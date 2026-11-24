@@ -1,6 +1,6 @@
 const DAY = /^(\d{4})-(\d{2})-(\d{2})$/;
-const INSTANT = new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short" });
-const NUMBER = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 });
+const INSTANT = new Intl.DateTimeFormat("en-GB", { dateStyle: "short", timeStyle: "short" });
+const NUMBER = new Intl.NumberFormat("en-GB", { maximumFractionDigits: 1 });
 
 /** « 03/11/2026 » : un jour `AAAA-MM-JJ`, lu tel quel (jamais décalé par le fuseau). */
 export function formatDay(day: string): string {

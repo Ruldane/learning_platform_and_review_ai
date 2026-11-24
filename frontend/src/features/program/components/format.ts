@@ -1,7 +1,7 @@
 import { parseDay } from "@/shared/lib/format";
 
-const WEEKDAY = new Intl.DateTimeFormat("fr-FR", { weekday: "short", timeZone: "UTC" });
-const DAY_OF_MONTH = new Intl.DateTimeFormat("fr-FR", { day: "numeric", timeZone: "UTC" });
+const WEEKDAY = new Intl.DateTimeFormat("en-GB", { weekday: "short", timeZone: "UTC" });
+const DAY_OF_MONTH = new Intl.DateTimeFormat("en-GB", { day: "numeric", timeZone: "UTC" });
 
 /** « lun. » : titre de colonne. */
 export function weekdayLabel(iso: string): string {

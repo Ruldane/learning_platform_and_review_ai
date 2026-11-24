@@ -2,7 +2,7 @@ import { t } from "@/shared/i18n/t";
 
 import type { Metrics } from "./viewTypes";
 
-const duration = new Intl.NumberFormat("fr-FR", {
+const duration = new Intl.NumberFormat("en-GB", {
   style: "unit",
   unit: "second",
   maximumFractionDigits: 2,

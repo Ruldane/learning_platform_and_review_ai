@@ -5,7 +5,7 @@ interface CostBadgeProps {
   cost: CostPayload | null;
 }
 
-const integer = new Intl.NumberFormat("fr-FR");
+const integer = new Intl.NumberFormat("en-GB");
 
 /**
  * « ≈ 0,04 » : deux décimales, trois sous le centime ; « < 0,001 » sous le millième, sans « ≈ »
@@ -14,7 +14,7 @@ const integer = new Intl.NumberFormat("fr-FR");
 function formatCost(usd: number): string {
   if (usd > 0 && usd < 0.001) return "< 0,001";
   const digits = usd > 0 && usd < 0.01 ? 3 : 2;
-  const amount = usd.toLocaleString("fr-FR", {
+  const amount = usd.toLocaleString("en-GB", {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   });

@@ -6,7 +6,7 @@ interface GoalListProps {
   goals: GoalRow[];
 }
 
-const DATE = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long" });
+const DATE = new Intl.DateTimeFormat("en-GB", { dateStyle: "long" });
 
 function formatDay(iso: string): string {
   const [year, month, day] = iso.split("-").map(Number);

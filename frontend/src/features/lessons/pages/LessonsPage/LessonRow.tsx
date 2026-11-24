@@ -23,7 +23,7 @@ export function LessonRow({ lesson }: { lesson: LessonSummaryOut }) {
       <span className="flex flex-wrap items-baseline gap-3 text-sm">
         {ready ? (
           <span className="text-muted-foreground">
-            {t("lessons.list.words", { count: lesson.word_count.toLocaleString("fr-FR") })}
+            {t("lessons.list.words", { count: lesson.word_count.toLocaleString("en-GB") })}
           </span>
         ) : null}
         <span className={cn("font-medium", ready ? "text-primary" : "text-muted-foreground")}>

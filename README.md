@@ -1,256 +1,250 @@
 # Tremplin
 
-Plateforme locale d'apprentissage et de carrière, pilotée par plusieurs agents IA. Elle tourne
-entièrement sous Docker sur votre machine : backend FastAPI, frontend React, base vectorielle,
-modèles locaux optionnels.
+Tremplin is a local learning and career platform powered by AI agents. It runs in Docker
+and uses a React interface, a FastAPI backend, SQLite, and Qdrant. You can run it as a
+personal workspace or enable Google sign-in to share an installation with a few people.
 
-Documents de référence : [SPEC.md](SPEC.md) (la spec), [DECISIONS.md](DECISIONS.md) (les choix et
-écarts), `docs/superpowers/plans/` (les plans d'implémentation).
+See the [product specification](SPEC.md), [decision log](DECISIONS.md), and
+[implementation plans](docs/superpowers/plans/) for details. For moving to another
+computer or restoring a backup, see the
+[installation and migration guide](docs/INSTALLATION-ET-MIGRATION.md).
 
-Pour changer de PC ou restaurer une sauvegarde, suivre le
-[guide d’installation et de migration](docs/INSTALLATION-ET-MIGRATION.md).
+## What Tremplin does
 
-## Prérequis
+### Turn a goal into a study plan
 
-- Docker et Docker Compose **2.24 ou plus récent** (`env_file` avec `required: false`) :
-  `docker compose version` pour vérifier.
-- [uv](https://docs.astral.sh/uv/) (Python 3.12 géré par uv), pour développer le back.
-- Node.js 22 ou plus et pnpm (`corepack enable`), pour développer le front.
+Set a learning goal and tell Tremplin when you can study. The Council works through
+the options and proposes a program. Review the proposal, make changes, and approve it
+when it fits. The Lesson Factory writes and checks lessons, and the program brings
+lessons, quizzes, spaced review, and practical projects into a schedule. You can study
+with the Tutor and track progress in the skills map.
 
-## Démarrage
-
-```bash
-cp .env.example .env     # y coller une seule clé LLM (ou la saisir plus tard dans l'interface)
-docker compose up -d
-# ouvrir http://localhost:5173
+```mermaid
+flowchart LR
+    Goal["Goal and availability"] --> Council["Council proposes a program"]
+    Council --> Review{"You review the proposal"}
+    Review -->|Request changes| Council
+    Review -->|Approve| Factory["Lesson Factory writes and checks lessons"]
+    Factory --> Study["Lessons, quizzes, practice, and review"]
+    Study --> Skills["Skills and evidence"]
 ```
 
-Une seule clé suffit (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY` ou `ZAI_API_KEY`) ; `BRAVE_API_KEY`
-est facultative. Les autres variables de `.env.example` ont toutes un défaut qui convient :
-elles servent à changer un port, à brancher un Ollama installé sur la machine ou à activer la
-connexion Google (voir plus bas).
+### Practice coding and collect evidence
 
-- Le premier démarrage construit les images et télécharge le modèle d'embeddings `bge-m3`
-  (environ 1,2 Go) : `docker compose logs -f ollama-init` montre la progression, le service
-  s'arrête une fois le modèle en place. L'application répond pendant ce temps.
-- Au premier lancement, l'application t'accueille en cinq étapes : l'état des services avec la
-  progression du téléchargement de `bge-m3`, ce qui sort de ta machine, ta clé d'API (avec un
-  test), l'import de ton CV et de ton profil LinkedIn (tu peux passer), puis ta disponibilité.
-  Elle ne revient pas une fois terminée. La progression de `bge-m3` est aussi lisible sans
-  l'interface : `curl -s http://localhost:8000/api/v1/health/embedding` (public, comme `/health`)
-  rend `present`, `percent` (de 0 à 100) et un texte. Si le modèle manque, le back le télécharge
-  lui-même depuis Ollama, une seule fois à la fois.
-- État des services : `curl -s http://localhost:8000/api/v1/health` (ou le voyant en haut de
-  l'interface). `"status": "ok"` quand la base, les 4 services et au moins une clé LLM sont là ;
-  `"degraded"` détaille ce qui manque.
-- Les clés API se saisissent aussi dans **Réglages > Modèles et clés** : elles sont chiffrées dans
-  le volume `app_data`, seuls leurs 4 derniers caractères sont affichés, et une clé saisie dans
-  l'interface prime sur celle du `.env`.
-- Arrêt : `docker compose down` (les volumes `app_data`, `qdrant_data`, `ollama_data` sont
-  conservés ; `docker compose down -v` efface toutes les données).
+Use the built-in IDE to work through exercises and run your code in an isolated
+container. An agent can review the exercise and propose a fix for you to inspect and
+accept. Save practical projects and evidence of your skills in your portfolio. The
+Brain keeps your notes and source documents searchable across sessions.
 
-### Ports déjà pris
+### Plan your next career move
 
-Les ports publiés (sur `127.0.0.1` seulement) sont 5173 (interface), 8000 (API) et 6333
-(Qdrant). Si l'un est déjà utilisé par un autre projet, le choisir dans `.env` :
+Import a résumé or LinkedIn profile to build a master profile. Save a job posting from a
+link or paste its text, compare its requirements with your profile, then prepare a
+targeted application and practice for interviews. Tremplin keeps the original profile
+and application work in your workspace so you can revisit them as your goals change.
+
+```mermaid
+flowchart LR
+    Resume["Résumé or LinkedIn profile"] --> Profile["Master profile"]
+    Profile --> Gap["Compare skills with requirements"]
+    Posting["Saved job posting"] --> Gap
+    Gap --> Application["Tailor and track the application"]
+    Gap --> Interview["Practice interviews"]
+```
+
+### Follow agent work from the browser or an MCP client
+
+The browser shows agents' progress, sources, and questions while a workflow runs.
+Claude Code and Codex can also start workflows and follow their sessions through the
+local MCP server. You choose the tools a token can use. Actions that require your
+approval wait for you in Tremplin.
+
+## Setup
+
+- Docker and Docker Compose **2.24 or later** for optional `env_file` entries. Check
+  with `docker compose version`.
+- For backend development, [uv](https://docs.astral.sh/uv/) with uv-managed Python 3.12.
+- For frontend development, Node.js 22 or later and pnpm (`corepack enable`).
 
 ```bash
+cp .env.example .env    # Add one LLM key now or enter it later in the app.
+docker compose up -d
+# Open http://localhost:5173
+```
+
+One provider key is enough (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, or `ZAI_API_KEY`).
+`BRAVE_API_KEY` is optional. The remaining settings in `.env.example` have defaults
+and let you change ports, use a host Ollama instance, or enable Google sign-in.
+
+- On first startup, Docker builds the images and downloads the `bge-m3` embedding
+  model (about 1.2 GB). Run `docker compose logs -f ollama-init` to watch the download.
+  The app responds during the download, and the initialization service exits when finished.
+- First-run setup covers service health and model download progress, what leaves the
+  computer, API key verification, optional résumé and LinkedIn profile import, and
+  availability. It appears once per workspace. The public
+  `GET /api/v1/health/embedding` endpoint returns `present`, `percent` (0–100), and a
+  message. If the model is missing, the backend requests a single download from Ollama.
+- Check the indicator in the browser or run `curl -s http://localhost:8000/api/v1/health`.
+  The response is `"status": "ok"` when the database, four services, and at least one
+  LLM key are available. `"degraded"` lists what is missing.
+- In **Settings > Models and keys**, you can enter keys that take precedence over
+  those in `.env`. Tremplin encrypts them in `app_data` and shows their last four
+  characters.
+- `docker compose down` stops the app and keeps `app_data`, `qdrant_data`, and
+  `ollama_data`. Adding `-v` deletes those volumes and their contents.
+
+### Change the published ports
+
+The interface (5173), API (8000), and Qdrant (6333) publish on `127.0.0.1`. If a port is
+in use, set the corresponding value in `.env`.
+
+```dotenv
 FRONTEND_PORT=5174
 BACKEND_PORT=8001
 QDRANT_PORT=6335
 ```
 
-puis `docker compose up -d --build` (l'adresse de l'API est intégrée à l'interface à la
-construction). L'origine autorisée par le back (`CORS_ORIGIN`) suit `FRONTEND_PORT`, et
-l'interface est alors sur `http://localhost:<FRONTEND_PORT>` (ou `http://127.0.0.1:<FRONTEND_PORT>` :
-les deux formes d'une origine locale sont acceptées). Pour autoriser d'autres origines (un front
-lancé hors Docker, par exemple), donner dans `.env` la liste complète, séparée par des virgules :
-`CORS_ORIGIN=http://localhost:5174,http://localhost:4173`.
+Run `docker compose up -d --build` afterward. The frontend gets the API address at
+build time. The backend's default allowed origin follows `FRONTEND_PORT` and accepts
+both `localhost` and `127.0.0.1`. For other origins, set the full comma-separated
+list, for example `CORS_ORIGIN=http://localhost:5174,http://localhost:4173`.
 
-### macOS et Ollama installé sur la machine
+### Use host Ollama on macOS
 
-Docker n'a pas accès au GPU sous macOS. Pour utiliser l'Ollama de la machine, décommenter
-`OLLAMA_BASE_URL=http://host.docker.internal:11434` dans `.env`, puis télécharger le modèle sur
-la machine, car `ollama-init` le télécharge dans le conteneur et non dans votre Ollama :
+Docker cannot access the GPU on macOS. To use Ollama on your Mac, uncomment
+`OLLAMA_BASE_URL=http://host.docker.internal:11434` in `.env` and run `ollama pull bge-m3`
+on the host. The `ollama-init` service downloads into the container's Ollama instance.
 
-```bash
-ollama pull bge-m3
-```
+### Configuration
 
-### Windows
-
-Si `docker compose build` échoue avec « additional privileges requested », définir
-`BUILDX_BAKE_ENTITLEMENTS_FS=0` (Git Bash : `export BUILDX_BAKE_ENTITLEMENTS_FS=0`).
-
-### Variables de `.env`
-
-| Variable | Rôle | Défaut |
+| Variable | Purpose | Default |
 | --- | --- | --- |
-| `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `ZAI_API_KEY` | Clé du fournisseur LLM (une seule suffit) | vide |
-| `BRAVE_API_KEY` | Recherche web Brave (facultatif) | vide |
-| `AUTH_MODE` | `local` (un utilisateur, sans connexion) ou `google` | `local` |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Client OAuth Google (mode Google) | vide |
-| `ALLOWED_EMAILS` | Adresses autorisées en mode Google (voir plus bas) | vide |
-| `GOOGLE_REDIRECT_URI`, `FRONTEND_URL` | Adresse de retour de Google et adresse du front | suivent `BACKEND_PORT` et `FRONTEND_PORT` |
-| `OLLAMA_BASE_URL` | Ollama de la machine plutôt que celui de Docker | `http://ollama:11434` |
-| `ZAI_BASE_URL` | Adresse de l'API Z.ai | `https://api.z.ai/api/paas/v4/` |
-| `LLM_CALL_DEADLINE_S` | Échéance totale d'un appel à un modèle, en secondes | `600` |
-| `WEB_RENDER_FALLBACK` | Repli Gotenberg du lecteur web ; `false` le coupe | `true` |
-| `FRONTEND_PORT`, `BACKEND_PORT`, `QDRANT_PORT` | Ports publiés sur `127.0.0.1` | `5173`, `8000`, `6333` |
-| `CORS_ORIGIN` | Origine(s) du front autorisée(s) par le back | suit `FRONTEND_PORT` |
+| `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `ZAI_API_KEY` | LLM provider keys | Empty |
+| `BRAVE_API_KEY` | Optional Brave web search | Empty |
+| `AUTH_MODE` | `local` workspace or `google` sign-in | `local` |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google OAuth client | Empty |
+| `ALLOWED_EMAILS` | Accounts allowed to sign in | Empty |
+| `GOOGLE_REDIRECT_URI`, `FRONTEND_URL` | OAuth callback and browser URL | Follow app ports |
+| `OLLAMA_BASE_URL` | Address of the Ollama instance | `http://ollama:11434` |
+| `ZAI_BASE_URL` | Z.ai API address | `https://api.z.ai/api/paas/v4/` |
+| `LLM_CALL_DEADLINE_S` | Model call deadline in seconds | `600` |
+| `WEB_RENDER_FALLBACK` | Gotenberg fallback for the web reader | `true` |
+| `FRONTEND_PORT`, `BACKEND_PORT`, `QDRANT_PORT` | Loopback ports | `5173`, `8000`, `6333` |
+| `CORS_ORIGIN` | Allowed frontend origins | Follows `FRONTEND_PORT` |
 
-Les clés ne sont jamais renvoyées au navigateur ni écrites dans les journaux, et `.env` n'est
-jamais commité.
+## Google sign-in
 
-## Mode Google : un compte par personne
+Local mode opens a single workspace without a sign-in screen. Google mode gives each
+person a workspace. To enable it, create a project in the
+[Google Cloud console](https://console.cloud.google.com) and configure Google Auth
+Platform as follows.
 
-Par défaut (`AUTH_MODE=local`), l'application n'a qu'un seul utilisateur et aucune page de
-connexion. Pour la partager à quelques personnes, chacune avec son espace, active la connexion
-Google. Elle demande de créer un client OAuth dans la console Google : c'est la seule
-configuration au delà des clés d'API.
+1. Set the audience to **External**, enter the app name and support address, and
+   request the `openid`, `email`, and `profile` scopes. While the app is in testing,
+   add each account as a test user.
+2. Create an OAuth client for a **Web application**. Set the JavaScript origin to
+   `http://localhost:5173` and the redirect URI to
+   `http://localhost:8000/api/v1/auth/google/callback`. Use your configured ports.
+   The redirect URI must match `GOOGLE_REDIRECT_URI` exactly.
+3. Configure the installation in `.env`.
 
-1. **Projet.** Sur <https://console.cloud.google.com>, crée un projet (« Tremplin », par exemple).
-2. **Écran de consentement** (Google Auth Platform, ou « APIs et services > Écran de consentement
-   OAuth ») : type d'utilisateur **Externe**, nom de l'application, adresse d'assistance. Les
-   portées demandées sont `openid`, `email` et `profile` seulement. Tant que l'application est
-   « en test », ajoute chaque adresse comme **utilisateur test** ; tu peux aussi la publier
-   (ces portées de base ne demandent pas de validation par Google).
-3. **Identifiants > Créer des identifiants > ID client OAuth**, type **Application Web**, avec :
-   - origine JavaScript autorisée : `http://localhost:5173` ;
-   - URI de redirection autorisé : `http://localhost:8000/api/v1/auth/google/callback`.
-
-   Copie l'ID client et le code secret. Si tu as changé `FRONTEND_PORT` ou `BACKEND_PORT`, reprends
-   les mêmes ports dans ces deux adresses ; l'adresse de retour doit être **identique au
-   caractère près** à `GOOGLE_REDIRECT_URI` (qui suit `BACKEND_PORT` par défaut).
-4. **Variables** dans `.env` :
-
-   ```bash
+   ```dotenv
    AUTH_MODE=google
-   GOOGLE_CLIENT_ID=<l'ID client>
-   GOOGLE_CLIENT_SECRET=<le code secret>
-   ALLOWED_EMAILS=camille.exemple@example.org,dominique.exemple@example.org
+   GOOGLE_CLIENT_ID=<client ID>
+   GOOGLE_CLIENT_SECRET=<client secret>
+   ALLOWED_EMAILS=camille@example.org,dominique@example.org
    # GOOGLE_REDIRECT_URI=http://localhost:8000/api/v1/auth/google/callback
    # FRONTEND_URL=http://localhost:5173
    ```
 
-   `GOOGLE_REDIRECT_URI` et `FRONTEND_URL` ne sont à écrire que si l'adresse n'est pas
-   `http://localhost:<port>` (un autre nom d'hôte, ou `https`) : elles suivent déjà
-   `BACKEND_PORT` et `FRONTEND_PORT`.
-5. **`ALLOWED_EMAILS`** : liste séparée par des virgules, comparée en minuscules et sans tenir
-   compte des espaces. **Vide, le back refuse de démarrer** en mode Google (message dans
-   `docker compose logs backend`). `*` laisse entrer tous les comptes Google ; sinon seuls les
-   comptes de la liste entrent. La liste est contrôlée à la connexion et à chaque requête :
-   retirer une adresse du `.env` puis relancer le back (`docker compose up -d`) coupe l'accès de
-   ce compte aussitôt.
-6. `docker compose up -d`, puis **ouvre l'application par `http://localhost:5173`**, pas par
-   `127.0.0.1` : le cookie de session est posé sur `localhost`, et le WebSocket des sessions
-   d'agents exige ce cookie et un en-tête `Origin` de l'interface (un script hors navigateur doit
-   donc l'envoyer).
+   Set the two URLs explicitly if you use a different host or HTTPS. The defaults
+   already follow `BACKEND_PORT` and `FRONTEND_PORT`.
 
-La connexion est un code d'autorisation avec PKCE ; la session tient dans un cookie `HttpOnly`
-`SameSite=Lax` de 30 jours (`Secure` quand l'adresse de retour est en `https`). Chaque ligne
-de la base, chaque vecteur et chaque fichier porte l'identifiant de son propriétaire : deux
-comptes ne voient jamais les données l'un de l'autre. Les clés d'API saisies dans l'interface
-sont celles de chaque compte ; celles du `.env` servent à tous.
+4. Run `docker compose up -d` and open **http://localhost:5173** with your configured
+   port. The session cookie belongs to `localhost`. The agent WebSocket needs that
+   cookie and the frontend's `Origin` header, including for clients outside the browser.
 
-**Avec `ALLOWED_EMAILS=*`, ne mets aucune clé d'API dans le `.env`** : tout compte Google qui se
-connecte consommerait tes clés et verrait leurs 4 derniers caractères. Mets-y plutôt la liste
-des adresses nommées, ou fais saisir à chacun ses propres clés dans l'interface.
+Tremplin compares comma-separated accounts in `ALLOWED_EMAILS` without regard to case
+or surrounding spaces. The backend refuses to start with an empty list in Google
+mode. Use a list of named accounts to share keys from `.env`. With `ALLOWED_EMAILS=*`,
+any Google account can connect, so let each person enter their own keys in the app.
+To revoke access, remove an address and restart the backend. The app checks the list
+at sign-in and on each request.
 
-**Cookies de `localhost`** : un cookie ne distingue pas les ports (RFC 6265). Tout autre
-serveur web de ta machine ouvert dans le même navigateur sur `localhost` reçoit donc le cookie
-de session de Tremplin ; ne navigue pas vers des applications locales auxquelles tu ne fais
-pas confiance pendant que tu es connecté. Pour un hébergement public, `https` (cookie
-`Secure`) est obligatoire.
+Sign-in uses the authorization code flow with PKCE. The 30-day session cookie is
+`HttpOnly`, `SameSite=Lax`, and `Secure` when the callback uses HTTPS. Workspace
+rows, vectors, and files are scoped to their owner. Keys entered through the interface
+belong to the account that entered them.
 
-### Reprise de l'espace local
+Browsers send cookies to the same host across ports. While signed in to Tremplin on
+`localhost`, open only trusted applications on that host. Use HTTPS for public hosting.
 
-Si tu as déjà utilisé Tremplin en mode local, tes données sont dans l'espace `local`. Au premier
-passage en mode Google, **seule une adresse nommée dans `ALLOWED_EMAILS`** se voit proposer de
-**reprendre** cet espace (rien n'est déplacé : le compte Google prend la place de l'utilisateur
-local) ou de commencer avec un **espace vide** (l'espace local reste intact en base, visible
-en repassant en `AUTH_MODE=local`). Règles à connaître :
+### Keep an existing local workspace
 
-- Avec `*`, la reprise n'est **jamais** proposée : la première personne venue prendrait des
-  données qui ne sont pas les siennes. Pour reprendre l'espace local, nomme ton adresse dans la
-  liste.
-- Avec **plusieurs adresses nommées, la première qui se connecte prend l'espace local** (ou le
-  refuse en choisissant « Espace vide »). Dès qu'un compte Google existe, la reprise n'est plus
-  proposée à personne d'autre.
-- La reprise est **close pour toujours** dès qu'un premier compte Google existe, même si ce
-  compte est ensuite supprimé par « Tout supprimer » (voir plus bas) : l'espace local, resté en
-  base, n'est plus jamais proposé à une autre adresse (ni à la même).
-- **Repasser en `AUTH_MODE=local` après « Reprendre »** : si la base ne contient qu'un seul
-  compte, l'application le reprend comme utilisateur unique et tes données reviennent. S'il y a
-  plusieurs comptes (par exemple un compte Google créé après « Espace vide »), le mode local
-  ouvre un espace **neuf et vide** : pour retrouver les données reprises, reste en mode Google.
+The first Google account to sign in from a named allowlist can either take over the
+existing local workspace or start with an empty one. Taking it over assigns the same
+workspace to the Google account. Choosing an empty workspace leaves the original data
+available in local mode. The offer closes as soon as the first Google account is
+created, even if that account is later deleted. A wildcard allowlist disables the offer.
 
-## Export et suppression de tes données
+After a takeover, returning to `AUTH_MODE=local` reuses your data if the database has
+just one account. With multiple accounts, local mode opens a new empty workspace. Use
+Google mode to reach the workspace you took over.
 
-Dans **Réglages > Mes données** :
+## Export or delete your data
 
-- **Exporter toutes mes données** : une archive `tremplin-export-AAAAMMJJ.zip` avec un
-  `manifest.json` (date, nombre de lignes par table, nombre de fichiers), un fichier JSON par
-  table et les fichiers que tu as importés. Elle ne contient ni tes clés d'API, ni les vecteurs
-  de la mémoire (recalculés à partir du texte), ni les points de reprise des agents.
-- **Tout supprimer** : efface tes lignes, tes vecteurs, tes fichiers et les points de reprise de
-  tes sessions, après confirmation en tapant `SUPPRIMER`. En mode local l'application reste
-  utilisable, avec un espace vide ; en mode Google ton compte disparaît aussi et tu reviens à la
-  page de connexion. Les clés du `.env` ne sont pas touchées. Si le service de vecteurs est en
-  panne, l'opération s'arrête et peut être relancée jusqu'au bout.
+Open **Settings > My data**.
 
-## Ce qui sort de la machine
+- **Export all my data** downloads `tremplin-export-YYYYMMDD.zip` with a
+  `manifest.json` containing the timestamp and counts, one JSON file per table,
+  and the files you imported. It excludes keys, recomputable vectors, and agent
+  checkpoints.
+- **Delete everything** removes your rows, vectors, files, and session checkpoints
+  after you enter the confirmation word shown in the app. Local mode returns you to
+  first-run setup. Google mode removes the account and returns you to sign-in. Keys in
+  `.env` stay available. If vector storage is unavailable, you can retry deletion.
 
-| Donnée | Destination |
+## What leaves your computer
+
+| Data | Destination |
 | --- | --- |
-| Prompts, qui peuvent contenir le CV et le profil | Le fournisseur LLM choisi |
-| Requêtes de recherche | Les moteurs interrogés par SearXNG |
-| Tout le reste (base, vecteurs, fichiers, embeddings) | Reste en local |
+| Prompts, which may include your résumé or profile | Your chosen model provider |
+| Search queries | Search engines queried through SearXNG or Brave |
+| Database, vectors, uploaded files, and embeddings | Local services |
 
-Le bouton **Tester** d'une clé et la liste des modèles appellent le fournisseur concerné avec
-cette clé. En mode Google, la connexion passe par Google, qui apprend que tu ouvres Tremplin ;
-l'application reçoit seulement ton adresse et ton nom. Le modèle d'embeddings `bge-m3` est
-téléchargé une fois depuis le registre d'Ollama. Aucune autre donnée ne quitte la machine : nom,
-adresse et téléphone sont retirés des requêtes de recherche avant leur envoi.
+Testing an API key and listing models call the provider with that key. In Google mode,
+Google handles sign-in and shares your name and email with Tremplin. Ollama downloads
+`bge-m3` once from its registry. Tremplin removes names, addresses, and phone numbers
+from outgoing search queries.
 
-## Coûts
+## Costs
 
-- Gratuit et local : Qdrant, `bge-m3` (Ollama), SearXNG et Gotenberg.
-- Payant à l'usage : les appels aux modèles du fournisseur dont tu as saisi la clé (Anthropic,
-  OpenAI ou Z.ai). Brave est facultatif.
-- L'écran **Coûts** des réglages totalise les dépenses par jour, par fonction, par agent et par
-  modèle sur 7, 30 ou 90 jours, et le **journal des agents** liste chaque appel (agent, modèle,
-  jetons, durée, coût). Les prix viennent de `backend/app/providers/llm/model_prices.json`, tels
-  qu'ils étaient au moment de l'appel : ce sont des estimations, pas une facture.
-- Les réglages permettent de choisir un modèle moins cher par niveau, ou agent par agent (mode
-  avancé).
+Qdrant, Ollama embeddings, SearXNG, and Gotenberg run locally. The model provider bills
+for its calls, and Brave is optional. The **Costs** screen groups estimates by day,
+feature, agent, and model over 7, 30, or 90 days. The agent log shows each call's model,
+token count, duration, and estimated cost. Estimates use the prices in
+`backend/app/providers/llm/model_prices.json` at the time of the call. You can choose
+models by tier or configure them per agent.
 
-## Piloter Tremplin avec Claude Code ou Codex (MCP)
+## MCP access for Claude Code and Codex
 
-Tremplin expose ses actions par un serveur MCP local (`http://127.0.0.1:8000/mcp`). Tu crées un
-jeton dans **Réglages > Accès MCP** (interrupteur coupé par défaut, portée, lecture ou écriture,
-expiration) ; ce qui ne s'annule pas attend ton clic dans l'application. Le branchement, les
-niveaux, les limites et les règles de conduite d'un agent sont dans `docs/mcp/` (`AGENTS.md`, lu
-par Codex ; `CLAUDE.md`, par Claude Code). La table des niveaux : `python -m scripts.mcp_levels`
-depuis `backend/`.
+The local MCP server listens at `http://127.0.0.1:8000/mcp`. In **Settings > MCP access**,
+enable the server and create a token with the scope, access mode, and expiration you
+want. The [MCP guide](docs/mcp/AGENTS.md) covers setup, permissions, and limits. To
+print the tool levels, run `uv run python -m scripts.mcp_levels` from `backend/`.
 
-## Services
-
-- Les 7 services : `frontend` (5173), `backend` (8000), `qdrant` (6333), `ollama`, `ollama-init`
-  (télécharge `bge-m3` une fois, puis s'arrête), `searxng`, `gotenberg`. Volumes nommés :
-  `app_data`, `qdrant_data`, `ollama_data`.
-- Le back démarre dès que les 4 services sont sains, sans attendre `bge-m3`.
-- Les versions des images sont figées dans `docker-compose.yml` (voir DECISIONS.md, D30).
-
-## Développement
-
-Rechargement à chaud du back et du front dans Docker :
+## Development
 
 ```bash
+# Run from the repository root for hot reload.
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 ```
 
-## Développement du back
+Compose pins the versions of its seven services in `docker-compose.yml` (D30).
+If a Windows build reports “additional privileges requested”, see
+[AGENTS.md](AGENTS.md) for the direct Docker build commands.
+
+### Backend
 
 ```bash
 cd backend
@@ -258,11 +252,11 @@ uv sync
 uv run pytest
 uv run ruff check . && uv run ruff format --check .
 uv run python -m mypy app
-uv run lint-imports                          # contrats d'import (pyproject.toml)
-uv run python -m scripts.export_openapi      # régénère contracts/openapi.json
+uv run lint-imports
+uv run python -m scripts.export_openapi
 ```
 
-Lancement hors Docker (données dans `backend/data/`, ignoré par git) :
+To run without Docker, set a local data directory and apply the migrations first.
 
 ```bash
 mkdir -p data && export DATA_DIR=./data
@@ -270,56 +264,37 @@ uv run alembic upgrade head
 uv run uvicorn --factory app.main:create_app --reload
 ```
 
-## Développement du front
+### Frontend
 
 ```bash
 cd frontend
 pnpm install
-pnpm dev          # http://localhost:5173, API attendue sur http://localhost:8000
+pnpm dev
 pnpm test && pnpm lint && pnpm typecheck && pnpm build
-pnpm gen:api      # types TypeScript depuis contracts/openapi.json
+pnpm gen:api && pnpm gen:api:check
 ```
 
-## Contrôles de qualité
-
-Installation des hooks (une fois, depuis la racine du dépôt) :
+### Quality checks and end-to-end tests
 
 ```bash
 uv run --project backend python -m pre_commit install
-```
-
-Exécution manuelle sur tout le dépôt :
-
-```bash
 uv run --project backend python -m pre_commit run --all-files
 ```
 
-Règles de taille : 300 lignes par fichier et 50 par fonction, vérifiées par
-`backend/scripts/check_file_length.py`. Les frontières d'architecture sont vérifiées par
-import-linter (back) et `eslint-plugin-boundaries` (front). Sous Windows, certains exécutables
-(`mypy.exe`, `pre-commit.exe`) peuvent être bloqués : les appeler en module (`python -m ...`).
+From `frontend/`, `pnpm e2e` runs the four local-mode Playwright journeys (Council,
+résumé, applications, and daily use). The Google-mode journey uses
+`playwright.auth.config.ts` and covers sign-in, local workspace takeover, setup,
+isolation, export, and deletion. Tests use the real application with fake providers
+and scripted models. The fake Google identity provider accepts any test address, so
+the test server binds only to a loopback interface in Google mode.
 
-## Parcours de bout en bout
-
-Cinq parcours Playwright (depuis `frontend/`), sur le back de bout en bout (`tests.e2e.server` :
-la vraie application, des fournisseurs factices et des modèles scriptés, sans réseau ni LLM
-réel) : `pnpm e2e` joue les quatre parcours du mode local (Conseil, CV, candidatures,
-quotidien). Le cinquième (connexion, reprise de l'espace local, premier lancement, isolation,
-export et suppression) a sa propre configuration, `playwright.auth.config.ts`, avec le back en
-mode Google et un faux fournisseur d'identité. Ce faux fournisseur connecte n'importe quelle
-adresse sans mot de passe : le serveur de ces essais refuse donc, en mode Google, d'écouter
-ailleurs que sur `127.0.0.1`, `::1` ou `localhost`.
-
-## Mettre à jour depuis une version précédente
+## Upgrade an installation
 
 ```bash
 git pull
 docker compose up -d --build
 ```
 
-Les données (volumes `app_data`, `qdrant_data`, `ollama_data`) sont conservées. À chaque
-démarrage, le conteneur du back lance `alembic upgrade head` avant le serveur : la base est
-migrée toute seule, et un back qui n'arrive pas à la migrer ne démarre pas
-(`docker compose logs backend`). Les réglages déjà enregistrés comptent comme « premier
-lancement terminé » : l'écran d'accueil ne s'impose pas à un compte existant. Pour garder une
-copie avant une mise à jour : `docker compose cp backend:/data ./sauvegarde-tremplin`.
+Upgrades keep volumes and settings. The backend runs `alembic upgrade head` before
+serving requests. Check `docker compose logs backend` for migration failures.
+Back up your data with `docker compose cp backend:/data ./tremplin-backup`.

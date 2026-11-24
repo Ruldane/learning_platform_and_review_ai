@@ -15,10 +15,10 @@ interface ConversationSettingsProps {
 
 function usageText(usage: Conversation["usage"]): string {
   return t("conversations.usage", {
-    thread: usage.thread_tokens.toLocaleString("fr-FR"),
-    threadLimit: usage.thread_token_limit.toLocaleString("fr-FR"),
-    day: usage.day_tokens.toLocaleString("fr-FR"),
-    dayLimit: usage.day_token_limit.toLocaleString("fr-FR"),
+    thread: usage.thread_tokens.toLocaleString("en-GB"),
+    threadLimit: usage.thread_token_limit.toLocaleString("en-GB"),
+    day: usage.day_tokens.toLocaleString("en-GB"),
+    dayLimit: usage.day_token_limit.toLocaleString("en-GB"),
   });
 }
 

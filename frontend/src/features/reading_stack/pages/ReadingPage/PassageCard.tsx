@@ -26,7 +26,7 @@ export function PassageCard({ id, passage }: { id: string; passage: string }) {
       </Button>
       {tooLong ? (
         <p id={notice} role="status" className="text-sm">
-          {t("reading.glossary.passageTooLong", { limit: MAX_PASSAGE.toLocaleString("fr-FR") })}
+          {t("reading.glossary.passageTooLong", { limit: MAX_PASSAGE.toLocaleString("en-GB") })}
         </p>
       ) : null}
       {card.data ? (

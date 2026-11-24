@@ -2,8 +2,8 @@ import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 import type { QuoteView as Quote } from "../viewTypes";
 
-const RATE = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 });
-const TREND = new Intl.NumberFormat("fr-FR", {
+const RATE = new Intl.NumberFormat("en-GB", { maximumFractionDigits: 1 });
+const TREND = new Intl.NumberFormat("en-GB", {
   maximumFractionDigits: 1,
   signDisplay: "exceptZero",
 });

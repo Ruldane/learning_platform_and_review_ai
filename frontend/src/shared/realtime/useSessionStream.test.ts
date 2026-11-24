@@ -3,7 +3,7 @@ import { http, HttpResponse } from "msw";
 import { StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { apiBaseUrl } from "@/shared/api/client";
-import { fr } from "@/shared/i18n/fr";
+import { en } from "@/shared/i18n/en";
 import { createFakeSocketServer } from "@/test/fakeSocket";
 import { server } from "@/test/server";
 import type { SessionView } from "./sessionApi";
@@ -95,7 +95,7 @@ describe("useSessionStream", () => {
       fake.last().drop(4404);
     });
     expect(result.current.connection).toBe("failed");
-    expect(result.current.error).toBe(fr.session.stream.not_found);
+    expect(result.current.error).toBe(en.session.stream.not_found);
     act(() => result.current.retry());
     expect(fake.sockets).toHaveLength(2);
     expect(result.current.connection).toBe("connecting");

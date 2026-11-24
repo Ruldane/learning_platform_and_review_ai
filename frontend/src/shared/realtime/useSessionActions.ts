@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import { ApiError, errorMessage } from "@/shared/api/errors";
-import { fr } from "@/shared/i18n/fr";
+import { en } from "@/shared/i18n/en";
 import { t } from "@/shared/i18n/t";
 import type { RunSource } from "@/shared/lib/runSource";
 import {
@@ -17,10 +17,10 @@ import { selectSession, useSessionStore } from "./sessionStore";
 import { snapshotOf } from "./statusGate";
 import type { UserCommand } from "./types";
 
-type SessionErrorCode = keyof typeof fr.session.errors;
+type SessionErrorCode = keyof typeof en.session.errors;
 
 const isSessionErrorCode = (code: string): code is SessionErrorCode =>
-  Object.hasOwn(fr.session.errors, code);
+  Object.hasOwn(en.session.errors, code);
 
 /** Message français d'un échec d'action : codes connus (409, 503) traduits ici, sinon celui de l'API. */
 export function sessionActionError(error: unknown): string {

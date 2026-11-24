@@ -92,7 +92,7 @@
         "type": "object"
       },
       "AgentCallOut": {
-        "description": "Un appel à un modèle, tel que journalisé : jamais le contenu du prompt.",
+        "description": "A call to a model, as logged: never the prompt content.",
         "properties": {
           "agent": {
             "anyOf": [
@@ -183,7 +183,7 @@
         "type": "object"
       },
       "AgentCallPage": {
-        "description": "Une page du journal ; `next_before` (curseur opaque) donne la page suivante, `None` à la\nfin.",
+        "description": "A page of the log; `next_before` (opaque cursor) gives the next page, `None` at the\nend.",
         "properties": {
           "items": {
             "items": {
@@ -288,7 +288,7 @@
         "type": "object"
       },
       "AgentOut": {
-        "description": "Un agent dont le modèle se choisit (surcharge par agent, P17) et le niveau qu'il suit.",
+        "description": "An agent whose model can be chosen (per-agent override, P17) and the tier it follows.",
         "properties": {
           "name": {
             "title": "Name",
@@ -451,7 +451,7 @@
         "type": "object"
       },
       "AlertOut": {
-        "description": "Une fiche existante qui ressemble à l'offre entrante : niveau, fiche, message en français\n(date et statut). `info` : simple information, ne bloque rien.",
+        "description": "An existing record that looks like the incoming posting: level, record, message (date and\nstatus). `info`: plain information, blocks nothing.",
         "properties": {
           "application_id": {
             "title": "Application Id",
@@ -570,7 +570,7 @@
         "type": "object"
       },
       "ApiKeyOut": {
-        "description": "Une clé, jamais en clair : seuls les 4 derniers caractères sont exposés.",
+        "description": "A key, never in clear text: only the last 4 characters are exposed.",
         "properties": {
           "label": {
             "title": "Label",
@@ -901,7 +901,7 @@
         "type": "object"
       },
       "ApplicationIn": {
-        "description": "Création manuelle ou depuis une offre. Avec `posting_id`, l'entreprise, l'intitulé, le\nlien et le texte figé viennent de l'offre (les champs donnés ne servent que si l'offre ne les\ndit pas encore) ; sans `posting_id`, `company` et `title` sont obligatoires (422 `fields`).\n`distinct_from` : les fiches de l'alerte que January a confirmées « autre poste ».",
+        "description": "Manual creation or from a posting. With `posting_id`, the company, job title, link and\nfrozen text come from the posting (the given fields are only used if the posting does not\nstate them yet); without `posting_id`, `company` and `title` are required (422 `fields`).\n`distinct_from`: the alert's records that January confirmed as \"another position\".",
         "properties": {
           "applied_on": {
             "anyOf": [
@@ -1220,7 +1220,7 @@
       },
       "ApplicationPatch": {
         "additionalProperties": false,
-        "description": "Les champs à changer (ceux qui sont envoyés, `null` efface un champ facultatif) ; `contacts`\nremplace la liste. `posting_text` : le texte de l'offre d'une fiche saisie sans lui (il ouvre\nson kit) ; un texte vide l'efface. Le statut ne se change que par\n`POST /applications/{id}/events` : l'envoyer ici est une 422 (`fields: [\"status\"]`), comme tout\nchamp inconnu.",
+        "description": "The fields to change (those sent; `null` clears an optional field); `contacts` replaces\nthe list. `posting_text`: the posting text of a record entered without it (it unlocks its\nkit); an empty text clears it. The status only changes through\n`POST /applications/{id}/events`: sending it here is a 422 (`fields: [\"status\"]`), like any\nunknown field.",
         "properties": {
           "applied_on": {
             "anyOf": [
@@ -1432,7 +1432,7 @@
         "type": "object"
       },
       "ApplicationStatsOut": {
-        "description": "Les indicateurs (SPEC 6.4) ; `StatsOut` est déjà le nom des statistiques de la mémoire.",
+        "description": "The indicators (SPEC 6.4); `StatsOut` is already the name of the memory statistics.",
         "properties": {
           "by_status": {
             "additionalProperties": {
@@ -2146,7 +2146,7 @@
             "type": "integer"
           },
           "weekly_budget_minutes": {
-            "description": "Budget hebdomadaire : cinq jours de semaine plus un bloc de week-end (borne haute).",
+            "description": "Weekly budget: five weekdays plus one weekend block (upper bound).",
             "readOnly": true,
             "title": "Weekly Budget Minutes",
             "type": "integer"
@@ -2460,7 +2460,7 @@
         "type": "object"
       },
       "BlockRubric": {
-        "description": "Le bloc d'étude du jour : la leçon et ses tâches dues (`minutes` : leur total).",
+        "description": "The study block of the day: the lesson and its due tasks (`minutes`: their total).",
         "properties": {
           "lesson_id": {
             "title": "Lesson Id",
@@ -2532,7 +2532,7 @@
         "type": "object"
       },
       "BoardEdit": {
-        "description": "Scène Excalidraw retouchée par January (`serializeAsJSON`) et sa note, renvoyée aux agents\ncomme un message. Corps plafonné à 2 Mio (`core.body_limits.BOARD_BODY_MAX`).",
+        "description": "Excalidraw scene edited by January (`serializeAsJSON`) and its note, sent back to the\nagents as a message. Body capped at 2 MiB (`core.body_limits.BOARD_BODY_MAX`).",
         "properties": {
           "note": {
             "maxLength": 2000,
@@ -3381,7 +3381,7 @@
         "type": "object"
       },
       "BriefOut": {
-        "description": "Le brief d'un jour local. `advice_status` : `pending` tant que la session du conseil vit\n(le seul état qui change encore) ; `ready` (`advice` rangé) ; `failed` (conseil impossible ou\nsession morte) et `unavailable` (aucun modèle) sont **définitifs pour la journée** : le\nconseil n'est jamais relancé, aucun « Réessayer » à offrir.",
+        "description": "The brief of a local day. `advice_status`: `pending` while the advice session lives (the\nonly state that still changes); `ready` (`advice` stored); `failed` (advice impossible or\nsession dead) and `unavailable` (no model) are **final for the day**: the advice is never\nrelaunched, there is no \"Retry\" to offer.",
         "properties": {
           "advice": {
             "anyOf": [
@@ -3398,7 +3398,7 @@
             "title": "Advice"
           },
           "advice_status": {
-            "description": "`pending` change encore ; `ready`, `failed` et `unavailable` sont définitifs.",
+            "description": "`pending` may still change; `ready`, `failed` and `unavailable` are final.",
             "enum": [
               "pending",
               "ready",
@@ -3476,7 +3476,7 @@
             "title": "Session Id"
           },
           "unavailable": {
-            "description": "Les rubriques dont la source était en panne à la création (vides ce jour).",
+            "description": "Sections whose source was down at creation (empty for that day).",
             "items": {
               "type": "string"
             },
@@ -3513,7 +3513,7 @@
         "type": "object"
       },
       "BriefResourceOut": {
-        "description": "La ressource du jour : un résultat réel du web dont la page a été lue. `published` : sa date\nsi le web la donne, jamais devinée.",
+        "description": "The resource of the day: a real web result whose page was read. `published`: its date if\nthe web gives it, never guessed.",
         "properties": {
           "domain": {
             "title": "Domain",
@@ -3800,7 +3800,7 @@
         "type": "object"
       },
       "ChangeOut": {
-        "description": "Un des trois changements qui feraient basculer un vote : la persona visée, les faits du\nprofil à mettre en avant. `needs_skill` : il demande un terme que le profil ne dit pas\n(`terms`), une compétence « à acquérir », jamais à écrire dans le CV telle quelle.",
+        "description": "One of the three changes that would flip a vote: the targeted persona, the profile facts\nto highlight. `needs_skill`: it calls for a term the profile does not state (`terms`), a\nskill \"to acquire\", never to be written into the CV as is.",
         "properties": {
           "fact_ids": {
             "items": {
@@ -3894,7 +3894,7 @@
         "type": "object"
       },
       "CheckOut": {
-        "description": "`own` : la fiche de cette offre, si elle existe ; `alerts` : certain, probable, possible ;\n`info` : même entreprise dans les 30 jours.",
+        "description": "`own`: this posting's record, if any; `alerts`: certain, probable, possible; `info`: same\ncompany within 30 days.",
         "properties": {
           "alerts": {
             "items": {
@@ -3930,7 +3930,7 @@
         "type": "object"
       },
       "ChooseOut": {
-        "description": "`already_chosen` : ce même choix était déjà fait (double clic, reprise générique) ; la\nrequête n'a rien changé, `start_date` comprise (D87). Faux aussi quand ce même choix relance\nle Stratège, dont la session a échoué sans programme (D97).",
+        "description": "`already_chosen`: this same choice was already made (double click, generic resume); the\nrequest changed nothing, `start_date` included (D87). Also false when this same choice\nrestarts the Strategist, whose session failed without a program (D97).",
         "properties": {
           "already_chosen": {
             "default": false,
@@ -3963,7 +3963,7 @@
         "type": "object"
       },
       "ChooseRequest": {
-        "description": "`mix_with` : seconde proposition du même lot (mélange) ; `start_date` : début souhaité du\nprogramme, un lundi, aujourd'hui ou plus tard (sinon 422 `invalid_start_date`) ; prochain\nlundi par défaut.",
+        "description": "`mix_with`: second proposal from the same batch (mix); `start_date`: desired program\nstart, a Monday, today or later (otherwise 422 `invalid_start_date`); next Monday by\ndefault.",
         "properties": {
           "mix_with": {
             "anyOf": [
@@ -4449,7 +4449,7 @@
         "type": "object"
       },
       "CommitteeDiff": {
-        "description": "L'avant et l'après (F19) : les votes, les objections disparues (`objections_resolved`) et les\nnouvelles (`objections_new`) par rapport à l'exécution `previous_id`.",
+        "description": "The before and after (F19): the votes, the objections that disappeared\n(`objections_resolved`) and the new ones (`objections_new`) compared with run `previous_id`.",
         "properties": {
           "objections_new": {
             "items": {
@@ -4487,7 +4487,7 @@
         "type": "object"
       },
       "CommitteeIn": {
-        "description": "La version de CV à faire juger : elle doit être prête (PDF rendu).",
+        "description": "The CV version to be judged: it must be ready (PDF rendered).",
         "properties": {
           "cv_version_id": {
             "maxLength": 36,
@@ -4503,7 +4503,7 @@
         "type": "object"
       },
       "CommitteeRunOut": {
-        "description": "Une exécution du comité. `votes`, `objections` et `changes` sont vides tant qu'elle n'est\npas terminée ; `verdict` est la majorité des quatre votes (égalité : peut-être).",
+        "description": "A committee run. `votes`, `objections` and `changes` are empty until it finishes;\n`verdict` is the majority of the four votes (tie: maybe).",
         "properties": {
           "application_id": {
             "anyOf": [
@@ -5311,7 +5311,7 @@
         "type": "object"
       },
       "CostRow": {
-        "description": "Une ligne du rapport. `key` : le jour (`2026-11-16`), le graphe (`\"\"` hors session),\nl'agent (`\"\"` aucun) ou `fournisseur:modèle` (`glm:glm-5.3-flash`).",
+        "description": "A report row. `key`: the day (`2026-11-16`), the graph (`\"\"` outside a session), the\nagent (`\"\"` none) or `provider:model` (`glm:glm-5.3-flash`).",
         "properties": {
           "calls": {
             "title": "Calls",
@@ -5350,7 +5350,7 @@
         "type": "object"
       },
       "CostTotals": {
-        "description": "Appels, jetons et coût d'un groupe d'appels ; `estimated_calls` : combien de ces appels\nont un coût estimé (le fournisseur n'a pas rendu ses jetons).",
+        "description": "Calls, tokens and cost of a group of calls; `estimated_calls`: how many of these calls\nhave an estimated cost (the provider did not return its tokens).",
         "properties": {
           "calls": {
             "title": "Calls",
@@ -5463,7 +5463,7 @@
         "type": "object"
       },
       "CostsReport": {
-        "description": "Les coûts des `days` derniers jours locaux, de `since` à `until` inclus ; les jours sans\nappel sont présents, à zéro.",
+        "description": "Costs over the last `days` local days, from `since` to `until` inclusive; days without\ncalls are present, at zero.",
         "properties": {
           "by_agent": {
             "items": {
@@ -5702,7 +5702,7 @@
         "type": "object"
       },
       "DebriefOut": {
-        "description": "Le débrief : quatre notes (1 à 5), trois points forts, trois corrections, la réponse\naméliorée de la question `weakest_index` (à vérifier si `flags` n'est pas vide), les questions\nratées (`missed`, note interne 2 au plus) et leurs points attendus, les réponses non\nnotées (`unrated`).",
+        "description": "The debrief: four scores (1 to 5), three strengths, three fixes, the improved answer to\nquestion `weakest_index` (to check if `flags` is not empty), the missed questions (`missed`,\ninternal score 2 at most) and their expected points, the unrated answers (`unrated`).",
         "properties": {
           "expected": {
             "items": {
@@ -5960,7 +5960,7 @@
         "type": "object"
       },
       "DeleteAccountIn": {
-        "description": "La confirmation de « Tout supprimer » : `confirm` doit être exactement `SUPPRIMER`.",
+        "description": "The \"Delete everything\" confirmation: `confirm` must be exactly `SUPPRIMER`.",
         "properties": {
           "confirm": {
             "title": "Confirm",
@@ -5975,7 +5975,7 @@
                 "type": "null"
               }
             ],
-            "description": "Identifiant du compte affiché, obligatoire en mode Google pour un appel direct. Dans une demande MCP confirmée, l'identité vient du jeton.",
+            "description": "Id of the displayed account, required in Google mode for a direct call. In a confirmed MCP request, the identity comes from the token.",
             "title": "Expected User Id"
           }
         },
@@ -6374,7 +6374,7 @@
         "type": "object"
       },
       "DraftOut": {
-        "description": "Un brouillon au nom de January. `to_check` : `flags` nomme ce que son profil et son projet\nne disent pas (ou la longueur). `edited` : January l'a retouché.",
+        "description": "A draft in January's name. `to_check`: `flags` names what her profile and project do not\nsay (or the length). `edited`: January edited it.",
         "properties": {
           "content": {
             "title": "Content",
@@ -6432,7 +6432,7 @@
         "type": "object"
       },
       "DraftPatchIn": {
-        "description": "Un brouillon retouché : `entry` pour l'entrée de projet, `content` pour les trois autres.\nUn seul des deux, selon le type.",
+        "description": "An edited draft: `entry` for the project entry, `content` for the other three.\nOnly one of the two, depending on the kind.",
         "properties": {
           "content": {
             "anyOf": [
@@ -6694,7 +6694,7 @@
         "type": "object"
       },
       "EmbeddingProgress": {
-        "description": "Le modèle d'embeddings : présent, ou en cours de téléchargement (`percent` de 0 à 100, vide\ntant que la taille n'est pas connue). `detail` est un texte français sans donnée personnelle.",
+        "description": "The embeddings model: present, or being downloaded (`percent` from 0 to 100, empty\nwhile the size is unknown). `detail` is a plain-language text without personal data.",
         "properties": {
           "detail": {
             "title": "Detail",
@@ -6813,7 +6813,7 @@
         "type": "object"
       },
       "EvaluationOut": {
-        "description": "La dernière évaluation : le verdict est celui du code. `repo_status` : le dépôt a-t-il pu\nêtre lu ? (`none` : aucun lien donné).",
+        "description": "The latest review: the verdict is the code's. `repo_status`: could the repository be\nread? (`none`: no link given).",
         "properties": {
           "at": {
             "anyOf": [
@@ -6867,7 +6867,7 @@
         "type": "object"
       },
       "EventIn": {
-        "description": "Un événement du fil : un changement de statut (`status` obligatoire) ou une note (`text`\nobligatoire). `on` : le jour de l'événement (défaut : aujourd'hui, fuseau de January ; jamais\nplus tard : 422 `on`) ;\n`interview_on` : le jour de l'entretien, pour le statut « Entretien » (défaut : `on`).",
+        "description": "A timeline event: a status change (`status` required) or a note (`text` required). `on`:\nthe day of the event (default: today, in January's time zone; never later: 422 `on`);\n`interview_on`: the interview day, for the \"Interview\" status (default: `on`).",
         "properties": {
           "interview_on": {
             "anyOf": [
@@ -7101,7 +7101,7 @@
         "type": "object"
       },
       "ExchangeOut": {
-        "description": "Une question principale, la réponse de January, la relance et sa réponse s'il y en a eu, la\nnote interne (1 à 5) ; `unrated` : le modèle n'a pas répondu, la note est neutre.",
+        "description": "A main question, January's answer, the follow-up question and its answer if any, the\ninternal score (1 to 5); `unrated`: the model did not answer, the score is neutral.",
         "properties": {
           "answer": {
             "title": "Answer",
@@ -7245,7 +7245,7 @@
         "type": "object"
       },
       "ExerciseGenerateIn": {
-        "description": "`topic` : le sujet de l'exercice à faire générer par les agents.",
+        "description": "`topic`: the subject of the exercise for the agents to generate.",
         "properties": {
           "level": {
             "default": "beginner",
@@ -7271,7 +7271,7 @@
         "type": "object"
       },
       "ExerciseIn": {
-        "description": "Un exercice écrit à la main : l'énoncé et, au choix, des fichiers de départ.",
+        "description": "A hand-written exercise: the statement and, optionally, starter files.",
         "properties": {
           "entry": {
             "default": "main.py",
@@ -7372,7 +7372,7 @@
         "type": "object"
       },
       "ExercisePatch": {
-        "description": "Retouche d'un exercice : les champs donnés remplacent ceux de l'exercice (`files` remplace\ntous ses fichiers, énoncé de départ et tests pytest compris) ; l'origine ne change pas.",
+        "description": "Edit of an exercise: the given fields replace the exercise's (`files` replaces all its\nfiles, starter statement and pytest tests included); the origin does not change.",
         "properties": {
           "entry": {
             "anyOf": [
@@ -7432,7 +7432,7 @@
         "type": "object"
       },
       "ExpectedOut": {
-        "description": "Les points qu'une bonne réponse à la question `index` aurait donnés (verso de la fiche).",
+        "description": "The points a good answer to question `index` would have given (back of the card).",
         "properties": {
           "index": {
             "title": "Index",
@@ -8028,7 +8028,7 @@
         "type": "object"
       },
       "FilesPutIn": {
-        "description": "Enregistre les fichiers de la séance. Interface : remplace tous les fichiers. Claude (MCP,\ninterrupteur allumé) : un seul fichier de `files`, les autres sont gardés ; `base_hash` est\nalors obligatoire : le sha256 du contenu actuel de ce fichier (`file_hashes` de la séance ;\ntexte vide pour un nouveau fichier). Il est ignoré pour l'interface. `entry` aussi, pour\nClaude. `base_hashes` (interface, facultatif) : le sha256 de la version de chaque fichier sur\nlaquelle tu as édité ; un fichier que Claude a changé depuis et que l'envoi écraserait donne 409\n`stale_base` (`details.files` : les noms) et rien n'est écrit.",
+        "description": "Saves the session's files. Interface: replaces all files. Claude (MCP, switch on): a single\nfile in `files`, the others are kept; `base_hash` is then required: the sha256 of that file's\ncurrent content (the session's `file_hashes`; empty text for a new file). It is ignored for\nthe interface. So is `entry`, for Claude. `base_hashes` (interface, optional): the sha256 of\nthe version of each file you edited from; a file Claude has changed since, which the upload\nwould overwrite, gives 409 `stale_base` (`details.files`: the names) and nothing is\nwritten.",
         "properties": {
           "base_hash": {
             "anyOf": [
@@ -8437,7 +8437,7 @@
         "type": "object"
       },
       "FreeInterviewIn": {
-        "description": "Un entretien sans fiche : sur une offre (`posting_id`) ou sur un intitulé seul (`role`).\nL'un ou l'autre, pas les deux ni aucun (422 `fields: [\"posting_id\", \"role\"]`).",
+        "description": "An interview without a record: on a posting (`posting_id`) or a job title only (`role`).\nOne or the other, not both nor neither (422 `fields: [\"posting_id\", \"role\"]`).",
         "properties": {
           "duration_min": {
             "enum": [
@@ -9073,7 +9073,7 @@
         "type": "object"
       },
       "GoalCreate": {
-        "description": "L'objectif saisi par January (SPEC 3.1, étape 1). Une échéance passée est refusée (422,\nchemin du champ seulement, jamais la saisie).",
+        "description": "The goal entered by January (SPEC 3.1, step 1). A past deadline is refused (422, field\npath only, never the input).",
         "properties": {
           "deadline": {
             "anyOf": [
@@ -9489,7 +9489,7 @@
         "type": "object"
       },
       "HealthReport": {
-        "description": "`down` si la base échoue, `degraded` si un autre contrôle échoue, sinon `ok`.",
+        "description": "`down` if the database fails, `degraded` if another check fails, otherwise `ok`.",
         "properties": {
           "checks": {
             "additionalProperties": {
@@ -9928,7 +9928,7 @@
         "type": "object"
       },
       "IdeSessionStarted": {
-        "description": "Le graphe tourne : `session_id` désigne la session d'agents à suivre (en moins de 2 s).",
+        "description": "The graph is running: `session_id` is the agent session to follow (within 2 s).",
         "properties": {
           "session_id": {
             "title": "Session Id",
@@ -10442,7 +10442,7 @@
         "type": "object"
       },
       "IntakeIn": {
-        "description": "La phrase de January : « j'ai postulé hier chez X pour le poste Y » (1 à 1 000 caractères).\nUne 422 nomme `text`, sans jamais la citer.",
+        "description": "January's sentence: \"I applied yesterday at X for the Y position\" (1 to 1,000 characters).\nA 422 names `text`, never quoting it.",
         "properties": {
           "text": {
             "maxLength": 1000,
@@ -10458,7 +10458,7 @@
         "type": "object"
       },
       "IntakeOut": {
-        "description": "La session de l'Assistant de suivi : la fiche en préparation arrive par ses événements\n(`interrupt.requested`, `kind` `application_confirm`).",
+        "description": "The Tracking Assistant session: the record being prepared arrives through its events\n(`interrupt.requested`, `kind` `application_confirm`).",
         "properties": {
           "session_id": {
             "title": "Session Id",
@@ -10622,7 +10622,7 @@
         "type": "object"
       },
       "InterviewIn": {
-        "description": "Le réglage d'un entretien : la formule (comportemental, technique, étude de cas, mixte), la\ndurée (4, 7 ou 10 questions principales) et la langue des questions.",
+        "description": "An interview's settings: the format (behavioral, technical, case study, mixed), the\nlength (4, 7 or 10 main questions) and the language of the questions.",
         "properties": {
           "duration_min": {
             "enum": [
@@ -10688,7 +10688,7 @@
         "type": "object"
       },
       "InterviewOut": {
-        "description": "Un entretien. `flags` : les termes que le profil ne dit pas dans la réponse améliorée.\n`cards_created` : les fiches de révision nouvelles (une par question ratée, dues demain).",
+        "description": "An interview. `flags`: the terms in the improved answer that the profile does not state.\n`cards_created`: the new revision cards (one per missed question, due tomorrow).",
         "properties": {
           "application_id": {
             "anyOf": [
@@ -11476,7 +11476,7 @@
         "type": "object"
       },
       "KitItemOut": {
-        "description": "Une pièce. `id` : `artifact_id` de l'événement `artifact.ready` (vide tant que la pièce n'est\npas rangée, statut `pending`). `flags` : les termes que le profil ne dit pas (pièce « à\nvérifier »). `salary_fields` : les réponses salariales laissées à January. `words` : le compte\ndes mots (le message pour `linkedin`, les deux relances ensemble pour `followups`). `error` :\nle motif lisible d'une pièce en échec. `sources` : les pages du dossier (`company_brief`).",
+        "description": "A piece. `id`: `artifact_id` of the `artifact.ready` event (empty while the piece is not\nstored, status `pending`). `flags`: the terms the profile does not state (piece \"to check\").\n`salary_fields`: the salary answers left to January. `words`: the word count (the message for\n`linkedin`, both follow-ups together for `followups`). `error`: the readable reason of a\nfailed piece. `sources`: the company file's pages (`company_brief`).",
         "properties": {
           "content": {
             "title": "Content",
@@ -11590,7 +11590,7 @@
         "type": "object"
       },
       "KitOut": {
-        "description": "Le kit d'une fiche : toujours sept pièces, `pending` pour celles pas encore rangées.\n`session_id` : la session ouverte, sinon la dernière ; `running` : une session est ouverte.",
+        "description": "A record's kit: always seven pieces, `pending` for those not stored yet. `session_id`: the\nopen session, otherwise the last one; `running`: a session is open.",
         "properties": {
           "items": {
             "items": {
@@ -11624,7 +11624,7 @@
         "type": "object"
       },
       "KitPatch": {
-        "description": "Le texte de January pour la pièce (vide permis : la pièce redevient « à vérifier »).",
+        "description": "January's text for the piece (empty allowed: the piece goes back to \"to check\").",
         "properties": {
           "content": {
             "maxLength": 20000,
@@ -11639,7 +11639,7 @@
         "type": "object"
       },
       "KitSourceOut": {
-        "description": "Une page lue pour le dossier de l'entreprise. `rank` : son numéro dans le texte (`[rank]`),\ndepuis 1.",
+        "description": "A page read for the company file. `rank`: its number in the text (`[rank]`), from 1.",
         "properties": {
           "rank": {
             "minimum": 1.0,
@@ -11839,19 +11839,19 @@
       "LessonOut": {
         "properties": {
           "attempts": {
-            "description": "Essais de production faits (3 au plus) : une leçon `failed` avec moins de 3 essais sera relancée.",
+            "description": "Production attempts made (3 at most): a `failed` lesson with fewer than 3 attempts will be retried.",
             "maximum": 3.0,
             "minimum": 0.0,
             "title": "Attempts",
             "type": "integer"
           },
           "completed": {
-            "description": "Toutes les tâches du module sont faites (au moins une) : leçon terminée.",
+            "description": "All of the module's tasks are done (at least one): lesson completed.",
             "title": "Completed",
             "type": "boolean"
           },
           "done_tasks": {
-            "description": "Tâches faites du module de la leçon (programme).",
+            "description": "Done tasks of the lesson's module (program).",
             "minimum": 0.0,
             "title": "Done Tasks",
             "type": "integer"
@@ -11895,7 +11895,7 @@
             "type": "array"
           },
           "status": {
-            "description": "`pending` : pas encore lancée (semaines 3 et suivantes : 7 jours avant leur début) ; `generating` ; `ready` ; `failed` (relancée automatiquement, 3 essais en tout).",
+            "description": "`pending`: not started yet (weeks 3 and later: 7 days before they start); `generating`; `ready`; `failed` (retried automatically, 3 attempts in all).",
             "enum": [
               "pending",
               "generating",
@@ -11910,7 +11910,7 @@
             "type": "string"
           },
           "total_tasks": {
-            "description": "Tâches du module de la leçon.",
+            "description": "Tasks of the lesson's module.",
             "minimum": 0.0,
             "title": "Total Tasks",
             "type": "integer"
@@ -11924,11 +11924,11 @@
                 "type": "null"
               }
             ],
-            "description": "Motif du dernier échec de vérification d'une écriture directe.",
+            "description": "Reason for the last failed verification of a direct write.",
             "title": "Verification Failure Reason"
           },
           "verification_feedback": {
-            "description": "Remarques du dernier contrôle refusé d'une écriture directe : notes motivées sous le minimum et affirmations non sourcées (D308). Vide sinon.",
+            "description": "Remarks from the last rejected check of a direct write: reasoned scores below the minimum and unsourced claims (D308). Empty otherwise.",
             "items": {
               "type": "string"
             },
@@ -11944,7 +11944,7 @@
                 "type": "null"
               }
             ],
-            "description": "Session de vérification d'une écriture directe en cours.",
+            "description": "Verification session of a direct write in progress.",
             "title": "Verification Session Id"
           },
           "week_rank": {
@@ -11977,7 +11977,7 @@
         "type": "object"
       },
       "LessonPatch": {
-        "description": "Retouche du titre ou du texte d'une leçon prête, ou ajout de ressources.",
+        "description": "Edit of a ready lesson's title or text, or addition of resources.",
         "properties": {
           "markdown": {
             "anyOf": [
@@ -12020,19 +12020,19 @@
       "LessonSummaryOut": {
         "properties": {
           "attempts": {
-            "description": "Essais de production faits (3 au plus) : une leçon `failed` avec moins de 3 essais sera relancée.",
+            "description": "Production attempts made (3 at most): a `failed` lesson with fewer than 3 attempts will be retried.",
             "maximum": 3.0,
             "minimum": 0.0,
             "title": "Attempts",
             "type": "integer"
           },
           "completed": {
-            "description": "Toutes les tâches du module sont faites (au moins une) : leçon terminée.",
+            "description": "All of the module's tasks are done (at least one): lesson completed.",
             "title": "Completed",
             "type": "boolean"
           },
           "done_tasks": {
-            "description": "Tâches faites du module de la leçon (programme).",
+            "description": "Done tasks of the lesson's module (program).",
             "minimum": 0.0,
             "title": "Done Tasks",
             "type": "integer"
@@ -12050,7 +12050,7 @@
             "type": "boolean"
           },
           "status": {
-            "description": "`pending` : pas encore lancée (semaines 3 et suivantes : 7 jours avant leur début) ; `generating` ; `ready` ; `failed` (relancée automatiquement, 3 essais en tout).",
+            "description": "`pending`: not started yet (weeks 3 and later: 7 days before they start); `generating`; `ready`; `failed` (retried automatically, 3 attempts in all).",
             "enum": [
               "pending",
               "generating",
@@ -12065,7 +12065,7 @@
             "type": "string"
           },
           "total_tasks": {
-            "description": "Tâches du module de la leçon.",
+            "description": "Tasks of the lesson's module.",
             "minimum": 0.0,
             "title": "Total Tasks",
             "type": "integer"
@@ -12079,7 +12079,7 @@
                 "type": "null"
               }
             ],
-            "description": "Motif du dernier échec de vérification d'une écriture directe.",
+            "description": "Reason for the last failed verification of a direct write.",
             "title": "Verification Failure Reason"
           },
           "verification_session_id": {
@@ -12091,7 +12091,7 @@
                 "type": "null"
               }
             ],
-            "description": "Session de vérification d'une écriture directe en cours.",
+            "description": "Verification session of a direct write in progress.",
             "title": "Verification Session Id"
           },
           "week_rank": {
@@ -12225,7 +12225,7 @@
         "type": "object"
       },
       "LessonWriteIn": {
-        "description": "Le brouillon d'un module soumis à la Fabrique. Par défaut, le titre du module est utilisé.",
+        "description": "A module's draft submitted to the Factory. By default, the module title is used.",
         "properties": {
           "markdown": {
             "maxLength": 60000,
@@ -14608,7 +14608,7 @@
         "type": "object"
       },
       "MessageRequest": {
-        "description": "Message de l'utilisatrice, ou commande du débat (D82) : le texte est alors facultatif.\nTexte vide (ou blanc) sans commande : 422 `invalid_input` (`SessionsService.message`).",
+        "description": "Message from the user, or a debate command (D82): the text is then optional.\nEmpty (or blank) text without a command: 422 `invalid_input` (`SessionsService.message`).",
         "properties": {
           "command": {
             "anyOf": [
@@ -15550,7 +15550,7 @@
         "type": "object"
       },
       "NoteIn": {
-        "description": "Une note ajoutée à la main ou par Claude : l'auteur vient de l'appelant, jamais du corps.\nUne proposition porte `replacement`, la plage de lignes et `base_hash` : le sha256 hexadécimal\n(minuscules, 64 signes) du contenu du fichier encodé en UTF-8.",
+        "description": "A note added by hand or by Claude: the author comes from the caller, never from the body.\nA proposal carries `replacement`, the line range and `base_hash`: the hexadecimal sha256\n(lowercase, 64 characters) of the file's content encoded in UTF-8.",
         "properties": {
           "base_hash": {
             "anyOf": [
@@ -16021,7 +16021,7 @@
         "type": "object"
       },
       "ObjectionOut": {
-        "description": "Une objection du comité (la plus lourde d'abord) et les personas qui la portent.",
+        "description": "A committee objection (the heaviest first) and the personas who raise it.",
         "properties": {
           "personas": {
             "items": {
@@ -16665,7 +16665,7 @@
         "type": "object"
       },
       "OffersRubric": {
-        "description": "Les nouvelles offres du radar (score au moins 70), 5 au plus ; `run_id` : le relevé de la\nmeilleure (`None` sans offre).",
+        "description": "New radar offers (score at least 70), 5 at most; `run_id`: the run of the best one\n(`None` without an offer).",
         "properties": {
           "items": {
             "items": {
@@ -17119,7 +17119,7 @@
         "type": "object"
       },
       "PlanVersionOut": {
-        "description": "Une version du plan. `pending` : proposition qui attend January (dans sa session) ;\n`empty` et `impossible` : propositions closes dès leur écriture, jamais à valider.",
+        "description": "A plan version. `pending`: proposal waiting for January (in its session);\n`empty` and `impossible`: proposals closed as soon as written, never to validate.",
         "properties": {
           "accepted_at": {
             "anyOf": [
@@ -18429,7 +18429,7 @@
         "type": "object"
       },
       "PreferencesIn": {
-        "description": "Mode du professeur (`auto` ou sur demande), style (`guide` : indices gradués ; `pair` :\nbinôme, annotations en marge et propositions à accepter), minuterie d'inactivité (30 s, en\noption), plafonds de jetons, et l'interrupteur « Claude peut écrire dans mes fichiers »\n(`mcp_can_write_files`, éteint par défaut : seule l'interface le règle, jamais le MCP).",
+        "description": "Professor mode (`auto` or on demand), style (`guide`: graded hints; `pair`: pair\nprogramming, margin annotations and proposals to accept), idle timer (30 s, optional), token\ncaps, and the \"Claude can write to my files\" switch (`mcp_can_write_files`, off by default:\nonly the interface sets it, never MCP).",
         "properties": {
           "day_cap": {
             "default": 300000,
@@ -18526,7 +18526,7 @@
         "type": "object"
       },
       "ProfileEntryIn": {
-        "description": "L'entrée de projet du profil maître : le texte de January, éventuellement modifié.",
+        "description": "The master profile project entry: January's text, possibly edited.",
         "properties": {
           "achievements": {
             "items": {
@@ -19078,7 +19078,7 @@
         "type": "object"
       },
       "ProjectBriefIn": {
-        "description": "L'énoncé d'un mini projet écrit à la main ou par Claude (aucun agent) : mêmes bornes que\ncelui du Praticien (`ProjectBrief`) : 2 à 5 contraintes, 3 à 6 critères vérifiables, 3 à 6\nheures.",
+        "description": "A mini project brief written by hand or by Claude (no agent): same bounds as the\nPractitioner's (`ProjectBrief`): 2 to 5 constraints, 3 to 6 checkable criteria, 3 to 6\nhours.",
         "properties": {
           "constraints": {
             "items": {
@@ -19149,7 +19149,7 @@
         "type": "object"
       },
       "ProjectBriefOut": {
-        "description": "L'énoncé écrit par le Praticien.",
+        "description": "The brief written by the Practitioner.",
         "properties": {
           "constraints": {
             "items": {
@@ -19204,7 +19204,7 @@
         "type": "object"
       },
       "ProjectBriefPatch": {
-        "description": "Retouche de l'énoncé : les champs donnés remplacent ceux de l'énoncé, les autres restent.",
+        "description": "Brief edit: the given fields replace the brief's, the others stay.",
         "properties": {
           "constraints": {
             "anyOf": [
@@ -19315,7 +19315,7 @@
         "type": "object"
       },
       "ProjectCreateIn": {
-        "description": "Le mini projet d'un module (un seul par module) : son énoncé, prêt à rendre.",
+        "description": "A module's mini project (one per module): its brief, ready to submit.",
         "properties": {
           "brief": {
             "$ref": "#/components/schemas/ProjectBriefIn"
@@ -19783,7 +19783,7 @@
         "type": "object"
       },
       "ProjectSummary": {
-        "description": "Une ligne du Portfolio. `week` (à partir de 1) et `rank` (dans la semaine, comme `GET\n/programs`) : la place du module dans son programme (`None` si le module n'existe plus).",
+        "description": "A Portfolio row. `week` (from 1) and `rank` (within the week, like `GET\n/programs`): the module's place in its program (`None` if the module no longer exists).",
         "properties": {
           "hours": {
             "anyOf": [
@@ -20666,7 +20666,7 @@
         "type": "object"
       },
       "QuestionIn": {
-        "description": "Une question écrite à la main ou par Claude, aux bornes de celles de l'Examinateur : un QCM\na 3 à 5 choix distincts et le rang du bon (`correct_index`) ; une question ouverte (`short`,\n`code`, `explain`) a la réponse attendue et une grille (1 à 4 critères) ; `code` donne\nl'extrait dans `code`.",
+        "description": "A question written by hand or by Claude, within the Examiner's bounds: an MCQ has 3 to 5\ndistinct choices and the rank of the right one (`correct_index`); an open question (`short`,\n`code`, `explain`) has the expected answer and a rubric (1 to 4 criteria); `code` gives the\nsnippet in `code`.",
         "properties": {
           "choices": {
             "items": {
@@ -20809,7 +20809,7 @@
         "type": "object"
       },
       "QuestionPatch": {
-        "description": "Retouche d'une question : les champs donnés remplacent ceux de la question, qui est\nrevalidée en entier (`QuestionIn`).",
+        "description": "Edit of a question: the given fields replace the question's, which is then\nrevalidated in full (`QuestionIn`).",
         "properties": {
           "choices": {
             "anyOf": [
@@ -21123,7 +21123,7 @@
         "type": "object"
       },
       "QuizWriteIn": {
-        "description": "Le quiz d'un module écrit en direct (aucun agent) : de 1 à 12 questions. Le module n'a pas\nbesoin d'une leçon prête. Pas de fiches de révision : leur écriture est une requête en masse que\nl'historique du MCP ne verrait pas.",
+        "description": "A module quiz written directly (no agent): 1 to 12 questions. The module does not need a\nready lesson. No review cards: writing them is a bulk query that the MCP history would not\nsee.",
         "properties": {
           "module_id": {
             "maxLength": 36,
@@ -21532,7 +21532,7 @@
             "type": "string"
           },
           "end": {
-            "description": "Fin exclusive du terme, en unités UTF-16.",
+            "description": "Exclusive end of the term, in UTF-16 units.",
             "exclusiveMinimum": 0.0,
             "title": "End",
             "type": "integer"
@@ -21549,7 +21549,7 @@
             "title": "Lesson Id"
           },
           "start": {
-            "description": "Début du terme, en unités UTF-16.",
+            "description": "Start of the term, in UTF-16 units.",
             "minimum": 0.0,
             "title": "Start",
             "type": "integer"
@@ -22407,7 +22407,7 @@
         "type": "object"
       },
       "ReminderOut": {
-        "description": "Une relance : qui contacter, un brouillon prêt à copier (gabarit fixe, aucun LLM), le canal.\nSans contact : `linkedin_search_url`, la recherche LinkedIn pré remplie (entreprise et poste\nvisé). `close_21` : `channel` « none », `draft` est la proposition de classer la fiche.",
+        "description": "A follow-up: whom to contact, a draft ready to copy (fixed template, no LLM), the channel.\nWithout a contact: `linkedin_search_url`, the prefilled LinkedIn search (company and target\nposition). `close_21`: `channel` \"none\", `draft` is the suggestion to close the record.",
         "properties": {
           "application_id": {
             "title": "Application Id",
@@ -22502,7 +22502,7 @@
         "type": "object"
       },
       "ReminderPatch": {
-        "description": "Fait, Reporter de 3 jours ou Ignorer ; toute autre valeur est une 422 sans écho.",
+        "description": "Done, Postpone 3 days or Ignore; any other value is a 422 without echo.",
         "properties": {
           "action": {
             "enum": [
@@ -22521,7 +22521,7 @@
         "type": "object"
       },
       "RemindersRubric": {
-        "description": "`due` : toutes les relances dues ; `items` : les 5 premières.",
+        "description": "`due`: all due reminders; `items`: the first 5.",
         "properties": {
           "due": {
             "title": "Due",
@@ -22778,7 +22778,7 @@
         "type": "object"
       },
       "ResourceOut": {
-        "description": "Une ressource d'un module : lien, métadonnées de la source (auteur, date, langue) et\nraison du choix ; `has_local_copy` : PDF libre gardé sur le disque\n(`GET /resources/{id}/file`), sinon `note` est la fiche de lecture.",
+        "description": "A module resource: link, source metadata (author, date, language) and the reason it was\nchosen; `has_local_copy`: free PDF kept on disk (`GET /resources/{id}/file`), otherwise\n`note` is the reading note.",
         "properties": {
           "author": {
             "anyOf": [
@@ -22800,7 +22800,7 @@
                 "type": "null"
               }
             ],
-            "description": "Date de publication telle que la source la donne.",
+            "description": "Publication date as given by the source.",
             "title": "Date"
           },
           "duration_minutes": {
@@ -22952,7 +22952,7 @@
       },
       "ResourceWriteIn": {
         "additionalProperties": false,
-        "description": "Un lien de lecture fourni avec une leçon, enregistré sans télécharger la page.",
+        "description": "A reading link provided with a lesson, saved without downloading the page.",
         "properties": {
           "author": {
             "anyOf": [
@@ -23097,7 +23097,7 @@
         "type": "object"
       },
       "ResumeRequest": {
-        "description": "Réponse à la question en attente (`interrupt_id` de `pending_interrupt`), ou reprise\nd'une pause (`interrupt_id` nul).",
+        "description": "Answer to the pending question (`interrupt_id` of `pending_interrupt`), or resuming\nfrom a pause (null `interrupt_id`).",
         "properties": {
           "interrupt_id": {
             "anyOf": [
@@ -23345,7 +23345,7 @@
         "type": "object"
       },
       "ReviewsRubric": {
-        "description": "`queue` : les fiches de la file du jour ; `remaining` : celles dues au-delà de la file.",
+        "description": "`queue`: the cards in today's queue; `remaining`: those due beyond the queue.",
         "properties": {
           "queue": {
             "title": "Queue",
@@ -23587,7 +23587,7 @@
         "type": "object"
       },
       "RunIn": {
-        "description": "`run` exécute `entry` ; `check` lance les tests de l'exercice par pytest dans le bac (code de\nsortie 0 = réussi). `entry` : le fichier d'entrée (celui de la séance par défaut).",
+        "description": "`run` executes `entry`; `check` runs the exercise's tests with pytest in the sandbox (exit\ncode 0 = passed). `entry`: the entry file (the session's by default).",
         "properties": {
           "entry": {
             "anyOf": [
@@ -23616,7 +23616,7 @@
         "type": "object"
       },
       "RunOut": {
-        "description": "Une exécution déposée (202) : on lit la sortie par `GET /ide/runs/{id}?after=`. `origin` :\n`mcp` quand Claude l'a lancée (la page affiche « lancée par Claude »).",
+        "description": "A submitted run (202): the output is read through `GET /ide/runs/{id}?after=`. `origin`:\n`mcp` when Claude started it (the page shows \"started by Claude\").",
         "properties": {
           "created_at": {
             "format": "date-time",
@@ -23676,7 +23676,7 @@
         "type": "object"
       },
       "RunProgress": {
-        "description": "La sortie depuis `after` (octets), le décalage suivant, et la fin quand le bac l'a rendue.",
+        "description": "The output since `after` (bytes), the next offset, and the end once the\nsandbox returned it.",
         "properties": {
           "duration_ms": {
             "anyOf": [
@@ -24051,7 +24051,7 @@
         "type": "object"
       },
       "SessionCreateIn": {
-        "description": "Ouvre une séance sur un exercice, ou une séance libre (sans `exercise_id`).",
+        "description": "Opens a session on an exercise, or a free session (without `exercise_id`).",
         "properties": {
           "exercise_id": {
             "anyOf": [
@@ -24164,7 +24164,7 @@
         "type": "object"
       },
       "SessionSummary": {
-        "description": "`passed` : la séance a eu une vérification (`check`) réussie (`passed_at` : la première).",
+        "description": "`passed`: the session had a successful check (`check`) (`passed_at`: the first one).",
         "properties": {
           "exercise_id": {
             "anyOf": [
@@ -24219,7 +24219,7 @@
         "type": "object"
       },
       "SessionView": {
-        "description": "État d'une session pour le front ; `last_seq` : dernier événement écrit (le WebSocket\nreprend avec `after_seq`) ; `subject_type`/`subject_id` : l'objet suivi (un document pour\nl'Archiviste), pour reprendre son suivi après un rechargement (D71).",
+        "description": "State of a session for the front; `last_seq`: last event written (the WebSocket\nresumes with `after_seq`); `subject_type`/`subject_id`: the tracked subject (a document for\nthe Archivist), to resume tracking it after a reload (D71).",
         "properties": {
           "cost_usd": {
             "title": "Cost Usd",
@@ -24341,7 +24341,7 @@
         "type": "object"
       },
       "SettingsOut": {
-        "description": "Réglages renvoyés par l'API : ajoute les valeurs calculées, jamais stockées.",
+        "description": "Settings returned by the API: adds the computed values, never stored.",
         "properties": {
           "agent_overrides": {
             "additionalProperties": {
@@ -24496,7 +24496,7 @@
             "type": "string"
           },
           "vision_enabled": {
-            "description": "Faux si le niveau `vision` pointe vers un modèle sans vision (spec 11.2).",
+            "description": "False if the `vision` tier points to a model without vision (spec 11.2).",
             "readOnly": true,
             "title": "Vision Enabled",
             "type": "boolean"
@@ -26465,7 +26465,7 @@
         "type": "object"
       },
       "SubmissionOut": {
-        "description": "Un rendu. `screenshots` : le nombre de captures (`GET /projects/{id}/screenshots/{n}`).",
+        "description": "A submission. `screenshots`: the number of screenshots\n(`GET /projects/{id}/screenshots/{n}`).",
         "properties": {
           "at": {
             "format": "date-time",
@@ -27175,7 +27175,7 @@
         "type": "object"
       },
       "TeachIn": {
-        "description": "Ce qui déclenche le professeur : une exécution en erreur (`run_error`) ou réussie\n(`run_ok`), une question (`question`, non vide : 422 sinon), une demande d'indice (`hint`) ou,\nen option, 30 s d'arrêt sur une ligne (`idle`). Jamais à la frappe.",
+        "description": "What triggers the professor: a failed (`run_error`) or successful (`run_ok`) run, a question\n(`question`, non-empty: 422 otherwise), a hint request (`hint`) or, optionally, 30 s stopped\non a line (`idle`). Never on typing.",
         "properties": {
           "file_path": {
             "anyOf": [
@@ -27243,7 +27243,7 @@
         "type": "object"
       },
       "TeachOut": {
-        "description": "Un seul des trois : `session_id` (le graphe du professeur travaille), `reference_note_id`\n(même erreur au même endroit : renvoi à la note précédente) ou `skipped` (pourquoi rien n'est\nlancé).",
+        "description": "Only one of the three: `session_id` (the professor's graph is working), `reference_note_id`\n(same error at the same place: pointer to the previous note) or `skipped` (why nothing is\nstarted).",
         "properties": {
           "reference_note_id": {
             "anyOf": [
@@ -28631,7 +28631,7 @@
         "type": "object"
       },
       "UsageOut": {
-        "description": "La consommation du professeur : jetons de la séance et du jour, leurs plafonds, et si le\nprofesseur est passé en mode « sur demande » (plafond atteint ou choix).",
+        "description": "The professor's usage: session and day tokens, their caps, and whether the professor\nswitched to \"on demand\" mode (cap reached or by choice).",
         "properties": {
           "day_cap": {
             "title": "Day Cap",
@@ -29199,7 +29199,7 @@
         "type": "object"
       },
       "VoteChange": {
-        "description": "Le vote d'une persona avant (exécution précédente) et après (celle-ci).",
+        "description": "A persona's vote before (previous run) and after (this one).",
         "properties": {
           "after": {
             "enum": [
@@ -29239,7 +29239,7 @@
         "type": "object"
       },
       "VoteOut": {
-        "description": "Le vote d'une persona : oui, non ou peut-être, son objection principale, sa raison.",
+        "description": "A persona's vote: yes, no or maybe, its main objection, its reason.",
         "properties": {
           "objection": {
             "title": "Objection",
@@ -29486,7 +29486,7 @@
         "type": "object"
       },
       "WeekLoadOut": {
-        "description": "Charge d'une semaine touchée, avant et après la proposition, et son plafond.",
+        "description": "Load of an affected week, before and after the proposal, and its cap.",
         "properties": {
           "after": {
             "title": "After",
@@ -29689,7 +29689,7 @@
         "type": "object"
       },
       "WeekRubric": {
-        "description": "L'avancement de la semaine locale du programme validé le plus récent.",
+        "description": "Progress of the local week of the most recent validated program.",
         "properties": {
           "done_minutes": {
             "title": "Done Minutes",
@@ -30010,7 +30010,7 @@
   "paths": {
     "/api/v1/account/delete": {
       "post": {
-        "description": "Tout supprimer : annule les sessions en cours, puis efface les vecteurs, les fichiers, les\npoints de reprise et toutes les lignes du compte. `confirm` doit être `SUPPRIMER`, sinon 422\n`confirmation_required`. L'identité affichée doit correspondre au compte authentifié.\nMode local : l'espace reste utilisable, vide ; mode Google : le compte et la session\ndisparaissent. La dernière purge des vecteurs peut reprendre en arrière-plan (202).",
+        "description": "Delete everything: cancels running sessions, then erases the vectors, files, checkpoints\nand every row of the account. `confirm` must be `SUPPRIMER`, otherwise 422\n`confirmation_required`. The displayed identity must match the authenticated account.\nLocal mode: the space stays usable, empty; Google mode: the account and the session\ndisappear. The final vector purge may resume in the background (202).",
         "operationId": "delete_account_api_v1_account_delete_post",
         "requestBody": {
           "content": {
@@ -30024,19 +30024,19 @@
         },
         "responses": {
           "202": {
-            "description": "Compte Google effacé ; la purge des vecteurs reprend en arrière-plan."
+            "description": "Google account erased; the vector purge resumes in the background."
           },
           "204": {
             "description": "Successful Response"
           },
           "409": {
-            "description": "`account_changed` : l'identité ne correspond plus à la session."
+            "description": "`account_changed`: the identity no longer matches the session."
           },
           "422": {
-            "description": "`confirmation_required` : confirme avec SUPPRIMER ; `account_identity_required` : indique l'identité affichée."
+            "description": "`confirmation_required`: confirm with SUPPRIMER; `account_identity_required`: give the displayed identity."
           },
           "503": {
-            "description": "`vector_store_unavailable` : Qdrant ne répond pas avant la suppression des lignes ; `vector_purge_incomplete` : l'espace local est effacé en base, relance la suppression pour retirer les vecteurs restants."
+            "description": "`vector_store_unavailable`: Qdrant does not answer before the rows are deleted; `vector_purge_incomplete`: the local space is erased in the database, run the deletion again to remove the remaining vectors."
           }
         },
         "summary": "Delete Account",
@@ -30047,17 +30047,17 @@
     },
     "/api/v1/account/export": {
       "get": {
-        "description": "Toutes les données de l'utilisatrice dans une archive zip `tremplin-export-AAAAMMJJ.zip`\n(téléchargement) : `manifest.json`, une table par fichier JSON (`tables/<table>.json`) et les\nfichiers déposés (`files/…`). Les clés d'API n'y sont jamais (seulement leurs quatre derniers\ncaractères) ; ni vecteurs ni points de reprise des agents (recalculables).",
+        "description": "All the user's data in a zip archive `tremplin-export-YYYYMMDD.zip` (download):\n`manifest.json`, one table per JSON file (`tables/<table>.json`) and the uploaded files\n(`files/…`). API keys are never included (only their last four characters); neither vectors\nnor agent checkpoints (they can be recomputed).",
         "operationId": "export_account_api_v1_account_export_get",
         "responses": {
           "200": {
             "content": {
               "application/zip": {}
             },
-            "description": "L'archive de toutes les données",
+            "description": "The archive of all the data",
             "headers": {
               "Content-Disposition": {
-                "description": "`attachment; filename=\"tremplin-export-AAAAMMJJ.zip\"` : le nom proposé au téléchargement, le jour étant celui de l'utilisatrice.",
+                "description": "`attachment; filename=\"tremplin-export-YYYYMMDD.zip\"`: the suggested download name, the day being the user's local day.",
                 "schema": {
                   "type": "string"
                 }
@@ -30196,7 +30196,7 @@
     },
     "/api/v1/applications": {
       "get": {
-        "description": "Les fiches, la plus récente d'abord ; adopte d'abord les versions de CV prêtes.",
+        "description": "The records, most recent first; adopts ready CV versions first.",
         "operationId": "get_applications_api_v1_applications_get",
         "parameters": [
           {
@@ -30276,7 +30276,7 @@
         ]
       },
       "post": {
-        "description": "Crée la fiche ; `info` : une autre fiche chez la même entreprise dans les 30 jours.",
+        "description": "Creates the record; `info`: another record at the same company within 30 days.",
         "operationId": "post_application_api_v1_applications_post",
         "requestBody": {
           "content": {
@@ -30303,7 +30303,7 @@
             "description": "`posting_not_found`"
           },
           "409": {
-            "description": "`application_duplicate` (`details.alerts` : les fiches existantes qui ressemblent à l'offre), `application_exists` (`details.application_id` : une fiche existe déjà pour cette offre)"
+            "description": "`application_duplicate` (`details.alerts`: the existing records that look like the posting), `application_exists` (`details.application_id`: a record already exists for this posting)"
           },
           "422": {
             "content": {
@@ -30324,7 +30324,7 @@
     },
     "/api/v1/applications/check": {
       "get": {
-        "description": "Contrôle d'une offre qui entre : par `posting_id` (la fiche de l'offre, les alertes) ou par\n`url` (avant l'analyse : « certain » seulement). Exactement une des deux entrées.",
+        "description": "Checks an incoming posting: by `posting_id` (the posting's record, the alerts) or by `url`\n(before analysis: \"certain\" only). Exactly one of the two inputs.",
         "operationId": "get_check_api_v1_applications_check_get",
         "parameters": [
           {
@@ -30397,7 +30397,7 @@
     },
     "/api/v1/applications/intake": {
       "post": {
-        "description": "Lance l'Assistant de suivi sur une phrase : la fiche en préparation est confirmée par\nJanuary (question `application_confirm`) avant d'être créée.",
+        "description": "Starts the Tracking Assistant on a sentence: the record being prepared is confirmed by\nJanuary (question `application_confirm`) before it is created.",
         "operationId": "post_intake_api_v1_applications_intake_post",
         "requestBody": {
           "content": {
@@ -30442,7 +30442,7 @@
     },
     "/api/v1/applications/stats": {
       "get": {
-        "description": "Fiches par statut, taux et délai moyen de réponse, relances dues.",
+        "description": "Records by status, response rate and average response time, due follow-ups.",
         "operationId": "get_stats_api_v1_applications_stats_get",
         "responses": {
           "200": {
@@ -30509,7 +30509,7 @@
         ]
       },
       "patch": {
-        "description": "Retouche les champs envoyés ; `contacts` remplace la liste. Le statut ne se change que par\n`POST /applications/{id}/events` : l'envoyer ici est une 422.",
+        "description": "Edits the fields sent; `contacts` replaces the list. The status only changes through\n`POST /applications/{id}/events`: sending it here is a 422.",
         "operationId": "patch_application_api_v1_applications__application_id__patch",
         "parameters": [
           {
@@ -30567,7 +30567,7 @@
     },
     "/api/v1/applications/{application_id}/events": {
       "post": {
-        "description": "Un changement de statut ou une note, daté (aujourd'hui par défaut).",
+        "description": "A status change or a note, dated (today by default).",
         "operationId": "post_event_api_v1_applications__application_id__events_post",
         "parameters": [
           {
@@ -30625,7 +30625,7 @@
     },
     "/api/v1/applications/{application_id}/interviews": {
       "post": {
-        "description": "Lance l'entretien blanc de la fiche : les questions arrivent par `interrupt.requested`\n(`kind` `interview_answer`), le débrief et les fiches de révision à la fin.",
+        "description": "Starts the record's mock interview: questions arrive through `interrupt.requested`\n(`kind` `interview_answer`), the debrief and revision cards at the end.",
         "operationId": "post_application_interview_api_v1_applications__application_id__interviews_post",
         "parameters": [
           {
@@ -30665,7 +30665,7 @@
             "description": "`application_not_found`"
           },
           "409": {
-            "description": "`interview_in_progress` (`details.interview_id` : l'entretien ouvert), `profile_required` (aucun profil maître validé), `radar_salary_missing` (pas de montant annuel brut pour le scénario salarial)"
+            "description": "`interview_in_progress` (`details.interview_id`: the open interview), `profile_required` (no validated master profile), `radar_salary_missing` (no gross annual amount for the salary scenario)"
           },
           "422": {
             "content": {
@@ -30689,7 +30689,7 @@
     },
     "/api/v1/applications/{application_id}/kit": {
       "get": {
-        "description": "Les sept pièces dans l'ordre fixe (`pending` : pas encore rangée).",
+        "description": "The seven pieces in fixed order (`pending`: not stored yet).",
         "operationId": "get_kit_api_v1_applications__application_id__kit_get",
         "parameters": [
           {
@@ -30735,7 +30735,7 @@
         ]
       },
       "post": {
-        "description": "Lance les sept pièces en parallèle ; elles arrivent par `artifact.ready` (`kind`\n`kit_item`). Relancer refait les pièces que January n'a pas modifiées.",
+        "description": "Starts the seven pieces in parallel; they arrive through `artifact.ready` (`kind`\n`kit_item`). Restarting redoes the pieces January has not edited.",
         "operationId": "post_kit_api_v1_applications__application_id__kit_post",
         "parameters": [
           {
@@ -30765,7 +30765,7 @@
             "description": "`application_not_found`"
           },
           "409": {
-            "description": "`kit_in_progress` (`details.session_id` : la session ouverte), `posting_required` (la fiche n'a ni offre ni texte d'offre), `profile_required` (aucun profil maître validé)"
+            "description": "`kit_in_progress` (`details.session_id`: the open session), `posting_required` (the record has neither a posting nor a posting text), `profile_required` (no validated master profile)"
           },
           "422": {
             "content": {
@@ -30806,7 +30806,7 @@
             "content": {
               "application/zip": {}
             },
-            "description": "Le kit en archive ZIP."
+            "description": "The kit as a ZIP archive."
           },
           "404": {
             "description": "`application_not_found`"
@@ -30830,7 +30830,7 @@
     },
     "/api/v1/applications/{application_id}/kit/{kind}": {
       "patch": {
-        "description": "Le texte de January remplace la pièce (gardée aux relances). Une pièce « à vérifier » est\nrelue : `flags` mis à jour, « prête » si rien ne reste.",
+        "description": "January's text replaces the piece (kept on restarts). A piece \"to check\" is re-checked:\n`flags` updated, \"ready\" if nothing remains.",
         "operationId": "patch_kit_item_api_v1_applications__application_id__kit__kind__patch",
         "parameters": [
           {
@@ -30888,7 +30888,7 @@
             "description": "`application_not_found`, `kit_item_not_found`"
           },
           "409": {
-            "description": "`profile_required`, `posting_required` : la modification d'une pièce à vérifier ne peut pas être relue sans le profil validé ni le texte de l'offre"
+            "description": "`profile_required`, `posting_required`: an edit to a piece to check cannot be re-checked without the validated profile and the posting text"
           },
           "422": {
             "content": {
@@ -31783,7 +31783,7 @@
     },
     "/api/v1/brain/status": {
       "get": {
-        "description": "État de synchronisation des dossiers, sans chemins locaux ni fichiers individuels.",
+        "description": "Folder sync status, without local paths or individual files.",
         "operationId": "status_view_api_v1_brain_status_get",
         "responses": {
           "200": {
@@ -31809,7 +31809,7 @@
     },
     "/api/v1/brain/sync-token": {
       "post": {
-        "description": "Crée le jeton du relais et invalide le précédent. La valeur n'est rendue qu'une fois.",
+        "description": "Create the relay token and invalidate the previous one. The value is returned only once.",
         "operationId": "create_sync_token_api_v1_brain_sync_token_post",
         "responses": {
           "201": {
@@ -32105,7 +32105,7 @@
     },
     "/api/v1/brief/today": {
       "get": {
-        "description": "Le brief du jour local, créé s'il manque (`origin` « opening »).",
+        "description": "The brief for the local day, created if missing (`origin` \"opening\").",
         "operationId": "get_today_api_v1_brief_today_get",
         "responses": {
           "200": {
@@ -32389,7 +32389,7 @@
     },
     "/api/v1/committee": {
       "get": {
-        "description": "Les exécutions (d'une offre), la plus récente d'abord, chacune avec son avant et après ;\nune exécution dont la session s'est terminée sans résultat passe en `failed`.",
+        "description": "The runs (of a posting), most recent first, each with its before and after; a run whose\nsession ended without a result turns `failed`.",
         "operationId": "get_committees_api_v1_committee_get",
         "parameters": [
           {
@@ -32443,7 +32443,7 @@
         ]
       },
       "post": {
-        "description": "Réunit le comité sur la version de CV : impressions, deux tours de débat, votes et\nsynthèse arrivent par les événements de la session ; le résultat est rangé à la fin.",
+        "description": "Convenes the committee on the CV version: impressions, two debate rounds, votes and\nsynthesis arrive through the session events; the result is stored at the end.",
         "operationId": "post_committee_api_v1_committee_post",
         "requestBody": {
           "content": {
@@ -32470,7 +32470,7 @@
             "description": "`version_not_found`, `posting_not_found`"
           },
           "409": {
-            "description": "`version_not_ready` (le PDF de la version n'est pas rendu), `committee_in_progress` (`details.run_id` : l'exécution ouverte de l'offre), `profile_required` (aucun profil maître validé)"
+            "description": "`version_not_ready` (the version's PDF is not rendered), `committee_in_progress` (`details.run_id`: the posting's open run), `profile_required` (no validated master profile)"
           },
           "422": {
             "content": {
@@ -33460,7 +33460,7 @@
     },
     "/api/v1/costs": {
       "get": {
-        "description": "Les coûts des 7, 30 ou 90 derniers jours (jours du fuseau de l'utilisatrice, aujourd'hui\ncompris), agrégés depuis les appels journalisés, aux prix de l'appel. Toute autre durée : 422\n(`details.fields` : `days`).",
+        "description": "Costs over the last 7, 30 or 90 days (days in the user's time zone, today included),\naggregated from the logged calls, at the prices of each call. Any other duration: 422\n(`details.fields`: `days`).",
         "operationId": "get_costs_api_v1_costs_get",
         "parameters": [
           {
@@ -33491,7 +33491,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "description": "`details.fields` : `days` (ni 7, ni 30, ni 90)"
+            "description": "`details.fields`: `days` (not 7, 30 or 90)"
           }
         },
         "summary": "Get Costs",
@@ -33502,7 +33502,7 @@
     },
     "/api/v1/costs/calls": {
       "get": {
-        "description": "Le journal des agents : les appels du plus récent au plus ancien, `limit` par page (50 par\ndéfaut). `before` est le curseur `next_before` de la page précédente ; `agent` et `graph`\nfiltrent. Aucun contenu de prompt.",
+        "description": "The agent log: calls newest first, `limit` per page (50 by default). `before` is the\n`next_before` cursor of the previous page; `agent` and `graph` filter. No prompt\ncontent.",
         "operationId": "get_calls_api_v1_costs_calls_get",
         "parameters": [
           {
@@ -33581,7 +33581,7 @@
             "description": "Successful Response"
           },
           "422": {
-            "description": "`details.fields` : `before` (curseur illisible) ou `limit`"
+            "description": "`details.fields`: `before` (unreadable cursor) or `limit`"
           }
         },
         "summary": "Get Calls",
@@ -33592,7 +33592,7 @@
     },
     "/api/v1/cv/modifications/{modification_id}": {
       "patch": {
-        "description": "Accepte ou refuse ; `after` : texte réécrit, revalidé (il peut rester « à confirmer ») ;\n`confirm: true` : accepte une modification « à confirmer », son fait entre au profil maître\n(nouvelle version validée).",
+        "description": "Accepts or refuses; `after`: rewritten text, revalidated (it may stay \"to confirm\");\n`confirm: true`: accepts a \"to confirm\" modification, its fact enters the master profile\n(new validated version).",
         "operationId": "patch_modification_api_v1_cv_modifications__modification_id__patch",
         "parameters": [
           {
@@ -33646,7 +33646,7 @@
                 }
               }
             },
-            "description": "`review_closed`, `confirmation_required` (« à confirmer » sans `confirm: true`), `fact_not_found` (le fait visé n'est plus dans le profil), `profile_conflict`, `profile_draft_pending` (un brouillon du profil attend sa validation : le valider avant de confirmer un fait)"
+            "description": "`review_closed`, `confirmation_required` (\"to confirm\" without `confirm: true`), `fact_not_found` (the targeted fact is no longer in the profile), `profile_conflict`, `profile_draft_pending` (a profile draft awaits validation: validate it before confirming a fact)"
           },
           "422": {
             "content": {
@@ -33656,7 +33656,7 @@
                 }
               }
             },
-            "description": "`validation_error` (`details.fields`), `keyword_not_in_profile` (le texte cite un mot clé de l'offre absent du profil) ; jamais la valeur reçue"
+            "description": "`validation_error` (`details.fields`), `keyword_not_in_profile` (the text cites a posting keyword missing from the profile); never the value received"
           }
         },
         "summary": "Patch Modification",
@@ -33667,7 +33667,7 @@
     },
     "/api/v1/cv/reviews": {
       "get": {
-        "description": "Les revues (d'une offre), la plus récente d'abord.",
+        "description": "The reviews (of a posting), newest first.",
         "operationId": "get_reviews_api_v1_cv_reviews_get",
         "parameters": [
           {
@@ -33721,7 +33721,7 @@
         ]
       },
       "post": {
-        "description": "Lance la revue du CV contre l'offre ; le profil (sa version) et le gabarit sont figés.",
+        "description": "Reviews the CV against the posting; the profile (its version) and template are frozen.",
         "operationId": "post_review_api_v1_cv_reviews_post",
         "requestBody": {
           "content": {
@@ -33762,7 +33762,7 @@
                 }
               }
             },
-            "description": "`posting_not_ready` (offre pas encore analysée), `profile_required` (aucun profil validé), `template_required` (aucun modèle actif prêt), `review_in_progress` (`details.review_id` : la revue en cours de cette offre)"
+            "description": "`posting_not_ready` (posting not analysed yet), `profile_required` (no validated profile), `template_required` (no ready active template), `review_in_progress` (`details.review_id`: the review in progress for this posting)"
           },
           "422": {
             "content": {
@@ -33847,7 +33847,7 @@
     },
     "/api/v1/cv/reviews/{review_id}/generate": {
       "post": {
-        "description": "Crée la version (décisions figées au clic) et reprend la question de sortie ; le PDF se\nsuit par `GET /cv/versions/{id}` (statut `rendering` puis `ready`, `pages_exceeded` ou\n`failed`) ou par l'événement `artifact.ready` de la session.",
+        "description": "Creates the version (decisions frozen at the click) and resumes the output question; the\nPDF is followed through `GET /cv/versions/{id}` (status `rendering` then `ready`,\n`pages_exceeded` or `failed`) or through the session's `artifact.ready` event.",
         "operationId": "post_generate_api_v1_cv_reviews__review_id__generate_post",
         "parameters": [
           {
@@ -33908,7 +33908,7 @@
                 }
               }
             },
-            "description": "`review_closed` (revue terminée ou en échec), `generation_in_progress` (`details.version_id` : la version en rendu), `review_not_waiting` (la revue n'attend pas « Que veux-tu maintenant ? »)"
+            "description": "`review_closed` (review finished or failed), `generation_in_progress` (`details.version_id`: the version being rendered), `review_not_waiting` (the review is not waiting on \"What do you want now?\")"
           },
           "422": {
             "content": {
@@ -33939,7 +33939,7 @@
     },
     "/api/v1/cv/reviews/{review_id}/modifications": {
       "patch": {
-        "description": "Décision groupée (50 au plus) ; les « à confirmer » ne sont jamais acceptés en groupe :\nils reviennent dans `skipped`, avec les identifiants inconnus.",
+        "description": "Bulk decision (50 at most); \"to confirm\" ones are never accepted in bulk: they come\nback in `skipped`, along with unknown identifiers.",
         "operationId": "patch_modifications_api_v1_cv_reviews__review_id__modifications_patch",
         "parameters": [
           {
@@ -34014,7 +34014,7 @@
     },
     "/api/v1/cv/templates": {
       "get": {
-        "description": "Les gabarits non archivés, le plus récent d'abord.",
+        "description": "Non-archived templates, newest first.",
         "operationId": "get_templates_api_v1_cv_templates_get",
         "responses": {
           "200": {
@@ -34038,7 +34038,7 @@
         ]
       },
       "post": {
-        "description": "CV en PDF (10 Mo au plus, 4 pages au plus) OU `document_id` d'un CV importé. 409\n`vision_unavailable`, 409 `capture_in_progress`, 413 `file_too_large`, 415\n`unsupported_file_type`, 422 `pdf_unreadable`.",
+        "description": "CV as PDF (10 MB at most, 4 pages at most) OR `document_id` of an imported CV. 409\n`vision_unavailable`, 409 `capture_in_progress`, 413 `file_too_large`, 415\n`unsupported_file_type`, 422 `pdf_unreadable`.",
         "operationId": "post_template_api_v1_cv_templates_post",
         "requestBody": {
           "content": {
@@ -34080,7 +34080,7 @@
     },
     "/api/v1/cv/templates/{template_id}": {
       "delete": {
-        "description": "Archivé (statut `archived`) ; 409 `template_in_use` si une revue en cours l'emploie.",
+        "description": "Archived (status `archived`); 409 `template_in_use` if a review in progress uses it.",
         "operationId": "delete_template_api_v1_cv_templates__template_id__delete",
         "parameters": [
           {
@@ -34160,7 +34160,7 @@
     },
     "/api/v1/cv/templates/{template_id}/activate": {
       "post": {
-        "description": "Le gabarit devient le seul actif ; 409 `template_not_ready` s'il n'est pas prêt.",
+        "description": "The template becomes the only active one; 409 `template_not_ready` if it is not ready.",
         "operationId": "post_activate_api_v1_cv_templates__template_id__activate_post",
         "parameters": [
           {
@@ -34198,7 +34198,7 @@
     },
     "/api/v1/cv/templates/{template_id}/pages/{kind}/{number}": {
       "get": {
-        "description": "Page `number` (depuis 1) du CV d'origine ou du rendu de la passe courante ; 404 sinon.",
+        "description": "Page `number` (from 1) of the original CV or of the current pass's render; 404 otherwise.",
         "operationId": "get_template_page_api_v1_cv_templates__template_id__pages__kind___number__get",
         "parameters": [
           {
@@ -34236,7 +34236,7 @@
             "content": {
               "image/png": {}
             },
-            "description": "Image PNG de la page."
+            "description": "PNG image of the page."
           },
           "422": {
             "content": {
@@ -34257,7 +34257,7 @@
     },
     "/api/v1/cv/versions": {
       "get": {
-        "description": "Les versions (d'une offre), la plus récente d'abord.",
+        "description": "The versions (of a posting), newest first.",
         "operationId": "get_versions_api_v1_cv_versions_get",
         "parameters": [
           {
@@ -34367,7 +34367,7 @@
     },
     "/api/v1/cv/versions/{version_id}/pages/{number}": {
       "get": {
-        "description": "Page `number` (depuis 1) d'une version prête ; 404 sinon.",
+        "description": "Page `number` (from 1) of a ready version; 404 otherwise.",
         "operationId": "get_version_page_api_v1_cv_versions__version_id__pages__number__get",
         "parameters": [
           {
@@ -34396,7 +34396,7 @@
             "content": {
               "image/png": {}
             },
-            "description": "Image PNG de la page."
+            "description": "PNG image of the page."
           },
           "404": {
             "content": {
@@ -34427,7 +34427,7 @@
     },
     "/api/v1/cv/versions/{version_id}/pdf": {
       "get": {
-        "description": "Téléchargement (`attachment`) ; 404 tant que la version n'est pas `ready`.",
+        "description": "Download (`attachment`); 404 as long as the version is not `ready`.",
         "operationId": "get_version_pdf_api_v1_cv_versions__version_id__pdf_get",
         "parameters": [
           {
@@ -34447,7 +34447,7 @@
             "content": {
               "application/pdf": {}
             },
-            "description": "Le CV ciblé en PDF."
+            "description": "The targeted CV as PDF."
           },
           "404": {
             "content": {
@@ -34457,7 +34457,7 @@
                 }
               }
             },
-            "description": "`version_not_found`, `version_not_ready` (pas encore `ready`)"
+            "description": "`version_not_found`, `version_not_ready` (not `ready` yet)"
           },
           "422": {
             "content": {
@@ -35022,7 +35022,7 @@
     },
     "/api/v1/documents": {
       "get": {
-        "description": "Les 200 plus récents, du plus récent au plus ancien.",
+        "description": "The 200 most recent, newest first.",
         "operationId": "list_documents_api_v1_documents_get",
         "responses": {
           "200": {
@@ -35065,7 +35065,7 @@
                 }
               }
             },
-            "description": "Contenu déjà importé"
+            "description": "Content already imported"
           },
           "202": {
             "content": {
@@ -35116,7 +35116,7 @@
                 }
               }
             },
-            "description": "Contenu déjà importé"
+            "description": "Content already imported"
           },
           "202": {
             "content": {
@@ -35147,7 +35147,7 @@
     },
     "/api/v1/documents/{document_id}/learned": {
       "post": {
-        "description": "« Déjà appris » : l'Archiviste crée des acquis déclarés à partir du document indexé.",
+        "description": "\"Already learned\": the Archivist creates declared skills from the indexed document.",
         "operationId": "mark_learned_api_v1_documents__document_id__learned_post",
         "parameters": [
           {
@@ -35484,7 +35484,7 @@
     },
     "/api/v1/flashcards/due": {
       "get": {
-        "description": "La file du jour (30 fiches, 15 minutes, moins celles déjà revues aujourd'hui).",
+        "description": "Today's queue (30 cards, 15 minutes, minus those already reviewed today).",
         "operationId": "due_cards_api_v1_flashcards_due_get",
         "responses": {
           "200": {
@@ -35506,7 +35506,7 @@
     },
     "/api/v1/flashcards/{card_id}/review": {
       "post": {
-        "description": "Avis sur une fiche due ; déjà revue : 409 `card_not_due` ; inconnue : 404.",
+        "description": "Review of a due card; already reviewed: 409 `card_not_due`; unknown: 404.",
         "operationId": "review_card_api_v1_flashcards__card_id__review_post",
         "parameters": [
           {
@@ -35559,7 +35559,7 @@
     },
     "/api/v1/future-self": {
       "get": {
-        "description": "Compare les rythmes pour un programme validé et le relevé du poste et de la zone choisis.",
+        "description": "Compares paces for a validated program and the survey of the chosen role and area.",
         "operationId": "get_projection_api_v1_future_self_get",
         "parameters": [
           {
@@ -35677,7 +35677,7 @@
     },
     "/api/v1/galaxy": {
       "get": {
-        "description": "La carte des compétences et des notes actives visibles par le compte.",
+        "description": "The skill map and the active notes visible to the account.",
         "operationId": "get_galaxy_api_v1_galaxy_get",
         "responses": {
           "200": {
@@ -35789,7 +35789,7 @@
     },
     "/api/v1/goals/direct": {
       "post": {
-        "description": "Écrit un objectif sans lancer le Conseil (aucun agent, aucun appel au modèle) : mêmes champs\nque `POST /goals`.",
+        "description": "Writes a goal without starting the Council (no agent, no model call): same fields as\n`POST /goals`.",
         "operationId": "write_goal_api_v1_goals_direct_post",
         "requestBody": {
           "content": {
@@ -35919,7 +35919,7 @@
     },
     "/api/v1/goals/{goal_id}/council": {
       "post": {
-        "description": "Relance depuis le début le Conseil de l'objectif, seulement si sa dernière session a\néchoué (409 `council_not_failed` sinon, `goal_already_chosen` si un programme est lancé).",
+        "description": "Restarts the goal's Council from the beginning, only if its latest session failed\n(409 `council_not_failed` otherwise, `goal_already_chosen` if a program was started).",
         "operationId": "retry_council_api_v1_goals__goal_id__council_post",
         "parameters": [
           {
@@ -36283,7 +36283,7 @@
     },
     "/api/v1/health": {
       "get": {
-        "description": "Toujours 200 et sans authentification : le front lit `status`.",
+        "description": "Always 200 and without authentication: the front end reads `status`.",
         "operationId": "health_api_v1_health_get",
         "responses": {
           "200": {
@@ -36305,7 +36305,7 @@
     },
     "/api/v1/health/embedding": {
       "get": {
-        "description": "Progression du modèle d'embeddings (`bge-m3`) : public, comme `/health`. Si le modèle\nmanque, le back le télécharge depuis Ollama, un téléchargement à la fois (relancé après un\néchec).",
+        "description": "Progress of the embeddings model (`bge-m3`): public, like `/health`. If the model\nis missing, the back end downloads it from Ollama, one download at a time (restarted after a\nfailure).",
         "operationId": "embedding_progress_api_v1_health_embedding_get",
         "responses": {
           "200": {
@@ -36327,7 +36327,7 @@
     },
     "/api/v1/ide/exercises": {
       "get": {
-        "description": "Mes exercices, les plus récents d'abord.",
+        "description": "My exercises, most recent first.",
         "operationId": "list_exercises_api_v1_ide_exercises_get",
         "responses": {
           "200": {
@@ -36351,7 +36351,7 @@
         ]
       },
       "post": {
-        "description": "Ajoute un exercice écrit à la main (ou par Claude : `origin` vient de l'appelant).",
+        "description": "Adds a hand-written exercise (or one written by Claude: `origin` comes from the caller).",
         "operationId": "create_exercise_api_v1_ide_exercises_post",
         "requestBody": {
           "content": {
@@ -36393,7 +36393,7 @@
     },
     "/api/v1/ide/exercises/generate": {
       "post": {
-        "description": "Fait générer un exercice par les agents : rend aussitôt la session à suivre. L'exercice\nn'est rangé qu'une fois sa solution vérifiée dans le bac à sable.",
+        "description": "Has the agents generate an exercise: returns the session to follow right away. The\nexercise is stored only once its solution has been verified in the sandbox.",
         "operationId": "generate_exercise_api_v1_ide_exercises_generate_post",
         "requestBody": {
           "content": {
@@ -36435,7 +36435,7 @@
     },
     "/api/v1/ide/exercises/{exercise_id}": {
       "delete": {
-        "description": "Supprime un exercice (ses séances restent). 404 si ce n'est pas le mien.",
+        "description": "Deletes an exercise (its sessions remain). 404 if it is not mine.",
         "operationId": "delete_exercise_api_v1_ide_exercises__exercise_id__delete",
         "parameters": [
           {
@@ -36455,7 +36455,7 @@
             "description": "Successful Response"
           },
           "404": {
-            "description": "Introuvable (ou pas à moi)."
+            "description": "Not found (or not mine)."
           },
           "422": {
             "content": {
@@ -36474,7 +36474,7 @@
         ]
       },
       "patch": {
-        "description": "Retouche un exercice (énoncé, fichiers de départ, tests pytest) sans agent ni exécution.",
+        "description": "Edits an exercise (statement, starter files, pytest tests) with no agent and no run.",
         "operationId": "update_exercise_api_v1_ide_exercises__exercise_id__patch",
         "parameters": [
           {
@@ -36511,10 +36511,10 @@
             "description": "Successful Response"
           },
           "404": {
-            "description": "Introuvable (ou pas à moi)."
+            "description": "Not found (or not mine)."
           },
           "422": {
-            "description": "`entry_invalid` ou champs à corriger (`details.fields`)"
+            "description": "`entry_invalid` or fields to fix (`details.fields`)"
           }
         },
         "summary": "Update Exercise",
@@ -36581,7 +36581,7 @@
     },
     "/api/v1/ide/notes/{note_id}/accept": {
       "post": {
-        "description": "Applique une proposition au fichier si celui-ci n'a pas changé (sinon 409 `note_stale`).\nUn appel MCP exige une confirmation dans Tremplin.",
+        "description": "Applies a proposal to the file if it has not changed (otherwise 409 `note_stale`).\nAn MCP call requires a confirmation in Tremplin.",
         "operationId": "accept_note_api_v1_ide_notes__note_id__accept_post",
         "parameters": [
           {
@@ -36611,7 +36611,7 @@
             "description": "`note_not_found`"
           },
           "409": {
-            "description": "`note_stale` (la note passe à `stale`), `note_closed`, `not_a_proposal`"
+            "description": "`note_stale` (the note becomes `stale`), `note_closed`, `not_a_proposal`"
           },
           "422": {
             "content": {
@@ -36632,7 +36632,7 @@
     },
     "/api/v1/ide/notes/{note_id}/reject": {
       "post": {
-        "description": "Refuse une proposition. Un appel MCP exige une confirmation dans Tremplin.",
+        "description": "Rejects a proposal. An MCP call requires a confirmation in Tremplin.",
         "operationId": "reject_note_api_v1_ide_notes__note_id__reject_post",
         "parameters": [
           {
@@ -36662,7 +36662,7 @@
             "description": "`note_not_found`"
           },
           "409": {
-            "description": "`note_stale` (la note passe à `stale`), `note_closed`, `not_a_proposal`"
+            "description": "`note_stale` (the note becomes `stale`), `note_closed`, `not_a_proposal`"
           },
           "422": {
             "content": {
@@ -36683,7 +36683,7 @@
     },
     "/api/v1/ide/preferences": {
       "get": {
-        "description": "Mode et style du professeur, minuterie d'inactivité, plafonds de jetons.",
+        "description": "Professor mode and style, idle timer, token caps.",
         "operationId": "get_preferences_api_v1_ide_preferences_get",
         "responses": {
           "200": {
@@ -36703,7 +36703,7 @@
         ]
       },
       "put": {
-        "description": "Remplace les préférences (professeur, interrupteur d'écriture de Claude). Geste de\nl'interface : jamais du MCP, qui n'a pas à régler son propre budget ni ses propres droits.",
+        "description": "Replaces the preferences (professor, Claude's write switch). An interface gesture:\nnever from MCP, which must not set its own budget or its own rights.",
         "operationId": "put_preferences_api_v1_ide_preferences_put",
         "requestBody": {
           "content": {
@@ -36727,7 +36727,7 @@
             "description": "Successful Response"
           },
           "403": {
-            "description": "`mcp_prefs_forbidden` : jamais par le MCP"
+            "description": "`mcp_prefs_forbidden`: never through MCP"
           },
           "422": {
             "content": {
@@ -36748,7 +36748,7 @@
     },
     "/api/v1/ide/runs/{run_id}": {
       "get": {
-        "description": "La sortie de l'exécution à partir de l'octet `after` (interrogation toutes les 300 ms).",
+        "description": "The run's output from byte `after` onwards (polled every 300 ms).",
         "operationId": "read_run_api_v1_ide_runs__run_id__get",
         "parameters": [
           {
@@ -36810,7 +36810,7 @@
     },
     "/api/v1/ide/sessions": {
       "get": {
-        "description": "Mes séances de code, la plus récente d'abord.",
+        "description": "My code sessions, most recent first.",
         "operationId": "list_sessions_api_v1_ide_sessions_get",
         "responses": {
           "200": {
@@ -36834,7 +36834,7 @@
         ]
       },
       "post": {
-        "description": "Ouvre une séance sur un exercice, ou une séance libre.",
+        "description": "Opens a session on an exercise, or a free session.",
         "operationId": "create_session_api_v1_ide_sessions_post",
         "requestBody": {
           "content": {
@@ -36858,7 +36858,7 @@
             "description": "Successful Response"
           },
           "404": {
-            "description": "Introuvable (ou pas à moi)."
+            "description": "Not found (or not mine)."
           },
           "422": {
             "content": {
@@ -36879,7 +36879,7 @@
     },
     "/api/v1/ide/sessions/{session_id}": {
       "get": {
-        "description": "Une séance avec ses fichiers.",
+        "description": "A session with its files.",
         "operationId": "get_session_api_v1_ide_sessions__session_id__get",
         "parameters": [
           {
@@ -36906,7 +36906,7 @@
             "description": "Successful Response"
           },
           "404": {
-            "description": "Introuvable (ou pas à moi)."
+            "description": "Not found (or not mine)."
           },
           "422": {
             "content": {
@@ -37243,7 +37243,7 @@
     },
     "/api/v1/ide/sessions/{session_id}/files": {
       "delete": {
-        "description": "Retire un fichier du projet et referme son onglet.",
+        "description": "Removes a file from the project and closes its tab.",
         "operationId": "remove_project_file_api_v1_ide_sessions__session_id__files_delete",
         "parameters": [
           {
@@ -37296,7 +37296,7 @@
         ]
       },
       "patch": {
-        "description": "Renomme un fichier du projet et adapte l'entrée et les onglets.",
+        "description": "Renames a project file and updates the entry and tabs.",
         "operationId": "rename_project_file_api_v1_ide_sessions__session_id__files_patch",
         "parameters": [
           {
@@ -37349,7 +37349,7 @@
         ]
       },
       "post": {
-        "description": "Crée un fichier à partir de la version lue de la séance.",
+        "description": "Creates a file from the session version that was read.",
         "operationId": "add_project_file_api_v1_ide_sessions__session_id__files_post",
         "parameters": [
           {
@@ -37402,7 +37402,7 @@
         ]
       },
       "put": {
-        "description": "Enregistre les fichiers de la séance (20 au plus, 200 Ko) : l'interface les remplace tous ;\nClaude (MCP, interrupteur allumé) écrit un fichier avec `base_hash`.",
+        "description": "Saves the session's files (at most 20, 200 KB): the interface replaces them all;\nClaude (MCP, switch on) writes one file with `base_hash`.",
         "operationId": "put_files_api_v1_ide_sessions__session_id__files_put",
         "parameters": [
           {
@@ -37439,13 +37439,13 @@
             "description": "Successful Response"
           },
           "403": {
-            "description": "`mcp_ide_write_off` : Claude n'y est pas autorisé (interrupteur) ; `mcp_ide_test_file` : un fichier de test de l'exercice"
+            "description": "`mcp_ide_write_off`: Claude is not allowed to (switch); `mcp_ide_test_file`: a test file of the exercise"
           },
           "404": {
             "description": "`session_not_found`"
           },
           "409": {
-            "description": "`stale_base` : un fichier a changé depuis la lecture (`details.files` côté interface)"
+            "description": "`stale_base`: a file changed since it was read (`details.files` on the interface side)"
           },
           "422": {
             "description": "`entry_missing`, `entry_invalid`, `files_too_large`, `base_hash_required`, `mcp_write_one_file`"
@@ -37459,7 +37459,7 @@
     },
     "/api/v1/ide/sessions/{session_id}/ghost": {
       "get": {
-        "description": "Repères des vérifications personnelles, dont la référence du journal, sans sortie.",
+        "description": "Markers of personal checks, including the log reference, without output.",
         "operationId": "ide_ghost_api_v1_ide_sessions__session_id__ghost_get",
         "parameters": [
           {
@@ -37685,7 +37685,7 @@
     },
     "/api/v1/ide/sessions/{session_id}/notes": {
       "get": {
-        "description": "Les notes de la séance : indices, explications, annotations, propositions, renvois.",
+        "description": "The session's notes: hints, explanations, annotations, proposals, references.",
         "operationId": "list_notes_api_v1_ide_sessions__session_id__notes_get",
         "parameters": [
           {
@@ -37716,7 +37716,7 @@
             "description": "Successful Response"
           },
           "404": {
-            "description": "Introuvable (ou pas à moi)."
+            "description": "Not found (or not mine)."
           },
           "422": {
             "content": {
@@ -37735,7 +37735,7 @@
         ]
       },
       "post": {
-        "description": "Ajoute une note ; l'auteur est celui de l'appelant (moi, le professeur, Claude).",
+        "description": "Adds a note; the author is the caller (me, the professor, Claude).",
         "operationId": "add_note_api_v1_ide_sessions__session_id__notes_post",
         "parameters": [
           {
@@ -37775,10 +37775,10 @@
             "description": "`session_not_found`"
           },
           "409": {
-            "description": "`note_stale` : le fichier a changé depuis la lecture"
+            "description": "`note_stale`: the file changed since it was read"
           },
           "422": {
-            "description": "`note_invalid` : plage, fichier ou empreinte (relire `file_hashes`)"
+            "description": "`note_invalid`: range, file or hash (re-read `file_hashes`)"
           }
         },
         "summary": "Add Note",
@@ -37789,7 +37789,7 @@
     },
     "/api/v1/ide/sessions/{session_id}/runs": {
       "get": {
-        "description": "Les 20 dernières exécutions de la séance, la plus récente d'abord (lues toutes les 3 s par la\npage ouverte : une exécution lancée par Claude y apparaît).",
+        "description": "The session's last 20 runs, most recent first (read every 3 s by the open page: a run\nstarted by Claude shows up there).",
         "operationId": "list_runs_api_v1_ide_sessions__session_id__runs_get",
         "parameters": [
           {
@@ -37820,7 +37820,7 @@
             "description": "Successful Response"
           },
           "404": {
-            "description": "Introuvable (ou pas à moi)."
+            "description": "Not found (or not mine)."
           },
           "422": {
             "content": {
@@ -37839,7 +37839,7 @@
         ]
       },
       "post": {
-        "description": "Dépose une exécution ou une vérification dans le bac à sable (une par utilisatrice).",
+        "description": "Submits a run or a check to the sandbox (one per user).",
         "operationId": "start_run_api_v1_ide_sessions__session_id__runs_post",
         "parameters": [
           {
@@ -37879,13 +37879,13 @@
             "description": "`session_not_found`"
           },
           "409": {
-            "description": "`run_in_progress` : une exécution est déjà en cours"
+            "description": "`run_in_progress`: a run is already in progress"
           },
           "422": {
             "description": "`entry_missing`, `run_refused`"
           },
           "503": {
-            "description": "`sandbox_unavailable` : le bac à sable est arrêté"
+            "description": "`sandbox_unavailable`: the sandbox is stopped"
           }
         },
         "summary": "Start Run",
@@ -37896,7 +37896,7 @@
     },
     "/api/v1/ide/sessions/{session_id}/tabs": {
       "put": {
-        "description": "Garde les onglets de l'interface pour la prochaine ouverture de la séance.",
+        "description": "Keeps the interface tabs for the next time the session is opened.",
         "operationId": "save_project_tabs_api_v1_ide_sessions__session_id__tabs_put",
         "parameters": [
           {
@@ -37951,7 +37951,7 @@
     },
     "/api/v1/ide/sessions/{session_id}/teach": {
       "post": {
-        "description": "Réveille le professeur : un graphe (`session_id`), un renvoi à la note précédente\n(`reference_note_id`) ou rien (`skipped`). Seule route qui lance le professeur : ni la\nsauvegarde des fichiers ni la frappe ne l'appellent.",
+        "description": "Wakes the professor: a graph (`session_id`), a pointer to the previous note\n(`reference_note_id`) or nothing (`skipped`). The only route that starts the professor:\nneither saving files nor typing calls it.",
         "operationId": "teach_api_v1_ide_sessions__session_id__teach_post",
         "parameters": [
           {
@@ -37991,7 +37991,7 @@
             "description": "`session_not_found`, `run_not_found`"
           },
           "422": {
-            "description": "Déclencheur inconnu, ou question vide"
+            "description": "Unknown trigger, or empty question"
           }
         },
         "summary": "Teach",
@@ -38184,7 +38184,7 @@
     },
     "/api/v1/ide/usage": {
       "get": {
-        "description": "Les jetons du professeur : séance (si `session_id`), jour, plafonds, mode sur demande.",
+        "description": "The professor's tokens: session (if `session_id`), day, caps, on-demand mode.",
         "operationId": "get_usage_api_v1_ide_usage_get",
         "parameters": [
           {
@@ -38217,7 +38217,7 @@
             "description": "Successful Response"
           },
           "404": {
-            "description": "Introuvable (ou pas à moi)."
+            "description": "Not found (or not mine)."
           },
           "422": {
             "content": {
@@ -38565,7 +38565,7 @@
     },
     "/api/v1/interviews": {
       "get": {
-        "description": "Les entretiens (d'une fiche), le plus récent d'abord ; un entretien dont la session s'est\nterminée sans résultat passe en `failed`.",
+        "description": "The interviews (of a record), most recent first; an interview whose session ended\nwithout a result turns `failed`.",
         "operationId": "get_interviews_api_v1_interviews_get",
         "parameters": [
           {
@@ -38622,7 +38622,7 @@
         ]
       },
       "post": {
-        "description": "Entretien libre, sans fiche : sur une offre (`posting_id`) ou sur un intitulé (`role`) ;\nrien n'est écrit au fil d'une candidature.",
+        "description": "Free interview, without a record: on a posting (`posting_id`) or a job title (`role`);\nnothing is written to an application's timeline.",
         "operationId": "post_free_interview_api_v1_interviews_post",
         "requestBody": {
           "content": {
@@ -38649,7 +38649,7 @@
             "description": "`posting_not_found`"
           },
           "409": {
-            "description": "`interview_in_progress` (`details.interview_id` : l'entretien ouvert), `profile_required` (aucun profil maître validé), `radar_salary_missing` (pas de montant annuel brut pour le scénario salarial)"
+            "description": "`interview_in_progress` (`details.interview_id`: the open interview), `profile_required` (no validated master profile), `radar_salary_missing` (no gross annual amount for the salary scenario)"
           },
           "422": {
             "content": {
@@ -38859,7 +38859,7 @@
     },
     "/api/v1/lab/overview": {
       "get": {
-        "description": "Les rubriques, leurs activités, les outils du jeton et les prérequis manquants.",
+        "description": "The sections, their activities, the token's tools and the missing prerequisites.",
         "operationId": "overview_api_v1_lab_overview_get",
         "responses": {
           "200": {
@@ -39223,7 +39223,7 @@
         ]
       },
       "patch": {
-        "description": "Soumet une retouche de titre ou de texte. Un ajout de ressources seul est immédiat.",
+        "description": "Submits a title or text edit. Adding resources alone is immediate.",
         "operationId": "patch_lesson_api_v1_lessons__lesson_id__patch",
         "parameters": [
           {
@@ -39265,13 +39265,13 @@
                 }
               }
             },
-            "description": "Brouillon soumis à la vérification."
+            "description": "Draft submitted for verification."
           },
           "404": {
             "description": "`lesson_not_found`"
           },
           "409": {
-            "description": "`lesson_not_ready` ou `lesson_generating`"
+            "description": "`lesson_not_ready` or `lesson_generating`"
           },
           "422": {
             "content": {
@@ -39602,7 +39602,7 @@
     },
     "/api/v1/lessons/{lesson_id}/pdf": {
       "get": {
-        "description": "PDF A4 de la leçon ; 404 `lesson_pdf_missing` tant qu'il n'est pas produit.",
+        "description": "A4 PDF of the lesson; 404 `lesson_pdf_missing` until it is produced.",
         "operationId": "get_lesson_pdf_api_v1_lessons__lesson_id__pdf_get",
         "parameters": [
           {
@@ -41009,7 +41009,7 @@
     },
     "/api/v1/memory/items/{item_id}/merge": {
       "post": {
-        "description": "Fond `other_ids` dans l'élément (D67) : même type, ni document ni décision en attente.",
+        "description": "Merges `other_ids` into the item (D67): same kind, neither a document nor a\npending decision.",
         "operationId": "merge_items_api_v1_memory_items__item_id__merge_post",
         "parameters": [
           {
@@ -41083,7 +41083,7 @@
     },
     "/api/v1/memory/reindex": {
       "post": {
-        "description": "Met la réindexation en file (worker) ; déjà en file ou en cours : l'état courant.",
+        "description": "Queues the reindexing (worker); already queued or running: the current state.",
         "operationId": "reindex_api_v1_memory_reindex_post",
         "responses": {
           "202": {
@@ -41929,7 +41929,7 @@
     },
     "/api/v1/modules/{module_id}/lesson": {
       "post": {
-        "description": "Soumet le Markdown fourni à la Fabrique et renvoie sa session de vérification.",
+        "description": "Submits the given Markdown to the Factory and returns its verification session.",
         "operationId": "write_lesson_api_v1_modules__module_id__lesson_post",
         "parameters": [
           {
@@ -41967,7 +41967,7 @@
             "description": "`module_not_found`"
           },
           "409": {
-            "description": "`lesson_exists`, `lesson_generating`, `module_skipped` ou `module_without_lesson`"
+            "description": "`lesson_exists`, `lesson_generating`, `module_skipped` or `module_without_lesson`"
           },
           "422": {
             "content": {
@@ -41988,7 +41988,7 @@
     },
     "/api/v1/modules/{module_id}/quiz": {
       "post": {
-        "description": "Prépare le quiz du module (202) ; déjà prêt : 200 ; en préparation : même session ; en\néchec : relancé. Leçon pas prête : 409 `lesson_not_ready`.",
+        "description": "Prepares the module quiz (202); already ready: 200; being prepared: same session;\nfailed: relaunched. Lesson not ready: 409 `lesson_not_ready`.",
         "operationId": "start_quiz_api_v1_modules__module_id__quiz_post",
         "parameters": [
           {
@@ -42010,7 +42010,7 @@
                 }
               }
             },
-            "description": "Quiz déjà prêt."
+            "description": "Quiz already ready."
           },
           "202": {
             "content": {
@@ -43607,7 +43607,7 @@
     },
     "/api/v1/profile": {
       "get": {
-        "description": "La version validée, le brouillon s'il est plus récent, la capture en cours.",
+        "description": "The validated version, the draft if it is newer, the capture in progress.",
         "operationId": "get_profile_api_v1_profile_get",
         "responses": {
           "200": {
@@ -43627,7 +43627,7 @@
         ]
       },
       "put": {
-        "description": "Nouvelle version validée (source `january`), ids des faits gardés, compétences du profil\ndéclarées. 409 `profile_conflict` : `base_version` n'est pas la dernière version.",
+        "description": "New validated version (source `january`), ids of the kept facts, declared profile\nskills. 409 `profile_conflict`: `base_version` is not the latest version.",
         "operationId": "put_profile_api_v1_profile_put",
         "requestBody": {
           "content": {
@@ -43669,7 +43669,7 @@
     },
     "/api/v1/profile/import": {
       "post": {
-        "description": "CV en PDF (10 Mo au plus), profil LinkedIn en PDF facultatif, note facultative. 409\n`capture_in_progress`, 413 `file_too_large`, 415 `unsupported_file_type`.",
+        "description": "CV as PDF (10 MB at most), optional LinkedIn profile as PDF, optional note. 409\n`capture_in_progress`, 413 `file_too_large`, 415 `unsupported_file_type`.",
         "operationId": "import_profile_api_v1_profile_import_post",
         "requestBody": {
           "content": {
@@ -43710,7 +43710,7 @@
     },
     "/api/v1/profile/versions": {
       "get": {
-        "description": "Toutes les versions, la plus récente d'abord.",
+        "description": "All versions, newest first.",
         "operationId": "get_profile_versions_api_v1_profile_versions_get",
         "responses": {
           "200": {
@@ -44275,7 +44275,7 @@
     },
     "/api/v1/programs/{program_id}/replan": {
       "post": {
-        "description": "Lance une replanification du Stratège. Brouillon : 409 `program_not_validated` ;\nreplanification ouverte : 409 `replan_open` (`details.session_id`).",
+        "description": "Starts a Strategist replanning. Draft: 409 `program_not_validated`;\nreplanning already open: 409 `replan_open` (`details.session_id`).",
         "operationId": "start_replan_api_v1_programs__program_id__replan_post",
         "parameters": [
           {
@@ -44370,7 +44370,7 @@
     },
     "/api/v1/programs/{program_id}/versions": {
       "get": {
-        "description": "Les versions du plan, la plus récente d'abord, avec leur statut.",
+        "description": "The plan versions, most recent first, with their status.",
         "operationId": "list_versions_api_v1_programs__program_id__versions_get",
         "parameters": [
           {
@@ -44710,7 +44710,7 @@
     },
     "/api/v1/projects": {
       "get": {
-        "description": "Le Portfolio : programme, semaine et rang de chaque projet ; `status` filtre.",
+        "description": "The Portfolio: program, week and rank of each project; `status` filters.",
         "operationId": "get_projects_api_v1_projects_get",
         "parameters": [
           {
@@ -44770,7 +44770,7 @@
         ]
       },
       "post": {
-        "description": "Écrit le mini projet d'un module en direct : l'énoncé est celui de January ou de Claude,\nsans agent ni appel au modèle ; le projet est « à faire ».",
+        "description": "Writes a module's mini project directly: the brief is January's or Claude's,\nwith no agent and no model call; the project is \"to do\".",
         "operationId": "post_project_api_v1_projects_post",
         "requestBody": {
           "content": {
@@ -44797,7 +44797,7 @@
             "description": "`module_not_found`"
           },
           "409": {
-            "description": "`project_exists` ou `module_skipped`"
+            "description": "`project_exists` or `module_skipped`"
           },
           "422": {
             "content": {
@@ -44863,7 +44863,7 @@
         ]
       },
       "patch": {
-        "description": "Retouche l'énoncé d'un projet sans rendu, sans agent.",
+        "description": "Edits the brief of a project without a submission, with no agent.",
         "operationId": "patch_one_project_api_v1_projects__project_id__patch",
         "parameters": [
           {
@@ -44903,7 +44903,7 @@
             "description": "`project_not_found`"
           },
           "409": {
-            "description": "`project_not_editable` : le projet est rendu, évalué ou validé"
+            "description": "`project_not_editable`: the project is submitted, reviewed or validated"
           },
           "422": {
             "content": {
@@ -44924,7 +44924,7 @@
     },
     "/api/v1/projects/{project_id}/brief": {
       "post": {
-        "description": "Relance l'énoncé d'un projet dont les trois essais ont échoué.",
+        "description": "Restarts the brief of a project whose three attempts failed.",
         "operationId": "post_brief_api_v1_projects__project_id__brief_post",
         "parameters": [
           {
@@ -44978,7 +44978,7 @@
     },
     "/api/v1/projects/{project_id}/drafts": {
       "post": {
-        "description": "Relance les brouillons d'un projet validé qui n'en a pas (leur écriture avait échoué,\nD173 n° 4) : une session les écrit sans refaire l'évaluation.",
+        "description": "Restarts the drafts of a validated project that has none (writing them had failed,\nD173 no. 4): a session writes them without redoing the review.",
         "operationId": "post_drafts_api_v1_projects__project_id__drafts_post",
         "parameters": [
           {
@@ -45008,7 +45008,7 @@
             "description": "`project_not_found`"
           },
           "409": {
-            "description": "`project_not_validated`, `drafts_present` (le projet a déjà ses brouillons) ou `review_in_progress` (`details.session_id`)"
+            "description": "`project_not_validated`, `drafts_present` (the project already has its drafts) or `review_in_progress` (`details.session_id`)"
           },
           "422": {
             "content": {
@@ -45021,7 +45021,7 @@
             "description": "Validation Error"
           },
           "503": {
-            "description": "`drafts_unavailable` : le lancement est refusé, rien n'est changé"
+            "description": "`drafts_unavailable`: the launch is refused, nothing changes"
           }
         },
         "summary": "Post Drafts",
@@ -45032,7 +45032,7 @@
     },
     "/api/v1/projects/{project_id}/drafts/{kind}": {
       "patch": {
-        "description": "Retouche un brouillon : `entry` pour `profile_entry`, `content` (3 000 caractères au plus)\npour les autres. Un brouillon « à vérifier » modifié est recontrôlé.",
+        "description": "Edits a draft: `entry` for `profile_entry`, `content` (3,000 characters at most)\nfor the others. An edited \"to check\" draft is checked again.",
         "operationId": "patch_one_draft_api_v1_projects__project_id__drafts__kind__patch",
         "parameters": [
           {
@@ -45208,7 +45208,7 @@
     },
     "/api/v1/projects/{project_id}/profile-entry": {
       "post": {
-        "description": "Ajoute le projet validé au profil maître (nouvelle version validée) : le seul chemin.",
+        "description": "Adds the validated project to the master profile (new validated version): the only path.",
         "operationId": "post_profile_entry_api_v1_projects__project_id__profile_entry_post",
         "parameters": [
           {
@@ -45248,7 +45248,7 @@
             "description": "`project_not_found`"
           },
           "409": {
-            "description": "`project_not_validated`, `entry_already_added`, `profile_required`, `profile_draft_pending` ou `profile_projects_full`"
+            "description": "`project_not_validated`, `entry_already_added`, `profile_required`, `profile_draft_pending` or `profile_projects_full`"
           },
           "422": {
             "content": {
@@ -45269,7 +45269,7 @@
     },
     "/api/v1/projects/{project_id}/screenshots/{number}": {
       "get": {
-        "description": "La capture `number` (de 1 à 5) du rendu `submission` (1 : le dernier, 2 : celui d'avant…),\ndans son type d'origine, jamais mise en cache.",
+        "description": "Screenshot `number` (1 to 5) of submission `submission` (1: the latest, 2: the one before…),\nin its original type, never cached.",
         "operationId": "get_screenshot_api_v1_projects__project_id__screenshots__number__get",
         "parameters": [
           {
@@ -45332,7 +45332,7 @@
             "description": "Successful Response"
           },
           "404": {
-            "description": "`project_not_found` ou `screenshot_not_found`"
+            "description": "`project_not_found` or `screenshot_not_found`"
           },
           "422": {
             "content": {
@@ -45353,7 +45353,7 @@
     },
     "/api/v1/projects/{project_id}/submit": {
       "post": {
-        "description": "Rend le projet : un lien http(s) et/ou une description (4 000 caractères au plus), jusqu'à\ncinq captures PNG, JPEG ou WebP de 5 Mo (vérifiées par leurs octets, jamais par leur nom).\nLes captures ne sont pas envoyées au modèle : elles sont montrées dans le Portfolio.",
+        "description": "Submits the project: an http(s) link and/or a description (4,000 characters at most), up to\nfive PNG, JPEG or WebP screenshots of 5 MB (checked by their bytes, never by their name).\nScreenshots are not sent to the model: they are shown in the Portfolio.",
         "operationId": "post_submit_api_v1_projects__project_id__submit_post",
         "parameters": [
           {
@@ -45392,16 +45392,16 @@
             "description": "`project_not_found`"
           },
           "409": {
-            "description": "`project_not_ready` (énoncé absent), `review_in_progress` (`details.session_id`) ou `project_validated`"
+            "description": "`project_not_ready` (no brief), `review_in_progress` (`details.session_id`) or `project_validated`"
           },
           "413": {
-            "description": "`file_too_large` : une capture dépasse 5 Mo, ou le corps 26 Mo"
+            "description": "`file_too_large`: a screenshot exceeds 5 MB, or the body 26 MB"
           },
           "422": {
             "description": "`details.fields` : `repo_url`, `description`, `screenshots`"
           },
           "503": {
-            "description": "`review_unavailable` : le rendu n'est pas gardé"
+            "description": "`review_unavailable`: the submission is not kept"
           }
         },
         "summary": "Post Submit",
@@ -45725,7 +45725,7 @@
     },
     "/api/v1/quizzes": {
       "post": {
-        "description": "Écrit le quiz d'un module en direct (1 à 12 questions, sans fiches), sans agent ni appel au\nmodèle ; la leçon du module n'a pas à être prête. Il reste « en préparation » (`generating`,\nsans session) tant qu'il n'a pas 8 questions, 3 types et des énoncés de 10 caractères : toute\ntentative donne alors 409 `quiz_incomplete`.",
+        "description": "Writes a module quiz directly (1 to 12 questions, no cards), with no agent and no model\ncall; the module lesson need not be ready. It stays \"being prepared\" (`generating`, no\nsession) until it has 8 questions, 3 types and prompts of 10 characters: until then any\nattempt gives 409 `quiz_incomplete`.",
         "operationId": "write_quiz_api_v1_quizzes_post",
         "requestBody": {
           "content": {
@@ -45752,7 +45752,7 @@
             "description": "`module_not_found`"
           },
           "409": {
-            "description": "`quiz_exists`, `quiz_generating` ou `module_skipped`"
+            "description": "`quiz_exists`, `quiz_generating` or `module_skipped`"
           },
           "422": {
             "content": {
@@ -45813,7 +45813,7 @@
         ]
       },
       "patch": {
-        "description": "Change le titre d'un quiz prêt.",
+        "description": "Changes the title of a ready quiz.",
         "operationId": "patch_quiz_api_v1_quizzes__quiz_id__patch",
         "parameters": [
           {
@@ -45872,7 +45872,7 @@
     },
     "/api/v1/quizzes/{quiz_id}/attempts": {
       "post": {
-        "description": "Envoie les réponses et lance la notation. 422 `invalid_answers` ; 409 `quiz_not_ready`,\n`attempt_in_progress` ou `retry_too_soon` (`details.retry_on`).",
+        "description": "Submits the answers and starts grading. 422 `invalid_answers`; 409 `quiz_not_ready`,\n`attempt_in_progress` or `retry_too_soon` (`details.retry_on`).",
         "operationId": "create_attempt_api_v1_quizzes__quiz_id__attempts_post",
         "parameters": [
           {
@@ -45976,7 +45976,7 @@
     },
     "/api/v1/quizzes/{quiz_id}/ghost": {
       "get": {
-        "description": "Repères récents et tentative éventuellement choisie depuis le journal, sans réponses.",
+        "description": "Recent markers and the attempt optionally chosen from the log, without answers.",
         "operationId": "quiz_ghost_api_v1_quizzes__quiz_id__ghost_get",
         "parameters": [
           {
@@ -46041,7 +46041,7 @@
     },
     "/api/v1/quizzes/{quiz_id}/questions": {
       "post": {
-        "description": "Ajoute une question à un quiz prêt qui n'a pas de tentative, sans agent.",
+        "description": "Adds a question to a ready quiz with no attempt, without an agent.",
         "operationId": "add_question_api_v1_quizzes__quiz_id__questions_post",
         "parameters": [
           {
@@ -46079,7 +46079,7 @@
             "description": "`quiz_not_found`"
           },
           "409": {
-            "description": "`quiz_not_ready`, `quiz_has_attempts` ou `quiz_full`"
+            "description": "`quiz_not_ready`, `quiz_has_attempts` or `quiz_full`"
           },
           "422": {
             "content": {
@@ -46100,7 +46100,7 @@
     },
     "/api/v1/quizzes/{quiz_id}/questions/{question_id}": {
       "patch": {
-        "description": "Retouche une question d'un quiz prêt qui n'a pas de tentative, sans agent.",
+        "description": "Edits a question of a ready quiz with no attempt, without an agent.",
         "operationId": "patch_question_api_v1_quizzes__quiz_id__questions__question_id__patch",
         "parameters": [
           {
@@ -46144,10 +46144,10 @@
             "description": "Successful Response"
           },
           "404": {
-            "description": "`quiz_not_found` ou `question_not_found`"
+            "description": "`quiz_not_found` or `question_not_found`"
           },
           "409": {
-            "description": "`quiz_not_ready` ou `quiz_has_attempts`"
+            "description": "`quiz_not_ready` or `quiz_has_attempts`"
           },
           "422": {
             "content": {
@@ -47030,7 +47030,7 @@
     },
     "/api/v1/reminders": {
       "get": {
-        "description": "Les relances, échéance croissante, après synchronisation avec les fiches : `due=true`\n(défaut) : en attente et dues aujourd'hui ; `due=false` : toutes (à venir, faites, ignorées).",
+        "description": "The follow-ups, by ascending due date, after syncing with the records: `due=true`\n(default): pending and due today; `due=false`: all (upcoming, done, ignored).",
         "operationId": "get_reminders_api_v1_reminders_get",
         "parameters": [
           {
@@ -47078,7 +47078,7 @@
     },
     "/api/v1/reminders/{reminder_id}": {
       "patch": {
-        "description": "`done` (la relance faite ; « Relancée » ou « Sans réponse » selon le type), `postpone`\n(+3 jours, reste en attente), `ignore`.",
+        "description": "`done` (the follow-up done; \"Followed up\" or \"No response\" depending on the kind),\n`postpone` (+3 days, stays pending), `ignore`.",
         "operationId": "patch_reminder_api_v1_reminders__reminder_id__patch",
         "parameters": [
           {
@@ -47118,7 +47118,7 @@
             "description": "`reminder_not_found`"
           },
           "409": {
-            "description": "`reminder_closed` : la relance est déjà faite ou ignorée"
+            "description": "`reminder_closed`: the follow-up is already done or ignored"
           },
           "422": {
             "content": {
@@ -47208,7 +47208,7 @@
     },
     "/api/v1/resources": {
       "get": {
-        "description": "Bibliothèque : ressources de l'utilisateur, les plus récentes d'abord, filtrées par\nprogramme, type, langue et statut.",
+        "description": "Library: the user's resources, most recent first, filtered by program, type, language\nand status.",
         "operationId": "list_resources_api_v1_resources_get",
         "parameters": [
           {
@@ -47378,7 +47378,7 @@
     },
     "/api/v1/resources/{resource_id}/file": {
       "get": {
-        "description": "Copie locale du PDF libre, en téléchargement ; 404 `resource_file_missing` s'il n'y en a\npas.",
+        "description": "Local copy of the free PDF, as a download; 404 `resource_file_missing` if there is\nnone.",
         "operationId": "get_resource_file_api_v1_resources__resource_id__file_get",
         "parameters": [
           {
@@ -48267,7 +48267,7 @@
     },
     "/api/v1/settings/agents": {
       "get": {
-        "description": "Les agents dont on peut surcharger le modèle (mode avancé) : nom et niveau, sans les agents\nde démonstration `demo_*`. Dans l'ordre du registre `AGENTS`.",
+        "description": "The agents whose model can be overridden (advanced mode): name and tier, without the\n`demo_*` demo agents. In the order of the `AGENTS` registry.",
         "operationId": "list_agents_api_v1_settings_agents_get",
         "responses": {
           "200": {

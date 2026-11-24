@@ -30,8 +30,8 @@ export function DescriptionField({ value, disabled, error, onChange }: Descripti
       />
       <p id={`${id}-count`} className="text-xs text-muted-foreground tabular-nums">
         {t("projects.submission.counter", {
-          count: characterCount(value).toLocaleString("fr-FR"),
-          max: DESCRIPTION_MAX.toLocaleString("fr-FR"),
+          count: characterCount(value).toLocaleString("en-GB"),
+          max: DESCRIPTION_MAX.toLocaleString("en-GB"),
         })}
       </p>
       {error ? (

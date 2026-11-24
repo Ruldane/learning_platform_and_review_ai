@@ -1,5 +1,5 @@
 import { ApiError, errorMessage } from "@/shared/api/errors";
-import { fr } from "@/shared/i18n/fr";
+import { en } from "@/shared/i18n/en";
 import { t } from "@/shared/i18n/t";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -45,9 +45,9 @@ export function launchErrors(error: unknown): LaunchErrors {
   return { general: errorMessage(error) };
 }
 
-type KnownCode = keyof typeof fr.radar.failure.codes;
+type KnownCode = keyof typeof en.radar.failure.codes;
 
-const isKnown = (code: string): code is KnownCode => Object.hasOwn(fr.radar.failure.codes, code);
+const isKnown = (code: string): code is KnownCode => Object.hasOwn(en.radar.failure.codes, code);
 
 /** Pourquoi un relevé a échoué, en clair : le code connu, sinon une panne inattendue. */
 export function failureReason(code: string | null): string {

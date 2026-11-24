@@ -1,4 +1,4 @@
-const locale = "fr-FR";
+const locale = "en-GB";
 const dates = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
 const measurements = new Intl.NumberFormat(locale, { maximumFractionDigits: 4 });
 

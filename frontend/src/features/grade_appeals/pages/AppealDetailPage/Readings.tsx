@@ -2,7 +2,7 @@ import { Link } from "react-router";
 import { t } from "@/shared/i18n/t";
 import type { Appeal } from "../../api";
 
-const dateFormat = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long" });
+const dateFormat = new Intl.DateTimeFormat("en-GB", { dateStyle: "long" });
 
 export function Readings({ row }: { row: Appeal }) {
   const original = row.source.criterion;

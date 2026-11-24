@@ -6,7 +6,7 @@ import { readHistory, type RoutineAction } from "../../api";
 import { CommitmentNotices } from "../../components/CommitmentNotices";
 import { ROUTINES } from "../../queryKeys";
 
-const timeLabel = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" });
+const timeLabel = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" });
 
 export function History({ id, action }: { id: string; action: RoutineAction }) {
   const history = useQuery({

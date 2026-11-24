@@ -4,7 +4,7 @@ import type { BlindRun } from "../../api";
 import { BlindVerdict } from "../../components/BlindVerdict";
 import { toVerdict } from "../../toView";
 
-const dateFormat = new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short" });
+const dateFormat = new Intl.DateTimeFormat("en-GB", { dateStyle: "short", timeStyle: "short" });
 
 interface Props {
   run: BlindRun;

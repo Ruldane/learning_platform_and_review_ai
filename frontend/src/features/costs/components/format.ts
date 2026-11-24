@@ -1,34 +1,34 @@
 import { parseDay } from "@/shared/lib/format";
 
-const INTEGER = new Intl.NumberFormat("fr-FR");
-const CENTS = new Intl.NumberFormat("fr-FR", {
+const INTEGER = new Intl.NumberFormat("en-GB");
+const CENTS = new Intl.NumberFormat("en-GB", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
-const MILLS = new Intl.NumberFormat("fr-FR", {
+const MILLS = new Intl.NumberFormat("en-GB", {
   minimumFractionDigits: 3,
   maximumFractionDigits: 3,
 });
-const TICKS = new Intl.NumberFormat("fr-FR", {
+const TICKS = new Intl.NumberFormat("en-GB", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 6,
 });
-const SECONDS = new Intl.NumberFormat("fr-FR", {
+const SECONDS = new Intl.NumberFormat("en-GB", {
   minimumFractionDigits: 1,
   maximumFractionDigits: 1,
 });
-const DAY_MONTH = new Intl.DateTimeFormat("fr-FR", {
+const DAY_MONTH = new Intl.DateTimeFormat("en-GB", {
   day: "numeric",
   month: "short",
   timeZone: "UTC",
 });
-const CALL_TIME = new Intl.DateTimeFormat("fr-FR", {
+const CALL_TIME = new Intl.DateTimeFormat("en-GB", {
   day: "numeric",
   month: "short",
   hour: "2-digit",
   minute: "2-digit",
 });
-const CALL_TIME_YEAR = new Intl.DateTimeFormat("fr-FR", {
+const CALL_TIME_YEAR = new Intl.DateTimeFormat("en-GB", {
   day: "numeric",
   month: "short",
   year: "numeric",

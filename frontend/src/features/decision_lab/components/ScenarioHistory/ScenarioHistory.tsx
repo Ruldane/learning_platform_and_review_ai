@@ -2,7 +2,7 @@ import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 import type { ScenarioLink } from "../viewTypes";
 
-const day = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" });
+const day = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium" });
 
 interface Props {
   scenarios: ScenarioLink[];

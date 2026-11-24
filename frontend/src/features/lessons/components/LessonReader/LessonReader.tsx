@@ -44,7 +44,7 @@ export function LessonReader({ lesson, onAskProfessor, conversationButton }: Les
       <header className="flex flex-col gap-3">
         <h1 className="text-3xl font-semibold">{lesson.title}</h1>
         <p className="text-sm text-muted-foreground">
-          {t("lessons.reader.words", { count: lesson.wordCount.toLocaleString("fr-FR") })} ·{" "}
+          {t("lessons.reader.words", { count: lesson.wordCount.toLocaleString("en-GB") })} ·{" "}
           {t("lessons.reader.readingTime", { minutes })}
         </p>
         {lesson.pdfUrl && (

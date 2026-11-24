@@ -13,9 +13,9 @@ describe("format", () => {
     expect(formatMinutes(minutes)).toBe(expected);
   });
 
-  it("names a day in French, whatever the local time zone", () => {
-    expect(longDay("2026-11-18")).toBe("mercredi 18 novembre");
-    expect(shortDay("2026-11-16")).toBe("lun. 16 nov.");
+  it("names a day in English, whatever the local time zone", () => {
+    expect(longDay("2026-11-18")).toBe("Wednesday 18 November");
+    expect(shortDay("2026-11-16")).toBe("Mon 16 Nov");
   });
 
   it("reads a day as midnight UTC", () => {

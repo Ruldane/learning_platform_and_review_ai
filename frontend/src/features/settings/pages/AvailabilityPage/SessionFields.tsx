@@ -45,7 +45,7 @@ export function SessionFields({ draft, errors, refused, onChange }: SessionField
           <NumberField
             label={t("settings.availability.tokenCap")}
             value={draft.tokenCap}
-            hint={t("settings.fields.atLeast", { min: TOKEN_CAP_MIN.toLocaleString("fr-FR") })}
+            hint={t("settings.fields.atLeast", { min: TOKEN_CAP_MIN.toLocaleString("en-GB") })}
             invalid={errors.tokenCap}
             refused={refused("tokenCap")}
             onChange={(tokenCap) => onChange({ ...draft, tokenCap })}

@@ -1,14 +1,14 @@
-import { fr } from "./fr";
+import { en } from "./en";
 
 type Leaves<T, Prefix extends string = ""> = {
   [K in keyof T & string]: T[K] extends string ? `${Prefix}${K}` : Leaves<T[K], `${Prefix}${K}.`>;
 }[keyof T & string];
 
-/** Chemin pointé vers un texte de `fr` (ex. `"settings.keys.last4"`). */
-export type MessageKey = Leaves<typeof fr>;
+/** Dotted path to a message, such as `"settings.keys.last4"`. */
+export type MessageKey = Leaves<typeof en>;
 
 function lookup(key: MessageKey): string {
-  let node: unknown = fr;
+  let node: unknown = en;
   for (const part of key.split(".")) {
     node =
       typeof node === "object" && node !== null
@@ -18,7 +18,7 @@ function lookup(key: MessageKey): string {
   return typeof node === "string" ? node : key;
 }
 
-/** Renvoie le texte français de `key`, en remplaçant chaque `{nom}` par `vars.nom`. */
+/** Returns the English message for `key`, replacing each `{name}` with `vars.name`. */
 export function t(key: MessageKey, vars?: Record<string, string | number>): string {
   const message = lookup(key);
   if (!vars) return message;

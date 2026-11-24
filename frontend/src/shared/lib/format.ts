@@ -1,10 +1,10 @@
-const LONG_DAY = new Intl.DateTimeFormat("fr-FR", {
+const LONG_DAY = new Intl.DateTimeFormat("en-GB", {
   weekday: "long",
   day: "numeric",
   month: "long",
   timeZone: "UTC",
 });
-const SHORT_DAY = new Intl.DateTimeFormat("fr-FR", {
+const SHORT_DAY = new Intl.DateTimeFormat("en-GB", {
   weekday: "short",
   day: "numeric",
   month: "short",

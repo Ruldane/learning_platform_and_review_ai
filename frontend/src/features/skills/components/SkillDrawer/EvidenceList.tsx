@@ -2,7 +2,7 @@ import { t } from "@/shared/i18n/t";
 import type { EvidenceView } from "../viewTypes";
 import { SmartLink } from "./SmartLink";
 
-const DAY = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" });
+const DAY = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium" });
 
 /** Les preuves d'un niveau : une ligne par preuve, avec un lien quand elle a sa page. */
 export function EvidenceList({ evidence }: { evidence: EvidenceView[] }) {

@@ -1,11 +1,11 @@
 import { ApiError, errorMessage } from "@/shared/api/errors";
-import { fr } from "@/shared/i18n/fr";
+import { en } from "@/shared/i18n/en";
 import { t } from "@/shared/i18n/t";
 import type { ProfileSaveErrorView } from "./components/viewTypes";
 
-type KnownCode = keyof typeof fr.cv.errors;
+type KnownCode = keyof typeof en.cv.errors;
 
-const isKnown = (code: string): code is KnownCode => Object.hasOwn(fr.cv.errors, code);
+const isKnown = (code: string): code is KnownCode => Object.hasOwn(en.cv.errors, code);
 
 /** Le code d'une erreur d'API, ou `null` pour toute autre erreur. */
 export const errorCode = (error: unknown): string | null =>

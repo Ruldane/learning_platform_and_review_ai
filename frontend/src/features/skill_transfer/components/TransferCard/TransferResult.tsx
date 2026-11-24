@@ -1,7 +1,7 @@
 import { t } from "@/shared/i18n/t";
 import type { ResultView } from "../viewTypes";
 
-const assessedFormat = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeStyle: "short" });
+const assessedFormat = new Intl.DateTimeFormat("en-GB", { dateStyle: "long", timeStyle: "short" });
 
 export function TransferResult({ assessment }: { assessment: ResultView }) {
   return (

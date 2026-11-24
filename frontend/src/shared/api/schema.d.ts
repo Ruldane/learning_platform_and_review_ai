@@ -15,11 +15,11 @@ export interface paths {
         put?: never;
         /**
          * Delete Account
-         * @description Tout supprimer : annule les sessions en cours, puis efface les vecteurs, les fichiers, les
-         *     points de reprise et toutes les lignes du compte. `confirm` doit être `SUPPRIMER`, sinon 422
-         *     `confirmation_required`. L'identité affichée doit correspondre au compte authentifié.
-         *     Mode local : l'espace reste utilisable, vide ; mode Google : le compte et la session
-         *     disparaissent. La dernière purge des vecteurs peut reprendre en arrière-plan (202).
+         * @description Delete everything: cancels running sessions, then erases the vectors, files, checkpoints
+         *     and every row of the account. `confirm` must be `SUPPRIMER`, otherwise 422
+         *     `confirmation_required`. The displayed identity must match the authenticated account.
+         *     Local mode: the space stays usable, empty; Google mode: the account and the session
+         *     disappear. The final vector purge may resume in the background (202).
          */
         post: operations["delete_account_api_v1_account_delete_post"];
         delete?: never;
@@ -37,10 +37,10 @@ export interface paths {
         };
         /**
          * Export Account
-         * @description Toutes les données de l'utilisatrice dans une archive zip `tremplin-export-AAAAMMJJ.zip`
-         *     (téléchargement) : `manifest.json`, une table par fichier JSON (`tables/<table>.json`) et les
-         *     fichiers déposés (`files/…`). Les clés d'API n'y sont jamais (seulement leurs quatre derniers
-         *     caractères) ; ni vecteurs ni points de reprise des agents (recalculables).
+         * @description All the user's data in a zip archive `tremplin-export-YYYYMMDD.zip` (download):
+         *     `manifest.json`, one table per JSON file (`tables/<table>.json`) and the uploaded files
+         *     (`files/…`). API keys are never included (only their last four characters); neither vectors
+         *     nor agent checkpoints (they can be recomputed).
          */
         get: operations["export_account_api_v1_account_export_get"];
         put?: never;
@@ -83,13 +83,13 @@ export interface paths {
         };
         /**
          * Get Applications
-         * @description Les fiches, la plus récente d'abord ; adopte d'abord les versions de CV prêtes.
+         * @description The records, most recent first; adopts ready CV versions first.
          */
         get: operations["get_applications_api_v1_applications_get"];
         put?: never;
         /**
          * Post Application
-         * @description Crée la fiche ; `info` : une autre fiche chez la même entreprise dans les 30 jours.
+         * @description Creates the record; `info`: another record at the same company within 30 days.
          */
         post: operations["post_application_api_v1_applications_post"];
         delete?: never;
@@ -107,8 +107,8 @@ export interface paths {
         };
         /**
          * Get Check
-         * @description Contrôle d'une offre qui entre : par `posting_id` (la fiche de l'offre, les alertes) ou par
-         *     `url` (avant l'analyse : « certain » seulement). Exactement une des deux entrées.
+         * @description Checks an incoming posting: by `posting_id` (the posting's record, the alerts) or by `url`
+         *     (before analysis: "certain" only). Exactly one of the two inputs.
          */
         get: operations["get_check_api_v1_applications_check_get"];
         put?: never;
@@ -130,8 +130,8 @@ export interface paths {
         put?: never;
         /**
          * Post Intake
-         * @description Lance l'Assistant de suivi sur une phrase : la fiche en préparation est confirmée par
-         *     January (question `application_confirm`) avant d'être créée.
+         * @description Starts the Tracking Assistant on a sentence: the record being prepared is confirmed by
+         *     January (question `application_confirm`) before it is created.
          */
         post: operations["post_intake_api_v1_applications_intake_post"];
         delete?: never;
@@ -149,7 +149,7 @@ export interface paths {
         };
         /**
          * Get Stats
-         * @description Fiches par statut, taux et délai moyen de réponse, relances dues.
+         * @description Records by status, response rate and average response time, due follow-ups.
          */
         get: operations["get_stats_api_v1_applications_stats_get"];
         put?: never;
@@ -176,8 +176,8 @@ export interface paths {
         head?: never;
         /**
          * Patch Application
-         * @description Retouche les champs envoyés ; `contacts` remplace la liste. Le statut ne se change que par
-         *     `POST /applications/{id}/events` : l'envoyer ici est une 422.
+         * @description Edits the fields sent; `contacts` replaces the list. The status only changes through
+         *     `POST /applications/{id}/events`: sending it here is a 422.
          */
         patch: operations["patch_application_api_v1_applications__application_id__patch"];
         trace?: never;
@@ -193,7 +193,7 @@ export interface paths {
         put?: never;
         /**
          * Post Event
-         * @description Un changement de statut ou une note, daté (aujourd'hui par défaut).
+         * @description A status change or a note, dated (today by default).
          */
         post: operations["post_event_api_v1_applications__application_id__events_post"];
         delete?: never;
@@ -213,8 +213,8 @@ export interface paths {
         put?: never;
         /**
          * Post Application Interview
-         * @description Lance l'entretien blanc de la fiche : les questions arrivent par `interrupt.requested`
-         *     (`kind` `interview_answer`), le débrief et les fiches de révision à la fin.
+         * @description Starts the record's mock interview: questions arrive through `interrupt.requested`
+         *     (`kind` `interview_answer`), the debrief and revision cards at the end.
          */
         post: operations["post_application_interview_api_v1_applications__application_id__interviews_post"];
         delete?: never;
@@ -232,14 +232,14 @@ export interface paths {
         };
         /**
          * Get Kit
-         * @description Les sept pièces dans l'ordre fixe (`pending` : pas encore rangée).
+         * @description The seven pieces in fixed order (`pending`: not stored yet).
          */
         get: operations["get_kit_api_v1_applications__application_id__kit_get"];
         put?: never;
         /**
          * Post Kit
-         * @description Lance les sept pièces en parallèle ; elles arrivent par `artifact.ready` (`kind`
-         *     `kit_item`). Relancer refait les pièces que January n'a pas modifiées.
+         * @description Starts the seven pieces in parallel; they arrive through `artifact.ready` (`kind`
+         *     `kit_item`). Restarting redoes the pieces January has not edited.
          */
         post: operations["post_kit_api_v1_applications__application_id__kit_post"];
         delete?: never;
@@ -284,8 +284,8 @@ export interface paths {
         head?: never;
         /**
          * Patch Kit Item
-         * @description Le texte de January remplace la pièce (gardée aux relances). Une pièce « à vérifier » est
-         *     relue : `flags` mis à jour, « prête » si rien ne reste.
+         * @description January's text replaces the piece (kept on restarts). A piece "to check" is re-checked:
+         *     `flags` updated, "ready" if nothing remains.
          */
         patch: operations["patch_kit_item_api_v1_applications__application_id__kit__kind__patch"];
         trace?: never;
@@ -632,7 +632,7 @@ export interface paths {
         };
         /**
          * Status View
-         * @description État de synchronisation des dossiers, sans chemins locaux ni fichiers individuels.
+         * @description Folder sync status, without local paths or individual files.
          */
         get: operations["status_view_api_v1_brain_status_get"];
         put?: never;
@@ -654,7 +654,7 @@ export interface paths {
         put?: never;
         /**
          * Create Sync Token
-         * @description Crée le jeton du relais et invalide le précédent. La valeur n'est rendue qu'une fois.
+         * @description Create the relay token and invalidate the previous one. The value is returned only once.
          */
         post: operations["create_sync_token_api_v1_brain_sync_token_post"];
         delete?: never;
@@ -757,7 +757,7 @@ export interface paths {
         };
         /**
          * Get Today
-         * @description Le brief du jour local, créé s'il manque (`origin` « opening »).
+         * @description The brief for the local day, created if missing (`origin` "opening").
          */
         get: operations["get_today_api_v1_brief_today_get"];
         put?: never;
@@ -885,15 +885,15 @@ export interface paths {
         };
         /**
          * Get Committees
-         * @description Les exécutions (d'une offre), la plus récente d'abord, chacune avec son avant et après ;
-         *     une exécution dont la session s'est terminée sans résultat passe en `failed`.
+         * @description The runs (of a posting), most recent first, each with its before and after; a run whose
+         *     session ended without a result turns `failed`.
          */
         get: operations["get_committees_api_v1_committee_get"];
         put?: never;
         /**
          * Post Committee
-         * @description Réunit le comité sur la version de CV : impressions, deux tours de débat, votes et
-         *     synthèse arrivent par les événements de la session ; le résultat est rangé à la fin.
+         * @description Convenes the committee on the CV version: impressions, two debate rounds, votes and
+         *     synthesis arrive through the session events; the result is stored at the end.
          */
         post: operations["post_committee_api_v1_committee_post"];
         delete?: never;
@@ -1204,9 +1204,9 @@ export interface paths {
         };
         /**
          * Get Costs
-         * @description Les coûts des 7, 30 ou 90 derniers jours (jours du fuseau de l'utilisatrice, aujourd'hui
-         *     compris), agrégés depuis les appels journalisés, aux prix de l'appel. Toute autre durée : 422
-         *     (`details.fields` : `days`).
+         * @description Costs over the last 7, 30 or 90 days (days in the user's time zone, today included),
+         *     aggregated from the logged calls, at the prices of each call. Any other duration: 422
+         *     (`details.fields`: `days`).
          */
         get: operations["get_costs_api_v1_costs_get"];
         put?: never;
@@ -1226,9 +1226,9 @@ export interface paths {
         };
         /**
          * Get Calls
-         * @description Le journal des agents : les appels du plus récent au plus ancien, `limit` par page (50 par
-         *     défaut). `before` est le curseur `next_before` de la page précédente ; `agent` et `graph`
-         *     filtrent. Aucun contenu de prompt.
+         * @description The agent log: calls newest first, `limit` per page (50 by default). `before` is the
+         *     `next_before` cursor of the previous page; `agent` and `graph` filter. No prompt
+         *     content.
          */
         get: operations["get_calls_api_v1_costs_calls_get"];
         put?: never;
@@ -1254,9 +1254,9 @@ export interface paths {
         head?: never;
         /**
          * Patch Modification
-         * @description Accepte ou refuse ; `after` : texte réécrit, revalidé (il peut rester « à confirmer ») ;
-         *     `confirm: true` : accepte une modification « à confirmer », son fait entre au profil maître
-         *     (nouvelle version validée).
+         * @description Accepts or refuses; `after`: rewritten text, revalidated (it may stay "to confirm");
+         *     `confirm: true`: accepts a "to confirm" modification, its fact enters the master profile
+         *     (new validated version).
          */
         patch: operations["patch_modification_api_v1_cv_modifications__modification_id__patch"];
         trace?: never;
@@ -1270,13 +1270,13 @@ export interface paths {
         };
         /**
          * Get Reviews
-         * @description Les revues (d'une offre), la plus récente d'abord.
+         * @description The reviews (of a posting), newest first.
          */
         get: operations["get_reviews_api_v1_cv_reviews_get"];
         put?: never;
         /**
          * Post Review
-         * @description Lance la revue du CV contre l'offre ; le profil (sa version) et le gabarit sont figés.
+         * @description Reviews the CV against the posting; the profile (its version) and template are frozen.
          */
         post: operations["post_review_api_v1_cv_reviews_post"];
         delete?: never;
@@ -1313,9 +1313,9 @@ export interface paths {
         put?: never;
         /**
          * Post Generate
-         * @description Crée la version (décisions figées au clic) et reprend la question de sortie ; le PDF se
-         *     suit par `GET /cv/versions/{id}` (statut `rendering` puis `ready`, `pages_exceeded` ou
-         *     `failed`) ou par l'événement `artifact.ready` de la session.
+         * @description Creates the version (decisions frozen at the click) and resumes the output question; the
+         *     PDF is followed through `GET /cv/versions/{id}` (status `rendering` then `ready`,
+         *     `pages_exceeded` or `failed`) or through the session's `artifact.ready` event.
          */
         post: operations["post_generate_api_v1_cv_reviews__review_id__generate_post"];
         delete?: never;
@@ -1339,8 +1339,8 @@ export interface paths {
         head?: never;
         /**
          * Patch Modifications
-         * @description Décision groupée (50 au plus) ; les « à confirmer » ne sont jamais acceptés en groupe :
-         *     ils reviennent dans `skipped`, avec les identifiants inconnus.
+         * @description Bulk decision (50 at most); "to confirm" ones are never accepted in bulk: they come
+         *     back in `skipped`, along with unknown identifiers.
          */
         patch: operations["patch_modifications_api_v1_cv_reviews__review_id__modifications_patch"];
         trace?: never;
@@ -1354,13 +1354,13 @@ export interface paths {
         };
         /**
          * Get Templates
-         * @description Les gabarits non archivés, le plus récent d'abord.
+         * @description Non-archived templates, newest first.
          */
         get: operations["get_templates_api_v1_cv_templates_get"];
         put?: never;
         /**
          * Post Template
-         * @description CV en PDF (10 Mo au plus, 4 pages au plus) OU `document_id` d'un CV importé. 409
+         * @description CV as PDF (10 MB at most, 4 pages at most) OR `document_id` of an imported CV. 409
          *     `vision_unavailable`, 409 `capture_in_progress`, 413 `file_too_large`, 415
          *     `unsupported_file_type`, 422 `pdf_unreadable`.
          */
@@ -1384,7 +1384,7 @@ export interface paths {
         post?: never;
         /**
          * Delete Template
-         * @description Archivé (statut `archived`) ; 409 `template_in_use` si une revue en cours l'emploie.
+         * @description Archived (status `archived`); 409 `template_in_use` if a review in progress uses it.
          */
         delete: operations["delete_template_api_v1_cv_templates__template_id__delete"];
         options?: never;
@@ -1403,7 +1403,7 @@ export interface paths {
         put?: never;
         /**
          * Post Activate
-         * @description Le gabarit devient le seul actif ; 409 `template_not_ready` s'il n'est pas prêt.
+         * @description The template becomes the only active one; 409 `template_not_ready` if it is not ready.
          */
         post: operations["post_activate_api_v1_cv_templates__template_id__activate_post"];
         delete?: never;
@@ -1421,7 +1421,7 @@ export interface paths {
         };
         /**
          * Get Template Page
-         * @description Page `number` (depuis 1) du CV d'origine ou du rendu de la passe courante ; 404 sinon.
+         * @description Page `number` (from 1) of the original CV or of the current pass's render; 404 otherwise.
          */
         get: operations["get_template_page_api_v1_cv_templates__template_id__pages__kind___number__get"];
         put?: never;
@@ -1441,7 +1441,7 @@ export interface paths {
         };
         /**
          * Get Versions
-         * @description Les versions (d'une offre), la plus récente d'abord.
+         * @description The versions (of a posting), newest first.
          */
         get: operations["get_versions_api_v1_cv_versions_get"];
         put?: never;
@@ -1478,7 +1478,7 @@ export interface paths {
         };
         /**
          * Get Version Page
-         * @description Page `number` (depuis 1) d'une version prête ; 404 sinon.
+         * @description Page `number` (from 1) of a ready version; 404 otherwise.
          */
         get: operations["get_version_page_api_v1_cv_versions__version_id__pages__number__get"];
         put?: never;
@@ -1498,7 +1498,7 @@ export interface paths {
         };
         /**
          * Get Version Pdf
-         * @description Téléchargement (`attachment`) ; 404 tant que la version n'est pas `ready`.
+         * @description Download (`attachment`); 404 as long as the version is not `ready`.
          */
         get: operations["get_version_pdf_api_v1_cv_versions__version_id__pdf_get"];
         put?: never;
@@ -1692,7 +1692,7 @@ export interface paths {
         };
         /**
          * List Documents
-         * @description Les 200 plus récents, du plus récent au plus ancien.
+         * @description The 200 most recent, newest first.
          */
         get: operations["list_documents_api_v1_documents_get"];
         put?: never;
@@ -1732,7 +1732,7 @@ export interface paths {
         put?: never;
         /**
          * Mark Learned
-         * @description « Déjà appris » : l'Archiviste crée des acquis déclarés à partir du document indexé.
+         * @description "Already learned": the Archivist creates declared skills from the indexed document.
          */
         post: operations["mark_learned_api_v1_documents__document_id__learned_post"];
         delete?: never;
@@ -1870,7 +1870,7 @@ export interface paths {
         };
         /**
          * Due Cards
-         * @description La file du jour (30 fiches, 15 minutes, moins celles déjà revues aujourd'hui).
+         * @description Today's queue (30 cards, 15 minutes, minus those already reviewed today).
          */
         get: operations["due_cards_api_v1_flashcards_due_get"];
         put?: never;
@@ -1892,7 +1892,7 @@ export interface paths {
         put?: never;
         /**
          * Review Card
-         * @description Avis sur une fiche due ; déjà revue : 409 `card_not_due` ; inconnue : 404.
+         * @description Review of a due card; already reviewed: 409 `card_not_due`; unknown: 404.
          */
         post: operations["review_card_api_v1_flashcards__card_id__review_post"];
         delete?: never;
@@ -1910,7 +1910,7 @@ export interface paths {
         };
         /**
          * Get Projection
-         * @description Compare les rythmes pour un programme validé et le relevé du poste et de la zone choisis.
+         * @description Compares paces for a validated program and the survey of the chosen role and area.
          */
         get: operations["get_projection_api_v1_future_self_get"];
         put?: never;
@@ -1930,7 +1930,7 @@ export interface paths {
         };
         /**
          * Get Galaxy
-         * @description La carte des compétences et des notes actives visibles par le compte.
+         * @description The skill map and the active notes visible to the account.
          */
         get: operations["get_galaxy_api_v1_galaxy_get"];
         put?: never;
@@ -1990,8 +1990,8 @@ export interface paths {
         put?: never;
         /**
          * Write Goal
-         * @description Écrit un objectif sans lancer le Conseil (aucun agent, aucun appel au modèle) : mêmes champs
-         *     que `POST /goals`.
+         * @description Writes a goal without starting the Council (no agent, no model call): same fields as
+         *     `POST /goals`.
          */
         post: operations["write_goal_api_v1_goals_direct_post"];
         delete?: never;
@@ -2045,8 +2045,8 @@ export interface paths {
         put?: never;
         /**
          * Retry Council
-         * @description Relance depuis le début le Conseil de l'objectif, seulement si sa dernière session a
-         *     échoué (409 `council_not_failed` sinon, `goal_already_chosen` si un programme est lancé).
+         * @description Restarts the goal's Council from the beginning, only if its latest session failed
+         *     (409 `council_not_failed` otherwise, `goal_already_chosen` if a program was started).
          */
         post: operations["retry_council_api_v1_goals__goal_id__council_post"];
         delete?: never;
@@ -2184,7 +2184,7 @@ export interface paths {
         };
         /**
          * Health
-         * @description Toujours 200 et sans authentification : le front lit `status`.
+         * @description Always 200 and without authentication: the front end reads `status`.
          */
         get: operations["health_api_v1_health_get"];
         put?: never;
@@ -2204,9 +2204,9 @@ export interface paths {
         };
         /**
          * Embedding Progress
-         * @description Progression du modèle d'embeddings (`bge-m3`) : public, comme `/health`. Si le modèle
-         *     manque, le back le télécharge depuis Ollama, un téléchargement à la fois (relancé après un
-         *     échec).
+         * @description Progress of the embeddings model (`bge-m3`): public, like `/health`. If the model
+         *     is missing, the back end downloads it from Ollama, one download at a time (restarted after a
+         *     failure).
          */
         get: operations["embedding_progress_api_v1_health_embedding_get"];
         put?: never;
@@ -2226,13 +2226,13 @@ export interface paths {
         };
         /**
          * List Exercises
-         * @description Mes exercices, les plus récents d'abord.
+         * @description My exercises, most recent first.
          */
         get: operations["list_exercises_api_v1_ide_exercises_get"];
         put?: never;
         /**
          * Create Exercise
-         * @description Ajoute un exercice écrit à la main (ou par Claude : `origin` vient de l'appelant).
+         * @description Adds a hand-written exercise (or one written by Claude: `origin` comes from the caller).
          */
         post: operations["create_exercise_api_v1_ide_exercises_post"];
         delete?: never;
@@ -2252,8 +2252,8 @@ export interface paths {
         put?: never;
         /**
          * Generate Exercise
-         * @description Fait générer un exercice par les agents : rend aussitôt la session à suivre. L'exercice
-         *     n'est rangé qu'une fois sa solution vérifiée dans le bac à sable.
+         * @description Has the agents generate an exercise: returns the session to follow right away. The
+         *     exercise is stored only once its solution has been verified in the sandbox.
          */
         post: operations["generate_exercise_api_v1_ide_exercises_generate_post"];
         delete?: never;
@@ -2274,14 +2274,14 @@ export interface paths {
         post?: never;
         /**
          * Delete Exercise
-         * @description Supprime un exercice (ses séances restent). 404 si ce n'est pas le mien.
+         * @description Deletes an exercise (its sessions remain). 404 if it is not mine.
          */
         delete: operations["delete_exercise_api_v1_ide_exercises__exercise_id__delete"];
         options?: never;
         head?: never;
         /**
          * Update Exercise
-         * @description Retouche un exercice (énoncé, fichiers de départ, tests pytest) sans agent ni exécution.
+         * @description Edits an exercise (statement, starter files, pytest tests) with no agent and no run.
          */
         patch: operations["update_exercise_api_v1_ide_exercises__exercise_id__patch"];
         trace?: never;
@@ -2314,8 +2314,8 @@ export interface paths {
         put?: never;
         /**
          * Accept Note
-         * @description Applique une proposition au fichier si celui-ci n'a pas changé (sinon 409 `note_stale`).
-         *     Un appel MCP exige une confirmation dans Tremplin.
+         * @description Applies a proposal to the file if it has not changed (otherwise 409 `note_stale`).
+         *     An MCP call requires a confirmation in Tremplin.
          */
         post: operations["accept_note_api_v1_ide_notes__note_id__accept_post"];
         delete?: never;
@@ -2335,7 +2335,7 @@ export interface paths {
         put?: never;
         /**
          * Reject Note
-         * @description Refuse une proposition. Un appel MCP exige une confirmation dans Tremplin.
+         * @description Rejects a proposal. An MCP call requires a confirmation in Tremplin.
          */
         post: operations["reject_note_api_v1_ide_notes__note_id__reject_post"];
         delete?: never;
@@ -2353,13 +2353,13 @@ export interface paths {
         };
         /**
          * Get Preferences
-         * @description Mode et style du professeur, minuterie d'inactivité, plafonds de jetons.
+         * @description Professor mode and style, idle timer, token caps.
          */
         get: operations["get_preferences_api_v1_ide_preferences_get"];
         /**
          * Put Preferences
-         * @description Remplace les préférences (professeur, interrupteur d'écriture de Claude). Geste de
-         *     l'interface : jamais du MCP, qui n'a pas à régler son propre budget ni ses propres droits.
+         * @description Replaces the preferences (professor, Claude's write switch). An interface gesture:
+         *     never from MCP, which must not set its own budget or its own rights.
          */
         put: operations["put_preferences_api_v1_ide_preferences_put"];
         post?: never;
@@ -2378,7 +2378,7 @@ export interface paths {
         };
         /**
          * Read Run
-         * @description La sortie de l'exécution à partir de l'octet `after` (interrogation toutes les 300 ms).
+         * @description The run's output from byte `after` onwards (polled every 300 ms).
          */
         get: operations["read_run_api_v1_ide_runs__run_id__get"];
         put?: never;
@@ -2398,13 +2398,13 @@ export interface paths {
         };
         /**
          * List Sessions
-         * @description Mes séances de code, la plus récente d'abord.
+         * @description My code sessions, most recent first.
          */
         get: operations["list_sessions_api_v1_ide_sessions_get"];
         put?: never;
         /**
          * Create Session
-         * @description Ouvre une séance sur un exercice, ou une séance libre.
+         * @description Opens a session on an exercise, or a free session.
          */
         post: operations["create_session_api_v1_ide_sessions_post"];
         delete?: never;
@@ -2422,7 +2422,7 @@ export interface paths {
         };
         /**
          * Get Session
-         * @description Une séance avec ses fichiers.
+         * @description A session with its files.
          */
         get: operations["get_session_api_v1_ide_sessions__session_id__get"];
         put?: never;
@@ -2513,25 +2513,25 @@ export interface paths {
         get?: never;
         /**
          * Put Files
-         * @description Enregistre les fichiers de la séance (20 au plus, 200 Ko) : l'interface les remplace tous ;
-         *     Claude (MCP, interrupteur allumé) écrit un fichier avec `base_hash`.
+         * @description Saves the session's files (at most 20, 200 KB): the interface replaces them all;
+         *     Claude (MCP, switch on) writes one file with `base_hash`.
          */
         put: operations["put_files_api_v1_ide_sessions__session_id__files_put"];
         /**
          * Add Project File
-         * @description Crée un fichier à partir de la version lue de la séance.
+         * @description Creates a file from the session version that was read.
          */
         post: operations["add_project_file_api_v1_ide_sessions__session_id__files_post"];
         /**
          * Remove Project File
-         * @description Retire un fichier du projet et referme son onglet.
+         * @description Removes a file from the project and closes its tab.
          */
         delete: operations["remove_project_file_api_v1_ide_sessions__session_id__files_delete"];
         options?: never;
         head?: never;
         /**
          * Rename Project File
-         * @description Renomme un fichier du projet et adapte l'entrée et les onglets.
+         * @description Renames a project file and updates the entry and tabs.
          */
         patch: operations["rename_project_file_api_v1_ide_sessions__session_id__files_patch"];
         trace?: never;
@@ -2545,7 +2545,7 @@ export interface paths {
         };
         /**
          * Ide Ghost
-         * @description Repères des vérifications personnelles, dont la référence du journal, sans sortie.
+         * @description Markers of personal checks, including the log reference, without output.
          */
         get: operations["ide_ghost_api_v1_ide_sessions__session_id__ghost_get"];
         put?: never;
@@ -2600,13 +2600,13 @@ export interface paths {
         };
         /**
          * List Notes
-         * @description Les notes de la séance : indices, explications, annotations, propositions, renvois.
+         * @description The session's notes: hints, explanations, annotations, proposals, references.
          */
         get: operations["list_notes_api_v1_ide_sessions__session_id__notes_get"];
         put?: never;
         /**
          * Add Note
-         * @description Ajoute une note ; l'auteur est celui de l'appelant (moi, le professeur, Claude).
+         * @description Adds a note; the author is the caller (me, the professor, Claude).
          */
         post: operations["add_note_api_v1_ide_sessions__session_id__notes_post"];
         delete?: never;
@@ -2624,14 +2624,14 @@ export interface paths {
         };
         /**
          * List Runs
-         * @description Les 20 dernières exécutions de la séance, la plus récente d'abord (lues toutes les 3 s par la
-         *     page ouverte : une exécution lancée par Claude y apparaît).
+         * @description The session's last 20 runs, most recent first (read every 3 s by the open page: a run
+         *     started by Claude shows up there).
          */
         get: operations["list_runs_api_v1_ide_sessions__session_id__runs_get"];
         put?: never;
         /**
          * Start Run
-         * @description Dépose une exécution ou une vérification dans le bac à sable (une par utilisatrice).
+         * @description Submits a run or a check to the sandbox (one per user).
          */
         post: operations["start_run_api_v1_ide_sessions__session_id__runs_post"];
         delete?: never;
@@ -2650,7 +2650,7 @@ export interface paths {
         get?: never;
         /**
          * Save Project Tabs
-         * @description Garde les onglets de l'interface pour la prochaine ouverture de la séance.
+         * @description Keeps the interface tabs for the next time the session is opened.
          */
         put: operations["save_project_tabs_api_v1_ide_sessions__session_id__tabs_put"];
         post?: never;
@@ -2671,9 +2671,9 @@ export interface paths {
         put?: never;
         /**
          * Teach
-         * @description Réveille le professeur : un graphe (`session_id`), un renvoi à la note précédente
-         *     (`reference_note_id`) ou rien (`skipped`). Seule route qui lance le professeur : ni la
-         *     sauvegarde des fichiers ni la frappe ne l'appellent.
+         * @description Wakes the professor: a graph (`session_id`), a pointer to the previous note
+         *     (`reference_note_id`) or nothing (`skipped`). The only route that starts the professor:
+         *     neither saving files nor typing calls it.
          */
         post: operations["teach_api_v1_ide_sessions__session_id__teach_post"];
         delete?: never;
@@ -2743,7 +2743,7 @@ export interface paths {
         };
         /**
          * Get Usage
-         * @description Les jetons du professeur : séance (si `session_id`), jour, plafonds, mode sur demande.
+         * @description The professor's tokens: session (if `session_id`), day, caps, on-demand mode.
          */
         get: operations["get_usage_api_v1_ide_usage_get"];
         put?: never;
@@ -2884,15 +2884,15 @@ export interface paths {
         };
         /**
          * Get Interviews
-         * @description Les entretiens (d'une fiche), le plus récent d'abord ; un entretien dont la session s'est
-         *     terminée sans résultat passe en `failed`.
+         * @description The interviews (of a record), most recent first; an interview whose session ended
+         *     without a result turns `failed`.
          */
         get: operations["get_interviews_api_v1_interviews_get"];
         put?: never;
         /**
          * Post Free Interview
-         * @description Entretien libre, sans fiche : sur une offre (`posting_id`) ou sur un intitulé (`role`) ;
-         *     rien n'est écrit au fil d'une candidature.
+         * @description Free interview, without a record: on a posting (`posting_id`) or a job title (`role`);
+         *     nothing is written to an application's timeline.
          */
         post: operations["post_free_interview_api_v1_interviews_post"];
         delete?: never;
@@ -2965,7 +2965,7 @@ export interface paths {
         };
         /**
          * Overview
-         * @description Les rubriques, leurs activités, les outils du jeton et les prérequis manquants.
+         * @description The sections, their activities, the token's tools and the missing prerequisites.
          */
         get: operations["overview_api_v1_lab_overview_get"];
         put?: never;
@@ -3096,7 +3096,7 @@ export interface paths {
         head?: never;
         /**
          * Patch Lesson
-         * @description Soumet une retouche de titre ou de texte. Un ajout de ressources seul est immédiat.
+         * @description Submits a title or text edit. Adding resources alone is immediate.
          */
         patch: operations["patch_lesson_api_v1_lessons__lesson_id__patch"];
         trace?: never;
@@ -3196,7 +3196,7 @@ export interface paths {
         };
         /**
          * Get Lesson Pdf
-         * @description PDF A4 de la leçon ; 404 `lesson_pdf_missing` tant qu'il n'est pas produit.
+         * @description A4 PDF of the lesson; 404 `lesson_pdf_missing` until it is produced.
          */
         get: operations["get_lesson_pdf_api_v1_lessons__lesson_id__pdf_get"];
         put?: never;
@@ -3719,7 +3719,8 @@ export interface paths {
         put?: never;
         /**
          * Merge Items
-         * @description Fond `other_ids` dans l'élément (D67) : même type, ni document ni décision en attente.
+         * @description Merges `other_ids` into the item (D67): same kind, neither a document nor a
+         *     pending decision.
          */
         post: operations["merge_items_api_v1_memory_items__item_id__merge_post"];
         delete?: never;
@@ -3756,7 +3757,7 @@ export interface paths {
         put?: never;
         /**
          * Reindex
-         * @description Met la réindexation en file (worker) ; déjà en file ou en cours : l'état courant.
+         * @description Queues the reindexing (worker); already queued or running: the current state.
          */
         post: operations["reindex_api_v1_memory_reindex_post"];
         delete?: never;
@@ -4039,7 +4040,7 @@ export interface paths {
         put?: never;
         /**
          * Write Lesson
-         * @description Soumet le Markdown fourni à la Fabrique et renvoie sa session de vérification.
+         * @description Submits the given Markdown to the Factory and returns its verification session.
          */
         post: operations["write_lesson_api_v1_modules__module_id__lesson_post"];
         delete?: never;
@@ -4059,8 +4060,8 @@ export interface paths {
         put?: never;
         /**
          * Start Quiz
-         * @description Prépare le quiz du module (202) ; déjà prêt : 200 ; en préparation : même session ; en
-         *     échec : relancé. Leçon pas prête : 409 `lesson_not_ready`.
+         * @description Prepares the module quiz (202); already ready: 200; being prepared: same session;
+         *     failed: relaunched. Lesson not ready: 409 `lesson_not_ready`.
          */
         post: operations["start_quiz_api_v1_modules__module_id__quiz_post"];
         delete?: never;
@@ -4641,13 +4642,13 @@ export interface paths {
         };
         /**
          * Get Profile
-         * @description La version validée, le brouillon s'il est plus récent, la capture en cours.
+         * @description The validated version, the draft if it is newer, the capture in progress.
          */
         get: operations["get_profile_api_v1_profile_get"];
         /**
          * Put Profile
-         * @description Nouvelle version validée (source `january`), ids des faits gardés, compétences du profil
-         *     déclarées. 409 `profile_conflict` : `base_version` n'est pas la dernière version.
+         * @description New validated version (source `january`), ids of the kept facts, declared profile
+         *     skills. 409 `profile_conflict`: `base_version` is not the latest version.
          */
         put: operations["put_profile_api_v1_profile_put"];
         post?: never;
@@ -4668,7 +4669,7 @@ export interface paths {
         put?: never;
         /**
          * Import Profile
-         * @description CV en PDF (10 Mo au plus), profil LinkedIn en PDF facultatif, note facultative. 409
+         * @description CV as PDF (10 MB at most), optional LinkedIn profile as PDF, optional note. 409
          *     `capture_in_progress`, 413 `file_too_large`, 415 `unsupported_file_type`.
          */
         post: operations["import_profile_api_v1_profile_import_post"];
@@ -4687,7 +4688,7 @@ export interface paths {
         };
         /**
          * Get Profile Versions
-         * @description Toutes les versions, la plus récente d'abord.
+         * @description All versions, newest first.
          */
         get: operations["get_profile_versions_api_v1_profile_versions_get"];
         put?: never;
@@ -4890,8 +4891,8 @@ export interface paths {
         put?: never;
         /**
          * Start Replan
-         * @description Lance une replanification du Stratège. Brouillon : 409 `program_not_validated` ;
-         *     replanification ouverte : 409 `replan_open` (`details.session_id`).
+         * @description Starts a Strategist replanning. Draft: 409 `program_not_validated`;
+         *     replanning already open: 409 `replan_open` (`details.session_id`).
          */
         post: operations["start_replan_api_v1_programs__program_id__replan_post"];
         delete?: never;
@@ -4926,7 +4927,7 @@ export interface paths {
         };
         /**
          * List Versions
-         * @description Les versions du plan, la plus récente d'abord, avec leur statut.
+         * @description The plan versions, most recent first, with their status.
          */
         get: operations["list_versions_api_v1_programs__program_id__versions_get"];
         put?: never;
@@ -5052,14 +5053,14 @@ export interface paths {
         };
         /**
          * Get Projects
-         * @description Le Portfolio : programme, semaine et rang de chaque projet ; `status` filtre.
+         * @description The Portfolio: program, week and rank of each project; `status` filters.
          */
         get: operations["get_projects_api_v1_projects_get"];
         put?: never;
         /**
          * Post Project
-         * @description Écrit le mini projet d'un module en direct : l'énoncé est celui de January ou de Claude,
-         *     sans agent ni appel au modèle ; le projet est « à faire ».
+         * @description Writes a module's mini project directly: the brief is January's or Claude's,
+         *     with no agent and no model call; the project is "to do".
          */
         post: operations["post_project_api_v1_projects_post"];
         delete?: never;
@@ -5084,7 +5085,7 @@ export interface paths {
         head?: never;
         /**
          * Patch One Project
-         * @description Retouche l'énoncé d'un projet sans rendu, sans agent.
+         * @description Edits the brief of a project without a submission, with no agent.
          */
         patch: operations["patch_one_project_api_v1_projects__project_id__patch"];
         trace?: never;
@@ -5100,7 +5101,7 @@ export interface paths {
         put?: never;
         /**
          * Post Brief
-         * @description Relance l'énoncé d'un projet dont les trois essais ont échoué.
+         * @description Restarts the brief of a project whose three attempts failed.
          */
         post: operations["post_brief_api_v1_projects__project_id__brief_post"];
         delete?: never;
@@ -5120,8 +5121,8 @@ export interface paths {
         put?: never;
         /**
          * Post Drafts
-         * @description Relance les brouillons d'un projet validé qui n'en a pas (leur écriture avait échoué,
-         *     D173 n° 4) : une session les écrit sans refaire l'évaluation.
+         * @description Restarts the drafts of a validated project that has none (writing them had failed,
+         *     D173 no. 4): a session writes them without redoing the review.
          */
         post: operations["post_drafts_api_v1_projects__project_id__drafts_post"];
         delete?: never;
@@ -5145,8 +5146,8 @@ export interface paths {
         head?: never;
         /**
          * Patch One Draft
-         * @description Retouche un brouillon : `entry` pour `profile_entry`, `content` (3 000 caractères au plus)
-         *     pour les autres. Un brouillon « à vérifier » modifié est recontrôlé.
+         * @description Edits a draft: `entry` for `profile_entry`, `content` (3,000 characters at most)
+         *     for the others. An edited "to check" draft is checked again.
          */
         patch: operations["patch_one_draft_api_v1_projects__project_id__drafts__kind__patch"];
         trace?: never;
@@ -5180,7 +5181,7 @@ export interface paths {
         put?: never;
         /**
          * Post Profile Entry
-         * @description Ajoute le projet validé au profil maître (nouvelle version validée) : le seul chemin.
+         * @description Adds the validated project to the master profile (new validated version): the only path.
          */
         post: operations["post_profile_entry_api_v1_projects__project_id__profile_entry_post"];
         delete?: never;
@@ -5198,8 +5199,8 @@ export interface paths {
         };
         /**
          * Get Screenshot
-         * @description La capture `number` (de 1 à 5) du rendu `submission` (1 : le dernier, 2 : celui d'avant…),
-         *     dans son type d'origine, jamais mise en cache.
+         * @description Screenshot `number` (1 to 5) of submission `submission` (1: the latest, 2: the one before…),
+         *     in its original type, never cached.
          */
         get: operations["get_screenshot_api_v1_projects__project_id__screenshots__number__get"];
         put?: never;
@@ -5221,9 +5222,9 @@ export interface paths {
         put?: never;
         /**
          * Post Submit
-         * @description Rend le projet : un lien http(s) et/ou une description (4 000 caractères au plus), jusqu'à
-         *     cinq captures PNG, JPEG ou WebP de 5 Mo (vérifiées par leurs octets, jamais par leur nom).
-         *     Les captures ne sont pas envoyées au modèle : elles sont montrées dans le Portfolio.
+         * @description Submits the project: an http(s) link and/or a description (4,000 characters at most), up to
+         *     five PNG, JPEG or WebP screenshots of 5 MB (checked by their bytes, never by their name).
+         *     Screenshots are not sent to the model: they are shown in the Portfolio.
          */
         post: operations["post_submit_api_v1_projects__project_id__submit_post"];
         delete?: never;
@@ -5363,10 +5364,10 @@ export interface paths {
         put?: never;
         /**
          * Write Quiz
-         * @description Écrit le quiz d'un module en direct (1 à 12 questions, sans fiches), sans agent ni appel au
-         *     modèle ; la leçon du module n'a pas à être prête. Il reste « en préparation » (`generating`,
-         *     sans session) tant qu'il n'a pas 8 questions, 3 types et des énoncés de 10 caractères : toute
-         *     tentative donne alors 409 `quiz_incomplete`.
+         * @description Writes a module quiz directly (1 to 12 questions, no cards), with no agent and no model
+         *     call; the module lesson need not be ready. It stays "being prepared" (`generating`, no
+         *     session) until it has 8 questions, 3 types and prompts of 10 characters: until then any
+         *     attempt gives 409 `quiz_incomplete`.
          */
         post: operations["write_quiz_api_v1_quizzes_post"];
         delete?: never;
@@ -5391,7 +5392,7 @@ export interface paths {
         head?: never;
         /**
          * Patch Quiz
-         * @description Change le titre d'un quiz prêt.
+         * @description Changes the title of a ready quiz.
          */
         patch: operations["patch_quiz_api_v1_quizzes__quiz_id__patch"];
         trace?: never;
@@ -5407,8 +5408,8 @@ export interface paths {
         put?: never;
         /**
          * Create Attempt
-         * @description Envoie les réponses et lance la notation. 422 `invalid_answers` ; 409 `quiz_not_ready`,
-         *     `attempt_in_progress` ou `retry_too_soon` (`details.retry_on`).
+         * @description Submits the answers and starts grading. 422 `invalid_answers`; 409 `quiz_not_ready`,
+         *     `attempt_in_progress` or `retry_too_soon` (`details.retry_on`).
          */
         post: operations["create_attempt_api_v1_quizzes__quiz_id__attempts_post"];
         delete?: never;
@@ -5443,7 +5444,7 @@ export interface paths {
         };
         /**
          * Quiz Ghost
-         * @description Repères récents et tentative éventuellement choisie depuis le journal, sans réponses.
+         * @description Recent markers and the attempt optionally chosen from the log, without answers.
          */
         get: operations["quiz_ghost_api_v1_quizzes__quiz_id__ghost_get"];
         put?: never;
@@ -5465,7 +5466,7 @@ export interface paths {
         put?: never;
         /**
          * Add Question
-         * @description Ajoute une question à un quiz prêt qui n'a pas de tentative, sans agent.
+         * @description Adds a question to a ready quiz with no attempt, without an agent.
          */
         post: operations["add_question_api_v1_quizzes__quiz_id__questions_post"];
         delete?: never;
@@ -5489,7 +5490,7 @@ export interface paths {
         head?: never;
         /**
          * Patch Question
-         * @description Retouche une question d'un quiz prêt qui n'a pas de tentative, sans agent.
+         * @description Edits a question of a ready quiz with no attempt, without an agent.
          */
         patch: operations["patch_question_api_v1_quizzes__quiz_id__questions__question_id__patch"];
         trace?: never;
@@ -5774,8 +5775,8 @@ export interface paths {
         };
         /**
          * Get Reminders
-         * @description Les relances, échéance croissante, après synchronisation avec les fiches : `due=true`
-         *     (défaut) : en attente et dues aujourd'hui ; `due=false` : toutes (à venir, faites, ignorées).
+         * @description The follow-ups, by ascending due date, after syncing with the records: `due=true`
+         *     (default): pending and due today; `due=false`: all (upcoming, done, ignored).
          */
         get: operations["get_reminders_api_v1_reminders_get"];
         put?: never;
@@ -5801,8 +5802,8 @@ export interface paths {
         head?: never;
         /**
          * Patch Reminder
-         * @description `done` (la relance faite ; « Relancée » ou « Sans réponse » selon le type), `postpone`
-         *     (+3 jours, reste en attente), `ignore`.
+         * @description `done` (the follow-up done; "Followed up" or "No response" depending on the kind),
+         *     `postpone` (+3 days, stays pending), `ignore`.
          */
         patch: operations["patch_reminder_api_v1_reminders__reminder_id__patch"];
         trace?: never;
@@ -5850,8 +5851,8 @@ export interface paths {
         };
         /**
          * List Resources
-         * @description Bibliothèque : ressources de l'utilisateur, les plus récentes d'abord, filtrées par
-         *     programme, type, langue et statut.
+         * @description Library: the user's resources, most recent first, filtered by program, type, language
+         *     and status.
          */
         get: operations["list_resources_api_v1_resources_get"];
         put?: never;
@@ -5888,8 +5889,8 @@ export interface paths {
         };
         /**
          * Get Resource File
-         * @description Copie locale du PDF libre, en téléchargement ; 404 `resource_file_missing` s'il n'y en a
-         *     pas.
+         * @description Local copy of the free PDF, as a download; 404 `resource_file_missing` if there is
+         *     none.
          */
         get: operations["get_resource_file_api_v1_resources__resource_id__file_get"];
         put?: never;
@@ -6119,8 +6120,8 @@ export interface paths {
         };
         /**
          * List Agents
-         * @description Les agents dont on peut surcharger le modèle (mode avancé) : nom et niveau, sans les agents
-         *     de démonstration `demo_*`. Dans l'ordre du registre `AGENTS`.
+         * @description The agents whose model can be overridden (advanced mode): name and tier, without the
+         *     `demo_*` demo agents. In the order of the `AGENTS` registry.
          */
         get: operations["list_agents_api_v1_settings_agents_get"];
         put?: never;
@@ -6845,7 +6846,7 @@ export interface components {
         };
         /**
          * AgentCallOut
-         * @description Un appel à un modèle, tel que journalisé : jamais le contenu du prompt.
+         * @description A call to a model, as logged: never the prompt content.
          */
         AgentCallOut: {
             /** Agent */
@@ -6878,8 +6879,8 @@ export interface components {
         };
         /**
          * AgentCallPage
-         * @description Une page du journal ; `next_before` (curseur opaque) donne la page suivante, `None` à la
-         *     fin.
+         * @description A page of the log; `next_before` (opaque cursor) gives the next page, `None` at the
+         *     end.
          */
         AgentCallPage: {
             /** Items */
@@ -6923,7 +6924,7 @@ export interface components {
         };
         /**
          * AgentOut
-         * @description Un agent dont le modèle se choisit (surcharge par agent, P17) et le niveau qu'il suit.
+         * @description An agent whose model can be chosen (per-agent override, P17) and the tier it follows.
          */
         AgentOut: {
             /** Name */
@@ -7000,8 +7001,8 @@ export interface components {
         };
         /**
          * AlertOut
-         * @description Une fiche existante qui ressemble à l'offre entrante : niveau, fiche, message en français
-         *     (date et statut). `info` : simple information, ne bloque rien.
+         * @description An existing record that looks like the incoming posting: level, record, message (date and
+         *     status). `info`: plain information, blocks nothing.
          */
         AlertOut: {
             /** Application Id */
@@ -7051,7 +7052,7 @@ export interface components {
         };
         /**
          * ApiKeyOut
-         * @description Une clé, jamais en clair : seuls les 4 derniers caractères sont exposés.
+         * @description A key, never in clear text: only the last 4 characters are exposed.
          */
         ApiKeyOut: {
             /** Label */
@@ -7134,10 +7135,10 @@ export interface components {
         };
         /**
          * ApplicationIn
-         * @description Création manuelle ou depuis une offre. Avec `posting_id`, l'entreprise, l'intitulé, le
-         *     lien et le texte figé viennent de l'offre (les champs donnés ne servent que si l'offre ne les
-         *     dit pas encore) ; sans `posting_id`, `company` et `title` sont obligatoires (422 `fields`).
-         *     `distinct_from` : les fiches de l'alerte que January a confirmées « autre poste ».
+         * @description Manual creation or from a posting. With `posting_id`, the company, job title, link and
+         *     frozen text come from the posting (the given fields are only used if the posting does not
+         *     state them yet); without `posting_id`, `company` and `title` are required (422 `fields`).
+         *     `distinct_from`: the alert's records that January confirmed as "another position".
          */
         ApplicationIn: {
             /** Applied On */
@@ -7213,11 +7214,11 @@ export interface components {
         };
         /**
          * ApplicationPatch
-         * @description Les champs à changer (ceux qui sont envoyés, `null` efface un champ facultatif) ; `contacts`
-         *     remplace la liste. `posting_text` : le texte de l'offre d'une fiche saisie sans lui (il ouvre
-         *     son kit) ; un texte vide l'efface. Le statut ne se change que par
-         *     `POST /applications/{id}/events` : l'envoyer ici est une 422 (`fields: ["status"]`), comme tout
-         *     champ inconnu.
+         * @description The fields to change (those sent; `null` clears an optional field); `contacts` replaces
+         *     the list. `posting_text`: the posting text of a record entered without it (it unlocks its
+         *     kit); an empty text clears it. The status only changes through
+         *     `POST /applications/{id}/events`: sending it here is a 422 (`fields: ["status"]`), like any
+         *     unknown field.
          */
         ApplicationPatch: {
             /** Applied On */
@@ -7263,7 +7264,7 @@ export interface components {
         };
         /**
          * ApplicationStatsOut
-         * @description Les indicateurs (SPEC 6.4) ; `StatsOut` est déjà le nom des statistiques de la mémoire.
+         * @description The indicators (SPEC 6.4); `StatsOut` is already the name of the memory statistics.
          */
         ApplicationStatsOut: {
             /** By Status */
@@ -7543,7 +7544,7 @@ export interface components {
             weekend_block_min_minutes: number;
             /**
              * Weekly Budget Minutes
-             * @description Budget hebdomadaire : cinq jours de semaine plus un bloc de week-end (borne haute).
+             * @description Weekly budget: five weekdays plus one weekend block (upper bound).
              */
             readonly weekly_budget_minutes: number;
         };
@@ -7668,7 +7669,7 @@ export interface components {
         };
         /**
          * BlockRubric
-         * @description Le bloc d'étude du jour : la leçon et ses tâches dues (`minutes` : leur total).
+         * @description The study block of the day: the lesson and its due tasks (`minutes`: their total).
          */
         BlockRubric: {
             /** Lesson Id */
@@ -7698,8 +7699,8 @@ export interface components {
         };
         /**
          * BoardEdit
-         * @description Scène Excalidraw retouchée par January (`serializeAsJSON`) et sa note, renvoyée aux agents
-         *     comme un message. Corps plafonné à 2 Mio (`core.body_limits.BOARD_BODY_MAX`).
+         * @description Excalidraw scene edited by January (`serializeAsJSON`) and its note, sent back to the
+         *     agents as a message. Body capped at 2 MiB (`core.body_limits.BOARD_BODY_MAX`).
          */
         BoardEdit: {
             /** Note */
@@ -7996,17 +7997,17 @@ export interface components {
         };
         /**
          * BriefOut
-         * @description Le brief d'un jour local. `advice_status` : `pending` tant que la session du conseil vit
-         *     (le seul état qui change encore) ; `ready` (`advice` rangé) ; `failed` (conseil impossible ou
-         *     session morte) et `unavailable` (aucun modèle) sont **définitifs pour la journée** : le
-         *     conseil n'est jamais relancé, aucun « Réessayer » à offrir.
+         * @description The brief of a local day. `advice_status`: `pending` while the advice session lives (the
+         *     only state that still changes); `ready` (`advice` stored); `failed` (advice impossible or
+         *     session dead) and `unavailable` (no model) are **final for the day**: the advice is never
+         *     relaunched, there is no "Retry" to offer.
          */
         BriefOut: {
             /** Advice */
             advice: string[] | null;
             /**
              * Advice Status
-             * @description `pending` change encore ; `ready`, `failed` et `unavailable` sont définitifs.
+             * @description `pending` may still change; `ready`, `failed` and `unavailable` are final.
              * @enum {string}
              */
             advice_status: "pending" | "ready" | "failed" | "unavailable";
@@ -8041,15 +8042,15 @@ export interface components {
             session_id: string | null;
             /**
              * Unavailable
-             * @description Les rubriques dont la source était en panne à la création (vides ce jour).
+             * @description Sections whose source was down at creation (empty for that day).
              */
             unavailable?: string[];
             week: components["schemas"]["WeekRubric"] | null;
         };
         /**
          * BriefResourceOut
-         * @description La ressource du jour : un résultat réel du web dont la page a été lue. `published` : sa date
-         *     si le web la donne, jamais devinée.
+         * @description The resource of the day: a real web result whose page was read. `published`: its date if
+         *     the web gives it, never guessed.
          */
         BriefResourceOut: {
             /** Domain */
@@ -8167,9 +8168,9 @@ export interface components {
         };
         /**
          * ChangeOut
-         * @description Un des trois changements qui feraient basculer un vote : la persona visée, les faits du
-         *     profil à mettre en avant. `needs_skill` : il demande un terme que le profil ne dit pas
-         *     (`terms`), une compétence « à acquérir », jamais à écrire dans le CV telle quelle.
+         * @description One of the three changes that would flip a vote: the targeted persona, the profile facts
+         *     to highlight. `needs_skill`: it calls for a term the profile does not state (`terms`), a
+         *     skill "to acquire", never to be written into the CV as is.
          */
         ChangeOut: {
             /** Fact Ids */
@@ -8203,8 +8204,8 @@ export interface components {
         };
         /**
          * CheckOut
-         * @description `own` : la fiche de cette offre, si elle existe ; `alerts` : certain, probable, possible ;
-         *     `info` : même entreprise dans les 30 jours.
+         * @description `own`: this posting's record, if any; `alerts`: certain, probable, possible; `info`: same
+         *     company within 30 days.
          */
         CheckOut: {
             /** Alerts */
@@ -8215,9 +8216,9 @@ export interface components {
         };
         /**
          * ChooseOut
-         * @description `already_chosen` : ce même choix était déjà fait (double clic, reprise générique) ; la
-         *     requête n'a rien changé, `start_date` comprise (D87). Faux aussi quand ce même choix relance
-         *     le Stratège, dont la session a échoué sans programme (D97).
+         * @description `already_chosen`: this same choice was already made (double click, generic resume); the
+         *     request changed nothing, `start_date` included (D87). Also false when this same choice
+         *     restarts the Strategist, whose session failed without a program (D97).
          */
         ChooseOut: {
             /**
@@ -8235,9 +8236,9 @@ export interface components {
         };
         /**
          * ChooseRequest
-         * @description `mix_with` : seconde proposition du même lot (mélange) ; `start_date` : début souhaité du
-         *     programme, un lundi, aujourd'hui ou plus tard (sinon 422 `invalid_start_date`) ; prochain
-         *     lundi par défaut.
+         * @description `mix_with`: second proposal from the same batch (mix); `start_date`: desired program
+         *     start, a Monday, today or later (otherwise 422 `invalid_start_date`); next Monday by
+         *     default.
          */
         ChooseRequest: {
             /** Mix With */
@@ -8418,8 +8419,8 @@ export interface components {
         };
         /**
          * CommitteeDiff
-         * @description L'avant et l'après (F19) : les votes, les objections disparues (`objections_resolved`) et les
-         *     nouvelles (`objections_new`) par rapport à l'exécution `previous_id`.
+         * @description The before and after (F19): the votes, the objections that disappeared
+         *     (`objections_resolved`) and the new ones (`objections_new`) compared with run `previous_id`.
          */
         CommitteeDiff: {
             /** Objections New */
@@ -8433,7 +8434,7 @@ export interface components {
         };
         /**
          * CommitteeIn
-         * @description La version de CV à faire juger : elle doit être prête (PDF rendu).
+         * @description The CV version to be judged: it must be ready (PDF rendered).
          */
         CommitteeIn: {
             /** Cv Version Id */
@@ -8441,8 +8442,8 @@ export interface components {
         };
         /**
          * CommitteeRunOut
-         * @description Une exécution du comité. `votes`, `objections` et `changes` sont vides tant qu'elle n'est
-         *     pas terminée ; `verdict` est la majorité des quatre votes (égalité : peut-être).
+         * @description A committee run. `votes`, `objections` and `changes` are empty until it finishes;
+         *     `verdict` is the majority of the four votes (tie: maybe).
          */
         CommitteeRunOut: {
             /** Application Id */
@@ -8721,8 +8722,8 @@ export interface components {
         };
         /**
          * CostRow
-         * @description Une ligne du rapport. `key` : le jour (`2026-11-16`), le graphe (`""` hors session),
-         *     l'agent (`""` aucun) ou `fournisseur:modèle` (`glm:glm-5.3-flash`).
+         * @description A report row. `key`: the day (`2026-11-16`), the graph (`""` outside a session), the
+         *     agent (`""` none) or `provider:model` (`glm:glm-5.3-flash`).
          */
         CostRow: {
             /** Calls */
@@ -8740,8 +8741,8 @@ export interface components {
         };
         /**
          * CostTotals
-         * @description Appels, jetons et coût d'un groupe d'appels ; `estimated_calls` : combien de ces appels
-         *     ont un coût estimé (le fournisseur n'a pas rendu ses jetons).
+         * @description Calls, tokens and cost of a group of calls; `estimated_calls`: how many of these calls
+         *     have an estimated cost (the provider did not return its tokens).
          */
         CostTotals: {
             /** Calls */
@@ -8793,8 +8794,8 @@ export interface components {
         };
         /**
          * CostsReport
-         * @description Les coûts des `days` derniers jours locaux, de `since` à `until` inclus ; les jours sans
-         *     appel sont présents, à zéro.
+         * @description Costs over the last `days` local days, from `since` to `until` inclusive; days without
+         *     calls are present, at zero.
          */
         CostsReport: {
             /** By Agent */
@@ -8882,10 +8883,9 @@ export interface components {
         };
         /**
          * DebriefOut
-         * @description Le débrief : quatre notes (1 à 5), trois points forts, trois corrections, la réponse
-         *     améliorée de la question `weakest_index` (à vérifier si `flags` n'est pas vide), les questions
-         *     ratées (`missed`, note interne 2 au plus) et leurs points attendus, les réponses non
-         *     notées (`unrated`).
+         * @description The debrief: four scores (1 to 5), three strengths, three fixes, the improved answer to
+         *     question `weakest_index` (to check if `flags` is not empty), the missed questions (`missed`,
+         *     internal score 2 at most) and their expected points, the unrated answers (`unrated`).
          */
         DebriefOut: {
             /** Expected */
@@ -8983,14 +8983,14 @@ export interface components {
         };
         /**
          * DeleteAccountIn
-         * @description La confirmation de « Tout supprimer » : `confirm` doit être exactement `SUPPRIMER`.
+         * @description The "Delete everything" confirmation: `confirm` must be exactly `SUPPRIMER`.
          */
         DeleteAccountIn: {
             /** Confirm */
             confirm: string;
             /**
              * Expected User Id
-             * @description Identifiant du compte affiché, obligatoire en mode Google pour un appel direct. Dans une demande MCP confirmée, l'identité vient du jeton.
+             * @description Id of the displayed account, required in Google mode for a direct call. In a confirmed MCP request, the identity comes from the token.
              */
             expected_user_id?: string | null;
         };
@@ -9123,8 +9123,8 @@ export interface components {
         };
         /**
          * DraftOut
-         * @description Un brouillon au nom de January. `to_check` : `flags` nomme ce que son profil et son projet
-         *     ne disent pas (ou la longueur). `edited` : January l'a retouché.
+         * @description A draft in January's name. `to_check`: `flags` names what her profile and project do not
+         *     say (or the length). `edited`: January edited it.
          */
         DraftOut: {
             /** Content */
@@ -9147,8 +9147,8 @@ export interface components {
         };
         /**
          * DraftPatchIn
-         * @description Un brouillon retouché : `entry` pour l'entrée de projet, `content` pour les trois autres.
-         *     Un seul des deux, selon le type.
+         * @description An edited draft: `entry` for the project entry, `content` for the other three.
+         *     Only one of the two, depending on the kind.
          */
         DraftPatchIn: {
             /** Content */
@@ -9237,8 +9237,8 @@ export interface components {
         };
         /**
          * EmbeddingProgress
-         * @description Le modèle d'embeddings : présent, ou en cours de téléchargement (`percent` de 0 à 100, vide
-         *     tant que la taille n'est pas connue). `detail` est un texte français sans donnée personnelle.
+         * @description The embeddings model: present, or being downloaded (`percent` from 0 to 100, empty
+         *     while the size is unknown). `detail` is a plain-language text without personal data.
          */
         EmbeddingProgress: {
             /** Detail */
@@ -9281,8 +9281,8 @@ export interface components {
         };
         /**
          * EvaluationOut
-         * @description La dernière évaluation : le verdict est celui du code. `repo_status` : le dépôt a-t-il pu
-         *     être lu ? (`none` : aucun lien donné).
+         * @description The latest review: the verdict is the code's. `repo_status`: could the repository be
+         *     read? (`none`: no link given).
          */
         EvaluationOut: {
             /** At */
@@ -9304,10 +9304,9 @@ export interface components {
         };
         /**
          * EventIn
-         * @description Un événement du fil : un changement de statut (`status` obligatoire) ou une note (`text`
-         *     obligatoire). `on` : le jour de l'événement (défaut : aujourd'hui, fuseau de January ; jamais
-         *     plus tard : 422 `on`) ;
-         *     `interview_on` : le jour de l'entretien, pour le statut « Entretien » (défaut : `on`).
+         * @description A timeline event: a status change (`status` required) or a note (`text` required). `on`:
+         *     the day of the event (default: today, in January's time zone; never later: 422 `on`);
+         *     `interview_on`: the interview day, for the "Interview" status (default: `on`).
          */
         EventIn: {
             /** Interview On */
@@ -9363,8 +9362,8 @@ export interface components {
         };
         /**
          * ExchangeOut
-         * @description Une question principale, la réponse de January, la relance et sa réponse s'il y en a eu, la
-         *     note interne (1 à 5) ; `unrated` : le modèle n'a pas répondu, la note est neutre.
+         * @description A main question, January's answer, the follow-up question and its answer if any, the
+         *     internal score (1 to 5); `unrated`: the model did not answer, the score is neutral.
          */
         ExchangeOut: {
             /** Answer */
@@ -9429,7 +9428,7 @@ export interface components {
         };
         /**
          * ExerciseGenerateIn
-         * @description `topic` : le sujet de l'exercice à faire générer par les agents.
+         * @description `topic`: the subject of the exercise for the agents to generate.
          */
         ExerciseGenerateIn: {
             /**
@@ -9443,7 +9442,7 @@ export interface components {
         };
         /**
          * ExerciseIn
-         * @description Un exercice écrit à la main : l'énoncé et, au choix, des fichiers de départ.
+         * @description A hand-written exercise: the statement and, optionally, starter files.
          */
         ExerciseIn: {
             /**
@@ -9489,8 +9488,8 @@ export interface components {
         };
         /**
          * ExercisePatch
-         * @description Retouche d'un exercice : les champs donnés remplacent ceux de l'exercice (`files` remplace
-         *     tous ses fichiers, énoncé de départ et tests pytest compris) ; l'origine ne change pas.
+         * @description Edit of an exercise: the given fields replace the exercise's (`files` replaces all its
+         *     files, starter statement and pytest tests included); the origin does not change.
          */
         ExercisePatch: {
             /** Entry */
@@ -9506,7 +9505,7 @@ export interface components {
         };
         /**
          * ExpectedOut
-         * @description Les points qu'une bonne réponse à la question `index` aurait donnés (verso de la fiche).
+         * @description The points a good answer to question `index` would have given (back of the card).
          */
         ExpectedOut: {
             /** Index */
@@ -9745,13 +9744,13 @@ export interface components {
         };
         /**
          * FilesPutIn
-         * @description Enregistre les fichiers de la séance. Interface : remplace tous les fichiers. Claude (MCP,
-         *     interrupteur allumé) : un seul fichier de `files`, les autres sont gardés ; `base_hash` est
-         *     alors obligatoire : le sha256 du contenu actuel de ce fichier (`file_hashes` de la séance ;
-         *     texte vide pour un nouveau fichier). Il est ignoré pour l'interface. `entry` aussi, pour
-         *     Claude. `base_hashes` (interface, facultatif) : le sha256 de la version de chaque fichier sur
-         *     laquelle tu as édité ; un fichier que Claude a changé depuis et que l'envoi écraserait donne 409
-         *     `stale_base` (`details.files` : les noms) et rien n'est écrit.
+         * @description Saves the session's files. Interface: replaces all files. Claude (MCP, switch on): a single
+         *     file in `files`, the others are kept; `base_hash` is then required: the sha256 of that file's
+         *     current content (the session's `file_hashes`; empty text for a new file). It is ignored for
+         *     the interface. So is `entry`, for Claude. `base_hashes` (interface, optional): the sha256 of
+         *     the version of each file you edited from; a file Claude has changed since, which the upload
+         *     would overwrite, gives 409 `stale_base` (`details.files`: the names) and nothing is
+         *     written.
          */
         FilesPutIn: {
             /** Base Hash */
@@ -9874,8 +9873,8 @@ export interface components {
         };
         /**
          * FreeInterviewIn
-         * @description Un entretien sans fiche : sur une offre (`posting_id`) ou sur un intitulé seul (`role`).
-         *     L'un ou l'autre, pas les deux ni aucun (422 `fields: ["posting_id", "role"]`).
+         * @description An interview without a record: on a posting (`posting_id`) or a job title only (`role`).
+         *     One or the other, not both nor neither (422 `fields: ["posting_id", "role"]`).
          */
         FreeInterviewIn: {
             /**
@@ -10094,8 +10093,8 @@ export interface components {
         };
         /**
          * GoalCreate
-         * @description L'objectif saisi par January (SPEC 3.1, étape 1). Une échéance passée est refusée (422,
-         *     chemin du champ seulement, jamais la saisie).
+         * @description The goal entered by January (SPEC 3.1, step 1). A past deadline is refused (422, field
+         *     path only, never the input).
          */
         GoalCreate: {
             /** Deadline */
@@ -10229,7 +10228,7 @@ export interface components {
         };
         /**
          * HealthReport
-         * @description `down` si la base échoue, `degraded` si un autre contrôle échoue, sinon `ok`.
+         * @description `down` if the database fails, `degraded` if another check fails, otherwise `ok`.
          */
         HealthReport: {
             /** Checks */
@@ -10367,7 +10366,7 @@ export interface components {
         };
         /**
          * IdeSessionStarted
-         * @description Le graphe tourne : `session_id` désigne la session d'agents à suivre (en moins de 2 s).
+         * @description The graph is running: `session_id` is the agent session to follow (within 2 s).
          */
         IdeSessionStarted: {
             /** Session Id */
@@ -10572,8 +10571,8 @@ export interface components {
         };
         /**
          * IntakeIn
-         * @description La phrase de January : « j'ai postulé hier chez X pour le poste Y » (1 à 1 000 caractères).
-         *     Une 422 nomme `text`, sans jamais la citer.
+         * @description January's sentence: "I applied yesterday at X for the Y position" (1 to 1,000 characters).
+         *     A 422 names `text`, never quoting it.
          */
         IntakeIn: {
             /** Text */
@@ -10581,7 +10580,7 @@ export interface components {
         };
         /**
          * IntakeOut
-         * @description La session de l'Assistant de suivi : la fiche en préparation arrive par ses événements
+         * @description The Tracking Assistant session: the record being prepared arrives through its events
          *     (`interrupt.requested`, `kind` `application_confirm`).
          */
         IntakeOut: {
@@ -10662,8 +10661,8 @@ export interface components {
         };
         /**
          * InterviewIn
-         * @description Le réglage d'un entretien : la formule (comportemental, technique, étude de cas, mixte), la
-         *     durée (4, 7 ou 10 questions principales) et la langue des questions.
+         * @description An interview's settings: the format (behavioral, technical, case study, mixed), the
+         *     length (4, 7 or 10 main questions) and the language of the questions.
          */
         InterviewIn: {
             /**
@@ -10689,8 +10688,8 @@ export interface components {
         };
         /**
          * InterviewOut
-         * @description Un entretien. `flags` : les termes que le profil ne dit pas dans la réponse améliorée.
-         *     `cards_created` : les fiches de révision nouvelles (une par question ratée, dues demain).
+         * @description An interview. `flags`: the terms in the improved answer that the profile does not state.
+         *     `cards_created`: the new revision cards (one per missed question, due tomorrow).
          */
         InterviewOut: {
             /** Application Id */
@@ -10962,11 +10961,11 @@ export interface components {
         };
         /**
          * KitItemOut
-         * @description Une pièce. `id` : `artifact_id` de l'événement `artifact.ready` (vide tant que la pièce n'est
-         *     pas rangée, statut `pending`). `flags` : les termes que le profil ne dit pas (pièce « à
-         *     vérifier »). `salary_fields` : les réponses salariales laissées à January. `words` : le compte
-         *     des mots (le message pour `linkedin`, les deux relances ensemble pour `followups`). `error` :
-         *     le motif lisible d'une pièce en échec. `sources` : les pages du dossier (`company_brief`).
+         * @description A piece. `id`: `artifact_id` of the `artifact.ready` event (empty while the piece is not
+         *     stored, status `pending`). `flags`: the terms the profile does not state (piece "to check").
+         *     `salary_fields`: the salary answers left to January. `words`: the word count (the message for
+         *     `linkedin`, both follow-ups together for `followups`). `error`: the readable reason of a
+         *     failed piece. `sources`: the company file's pages (`company_brief`).
          */
         KitItemOut: {
             /** Content */
@@ -11000,8 +10999,8 @@ export interface components {
         };
         /**
          * KitOut
-         * @description Le kit d'une fiche : toujours sept pièces, `pending` pour celles pas encore rangées.
-         *     `session_id` : la session ouverte, sinon la dernière ; `running` : une session est ouverte.
+         * @description A record's kit: always seven pieces, `pending` for those not stored yet. `session_id`: the
+         *     open session, otherwise the last one; `running`: a session is open.
          */
         KitOut: {
             /** Items */
@@ -11013,7 +11012,7 @@ export interface components {
         };
         /**
          * KitPatch
-         * @description Le texte de January pour la pièce (vide permis : la pièce redevient « à vérifier »).
+         * @description January's text for the piece (empty allowed: the piece goes back to "to check").
          */
         KitPatch: {
             /** Content */
@@ -11021,8 +11020,7 @@ export interface components {
         };
         /**
          * KitSourceOut
-         * @description Une page lue pour le dossier de l'entreprise. `rank` : son numéro dans le texte (`[rank]`),
-         *     depuis 1.
+         * @description A page read for the company file. `rank`: its number in the text (`[rank]`), from 1.
          */
         KitSourceOut: {
             /** Rank */
@@ -11097,17 +11095,17 @@ export interface components {
         LessonOut: {
             /**
              * Attempts
-             * @description Essais de production faits (3 au plus) : une leçon `failed` avec moins de 3 essais sera relancée.
+             * @description Production attempts made (3 at most): a `failed` lesson with fewer than 3 attempts will be retried.
              */
             attempts: number;
             /**
              * Completed
-             * @description Toutes les tâches du module sont faites (au moins une) : leçon terminée.
+             * @description All of the module's tasks are done (at least one): lesson completed.
              */
             completed: boolean;
             /**
              * Done Tasks
-             * @description Tâches faites du module de la leçon (programme).
+             * @description Done tasks of the lesson's module (program).
              */
             done_tasks: number;
             /** Failure Reason */
@@ -11126,7 +11124,7 @@ export interface components {
             resources: components["schemas"]["ResourceOut"][];
             /**
              * Status
-             * @description `pending` : pas encore lancée (semaines 3 et suivantes : 7 jours avant leur début) ; `generating` ; `ready` ; `failed` (relancée automatiquement, 3 essais en tout).
+             * @description `pending`: not started yet (weeks 3 and later: 7 days before they start); `generating`; `ready`; `failed` (retried automatically, 3 attempts in all).
              * @enum {string}
              */
             status: "pending" | "generating" | "ready" | "failed";
@@ -11134,22 +11132,22 @@ export interface components {
             title: string;
             /**
              * Total Tasks
-             * @description Tâches du module de la leçon.
+             * @description Tasks of the lesson's module.
              */
             total_tasks: number;
             /**
              * Verification Failure Reason
-             * @description Motif du dernier échec de vérification d'une écriture directe.
+             * @description Reason for the last failed verification of a direct write.
              */
             verification_failure_reason?: string | null;
             /**
              * Verification Feedback
-             * @description Remarques du dernier contrôle refusé d'une écriture directe : notes motivées sous le minimum et affirmations non sourcées (D308). Vide sinon.
+             * @description Remarks from the last rejected check of a direct write: reasoned scores below the minimum and unsourced claims (D308). Empty otherwise.
              */
             verification_feedback?: string[];
             /**
              * Verification Session Id
-             * @description Session de vérification d'une écriture directe en cours.
+             * @description Verification session of a direct write in progress.
              */
             verification_session_id?: string | null;
             /** Week Rank */
@@ -11159,7 +11157,7 @@ export interface components {
         };
         /**
          * LessonPatch
-         * @description Retouche du titre ou du texte d'une leçon prête, ou ajout de ressources.
+         * @description Edit of a ready lesson's title or text, or addition of resources.
          */
         LessonPatch: {
             /** Markdown */
@@ -11173,17 +11171,17 @@ export interface components {
         LessonSummaryOut: {
             /**
              * Attempts
-             * @description Essais de production faits (3 au plus) : une leçon `failed` avec moins de 3 essais sera relancée.
+             * @description Production attempts made (3 at most): a `failed` lesson with fewer than 3 attempts will be retried.
              */
             attempts: number;
             /**
              * Completed
-             * @description Toutes les tâches du module sont faites (au moins une) : leçon terminée.
+             * @description All of the module's tasks are done (at least one): lesson completed.
              */
             completed: boolean;
             /**
              * Done Tasks
-             * @description Tâches faites du module de la leçon (programme).
+             * @description Done tasks of the lesson's module (program).
              */
             done_tasks: number;
             /** Id */
@@ -11194,7 +11192,7 @@ export interface components {
             pdf_available: boolean;
             /**
              * Status
-             * @description `pending` : pas encore lancée (semaines 3 et suivantes : 7 jours avant leur début) ; `generating` ; `ready` ; `failed` (relancée automatiquement, 3 essais en tout).
+             * @description `pending`: not started yet (weeks 3 and later: 7 days before they start); `generating`; `ready`; `failed` (retried automatically, 3 attempts in all).
              * @enum {string}
              */
             status: "pending" | "generating" | "ready" | "failed";
@@ -11202,17 +11200,17 @@ export interface components {
             title: string;
             /**
              * Total Tasks
-             * @description Tâches du module de la leçon.
+             * @description Tasks of the lesson's module.
              */
             total_tasks: number;
             /**
              * Verification Failure Reason
-             * @description Motif du dernier échec de vérification d'une écriture directe.
+             * @description Reason for the last failed verification of a direct write.
              */
             verification_failure_reason?: string | null;
             /**
              * Verification Session Id
-             * @description Session de vérification d'une écriture directe en cours.
+             * @description Verification session of a direct write in progress.
              */
             verification_session_id?: string | null;
             /** Week Rank */
@@ -11280,7 +11278,7 @@ export interface components {
         };
         /**
          * LessonWriteIn
-         * @description Le brouillon d'un module soumis à la Fabrique. Par défaut, le titre du module est utilisé.
+         * @description A module's draft submitted to the Factory. By default, the module title is used.
          */
         LessonWriteIn: {
             /** Markdown */
@@ -12232,8 +12230,8 @@ export interface components {
         };
         /**
          * MessageRequest
-         * @description Message de l'utilisatrice, ou commande du débat (D82) : le texte est alors facultatif.
-         *     Texte vide (ou blanc) sans commande : 422 `invalid_input` (`SessionsService.message`).
+         * @description Message from the user, or a debate command (D82): the text is then optional.
+         *     Empty (or blank) text without a command: 422 `invalid_input` (`SessionsService.message`).
          */
         MessageRequest: {
             /** Command */
@@ -12573,9 +12571,9 @@ export interface components {
         };
         /**
          * NoteIn
-         * @description Une note ajoutée à la main ou par Claude : l'auteur vient de l'appelant, jamais du corps.
-         *     Une proposition porte `replacement`, la plage de lignes et `base_hash` : le sha256 hexadécimal
-         *     (minuscules, 64 signes) du contenu du fichier encodé en UTF-8.
+         * @description A note added by hand or by Claude: the author comes from the caller, never from the body.
+         *     A proposal carries `replacement`, the line range and `base_hash`: the hexadecimal sha256
+         *     (lowercase, 64 characters) of the file's content encoded in UTF-8.
          */
         NoteIn: {
             /** Base Hash */
@@ -12723,7 +12721,7 @@ export interface components {
         };
         /**
          * ObjectionOut
-         * @description Une objection du comité (la plus lourde d'abord) et les personas qui la portent.
+         * @description A committee objection (the heaviest first) and the personas who raise it.
          */
         ObjectionOut: {
             /** Personas */
@@ -12898,8 +12896,8 @@ export interface components {
         };
         /**
          * OffersRubric
-         * @description Les nouvelles offres du radar (score au moins 70), 5 au plus ; `run_id` : le relevé de la
-         *     meilleure (`None` sans offre).
+         * @description New radar offers (score at least 70), 5 at most; `run_id`: the run of the best one
+         *     (`None` without an offer).
          */
         OffersRubric: {
             /** Items */
@@ -13056,8 +13054,8 @@ export interface components {
         };
         /**
          * PlanVersionOut
-         * @description Une version du plan. `pending` : proposition qui attend January (dans sa session) ;
-         *     `empty` et `impossible` : propositions closes dès leur écriture, jamais à valider.
+         * @description A plan version. `pending`: proposal waiting for January (in its session);
+         *     `empty` and `impossible`: proposals closed as soon as written, never to validate.
          */
         PlanVersionOut: {
             /** Accepted At */
@@ -13456,10 +13454,10 @@ export interface components {
         };
         /**
          * PreferencesIn
-         * @description Mode du professeur (`auto` ou sur demande), style (`guide` : indices gradués ; `pair` :
-         *     binôme, annotations en marge et propositions à accepter), minuterie d'inactivité (30 s, en
-         *     option), plafonds de jetons, et l'interrupteur « Claude peut écrire dans mes fichiers »
-         *     (`mcp_can_write_files`, éteint par défaut : seule l'interface le règle, jamais le MCP).
+         * @description Professor mode (`auto` or on demand), style (`guide`: graded hints; `pair`: pair
+         *     programming, margin annotations and proposals to accept), idle timer (30 s, optional), token
+         *     caps, and the "Claude can write to my files" switch (`mcp_can_write_files`, off by default:
+         *     only the interface sets it, never MCP).
          */
         PreferencesIn: {
             /**
@@ -13532,7 +13530,7 @@ export interface components {
         };
         /**
          * ProfileEntryIn
-         * @description L'entrée de projet du profil maître : le texte de January, éventuellement modifié.
+         * @description The master profile project entry: January's text, possibly edited.
          */
         ProfileEntryIn: {
             /** Achievements */
@@ -13753,9 +13751,9 @@ export interface components {
         };
         /**
          * ProjectBriefIn
-         * @description L'énoncé d'un mini projet écrit à la main ou par Claude (aucun agent) : mêmes bornes que
-         *     celui du Praticien (`ProjectBrief`) : 2 à 5 contraintes, 3 à 6 critères vérifiables, 3 à 6
-         *     heures.
+         * @description A mini project brief written by hand or by Claude (no agent): same bounds as the
+         *     Practitioner's (`ProjectBrief`): 2 to 5 constraints, 3 to 6 checkable criteria, 3 to 6
+         *     hours.
          */
         ProjectBriefIn: {
             /** Constraints */
@@ -13778,7 +13776,7 @@ export interface components {
         };
         /**
          * ProjectBriefOut
-         * @description L'énoncé écrit par le Praticien.
+         * @description The brief written by the Practitioner.
          */
         ProjectBriefOut: {
             /** Constraints */
@@ -13801,7 +13799,7 @@ export interface components {
         };
         /**
          * ProjectBriefPatch
-         * @description Retouche de l'énoncé : les champs donnés remplacent ceux de l'énoncé, les autres restent.
+         * @description Brief edit: the given fields replace the brief's, the others stay.
          */
         ProjectBriefPatch: {
             /** Constraints */
@@ -13821,7 +13819,7 @@ export interface components {
         };
         /**
          * ProjectCreateIn
-         * @description Le mini projet d'un module (un seul par module) : son énoncé, prêt à rendre.
+         * @description A module's mini project (one per module): its brief, ready to submit.
          */
         ProjectCreateIn: {
             brief: components["schemas"]["ProjectBriefIn"];
@@ -14005,8 +14003,8 @@ export interface components {
         };
         /**
          * ProjectSummary
-         * @description Une ligne du Portfolio. `week` (à partir de 1) et `rank` (dans la semaine, comme `GET
-         *     /programs`) : la place du module dans son programme (`None` si le module n'existe plus).
+         * @description A Portfolio row. `week` (from 1) and `rank` (within the week, like `GET
+         *     /programs`): the module's place in its program (`None` if the module no longer exists).
          */
         ProjectSummary: {
             /** Hours */
@@ -14348,10 +14346,10 @@ export interface components {
         };
         /**
          * QuestionIn
-         * @description Une question écrite à la main ou par Claude, aux bornes de celles de l'Examinateur : un QCM
-         *     a 3 à 5 choix distincts et le rang du bon (`correct_index`) ; une question ouverte (`short`,
-         *     `code`, `explain`) a la réponse attendue et une grille (1 à 4 critères) ; `code` donne
-         *     l'extrait dans `code`.
+         * @description A question written by hand or by Claude, within the Examiner's bounds: an MCQ has 3 to 5
+         *     distinct choices and the rank of the right one (`correct_index`); an open question (`short`,
+         *     `code`, `explain`) has the expected answer and a rubric (1 to 4 criteria); `code` gives the
+         *     snippet in `code`.
          */
         QuestionIn: {
             /** Choices */
@@ -14402,8 +14400,8 @@ export interface components {
         };
         /**
          * QuestionPatch
-         * @description Retouche d'une question : les champs donnés remplacent ceux de la question, qui est
-         *     revalidée en entier (`QuestionIn`).
+         * @description Edit of a question: the given fields replace the question's, which is then
+         *     revalidated in full (`QuestionIn`).
          */
         QuestionPatch: {
             /** Choices */
@@ -14481,9 +14479,9 @@ export interface components {
         };
         /**
          * QuizWriteIn
-         * @description Le quiz d'un module écrit en direct (aucun agent) : de 1 à 12 questions. Le module n'a pas
-         *     besoin d'une leçon prête. Pas de fiches de révision : leur écriture est une requête en masse que
-         *     l'historique du MCP ne verrait pas.
+         * @description A module quiz written directly (no agent): 1 to 12 questions. The module does not need a
+         *     ready lesson. No review cards: writing them is a bulk query that the MCP history would not
+         *     see.
          */
         QuizWriteIn: {
             /** Module Id */
@@ -14631,14 +14629,14 @@ export interface components {
             definition: string;
             /**
              * End
-             * @description Fin exclusive du terme, en unités UTF-16.
+             * @description Exclusive end of the term, in UTF-16 units.
              */
             end: number;
             /** Lesson Id */
             lesson_id: string | null;
             /**
              * Start
-             * @description Début du terme, en unités UTF-16.
+             * @description Start of the term, in UTF-16 units.
              */
             start: number;
             /** Term */
@@ -14924,9 +14922,9 @@ export interface components {
         };
         /**
          * ReminderOut
-         * @description Une relance : qui contacter, un brouillon prêt à copier (gabarit fixe, aucun LLM), le canal.
-         *     Sans contact : `linkedin_search_url`, la recherche LinkedIn pré remplie (entreprise et poste
-         *     visé). `close_21` : `channel` « none », `draft` est la proposition de classer la fiche.
+         * @description A follow-up: whom to contact, a draft ready to copy (fixed template, no LLM), the channel.
+         *     Without a contact: `linkedin_search_url`, the prefilled LinkedIn search (company and target
+         *     position). `close_21`: `channel` "none", `draft` is the suggestion to close the record.
          */
         ReminderOut: {
             /** Application Id */
@@ -14965,7 +14963,7 @@ export interface components {
         };
         /**
          * ReminderPatch
-         * @description Fait, Reporter de 3 jours ou Ignorer ; toute autre valeur est une 422 sans écho.
+         * @description Done, Postpone 3 days or Ignore; any other value is a 422 without echo.
          */
         ReminderPatch: {
             /**
@@ -14976,7 +14974,7 @@ export interface components {
         };
         /**
          * RemindersRubric
-         * @description `due` : toutes les relances dues ; `items` : les 5 premières.
+         * @description `due`: all due reminders; `items`: the first 5.
          */
         RemindersRubric: {
             /** Due */
@@ -15064,16 +15062,16 @@ export interface components {
         };
         /**
          * ResourceOut
-         * @description Une ressource d'un module : lien, métadonnées de la source (auteur, date, langue) et
-         *     raison du choix ; `has_local_copy` : PDF libre gardé sur le disque
-         *     (`GET /resources/{id}/file`), sinon `note` est la fiche de lecture.
+         * @description A module resource: link, source metadata (author, date, language) and the reason it was
+         *     chosen; `has_local_copy`: free PDF kept on disk (`GET /resources/{id}/file`), otherwise
+         *     `note` is the reading note.
          */
         ResourceOut: {
             /** Author */
             author: string | null;
             /**
              * Date
-             * @description Date de publication telle que la source la donne.
+             * @description Publication date as given by the source.
              */
             date: string | null;
             /** Duration Minutes */
@@ -15121,7 +15119,7 @@ export interface components {
         };
         /**
          * ResourceWriteIn
-         * @description Un lien de lecture fourni avec une leçon, enregistré sans télécharger la page.
+         * @description A reading link provided with a lesson, saved without downloading the page.
          */
         ResourceWriteIn: {
             /** Author */
@@ -15164,8 +15162,8 @@ export interface components {
         };
         /**
          * ResumeRequest
-         * @description Réponse à la question en attente (`interrupt_id` de `pending_interrupt`), ou reprise
-         *     d'une pause (`interrupt_id` nul).
+         * @description Answer to the pending question (`interrupt_id` of `pending_interrupt`), or resuming
+         *     from a pause (null `interrupt_id`).
          */
         ResumeRequest: {
             /** Interrupt Id */
@@ -15260,7 +15258,7 @@ export interface components {
         };
         /**
          * ReviewsRubric
-         * @description `queue` : les fiches de la file du jour ; `remaining` : celles dues au-delà de la file.
+         * @description `queue`: the cards in today's queue; `remaining`: those due beyond the queue.
          */
         ReviewsRubric: {
             /** Queue */
@@ -15369,8 +15367,8 @@ export interface components {
         };
         /**
          * RunIn
-         * @description `run` exécute `entry` ; `check` lance les tests de l'exercice par pytest dans le bac (code de
-         *     sortie 0 = réussi). `entry` : le fichier d'entrée (celui de la séance par défaut).
+         * @description `run` executes `entry`; `check` runs the exercise's tests with pytest in the sandbox (exit
+         *     code 0 = passed). `entry`: the entry file (the session's by default).
          */
         RunIn: {
             /** Entry */
@@ -15384,8 +15382,8 @@ export interface components {
         };
         /**
          * RunOut
-         * @description Une exécution déposée (202) : on lit la sortie par `GET /ide/runs/{id}?after=`. `origin` :
-         *     `mcp` quand Claude l'a lancée (la page affiche « lancée par Claude »).
+         * @description A submitted run (202): the output is read through `GET /ide/runs/{id}?after=`. `origin`:
+         *     `mcp` when Claude started it (the page shows "started by Claude").
          */
         RunOut: {
             /**
@@ -15417,7 +15415,8 @@ export interface components {
         };
         /**
          * RunProgress
-         * @description La sortie depuis `after` (octets), le décalage suivant, et la fin quand le bac l'a rendue.
+         * @description The output since `after` (bytes), the next offset, and the end once the
+         *     sandbox returned it.
          */
         RunProgress: {
             /** Duration Ms */
@@ -15546,7 +15545,7 @@ export interface components {
         };
         /**
          * SessionCreateIn
-         * @description Ouvre une séance sur un exercice, ou une séance libre (sans `exercise_id`).
+         * @description Opens a session on an exercise, or a free session (without `exercise_id`).
          */
         SessionCreateIn: {
             /** Exercise Id */
@@ -15562,7 +15561,7 @@ export interface components {
         };
         /**
          * SessionSummary
-         * @description `passed` : la séance a eu une vérification (`check`) réussie (`passed_at` : la première).
+         * @description `passed`: the session had a successful check (`check`) (`passed_at`: the first one).
          */
         SessionSummary: {
             /** Exercise Id */
@@ -15583,9 +15582,9 @@ export interface components {
         };
         /**
          * SessionView
-         * @description État d'une session pour le front ; `last_seq` : dernier événement écrit (le WebSocket
-         *     reprend avec `after_seq`) ; `subject_type`/`subject_id` : l'objet suivi (un document pour
-         *     l'Archiviste), pour reprendre son suivi après un rechargement (D71).
+         * @description State of a session for the front; `last_seq`: last event written (the WebSocket
+         *     resumes with `after_seq`); `subject_type`/`subject_id`: the tracked subject (a document for
+         *     the Archivist), to resume tracking it after a reload (D71).
          */
         SessionView: {
             /** Cost Usd */
@@ -15626,7 +15625,7 @@ export interface components {
         };
         /**
          * SettingsOut
-         * @description Réglages renvoyés par l'API : ajoute les valeurs calculées, jamais stockées.
+         * @description Settings returned by the API: adds the computed values, never stored.
          */
         SettingsOut: {
             /** Agent Overrides */
@@ -15715,7 +15714,7 @@ export interface components {
             timezone: string;
             /**
              * Vision Enabled
-             * @description Faux si le niveau `vision` pointe vers un modèle sans vision (spec 11.2).
+             * @description False if the `vision` tier points to a model without vision (spec 11.2).
              */
             readonly vision_enabled: boolean;
             weekly_review?: components["schemas"]["WeeklyReview"];
@@ -16379,7 +16378,8 @@ export interface components {
         };
         /**
          * SubmissionOut
-         * @description Un rendu. `screenshots` : le nombre de captures (`GET /projects/{id}/screenshots/{n}`).
+         * @description A submission. `screenshots`: the number of screenshots
+         *     (`GET /projects/{id}/screenshots/{n}`).
          */
         SubmissionOut: {
             /**
@@ -16639,9 +16639,9 @@ export interface components {
         };
         /**
          * TeachIn
-         * @description Ce qui déclenche le professeur : une exécution en erreur (`run_error`) ou réussie
-         *     (`run_ok`), une question (`question`, non vide : 422 sinon), une demande d'indice (`hint`) ou,
-         *     en option, 30 s d'arrêt sur une ligne (`idle`). Jamais à la frappe.
+         * @description What triggers the professor: a failed (`run_error`) or successful (`run_ok`) run, a question
+         *     (`question`, non-empty: 422 otherwise), a hint request (`hint`) or, optionally, 30 s stopped
+         *     on a line (`idle`). Never on typing.
          */
         TeachIn: {
             /** File Path */
@@ -16660,9 +16660,9 @@ export interface components {
         };
         /**
          * TeachOut
-         * @description Un seul des trois : `session_id` (le graphe du professeur travaille), `reference_note_id`
-         *     (même erreur au même endroit : renvoi à la note précédente) ou `skipped` (pourquoi rien n'est
-         *     lancé).
+         * @description Only one of the three: `session_id` (the professor's graph is working), `reference_note_id`
+         *     (same error at the same place: pointer to the previous note) or `skipped` (why nothing is
+         *     started).
          */
         TeachOut: {
             /** Reference Note Id */
@@ -17212,8 +17212,8 @@ export interface components {
         };
         /**
          * UsageOut
-         * @description La consommation du professeur : jetons de la séance et du jour, leurs plafonds, et si le
-         *     professeur est passé en mode « sur demande » (plafond atteint ou choix).
+         * @description The professor's usage: session and day tokens, their caps, and whether the professor
+         *     switched to "on demand" mode (cap reached or by choice).
          */
         UsageOut: {
             /** Day Cap */
@@ -17476,7 +17476,7 @@ export interface components {
         };
         /**
          * VoteChange
-         * @description Le vote d'une persona avant (exécution précédente) et après (celle-ci).
+         * @description A persona's vote before (previous run) and after (this one).
          */
         VoteChange: {
             /**
@@ -17497,7 +17497,7 @@ export interface components {
         };
         /**
          * VoteOut
-         * @description Le vote d'une persona : oui, non ou peut-être, son objection principale, sa raison.
+         * @description A persona's vote: yes, no or maybe, its main objection, its reason.
          */
         VoteOut: {
             /** Objection */
@@ -17596,7 +17596,7 @@ export interface components {
         };
         /**
          * WeekLoadOut
-         * @description Charge d'une semaine touchée, avant et après la proposition, et son plafond.
+         * @description Load of an affected week, before and after the proposal, and its cap.
          */
         WeekLoadOut: {
             /** After */
@@ -17682,7 +17682,7 @@ export interface components {
         };
         /**
          * WeekRubric
-         * @description L'avancement de la semaine locale du programme validé le plus récent.
+         * @description Progress of the local week of the most recent validated program.
          */
         WeekRubric: {
             /** Done Minutes */
@@ -17828,7 +17828,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Compte Google effacé ; la purge des vecteurs reprend en arrière-plan. */
+            /** @description Google account erased; the vector purge resumes in the background. */
             202: {
                 headers: {
                     [name: string]: unknown;
@@ -17842,21 +17842,21 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `account_changed` : l'identité ne correspond plus à la session. */
+            /** @description `account_changed`: the identity no longer matches the session. */
             409: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            /** @description `confirmation_required` : confirme avec SUPPRIMER ; `account_identity_required` : indique l'identité affichée. */
+            /** @description `confirmation_required`: confirm with SUPPRIMER; `account_identity_required`: give the displayed identity. */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            /** @description `vector_store_unavailable` : Qdrant ne répond pas avant la suppression des lignes ; `vector_purge_incomplete` : l'espace local est effacé en base, relance la suppression pour retirer les vecteurs restants. */
+            /** @description `vector_store_unavailable`: Qdrant does not answer before the rows are deleted; `vector_purge_incomplete`: the local space is erased in the database, run the deletion again to remove the remaining vectors. */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -17874,10 +17874,10 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description L'archive de toutes les données */
+            /** @description The archive of all the data */
             200: {
                 headers: {
-                    /** @description `attachment; filename="tremplin-export-AAAAMMJJ.zip"` : le nom proposé au téléchargement, le jour étant celui de l'utilisatrice. */
+                    /** @description `attachment; filename="tremplin-export-YYYYMMDD.zip"`: the suggested download name, the day being the user's local day. */
                     "Content-Disposition"?: string;
                     [name: string]: unknown;
                 };
@@ -17988,7 +17988,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `application_duplicate` (`details.alerts` : les fiches existantes qui ressemblent à l'offre), `application_exists` (`details.application_id` : une fiche existe déjà pour cette offre) */
+            /** @description `application_duplicate` (`details.alerts`: the existing records that look like the posting), `application_exists` (`details.application_id`: a record already exists for this posting) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -18258,7 +18258,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `interview_in_progress` (`details.interview_id` : l'entretien ouvert), `profile_required` (aucun profil maître validé), `radar_salary_missing` (pas de montant annuel brut pour le scénario salarial) */
+            /** @description `interview_in_progress` (`details.interview_id`: the open interview), `profile_required` (no validated master profile), `radar_salary_missing` (no gross annual amount for the salary scenario) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -18348,7 +18348,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `kit_in_progress` (`details.session_id` : la session ouverte), `posting_required` (la fiche n'a ni offre ni texte d'offre), `profile_required` (aucun profil maître validé) */
+            /** @description `kit_in_progress` (`details.session_id`: the open session), `posting_required` (the record has neither a posting nor a posting text), `profile_required` (no validated master profile) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -18377,7 +18377,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Le kit en archive ZIP. */
+            /** @description The kit as a ZIP archive. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -18436,7 +18436,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `profile_required`, `posting_required` : la modification d'une pièce à vérifier ne peut pas être relue sans le profil validé ni le texte de l'offre */
+            /** @description `profile_required`, `posting_required`: an edit to a piece to check cannot be re-checked without the validated profile and the posting text */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -19594,7 +19594,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `version_not_ready` (le PDF de la version n'est pas rendu), `committee_in_progress` (`details.run_id` : l'exécution ouverte de l'offre), `profile_required` (aucun profil maître validé) */
+            /** @description `version_not_ready` (the version's PDF is not rendered), `committee_in_progress` (`details.run_id`: the posting's open run), `profile_required` (no validated master profile) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -20300,7 +20300,7 @@ export interface operations {
                     "application/json": components["schemas"]["CostsReport"];
                 };
             };
-            /** @description `details.fields` : `days` (ni 7, ni 30, ni 90) */
+            /** @description `details.fields`: `days` (not 7, 30 or 90) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -20332,7 +20332,7 @@ export interface operations {
                     "application/json": components["schemas"]["AgentCallPage"];
                 };
             };
-            /** @description `details.fields` : `before` (curseur illisible) ou `limit` */
+            /** @description `details.fields`: `before` (unreadable cursor) or `limit` */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -20374,7 +20374,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorOut"];
                 };
             };
-            /** @description `review_closed`, `confirmation_required` (« à confirmer » sans `confirm: true`), `fact_not_found` (le fait visé n'est plus dans le profil), `profile_conflict`, `profile_draft_pending` (un brouillon du profil attend sa validation : le valider avant de confirmer un fait) */
+            /** @description `review_closed`, `confirmation_required` ("to confirm" without `confirm: true`), `fact_not_found` (the targeted fact is no longer in the profile), `profile_conflict`, `profile_draft_pending` (a profile draft awaits validation: validate it before confirming a fact) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -20383,7 +20383,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorOut"];
                 };
             };
-            /** @description `validation_error` (`details.fields`), `keyword_not_in_profile` (le texte cite un mot clé de l'offre absent du profil) ; jamais la valeur reçue */
+            /** @description `validation_error` (`details.fields`), `keyword_not_in_profile` (the text cites a posting keyword missing from the profile); never the value received */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -20456,7 +20456,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorOut"];
                 };
             };
-            /** @description `posting_not_ready` (offre pas encore analysée), `profile_required` (aucun profil validé), `template_required` (aucun modèle actif prêt), `review_in_progress` (`details.review_id` : la revue en cours de cette offre) */
+            /** @description `posting_not_ready` (posting not analysed yet), `profile_required` (no validated profile), `template_required` (no ready active template), `review_in_progress` (`details.review_id`: the review in progress for this posting) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -20558,7 +20558,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorOut"];
                 };
             };
-            /** @description `review_closed` (revue terminée ou en échec), `generation_in_progress` (`details.version_id` : la version en rendu), `review_not_waiting` (la revue n'attend pas « Que veux-tu maintenant ? ») */
+            /** @description `review_closed` (review finished or failed), `generation_in_progress` (`details.version_id`: the version being rendered), `review_not_waiting` (the review is not waiting on "What do you want now?") */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -20795,7 +20795,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Image PNG de la page. */
+            /** @description PNG image of the page. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -20898,7 +20898,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Image PNG de la page. */
+            /** @description PNG image of the page. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -20938,7 +20938,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Le CV ciblé en PDF. */
+            /** @description The targeted CV as PDF. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -20947,7 +20947,7 @@ export interface operations {
                     "application/pdf": unknown;
                 };
             };
-            /** @description `version_not_found`, `version_not_ready` (pas encore `ready`) */
+            /** @description `version_not_found`, `version_not_ready` (not `ready` yet) */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -21410,7 +21410,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Contenu déjà importé */
+            /** @description Content already imported */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21452,7 +21452,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Contenu déjà importé */
+            /** @description Content already imported */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -22420,7 +22420,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Introuvable (ou pas à moi). */
+            /** @description Not found (or not mine). */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -22462,14 +22462,14 @@ export interface operations {
                     "application/json": components["schemas"]["ExerciseOut"];
                 };
             };
-            /** @description Introuvable (ou pas à moi). */
+            /** @description Not found (or not mine). */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            /** @description `entry_invalid` ou champs à corriger (`details.fields`) */
+            /** @description `entry_invalid` or fields to fix (`details.fields`) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -22538,7 +22538,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `note_stale` (la note passe à `stale`), `note_closed`, `not_a_proposal` */
+            /** @description `note_stale` (the note becomes `stale`), `note_closed`, `not_a_proposal` */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -22583,7 +22583,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `note_stale` (la note passe à `stale`), `note_closed`, `not_a_proposal` */
+            /** @description `note_stale` (the note becomes `stale`), `note_closed`, `not_a_proposal` */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -22643,7 +22643,7 @@ export interface operations {
                     "application/json": components["schemas"]["PreferencesOut"];
                 };
             };
-            /** @description `mcp_prefs_forbidden` : jamais par le MCP */
+            /** @description `mcp_prefs_forbidden`: never through MCP */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -22750,7 +22750,7 @@ export interface operations {
                     "application/json": components["schemas"]["IdeSessionOut"];
                 };
             };
-            /** @description Introuvable (ou pas à moi). */
+            /** @description Not found (or not mine). */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -22788,7 +22788,7 @@ export interface operations {
                     "application/json": components["schemas"]["IdeSessionOut"];
                 };
             };
-            /** @description Introuvable (ou pas à moi). */
+            /** @description Not found (or not mine). */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -23026,7 +23026,7 @@ export interface operations {
                     "application/json": components["schemas"]["IdeSessionOut"];
                 };
             };
-            /** @description `mcp_ide_write_off` : Claude n'y est pas autorisé (interrupteur) ; `mcp_ide_test_file` : un fichier de test de l'exercice */
+            /** @description `mcp_ide_write_off`: Claude is not allowed to (switch); `mcp_ide_test_file`: a test file of the exercise */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -23040,7 +23040,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `stale_base` : un fichier a changé depuis la lecture (`details.files` côté interface) */
+            /** @description `stale_base`: a file changed since it was read (`details.files` on the interface side) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -23317,7 +23317,7 @@ export interface operations {
                     "application/json": components["schemas"]["NoteOut"][];
                 };
             };
-            /** @description Introuvable (ou pas à moi). */
+            /** @description Not found (or not mine). */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -23366,14 +23366,14 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `note_stale` : le fichier a changé depuis la lecture */
+            /** @description `note_stale`: the file changed since it was read */
             409: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            /** @description `note_invalid` : plage, fichier ou empreinte (relire `file_hashes`) */
+            /** @description `note_invalid`: range, file or hash (re-read `file_hashes`) */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -23402,7 +23402,7 @@ export interface operations {
                     "application/json": components["schemas"]["RunOut"][];
                 };
             };
-            /** @description Introuvable (ou pas à moi). */
+            /** @description Not found (or not mine). */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -23451,7 +23451,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `run_in_progress` : une exécution est déjà en cours */
+            /** @description `run_in_progress`: a run is already in progress */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -23465,7 +23465,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `sandbox_unavailable` : le bac à sable est arrêté */
+            /** @description `sandbox_unavailable`: the sandbox is stopped */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -23540,7 +23540,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Déclencheur inconnu, ou question vide */
+            /** @description Unknown trigger, or empty question */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -23695,7 +23695,7 @@ export interface operations {
                     "application/json": components["schemas"]["UsageOut"];
                 };
             };
-            /** @description Introuvable (ou pas à moi). */
+            /** @description Not found (or not mine). */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -24027,7 +24027,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `interview_in_progress` (`details.interview_id` : l'entretien ouvert), `profile_required` (aucun profil maître validé), `radar_salary_missing` (pas de montant annuel brut pour le scénario salarial) */
+            /** @description `interview_in_progress` (`details.interview_id`: the open interview), `profile_required` (no validated master profile), `radar_salary_missing` (no gross annual amount for the salary scenario) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -24465,7 +24465,7 @@ export interface operations {
                     "application/json": components["schemas"]["LessonOut"];
                 };
             };
-            /** @description Brouillon soumis à la vérification. */
+            /** @description Draft submitted for verification. */
             202: {
                 headers: {
                     [name: string]: unknown;
@@ -24481,7 +24481,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `lesson_not_ready` ou `lesson_generating` */
+            /** @description `lesson_not_ready` or `lesson_generating` */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -26372,7 +26372,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `lesson_exists`, `lesson_generating`, `module_skipped` ou `module_without_lesson` */
+            /** @description `lesson_exists`, `lesson_generating`, `module_skipped` or `module_without_lesson` */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -26401,7 +26401,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Quiz déjà prêt. */
+            /** @description Quiz already ready. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -28520,7 +28520,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `project_exists` ou `module_skipped` */
+            /** @description `project_exists` or `module_skipped` */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -28607,7 +28607,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `project_not_editable` : le projet est rendu, évalué ou validé */
+            /** @description `project_not_editable`: the project is submitted, reviewed or validated */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -28704,7 +28704,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `project_not_validated`, `drafts_present` (le projet a déjà ses brouillons) ou `review_in_progress` (`details.session_id`) */
+            /** @description `project_not_validated`, `drafts_present` (the project already has its drafts) or `review_in_progress` (`details.session_id`) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -28720,7 +28720,7 @@ export interface operations {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
-            /** @description `drafts_unavailable` : le lancement est refusé, rien n'est changé */
+            /** @description `drafts_unavailable`: the launch is refused, nothing changes */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -28876,7 +28876,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `project_not_validated`, `entry_already_added`, `profile_required`, `profile_draft_pending` ou `profile_projects_full` */
+            /** @description `project_not_validated`, `entry_already_added`, `profile_required`, `profile_draft_pending` or `profile_projects_full` */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -28919,7 +28919,7 @@ export interface operations {
                     "image/webp": string;
                 };
             };
-            /** @description `project_not_found` ou `screenshot_not_found` */
+            /** @description `project_not_found` or `screenshot_not_found` */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -28968,14 +28968,14 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `project_not_ready` (énoncé absent), `review_in_progress` (`details.session_id`) ou `project_validated` */
+            /** @description `project_not_ready` (no brief), `review_in_progress` (`details.session_id`) or `project_validated` */
             409: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            /** @description `file_too_large` : une capture dépasse 5 Mo, ou le corps 26 Mo */
+            /** @description `file_too_large`: a screenshot exceeds 5 MB, or the body 26 MB */
             413: {
                 headers: {
                     [name: string]: unknown;
@@ -28989,7 +28989,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `review_unavailable` : le rendu n'est pas gardé */
+            /** @description `review_unavailable`: the submission is not kept */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -29261,7 +29261,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `quiz_exists`, `quiz_generating` ou `module_skipped` */
+            /** @description `quiz_exists`, `quiz_generating` or `module_skipped` */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -29490,7 +29490,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `quiz_not_ready`, `quiz_has_attempts` ou `quiz_full` */
+            /** @description `quiz_not_ready`, `quiz_has_attempts` or `quiz_full` */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -29533,14 +29533,14 @@ export interface operations {
                     "application/json": components["schemas"]["QuizOut"];
                 };
             };
-            /** @description `quiz_not_found` ou `question_not_found` */
+            /** @description `quiz_not_found` or `question_not_found` */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            /** @description `quiz_not_ready` ou `quiz_has_attempts` */
+            /** @description `quiz_not_ready` or `quiz_has_attempts` */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -30230,7 +30230,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `reminder_closed` : la relance est déjà faite ou ignorée */
+            /** @description `reminder_closed`: the follow-up is already done or ignored */
             409: {
                 headers: {
                     [name: string]: unknown;

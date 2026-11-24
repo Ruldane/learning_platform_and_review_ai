@@ -20,7 +20,7 @@ export function PostingCvList({ cvs }: { cvs: PostingCv[] }) {
             <a href={cv.pdfUrl} download className={buttonVariants({ variant: "outline" })}>
               {t("gap.posting.cvDownload", {
                 number: cv.number,
-                date: new Date(cv.createdAt).toLocaleDateString("fr-FR"),
+                date: new Date(cv.createdAt).toLocaleDateString("en-GB"),
               })}
             </a>
           </li>

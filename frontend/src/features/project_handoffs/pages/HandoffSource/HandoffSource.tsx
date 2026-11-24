@@ -2,7 +2,7 @@ import { Link } from "react-router";
 import type { components } from "@/shared/api/schema";
 import { t } from "@/shared/i18n/t";
 
-const dateFormat = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" });
+const dateFormat = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" });
 
 type Source = components["schemas"]["ProjectHandoffSource"];
 

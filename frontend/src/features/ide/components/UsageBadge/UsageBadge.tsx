@@ -5,7 +5,7 @@ interface UsageBadgeProps {
   usage: UsageView;
 }
 
-const NUMBER = new Intl.NumberFormat("fr-FR");
+const NUMBER = new Intl.NumberFormat("en-GB");
 
 /**
  * Ce que le professeur a consommé : jetons de la séance et du jour face à leurs plafonds. Le mode

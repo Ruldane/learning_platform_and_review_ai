@@ -3,7 +3,7 @@ import { t } from "@/shared/i18n/t";
 import type { ComparisonView, OfferFactsView } from "./components/viewTypes";
 
 type Result = components["schemas"]["OfferComparisonResult"];
-const numbers = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 });
+const numbers = new Intl.NumberFormat("en-GB", { maximumFractionDigits: 2 });
 const display = (value: number | null) => value === null ? t("offerComparison.notScored") : numbers.format(value);
 const criterion = (key: Result["scored_criteria"][number]) => t(`offerComparison.criterion.${key}`);
 
