@@ -6,7 +6,7 @@ import { PostingAnalysisCard } from "./PostingAnalysisCard";
 const analysis: PostingAnalysisView = {
   title: "Développeuse front",
   company: "Société Fictive",
-  level: "confirme",
+  level: "mid_level",
   location: "Lyon",
   remote: "2 jours par semaine",
   requirements: [
@@ -46,7 +46,7 @@ describe("PostingAnalysisCard", () => {
           company: null,
           location: null,
           remote: null,
-          level: "inconnu",
+          level: "unknown",
           eliminatory: [],
           tools: [],
           keywords: [],

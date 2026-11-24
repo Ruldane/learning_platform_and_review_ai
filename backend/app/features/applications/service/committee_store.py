@@ -68,7 +68,7 @@ def _analysis(posting: JobPosting, application: Application | None) -> PostingAn
         is_job_posting=True,
         title=(posting.title or DEFAULT_TITLE).ljust(2, "."),
         company=posting.company,
-        level="inconnu",
+        level="unknown",
         language=text_language(posting.text),
     )
 

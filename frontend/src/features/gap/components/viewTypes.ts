@@ -53,7 +53,7 @@ export interface MissingSkillView {
 export interface PostingAnalysisView {
   title: string;
   company: string | null;
-  /** `junior`, `confirme`, `senior`, `lead` ou `inconnu` ; toute autre valeur est rendue telle quelle. */
+  /** Seniority code from the analysis. Unknown codes use the unspecified label. */
   level: string;
   location: string | null;
   remote: string | null;

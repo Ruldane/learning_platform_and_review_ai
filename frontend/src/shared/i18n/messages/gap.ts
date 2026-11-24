@@ -27,7 +27,7 @@ export const gap = {
     company: "Company: {company}",
     location: "Location: {location}",
     remote: "Remote work: {remote}",
-    level: { junior: "Junior", confirme: "Mid-level", senior: "Senior", lead: "Lead" },
+    level: { junior: "Junior", mid_level: "Mid-level", senior: "Senior", lead: "Lead" },
     levelUnknown: "Level not specified",
     levelLabel: "Level: {level}",
     requirements: "Requirements",

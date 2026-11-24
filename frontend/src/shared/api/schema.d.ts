@@ -13288,7 +13288,7 @@ export interface components {
              * Level
              * @enum {string}
              */
-            level: "junior" | "confirme" | "senior" | "lead" | "inconnu";
+            level: "junior" | "mid_level" | "senior" | "lead" | "unknown";
             /** Location */
             location: string | null;
             /** Remote */
@@ -13335,10 +13335,10 @@ export interface components {
             language: string;
             /**
              * Level
-             * @default inconnu
+             * @default unknown
              * @enum {string}
              */
-            level: "junior" | "confirme" | "senior" | "lead" | "inconnu";
+            level: "junior" | "mid_level" | "senior" | "lead" | "unknown";
             /** Location */
             location?: string | null;
             /** Remote */
@@ -13423,7 +13423,7 @@ export interface components {
             /** Language */
             language?: string | null;
             /** Level */
-            level?: ("junior" | "confirme" | "senior" | "lead" | "inconnu") | null;
+            level?: ("junior" | "mid_level" | "senior" | "lead" | "unknown") | null;
             /** Location */
             location?: string | null;
             /** Remote */

@@ -14,9 +14,9 @@ Answer:
 - `is_job_posting`: false if this text is not a job posting (article, login page, CV,
   meaningless text) or if it is an incomplete posting (a title with no duties or requirements:
   do not guess its content); in that case, return only `title` ("Untitled" by default), `level`
-  "inconnu", `language` and empty lists;
+  "unknown", `language` and empty lists;
 - `title`: the job title as written in the posting; `company`: the company, otherwise `null`;
-- `level`: "junior", "confirme", "senior", "lead" or "inconnu" (unknown);
+- `level`: "junior", "mid_level", "senior", "lead" or "unknown";
 - `location`, `remote` (remote work: "total", "partiel", "non"…), otherwise `null`;
 - `language`: the posting's language, in two letters ("fr", "en");
 - `requirements`: the posting's requirements (40 at most), each with `text` (a short sentence),

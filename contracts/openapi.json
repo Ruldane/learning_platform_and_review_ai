@@ -17640,10 +17640,10 @@
           "level": {
             "enum": [
               "junior",
-              "confirme",
+              "mid_level",
               "senior",
               "lead",
-              "inconnu"
+              "unknown"
             ],
             "title": "Level",
             "type": "string"
@@ -17793,13 +17793,13 @@
             "type": "string"
           },
           "level": {
-            "default": "inconnu",
+            "default": "unknown",
             "enum": [
               "junior",
-              "confirme",
+              "mid_level",
               "senior",
               "lead",
-              "inconnu"
+              "unknown"
             ],
             "title": "Level",
             "type": "string"
@@ -18130,10 +18130,10 @@
               {
                 "enum": [
                   "junior",
-                  "confirme",
+                  "mid_level",
                   "senior",
                   "lead",
-                  "inconnu"
+                  "unknown"
                 ],
                 "type": "string"
               },

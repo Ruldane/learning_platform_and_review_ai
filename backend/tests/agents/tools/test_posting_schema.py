@@ -24,10 +24,15 @@ def analysis(**kwargs: Any) -> PostingAnalysis:
     fields: dict[str, Any] = {
         "is_job_posting": True,
         "title": "AI Product Engineer",
-        "level": "confirme",
+        "level": "mid_level",
         "language": "fr",
     }
     return PostingAnalysis(**(fields | kwargs))
+
+
+@pytest.mark.parametrize(("old", "new"), [("confirme", "mid_level"), ("inconnu", "unknown")])
+def test_legacy_checkpoint_levels_read_as_english_codes(old: str, new: str) -> None:
+    assert analysis(level=old).model_dump(mode="json")["level"] == new
 
 
 def test_keyword_must_appear_verbatim() -> None:

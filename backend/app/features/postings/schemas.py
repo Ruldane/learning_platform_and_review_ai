@@ -6,6 +6,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
+from app.agents.tools.posting_schema import PostingLevel
 from app.db.models.postings import PostingSource, PostingStatus
 
 URL_MAX = 2048
@@ -62,7 +63,7 @@ class PostingAnalysisOut(BaseModel):
 
     title: str
     company: str | None
-    level: Literal["junior", "confirme", "senior", "lead", "inconnu"]
+    level: PostingLevel
     location: str | None
     remote: str | None
     language: str
@@ -143,7 +144,7 @@ class PostingAnalysisIn(BaseModel):
 
     title: str = Field(min_length=2, max_length=200)
     company: str | None = Field(default=None, max_length=200)
-    level: Literal["junior", "confirme", "senior", "lead", "inconnu"] = "inconnu"
+    level: PostingLevel = "unknown"
     location: str | None = Field(default=None, max_length=120)
     remote: str | None = Field(default=None, max_length=60)
     language: str = Field(default="fr", pattern=r"^[a-z]{2}$")
@@ -169,7 +170,7 @@ class PostingPatch(BaseModel):
 
     title: str | None = Field(default=None, min_length=2, max_length=200)
     company: str | None = Field(default=None, max_length=200)
-    level: Literal["junior", "confirme", "senior", "lead", "inconnu"] | None = None
+    level: PostingLevel | None = None
     location: str | None = Field(default=None, max_length=120)
     remote: str | None = Field(default=None, max_length=60)
     language: str | None = Field(default=None, pattern=r"^[a-z]{2}$")

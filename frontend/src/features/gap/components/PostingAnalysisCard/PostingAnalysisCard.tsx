@@ -9,7 +9,7 @@ interface PostingAnalysisCardProps {
   showTitle?: boolean;
 }
 
-const KNOWN_LEVELS = ["junior", "confirme", "senior", "lead"] as const;
+const KNOWN_LEVELS = ["junior", "mid_level", "senior", "lead"] as const;
 
 function levelText(level: string): string {
   const known = KNOWN_LEVELS.find((key) => key === level);
