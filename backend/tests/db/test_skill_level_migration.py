@@ -19,8 +19,8 @@ OLD_OUTCOME = {"result": {"skills": [["valide", "en_cours"]]}}
 OUTCOME = {"result": {"skills": [["valide", "in_progress"]]}}
 
 
-def _insert(conn: Connection, table: Table, row_id: str, **fields: object) -> None:
-    conn.execute(table.insert().values(id=row_id, user_id="u1", **fields))
+def _insert(conn: Connection, table: Table, record_id: str, **fields: object) -> None:
+    conn.execute(table.insert().values(id=record_id, user_id="u1", **fields))
 
 
 def _seed(conn: Connection) -> None:

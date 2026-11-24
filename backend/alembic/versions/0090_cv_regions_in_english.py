@@ -69,8 +69,9 @@ def _translate(*, reverse: bool) -> None:
         _rename("cv_templates", "score_detail", "$", old, new)
         _rename("cv_templates", "pass_log", "$[[]*].similarity", old, new)
         for snapshot in ("before", "after"):
-            _rename("mcp_changes", snapshot, "$.score_detail", old, new)
-            _rename("mcp_changes", snapshot, "$.pass_log[[]*].similarity", old, new)
+            # SQLite's json_tree quotes keys containing underscores in its paths.
+            _rename("mcp_changes", snapshot, '$."score_detail"', old, new)
+            _rename("mcp_changes", snapshot, '$."pass_log"[[]*].similarity', old, new)
 
 
 def upgrade() -> None:
