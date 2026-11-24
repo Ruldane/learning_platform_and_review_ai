@@ -9,7 +9,7 @@ import { useGoal } from "../../hooks/useGoal";
 import { CouncilLayout } from "./CouncilLayout";
 
 /**
- * Le Conseil d'un objectif (`/apprendre/objectifs/:goalId/conseil`). L'objectif donne la session
+ * Le Conseil d'un objectif (`/learn/goals/:goalId/council`). L'objectif donne la session
  * du Conseil : recharger la page rejoint la même session, le flux rejoue les événements.
  * `createSocket` ne sert qu'aux tests (faux WebSocket).
  */
@@ -54,7 +54,7 @@ export function CouncilPage({ createSocket }: { createSocket?: SocketFactory }) 
         />
       ) : null}
       {goal.isError || (goal.data && !goal.data.council_session_id) ? (
-        <Link to="/apprendre/objectifs" className="self-start text-sm underline">
+        <Link to="/learn/goals" className="self-start text-sm underline">
           {t("learning.council.goalsLink")}
         </Link>
       ) : null}

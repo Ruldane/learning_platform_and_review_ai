@@ -22,7 +22,7 @@ export function CommitmentNotices({ notices }: { notices: readonly Notice[] }) {
         <li className="border-l pl-3" key={notice.id}>
           <Link
             className="font-medium underline"
-            to={`/etudier/engagements/${encodeURIComponent(notice.id)}`}
+            to={`/study/commitments/${encodeURIComponent(notice.id)}`}
           >
             {notice.title}
           </Link>

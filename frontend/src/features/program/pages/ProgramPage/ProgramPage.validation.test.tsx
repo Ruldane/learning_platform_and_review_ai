@@ -10,8 +10,8 @@ function setup(initial: Parameters<typeof programApi>[0] = {}) {
   const api = programApi(initial);
   server.use(...api.handlers);
   const view = renderRoutes(
-    [{ path: "/apprendre/programme/:programId", element: <ProgramPage /> }],
-    "/apprendre/programme/p1",
+    [{ path: "/learn/programs/:programId", element: <ProgramPage /> }],
+    "/learn/programs/p1",
   );
   return { ...api, ...view };
 }

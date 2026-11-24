@@ -8,15 +8,15 @@ import { SearchBenchPage } from "./pages/SearchBenchPage";
 export const memoryManifest: FeatureManifest = {
   id: "memory",
   routes: [
-    { path: "memoire", Component: MemoryExplorerPage },
-    { path: "memoire/carte", Component: MemoryMapPage },
-    { path: "memoire/banc", Component: SearchBenchPage },
-    { path: "memoire/documents", Component: DocumentsPage },
+    { path: "memory", Component: MemoryExplorerPage },
+    { path: "memory/map", Component: MemoryMapPage },
+    { path: "memory/search-bench", Component: SearchBenchPage },
+    { path: "memory/documents", Component: DocumentsPage },
   ],
   nav: [
-    { section: "memory", labelKey: "memory.nav.explorer", path: "/memoire", order: 1 },
-    { section: "memory", labelKey: "memory.nav.map", path: "/memoire/carte", order: 2 },
-    { section: "memory", labelKey: "memory.nav.bench", path: "/memoire/banc", order: 3 },
-    { section: "memory", labelKey: "memory.nav.documents", path: "/memoire/documents", order: 4 },
+    { section: "memory", labelKey: "memory.nav.explorer", path: "/memory", order: 1 },
+    { section: "memory", labelKey: "memory.nav.map", path: "/memory/map", order: 2 },
+    { section: "memory", labelKey: "memory.nav.bench", path: "/memory/search-bench", order: 3 },
+    { section: "memory", labelKey: "memory.nav.documents", path: "/memory/documents", order: 4 },
   ],
 };

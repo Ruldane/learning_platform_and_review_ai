@@ -11,10 +11,10 @@ import { BoardContent } from "./BoardContent";
 import { ViewSwitch, type BoardView } from "./ViewSwitch";
 
 /**
- * Le suivi des candidatures (`/candidatures`) : les indicateurs, le tableau de suivi (colonnes par
+ * Le suivi des candidatures (`/applications`) : les indicateurs, le tableau de suivi (colonnes par
  * statut, glisser-déposer ou menu « Déplacer vers… ») ou le tableau trié, au choix. Un déplacement
  * est visible tout de suite ; refusé, la fiche revient dans sa colonne et l'erreur est dite. La fiche
- * s'ouvre dans un tiroir par-dessus (`/candidatures/:applicationId`, l'`Outlet`).
+ * s'ouvre dans un tiroir par-dessus (`/applications/:applicationId`, l'`Outlet`).
  */
 export function BoardPage() {
   const [view, setView] = useState<BoardView>("board");

@@ -14,7 +14,7 @@ const ITEMS: ActivityItemView[] = [
     at: "2026-11-16T11:55:00Z",
     title: "Leçon prête : Les jointures",
     detail: "Module SQL",
-    link: "/apprendre/lecons/l1",
+    link: "/learn/lessons/l1",
   },
   {
     id: "job_failed:x:failed",
@@ -56,7 +56,7 @@ describe("ActivityFeed", () => {
     setup();
     expect(screen.getByRole("link", { name: "Leçon prête : Les jointures" })).toHaveAttribute(
       "href",
-      "/apprendre/lecons/l1",
+      "/learn/lessons/l1",
     );
     expect(screen.getAllByRole("link")).toHaveLength(1);
     expect(screen.getByText("Une tâche planifiée a échoué")).toBeInTheDocument();

@@ -33,11 +33,11 @@ function setup(options: { programs?: unknown[] | Reply; quizzes?: unknown[] | Re
   );
   const router = createMemoryRouter(
     [
-      { path: "/etudier/quiz", element: <QuizIndexPage pollMs={5} /> },
-      { path: "/etudier/quiz/:quizId", element: <p>Page du quiz</p> },
-      { path: "/apprendre/conseil", element: <p>Conseil</p> },
+      { path: "/study/quiz", element: <QuizIndexPage pollMs={5} /> },
+      { path: "/study/quiz/:quizId", element: <p>Page du quiz</p> },
+      { path: "/learn/council", element: <p>Conseil</p> },
     ],
-    { initialEntries: ["/etudier/quiz"] },
+    { initialEntries: ["/study/quiz"] },
   );
   render(<RouterProvider router={router} />, { wrapper: createQueryWrapper() });
   return { router, user: userEvent.setup() };
@@ -73,14 +73,14 @@ describe("QuizIndexPage", () => {
     });
     const { router, user } = setup();
     await user.dblClick(await screen.findByRole("button", { name: "Prepare the quiz: API REST" }));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/etudier/quiz/z1"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/study/quiz/z1"));
     expect(posts).toHaveLength(1);
   });
 
   it("opens a ready quiz", async () => {
     const { router, user } = setup({ quizzes: [row({ quiz_id: "z9", status: "ready" })] });
     await user.click(await screen.findByRole("button", { name: "Take the quiz: API REST" }));
-    expect(router.state.location.pathname).toBe("/etudier/quiz/z9");
+    expect(router.state.location.pathname).toBe("/study/quiz/z9");
   });
 
   it("shows a refused preparation inline and keeps the button", async () => {
@@ -115,7 +115,7 @@ describe("QuizIndexPage", () => {
       await screen.findByRole("heading", { name: "No program yet" }),
     ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Go to the Council" }));
-    expect(router.state.location.pathname).toBe("/apprendre/conseil");
+    expect(router.state.location.pathname).toBe("/learn/council");
   });
 
   it("has an empty state when the program has no module", async () => {

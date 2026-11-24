@@ -5,7 +5,7 @@ import { sourceLabels } from "../../labels";
 
 export function EvidenceCard({ value }: { value: Evidence }) {
   const { kind, resource_id } = value.reference;
-  const path = kind === "quiz" ? "/etudier/quiz/" : "/competences/portfolio/";
+  const path = kind === "quiz" ? "/study/quiz/" : "/skills/portfolio/";
   const recorded = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium" }).format(
     new Date(value.recorded_at),
   );

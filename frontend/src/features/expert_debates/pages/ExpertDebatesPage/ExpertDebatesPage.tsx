@@ -22,7 +22,7 @@ export function ExpertDebatesPage() {
   return (
     <div className="flex max-w-3xl flex-col gap-5">
       {debateId && (
-        <Link to="/etudier/debats" className="self-start text-sm underline underline-offset-2">
+        <Link to="/study/debates" className="self-start text-sm underline underline-offset-2">
           {t("expertDebates.back")}
         </Link>
       )}

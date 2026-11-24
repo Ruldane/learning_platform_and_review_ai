@@ -109,7 +109,7 @@ def make_publish(deps: GraphDeps) -> Node:
                 "artifact_id": done.lesson_id,
                 "kind": "lesson",
                 "title": brief.title,
-                "url": f"/apprendre/lecons/{done.lesson_id}",
+                "url": f"/learn/lessons/{done.lesson_id}",
             },
             agent="writer",
         )

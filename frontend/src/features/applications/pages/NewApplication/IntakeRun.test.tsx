@@ -38,7 +38,7 @@ async function setup(stayMounted = false) {
       ? [{ path: "*", element: intake }]
       : [
           { path: "/", element: intake },
-          { path: "/candidatures/:applicationId", element: <Landing /> },
+          { path: "/applications/:applicationId", element: <Landing /> },
         ],
     { initialEntries: ["/"] },
   );
@@ -52,15 +52,15 @@ describe("IntakeRun", () => {
 
   it("refreshes the application list when the session announces the application", async () => {
     const { client, router, stream, e } = await setup();
-    stream.push(e.artifactReady("application", "a1", "/candidatures/a1"));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/candidatures/a1"));
+    stream.push(e.artifactReady("application", "a1", "/applications/a1"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/applications/a1"));
     expect(client.getQueryState(["applications", "list"])?.isInvalidated).toBe(true);
     expect(await screen.findByText("application opened")).toBeVisible();
   });
 
   it("passes other applications at the same company to the open application", async () => {
     const { router, stream, e } = await setup();
-    const ready = e.artifactReady("application", "a1", "/candidatures/a1");
+    const ready = e.artifactReady("application", "a1", "/applications/a1");
     stream.push({
       ...ready,
       payload: {
@@ -77,7 +77,7 @@ describe("IntakeRun", () => {
         ],
       },
     } as typeof ready);
-    await waitFor(() => expect(router.state.location.pathname).toBe("/candidatures/a1"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/applications/a1"));
     expect(
       await screen.findByText(/you applied for the Autre poste role at Acme 3 days ago/),
     ).toBeVisible();
@@ -86,8 +86,8 @@ describe("IntakeRun", () => {
   it("reads the applications once per announcing event, however many events follow", async () => {
     const { client, router, stream, e } = await setup(true);
     const invalidate = vi.spyOn(client, "invalidateQueries");
-    stream.push(e.artifactReady("application", "a1", "/candidatures/a1"));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/candidatures/a1"));
+    stream.push(e.artifactReady("application", "a1", "/applications/a1"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/applications/a1"));
     expect(invalidate).toHaveBeenCalledTimes(1);
     // Later session events still refer to the same announced application.
     stream.push(e.cost());

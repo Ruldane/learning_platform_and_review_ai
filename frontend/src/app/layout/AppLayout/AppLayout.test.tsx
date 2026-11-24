@@ -56,7 +56,7 @@ describe("AppLayout", () => {
     const panel = screen.getByRole("complementary", { name: "Landmarks and information" });
     expect(within(panel).getByRole("link", { name: "Tremplin" })).toHaveAttribute("href", "/");
     const nav = within(banner).getByRole("navigation", { name: "Main navigation" });
-    expect(within(nav).getByRole("link", { name: "Learn" })).toHaveAttribute("href", "/etudier");
+    expect(within(nav).getByRole("link", { name: "Learn" })).toHaveAttribute("href", "/learn");
     expect(within(nav).getByRole("link", { name: "Home" })).toHaveAttribute(
       "aria-current",
       "page",

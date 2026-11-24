@@ -19,8 +19,8 @@ const capturing = { draft: null, validated: null, session_id: "s1", source_docum
 
 function setup(api: Parameters<typeof renderCv>[3] = {}) {
   return renderCv(
-    "/carriere/profil",
-    "/carriere/profil",
+    "/career/profile",
+    "/career/profile",
     (createSocket) => <ProfilePage pollMs={40} createSocket={createSocket} />,
     api,
   );

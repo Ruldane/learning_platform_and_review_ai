@@ -8,7 +8,7 @@ import { QueryPanel } from "./QueryPanel";
 import { SkillDetailSlot } from "./SkillDetailSlot";
 
 /** Les objectifs : c'est un objectif (et son programme) qui remplit la carte. */
-const GOALS_PATH = "/apprendre/objectifs";
+const GOALS_PATH = "/learn/goals";
 
 /** Rend le focus au nœud de la compétence refermée (le clavier retrouve sa place dans le graphe). */
 function focusNode(root: HTMLElement | null, skillId: string) {

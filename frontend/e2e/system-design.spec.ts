@@ -5,7 +5,7 @@ test.skip(process.env.E2E_SYSTEM_DESIGN !== "1", "Requires the system design tes
 
 test("draws, submits the saved diagram and revisits the review", async ({ page, request }) => {
   await finishFirstLaunch(request);
-  await page.goto("/candidatures/entretien");
+  await page.goto("/applications/interview");
   await page.getByRole("link", { name: "System design practice" }).press("Enter");
   await page.getByRole("button", { name: "Open an architecture topic" }).press("Enter");
   await expect(

@@ -21,12 +21,12 @@ from app.mcp.registry import Registry
 router = APIRouter()
 _SECTIONS = {
     "home": ("Home", "/"),
-    "learn": ("Study", "/etudier"),
-    "code": ("Code", "/coder"),
-    "memory": ("Brain", "/cerveau"),
-    "career": ("Career", "/carriere"),
-    "lab": ("Lab", "/labo"),
-    "settings": ("Settings", "/reglages"),
+    "learn": ("Study", "/learn"),
+    "code": ("Code", "/coding"),
+    "memory": ("Brain", "/brain"),
+    "career": ("Career", "/career"),
+    "lab": ("Lab", "/lab"),
+    "settings": ("Settings", "/settings"),
 }
 _WITH_MODELS = frozenset(
     {

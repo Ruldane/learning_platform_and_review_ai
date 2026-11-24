@@ -29,7 +29,7 @@ export function ReadingDefinition({
       </p>
       <p id="reading-definition-text">{text}</p>
       {lessonId ? (
-        <Link className="underline" to={`/apprendre/lecons/${lessonId}`}>
+        <Link className="underline" to={`/learn/lessons/${lessonId}`}>
           {t("reading.glossary.chapter", { chapter })}
         </Link>
       ) : (

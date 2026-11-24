@@ -40,7 +40,7 @@ async def test_radar_reads_extracts_and_finalizes(
         "artifact_id": RUN_ID,
         "kind": "radar",
         "title": "Radar du marché",
-        "url": f"/carriere/radar/{RUN_ID}",
+        "url": f"/career/radar/{RUN_ID}",
     }
     assert await run.said() == [
         "10 pages lues : 10 offres, 0 bloquée.",

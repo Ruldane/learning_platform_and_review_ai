@@ -14,9 +14,9 @@ import { ExplanationTurn } from "./ExplanationTurn";
 const openStates = new Set(["running", "waiting_user", "paused"]);
 
 function backPath(entry: FeynmanEntry) {
-  if (entry.kind === "lesson") return `/apprendre/lecons/${encodeURIComponent(entry.id)}`;
+  if (entry.kind === "lesson") return `/learn/lessons/${encodeURIComponent(entry.id)}`;
   if (entry.kind === "ide") return `/code/${encodeURIComponent(entry.id)}`;
-  return "/competences";
+  return "/skills";
 }
 
 export function FeynmanThread({ entry }: { entry: FeynmanEntry }) {

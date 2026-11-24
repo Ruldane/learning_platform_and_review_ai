@@ -40,21 +40,21 @@ from app.features.skills.schemas import (
     SkillNodeOut,
 )
 
-STUDY_URL = "/etudier/session"
-QUIZ_URL = "/etudier/quiz"
-REVIEW_URL = "/etudier/revisions"
-JOURNAL_URL = "/etudier/journal"
+STUDY_URL = "/study/session"
+QUIZ_URL = "/study/quiz"
+REVIEW_URL = "/study/reviews"
+JOURNAL_URL = "/study/journal"
 POSTING_PAGE = "/career/postings/"
 # Page de chaque genre de preuve qui désigne un objet (`ref_id`) ; « capture » mène au journal.
 _EVIDENCE_PAGES: dict[EvidenceKind, str] = {
-    "lesson": "/apprendre/lecons/",
-    "quiz": "/etudier/quiz/",
-    "study": "/etudier/session/",
-    "program": "/apprendre/programme/",
-    "github": "/competences/portfolio/",
-    "system_design": "/candidatures/system-design/",
-    "contribution": "/competences/contributions/",
-    "feynman": "/etudier/explique-moi/",
+    "lesson": "/learn/lessons/",
+    "quiz": "/study/quiz/",
+    "study": "/study/session/",
+    "program": "/learn/programs/",
+    "github": "/skills/portfolio/",
+    "system_design": "/applications/system-design/",
+    "contribution": "/skills/contributions/",
+    "feynman": "/study/explain/",
 }
 
 
@@ -141,7 +141,7 @@ def next_action(level: SkillLevel | None, skill: str, facts: ActionFacts) -> Nex
     prouvée → rien. Sans module qui l'enseigne, le libellé nomme la compétence."""
     subject = facts.module or skill
     if level is None or level == "declared":
-        url = f"{STUDY_URL}?lecon={quote(facts.lesson_id, safe='')}" if facts.lesson_id else None
+        url = f"{STUDY_URL}?lesson={quote(facts.lesson_id, safe='')}" if facts.lesson_id else None
         return NextActionOut(kind="study", label=f"Étudier « {subject} »", url=url or STUDY_URL)
     if level == "in_progress":
         url = f"{QUIZ_URL}/{quote(facts.quiz_id, safe='')}" if facts.quiz_id else QUIZ_URL

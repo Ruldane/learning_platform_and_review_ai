@@ -23,7 +23,7 @@ export function LabReadiness({
       <p className="text-sm font-medium text-muted-foreground">{t(`navigation.${status}`)}</p>
       {needsAudio && <p className="text-sm">{t("navigation.podcastAudioKey")}</p>}
       {(needsAudio || missing.includes("models")) && (
-        <Link to="/reglages/modeles" className="text-sm underline">
+        <Link to="/settings/models" className="text-sm underline">
           {t("navigation.modelsLink")}
         </Link>
       )}

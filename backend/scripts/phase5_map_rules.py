@@ -96,9 +96,9 @@ def check_detail(
     """La fiche de la compétence cite la session (si elle a été étudiée) et le quiz (s'il est
     réussi) par leur adresse."""
     urls = {(e["kind"], e["url"]) for e in detail["evidence"]}
-    if study_id and ("study", f"/etudier/session/{study_id}") not in urls:
+    if study_id and ("study", f"/study/session/{study_id}") not in urls:
         raise CheckFailed(step, f"Preuve de la session {study_id} absente de la compétence.")
-    if quiz_id and ("quiz", f"/etudier/quiz/{quiz_id}") not in urls:
+    if quiz_id and ("quiz", f"/study/quiz/{quiz_id}") not in urls:
         raise CheckFailed(step, f"Preuve du quiz {quiz_id} absente de la compétence.")
 
 

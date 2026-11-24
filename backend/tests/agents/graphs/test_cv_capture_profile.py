@@ -54,7 +54,7 @@ async def test_profile_capture_extracts_and_saves_draft(
         "artifact_id": "profil-v1",
         "kind": "master_profile",
         "title": "Profil maître",
-        "url": "/carriere/profil",
+        "url": "/career/profile",
     }
 
 

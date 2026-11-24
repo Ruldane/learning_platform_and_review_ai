@@ -3,9 +3,9 @@ import { ProjectHandoffsPage } from "./pages/ProjectHandoffsPage";
 
 export const projectHandoffsManifest: FeatureManifest = {
   id: "project_handoffs",
-  routes: [{ path: "carriere/transmission-projet", Component: ProjectHandoffsPage }],
+  routes: [{ path: "career/project-handoffs", Component: ProjectHandoffsPage }],
   nav: [{
     section: "career", labelKey: "projectHandoffs.title",
-    path: "/carriere/transmission-projet", order: 6.3,
+    path: "/career/project-handoffs", order: 6.3,
   }],
 };

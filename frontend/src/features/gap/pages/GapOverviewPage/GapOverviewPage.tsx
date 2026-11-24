@@ -10,7 +10,7 @@ import { TopMissingList } from "../../components/TopMissingList";
 import { useTopMissing } from "../../hooks/useTopMissing";
 import { toMissingViews } from "../../toView";
 
-const SKILLS_PATH = "/competences";
+const SKILLS_PATH = "/skills";
 const POSTINGS_PATH = "/career/postings";
 
 /**

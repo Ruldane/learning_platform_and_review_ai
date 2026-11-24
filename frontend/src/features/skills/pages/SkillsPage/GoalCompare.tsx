@@ -21,7 +21,7 @@ export function GoalCompare() {
         description={t("skills.compareNone.description")}
         action={{
           label: t("skills.compareNone.action"),
-          onClick: () => void navigate("/apprendre/objectifs"),
+          onClick: () => void navigate("/learn/goals"),
         }}
       />
     );
@@ -37,7 +37,7 @@ export function GoalCompare() {
             targetLabel={view.targetLabel}
             emptyAction={{
               label: t("skills.compare.emptyAction"),
-              onClick: () => void navigate("/apprendre/objectifs"),
+              onClick: () => void navigate("/learn/goals"),
             }}
           />
         );

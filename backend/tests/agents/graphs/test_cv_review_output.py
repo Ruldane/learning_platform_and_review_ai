@@ -26,7 +26,7 @@ async def test_output_loop_report_then_pdf_then_finish(
             "artifact_id": f"rapport-{REVIEW_ID}",
             "kind": "cv_report",
             "title": "Rapport de la revue du CV",
-            "url": f"/carriere/cv/revues/{REVIEW_ID}#rapport",
+            "url": f"/career/cv/reviews/{REVIEW_ID}#rapport",
         },
         {
             "artifact_id": "v1",

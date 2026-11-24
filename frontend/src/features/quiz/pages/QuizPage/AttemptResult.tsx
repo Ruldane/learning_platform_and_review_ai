@@ -30,7 +30,7 @@ export function AttemptResult({ result, refreshing, onBack }: AttemptResultProps
             {t("quiz.page.again")}
           </Button>
         )}
-        <Link to="/etudier/quiz" className={buttonVariants({ variant: "outline" })}>
+        <Link to="/study/quiz" className={buttonVariants({ variant: "outline" })}>
           {t("quiz.page.allQuizzes")}
         </Link>
       </div>

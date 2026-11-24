@@ -13,7 +13,7 @@ import { CommitteeWorkspace } from "./CommitteeWorkspace";
 const isMissing = (error: unknown) => error instanceof ApiError && error.status === 404;
 
 /**
- * Le comité de recrutement simulé d'une candidature (`/candidatures/:applicationId/comite`) : le
+ * Le comité de recrutement simulé d'une candidature (`/applications/:applicationId/committee`) : le
  * débat à gauche, les votes, le verdict et l'avant / après à droite, sous le bandeau « Simulation,
  * pas une prédiction ». `createSocket` ne sert qu'aux tests.
  */

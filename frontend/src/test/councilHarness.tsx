@@ -9,7 +9,7 @@ import { createFakeSocketServer, type FakeSocketServer } from "./fakeSocket";
 import { createQueryWrapper } from "./queryWrapper";
 import { server } from "./server";
 
-const ROUTE = "/apprendre/objectifs/:goalId/conseil";
+const ROUTE = "/learn/goals/:goalId/council";
 
 /**
  * Monte la page du Conseil (`makePage` reçoit la fabrique de faux sockets) sur l'objectif `g1` avec
@@ -24,7 +24,7 @@ export function renderCouncil(
   const council = councilApi(api);
   server.use(...council.handlers);
   const router = createMemoryRouter([{ path: ROUTE, element: makePage(sockets.factory) }], {
-    initialEntries: ["/apprendre/objectifs/g1/conseil"],
+    initialEntries: ["/learn/goals/g1/council"],
   });
   render(<RouterProvider router={router} />, { wrapper: createQueryWrapper() });
   return { fake: sockets, state: council.state, user: userEvent.setup() };

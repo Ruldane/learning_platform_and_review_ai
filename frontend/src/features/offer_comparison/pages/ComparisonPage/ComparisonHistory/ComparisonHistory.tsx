@@ -17,7 +17,7 @@ export function ComparisonHistory() {
       {list.data?.length ? <ul className="grid gap-2">
         {list.data.map((row) => (
           <li key={row.id} className="rounded border bg-card p-3">
-            <Link to={`/carriere/comparer-les-offres/${row.id}`} className="underline">
+            <Link to={`/career/offer-comparison/${row.id}`} className="underline">
               {row.first.title ?? t("offerComparison.unknownTitle")} · {row.second.title ?? t("offerComparison.unknownTitle")}
             </Link>
           </li>

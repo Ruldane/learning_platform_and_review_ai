@@ -28,7 +28,7 @@ export function IncidentDetail({ incident, busy, onAct }: IncidentDetailProps) {
   }));
   return (
     <>
-      <Link to="/astreinte" className="self-start text-sm underline underline-offset-2">
+      <Link to="/on-call" className="self-start text-sm underline underline-offset-2">
         {t("oncall.back")}
       </Link>
       <h1 className="text-2xl font-semibold">{incident.title}</h1>

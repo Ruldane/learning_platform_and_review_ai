@@ -13,7 +13,7 @@ import { OfferChooser } from "../OfferChooser";
 
 export function MissionsPage() {
   const [params, changeParams] = useSearchParams();
-  const posting = params.get("offre");
+  const posting = params.get("posting") ?? params.get("offre");
   const heading = useRef<HTMLHeadingElement>(null);
   const history = useQuery({
     queryKey: missionsKey,

@@ -37,8 +37,8 @@ it("demande une confirmation explicite avant de préparer le lien GitHub", async
     }),
   );
   const { user } = renderRoutes(
-    [{ path: "/competences/contributions/:id", element: <DossierPage /> }],
-    "/competences/contributions/d1",
+    [{ path: "/skills/contributions/:id", element: <DossierPage /> }],
+    "/skills/contributions/d1",
   );
   await user.type(await screen.findByLabelText("Compte GitHub"), "camille");
   await user.type(screen.getByLabelText("Branche à proposer"), "tests");

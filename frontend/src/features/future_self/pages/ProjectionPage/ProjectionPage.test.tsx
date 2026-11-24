@@ -42,10 +42,10 @@ const data: components["schemas"]["FutureSelfOut"] = {
 function renderProjection() {
   return renderRoutes(
     [
-      { path: "/carriere/futur", Component: ProjectionPage },
-      { path: "/apprendre/lecons/l1", element: <h1>Leçon de recette</h1> },
+      { path: "/career/future-self", Component: ProjectionPage },
+      { path: "/learn/lessons/l1", element: <h1>Leçon de recette</h1> },
     ],
-    "/carriere/futur",
+    "/career/future-self",
   );
 }
 
@@ -88,7 +88,7 @@ it("simule une autre disponibilité et ouvre le chapitre au clavier", async () =
   expect(requests.at(-1)?.get("alternative_weekly_minutes")).toBe("240");
   expect(screen.getByRole("link", { name: "Proposer une replanification" })).toHaveAttribute(
     "href",
-    "/apprendre/programme/p1/replanification",
+    "/learn/programs/p1/replan",
   );
 
   const chapter = screen.getByRole("link", { name: "Recherche augmentée" });
@@ -97,7 +97,7 @@ it("simule une autre disponibilité et ouvre le chapitre au clavier", async () =
   }
   expect(chapter).toHaveFocus();
   await user.keyboard("{Enter}");
-  expect(router.state.location.pathname).toBe("/apprendre/lecons/l1");
+  expect(router.state.location.pathname).toBe("/learn/lessons/l1");
   expect(await screen.findByRole("heading", { name: "Leçon de recette" })).toBeVisible();
 });
 

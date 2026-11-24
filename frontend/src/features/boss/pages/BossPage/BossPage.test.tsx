@@ -7,7 +7,7 @@ import { server } from "@/test/server";
 import { BossPage } from "./BossPage";
 
 const program = "programme-test";
-const route = `/apprendre/programme/${program}/boss`;
+const route = `/learn/programs/${program}/boss`;
 const path = `${API}/boss/programs/${program}`;
 
 it("reprend le besoin modifié et permet d’ouvrir le projet remis", async () => {
@@ -37,7 +37,7 @@ it("reprend le besoin modifié et permet d’ouvrir le projet remis", async () =
     ),
   );
 
-  renderRoutes([{ path: "/apprendre/programme/:programId/boss", element: <BossPage /> }], route);
+  renderRoutes([{ path: "/learn/programs/:programId/boss", element: <BossPage /> }], route);
   expect(
     await screen.findByRole("heading", { name: "Changement demandé par le client" }),
   ).toBeVisible();

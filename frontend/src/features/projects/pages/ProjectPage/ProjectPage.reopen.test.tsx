@@ -16,7 +16,7 @@ const setup = (api: Parameters<typeof renderProjects>[1] = {}) =>
       project: <ProjectPage createSocket={createSocket} />,
     }),
     api,
-    "/competences/portfolio/p1",
+    "/skills/portfolio/p1",
   );
 
 const validated = (over: Record<string, unknown> = {}) =>

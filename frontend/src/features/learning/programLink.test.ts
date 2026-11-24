@@ -11,16 +11,16 @@ describe("programLink", () => {
   it("follows the artifact of kind « program »", () => {
     const e = councilEvents("pr1");
     const events = [
-      e.artifactReady("lesson", "l1", "/apprendre/lecons/l1"),
-      e.artifactReady("program", "pr9", "/apprendre/programme/pr9"),
+      e.artifactReady("lesson", "l1", "/learn/lessons/l1"),
+      e.artifactReady("program", "pr9", "/learn/programs/pr9"),
     ];
-    expect(programLink(events, null)).toBe("/apprendre/programme/pr9");
+    expect(programLink(events, null)).toBe("/learn/programs/pr9");
   });
 
   it("builds the link from the artifact id when the event has no address", () => {
     const e = councilEvents("pr1");
     expect(programLink([e.artifactReady("program", "pr9", null)], null)).toBe(
-      "/apprendre/programme/pr9",
+      "/learn/programs/pr9",
     );
   });
 
@@ -29,12 +29,12 @@ describe("programLink", () => {
     (url) => {
       const e = councilEvents("pr1");
       expect(programLink([e.artifactReady("program", "pr9", url)], null)).toBe(
-        "/apprendre/programme/pr9",
+        "/learn/programs/pr9",
       );
     },
   );
 
   it("falls back to the program known by the goal, after a reload", () => {
-    expect(programLink([], "pr3")).toBe("/apprendre/programme/pr3");
+    expect(programLink([], "pr3")).toBe("/learn/programs/pr3");
   });
 });

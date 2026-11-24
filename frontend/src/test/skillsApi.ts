@@ -28,12 +28,12 @@ export const detailOut = (over: Record<string, unknown> = {}) => ({
       kind: "lesson",
       label: "Leçon : Sélecteurs",
       at: "2026-11-10T09:00:00Z",
-      url: "/apprendre/lecons/l1",
+      url: "/learn/lessons/l1",
     },
     { kind: "program", label: "Programme web", at: null, url: null },
   ],
   postings: [],
-  next_action: { kind: "quiz", label: "Passer le quiz « Mise en page »", url: "/etudier/quiz/q1" },
+  next_action: { kind: "quiz", label: "Passer le quiz « Mise en page »", url: "/study/quiz/q1" },
   ...over,
 });
 

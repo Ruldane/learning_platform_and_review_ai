@@ -7,8 +7,8 @@ import { NewReviewPage } from "./NewReviewPage";
 
 function setup(api: Parameters<typeof renderCv>[3] = {}, runSource?: string) {
   return renderCv(
-    "/carriere/cv/revue/nouvelle/:postingId",
-    { pathname: "/carriere/cv/revue/nouvelle/p1", state: { runSource } },
+    "/career/cv/reviews/new/:postingId",
+    { pathname: "/career/cv/reviews/new/p1", state: { runSource } },
     () => <NewReviewPage />,
     api,
   );

@@ -28,7 +28,7 @@ export function PrerequisiteList({ items }: { items: Week["prerequisites"] }) {
                   <li key={ref.id}>
                     <Link
                       className="underline"
-                      to={`/apprendre/programme/${encodeURIComponent(ref.program_id)}`}
+                      to={`/learn/programs/${encodeURIComponent(ref.program_id)}`}
                     >
                       {ref.title}
                     </Link>

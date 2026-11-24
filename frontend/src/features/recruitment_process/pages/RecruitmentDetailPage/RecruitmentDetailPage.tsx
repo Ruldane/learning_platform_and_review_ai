@@ -32,7 +32,9 @@ export function RecruitmentDetailPage() {
   const row = query.data;
   return (
     <section className="grid max-w-3xl gap-5">
-      <Link to="/carriere/recrutement-simule" className="w-fit underline">{t("recruitmentProcess.back")}</Link>
+      <Link to="/career/recruitment-process" className="w-fit underline">
+        {t("recruitmentProcess.back")}
+      </Link>
       {query.isPending ? <LoadingState label={t("recruitmentProcess.loading")} /> : null}
       {query.error ? <ErrorState message={errorMessage(query.error)} onRetry={() => void query.refetch()} /> : null}
       {row ? <>

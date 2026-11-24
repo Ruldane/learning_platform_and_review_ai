@@ -18,7 +18,7 @@ export function ToolLinks({ applicationId, hasScheduledInterview }: Props) {
   ];
   if (hasScheduledInterview) {
     links.push({
-      to: `/reglages/agenda?entretien=${encodeURIComponent(applicationId)}`,
+      to: `/settings/calendar?application=${encodeURIComponent(applicationId)}`,
       label: t("calendar.link"),
     });
   }

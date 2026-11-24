@@ -55,7 +55,7 @@ test("autorise Nod, reçoit une seule question et enregistre l’avis Telegram",
   expect(created.status()).toBe(201);
   const connection = (await created.json()) as { id: string; token: string };
 
-  await page.goto("/reglages/revision-messagerie");
+  await page.goto("/settings/message-review");
   await expect(page.getByRole("heading", { name: "Révision par messagerie" })).toBeVisible();
   const optIn = page.getByRole("checkbox", { name: "Autoriser les questions de Nod" });
   await expect(optIn).not.toBeChecked();

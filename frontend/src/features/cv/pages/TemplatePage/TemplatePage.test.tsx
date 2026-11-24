@@ -9,12 +9,12 @@ import { refusal, templateOut } from "@/test/cvApi";
 import { openStream, renderCv } from "@/test/cvHarness";
 import { TemplatePage } from "./TemplatePage";
 
-const ROUTE = "/carriere/cv/modeles/:templateId";
+const ROUTE = "/career/cv/templates/:templateId";
 
 function setup(api: Parameters<typeof renderCv>[3] = {}) {
   return renderCv(
     ROUTE,
-    "/carriere/cv/modeles/t1",
+    "/career/cv/templates/t1",
     (createSocket) => <TemplatePage pollMs={40} createSocket={createSocket} />,
     api,
   );

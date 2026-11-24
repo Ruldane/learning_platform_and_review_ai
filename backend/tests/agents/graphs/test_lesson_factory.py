@@ -65,9 +65,7 @@ async def test_lesson_factory_publishes_lesson_with_three_to_six_resources(
     assert pub.markdown == GOOD_LESSON.strip() and pub.module_id == MODULE_ID
     assert pub.report.words == 1500 and pub.report.revisions == 0 and pub.report.problems == ()
     ready = await c.events("artifact.ready")
-    assert [(r["kind"], r["url"]) for r in ready] == [
-        ("lesson", f"/apprendre/lecons/{pub.lesson_id}")
-    ]
+    assert [(r["kind"], r["url"]) for r in ready] == [("lesson", f"/learn/lessons/{pub.lesson_id}")]
     assert c.writer_calls == 1 and len(c.prompts_of("verifier")) == 1
 
 

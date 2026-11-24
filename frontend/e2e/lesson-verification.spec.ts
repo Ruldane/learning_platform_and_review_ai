@@ -39,7 +39,7 @@ test("le lecteur garde la version publiée pendant la vérification", async ({ p
     }),
   );
 
-  await page.goto(`/apprendre/lecons/${lessonId}`);
+  await page.goto(`/learn/lessons/${lessonId}`);
   const review = page.getByRole("status", { name: "À vérifier" });
   await expect(review).toBeVisible();
   await expect(page.getByText("Une première version des messages.")).toBeVisible();
@@ -51,7 +51,7 @@ test("le lecteur garde la version publiée pendant la vérification", async ({ p
 });
 
 test("le professeur retrouve le fil de la leçon sans quitter le lecteur", async ({ page }) => {
-  const lessonPath = `/apprendre/lecons/${lessonId}`;
+  const lessonPath = `/learn/lessons/${lessonId}`;
   const conversationPath = `**/api/v1/lessons/${lessonId}/conversation`;
   const excerpt = "Une première version des messages.";
   const question = "À quoi sert un message système ?";
@@ -122,7 +122,7 @@ test("le professeur retrouve le fil de la leçon sans quitter le lecteur", async
   await expect(panel.getByText(answer)).toBeVisible();
   await expect(panel.getByRole("link", { name: "Les rôles" })).toHaveAttribute(
     "href",
-    "/memoire?item=fiche-e2e",
+    "/memory?item=fiche-e2e",
   );
 
   await input.press("Escape");

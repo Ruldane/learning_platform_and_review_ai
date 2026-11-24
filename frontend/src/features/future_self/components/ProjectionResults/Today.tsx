@@ -14,7 +14,7 @@ export function Today({ projection }: { projection: ProjectionView }) {
         <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
           <span>{t("futureSelf.sample", { count: projection.offerCount })}</span>
           <Link
-            to={`/carriere/radar/${projection.sampleId}`}
+            to={`/career/radar/${projection.sampleId}`}
             className={buttonVariants({ variant: "link", size: "sm" })}
           >
             {t("futureSelf.openSample")}

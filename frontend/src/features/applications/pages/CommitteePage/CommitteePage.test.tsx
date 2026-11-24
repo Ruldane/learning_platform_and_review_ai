@@ -18,7 +18,7 @@ describe("CommitteePage", () => {
     expect(screen.getByRole("note")).toHaveTextContent("Simulation, pas une prédiction.");
     expect(screen.getByRole("link", { name: "Retour à la fiche" })).toHaveAttribute(
       "href",
-      "/candidatures/a1",
+      "/applications/a1",
     );
     expect(await screen.findByText(/Aucun comité pour cette offre/)).toBeVisible();
     expect(screen.getByRole("button", { name: "Lancer le comité" })).toBeEnabled();
@@ -31,7 +31,7 @@ describe("CommitteePage", () => {
   });
 
   it("says a missing application in words, with a way back to the board", async () => {
-    setup({}, {}, "/candidatures/zz/comite");
+    setup({}, {}, "/applications/zz/committee");
     expect(await screen.findByText("Cette candidature n'existe plus.")).toBeVisible();
     expect(screen.getByRole("heading", { level: 1, name: "Fiche introuvable" })).toBeVisible();
   });

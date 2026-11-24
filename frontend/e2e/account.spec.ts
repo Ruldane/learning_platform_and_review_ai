@@ -56,7 +56,7 @@ async function walkThroughWelcome(page: Page): Promise<void> {
 
 /** Réglages > Style : un texte enregistré, annoncé. */
 async function saveStyle(page: Page): Promise<void> {
-  await page.goto("/reglages/style");
+  await page.goto("/settings/style");
   const field = page.getByLabel("Guide de style personnel");
   await expect(field).toHaveValue("");
   await field.fill(STYLE);
@@ -66,9 +66,9 @@ async function saveStyle(page: Page): Promise<void> {
 
 /** Camille retrouve ses données : la note de l'espace local et son style. */
 async function expectCamilleData(page: Page): Promise<void> {
-  await page.goto("/etudier/journal");
+  await page.goto("/study/journal");
   await expect(page.getByText(LOCAL_NOTE)).toBeVisible();
-  await page.goto("/reglages/style");
+  await page.goto("/settings/style");
   await expect(page.getByLabel("Guide de style personnel")).toHaveValue(STYLE);
 }
 
@@ -118,7 +118,7 @@ test("Camille reprend l'espace local, Dominique repart de zéro et supprime tout
   expect(await signedInAs(page)).toBe(CAMILLE);
 
   // La capture de l'espace local est au journal ; un texte de style est enregistré.
-  await page.goto("/etudier/journal");
+  await page.goto("/study/journal");
   await expect(page.getByText(LOCAL_NOTE)).toBeVisible();
   await saveStyle(page);
 
@@ -133,14 +133,14 @@ test("Camille reprend l'espace local, Dominique repart de zéro et supprime tout
   // Son espace est vide : ni la note de Camille, ni son style.
   await page.getByRole("button", { name: "Passer l'accueil" }).click();
   await expect(page).toHaveURL(/localhost:\d+\/$/);
-  await page.goto("/etudier/journal");
+  await page.goto("/study/journal");
   await expect(page.getByText("Ton journal est vide")).toBeVisible();
   await expect(page.getByText(LOCAL_NOTE)).toHaveCount(0);
-  await page.goto("/reglages/style");
+  await page.goto("/settings/style");
   await expect(page.getByLabel("Guide de style personnel")).toHaveValue("");
 
   // (4) Mes données : l'export, puis « Tout supprimer » ramène à la connexion.
-  await page.goto("/reglages/donnees");
+  await page.goto("/settings/data");
   await exportData(page);
   await deleteEverything(page);
   await expect(page).toHaveURL(/\/login$/);
@@ -163,7 +163,7 @@ test("« Tout supprimer » n'efface pas le compte d'un autre onglet", async ({ c
   await expect(page).toHaveURL(/\/welcome$/);
   await page.getByRole("button", { name: "Passer l'accueil" }).click();
   await expect(page).toHaveURL(/localhost:\d+\/$/);
-  await page.goto("/reglages/donnees");
+  await page.goto("/settings/data");
   await expect(page.getByRole("heading", { name: "Tout supprimer" })).toBeVisible();
   await expect(page.getByText(`Compte à effacer : ${DOMINIQUE}`)).toBeVisible();
 

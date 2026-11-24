@@ -47,7 +47,7 @@ describe("CommitteePage, lancer et relancer", () => {
     expect(await screen.findByText(/Aucune version prête du CV pour cette offre/)).toBeVisible();
     expect(screen.getByRole("link", { name: "Voir les versions du CV" })).toHaveAttribute(
       "href",
-      "/carriere/cv/versions",
+      "/career/cv/versions",
     );
     expect(screen.queryByRole("button", { name: /comité/ })).toBeNull();
   });
@@ -136,7 +136,7 @@ describe("CommitteePage, lancer et relancer", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Aucun profil maître validé");
     expect(screen.getByRole("link", { name: "Ouvrir mon profil" })).toHaveAttribute(
       "href",
-      "/carriere/profil",
+      "/career/profile",
     );
   });
 

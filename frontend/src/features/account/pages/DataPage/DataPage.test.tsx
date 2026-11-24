@@ -34,7 +34,7 @@ describe("DataPage", () => {
     expect(client.getQueryData(["settings"])).toBeUndefined();
     // La porte de la coquille mène à /login dès que `me` est vide ; ici, aucune porte :
     // la page n'ordonne aucune navigation elle-même.
-    expect(router.state.location.pathname).toBe("/reglages/donnees");
+    expect(router.state.location.pathname).toBe("/settings/data");
   });
 
   it("closes the Google session when only the final vector purge remains", async () => {
@@ -53,7 +53,7 @@ describe("DataPage", () => {
       "aria-invalid",
       "true",
     );
-    expect(router.state.location.pathname).toBe("/reglages/donnees");
+    expect(router.state.location.pathname).toBe("/settings/data");
   });
 
   it("shows its own wording for a refused confirmation, never the server text", async () => {

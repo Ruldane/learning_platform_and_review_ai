@@ -28,7 +28,7 @@ export function MemoryMapPage() {
         <VectorMap
           points={map.data.points}
           truncated={map.data.truncated}
-          onOpen={(id) => void navigate(`/memoire?item=${encodeURIComponent(id)}`)}
+          onOpen={(id) => void navigate(`/memory?item=${encodeURIComponent(id)}`)}
         />
       )}
     </div>

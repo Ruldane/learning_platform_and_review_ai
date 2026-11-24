@@ -19,7 +19,7 @@ interface StudySessionPageProps {
 }
 
 /**
- * Une session d'étude (`/etudier/session/:studyId`). Ouverte : le Tuteur, le minuteur et le
+ * Une session d'étude (`/study/session/:studyId`). Ouverte : le Tuteur, le minuteur et le
  * tableau. Terminée : le bilan (relu jusqu'à `finished` après « Terminer »). Abandonnée ou
  * introuvable : un état vide qui ramène au départ. Une relecture ratée en arrière-plan se dit en
  * ligne, sans remplacer la page (le minuteur reste monté).
@@ -32,7 +32,7 @@ export function StudySessionPage({
   const navigate = useNavigate();
   const [finishing, setFinishing] = useState(false);
   const { query, budget } = useStudySession(studyId, finishing, pollMs);
-  const home = () => void navigate("/etudier/session");
+  const home = () => void navigate("/study/session");
 
   if (query.isPending) return <LoadingState label={t("study.session.loading")} />;
   if (query.isError && query.data === undefined) {

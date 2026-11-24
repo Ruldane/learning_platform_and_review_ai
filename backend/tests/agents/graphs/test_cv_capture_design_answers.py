@@ -29,7 +29,7 @@ async def test_validate_finishes_ready(
         "artifact_id": "modele-t1",
         "kind": "cv_template",
         "title": "Modèle de CV",
-        "url": "/carriere/cv/modeles/t1",
+        "url": "/career/cv/templates/t1",
     }
     [done] = await run.events("run.completed")
     assert done["summary"] == "Modèle de CV prêt : il ressemble à ton CV à 90 %."

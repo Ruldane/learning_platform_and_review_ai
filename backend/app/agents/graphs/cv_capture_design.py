@@ -42,7 +42,7 @@ DESIGN_ENTRY = "prepare"
 # du rendu (60 s) et score (preflight G27 : au-delà des 120 s par défaut de SPEC 9.6).
 PREPARE_TIMEOUT_S = LAYOUT_TIMEOUT_S + 4 * FONT_TIMEOUT_S + 30
 RENDER_TIMEOUT_S = HTML_RENDER_TIMEOUT_S + LAYOUT_TIMEOUT_S + 30
-ARTIFACT_URL = "/carriere/cv/modeles/{template_id}"
+ARTIFACT_URL = "/career/cv/templates/{template_id}"
 RESTARTED = "Capture abandonnée."
 
 logger = logging.getLogger(__name__)

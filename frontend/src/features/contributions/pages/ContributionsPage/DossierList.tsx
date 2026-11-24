@@ -23,7 +23,7 @@ export function DossierList() {
         {query.data.map((item) => (
           <li key={item.id} className="flex flex-wrap items-baseline justify-between gap-2">
             <Link
-              to={`/competences/contributions/${encodeURIComponent(item.id)}`}
+              to={`/skills/contributions/${encodeURIComponent(item.id)}`}
               className="underline underline-offset-4"
             >
               {item.issue.title}

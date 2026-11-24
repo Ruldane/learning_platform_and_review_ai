@@ -7,7 +7,7 @@ export function LastFinishedBlock({ value }: { value: LastBlock }) {
   const isTraining = value.kind === "training";
   const url = isTraining
     ? trainingUrl(value.id)
-    : `/etudier/session/${encodeURIComponent(value.id)}`;
+    : `/study/session/${encodeURIComponent(value.id)}`;
   return (
     <div>
       <h3 className="font-medium">{t("studyReturn.lastBlock")}</h3>

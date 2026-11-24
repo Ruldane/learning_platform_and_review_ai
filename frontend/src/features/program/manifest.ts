@@ -9,10 +9,10 @@ import { ProgramPage } from "./pages/ProgramPage";
 export const programManifest: FeatureManifest = {
   id: "program",
   routes: [
-    { path: "apprendre/programme", Component: ProgramIndexPage },
-    { path: "apprendre/programme/:programId", Component: ProgramPage, handle: { wide: true } },
+    { path: "learn/programs", Component: ProgramIndexPage },
+    { path: "learn/programs/:programId", Component: ProgramPage, handle: { wide: true } },
   ],
   nav: [
-    { section: "learn", labelKey: "program.nav.program", path: "/apprendre/programme", order: 3 },
+    { section: "learn", labelKey: "program.nav.program", path: "/learn/programs", order: 3 },
   ],
 };

@@ -11,7 +11,7 @@ import { toReference } from "../../toView";
 
 export function QuizGhostPanel({ quizId, live, currentAttemptId }: QuizGhostProps) {
   const [params, setParams] = useSearchParams();
-  const referenceId = params.get("fantome");
+  const referenceId = params.get("ghost") ?? params.get("fantome");
   const query = useQuery({
     queryKey: ["ghost", "quiz", quizId, referenceId],
     queryFn: ({ signal }) => fetchQuizGhost(quizId, referenceId, signal),

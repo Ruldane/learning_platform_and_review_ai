@@ -9,7 +9,7 @@ const base = "http://localhost:8000/api/v1/brain";
 const folder = { id: "notes", name: "Cours", path: "C:\\Notes", paused: false, revision: 1 };
 
 function setup() {
-  return renderRoutes([{ path: "/memoire/cerveau", element: <BrainPage /> }], "/memoire/cerveau");
+  return renderRoutes([{ path: "/memory/brain", element: <BrainPage /> }], "/memory/brain");
 }
 
 describe("BrainPage", () => {

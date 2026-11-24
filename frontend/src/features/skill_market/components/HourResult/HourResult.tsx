@@ -27,7 +27,7 @@ export function HourResult({ value }: { value: Simulation }) {
       ) : null}
       {value.lesson_id ? (
         <Link
-          to={"/apprendre/lecons/" + encodeURIComponent(value.lesson_id)}
+          to={"/learn/lessons/" + encodeURIComponent(value.lesson_id)}
           className="w-fit underline"
         >
           {t("skillMarket.chapter")}

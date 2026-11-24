@@ -11,10 +11,10 @@ export function StudyEnd({ session }: { session: StudySessionOut }) {
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
       <StudySummaryCard summary={toSummaryView(session)} />
       <div className="flex flex-wrap gap-2">
-        <Link to="/etudier/revisions" className={buttonVariants()}>
+        <Link to="/study/reviews" className={buttonVariants()}>
           {t("study.session.reviews")}
         </Link>
-        <Link to="/etudier/session" className={buttonVariants({ variant: "outline" })}>
+        <Link to="/study/session" className={buttonVariants({ variant: "outline" })}>
           {t("study.session.nextBlock")}
         </Link>
       </div>

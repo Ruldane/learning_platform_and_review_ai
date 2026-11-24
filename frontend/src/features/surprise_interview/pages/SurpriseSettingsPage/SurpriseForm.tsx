@@ -30,7 +30,7 @@ export function SurpriseForm({ values, settings, saving, saved, error, onChange,
           ? t("surpriseInterview.slot", { start, end, timezone })
           : t("surpriseInterview.noConnection")}
       </p>
-      <Link className="text-primary underline" to="/reglages/revision-messagerie">
+      <Link className="text-primary underline" to="/settings/message-review">
         {t("surpriseInterview.connection")}
       </Link>
       <fieldset className="grid gap-3" disabled={saving || !telegram_ready}>

@@ -21,7 +21,7 @@ export function PaperLabDetail({ labId }: { labId: string }) {
   const data = lab.data;
   return (
     <>
-      <Link to="/apprendre/articles" className="w-fit underline underline-offset-4">
+      <Link to="/learn/papers" className="w-fit underline underline-offset-4">
         {t("paperLab.list")}
       </Link>
       {data.title ? <h2 className="text-lg font-semibold">{data.title}</h2> : null}

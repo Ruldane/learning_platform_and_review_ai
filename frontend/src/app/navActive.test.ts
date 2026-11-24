@@ -11,8 +11,8 @@ const groups: NavGroup[] = [
     section: "applications",
     labelKey: "nav.applications",
     items: [
-      { labelKey: "applications.nav.board", path: "/candidatures" },
-      { labelKey: "applications.nav.reminders", path: "/candidatures/relances" },
+      { labelKey: "applications.nav.board", path: "/applications" },
+      { labelKey: "applications.nav.reminders", path: "/applications/reminders" },
     ],
   },
 ];
@@ -24,16 +24,16 @@ describe("currentNav", () => {
   });
 
   it("garde l'entrée la plus générale sur une sous-route hors navigation (fiche ouverte)", () => {
-    expect(currentNav(groups, "/candidatures/a1")).toEqual({
+    expect(currentNav(groups, "/applications/a1")).toEqual({
       section: "applications",
-      path: "/candidatures",
+      path: "/applications",
     });
   });
 
   it("préfère l'entrée la plus précise quand l'une est la sous-route de l'autre", () => {
-    expect(currentNav(groups, "/candidatures/relances")).toEqual({
+    expect(currentNav(groups, "/applications/reminders")).toEqual({
       section: "applications",
-      path: "/candidatures/relances",
+      path: "/applications/reminders",
     });
   });
 });

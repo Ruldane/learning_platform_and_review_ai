@@ -65,7 +65,7 @@ def announce(state: ProjectReviewState) -> ProjectReviewState:
             "artifact_id": project_id,
             "kind": "project",
             "title": state["title"],
-            "url": f"/competences/portfolio/{project_id}",
+            "url": f"/skills/portfolio/{project_id}",
         },
         agent=AGENT,
     )

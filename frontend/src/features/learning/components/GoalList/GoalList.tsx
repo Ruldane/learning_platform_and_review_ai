@@ -15,7 +15,7 @@ function formatDay(iso: string): string {
 
 /** Lien vers le programme : celui de l'objectif s'il existe, sinon le plus récent. */
 const programPath = (goal: GoalRow) =>
-  goal.programId ? `/apprendre/programme/${goal.programId}` : "/apprendre/programme";
+  goal.programId ? `/learn/programs/${goal.programId}` : "/learn/programs";
 
 /**
  * Les objectifs de January : texte, poste visé, échéance, heures par semaine, statut, lien vers le
@@ -42,7 +42,7 @@ export function GoalList({ goals }: GoalListProps) {
           </div>
           <div className="flex flex-wrap gap-4 text-sm">
             <Link
-              to={`/apprendre/objectifs/${goal.id}/conseil`}
+              to={`/learn/goals/${goal.id}/council`}
               className="underline underline-offset-2"
             >
               {t("learning.goals.list.council")}

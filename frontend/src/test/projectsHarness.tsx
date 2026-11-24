@@ -14,8 +14,8 @@ export interface ProjectPages {
 
 /** Les pages où les liens du Portfolio mènent : des repères, pour vérifier qu'on y arrive. */
 const LANDINGS = [
-  { path: "/competences", element: <p>Page de la carte des compétences</p> },
-  { path: "/carriere/profil", element: <p>Page du profil maître</p> },
+  { path: "/skills", element: <p>Page de la carte des compétences</p> },
+  { path: "/career/profile", element: <p>Page du profil maître</p> },
 ];
 
 /**
@@ -25,7 +25,7 @@ const LANDINGS = [
 export function renderProjects(
   makeUi: (createSocket: FakeSocketServer["factory"]) => ProjectPages,
   api: ProjectsApiOptions = {},
-  path = "/competences/portfolio",
+  path = "/skills/portfolio",
 ) {
   const sockets = createFakeSocketServer();
   const backend = projectsApi(api);
@@ -33,8 +33,8 @@ export function renderProjects(
   const pages = makeUi(sockets.factory);
   const view = renderRoutes(
     [
-      { path: "/competences/portfolio", element: pages.portfolio },
-      { path: "/competences/portfolio/:projectId", element: pages.project },
+      { path: "/skills/portfolio", element: pages.portfolio },
+      { path: "/skills/portfolio/:projectId", element: pages.project },
       ...LANDINGS,
     ],
     path,

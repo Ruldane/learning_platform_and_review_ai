@@ -26,8 +26,8 @@ function setup(
   });
   server.use(...api.handlers);
   const view = renderRoutes(
-    [{ path: "/reglages/modeles", element: <ModelsAndKeysPage /> }],
-    "/reglages/modeles",
+    [{ path: "/settings/models", element: <ModelsAndKeysPage /> }],
+    "/settings/models",
   );
   return { ...api, ...view };
 }

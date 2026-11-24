@@ -21,7 +21,7 @@ const setup = (api: Parameters<typeof renderProjects>[1] = {}) =>
       project: <ProjectPage createSocket={createSocket} />,
     }),
     api,
-    "/competences/portfolio/p1",
+    "/skills/portfolio/p1",
   );
 
 const validated = (over: Record<string, unknown> = {}) =>
@@ -59,7 +59,7 @@ describe("ProjectPage : un projet validé", () => {
     expect(screen.queryByRole("form", { name: "Rendre ton projet" })).toBeNull();
 
     await user.click(screen.getByRole("link", { name: "Voir la carte des compétences" }));
-    expect(router.state.location.pathname).toBe("/competences");
+    expect(router.state.location.pathname).toBe("/skills");
   });
 
   it("does not claim the screenshots were unread when the last submission had none", async () => {
@@ -274,7 +274,7 @@ describe("ProjectPage : l'ajout au profil maître", () => {
     });
     await user.click(await addButton());
     await user.click(await screen.findByRole("link", { name: "Ouvrir ton profil maître" }));
-    expect(router.state.location.pathname).toBe("/carriere/profil");
+    expect(router.state.location.pathname).toBe("/career/profile");
   });
 });
 

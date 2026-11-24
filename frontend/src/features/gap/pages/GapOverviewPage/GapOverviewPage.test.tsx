@@ -12,7 +12,7 @@ function setup(api: Parameters<typeof postingsApi>[0] = {}) {
     [
       { path: "/career/gaps", element: <GapOverviewPage /> },
       { path: "/career/postings", element: <p>Postings list</p> },
-      { path: "/competences", element: <p>Skills map</p> },
+      { path: "/skills", element: <p>Skills map</p> },
     ],
     "/career/gaps",
   );
@@ -26,13 +26,13 @@ describe("GapOverviewPage", () => {
     expect(items[0]).toHaveTextContent("Python — 5 postings, required in 4");
     expect(items[1]).toHaveTextContent("Docker — 1 posting, never required");
     await user.click(screen.getByRole("link", { name: "View the skills map" }));
-    expect(router.state.location.pathname).toBe("/competences");
+    expect(router.state.location.pathname).toBe("/skills");
   });
 
   it("opens the skills map from a skill", async () => {
     const { user, router } = setup();
     await user.click(await screen.findByRole("button", { name: /Python/ }));
-    expect(router.state.location.pathname).toBe("/competences");
+    expect(router.state.location.pathname).toBe("/skills");
   });
 
   it("offers to add a posting when nothing is missing yet", async () => {

@@ -14,11 +14,11 @@ import { NewApplicationPage } from "./NewApplicationPage";
 function setup(api: Parameters<typeof renderApplications>[2] = {}) {
   const sockets = createFakeSocketServer();
   const routes = applicationsManifest.routes.map((route) =>
-    route.path === "candidatures/nouvelle"
+    route.path === "applications/new"
       ? { path: route.path, element: <NewApplicationPage createSocket={sockets.factory} /> }
       : route,
   );
-  const view = renderApplications(routes, "/candidatures/nouvelle", {
+  const view = renderApplications(routes, "/applications/new", {
     applications: [applicationOut({ id: "a1" }), applicationOut({ id: "a9", title: "Autre" })],
     ...api,
   });
@@ -103,8 +103,8 @@ describe("NewApplicationPage, one-sentence entry", () => {
         fields: expect.objectContaining({ company: "Acme Corp", status: "applied" }),
       },
     });
-    stream.push(e.artifactReady("application", "a1", "/candidatures/a1"));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/candidatures/a1"));
+    stream.push(e.artifactReady("application", "a1", "/applications/a1"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/applications/a1"));
   });
 
   it("offers to open the existing application or confirm a different role", async () => {
@@ -154,8 +154,8 @@ describe("NewApplicationPage, one-sentence entry", () => {
 
   it("opens the existing application announced by the session", async () => {
     const { stream, e, router } = await askConfirmation();
-    stream.push(e.artifactReady("application", "a9", "/candidatures/a9"));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/candidatures/a9"));
+    stream.push(e.artifactReady("application", "a9", "/applications/a9"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/applications/a9"));
   });
 
   it("lets January edit her sentence after the session ends without a record", async () => {

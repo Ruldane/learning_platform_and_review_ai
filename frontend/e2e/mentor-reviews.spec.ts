@@ -9,7 +9,7 @@ const COMMENT = "Ajouter une note sur les deux résultats.";
 
 test("confirme une copie, recueille un commentaire et retire l’accès", async ({ page, request, browser }) => {
   await finishFirstLaunch(request);
-  await page.goto("/carriere/relecture-mentor");
+  await page.goto("/career/mentor-review");
   await page.getByLabel("Dossier à partager").selectOption({ label: PACKET });
   await page.getByRole("button", { name: "Préparer le partage" }).click();
   await expect(page.getByText(ARTIFACT)).toBeVisible();

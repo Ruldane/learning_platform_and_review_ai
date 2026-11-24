@@ -33,7 +33,7 @@ export function ProjectionResults({ projection }: { projection: ProjectionView }
       <Chapters items={projection.chapters} />
       {projection.programId ? (
         <Link
-          to={`/apprendre/programme/${projection.programId}/replanification`}
+          to={`/learn/programs/${projection.programId}/replan`}
           className={buttonVariants({ variant: "outline", className: "justify-self-start" })}
         >
           {t("futureSelf.replan")}

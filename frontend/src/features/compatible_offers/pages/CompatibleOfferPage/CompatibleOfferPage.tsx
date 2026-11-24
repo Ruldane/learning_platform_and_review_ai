@@ -32,7 +32,7 @@ export function CompatibleOfferPage() {
       {plan.error ? <InlineError message={errorMessage(plan.error)} /> : null}
       {plan.data ? (
         <div role="status">
-          <Link className="underline" to={"/apprendre/programme/" + plan.data.program_id + "/replanification"}>
+          <Link className="underline" to={`/learn/programs/${plan.data.program_id}/replan`}>
             {t("compatibleOffers.openPlan")}
           </Link>
         </div>

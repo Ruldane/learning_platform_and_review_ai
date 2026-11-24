@@ -13,8 +13,8 @@ function setup(put?: Parameters<typeof settingsApi>[0]["put"], gate?: Promise<vo
   const api = settingsApi({ settings: stored, put, gate });
   server.use(...api.handlers);
   const view = renderRoutes(
-    [{ path: "/reglages/style", element: <StylePage /> }],
-    "/reglages/style",
+    [{ path: "/settings/style", element: <StylePage /> }],
+    "/settings/style",
   );
   return { ...api, ...view };
 }
@@ -83,8 +83,8 @@ describe("StylePage", () => {
     const api = settingsApi({ settings: { ...stored, style_guide: "a" } });
     server.use(...api.handlers);
     const { user } = renderRoutes(
-      [{ path: "/reglages/style", element: <StylePage /> }],
-      "/reglages/style",
+      [{ path: "/settings/style", element: <StylePage /> }],
+      "/settings/style",
     );
     expect(await screen.findByText("1 character")).toBeInTheDocument();
     await user.clear(guide());

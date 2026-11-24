@@ -20,12 +20,12 @@ test("reprend le recrutement à l’exercice et retrouve les trois appréciation
   const { posting_id: posting, project_id: project } = (await seeded.json()) as {
     posting_id: string; project_id: string;
   };
-  await page.goto("/carriere/recrutement-simule");
+  await page.goto("/career/recruitment-process");
   await page.getByLabel("Offre analysée").selectOption(posting);
   await page.getByLabel("Projet revu à présenter").selectOption(project);
   await page.getByRole("button", { name: "Préparer la répétition" }).press("Enter");
   await expect(page.getByRole("link", { name: "Audit des délais d’un pipeline" })).toHaveAttribute(
-    "href", `/competences/portfolio/${project}`,
+    "href", `/skills/portfolio/${project}`,
   );
   await expect(page.getByText("Justifier la fidélité d’un système RAG", { exact: false })).toBeVisible();
   await answer(page, "Revue de projet", "J’ai contrôlé les mesures d’un échantillon daté.");

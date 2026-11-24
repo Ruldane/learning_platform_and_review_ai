@@ -29,7 +29,7 @@ export function DayStart({
         openSessionId={openSessionId}
         disabled={starter.pending}
         onStart={() => void starter.start({ mode })}
-        onResume={() => void navigate(`/etudier/session/${openSessionId}`)}
+        onResume={() => void navigate(`/study/session/${openSessionId}`)}
       />
     </>
   );

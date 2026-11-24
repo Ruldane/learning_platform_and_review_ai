@@ -5,7 +5,7 @@ import { renderApplications } from "@/test/applicationsHarness";
 import { applicationsManifest } from "../../manifest";
 
 async function openDrawer(api: Parameters<typeof renderApplications>[2] = {}) {
-  renderApplications(applicationsManifest.routes, "/candidatures/a1", {
+  renderApplications(applicationsManifest.routes, "/applications/a1", {
     applications: [applicationOut()],
     ...api,
   });

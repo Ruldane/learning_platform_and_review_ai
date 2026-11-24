@@ -54,7 +54,7 @@ async def test_builder_saves_draft_and_stops_for_validation(
         "artifact_id": pid,
         "kind": "program",
         "title": "Parcours IA",
-        "url": f"/apprendre/programme/{pid}",
+        "url": f"/learn/programs/{pid}",
     }
     said = await c.events("agent.message")
     assert "2 semaine(s)" in said[-1]["text"] and "85 %" in said[-1]["text"]

@@ -12,7 +12,7 @@ import { TopNav } from "./TopNav";
 function renderNav(due: number) {
   server.use(...applicationsApi({ stats: { due_reminders: due } }).handlers);
   render(
-    <MemoryRouter initialEntries={["/candidatures"]}>
+    <MemoryRouter initialEntries={["/applications"]}>
       <TopNav groups={buildNav([applicationsManifest])} />
     </MemoryRouter>,
     { wrapper: createQueryWrapper() },
@@ -38,7 +38,7 @@ describe("application navigation badges", () => {
     renderNav(3);
     await userEvent.click(await screen.findByRole("button", { name: /^Applications/ }));
     const entry = await screen.findByRole("menuitem", { name: "Follow-ups, 3 follow-ups due" });
-    expect(entry).toHaveAttribute("href", "/candidatures/relances");
+    expect(entry).toHaveAttribute("href", "/applications/reminders");
     expect(entry).toHaveAccessibleName("Follow-ups, 3 follow-ups due");
   });
 
@@ -46,9 +46,9 @@ describe("application navigation badges", () => {
     renderNav(0);
     await userEvent.click(screen.getByRole("button", { name: "Applications" }));
     expect(screen.getAllByRole("menuitem").map((item) => item.getAttribute("href"))).toEqual([
-      "/candidatures",
-      "/candidatures/relances",
-      "/candidatures/entretien",
+      "/applications",
+      "/applications/reminders",
+      "/applications/interview",
     ]);
   });
 

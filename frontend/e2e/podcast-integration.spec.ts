@@ -82,7 +82,7 @@ async function verifyQuiz(page: Page, id: string) {
 
 test("prépare le podcast, corrige le quiz et relit le même épisode", async ({ page, request }) => {
   await finishFirstLaunch(request);
-  await page.goto("/etudier/podcast", { waitUntil: "domcontentloaded" });
+  await page.goto("/study/podcast", { waitUntil: "domcontentloaded" });
   const preparing = page.waitForResponse(
     (response) =>
       response.url() === API + "/podcast/today" && response.request().method() === "POST",

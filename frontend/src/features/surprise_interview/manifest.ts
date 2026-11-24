@@ -3,12 +3,12 @@ import { SurpriseSettingsPage } from "./pages/SurpriseSettingsPage";
 
 export const surpriseInterviewManifest: FeatureManifest = {
   id: "surprise_interview",
-  routes: [{ path: "reglages/entretien-surprise", Component: SurpriseSettingsPage }],
+  routes: [{ path: "settings/surprise-interviews", Component: SurpriseSettingsPage }],
   nav: [
     {
       section: "settings",
       labelKey: "surpriseInterview.title",
-      path: "/reglages/entretien-surprise",
+      path: "/settings/surprise-interviews",
       order: 11,
     },
   ],

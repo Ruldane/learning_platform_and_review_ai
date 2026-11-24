@@ -9,10 +9,10 @@ export const skillsManifest: FeatureManifest = {
   id: "skills",
   routes: [
     {
-      path: "competences",
+      path: "skills",
       lazy: async () => ({ Component: (await import("./pages/SkillsPage")).SkillsPage }),
       handle: { wide: true },
     },
   ],
-  nav: [{ section: "skills", labelKey: "skills.nav.map", path: "/competences", order: 1 }],
+  nav: [{ section: "skills", labelKey: "skills.nav.map", path: "/skills", order: 1 }],
 };

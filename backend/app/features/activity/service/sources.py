@@ -88,7 +88,7 @@ async def lessons_source(
                 kind="lesson",
                 at=lesson.at,
                 title=f"{label}: {lesson.title}",
-                link=f"/apprendre/lecons/{lesson.id}",
+                link=f"/learn/lessons/{lesson.id}",
             )
         )
     return items
@@ -103,7 +103,7 @@ async def radar_source(
             kind="radar",
             at=run.at,
             title=f"Radar scan: {run.offers_read} offers read, {run.blocked_count} blocked",
-            link=f"/carriere/radar/{run.id}",
+            link=f"/career/radar/{run.id}",
         )
         for run in await recent_runs(db, user_id, after, before, limit)
     ]
@@ -141,7 +141,7 @@ async def project_source(
                 kind="project",
                 at=project.at,
                 title=f"{label}: {project.title}",
-                link=f"/competences/portfolio/{project.id}",
+                link=f"/skills/portfolio/{project.id}",
             )
         )
     return items
@@ -178,7 +178,7 @@ async def memory_source(
                 f"{write.item_title}"
             ),
             detail=write.reason,
-            link="/memoire",
+            link="/memory",
         )
         for write in await recent_agent_writes(db, user_id, after, before, limit)
     ]

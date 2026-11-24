@@ -8,7 +8,7 @@ test("relit un ancien résumé et compare un quiz sans révéler ses anciennes r
   request,
 }) => {
   await finishFirstLaunch(request);
-  await page.goto("/etudier/journal");
+  await page.goto("/study/journal");
   await page.getByRole("link", { name: "Courir contre cette tentative" }).first().click();
   const ghost = page.getByRole("region", { name: "Course contre ton fantôme" });
   await expect(ghost.getByText("Ton essai précédent")).toBeVisible();

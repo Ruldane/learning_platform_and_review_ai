@@ -1,6 +1,6 @@
 import type { SessionEvent } from "@/shared/realtime/types";
 
-const PROGRAM_BASE = "/apprendre/programme";
+const PROGRAM_BASE = "/learn/programs";
 /** Une adresse de l'application : un chemin, jamais un autre site (`//hôte`, `https:`, `javascript:`). */
 const INTERNAL = /^\/(?!\/)/;
 

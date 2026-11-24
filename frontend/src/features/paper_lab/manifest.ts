@@ -4,8 +4,8 @@ import { PaperLabPage } from "./pages/PaperLabPage";
 export const paperLabManifest: FeatureManifest = {
   id: "paper_lab",
   routes: [
-    { path: "apprendre/articles", Component: PaperLabPage },
-    { path: "apprendre/articles/:labId", Component: PaperLabPage },
+    { path: "learn/papers", Component: PaperLabPage },
+    { path: "learn/papers/:labId", Component: PaperLabPage },
   ],
-  nav: [{ section: "learn", labelKey: "paperLab.title", path: "/apprendre/articles", order: 8 }],
+  nav: [{ section: "learn", labelKey: "paperLab.title", path: "/learn/papers", order: 8 }],
 };

@@ -19,7 +19,7 @@ test("rendre le projet avec un commit attribué et retrouver la preuve sur la ca
   const seeded = await request.post(`${fixtures}/seed`);
   expect(seeded.ok()).toBe(true);
   const { project_id: id } = (await seeded.json()) as { project_id: string };
-  const project = `/competences/portfolio/${id}`;
+  const project = `/skills/portfolio/${id}`;
   await page.goto(project);
   await page.getByRole("textbox", { name: "Lien du dépôt" }).fill(repository);
   await page.getByText("Faire vérifier un commit GitHub", { exact: true }).press("Enter");
@@ -35,7 +35,7 @@ test("rendre le projet avec un commit attribué et retrouver la preuve sur la ca
     page.getByRole("link", { name: "Ouvrir le commit 128d4898 sur GitHub" }),
   ).toHaveAttribute("href", `${repository}/commit/${sha}`);
 
-  await page.goto("/competences");
+  await page.goto("/skills");
   await page.getByRole("button", { name: /^pandas[,. ]/i }).press("Enter");
   const proof = page.getByRole("link", { name: /Contribution GitHub vérifiée \(128d4898\)/ });
   await expect(proof).toHaveAttribute("href", project);

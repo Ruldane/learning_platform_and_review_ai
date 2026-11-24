@@ -36,7 +36,7 @@ export function ModuleLessons({ lessons }: ModuleLessonsProps) {
               ) : null}
               {lesson.lessonId ? (
                 <Link
-                  to={`/apprendre/lecons/${lesson.lessonId}`}
+                  to={`/learn/lessons/${lesson.lessonId}`}
                   className="underline underline-offset-2"
                 >
                   {t("program.lessons.open")}

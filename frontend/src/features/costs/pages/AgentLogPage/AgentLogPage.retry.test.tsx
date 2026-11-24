@@ -19,8 +19,8 @@ function setup(failing: { value: boolean }) {
   const api = costsApi({ calls: (url) => (failing.value ? broken() : callPage(url)) });
   server.use(...api.handlers);
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const router = createMemoryRouter([{ path: "/reglages/journal", element: <AgentLogPage /> }], {
-    initialEntries: ["/reglages/journal"],
+  const router = createMemoryRouter([{ path: "/settings/agent-log", element: <AgentLogPage /> }], {
+    initialEntries: ["/settings/agent-log"],
   });
   render(<RouterProvider router={router} />, { wrapper: createQueryWrapper(client) });
   return { ...api, client, user: userEvent.setup() };

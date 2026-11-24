@@ -8,10 +8,10 @@ import { server } from "@/test/server";
 import { applicationsManifest } from "../../manifest";
 import { InterviewPage } from "./InterviewPage";
 
-const ROUTE = "candidatures/:applicationId/entretien";
+const ROUTE = "applications/:applicationId/interview";
 export const SESSION = "iv-s-new";
 
-export function setup(options: InterviewApiOptions = {}, path = "/candidatures/a1/entretien") {
+export function setup(options: InterviewApiOptions = {}, path = "/applications/a1/interview") {
   const sockets = createFakeSocketServer();
   const interviews = interviewApi(options);
   server.use(...interviews.handlers);

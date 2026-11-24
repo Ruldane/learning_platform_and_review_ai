@@ -20,8 +20,8 @@ const groups: NavGroup[] = [
     icon: BookOpen,
     color: "var(--section-learn)",
     items: [
-      { labelKey: "program.nav.program", path: "/apprendre/programme" },
-      { labelKey: "lessons.nav.lessons", path: "/apprendre/lecons" },
+      { labelKey: "program.nav.program", path: "/learn/programs" },
+      { labelKey: "lessons.nav.lessons", path: "/learn/lessons" },
     ],
   },
   {
@@ -30,8 +30,8 @@ const groups: NavGroup[] = [
     icon: Settings,
     color: "var(--section-settings)",
     items: [
-      { labelKey: "costs.nav.costs", path: "/reglages/couts" },
-      { labelKey: "account.nav.data", path: "/reglages/donnees" },
+      { labelKey: "costs.nav.costs", path: "/settings/costs" },
+      { labelKey: "account.nav.data", path: "/settings/data" },
     ],
   },
 ];
@@ -40,7 +40,7 @@ function renderNav(path = "/") {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <TopNav groups={groups} />
-      <Link to="/apprendre/lecons">Outside the menu</Link>
+      <Link to="/learn/lessons">Outside the menu</Link>
       <p>Outside</p>
     </MemoryRouter>,
   );
@@ -68,7 +68,7 @@ describe("TopNav", () => {
   });
 
   it("carries the colour of the active section (tint and border), not of the others", () => {
-    renderNav("/apprendre/lecons");
+    renderNav("/learn/lessons");
     const active = section("Learn");
     expect(active.style.getPropertyValue("--section-color")).toBe("var(--section-learn)");
     expect(active.className).toContain(
@@ -94,13 +94,13 @@ describe("TopNav", () => {
     expect(section("Learn")).toHaveAttribute("aria-expanded", "true");
     const items = within(screen.getByRole("menu", { name: "Learn" })).getAllByRole("menuitem");
     expect(items.map((item) => item.getAttribute("href"))).toEqual([
-      "/apprendre/programme",
-      "/apprendre/lecons",
+      "/learn/programs",
+      "/learn/lessons",
     ]);
   });
 
   it("highlights the current section and the current page (aria-current)", async () => {
-    renderNav("/apprendre/lecons");
+    renderNav("/learn/lessons");
     expect(section("Learn")).toHaveAttribute("data-active", "true");
     expect(section("Settings")).not.toHaveAttribute("data-active");
     expect(screen.getByRole("link", { name: "Home" })).not.toHaveAttribute("aria-current");
@@ -198,7 +198,7 @@ describe("TopNav", () => {
 
     it("shows a Menu button instead of the bar, and a panel with every section and page", async () => {
       narrow();
-      renderNav("/apprendre/lecons");
+      renderNav("/learn/lessons");
       expect(screen.queryByRole("button", { name: "Learn" })).toBeNull();
       const menu = screen.getByRole("button", { name: "Menu" });
       expect(menu).toHaveAttribute("aria-expanded", "false");

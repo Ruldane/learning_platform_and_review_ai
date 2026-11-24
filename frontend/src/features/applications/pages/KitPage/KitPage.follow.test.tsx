@@ -12,7 +12,7 @@ import { server } from "@/test/server";
 import { applicationsManifest } from "../../manifest";
 import { KitPage } from "./KitPage";
 
-const KIT_ROUTE = "candidatures/:applicationId/kit";
+const KIT_ROUTE = "applications/:applicationId/kit";
 
 function setup(options: KitApiOptions = {}) {
   const sockets = createFakeSocketServer();
@@ -23,7 +23,7 @@ function setup(options: KitApiOptions = {}) {
       ? { path: route.path, element: <KitPage createSocket={sockets.factory} /> }
       : route,
   );
-  const view = renderApplications(routes, "/candidatures/a1/kit", {
+  const view = renderApplications(routes, "/applications/a1/kit", {
     applications: [applicationOut({ id: "a1", company: "Acme", title: "Data engineer" })],
   });
   return { ...view, sockets, kit };

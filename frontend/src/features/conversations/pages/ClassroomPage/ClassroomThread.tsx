@@ -20,7 +20,7 @@ export function ClassroomThread({ lessonId }: { lessonId: string }) {
       <header className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-semibold">{t("conversations.classroom.title")}</h1>
         <Link
-          to={`/apprendre/lecons/${encodeURIComponent(lessonId)}`}
+          to={`/learn/lessons/${encodeURIComponent(lessonId)}`}
           className="text-sm underline"
         >
           {t("conversations.classroom.back")}

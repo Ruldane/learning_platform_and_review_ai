@@ -7,8 +7,8 @@ import { renderRoutes } from "@/test/renderRoutes";
 import { server } from "@/test/server";
 import { ClassroomPage } from "./ClassroomPage";
 
-const lesson = "/apprendre/lecons/l1";
-const classroom = lesson + "/classe";
+const lesson = "/learn/lessons/l1";
+const classroom = lesson + "/classroom";
 const endpoint = "http://localhost:8000/api/v1/lessons/l1/classroom";
 const explanation = "La chaîne relie chaque résultat à l’étape suivante.";
 const response: components["schemas"]["LessonConversationOut"] = {
@@ -54,7 +54,7 @@ it("shows all three roles and keeps the lesson source on return", async () => {
   );
   const { user, router } = renderRoutes(
     [
-      { path: "/apprendre/lecons/:lessonId/classe", Component: ClassroomPage },
+      { path: "/learn/lessons/:lessonId/classroom", Component: ClassroomPage },
       { path: lesson, element: <Link to={classroom}>Reprendre la classe</Link> },
     ],
     classroom,

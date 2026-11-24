@@ -5,9 +5,9 @@ import { Button } from "@/shared/ui/button";
 import type { Graph, Node } from "../../api";
 
 const paths = {
-  lesson: (ref: string) => `/apprendre/lecons/${encodeURIComponent(ref)}`,
-  training: (ref: string) => `/etudier/training?${new URLSearchParams({ competence: ref })}`,
-  note: (ref: string) => `/memoire?${new URLSearchParams({ item: ref })}`,
+  lesson: (ref: string) => `/learn/lessons/${encodeURIComponent(ref)}`,
+  training: (ref: string) => `/study/training?${new URLSearchParams({ skill: ref })}`,
+  note: (ref: string) => `/memory?${new URLSearchParams({ item: ref })}`,
 };
 
 interface Props {

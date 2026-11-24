@@ -93,7 +93,7 @@ describe("OffersConversation", () => {
     );
     expect(within(dialog).getByRole("link", { name: "Northwind application" })).toHaveAttribute(
       "href",
-      "/candidatures/application-1",
+      "/applications/application-1",
     );
     await user.click(within(dialog).getByRole("button", { name: "Open Northwind search" }));
     expect(within(dialog).queryByText("You added it on 2 November.")).not.toBeInTheDocument();

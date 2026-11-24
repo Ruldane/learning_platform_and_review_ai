@@ -14,40 +14,40 @@ describe("settingsManifest", () => {
       {
         section: "settings",
         labelKey: "settings.models.navLabel",
-        path: "/reglages/modeles",
+        path: "/settings/models",
         order: 1,
       },
       {
         section: "settings",
         labelKey: "settings.search.navLabel",
-        path: "/reglages/recherche",
+        path: "/settings/search",
         order: 2,
       },
       {
         section: "settings",
         labelKey: "settings.availability.navLabel",
-        path: "/reglages/disponibilite",
+        path: "/settings/availability",
         order: 3,
       },
       {
         section: "settings",
         labelKey: "settings.study.navLabel",
-        path: "/reglages/etude",
+        path: "/settings/study",
         order: 4,
       },
       {
         section: "settings",
         labelKey: "settings.style.navLabel",
-        path: "/reglages/style",
+        path: "/settings/style",
         order: 5,
       },
     ]);
     expect(settingsManifest.routes.map((route) => route.path)).toEqual([
-      "reglages/modeles",
-      "reglages/recherche",
-      "reglages/disponibilite",
-      "reglages/etude",
-      "reglages/style",
+      "settings/models",
+      "settings/search",
+      "settings/availability",
+      "settings/study",
+      "settings/style",
       "welcome",
     ]);
   });

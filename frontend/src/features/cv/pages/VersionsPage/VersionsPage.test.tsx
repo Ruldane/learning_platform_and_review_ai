@@ -6,7 +6,7 @@ import { renderCv } from "@/test/cvHarness";
 import { VersionsPage } from "./VersionsPage";
 
 function setup(api: Parameters<typeof renderCv>[3] = {}) {
-  return renderCv("/carriere/cv/versions", "/carriere/cv/versions", () => <VersionsPage />, api);
+  return renderCv("/career/cv/versions", "/career/cv/versions", () => <VersionsPage />, api);
 }
 
 describe("VersionsPage", () => {

@@ -4,7 +4,7 @@ import { LessonHuntPage } from "./pages/LessonHuntPage";
 export const lessonHuntManifest: FeatureManifest = {
   id: "lesson_hunt",
   routes: [
-    { path: "apprendre/lecons/:lessonId/erreurs", Component: LessonHuntPage },
-    { path: "apprendre/erreurs/:huntId", Component: LessonHuntPage },
+    { path: "learn/lessons/:lessonId/errors", Component: LessonHuntPage },
+    { path: "learn/error-hunts/:huntId", Component: LessonHuntPage },
   ],
 };

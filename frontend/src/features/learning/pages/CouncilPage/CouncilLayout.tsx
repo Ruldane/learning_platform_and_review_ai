@@ -39,7 +39,7 @@ export function CouncilLayout({ goal, sessionId, createSocket }: CouncilLayoutPr
     return (
       <ErrorState
         message={stream.error ?? t("errors.generic")}
-        onRetry={missing ? () => void navigate("/apprendre/objectifs") : stream.retry}
+        onRetry={missing ? () => void navigate("/learn/goals") : stream.retry}
         actionLabel={missing ? t("learning.council.goalsLink") : undefined}
       />
     );

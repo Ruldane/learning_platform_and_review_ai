@@ -11,8 +11,8 @@ function setup(options: Parameters<typeof mcpApi>[0] = {}) {
   const api = mcpApi(options);
   server.use(...api.handlers);
   const view = renderRoutes(
-    [{ path: "/reglages/mcp", element: <McpAccessPage /> }],
-    "/reglages/mcp",
+    [{ path: "/settings/mcp", element: <McpAccessPage /> }],
+    "/settings/mcp",
   );
   return { ...api, ...view };
 }

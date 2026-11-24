@@ -39,8 +39,8 @@ it("déclenche l’alerte au pas virtuel et ouvre le journal et le projet de ré
       return HttpResponse.json(current);
     }),
   );
-  const routes = [{ path: "/astreinte/:incidentId", element: <OncallPage /> }];
-  const { user } = renderRoutes(routes, `/astreinte/${exercise.id}`);
+  const routes = [{ path: "/on-call/:incidentId", element: <OncallPage /> }];
+  const { user } = renderRoutes(routes, `/on-call/${exercise.id}`);
 
   expect(await screen.findByText("En attente d’alerte")).toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: "Avancer d’une minute" }));

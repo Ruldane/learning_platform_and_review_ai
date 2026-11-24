@@ -128,7 +128,7 @@ describe("RadarPage messages and redirects", () => {
     stream.push(councilEvents("sess-new1").completed());
     await screen.findByRole("heading", { name: "Most in-demand skills" });
 
-    await act(() => router.navigate("/carriere/radar"));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/carriere/radar/r9"));
+    await act(() => router.navigate("/career/radar"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/career/radar/r9"));
   });
 });

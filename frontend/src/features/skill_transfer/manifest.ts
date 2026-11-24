@@ -4,7 +4,7 @@ export const skillTransferManifest: FeatureManifest = {
   id: "skill_transfer",
   routes: [
     {
-      path: "competences/transfert",
+      path: "skills/transfer",
       lazy: async () => ({
         Component: (await import("./pages/SkillTransferPage")).SkillTransferPage,
       }),
@@ -14,7 +14,7 @@ export const skillTransferManifest: FeatureManifest = {
     {
       section: "skills",
       labelKey: "skillTransfer.nav",
-      path: "/competences/transfert",
+      path: "/skills/transfer",
       order: 4.5,
     },
   ],

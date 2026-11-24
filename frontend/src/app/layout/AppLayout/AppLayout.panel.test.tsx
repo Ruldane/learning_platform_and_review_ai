@@ -63,7 +63,7 @@ describe("AppLayout side panel", () => {
   });
 
   it("shows the current section and page", async () => {
-    renderAt("/reglages/couts");
+    renderAt("/settings/costs");
     const here = within(await screen.findByRole("complementary", PANEL)).getByRole("group", {
       name: "You are here",
     });
@@ -83,7 +83,7 @@ describe("AppLayout side panel", () => {
   });
 
   it("colours the active menu section and marks the current location", async () => {
-    renderAt("/reglages/couts");
+    renderAt("/settings/costs");
     await screen.findByRole("complementary", PANEL);
     const nav = screen.getByRole("navigation", { name: "Main navigation" });
     const settings = within(nav).getByRole("link", { name: "Settings" });
@@ -109,7 +109,7 @@ describe("AppLayout side panel", () => {
     );
 
     it("shows the panel below the top bar and puts navigation in the Menu button", async () => {
-      renderAt("/reglages/couts");
+      renderAt("/settings/costs");
       const line = await screen.findByRole("complementary", PANEL);
       const banner = screen.getByRole("banner");
       expect(line.className).not.toContain("w-60");

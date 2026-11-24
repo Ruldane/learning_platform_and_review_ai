@@ -25,7 +25,7 @@ const ROWS = () => [
 ];
 
 function setup(api: Parameters<typeof renderApplications>[2] = {}) {
-  return renderApplications(routes, "/candidatures", { applications: ROWS(), ...api });
+  return renderApplications(routes, "/applications", { applications: ROWS(), ...api });
 }
 
 describe("BoardPage", () => {
@@ -112,7 +112,7 @@ describe("BoardPage", () => {
     await user.click(
       await screen.findByRole("button", { name: "Ouvrir la fiche de Acme, poste Data engineer" }),
     );
-    expect(router.state.location.pathname).toBe("/candidatures/a1");
+    expect(router.state.location.pathname).toBe("/applications/a1");
     expect(await screen.findByRole("dialog", { name: /Acme, Data engineer/ })).toBeVisible();
     // Le suivi reste monté derrière le tiroir (masqué aux lecteurs d'écran par la boîte modale).
     expect(screen.getByRole("group", { name: "Postulée, 1", hidden: true })).toBeInTheDocument();
@@ -122,13 +122,13 @@ describe("BoardPage", () => {
     const { user, router } = setup({ applications: [] });
     expect(await screen.findByText("Aucune candidature pour l'instant")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Nouvelle candidature" }));
-    expect(router.state.location.pathname).toBe("/candidatures/nouvelle");
+    expect(router.state.location.pathname).toBe("/applications/new");
   });
 
   it("links to the new application page", async () => {
     const { user, router } = setup();
     await user.click(await screen.findByRole("link", { name: "Nouvelle candidature" }));
-    expect(router.state.location.pathname).toBe("/candidatures/nouvelle");
+    expect(router.state.location.pathname).toBe("/applications/new");
   });
 
   it("says it is loading, then shows the board", async () => {

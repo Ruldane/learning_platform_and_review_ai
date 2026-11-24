@@ -113,8 +113,8 @@ def test_a_module_without_skills_is_a_failure() -> None:
 
 def test_the_skill_page_cites_the_session_and_the_passed_quiz() -> None:
     evidence = [
-        {"kind": "study", "url": "/etudier/session/e1"},
-        {"kind": "quiz", "url": "/etudier/quiz/q1"},
+        {"kind": "study", "url": "/study/session/e1"},
+        {"kind": "quiz", "url": "/study/quiz/q1"},
     ]
     detail: dict[str, Any] = {"evidence": evidence}
 

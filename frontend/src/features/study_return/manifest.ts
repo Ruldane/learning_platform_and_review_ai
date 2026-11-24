@@ -5,12 +5,12 @@ import { useStudyReturnBadge } from "./useStudyReturn";
 
 export const studyReturnManifest: FeatureManifest = {
   id: "study_return",
-  routes: [{ path: "etudier/reprise-apres-pause", Component: StudyReturnPage }],
+  routes: [{ path: "study/return", Component: StudyReturnPage }],
   nav: [
     {
       section: "study",
       labelKey: "studyReturn.title",
-      path: "/etudier/reprise-apres-pause",
+      path: "/study/return",
       order: 1.8,
       useBadge: useStudyReturnBadge,
       badgeLabel: () => t("studyReturn.badge"),

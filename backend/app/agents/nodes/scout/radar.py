@@ -248,7 +248,7 @@ def make_finish(deps: GraphDeps) -> Node:
             "artifact_id": run_id,
             "kind": "radar",
             "title": "Radar du marché",
-            "url": f"/carriere/radar/{run_id}",
+            "url": f"/career/radar/{run_id}",
         }
         emit("artifact.ready", artifact, agent=AGENT)
         text = summary_text(report)

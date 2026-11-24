@@ -10,7 +10,7 @@ import { TemplatesPage } from "./TemplatesPage";
 const createSpy = vi.spyOn(cvApiModule, "createTemplate");
 
 function setup(api: Parameters<typeof renderCv>[3] = {}) {
-  return renderCv("/carriere/cv", "/carriere/cv", () => <TemplatesPage pollMs={40} />, api);
+  return renderCv("/career/cv", "/career/cv", () => <TemplatesPage pollMs={40} />, api);
 }
 
 const pdf = () => new File(["%PDF-1.4"], "cv.pdf", { type: "application/pdf" });

@@ -57,13 +57,13 @@ async def test_validated_and_to_redo_projects_are_in_the_feed(env: Env) -> None:
     assert [item.kind for item in page.items] == ["project", "project"]
     redo_item, done_item = page.items
     assert redo_item.title == "Project needs revision: Un tableau de bord"
-    assert redo_item.link == f"/competences/portfolio/{redo}" and redo_item.at == hours(3)
+    assert redo_item.link == f"/skills/portfolio/{redo}" and redo_item.at == hours(3)
     assert (
         redo_item.id == f"project:{redo}:to_redo:s-{hours(3).isoformat()}"
         and redo_item.detail is None
     )
     assert done_item.title == "Project approved: Une API de suivi"
-    assert done_item.link == f"/competences/portfolio/{done}" and done_item.at == hours(2)
+    assert done_item.link == f"/skills/portfolio/{done}" and done_item.at == hours(2)
     assert done_item.id == f"project:{done}:validated"
     dumped = page.model_dump_json()
     assert "secret" not in dumped  # ni la description, ni le retour du Praticien

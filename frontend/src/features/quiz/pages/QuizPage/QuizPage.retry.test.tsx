@@ -12,8 +12,8 @@ function setup(api: Parameters<typeof quizApi>[0] = {}) {
   const quiz = quizApi(api);
   server.use(...quiz.handlers);
   const router = createMemoryRouter(
-    [{ path: "/etudier/quiz/:quizId", element: <QuizPage preparePollMs={5} gradePollMs={5} /> }],
-    { initialEntries: ["/etudier/quiz/z1"] },
+    [{ path: "/study/quiz/:quizId", element: <QuizPage preparePollMs={5} gradePollMs={5} /> }],
+    { initialEntries: ["/study/quiz/z1"] },
   );
   render(<RouterProvider router={router} />, { wrapper: createQueryWrapper() });
   return { user: userEvent.setup() };

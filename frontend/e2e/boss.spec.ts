@@ -29,7 +29,7 @@ test("le Boss reprend le changement client et note la remise sauvegardée", asyn
   expect(programs.ok()).toBe(true);
   const [program] = (await programs.json()) as { id: string }[];
   if (!program) throw new Error("Programme de recette introuvable.");
-  await page.goto(`/apprendre/programme/${program.id}`);
+  await page.goto(`/learn/programs/${program.id}`);
   await page.getByRole("link", { name: "Voir le Boss de fin de programme" }).click();
   await page.getByRole("button", { name: "Démarrer les 30 minutes" }).click();
   await expect(page.getByText("Demande initiale")).toBeVisible();

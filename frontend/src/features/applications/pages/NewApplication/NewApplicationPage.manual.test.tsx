@@ -13,11 +13,11 @@ import { NewApplicationPage } from "./NewApplicationPage";
 function setup(api: Parameters<typeof renderApplications>[2] = {}) {
   const sockets = createFakeSocketServer();
   const routes = applicationsManifest.routes.map((route) =>
-    route.path === "candidatures/nouvelle"
+    route.path === "applications/new"
       ? { path: route.path, element: <NewApplicationPage createSocket={sockets.factory} /> }
       : route,
   );
-  const view = renderApplications(routes, "/candidatures/nouvelle", {
+  const view = renderApplications(routes, "/applications/new", {
     applications: [applicationOut({ id: "a1" }), applicationOut({ id: "a9", title: "Autre" })],
     ...api,
   });
@@ -44,7 +44,7 @@ describe("NewApplicationPage, à la main", () => {
     await user.type(screen.getByLabelText("Postulée le"), "2026-11-10");
     await user.selectOptions(screen.getByLabelText("Canal"), "linkedin");
     await user.click(screen.getByRole("button", { name: "Créer la fiche" }));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/candidatures/new1"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/applications/new1"));
     expect(state.creates).toEqual([
       {
         company: "Delta",
@@ -131,7 +131,7 @@ describe("NewApplicationPage, à la main", () => {
     expect(alert).toHaveTextContent("Attention, tu as déjà une fiche chez Acme");
     expect(screen.queryByText("Cette fiche existe déjà.")).toBeNull();
     await user.click(within(alert).getByRole("button", { name: "Ouvrir la fiche existante" }));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/candidatures/a9"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/applications/a9"));
     expect(state.creates).toHaveLength(1);
   });
 
@@ -166,7 +166,7 @@ describe("NewApplicationPage, à la main", () => {
     await user.type(screen.getByLabelText("Poste"), "Data engineer");
     await user.click(screen.getByRole("button", { name: "Créer la fiche" }));
     await user.click(await screen.findByRole("button", { name: "C'est un autre poste" }));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/candidatures/new2"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/applications/new2"));
     expect(state.creates[1]).toMatchObject({ company: "Acme", distinct_from: ["a9"] });
   });
 

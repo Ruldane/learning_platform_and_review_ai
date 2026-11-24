@@ -45,7 +45,7 @@ export function PostingView({
       {posting.analysis ? (
         <Link
           className="self-start underline"
-          to={`/carriere/missions?offre=${encodeURIComponent(posting.id)}`}
+          to={`/career/missions?posting=${encodeURIComponent(posting.id)}`}
         >
           {t("missions.openFromOffer")}
         </Link>

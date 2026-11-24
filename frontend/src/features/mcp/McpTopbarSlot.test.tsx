@@ -27,7 +27,7 @@ describe("McpTopbarSlot", () => {
       confirmationOut({ id: "e", status: "refused" }),
     ]);
     const link = await screen.findByRole("link", { name: "2 requests to confirm" });
-    expect(link).toHaveAttribute("href", "/reglages/mcp");
+    expect(link).toHaveAttribute("href", "/settings/mcp");
     expect(link).toHaveTextContent("To confirm (2)");
   });
 

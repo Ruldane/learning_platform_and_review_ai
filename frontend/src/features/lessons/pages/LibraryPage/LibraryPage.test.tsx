@@ -8,9 +8,9 @@ import { server } from "@/test/server";
 import { LibraryPage } from "./LibraryPage";
 
 const routes = [
-  { path: "/apprendre/bibliotheque", element: <LibraryPage /> },
-  { path: "/apprendre/programme/:programId", element: <h1>Programme ouvert</h1> },
-  { path: "/apprendre/programme", element: <h1>Programme ouvert</h1> },
+  { path: "/learn/library", element: <LibraryPage /> },
+  { path: "/learn/programs/:programId", element: <h1>Programme ouvert</h1> },
+  { path: "/learn/programs", element: <h1>Programme ouvert</h1> },
 ];
 
 function setup(resources: Record<string, unknown>[] = [resourceOut()]) {
@@ -22,7 +22,7 @@ function setup(resources: Record<string, unknown>[] = [resourceOut()]) {
       return HttpResponse.json(resources);
     }),
   );
-  return { queries, ...renderRoutes(routes, "/apprendre/bibliotheque") };
+  return { queries, ...renderRoutes(routes, "/learn/library") };
 }
 
 describe("LibraryPage", () => {
@@ -73,7 +73,7 @@ describe("LibraryPage", () => {
     const { router, user } = setup([]);
     expect(await screen.findByText("No resources yet")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "View the program" }));
-    expect(router.state.location.pathname).toBe("/apprendre/programme/p1");
+    expect(router.state.location.pathname).toBe("/learn/programs/p1");
   });
 
   it("offers to clear the filters when none matches", async () => {
@@ -97,7 +97,7 @@ describe("LibraryPage", () => {
           : HttpResponse.json([resourceOut()]);
       }),
     );
-    const { user } = renderRoutes(routes, "/apprendre/bibliotheque");
+    const { user } = renderRoutes(routes, "/learn/library");
     await user.click(await screen.findByRole("button", { name: "Retry" }));
     expect(
       await screen.findByRole("link", { name: /Documentation officielle de Python/ }),

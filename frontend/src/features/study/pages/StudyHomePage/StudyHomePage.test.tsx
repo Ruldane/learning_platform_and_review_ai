@@ -15,7 +15,7 @@ const started = { study_session_id: "st1", session_id: "s1", lesson_id: "l1" };
 
 type Summary = Record<string, unknown> | (() => Response | Promise<Response>);
 
-function setup(summary: Summary = summaryOut(), entry: InitialEntry = "/etudier/session") {
+function setup(summary: Summary = summaryOut(), entry: InitialEntry = "/study/session") {
   server.use(
     http.get(`${API}/study-sessions/summary`, () =>
       typeof summary === "function" ? summary() : HttpResponse.json(summary),
@@ -23,10 +23,10 @@ function setup(summary: Summary = summaryOut(), entry: InitialEntry = "/etudier/
     http.get(`${API}/lessons/l1`, () => HttpResponse.json({ id: "l1", title: "Les API REST" })),
   );
   const routes: { path: string; element: ReactElement }[] = [
-    { path: "/etudier/session", element: <StudyHomePage /> },
-    { path: "/etudier/session/:studyId", element: <p>Session opened</p> },
-    { path: "/etudier/training/:studyId", element: <p>Training opened</p> },
-    { path: "/apprendre/lecons", element: <p>Lesson list</p> },
+    { path: "/study/session", element: <StudyHomePage /> },
+    { path: "/study/session/:studyId", element: <p>Session opened</p> },
+    { path: "/study/training/:studyId", element: <p>Training opened</p> },
+    { path: "/learn/lessons", element: <p>Lesson list</p> },
   ];
   const router = createMemoryRouter(routes, { initialEntries: [entry] });
   render(<RouterProvider router={router} />, { wrapper: createQueryWrapper() });
@@ -40,7 +40,7 @@ describe("StudyHomePage", () => {
     expect(await screen.findByRole("heading", { name: "Les API REST" })).toBeInTheDocument();
     await user.click(screen.getByRole("radio", { name: /Feynman/ }));
     await user.click(screen.getByRole("button", { name: "Start my block" }));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/etudier/session/st1"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/study/session/st1"));
     expect(posts).toEqual([{ mode: "feynman" }]);
   });
 
@@ -57,7 +57,7 @@ describe("StudyHomePage", () => {
     const posts = recordPosts("/study-sessions", 202, started);
     const { router, user } = setup(summaryOut({ open_session_id: "st9" }));
     await user.click(await screen.findByRole("button", { name: "Resume my session" }));
-    expect(router.state.location.pathname).toBe("/etudier/session/st9");
+    expect(router.state.location.pathname).toBe("/study/session/st9");
     expect(screen.queryByRole("button", { name: "Start my block" })).not.toBeInTheDocument();
     expect(posts).toHaveLength(0);
   });
@@ -74,7 +74,7 @@ describe("StudyHomePage", () => {
     );
     const { router, user } = setup();
     await user.click(await screen.findByRole("button", { name: "Start my block" }));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/etudier/session/st9"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/study/session/st9"));
   });
 
   it("reopens the training that is blocking a guided session", async () => {
@@ -89,7 +89,7 @@ describe("StudyHomePage", () => {
     const { router, user } = setup();
     await user.click(await screen.findByRole("button", { name: "Start my block" }));
     expect(await screen.findByText("Training opened")).toBeVisible();
-    expect(router.state.location.pathname).toBe("/etudier/training/training-1");
+    expect(router.state.location.pathname).toBe("/study/training/training-1");
   });
 
   it("offers to choose a lesson on no_block_today", async () => {
@@ -104,7 +104,7 @@ describe("StudyHomePage", () => {
       await screen.findByRole("heading", { name: "No block planned today" }),
     ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Choose a lesson" }));
-    expect(router.state.location.pathname).toBe("/apprendre/lecons");
+    expect(router.state.location.pathname).toBe("/learn/lessons");
   });
 
   it("shows an empty state with an action when there is no block and no session", async () => {
@@ -113,7 +113,7 @@ describe("StudyHomePage", () => {
       await screen.findByRole("heading", { name: "No block planned today" }),
     ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Choose a lesson" }));
-    expect(router.state.location.pathname).toBe("/apprendre/lecons");
+    expect(router.state.location.pathname).toBe("/learn/lessons");
   });
 
   it("shows another start error inline and keeps the button", async () => {
@@ -125,14 +125,14 @@ describe("StudyHomePage", () => {
     expect(screen.getByRole("button", { name: "Start my block" })).toBeEnabled();
   });
 
-  it("preselects the lesson from ?lecon", async () => {
+  it("preselects the lesson from ?lesson", async () => {
     const posts = recordPosts("/study-sessions", 202, started);
-    const { router, user } = setup(summaryOut(), "/etudier/session?lecon=l1");
+    const { router, user } = setup(summaryOut(), "/study/session?lesson=l1");
     expect(await screen.findByRole("heading", { name: "Les API REST" })).toBeInTheDocument();
     expect(screen.queryByText("Your block for today")).not.toBeInTheDocument();
     expect(screen.queryByText("Your question for the tutor")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Study this lesson" }));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/etudier/session/st1"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/study/session/st1"));
     expect(posts).toEqual([{ lesson_id: "l1", mode: "socratic" }]);
   });
 
@@ -140,7 +140,7 @@ describe("StudyHomePage", () => {
     const posts = recordPosts("/study-sessions", 202, started);
     const passage = "x".repeat(2500);
     const { user } = setup(summaryOut(), {
-      pathname: "/etudier/session",
+      pathname: "/study/session",
       state: { lessonId: "l1", question: passage },
     } as InitialEntry);
     expect(await screen.findByText("Your question for the tutor")).toBeInTheDocument();
@@ -153,11 +153,11 @@ describe("StudyHomePage", () => {
   it("keeps the open session within reach when a lesson is chosen", async () => {
     const { router, user } = setup(
       summaryOut({ open_session_id: "st9" }),
-      "/etudier/session?lecon=l1",
+      "/study/session?lesson=l1",
     );
     await screen.findByRole("heading", { name: "Les API REST" });
     await user.click(screen.getByRole("button", { name: "Resume my session" }));
-    expect(router.state.location.pathname).toBe("/etudier/session/st9");
+    expect(router.state.location.pathname).toBe("/study/session/st9");
   });
 
   it("announces the loading", () => {

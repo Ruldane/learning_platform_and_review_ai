@@ -8,7 +8,7 @@ test("compose un module à partir de deux lignes choisies puis le range", async 
   request,
 }) => {
   await finishFirstLaunch(request);
-  await page.goto("/etudier/modules-reunion");
+  await page.goto("/study/meeting-modules");
   await page.getByLabel("Titre du module").fill("Préparer l’atelier de juillet");
   await page
     .getByLabel("Extrait de la réunion")

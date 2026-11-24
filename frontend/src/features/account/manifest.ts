@@ -6,6 +6,6 @@ import { DataPage } from "./pages/DataPage";
  */
 export const accountManifest: FeatureManifest = {
   id: "account",
-  routes: [{ path: "reglages/donnees", Component: DataPage }],
-  nav: [{ section: "settings", labelKey: "account.nav.data", path: "/reglages/donnees", order: 8 }],
+  routes: [{ path: "settings/data", Component: DataPage }],
+  nav: [{ section: "settings", labelKey: "account.nav.data", path: "/settings/data", order: 8 }],
 };

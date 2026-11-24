@@ -261,7 +261,7 @@ describe("capture dialog", () => {
     const dialog = await screen.findByRole("dialog");
     expect(await within(dialog).findByText("Capture complete.")).toBeInTheDocument();
     await user.click(within(dialog).getByRole("link", { name: "View journal" }));
-    expect(router.state.location.pathname).toBe("/etudier/journal");
+    expect(router.state.location.pathname).toBe("/study/journal");
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
 });

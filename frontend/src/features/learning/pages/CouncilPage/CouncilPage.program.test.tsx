@@ -43,9 +43,9 @@ describe("CouncilPage : programme", () => {
     const program = councilEvents("pr1");
     socketsOf(fake, "pr1")[0]!
       .open()
-      .push(program.artifactReady("program", "pr9", "/apprendre/programme/pr9"));
+      .push(program.artifactReady("program", "pr9", "/learn/programs/pr9"));
     const link = await screen.findByRole("link", { name: "Voir le programme" });
-    expect(link).toHaveAttribute("href", "/apprendre/programme/pr9");
+    expect(link).toHaveAttribute("href", "/learn/programs/pr9");
     expect(document.querySelector('[aria-current="step"]')).toHaveTextContent("Programme");
   });
 
@@ -58,7 +58,7 @@ describe("CouncilPage : programme", () => {
     (await openCouncil(fake)).push(e.message("moderator-choix", "Parcours choisi"), e.completed());
     expect(await screen.findByRole("link", { name: "Voir le programme" })).toHaveAttribute(
       "href",
-      "/apprendre/programme/pr3",
+      "/learn/programs/pr3",
     );
   });
 

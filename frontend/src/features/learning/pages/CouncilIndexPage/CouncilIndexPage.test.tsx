@@ -11,11 +11,11 @@ import { CouncilIndexPage } from "./CouncilIndexPage";
 function setup() {
   const router = createMemoryRouter(
     [
-      { path: "/apprendre/conseil", element: <CouncilIndexPage /> },
-      { path: "/apprendre/objectifs", element: <h1>Mes objectifs</h1> },
-      { path: "/apprendre/objectifs/:goalId/conseil", element: <h1>Conseil ouvert</h1> },
+      { path: "/learn/council", element: <CouncilIndexPage /> },
+      { path: "/learn/goals", element: <h1>Mes objectifs</h1> },
+      { path: "/learn/goals/:goalId/council", element: <h1>Conseil ouvert</h1> },
     ],
-    { initialEntries: ["/apprendre/conseil"] },
+    { initialEntries: ["/learn/council"] },
   );
   render(<RouterProvider router={router} />, { wrapper: createQueryWrapper() });
   return { router, user: userEvent.setup() };
@@ -33,7 +33,7 @@ describe("CouncilIndexPage", () => {
     );
     const { router } = setup();
     expect(await screen.findByRole("heading", { name: "Conseil ouvert" })).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe("/apprendre/objectifs/new/conseil");
+    expect(router.state.location.pathname).toBe("/learn/goals/new/council");
     // Remplacé dans l'historique : « Retour » ne boucle pas.
     expect(router.state.historyAction).toBe("REPLACE");
   });
@@ -43,7 +43,7 @@ describe("CouncilIndexPage", () => {
     const { router, user } = setup();
     expect(await screen.findByText("Saisis un objectif")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Saisir un objectif" }));
-    expect(router.state.location.pathname).toBe("/apprendre/objectifs");
+    expect(router.state.location.pathname).toBe("/learn/goals");
   });
 
   it("offers « Réessayer » when the goals cannot be read", async () => {

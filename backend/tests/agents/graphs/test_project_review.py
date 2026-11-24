@@ -56,7 +56,7 @@ async def test_all_criteria_met_validates_and_drafts(
     assert run.calls(EVALUATE_ASK) == 1 and run.calls(DRAFTS_ASK) == 1  # deux appels
     [artifact] = await run.events("artifact.ready")
     assert artifact["kind"] == "project" and artifact["artifact_id"] == PROJECT_ID
-    assert artifact["url"] == f"/competences/portfolio/{PROJECT_ID}" and artifact["title"] == TITLE
+    assert artifact["url"] == f"/skills/portfolio/{PROJECT_ID}" and artifact["title"] == TITLE
     [done] = await run.events("run.completed")
     assert done["summary"] == "Projet validé : 4 brouillons prêts."
 

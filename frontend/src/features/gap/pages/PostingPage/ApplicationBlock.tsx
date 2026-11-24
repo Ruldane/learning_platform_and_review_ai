@@ -9,7 +9,7 @@ import { useApplicationCheck } from "../../hooks/useApplicationCheck";
 import { useCreateFromPosting } from "../../hooks/useCreateFromPosting";
 import { toApplicationAlertView, toExistingApplicationView } from "../../toView";
 
-const applicationPath = (applicationId: string) => `/candidatures/${applicationId}`;
+const applicationPath = (applicationId: string) => `/applications/${applicationId}`;
 
 /**
  * La candidature de l'offre : celle qui existe déjà, l'alerte de doublon quand des fiches lui

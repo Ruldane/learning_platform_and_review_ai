@@ -26,7 +26,7 @@ describe("ProgramList", () => {
     const [first, second] = screen.getAllByRole("listitem") as [HTMLElement, HTMLElement];
     expect(within(first).getByRole("link", { name: "Bases du ML" })).toHaveAttribute(
       "href",
-      "/apprendre/programme/new",
+      "/learn/programs/new",
     );
     expect(within(first).getByText("Draft")).toBeInTheDocument();
     expect(within(first).getByText("12 weeks")).toBeInTheDocument();

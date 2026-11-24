@@ -7,7 +7,7 @@ import { ProgramPicker } from "../../components/ProgramPicker";
 import { usePrograms } from "../../useBook";
 import { Edition } from "./Edition";
 
-const BOOK_PATH = "/apprendre/livre";
+const BOOK_PATH = "/learn/book";
 
 export function BookPage({ pollMs = 3_000 }: { pollMs?: number }) {
   const { programId } = useParams();
@@ -25,7 +25,7 @@ export function BookPage({ pollMs = 3_000 }: { pollMs?: number }) {
         />
       ) : null}
       {programs.data?.length === 0 ? (
-        <Link to="/apprendre/objectifs" className="underline underline-offset-4">
+        <Link to="/learn/goals" className="underline underline-offset-4">
           {t("book.program.empty")}
         </Link>
       ) : null}

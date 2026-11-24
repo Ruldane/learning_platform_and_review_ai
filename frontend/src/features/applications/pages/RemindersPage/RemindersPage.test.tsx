@@ -24,7 +24,7 @@ const REMINDERS = () => [
 ];
 
 function setup(api: Parameters<typeof renderApplications>[2] = {}) {
-  return renderApplications(routes, "/candidatures/relances", {
+  return renderApplications(routes, "/applications/reminders", {
     applications: [
       applicationOut(),
       applicationOut({ id: "a2", company: "Beta", title: "Analyste", status: "followed_up" }),
@@ -183,7 +183,7 @@ describe("RemindersPage", () => {
     const { user, router } = setup({ reminders: [] });
     expect(await screen.findByText("Aucune relance due")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Retour au suivi" }));
-    expect(router.state.location.pathname).toBe("/candidatures");
+    expect(router.state.location.pathname).toBe("/applications");
   });
 
   it("says it is loading", () => {

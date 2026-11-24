@@ -10,7 +10,7 @@ interface PlanResultProps {
 }
 
 const replanHref = (programId: string | null) =>
-  programId === null ? "/apprendre/programme" : `/apprendre/programme/${programId}/replanification`;
+  programId === null ? "/learn/programs" : `/learn/programs/${programId}/replan`;
 
 /**
  * Ce que « Ajouter au planning » a donné : un lien vers la replanification (lancée ou déjà
@@ -34,7 +34,7 @@ export function PlanResult({ outcome, failure }: PlanResultProps) {
     <div className="flex flex-col items-start gap-2">
       <InlineError message={failure.message} />
       {failure.code === "no_program" ? (
-        <Link to="/apprendre/objectifs" className={buttonVariants({ size: "sm" })}>
+        <Link to="/learn/goals" className={buttonVariants({ size: "sm" })}>
           {t("gap.posting.planNoProgram")}
         </Link>
       ) : null}

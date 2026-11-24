@@ -5,13 +5,13 @@ describe("quizManifest", () => {
   it("declares the reviews, the quiz list and the quiz page", () => {
     expect(quizManifest.id).toBe("quiz");
     expect(quizManifest.routes.map((route) => route.path)).toEqual([
-      "etudier/revisions",
-      "etudier/quiz",
-      "etudier/quiz/:quizId",
+      "study/reviews",
+      "study/quiz",
+      "study/quiz/:quizId",
     ]);
     expect(quizManifest.nav).toEqual([
-      { section: "study", labelKey: "quiz.nav.reviews", path: "/etudier/revisions", order: 2 },
-      { section: "study", labelKey: "quiz.nav.quiz", path: "/etudier/quiz", order: 3 },
+      { section: "study", labelKey: "quiz.nav.reviews", path: "/study/reviews", order: 2 },
+      { section: "study", labelKey: "quiz.nav.quiz", path: "/study/quiz", order: 3 },
       { section: "study", labelKey: "mobile.title", path: "/mobile", order: 3.5 },
     ]);
   });

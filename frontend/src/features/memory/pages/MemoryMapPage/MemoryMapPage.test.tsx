@@ -6,17 +6,17 @@ import { API, apiError, mapOut, memoryBackend, readHandlers } from "../../fixtur
 import { renderRoutes } from "@/test/renderRoutes";
 import { MemoryMapPage } from "./MemoryMapPage";
 
-const DOCS = { path: "/memoire/documents", element: <p>Écran des documents</p> };
+const DOCS = { path: "/memory/documents", element: <p>Écran des documents</p> };
 
 function setup(init: Parameters<typeof memoryBackend>[0] = {}) {
   server.use(...readHandlers(memoryBackend(init)));
   return renderRoutes(
     [
-      { path: "/memoire/carte", element: <MemoryMapPage /> },
-      { path: "/memoire", element: <p>Explorateur</p> },
+      { path: "/memory/map", element: <MemoryMapPage /> },
+      { path: "/memory", element: <p>Explorateur</p> },
       DOCS,
     ],
-    "/memoire/carte",
+    "/memory/map",
   );
 }
 
@@ -24,7 +24,7 @@ describe("MemoryMapPage", () => {
   it("opens the clicked item in the explorer through ?item=", async () => {
     const { router, user } = setup();
     await user.click(await screen.findByRole("button", { name: "Attention (Acquis)" }));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/memoire"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/memory"));
     expect(router.state.location.search).toBe("?item=i1");
   });
 
@@ -37,7 +37,7 @@ describe("MemoryMapPage", () => {
     const { router, user } = setup({ map: { ...mapOut, points: [] } });
     expect(await screen.findByText("La carte apparaîtra après le premier import.")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Importer un document" }));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/memoire/documents"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/memory/documents"));
   });
 
   it("shows a loading state, then a retryable error", async () => {
@@ -49,8 +49,8 @@ describe("MemoryMapPage", () => {
       }),
     );
     const { user } = renderRoutes(
-      [{ path: "/memoire/carte", element: <MemoryMapPage /> }],
-      "/memoire/carte",
+      [{ path: "/memory/map", element: <MemoryMapPage /> }],
+      "/memory/map",
     );
     expect(screen.getByRole("status")).toBeInTheDocument();
     expect(await screen.findByText("Carte indisponible.")).toBeInTheDocument();

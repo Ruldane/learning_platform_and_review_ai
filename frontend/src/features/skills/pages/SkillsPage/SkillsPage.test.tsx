@@ -13,12 +13,12 @@ function setup(api: Parameters<typeof skillsApi>[0] = {}) {
   server.use(...skills.handlers);
   const view = renderRoutes(
     [
-      { path: "/competences", element: <SkillsPage /> },
-      { path: "/apprendre/objectifs", element: <p>Objectifs</p> },
-      { path: "/etudier/session", element: <p>Session guidée</p> },
+      { path: "/skills", element: <SkillsPage /> },
+      { path: "/learn/goals", element: <p>Objectifs</p> },
+      { path: "/study/session", element: <p>Session guidée</p> },
       { path: "/career/postings", element: <p>Liste des offres</p> },
     ],
-    "/competences",
+    "/skills",
   );
   return { ...view, reads: skills.reads };
 }
@@ -58,7 +58,7 @@ describe("SkillsPage", () => {
     });
     await user.click(screen.getByRole("tab", { name: "Comparison" }));
     await user.click(await screen.findByRole("button", { name: "Create a goal" }));
-    expect(router.state.location.pathname).toBe("/apprendre/objectifs");
+    expect(router.state.location.pathname).toBe("/learn/goals");
   });
 
   it("shows an empty state, a loading state and a retryable error", async () => {
@@ -174,7 +174,7 @@ describe("SkillsPage", () => {
       const { user, router } = setup({ graph: empty });
       expect(await screen.findByText("No skills on the map")).toBeInTheDocument();
       await user.click(screen.getByRole("button", { name: "Create a goal" }));
-      expect(router.state.location.pathname).toBe("/apprendre/objectifs");
+      expect(router.state.location.pathname).toBe("/learn/goals");
     });
 
     it("offers to create a goal from an empty radar", async () => {
@@ -182,7 +182,7 @@ describe("SkillsPage", () => {
       await user.click(screen.getByRole("tab", { name: "Radar" }));
       expect(await screen.findByText("No domains to show")).toBeInTheDocument();
       await user.click(screen.getByRole("button", { name: "Create a goal" }));
-      expect(router.state.location.pathname).toBe("/apprendre/objectifs");
+      expect(router.state.location.pathname).toBe("/learn/goals");
     });
 
     it("offers to study from an empty progress", async () => {
@@ -190,7 +190,7 @@ describe("SkillsPage", () => {
       await user.click(screen.getByRole("tab", { name: "Progress" }));
       expect(await screen.findByText("No snapshots yet")).toBeInTheDocument();
       await user.click(screen.getByRole("button", { name: "Start a session" }));
-      expect(router.state.location.pathname).toBe("/etudier/session");
+      expect(router.state.location.pathname).toBe("/study/session");
     });
 
     it("offers to see the goals from an empty comparison", async () => {
@@ -200,7 +200,7 @@ describe("SkillsPage", () => {
       await user.click(screen.getByRole("tab", { name: "Comparison" }));
       expect(await screen.findByText("No skills to compare")).toBeInTheDocument();
       await user.click(screen.getByRole("button", { name: "See my goals" }));
-      expect(router.state.location.pathname).toBe("/apprendre/objectifs");
+      expect(router.state.location.pathname).toBe("/learn/goals");
     });
   });
 });

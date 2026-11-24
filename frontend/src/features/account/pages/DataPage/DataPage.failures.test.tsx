@@ -48,7 +48,7 @@ describe("DataPage, failures and order of calls", () => {
     expect(message).toHaveTextContent("deletion resumes where it stopped");
     await waitFor(() => expect(message).toHaveFocus());
     expect(word()).toHaveValue("SUPPRIMER");
-    expect(router.state.location.pathname).toBe("/reglages/donnees");
+    expect(router.state.location.pathname).toBe("/settings/data");
   });
 
   it("a second validation in the same instant sends one deletion only", async () => {

@@ -17,11 +17,11 @@ import { WeekCard } from "../../components/WeekCard";
 import type { BriefView } from "../../toView";
 
 /** Les routes où l'accueil mène (il n'importe jamais une autre feature : il ne connaît que ses chemins). */
-const STUDY_SESSION = "/etudier/session";
-const REVIEWS = "/etudier/revisions";
+const STUDY_SESSION = "/study/session";
+const REVIEWS = "/study/reviews";
 const POSTINGS = "/career/postings";
-const GOALS = "/apprendre/objectifs";
-const applicationPath = (applicationId: string) => `/candidatures/${applicationId}`;
+const GOALS = "/learn/goals";
+const applicationPath = (applicationId: string) => `/applications/${applicationId}`;
 
 /**
  * Le brief du jour : l'en-tête, les actions rapides puis les sept rubriques dans l'ordre de F17

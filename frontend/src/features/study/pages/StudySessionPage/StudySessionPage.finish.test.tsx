@@ -78,7 +78,7 @@ describe("StudySessionPage: Finish", () => {
     expect(screen.getByText("REST")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Review my cards" })).toHaveAttribute(
       "href",
-      "/etudier/revisions",
+      "/study/reviews",
     );
   });
 

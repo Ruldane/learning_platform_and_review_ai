@@ -19,7 +19,7 @@ test("corrige le résumé proposé et peut ensuite le copier", async ({ page, re
       },
     });
   });
-  await page.goto("/carriere/linkedin");
+  await page.goto("/career/linkedin");
   await page.getByRole("button", { name: "Préparer les propositions" }).press("Enter");
   await expect(page.getByText("Résumé · 900")).toBeVisible();
   const copy = page.getByRole("button", { name: "Copier le résumé" });

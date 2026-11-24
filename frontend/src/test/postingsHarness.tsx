@@ -21,12 +21,12 @@ export function renderPosting(
     [
       { path: "/career/postings/:postingId", element: makePage(sockets.factory) },
       { path: "/career/postings", element: <p>Postings list</p> },
-      { path: "/candidatures/:applicationId", element: <p>Application details</p> },
+      { path: "/applications/:applicationId", element: <p>Application details</p> },
       {
-        path: "/apprendre/programme/:programId/replanification",
+        path: "/learn/programs/:programId/replan",
         element: <p>Replan</p>,
       },
-      { path: "/apprendre/objectifs", element: <p>Goals</p> },
+      { path: "/learn/goals", element: <p>Goals</p> },
     ],
     "/career/postings/p1",
   );

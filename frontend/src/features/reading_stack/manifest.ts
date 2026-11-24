@@ -4,6 +4,6 @@ import { ReadingPage } from "./pages/ReadingPage";
 
 export const readingManifest: FeatureManifest = {
   id: "reading_stack",
-  routes: [{ path: "memoire/lecture/:itemId?", element: createElement(ReadingPage) }],
-  nav: [{ section: "memory", labelKey: "reading.title", path: "/memoire/lecture", order: 6 }],
+  routes: [{ path: "memory/reading/:itemId?", element: createElement(ReadingPage) }],
+  nav: [{ section: "memory", labelKey: "reading.title", path: "/memory/reading", order: 6 }],
 };

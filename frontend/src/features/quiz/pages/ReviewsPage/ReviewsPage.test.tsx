@@ -34,10 +34,10 @@ function setup(due: Record<string, unknown> | Reply = queue()) {
   );
   const router = createMemoryRouter(
     [
-      { path: "/etudier/revisions", element: <ReviewsPage /> },
-      { path: "/etudier/quiz", element: <p>Liste des quiz</p> },
+      { path: "/study/reviews", element: <ReviewsPage /> },
+      { path: "/study/quiz", element: <p>Liste des quiz</p> },
     ],
-    { initialEntries: ["/etudier/revisions"] },
+    { initialEntries: ["/study/reviews"] },
   );
   render(<RouterProvider router={router} />, { wrapper: createQueryWrapper() });
   return { router, user: userEvent.setup() };
@@ -142,7 +142,7 @@ describe("ReviewsPage", () => {
       await screen.findByRole("heading", { name: "No more cards to review" }),
     ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "See the quizzes" }));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/etudier/quiz"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/study/quiz"));
   });
 
   it("has an empty state when nothing is due", async () => {

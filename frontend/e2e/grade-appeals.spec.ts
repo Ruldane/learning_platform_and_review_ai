@@ -8,7 +8,7 @@ test("justifie un désaccord puis retrouve la décision et les deux lectures", a
   const seed = await request.post(`${new URL(API).origin}/e2e/grade-appeals/ready`);
   expect(seed.ok()).toBe(true);
   const { project_id: project } = (await seed.json()) as { project_id: string };
-  await page.goto("/competences/contestations");
+  await page.goto("/skills/appeals");
   await page.getByLabel("Projet évalué").selectOption(project);
   await page.getByLabel("Critère contesté").selectOption({ label: "Rendre le prélèvement reproductible" });
   const reason = "Les dates se trouvent dans le dernier paragraphe de la remise.";

@@ -91,12 +91,12 @@ export function renderReplan(
   const router = createMemoryRouter(
     [
       {
-        path: "/apprendre/programme/:programId/replanification",
+        path: "/learn/programs/:programId/replan",
         element: makePage(sockets.factory),
       },
-      { path: "/apprendre/programme/:programId", element: <p>Programme</p> },
+      { path: "/learn/programs/:programId", element: <p>Programme</p> },
     ],
-    { initialEntries: ["/apprendre/programme/p1/replanification"] },
+    { initialEntries: ["/learn/programs/p1/replan"] },
   );
   render(<RouterProvider router={router} />, { wrapper: createQueryWrapper() });
   return { fake: sockets, state: replan.state, router, user: userEvent.setup() };

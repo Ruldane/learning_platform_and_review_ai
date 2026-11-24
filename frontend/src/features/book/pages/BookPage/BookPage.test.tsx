@@ -33,8 +33,8 @@ it("demande une édition et affiche les deux téléchargements quand elle est pr
     }),
   );
   const { user } = renderRoutes(
-    [{ path: "/apprendre/livre/:programId?", element: <BookPage pollMs={20} /> }],
-    `/apprendre/livre/${PROGRAM}`,
+    [{ path: "/learn/book/:programId?", element: <BookPage pollMs={20} /> }],
+    `/learn/book/${PROGRAM}`,
   );
   await user.click(await screen.findByRole("button", { name: "Préparer le livre" }));
   expect(await screen.findByText("L’édition est en préparation.")).toBeVisible();

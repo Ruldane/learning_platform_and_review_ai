@@ -7,7 +7,7 @@ describe("skillsManifest", () => {
     expect(skillsManifest.routes.map((route) => route.path)).toEqual(["competences"]);
     expect(skillsManifest.routes[0]?.handle).toEqual({ wide: true });
     expect(skillsManifest.nav).toEqual([
-      { section: "skills", labelKey: "skills.nav.map", path: "/competences", order: 1 },
+      { section: "skills", labelKey: "skills.nav.map", path: "/skills", order: 1 },
     ]);
   });
 });

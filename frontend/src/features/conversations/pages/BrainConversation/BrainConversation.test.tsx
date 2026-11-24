@@ -60,10 +60,10 @@ describe("BrainConversation", () => {
     );
     const { user, router } = renderRoutes(
       [
-        { path: "/memoire/cerveau", element: <BrainConversation /> },
-        { path: "/memoire", element: <p>Document ouvert</p> },
+        { path: "/memory/brain", element: <BrainConversation /> },
+        { path: "/memory", element: <p>Document ouvert</p> },
       ],
-      "/memoire/cerveau",
+      "/memory/brain",
     );
 
     const input = await screen.findByRole("textbox", { name: "Your question for the Brain" });

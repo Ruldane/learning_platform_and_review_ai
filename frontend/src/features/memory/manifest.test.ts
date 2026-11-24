@@ -6,16 +6,16 @@ describe("memoryManifest", () => {
   it("declares the four memory screens", () => {
     expect(memoryManifest.id).toBe("memory");
     expect(memoryManifest.nav?.map((n) => n.path)).toEqual([
-      "/memoire",
-      "/memoire/carte",
-      "/memoire/banc",
-      "/memoire/documents",
+      "/memory",
+      "/memory/map",
+      "/memory/search-bench",
+      "/memory/documents",
     ]);
     expect(memoryManifest.routes.map((r) => r.path)).toEqual([
       "memoire",
-      "memoire/carte",
-      "memoire/banc",
-      "memoire/documents",
+      "memory/map",
+      "memory/search-bench",
+      "memory/documents",
     ]);
   });
 

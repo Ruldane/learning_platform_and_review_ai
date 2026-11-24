@@ -39,8 +39,8 @@ it("attache les liens au bon expert et sauvegarde le jugement", async () => {
       return HttpResponse.json(current);
     }),
   );
-  const routes = [{ path: "/etudier/debats/:debateId", element: <ExpertDebatesPage /> }];
-  const { user } = renderRoutes(routes, `/etudier/debats/${debate.id}`);
+  const routes = [{ path: "/study/debates/:debateId", element: <ExpertDebatesPage /> }];
+  const { user } = renderRoutes(routes, `/study/debates/${debate.id}`);
   const researcher = await screen.findByRole("article", { name: "Chercheur" });
   expect(within(researcher).getByRole("link", { name: /Une méthode/ })).toHaveAttribute(
     "href",

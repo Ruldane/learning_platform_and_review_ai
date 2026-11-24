@@ -24,7 +24,7 @@ export function LessonsBody({ programId }: { programId: string }) {
         description={t("lessons.list.emptyDescription")}
         action={{
           label: t("lessons.list.emptyAction"),
-          onClick: () => void navigate(`/apprendre/programme/${programId}`),
+          onClick: () => void navigate(`/learn/programs/${programId}`),
         }}
       />
     );

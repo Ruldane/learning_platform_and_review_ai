@@ -3,10 +3,10 @@ import { t } from "@/shared/i18n/t";
 import type { ConversationTurn } from "../../api";
 
 const paths = {
-  lesson: (id: string) => `/apprendre/lecons/${id}`,
-  memory: (id: string) => `/memoire?item=${id}`,
+  lesson: (id: string) => `/learn/lessons/${id}`,
+  memory: (id: string) => `/memory?item=${id}`,
   posting: (id: string) => `/career/postings/${id}`,
-  application: (id: string) => `/candidatures/${id}`,
+  application: (id: string) => `/applications/${id}`,
 } satisfies Record<ConversationTurn["sources"][number]["kind"], (id: string) => string>;
 
 export function ConversationSources({ sources }: Pick<ConversationTurn, "sources">) {

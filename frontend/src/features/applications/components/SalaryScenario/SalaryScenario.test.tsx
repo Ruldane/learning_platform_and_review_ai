@@ -23,7 +23,7 @@ it("sépare les montants du radar des règles et du bilan de la simulation", () 
   expect(radar).toHaveTextContent("50 000 € à 70 000 € bruts par an");
   expect(within(radar).getByRole("link", { name: "Consulter le relevé" })).toHaveAttribute(
     "href",
-    "/carriere/radar/r1",
+    "/career/radar/r1",
   );
   expect(screen.getByRole("region", { name: "Règles de la simulation" })).toBeVisible();
   const outcome = screen.getByRole("region", { name: "Bilan de la simulation" });

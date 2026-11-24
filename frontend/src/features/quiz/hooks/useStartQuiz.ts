@@ -28,7 +28,7 @@ export function useStartQuiz() {
     try {
       const started = await mutateAsync({ moduleId, source });
       void queryClient.invalidateQueries({ queryKey: ["quiz", "list"] });
-      void navigate(`/etudier/quiz/${started.quiz_id}`);
+      void navigate(`/study/quiz/${started.quiz_id}`);
       return; // la page se quitte : le verrou reste posé
     } catch (failure) {
       setError(errorMessage(failure));

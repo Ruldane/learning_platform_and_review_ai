@@ -32,7 +32,7 @@ OPTIONS = [
     {"value": "pdf", "label": "Générer le PDF"},
     {"value": "finish", "label": "Terminer"},
 ]
-REPORT_URL = "/carriere/cv/revues/{review_id}#rapport"
+REPORT_URL = "/career/cv/reviews/{review_id}#rapport"
 PDF_URL = "/api/v1/cv/versions/{version_id}/pdf"
 RENDER_FAILED = "Le PDF n'a pas pu être généré : réessaie dans un instant."
 CLOSED = "Revue terminée. Tes modifications et tes versions restent dans la revue."

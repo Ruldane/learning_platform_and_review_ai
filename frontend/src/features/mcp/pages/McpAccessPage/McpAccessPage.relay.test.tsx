@@ -25,8 +25,8 @@ it("passes the pairing code to the local relay and shows its new state", async (
     }),
     ...mcpApi().handlers,
   );
-  const routes = [{ path: "/reglages/mcp", element: <McpAccessPage /> }];
-  const { user } = renderRoutes(routes, "/reglages/mcp");
+  const routes = [{ path: "/settings/mcp", element: <McpAccessPage /> }];
+  const { user } = renderRoutes(routes, "/settings/mcp");
 
   expect(await screen.findByText("Incomplete scope")).toBeInTheDocument();
   expect(screen.getByText(/Missing scopes.*lessons/)).toBeInTheDocument();

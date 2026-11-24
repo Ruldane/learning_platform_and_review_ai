@@ -38,7 +38,7 @@ AGENT = "archivist"
 PROFILE_REQUEST = "Établis le profil maître de January à partir de ses documents."
 LOAD_TIMEOUT_S = 180  # deux mises en page de PDF (60 s chacune au plus) et leur lecture
 EXTRACT_TIMEOUT_S = 600  # une longue sortie structurée (GLM), avec ses nouveaux essais
-ARTIFACT_URL = "/carriere/profil"
+ARTIFACT_URL = "/career/profile"
 _KINDS: dict[str, SourceKind] = {"cv": "cv", "linkedin": "linkedin", "note": "note"}
 
 logger = logging.getLogger(__name__)

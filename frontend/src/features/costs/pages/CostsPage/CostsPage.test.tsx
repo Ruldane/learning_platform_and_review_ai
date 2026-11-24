@@ -10,8 +10,8 @@ function setup(options: Parameters<typeof costsApi>[0] = {}) {
   const api = costsApi(options);
   server.use(...api.handlers);
   const view = renderRoutes(
-    [{ path: "/reglages/couts", element: <CostsPage /> }],
-    "/reglages/couts",
+    [{ path: "/settings/costs", element: <CostsPage /> }],
+    "/settings/costs",
   );
   return { ...api, ...view };
 }

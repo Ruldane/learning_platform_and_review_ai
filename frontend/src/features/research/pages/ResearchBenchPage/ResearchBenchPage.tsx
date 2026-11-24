@@ -19,7 +19,7 @@ export function ResearchBenchPage({ createSocket }: { createSocket?: SocketFacto
       <header>
         <h1 className="text-2xl font-semibold">{t("research.page.title")}</h1>
         <p className="mt-2 text-muted-foreground">{t("research.page.intro")}</p>
-        <Link to="/reglages/recherche" className="mt-2 inline-block text-sm underline">
+        <Link to="/settings/search" className="mt-2 inline-block text-sm underline">
           {t("research.page.settingsLink")}
         </Link>
       </header>

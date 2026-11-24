@@ -45,7 +45,7 @@ describe("App", () => {
     const api = onboardingApi({ settings: { ...settingsFixture, onboarding_done: false } });
     server.use(...authApi({ me: camille }).handlers, ...api.handlers);
     const router = createMemoryRouter(buildRoutes(FEATURES), {
-      initialEntries: ["/apprendre/conseil"],
+      initialEntries: ["/learn/council"],
     });
     render(<App router={router} />);
     expect(

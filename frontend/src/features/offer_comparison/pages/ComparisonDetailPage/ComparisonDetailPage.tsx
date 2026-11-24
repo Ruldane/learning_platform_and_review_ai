@@ -16,7 +16,9 @@ export function ComparisonDetailPage() {
   });
   return (
     <section className="grid max-w-4xl gap-5">
-      <Link className="w-fit underline" to="/carriere/comparer-les-offres">{t("offerComparison.back")}</Link>
+      <Link className="w-fit underline" to="/career/offer-comparison">
+        {t("offerComparison.back")}
+      </Link>
       <h1 className="text-2xl font-semibold">{t("offerComparison.recorded")}</h1>
       {row.isPending ? <LoadingState label={t("offerComparison.loading")} /> : null}
       {row.error ? <ErrorState message={errorMessage(row.error)} onRetry={() => void row.refetch()} /> : null}

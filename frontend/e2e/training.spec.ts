@@ -9,13 +9,13 @@ test("le training garde les leçons et le mode de chaque fil et permet de les ef
 }, testInfo) => {
   const api = process.env.E2E_API_URL ?? "http://localhost:8765";
   expect((await request.post(`${api}/__e2e/book/seed`)).ok()).toBe(true);
-  await page.goto("/etudier/training");
+  await page.goto("/study/training");
   await page.getByText("Leçons sélectionnées (0)", { exact: true }).click();
   const select = page.getByRole("combobox", { name: "Ajouter une leçon" });
   await select.selectOption({ label: "Première boucle" });
   await expect(page.getByText("Leçons sélectionnées (1)", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Commencer le training" }).click();
-  await expect(page).toHaveURL(/\/etudier\/training\/[0-9a-f-]+$/);
+  await expect(page).toHaveURL(/\/study\/training\/[0-9a-f-]+$/);
   const url = page.url();
   const mode = page.getByRole("combobox", { name: "Mode d’apprentissage" });
   await expect(mode).toHaveValue("socratic");
@@ -44,7 +44,7 @@ test("le training garde les leçons et le mode de chaque fil et permet de les ef
   await expect(sidebar.getByRole("button", { name: "Ouvrir Révision des chaînes" })).toBeVisible();
   await sidebar.getByRole("button", { name: "Nouvelle conversation", exact: true }).click();
   await page.getByRole("button", { name: "Commencer le training" }).click();
-  await expect(page).toHaveURL(/\/etudier\/training\/[0-9a-f-]+$/);
+  await expect(page).toHaveURL(/\/study\/training\/[0-9a-f-]+$/);
   await expect(page).not.toHaveURL(url);
   await expect(mode).toHaveValue("socratic");
   await expect(page.getByText("Leçons sélectionnées (0)", { exact: true })).toBeVisible();

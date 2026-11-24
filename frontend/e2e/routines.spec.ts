@@ -8,7 +8,7 @@ test("la routine s’exécute à l’heure et reste suspendue après rechargemen
   request,
 }) => {
   await finishFirstLaunch(request);
-  await page.goto("/reglages/routines");
+  await page.goto("/settings/routines");
   await page.getByLabel("Heure du rappel").fill("08:45");
   await page.getByRole("button", { name: "Activer la routine" }).press("Enter");
   await expect(page.getByText("Routine active.")).toBeVisible();

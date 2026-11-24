@@ -22,7 +22,7 @@ interface LessonPageProps {
 }
 
 /**
- * Leçon (`/apprendre/lecons/:lessonId`) : le lecteur, les ressources du module et le PDF quand la
+ * Leçon (`/learn/lessons/:lessonId`) : le lecteur, les ressources du module et le PDF quand la
  * leçon est prête ; sinon l'état de sa préparation, dit clairement.
  */
 export function LessonPage({ conversationPanel, updatesPanel: Updates }: LessonPageProps) {

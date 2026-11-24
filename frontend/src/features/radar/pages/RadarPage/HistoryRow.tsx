@@ -13,7 +13,7 @@ export function HistoryRow({ item, current }: { item: HistoryItemView; current: 
       className={`flex flex-col gap-1 rounded-xl border bg-card p-3 text-sm ${current ? "border-primary" : ""}`}
     >
       <span className="flex flex-wrap items-baseline gap-x-3">
-        <Link to={`/carriere/radar/${item.id}`} className="font-medium underline">
+        <Link to={`/career/radar/${item.id}`} className="font-medium underline">
           {when}
         </Link>
         <span className="font-medium">{t(`radar.history.status.${item.status}`)}</span>

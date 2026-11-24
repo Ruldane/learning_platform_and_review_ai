@@ -8,20 +8,20 @@ import { server } from "./server";
 
 /**
  * Monte la page du radar à `path` (`makeUi` reçoit la fabrique de faux sockets) sur ses deux routes
- * (`/carriere/radar` et `/carriere/radar/:runId`, comme le manifeste) avec le radar en mémoire.
+ * (`/career/radar` et `/career/radar/:runId`, comme le manifeste) avec le radar en mémoire.
  */
 export function renderRadar(
   makeUi: (createSocket: FakeSocketServer["factory"]) => ReactElement,
   api: RadarApiOptions = {},
-  path = "/carriere/radar",
+  path = "/career/radar",
 ) {
   const sockets = createFakeSocketServer();
   const backend = radarApi(api);
   server.use(...backend.handlers);
   const view = renderRoutes(
     [
-      { path: "/carriere/radar", element: makeUi(sockets.factory) },
-      { path: "/carriere/radar/:runId", element: makeUi(sockets.factory) },
+      { path: "/career/radar", element: makeUi(sockets.factory) },
+      { path: "/career/radar/:runId", element: makeUi(sockets.factory) },
     ],
     path,
   );

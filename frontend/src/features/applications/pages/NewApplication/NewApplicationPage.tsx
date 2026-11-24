@@ -11,7 +11,7 @@ interface NewApplicationPageProps {
 }
 
 /**
- * Une nouvelle fiche (`/candidatures/nouvelle`) : en une phrase (l'Assistant de suivi la prépare et
+ * Une nouvelle fiche (`/applications/new`) : en une phrase (l'Assistant de suivi la prépare et
  * demande confirmation) ou à la main. Dans les deux cas, une fiche qui ressemble à une autre
  * déclenche l'alerte de doublon, et la fiche créée s'ouvre.
  */

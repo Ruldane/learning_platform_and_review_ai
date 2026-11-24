@@ -52,13 +52,13 @@ async def test_feed_merges_sources_by_time(env: Env) -> None:
     by_kind = {(item.kind, item.at): item for item in page.items}
     lesson_fail = by_kind["lesson", hours(6)]
     assert lesson_fail.title == "Lesson failed: Leçon Module Projet"
-    assert lesson_fail.link == f"/apprendre/lecons/{failed}"
+    assert lesson_fail.link == f"/learn/lessons/{failed}"
     assert lesson_fail.id == f"lesson:{failed}:failed"
     assert by_kind["lesson", hours(1)].title == "Lesson ready: Leçon Module Bases"
     assert by_kind["lesson", hours(1)].id == f"lesson:{ready}:ready"
     radar = by_kind["radar", hours(4)]
     assert radar.title == "Radar scan: 47 offers read, 6 blocked"
-    assert radar.link == f"/carriere/radar/{radar.id.split(':')[1]}"
+    assert radar.link == f"/career/radar/{radar.id.split(':')[1]}"
     brief = by_kind["brief", hours(5)]
     assert brief.title == "Daily brief ready" and brief.link == "/"
     memory = by_kind["memory", hours(3)]

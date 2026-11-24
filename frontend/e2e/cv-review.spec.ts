@@ -25,7 +25,7 @@ function pdfFile() {
 
 /** 1. Profil : dépôt du PDF, brouillon relu, profil validé. */
 async function createProfile(page: Page): Promise<void> {
-  await page.goto("/carriere/profil");
+  await page.goto("/career/profile");
   await page.getByLabel("Ton CV (PDF)", { exact: true }).setInputFiles(pdfFile());
   await page.getByRole("button", { name: "Créer mon profil maître" }).click();
   const validate = page.getByRole("button", { name: "Valider mon profil" });
@@ -37,10 +37,10 @@ async function createProfile(page: Page): Promise<void> {
 
 /** 2. Modèles : le même PDF, les passes du Maquettiste, puis « Valider ». */
 async function createTemplate(page: Page): Promise<void> {
-  await page.goto("/carriere/cv");
+  await page.goto("/career/cv");
   await page.getByLabel("Ton CV (PDF, 4 pages au plus)").setInputFiles(pdfFile());
   await page.getByRole("button", { name: "Créer le modèle" }).click();
-  await expect(page).toHaveURL(/\/carriere\/cv\/modeles\/[^/]+$/);
+  await expect(page).toHaveURL(/\/career\/cv\/templates\/[^/]+$/);
 
   const validate = page.getByRole("button", { name: "Valider", exact: true });
   await expect(validate).toBeVisible({ timeout: 120_000 });
@@ -77,7 +77,7 @@ function cards(page: Page): Locator {
 /** 4. La revue : le fil des agents, puis les trois modifications proposées. */
 async function startReview(page: Page): Promise<void> {
   await page.getByRole("link", { name: "Revoir mon CV pour cette offre" }).click();
-  await expect(page).toHaveURL(/\/carriere\/cv\/revues\/[^/]+$/);
+  await expect(page).toHaveURL(/\/career\/cv\/reviews\/[^/]+$/);
   await expect(cards(page)).toHaveCount(3, { timeout: 180_000 });
   const feed = page.getByRole("region", { name: "Fil de la revue" });
   await expect(feed.getByText("Lecteur ATS", { exact: true }).first()).toBeVisible();
@@ -130,7 +130,7 @@ async function finish(page: Page): Promise<void> {
   ).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText("La revue est terminée : les décisions sont figées.")).toBeVisible();
 
-  await page.goto("/carriere/cv/versions");
+  await page.goto("/career/cv/versions");
   const group = page.getByRole("region", { name: /^Versions pour l'offre AI Product Engineer/ });
   await expect(group.getByText("Version 1").first()).toBeVisible();
   await expect(group.getByText("Prête").first()).toBeVisible();

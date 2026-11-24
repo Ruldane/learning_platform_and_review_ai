@@ -38,7 +38,7 @@ export function TemplateCreateForm({
       />
       {form.problem ? <InlineError message={form.problem} /> : null}
       {form.visionUnavailable ? (
-        <Link to="/reglages/modeles" className="text-sm font-medium underline underline-offset-4">
+        <Link to="/settings/models" className="text-sm font-medium underline underline-offset-4">
           {t("cv.templatesPage.settingsLink")}
         </Link>
       ) : null}

@@ -3,8 +3,8 @@ import { SkillMarketPage } from "./pages/SkillMarketPage";
 
 export const skillMarketManifest: FeatureManifest = {
   id: "skill_market",
-  routes: [{ path: "carriere/competences", Component: SkillMarketPage }],
+  routes: [{ path: "career/skills", Component: SkillMarketPage }],
   nav: [
-    { section: "career", labelKey: "skillMarket.title", path: "/carriere/competences", order: 8 },
+    { section: "career", labelKey: "skillMarket.title", path: "/career/skills", order: 8 },
   ],
 };

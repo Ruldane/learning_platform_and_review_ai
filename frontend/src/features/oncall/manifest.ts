@@ -4,8 +4,8 @@ import { OncallPage } from "./pages/OncallPage";
 export const oncallManifest: FeatureManifest = {
   id: "oncall",
   routes: [
-    { path: "astreinte", Component: OncallPage },
-    { path: "astreinte/:incidentId", Component: OncallPage },
+    { path: "on-call", Component: OncallPage },
+    { path: "on-call/:incidentId", Component: OncallPage },
   ],
-  nav: [{ section: "study", labelKey: "oncall.nav.oncall", path: "/astreinte", order: 6 }],
+  nav: [{ section: "study", labelKey: "oncall.nav.oncall", path: "/on-call", order: 6 }],
 };

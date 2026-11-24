@@ -42,7 +42,7 @@ describe("PortfolioPage", () => {
     const todo = screen.getByRole("region", { name: "À faire" });
     expect(within(todo).getByRole("link", { name: "Tableau de bord" })).toHaveAttribute(
       "href",
-      "/competences/portfolio/p2",
+      "/skills/portfolio/p2",
     );
     expect(within(todo).getByText("Statut : À faire")).toBeVisible();
     expect(within(todo).getByText("6 h estimées")).toBeVisible();
@@ -69,7 +69,7 @@ describe("PortfolioPage", () => {
   it("opens the page of a project from its card", async () => {
     const { user, router } = setup({ projects: PROJECTS });
     await user.click(await screen.findByRole("link", { name: "Tableau de bord" }));
-    expect(router.state.location.pathname).toBe("/competences/portfolio/p2");
+    expect(router.state.location.pathname).toBe("/skills/portfolio/p2");
     expect(await screen.findByRole("heading", { level: 1, name: "Tableau de bord" })).toBeVisible();
   });
 
@@ -95,9 +95,9 @@ describe("PortfolioPage", () => {
   it("reads the list at every opening (a status may have changed)", async () => {
     const { state, router } = setup({ projects: [PROJECTS[1]!] });
     await screen.findByRole("link", { name: "Tableau de bord" });
-    await router.navigate("/competences");
+    await router.navigate("/skills");
     await screen.findByText("Page de la carte des compétences");
-    await router.navigate("/competences/portfolio");
+    await router.navigate("/skills/portfolio");
     await waitFor(() => expect(state.listReads).toBe(2));
   });
 });

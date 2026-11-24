@@ -4,20 +4,20 @@ import { ProjectPage } from "./pages/ProjectPage";
 
 /**
  * Les mini projets (SPEC 14.2, section « Compétences » de la navigation, après la carte) : le
- * Portfolio (`/competences/portfolio`, les projets groupés par statut) et la page d'un projet
- * (`/competences/portfolio/:projectId`) : énoncé, rendu, évaluation, brouillons et ajout au profil.
+ * Portfolio (`/skills/portfolio`, les projets groupés par statut) et la page d'un projet
+ * (`/skills/portfolio/:projectId`) : énoncé, rendu, évaluation, brouillons et ajout au profil.
  */
 export const projectsManifest: FeatureManifest = {
   id: "projects",
   routes: [
-    { path: "competences/portfolio", Component: PortfolioPage },
-    { path: "competences/portfolio/:projectId", Component: ProjectPage },
+    { path: "skills/portfolio", Component: PortfolioPage },
+    { path: "skills/portfolio/:projectId", Component: ProjectPage },
   ],
   nav: [
     {
       section: "skills",
       labelKey: "projects.nav.portfolio",
-      path: "/competences/portfolio",
+      path: "/skills/portfolio",
       order: 2,
     },
   ],

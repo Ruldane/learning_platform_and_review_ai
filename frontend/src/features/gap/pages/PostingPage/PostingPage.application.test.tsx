@@ -40,7 +40,7 @@ describe("PostingPage applications", () => {
     expect(state.checks).toEqual(["?posting_id=p1"]);
     expect(section.queryByRole("alert")).toBeNull();
     await user.click(section.getByRole("button", { name: CREATE }));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/candidatures/ap1"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/applications/ap1"));
     expect(state.applications).toEqual([{ posting_id: "p1", status: "to_apply" }]);
   });
 
@@ -63,7 +63,7 @@ describe("PostingPage applications", () => {
     expect(section.getByText(/Ingénieure données \(Applied\)/)).toBeVisible();
     expect(section.queryByRole("button", { name: CREATE })).toBeNull();
     await user.click(section.getByRole("button", { name: "Open the application" }));
-    expect(router.state.location.pathname).toBe("/candidatures/ap2");
+    expect(router.state.location.pathname).toBe("/applications/ap2");
   });
 
   it("shows the duplicate alert of the check, with its three choices and no create button", async () => {
@@ -73,13 +73,13 @@ describe("PostingPage applications", () => {
     expect(section.getByText(/You already have an application at Société Fictive/)).toBeVisible();
     expect(section.queryByRole("button", { name: CREATE })).toBeNull();
     await user.click(section.getByRole("button", { name: "Open the existing application" }));
-    expect(router.state.location.pathname).toBe("/candidatures/ap9");
+    expect(router.state.location.pathname).toBe("/applications/ap9");
   });
 
   it("creates the application when confirmed as a different role", async () => {
     const { user, state, router } = setup({ check: check({ alerts: [alert()] }) });
     await user.click(await screen.findByRole("button", { name: "It's a different role" }));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/candidatures/ap1"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/applications/ap1"));
     expect(state.applications).toEqual([
       { posting_id: "p1", status: "to_apply", distinct_from: ["ap9"] },
     ]);
@@ -129,7 +129,7 @@ describe("PostingPage applications", () => {
         ),
     });
     await user.click(await screen.findByRole("button", { name: CREATE }));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/candidatures/ap5"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/applications/ap5"));
   });
 
   it("says why the creation failed and keeps the button", async () => {

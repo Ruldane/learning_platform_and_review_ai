@@ -20,7 +20,7 @@ export function ReplanHistory(props: ReplanHistoryProps) {
   const navigate = useNavigate();
   const toProgram = {
     label: t("replan.history.emptyAction"),
-    onClick: () => void navigate(`/apprendre/programme/${programId}`),
+    onClick: () => void navigate(`/learn/programs/${programId}`),
   };
   return (
     <section aria-labelledby="replan-history-title" className="flex flex-col gap-2">

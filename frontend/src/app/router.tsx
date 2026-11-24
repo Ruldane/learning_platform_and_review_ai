@@ -7,6 +7,7 @@ import {
   useParams,
 } from "react-router";
 import type { FeatureManifest } from "@/shared/lib/feature";
+import { LEGACY_PATHS } from "./legacyPaths";
 import { AppLayout } from "./layout/AppLayout";
 import { buildDestinations, descriptionKey, sectionLanding, type Hub } from "./navigation";
 import { DestinationCards, NavigationPage, SettingsTabs } from "./pages/NavigationPage";
@@ -71,6 +72,7 @@ export function buildRoutes(features: FeatureManifest[]): RouteObject[] {
       children: [
         ...features.flatMap(featureRoutes),
         ...landingRoutes(features),
+        ...redirectRoutes(LEGACY_PATHS),
         { path: "*", Component: NotFoundPage },
       ],
     },

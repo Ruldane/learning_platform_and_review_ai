@@ -118,7 +118,7 @@ describe("RadarPage results and history", () => {
     expect(rows[0]).toHaveAttribute("aria-current", "true");
 
     await user.click(within(rows[1]!).getByRole("link"));
-    expect(router.state.location.pathname).toBe("/carriere/radar/r2");
+    expect(router.state.location.pathname).toBe("/career/radar/r2");
     expect(await screen.findByText("Excel")).toBeVisible();
     const after = within(await screen.findByRole("list", { name: "Previous scans" }));
     expect(after.getAllByRole("listitem")[1]).toHaveAttribute("aria-current", "true");
@@ -127,7 +127,7 @@ describe("RadarPage results and history", () => {
   it("opens a run by its address, and says when it does not exist", async () => {
     setup(
       { runs: [radarRun("r1", { ranking: [trendOut("Excel", 1, 0.8)] })] },
-      "/carriere/radar/zzz",
+      "/career/radar/zzz",
     );
     expect(await screen.findByRole("heading", { name: "Scan not found" })).toBeVisible();
     expect(screen.getByRole("button", { name: "See the radar" })).toBeVisible();

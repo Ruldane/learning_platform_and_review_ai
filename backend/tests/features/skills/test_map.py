@@ -80,11 +80,11 @@ async def test_detail_shows_structured_and_legacy_evidence(db_session_factory: F
     )
     assert [(e.kind, e.url) for e in detail.evidence] == [
         ("cv", None),
-        ("program", "/apprendre/programme/p1"),
-        ("lesson", "/apprendre/lecons/l1"),
-        ("capture", "/etudier/journal"),
-        ("study", "/etudier/session/s1"),
-        ("quiz", "/etudier/quiz/q1"),
+        ("program", "/learn/programs/p1"),
+        ("lesson", "/learn/lessons/l1"),
+        ("capture", "/study/journal"),
+        ("study", "/study/session/s1"),
+        ("quiz", "/study/quiz/q1"),
         ("program", None),  # chaîne de la phase 4 : ni référence ni date
     ]
     assert detail.evidence[5].label == "Quiz « Bases » : 85 % (17/11)"
@@ -109,18 +109,18 @@ BASES = ActionFacts(module="Bases", lesson_id="L1", quiz_id="Q1")
 @pytest.mark.parametrize(
     ("level", "facts", "expected"),
     [
-        (None, BASES, ("study", "Étudier « Bases »", "/etudier/session?lecon=L1")),
-        ("declared", ActionFacts(), ("study", "Étudier « Pandas »", "/etudier/session")),
-        ("in_progress", BASES, ("quiz", "Passer le quiz « Bases »", "/etudier/quiz/Q1")),
+        (None, BASES, ("study", "Étudier « Bases »", "/study/session?lesson=L1")),
+        ("declared", ActionFacts(), ("study", "Étudier « Pandas »", "/study/session")),
+        ("in_progress", BASES, ("quiz", "Passer le quiz « Bases »", "/study/quiz/Q1")),
         (
             "in_progress",
             ActionFacts(module="Bases"),
-            ("quiz", "Passer le quiz « Bases »", "/etudier/quiz"),
+            ("quiz", "Passer le quiz « Bases »", "/study/quiz"),
         ),
         (
             "validated",
             ActionFacts(cards_due=True),
-            ("review", "Réviser les fiches « Pandas »", "/etudier/revisions"),
+            ("review", "Réviser les fiches « Pandas »", "/study/reviews"),
         ),
         ("validated", ActionFacts(), ("project", "Projet preuve (bientôt)", None)),
         ("proven", BASES, None),
@@ -135,7 +135,7 @@ def test_next_action_by_level(
 
 def test_evidence_url_escapes_reference() -> None:
     item = Evidence(kind="quiz", ref_id="a/../b", label="Quiz", at="")
-    assert evidence_url(item) == "/etudier/quiz/a%2F..%2Fb"
+    assert evidence_url(item) == "/study/quiz/a%2F..%2Fb"
 
 
 async def test_detail_next_action_reads_lesson_quiz_and_due_cards(
@@ -161,15 +161,15 @@ async def test_detail_next_action_reads_lesson_quiz_and_due_cards(
             found = (await skill_detail(db, ME, skill_id, NOW)).next_action
         return None if found is None else (found.kind, found.label, found.url)
 
-    assert await action() == ("study", "Étudier « Bases »", f"/etudier/session?lecon={lesson_id}")
+    assert await action() == ("study", "Étudier « Bases »", f"/study/session?lesson={lesson_id}")
     await set_level(db_session_factory, ME, skill_id, "in_progress")
-    assert await action() == ("quiz", "Passer le quiz « Bases »", f"/etudier/quiz/{quiz_id}")
+    assert await action() == ("quiz", "Passer le quiz « Bases »", f"/study/quiz/{quiz_id}")
     await set_level(db_session_factory, ME, skill_id, "validated")
     await add_card(db_session_factory, ME, "PANDAS ", NOW.date() + timedelta(days=1))
     await add_card(db_session_factory, OTHER, "pandas", NOW.date())
     assert await action() == ("project", "Projet preuve (bientôt)", None)
     await add_card(db_session_factory, ME, "Pandas", NOW.date())
-    assert await action() == ("review", "Réviser les fiches « Pandas »", "/etudier/revisions")
+    assert await action() == ("review", "Réviser les fiches « Pandas »", "/study/reviews")
 
 
 async def test_study_action_without_ready_lesson_opens_study_home(
@@ -187,9 +187,9 @@ async def test_study_action_without_ready_lesson_opens_study_home(
         quiz = (await skill_detail(db, ME, skill_id, NOW)).next_action
     assert study is not None and (study.label, study.url) == (
         "Étudier « Bases »",
-        "/etudier/session",
+        "/study/session",
     )
-    assert quiz is not None and quiz.url == "/etudier/quiz"
+    assert quiz is not None and quiz.url == "/study/quiz"
 
 
 async def test_graph_demand_comes_from_the_latest_done_radar_run(

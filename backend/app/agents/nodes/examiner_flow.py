@@ -84,7 +84,7 @@ def make_save_quiz(deps: GraphDeps) -> Node:
             "artifact_id": material.quiz_id,
             "kind": "quiz",
             "title": draft.title,
-            "url": f"/etudier/quiz/{material.quiz_id}",
+            "url": f"/study/quiz/{material.quiz_id}",
         }
         emit("artifact.ready", artifact, agent=AGENT)
         return {"questions": count, "summary": f"Quiz prêt : « {material.module_title} »."}

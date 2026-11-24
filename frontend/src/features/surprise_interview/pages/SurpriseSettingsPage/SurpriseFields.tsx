@@ -42,7 +42,7 @@ export function SurpriseFields({
         </select>
       </label>
       <p>{t("surpriseInterview.tokenHelp")}</p>
-      <Link className="text-primary underline" to="/reglages/mcp">
+      <Link className="text-primary underline" to="/settings/mcp">
         {t("surpriseInterview.access")}
       </Link>
     </>

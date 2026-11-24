@@ -25,8 +25,8 @@ function setup(init: Parameters<typeof memoryBackend>[0] = {}) {
   const fake = createFakeSocketServer();
   server.use(...readHandlers(backend));
   const view = renderRoutes(
-    [{ path: "/memoire/documents", element: <DocumentsPage createSocket={fake.factory} /> }],
-    "/memoire/documents",
+    [{ path: "/memory/documents", element: <DocumentsPage createSocket={fake.factory} /> }],
+    "/memory/documents",
   );
   return { backend, fake, ...view };
 }

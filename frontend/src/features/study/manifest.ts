@@ -11,9 +11,9 @@ import { StudySessionPage } from "./pages/StudySessionPage";
 export const studyManifest: FeatureManifest = {
   id: "study",
   routes: [
-    { path: "etudier/session", Component: StudyHomePage },
-    { path: "etudier/session/:studyId", Component: StudySessionPage, handle: { wide: true } },
+    { path: "study/session", Component: StudyHomePage },
+    { path: "study/session/:studyId", Component: StudySessionPage, handle: { wide: true } },
   ],
-  nav: [{ section: "study", labelKey: "study.nav.session", path: "/etudier/session", order: 1 }],
+  nav: [{ section: "study", labelKey: "study.nav.session", path: "/study/session", order: 1 }],
   shell: { topbar: StudyTopbarSlot },
 };

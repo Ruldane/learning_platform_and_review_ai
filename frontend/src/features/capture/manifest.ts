@@ -10,7 +10,7 @@ import { JournalPage } from "./pages/JournalPage";
  */
 export const captureManifest: FeatureManifest = {
   id: "capture",
-  routes: [{ path: "etudier/journal", Component: JournalPage }],
-  nav: [{ section: "study", labelKey: "capture.nav.journal", path: "/etudier/journal", order: 4 }],
+  routes: [{ path: "study/journal", Component: JournalPage }],
+  nav: [{ section: "study", labelKey: "capture.nav.journal", path: "/study/journal", order: 4 }],
   shell: { topbar: CaptureTopbarButton, overlay: CaptureOverlay },
 };

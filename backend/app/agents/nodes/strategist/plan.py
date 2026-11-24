@@ -187,7 +187,7 @@ def make_save(deps: GraphDeps) -> Node:
             "artifact_id": saved.program_id,
             "kind": "program",
             "title": draft.title,
-            "url": f"/apprendre/programme/{saved.program_id}",
+            "url": f"/learn/programs/{saved.program_id}",
         }
         emit("artifact.ready", artifact, agent=AGENT)
         return {"saved": asdict(saved)}

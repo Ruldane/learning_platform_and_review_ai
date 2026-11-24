@@ -14,7 +14,7 @@ interface ProfilePageProps {
 }
 
 /**
- * Le profil maître (`/carriere/profil`). Sans profil : l'import des documents. Pendant la lecture :
+ * Le profil maître (`/career/profile`). Sans profil : l'import des documents. Pendant la lecture :
  * le fil de l'Archiviste. Un brouillon se relit puis se valide (`PUT` avec la version relue) ; un
  * profil validé se corrige de la même façon. L'historique des versions est dessous.
  */

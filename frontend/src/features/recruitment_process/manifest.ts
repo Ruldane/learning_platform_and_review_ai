@@ -4,13 +4,13 @@ export const recruitmentProcessManifest: FeatureManifest = {
   id: "recruitment_process",
   routes: [
     {
-      path: "carriere/recrutement-simule",
+      path: "career/recruitment-process",
       lazy: async () => ({
         Component: (await import("./pages/RecruitmentListPage")).RecruitmentListPage,
       }),
     },
     {
-      path: "carriere/recrutement-simule/:processId",
+      path: "career/recruitment-process/:processId",
       lazy: async () => ({
         Component: (await import("./pages/RecruitmentDetailPage")).RecruitmentDetailPage,
       }),
@@ -20,7 +20,7 @@ export const recruitmentProcessManifest: FeatureManifest = {
     {
       section: "career",
       labelKey: "recruitmentProcess.title",
-      path: "/carriere/recrutement-simule",
+      path: "/career/recruitment-process",
       order: 8.6,
     },
   ],

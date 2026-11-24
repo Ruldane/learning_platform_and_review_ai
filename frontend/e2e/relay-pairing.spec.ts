@@ -24,7 +24,7 @@ test("appaire, renouvelle et révoque le relais depuis Accès MCP", async ({ pag
     await route.fulfill({ status: 204, headers });
   });
 
-  await page.goto("/reglages/mcp");
+  await page.goto("/settings/mcp");
   const relay = page.getByRole("heading", { name: "Relais local" }).locator("../..");
   await relay.getByRole("button", { name: "Connecter le relais" }).click();
   await expect(relay.getByText("Relais connecté")).toBeVisible();

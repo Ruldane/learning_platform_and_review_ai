@@ -27,15 +27,15 @@ const sessionView = (status: string, lastSeq = 0) => ({
 });
 const apiError = (code: string, message: string) => ({ error: { code, message, details: null } });
 
-function setup(route = "/reglages/recherche/essai") {
+function setup(route = "/settings/search/probe") {
   const fake = createFakeSocketServer();
   const view = renderRoutes(
     [
       {
-        path: "/reglages/recherche/essai",
+        path: "/settings/search/probe",
         element: <ResearchBenchPage createSocket={fake.factory} />,
       },
-      { path: "/reglages/recherche", element: <p>Réglages de recherche</p> },
+      { path: "/settings/search", element: <p>Réglages de recherche</p> },
     ],
     route,
   );
@@ -106,7 +106,7 @@ describe("ResearchBenchPage", () => {
   });
 
   it("keeps a replayed source once and shows an excluded domain without crashing", async () => {
-    const { fake } = setup("/reglages/recherche/essai?session=s1");
+    const { fake } = setup("/settings/search/probe?session=s1");
     await waitFor(() => expect(fake.sockets).toHaveLength(1));
     const { sourceFound } = researchEvents();
     fake
@@ -127,7 +127,7 @@ describe("ResearchBenchPage", () => {
   });
 
   it("resumes the session given in ?session= after a reload", async () => {
-    const { fake } = setup("/reglages/recherche/essai?session=s1");
+    const { fake } = setup("/settings/search/probe?session=s1");
     expect(screen.queryByRole("button", { name: "Lancer l'essai" })).not.toBeInTheDocument();
     await waitFor(() => expect(fake.sockets).toHaveLength(1));
     expect(fake.last().url).toContain("/s1");
@@ -140,7 +140,7 @@ describe("ResearchBenchPage", () => {
   });
 
   it("shows the failure message of a failed run and offers a new attempt", async () => {
-    const { fake, router, user } = setup("/reglages/recherche/essai?session=s1");
+    const { fake, router, user } = setup("/settings/search/probe?session=s1");
     await waitFor(() => expect(fake.sockets).toHaveLength(1));
     const { failed } = researchEvents();
     fake.last().open().push(failed("Aucun moteur de recherche n'a répondu."));
@@ -162,7 +162,7 @@ describe("ResearchBenchPage", () => {
         return HttpResponse.json(sessionView("cancelled"));
       }),
     );
-    const { fake, user } = setup("/reglages/recherche/essai?session=s1");
+    const { fake, user } = setup("/settings/search/probe?session=s1");
     await waitFor(() => expect(fake.sockets).toHaveLength(1));
     const { sourceFound } = researchEvents();
     fake
@@ -177,7 +177,7 @@ describe("ResearchBenchPage", () => {
   });
 
   it("does not offer to cancel a run that has already completed", async () => {
-    const { fake } = setup("/reglages/recherche/essai?session=s1");
+    const { fake } = setup("/settings/search/probe?session=s1");
     await waitFor(() => expect(fake.sockets).toHaveLength(1));
     const { completed } = researchEvents();
     fake.last().open().push(completed());
@@ -201,7 +201,7 @@ describe("ResearchBenchPage", () => {
   });
 
   it("offers another attempt when the session is unknown", async () => {
-    const { fake, user } = setup("/reglages/recherche/essai?session=s1");
+    const { fake, user } = setup("/settings/search/probe?session=s1");
     await waitFor(() => expect(fake.sockets).toHaveLength(1));
     fake.last().drop(4404);
     expect(await screen.findByRole("alert")).toBeInTheDocument();

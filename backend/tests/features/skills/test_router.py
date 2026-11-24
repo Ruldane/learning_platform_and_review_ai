@@ -51,7 +51,7 @@ async def test_graph_reflects_level_change_immediately(
             "kind": "quiz",
             "label": "Quiz « Bases » : 85 %",
             "at": "2026-11-17T10:00:00Z",
-            "url": "/etudier/quiz/q1",
+            "url": "/study/quiz/q1",
         }
     ]
     assert detail["next_action"] == {

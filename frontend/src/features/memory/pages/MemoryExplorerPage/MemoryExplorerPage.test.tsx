@@ -14,7 +14,7 @@ import {
 import { renderRoutes } from "@/test/renderRoutes";
 import { MemoryExplorerPage } from "./MemoryExplorerPage";
 
-const DOCS = { path: "/memoire/documents", element: <p>Écran des documents</p> };
+const DOCS = { path: "/memory/documents", element: <p>Écran des documents</p> };
 
 const pendingDecision = itemOut({
   id: "p1",
@@ -25,10 +25,10 @@ const pendingDecision = itemOut({
   reason: "Tu as lu trois offres NLP.",
 });
 
-function setup(initial = "/memoire", init: Parameters<typeof memoryBackend>[0] = {}) {
+function setup(initial = "/memory", init: Parameters<typeof memoryBackend>[0] = {}) {
   const backend = memoryBackend(init);
   server.use(...readHandlers(backend), ...writeHandlers(backend));
-  const view = renderRoutes([{ path: "/memoire", element: <MemoryExplorerPage /> }, DOCS], initial);
+  const view = renderRoutes([{ path: "/memory", element: <MemoryExplorerPage /> }, DOCS], initial);
   return { backend, ...view };
 }
 
@@ -57,7 +57,7 @@ describe("MemoryExplorerPage", () => {
   });
 
   it("puts the opened item in the address and opens the item given in ?item=", async () => {
-    const { router, user } = setup("/memoire?item=i3");
+    const { router, user } = setup("/memory?item=i3");
     const drawer = await screen.findByRole("dialog");
     expect(await within(drawer).findByText("Backpropagation")).toBeInTheDocument();
     await user.click(within(drawer).getByRole("button", { name: "Fermer" }));
@@ -68,14 +68,14 @@ describe("MemoryExplorerPage", () => {
   });
 
   it("says so when the item in ?item= no longer exists, and lets the user close it", async () => {
-    const { router, user } = setup("/memoire?item=zzz");
+    const { router, user } = setup("/memory?item=zzz");
     expect(await screen.findByText("Élément introuvable.")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Fermer" }));
     expect(router.state.location.search).toBe("");
   });
 
   it("confirms a pending decision with PATCH status active, then hides the box", async () => {
-    const { backend, user } = setup("/memoire", {
+    const { backend, user } = setup("/memory", {
       items: [itemOut(), pendingDecision],
       stats: statsOut({ pending_decisions: 1 }),
     });
@@ -91,7 +91,7 @@ describe("MemoryExplorerPage", () => {
   });
 
   it("rejects a pending decision with DELETE", async () => {
-    const { backend, user } = setup("/memoire", { items: [itemOut(), pendingDecision] });
+    const { backend, user } = setup("/memory", { items: [itemOut(), pendingDecision] });
     await user.click(await screen.findByRole("button", { name: "Refuser" }));
     await waitFor(() =>
       expect(backend.writes).toEqual([{ method: "DELETE", path: "/memory/items/p1", body: null }]),
@@ -112,7 +112,7 @@ describe("MemoryExplorerPage", () => {
       itemOut({ id: "l1", kind: "lesson", title: "Leçon A", level: null }),
       itemOut({ id: "l2", kind: "lesson", title: "Leçon B", level: null }),
     ];
-    const { backend, user } = setup("/memoire", { items: lessons });
+    const { backend, user } = setup("/memory", { items: lessons });
     await user.click(await screen.findByLabelText("Sélectionner « Leçon A »"));
     await user.click(screen.getByLabelText("Sélectionner « Leçon B »"));
     await user.click(screen.getByRole("button", { name: "Fusionner" }));
@@ -130,7 +130,7 @@ describe("MemoryExplorerPage", () => {
       itemOut({ id: "l1", kind: "lesson", title: "Leçon A", level: null }),
       itemOut({ id: "l2", kind: "lesson", title: "Leçon B", level: null }),
     ];
-    const { user } = setup("/memoire", { items: lessons });
+    const { user } = setup("/memory", { items: lessons });
     server.use(
       http.post(`${API}/memory/items/:id/merge`, () =>
         apiError("memory_duplicate", "Ce contenu existe déjà dans ta mémoire.", 409),
@@ -164,10 +164,10 @@ describe("MemoryExplorerPage", () => {
   });
 
   it("offers to import a document when the memory is empty", async () => {
-    const { router, user } = setup("/memoire", { items: [] });
+    const { router, user } = setup("/memory", { items: [] });
     expect(await screen.findByText("Aucun élément en mémoire")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Importer un document" }));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/memoire/documents"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/memory/documents"));
   });
 
   it("shows a retryable error when the list fails", async () => {
@@ -194,7 +194,7 @@ describe("MemoryExplorerPage", () => {
   });
 
   it("edits the opened item with PATCH, then shows it read-only again", async () => {
-    const { backend, user } = setup("/memoire?item=i1");
+    const { backend, user } = setup("/memory?item=i1");
     const drawer = await screen.findByRole("dialog");
     await user.click(await within(drawer).findByRole("button", { name: "Modifier" }));
     const title = within(drawer).getByLabelText("Titre");
@@ -215,7 +215,7 @@ describe("MemoryExplorerPage", () => {
       level: null,
       text: "x".repeat(25_000),
     });
-    const { backend, user } = setup("/memoire?item=d9", { items: [long] });
+    const { backend, user } = setup("/memory?item=d9", { items: [long] });
     const drawer = await screen.findByRole("dialog");
     await user.click(await within(drawer).findByRole("button", { name: "Modifier" }));
     await user.type(within(drawer).getByLabelText("Titre"), " v2");
@@ -225,7 +225,7 @@ describe("MemoryExplorerPage", () => {
   });
 
   it("deletes the opened item after an in-page confirmation, and closes the drawer", async () => {
-    const { backend, router, user } = setup("/memoire?item=i1");
+    const { backend, router, user } = setup("/memory?item=i1");
     const drawer = await screen.findByRole("dialog");
     await user.click(await within(drawer).findByRole("button", { name: "Supprimer" }));
     await user.click(within(drawer).getByRole("button", { name: "Oui, supprimer" }));

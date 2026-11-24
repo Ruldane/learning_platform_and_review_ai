@@ -57,7 +57,7 @@ test("Contribution confirmée, publication simulée et preuve après fusion", as
   expect(seed.ok()).toBe(true);
   const { program_id: programId } = (await seed.json()) as { program_id: string };
 
-  await page.goto("/competences/contributions");
+  await page.goto("/skills/contributions");
   await page.getByRole("combobox", { name: "Programme" }).selectOption(programId);
   await expect(page.getByRole("link", { name: "Tests pandas" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Tests numpy" })).toHaveCount(0);

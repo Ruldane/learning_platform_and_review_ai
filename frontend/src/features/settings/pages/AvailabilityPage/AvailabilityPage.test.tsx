@@ -18,8 +18,8 @@ function setup(put?: Parameters<typeof settingsApi>[0]["put"], gate?: Promise<vo
   const api = settingsApi({ settings: stored, put, gate });
   server.use(...api.handlers);
   const view = renderRoutes(
-    [{ path: "/reglages/disponibilite", element: <AvailabilityPage /> }],
-    "/reglages/disponibilite",
+    [{ path: "/settings/availability", element: <AvailabilityPage /> }],
+    "/settings/availability",
   );
   return { ...api, ...view };
 }
@@ -194,8 +194,8 @@ describe("AvailabilityPage", () => {
     const api = settingsApi({ settings: { ...stored, lesson_language: "nl" } });
     server.use(...api.handlers);
     renderRoutes(
-      [{ path: "/reglages/disponibilite", element: <AvailabilityPage /> }],
-      "/reglages/disponibilite",
+      [{ path: "/settings/availability", element: <AvailabilityPage /> }],
+      "/settings/availability",
     );
     expect(await screen.findByLabelText(LESSON_LANGUAGE)).toHaveValue("nl");
   });

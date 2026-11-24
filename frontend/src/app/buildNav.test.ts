@@ -8,7 +8,7 @@ describe("buildNav", () => {
       {
         id: "settings",
         routes: [],
-        nav: [{ section: "settings", labelKey: "nav.settings", path: "/reglages", order: 1 }],
+        nav: [{ section: "settings", labelKey: "nav.settings", path: "/settings", order: 1 }],
       },
       {
         id: "home",
@@ -78,21 +78,21 @@ describe("buildNav", () => {
         id: "settings",
         routes: [],
         nav: [
-          { section: "settings", labelKey: "nav.study", path: "/reglages/style", order: 3 },
-          { section: "settings", labelKey: "nav.learn", path: "/reglages/modeles", order: 1 },
+          { section: "settings", labelKey: "nav.study", path: "/settings/style", order: 3 },
+          { section: "settings", labelKey: "nav.learn", path: "/settings/models", order: 1 },
         ],
       },
       {
         id: "other",
         routes: [],
-        nav: [{ section: "settings", labelKey: "nav.home", path: "/reglages/dispo", order: 2 }],
+        nav: [{ section: "settings", labelKey: "nav.home", path: "/settings/dispo", order: 2 }],
       },
     ];
     const [group] = buildNav(features);
     expect(group?.items.map((i) => i.path)).toEqual([
-      "/reglages/modeles",
-      "/reglages/dispo",
-      "/reglages/style",
+      "/settings/models",
+      "/settings/dispo",
+      "/settings/style",
     ]);
   });
 

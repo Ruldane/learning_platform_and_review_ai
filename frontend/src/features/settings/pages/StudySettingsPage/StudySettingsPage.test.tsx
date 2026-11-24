@@ -25,8 +25,8 @@ function setup(options: { get?: () => Response; put?: (body: unknown) => Respons
     }),
   );
   const view = renderRoutes(
-    [{ path: "/reglages/etude", element: <StudySettingsPage /> }],
-    "/reglages/etude",
+    [{ path: "/settings/study", element: <StudySettingsPage /> }],
+    "/settings/study",
   );
   return { puts, ...view };
 }
@@ -71,7 +71,7 @@ describe("StudySettingsPage", () => {
     server.use(
       http.get(`${API}/settings`, () => HttpResponse.json({ ...stored, timezone: "Etc/Zoulou" })),
     );
-    renderRoutes([{ path: "/reglages/etude", element: <StudySettingsPage /> }], "/reglages/etude");
+    renderRoutes([{ path: "/settings/study", element: <StudySettingsPage /> }], "/settings/study");
     const zone = await screen.findByLabelText("Fuseau horaire");
     expect(zone).toHaveValue("Etc/Zoulou");
     expect(screen.getByRole("option", { name: "Europe/Paris" })).toBeInTheDocument();

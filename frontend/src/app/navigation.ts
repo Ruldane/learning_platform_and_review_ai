@@ -8,42 +8,42 @@ const SECTIONS = [
   { section: "home", path: "/", labelKey: "nav.home", icon: Home, color: "var(--section-home)" },
   {
     section: "learn",
-    path: "/etudier",
+    path: "/learn",
     labelKey: "navigation.learn",
     icon: BookOpen,
     color: "var(--section-learn)",
   },
   {
     section: "code",
-    path: "/coder",
+    path: "/coding",
     labelKey: "navigation.code",
     icon: Code2,
     color: "var(--section-study)",
   },
   {
     section: "memory",
-    path: "/cerveau",
+    path: "/brain",
     labelKey: "navigation.memory",
     icon: Brain,
     color: "var(--section-memory)",
   },
   {
     section: "career",
-    path: "/carriere",
+    path: "/career",
     labelKey: "nav.career",
     icon: Briefcase,
     color: "var(--section-career)",
   },
   {
     section: "lab",
-    path: "/labo",
+    path: "/lab",
     labelKey: "navigation.lab",
     icon: FlaskConical,
     color: "var(--section-skills)",
   },
   {
     section: "settings",
-    path: "/reglages",
+    path: "/settings",
     labelKey: "nav.settings",
     icon: Settings,
     color: "var(--section-settings)",
@@ -101,14 +101,14 @@ const PRIMARY: Partial<Record<Feature, Section>> = {
 };
 
 const AREAS: Record<string, SettingsArea> = {
-  "/reglages/modeles": "models",
-  "/reglages/mcp": "access",
-  "/reglages/revision-messagerie": "access",
-  "/reglages/disponibilite": "profile",
-  "/reglages/agenda": "profile",
-  "/reglages/style": "profile",
-  "/reglages/etude": "profile",
-  "/reglages/entretien-surprise": "profile",
+  "/settings/models": "models",
+  "/settings/mcp": "access",
+  "/settings/message-review": "access",
+  "/settings/availability": "profile",
+  "/settings/calendar": "profile",
+  "/settings/style": "profile",
+  "/settings/study": "profile",
+  "/settings/surprise-interviews": "profile",
 };
 
 const DESTINATIONS: Record<string, readonly NavEntry[]> = {

@@ -33,7 +33,7 @@ describe("RadarPage launch and live updates", () => {
     await user.click(screen.getByRole("button", { name: "Run a scan" }));
 
     expect(state.bodies).toEqual([{ role: "Analyste données", zone: "France" }]);
-    await waitFor(() => expect(router.state.location.pathname).toBe("/carriere/radar/new1"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/career/radar/new1"));
     const title = await screen.findByRole("heading", { name: "Scan in progress" });
     expect(title).toBeVisible();
     expect(title).toHaveFocus(); // Focus moves to the scan as it replaces the form.
@@ -72,7 +72,7 @@ describe("RadarPage launch and live updates", () => {
       runs: [RUNNING],
       sessions: [sessionOut("sess-r9", "running", radarSession("r9"))],
     });
-    await waitFor(() => expect(router.state.location.pathname).toBe("/carriere/radar/r9"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/career/radar/r9"));
     expect(await screen.findByRole("heading", { name: "Scan in progress" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Scan in progress…" })).toHaveAttribute(
       "aria-disabled",
@@ -94,7 +94,7 @@ describe("RadarPage launch and live updates", () => {
     state.sessions.push(sessionOut("sess-r9", "running", radarSession("r9")));
 
     await user.click(screen.getByRole("button", { name: "Run a scan" }));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/carriere/radar/r9"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/career/radar/r9"));
     expect(await screen.findByText("A scan was already in progress: following it.")).toBeVisible();
     await openStream(sockets, "sess-r9");
     expect(state.runs.filter((run) => run.status === "running")).toHaveLength(1);

@@ -18,7 +18,7 @@ test("relit le rappel et les repères, ouvre le bloc et conserve les tâches du 
   expect(first.ok()).toBe(true);
   const existing = await first.json();
 
-  await page.goto("/etudier/reprise-apres-pause");
+  await page.goto("/study/return");
   await page.getByLabel("Date du rappel").fill("2026-01-05");
   await page.getByRole("button", { name: "Programmer le rappel" }).press("Enter");
   await expect(page.getByText("Le rappel de reprise est dû.")).toBeVisible();
@@ -35,9 +35,9 @@ test("relit le rappel et les repères, ouvre le bloc et conserve les tâches du 
   await expect(page.getByRole("heading", { name: "Dernier bloc terminé" })).toBeVisible();
 
   await page.getByRole("button", { name: "Démarrer le bloc" }).press("Enter");
-  await expect(page).toHaveURL(/\/etudier\/training\/[0-9a-f-]+$/);
+  await expect(page).toHaveURL(/\/study\/training\/[0-9a-f-]+$/);
   const trainingUrl = new URL(page.url()).pathname;
-  await page.goto("/etudier/reprise-apres-pause");
+  await page.goto("/study/return");
   await expect(page.getByRole("link", { name: "Retrouver le bloc" })).toHaveAttribute(
     "href",
     trainingUrl,

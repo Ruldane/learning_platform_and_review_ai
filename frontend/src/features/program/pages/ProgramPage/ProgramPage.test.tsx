@@ -11,10 +11,10 @@ function setup(program: Record<string, unknown> = programOut()) {
   server.use(...handlers);
   const view = renderRoutes(
     [
-      { path: "/apprendre/programme/:programId", element: <ProgramPage /> },
-      { path: "/apprendre/lecons/:lessonId", element: <h1>Leçon ouverte</h1> },
+      { path: "/learn/programs/:programId", element: <ProgramPage /> },
+      { path: "/learn/lessons/:lessonId", element: <h1>Leçon ouverte</h1> },
     ],
-    "/apprendre/programme/p1",
+    "/learn/programs/p1",
   );
   return { ...view, state };
 }
@@ -195,8 +195,8 @@ describe("ProgramPage", () => {
       http.get(`${API}/sessions/s1`, () => HttpResponse.json({}, { status: 404 })),
     );
     const { user } = renderRoutes(
-      [{ path: "/apprendre/programme/:programId", element: <ProgramPage /> }],
-      "/apprendre/programme/p1",
+      [{ path: "/learn/programs/:programId", element: <ProgramPage /> }],
+      "/learn/programs/p1",
     );
     await user.click(await screen.findByRole("button", { name: "Retry" }));
     expect(await screen.findByRole("heading", { name: "Python pour la data" })).toBeInTheDocument();

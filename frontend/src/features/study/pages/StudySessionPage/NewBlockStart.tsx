@@ -12,7 +12,7 @@ import type { StudySessionOut } from "../../types";
  */
 export function NewBlockStart({ mode }: { mode: StudySessionOut["mode"] }) {
   const navigate = useNavigate();
-  const starter = useStartStudy(() => void navigate("/etudier/session"));
+  const starter = useStartStudy(() => void navigate("/study/session"));
   return (
     <div className="flex flex-col gap-2">
       {starter.launchMenu}

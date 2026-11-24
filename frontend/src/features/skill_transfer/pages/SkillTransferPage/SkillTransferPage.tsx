@@ -18,7 +18,7 @@ function refreshInterval(rows: Transfer[] | undefined): number | false {
 
 export function SkillTransferPage() {
   const [search] = useSearchParams();
-  const skillId = search.get("competence") || undefined;
+  const skillId = (search.get("skill") ?? search.get("competence")) || undefined;
   const queries = useQueryClient();
   const proofs = useQuery({
     queryKey: [...PROOFS, skillId],
@@ -36,7 +36,11 @@ export function SkillTransferPage() {
   return (
     <section className="grid max-w-3xl gap-5">
       <h1 className="text-2xl font-semibold">{t("skillTransfer.title")}</h1>
-      {skillId ? <Link className="w-fit underline" to="/competences/transfert">{t("skillTransfer.all")}</Link> : null}
+      {skillId ? (
+        <Link className="w-fit underline" to="/skills/transfer">
+          {t("skillTransfer.all")}
+        </Link>
+      ) : null}
       {proofs.isPending || rows.isPending ? <LoadingState label={t("skillTransfer.loading")} /> : null}
       {proofs.error ? <ErrorState message={errorMessage(proofs.error)} onRetry={() => void proofs.refetch()} /> : null}
       {proofs.data ? (

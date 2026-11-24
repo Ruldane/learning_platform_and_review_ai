@@ -39,7 +39,7 @@ describe("PostingPage", () => {
     expect(screen.getByRole("table", { name: "Gap with the posting" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Review my CV for this posting" })).toHaveAttribute(
       "href",
-      "/carriere/cv/revue/nouvelle/p1",
+      "/career/cv/reviews/new/p1",
     );
   });
 
@@ -107,7 +107,7 @@ describe("PostingPage", () => {
     expect(await screen.findByText("A replanning is already open.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: OPEN_REPLAN })).toHaveAttribute(
       "href",
-      "/apprendre/programme/pg1/replanification",
+      "/learn/programs/pg1/replan",
     );
   });
 

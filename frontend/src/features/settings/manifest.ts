@@ -16,11 +16,11 @@ import { WelcomePage } from "./pages/WelcomePage";
 export const settingsManifest: FeatureManifest = {
   id: "settings",
   routes: [
-    { path: "reglages/modeles", Component: ModelsAndKeysPage },
-    { path: "reglages/recherche", Component: SearchSettingsPage },
-    { path: "reglages/disponibilite", Component: AvailabilityPage },
-    { path: "reglages/etude", Component: StudySettingsPage },
-    { path: "reglages/style", Component: StylePage },
+    { path: "settings/models", Component: ModelsAndKeysPage },
+    { path: "settings/search", Component: SearchSettingsPage },
+    { path: "settings/availability", Component: AvailabilityPage },
+    { path: "settings/study", Component: StudySettingsPage },
+    { path: "settings/style", Component: StylePage },
     // Le premier lancement : une route, jamais une entrée de navigation (la porte y mène), et sans navigation latérale (`bare`).
     { path: "welcome", Component: WelcomePage, handle: { bare: true } },
   ],
@@ -30,22 +30,22 @@ export const settingsManifest: FeatureManifest = {
     {
       section: "settings",
       labelKey: "settings.models.navLabel",
-      path: "/reglages/modeles",
+      path: "/settings/models",
       order: 1,
     },
     {
       section: "settings",
       labelKey: "settings.search.navLabel",
-      path: "/reglages/recherche",
+      path: "/settings/search",
       order: 2,
     },
     {
       section: "settings",
       labelKey: "settings.availability.navLabel",
-      path: "/reglages/disponibilite",
+      path: "/settings/availability",
       order: 3,
     },
-    { section: "settings", labelKey: "settings.study.navLabel", path: "/reglages/etude", order: 4 },
-    { section: "settings", labelKey: "settings.style.navLabel", path: "/reglages/style", order: 5 },
+    { section: "settings", labelKey: "settings.study.navLabel", path: "/settings/study", order: 4 },
+    { section: "settings", labelKey: "settings.style.navLabel", path: "/settings/style", order: 5 },
   ],
 };

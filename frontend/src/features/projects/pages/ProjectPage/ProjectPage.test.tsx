@@ -17,7 +17,7 @@ import { ProjectPage } from "./ProjectPage";
 
 const setup = (
   api: Parameters<typeof renderProjects>[1] = {},
-  path = "/competences/portfolio/p1",
+  path = "/skills/portfolio/p1",
 ) =>
   renderProjects(
     (createSocket) => ({
@@ -52,12 +52,12 @@ describe("ProjectPage : l'énoncé", () => {
     expect(screen.getByText("Durée estimée : 6 h")).toBeVisible();
     expect(screen.getByRole("link", { name: "Retour au Portfolio" })).toHaveAttribute(
       "href",
-      "/competences/portfolio",
+      "/skills/portfolio",
     );
   });
 
   it("says a project is missing", async () => {
-    setup({ projects: [] }, "/competences/portfolio/nope");
+    setup({ projects: [] }, "/skills/portfolio/nope");
     expect(
       await screen.findByRole("heading", { level: 1, name: "Projet introuvable" }),
     ).toBeVisible();
@@ -110,7 +110,7 @@ describe("ProjectPage : l'énoncé", () => {
     const other = projectOut("p2", { title: "Autre projet" });
     const { user, router } = setup({ projects: [TODO, other] });
     await user.type(await screen.findByLabelText("Description"), "Une requête SQL.");
-    await router.navigate("/competences/portfolio/p2");
+    await router.navigate("/skills/portfolio/p2");
     expect(await screen.findByRole("heading", { level: 1, name: "Autre projet" })).toBeVisible();
     expect(screen.getByLabelText("Description")).toHaveValue("");
   });

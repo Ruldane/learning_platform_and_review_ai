@@ -33,10 +33,10 @@ describe("« Tout supprimer » avec la porte de connexion", () => {
               <Outlet />
             </SessionGate>
           ),
-          children: [{ path: "reglages/donnees", element: <DataPage /> }],
+          children: [{ path: "settings/data", element: <DataPage /> }],
         },
       ],
-      { initialEntries: ["/reglages/donnees"] },
+      { initialEntries: ["/settings/data"] },
     );
     const Wrapper = createQueryWrapper(client);
     render(

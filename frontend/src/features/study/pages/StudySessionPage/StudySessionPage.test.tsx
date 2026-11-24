@@ -95,7 +95,7 @@ describe("StudySessionPage", () => {
     await user.click(screen.getByRole("button", { name: "Finish" }));
     await waitFor(() => expect(patches).toEqual([{ action: "finish", worked_minutes: 2 }]));
     expect(await screen.findByRole("heading", { name: "Session complete" })).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe("/etudier/session/st1");
+    expect(router.state.location.pathname).toBe("/study/session/st1");
   });
 
   it("starts a new block from an interrupted session, without going back to it", async () => {
@@ -113,7 +113,7 @@ describe("StudySessionPage", () => {
       sessions: [studyOut({ status: "interrupted", mode: "feynman" })],
     });
     await user.click(await screen.findByRole("button", { name: "Start a new block" }));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/etudier/session/st2"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/study/session/st2"));
     expect(starts).toEqual([{ mode: "feynman" }]);
   });
 
@@ -121,7 +121,7 @@ describe("StudySessionPage", () => {
     recordPosts("/study-sessions", 404, apiError("no_block_today", "Aucun bloc."));
     const { user, router } = setup({ sessions: [studyOut({ status: "interrupted" })] });
     await user.click(await screen.findByRole("button", { name: "Start a new block" }));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/etudier/session"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/study/session"));
   });
 
   it("reads the session again when the agents session fails", async () => {
@@ -173,7 +173,7 @@ describe("StudySessionPage", () => {
     const { user, router } = setup({ sessions: [studyOut({ status: "cancelled" })] });
     expect(await screen.findByRole("heading", { name: "Session abandoned" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Start a new block" }));
-    expect(router.state.location.pathname).toBe("/etudier/session");
+    expect(router.state.location.pathname).toBe("/study/session");
   });
 
   it("has an empty state for an unknown session", async () => {
@@ -185,7 +185,7 @@ describe("StudySessionPage", () => {
     });
     expect(await screen.findByRole("heading", { name: "Session not found" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Back to guided session" }));
-    expect(router.state.location.pathname).toBe("/etudier/session");
+    expect(router.state.location.pathname).toBe("/study/session");
   });
 
   it("announces the loading, then shows an error with a retry button", async () => {

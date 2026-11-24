@@ -6,12 +6,12 @@ describe("applicationsManifest", () => {
     expect(applicationsManifest.id).toBe("applications");
     expect(applicationsManifest.routes.map((route) => route.path)).toEqual([
       "candidatures",
-      "candidatures/relances",
-      "candidatures/nouvelle",
-      "candidatures/entretien",
-      "candidatures/:applicationId/kit",
-      "candidatures/:applicationId/entretien",
-      "candidatures/:applicationId/comite",
+      "applications/reminders",
+      "applications/new",
+      "applications/interview",
+      "applications/:applicationId/kit",
+      "applications/:applicationId/interview",
+      "applications/:applicationId/committee",
     ]);
     expect(applicationsManifest.routes[0]?.children?.map((route) => route.path)).toEqual([
       ":applicationId",
@@ -25,9 +25,9 @@ describe("applicationsManifest", () => {
   it("puts the board first, the reminders second and the free interview third in the Candidatures section", () => {
     const nav = applicationsManifest.nav ?? [];
     expect(nav.map(({ section, path, order }) => ({ section, path, order }))).toEqual([
-      { section: "applications", path: "/candidatures", order: 1 },
-      { section: "applications", path: "/candidatures/relances", order: 2 },
-      { section: "applications", path: "/candidatures/entretien", order: 3 },
+      { section: "applications", path: "/applications", order: 1 },
+      { section: "applications", path: "/applications/reminders", order: 2 },
+      { section: "applications", path: "/applications/interview", order: 3 },
     ]);
   });
 

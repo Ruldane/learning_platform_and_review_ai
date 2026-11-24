@@ -6,10 +6,10 @@ import { server } from "@/test/server";
 import { API, apiError, itemOut, memoryBackend, readHandlers, writeHandlers } from "../../fixtures";
 import { MemoryExplorerPage } from "./MemoryExplorerPage";
 
-function setup(initial = "/memoire", init: Parameters<typeof memoryBackend>[0] = {}) {
+function setup(initial = "/memory", init: Parameters<typeof memoryBackend>[0] = {}) {
   const backend = memoryBackend(init);
   server.use(...readHandlers(backend), ...writeHandlers(backend));
-  const view = renderRoutes([{ path: "/memoire", element: <MemoryExplorerPage /> }], initial);
+  const view = renderRoutes([{ path: "/memory", element: <MemoryExplorerPage /> }], initial);
   return { backend, ...view };
 }
 
@@ -33,7 +33,7 @@ const lessons = [
 
 describe("MemoryExplorerPage (final review fixes)", () => {
   it("does not show the save error of one item on the next item (I3)", async () => {
-    const { user } = setup("/memoire?item=i1");
+    const { user } = setup("/memory?item=i1");
     server.use(
       http.patch(`${API}/memory/items/:id`, () =>
         apiError("memory_duplicate", "Un élément identique existe déjà.", 409),
@@ -51,7 +51,7 @@ describe("MemoryExplorerPage (final review fixes)", () => {
   });
 
   it("does not show the save error on the creation form either (I3)", async () => {
-    const { user } = setup("/memoire?item=i1");
+    const { user } = setup("/memory?item=i1");
     server.use(
       http.patch(`${API}/memory/items/:id`, () =>
         apiError("memory_duplicate", "Un élément identique existe déjà.", 409),
@@ -71,7 +71,7 @@ describe("MemoryExplorerPage (final review fixes)", () => {
     const many = Array.from({ length: 26 }, (_, n) =>
       itemOut({ id: `m${n + 1}`, title: `Élément ${String(n + 1).padStart(2, "0")}` }),
     );
-    const { backend, user } = setup("/memoire", { items: many });
+    const { backend, user } = setup("/memory", { items: many });
     paginate(backend);
     expect(await screen.findByText("Élément 01")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Suivant" }));
@@ -84,7 +84,7 @@ describe("MemoryExplorerPage (final review fixes)", () => {
   });
 
   it("locks the merge while it is in flight and sends it once (I5)", async () => {
-    const { backend, user } = setup("/memoire", { items: lessons });
+    const { backend, user } = setup("/memory", { items: lessons });
     let release: () => void = () => undefined;
     const gate = new Promise<void>((resolve) => {
       release = resolve;

@@ -185,9 +185,9 @@ describe("WelcomePage", () => {
     await goTo(user, 5);
     await user.click(finish());
     await screen.findByText("Accueil de Tremplin");
-    await router.navigate("/reglages");
+    await router.navigate("/settings");
     expect(await screen.findByText("Réglages")).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe("/reglages");
+    expect(router.state.location.pathname).toBe("/settings");
     await router.navigate("/");
     expect(await screen.findByText("Accueil de Tremplin")).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/");

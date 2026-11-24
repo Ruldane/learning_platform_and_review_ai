@@ -15,13 +15,13 @@ export function makeQuizManifest(GhostPanel?: ComponentType<QuizGhostProps>): Fe
     id: "quiz",
     publicRoutes: [{ path: "/mobile", Component: MobilePage }],
     routes: [
-      { path: "etudier/revisions", Component: ReviewsPage },
-      { path: "etudier/quiz", Component: QuizIndexPage },
-      { path: "etudier/quiz/:quizId", Component: () => createElement(QuizPage, { GhostPanel }) },
+      { path: "study/reviews", Component: ReviewsPage },
+      { path: "study/quiz", Component: QuizIndexPage },
+      { path: "study/quiz/:quizId", Component: () => createElement(QuizPage, { GhostPanel }) },
     ],
     nav: [
-      { section: "study", labelKey: "quiz.nav.reviews", path: "/etudier/revisions", order: 2 },
-      { section: "study", labelKey: "quiz.nav.quiz", path: "/etudier/quiz", order: 3 },
+      { section: "study", labelKey: "quiz.nav.reviews", path: "/study/reviews", order: 2 },
+      { section: "study", labelKey: "quiz.nav.quiz", path: "/study/quiz", order: 3 },
       { section: "study", labelKey: "mobile.title", path: "/mobile", order: 3.5 },
     ],
   };

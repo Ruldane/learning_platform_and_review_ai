@@ -101,7 +101,7 @@ async def test_late_twice_asks_option_then_proposes_with_it(
         "artifact_id": PROGRAM_ID,
         "kind": "plan_version",
         "title": "Replanification : Parcours IA",
-        "url": f"/apprendre/programme/{PROGRAM_ID}/replanification",
+        "url": f"/learn/programs/{PROGRAM_ID}/replan",
     }
 
 

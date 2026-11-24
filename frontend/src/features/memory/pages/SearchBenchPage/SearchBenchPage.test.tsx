@@ -6,12 +6,12 @@ import { API, apiError, searchOut } from "../../fixtures";
 import { renderRoutes } from "@/test/renderRoutes";
 import { SearchBenchPage } from "./SearchBenchPage";
 
-const DOCS = { path: "/memoire/documents", element: <p>Écran des documents</p> };
+const DOCS = { path: "/memory/documents", element: <p>Écran des documents</p> };
 
 function setup() {
   return renderRoutes(
-    [{ path: "/memoire/banc", element: <SearchBenchPage /> }, DOCS],
-    "/memoire/banc",
+    [{ path: "/memory/search-bench", element: <SearchBenchPage /> }, DOCS],
+    "/memory/search-bench",
   );
 }
 
@@ -59,6 +59,6 @@ describe("SearchBenchPage", () => {
     await user.type(screen.getByLabelText("Requête"), "rien");
     await user.click(screen.getByRole("button", { name: "Lancer" }));
     await user.click(await screen.findByRole("button", { name: "Importer un document" }));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/memoire/documents"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/memory/documents"));
   });
 });

@@ -51,7 +51,7 @@ async def test_github_attribution_and_replay(
     graph = (await client.get("/api/v1/skills/graph")).json()
     skill = next(node for node in graph["nodes"] if node["name"] == "pandas")
     [evidence] = (await client.get(f"/api/v1/skills/{skill['id']}")).json()["evidence"]
-    assert evidence["kind"] == "github" and evidence["url"] == f"/competences/portfolio/{project}"
+    assert evidence["kind"] == "github" and evidence["url"] == f"/skills/portfolio/{project}"
     second_project = await env.add_project(1)
     duplicate = await client.post(
         f"{API}/{second_project}/github-claims", json={"repo_url": REPO_URL, "sha": SHA}

@@ -27,8 +27,8 @@ function setup(options: { usage?: unknown; put?: (body: unknown) => Response } =
     }),
   );
   const view = renderRoutes(
-    [{ path: "/reglages/recherche", element: <SearchSettingsPage /> }],
-    "/reglages/recherche",
+    [{ path: "/settings/search", element: <SearchSettingsPage /> }],
+    "/settings/search",
   );
   return { puts, ...view };
 }

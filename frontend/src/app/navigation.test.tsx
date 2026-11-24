@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { createMemoryRouter, matchRoutes, RouterProvider } from "react-router";
+import { createMemoryRouter, generatePath, matchRoutes, RouterProvider } from "react-router";
 import { beforeEach, expect, it } from "vitest";
 import { settingsFixture } from "@/features/settings/fixtures";
 import { apiBaseUrl } from "@/shared/api/client";
@@ -9,6 +9,7 @@ import { authApi, camille } from "@/test/authApi";
 import { createQueryWrapper } from "@/test/queryWrapper";
 import { server } from "@/test/server";
 import { settingsApi } from "@/test/settingsApi";
+import { LEGACY_PATHS } from "./legacyPaths";
 import { FEATURES } from "./registry";
 import { buildRoutes } from "./router";
 import { buildDestinations } from "./navigation";
@@ -33,7 +34,7 @@ beforeEach(() => {
 });
 
 it("ouvre les rubriques et conserve les liens vers les écrans historiques", async () => {
-  renderAt("/etudier");
+  renderAt("/learn");
   await screen.findByRole("heading", { name: "Étudier" });
   const nav = screen.getByRole("navigation", { name: "Navigation principale" });
   expect(
@@ -44,11 +45,11 @@ it("ouvre les rubriques et conserve les liens vers les écrans historiques", asy
   const main = screen.getByRole("main");
   expect(within(main).getByRole("link", { name: /Programmes/ })).toHaveAttribute(
     "href",
-    "/apprendre/programme",
+    "/learn/programs",
   );
   expect(within(main).getByRole("link", { name: /Leçons/ })).toHaveAttribute(
     "href",
-    "/apprendre/lecons",
+    "/learn/lessons",
   );
 });
 
@@ -59,7 +60,7 @@ it("affiche puis épingle une expérience du Labo dans le menu", async () => {
       return HttpResponse.json({ pinned: ["oncall"], tour: "pending" });
     }),
   );
-  renderAt("/labo");
+  renderAt("/lab");
   await screen.findByRole("heading", { name: "Labo" });
   const main = screen.getByRole("main");
   expect((await within(main).findAllByText("Prête")).length).toBeGreaterThan(1);
@@ -67,12 +68,12 @@ it("affiche puis épingle une expérience du Labo dans le menu", async () => {
   const nav = screen.getByRole("navigation", { name: "Navigation principale" });
   expect(await within(nav).findByRole("link", { name: /Astreinte/i })).toHaveAttribute(
     "href",
-    "/astreinte",
+    "/on-call",
   );
 });
 
 it("répartit les réglages dans quatre onglets et donne accès aux écrans existants", async () => {
-  renderAt("/reglages");
+  renderAt("/settings");
   await screen.findByRole("heading", { name: "Réglages" });
   const tabs = screen.getByRole("tablist");
   expect(within(tabs).getAllByRole("tab")).toHaveLength(4);
@@ -94,6 +95,19 @@ it("conserve une destination fonctionnelle pour chaque ancienne entrée", () => 
   }
 });
 
+it("keeps every previous page URL and its English destination routable", () => {
+  const routes = buildRoutes(FEATURES);
+  for (const [before, after] of Object.entries(LEGACY_PATHS)) {
+    const params = Object.fromEntries(
+      [...before.matchAll(/:(\w+)/g)].map((match) => [match[0].slice(1), "example"]),
+    );
+    const legacy = matchRoutes(routes, generatePath<string>(before, params))?.at(-1)?.route;
+    const current = matchRoutes(routes, generatePath<string>(after, params))?.at(-1)?.route;
+    expect(legacy?.path, before).toBe(before);
+    expect(current && (current.index || current.path !== "*"), after).toBeTruthy();
+  }
+});
+
 it("annonce le réglage audio du Podcast à partir des mêmes prérequis que le MCP", async () => {
   server.use(
     http.get(overviewUrl, () =>
@@ -104,12 +118,12 @@ it("annonce le réglage audio du Podcast à partir des mêmes prérequis que le 
       }),
     ),
   );
-  renderAt("/labo");
+  renderAt("/lab");
   const message = await screen.findByText("Pour écouter le podcast, ajoute une clé OpenAI.");
   const card = message.closest("li");
   expect(card).not.toBeNull();
   expect(
     within(card!).getByRole("link", { name: "Vérifier les modèles et les clés" }),
-  ).toHaveAttribute("href", "/reglages/modeles");
+  ).toHaveAttribute("href", "/settings/models");
   expect(within(card!).queryByText("Prête")).toBeNull();
 });

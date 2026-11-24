@@ -19,7 +19,7 @@ export function HandoffSource({ source }: { source: Source }) {
       {source.repo_url && (
         <p className="break-all">{t("projectHandoffs.repository")} <code>{source.repo_url}</code></p>
       )}
-      <Link to={`/competences/portfolio/${source.project_id}`} className="w-fit underline">
+      <Link to={`/skills/portfolio/${source.project_id}`} className="w-fit underline">
         {t("projectHandoffs.openProject")}
       </Link>
     </section>

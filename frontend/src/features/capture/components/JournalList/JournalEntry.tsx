@@ -35,7 +35,7 @@ export function JournalEntry({ entry }: JournalEntryProps) {
           ) : null}
           {entry.memoryItemId ? (
             <Link
-              to={`/memoire?item=${encodeURIComponent(entry.memoryItemId)}`}
+              to={`/memory?item=${encodeURIComponent(entry.memoryItemId)}`}
               className="underline"
             >
               {t("capture.journal.openMemory")}

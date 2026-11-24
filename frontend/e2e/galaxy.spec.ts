@@ -48,7 +48,7 @@ async function rotateAndZoom(page: Page) {
 
 test("la Galaxie projette les nœuds et les ouvre aussi au clavier", async ({ page, request }) => {
   await finishFirstLaunch(request);
-  await page.goto("/competences/galaxie");
+  await page.goto("/skills/galaxy");
   await expect(page.getByText("Aucune compétence ni note active à afficher.")).toBeVisible();
   expect((await request.post(`${API}/skills`, { data: { name: "Python fictif" } })).status()).toBe(
     201,
@@ -77,7 +77,7 @@ test("la Galaxie projette les nœuds et les ouvre aussi au clavier", async ({ pa
   ).toHaveAttribute("aria-pressed", "true");
   await page.getByRole("button", { name: "Python fictif Compétence", exact: true }).press("Enter");
   await selected.getByRole("link", { name: "Ouvrir l’entraînement" }).click();
-  await expect(page).toHaveURL(/\/etudier\/training\?competence=[0-9a-f-]+$/);
+  await expect(page).toHaveURL(/\/study\/training\?skill=[0-9a-f-]+$/);
   await expect(page.getByText("Sujet proposé · Python fictif")).toBeVisible();
   await page.getByRole("button", { name: "Commencer le training" }).click();
   await expect(page.getByRole("textbox", { name: "Ton message au tuteur" })).toHaveValue(

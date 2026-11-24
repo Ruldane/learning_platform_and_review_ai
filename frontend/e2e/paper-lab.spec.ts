@@ -11,7 +11,7 @@ test("lit une source, ouvre le mini-cours et joue la mesure du notebook", async 
   request,
 }) => {
   await finishFirstLaunch(request);
-  await page.goto("/apprendre/articles");
+  await page.goto("/learn/papers");
   await page
     .getByRole("textbox", { name: "Adresse de l’article" })
     .fill("https://articles.exemple.org/regression");

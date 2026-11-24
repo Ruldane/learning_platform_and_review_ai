@@ -200,7 +200,7 @@ def make_preview(deps: GraphDeps) -> Node:
             "artifact_id": ctx.program_id,
             "kind": "plan_version",
             "title": f"Replanification : {ctx.title}",
-            "url": f"/apprendre/programme/{ctx.program_id}/replanification",
+            "url": f"/learn/programs/{ctx.program_id}/replan",
         }
         emit("artifact.ready", artifact, agent=AGENT)
         return {"preview": as_json(saved), "outcome": ""}

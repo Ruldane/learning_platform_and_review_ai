@@ -17,7 +17,7 @@ export function SystemDesignStart() {
   const keyed = useContext(RunSourceAvailability) ?? noKeys;
   const start = useMutation({
     mutationFn: () => startDesign(source),
-    onSuccess: ({ interview_id }) => navigate(`/candidatures/system-design/${interview_id}`),
+    onSuccess: ({ interview_id }) => navigate(`/applications/system-design/${interview_id}`),
   });
   return (
     <div className="flex flex-col items-start gap-3">

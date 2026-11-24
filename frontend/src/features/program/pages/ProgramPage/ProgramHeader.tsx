@@ -17,7 +17,7 @@ export function ProgramHeader({ program }: { program: ProgramOut }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <Link
-            to="/apprendre/programme?liste"
+            to="/learn/programs?list"
             className="mb-1 inline-flex items-center gap-1 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
           >
             <ArrowLeft aria-hidden="true" className="size-4" />
@@ -34,14 +34,14 @@ export function ProgramHeader({ program }: { program: ProgramOut }) {
         </div>
         <nav aria-label={t("program.exports.label")} className="flex flex-wrap gap-2">
           {program.status === "validated" ? (
-            <Link to={`/apprendre/programme/${program.id}/replanification`} className={link}>
+            <Link to={`/learn/programs/${program.id}/replan`} className={link}>
               <RefreshCw aria-hidden="true" />
               {t("program.replan.button")}
             </Link>
           ) : null}
           {program.status === "validated" ? (
             <Link
-              to={`/reglages/agenda?programme=${encodeURIComponent(program.id)}`}
+              to={`/settings/calendar?program=${encodeURIComponent(program.id)}`}
               className={link}
             >
               {t("calendar.link")}

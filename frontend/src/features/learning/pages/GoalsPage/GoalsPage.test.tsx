@@ -23,13 +23,13 @@ function setup(goals: unknown[] = []) {
   const fake = createFakeSocketServer();
   const router = createMemoryRouter(
     [
-      { path: "/apprendre/objectifs", element: <GoalsPage /> },
+      { path: "/learn/goals", element: <GoalsPage /> },
       {
-        path: "/apprendre/objectifs/:goalId/conseil",
+        path: "/learn/goals/:goalId/council",
         element: <CouncilPage createSocket={fake.factory} />,
       },
     ],
-    { initialEntries: ["/apprendre/objectifs"] },
+    { initialEntries: ["/learn/goals"] },
   );
   render(<RouterProvider router={router} />, { wrapper: createQueryWrapper() });
   return { router, user: userEvent.setup() };
@@ -64,7 +64,7 @@ describe("GoalsPage", () => {
         weekly_hours: 8,
       },
     ]);
-    expect(router.state.location.pathname).toBe("/apprendre/objectifs/g1/conseil");
+    expect(router.state.location.pathname).toBe("/learn/goals/g1/council");
     expect(await screen.findByText("Devenir ingénieure data")).toBeInTheDocument();
   });
 
@@ -101,7 +101,7 @@ describe("GoalsPage", () => {
     );
     await user.click(screen.getByRole("button", { name: "Convoquer le Conseil" }));
     expect(await screen.findByText("Le moteur est arrêté.")).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe("/apprendre/objectifs");
+    expect(router.state.location.pathname).toBe("/learn/goals");
     expect(screen.getByRole("button", { name: "Convoquer le Conseil" })).toBeEnabled();
   });
 
@@ -121,11 +121,11 @@ describe("GoalsPage", () => {
     expect(within(items[0]!).getByText("Devenir ingénieure data")).toBeInTheDocument();
     expect(within(items[0]!).getByRole("link", { name: /Voir le programme/ })).toHaveAttribute(
       "href",
-      "/apprendre/programme/pr2",
+      "/learn/programs/pr2",
     );
     expect(within(items[1]!).getByRole("link", { name: /Ouvrir le Conseil/ })).toHaveAttribute(
       "href",
-      "/apprendre/objectifs/g1/conseil",
+      "/learn/goals/g1/council",
     );
   });
 

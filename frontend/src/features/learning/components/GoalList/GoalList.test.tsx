@@ -48,8 +48,8 @@ describe("GoalList", () => {
     renderList(goals);
     const links = screen.getAllByRole("link", { name: /Ouvrir le Conseil/ });
     expect(links.map((a) => a.getAttribute("href"))).toEqual([
-      "/apprendre/objectifs/g2/conseil",
-      "/apprendre/objectifs/g1/conseil",
+      "/learn/goals/g2/council",
+      "/learn/goals/g1/council",
     ]);
   });
 
@@ -57,14 +57,14 @@ describe("GoalList", () => {
     renderList(goals);
     const links = screen.getAllByRole("link", { name: /Voir le programme/ });
     expect(links).toHaveLength(1);
-    expect(links[0]).toHaveAttribute("href", "/apprendre/programme/pr2");
+    expect(links[0]).toHaveAttribute("href", "/learn/programs/pr2");
   });
 
   it("links a chosen goal without program id to the program index", () => {
     renderList([{ ...goals[1]!, status: "chosen" }]);
     expect(screen.getByRole("link", { name: /Voir le programme/ })).toHaveAttribute(
       "href",
-      "/apprendre/programme",
+      "/learn/programs",
     );
   });
 });

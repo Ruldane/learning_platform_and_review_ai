@@ -19,7 +19,7 @@ describe("InterviewPage settings", () => {
     expect(await screen.findByText("Acme, Data engineer")).toBeVisible();
     expect(screen.getByRole("link", { name: "Back to the application" })).toHaveAttribute(
       "href",
-      "/candidatures/a1",
+      "/applications/a1",
     );
     const mode = await screen.findByRole("group", { name: "Format" });
     expect(
@@ -63,7 +63,7 @@ describe("InterviewPage settings", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("No validated master profile");
     expect(screen.getByRole("link", { name: "Open my profile" })).toHaveAttribute(
       "href",
-      "/carriere/profil",
+      "/career/profile",
     );
     expect(screen.getByRole("button", { name: "Start the interview" })).toBeEnabled();
   });
@@ -121,7 +121,7 @@ describe("InterviewPage settings", () => {
     ).toBeVisible();
     expect(screen.getByRole("link", { name: "Open that application" })).toHaveAttribute(
       "href",
-      "/candidatures/a2/entretien",
+      "/applications/a2/interview",
     );
   });
 
@@ -139,7 +139,7 @@ describe("InterviewPage settings", () => {
   });
 
   it("says when the application does not exist", async () => {
-    setup({}, "/candidatures/zz/entretien");
+    setup({}, "/applications/zz/interview");
     expect(await screen.findByText("This application no longer exists.")).toBeVisible();
     expect(screen.getByRole("heading", { level: 1, name: "Application not found" })).toBeVisible();
   });

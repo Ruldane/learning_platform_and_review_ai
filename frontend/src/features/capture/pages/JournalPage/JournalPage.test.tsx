@@ -73,7 +73,7 @@ describe("JournalPage", () => {
     const second = within(weeks[1]!.closest("section")!);
     expect(second.getByRole("link", { name: "View session" })).toHaveAttribute(
       "href",
-      "/etudier/session/st1",
+      "/study/session/st1",
     );
   });
 
@@ -104,7 +104,7 @@ describe("JournalPage", () => {
     ]);
     expect(await screen.findByRole("link", { name: "View session" })).toHaveAttribute(
       "href",
-      "/etudier/training/training-1",
+      "/study/training/training-1",
     );
   });
 
@@ -129,7 +129,7 @@ describe("JournalPage", () => {
     ]);
     expect(
       await screen.findByRole("link", { name: "Race against this attempt" }),
-    ).toHaveAttribute("href", "/code/session-1?fantome=run-1");
+    ).toHaveAttribute("href", "/code/session-1?ghost=run-1");
   });
 
   it("keeps the filter and its focus while the new type loads (revue finale 5, C-m2)", async () => {

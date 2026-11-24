@@ -55,7 +55,7 @@ async def test_sentence_becomes_confirmed_application(
         "artifact_id": application_id,
         "kind": "application",
         "title": "Application at Société Fictive",
-        "url": f"/candidatures/{application_id}",
+        "url": f"/applications/{application_id}",
     }
 
 
@@ -105,7 +105,7 @@ async def test_intake_open_returns_the_existing_application(
     assert intake_store.save_calls == 0
     [artifact] = await run.events("artifact.ready")
     assert artifact["artifact_id"] == EXISTING_ID and artifact["kind"] == "application"
-    assert artifact["url"] == f"/candidatures/{EXISTING_ID}"
+    assert artifact["url"] == f"/applications/{EXISTING_ID}"
 
 
 async def test_intake_cancel_saves_nothing(

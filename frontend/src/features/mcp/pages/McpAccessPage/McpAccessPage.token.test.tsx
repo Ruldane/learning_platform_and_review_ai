@@ -8,12 +8,12 @@ import { McpAccessPage } from "./McpAccessPage";
 const COMMAND =
   'claude mcp add --transport http tremplin http://127.0.0.1:8000/mcp --header "Authorization: Bearer tmcp_SECRET-VALUE-123"';
 
-const ROUTES = [{ path: "/reglages/mcp", element: <McpAccessPage /> }];
+const ROUTES = [{ path: "/settings/mcp", element: <McpAccessPage /> }];
 
 function setup(options: Parameters<typeof mcpApi>[0] = {}) {
   const api = mcpApi(options);
   server.use(...api.handlers);
-  const view = renderRoutes(ROUTES, "/reglages/mcp");
+  const view = renderRoutes(ROUTES, "/settings/mcp");
   return { ...api, ...view };
 }
 
@@ -38,7 +38,7 @@ describe("McpAccessPage, tokens", () => {
 
     // « Recharger » : la page est remontée, la valeur du jeton n'existe plus nulle part.
     cleanup();
-    renderRoutes(ROUTES, "/reglages/mcp");
+    renderRoutes(ROUTES, "/settings/mcp");
     expect(await screen.findByText("Portable")).toBeInTheDocument();
     expect(document.body).not.toHaveTextContent("tmcp_SECRET-VALUE-123");
     expect(screen.queryByRole("region", { name: "Your token" })).toBeNull();

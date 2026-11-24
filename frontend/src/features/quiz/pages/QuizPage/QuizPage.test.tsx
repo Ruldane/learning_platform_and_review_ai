@@ -21,10 +21,10 @@ function setup(api: Parameters<typeof quizApi>[0] = {}, realPolling = false) {
   const page = realPolling ? <QuizPage /> : <QuizPage preparePollMs={5} gradePollMs={5} />;
   const router = createMemoryRouter(
     [
-      { path: "/etudier/quiz/:quizId", element: page },
-      { path: "/etudier/quiz", element: <p>Liste des quiz</p> },
+      { path: "/study/quiz/:quizId", element: page },
+      { path: "/study/quiz", element: <p>Liste des quiz</p> },
     ],
-    { initialEntries: ["/etudier/quiz/z1"] },
+    { initialEntries: ["/study/quiz/z1"] },
   );
   render(<RouterProvider router={router} />, { wrapper: createQueryWrapper() });
   const user = userEvent.setup(realPolling ? { advanceTimers: vi.advanceTimersByTime } : {});
@@ -274,7 +274,7 @@ describe("QuizPage", () => {
     });
     expect(await screen.findByRole("heading", { name: "Quiz not found" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "All quizzes" }));
-    expect(router.state.location.pathname).toBe("/etudier/quiz");
+    expect(router.state.location.pathname).toBe("/study/quiz");
   });
 
   it("announces the loading, then shows an error with a retry button", async () => {
@@ -287,8 +287,8 @@ describe("QuizPage", () => {
           : HttpResponse.json(quizOut());
       }),
     );
-    const router = createMemoryRouter([{ path: "/etudier/quiz/:quizId", element: <QuizPage /> }], {
-      initialEntries: ["/etudier/quiz/z1"],
+    const router = createMemoryRouter([{ path: "/study/quiz/:quizId", element: <QuizPage /> }], {
+      initialEntries: ["/study/quiz/z1"],
     });
     render(<RouterProvider router={router} />, { wrapper: createQueryWrapper() });
     expect(screen.getByRole("status")).toHaveTextContent("Loading the quiz…");

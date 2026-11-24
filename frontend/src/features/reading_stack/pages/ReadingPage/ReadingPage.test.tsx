@@ -35,8 +35,8 @@ describe("ReadingPage", () => {
       }),
     );
     const { user } = renderRoutes(
-      [{ path: "/memoire/lecture/:itemId?", element: <ReadingPage /> }],
-      "/memoire/lecture/article",
+      [{ path: "/memory/reading/:itemId?", element: <ReadingPage /> }],
+      "/memory/reading/article",
     );
     const readable = await screen.findByText(text);
     const select = (end: number) => {
@@ -79,8 +79,8 @@ describe("ReadingPage", () => {
       }),
     );
     const { user } = renderRoutes(
-      [{ path: "/memoire/lecture/:itemId?", element: <ReadingPage /> }],
-      "/memoire/lecture",
+      [{ path: "/memory/reading/:itemId?", element: <ReadingPage /> }],
+      "/memory/reading",
     );
     await user.click(await screen.findByRole("link", { name: article.title }));
     expect(await screen.findByText(article.text)).toBeVisible();

@@ -56,8 +56,8 @@ describe("HomePage", () => {
   it("sends the quick actions to their screens", async () => {
     const { user, router } = setup();
     for (const [name, path] of [
-      ["Start my block", "/etudier/session"],
-      ["Review", "/etudier/revisions"],
+      ["Start my block", "/study/session"],
+      ["Review", "/study/reviews"],
       ["Add a posting", "/career/postings"],
     ] as const) {
       const group = await screen.findByRole("group", { name: "Quick actions" });
@@ -72,7 +72,7 @@ describe("HomePage", () => {
     await user.click(
       await screen.findByRole("button", { name: "Société Fictive, Data engineer role" }),
     );
-    await waitFor(() => expect(router.state.location.pathname).toBe("/candidatures/a1"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/applications/a1"));
     await router.navigate("/");
     const group = await screen.findByRole("group", { name: "Quick actions" });
     expect(useCaptureRequest.getState().count).toBe(0);
@@ -87,7 +87,7 @@ describe("HomePage", () => {
     expect(screen.queryByRole("heading", { name: "Your week" })).toBeNull();
     expect(screen.getByRole("heading", { name: "Reviews" })).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Start with a goal" }));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/apprendre/objectifs"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/learn/goals"));
   });
 
   it("pages the activity feed by the (at, id) pair, without losing or repeating a tie", async () => {

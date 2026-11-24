@@ -283,6 +283,6 @@ describe("ReplanPage", () => {
     const { user, router } = setup({ versions: [] });
     expect(await screen.findByText("Aucune version pour l'instant")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Voir le programme" }));
-    expect(router.state.location.pathname).toBe("/apprendre/programme/p1");
+    expect(router.state.location.pathname).toBe("/learn/programs/p1");
   });
 });

@@ -67,7 +67,7 @@ describe("LessonConversation", () => {
     expect(within(panel).queryByRole("link", { name: "Lien produit par le modèle" })).toBeNull();
     expect(within(panel).getByRole("link", { name: "Note de cours" })).toHaveAttribute(
       "href",
-      "/memoire?item=mem1",
+      "/memory?item=mem1",
     );
     await user.keyboard("{Escape}");
     expect(close).toHaveBeenCalledOnce();

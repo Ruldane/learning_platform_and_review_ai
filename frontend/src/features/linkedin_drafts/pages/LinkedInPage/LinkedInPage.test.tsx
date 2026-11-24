@@ -60,7 +60,7 @@ it.each([false, true])(
     );
     const fetches = vi.spyOn(globalThis, "fetch");
     vi.stubGlobal("ClipboardItem", ClipboardItemDouble);
-    const path = "/carriere/linkedin";
+    const path = "/career/linkedin";
     const { user } = renderRoutes([{ path, Component: LinkedInPage }], path);
     const written = vi.fn();
     const writeText = vi

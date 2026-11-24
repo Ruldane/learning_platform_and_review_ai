@@ -36,7 +36,7 @@ function setup(over: Parameters<typeof onboardingApi>[0], at = "/") {
               </main>
             ),
           },
-          { path: "apprendre", element: <p>Apprendre</p> },
+          { path: "learn", element: <p>Apprendre</p> },
           { path: "welcome", element: <WelcomePage /> },
         ],
       },
@@ -62,7 +62,7 @@ function setup(over: Parameters<typeof onboardingApi>[0], at = "/") {
 
 describe("OnboardingGate", () => {
   it("gate sends a new account to /welcome", async () => {
-    const { router, visited } = setup({ settings: fresh }, "/apprendre");
+    const { router, visited } = setup({ settings: fresh }, "/learn");
     expect(
       await screen.findByRole("heading", { level: 1, name: "Les services de Tremplin" }),
     ).toBeInTheDocument();
@@ -70,14 +70,14 @@ describe("OnboardingGate", () => {
     expect(router.state.location.pathname).toBe("/welcome");
     // Un remplacement : « précédent » ne ramène pas à une porte qui renverrait aussitôt.
     expect(router.state.historyAction).toBe("REPLACE");
-    expect(visited).toEqual(["/apprendre", "/welcome"]);
+    expect(visited).toEqual(["/learn", "/welcome"]);
   });
 
   it("gate lets an onboarded account through", async () => {
-    const { router, visited } = setup({ settings: settingsFixture }, "/apprendre");
+    const { router, visited } = setup({ settings: settingsFixture }, "/learn");
     expect(await screen.findByText("Apprendre")).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe("/apprendre");
-    expect(visited).toEqual(["/apprendre"]);
+    expect(router.state.location.pathname).toBe("/learn");
+    expect(visited).toEqual(["/learn"]);
   });
 
   it("does not send a new account away from /welcome, nor loop", async () => {

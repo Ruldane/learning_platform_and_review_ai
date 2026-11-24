@@ -9,7 +9,7 @@ import type { RunView } from "../../toView";
 import { RunSection } from "./RunSection";
 
 interface RunAreaProps {
-  /** Le relevé vient de l'adresse (`/carriere/radar/:runId`), pas du dernier relevé fini. */
+  /** Le relevé vient de l'adresse (`/career/radar/:runId`), pas du dernier relevé fini. */
   byAddress: boolean;
   view: RunView | null | undefined;
   detail: ReturnType<typeof useRadarRun>;
@@ -35,7 +35,7 @@ export function RunArea({ byAddress, view, detail, focusRun = false }: RunAreaPr
         description={t("radar.page.notFoundText")}
         action={{
           label: t("radar.page.notFoundAction"),
-          onClick: () => void navigate("/carriere/radar"),
+          onClick: () => void navigate("/career/radar"),
         }}
       />
     );

@@ -36,7 +36,8 @@ function offerView(offer: BriefOut["offers"]["items"][number]): OfferItemView {
   if (!run_id || !offer_ref) return view;
   return {
     ...view,
-    gapPath: "/carriere/offres-compatibles/" + encodeURIComponent(run_id) + "/" + encodeURIComponent(offer_ref),
+    gapPath:
+      `/career/compatible-offers/${encodeURIComponent(run_id)}/${encodeURIComponent(offer_ref)}`,
   };
 }
 

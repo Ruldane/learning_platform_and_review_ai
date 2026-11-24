@@ -23,7 +23,7 @@ describe("CitationChips", () => {
       />,
     );
     const link = screen.getByRole("link", { name: "Source 2: Ma note" });
-    expect(link).toHaveAttribute("href", "/memoire?item=it%201");
+    expect(link).toHaveAttribute("href", "/memory?item=it%201");
     expect(link).toHaveAttribute("rel", "noopener noreferrer");
   });
 

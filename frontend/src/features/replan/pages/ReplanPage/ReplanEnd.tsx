@@ -39,7 +39,7 @@ export function ReplanEnd({ programId, status, failure, decision, onAgain }: Rep
       </p>
       {failure ? <p className="text-sm text-destructive">{failure}</p> : null}
       <div className="flex flex-wrap gap-2">
-        <Link to={`/apprendre/programme/${programId}`} className={buttonVariants()}>
+        <Link to={`/learn/programs/${programId}`} className={buttonVariants()}>
           {t("replan.back")}
         </Link>
         <Button variant="outline" onClick={onAgain}>

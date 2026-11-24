@@ -18,7 +18,7 @@ const todo = () =>
     cv_version_number: null,
   });
 
-function setup(path = "/candidatures/a1", api: Parameters<typeof renderApplications>[2] = {}) {
+function setup(path = "/applications/a1", api: Parameters<typeof renderApplications>[2] = {}) {
   return renderApplications(routes, path, {
     applications: [applicationOut({ cv_version_number: 2 }), todo()],
     ...api,
@@ -34,7 +34,7 @@ async function openDrawer(path?: string, api?: Parameters<typeof renderApplicati
 
 describe("ApplicationDrawer", () => {
   it("shows the application: fields, contacts, history, version and tools", async () => {
-    const { dialog } = await openDrawer("/candidatures/a1", {
+    const { dialog } = await openDrawer("/applications/a1", {
       details: {
         a1: {
           events: [
@@ -57,19 +57,19 @@ describe("ApplicationDrawer", () => {
     expect(within(dialog).getByText("Version 2 du CV")).toBeVisible();
     expect(within(dialog).getByRole("link", { name: "Voir mes versions de CV" })).toHaveAttribute(
       "href",
-      "/carriere/cv/versions",
+      "/career/cv/versions",
     );
     expect(within(dialog).getByRole("link", { name: "Kit de candidature" })).toHaveAttribute(
       "href",
-      "/candidatures/a1/kit",
+      "/applications/a1/kit",
     );
     expect(within(dialog).getByRole("link", { name: "Entretien d'entraînement" })).toHaveAttribute(
       "href",
-      "/candidatures/a1/entretien",
+      "/applications/a1/interview",
     );
     expect(within(dialog).getByRole("link", { name: "Comité de recrutement" })).toHaveAttribute(
       "href",
-      "/candidatures/a1/comite",
+      "/applications/a1/committee",
     );
   });
 
@@ -85,7 +85,7 @@ describe("ApplicationDrawer", () => {
   });
 
   it("keeps unsaved edits when another write in the drawer re-reads the application", async () => {
-    const { user, state, dialog } = await openDrawer("/candidatures/a2");
+    const { user, state, dialog } = await openDrawer("/applications/a2");
     const title = within(dialog).getByLabelText("Poste");
     await user.clear(title);
     await user.type(title, "Analyste senior");
@@ -98,7 +98,7 @@ describe("ApplicationDrawer", () => {
   });
 
   it("takes the date a status change sets, and never sends it back as an edit", async () => {
-    const { user, state, dialog } = await openDrawer("/candidatures/a2");
+    const { user, state, dialog } = await openDrawer("/applications/a2");
     expect(within(dialog).getByLabelText("Postulée le")).toHaveValue("");
     const company = within(dialog).getByLabelText("Entreprise");
     await user.clear(company);
@@ -160,7 +160,7 @@ describe("ApplicationDrawer", () => {
   });
 
   it("records « J'ai postulé » at today's date by default", async () => {
-    const { user, state, dialog } = await openDrawer("/candidatures/a2");
+    const { user, state, dialog } = await openDrawer("/applications/a2");
     await user.click(within(dialog).getByRole("button", { name: "J'ai postulé" }));
     expect(state.events).toEqual([
       { id: "a2", body: { kind: "status", status: "applied", on: todayString() } },
@@ -170,7 +170,7 @@ describe("ApplicationDrawer", () => {
   });
 
   it("records « J'ai postulé » at the chosen date", async () => {
-    const { user, state, dialog } = await openDrawer("/candidatures/a2");
+    const { user, state, dialog } = await openDrawer("/applications/a2");
     const day = within(dialog).getByLabelText("Date de candidature");
     await user.clear(day);
     await user.type(day, "2026-11-10");
@@ -179,7 +179,7 @@ describe("ApplicationDrawer", () => {
   });
 
   it("bounds the dates of « J'ai postulé » and of a status change to today, and refuses a future one", async () => {
-    const { user, state, dialog } = await openDrawer("/candidatures/a2");
+    const { user, state, dialog } = await openDrawer("/applications/a2");
     const applied = within(dialog).getByLabelText("Date de candidature");
     expect(applied).toHaveAttribute("max", todayString());
     expect(within(dialog).getByLabelText("Date du changement")).toHaveAttribute(
@@ -231,7 +231,7 @@ describe("ApplicationDrawer", () => {
   });
 
   it("offers no posting text field when the fiche already has one", async () => {
-    const { dialog } = await openDrawer("/candidatures/a1", {
+    const { dialog } = await openDrawer("/applications/a1", {
       details: { a1: { posting_text: "Texte déjà là." } },
     });
     expect(within(dialog).queryByLabelText("Texte de l'offre")).toBeNull();
@@ -249,7 +249,7 @@ describe("ApplicationDrawer", () => {
 
   it("lists the pending reminders of the application and handles them", async () => {
     const reminders = [reminderOut(), reminderOut({ id: "r9", application_id: "a2" })];
-    const { user, state, dialog } = await openDrawer("/candidatures/a1", { reminders });
+    const { user, state, dialog } = await openDrawer("/applications/a1", { reminders });
     const card = await within(dialog).findByRole("article");
     expect(within(card).getByText("Relance LinkedIn à 7 jours")).toBeVisible();
     await user.click(within(card).getByRole("button", { name: "Fait" }));
@@ -260,7 +260,7 @@ describe("ApplicationDrawer", () => {
   });
 
   it("shows an error when the server refuses a write", async () => {
-    const { user, dialog } = await openDrawer("/candidatures/a1", {
+    const { user, dialog } = await openDrawer("/applications/a1", {
       event: () =>
         new Response(
           JSON.stringify({
@@ -280,20 +280,20 @@ describe("ApplicationDrawer", () => {
   it("closes with Escape and goes back to the board", async () => {
     const { user, router } = await openDrawer();
     await user.keyboard("{Escape}");
-    await waitFor(() => expect(router.state.location.pathname).toBe("/candidatures"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/applications"));
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("closes with its button", async () => {
     const { user, router, dialog } = await openDrawer();
     await user.click(within(dialog).getByRole("button", { name: "Fermer la fiche" }));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/candidatures"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/applications"));
   });
 
   it("says when the application does not exist, and goes back to the board", async () => {
-    const { user, router } = setup("/candidatures/inconnue");
+    const { user, router } = setup("/applications/inconnue");
     expect(await screen.findByText("Fiche introuvable")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Retour au suivi" }));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/candidatures"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/applications"));
   });
 });

@@ -20,7 +20,7 @@ describe("RadarPage focus and browser history", () => {
   it("radar focus without location state: the title takes the focus after a launch", async () => {
     const { user, state, router, sockets } = setup();
     await user.click(await screen.findByRole("button", { name: "Run a scan" }));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/carriere/radar/new1"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/career/radar/new1"));
     // Reloading the page or going back does not restore launch state from history.
     expect(router.state.location.state).toBeNull();
     expect(await screen.findByRole("heading", { name: "Scan in progress" })).toHaveFocus();
@@ -34,8 +34,8 @@ describe("RadarPage focus and browser history", () => {
       runs: [radarRun("r1"), RUNNING],
       sessions: [sessionOut("sess-r9", "running", radarSession("r9"))],
     });
-    await waitFor(() => expect(router.state.location.pathname).toBe("/carriere/radar/r9"));
-    await router.navigate("/carriere/radar/r9", {
+    await waitFor(() => expect(router.state.location.pathname).toBe("/career/radar/r9"));
+    await router.navigate("/career/radar/r9", {
       state: { sessionId: "sess-forged", resumed: true },
       replace: true,
     });
@@ -53,11 +53,11 @@ describe("RadarPage focus and browser history", () => {
     expect(await screen.findByRole("heading", { name: "Scan in progress" })).toHaveFocus();
 
     // Visit a completed scan before returning to the running scan.
-    await router.navigate("/carriere/radar/r1");
+    await router.navigate("/career/radar/r1");
     await waitFor(() =>
       expect(screen.queryByRole("heading", { name: "Scan in progress" })).toBeNull(),
     );
-    await router.navigate("/carriere/radar/new1");
+    await router.navigate("/career/radar/new1");
     const title = await screen.findByRole("heading", { name: "Scan in progress" });
     expect(title).not.toHaveFocus();
   });

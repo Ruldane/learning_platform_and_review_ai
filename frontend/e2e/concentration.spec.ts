@@ -8,9 +8,9 @@ test("accepte une pause après plusieurs erreurs et reprend le même training", 
   request,
 }) => {
   await finishFirstLaunch(request);
-  await page.goto("/etudier/training", { waitUntil: "domcontentloaded" });
+  await page.goto("/study/training", { waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: "Commencer le training" }).click();
-  await expect(page).toHaveURL(/\/etudier\/training\/[0-9a-f-]+$/);
+  await expect(page).toHaveURL(/\/study\/training\/[0-9a-f-]+$/);
   const url = page.url();
   await page.clock.install();
   const input = page.getByRole("textbox", { name: "Ton message au tuteur" });

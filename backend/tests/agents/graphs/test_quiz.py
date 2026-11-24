@@ -68,7 +68,7 @@ async def test_quiz_generate_saves_questions_and_cards(make_quiz_runner: MakeQui
         "artifact_id": QUIZ_ID,
         "kind": "quiz",
         "title": f"Quiz : {TITLE}",
-        "url": f"/etudier/quiz/{QUIZ_ID}",
+        "url": f"/study/quiz/{QUIZ_ID}",
     }
     said = await run.events("agent.message")
     assert said[-1]["text"] == "Quiz prêt : 10 questions et 4 fiches de révision."

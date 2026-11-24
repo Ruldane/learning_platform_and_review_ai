@@ -20,7 +20,7 @@ export function WeekDetails({ week }: { week: Week }) {
         <ul className="list-inside list-disc">
           {week.programs.map(({ id, title }) => (
             <li key={id}>
-              <Link className="underline" to={`/apprendre/programme/${encodeURIComponent(id)}`}>
+              <Link className="underline" to={`/learn/programs/${encodeURIComponent(id)}`}>
                 {title}
               </Link>
             </li>

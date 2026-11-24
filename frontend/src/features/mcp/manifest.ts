@@ -9,7 +9,7 @@ import { McpAccessPage } from "./pages/McpAccessPage";
  */
 export const mcpManifest: FeatureManifest = {
   id: "mcp",
-  routes: [{ path: "reglages/mcp", Component: McpAccessPage }],
-  nav: [{ section: "settings", labelKey: "mcp.nav.access", path: "/reglages/mcp", order: 9 }],
+  routes: [{ path: "settings/mcp", Component: McpAccessPage }],
+  nav: [{ section: "settings", labelKey: "mcp.nav.access", path: "/settings/mcp", order: 9 }],
   shell: { topbar: McpTopbarSlot },
 };

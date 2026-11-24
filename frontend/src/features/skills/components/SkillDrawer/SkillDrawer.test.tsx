@@ -16,12 +16,12 @@ const detail: SkillDetailView = {
       kind: "lesson",
       label: "Leçon : Sélecteurs",
       at: "2026-11-10T09:00:00Z",
-      url: "/apprendre/lecons/l1",
+      url: "/learn/lessons/l1",
     },
     { kind: "capture", label: "Note rapide", at: "2026-11-11T09:00:00Z", url: null },
   ],
   postings: [],
-  nextAction: { kind: "quiz", label: "Passer le quiz « Mise en page »", url: "/etudier/quiz/q1" },
+  nextAction: { kind: "quiz", label: "Passer le quiz « Mise en page »", url: "/study/quiz/q1" },
 };
 
 function renderDrawer(value: SkillDetailView | null, onClose = vi.fn()) {
@@ -45,11 +45,11 @@ describe("SkillDrawer", () => {
     expect(within(dialog).getByText("Niveau : En cours")).toBeInTheDocument();
     const evidence = within(dialog).getByRole("list", { name: "Preuves" });
     const link = within(evidence).getByRole("link", { name: /Leçon : Sélecteurs/ });
-    expect(link).toHaveAttribute("href", "/apprendre/lecons/l1");
+    expect(link).toHaveAttribute("href", "/learn/lessons/l1");
     expect(within(evidence).getByText(/Note rapide/)).toBeInTheDocument();
     expect(within(evidence).getAllByRole("link")).toHaveLength(1);
     const next = within(dialog).getByRole("link", { name: "Passer le quiz « Mise en page »" });
-    expect(next).toHaveAttribute("href", "/etudier/quiz/q1");
+    expect(next).toHaveAttribute("href", "/study/quiz/q1");
   });
 
   it("shows empty postings state", () => {

@@ -32,7 +32,7 @@ export function DossierPage() {
   }
   return (
     <div className="flex max-w-2xl flex-col gap-4">
-      <Link to="/competences/contributions" className="self-start underline">
+      <Link to="/skills/contributions" className="self-start underline">
         {t("contributions.back")}
       </Link>
       <h1 ref={title} tabIndex={-1} className="text-2xl font-semibold">

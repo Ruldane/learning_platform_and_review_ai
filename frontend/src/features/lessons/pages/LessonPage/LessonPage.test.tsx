@@ -10,10 +10,10 @@ function setup(lesson: Record<string, unknown> = lessonOut()) {
   server.use(http.get(`${API}/lessons/l1`, () => HttpResponse.json(lesson)));
   return renderRoutes(
     [
-      { path: "/apprendre/lecons/:lessonId", element: <LessonPage /> },
-      { path: "/apprendre/lecons", element: <h1>Toutes les leçons</h1> },
+      { path: "/learn/lessons/:lessonId", element: <LessonPage /> },
+      { path: "/learn/lessons", element: <h1>Toutes les leçons</h1> },
     ],
-    "/apprendre/lecons/l1",
+    "/learn/lessons/l1",
   );
 }
 
@@ -45,8 +45,8 @@ describe("LessonPage", () => {
         }),
       );
       renderRoutes(
-        [{ path: "/apprendre/lecons/:lessonId", element: <LessonPage /> }],
-        "/apprendre/lecons/l1",
+        [{ path: "/learn/lessons/:lessonId", element: <LessonPage /> }],
+        "/learn/lessons/l1",
       );
       expect(await screen.findByText("Une variable nomme une valeur.")).toBeInTheDocument();
       expect(screen.queryByRole("link", { name: "Download PDF" })).toBeNull();
@@ -145,7 +145,7 @@ describe("LessonPage", () => {
   it("goes back to the lessons", async () => {
     const { router, user } = setup();
     await user.click(await screen.findByRole("link", { name: "All lessons" }));
-    expect(router.state.location.pathname).toBe("/apprendre/lecons");
+    expect(router.state.location.pathname).toBe("/learn/lessons");
   });
 
   it("offers Retry when the lesson cannot be read", async () => {
@@ -159,8 +159,8 @@ describe("LessonPage", () => {
       }),
     );
     const { user } = renderRoutes(
-      [{ path: "/apprendre/lecons/:lessonId", element: <LessonPage /> }],
-      "/apprendre/lecons/l1",
+      [{ path: "/learn/lessons/:lessonId", element: <LessonPage /> }],
+      "/learn/lessons/l1",
     );
     await user.click(await screen.findByRole("button", { name: "Retry" }));
     expect(

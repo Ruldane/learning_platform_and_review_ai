@@ -8,7 +8,7 @@ test("compare une correction de version puis la soumet à la publication", async
   request,
 }) => {
   await finishFirstLaunch(request);
-  await page.goto("/apprendre/lecons");
+  await page.goto("/learn/lessons");
   await page.getByRole("link", { name: "Lire « Module Bases »", exact: true }).click();
   const updates = page.getByRole("region", { name: "Veille des versions" });
   const proposal = updates.getByRole("article", { name: "fictilib 2.0.0" });

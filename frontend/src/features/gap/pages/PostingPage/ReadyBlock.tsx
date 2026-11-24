@@ -49,7 +49,11 @@ export function ReadyBlock({ posting, pollMs, createSocket }: ReadyBlockProps) {
       {cvs ? <PostingCvList cvs={cvs} /> : null}
       <div className="flex flex-wrap items-end gap-2">
         {provider.menu}
-        <Link to={`/carriere/cv/revue/nouvelle/${posting.id}`} state={{ runSource: provider.source }} className={buttonVariants()}>
+        <Link
+          to={`/career/cv/reviews/new/${posting.id}`}
+          state={{ runSource: provider.source }}
+          className={buttonVariants()}
+        >
           {t("gap.posting.reviewCv")}
         </Link>
         {posting.url ? (

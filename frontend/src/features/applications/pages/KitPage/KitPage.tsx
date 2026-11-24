@@ -3,7 +3,7 @@ import type { SocketFactory } from "@/shared/realtime/socket";
 import { KitContent } from "./KitContent";
 
 /**
- * Le kit d'une candidature (`/candidatures/:applicationId/kit`) : sept pièces préparées par les
+ * Le kit d'une candidature (`/applications/:applicationId/kit`) : sept pièces préparées par les
  * agents, montrées dès qu'elles sont prêtes, que January relit, modifie et copie. `createSocket` ne
  * sert qu'aux tests.
  */

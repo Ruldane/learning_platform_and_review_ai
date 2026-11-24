@@ -7,7 +7,7 @@ import { learningKeys } from "../queryKeys";
 import type { GoalInput } from "../types";
 
 /** Chemin du Conseil d'un objectif. */
-export const councilPath = (goalId: string) => `/apprendre/objectifs/${goalId}/conseil`;
+export const councilPath = (goalId: string) => `/learn/goals/${goalId}/council`;
 
 /**
  * Crée un objectif (`POST /goals`, qui lance le Conseil, D87) puis ouvre son Conseil. L'objectif

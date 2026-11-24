@@ -10,8 +10,8 @@ import { openStream, renderCv } from "@/test/cvHarness";
 /** Monte la revue `rv1` (session `r1`) avec les routes de `cvApi`. */
 function renderReview(api: Parameters<typeof renderCv>[3] = {}) {
   return renderCv(
-    "/carriere/cv/revues/:reviewId",
-    "/carriere/cv/revues/rv1",
+    "/career/cv/reviews/:reviewId",
+    "/career/cv/reviews/rv1",
     (createSocket) => <ReviewPage pollMs={40} createSocket={createSocket} />,
     api,
   );

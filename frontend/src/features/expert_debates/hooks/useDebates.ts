@@ -5,7 +5,7 @@ import { debateDetails, listDebates, startDebate, storeJudgment } from "../api";
 
 const recent = ["expert_debates", "recent"] as const;
 const details = (id: string) => ["expert_debates", id] as const;
-export const debatePath = (id: string) => `/etudier/debats/${encodeURIComponent(id)}`;
+export const debatePath = (id: string) => `/study/debates/${encodeURIComponent(id)}`;
 
 export function useDebates(id: string) {
   const cache = useQueryClient();

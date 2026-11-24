@@ -50,7 +50,7 @@ export function SearchSettingsEditor({ settings, usage }: SearchSettingsEditorPr
       <header>
         <h1 className="text-2xl font-semibold">{t("settings.search.title")}</h1>
         <p className="mt-2 text-muted-foreground">{t("settings.search.intro")}</p>
-        <Link to="/reglages/recherche/essai" className="mt-2 inline-block text-sm underline">
+        <Link to="/settings/search/probe" className="mt-2 inline-block text-sm underline">
           {t("settings.search.tryBench")}
         </Link>
       </header>

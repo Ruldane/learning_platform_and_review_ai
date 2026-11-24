@@ -2,7 +2,7 @@ import { api } from "@/shared/api/client";
 import { unwrap } from "@/shared/api/errors";
 import type { components } from "@/shared/api/schema";
 
-export const replayBasePath = "/etudier/replay-incident";
+export const replayBasePath = "/study/incident-replay";
 export const replayKey = ["incident_replay"] as const;
 
 type StartReplay = components["schemas"]["IncidentReplayIn"];

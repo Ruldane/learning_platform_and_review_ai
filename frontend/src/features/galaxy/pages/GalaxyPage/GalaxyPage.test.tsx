@@ -6,7 +6,7 @@ import { renderRoutes } from "@/test/renderRoutes";
 import { server } from "@/test/server";
 import { GalaxyPage } from "./GalaxyPage";
 
-const route = "/competences/galaxie";
+const route = "/skills/galaxy";
 const routes = [{ path: route, element: <GalaxyPage /> }];
 const empty = { nodes: [], edges: [], target_label: null };
 
@@ -47,7 +47,7 @@ it("ouvre le chapitre lié depuis la sélection au clavier", async () => {
   expect(screen.getByText("Écart de 2 niveaux")).toBeVisible();
   expect(screen.getByRole("link", { name: "Ouvrir le chapitre" })).toHaveAttribute(
     "href",
-    "/apprendre/lecons/lecon-test",
+    "/learn/lessons/lecon-test",
   );
 });
 
@@ -75,6 +75,6 @@ it("distingue les homonymes et garde le sujet hors de l’adresse de training", 
   await user.click(skill);
   expect(screen.getByRole("link", { name: "Ouvrir l’entraînement" })).toHaveAttribute(
     "href",
-    "/etudier/training?competence=identifiant",
+    "/study/training?skill=identifiant",
   );
 });

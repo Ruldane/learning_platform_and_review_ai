@@ -11,7 +11,7 @@ export function RadarPanel() {
   const navigate = useNavigate();
   const toGoals = {
     label: t("skills.radar.emptyAction"),
-    onClick: () => void navigate("/apprendre/objectifs"),
+    onClick: () => void navigate("/learn/goals"),
   };
   return (
     <QueryPanel query={query}>

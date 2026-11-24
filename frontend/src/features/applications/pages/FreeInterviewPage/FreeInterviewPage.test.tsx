@@ -11,7 +11,7 @@ import { server } from "@/test/server";
 import { applicationsManifest } from "../../manifest";
 import { FreeInterviewPage } from "./FreeInterviewPage";
 
-const ROUTE = "candidatures/entretien";
+const ROUTE = "applications/interview";
 
 function setup(options: InterviewApiOptions = {}) {
   const sockets = createFakeSocketServer();
@@ -22,7 +22,7 @@ function setup(options: InterviewApiOptions = {}) {
       ? { path: route.path, element: <FreeInterviewPage createSocket={sockets.factory} /> }
       : route,
   );
-  const view = renderApplications(routes, "/candidatures/entretien", {
+  const view = renderApplications(routes, "/applications/interview", {
     applications: [applicationOut({ id: "a1" })],
   });
   return { ...view, sockets, interviews };
@@ -40,7 +40,7 @@ describe("FreeInterviewPage", () => {
     ).toBeVisible();
     expect(screen.getByRole("link", { name: "Back to applications" })).toHaveAttribute(
       "href",
-      "/candidatures",
+      "/applications",
     );
     const target = await screen.findByRole("group", { name: "What is the interview about?" });
     expect(within(target).getByRole("radio", { name: "An analyzed posting" })).toBeChecked();

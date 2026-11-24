@@ -14,7 +14,7 @@ export function LessonRow({ lesson }: { lesson: LessonSummaryOut }) {
   return (
     <li className="flex flex-wrap items-baseline justify-between gap-2 rounded-xl border bg-card px-4 py-3">
       <Link
-        to={`/apprendre/lecons/${lesson.id}`}
+        to={`/learn/lessons/${lesson.id}`}
         aria-label={t("lessons.list.open", { title: lesson.title })}
         className="min-w-0 font-medium break-words underline underline-offset-2"
       >

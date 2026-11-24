@@ -6,7 +6,7 @@ import { usePostingTitles } from "../../hooks/useVersions";
 
 /**
  * Sur la page des modèles : choisir une offre analysée et ouvrir sa revue
- * (`/carriere/cv/revue/nouvelle/:postingId`), qui mène au CV généré pour elle.
+ * (`/career/cv/reviews/new/:postingId`), qui mène au CV généré pour elle.
  */
 export function TemplatePostingPicker() {
   const navigate = useNavigate();
@@ -30,7 +30,7 @@ export function TemplatePostingPicker() {
           <PostingPicker
             postings={ready}
             onPick={(postingId) =>
-              void navigate(`/carriere/cv/revue/nouvelle/${postingId}`, {
+              void navigate(`/career/cv/reviews/new/${postingId}`, {
                 state: { runSource: provider.source },
               })
             }

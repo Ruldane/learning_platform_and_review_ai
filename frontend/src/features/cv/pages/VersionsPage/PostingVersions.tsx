@@ -23,7 +23,7 @@ export function PostingVersions({ group }: { group: PostingGroup }) {
           </Link>
         ) : null}
         {reviewId ? (
-          <Link to={`/carriere/cv/revues/${reviewId}`} className={link}>
+          <Link to={`/career/cv/reviews/${reviewId}`} className={link}>
             {t("cv.versionsPage.openReview")}
           </Link>
         ) : null}

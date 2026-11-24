@@ -50,7 +50,7 @@ export function TemplateRow({ template, busy, onActivate }: TemplateRowProps) {
           </Button>
         ) : null}
         <Link
-          to={`/carriere/cv/modeles/${template.id}`}
+          to={`/career/cv/templates/${template.id}`}
           aria-label={t("cv.templatesPage.openNamed", { name: template.name })}
           className={buttonVariants({ variant: "outline", size: "sm" })}
         >

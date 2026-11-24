@@ -51,7 +51,7 @@ describe("PostingPage deletion", () => {
     );
     expect(screen.getByRole("link", { name: OPEN_REVIEW })).toHaveAttribute(
       "href",
-      "/carriere/cv/revue/nouvelle/p1",
+      "/career/cv/reviews/new/p1",
     );
   });
 

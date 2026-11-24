@@ -25,7 +25,7 @@ function useAppealForm() {
     mutationFn: createAppeal,
     onSuccess: async (row) => {
       await queries.invalidateQueries({ queryKey: APPEALS });
-      void navigate(`/competences/contestations/${row.id}`);
+      void navigate(`/skills/appeals/${row.id}`);
     },
   });
   const changeProject = (id: string) => {

@@ -6,11 +6,11 @@ import { TrainingPage } from "./pages/TrainingPage";
 export const conversationsManifest: FeatureManifest = {
   id: "conversations",
   routes: [
-    { path: "etudier/training/:studyId?", Component: TrainingPage, handle: { wide: true } },
-    { path: "apprendre/lecons/:lessonId/classe", Component: ClassroomPage },
-    { path: "apprendre/lecons/:lessonId/explique-moi", Component: FeynmanPage },
-    { path: "code/:sessionId/explique-moi", Component: FeynmanPage },
-    { path: "etudier/explique-moi/:turnId", Component: FeynmanPage },
+    { path: "study/training/:studyId?", Component: TrainingPage, handle: { wide: true } },
+    { path: "learn/lessons/:lessonId/classroom", Component: ClassroomPage },
+    { path: "learn/lessons/:lessonId/explain", Component: FeynmanPage },
+    { path: "code/:sessionId/explain", Component: FeynmanPage },
+    { path: "study/explain/:turnId", Component: FeynmanPage },
   ],
-  nav: [{ section: "study", labelKey: "training.title", path: "/etudier/training", order: 1.5 }],
+  nav: [{ section: "study", labelKey: "training.title", path: "/study/training", order: 1.5 }],
 };

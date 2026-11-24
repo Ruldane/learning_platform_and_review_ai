@@ -4,7 +4,7 @@ export const blindAssessmentManifest: FeatureManifest = {
   id: "blind_assessment",
   routes: [
     {
-      path: "carriere/epreuve-aveugle",
+      path: "career/blind-assessment",
       lazy: async () => ({ Component: (await import("./pages/BlindAssessmentPage")).BlindAssessmentPage }),
     },
   ],
@@ -12,7 +12,7 @@ export const blindAssessmentManifest: FeatureManifest = {
     {
       section: "career",
       labelKey: "blindAssessment.title",
-      path: "/carriere/epreuve-aveugle",
+      path: "/career/blind-assessment",
       order: 8.5,
     },
   ],

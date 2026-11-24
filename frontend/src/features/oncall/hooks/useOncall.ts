@@ -23,7 +23,7 @@ export function useOncall(id: string) {
     mutationFn: (kind: ScenarioKind | null) => createIncident(kind),
     onSuccess: async (created) => {
       cache.setQueryData(details(created.id), created);
-      await navigate(`/astreinte/${encodeURIComponent(created.id)}`);
+      await navigate(`/on-call/${encodeURIComponent(created.id)}`);
       await cache.invalidateQueries({ queryKey: lists });
     },
   });

@@ -34,7 +34,7 @@ describe("InterviewPage debrief", () => {
     ).toBeVisible();
     expect(screen.getByRole("link", { name: "Open my reviews" })).toHaveAttribute(
       "href",
-      "/etudier/revisions",
+      "/study/reviews",
     );
   });
 

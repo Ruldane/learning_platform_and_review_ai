@@ -26,7 +26,7 @@ describe("DataPage, the account changed in another tab", () => {
     expect(client.getQueryData(["settings"])).toBeUndefined();
     expect(client.getQueryData(["auth", "me"])).toEqual(dominique);
     expect(reset).toHaveBeenCalledTimes(1);
-    expect(router.state.location.pathname).toBe("/reglages/donnees");
+    expect(router.state.location.pathname).toBe("/settings/data");
     // La personne peut relire le message, puis recommencer pour le compte affiché maintenant.
     expect(word()).toBeInTheDocument();
   });

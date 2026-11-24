@@ -14,8 +14,8 @@ function setup(options: Parameters<typeof costsApi>[0] = {}) {
   const api = costsApi(options);
   server.use(...api.handlers);
   const view = renderRoutes(
-    [{ path: "/reglages/journal", element: <AgentLogPage /> }],
-    "/reglages/journal",
+    [{ path: "/settings/agent-log", element: <AgentLogPage /> }],
+    "/settings/agent-log",
   );
   return { ...api, ...view };
 }
@@ -60,7 +60,7 @@ describe("AgentLogPage", () => {
     await screen.findByRole("table", { name: TABLE });
     const first = within(bodyRows()[0]!);
     const link = first.getByRole("link", { name: "View screen: Learning council" });
-    expect(link).toHaveAttribute("href", "/apprendre/conseil");
+    expect(link).toHaveAttribute("href", "/learn/council");
     expect(first.getByText("sess-123")).toBeInTheDocument();
   });
 
@@ -132,8 +132,9 @@ describe("AgentLogPage", () => {
     const api = costsApi();
     server.use(...api.handlers);
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    const router = createMemoryRouter([{ path: "/reglages/journal", element: <AgentLogPage /> }], {
-      initialEntries: ["/reglages/journal"],
+    const routes = [{ path: "/settings/agent-log", element: <AgentLogPage /> }];
+    const router = createMemoryRouter(routes, {
+      initialEntries: ["/settings/agent-log"],
     });
     render(<RouterProvider router={router} />, { wrapper: createQueryWrapper(client) });
     const user = userEvent.setup();

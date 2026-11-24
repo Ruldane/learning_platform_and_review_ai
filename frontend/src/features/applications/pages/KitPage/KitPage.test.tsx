@@ -12,7 +12,7 @@ import { server } from "@/test/server";
 import { applicationsManifest } from "../../manifest";
 import { KitPage } from "./KitPage";
 
-const KIT_ROUTE = "candidatures/:applicationId/kit";
+const KIT_ROUTE = "applications/:applicationId/kit";
 
 function setup(options: KitApiOptions = {}, api: Parameters<typeof renderApplications>[2] = {}) {
   const sockets = createFakeSocketServer();
@@ -23,7 +23,7 @@ function setup(options: KitApiOptions = {}, api: Parameters<typeof renderApplica
       ? { path: route.path, element: <KitPage createSocket={sockets.factory} /> }
       : route,
   );
-  const view = renderApplications(routes, "/candidatures/a1/kit", {
+  const view = renderApplications(routes, "/applications/a1/kit", {
     applications: [applicationOut({ id: "a1", company: "Acme", title: "Data engineer" })],
     ...api,
   });
@@ -48,7 +48,7 @@ describe("KitPage", () => {
     expect(screen.queryByRole("link", { name: "Télécharger l'archive" })).toBeNull();
     expect(screen.getByRole("link", { name: "Retour à la fiche" })).toHaveAttribute(
       "href",
-      "/candidatures/a1",
+      "/applications/a1",
     );
   });
 
@@ -124,7 +124,7 @@ describe("KitPage", () => {
     if (code === "profile_required") {
       expect(screen.getByRole("link", { name: "Ouvrir mon profil" })).toHaveAttribute(
         "href",
-        "/carriere/profil",
+        "/career/profile",
       );
     }
   });

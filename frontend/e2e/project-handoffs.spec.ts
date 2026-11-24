@@ -7,7 +7,7 @@ test.skip(process.env.E2E_PROJECT_HANDOFFS !== "1", "Requiert un projet fictif d
 
 test("approuve le guide d’un rendu existant et exporte la version exacte", async ({ page, request }) => {
   await finishFirstLaunch(request);
-  await page.goto("/carriere/transmission-projet");
+  await page.goto("/career/project-handoffs");
   await page.getByRole("combobox", { name: "Projet", exact: true })
     .selectOption({ label: "Catalogue de la bibliothèque" });
   const submitted = "Le rendu synthétique garde la liste des livres et son filtre.";

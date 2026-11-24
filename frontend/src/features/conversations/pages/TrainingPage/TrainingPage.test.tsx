@@ -36,8 +36,8 @@ const training = {
 
 function setup() {
   return renderRoutes(
-    [{ path: "/etudier/training/:studyId?", element: <TrainingPage /> }],
-    "/etudier/training",
+    [{ path: "/study/training/:studyId?", element: <TrainingPage /> }],
+    "/study/training",
   );
 }
 
@@ -75,7 +75,7 @@ describe("TrainingPage", () => {
     await user.selectOptions(modeField, "feynman");
     await waitFor(() => expect(modeField).toHaveValue("feynman"));
     expect(changes).toHaveLength(1);
-    expect(router.state.location.pathname).toBe(`/etudier/training/${STUDY_ID}`);
+    expect(router.state.location.pathname).toBe(`/study/training/${STUDY_ID}`);
     expect(screen.getByText(greeting)).toBeVisible();
 
     await user.click(screen.getByRole("button", { name: "Finish training" }));

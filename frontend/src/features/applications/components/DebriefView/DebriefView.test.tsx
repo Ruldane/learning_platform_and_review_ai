@@ -8,7 +8,7 @@ import { DebriefView } from "./DebriefView";
 function show(interview: InterviewView = makeInterview()) {
   render(
     <MemoryRouter>
-      <DebriefView interview={interview} reviewsHref="/etudier/revisions" />
+      <DebriefView interview={interview} reviewsHref="/study/reviews" />
     </MemoryRouter>,
   );
 }
@@ -84,7 +84,7 @@ describe("DebriefView", () => {
     expect(screen.getByText("3 fiches de révision ont été créées, à revoir demain.")).toBeVisible();
     expect(screen.getByRole("link", { name: "Ouvrir mes révisions" })).toHaveAttribute(
       "href",
-      "/etudier/revisions",
+      "/study/reviews",
     );
   });
 

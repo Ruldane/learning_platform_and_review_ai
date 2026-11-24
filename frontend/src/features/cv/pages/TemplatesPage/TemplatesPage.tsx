@@ -17,7 +17,7 @@ const link = "text-sm font-medium underline underline-offset-4";
 const focusFileField = () => document.getElementById(FILE_FIELD_ID)?.focus();
 
 /**
- * Les modèles de CV (`/carriere/cv`) : la liste, puis l'envoi d'un PDF (ou d'un PDF déjà importé)
+ * Les modèles de CV (`/career/cv`) : la liste, puis l'envoi d'un PDF (ou d'un PDF déjà importé)
  * pour en créer un. Une création mène à la page du modèle, où le Maquettiste travaille en direct.
  */
 export function TemplatesPage({ pollMs = POLL_MS }: { pollMs?: number }) {
@@ -30,10 +30,10 @@ export function TemplatesPage({ pollMs = POLL_MS }: { pollMs?: number }) {
         <h1 className="text-2xl font-semibold">{t("cv.templatesPage.title")}</h1>
         <p className="max-w-prose text-muted-foreground">{t("cv.templatesPage.intro")}</p>
         <nav className="flex flex-wrap gap-4">
-          <Link to="/carriere/profil" className={link}>
+          <Link to="/career/profile" className={link}>
             {t("cv.templatesPage.profileLink")}
           </Link>
-          <Link to="/carriere/cv/versions" className={link}>
+          <Link to="/career/cv/versions" className={link}>
             {t("cv.templatesPage.versionsLink")}
           </Link>
           <Link to="/career/postings" className={link}>
@@ -60,7 +60,7 @@ export function TemplatesPage({ pollMs = POLL_MS }: { pollMs?: number }) {
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-medium">{t("cv.templatesPage.formTitle")}</h2>
         <TemplateCreateForm
-          onCreated={(id) => void navigate(`/carriere/cv/modeles/${id}`)}
+          onCreated={(id) => void navigate(`/career/cv/templates/${id}`)}
           profileDocumentId={profile.data?.source_document_id ?? null}
         />
       </section>

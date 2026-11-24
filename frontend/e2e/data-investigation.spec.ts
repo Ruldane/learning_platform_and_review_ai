@@ -5,7 +5,7 @@ test.skip(process.env.E2E_DATA_INVESTIGATION !== "1", "Requiert la base locale d
 
 test("rejoue les transformations à partir des lignes sources", async ({ page, request }) => {
   await finishFirstLaunch(request);
-  await page.goto("/etudier/enquetes");
+  await page.goto("/study/investigations");
   await page
     .getByRole("region", { name: "Contrôle des livraisons d’un festival" })
     .getByRole("button", { name: "Ouvrir cette enquête" })

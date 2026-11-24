@@ -31,11 +31,11 @@ function setup(lesson: Record<string, unknown> = lessonOut()) {
   return renderRoutes(
     [
       {
-        path: "/apprendre/lecons/:lessonId",
+        path: "/learn/lessons/:lessonId",
         element: <LessonPage conversationPanel={Conversation} />,
       },
     ],
-    "/apprendre/lecons/l1",
+    "/learn/lessons/l1",
   );
 }
 
@@ -54,7 +54,7 @@ describe("LessonPage: studying with the tutor", () => {
     const ask = screen.getByRole("button", { name: "Ask the professor" });
     ask.focus();
     await user.keyboard("{Enter}");
-    expect(router.state.location.pathname).toBe("/apprendre/lecons/l1");
+    expect(router.state.location.pathname).toBe("/learn/lessons/l1");
     const dialog = await screen.findByRole("dialog", { name: "Professor" });
     expect(within(dialog).getByText("Une variable nomme une valeur.")).toBeVisible();
     await user.click(within(dialog).getByRole("button", { name: "Close conversation" }));
@@ -69,7 +69,7 @@ describe("LessonPage: studying with the tutor", () => {
     setup();
     expect(await screen.findByRole("link", { name: "Study this lesson" })).toHaveAttribute(
       "href",
-      "/etudier/session?lecon=l1",
+      "/study/session?lesson=l1",
     );
   });
 

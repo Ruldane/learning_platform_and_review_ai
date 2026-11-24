@@ -25,11 +25,11 @@ export function setup(
   client.setQueryData(["goals"], [{ id: "g1" }]);
   const router = createMemoryRouter(
     [
-      { path: "/reglages/donnees", element: <DataPage /> },
+      { path: "/settings/data", element: <DataPage /> },
       { path: "/welcome", element: <p>Premier lancement</p> },
       { path: "/login", element: <p>Connexion</p> },
     ],
-    { initialEntries: ["/reglages/donnees"] },
+    { initialEntries: ["/settings/data"] },
   );
   const Wrapper = createQueryWrapper(client);
   render(

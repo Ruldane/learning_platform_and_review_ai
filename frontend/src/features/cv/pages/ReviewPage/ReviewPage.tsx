@@ -16,7 +16,7 @@ interface ReviewPageProps {
 }
 
 /**
- * Une revue du CV (`/carriere/cv/revues/:reviewId`), lue en une page : le fil des agents, les
+ * Une revue du CV (`/career/cv/reviews/:reviewId`), lue en une page : le fil des agents, les
  * indicateurs avant et après, les modifications à décider, le rapport, puis la sortie (voir le
  * rapport, générer le PDF, terminer) et l'aperçu de la dernière version.
  */
@@ -34,7 +34,7 @@ export function ReviewPage({ pollMs = POLL_MS, createSocket }: ReviewPageProps) 
           description={t("cv.reviewPage.notFoundHint")}
           action={{
             label: t("cv.reviewPage.notFoundAction"),
-            onClick: () => void navigate("/carriere/cv/versions"),
+            onClick: () => void navigate("/career/cv/versions"),
           }}
         />
       );
@@ -53,7 +53,7 @@ export function ReviewPage({ pollMs = POLL_MS, createSocket }: ReviewPageProps) 
           <Link to={`/career/postings/${review.posting_id}`} className="underline">
             {t("cv.reviewPage.back")}
           </Link>
-          <Link to="/carriere/cv/versions" className="underline">
+          <Link to="/career/cv/versions" className="underline">
             {t("cv.reviewPage.versionsLink")}
           </Link>
         </nav>

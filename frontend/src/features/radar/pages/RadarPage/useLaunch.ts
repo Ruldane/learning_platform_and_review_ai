@@ -6,7 +6,7 @@ import type { useStartRadar } from "../../hooks/useStartRadar";
 /**
  * « Lancer un relevé » : un lancement tient du clic jusqu'à ce que le relevé à suivre soit lu : un
  * second clic (double clic, Entrée répétée) n'envoie rien, il ne peut donc pas produire un 409 qui
- * écraserait la session du 202. Le lancement mène à `/carriere/radar/:runId` ; la session du 202
+ * écraserait la session du 202. Le lancement mène à `/career/radar/:runId` ; la session du 202
  * reste dans `starter.started`.
  */
 export function useLaunch(
@@ -27,7 +27,7 @@ export function useLaunch(
         launching.current = false;
         return;
       }
-      void navigate(`/carriere/radar/${started.runId}`);
+      void navigate(`/career/radar/${started.runId}`);
     });
   };
 }

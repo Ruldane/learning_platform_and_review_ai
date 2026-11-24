@@ -223,7 +223,7 @@ def _artifact(application_id: str, title: str, info: list[dict[str, Any]] | None
         "artifact_id": application_id,
         "kind": "application",
         "title": title,
-        "url": f"/candidatures/{application_id}",
+        "url": f"/applications/{application_id}",
     }
     if info:
         artifact["info"] = info  # « même entreprise depuis 30 jours » (SPEC 6.3), pour l'écran

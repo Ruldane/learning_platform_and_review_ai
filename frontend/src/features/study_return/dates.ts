@@ -5,5 +5,5 @@ export function formatDate(value: string) {
 }
 
 export function trainingUrl(id: string) {
-  return `/etudier/training/${encodeURIComponent(id)}`;
+  return `/study/training/${encodeURIComponent(id)}`;
 }

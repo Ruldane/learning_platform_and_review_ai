@@ -9,7 +9,7 @@ test.skip(
 test("ouvre une définition au clavier et crée une fiche du passage choisi", async ({ page, request }) => {
   const passage = "Le terme mène à une liste de documents.";
   await finishFirstLaunch(request);
-  await page.goto("/memoire/lecture");
+  await page.goto("/memory/reading");
   await page.getByRole("link", { name: "Comprendre les index" }).click();
   const term = page.getByRole("button", { name: "index inversé", exact: true });
   await term.focus();
@@ -20,7 +20,7 @@ test("ouvre une définition au clavier et crée une fiche du passage choisi", as
   await page.keyboard.press("Tab");
   const chapter = definition.getByRole("link", { name: /Chapitre/ });
   await expect(chapter).toBeFocused();
-  await expect(chapter).toHaveAttribute("href", /\/apprendre\/lecons\/[0-9a-f-]+$/);
+  await expect(chapter).toHaveAttribute("href", /\/learn\/lessons\/[0-9a-f-]+$/);
 
   await term.evaluate((button, selected) => {
     const text = button.parentNode?.lastChild;

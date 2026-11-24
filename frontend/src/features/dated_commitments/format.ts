@@ -12,7 +12,7 @@ export function normalizeMeasure(value: string) {
   return value.trim().replace(",", ".");
 }
 
-export const commitmentsPath = "/etudier/engagements";
+export const commitmentsPath = "/study/commitments";
 
 export function commitmentPath(id: string) {
   return `${commitmentsPath}/${encodeURIComponent(id)}`;
