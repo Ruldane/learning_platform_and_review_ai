@@ -39,7 +39,7 @@ from tests.support.lessons import (
 )
 
 PATIENCE_S = 60
-RESOURCES_MARKER = "Tâche : choisir les ressources d'apprentissage"
+RESOURCES_MARKER = "Task: choose the learning resources"
 NO_CLAIM = verifier_reply()
 GOOD_LESSON = lesson_markdown(1500, urls=(URLS[0], URLS[1]))
 _SOURCE_ID = re.compile(r"source_id : (\S+) \(note")

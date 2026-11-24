@@ -44,12 +44,12 @@ function setup(props: { items?: ActivityItemView[]; hasMore?: boolean; onMore?: 
 describe("ActivityFeed", () => {
   it("writes each date relatively, with the full date in the title and in hidden text", () => {
     setup();
-    const first = screen.getAllByText(/il y a/)[0]!;
-    expect(first).toHaveTextContent("il y a 5 min");
-    expect(first).toHaveAttribute("title", expect.stringMatching(/16 novembre 2026/));
-    expect(first.querySelector(".sr-only")).toHaveTextContent(/16 novembre 2026/);
+    const first = screen.getAllByText(/ago/)[0]!;
+    expect(first).toHaveTextContent("5 min ago");
+    expect(first).toHaveAttribute("title", expect.stringMatching(/16 November 2026/));
+    expect(first.querySelector(".sr-only")).toHaveTextContent(/16 November 2026/);
     expect(first).toHaveAttribute("datetime", "2026-11-16T11:55:00Z");
-    expect(screen.getByText(/il y a 3 h/)).toBeInTheDocument();
+    expect(screen.getByText(/3 h ago/)).toBeInTheDocument();
   });
 
   it("links an event to its screen and leaves the others as plain text", () => {
@@ -72,24 +72,24 @@ describe("ActivityFeed", () => {
     const icons = container.querySelectorAll("svg");
     expect(icons.length).toBeGreaterThanOrEqual(2);
     icons.forEach((icon) => expect(icon).toHaveAttribute("aria-hidden", "true"));
-    expect(screen.getByText("Leçon :", { exact: false })).toHaveClass("sr-only");
+    expect(screen.getByText("Lesson :", { exact: false })).toHaveClass("sr-only");
   });
 
   it("offers « Voir plus » only when there is more, and calls onMore", async () => {
     const user = userEvent.setup();
     const { onMore } = setup({ hasMore: true });
-    await user.click(screen.getByRole("button", { name: "Voir plus" }));
+    await user.click(screen.getByRole("button", { name: "Show more" }));
     expect(onMore).toHaveBeenCalledOnce();
   });
 
   it("has no « Voir plus » when everything is shown", () => {
     setup();
-    expect(screen.queryByRole("button", { name: "Voir plus" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Show more" })).toBeNull();
   });
 
   it("says nothing happened yet", () => {
     setup({ items: [] });
-    expect(screen.getByText("Rien de nouveau pour l'instant.")).toBeInTheDocument();
+    expect(screen.getByText("Nothing new yet.")).toBeInTheDocument();
     expect(screen.queryByRole("list")).toBeNull();
   });
 
@@ -101,10 +101,10 @@ describe("ActivityFeed", () => {
         <ActivityFeed items={ITEMS} hasMore loadingMore onMore={onMore} now={NOW} />
       </MemoryRouter>,
     );
-    const more = screen.getByRole("button", { name: "Chargement…" });
+    const more = screen.getByRole("button", { name: "Loading…" });
     expect(more).toHaveAttribute("aria-busy", "true");
     expect(more).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByRole("region", { name: "Activité récente" })).toHaveAttribute(
+    expect(screen.getByRole("region", { name: "Recent activity" })).toHaveAttribute(
       "aria-busy",
       "true",
     );

@@ -13,6 +13,8 @@ import { CaptureTopbarButton } from "./CaptureTopbarButton";
 import { useCaptureRequest } from "@/shared/lib/captureRequest";
 import { useCaptureDialog } from "./captureDialog";
 
+const FIELD = "A link or a note";
+
 const setup = () =>
   renderCapture((createSocket) => (
     <>
@@ -44,24 +46,24 @@ describe("capture dialog", () => {
     const { user } = setup();
     expect(screen.queryByRole("dialog")).toBeNull();
     await user.keyboard("{Control>}k{/Control}");
-    expect(await screen.findByRole("dialog", { name: "Capture rapide" })).toBeInTheDocument();
+    expect(await screen.findByRole("dialog", { name: "Quick capture" })).toBeInTheDocument();
     await user.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     await user.keyboard("{Meta>}k{/Meta}");
-    expect(await screen.findByRole("dialog", { name: "Capture rapide" })).toBeInTheDocument();
+    expect(await screen.findByRole("dialog", { name: "Quick capture" })).toBeInTheDocument();
   });
 
   it("opens capture with Ctrl+K even from a text field", async () => {
     const { user } = setup();
     await user.click(screen.getByLabelText("Un champ de la page"));
     await user.keyboard("{Control>}k{/Control}");
-    expect(await screen.findByRole("dialog", { name: "Capture rapide" })).toBeInTheDocument();
+    expect(await screen.findByRole("dialog", { name: "Quick capture" })).toBeInTheDocument();
   });
 
   it("opens from the top bar button, focuses the field and closes with Escape", async () => {
     const { user } = setup();
-    await user.click(screen.getByRole("button", { name: /Capture rapide/ }));
-    const field = await screen.findByLabelText("Un lien ou une note");
+    await user.click(screen.getByRole("button", { name: /Quick capture/ }));
+    const field = await screen.findByLabelText(FIELD);
     expect(field).toHaveFocus();
     await user.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
@@ -72,7 +74,7 @@ describe("capture dialog", () => {
     setup();
     expect(screen.queryByRole("dialog")).toBeNull();
     act(() => useCaptureRequest.getState().request());
-    expect(await screen.findByRole("dialog", { name: "Capture rapide" })).toBeInTheDocument();
+    expect(await screen.findByRole("dialog", { name: "Quick capture" })).toBeInTheDocument();
   });
 
   it("keeps the focus inside the dialog", async () => {
@@ -90,11 +92,11 @@ describe("capture dialog", () => {
     const { user, fake } = setup();
     await user.keyboard("{Control>}k{/Control}");
     await user.type(
-      await screen.findByLabelText("Un lien ou une note"),
+      await screen.findByLabelText(FIELD),
       "https://exemple.fr/article",
     );
-    expect(screen.getByText("Lien détecté : l'Archiviste va le lire.")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Capturer" }));
+    expect(screen.getByText("Link detected: the Archivist will read it.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Capture" }));
     await waitFor(() => expect(posts).toEqual([{ url: "https://exemple.fr/article" }]));
     const e = councilEvents("s5");
     const socket = await openCaptureStream(fake);
@@ -107,10 +109,10 @@ describe("capture dialog", () => {
     const { user } = setup();
     await user.keyboard("{Control>}k{/Control}");
     await user.type(
-      await screen.findByLabelText("Un lien ou une note"),
+      await screen.findByLabelText(FIELD),
       "Idée : lire https://x.fr plus tard",
     );
-    expect(screen.getByText(/Note : elle sera résumée/)).toBeInTheDocument();
+    expect(screen.getByText(/Note: it will be summarized/)).toBeInTheDocument();
     await user.keyboard("{Control>}{Enter}{/Control}");
     await waitFor(() => expect(posts).toEqual([{ text: "Idée : lire https://x.fr plus tard" }]));
   });
@@ -120,8 +122,8 @@ describe("capture dialog", () => {
     recordPosts("/capture", 202, { session_id: "s5" });
     const { user, fake } = setup();
     await user.keyboard("{Control>}k{/Control}");
-    await user.type(await screen.findByLabelText("Un lien ou une note"), "https://exemple.fr/a");
-    await user.click(screen.getByRole("button", { name: "Capturer" }));
+    await user.type(await screen.findByLabelText(FIELD), "https://exemple.fr/a");
+    await user.click(screen.getByRole("button", { name: "Capture" }));
     const e = councilEvents("s5");
     const socket = await openCaptureStream(fake);
     socket.push(
@@ -142,8 +144,8 @@ describe("capture dialog", () => {
     recordPosts("/capture", 202, { session_id: "s5" });
     const { user, fake } = setup();
     await user.keyboard("{Control>}k{/Control}");
-    await user.type(await screen.findByLabelText("Un lien ou une note"), "https://ferme.fr/page");
-    await user.click(screen.getByRole("button", { name: "Capturer" }));
+    await user.type(await screen.findByLabelText(FIELD), "https://ferme.fr/page");
+    await user.click(screen.getByRole("button", { name: "Capture" }));
     const e = councilEvents("s5");
     const socket = await openCaptureStream(fake);
     socket.push(
@@ -155,9 +157,9 @@ describe("capture dialog", () => {
     );
     const area = await screen.findByLabelText("Le texte de la page");
     expect(area).toHaveAttribute("maxlength", "20000");
-    expect(screen.getByRole("button", { name: "Envoyer le texte" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Send text" })).toBeDisabled();
     await user.type(area, "Le contenu collé.");
-    await user.click(screen.getByRole("button", { name: "Envoyer le texte" }));
+    await user.click(screen.getByRole("button", { name: "Send text" }));
     await waitFor(() =>
       expect(resumes).toEqual([
         { interrupt_id: "i1", value: { answers: { text: "Le contenu collé." } } },
@@ -170,8 +172,8 @@ describe("capture dialog", () => {
     recordPosts("/capture", 202, { session_id: "s5" });
     const { user, fake } = setup();
     await user.keyboard("{Control>}k{/Control}");
-    await user.type(await screen.findByLabelText("Un lien ou une note"), "https://ferme.fr/page");
-    await user.click(screen.getByRole("button", { name: "Capturer" }));
+    await user.type(await screen.findByLabelText(FIELD), "https://ferme.fr/page");
+    await user.click(screen.getByRole("button", { name: "Capture" }));
     (await openCaptureStream(fake)).push(
       councilEvents("s5").interrupt("capture_text", "i1", {
         question: "Colle le texte.",
@@ -199,7 +201,7 @@ describe("capture dialog", () => {
     const { user } = setup();
     await user.keyboard("{Control>}k{/Control}");
     const file = new File(["%PDF"], "cours.pdf", { type: "application/pdf" });
-    await user.upload(await screen.findByLabelText("Choisir un fichier"), file);
+    await user.upload(await screen.findByLabelText("Choose a file"), file);
     await waitFor(() => expect(posts).toEqual([{ document_id: "d1" }]));
     expect(contentType).toMatch(/^multipart\/form-data; boundary=/);
   });
@@ -212,8 +214,8 @@ describe("capture dialog", () => {
     // Un glisser-déposer ne passerait pas par le filtre `accept` du sélecteur natif.
     await userEvent
       .setup({ applyAccept: false })
-      .upload(await screen.findByLabelText("Choisir un fichier"), file);
-    expect(await screen.findByText(/Type de fichier non pris en charge/)).toBeInTheDocument();
+      .upload(await screen.findByLabelText("Choose a file"), file);
+    expect(await screen.findByText(/Unsupported file type/)).toBeInTheDocument();
     expect(posts).toEqual([]);
   });
 
@@ -230,8 +232,8 @@ describe("capture dialog", () => {
     const { user } = setup();
     await user.keyboard("{Control>}k{/Control}");
     const file = new File(["%PDF"], "cours.pdf", { type: "application/pdf" });
-    await user.upload(await screen.findByLabelText("Choisir un fichier"), file);
-    expect(await screen.findByText(/L'import de ce fichier a échoué/)).toBeInTheDocument();
+    await user.upload(await screen.findByLabelText("Choose a file"), file);
+    expect(await screen.findByText(/Importing this file failed/)).toBeInTheDocument();
   });
 
   it("shows a refused link inline and keeps the field", async () => {
@@ -239,26 +241,26 @@ describe("capture dialog", () => {
     const { user } = setup();
     await user.keyboard("{Control>}k{/Control}");
     await user.type(
-      await screen.findByLabelText("Un lien ou une note"),
+      await screen.findByLabelText(FIELD),
       "https://moi:mdp@site.fr/a",
     );
-    await user.click(screen.getByRole("button", { name: "Capturer" }));
-    expect(await screen.findByText(/identifiants/)).toBeInTheDocument();
-    expect(screen.getByLabelText("Un lien ou une note")).toHaveValue("https://moi:mdp@site.fr/a");
+    await user.click(screen.getByRole("button", { name: "Capture" }));
+    expect(await screen.findByText(/contains credentials/)).toBeInTheDocument();
+    expect(screen.getByLabelText(FIELD)).toHaveValue("https://moi:mdp@site.fr/a");
   });
 
   it("shows the end of a capture and goes to the journal", async () => {
     recordPosts("/capture", 202, { session_id: "s5" });
     const { user, fake, router } = setup();
     await user.keyboard("{Control>}k{/Control}");
-    await user.type(await screen.findByLabelText("Un lien ou une note"), "https://exemple.fr/a");
-    await user.click(screen.getByRole("button", { name: "Capturer" }));
+    await user.type(await screen.findByLabelText(FIELD), "https://exemple.fr/a");
+    await user.click(screen.getByRole("button", { name: "Capture" }));
     const e = councilEvents("s5");
     const socket = await openCaptureStream(fake);
     socket.push(e.message("m1", "Résumé.", "archivist"), e.completed());
     const dialog = await screen.findByRole("dialog");
-    expect(await within(dialog).findByText("Capture terminée.")).toBeInTheDocument();
-    await user.click(within(dialog).getByRole("link", { name: "Voir le journal" }));
+    expect(await within(dialog).findByText("Capture complete.")).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("link", { name: "View journal" }));
     expect(router.state.location.pathname).toBe("/etudier/journal");
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });

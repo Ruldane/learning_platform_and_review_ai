@@ -17,16 +17,16 @@ function setup() {
 describe("QuickActions", () => {
   it("has the four buttons in the order of the spec", () => {
     setup();
-    const group = screen.getByRole("group", { name: "Actions rapides" });
+    const group = screen.getByRole("group", { name: "Quick actions" });
     const names = Array.from(group.querySelectorAll("button")).map((b) => b.textContent);
-    expect(names).toEqual(["Commencer mon bloc", "Réviser", "Ajouter une offre", "Capturer"]);
+    expect(names).toEqual(["Start my block", "Review", "Add a posting", "Capture"]);
   });
 
   it("is operable from the keyboard alone, in tab order", async () => {
     const user = userEvent.setup();
     const handlers = setup();
     await user.tab();
-    expect(screen.getByRole("button", { name: "Commencer mon bloc" })).toHaveFocus();
+    expect(screen.getByRole("button", { name: "Start my block" })).toHaveFocus();
     await user.keyboard("{Enter}");
     await user.tab();
     await user.keyboard(" ");

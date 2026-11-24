@@ -87,7 +87,7 @@ async def test_every_direct_write_tool_is_level_2_without_graph(
         tool = registry.get(name)
         assert tool is not None, name
         assert (tool.level, tool.graph, tool.side_effects) == (2, None, "db"), name
-        expected = "Fabrique" if name.startswith("lessons_") else "Écriture directe, aucun agent"
+        expected = "Lesson Factory" if name.startswith("lessons_") else "Direct write, no agent"
         assert expected in tool.description, name
 
 
@@ -268,6 +268,6 @@ async def test_posting_write_is_undone_with_its_memory_item_and_duplicates(
 async def test_write_tool_descriptions_tell_the_real_rules(app: FastAPI) -> None:
     registry = app.state.mcp_registry
     quiz = registry.get("quiz_write_quiz").description
-    assert all(w in quiz for w in ("en préparation", "8 questions", "3 types")), quiz
+    assert all(rule in quiz for rule in ("in preparation", "8 questions", "3 different types"))
     posting = registry.get("postings_write_posting").description
-    assert "300 caractères" in posting and "50 mots" in posting
+    assert "300 characters" in posting and "50 words" in posting
