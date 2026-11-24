@@ -1,7 +1,7 @@
-"""Préférences du professeur et consommation de jetons (10.A3) : le mode (automatique ou sur
-demande), le style (`guide` ou binôme), la minuterie d'inactivité, les plafonds de séance et du
-jour. La consommation se lit dans le journal des appels (`TeacherUsageRepository`) : les jetons
-de la séance de code et ceux du jour de l'utilisatrice (son fuseau, D98). Aucun texte n'est lu."""
+"""Professor preferences and token usage (10.A3): the mode (automatic or on demand), the style
+(`guide` or pair), the idle timer, the session and day caps. Usage is read from the call log
+(`TeacherUsageRepository`): the code session's tokens and those of the user's day (her time zone,
+D98). No text is read."""
 
 from datetime import datetime
 
@@ -24,15 +24,15 @@ class UsageService:
         self._user_id = user_id
 
     async def preferences(self) -> PreferencesOut:
-        """Les préférences enregistrées, sinon les valeurs de départ (100 000 jetons par séance,
-        300 000 par jour, mode automatique, style guide)."""
+        """The saved preferences, otherwise the defaults (100,000 tokens per session, 300,000 per
+        day, automatic mode, guide style)."""
         row = await PreferenceRepository(self._db, self._user_id).mine()
         if row is None:
             return PreferencesOut()
         return PreferencesOut.model_validate(row)
 
     async def save_preferences(self, data: PreferencesIn) -> PreferencesOut:
-        """Remplace les préférences (une ligne par compte)."""
+        """Replaces the preferences (one row per account)."""
         repo = PreferenceRepository(self._db, self._user_id)
         values = data.model_dump()
         row = await repo.mine()
@@ -55,8 +55,8 @@ class UsageService:
         return await TeacherUsageRepository(self._db, self._user_id).since(await self._day_start())
 
     async def usage(self, ide_session_id: str | None) -> UsageOut:
-        """Les jetons du professeur : de la séance (0 sans séance donnée) et du jour, les plafonds,
-        et si le professeur est « sur demande » (par choix, ou plafond atteint)."""
+        """The professor's tokens: for the session (0 when no session is given) and the day, the
+        caps, and whether the professor is "on demand" (by choice, or cap reached)."""
         prefs = await self.preferences()
         session_tokens = 0
         if ide_session_id is not None:

@@ -1,4 +1,4 @@
-"""Instantané détenu par un compte, assemblé avant le rendu."""
+"""Snapshot owned by an account, assembled before rendering."""
 
 from dataclasses import dataclass
 from datetime import datetime
@@ -18,7 +18,7 @@ class GlossaryEntry:
 
 @dataclass(frozen=True)
 class BookChapter:
-    """Chapitre publié. Son rang (à partir de 1) vient du sommaire du Stratège."""
+    """Published chapter. Its rank (from 1) comes from the Strategist's table of contents."""
 
     rank: int
     title: str
@@ -29,7 +29,7 @@ class BookChapter:
 
 @dataclass(frozen=True)
 class BookSource:
-    """Les notes et chapitres lus pour le même compte, indépendamment de la base."""
+    """Notes and chapters read for the same account, independently of the database."""
 
     program_id: str
     title: str
@@ -41,6 +41,6 @@ class BookSource:
     def __post_init__(self) -> None:
         ranks = {chapter.rank for chapter in self.chapters}
         if len(ranks) != len(self.chapters) or any(rank < 1 for rank in ranks):
-            raise ValueError("Rangs des chapitres invalides.")
+            raise ValueError("Invalid chapter ranks.")
         if self.modified_at.utcoffset() is None:
-            raise ValueError("Date d'édition sans fuseau horaire.")
+            raise ValueError("Edition date without a time zone.")

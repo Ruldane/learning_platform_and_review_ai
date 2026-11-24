@@ -14,8 +14,8 @@ MCP = FeatureMcp(
             "POST /postings",
             2,
             "postings_add_posting",
-            "Ajoute une offre par son lien (`url`) ou son texte collé (`text`) et lance "
-            "l'analyse ; la même offre rend l'existante.",
+            "Adds a job posting by its link (`url`) or pasted text (`text`) and starts "
+            "the analysis; the same posting returns the existing one.",
             untrusted=tuple(f"posting.{name}" for name in _TEXT),
             launches="gap_analysis",
         ),
@@ -23,53 +23,53 @@ MCP = FeatureMcp(
             "GET /postings",
             1,
             "postings_list_postings",
-            "Les offres de January, les plus récentes d'abord.",
+            "January's job postings, most recent first.",
             untrusted=("[].title", "[].company"),
         ),
         McpAction(
             "GET /postings/{posting_id}",
             1,
             "postings_get_posting",
-            "Une offre : texte figé, analyse, doublons.",
+            "A job posting: frozen text, analysis, duplicates.",
             untrusted=_TEXT,
         ),
         McpAction(
             "DELETE /postings/{posting_id}",
             3,
             "postings_delete_posting",
-            "Retire l'offre, son élément de mémoire, ses revues et ses versions de CV (PDF et "
-            "images compris) : demande à confirmer.",
+            "Removes the posting, its memory item, its reviews and its CV versions (PDFs and "
+            "images included): asks for confirmation.",
             side_effects="external",
         ),
         McpAction(
             "POST /postings/{posting_id}/distinct",
             2,
             "postings_mark_distinct",
-            "Marque deux offres comme distinctes : le doublon disparaît des deux côtés.",
+            "Marks two postings as distinct: the duplicate disappears on both sides.",
         ),
         McpAction(
             "POST /postings/{posting_id}/gap",
             2,
             "postings_relaunch_gap",
-            "Relance l'analyse d'écart d'une offre.",
+            "Restarts the gap analysis of a posting.",
             launches="gap_analysis",
         ),
         McpAction(
             "POST /postings/direct",
             2,
             "postings_write_posting",
-            "Écriture directe, aucun agent : range une offre que Claude a lue (`text` : 300 "
-            "caractères et 50 mots au moins, `url` facultatif, et son analyse : `title`, "
+            "Direct write, no agent: stores a posting Claude has read (`text`: at least 300 "
+            "characters and 50 words, optional `url`, and its analysis: `title`, "
             "`company`, `requirements`, `keywords`, "
-            "`skills`…) ; l'offre est prête aussitôt, sans écart (`postings_relaunch_gap`).",
+            "`skills`…); the posting is ready at once, without a gap (`postings_relaunch_gap`).",
             untrusted=tuple(f"posting.{name}" for name in _TEXT),
         ),
         McpAction(
             "PATCH /postings/{posting_id}",
             2,
             "postings_update_posting",
-            "Écriture directe, aucun agent : retouche l'analyse d'une offre (titre, entreprise, "
-            "exigences, mots clés, compétences…).",
+            "Direct write, no agent: edits the analysis of a posting (title, company, "
+            "requirements, keywords, skills…).",
             untrusted=_TEXT,
         ),
     ),

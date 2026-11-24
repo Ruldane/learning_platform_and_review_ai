@@ -20,9 +20,9 @@ class TelegramReviewPreferences(BaseModel):
     @model_validator(mode="after")
     def check_consent(self) -> Self:
         if self.start >= self.end:
-            raise ValueError("La fin doit suivre le début le même jour.")
+            raise ValueError("The end must follow the start on the same day.")
         if self.enabled and (self.token_id is None or self.chat_id is None):
-            raise ValueError("Choisis le jeton Nod et la discussion privée.")
+            raise ValueError("Choose the Nod token and the private chat.")
         return self
 
 

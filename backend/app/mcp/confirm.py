@@ -164,7 +164,7 @@ def summarize(tool: ToolSpec, request: ToolRequest) -> str:
         fields.update(request.body)
     for name, value in list(fields.items())[:_PREVIEW_FIELDS]:
         if isinstance(value, str | int | float | bool):
-            parts.append(f"{clip(name, 30)} = « {clip(scrub_text(str(value)), _PREVIEW)} »")
+            parts.append(f'{clip(name, 30)} = "{clip(scrub_text(str(value)), _PREVIEW)}"')
         else:
             parts.append(clip(name, 30))
     text = f"{what} — {request.method} {request.path}"
@@ -188,6 +188,6 @@ async def check_before_confirmation(
     try:
         verdict = await asyncio.wait_for(tool.precheck(asked), PRECHECK_TIMEOUT_S)
     except Exception as exc:
-        logger.error("MCP : contrôle préalable impossible (%s)", type(exc).__name__)
-        verdict = Verdict(ok=False, reasons=("Le contrôle préalable n'a pas pu se faire.",))
+        logger.error("MCP: precheck failed (%s)", type(exc).__name__)
+        verdict = Verdict(ok=False, reasons=("The precheck could not be run.",))
     return {"ok": verdict.ok, "reasons": list(verdict.reasons), "summary": verdict.summary}

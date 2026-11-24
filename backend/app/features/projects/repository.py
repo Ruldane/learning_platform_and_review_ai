@@ -1,8 +1,8 @@
-"""Mini projets d'un utilisateur (13.3). Les lectures qui précèdent une écriture rafraîchissent la
-ligne (`populate_existing`) : sous le verrou d'un projet, une requête voit l'état commité par la
-précédente. La création est gardée en SQL (`INSERT … ON CONFLICT DO NOTHING` sur
-`(user_id, module_id)`) : deux passages ne créent jamais deux projets pour un module. Le commit
-appartient à l'appelant."""
+"""A user's mini projects (13.3). Reads that precede a write refresh the row
+(`populate_existing`): under a project's lock, a request sees the state committed by the
+previous one. Creation is guarded in SQL (`INSERT … ON CONFLICT DO NOTHING` on
+`(user_id, module_id)`): two passes never create two projects for one module. The commit
+belongs to the caller."""
 
 import builtins
 from collections.abc import Collection
@@ -27,7 +27,7 @@ class ProjectRepository(UserScopedRepository[Project]):
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def all(self, status: str | None = None) -> builtins.list[Project]:
-        """Les projets de l'utilisatrice (ceux de ce statut si donné), les plus anciens d'abord."""
+        """The user's projects (those with this status if given), oldest first."""
         stmt = select(Project).where(Project.user_id == self.user_id)
         if status is not None:
             stmt = stmt.where(Project.status == status)
@@ -37,7 +37,7 @@ class ProjectRepository(UserScopedRepository[Project]):
         return builtins.list((await self.session.execute(stmt)).scalars())
 
     async def in_status(self, statuses: Collection[str]) -> builtins.list[Project]:
-        """Les projets dans l'un de ces statuts, relus."""
+        """The projects in one of these statuses, re-read."""
         stmt = (
             select(Project)
             .where(Project.user_id == self.user_id, Project.status.in_(list(statuses)))
@@ -47,16 +47,16 @@ class ProjectRepository(UserScopedRepository[Project]):
         return builtins.list((await self.session.execute(stmt)).scalars())
 
     async def module_ids(self) -> builtins.set[str]:
-        """Les modules qui ont déjà leur projet."""
+        """The modules that already have their project."""
         stmt = select(Project.module_id).where(Project.user_id == self.user_id)
         return builtins.set((await self.session.execute(stmt)).scalars())
 
     async def insert_if_absent(
         self, *, module_id: str, program_id: str, title: str, now: datetime
     ) -> str | None:
-        """Crée le projet du module (`brief_pending`, premier essai) et rend son id ; `None` si le
-        module a déjà son projet (rien n'est changé). Seul celui qui reçoit un id lance la
-        session de l'énoncé."""
+        """Creates the module's project (`brief_pending`, first attempt) and returns its id; `None`
+        if the module already has its project (nothing changes). Only the caller that receives an
+        id starts the brief session."""
         stmt = (
             sqlite_insert(Project)
             .values(

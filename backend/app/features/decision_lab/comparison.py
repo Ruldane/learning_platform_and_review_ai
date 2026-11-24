@@ -1,4 +1,4 @@
-"""Charge constante, sans file d’attente, pendant une panne d’une réplique."""
+"""Constant load, without a queue, during the outage of one replica."""
 
 from app.features.decision_lab.schemas import (
     ArchitectureAssumptions,
@@ -13,7 +13,7 @@ _BASIS_POINTS = 10_000
 
 
 def _round_ratio(numerator: int, denominator: int) -> int:
-    """Arrondit le quotient positif à l’entier le plus proche, au-dessus à mi-chemin."""
+    """Rounds the positive quotient to the nearest integer, halves rounding up."""
     return (numerator + denominator // 2) // denominator
 
 

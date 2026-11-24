@@ -7,7 +7,7 @@ MCP = FeatureMcp(
             "GET /skill-market",
             1,
             "skill_market_read",
-            "Compare les deux relevés du poste et simule une heure sur la compétence choisie.",
+            "Compares the role's two market snapshots and simulates one hour on the chosen skill.",
             untrusted=("role", "zone", "quotes[].name", "simulation.skill", "simulation.chapter"),
         ),
     ),

@@ -11,7 +11,7 @@ PAGE_SIZE = 50
 
 
 def reading_not_found() -> AppError:
-    return AppError("reading_not_found", "Élément de lecture introuvable.", 404)
+    return AppError("reading_not_found", "Reading item not found.", 404)
 
 
 async def read_entry(db: AsyncSession, user_id: str, item_id: str) -> ReadingItem:

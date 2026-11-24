@@ -9,22 +9,22 @@ MCP = FeatureMcp(
             "POST /programs/{program_id}/replan",
             2,
             "replan_start_replan",
-            "Lance une replanification (« cette semaine je n'ai que 5 heures ») : le Stratège "
-            "propose, rien n'est écrit sans la réponse de January.",
+            'Starts a replan ("this week I only have 5 hours"): the Strategist '
+            "proposes, nothing is written without January's answer.",
             launches="replan",
         ),
         McpAction(
             "GET /programs/{program_id}/versions",
             1,
             "replan_list_versions",
-            "Les versions du plan d'un programme, la plus récente d'abord.",
+            "The plan versions of a program, most recent first.",
         ),
     ),
     graphs=(
         McpGraph(
             "replan",
             follow_only=True,
-            summary="Replanifie un programme (`program_id`, `trigger`, message facultatif).",
+            summary="Replans a program (`program_id`, `trigger`, optional message).",
         ),
     ),
 )

@@ -1,4 +1,4 @@
-"""Vérifie la copie courante du service dans le bac, sur des cas générés."""
+"""Checks the current copy of the service in the sandbox, on generated cases."""
 
 import json
 

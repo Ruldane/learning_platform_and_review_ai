@@ -1,6 +1,6 @@
-"""Quiz, questions, tentatives et fiches de révision (D99, D101). Lectures fraîches
-(`populate_existing`) ; les écritures disputées sont gardées en SQL (`UPDATE … WHERE` sur l'état
-attendu, `INSERT … ON CONFLICT DO NOTHING`) : un double envoi n'écrit qu'une fois."""
+"""Quizzes, questions, attempts and review cards (D99, D101). Fresh reads
+(`populate_existing`); contended writes are guarded in SQL (`UPDATE … WHERE` on the expected
+state, `INSERT … ON CONFLICT DO NOTHING`): a double submission writes only once."""
 
 import builtins
 from collections.abc import Collection
@@ -47,7 +47,7 @@ class QuizRepository(UserScopedRepository[Quiz]):
         return builtins.list((await self.session.execute(stmt)).scalars().all())
 
     async def mark_ready(self, quiz_id: str, session_id: str, title: str) -> bool:
-        """Passe le quiz à `ready` s'il ne l'est pas déjà ; vrai si c'est cet appel."""
+        """Moves the quiz to `ready` unless it already is; true if this call did it."""
         stmt = (
             update(Quiz)
             .where(Quiz.id == quiz_id, Quiz.user_id == self.user_id, Quiz.status != "ready")
@@ -56,7 +56,7 @@ class QuizRepository(UserScopedRepository[Quiz]):
         return _changed(await self.session.execute(stmt))
 
     async def mark_failed(self, quiz_id: str, reason: str) -> None:
-        """Quiz en échec, jamais un quiz déjà prêt."""
+        """Quiz marked failed, never a quiz already ready."""
         stmt = (
             update(Quiz)
             .where(Quiz.id == quiz_id, Quiz.user_id == self.user_id, Quiz.status != "ready")
@@ -89,7 +89,7 @@ class AttemptRepository(UserScopedRepository[QuizAttempt]):
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def for_quizzes(self, quiz_ids: Collection[str]) -> builtins.list[QuizAttempt]:
-        """Tentatives de ces quiz, de la plus ancienne à la plus récente."""
+        """Attempts of these quizzes, oldest first."""
         if not quiz_ids:
             return []
         stmt = (
@@ -121,7 +121,7 @@ class AttemptRepository(UserScopedRepository[QuizAttempt]):
         return builtins.list((await self.session.execute(stmt)).scalars())
 
     async def graded_modules(self, module_ids: Collection[str]) -> set[str]:
-        """Modules parmi `module_ids` dont le quiz a au moins une tentative notée."""
+        """Modules among `module_ids` whose quiz has at least one graded attempt."""
         if not module_ids:
             return set()
         stmt = (
@@ -137,7 +137,7 @@ class AttemptRepository(UserScopedRepository[QuizAttempt]):
         return set((await self.session.execute(stmt)).scalars().all())
 
     async def claim_graded(self, attempt_id: str) -> bool:
-        """`grading` → `graded` ; vrai si c'est cet appel (un rejeu reçoit faux)."""
+        """`grading` → `graded`; true if this call did it (a replay gets false)."""
         stmt = (
             update(QuizAttempt)
             .where(
@@ -150,7 +150,7 @@ class AttemptRepository(UserScopedRepository[QuizAttempt]):
         return _changed(await self.session.execute(stmt))
 
     async def fail_grading(self, attempt_ids: Collection[str]) -> None:
-        """Tentatives encore `grading` passées en échec (notation interrompue)."""
+        """Attempts still `grading` moved to failed (interrupted grading)."""
         if not attempt_ids:
             return
         stmt = (
@@ -185,7 +185,7 @@ class FlashcardRepository(UserScopedRepository[Flashcard]):
         return [(front, back) for front, back in (await self.session.execute(stmt)).all()]
 
     async def insert_once(self, **fields: Any) -> bool:
-        """Écrit la fiche si son recto (`front_hash`) est nouveau ; vrai si elle est créée."""
+        """Writes the card if its front (`front_hash`) is new; true if it was created."""
         stmt = (
             sqlite_insert(Flashcard)
             .values(user_id=self.user_id, **fields)
@@ -203,7 +203,7 @@ class FlashcardRepository(UserScopedRepository[Flashcard]):
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def due(self, today: date, limit: int) -> builtins.list[Flashcard]:
-        """Fiches dues (échéance ≤ `today`), les plus en retard d'abord, `limit` au plus."""
+        """Due cards (due date ≤ `today`), most overdue first, at most `limit`."""
         if limit <= 0:
             return []
         stmt = (
@@ -215,7 +215,7 @@ class FlashcardRepository(UserScopedRepository[Flashcard]):
         return builtins.list((await self.session.execute(stmt)).scalars().all())
 
     async def due_skills(self, today: date) -> builtins.list[str]:
-        """Les compétences (telles qu'écrites) des fiches dues, une fois chacune."""
+        """The skills (as written) of the due cards, once each."""
         stmt = (
             select(Flashcard.skill)
             .where(
@@ -240,8 +240,8 @@ class FlashcardRepository(UserScopedRepository[Flashcard]):
         return int((await self.session.execute(stmt)).scalar_one())
 
     async def claim_review(self, card: Flashcard, today: date, step: int, due: date) -> bool:
-        """Avis gardé par l'échéance : la fiche doit être due (≤ `today`) ; vrai si c'est cet
-        appel qui l'a revue (un second avis la trouve déjà repoussée)."""
+        """Review guarded by the due date: the card must be due (≤ `today`); true if this call
+        reviewed it (a second review finds it already pushed back)."""
         stmt = (
             update(Flashcard)
             .where(
@@ -253,7 +253,7 @@ class FlashcardRepository(UserScopedRepository[Flashcard]):
         )
         if not _changed(await self.session.execute(stmt)):
             return False
-        # L’écriture ORM est enregistrée dans l’historique de la réponse relayée par Nod.
+        # The ORM write is recorded in the history of the response relayed by Nod.
         card.step, card.due_date, card.last_reviewed_on = step, due, today
         await self.session.flush()
         return True

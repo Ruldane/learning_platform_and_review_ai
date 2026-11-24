@@ -1,1 +1,1 @@
-"""Comparaison déterministe d’offres privées."""
+"""Deterministic comparison of private offers."""

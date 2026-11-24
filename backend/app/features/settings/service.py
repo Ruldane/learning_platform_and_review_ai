@@ -13,7 +13,7 @@ from app.providers.llm.base import ModelChoice, Tier
 
 logger = logging.getLogger(__name__)
 
-# Les champs calculés sont recalculés à la lecture : on ne les stocke pas.
+# Computed fields are recomputed on read: they are not stored.
 _COMPUTED = {"availability": {"weekly_budget_minutes"}}
 
 
@@ -23,9 +23,9 @@ def _has_removed_agents(stored: dict[str, Any]) -> bool:
 
 
 def _without_removed_agents(stored: dict[str, Any]) -> dict[str, Any]:
-    """Retire d'une surcharge stockée un agent qui n'est plus au catalogue (renommé, supprimé,
-    de démonstration) : les autres surcharges restent. Ne journalise rien : les réglages se lisent
-    à chaque appel de modèle ; `SettingsService.replace` le dit une fois, à l'enregistrement."""
+    """Removes from a stored override an agent that is no longer in the catalog (renamed,
+    deleted, demo): the other overrides stay. Logs nothing: settings are read on every model
+    call; `SettingsService.replace` says it once, when saving."""
     if not _has_removed_agents(stored):
         return stored
     overrides: dict[str, Any] = stored["agent_overrides"]
@@ -34,15 +34,15 @@ def _without_removed_agents(stored: dict[str, Any]) -> dict[str, Any]:
 
 
 def _parse_stored(stored: dict[str, Any]) -> UserSettings:
-    """Défauts fusionnés avec le stocké. Les clés inconnues sont ignorées (compatibilité
-    ascendante) ; un champ invalide retombe sur son défaut sans faire échouer la lecture."""
+    """Defaults merged with what is stored. Unknown keys are ignored (backward
+    compatibility); an invalid field falls back to its default without failing the read."""
     stored = _without_removed_agents(stored)
     try:
         return UserSettings.model_validate(stored)
     except ValidationError as exc:
         invalid = {str(err["loc"][0]) for err in exc.errors() if err["loc"]}
-        # Seuls les noms de champs sont journalisés, jamais leur contenu.
-        logger.warning("Réglages stockés invalides, valeurs par défaut pour : %s", sorted(invalid))
+        # Only field names are logged, never their content.
+        logger.warning("Invalid stored settings, default values for: %s", sorted(invalid))
         kept = {key: value for key, value in stored.items() if key not in invalid}
         try:
             return UserSettings.model_validate(kept)
@@ -51,9 +51,9 @@ def _parse_stored(stored: dict[str, Any]) -> UserSettings:
 
 
 async def scheduled_users(db: AsyncSession) -> list[str]:
-    """Les comptes dont le premier lancement est fini (`onboarding_done` de `GET /settings`,
-    D183), du plus ancien au plus récent : les tâches planifiées qui peuvent appeler un modèle ou
-    le web ne travaillent que pour eux (D197). Lecture sans `user_id`, identifiants seulement."""
+    """The accounts whose first run is done (`onboarding_done` of `GET /settings`, D183),
+    oldest first: scheduled jobs that may call a model or the web only work for them (D197).
+    Read without `user_id`, identifiers only."""
     return await onboarded_user_ids(db)
 
 
@@ -62,15 +62,15 @@ class SettingsService:
         self._repo = UserSettingsRepository(session, user_id)
 
     async def get(self, *, initialize: bool = False) -> UserSettings:
-        """Les réglages stockés, défauts fusionnés ; ne fait aucune écriture, sauf `initialize`.
+        """The stored settings, defaults merged; performs no write, except `initialize`.
 
-        `initialize` (réservé à `GET /settings` et à `replace`) : au tout premier accès d'un compte
-        sans ligne de réglages, crée la ligne qui fixe `onboarding_done` : vrai si le compte a déjà
-        une clé d'API ou un objectif (compte d'avant la phase 9, D183), faux sinon. La décision est
-        prise une fois, jamais refaite : une clé ajoutée pendant le premier lancement ne le termine
-        pas. Les autres lecteurs (autres features, agents, tâches planifiées) ne passent pas
-        `initialize` : une écriture dans leur lecture garderait le verrou d'écriture de la base
-        pendant qu'une autre session écrit.
+        `initialize` (reserved for `GET /settings` and `replace`): on the very first access of an
+        account without a settings row, creates the row that sets `onboarding_done`: true if the
+        account already has an API key or a goal (account from before phase 9, D183), false
+        otherwise. The decision is made once and never redone: a key added during the first run
+        does not end it. Other readers (other features, agents, scheduled jobs) do not pass
+        `initialize`: a write inside their read would hold the database write lock while
+        another session writes.
         """
         stored = await self._repo.get_data()
         if stored is None and initialize:
@@ -80,22 +80,20 @@ class SettingsService:
         return _parse_stored(stored if isinstance(stored, dict) else {})
 
     async def close_local_claim(self) -> None:
-        """Ferme pour toujours la reprise de l'espace local (clé réservée de ces réglages, qui
-        survit à tout remplacement ; jamais exposée par l'API)."""
+        """Closes the local space takeover for good (reserved key of these settings, which
+        survives every replacement; never exposed by the API)."""
         await self._repo.close_local_claim()
 
     async def replace(self, new: UserSettings) -> UserSettings:
-        """Enregistre les réglages. `onboarding_done` ne repasse jamais à faux : une page qui
-        renvoie l'ancien réglage (ou l'oublie) ne rouvre pas le premier lancement (P20). Le
-        dépôt l'écrit de façon monotone (pas de lecture puis écriture) : même deux requêtes qui
-        se croisent ne le défont pas ; la réponse dit ce qui est enregistré."""
+        """Saves the settings. `onboarding_done` never goes back to false: a page that sends
+        back the old setting (or forgets it) does not reopen the first run (P20). The repository
+        writes it monotonically (no read then write): even two crossing requests do not undo
+        it; the response says what is saved."""
         current = await self.get(initialize=True)
         stored = await self._repo.get_data() or {}
         if _has_removed_agents(stored):
-            # Une fois, ici : la surcharge d'un agent disparu part avec ce remplacement.
-            logger.warning(
-                "Réglages enregistrés : surcharge d'un agent disparu retirée (agent_overrides)"
-            )
+            # Once, here: the override of a removed agent goes away with this replacement.
+            logger.warning("Settings saved: override of a removed agent dropped (agent_overrides)")
         done = current.onboarding_done or new.onboarding_done
         kept = new.model_copy(update={"onboarding_done": done})
         await self._repo.save_data(kept.model_dump(mode="json", exclude=_COMPUTED))
@@ -104,8 +102,8 @@ class SettingsService:
 
 
 class SettingsModelReader:
-    """Lecture du modèle à utiliser, pour la fabrique LLM. Ouvre sa propre session : elle est
-    appelée hors requête HTTP (agents, tâches planifiées)."""
+    """Reads the model to use, for the LLM factory. Opens its own session: it is called
+    outside any HTTP request (agents, scheduled jobs)."""
 
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
         self._session_factory = session_factory
@@ -119,8 +117,8 @@ class SettingsModelReader:
 
 
 class SettingsRunReader:
-    """Réglages d'une exécution d'agents (`RunSettingsSource` du moteur), assemblé par
-    `app.bootstrap`. Ouvre sa propre session : appelé par le runner, hors requête HTTP."""
+    """Settings of an agent run (`RunSettingsSource` of the engine), assembled by
+    `app.bootstrap`. Opens its own session: called by the runner, outside any HTTP request."""
 
     def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
         self._session_factory = session_factory

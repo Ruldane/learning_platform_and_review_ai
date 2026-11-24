@@ -22,10 +22,10 @@ from app.features.proof_packets.schemas import (
 )
 
 PROCEDURE = (
-    "Comparer le SHA-256 du fichier téléchargé à l’empreinte affichée dans le dossier.",
-    "Identifier chaque rendu à l’aide de son identifiant et de sa révision.",
-    "Calculer le SHA-256 du texte du rendu encodé en UTF-8 et le comparer à son empreinte.",
-    "Relire la mesure observée et la cible de chaque critère enregistré.",
+    "Compare the SHA-256 of the downloaded file with the fingerprint shown in the packet.",
+    "Identify each submission by its identifier and revision.",
+    "Compute the SHA-256 of the UTF-8 submission text and compare it with its fingerprint.",
+    "Review the observed measurement and the target of each recorded criterion.",
 )
 
 
@@ -52,9 +52,7 @@ async def save(
 ) -> ProofPacketOut:
     reviewed = await preview(rt, user_id, body)
     if not compare_digest(reviewed.digest, body.expected_digest):
-        raise AppError(
-            "proof_packet_changed", "Le manifeste a changé. Prévisualise-le de nouveau.", 409
-        )
+        raise AppError("proof_packet_changed", "The manifest has changed. Preview it again.", 409)
     row = await ProofPackets(db, user_id).add(
         title=reviewed.manifest.title,
         digest=reviewed.digest,
@@ -71,14 +69,14 @@ async def save(
 async def _owned(db: AsyncSession, user_id: str, packet_id: str) -> ProofPacket:
     row = await ProofPackets(db, user_id).get(packet_id)
     if row is None:
-        raise AppError("proof_packet_not_found", "Dossier de preuves introuvable.", 404)
+        raise AppError("proof_packet_not_found", "Proof packet not found.", 404)
     return row
 
 
 def _verified_payload(row: ProofPacket) -> bytes:
     payload = row.manifest.encode("utf-8")
     if not compare_digest(sha256(payload).hexdigest(), row.digest):
-        raise AppError("proof_packet_unavailable", "Le manifeste sauvegardé est illisible.", 409)
+        raise AppError("proof_packet_unavailable", "The saved manifest is unreadable.", 409)
     return payload
 
 

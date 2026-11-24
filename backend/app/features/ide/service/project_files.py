@@ -1,4 +1,4 @@
-"""Écritures ciblées sur les fichiers d'une séance Python, sans accès au disque hôte."""
+"""Targeted writes on a Python session's files, without access to the host disk."""
 
 from app.core.errors import AppError
 from app.db.base import utcnow
@@ -9,7 +9,7 @@ from app.features.ide.service.context import IdeContext
 from app.features.ide.service.errors import mcp_ide_test_file, mcp_ide_write_off
 from app.providers.sandbox.base import check_file_name
 
-# Le lanceur vérifie de nouveau la longueur et la profondeur des segments à la matérialisation.
+# The launcher checks segment length and depth again when materializing.
 _MAX_DEPTH = 8
 _MAX_COMPONENT_CHARS = 100
 _MAX_COMPONENT_BYTES = 255
@@ -18,19 +18,17 @@ _MAX_COMPONENT_BYTES = 255
 def _changed() -> AppError:
     return AppError(
         "project_changed",
-        "Le projet a changé. Relis ses fichiers avant de modifier l’arborescence.",
+        "The project changed. Re-read its files before changing the file tree.",
         409,
     )
 
 
 def _not_found() -> AppError:
-    return AppError("project_file_not_found", "Fichier du projet introuvable.", 404)
+    return AppError("project_file_not_found", "Project file not found.", 404)
 
 
 def _invalid_path() -> AppError:
-    return AppError(
-        "project_path_invalid", "Ce chemin de fichier est refusé par le bac à sable.", 422
-    )
+    return AppError("project_path_invalid", "This file path is refused by the sandbox.", 422)
 
 
 def _check_destination(files: dict[str, str], path: str) -> None:
@@ -45,11 +43,9 @@ def _check_destination(files: dict[str, str], path: str) -> None:
     except ValueError:
         raise _invalid_path() from None
     if path in files:
-        raise AppError("project_file_exists", "Un fichier porte déjà ce nom.", 409)
+        raise AppError("project_file_exists", "A file already has this name.", 409)
     if any(name.startswith(path + "/") or path.startswith(name + "/") for name in files):
-        raise AppError(
-            "project_path_conflict", "Un fichier et un dossier utilisent le même chemin.", 409
-        )
+        raise AppError("project_path_conflict", "A file and a folder use the same path.", 409)
 
 
 async def _edit_session(ctx: IdeContext, session_id: str, version: int, *paths: str) -> IdeSession:
@@ -79,9 +75,7 @@ async def _save(
     try:
         sessions.check_files(files, entry)
     except UnicodeEncodeError:
-        raise AppError(
-            "project_file_encoding", "Le fichier doit être un texte UTF-8 valide.", 422
-        ) from None
+        raise AppError("project_file_encoding", "The file must be valid UTF-8 text.", 422) from None
     if not await sessions.claim_files(ctx, project):
         raise _changed()
     await ctx.db.refresh(project, attribute_names=["workspace_tabs"])

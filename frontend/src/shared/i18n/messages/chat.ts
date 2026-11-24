@@ -1,5 +1,5 @@
 export const chat = {
-  newMessages: "Nouveaux messages ↓",
-  send: "Envoyer",
-  shortcuts: "Entrée envoie, Maj+Entrée fait un retour à la ligne.",
+  newMessages: "New messages ↓",
+  send: "Send",
+  shortcuts: "Enter sends, Shift+Enter adds a new line.",
 } as const;

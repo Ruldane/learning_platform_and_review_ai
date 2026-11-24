@@ -26,5 +26,5 @@ class LabPreferencesPatch(BaseModel):
         if values is None:
             return None
         if len(values) != len(set(values)) or any(value not in PINNABLE for value in values):
-            raise ValueError("Sélectionne des activités distinctes du Labo.")
+            raise ValueError("Select distinct Lab activities.")
         return values

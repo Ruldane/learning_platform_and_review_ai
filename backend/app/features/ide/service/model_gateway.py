@@ -1,4 +1,4 @@
-"""Accès OpenAI de l'IDE. Le code du bac ne voit que le texte de réponse."""
+"""The IDE's OpenAI access. Sandbox code only sees the response text."""
 
 import asyncio
 from typing import Literal, Protocol
@@ -81,24 +81,24 @@ class ModelGateway:
             choice = await self._models.resolve(user_id, tier)
             if choice.provider == "openai" and choice.model == name:
                 return tier
-        raise AppError("gateway_model_refused", "Ce modèle OpenAI n’est pas configuré.", 422)
+        raise AppError("gateway_model_refused", "This OpenAI model is not configured.", 422)
 
     async def _reserve(self, user_id: str, amount: int) -> None:
         async with self._factory() as db:
             settings = await SettingsService(db, user_id).get()
             day = local_today(user_zone(settings.timezone)).isoformat()
             if not await reserve(db, user_id, day, amount, self._day_cap):
-                raise AppError("gateway_budget_exhausted", "Budget du jour épuisé.", 429)
-            await db.commit()  # Une panne du fournisseur ne permet pas de dépasser le budget.
+                raise AppError("gateway_budget_exhausted", "Daily budget exhausted.", 429)
+            await db.commit()  # A provider outage cannot let the budget be exceeded.
 
     async def complete(self, user_id: str, payload: object) -> str:
         try:
             request = _Completion.model_validate(payload)
             amount = request.reservation()
         except (ValidationError, UnicodeEncodeError):
-            raise AppError("gateway_request_invalid", "Requête modèle invalide.", 422) from None
+            raise AppError("gateway_request_invalid", "Invalid model request.", 422) from None
         if amount > MAX_REQUEST_BYTES:
-            raise AppError("gateway_request_invalid", "Requête modèle trop volumineuse.", 422)
+            raise AppError("gateway_request_invalid", "Model request too large.", 422)
         with inherit_source(user_id, None, "openai"):
             tier = await self._tier(user_id, request.model)
             model = await self._models.get_chat_model(user_id, tier)

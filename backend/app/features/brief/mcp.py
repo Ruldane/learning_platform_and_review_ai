@@ -9,7 +9,7 @@ MCP = FeatureMcp(
             "GET /brief/today",
             1,
             "brief_get_today",
-            "Le brief du jour (bloc, révisions, relances, offres, ressource, conseil).",
+            "Today's brief (block, reviews, follow-ups, postings, resource, advice).",
             untrusted=("resource", "offers"),
         ),
     ),
@@ -17,7 +17,7 @@ MCP = FeatureMcp(
         McpGraph(
             "daily_brief",
             follow_only=True,
-            summary="Écrit le conseil et la ressource du brief du jour (`brief_id`).",
+            summary="Writes the advice and resource of today's brief (`brief_id`).",
         ),
     ),
     play_actions=(McpAction("GET /brief/today", 2, "brief_play_today", launches="daily_brief"),),

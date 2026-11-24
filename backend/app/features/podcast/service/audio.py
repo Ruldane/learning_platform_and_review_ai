@@ -1,4 +1,4 @@
-"""Assembler les répliques en WAV mono, dans l’ordre du script."""
+"""Assemble the lines into mono WAV, in script order."""
 
 import wave
 from collections.abc import Sequence

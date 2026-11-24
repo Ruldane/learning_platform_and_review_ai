@@ -1,4 +1,4 @@
-"""Document `.ipynb` v4. Les champs descriptifs existants restent dans le fichier."""
+"""`.ipynb` v4 document. Existing descriptive fields stay in the file."""
 
 import json
 from typing import Any
@@ -12,7 +12,7 @@ _OUTPUT_LIMIT = 4_000
 
 
 def invalid() -> AppError:
-    return AppError("notebook_invalid", "Le notebook doit contenir des cellules Jupyter v4.", 422)
+    return AppError("notebook_invalid", "The notebook must contain Jupyter v4 cells.", 422)
 
 
 def _as_text(value: object) -> str:
@@ -91,7 +91,7 @@ class Notebook:
                 return "\n\n".join([*previous, cell.source])
             if include_previous and cell.kind == "code":
                 previous.append(cell.source)
-        raise AppError("cell_not_found", "Cellule Python introuvable.", 404)
+        raise AppError("cell_not_found", "Python cell not found.", 404)
 
     def record_output(self, cell_id: str, output: str) -> None:
         raw = next(cell for cell in self._raw["cells"] if cell["id"] == cell_id)

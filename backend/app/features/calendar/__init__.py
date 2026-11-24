@@ -1,1 +1,1 @@
-"""Google Agenda sur autorisation distincte de la connexion Tremplin."""
+"""Google Calendar under an authorisation separate from the Tremplin sign-in."""

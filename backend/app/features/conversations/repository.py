@@ -44,7 +44,7 @@ class ConversationRepository(UserScopedRepository[Conversation]):
         return found.scalar_one_or_none()
 
     async def claim(self, scope: str, thread_id: str | None = None) -> list[Conversation]:
-        """Prend le verrou d'écriture SQLite avant de relire les tours du périmètre."""
+        """Takes the SQLite write lock before rereading the scope's turns."""
         stmt = update(Conversation).where(
             Conversation.user_id == self.user_id, Conversation.scope == scope
         )
@@ -69,7 +69,7 @@ class ConversationRepository(UserScopedRepository[Conversation]):
         )
 
     async def erase_chat_snapshots(self, thread_ids: list[str], session_ids: list[str]) -> None:
-        # Retire l'appel entier pour que l'annulation ne rejoue jamais une partie de l'écriture.
+        # Removes the whole call so that cancellation never replays part of the write.
         snapshots = select(McpChange.call_id).where(
             McpChange.user_id == self.user_id,
             (
@@ -170,7 +170,8 @@ class TurnRepository(UserScopedRepository[ConversationTurn]):
     async def usage(
         self, thread_id: str, since: datetime, reserve: int
     ) -> tuple[int, int, int, int]:
-        """Jetons du fil et du jour, tours du fil et réserve restante des tours ouverts."""
+        """Tokens of the thread and of the day, turns of the thread and remaining
+        reserve of open turns."""
         in_thread = ConversationTurn.thread_id == thread_id
         open_turn = AgentSession.status.in_(OPEN_SESSION_STATES)
         tokens = AgentSession.tokens_in + AgentSession.tokens_out
@@ -201,7 +202,7 @@ class TurnRepository(UserScopedRepository[ConversationTurn]):
     async def claim_reply(
         self, thread_id: str, turn_id: str, session_id: str
     ) -> ConversationTurn | None:
-        """Verrou d'écriture SQLite : une annulation MCP et la réponse ne se croisent pas."""
+        """SQLite write lock: an MCP cancellation and the reply do not cross."""
         running = select(AgentSession.id).where(
             self._owned_session, AgentSession.status == "running"
         )
@@ -236,7 +237,7 @@ class TurnRepository(UserScopedRepository[ConversationTurn]):
         )
 
     async def erase_sessions(self, ids: list[str]) -> None:
-        # Les événements et les échanges sont effacés par les clés étrangères.
+        # Events and exchanges are deleted through the foreign keys.
         await self.session.execute(
             delete(AgentSession).where(
                 AgentSession.user_id == self.user_id, AgentSession.id.in_(ids)

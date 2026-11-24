@@ -1,2 +1,2 @@
-"""Leçons et ressources (SPEC 3.5, 3.6) : Markdown sûr et rendu PDF (D89), production en chaîne
-et tâche planifiée « J-7 », Bibliothèque (D91)."""
+"""Lessons and resources (SPEC 3.5, 3.6): safe Markdown and PDF rendering (D89), chained
+production and the "D-7" scheduled job, Library (D91)."""

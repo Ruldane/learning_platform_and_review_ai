@@ -1,7 +1,6 @@
-"""Lectures de la replanification (SPEC F13) : bilans hebdomadaires (lignes `weekly_review` du
-journal, écrites par `capture.service.journal`), faits d'une semaine (tentatives de quiz notées,
-sessions d'étude terminées, captures) et sessions `replan` lancées pour un bilan. Toutes filtrent
-par `user_id`."""
+"""Replanning reads (SPEC F13): weekly reviews (`weekly_review` journal rows, written by
+`capture.service.journal`), a week's facts (graded quiz attempts, finished study sessions,
+captures) and `replan` sessions launched for a review. All of them filter by `user_id`."""
 
 import builtins
 from collections.abc import Collection
@@ -34,7 +33,7 @@ class ReviewRepository(UserScopedRepository[JournalEntry]):
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def texts(self, entry_ids: Collection[str]) -> dict[str, str]:
-        """`entrée → texte` des bilans demandés (historique des versions)."""
+        """`entry → text` of the requested reviews (version history)."""
         if not entry_ids:
             return {}
         stmt = select(JournalEntry.id, JournalEntry.text).where(
@@ -55,7 +54,7 @@ class ReviewRepository(UserScopedRepository[JournalEntry]):
 
 
 class FactsRepository(UserScopedRepository[QuizAttempt]):
-    """Ce qui s'est passé pendant une semaine, entre deux instants UTC."""
+    """What happened during a week, between two UTC instants."""
 
     model = QuizAttempt
 
@@ -91,7 +90,7 @@ class ReplanSessionRepository(UserScopedRepository[AgentSession]):
     model = AgentSession
 
     async def launched_for(self, program_id: str, entry_id: str) -> bool:
-        """Une session `replan` a-t-elle déjà été lancée pour ce bilan (quel que soit son sort) ?"""
+        """Has a `replan` session already been launched for this review (whatever its outcome)?"""
         stmt = select(func.count()).where(
             AgentSession.user_id == self.user_id,
             AgentSession.graph == "replan",

@@ -1,4 +1,4 @@
-"""Relit les seuls éléments confirmés dans Tremplin, dans le compte courant."""
+"""Re-read only the items confirmed in Tremplin, in the current account."""
 
 from dataclasses import dataclass
 from datetime import date
@@ -40,9 +40,9 @@ async def read_source(db: AsyncSession, user_id: str, selection: Selection) -> S
         application = await get_application(db, user_id, selection.source_id)
         if application.interview_on and application.status == "interview":
             return Source(
-                f"Entretien {application.title} · {application.company}",
+                f"Interview {application.title} · {application.company}",
                 application.interview_on,
                 selection.minutes,
                 zone,
             )
-    raise AppError("calendar_source_not_found", "Bloc d’étude ou entretien introuvable.", 404)
+    raise AppError("calendar_source_not_found", "Study block or interview not found.", 404)

@@ -10,7 +10,7 @@ from app.db.models.memory import Document, MemoryChunk, MemoryItem
 
 
 class NoteReadingRepository:
-    """Lignes actives de Mémoire dont le document est toujours lié au synchroniseur."""
+    """Active Memory rows whose document is still linked to the synchroniser."""
 
     def __init__(self, session: AsyncSession, user_id: str) -> None:
         self._db = session
@@ -35,7 +35,7 @@ class NoteReadingRepository:
         )
 
     async def link_entries(self) -> list[tuple[str, str, str, str, dict[str, Any] | None]]:
-        """Métadonnées de résolution des notes actives. Leurs textes ne sont pas lus."""
+        """Resolution metadata of active notes. Their texts are not read."""
         stmt = self._active().with_only_columns(
             BrainFile.folder_id,
             BrainFile.path,
@@ -79,7 +79,7 @@ class NoteReadingRepository:
         ]
 
     async def matching(self, terms: Sequence[str], limit: int) -> list[tuple[str, str, str, str]]:
-        """Un fragment par note, le mieux classé par son titre et son texte."""
+        """One chunk per note, the best ranked by its title and text."""
         score: ColumnElement[int] = literal(0)
         for term in terms:
             score = (

@@ -1,6 +1,6 @@
-"""Mes données (SPEC 17.1, phase 9) : l'export de toutes les données de l'utilisatrice et « Tout
-supprimer ». Au nom de l'utilisatrice courante, jamais d'un autre compte ; une 422 nomme les
-champs, sans jamais recopier la confirmation reçue."""
+"""My data (SPEC 17.1, phase 9): export of all the user's data and "Delete everything". On
+behalf of the current user, never another account; a 422 names the fields, never echoing the
+confirmation received."""
 
 from datetime import UTC, datetime
 from typing import Annotated, Any
@@ -37,12 +37,12 @@ router = APIRouter(prefix="/account", tags=["account"], route_class=FieldPathsRo
 _ZIP: dict[int | str, dict[str, Any]] = {
     200: {
         "content": {"application/zip": {}},
-        "description": "L'archive de toutes les données",
+        "description": "The archive of all the data",
         "headers": {
             "Content-Disposition": {
                 "description": (
-                    '`attachment; filename="tremplin-export-AAAAMMJJ.zip"` : le nom proposé au'
-                    " téléchargement, le jour étant celui de l'utilisatrice."
+                    '`attachment; filename="tremplin-export-YYYYMMDD.zip"`: the suggested'
+                    " download name, the day being the user's local day."
                 ),
                 "schema": {"type": "string"},
             }
@@ -52,8 +52,8 @@ _ZIP: dict[int | str, dict[str, Any]] = {
 
 
 def get_account_runtime(conn: HTTPConnection) -> AccountRuntime:
-    """Stockage, index vectoriel et moteur d'agents du démarrage (`app.state`), plus les verrous
-    par compte, créés à la première demande et gardés pour la vie de l'application."""
+    """Storage, vector index and agent engine from startup (`app.state`), plus the per-account
+    locks, created on first request and kept for the application's lifetime."""
     state = conn.app.state
     locks: KeyLocks | None = getattr(state, "account_locks", None)
     if locks is None:
@@ -75,10 +75,10 @@ AccountDep = Annotated[AccountRuntime, Depends(get_account_runtime)]
 
 @router.get("/export", response_class=Response, responses=_ZIP)
 async def export_account(current: CurrentUserDep, db: Db, rt: AccountDep) -> Response:
-    """Toutes les données de l'utilisatrice dans une archive zip `tremplin-export-AAAAMMJJ.zip`
-    (téléchargement) : `manifest.json`, une table par fichier JSON (`tables/<table>.json`) et les
-    fichiers déposés (`files/…`). Les clés d'API n'y sont jamais (seulement leurs quatre derniers
-    caractères) ; ni vecteurs ni points de reprise des agents (recalculables)."""
+    """All the user's data in a zip archive `tremplin-export-YYYYMMDD.zip` (download):
+    `manifest.json`, one table per JSON file (`tables/<table>.json`) and the uploaded files
+    (`files/…`). API keys are never included (only their last four characters); neither vectors
+    nor agent checkpoints (they can be recomputed)."""
     now = datetime.now(UTC)
     filename = export_filename(now, await user_export_zone(db, current.id))
     if MCP_IDENTITY.get() is not None:
@@ -96,10 +96,10 @@ async def export_account(current: CurrentUserDep, db: Db, rt: AccountDep) -> Res
             "X-Content-Type-Options": "nosniff",
         }
     except BaseException:
-        archive.close()  # la réponse n'existera pas : le flux ne le fermera jamais
+        archive.close()  # the response will not exist: the stream will never close it
         raise
-    # Le flux ferme le fichier à sa fin ou si le client part ; la tâche de fin le garantit même
-    # si le flux n'a jamais démarré.
+    # The stream closes the file when done or if the client leaves; the background task
+    # guarantees it even if the stream never started.
     return StreamingResponse(
         stream_export(archive),
         media_type="application/zip",
@@ -113,22 +113,20 @@ async def export_account(current: CurrentUserDep, db: Db, rt: AccountDep) -> Res
     status_code=204,
     response_class=Response,
     responses={
-        202: {
-            "description": "Compte Google effacé ; la purge des vecteurs reprend en arrière-plan."
-        },
-        409: {"description": "`account_changed` : l'identité ne correspond plus à la session."},
+        202: {"description": "Google account erased; the vector purge resumes in the background."},
+        409: {"description": "`account_changed`: the identity no longer matches the session."},
         422: {
             "description": (
-                "`confirmation_required` : confirme avec SUPPRIMER ; "
-                "`account_identity_required` : indique l'identité affichée."
+                "`confirmation_required`: confirm with SUPPRIMER; "
+                "`account_identity_required`: give the displayed identity."
             )
         },
         503: {
             "description": (
-                "`vector_store_unavailable` : Qdrant ne répond pas avant la suppression "
-                "des lignes ; "
-                "`vector_purge_incomplete` : l'espace local est effacé en base, "
-                "relance la suppression pour retirer les vecteurs restants."
+                "`vector_store_unavailable`: Qdrant does not answer before the rows "
+                "are deleted; "
+                "`vector_purge_incomplete`: the local space is erased in the database, "
+                "run the deletion again to remove the remaining vectors."
             )
         },
     },
@@ -136,30 +134,30 @@ async def export_account(current: CurrentUserDep, db: Db, rt: AccountDep) -> Res
 async def delete_account(
     request: Request, body: DeleteAccountIn, current: ConfirmedUserDep, rt: AccountDep
 ) -> Response:
-    """Tout supprimer : annule les sessions en cours, puis efface les vecteurs, les fichiers, les
-    points de reprise et toutes les lignes du compte. `confirm` doit être `SUPPRIMER`, sinon 422
-    `confirmation_required`. L'identité affichée doit correspondre au compte authentifié.
-    Mode local : l'espace reste utilisable, vide ; mode Google : le compte et la session
-    disparaissent. La dernière purge des vecteurs peut reprendre en arrière-plan (202)."""
+    """Delete everything: cancels running sessions, then erases the vectors, files, checkpoints
+    and every row of the account. `confirm` must be `SUPPRIMER`, otherwise 422
+    `confirmation_required`. The displayed identity must match the authenticated account.
+    Local mode: the space stays usable, empty; Google mode: the account and the session
+    disappear. The final vector purge may resume in the background (202)."""
     if body.confirm != DELETE_CONFIRMATION:
         raise AppError(
             "confirmation_required",
-            "Écris SUPPRIMER pour confirmer.",
+            "Type SUPPRIMER to confirm.",
             422,
             {"fields": ["confirm"]},
         )
     auth_mode = request.app.state.settings.auth_mode
     if body.expected_user_id is not None and body.expected_user_id != current.id:
-        raise AppError("account_changed", "Le compte connecté a changé.", 409)
+        raise AppError("account_changed", "The signed-in account has changed.", 409)
     if body.expected_user_id is None and auth_mode == "google" and MCP_IDENTITY.get() is None:
         raise AppError(
             "account_identity_required",
-            "Indique le compte affiché pour confirmer sa suppression.",
+            "Give the displayed account to confirm its deletion.",
             422,
             {"fields": ["expected_user_id"]},
         )
     complete = await erase_account(rt, current.id, auth_mode=auth_mode)
     response = Response(status_code=204 if complete else 202)
     if auth_mode == "google":
-        clear_session_cookie(response)  # la session a disparu avec le compte
+        clear_session_cookie(response)  # the session disappeared with the account
     return response

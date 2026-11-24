@@ -1,5 +1,5 @@
-"""Lecture des leçons (SPEC 3.5, D91) : liste d'un programme (ordre des semaines puis des
-modules), leçon complète avec ses ressources, PDF servi à son seul propriétaire."""
+"""Reading lessons (SPEC 3.5, D91): a program's list (week order, then module order), full
+lesson with its resources, PDF served to its owner only."""
 
 from dataclasses import dataclass
 from datetime import datetime
@@ -24,15 +24,15 @@ from app.providers.storage.base import FileStorage, StorageKeyInvalid
 
 
 def lesson_not_found() -> AppError:
-    return AppError("lesson_not_found", "Leçon introuvable.", 404)
+    return AppError("lesson_not_found", "Lesson not found.", 404)
 
 
 def lesson_pdf_missing() -> AppError:
-    return AppError("lesson_pdf_missing", "Le PDF de cette leçon n'est pas encore disponible.", 404)
+    return AppError("lesson_pdf_missing", "This lesson's PDF is not available yet.", 404)
 
 
 def _week_ranks(loaded: Loaded) -> dict[str, int]:
-    """`module → rang de sa semaine`."""
+    """`module → rank of its week`."""
     weeks = {week.id: week.rank for week in loaded.weeks}
     return {module.id: weeks.get(module.week_id, 0) for module in loaded.modules}
 
@@ -40,7 +40,7 @@ def _week_ranks(loaded: Loaded) -> dict[str, int]:
 def _summary(
     lesson: Lesson, week_rank: int, open_ids: list[str], tasks: list[Task]
 ) -> dict[str, object]:
-    """Résumé d'une leçon ; `tasks` : celles de son module (terminée quand toutes sont faites)."""
+    """Summary of a lesson; `tasks`: those of its module (completed when all are done)."""
     status, reason = shown(lesson.status, lesson.session_id, lesson.failure_reason, open_ids)
     sid = lesson.verification_session_id
     verification_reason = lesson.verification_failure_reason
@@ -77,9 +77,9 @@ def _states(rows: list[Lesson]) -> list[tuple[str, str | None]]:
 
 
 async def list_lessons(db: AsyncSession, user_id: str, program_id: str) -> list[LessonSummaryOut]:
-    """Leçons d'un programme de l'utilisateur (404 `program_not_found` sinon), dans l'ordre du
-    programme ; un module sans leçon encore créée n'apparaît pas. Une leçon interrompue hors
-    du port apparaît en échec (`status`), sans écriture."""
+    """Lessons of one of the user's programs (404 `program_not_found` otherwise), in program
+    order; a module with no lesson created yet does not appear. A lesson interrupted outside the
+    port appears as failed (`status`), without any write."""
     loaded = await load(db, user_id, program_id)
     ranks = _week_ranks(loaded)
     order = {module.id: index for index, module in enumerate(loaded.modules)}
@@ -109,7 +109,7 @@ async def _owned(db: AsyncSession, user_id: str, lesson_id: str) -> Lesson:
 
 
 async def get_lesson(db: AsyncSession, user_id: str, lesson_id: str) -> LessonOut:
-    found = await _owned(db, user_id, lesson_id)  # son programme, puis relue après les sessions
+    found = await _owned(db, user_id, lesson_id)  # its program, then read again after the sessions
     lesson, open_ids = await read_with_open_sessions(
         db,
         user_id,
@@ -138,7 +138,7 @@ async def get_lesson(db: AsyncSession, user_id: str, lesson_id: str) -> LessonOu
 async def lesson_pdf(
     db: AsyncSession, storage: FileStorage, user_id: str, lesson_id: str
 ) -> tuple[str, bytes]:
-    """Titre et PDF de la leçon de l'utilisateur ; 404 `lesson_pdf_missing` tant qu'absent."""
+    """Title and PDF of the user's lesson; 404 `lesson_pdf_missing` while missing."""
     lesson = await _owned(db, user_id, lesson_id)
     if lesson.pdf_key is None:
         raise lesson_pdf_missing()
@@ -149,8 +149,8 @@ async def lesson_pdf(
 
 
 async def ready_markdown(db: AsyncSession, user_id: str, module_id: str) -> str | None:
-    """Le Markdown de la leçon prête du module, `None` si elle n'est pas prête (quiz, D101).
-    Lecture pour les autres features (contrat 2)."""
+    """Markdown of the module's ready lesson, `None` if it is not ready (quiz, D101).
+    Read for other features (contract 2)."""
     lesson = await LessonRepository(db, user_id).by_module(module_id)
     return lesson.markdown if lesson is not None and lesson.status == "ready" else None
 
@@ -167,7 +167,7 @@ class PublishedChapter:
 async def published_chapters(
     db: AsyncSession, user_id: str, program_id: str
 ) -> tuple[PublishedChapter, ...]:
-    """Versions publiées uniquement, même quand une nouvelle retouche est en préparation."""
+    """Published versions only, even while a new edit is being prepared."""
     rows = await LessonRepository(db, user_id).for_program(program_id)
     return tuple(
         PublishedChapter(row.id, row.module_id, row.title, row.markdown, row.updated_at)
@@ -177,14 +177,14 @@ async def published_chapters(
 
 
 async def ready_lesson_id(db: AsyncSession, user_id: str, module_id: str) -> str | None:
-    """La leçon prête du module, `None` sinon (prochaine action de la carte, D107). Lecture
-    pour les autres features (contrat 2)."""
+    """The module's ready lesson, `None` otherwise (the card's next action, D107). Read for
+    other features (contract 2)."""
     lesson = await LessonRepository(db, user_id).by_module(module_id)
     return lesson.id if lesson is not None and lesson.status == "ready" else None
 
 
 async def published_lesson_routes(db: AsyncSession, user_id: str) -> dict[str, str]:
-    """Identifiants de chapitres publiés par module, sans lire le contenu."""
+    """Published chapter ids by module, without reading the content."""
     return await LessonRepository(db, user_id).ready_routes()
 
 
@@ -199,9 +199,9 @@ class RecentLesson:
 async def recent_lessons(
     db: AsyncSession, user_id: str, after: datetime | None, before: datetime | None, limit: int
 ) -> list[RecentLesson]:
-    """Les leçons devenues prêtes ou en échec dans `[after, before]`, plus récentes d'abord (fil
-    d'activité, 8.7). Lecture pour les autres features (contrat 2) : l'état enregistré, sans
-    relire les sessions."""
+    """Lessons that became ready or failed within `[after, before]`, most recent first
+    (activity feed, 8.7). Read for other features (contract 2): the stored state, without
+    re-reading the sessions."""
     rows = await LessonRepository(db, user_id).recent_settled(after, before, limit)
     return [
         RecentLesson(

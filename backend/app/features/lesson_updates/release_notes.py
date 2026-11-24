@@ -1,4 +1,4 @@
-"""Relève les remplacements d’API explicitement nommés dans le journal de version."""
+"""Collects the API replacements explicitly named in the changelog."""
 
 import re
 from dataclasses import dataclass

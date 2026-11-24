@@ -1,6 +1,6 @@
-"""Contrôle à l'entrée d'une offre (SPEC 6.3, D139) : l'offre qui entre (une offre analysée, un
-lien seul) est comparée aux fiches existantes, quel que soit l'écran. Les règles sont celles de
-`matching` (7.1) ; ici, la lecture de l'offre et des fiches."""
+"""Check when a posting comes in (SPEC 6.3, D139): the incoming posting (an analyzed posting, a
+link only) is compared with the existing records, whatever the screen. The rules are those of
+`matching` (7.1); here, reading the posting and the records."""
 
 from collections.abc import Iterable
 from datetime import date, datetime
@@ -20,8 +20,9 @@ from app.features.postings.service.rules import company_key, posting_url_key
 
 
 def incoming_from_posting(posting: JobPosting, distinct: Iterable[str] = ()) -> Incoming:
-    """L'offre entrante : lien normalisé, entreprise et intitulé (ceux de l'offre, sinon de
-    l'analyse), offres « possibles » de ses doublons, fiches confirmées « autre poste »."""
+    """The incoming posting: normalized link, company and job title (the posting's, otherwise
+    the analysis'), "possible" postings among its duplicates, records confirmed as "another
+    position"."""
     analysis = posting.analysis or {}
     return Incoming(
         url_norm=posting.url_norm,
@@ -38,7 +39,7 @@ def incoming_from_posting(posting: JobPosting, distinct: Iterable[str] = ()) -> 
 
 
 def incoming_from_url(url: str) -> Incoming:
-    """Avant l'analyse : seul le lien est connu. 422 `url` si le lien est refusé."""
+    """Before analysis: only the link is known. 422 `url` if the link is rejected."""
     try:
         key = posting_url_key(url)
     except AppError as exc:
@@ -57,7 +58,7 @@ def incoming_from_url(url: str) -> Incoming:
 async def check_incoming(
     db: AsyncSession, user_id: str, incoming: Incoming, today: date
 ) -> list[Hit]:
-    """Les fiches qui ressemblent à l'offre entrante (voir `matching.match`)."""
+    """The records that look like the incoming posting (see `matching.match`)."""
     views = await views_of(db, user_id, await zone_of(db, user_id))
     return match(incoming, views, today)
 
@@ -65,9 +66,9 @@ async def check_incoming(
 async def check_posting(
     db: AsyncSession, user_id: str, now: datetime, posting_id: str | None, url: str | None
 ) -> CheckOut:
-    """`GET /applications/check` : par `posting_id` (la fiche de l'offre, les alertes et les
-    informations) ou par `url` (avant l'analyse : le niveau « certain » seulement). Exactement
-    une des deux entrées, sinon 422."""
+    """`GET /applications/check`: by `posting_id` (the posting's record, the alerts and the
+    information) or by `url` (before analysis: the "certain" level only). Exactly one of the two
+    inputs, otherwise 422."""
     if (posting_id is None) == (url is None):
         raise invalid("posting_id", "url")
     zone = await zone_of(db, user_id)

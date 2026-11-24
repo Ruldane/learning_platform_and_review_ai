@@ -1,4 +1,4 @@
-"""Réservation du rapport et dossier lu par le responsable d'exploitation."""
+"""Report reservation and the dossier read by the operations lead."""
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -22,24 +22,24 @@ async def launch_report(
 ) -> OncallReviewStarted:
     report = report.strip()
     if len(report) < 8:
-        raise AppError("incident_report_empty", "Écris d’abord ton rapport d’incident.", 422)
+        raise AppError("incident_report_empty", "Write your incident report first.", 422)
 
     async def prepare(db: AsyncSession, session_id: str) -> None:
         service = OncallService(db, user_id, None)
         row = await service.repo.require(incident_id)
         if row.proof_recorded or await review_state(db, user_id, row) == "running":
-            raise AppError("incident_review_busy", "Un rapport est déjà en cours ou validé.", 409)
+            raise AppError(
+                "incident_review_busy", "A report is already in progress or validated.", 409
+            )
         if not await service.repaired(row):
             raise AppError(
                 "incident_repair_required",
-                "Fais passer le diagnostic sur le service actuel.",
+                "Run the diagnostic on the current service.",
                 409,
             )
         observations = [event for event in row.events if event["id"] in row.observed_events]
         if not observations:
-            raise AppError(
-                "incident_observation_required", "Consulte un événement du journal.", 409
-            )
+            raise AppError("incident_observation_required", "Open an event from the log.", 409)
         await service.repo.claim(row)
         row.report, row.review_session_id, row.verdict = report, session_id, None
         row.review_context = {
@@ -68,7 +68,7 @@ async def _assigned(
 ) -> OncallIncident:
     row = await IncidentRepository(db, user_id).require(incident_id)
     if row.review_session_id != session_id or row.report is None or row.review_context is None:
-        raise AppError("incident_review_stale", "Ce rapport n’est plus celui à évaluer.", 409)
+        raise AppError("incident_review_stale", "This report is no longer the one to assess.", 409)
     return row
 
 
@@ -105,9 +105,7 @@ class AgentOncallStore:
                 "diagnostic_hash"
             ) == row.diagnostic_hash
             if score.accepted and same_diagnostic and await service.repaired(row):
-                proof = evidence(
-                    "ide", row.ide_session_id, "Simulation d’astreinte réussie", utcnow()
-                )
+                proof = evidence("ide", row.ide_session_id, "On-call simulation passed", utcnow())
                 await SkillsService(db, user_id).raise_levels(
                     ["Diagnostic d’incident"], "en_cours", proof
                 )

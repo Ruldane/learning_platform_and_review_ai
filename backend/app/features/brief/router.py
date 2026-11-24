@@ -1,7 +1,7 @@
-"""API du brief du matin (SPEC 14.2, P12, D162) : `GET /brief/today` rend le brief du jour local
-de l'utilisatrice et le crée s'il manque (à l'ouverture, quelle que soit l'heure). Il n'attend
-jamais un agent : le conseil et la ressource arrivent ensuite (`advice_status` `pending`, à
-relire). Au nom de l'utilisatrice courante."""
+"""Morning brief API (SPEC 14.2, P12, D162): `GET /brief/today` returns the user's brief for her
+local day and creates it if missing (on opening, whatever the time). It never waits for an
+agent: the advice and the resource arrive later (`advice_status` `pending`, read again). On
+behalf of the current user."""
 
 from typing import Annotated
 
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/brief", tags=["brief"])
 
 
 def get_brief_runtime(conn: HTTPConnection) -> BriefRuntime:
-    """Le brief ouvert par le lifespan (`app.state.daily.brief`)."""
+    """The brief opened by the lifespan (`app.state.daily.brief`)."""
     runtime: BriefRuntime = conn.app.state.daily.brief
     return runtime
 
@@ -27,6 +27,6 @@ BriefDep = Annotated[BriefRuntime, Depends(get_brief_runtime)]
 
 @router.get("/today", response_model=BriefOut)
 async def get_today(current: CurrentUserDep, rt: BriefDep) -> BriefOut:
-    """Le brief du jour local, créé s'il manque (`origin` « opening »)."""
+    """The brief for the local day, created if missing (`origin` "opening")."""
     brief, _created = await ensure_today(rt, current.id, origin="opening")
     return brief

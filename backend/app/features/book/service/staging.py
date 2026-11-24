@@ -1,4 +1,4 @@
-"""Écrit les deux nouveaux fichiers sans modifier les pointeurs de l'édition servie."""
+"""Write both new files without changing the served edition's pointers."""
 
 import asyncio
 import logging
@@ -24,19 +24,19 @@ async def _discard(storage: FileStorage, user_id: str, keys: Iterable[str]) -> N
         try:
             await storage.delete(user_id, key)
         except Exception as error:
-            logger.warning("Nettoyage d'une édition (%s)", type(error).__name__)
+            logger.warning("Edition cleanup (%s)", type(error).__name__)
 
 
 async def discard_book(storage: FileStorage, user_id: str, keys: BookKeys) -> None:
-    """Retire les fichiers non retenus, ou ceux d'une ancienne édition déjà remplacée."""
+    """Remove files that were not kept, or those of an old, already replaced edition."""
     await _discard(storage, user_id, (keys.pdf, keys.epub))
 
 
 async def _save(
     storage: FileStorage, user_id: str, data: bytes, suffix: str, staged: list[str]
 ) -> str:
-    # Une écriture locale peut continuer dans son thread après l'annulation. Attendre sa
-    # clé permet de supprimer aussi ce fichier, avant de rendre l'annulation à l'appelant.
+    # A local write may continue in its thread after cancellation. Waiting for its key lets
+    # us delete that file too, before handing the cancellation back to the caller.
     writing = asyncio.create_task(storage.save(user_id, _CATEGORY, data, suffix))
     try:
         key = await asyncio.shield(writing)
@@ -49,7 +49,7 @@ async def _save(
 
 
 async def stage_book(storage: FileStorage, user_id: str, files: BookFiles) -> BookKeys:
-    """Prépare deux clés du compte à publier ensemble dans la transaction d'intégration."""
+    """Prepare two account keys to publish together in the integration transaction."""
     staged: list[str] = []
     try:
         pdf = await _save(storage, user_id, files.pdf, ".pdf", staged)

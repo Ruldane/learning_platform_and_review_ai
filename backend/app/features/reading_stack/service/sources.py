@@ -10,7 +10,7 @@ from app.features.reading_stack.service.schedule import MAX_SOURCES
 
 
 def source_not_found() -> AppError:
-    return AppError("reading_source_not_found", "Source de lecture introuvable.", 404)
+    return AppError("reading_source_not_found", "Reading source not found.", 404)
 
 
 def _source_value(body: ReadingSourceIn) -> str:
@@ -20,11 +20,9 @@ def _source_value(body: ReadingSourceIn) -> str:
         try:
             return normalize_domain(body.value)
         except ValueError:
-            raise AppError(
-                "reading_site_invalid", "Saisis un nom de domaine valide.", 422
-            ) from None
+            raise AppError("reading_site_invalid", "Enter a valid domain name.", 422) from None
     if len(body.value) > 180:
-        raise AppError("reading_topic_too_long", "Le sujet doit tenir en 180 caractères.", 422)
+        raise AppError("reading_topic_too_long", "The topic must fit in 180 characters.", 422)
     return " ".join(body.value.split())
 
 
@@ -39,14 +37,14 @@ async def add_source(db: AsyncSession, user_id: str, body: ReadingSourceIn) -> R
     repo = ReadingSources(db, user_id)
     if len(await repo.list()) >= MAX_SOURCES:
         raise AppError(
-            "reading_source_limit", f"Tu peux suivre {MAX_SOURCES} sources au plus.", 409
+            "reading_source_limit", f"You can follow at most {MAX_SOURCES} sources.", 409
         )
     value = _source_value(body)
     try:
         async with db.begin_nested():
             row = await repo.add(kind=body.kind, label=body.label, value=value)
     except IntegrityError:
-        raise AppError("reading_source_exists", "Cette source est déjà suivie.", 409) from None
+        raise AppError("reading_source_exists", "This source is already followed.", 409) from None
     return ReadingSourceOut.model_validate(row)
 
 

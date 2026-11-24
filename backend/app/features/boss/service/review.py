@@ -1,4 +1,4 @@
-"""Diagnostic et grille du Boss, exécutés par la session de fond."""
+"""Boss diagnostic and rubric, run by the background session."""
 
 from collections.abc import Callable
 
@@ -31,7 +31,7 @@ def _sample(files: dict[str, str]) -> dict[str, str]:
 async def _assigned(repo: BossRepository, program_id: str, session_id: str) -> BossAttempt:
     row = await repo.require(program_id)
     if row.review_session_id != session_id or row.submitted_files is None:
-        raise AppError("boss_review_stale", "Cette session ne correspond plus à la remise.", 409)
+        raise AppError("boss_review_stale", "This session no longer matches the submission.", 409)
     return row
 
 
@@ -54,7 +54,7 @@ class AgentBossReview:
         if cached is None:
             sandbox = self._sandbox()
             if sandbox is None or run_id is None:
-                raise AppError("boss_sandbox_unavailable", "Le bac est indisponible.", 503)
+                raise AppError("boss_sandbox_unavailable", "The sandbox is unavailable.", 503)
             result = await diagnostic.run(sandbox, diagnostic.job_for(run_id, code))
             await self._save_diagnostic(user_id, program_id, session_id, result)
         else:
@@ -95,11 +95,9 @@ class AgentBossReview:
                 current = await _assigned(repo, program_id, session_id)
                 if current.verdict is not None:
                     return BossGrade.model_validate(current.verdict)
-                raise AppError("boss_review_stale", "L’évaluation a évolué.", 409)
+                raise AppError("boss_review_stale", "The evaluation has changed.", 409)
             if proof:
-                item = evidence(
-                    "ide", row.ide_session_id, "Boss de fin de programme réussi", utcnow()
-                )
+                item = evidence("ide", row.ide_session_id, "End-of-program Boss passed", utcnow())
                 await SkillsService(db, user_id).raise_levels([SKILL], "en_cours", item)
             await db.commit()
             return grade

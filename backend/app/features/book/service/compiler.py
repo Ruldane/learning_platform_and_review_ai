@@ -1,4 +1,4 @@
-"""Rendu complet d'une édition avant de l'exposer au stockage."""
+"""Full rendering of an edition before exposing it to storage."""
 
 import asyncio
 from base64 import b64encode
@@ -38,7 +38,7 @@ def _pdf_document(book: PreparedBook, diagrams: Mapping[str, bytes]) -> HtmlDocu
 
 def _serialize(book: PreparedBook, diagrams: Mapping[str, bytes]) -> tuple[HtmlDocument, bytes]:
     epub = epub_bytes(book, diagrams)
-    # Le PDF remplace les références EPUB par des images embarquées dans le document HTML.
+    # The PDF replaces EPUB references with images embedded in the HTML document.
     return _pdf_document(book, diagrams), epub
 
 
@@ -48,7 +48,7 @@ async def compile_book(
     *,
     diagram_layout: PdfLayoutExtractor | None = None,
 ) -> BookFiles:
-    """Compile les deux formats à partir du même instantané, pour un travail de fond."""
+    """Compile both formats from the same snapshot, for a background job."""
     book = await asyncio.to_thread(prepare_book, source)
     diagrams = await render_diagrams(book, renderer, diagram_layout)
     document, epub = await asyncio.to_thread(_serialize, book, diagrams)

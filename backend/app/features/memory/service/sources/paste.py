@@ -9,8 +9,8 @@ from app.features.memory.service.sources.base import (
 
 
 class PasteSource:
-    """Texte collé, enregistré en `.txt` comme un fichier (D66) ; titre : celui saisi, sinon
-    « Texte collé du JJ/MM/AAAA », déjà posé comme nom du document à sa création."""
+    """Pasted text, stored as a `.txt` file (D66); title: the one entered, otherwise
+    "Pasted text from DD/MM/YYYY", already set as the document name on creation."""
 
     kind: DocumentSourceKind = "paste"
 

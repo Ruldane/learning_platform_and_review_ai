@@ -1,4 +1,4 @@
-"""L’évaluateur reçoit les textes A et B, sans métadonnées de provenance."""
+"""The assessor receives texts A and B, without provenance metadata."""
 
 from dataclasses import dataclass
 from typing import Annotated, Protocol
@@ -40,12 +40,12 @@ class BlindAssessmentStore(Protocol):
 
 class _MissingBlind:
     async def context(self, user_id: str, assessment_id: str, session_id: str) -> BlindContext:
-        raise RuntimeError("Le port de l’épreuve en aveugle n’est pas branché.")
+        raise RuntimeError("The blind assessment port is not wired.")
 
     async def finish(
         self, user_id: str, assessment_id: str, session_id: str, grade: BlindGrade
     ) -> None:
-        raise RuntimeError("Le port de l’épreuve en aveugle n’est pas branché.")
+        raise RuntimeError("The blind assessment port is not wired.")
 
 
 NO_BLIND: BlindAssessmentStore = _MissingBlind()

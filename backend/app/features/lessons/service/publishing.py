@@ -1,8 +1,8 @@
-"""Suites de la publication d'une leçon (D91), chacune idempotente et sans transaction ouverte
-pendant le réseau (D66) : copies locales des PDF libres des ressources (sinon fiche de lecture),
-PDF A4 de la leçon (Gotenberg), leçon rangée dans la mémoire (`lecon`). Une panne de l'une est
-journalisée par son type et n'empêche ni les autres ni la publication : la leçon se lit dans
-l'application et le rejeu du nœud (ou la prochaine publication) rattrape ce qui manque."""
+"""Follow-ups of a lesson's publication (D91), each idempotent and with no transaction open
+during network calls (D66): local copies of the resources' free PDFs (otherwise a reading note),
+the lesson's A4 PDF (Gotenberg), the lesson stored in memory (`lecon`). A failure of one is
+logged by its type and blocks neither the others nor the publication: the lesson can be read in
+the application and replaying the node (or the next publication) catches up on what is missing."""
 
 import logging
 from dataclasses import dataclass
@@ -22,7 +22,7 @@ AUTHOR = "writer"
 
 @dataclass(frozen=True)
 class Published:
-    """Ce que les suites relisent de la leçon publiée."""
+    """What the follow-ups read back from the published lesson."""
 
     user_id: str
     session_id: str
@@ -36,7 +36,7 @@ class Published:
 
 
 async def _pending_copies(rt: LessonsRuntime, p: Published) -> list[tuple[str, str, str | None]]:
-    """`(ressource, adresse, source)` des ressources dont la copie n'a pas encore été tentée."""
+    """`(resource, address, source)` of the resources whose copy has not been attempted yet."""
     async with rt.session_factory() as db:
         rows = await ResourceRepository(db, p.user_id).for_module(p.module_id)
     return [
@@ -47,15 +47,15 @@ async def _pending_copies(rt: LessonsRuntime, p: Published) -> list[tuple[str, s
 
 
 async def _notes(rt: LessonsRuntime, p: Published) -> dict[str, str]:
-    """Fiche de lecture de chaque source de la session : son résumé, à défaut sa raison."""
+    """Reading note of each source of the session: its summary, otherwise its reason."""
     async with rt.session_factory() as db:
         sources = await list_sources(db, p.user_id, p.session_id)
     return {s.id: ((s.summary or s.reason or "").strip()[:READING_NOTE_MAX]) for s in sources}
 
 
 async def copy_resources(rt: LessonsRuntime, p: Published) -> None:
-    """PDF librement téléchargeable → copie locale (catégorie `resources`), sinon fiche de
-    lecture. Une ressource tranchée (copie ou fiche) ne se retente pas au rejeu."""
+    """Freely downloadable PDF → local copy (`resources` category), otherwise a reading note.
+    A settled resource (copy or note) is not retried on replay."""
     pending = await _pending_copies(rt, p)
     if not pending:
         return
@@ -64,10 +64,10 @@ async def copy_resources(rt: LessonsRuntime, p: Published) -> None:
     for resource_id, url, source_id in pending:
         data = await download_pdf(rt.research, p.user_id, url)
         key = None if data is None else await rt.storage.save(p.user_id, "resources", data, ".pdf")
-        note = notes.get(source_id or "") or "Fiche indisponible."
+        note = notes.get(source_id or "") or "Note unavailable."
         copied += await _settle(rt, p.user_id, resource_id, key, note, publication=p)
     logger.info(
-        "Ressources : leçon %s, %d copie(s) locale(s) sur %d", p.lesson_id, copied, len(pending)
+        "Resources: lesson %s, %d local copy(ies) out of %d", p.lesson_id, copied, len(pending)
     )
 
 
@@ -80,9 +80,9 @@ async def _settle(
     *,
     publication: Published | None = None,
 ) -> bool:
-    """Copie (ou, sans copie, fiche) rangée sur la ressource ; rend « copie gardée ». Une copie
-    non gardée (rangée entre-temps par un autre appel, ressource disparue, écriture en échec)
-    est supprimée du disque : jamais de fichier orphelin."""
+    """Stores the copy (or, without a copy, the note) on the resource; returns "copy kept". A
+    copy not kept (stored meanwhile by another call, resource gone, failed write) is deleted
+    from disk: never an orphan file."""
     kept = False
     try:
         async with rt.session_factory() as db:
@@ -103,7 +103,7 @@ async def _settle(
 
 
 async def lesson_pdf(rt: LessonsRuntime, p: Published) -> bool:
-    """PDF A4 de la leçon (catégorie `lessons`), une seule fois ; `False` s'il manque encore."""
+    """The lesson's A4 PDF (`lessons` category), only once; `False` if still missing."""
     async with rt.session_factory() as db:
         lesson = await LessonRepository(db, p.user_id).get_fresh(p.lesson_id)
         if lesson is None or lesson.session_id != p.session_id:
@@ -118,7 +118,7 @@ async def lesson_pdf(rt: LessonsRuntime, p: Published) -> bool:
         kept = await repo.set_pdf_key(p.lesson_id, key, p.session_id)
         lesson = await repo.get_fresh(p.lesson_id)
         await db.commit()
-    if not kept:  # rangé entre-temps par un autre appel (ou leçon disparue) : le nôtre est en trop
+    if not kept:  # stored meanwhile by another call (or lesson gone): ours is redundant
         await rt.storage.delete(p.user_id, key)
     return lesson is not None and lesson.session_id == p.session_id and lesson.pdf_key is not None
 
@@ -132,13 +132,13 @@ async def render_pdf_key(
         )
         return await rt.storage.save(user_id, "lessons", pdf, ".pdf")
     except Exception as exc:
-        logger.warning("PDF de la leçon %s non produit (%s)", lesson_id, type(exc).__name__)
+        logger.warning("PDF of lesson %s not produced (%s)", lesson_id, type(exc).__name__)
         return None
 
 
 async def remember(rt: LessonsRuntime, p: Published) -> None:
-    """La leçon dans la mémoire (`lecon` : titre, Markdown, étiquette du programme) ; le même
-    contenu rejoué n'écrit rien de plus (dédoublonnage de la mémoire)."""
+    """The lesson in memory (`lecon`: title, Markdown, program tag); the same content replayed
+    writes nothing more (memory deduplication)."""
     try:
         async with rt.session_factory() as db:
             if not await LessonRepository(db, p.user_id).claim_published(p.lesson_id, p.session_id):
@@ -153,20 +153,20 @@ async def remember(rt: LessonsRuntime, p: Published) -> None:
                 tags=(p.program_title,),
                 author=AUTHOR,
                 session_id=p.session_id,
-                reason="Leçon du programme publiée après contrôle du Vérificateur.",
+                reason="Program lesson published after the Verifier's check.",
             )
             await db.commit()
         schedule_indexing(rt.memory, p.user_id)
     except Exception as exc:
-        logger.warning("Leçon %s non rangée en mémoire (%s)", p.lesson_id, type(exc).__name__)
+        logger.warning("Lesson %s not stored in memory (%s)", p.lesson_id, type(exc).__name__)
 
 
 async def finish(rt: LessonsRuntime, p: Published) -> bool:
-    """Les trois suites ; rend « le PDF de la leçon est prêt »."""
+    """The three follow-ups; returns "the lesson PDF is ready"."""
     try:
         await copy_resources(rt, p)
     except Exception as exc:
-        logger.warning("Ressources de la leçon %s (%s)", p.lesson_id, type(exc).__name__)
+        logger.warning("Resources of lesson %s (%s)", p.lesson_id, type(exc).__name__)
     pdf_ok = await lesson_pdf(rt, p)
     await remember(rt, p)
     return pdf_ok

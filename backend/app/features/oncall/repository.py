@@ -1,4 +1,4 @@
-"""Accès par compte et réservation atomique des transitions du simulateur."""
+"""Per-account access and atomic reservation of the simulator transitions."""
 
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
@@ -10,7 +10,7 @@ from app.db.repository import UserScopedRepository
 
 
 def diagnostic_in_progress() -> AppError:
-    return AppError("diagnostic_in_progress", "Un autre diagnostic est en cours.", 409)
+    return AppError("diagnostic_in_progress", "Another diagnostic is in progress.", 409)
 
 
 class IncidentRepository(UserScopedRepository[OncallIncident]):
@@ -47,7 +47,7 @@ class IncidentRepository(UserScopedRepository[OncallIncident]):
     async def require(self, incident_id: str) -> OncallIncident:
         row = await self.get_fresh(incident_id)
         if row is None:
-            raise AppError("incident_not_found", "Incident introuvable.", 404)
+            raise AppError("incident_not_found", "Incident not found.", 404)
         return row
 
     async def claim(self, row: OncallIncident) -> None:
@@ -64,7 +64,7 @@ class IncidentRepository(UserScopedRepository[OncallIncident]):
             .execution_options(synchronize_session=False)
         )
         if (await self.session.execute(stmt)).scalar_one_or_none() is None:
-            raise AppError("incident_changed", "L’incident a évolué. Relis son journal.", 409)
+            raise AppError("incident_changed", "The incident has changed. Reread its log.", 409)
         set_committed_value(row, "version", version + 1)
 
     async def reserve_diagnostic(self, row: OncallIncident, run_id: str, fingerprint: str) -> None:
@@ -75,7 +75,7 @@ class IncidentRepository(UserScopedRepository[OncallIncident]):
             fingerprint,
         )
         try:
-            # Vérifie l'unicité par compte avant tout dépôt dans le bac.
+            # Checks per-account uniqueness before anything is put in the sandbox.
             await self.session.flush()
         except IntegrityError:
             raise diagnostic_in_progress() from None

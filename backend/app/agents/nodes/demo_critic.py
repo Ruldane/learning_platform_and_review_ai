@@ -1,4 +1,4 @@
-"""Nœud du Critique : répond nommément au Défenseur, puis clôt le tour."""
+"""Critic node: answers the Proponent by name, then closes the round."""
 
 from app.agents.nodes.demo_turn import play_turn
 from app.agents.runtime.deps import GraphDeps
@@ -19,7 +19,7 @@ def make_critic(deps: GraphDeps) -> DebateNode:
             state,
             agent=AGENT,
             previous=last_proponent,
-            intent="Je cherche la limite de l'argument du Défenseur.",
+            intent="I look for the limit of the Proponent's argument.",
         )
         update["round"] = state.get("round", 0) + 1
         return update

@@ -10,7 +10,7 @@ REASON_MAX = 300
 
 
 class WriteRepository(UserScopedRepository[MemoryWrite]):
-    """Journal des écritures de la mémoire (agents et utilisateur)."""
+    """Write log of the memory (agents and user)."""
 
     model = MemoryWrite
 
@@ -23,8 +23,8 @@ class WriteRepository(UserScopedRepository[MemoryWrite]):
         session_id: str | None,
         reason: str | None,
     ) -> MemoryWrite:
-        """Note une écriture ; le titre et le type de l'élément sont copiés pour que la ligne
-        survive à sa suppression."""
+        """Records a write; the item's title and kind are copied so the row survives its
+        deletion."""
         return await self.add(
             item_id=item.id,
             item_title=item.title,
@@ -60,10 +60,10 @@ class WriteRepository(UserScopedRepository[MemoryWrite]):
         *,
         skip: tuple[str, str, str],
     ) -> builtins.list[MemoryWrite]:
-        """Les écritures des agents (auteur autre que l'utilisatrice, hors suppressions) dans
-        `[after, before]` (bornes incluses), la plus récente d'abord (fil d'activité). `skip` =
-        (auteur, raison exacte, début de raison) : les écritures de cet auteur qui portent l'une
-        de ces raisons sont celles d'une action de l'utilisatrice (sa capture), écartées."""
+        """Agent writes (author other than the user, deletions excluded) within `[after, before]`
+        (inclusive bounds), most recent first (activity feed). `skip` = (author, exact reason,
+        reason prefix): this author's writes carrying one of these reasons come from an action
+        of the user (her capture) and are dropped."""
         author, reason, prefix = skip
         why = func.coalesce(MemoryWrite.reason, "")
         stmt = self._ordered().where(

@@ -1,20 +1,21 @@
-"""Markdown d'une leçon en HTML sûr (SPEC 3.5, 17.4, D89). La leçon est écrite par un agent qui
-a lu des pages web : son texte est **non fiable**.
+"""A lesson's Markdown as safe HTML (SPEC 3.5, 17.4, D89). The lesson is written by an agent
+that read web pages: its text is **untrusted**.
 
-1. `markdown-it-py` en `commonmark` avec tables ; le **HTML brut n'est jamais rendu** : le
-   parseur le reconnaît pour le neutraliser. Une balise en ligne (`html_inline`) est **retirée**
-   (D89) ; un bloc HTML (`html_block`) devient du **texte échappé** dans un `<p>` (D97) : un
-   `<pre>` ou `<script>` jamais refermé, qui court jusqu'à la fin du document, n'avale plus la
-   suite de la leçon. Le Vérificateur refuse de toute façon le HTML brut hors du code. Une image
-   devient son texte de remplacement (rien n'est chargé).
-2. Bloc ```` ```mermaid ```` : analysé par la grammaire stricte du Scribe puis **réémis**
-   (`normalize_mermaid`, D85 §11f) ; seule la version régénérée entre dans `<pre class="mermaid">`,
-   au texte échappé. Refusé : un encadré « schéma indisponible », jamais le code d'origine.
-3. Sections de niveau 2 : titre ancré (`s<n>-<slug>`), sommaire, encadrés pour « L'essentiel en
-   5 lignes » et « Erreurs fréquentes ».
-4. `nh3.clean` en liste blanche : balises `ALLOWED_TAGS`, attributs `href` / `id` / `class`
-   (classes connues seulement), liens `http` et `https` (relatifs refusés), `rel="noopener
-   noreferrer"`. Ni script, ni style, ni gestionnaire d'événement, ni image, ni iframe."""
+1. `markdown-it-py` in `commonmark` mode with tables; **raw HTML is never rendered**: the parser
+   recognizes it in order to neutralize it. An inline tag (`html_inline`) is **removed** (D89);
+   an HTML block (`html_block`) becomes **escaped text** inside a `<p>` (D97): a `<pre>` or
+   `<script>` never closed, running to the end of the document, no longer swallows the rest of
+   the lesson. The Verifier rejects raw HTML outside code anyway. An image becomes its
+   alternative text (nothing is loaded).
+2. ```` ```mermaid ```` block: parsed by the Scribe's strict grammar then **re-emitted**
+   (`normalize_mermaid`, D85 §11f); only the regenerated version goes into
+   `<pre class="mermaid">`, as escaped text. Rejected: a "diagram unavailable" box, never the
+   original code.
+3. Level-2 sections: anchored heading (`s<n>-<slug>`), table of contents, callouts for
+   « L'essentiel en 5 lignes » and « Erreurs fréquentes ».
+4. Allow-list `nh3.clean`: `ALLOWED_TAGS` tags, `href` / `id` / `class` attributes (known
+   classes only), `http` and `https` links (relative ones rejected), `rel="noopener
+   noreferrer"`. No script, style, event handler, image or iframe."""
 
 import re
 import unicodedata
@@ -40,17 +41,17 @@ _CLASSES = {
     "span": {"image-omitted"},
 }
 _ATTRIBUTES = {"a": {"href"}, "h2": {"id"}}
-# Au-delà, le texte est coupé : une leçon fait 1 200 à 2 500 mots (SPEC 3.5).
+# Beyond this, the text is cut: a lesson is 1,200 to 2,500 words long (SPEC 3.5).
 MAX_MARKDOWN_CHARS = 200_000
 MERMAID_BLOCK = '<pre class="mermaid">'
-UNAVAILABLE = '<aside class="diagram-unavailable"><p>Schéma indisponible.</p></aside>\n'
+UNAVAILABLE = '<aside class="diagram-unavailable"><p>Diagram unavailable.</p></aside>\n'
 
 
 @dataclass(frozen=True)
 class RenderedMarkdown:
     html: str
-    toc: list[tuple[str, str]]  # (ancre, titre de section)
-    diagrams: int  # blocs Mermaid acceptés (rendus en SVG si les scripts tournent)
+    toc: list[tuple[str, str]]  # (anchor, section title)
+    diagrams: int  # accepted Mermaid blocks (rendered as SVG if scripts run)
 
 
 def _fence(_renderer: Any, tokens: Sequence[Token], idx: int, _opts: Any, env: Any) -> str:
@@ -79,8 +80,8 @@ def _escaped_block(_renderer: Any, tokens: Sequence[Token], idx: int, _opts: Any
     return f"<p>{escapeHtml(tokens[idx].content.strip())}</p>\n"
 
 
-# `html: True` pour le parseur seulement : le HTML brut devient des jetons `html_inline`
-# (retirés) et `html_block` (texte échappé), jamais copiés tels quels.
+# `html: True` for the parser only: raw HTML becomes `html_inline` tokens (removed) and
+# `html_block` tokens (escaped text), never copied as is.
 _MD = MarkdownIt("commonmark", {"html": True}).enable("table")
 _MD.add_render_rule("fence", _fence)
 _MD.add_render_rule("image", _image)
@@ -89,7 +90,7 @@ _MD.add_render_rule("html_block", _escaped_block)
 
 
 def _plain(inline: Token) -> str:
-    """Texte d'un titre, sans mise en forme."""
+    """Text of a heading, without formatting."""
     parts = [t.content for t in inline.children or [] if t.type in ("text", "code_inline")]
     return " ".join("".join(parts).split())
 
@@ -114,7 +115,7 @@ def _section_class(title: str) -> str:
 
 
 def _chunks(tokens: list[Token]) -> list[list[Token]]:
-    """Découpe aux titres h2 de premier niveau (pas ceux d'une citation ou d'une liste)."""
+    """Splits at top-level h2 headings (not those inside a quote or a list)."""
     chunks: list[list[Token]] = [[]]
     for token in tokens:
         if token.type == "heading_open" and token.tag == "h2" and token.level == 0:
@@ -137,7 +138,7 @@ def _clean(html: str) -> str:
 
 
 def _without_title(tokens: list[Token]) -> list[Token]:
-    """Sans le premier titre h1 placé avant toute section : le PDF le porte déjà en couverture."""
+    """Without the first h1 before any section: the PDF already shows it on the cover."""
     for index, token in enumerate(tokens):
         if token.type == "heading_open" and token.level == 0 and token.tag in ("h1", "h2"):
             return tokens[:index] + tokens[index + 3 :] if token.tag == "h1" else tokens
@@ -145,8 +146,8 @@ def _without_title(tokens: list[Token]) -> list[Token]:
 
 
 def markdown_to_html(markdown: str, *, drop_title: bool = False) -> RenderedMarkdown:
-    """`drop_title` : retire le titre `# …` du début (PDF seulement, D97) ; la vue de
-    l'application lit le Markdown tel quel."""
+    """`drop_title`: removes the leading `# …` title (PDF only, D97); the application view
+    reads the Markdown as is."""
     env: dict[str, Any] = {"diagrams": 0}
     tokens = _MD.parse(markdown[:MAX_MARKDOWN_CHARS], env)
     if drop_title:

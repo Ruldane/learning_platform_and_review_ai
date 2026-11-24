@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.features.lessons.repository import LessonRepository
 
-# Les mots pédagogiques courants ne pointent vers aucun chapitre en particulier.
+# Common teaching words (French) point to no chapter in particular.
 _STOP = frozenset(
     [
         "avec",

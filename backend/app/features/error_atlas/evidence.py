@@ -1,4 +1,4 @@
-"""Projections de corrections conclues, sans relire les réponses en cours."""
+"""Projections of completed gradings, without rereading answers in progress."""
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -34,7 +34,7 @@ def _quiz_evidence(attempt: QuizAttempt, title: str) -> list[AtlasEvidenceOut]:
                     kind="quiz", resource_id=attempt.quiz_id, source_id=attempt.id, item_id=item_id
                 ),
                 title=title,
-                finding=finding or f"La correction attribue {points:g} sur 1 à cette question.",
+                finding=finding or f"The grading awards {points:g} out of 1 to this question.",
                 expected=_snippet(item.get("correct_answer")),
                 recorded_at=attempt.graded_at or attempt.created_at,
             )
@@ -69,7 +69,7 @@ def _project_evidence(project: Project) -> list[AtlasEvidenceOut]:
                     kind="project", resource_id=project.id, source_id=revision, item_id=str(index)
                 ),
                 title=project.title,
-                finding=_snippet(item.get("comment")) or "Ce critère est indiqué comme non rempli.",
+                finding=_snippet(item.get("comment")) or "This criterion is marked as not met.",
                 expected=expected,
                 recorded_at=at,
             )
@@ -99,5 +99,5 @@ async def read_evidence(
         available = [evidence for row in projects for evidence in _project_evidence(row)]
     match = next((evidence for evidence in available if evidence.reference == reference), None)
     if match is None:
-        raise AppError("atlas_evidence_not_found", "Correction ou critère introuvable.", 404)
+        raise AppError("atlas_evidence_not_found", "Grading or criterion not found.", 404)
     return match

@@ -1,7 +1,7 @@
-"""Les leçons dans la vie de l'application (D91) : ce que la production en chaîne, le port du
-Rédacteur (`AgentLessonStore`), la tâche planifiée et les routes partagent (base, lanceur de
-sessions, mémoire, recherche, stockage des fichiers, rendu PDF, verrous par programme). Créé par
-le lifespan avant le moteur d'agents (`app.state.lessons`), avec le lanceur encore non lié."""
+"""Lessons in the application's lifetime (D91): what chained production, the Writer's port
+(`AgentLessonStore`), the scheduled job and the routes share (database, session launcher, memory,
+research, file storage, PDF rendering, per-program locks). Created by the lifespan before the
+agent engine (`app.state.lessons`), with the launcher not bound yet."""
 
 import asyncio
 import weakref
@@ -20,7 +20,7 @@ from app.providers.storage.base import FileStorage
 
 
 class Launcher(Protocol):
-    """Ce que la production attend du lanceur de sessions (`SessionLauncher`, D82)."""
+    """What production expects from the session launcher (`SessionLauncher`, D82)."""
 
     async def start(
         self,
@@ -35,9 +35,9 @@ class Launcher(Protocol):
 
 
 class ProgramLocks:
-    """Verrous des leçons, un par programme : la production (validation, tâche planifiée, fin
-    d'une leçon) passe dessous. Faibles : un verrou que plus personne ne tient disparaît. Propres
-    à ce processus (un seul worker, comme les verrous du programme et de la recherche)."""
+    """Lessons locks, one per program: production (validation, scheduled job, end of a lesson)
+    runs under them. Weak: a lock nobody holds anymore disappears. Local to this process (a
+    single worker, like the program and research locks)."""
 
     def __init__(self) -> None:
         self._locks: weakref.WeakValueDictionary[tuple[str, str], asyncio.Lock] = (

@@ -1,4 +1,4 @@
-"""Vue de projet à restaurer après une réouverture ou une modification des fichiers."""
+"""Project view to restore after reopening or after the files change."""
 
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -18,7 +18,7 @@ class ProjectTabs:
     active_path: str | None
 
     def renamed(self, source: str, destination: str) -> "ProjectTabs":
-        """La position et la sélection d'un fichier suivent son nouveau chemin."""
+        """A file's position and selection follow its new path."""
         return ProjectTabs(
             tuple(destination if path == source else path for path in self.open_paths),
             destination if self.active_path == source else self.active_path,
@@ -71,5 +71,5 @@ async def save(ctx: IdeContext, session_id: str, draft: ProjectTabsState) -> Pro
         .returning(IdeSession.id)
     )
     if (await ctx.db.execute(stmt)).scalar_one_or_none() is None:
-        raise AppError("project_changed", "Le projet a changé. Relis les onglets.", 409)
+        raise AppError("project_changed", "The project changed. Re-read the tabs.", 409)
     return state

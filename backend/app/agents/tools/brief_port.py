@@ -1,20 +1,18 @@
-"""Port du brief du jour (P11, D161). `app.agents` n'importe aucune feature (contrat 6) : il décrit
-ici ce dont le parcours `daily_brief` a besoin ; la feature `brief` l'implémente (tâche 8.6).
+"""Port of the daily brief (P11, D161). `app.agents` imports no feature (contract 6): it describes
+here what the `daily_brief` flow needs; the `brief` feature implements it (task 8.6).
 
-Le brief est un instantané du jour : le bloc, les révisions, les relances, les offres et
-l'avancement sont **calculés par le code** (feature `brief`) ; seules la ressource (l'Éclaireur) et
-les deux phrases du conseil (le Modérateur) passent par un modèle. Les faits du jour, le sujet et
-les textes rangés sont des données de l'utilisatrice ou du web (17.2, 17.4) : jamais journalisés.
+The brief is a snapshot of the day: the block, reviews, follow-ups, offers and progress are
+**computed by code** (`brief` feature); only the resource (the Scout) and the two advice sentences
+(the Moderator) go through a model. The day's facts, the topic and the stored texts are user or web
+data (17.2, 17.4): never logged.
 
-- `context` : lecture seule ; les faits du jour, ce qui est déjà rangé (`resource_done`,
-  `advice_done`) et les nombres que le conseil a le droit de citer (`allowed_numbers`, calculés par
-  le code sur les faits).
-- `save_resource` : la ressource du jour, `None` = rubrique vide (aucun sujet, aucune page lisible,
-  recherche en panne). Idempotent : la première écriture gagne, un nœud rejoué ne change rien.
-- `save_advice` : les deux phrases du conseil, `None` = conseil `failed` (un nombre inventé, ou
-  aucune réponse valable), ou `unavailable` (`unavailable=True` : aucun modèle, faute de clé).
-  Idempotent de même ; un conseil rangé `None` le reste toute la journée (jamais de nouvel
-  essai)."""
+- `context`: read only; the day's facts, what is already stored (`resource_done`, `advice_done`)
+  and the numbers the advice may quote (`allowed_numbers`, computed by code from the facts).
+- `save_resource`: the day's resource, `None` = empty section (no topic, no readable page, search
+  down). Idempotent: the first write wins, a replayed node changes nothing.
+- `save_advice`: the two advice sentences, `None` = `failed` advice (an invented number, or no
+  valid answer), or `unavailable` (`unavailable=True`: no model, for lack of a key). Idempotent
+  too; advice stored as `None` stays so all day (never retried)."""
 
 from dataclasses import dataclass
 from datetime import date
@@ -23,8 +21,8 @@ from typing import Literal, Protocol
 from app.agents.tools.brief_schema import ResourceView
 from app.core.errors import AppError
 
-# Les codes d'erreur de la fabrique de modèles quand aucun modèle ne peut être construit (aucune
-# clé, clé illisible, fournisseur inconnu) : le conseil est alors « indisponible », pas « échoué ».
+# Error codes of the model factory when no model can be built (no key, unreadable key, unknown
+# provider): the advice is then "unavailable", not "failed".
 MODEL_UNAVAILABLE_CODES = frozenset(
     {"llm_key_missing", "llm_key_unreadable", "llm_provider_unknown"}
 )
@@ -32,19 +30,19 @@ MODEL_UNAVAILABLE_CODES = frozenset(
 
 @dataclass(frozen=True)
 class AdviceFacts:
-    """Les faits du jour, tels que le code les a comptés. Le conseil ne dit rien d'autre."""
+    """The day's facts, as counted by code. The advice says nothing else."""
 
-    # Un fait `None` : sa rubrique était en panne ce matin (`unavailable`) ; le conseil ne le reçoit
-    # pas, jamais un zéro de remplacement. `block_minutes` `None` : le bloc est indisponible.
-    block_title: str | None  # le bloc d'étude du jour (`None` : aucun bloc prévu)
+    # A `None` fact: its section was down this morning (`unavailable`); the advice does not receive
+    # it, never a replacement zero. `block_minutes` `None`: the block is unavailable.
+    block_title: str | None  # the day's study block (`None`: no block planned)
     block_minutes: int | None
-    cards_due: int | None  # fiches à réviser
-    reminders_due: int | None  # relances de candidature à faire
-    offers: int | None  # offres à regarder
-    best_score: int | None  # meilleur score de quiz récent
-    week_planned: int | None  # tâches prévues cette semaine
-    week_done: int | None  # tâches faites cette semaine
-    streak_days: int | None  # jours d'étude de suite
+    cards_due: int | None  # cards to review
+    reminders_due: int | None  # application follow-ups due
+    offers: int | None  # offers to look at
+    best_score: int | None  # best recent quiz score
+    week_planned: int | None  # tasks planned this week
+    week_done: int | None  # tasks done this week
+    streak_days: int | None  # consecutive study days
 
 
 @dataclass(frozen=True)
@@ -52,11 +50,11 @@ class BriefContext:
     brief_id: str
     day: date
     language: Literal["fr", "en"]
-    topic: str | None  # le sujet de la ressource (`None` : aucune recherche)
+    topic: str | None  # the resource topic (`None`: no search)
     facts: AdviceFacts
     resource_done: bool
     advice_done: bool
-    allowed_numbers: frozenset[str]  # nombres permis dans le conseil (forme canonique)
+    allowed_numbers: frozenset[str]  # numbers allowed in the advice (canonical form)
 
 
 class BriefStore(Protocol):
@@ -78,11 +76,11 @@ class BriefStore(Protocol):
 
 
 def brief_unavailable() -> AppError:
-    return AppError("brief_unavailable", "Le brief du jour n'est pas branché sur ce moteur.", 503)
+    return AppError("brief_unavailable", "The daily brief is not wired to this engine.", 503)
 
 
 class _NoBrief:
-    """Valeur par défaut du moteur (tests, démarrages sans la feature)."""
+    """Engine default (tests, startups without the feature)."""
 
     async def context(self, user_id: str, brief_id: str) -> BriefContext:
         raise brief_unavailable()

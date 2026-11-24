@@ -1,4 +1,4 @@
-"""Routes et outils MCP des nouveaux parcours Tremplin."""
+"""Routes and MCP tools of the new Tremplin workflows."""
 
 from app.features.blind_assessment.mcp import MCP as blind_assessment_mcp
 from app.features.blind_assessment.router import router as blind_assessment_router

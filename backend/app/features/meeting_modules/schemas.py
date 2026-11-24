@@ -28,7 +28,7 @@ class MeetingSelection(BaseModel):
     @model_validator(mode="after")
     def unique_lines(self) -> Self:
         if len(self.lines) != len(set(self.lines)):
-            raise ValueError("Chaque ligne doit être sélectionnée une seule fois.")
+            raise ValueError("Each line must be selected only once.")
         return self
 
 

@@ -1,1 +1,1 @@
-"""Brief du jour : rubriques calculées par le code, ressource et conseil (phase 8, F17)."""
+"""Daily brief: sections computed by the code, resource and advice (phase 8, F17)."""

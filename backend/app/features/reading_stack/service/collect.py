@@ -1,4 +1,4 @@
-"""Collecte de liens publics avec les limites et les fournisseurs de la recherche."""
+"""Collect public links with the research limits and providers."""
 
 import logging
 from collections.abc import Sequence
@@ -87,9 +87,7 @@ async def _from_source(
     try:
         candidates = await _candidates(rt, user_id, source, excluded)
     except AppError as exc:
-        logger.warning(
-            "Collecte de lecture : utilisateur %s, source %s, %s", user_id, source.id, exc.code
-        )
+        logger.warning("Reading collection: user %s, source %s, %s", user_id, source.id, exc.code)
         return []
     articles: list[CollectedItem] = []
     attempts = 0

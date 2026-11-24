@@ -1,1 +1,1 @@
-"""Préparation, anonymisation et résultat de l’épreuve."""
+"""Preparation, anonymisation and result of the assessment."""

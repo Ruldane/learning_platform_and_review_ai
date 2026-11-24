@@ -1,13 +1,13 @@
-"""Le catalogue des agents dont le modèle se surcharge (mode avancé, P17) : le registre `AGENTS`,
-sans les agents de démonstration, dans l'ordre du registre."""
+"""The catalog of agents whose model can be overridden (advanced mode, P17): the `AGENTS`
+registry, without the demo agents, in registry order."""
 
 from app.agents.registry import AGENTS
 from app.features.settings.schemas import AgentOut, is_overridable
 
 
 def agent_catalogue() -> list[AgentOut]:
-    """Nom et niveau de chaque agent de `AGENTS` hors `demo_*`, dans l'ordre du registre (celui
-    des équipes d'agents : le front l'affiche tel quel)."""
+    """Name and tier of each agent in `AGENTS` except `demo_*`, in registry order (that of the
+    agent teams: the front shows it as is)."""
     return [
         AgentOut(name=spec.name, tier=spec.tier)
         for spec in AGENTS.values()

@@ -15,7 +15,7 @@ from app.providers.storage.base import StorageKeyInvalid
 
 
 def missing() -> AppError:
-    return AppError("portfolio_not_found", "Portfolio introuvable.", 404)
+    return AppError("portfolio_not_found", "Portfolio not found.", 404)
 
 
 def draft_view(site: PortfolioSite, row: PortfolioDraft, origin: str | None) -> PortfolioDraftOut:
@@ -54,7 +54,7 @@ async def build(rt: PortfolioRuntime, user_id: str, requested: SelectDraft) -> P
         picked = [item for item in available if item.id in selected]
         if selected != {item.id for item in picked}:
             raise AppError(
-                "portfolio_choices_changed", "Certains faits ont changé. Relis la sélection.", 409
+                "portfolio_choices_changed", "Some facts have changed. Review the selection.", 409
             )
         data = html(picked)
         try:

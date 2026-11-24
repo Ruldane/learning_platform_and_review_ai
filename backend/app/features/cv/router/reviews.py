@@ -1,8 +1,8 @@
-"""API des revues de CV et des décisions de January (SPEC 5.3, 14.2 ; D130). `POST /cv/reviews`
-fige le profil validé et le gabarit actif puis lance le parcours `cv_review` ; les décisions
-(`PATCH /cv/modifications/{id}`, `PATCH /cv/reviews/{id}/modifications`) et « Générer le PDF »
-(`POST /cv/reviews/{id}/generate`) passent par le verrou des revues. Une 422 nomme les champs,
-jamais leur valeur."""
+"""API of CV reviews and of January's decisions (SPEC 5.3, 14.2; D130). `POST /cv/reviews`
+freezes the validated profile and the active template then starts the `cv_review` flow; the
+decisions (`PATCH /cv/modifications/{id}`, `PATCH /cv/reviews/{id}/modifications`) and "Generate
+the PDF" (`POST /cv/reviews/{id}/generate`) go through the reviews lock. A 422 names the fields,
+never their value."""
 
 from typing import Annotated, Any
 
@@ -33,7 +33,7 @@ Id = Annotated[str, Path(min_length=1, max_length=36)]
 
 
 def errors(**by_status: str) -> dict[int | str, dict[str, Any]]:
-    """Réponses d'erreur documentées : `{error: {code, message, details}}`, codes listés."""
+    """Documented error responses: `{error: {code, message, details}}`, codes listed."""
     return {
         int(code.removeprefix("e")): {"model": ErrorOut, "description": text}
         for code, text in by_status.items()
@@ -47,15 +47,15 @@ def errors(**by_status: str) -> dict[int | str, dict[str, Any]]:
     responses=errors(
         e404="`posting_not_found`",
         e409=(
-            "`posting_not_ready` (offre pas encore analysée), `profile_required` (aucun profil "
-            "validé), `template_required` (aucun modèle actif prêt), `review_in_progress` "
-            "(`details.review_id` : la revue en cours de cette offre)"
+            "`posting_not_ready` (posting not analysed yet), `profile_required` (no validated "
+            "profile), `template_required` (no ready active template), `review_in_progress` "
+            "(`details.review_id`: the review in progress for this posting)"
         ),
         e503="`engine_unavailable`",
     ),
 )
 async def post_review(body: ReviewStart, current: CurrentUserDep, rt: CvDep) -> ReviewStarted:
-    """Lance la revue du CV contre l'offre ; le profil (sa version) et le gabarit sont figés."""
+    """Reviews the CV against the posting; the profile (its version) and template are frozen."""
     return await start_review(rt, current.id, body.posting_id)
 
 
@@ -65,7 +65,7 @@ async def get_reviews(
     rt: CvDep,
     posting_id: Annotated[str | None, Query(min_length=1, max_length=36)] = None,
 ) -> list[CvReviewOut]:
-    """Les revues (d'une offre), la plus récente d'abord."""
+    """The reviews (of a posting), newest first."""
     return await list_reviews(rt, current.id, posting_id)
 
 
@@ -86,8 +86,8 @@ async def get_one_review(review_id: Id, current: CurrentUserDep, rt: CvDep) -> C
 async def patch_modifications(
     review_id: Id, body: BulkDecision, current: CurrentUserDep, rt: CvDep
 ) -> BulkResult:
-    """Décision groupée (50 au plus) ; les « à confirmer » ne sont jamais acceptés en groupe :
-    ils reviennent dans `skipped`, avec les identifiants inconnus."""
+    """Bulk decision (50 at most); "to confirm" ones are never accepted in bulk: they come
+    back in `skipped`, along with unknown identifiers."""
     return await decide_many(rt, current.id, review_id, body)
 
 
@@ -98,9 +98,9 @@ async def patch_modifications(
     responses=errors(
         e404="`review_not_found`",
         e409=(
-            "`review_closed` (revue terminée ou en échec), `generation_in_progress` "
-            "(`details.version_id` : la version en rendu), `review_not_waiting` (la revue "
-            "n'attend pas « Que veux-tu maintenant ? »)"
+            "`review_closed` (review finished or failed), `generation_in_progress` "
+            "(`details.version_id`: the version being rendered), `review_not_waiting` (the review "
+            'is not waiting on "What do you want now?")'
         ),
         e503="`engine_unavailable`",
     ),
@@ -108,9 +108,9 @@ async def patch_modifications(
 async def post_generate(
     review_id: Id, current: CurrentUserDep, rt: CvDep, body: GenerateIn | None = None
 ) -> GenerateStarted:
-    """Crée la version (décisions figées au clic) et reprend la question de sortie ; le PDF se
-    suit par `GET /cv/versions/{id}` (statut `rendering` puis `ready`, `pages_exceeded` ou
-    `failed`) ou par l'événement `artifact.ready` de la session."""
+    """Creates the version (decisions frozen at the click) and resumes the output question; the
+    PDF is followed through `GET /cv/versions/{id}` (status `rendering` then `ready`,
+    `pages_exceeded` or `failed`) or through the session's `artifact.ready` event."""
     return await generate(rt, current.id, review_id, body or GenerateIn())
 
 
@@ -120,21 +120,21 @@ async def post_generate(
     responses=errors(
         e404="`modification_not_found`",
         e409=(
-            "`review_closed`, `confirmation_required` (« à confirmer » sans `confirm: true`), "
-            "`fact_not_found` (le fait visé n'est plus dans le profil), `profile_conflict`, "
-            "`profile_draft_pending` (un brouillon du profil attend sa validation : le valider "
-            "avant de confirmer un fait)"
+            '`review_closed`, `confirmation_required` ("to confirm" without `confirm: true`), '
+            "`fact_not_found` (the targeted fact is no longer in the profile), `profile_conflict`, "
+            "`profile_draft_pending` (a profile draft awaits validation: validate it before "
+            "confirming a fact)"
         ),
         e422=(
-            "`validation_error` (`details.fields`), `keyword_not_in_profile` (le texte cite un "
-            "mot clé de l'offre absent du profil) ; jamais la valeur reçue"
+            "`validation_error` (`details.fields`), `keyword_not_in_profile` (the text cites a "
+            "posting keyword missing from the profile); never the value received"
         ),
     ),
 )
 async def patch_modification(
     modification_id: Id, body: ModificationPatch, current: CurrentUserDep, rt: CvDep
 ) -> ModificationOut:
-    """Accepte ou refuse ; `after` : texte réécrit, revalidé (il peut rester « à confirmer ») ;
-    `confirm: true` : accepte une modification « à confirmer », son fait entre au profil maître
-    (nouvelle version validée)."""
+    """Accepts or refuses; `after`: rewritten text, revalidated (it may stay "to confirm");
+    `confirm: true`: accepts a "to confirm" modification, its fact enters the master profile
+    (new validated version)."""
     return await decide(rt, current.id, modification_id, body)

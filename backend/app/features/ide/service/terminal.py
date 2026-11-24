@@ -1,4 +1,4 @@
-"""Relais du terminal. Aucune commande n'est interprétée dans le service de l'IDE."""
+"""Terminal relay. No command is interpreted in the IDE service."""
 
 from app.core.errors import AppError
 from app.db.models.ide import IdeRun
@@ -25,7 +25,7 @@ async def _owned(ctx: IdeContext, run_id: str) -> IdeRun:
 
 
 def _closed() -> AppError:
-    return AppError("terminal_closed", "Ce terminal est fermé.", 409)
+    return AppError("terminal_closed", "This terminal is closed.", 409)
 
 
 async def start(ctx: IdeContext, session_id: str) -> TerminalStarted:
@@ -46,12 +46,12 @@ async def send(ctx: IdeContext, run_id: str, text: str) -> None:
     try:
         data = text.encode()
         if not 0 < len(data) <= MAX_INPUT_CHUNK_BYTES:
-            raise ValueError("taille invalide")
+            raise ValueError("invalid size")
         await _sandbox(ctx).write_input(run.id, data)
     except UnknownRun:
         raise _closed() from None
     except ValueError:
-        raise AppError("terminal_input_invalid", "Entrée trop longue ou illisible.", 422) from None
+        raise AppError("terminal_input_invalid", "Input too long or unreadable.", 422) from None
     except OSError:
         raise sandbox_unavailable() from None
 

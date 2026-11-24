@@ -19,7 +19,7 @@ def get_health_service(providers: Annotated[Providers, Depends(get_providers)]) 
 async def health(
     service: Annotated[HealthService, Depends(get_health_service)],
 ) -> HealthReport:
-    """Toujours 200 et sans authentification : le front lit `status`."""
+    """Always 200 and without authentication: the front end reads `status`."""
     return await service.run()
 
 
@@ -27,11 +27,11 @@ async def health(
 async def embedding_progress(
     providers: Annotated[Providers, Depends(get_providers)],
 ) -> EmbeddingProgress:
-    """Progression du modèle d'embeddings (`bge-m3`) : public, comme `/health`. Si le modèle
-    manque, le back le télécharge depuis Ollama, un téléchargement à la fois (relancé après un
-    échec)."""
-    if providers.embedding is None:  # jamais en service : `build_providers` le pose toujours
-        raise AppError("not_implemented", "Pas encore disponible.", 501)
+    """Progress of the embeddings model (`bge-m3`): public, like `/health`. If the model
+    is missing, the back end downloads it from Ollama, one download at a time (restarted after a
+    failure)."""
+    if providers.embedding is None:  # never in production: `build_providers` always sets it
+        raise AppError("not_implemented", "Not available yet.", 501)
     data = await providers.embedding.progress()
     return EmbeddingProgress(
         model=data.model, present=data.present, percent=data.percent, detail=data.detail

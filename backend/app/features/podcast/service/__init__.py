@@ -1,1 +1,1 @@
-"""Préparation et publication du podcast."""
+"""Podcast preparation and publication."""

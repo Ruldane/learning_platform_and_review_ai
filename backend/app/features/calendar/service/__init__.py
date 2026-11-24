@@ -1,4 +1,4 @@
-"""Services de la connexion, de la disponibilité et des confirmations Agenda."""
+"""Services for the Calendar connection, availability and confirmations."""
 
 from app.features.calendar.service.oauth import status as connection_status
 

@@ -9,9 +9,9 @@ MCP = FeatureMcp(
             "GET /future-self",
             1,
             "future_self_get_projection",
-            "Compare les rythmes d'étude pour un poste (`role`), une zone (`zone`) et un programme "
-            "validé (`program_id`). `alternative_weekly_minutes` simule une autre disponibilité "
-            "hebdomadaire. `target_percent` indique la part d'offres visée (60 par défaut).",
+            "Compares study paces for a role (`role`), an area (`zone`) and a validated program "
+            "(`program_id`). `alternative_weekly_minutes` simulates another weekly availability. "
+            "`target_percent` sets the targeted share of postings (60 by default).",
             untrusted=("recommendations[].chapter.title", "recommendations[].chapter.skills[]"),
         ),
     ),

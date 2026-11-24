@@ -1,5 +1,5 @@
-"""Explorateur de la mémoire (4.6, D67) : carte 2D, statistiques, export JSON. Lectures seules ;
-le texte fait foi en base, l'index ne fournit que les vecteurs de la carte."""
+"""Memory explorer (4.6, D67): 2D map, statistics, JSON export. Read-only; the text in the
+database is authoritative, the index only provides the map's vectors."""
 
 from collections import defaultdict
 from datetime import UTC, datetime
@@ -28,15 +28,15 @@ from app.features.memory.service.projection import project_2d
 from app.features.memory.service.runtime import MemoryRuntime
 
 MAP_MAX_ITEMS = 2000
-# Plafond des vecteurs lus pour la carte (≈ 4 fois le quota Vectorize de référence à 1 024).
+# Cap on vectors read for the map (≈ 4 times the reference Vectorize quota at 1,024).
 MAP_MAX_VECTORS = 20_000
 VECTORIZE_LIMIT = 5_000_000
 
 
 async def memory_map(db: AsyncSession, user_id: str, runtime: MemoryRuntime) -> MapResponse:
-    """Un point par élément actif = moyenne de ses vecteurs ; les `MAP_MAX_ITEMS` plus récents
-    au plus (`truncated`). Un élément sans vecteur (non indexé) n'a pas de point. Qdrant ou
-    Ollama indisponible : 503 lisible (l'erreur du port)."""
+    """One point per active item = mean of its vectors; at most the `MAP_MAX_ITEMS` most recent
+    (`truncated`). An item without a vector (unindexed) has no point. Qdrant or Ollama
+    unavailable: readable 503 (the port's error)."""
     rows = await MemoryItemRepository(db, user_id).active(limit=MAP_MAX_ITEMS + 1)
     truncated = len(rows) > MAP_MAX_ITEMS
     rows = rows[:MAP_MAX_ITEMS]
@@ -62,9 +62,9 @@ async def memory_map(db: AsyncSession, user_id: str, runtime: MemoryRuntime) -> 
 async def memory_stats(
     db: AsyncSession, user_id: str, runtime: MemoryRuntime, settings: Settings
 ) -> StatsOut:
-    """Comptes par type (les 6, zéro compris) des éléments actifs, fragments, décisions en
-    attente, éléments non indexés, dernière écriture, part du quota Vectorize de référence
-    (fragments × dimension / 5 000 000), état de la réindexation, lien du tableau de bord."""
+    """Counts per kind (all 6, zero included) of active items, chunks, pending decisions,
+    unindexed items, last write, share of the reference Vectorize quota
+    (chunks × dimension / 5,000,000), reindex state, dashboard link."""
     items = MemoryItemRepository(db, user_id)
     counts = await items.count_by_kind()
     by_kind = {kind: counts.get(kind, 0) for kind in MEMORY_KINDS}
@@ -89,7 +89,7 @@ async def memory_stats(
 
 
 async def memory_export(db: AsyncSession, user_id: str) -> MemoryExport:
-    """Éléments (actifs et en attente), documents et journal complet ; aucun vecteur."""
+    """Items (active and pending), documents and the full log; no vectors."""
     items = await MemoryItemRepository(db, user_id).everything()
     documents = await DocumentRepository(db, user_id).list_recent(limit=None)
     writes = await WriteRepository(db, user_id).all()

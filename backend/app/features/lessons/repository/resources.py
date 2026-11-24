@@ -9,7 +9,7 @@ from app.db.repository import UserScopedRepository
 
 @dataclass(frozen=True)
 class ResourceFilter:
-    """Filtres de la Bibliothèque (SPEC 3.6) ; `None` : pas de filtre."""
+    """Library filters (SPEC 3.6); `None`: no filter."""
 
     program_id: str | None = None
     type: str | None = None

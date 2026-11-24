@@ -1,4 +1,4 @@
-"""Lecture locale du prochain événement confirmé, sans texte personnel."""
+"""Local read of the next confirmed event, without personal text."""
 
 from app.features.calendar.repository import Proposals
 from app.features.calendar.schemas import CalendarProposalOut, UpcomingEvent

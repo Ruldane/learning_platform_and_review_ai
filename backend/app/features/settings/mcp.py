@@ -34,9 +34,7 @@ PREFERENCE_FIELDS = frozenset(
     }
 )
 
-_SECRETS = (
-    "Clés d'API, modèles par niveau et surcharges par agent : niveau 4, jamais exposé au MCP."
-)
+_SECRETS = "API keys, models per tier and per-agent overrides: level 4, never exposed to MCP."
 
 MCP = FeatureMcp(
     feature="settings",
@@ -45,16 +43,16 @@ MCP = FeatureMcp(
             "GET /settings",
             1,
             "settings_get_preferences",
-            "Les préférences de January (disponibilité, rythme, étude, style, recherche, "
-            "fuseau). Jamais les modèles par niveau, les surcharges par agent ni les clés.",
+            "January's preferences (availability, pace, study, style, search, "
+            "time zone). Never the models per tier, the per-agent overrides or the keys.",
             response_fields=PREFERENCE_FIELDS,
         ),
         McpAction(
             "PUT /settings",
             2,
             "settings_update_preferences",
-            "Change des préférences : n'envoie que les champs à modifier, les autres sont "
-            "gardés. Les modèles et les clés ne se changent pas ici.",
+            "Changes preferences: send only the fields to modify, the others are "
+            "kept. Models and keys cannot be changed here.",
             body_fields=PREFERENCE_FIELDS,
             merge_from="GET /settings",
             response_fields=PREFERENCE_FIELDS,

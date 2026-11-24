@@ -1,9 +1,9 @@
-"""Qui appelle : l'interface de January ou Claude par le serveur MCP (phase 10, P12).
+"""Who is calling: January's interface or Claude through the MCP server (phase 10, P12).
 
-`MCP_IDENTITY` n'est écrite que par l'envoyeur du MCP (`app/mcp`), jamais depuis un en-tête ni un
-cookie : rien d'extérieur ne peut donc la forger. Vide, l'appelant est l'application. Un service
-qui écrit (notes de l'IDE, historique des changements) lit `current_caller()` pour savoir qui a
-fait le geste : le professeur interne et Claude passent par le même service, seul l'auteur change
+`MCP_IDENTITY` is only written by the MCP dispatcher (`app/mcp`), never from a header or a
+cookie: nothing external can forge it. When empty, the caller is the application. A service
+that writes (IDE notes, change history) reads `current_caller()` to know who made the
+gesture: the internal professor and Claude go through the same service, only the author changes
 (P8)."""
 
 from contextvars import ContextVar
@@ -17,9 +17,9 @@ from app.core.errors import AppError
 
 @dataclass(frozen=True)
 class McpIdentity:
-    """L'identité posée par l'envoyeur MCP pour la durée d'un appel : l'utilisatrice propriétaire
-    du jeton, le jeton (identifiant, jamais sa valeur), son étiquette, les features qu'il ouvre et
-    son mode (`read` par défaut)."""
+    """The identity set by the MCP dispatcher for the duration of a call: the user who owns the
+    token, the token (identifier, never its value), its label, the features it opens and
+    its mode (`read` by default)."""
 
     user_id: str
     token_id: str
@@ -34,15 +34,15 @@ MCP_CONFIRMED: ContextVar[bool] = ContextVar("mcp_confirmed", default=False)
 
 @dataclass(frozen=True)
 class Caller:
-    """`kind` : `app` (l'interface, ou une tâche interne) ou `mcp` ; `label` : « app » ou
-    l'étiquette du jeton."""
+    """`kind`: `app` (the interface, or an internal task) or `mcp`; `label`: "app" or
+    the token's label."""
 
     kind: Literal["app", "mcp"]
     label: str
 
 
 def current_caller() -> Caller:
-    """`app` si `MCP_IDENTITY` est vide, sinon l'étiquette du jeton."""
+    """`app` if `MCP_IDENTITY` is empty, otherwise the token's label."""
     identity = MCP_IDENTITY.get()
     if identity is None:
         return Caller(kind="app", label="app")
@@ -53,9 +53,9 @@ CallerDep = Annotated[Caller, Depends(current_caller)]
 
 
 def require_confirmed_gesture() -> None:
-    """Une action personnelle est autorisée par l'interface ou par une demande confirmée."""
+    """A personal action is allowed from the interface or through a confirmed request."""
     if MCP_IDENTITY.get() is not None and not MCP_CONFIRMED.get():
-        raise AppError("mcp_gesture_forbidden", "Confirme cette action dans Tremplin.", 403)
+        raise AppError("mcp_gesture_forbidden", "Confirm this action in Tremplin.", 403)
 
 
 ConfirmedGesture = Depends(require_confirmed_gesture)

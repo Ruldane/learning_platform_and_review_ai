@@ -1,1 +1,1 @@
-"""Bilan hebdomadaire et replanification (SPEC F13)."""
+"""Weekly review and replanning (SPEC F13)."""

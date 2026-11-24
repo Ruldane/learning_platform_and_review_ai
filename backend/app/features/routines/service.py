@@ -27,7 +27,7 @@ def _first_day(local: datetime, hour: str) -> date:
 async def _require(repo: Routines, routine_id: str) -> Routine:
     row = await repo.get(routine_id)
     if row is None:
-        raise AppError("routine_not_found", "Routine introuvable.", 404)
+        raise AppError("routine_not_found", "Routine not found.", 404)
     return row
 
 
@@ -39,7 +39,7 @@ async def create(db: AsyncSession, owner: str, body: RoutineIn, now: datetime) -
     repo = Routines(db, owner)
     await repo.begin_write()
     if await repo.for_action(body.action) is not None:
-        raise AppError("routine_exists", "Cette routine existe déjà.", 409)
+        raise AppError("routine_exists", "This routine already exists.", 409)
     local = await _local(db, owner, now)
     return await repo.add(
         action=body.action, local_time=body.local_time, starts_on=_first_day(local, body.local_time)

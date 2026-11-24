@@ -19,7 +19,7 @@ def _revision(title: str, markdown: str) -> str:
 async def prepare(db: AsyncSession, user_id: str, lesson_id: str) -> LessonVariantOut:
     source = await get_lesson(db, user_id, lesson_id)
     if source.status != "ready" or not source.markdown.strip():
-        raise AppError("lesson_not_published", "Choisis une leçon publiée.", 409)
+        raise AppError("lesson_not_published", "Choose a published lesson.", 409)
     revision = _revision(source.title, source.markdown)
     editions = LessonVariants(db, user_id)
     existing = await editions.for_revision(lesson_id, revision)
@@ -48,7 +48,7 @@ async def prepare(db: AsyncSession, user_id: str, lesson_id: str) -> LessonVaria
 async def read(db: AsyncSession, user_id: str, edition_id: str) -> LessonVariantOut:
     row = await LessonVariants(db, user_id).get(edition_id)
     if row is None:
-        raise AppError("lesson_variant_not_found", "Édition introuvable.", 404)
+        raise AppError("lesson_variant_not_found", "Edition not found.", 404)
     return LessonVariantOut.model_validate(row)
 
 

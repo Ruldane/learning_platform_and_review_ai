@@ -1,5 +1,5 @@
-"""Contrat des mini projets (SPEC 14.2, P1 à P3, P19, D166). Une 422 nomme les champs, jamais leur
-valeur (description, lien de dépôt, texte d'un brouillon : des données personnelles, 17.2)."""
+"""Mini project contract (SPEC 14.2, P1 to P3, P19, D166). A 422 names the fields, never their
+value (description, repository link, draft text: personal data, 17.2)."""
 
 from datetime import datetime
 from typing import Annotated, Literal
@@ -25,8 +25,8 @@ __all__ = [
 ]
 
 CONTENT_MAX = 3_000
-# Les textes de l'entrée de projet sont rognés avant d'être mesurés : un nom ou une réalisation
-# blancs sont une 422, jamais une erreur du profil (D166).
+# Project entry texts are stripped before being measured: a blank name or achievement
+# is a 422, never a profile error (D166).
 _STRIP = {"strip_whitespace": True}
 EntryName = Annotated[str, StringConstraints(**_STRIP, min_length=1, max_length=120)]
 EntryLine = Annotated[str, StringConstraints(**_STRIP, min_length=1, max_length=200)]
@@ -34,7 +34,7 @@ EntryText = Annotated[str, StringConstraints(**_STRIP, max_length=600)]
 
 
 class ProjectBriefOut(BaseModel):
-    """L'énoncé écrit par le Praticien."""
+    """The brief written by the Practitioner."""
 
     title: str
     context: str
@@ -46,7 +46,8 @@ class ProjectBriefOut(BaseModel):
 
 
 class SubmissionOut(BaseModel):
-    """Un rendu. `screenshots` : le nombre de captures (`GET /projects/{id}/screenshots/{n}`)."""
+    """A submission. `screenshots`: the number of screenshots
+    (`GET /projects/{id}/screenshots/{n}`)."""
 
     at: datetime
     repo_url: str | None
@@ -62,8 +63,8 @@ class CriterionOut(BaseModel):
 
 
 class EvaluationOut(BaseModel):
-    """La dernière évaluation : le verdict est celui du code. `repo_status` : le dépôt a-t-il pu
-    être lu ? (`none` : aucun lien donné)."""
+    """The latest review: the verdict is the code's. `repo_status`: could the repository be
+    read? (`none`: no link given)."""
 
     at: datetime | None
     verdict: Literal["validated", "to_redo"]
@@ -73,7 +74,7 @@ class EvaluationOut(BaseModel):
 
 
 class ProfileEntryIn(BaseModel):
-    """L'entrée de projet du profil maître : le texte de January, éventuellement modifié."""
+    """The master profile project entry: January's text, possibly edited."""
 
     name: EntryName
     description: EntryText = ""
@@ -81,8 +82,8 @@ class ProfileEntryIn(BaseModel):
 
 
 class DraftOut(BaseModel):
-    """Un brouillon au nom de January. `to_check` : `flags` nomme ce que son profil et son projet
-    ne disent pas (ou la longueur). `edited` : January l'a retouché."""
+    """A draft in January's name. `to_check`: `flags` names what her profile and project do not
+    say (or the length). `edited`: January edited it."""
 
     kind: DraftKind
     status: DraftStatus
@@ -108,8 +109,8 @@ class ProjectOut(BaseModel):
 
 
 class ProjectSummary(BaseModel):
-    """Une ligne du Portfolio. `week` (à partir de 1) et `rank` (dans la semaine, comme `GET
-    /programs`) : la place du module dans son programme (`None` si le module n'existe plus)."""
+    """A Portfolio row. `week` (from 1) and `rank` (within the week, like `GET
+    /programs`): the module's place in its program (`None` if the module no longer exists)."""
 
     id: str
     module_id: str
@@ -131,17 +132,17 @@ class SessionStarted(BaseModel):
 
 
 class DraftPatchIn(BaseModel):
-    """Un brouillon retouché : `entry` pour l'entrée de projet, `content` pour les trois autres.
-    Un seul des deux, selon le type."""
+    """An edited draft: `entry` for the project entry, `content` for the other three.
+    Only one of the two, depending on the kind."""
 
     content: str | None = Field(default=None, min_length=1, max_length=CONTENT_MAX)
     entry: ProfileEntryIn | None = None
 
 
 class ProjectBriefIn(BaseModel):
-    """L'énoncé d'un mini projet écrit à la main ou par Claude (aucun agent) : mêmes bornes que
-    celui du Praticien (`ProjectBrief`) : 2 à 5 contraintes, 3 à 6 critères vérifiables, 3 à 6
-    heures."""
+    """A mini project brief written by hand or by Claude (no agent): same bounds as the
+    Practitioner's (`ProjectBrief`): 2 to 5 constraints, 3 to 6 checkable criteria, 3 to 6
+    hours."""
 
     title: str = Field(min_length=3, max_length=120)
     context: str = Field(min_length=1, max_length=900)
@@ -157,14 +158,14 @@ class ProjectBriefIn(BaseModel):
 
 
 class ProjectCreateIn(BaseModel):
-    """Le mini projet d'un module (un seul par module) : son énoncé, prêt à rendre."""
+    """A module's mini project (one per module): its brief, ready to submit."""
 
     module_id: str = Field(min_length=1, max_length=36)
     brief: ProjectBriefIn
 
 
 class ProjectBriefPatch(BaseModel):
-    """Retouche de l'énoncé : les champs donnés remplacent ceux de l'énoncé, les autres restent."""
+    """Brief edit: the given fields replace the brief's, the others stay."""
 
     title: str | None = Field(default=None, min_length=3, max_length=120)
     context: str | None = Field(default=None, min_length=1, max_length=900)
@@ -181,5 +182,5 @@ class ProjectBriefPatch(BaseModel):
     @model_validator(mode="after")
     def _something(self) -> "ProjectBriefPatch":
         if not self.model_dump(exclude_none=True):
-            raise ValueError("rien à changer")
+            raise ValueError("nothing to change")
         return self

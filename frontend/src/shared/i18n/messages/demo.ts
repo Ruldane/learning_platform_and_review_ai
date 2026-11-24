@@ -1,21 +1,21 @@
 /** Textes de la démo du moteur d'agents. */
 export const demo = {
-  title: "Démo du moteur d'agents",
+  title: "Agent engine demo",
   intro:
-    "Un Avocat et un Critique débattent d'un sujet de ton choix ; l'équipe te pose une question entre les deux tours.",
+    "An Advocate and a Critic debate a topic of your choice; the team asks you a question between the two rounds.",
   topic: {
-    label: "Sujet",
-    placeholder: "Ex. apprendre Rust",
-    submit: "Lancer le débat",
-    starting: "Lancement…",
+    label: "Topic",
+    placeholder: "e.g. learning Rust",
+    submit: "Start the debate",
+    starting: "Starting…",
   },
-  loading: "Ouverture du débat…",
-  reconnecting: "Connexion au direct perdue, reconnexion…",
-  restart: "Nouveau débat",
+  loading: "Opening the debate…",
+  reconnecting: "Live connection lost, reconnecting…",
+  restart: "New debate",
   cancel: {
-    title: "Annuler le débat ?",
-    description: "Les agents s'arrêtent et la session ne pourra plus reprendre.",
-    confirm: "Oui, annuler le débat",
-    keep: "Non, continuer",
+    title: "Cancel the debate?",
+    description: "The agents will stop and the session can't be resumed.",
+    confirm: "Yes, cancel the debate",
+    keep: "No, continue",
   },
 } as const;

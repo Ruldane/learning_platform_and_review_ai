@@ -1,12 +1,12 @@
-"""Retoucher un brouillon (rule 4, D166) : `PATCH /projects/{id}/drafts/{kind}`, sous le verrou du
-projet. Le texte de January remplace celui du brouillon (`edited = true`) : `content` pour la
-ligne de CV, le post LinkedIn et le plan du README ; `entry` pour l'entrée de projet (dont le
-contenu devient son texte, comme `draft_text`). Un brouillon `to_check` modifié est recontrôlé
-par `text_claims` contre **la même référence** que le Praticien (profil validé, ce que January dit
-de son projet, compétences du module, titre de l'énoncé autorisé) et, pour le post LinkedIn, la
-longueur de 80 à 200 mots : `flags` est mis à jour, le brouillon est `ready` s'il est vide. Un
-brouillon `ready` retouché reste `ready` : ce sont ses mots. Rien n'entre au profil maître ici.
-422 sans écho (`fields`) si le champ n'est pas celui du type. Journaux : identifiants seulement."""
+"""Editing a draft (rule 4, D166): `PATCH /projects/{id}/drafts/{kind}`, under the project's
+lock. January's text replaces the draft's (`edited = true`): `content` for the CV line, the
+LinkedIn post and the README outline; `entry` for the project entry (whose content becomes its
+text, like `draft_text`). An edited `to_check` draft is checked again by `text_claims` against
+**the same reference** as the Practitioner (validated profile, what January says about her
+project, module skills, brief title allowed) and, for the LinkedIn post, the length of 80 to
+200 words: `flags` is updated, the draft is `ready` if it is empty. An edited `ready` draft
+stays `ready`: those are her words. Nothing enters the master profile here.
+422 without echo (`fields`) if the field does not match the kind. Logs: identifiers only."""
 
 import logging
 
@@ -32,12 +32,12 @@ logger = logging.getLogger(__name__)
 
 
 def entry_text(entry: ProfileEntryIn) -> str:
-    """Le texte de l'entrée de projet que `text_claims` contrôle (comme `draft_text`)."""
+    """The project entry text that `text_claims` checks (like `draft_text`)."""
     return "\n".join([entry.name, entry.description, *entry.achievements]).strip()
 
 
 def _new_content(kind: DraftKind, body: DraftPatchIn) -> tuple[str, ProfileEntryIn | None]:
-    """Le texte et l'entrée retouchés ; 422 (`entry` ou `content`) si le champ ne va pas au type."""
+    """The edited text and entry; 422 (`entry` or `content`) if the field does not fit the kind."""
     if kind == "profile_entry":
         if body.entry is None or body.content is not None:
             raise invalid_submission(["entry"])
@@ -51,7 +51,7 @@ def _new_content(kind: DraftKind, body: DraftPatchIn) -> tuple[str, ProfileEntry
 async def _flags(
     db: AsyncSession, user_id: str, row: Project, kind: DraftKind, text: str
 ) -> list[str]:
-    """Les termes que la référence ne dit pas, puis la longueur du post LinkedIn hors bornes."""
+    """The terms the reference does not state, then the LinkedIn post length if out of bounds."""
     submission = latest_submission(row)
     skills = await module_skills(db, user_id, row)
     title = str((row.brief or {}).get("title", row.title))
@@ -62,7 +62,7 @@ async def _flags(
     low, high = LINKEDIN_WORDS
     words = linkedin_words(text)
     if kind == "linkedin_post" and not low <= words <= high:
-        flags.append(f"{words} mots ({low} à {high} attendus)")
+        flags.append(f"{words} words ({low} to {high} expected)")
     return flags
 
 
@@ -86,7 +86,5 @@ async def patch_draft(
             new["flags"], new["status"] = flags, "to_check" if flags else "ready"
         row.drafts = {**row.drafts, kind: new}
         await db.commit()
-        logger.info(
-            "Brouillon retouché : projet %s, type %s, statut %s", project_id, kind, new["status"]
-        )
+        logger.info("Draft edited: project %s, kind %s, status %s", project_id, kind, new["status"])
         return await project_out_live(db, user_id, row)

@@ -1,4 +1,4 @@
-"""Approbation du contenu exact avant exposition, puis retrait par échange de pointeur."""
+"""Approve the exact content before exposure, then withdraw by swapping the pointer."""
 
 from hmac import compare_digest
 
@@ -26,7 +26,7 @@ from app.features.portfolio.service.runtime import PortfolioRuntime
 def _changed() -> AppError:
     return AppError(
         "portfolio_version_changed",
-        "La version ou la destination a changé. Relis le portfolio.",
+        "The version or the destination has changed. Review the portfolio.",
         409,
     )
 
@@ -69,7 +69,7 @@ async def publish(
         origin = rt.origin()
         destination = public_url(origin, site.slug)
         if destination is None:
-            raise AppError("portfolio_host_unavailable", "Aucun hébergement public configuré.", 409)
+            raise AppError("portfolio_host_unavailable", "No public hosting is configured.", 409)
         draft = await require_draft(db, user_id, site.draft_id)
         if destination != approval.destination or not compare_digest(draft.digest, approval.digest):
             raise _changed()

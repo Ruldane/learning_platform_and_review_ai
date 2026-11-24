@@ -1,9 +1,8 @@
-"""Le sujet de la ressource du brief (F17, D161) : « {domaine visé} actualités », construit par le
-code, jamais par un modèle. Le domaine vient, dans l'ordre : du poste des réglages du radar, du
-poste du dernier objectif, d'un court sujet tiré du texte de ce dernier objectif (le verbe
-« Devenir » ou « Become » en tête retiré, une seule ligne, `MAX_TOPIC` caractères au plus), puis du
-titre du programme validé. Rien de tout cela : `None`, aucune recherche. Le sujet est une donnée
-de la requête et du prompt (cadré `untrusted`) ; il n'est jamais journalisé."""
+"""The brief resource topic (F17, D161): "{target field} news", built by the code, never by a
+model. The field comes, in order, from: the radar settings role, the latest goal's role, a short
+topic taken from that goal's text (a leading "Devenir" or "Become" removed, a single line,
+`MAX_TOPIC` characters at most), then the validated program title. None of these: `None`, no
+search. The topic is request and prompt data (framed `untrusted`); it is never logged."""
 
 import re
 
@@ -13,8 +12,8 @@ from app.features.learning.service.goals import list_goals
 from app.features.program.service.programs import list_programs
 from app.features.radar.service.runs import defaults
 
-TOPIC_SUFFIX = "actualités"
-MAX_TOPIC = 80  # caractères du domaine tiré d'un texte libre
+TOPIC_SUFFIX = "news"
+MAX_TOPIC = 80  # characters of the field taken from free text
 
 _VERB = re.compile(
     r"^(?:devenir|become)\b\s*(?:(?:une?|le|la|les|an?|the)\b\s*|l['’]\s*)?", re.IGNORECASE
@@ -23,7 +22,7 @@ _SENTENCE_END = re.compile(r"[.!?;:]")
 
 
 def _cap(text: str) -> str:
-    """`text` coupé à `MAX_TOPIC` caractères, sur un mot si possible."""
+    """`text` cut at `MAX_TOPIC` characters, on a word boundary if possible."""
     if len(text) <= MAX_TOPIC:
         return text
     head = text[:MAX_TOPIC]
@@ -31,15 +30,15 @@ def _cap(text: str) -> str:
 
 
 def goal_topic(text: str) -> str | None:
-    """Un court sujet tiré du texte libre d'un objectif : une seule ligne, sans le verbe « Devenir »
-    ou « Become » ni l'article qui le suit, coupée à la première phrase puis à `MAX_TOPIC`
-    caractères (sur un mot). `None` si rien n'en reste."""
+    """A short topic taken from a goal's free text: a single line, without the verb "Devenir" or
+    "Become" nor the article that follows, cut at the first sentence then at `MAX_TOPIC`
+    characters (on a word). `None` if nothing is left."""
     line = _VERB.sub("", " ".join(text.split()), count=1)
     return _cap(_SENTENCE_END.split(line, maxsplit=1)[0].strip()).strip() or None
 
 
 async def resource_topic(db: AsyncSession, user_id: str) -> str | None:
-    """Le sujet de recherche de la ressource du jour, `None` s'il n'y a aucun domaine connu."""
+    """The search topic of the day's resource, `None` if no field is known."""
     role, _zone = await defaults(db, user_id)
     if role:
         return f"{role} {TOPIC_SUFFIX}"

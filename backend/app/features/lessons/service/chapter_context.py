@@ -1,4 +1,4 @@
-"""Contexte pédagogique d'un chapitre à partir de la table des matières."""
+"""Teaching context of a chapter, built from the table of contents."""
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -34,23 +34,23 @@ async def chapter_context(db: AsyncSession, user_id: str, loaded: Loaded, module
     current = chapters[index]
     names = {normalize_skill_name(name) for name in current.requires}
     earlier = [notion for chapter in chapters[:index] for notion in chapter.introduces]
-    lines = ["Notions requises du glossaire"]
+    lines = ["Required glossary concepts"]
     lines.extend(
-        f"- {notion.name} : {notion.definition}"
+        f"- {notion.name}: {notion.definition}"
         for notion in earlier
         if normalize_skill_name(notion.name) in names
     )
-    lines.append("Notions à introduire")
-    lines.extend(f"- {notion.name} : {notion.definition}" for notion in current.introduces)
+    lines.append("Concepts to introduce")
+    lines.extend(f"- {notion.name}: {notion.definition}" for notion in current.introduces)
     if index:
         previous = chapters[index - 1].title
-        lines.append(f"Chapitre précédent : {previous}")
+        lines.append(f"Previous chapter: {previous}")
         if summary := await _previous_summary(db, user_id, loaded, outline, index - 1):
             lines.append(summary)
     if index + 1 < len(chapters):
         following = chapters[index + 1]
-        lines.append(f"Chapitre suivant : {following.title}")
+        lines.append(f"Next chapter: {following.title}")
         if following.introduces:
             following_names = ", ".join(notion.name for notion in following.introduces)
-            lines.append(f"Notions prévues ensuite : {following_names}")
+            lines.append(f"Concepts planned next: {following_names}")
     return "\n".join(lines)

@@ -1,4 +1,4 @@
-"""Réservation de la session et de la version remise dans la même transaction."""
+"""Reserve the session and the submitted version in the same transaction."""
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -33,12 +33,12 @@ async def launch_review(
                 facts and facts.status in {"running", "paused", "waiting_user"}
             ):
                 raise _ExistingReview(previous)
-            # Une évaluation interrompue reprend sur la remise, même après l'échéance.
+            # An interrupted evaluation resumes on the submission, even after the deadline.
             row.review_session_id = session_id
             return
         now = clock()
         if now >= row.deadline_at:
-            raise AppError("boss_expired", "Le temps du défi est écoulé.", 409)
+            raise AppError("boss_expired", "The challenge time is up.", 409)
         if now < row.change_at:
             raise AppError(
                 "boss_change_pending", "Le client doit te transmettre son changement.", 409
@@ -47,7 +47,7 @@ async def launch_review(
             row.ide_session_id
         )
         if ENTRY not in project.files:
-            raise AppError("boss_entry_missing", "Le fichier service.py est nécessaire.", 422)
+            raise AppError("boss_entry_missing", "The service.py file is required.", 422)
         run_id = new_id()
         job_for(run_id, project.files)
         row.submitted_at = now

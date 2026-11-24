@@ -1,4 +1,4 @@
-"""Dossiers Cerveau et canal réservé au synchroniseur local."""
+"""Brain folders and the channel reserved for the local synchroniser."""
 
 from typing import Annotated
 
@@ -54,7 +54,7 @@ MemoryDep = Annotated[MemoryRuntime, Depends(_memory)]
 
 @router.get("/status", response_model=list[FolderStatus])
 async def status_view(db: Db, current: CurrentUserDep) -> list[FolderStatus]:
-    """État de synchronisation des dossiers, sans chemins locaux ni fichiers individuels."""
+    """Folder sync status, without local paths or individual files."""
     return await folders.status(db, current.id)
 
 
@@ -93,7 +93,7 @@ async def relay_status(db: Db, current: CurrentUserDep) -> BrainRelayStatus:
 
 @router.post("/sync-token", response_model=SyncTokenOut, status_code=status.HTTP_201_CREATED)
 async def create_sync_token(db: Db, current: InterfaceUserDep, response: Response) -> SyncTokenOut:
-    """Crée le jeton du relais et invalide le précédent. La valeur n'est rendue qu'une fois."""
+    """Create the relay token and invalidate the previous one. The value is returned only once."""
     response.headers["Cache-Control"] = "no-store"
     return await sync.rotate_token(db, current.id)
 

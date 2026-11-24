@@ -14,7 +14,7 @@ def catalog() -> list[IncidentScenarioOut]:
 async def _require(repo: IncidentReplays, replay_id: str) -> IncidentReplay:
     row = await repo.get(replay_id)
     if row is None:
-        raise AppError("incident_replay_not_found", "Replay introuvable.", 404)
+        raise AppError("incident_replay_not_found", "Replay not found.", 404)
     return row
 
 
@@ -34,12 +34,12 @@ async def create(db: AsyncSession, user_id: str, body: IncidentReplayIn) -> Inci
     if previous is not None:
         if previous.scenario != body.scenario:
             raise AppError(
-                "incident_receipt_used", "Ce reçu a déjà servi pour un autre incident.", 409
+                "incident_receipt_used", "This receipt was already used for another incident.", 409
             )
         return previous
     scenario = SCENARIOS.get(body.scenario)
     if scenario is None:
-        raise AppError("incident_scenario_not_found", "Incident d’entraînement introuvable.", 404)
+        raise AppError("incident_scenario_not_found", "Practice incident not found.", 404)
     summary, events = scenario
     return await repo.add(
         receipt=receipt,
@@ -57,12 +57,12 @@ async def annotate(
     row = await _require(repo, replay_id)
     if note.step >= len(row.timeline):
         raise AppError(
-            "incident_step_out_of_range", "Ce point de la chronologie n’existe pas.", 422
+            "incident_step_out_of_range", "This point in the timeline does not exist.", 422
         )
     record = note.model_dump()
     if record in row.notes:
         return row
     if len(row.notes) >= 100:
-        raise AppError("incident_notes_full", "Ce replay contient déjà 100 hypothèses.", 409)
+        raise AppError("incident_notes_full", "This replay already holds 100 hypotheses.", 409)
     row.notes = [*row.notes, record]
     return row

@@ -5,7 +5,7 @@ from app.db.repository import UserScopedRepository
 
 
 class ApiKeyRepository(UserScopedRepository[ApiKey]):
-    """Une ligne `api_keys` par fournisseur et par utilisateur (clé chiffrée)."""
+    """One `api_keys` row per provider and per user (encrypted key)."""
 
     model = ApiKey
 
@@ -14,7 +14,7 @@ class ApiKeyRepository(UserScopedRepository[ApiKey]):
         return rows[0] if rows else None
 
     async def upsert(self, provider: str, encrypted_key: str, last4: str) -> ApiKey:
-        """Remplace la clé ; le résultat du dernier test ne vaut plus pour la nouvelle clé."""
+        """Replaces the key; the result of the last test no longer applies to the new key."""
         fields = {
             "encrypted_key": encrypted_key,
             "last4": last4,

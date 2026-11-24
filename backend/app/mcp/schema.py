@@ -118,14 +118,14 @@ def _is_file(node: Mapping[str, Any], components: Mapping[str, Any]) -> bool:
 def operation(openapi: Mapping[str, Any], method: str, path: str) -> Mapping[str, Any]:
     found = openapi.get("paths", {}).get(API_PREFIX + path, {}).get(method.lower())
     if found is None:
-        raise McpConfigError(f"route déclarée mais absente de l'application : {method} {path}")
+        raise McpConfigError(f"route declared but missing from the app: {method} {path}")
     return found  # type: ignore[no-any-return]
 
 
 def split_route(route: str) -> tuple[str, str]:
     method, _, path = route.partition(" ")
     if method not in ("GET", "POST", "PUT", "PATCH", "DELETE") or not path.startswith("/"):
-        raise McpConfigError(f"route mal formée : « {route} » (attendu « POST /postings »)")
+        raise McpConfigError(f"malformed route '{route}' (expected 'POST /postings')")
     return method, path
 
 
@@ -146,8 +146,8 @@ def _body_media(op: Mapping[str, Any], form: bool, route: str) -> Mapping[str, A
     for media in wanted:
         if media in content:
             return {"schema": content[media].get("schema", {}), "required": body.get("required")}
-    hint = "un formulaire sans fichier" if form else 'du JSON (formulaire : encoding="form")'
-    raise McpConfigError(f"{route} ne reçoit pas {hint} : corriger la déclaration ou exclure")
+    hint = "a form without a file" if form else 'JSON (form: encoding="form")'
+    raise McpConfigError(f"{route} does not accept {hint}: fix the declaration or exclude it")
 
 
 def _parameters(
@@ -192,7 +192,7 @@ def build_route_tool(
             media, components, defs, props, required, body_args, body_fields, merge_from, route
         )
     elif body_fields is not None:
-        raise McpConfigError(f"{route} : body_fields sans corps de requête")
+        raise McpConfigError(f"{route}: body_fields without a request body")
     merge_path = _merge_path(openapi, route, path_params, merge_from, body_fields)
     schema: dict[str, Any] = {"type": "object", "properties": props, "additionalProperties": False}
     if required:
@@ -231,21 +231,21 @@ def _body_arguments(
     fields: Mapping[str, Any] = schema.get("properties", {})
     if not fields:
         if allowed is not None:
-            raise McpConfigError(f"{route} : body_fields sans champs de corps")
+            raise McpConfigError(f"{route}: body_fields without body fields")
         props["body"] = _port(schema, components, defs)
         if media["required"]:
             required.append("body")
         return "body"
     unknown = (allowed or frozenset()) - fields.keys()
     if unknown:
-        raise McpConfigError(f"{route} : champs de corps inconnus {sorted(unknown)}")
+        raise McpConfigError(f"{route}: unknown body fields {sorted(unknown)}")
     needed = set(schema.get("required", ()))
     for key, sub in fields.items():
         if allowed is not None and key not in allowed:
             continue
         if _is_file(sub, components):
             if key in needed:
-                raise McpConfigError(f"{route} : le champ « {key} » est un fichier (non exposé)")
+                raise McpConfigError(f"{route}: the field '{key}' is a file (not exposed)")
             continue
         name = key if key not in props else f"body_{key}"
         props[name] = _port(sub, components, defs)
@@ -266,9 +266,9 @@ def _merge_path(
         return None
     method, path = split_route(merge_from)
     if method != "GET" or body_fields is None:
-        raise McpConfigError(f"{route} : merge_from est une route GET et exige body_fields")
+        raise McpConfigError(f"{route}: merge_from is a GET route and requires body_fields")
     operation(openapi, method, path)
     needed = {part[1:-1] for part in path.split("/") if part.startswith("{")}
     if not needed <= path_params:
-        raise McpConfigError(f"{route} : {merge_from} demande des paramètres que la route n'a pas")
+        raise McpConfigError(f"{route}: {merge_from} needs parameters the route does not have")
     return path

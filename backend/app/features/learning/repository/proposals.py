@@ -8,8 +8,8 @@ from app.db.repository import UserScopedRepository
 
 
 class ProposalRepository(UserScopedRepository[Proposal]):
-    """Propositions du Conseil, par lot (`batch`) et par rang. Lectures fraîches
-    (`populate_existing`), comme `GoalRepository`."""
+    """Council proposals, by batch (`batch`) and rank. Fresh reads (`populate_existing`),
+    like `GoalRepository`."""
 
     model = Proposal
 
@@ -28,7 +28,7 @@ class ProposalRepository(UserScopedRepository[Proposal]):
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def latest_batch(self, goal_id: str) -> tuple[str, int] | None:
-        """`(session, lot)` du dernier lot de l'objectif, `None` s'il n'y en a aucun."""
+        """`(session, batch)` of the goal's latest batch, `None` if there is none."""
         stmt = (
             select(Proposal.session_id, func.max(Proposal.batch))
             .where(Proposal.user_id == self.user_id, Proposal.goal_id == goal_id)
@@ -53,8 +53,8 @@ class ProposalRepository(UserScopedRepository[Proposal]):
         return builtins.list((await self.session.execute(stmt)).scalars().all())
 
     async def set_chosen(self, session_id: str, batch: int, chosen: Collection[str]) -> None:
-        """Marque exactement `chosen` dans le lot (les autres propositions du lot ne le sont
-        plus)."""
+        """Marks exactly `chosen` in the batch (the batch's other proposals no longer
+        are)."""
         stmt = (
             update(Proposal)
             .where(

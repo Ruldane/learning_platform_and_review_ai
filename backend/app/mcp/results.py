@@ -165,8 +165,8 @@ def timed_out(data: Any, call_id: str | None) -> ToolResult:
     Claude le lit (`notice`) avant de relancer, le journal le garde (`outcome: timeout`) ; rien
     n'a été enregistré pour l'annulation."""
     notice = (
-        "La route a pu écrire avant le délai : vérifie l'état (lecture) avant de relancer, "
-        "et cet appel ne pourra pas être annulé depuis l'application."
+        "The route may have written before the timeout: check the state (read) before retrying, "
+        "and this call cannot be undone from the app."
     )
     return ToolResult(
         data=data,

@@ -32,8 +32,9 @@ async def _resolve_key(
     env_keys: Mapping[str, str | None],
     provider: str,
 ) -> tuple[str, Source] | None:
-    """Clé en clair et origine : base d'abord, puis `.env` (D8). Lève `SecretUnreadable` si la
-    clé de la base ne se déchiffre plus. Toute valeur déchiffrée rejoint `KnownSecrets`."""
+    """Clear-text key and its origin: database first, then `.env` (D8). Raises
+    `SecretUnreadable` if the database key no longer decrypts. Every decrypted value joins
+    `KnownSecrets`."""
     row = await repo.get_by_provider(provider)
     if row is not None:
         plain = cipher.decrypt(row.encrypted_key)
@@ -47,8 +48,8 @@ async def _resolve_key(
 
 
 class DbKeyReader:
-    """Lecture des clés pour la fabrique LLM. Ouvre sa propre session : elle est appelée hors
-    requête HTTP (agents, tâches planifiées). Satisfait `KeyReader`."""
+    """Reads keys for the LLM factory. Opens its own session: it is called outside any HTTP
+    request (agents, scheduled jobs). Satisfies `KeyReader`."""
 
     def __init__(
         self,
@@ -68,12 +69,12 @@ class DbKeyReader:
 
 
 def _unknown(name: str) -> AppError:
-    return AppError("unknown_provider", f"Fournisseur inconnu : {name}.", 404)
+    return AppError("unknown_provider", f"Unknown provider: {name}.", 404)
 
 
 class ApiKeyService:
-    """`providers` : fournisseurs de l'écran des clés (LLM et Brave), pour lister, saisir,
-    supprimer et tester une clé ; `llm` : les seuls fournisseurs LLM, pour les modèles (D73)."""
+    """`providers`: providers of the keys screen (LLM and Brave), to list, enter, delete and
+    test a key; `llm`: the LLM providers only, for the models (D73)."""
 
     def __init__(
         self,
@@ -104,7 +105,7 @@ class ApiKeyService:
         return provider
 
     async def get_plaintext(self, provider: str) -> str | None:
-        """Clé en clair (base d'abord, puis `.env`), ou `None`. Lève `SecretUnreadable`."""
+        """Clear-text key (database first, then `.env`), or `None`. Raises `SecretUnreadable`."""
         self._provider(provider)
         resolved = await _resolve_key(self._repo, self._cipher, self._env_keys, provider)
         return resolved[0] if resolved is not None else None
@@ -139,8 +140,8 @@ class ApiKeyService:
         return True
 
     async def test(self, provider: str) -> KeyTestResult:
-        """Teste la clé en vigueur. Le résultat est mémorisé pour une clé saisie dans l'interface
-        (une clé `.env` n'a pas de ligne où l'écrire)."""
+        """Tests the key in effect. The result is stored for a key entered in the interface
+        (a `.env` key has no row to write it to)."""
         key_provider = self._provider(provider)
         try:
             resolved = await _resolve_key(self._repo, self._cipher, self._env_keys, provider)
@@ -149,9 +150,7 @@ class ApiKeyService:
             await self._repo.record_test(provider, False, datetime.now(UTC))
             return result
         if resolved is None:
-            return KeyTestResult(
-                ok=False, message=f"Aucune clé enregistrée pour {key_provider.label}."
-            )
+            return KeyTestResult(ok=False, message=f"No key saved for {key_provider.label}.")
         plain, source = resolved
         result = await key_provider.test_key(plain)
         if source == "ui":
@@ -159,7 +158,7 @@ class ApiKeyService:
         return result
 
     async def _usable_key(self, provider: str) -> str | None:
-        """Clé lisible, ou `None` si absente ou illisible."""
+        """Readable key, or `None` if missing or unreadable."""
         try:
             return await self.get_plaintext(provider)
         except SecretUnreadable:
@@ -174,15 +173,13 @@ class ApiKeyService:
         try:
             return await self.list_models(provider)
         except Exception as exc:
-            # Un fournisseur en panne ne doit pas faire échouer toute la page : on ne journalise
-            # que son nom et le type d'erreur, jamais la clé ni le message de l'exception.
-            logger.warning(
-                "Liste des modèles indisponible pour %s (%s)", provider, type(exc).__name__
-            )
+            # A provider that is down must not make the whole page fail: we only log
+            # its name and the error type, never the key nor the exception message.
+            logger.warning("Model list unavailable for %s (%s)", provider, type(exc).__name__)
             return None
 
     async def models_overview(self) -> ModelsOut:
-        """Fournisseurs, présence d'une clé lisible, modèles proposés et préréglages."""
+        """Providers, presence of a readable key, offered models and presets."""
         entries: builtins.list[ProviderModels] = []
         for llm in self._llm.values():
             has_key = await self._usable_key(llm.name) is not None
@@ -200,9 +197,9 @@ class ApiKeyService:
         key_provider = self._provider(provider)
         clean = key.strip()
         if not clean:
-            raise AppError("invalid_key", "La clé est vide.", 422)
+            raise AppError("invalid_key", "The key is empty.", 422)
         if len(clean) < _MIN_KEY_LENGTH:
-            raise AppError("invalid_key", "La clé est trop courte.", 422)
+            raise AppError("invalid_key", "The key is too short.", 422)
         KnownSecrets.add(clean)
         row = await self._repo.upsert(provider, self._cipher.encrypt(clean), clean[-4:])
         return self._out(key_provider, row)

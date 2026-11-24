@@ -44,13 +44,15 @@ def _study_step(item: MeetingExcerpt) -> MeetingStudyStep:
     if item.kind == "decision":
         return MeetingStudyStep(
             source_line=item.line,
-            instruction="Reformule la décision et compare-la à une solution de ton choix.",
-            criterion="Donne un avantage, un inconvénient et le contexte où ton choix changerait.",
+            instruction="Restate the decision and compare it with a solution of your choice.",
+            criterion=(
+                "Give one advantage, one drawback and the context where your choice would change."
+            ),
             minutes=8,
         )
     return MeetingStudyStep(
         source_line=item.line,
-        instruction="Trouve un exemple concret de ce sujet et vérifie-le sur un cas comparable.",
-        criterion="Nomme la donnée qui vérifie ton exemple et explique ton résultat.",
+        instruction="Find a concrete example of this topic and check it on a comparable case.",
+        criterion="Name the data that checks your example and explain your result.",
         minutes=10,
     )

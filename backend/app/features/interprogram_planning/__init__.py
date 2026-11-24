@@ -1,1 +1,1 @@
-"""Semaine commune aux programmes d’un compte."""
+"""Shared week across an account's programs."""

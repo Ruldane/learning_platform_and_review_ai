@@ -1,1 +1,1 @@
-"""Course contre ses propres tentatives."""
+"""Race against your own attempts."""

@@ -1,5 +1,5 @@
-"""Schémas de l'IDE Python (phase 10, P1) : définitifs dès 10.P ; un flux ne change jamais la
-surface (s'il le faut, il régénère `contracts/openapi.json` et `schema.d.ts` et le dit)."""
+"""Python IDE schemas (phase 10, P1): final as of 10.P; a flow never changes the surface (if it
+must, it regenerates `contracts/openapi.json` and `schema.d.ts` and says so)."""
 
 from datetime import datetime
 from typing import Literal
@@ -68,20 +68,20 @@ SkipReason = Literal["cap_reached", "on_demand", "busy"]
 
 
 class IdeSessionStarted(BaseModel):
-    """Le graphe tourne : `session_id` désigne la session d'agents à suivre (en moins de 2 s)."""
+    """The graph is running: `session_id` is the agent session to follow (within 2 s)."""
 
     session_id: str
 
 
 class SessionCreateIn(BaseModel):
-    """Ouvre une séance sur un exercice, ou une séance libre (sans `exercise_id`)."""
+    """Opens a session on an exercise, or a free session (without `exercise_id`)."""
 
     exercise_id: str | None = None
     title: str | None = Field(default=None, min_length=1, max_length=TITLE_MAX)
 
 
 class SessionSummary(BaseModel):
-    """`passed` : la séance a eu une vérification (`check`) réussie (`passed_at` : la première)."""
+    """`passed`: the session had a successful check (`check`) (`passed_at`: the first one)."""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -95,7 +95,7 @@ class SessionSummary(BaseModel):
 
 class IdeSessionOut(SessionSummary):
     exercise_statement: str | None = None
-    """`file_hashes` : le sha256 de chaque fichier (le `base_hash` que Claude renvoie)."""
+    """`file_hashes`: the sha256 of each file (the `base_hash` Claude sends back)."""
 
     files: dict[str, str]
     entry: str
@@ -109,13 +109,13 @@ class IdeSessionOut(SessionSummary):
 
 
 class FilesPutIn(BaseModel):
-    """Enregistre les fichiers de la séance. Interface : remplace tous les fichiers. Claude (MCP,
-    interrupteur allumé) : un seul fichier de `files`, les autres sont gardés ; `base_hash` est
-    alors obligatoire : le sha256 du contenu actuel de ce fichier (`file_hashes` de la séance ;
-    texte vide pour un nouveau fichier). Il est ignoré pour l'interface. `entry` aussi, pour
-    Claude. `base_hashes` (interface, facultatif) : le sha256 de la version de chaque fichier sur
-    laquelle tu as édité ; un fichier que Claude a changé depuis et que l'envoi écraserait donne 409
-    `stale_base` (`details.files` : les noms) et rien n'est écrit."""
+    """Saves the session's files. Interface: replaces all files. Claude (MCP, switch on): a single
+    file in `files`, the others are kept; `base_hash` is then required: the sha256 of that file's
+    current content (the session's `file_hashes`; empty text for a new file). It is ignored for
+    the interface. So is `entry`, for Claude. `base_hashes` (interface, optional): the sha256 of
+    the version of each file you edited from; a file Claude has changed since, which the upload
+    would overwrite, gives 409 `stale_base` (`details.files`: the names) and nothing is
+    written."""
 
     files: dict[str, str]
     entry: str | None = Field(default=None, min_length=1, max_length=PATH_MAX)
@@ -128,21 +128,21 @@ class FilesPutIn(BaseModel):
     @classmethod
     def _hashes(cls, hashes: dict[str, str] | None) -> dict[str, str] | None:
         if hashes is not None and not all(is_file_hash(value) for value in hashes.values()):
-            raise ValueError("empreinte invalide")
+            raise ValueError("invalid hash")
         return hashes
 
 
 class RunIn(BaseModel):
-    """`run` exécute `entry` ; `check` lance les tests de l'exercice par pytest dans le bac (code de
-    sortie 0 = réussi). `entry` : le fichier d'entrée (celui de la séance par défaut)."""
+    """`run` executes `entry`; `check` runs the exercise's tests with pytest in the sandbox (exit
+    code 0 = passed). `entry`: the entry file (the session's by default)."""
 
     kind: RunKind = "run"
     entry: str | None = Field(default=None, min_length=1, max_length=PATH_MAX)
 
 
 class RunOut(BaseModel):
-    """Une exécution déposée (202) : on lit la sortie par `GET /ide/runs/{id}?after=`. `origin` :
-    `mcp` quand Claude l'a lancée (la page affiche « lancée par Claude »)."""
+    """A submitted run (202): the output is read through `GET /ide/runs/{id}?after=`. `origin`:
+    `mcp` when Claude started it (the page shows "started by Claude")."""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -156,7 +156,8 @@ class RunOut(BaseModel):
 
 
 class RunProgress(BaseModel):
-    """La sortie depuis `after` (octets), le décalage suivant, et la fin quand le bac l'a rendue."""
+    """The output since `after` (bytes), the next offset, and the end once the
+    sandbox returned it."""
 
     id: str
     status: RunStatus
@@ -168,9 +169,9 @@ class RunProgress(BaseModel):
 
 
 class TeachIn(BaseModel):
-    """Ce qui déclenche le professeur : une exécution en erreur (`run_error`) ou réussie
-    (`run_ok`), une question (`question`, non vide : 422 sinon), une demande d'indice (`hint`) ou,
-    en option, 30 s d'arrêt sur une ligne (`idle`). Jamais à la frappe."""
+    """What triggers the professor: a failed (`run_error`) or successful (`run_ok`) run, a question
+    (`question`, non-empty: 422 otherwise), a hint request (`hint`) or, optionally, 30 s stopped
+    on a line (`idle`). Never on typing."""
 
     trigger: TeachTrigger
     question: str | None = Field(default=None, max_length=QUESTION_MAX)
@@ -181,14 +182,14 @@ class TeachIn(BaseModel):
     @model_validator(mode="after")
     def _question_needed(self) -> "TeachIn":
         if self.trigger == "question" and not (self.question or "").strip():
-            raise ValueError("la question est vide")
+            raise ValueError("the question is empty")
         return self
 
 
 class TeachOut(BaseModel):
-    """Un seul des trois : `session_id` (le graphe du professeur travaille), `reference_note_id`
-    (même erreur au même endroit : renvoi à la note précédente) ou `skipped` (pourquoi rien n'est
-    lancé)."""
+    """Only one of the three: `session_id` (the professor's graph is working), `reference_note_id`
+    (same error at the same place: pointer to the previous note) or `skipped` (why nothing is
+    started)."""
 
     session_id: str | None = None
     reference_note_id: str | None = None
@@ -196,9 +197,9 @@ class TeachOut(BaseModel):
 
 
 class NoteIn(BaseModel):
-    """Une note ajoutée à la main ou par Claude : l'auteur vient de l'appelant, jamais du corps.
-    Une proposition porte `replacement`, la plage de lignes et `base_hash` : le sha256 hexadécimal
-    (minuscules, 64 signes) du contenu du fichier encodé en UTF-8."""
+    """A note added by hand or by Claude: the author comes from the caller, never from the body.
+    A proposal carries `replacement`, the line range and `base_hash`: the hexadecimal sha256
+    (lowercase, 64 characters) of the file's content encoded in UTF-8."""
 
     kind: NoteKind
     content: str = Field(min_length=1, max_length=NOTE_MAX)
@@ -217,7 +218,7 @@ class NoteOut(BaseModel):
     kind: NoteKind
     author: NoteAuthor
     author_label: str | None
-    origin: Origin  # `mcp` : écrite par Claude (la page affiche « Claude »)
+    origin: Origin  # `mcp`: written by Claude (the page shows "Claude")
     status: NoteStatus
     file_path: str | None
     line_start: int | None
@@ -226,15 +227,15 @@ class NoteOut(BaseModel):
     replacement: str | None
     base_hash: str | None
     reference_note_id: str | None
-    level: int | None  # niveau réel d'un indice gradué (1 à 3), vide pour les autres notes
+    level: int | None  # actual level of a graded hint (1 to 3), empty for other notes
     created_at: datetime
 
 
 class PreferencesIn(BaseModel):
-    """Mode du professeur (`auto` ou sur demande), style (`guide` : indices gradués ; `pair` :
-    binôme, annotations en marge et propositions à accepter), minuterie d'inactivité (30 s, en
-    option), plafonds de jetons, et l'interrupteur « Claude peut écrire dans mes fichiers »
-    (`mcp_can_write_files`, éteint par défaut : seule l'interface le règle, jamais le MCP)."""
+    """Professor mode (`auto` or on demand), style (`guide`: graded hints; `pair`: pair
+    programming, margin annotations and proposals to accept), idle timer (30 s, optional), token
+    caps, and the "Claude can write to my files" switch (`mcp_can_write_files`, off by default:
+    only the interface sets it, never MCP)."""
 
     teacher_mode: TeacherMode = "auto"
     teacher_style: TeacherStyle = "guide"
@@ -249,8 +250,8 @@ class PreferencesOut(PreferencesIn):
 
 
 class UsageOut(BaseModel):
-    """La consommation du professeur : jetons de la séance et du jour, leurs plafonds, et si le
-    professeur est passé en mode « sur demande » (plafond atteint ou choix)."""
+    """The professor's usage: session and day tokens, their caps, and whether the professor
+    switched to "on demand" mode (cap reached or by choice)."""
 
     session_tokens: int
     day_tokens: int

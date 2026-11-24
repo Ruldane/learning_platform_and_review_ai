@@ -1,1 +1,1 @@
-"""Dossiers privés de preuves approuvées."""
+"""Private packets of approved proofs."""

@@ -1,4 +1,4 @@
-"""Demande d'une édition et téléchargement à partir des pointeurs publiés."""
+"""Edition request and download from the published pointers."""
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -45,6 +45,6 @@ async def download(
         try:
             return await runtime.storage.read(user_id, key)
         except (FileNotFoundError, StorageKeyInvalid):
-            # Une nouvelle édition a pu remplacer l'ancienne entre la lecture et le disque.
+            # A new edition may have replaced the old one between the read and the disk.
             continue
-    raise AppError("book_file_missing", "Cette édition n’est pas disponible.", 404)
+    raise AppError("book_file_missing", "This edition is not available.", 404)

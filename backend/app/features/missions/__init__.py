@@ -1,1 +1,1 @@
-"""Missions personnelles à partir d'une offre analysée."""
+"""Personal missions based on an analyzed offer."""

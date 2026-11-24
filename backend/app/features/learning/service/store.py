@@ -1,11 +1,11 @@
-"""Port du Conseil (`CouncilStore`, D84) sur la feature `learning` : implémentation branchée par
-`bootstrap.agent_ports`. Chaque appel ouvre sa propre session de base, courte, et la commite
-(D66) ; chaque lecture et écriture est filtrée par utilisateur (un objectif d'un autre : 404).
+"""Council port (`CouncilStore`, D84) on the `learning` feature: implementation wired by
+`bootstrap.agent_ports`. Each call opens its own short database session and commits it (D66);
+each read and write is filtered by user (someone else's goal: 404).
 
-Le choix et le lancement du programme passent sous le verrou de l'objectif (même verrou que la
-route `choose`, D87) : un seul `program_builder` par objectif.
+The choice and the program start go under the goal's lock (same lock as the `choose` route,
+D87): a single `program_builder` per goal.
 
-Journaux : identifiants seulement (SPEC 17.2)."""
+Logs: identifiers only (SPEC 17.2)."""
 
 import logging
 from collections.abc import Awaitable, Callable, Mapping, Sequence
@@ -112,16 +112,16 @@ class AgentCouncilStore:
             await self._run(lambda db: write_choice(db, user_id, session_id, goal_id, choice))
 
     async def start_program(self, user_id: str, goal_id: str, choice: Choice) -> str:
-        """Sous le verrou de l'objectif : programme déjà écrit (sa session) ou session
-        `program_builder` ouverte → rendue telle quelle ; sinon lancée. L'objectif passe à
-        « chosen »."""
+        """Under the goal's lock: program already written (its session) or open
+        `program_builder` session → returned as is; otherwise started. The goal moves to
+        "chosen"."""
         async with self._learning.goal_lock(user_id, goal_id):
             existing = await self._run(lambda db: program_session(db, user_id, goal_id))
             if existing is not None:
                 return existing
             session_id = await launch_program(self._db, self._launcher, user_id, goal_id, choice)
         logger.info(
-            "Programme lancé : utilisateur %s, objectif %s, session %s",
+            "Program started: user %s, goal %s, session %s",
             user_id,
             goal_id,
             session_id,

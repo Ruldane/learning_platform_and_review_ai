@@ -1,4 +1,4 @@
-"""Vues du défi et de sa note, sans fichiers remis ni résultat brut du bac."""
+"""Views of the challenge and its grade, without submitted files or raw sandbox output."""
 
 from datetime import datetime
 from typing import Literal

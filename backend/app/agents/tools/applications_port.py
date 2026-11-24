@@ -1,20 +1,20 @@
-"""Port de la création d'une fiche en une phrase (SPEC 6.1, 6.3, D141). `app.agents` n'importe
-aucune feature (contrat 6) : il décrit ici ce dont le parcours `application_intake` a besoin (le
-jour de January, les alertes de doublon d'une fiche en préparation, la création) ; la feature
-`applications` l'implémente (`AgentApplicationStore`, `service/agent_store.py`).
+"""Port for creating an application from one sentence (SPEC 6.1, 6.3, D141). `app.agents` imports
+no feature (contract 6): it describes here what the `application_intake` flow needs (January's day,
+the duplicate alerts of an application being drafted, the creation); the `applications` feature
+implements it (`AgentApplicationStore`, `service/agent_store.py`).
 
-La phrase de January et la fiche qu'elle décrit sont des données personnelles : ni ici ni dans
-l'implémentation elles ne sont journalisées (17.2).
+January's sentence and the application it describes are personal data: neither here nor in the
+implementation are they logged (17.2).
 
-- `intake_alerts` : mêmes règles que la création à la main (`match`, 7.1), **sans** les simples
-  informations (« même entreprise dans les 30 jours ») qui ne bloquent rien ; les fiches sont
-  rendues de la plus forte alerte à la plus faible.
-- `intake_info` : les mêmes fiches, mais les simples informations seules (« même entreprise dans
-  les 30 jours », SPEC 6.3) : elles ne bloquent rien, la session les annonce à la création.
-- `save_intake` : la création passe par le service de la route `POST /applications` (même contrôle
-  des doublons : sans `distinct_from` qui les couvre, une fiche qui ressemble est refusée) et
-  **idempotente par session** : un nœud rejoué après un arrêt (SPEC 9.4) ne crée pas de seconde
-  fiche, il relit l'identifiant de celle de la session.
+- `intake_alerts`: same rules as manual creation (`match`, 7.1), **without** the plain notices
+  ("same company within 30 days") that block nothing; applications are returned from the
+  strongest alert to the weakest.
+- `intake_info`: the same applications, but only the plain notices ("same company within
+  30 days", SPEC 6.3): they block nothing, the session announces them at creation.
+- `save_intake`: creation goes through the service of the `POST /applications` route (same
+  duplicate check: without a `distinct_from` covering them, a similar application is refused) and
+  is **idempotent per session**: a node replayed after a stop (SPEC 9.4) does not create a second
+  application, it reads back the id of the session's one.
 """
 
 from dataclasses import dataclass
@@ -34,15 +34,15 @@ NOTES_MAX = 500
 
 
 class IntakeDraft(BaseModel):
-    """La fiche que décrit la phrase de January : sortie structurée de l'Assistant de suivi, puis
-    ce que January confirme. Un champ facultatif vide vaut « absent » ; rien n'est inventé."""
+    """The application January's sentence describes: structured output of the tracking Assistant,
+    then what January confirms. An empty optional field means "absent"; nothing is invented."""
 
     model_config = ConfigDict(str_strip_whitespace=True)
 
     company: str = Field(min_length=1, max_length=COMPANY_MAX)
     title: str = Field(min_length=1, max_length=TITLE_MAX)
     status: ApplicationStatus = "applied"
-    applied_on: date | None = None  # « hier » résolu par rapport au jour de January
+    applied_on: date | None = None  # "yesterday" resolved against January's day
     channel: Channel | None = None
     contact_name: str | None = Field(default=None, max_length=CONTACT_MAX)
     contact_role: str | None = Field(default=None, max_length=CONTACT_MAX)
@@ -50,7 +50,7 @@ class IntakeDraft(BaseModel):
 
     @model_validator(mode="after")
     def _planned_has_no_date(self) -> "IntakeDraft":
-        """Une candidature « à postuler » n'a pas encore de jour d'envoi."""
+        """A "to apply" application has no sending day yet."""
         if self.status == "to_apply":
             self.applied_on = None
         return self
@@ -65,7 +65,7 @@ class IntakeDraft(BaseModel):
 
 @dataclass(frozen=True)
 class IntakeContext:
-    """Le jour de January (son fuseau) et la langue de son interface."""
+    """January's day (her time zone) and the language of her interface."""
 
     today: date
     language: str
@@ -73,8 +73,8 @@ class IntakeContext:
 
 @dataclass(frozen=True)
 class AlertView:
-    """Une fiche existante qui ressemble à la fiche en préparation : sa force, son identifiant et
-    le message en français (date et statut, SPEC 6.3)."""
+    """An existing application similar to the one being drafted: its strength, its id and the
+    message (date and status, SPEC 6.3)."""
 
     level: AlertStrength
     application_id: str
@@ -83,7 +83,7 @@ class AlertView:
 
 @dataclass(frozen=True)
 class InfoView:
-    """Une information « même entreprise » : la fiche proche et le message en français."""
+    """A "same company" notice: the close application and the message."""
 
     application_id: str
     company: str
@@ -94,34 +94,32 @@ class InfoView:
 
 class ApplicationStore(Protocol):
     async def intake_context(self, user_id: str) -> IntakeContext:
-        """Le jour de January (fuseau de ses réglages) et la langue de son interface."""
+        """January's day (time zone from her settings) and the language of her interface."""
         ...
 
     async def intake_alerts(self, user_id: str, draft: IntakeDraft) -> list[AlertView]:
-        """Les fiches qui bloquent la création (voir le module), la plus forte d'abord."""
+        """The applications that block creation (see the module), strongest first."""
         ...
 
     async def intake_info(self, user_id: str, draft: IntakeDraft) -> list[InfoView]:
-        """Les simples informations (même entreprise dans les 30 jours), la plus récente d'abord."""
+        """The plain notices (same company within 30 days), most recent first."""
         ...
 
     async def save_intake(
         self, user_id: str, session_id: str, draft: IntakeDraft, distinct_from: list[str]
     ) -> str:
-        """Crée la fiche et rend son identifiant ; idempotent par session. `distinct_from` : les
-        fiches de l'alerte que January a confirmées « autre poste » ; 409 `application_duplicate`
-        si une fiche qui ressemble n'est pas couverte."""
+        """Creates the application and returns its id; idempotent per session. `distinct_from`:
+        the alerted applications January confirmed as "another position"; 409
+        `application_duplicate` if a similar application is not covered."""
         ...
 
 
 def applications_unavailable() -> AppError:
-    return AppError(
-        "applications_unavailable", "Les candidatures ne sont pas branchées sur ce moteur.", 503
-    )
+    return AppError("applications_unavailable", "Applications are not wired to this engine.", 503)
 
 
 class _NoApplications:
-    """Valeur par défaut du moteur (tests, démarrages sans la feature)."""
+    """Engine default (tests, startups without the feature)."""
 
     async def intake_context(self, user_id: str) -> IntakeContext:
         raise applications_unavailable()

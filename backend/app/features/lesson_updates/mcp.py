@@ -10,7 +10,7 @@ MCP = FeatureMcp(
             f"GET {_ROOT}",
             1,
             "lesson_updates_list_proposals",
-            "Lit les corrections de version documentées d’une leçon.",
+            "Reads a lesson's documented version corrections.",
             untrusted=(
                 "[].source_url",
                 "[].explanation",
@@ -22,7 +22,7 @@ MCP = FeatureMcp(
             "POST /lessons/{lesson_id}/updates/{update_id}/accept",
             3,
             "lesson_updates_accept_lesson_update",
-            "Applique la correction proposée à la leçon. Demande à confirmer.",
+            "Applies the proposed correction to the lesson. Asks for confirmation.",
         ),
     ),
     graphs=(McpGraph(GRAPH, follow_only=True),),

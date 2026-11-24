@@ -1,4 +1,4 @@
-"""Version de l’exercice et synthèse des vérifications personnelles, en lecture seule."""
+"""Exercise version and summary of personal checks, read-only."""
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -32,11 +32,7 @@ def _summary(run: IdeRun, current: str | None, previous: str | None) -> Practice
 async def record_finished_check(db: AsyncSession, run: IdeRun) -> None:
     settings = await SettingsService(db, run.user_id).get()
     day = utcnow().astimezone(user_zone(settings.timezone)).date()
-    text = (
-        "Vérification de code réussie."
-        if run.exit_code == 0
-        else "Vérification de code terminée avec un échec."
-    )
+    text = "Code check passed." if run.exit_code == 0 else "Code check finished with a failure."
     await add_entry(
         db,
         run.user_id,
@@ -57,7 +53,7 @@ async def read_history(
     if session.exercise_id is None:
         return []
     current = session.exercise_version
-    # Les vérifications comparent les séances ouvertes sur le même exercice de départ.
+    # Checks compare sessions opened on the same starting exercise.
     checks = await RunRepository(db, user_id).recent_for_exercise(
         session.exercise_id, current, run_id
     )

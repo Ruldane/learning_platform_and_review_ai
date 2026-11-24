@@ -1,4 +1,4 @@
-"""Rapproche une PR publique du dossier confirmé et inscrit la preuve dans la même transaction."""
+"""Matches a public PR with the confirmed dossier and records the proof in the same transaction."""
 
 from datetime import UTC, datetime
 
@@ -15,7 +15,7 @@ from app.features.skills.service import SkillsService
 def _unverified() -> AppError:
     return AppError(
         "contribution_pull_unverified",
-        "La pull request ne correspond pas au compte, aux branches et au repère confirmés.",
+        "The pull request does not match the confirmed account, branches and marker.",
         409,
     )
 
@@ -27,7 +27,7 @@ async def track(
         row = await ContributionRepository(db, user_id).owned(contribution_id)
         approved = publication_of(row)
         if approved is None:
-            raise AppError("contribution_not_confirmed", "Confirme d’abord la préparation.", 409)
+            raise AppError("contribution_not_confirmed", "Confirm the preparation first.", 409)
         repo = repository(row)
         number = row.pull_number if url is None else repo.pull_number(url)
         if number is None or (row.pull_number is not None and row.pull_number != number):
@@ -45,9 +45,7 @@ async def track(
         if row.revision != revision or not await records.change(
             row, pull_number=number, status=status
         ):
-            raise AppError(
-                "contribution_changed", "Ce dossier a changé. Actualise sa lecture.", 409
-            )
+            raise AppError("contribution_changed", "This dossier has changed. Refresh it.", 409)
         if status == "accepted":
             proof = evidence(
                 "contribution", contribution_id, row.issue_title[:200], datetime.now(UTC)

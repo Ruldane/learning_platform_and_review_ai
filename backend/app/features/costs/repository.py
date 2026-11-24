@@ -8,8 +8,8 @@ from sqlalchemy.orm import InstrumentedAttribute
 from app.db.models.agents import LlmCall
 from app.db.repository import UserScopedRepository
 
-# Les colonnes que lisent le rapport et le journal : ni `user_id`, ni `updated_at`, et des
-# lignes légères (pas d'entités dans la session) pour les 90 jours du rapport.
+# The columns the report and the log read: neither `user_id` nor `updated_at`, and light
+# rows (no entities in the session) for the report's 90 days.
 _SINCE_COLUMNS = (
     LlmCall.created_at,
     LlmCall.graph,
@@ -30,18 +30,18 @@ _PAGE_COLUMNS = (
 
 
 def _matches(column: InstrumentedAttribute[str | None], value: str) -> ColumnElement[bool]:
-    """Égalité ; la valeur vide désigne « sans » : le rapport des coûts range sous la clé `""` les
-    appels dont l'agent ou le graphe est NULL, et le journal les retrouve avec cette même clé."""
+    """Equality; the empty value means "none": the cost report files under the key `""` the
+    calls whose agent or graph is NULL, and the log finds them again with that same key."""
     return or_(column.is_(None), column == "") if value == "" else column == value
 
 
 class LlmCallRepository(UserScopedRepository[LlmCall]):
-    """Lecture du journal des appels (`llm_calls`), au nom d'une seule utilisatrice."""
+    """Reads the call log (`llm_calls`) on behalf of a single user."""
 
     model = LlmCall
 
     async def since(self, start_utc: datetime) -> Sequence[Row[*tuple[Any, ...]]]:
-        """Les appels faits à partir de `start_utc` (inclus), du plus ancien au plus récent."""
+        """Calls made from `start_utc` (inclusive), oldest first."""
         stmt = (
             select(*_SINCE_COLUMNS)
             .where(LlmCall.user_id == self.user_id, LlmCall.created_at >= start_utc)
@@ -57,8 +57,8 @@ class LlmCallRepository(UserScopedRepository[LlmCall]):
         agent: str | None,
         graph: str | None,
     ) -> Sequence[Row[*tuple[Any, ...]]]:
-        """`limit` appels du plus récent au plus ancien, strictement avant le curseur
-        `(created_at, id)` s'il y en a un ; `agent` et `graph` filtrent."""
+        """`limit` calls, newest first, strictly before the cursor `(created_at, id)`
+        if there is one; `agent` and `graph` filter."""
         stmt = select(*_PAGE_COLUMNS).where(LlmCall.user_id == self.user_id)
         if before is not None:
             at, call_id = before

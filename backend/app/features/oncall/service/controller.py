@@ -1,4 +1,4 @@
-"""Deux processus du diagnostic, tous deux lancés dans le bac existant."""
+"""The diagnostic's two processes, both started in the existing sandbox."""
 
 from app.features.oncall.scenarios import SIZES
 

@@ -1,7 +1,10 @@
-"""La mémoire vue par la capture rapide (SPEC F18, D108) : l'état d'un document importé de
-January, et l'écriture de sa capture résumée en élément `document` (auteur l'Archiviste, raison
-« Capture rapide de January. »), indexée après le commit de l'appelant (D66). Lectures et
-écritures pour les autres features (contrat 2). Journaux : identifiants seulement."""
+"""Memory as seen by the quick capture (SPEC F18, D108): the state of a document imported by
+January, and the writing of her summarised capture as a `document` item (author the Archivist,
+reason `CAPTURE_REASON`), indexed after the caller's commit (D66). Reads and writes for the
+other features (contract 2). Logs: identifiers only.
+
+`CAPTURE_REASON` and `CAPTURE_REFLECT_PREFIX` are stored in the write log and matched there
+(`recent.py`): they keep their French values until a coordinated migration."""
 
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -16,23 +19,23 @@ from app.features.memory.service.runtime import MemoryRuntime
 
 CAPTURE_AUTHOR = "archivist"
 CAPTURE_REASON = "Capture rapide de January."
-CAPTURE_REFLECT_PREFIX = "Capture « "  # début de la raison des acquis reflétés par une capture
+CAPTURE_REFLECT_PREFIX = "Capture « "  # start of the reason for skills reflected by a capture
 
 
 def reflect_reason(title: str) -> str:
-    """La raison des acquis qu'une capture « j'ai appris » reflète en mémoire."""
+    """The reason for the skills that an "I learned" capture reflects in memory."""
     return f"{CAPTURE_REFLECT_PREFIX}{title} » : January dit l'avoir appris."
 
 
 @dataclass(frozen=True)
 class DocumentState:
-    status: str  # `queued`, `processing`, `indexed` ou `error`
+    status: str  # `queued`, `processing`, `indexed` or `error`
     name: str
     url: str | None
 
 
 async def document_state(db: AsyncSession, user_id: str, document_id: str) -> DocumentState | None:
-    """L'état d'un document de l'utilisateur, `None` s'il n'existe pas ou n'est pas à lui."""
+    """The state of a user's document, `None` if it does not exist or is not theirs."""
     doc = await DocumentRepository(db, user_id).get(document_id)
     return None if doc is None else DocumentState(doc.status, doc.name, doc.url)
 
@@ -47,9 +50,9 @@ async def write_capture(
     tags: Sequence[str],
     session_id: str,
 ) -> MemoryItem:
-    """L'élément `document` de la capture (sans `source_id` : le supprimer ne touche à aucun
-    document importé). Même contenu déjà là : l'existant. Non indexé ici, et non commité : la
-    transaction est celle de l'appelant, qui indexe ensuite (`index_capture`)."""
+    """The capture's `document` item (without `source_id`: deleting it touches no imported
+    document). Same content already there: the existing one. Not indexed here, and not
+    committed: the transaction is the caller's, which indexes afterwards (`index_capture`)."""
     draft = WriteDraft(
         kind="document",
         title=title,
@@ -64,9 +67,9 @@ async def write_capture(
 
 
 async def index_capture(runtime: MemoryRuntime, user_id: str, item_id: str) -> bool:
-    """Indexe l'élément s'il ne l'est pas encore (rejeu compris) ; vrai s'il est indexé. Une
-    panne d'Ollama ou de Qdrant le laisse non indexé, sans exception : la réindexation le
-    rattrapera."""
+    """Indexes the item if not indexed yet (replay included); true if it is indexed. An
+    Ollama or Qdrant outage leaves it unindexed, without an exception: reindexing will catch
+    it up."""
     async with runtime.session_factory() as db:
         item = await MemoryItemRepository(db, user_id).get(item_id)
         if item is None:

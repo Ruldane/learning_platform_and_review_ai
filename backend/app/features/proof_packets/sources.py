@@ -12,7 +12,7 @@ from app.features.proof_packets.schemas import (
 
 
 async def _available(rt: MissionRuntime, user_id: str) -> dict[UUID, ProofPacketItem | None]:
-    """Les mesures de la mission et le rendu sont figés dans la même lecture par compte."""
+    """The mission measurements and the submission are frozen in the same per-account read."""
     result: dict[UUID, ProofPacketItem | None] = {}
     for mission in await list_missions(rt, user_id):
         mission_id = UUID(mission.id)
@@ -63,11 +63,13 @@ async def selected(
     proofs = []
     for reference in sorted(references, key=lambda reference: reference.mission_id):
         if reference.mission_id not in available:
-            raise AppError("proof_source_not_found", "Rendu introuvable.", 404)
+            raise AppError("proof_source_not_found", "Submission not found.", 404)
         proof = available[reference.mission_id]
         if proof is None:
-            raise AppError("proof_source_unapproved", "Enregistre d’abord le rendu mesuré.", 409)
+            raise AppError("proof_source_unapproved", "Save the measured submission first.", 409)
         if (proof.proof_id, proof.revision) != (reference.proof_id, reference.revision):
-            raise AppError("proof_source_changed", "Le rendu a changé. Relis les preuves.", 409)
+            raise AppError(
+                "proof_source_changed", "The submission has changed. Review the proofs.", 409
+            )
         proofs.append(proof)
     return proofs

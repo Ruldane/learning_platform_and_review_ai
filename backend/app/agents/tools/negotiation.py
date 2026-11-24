@@ -1,4 +1,4 @@
-"""Les chiffres d'un relevé et le résultat distinct du jeu de rôle salarial."""
+"""The figures of a salary survey and the separate outcome of the salary role-play."""
 
 from typing import Literal
 

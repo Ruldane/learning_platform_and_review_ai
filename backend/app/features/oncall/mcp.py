@@ -1,51 +1,49 @@
 from app.agents.tools.oncall_port import REVIEW_GRAPH
 from app.mcp.base import FeatureMcp, McpAction, McpGraph
 
-_GESTURE = "Exercice d’astreinte : le geste de l’utilisatrice se fait dans l’interface."
+_GESTURE = "On-call drill: the user's action happens in the interface."
 
 MCP = FeatureMcp(
     feature="oncall",
     actions=(
-        McpAction(
-            "GET /oncall/incidents", 1, "oncall_list_incidents", "Liste les exercices d’astreinte."
-        ),
+        McpAction("GET /oncall/incidents", 1, "oncall_list_incidents", "Lists the on-call drills."),
         McpAction(
             "GET /oncall/incidents/{incident_id}",
             1,
             "oncall_get_incident",
-            "Lit l’état, les événements et le résultat d’un exercice.",
+            "Reads the state, events and result of a drill.",
             untrusted=("report", "verdict.feedback"),
         ),
         McpAction(
             "POST /oncall/incidents",
             3,
             "oncall_start_incident",
-            "Démarre un exercice d’astreinte. Demande à confirmer.",
+            "Starts an on-call drill. Asks for confirmation.",
         ),
         McpAction(
             "POST /oncall/incidents/{incident_id}/advance",
             3,
             "oncall_advance_incident",
-            "Avance l’exercice d’astreinte. Demande à confirmer.",
+            "Advances the on-call drill. Asks for confirmation.",
         ),
         McpAction(
             "POST /oncall/incidents/{incident_id}/events/{event_id}/observe",
             3,
             "oncall_observe_incident_event",
-            "Note une observation de l’exercice. Demande à confirmer.",
+            "Records an observation in the drill. Asks for confirmation.",
         ),
         McpAction(
             "POST /oncall/incidents/{incident_id}/diagnostic",
             3,
             "oncall_run_incident_diagnostic",
-            "Exécute le diagnostic de l’exercice. Demande à confirmer.",
+            "Runs the drill's diagnostic. Asks for confirmation.",
             side_effects="external",
         ),
         McpAction(
             "POST /oncall/incidents/{incident_id}/report",
             3,
             "oncall_submit_incident_report",
-            "Remet le rapport de l’exercice. Demande à confirmer.",
+            "Submits the drill report. Asks for confirmation.",
             launches="oncall_review",
         ),
     ),

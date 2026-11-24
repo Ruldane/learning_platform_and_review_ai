@@ -1,5 +1,5 @@
-"""Le rapport des coûts d'une utilisatrice : ses appels journalisés, aux prix de l'appel, sur
-les `days` derniers jours de son fuseau."""
+"""A user's cost report: her logged calls, at the prices of each call, over the last `days`
+days of her time zone."""
 
 from datetime import datetime
 
@@ -15,7 +15,7 @@ from app.features.settings.service import SettingsService
 async def costs_report(
     db: AsyncSession, user_id: str, days: int, now: datetime | None = None
 ) -> CostsReport:
-    """Le rapport des `days` derniers jours locaux, aujourd'hui compris (`now` : pour les tests)."""
+    """The report for the last `days` local days, today included (`now`: for tests)."""
     zone = user_zone((await SettingsService(db, user_id).get()).timezone)
     since, until = window(local_today(zone, now), days)
     rows = await LlmCallRepository(db, user_id).since(local_moment(since, "00:00", zone))

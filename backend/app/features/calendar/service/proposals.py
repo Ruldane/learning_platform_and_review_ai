@@ -1,4 +1,4 @@
-"""Un aperçu scelle la source et le créneau. Seule sa confirmation écrit chez Google."""
+"""A preview seals the source and the slot. Only its confirmation writes to Google."""
 
 import json
 from datetime import UTC, datetime, timedelta
@@ -52,16 +52,14 @@ def _event_stamp(event: CalendarEvent | None) -> str | None:
 
 
 def stale() -> AppError:
-    return AppError(
-        "calendar_proposal_stale", "Refais un aperçu de ce créneau avant de confirmer.", 409
-    )
+    return AppError("calendar_proposal_stale", "Preview this slot again before confirming.", 409)
 
 
 async def require_credential(rt: CalendarRuntime, db: AsyncSession, user_id: str) -> Credential:
     rt.provider()
     active = await credential(rt, db, user_id)
     if active is None:
-        raise AppError("calendar_disconnected", "Connecte Google Agenda pour continuer.", 409)
+        raise AppError("calendar_disconnected", "Connect Google Calendar to continue.", 409)
     return active
 
 
@@ -119,7 +117,7 @@ async def confirm(rt: CalendarRuntime, user_id: str, proposal_id: str) -> Calend
         async with rt.factory() as db:
             row = await Proposals(db, user_id).get(proposal_id)
             if row is None:
-                raise AppError("calendar_proposal_not_found", "Aperçu Agenda introuvable.", 404)
+                raise AppError("calendar_proposal_not_found", "Calendar preview not found.", 404)
             preview = CalendarProposalOut.model_validate(row.payload["preview"])
             result = preview.model_copy(update={"status": "synced"})
             if row.synced_at is not None:
@@ -164,7 +162,7 @@ async def _sync(
     if old is not None and same_event(old, event):
         return
     if preview.start < now or _event_stamp(old) != previous:
-        # L’aperçu ne couvre plus l’événement courant ou son créneau.
+        # The preview no longer covers the current event or its slot.
         raise stale()
     if preview.action == "unchanged":
         raise stale()

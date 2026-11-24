@@ -11,20 +11,20 @@ MCP = FeatureMcp(
             f"POST {_ROOT}/invite",
             2,
             "surprise_interview_invite",
-            "Réserve l’invitation hebdomadaire dans la plage consentie. Nod seul.",
+            "Reserves the weekly invitation within the consented window. Nod only.",
         ),
         McpAction(
             f"POST {_INVITATION}/accept",
             2,
             "surprise_interview_accept",
-            "Lance l’entretien uniquement après l’acceptation explicite dans la discussion privée.",
+            "Starts the interview only after explicit acceptance in the private chat.",
             launches="interview",
         ),
         McpAction(
             f"GET {_INVITATION}",
             1,
             "surprise_interview_state",
-            "Lit la question en attente ou le bilan de cet entretien. Nod seul.",
+            "Reads the pending question or the debrief of this interview. Nod only.",
             untrusted=(
                 "question.text",
                 "debrief.strengths[]",
@@ -36,9 +36,9 @@ MCP = FeatureMcp(
             f"POST {_INVITATION}/answer",
             2,
             "surprise_interview_answer",
-            "Relaye la réponse originale à la question indiquée et son identifiant de message. "
-            "Après incident, relire l’état et renvoyer le même message si la question attend. "
-            "La réponse ne peut pas être annulée. Nod seul.",
+            "Relays the original answer to the given question and its message identifier. "
+            "After a failure, read the state again and resend the same message if the question "
+            "is still waiting. The answer cannot be undone. Nod only.",
         ),
     ),
     excluded={

@@ -1,4 +1,4 @@
-"""Lecture et règlement d'une soumission directe par la Fabrique de leçons."""
+"""Reading and settling a direct submission through the Lesson Factory."""
 
 import asyncio
 from collections.abc import Sequence
@@ -22,14 +22,14 @@ from app.features.settings.service import SettingsService
 from app.mcp.recorder import ChangeRecorder
 from app.providers.pdf.base import HTML_RENDER_TIMEOUT_S
 
-PDF_ATTEMPT_TIMEOUT_S = 2 * HTML_RENDER_TIMEOUT_S + 10  # rendu Mermaid, repli et rangement
+PDF_ATTEMPT_TIMEOUT_S = 2 * HTML_RENDER_TIMEOUT_S + 10  # Mermaid rendering, fallback and storage
 
 
 class RevisionPdfUnavailable(AppError):
     def __init__(self) -> None:
         super().__init__(
             "lesson_revision_pdf_unavailable",
-            "Le PDF de la retouche n'a pas pu être produit. La version publiée reste disponible.",
+            "The edit's PDF could not be produced. The published version remains available.",
             503,
         )
 
@@ -45,7 +45,7 @@ class PendingDraft(BaseModel):
 
 def verification_revoked() -> AppError:
     return AppError(
-        "lesson_verification_revoked", "Cette session ne peut plus publier le brouillon.", 409
+        "lesson_verification_revoked", "This session can no longer publish the draft.", 409
     )
 
 
@@ -71,7 +71,7 @@ async def save_submission(
 ) -> None:
     sid = lesson.verification_session_id
     if sid is None:
-        return  # publication déjà commitée, les suites reprennent
+        return  # publication already committed, follow-ups resume
     if lesson.status == "ready" and lesson.pdf_key is not None and pdf_key is None:
         raise RevisionPdfUnavailable()
     draft = PendingDraft.model_validate(lesson.verification_draft)
@@ -128,18 +128,18 @@ async def _save_content(
         tags=(program_title,),
         author=author_of(draft.is_mcp),
         replaces=before,
-        reason="Leçon soumise puis publiée après contrôle du Vérificateur.",
+        reason="Lesson submitted then published after the Verifier's check.",
     )
 
 
 async def prepare_pdf(
     rt: LessonsRuntime, user_id: str, module_id: str, session_id: str, markdown: str
 ) -> str | None:
-    """Rend le futur PDF sans tenir le verrou ni publier le brouillon."""
+    """Renders the future PDF without holding the lock or publishing the draft."""
     async with rt.session_factory() as db:
         row = await LessonRepository(db, user_id).by_module(module_id)
         if row is None or row.verification_session_id != session_id:
-            return None  # rejeu d'une publication finie, ou autorisation déjà révoquée
+            return None  # replay of a finished publication, or authorization already revoked
         draft = PendingDraft.model_validate(row.verification_draft)
         language = (await SettingsService(db, user_id).get()).lesson_language
     attempts = 2 if row.status == "ready" else 1
@@ -165,7 +165,7 @@ async def fail_submission(
     repo = LessonRepository(db, user_id)
     lesson = await repo.claim_verification(module_id, session_id)
     if lesson is None:
-        # Après un arrêt entre commit et checkpoint, la même raison est déjà rangée.
+        # After a stop between commit and checkpoint, the same reason is already stored.
         row = await repo.by_module(module_id)
         if (
             row is not None

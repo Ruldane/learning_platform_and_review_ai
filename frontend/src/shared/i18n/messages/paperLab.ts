@@ -1,13 +1,12 @@
 export const paperLab = {
-  title: "Du papier au code",
-  url: "Adresse de l’article",
-  prepare: "Préparer le mini-cours",
-  list: "Retour aux articles",
-  source: "Article source",
-  preparing: "Lecture de l’article et préparation de l’expérience…",
-  failed:
-    "La préparation a échoué. Tu peux essayer une autre adresse ou recommencer depuis la liste.",
-  failedList: "À relancer",
-  expected: "Résultat attendu dans le notebook",
-  notebook: "Ouvrir le projet Python",
+  title: "From paper to code",
+  url: "Paper URL",
+  prepare: "Prepare the mini-course",
+  list: "Back to papers",
+  source: "Source paper",
+  preparing: "Reading the paper and preparing the experiment…",
+  failed: "Preparation failed. You can try another URL or start over from the list.",
+  failedList: "To retry",
+  expected: "Expected result in the notebook",
+  notebook: "Open the Python project",
 } as const;

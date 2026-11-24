@@ -1,7 +1,7 @@
-"""Objectifs (SPEC 3.1, étape 1) : création, qui lance le Conseil (`learning_council`), et
-lectures. Écritures du port pour l'objectif (cadrage, compte rendu).
+"""Goals (SPEC 3.1, step 1): creation, which starts the Council (`learning_council`), and
+reads. Port writes for the goal (framing, minutes).
 
-Journaux : identifiants seulement, jamais le texte d'un objectif ni une réponse (SPEC 17.2)."""
+Logs: identifiers only, never a goal's text or an answer (SPEC 17.2)."""
 
 import builtins
 import logging
@@ -25,11 +25,11 @@ SUBJECT = "goal"
 
 
 def goal_not_found() -> AppError:
-    return AppError("goal_not_found", "Objectif introuvable.", 404)
+    return AppError("goal_not_found", "Goal not found.", 404)
 
 
 async def owned_goal(db: AsyncSession, user_id: str, goal_id: str) -> Goal:
-    """L'objectif de l'utilisateur, relu (frais) ; 404 s'il n'existe pas ou est à un autre."""
+    """The user's goal, read fresh; 404 if it does not exist or belongs to someone else."""
     goal = await GoalRepository(db, user_id).get_fresh(goal_id)
     if goal is None:
         raise goal_not_found()
@@ -37,9 +37,9 @@ async def owned_goal(db: AsyncSession, user_id: str, goal_id: str) -> Goal:
 
 
 async def program_of(db: AsyncSession, user_id: str, goal_id: str) -> tuple[str | None, str | None]:
-    """`(programme, session program_builder)` de l'objectif : le dernier programme écrit et sa
-    session, sinon la dernière session `program_builder` lancée (le Stratège n'a encore rien
-    enregistré, ou elle a échoué)."""
+    """`(program, program_builder session)` of the goal: the latest written program and its
+    session, otherwise the latest `program_builder` session started (the Strategist has not
+    saved anything yet, or it failed)."""
     program = await GoalRepository(db, user_id).latest_program(goal_id)
     if program is not None and program[1] is not None:
         return program
@@ -58,7 +58,7 @@ async def goal_out(db: AsyncSession, user_id: str, goal: Goal) -> GoalOut:
         target_role=goal.target_role,
         deadline=goal.deadline,
         weekly_hours=None if weekly is None else weekly // 60,
-        status=goal.status,  # type: ignore[arg-type]  # colonne texte, valeurs de GoalStatus
+        status=goal.status,  # type: ignore[arg-type]  # text column, GoalStatus values
         council_session_id=goal.council_session_id,
         program_id=program_id,
         program_session_id=program_session_id,
@@ -69,10 +69,9 @@ async def goal_out(db: AsyncSession, user_id: str, goal: Goal) -> GoalOut:
 async def create_goal(
     db: AsyncSession, learning: LearningRuntime, user_id: str, req: GoalCreate
 ) -> GoalStarted:
-    """Enregistre l'objectif puis lance son Conseil (aucune route de session à part, D87).
-    L'objectif est commité AVANT le lancement : le nœud `context` le relit dans sa propre
-    session. Lancement impossible, quelle que soit l'erreur : l'objectif est retiré (`_discard`),
-    l'erreur passe."""
+    """Saves the goal then starts its Council (no separate session route, D87). The goal is
+    committed BEFORE the start: the `context` node reads it again in its own session. Start
+    impossible, whatever the error: the goal is removed (`_discard`), the error propagates."""
     goal = await _add_goal(db, user_id, req, status="council")
     await db.commit()
     try:
@@ -83,10 +82,8 @@ async def create_goal(
         await _discard(db, user_id, goal.id)
         raise
     goal.council_session_id = session_id
-    await db.commit()  # verrou d'écriture de SQLite rendu aussitôt : le Conseil écrit déjà
-    logger.info(
-        "Objectif créé : utilisateur %s, objectif %s, Conseil %s", user_id, goal.id, session_id
-    )
+    await db.commit()  # SQLite write lock released right away: the Council is already writing
+    logger.info("Goal created: user %s, goal %s, Council %s", user_id, goal.id, session_id)
     return GoalStarted(goal=await goal_out(db, user_id, goal), session_id=session_id)
 
 
@@ -103,25 +100,25 @@ async def _add_goal(db: AsyncSession, user_id: str, req: GoalCreate, *, status: 
 
 
 async def write_goal(db: AsyncSession, user_id: str, req: GoalCreate) -> GoalOut:
-    """Écriture directe (phase 10, D213) : l'objectif seul, sans Conseil, sans session ni appel au
-    modèle. Il est déjà « chosen » : aucun parcours n'est à choisir, le programme s'écrit ensuite
-    (`POST /programs/direct`). Un Conseil ne s'y relance pas (`council_not_failed`)."""
+    """Direct write (phase 10, D213): the goal alone, without Council, session or model call. It
+    is already "chosen": no path to choose, the program is written next
+    (`POST /programs/direct`). A Council cannot be restarted on it (`council_not_failed`)."""
     goal = await _add_goal(db, user_id, req, status="chosen")
     await db.commit()
-    logger.info("Objectif écrit en direct : utilisateur %s, objectif %s", user_id, goal.id)
+    logger.info("Goal written directly: user %s, goal %s", user_id, goal.id)
     return await goal_out(db, user_id, goal)
 
 
 async def _discard(db: AsyncSession, user_id: str, goal_id: str) -> None:
-    """Retire l'objectif dont le Conseil n'a pas pu être lancé, quelle que soit l'erreur
-    (moteur indisponible, base, entrée refusée) : aucun objectif orphelin sans Conseil. Au mieux :
-    un retrait impossible est journalisé et l'erreur d'origine passe."""
+    """Removes the goal whose Council could not be started, whatever the error (engine
+    unavailable, database, input refused): no orphan goal without a Council. Best effort: a
+    failed removal is logged and the original error propagates."""
     try:
         await db.rollback()
         await GoalRepository(db, user_id).delete(goal_id)
         await db.commit()
     except Exception:
-        logger.warning("Objectif non retiré après un lancement manqué : objectif %s", goal_id)
+        logger.warning("Goal not removed after a failed start: goal %s", goal_id)
 
 
 async def list_goals(db: AsyncSession, user_id: str) -> builtins.list[GoalOut]:
@@ -134,13 +131,13 @@ async def get_goal(db: AsyncSession, user_id: str, goal_id: str) -> GoalOut:
 
 
 async def open_council(db: AsyncSession, user_id: str, goal_id: str) -> str | None:
-    """Session du Conseil de l'objectif encore ouverte, `None` sinon."""
+    """The goal's Council session still open, `None` otherwise."""
     return await find_active_session(
         db, user_id, graph=COUNCIL_GRAPH, subject_type=SUBJECT, subject_id=goal_id
     )
 
 
-# --- Écritures du port (`AgentCouncilStore`) --------------------------------------------
+# --- Port writes (`AgentCouncilStore`) --------------------------------------------------
 
 
 def brief_of(goal: Goal) -> GoalBrief:
@@ -162,7 +159,7 @@ async def save_framing(
     questions: Sequence[FramingQuestion],
     answers: Mapping[str, str],
 ) -> None:
-    """Questions et réponses du cadrage ; écrase les précédentes (idempotent)."""
+    """Framing questions and answers; overwrites the previous ones (idempotent)."""
     goal = await owned_goal(db, user_id, goal_id)
     goal.framing = {
         "questions": [{"id": q.id, "question": q.question} for q in questions],
@@ -178,7 +175,7 @@ async def save_minutes(db: AsyncSession, user_id: str, goal_id: str, text: str) 
 
 
 async def mark_planned(db: AsyncSession, user_id: str, goal_id: str) -> None:
-    """Programme validé (D88) : l'objectif passe à « planned »."""
+    """Program validated (D88): the goal moves to "planned"."""
     goal = await owned_goal(db, user_id, goal_id)
     if goal.status != "planned":
         goal.status = "planned"

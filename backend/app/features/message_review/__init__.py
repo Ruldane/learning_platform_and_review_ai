@@ -1,1 +1,1 @@
-"""Révision de fiches via la discussion Telegram consentie."""
+"""Card review through the consented Telegram chat."""

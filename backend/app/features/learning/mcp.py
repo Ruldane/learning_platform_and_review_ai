@@ -9,57 +9,57 @@ MCP = FeatureMcp(
             "POST /goals",
             2,
             "learning_create_goal",
-            "Crée un objectif d'apprentissage et lance le Conseil qui propose des parcours.",
+            "Creates a learning goal and starts the Council, which proposes learning paths.",
             launches="learning_council",
         ),
         McpAction(
             "POST /goals/direct",
             2,
             "learning_write_goal",
-            "Écriture directe, aucun agent : crée un objectif (intitulé, métier visé, échéance, "
-            "heures par semaine) sans lancer le Conseil, donc sans coût d'API ; le programme "
-            "s'écrit ensuite par `program_write_program`.",
+            "Direct write, no agent: creates a goal (title, target role, deadline, "
+            "hours per week) without starting the Council, so at no API cost; the program "
+            "is then written with `program_write_program`.",
         ),
-        McpAction("GET /goals", 1, "learning_list_goals", "Les objectifs d'apprentissage."),
-        McpAction("GET /goals/{goal_id}", 1, "learning_get_goal", "Un objectif et son état."),
+        McpAction("GET /goals", 1, "learning_list_goals", "The learning goals."),
+        McpAction("GET /goals/{goal_id}", 1, "learning_get_goal", "A goal and its state."),
         McpAction(
             "POST /goals/{goal_id}/council",
             2,
             "learning_retry_council",
-            "Relance le Conseil d'un objectif dont la dernière session a échoué.",
+            "Restarts the Council for a goal whose last session failed.",
             launches="learning_council",
         ),
         McpAction(
             "GET /goals/{goal_id}/proposals",
             1,
             "learning_list_proposals",
-            "Les parcours proposés par le Conseil pour un objectif.",
+            "The learning paths proposed by the Council for a goal.",
         ),
         McpAction(
             "POST /proposals/{proposal_id}/choose",
             3,
             "learning_choose_proposal",
-            "Choisit le parcours d'un objectif et lance la construction du programme : "
-            "c'est une décision de January, demande à confirmer.",
+            "Chooses the learning path of a goal and starts building the program: "
+            "this is January's decision, asks for confirmation.",
         ),
         McpAction(
             "GET /goals/{goal_id}/boards",
             1,
             "learning_list_boards",
-            "Les états du tableau du Conseil pour un objectif.",
+            "The Council board states for a goal.",
         ),
         McpAction(
             "POST /boards/{board_id}/edits",
             2,
             "learning_edit_board",
-            "Retouche l'état du tableau du Conseil (nouvelle version de l'état).",
+            "Edits the Council board state (new version of the state).",
         ),
     ),
     graphs=(
         McpGraph(
             "learning_council",
-            summary="Le Conseil d'apprentissage sur un objectif (`goal_id`) : débat, "
-            "cadrage et propositions de parcours.",
+            summary="The Learning Council on a goal (`goal_id`): debate, "
+            "framing and learning path proposals.",
         ),
     ),
 )

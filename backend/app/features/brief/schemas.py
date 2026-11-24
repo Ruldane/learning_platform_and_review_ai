@@ -1,6 +1,6 @@
-"""Contrat du brief du jour (SPEC 14.2, P11, P12, D162). Un instantané : les rubriques calculées
-par le code (bloc, révisions, relances, offres, semaine) sont figées à la création ; la ressource
-et le conseil arrivent ensuite, écrits par les agents. Chaque rubrique mène à l'écran vivant."""
+"""Contract of the daily brief (SPEC 14.2, P11, P12, D162). A snapshot: the sections computed by
+the code (block, reviews, reminders, offers, week) are frozen at creation; the resource and the
+advice arrive later, written by the agents. Each section leads to the live screen."""
 
 from datetime import date, datetime
 
@@ -16,7 +16,7 @@ class BriefBlockTask(BaseModel):
 
 
 class BlockRubric(BaseModel):
-    """Le bloc d'étude du jour : la leçon et ses tâches dues (`minutes` : leur total)."""
+    """The study block of the day: the lesson and its due tasks (`minutes`: their total)."""
 
     module_title: str
     lesson_id: str
@@ -26,7 +26,7 @@ class BlockRubric(BaseModel):
 
 
 class ReviewsRubric(BaseModel):
-    """`queue` : les fiches de la file du jour ; `remaining` : celles dues au-delà de la file."""
+    """`queue`: the cards in today's queue; `remaining`: those due beyond the queue."""
 
     queue: int
     remaining: int
@@ -42,7 +42,7 @@ class ReminderItem(BaseModel):
 
 
 class RemindersRubric(BaseModel):
-    """`due` : toutes les relances dues ; `items` : les 5 premières."""
+    """`due`: all due reminders; `items`: the first 5."""
 
     due: int
     items: list[ReminderItem]
@@ -58,15 +58,15 @@ class OfferItem(BaseModel):
 
 
 class OffersRubric(BaseModel):
-    """Les nouvelles offres du radar (score au moins 70), 5 au plus ; `run_id` : le relevé de la
-    meilleure (`None` sans offre)."""
+    """New radar offers (score at least 70), 5 at most; `run_id`: the run of the best one
+    (`None` without an offer)."""
 
     run_id: str | None
     items: list[OfferItem]
 
 
 class WeekRubric(BaseModel):
-    """L'avancement de la semaine locale du programme validé le plus récent."""
+    """Progress of the local week of the most recent validated program."""
 
     planned_minutes: int
     done_minutes: int
@@ -77,8 +77,8 @@ class WeekRubric(BaseModel):
 
 
 class BriefResourceOut(BaseModel):
-    """La ressource du jour : un résultat réel du web dont la page a été lue. `published` : sa date
-    si le web la donne, jamais devinée."""
+    """The resource of the day: a real web result whose page was read. `published`: its date if
+    the web gives it, never guessed."""
 
     title: str
     url: str
@@ -88,10 +88,10 @@ class BriefResourceOut(BaseModel):
 
 
 class BriefOut(BaseModel):
-    """Le brief d'un jour local. `advice_status` : `pending` tant que la session du conseil vit
-    (le seul état qui change encore) ; `ready` (`advice` rangé) ; `failed` (conseil impossible ou
-    session morte) et `unavailable` (aucun modèle) sont **définitifs pour la journée** : le
-    conseil n'est jamais relancé, aucun « Réessayer » à offrir."""
+    """The brief of a local day. `advice_status`: `pending` while the advice session lives (the
+    only state that still changes); `ready` (`advice` stored); `failed` (advice impossible or
+    session dead) and `unavailable` (no model) are **final for the day**: the advice is never
+    relaunched, there is no "Retry" to offer."""
 
     id: str
     day: date
@@ -106,10 +106,10 @@ class BriefOut(BaseModel):
     resource: BriefResourceOut | None
     unavailable: list[str] = Field(
         default_factory=list,
-        description="Les rubriques dont la source était en panne à la création (vides ce jour).",
+        description="Sections whose source was down at creation (empty for that day).",
     )
     advice: list[str] | None
     advice_status: AdviceStatus = Field(
-        description="`pending` change encore ; `ready`, `failed` et `unavailable` sont définitifs."
+        description="`pending` may still change; `ready`, `failed` and `unavailable` are final."
     )
     session_id: str | None

@@ -1,7 +1,6 @@
-"""API de l'apprentissage (SPEC 14.2, D87) : objectifs (la création lance le Conseil, une
-relance le reprend après un échec, D97), propositions du dernier lot, choix du parcours, états
-du tableau. Les autres actions du Conseil
-(réponse au cadrage, commandes, messages) passent par les routes des sessions."""
+"""Learning API (SPEC 14.2, D87): goals (creating one starts the Council, a retry restarts it
+after a failure, D97), proposals of the latest batch, path choice, board states. The Council's
+other actions (framing answer, commands, messages) go through the session routes."""
 
 from typing import Annotated
 
@@ -27,7 +26,7 @@ router = APIRouter(tags=["learning"])
 
 
 def get_learning_runtime(conn: HTTPConnection) -> LearningRuntime:
-    """L'apprentissage ouvert par le lifespan (`app.state.learning`)."""
+    """The learning runtime opened by the lifespan (`app.state.learning`)."""
     runtime: LearningRuntime = conn.app.state.learning
     return runtime
 
@@ -44,8 +43,8 @@ async def create_goal(
 
 @router.post("/goals/direct", status_code=http.HTTP_201_CREATED, response_model=GoalOut)
 async def write_goal(body: GoalCreate, current: CurrentUserDep, db: Db) -> GoalOut:
-    """Écrit un objectif sans lancer le Conseil (aucun agent, aucun appel au modèle) : mêmes champs
-    que `POST /goals`."""
+    """Writes a goal without starting the Council (no agent, no model call): same fields as
+    `POST /goals`."""
     return await goals.write_goal(db, current.id, body)
 
 
@@ -65,8 +64,8 @@ async def get_goal(goal_id: str, current: CurrentUserDep, db: Db) -> GoalOut:
 async def retry_council(
     goal_id: str, current: CurrentUserDep, learning: LearningDep
 ) -> GoalStarted:
-    """Relance depuis le début le Conseil de l'objectif, seulement si sa dernière session a
-    échoué (409 `council_not_failed` sinon, `goal_already_chosen` si un programme est lancé)."""
+    """Restarts the goal's Council from the beginning, only if its latest session failed
+    (409 `council_not_failed` otherwise, `goal_already_chosen` if a program was started)."""
     return await launching.retry_council(learning, current.id, goal_id)
 
 

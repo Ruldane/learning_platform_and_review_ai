@@ -10,7 +10,7 @@ from app.features.memory.service.sources.base import (
 
 
 class TextSource:
-    """Fichier texte ; titre : nom sans extension."""
+    """Text file; title: name without extension."""
 
     kind: DocumentSourceKind = "text"
 

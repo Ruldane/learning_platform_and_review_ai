@@ -1,5 +1,5 @@
-"""Recherche dans la mémoire d'un utilisateur. L'index ne donne que des identifiants et des
-scores : le texte, le titre et l'auteur sont relus en base, qui fait foi (D65)."""
+"""Search in a user's memory. The index only returns identifiers and scores: the text,
+the title and the author are reread from the database, which is authoritative (D65)."""
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,12 +13,12 @@ from app.features.memory.service.runtime import MemoryRuntime
 async def search(
     db: AsyncSession, user_id: str, runtime: MemoryRuntime, req: SearchRequest
 ) -> SearchResponse:
-    """Une requête vide est refusée avant toute vectorisation. Un vecteur sans fragment ou sans
-    élément en base (orphelin) ou dont l'élément attend sa confirmation est écarté. Ollama ou
-    Qdrant indisponible : 503 lisible (l'erreur du port)."""
+    """An empty query is rejected before any embedding. A vector without a chunk or item in the
+    database (orphan), or whose item awaits confirmation, is dropped. Ollama or Qdrant
+    unavailable: readable 503 (the port's error)."""
     query = req.query.strip()
     if not query:
-        raise AppError("memory_query_empty", "La recherche ne peut pas être vide.", 422)
+        raise AppError("memory_query_empty", "The search cannot be empty.", 422)
     found = await runtime.providers.index.search(user_id, query, kinds=req.kinds or None, k=req.k)
     chunks = await ChunkRepository(db, user_id).get_many([h.chunk_id for h in found])
     items = await MemoryItemRepository(db, user_id).get_many(

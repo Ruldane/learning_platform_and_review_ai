@@ -47,9 +47,9 @@ logger = logging.getLogger(__name__)
 REQUEST_TIMEOUT_S = 90.0
 _BAD_PATH_CHARS = ("..", "?", "#", "%", "\\", "\x00")
 _NO_HISTORY = {
-    "overflow": "Trop de lignes touchées pour garder l'historique",
-    "failed": "L'historique de cet appel n'a pas pu être écrit",
-    "empty": "Aucune ligne de la base n'a été enregistrée pour cet appel",
+    "overflow": "Too many rows touched to keep the history",
+    "failed": "The history of this call could not be written",
+    "empty": "No database row was recorded for this call",
 }
 
 
@@ -74,7 +74,7 @@ async def internal_request(
         or never_reachable(path, method)
         or any(c in path for c in _BAD_PATH_CHARS)
     ):
-        return internal_error(403, "route_not_reachable", "Cette route n'est pas ouverte au MCP.")
+        return internal_error(403, "route_not_reachable", "This route is not open to MCP.")
     options: dict[str, Any] = {"params": dict(params) or None}
     if form:
         options["files"] = form_fields(body)
@@ -88,7 +88,7 @@ async def internal_request(
             call = http.request(method, API_PREFIX + path, **options)
             response = await asyncio.wait_for(call, REQUEST_TIMEOUT_S)
     except TimeoutError:
-        return internal_error(504, "tool_timeout", "La route a mis trop de temps à répondre.")
+        return internal_error(504, "tool_timeout", "The route took too long to respond.")
     finally:
         MCP_CONFIRMED.reset(confirmation)
         MCP_IDENTITY.reset(token)
@@ -141,7 +141,7 @@ class McpDispatcher:
             body = {"graph": tool.graph, "input": dict(arguments)}
             return ToolRequest("POST", "/sessions", {}, body)
         if tool.plan is None:
-            raise ArgumentError("Outil sans route.")
+            raise ArgumentError("Tool without a route.")
         return build_request(tool.plan, arguments)
 
     async def _send(
@@ -207,10 +207,7 @@ class McpDispatcher:
         notice = None
         if no_history is not None:
             ids["history"] = "none"
-            notice = (
-                f"{_NO_HISTORY[no_history]} : cet appel ne pourra pas être annulé depuis "
-                "l'application."
-            )
+            notice = f"{_NO_HISTORY[no_history]}: this call cannot be undone from the app."
         return ToolResult(
             data={} if data is None else data,
             code=response.status,
@@ -257,7 +254,7 @@ class McpDispatcher:
         try:
             read = await internal_request(self._app, identity, "GET", path, {}, None)
         except Exception as exc:  # le libellé n'est qu'un confort : jamais un blocage
-            logger.error("MCP : libellé de la cible impossible (%s)", type(exc).__name__)
+            logger.error("MCP: target label failed (%s)", type(exc).__name__)
             return None
         return label_of(read.data, reader) if read.status == 200 else None
 
@@ -273,11 +270,11 @@ class McpDispatcher:
         action de niveau 3 ne s'annule pas)."""
         tool = self._registry.get(stored.tool)
         if tool is None or tool.level != 3 or not tool.available_to(identity):
-            data = {"error": {"code": "unknown_tool", "message": "Outil retiré depuis."}}
+            data = {"error": {"code": "unknown_tool", "message": "Tool removed since."}}
             return ToolResult(data=data, code=404)
         try:
             if tool.route is None or stored.request.method != tool.route[0]:
-                raise ArgumentError("Cette demande ne correspond plus à l’outil.")
+                raise ArgumentError("This request no longer matches the tool.")
             self._routes.ensure_declared(tool, stored.request)
         except ArgumentError as exc:
             data = {"error": {"code": "invalid_arguments", "message": exc.message}}

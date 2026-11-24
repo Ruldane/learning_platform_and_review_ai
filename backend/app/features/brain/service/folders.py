@@ -1,4 +1,4 @@
-"""Gestion des racines déclarées par le compte et bilan public sans les chemins."""
+"""Management of the roots declared by the account and a public summary without paths."""
 
 from collections import Counter
 from collections.abc import Callable
@@ -31,7 +31,7 @@ async def owned_folder(db: AsyncSession, user_id: str, folder_id: str) -> BrainF
 
 
 def _exists() -> AppError:
-    return AppError("brain_folder_exists", "Ce dossier est déjà enregistré.", 409)
+    return AppError("brain_folder_exists", "This folder is already registered.", 409)
 
 
 async def create_folder(db: AsyncSession, user_id: str, body: FolderIn) -> FolderOut:

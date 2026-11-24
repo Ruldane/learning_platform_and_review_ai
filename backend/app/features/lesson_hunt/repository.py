@@ -1,4 +1,4 @@
-"""Exercices de lecture critique par compte et par session."""
+"""Critical reading exercises per account and per session."""
 
 from typing import Any
 
@@ -20,7 +20,7 @@ class HuntRepository:
         )
         row = await self._db.scalar(query)
         if row is None:
-            raise AppError("lesson_hunt_not_found", "Exercice de lecture introuvable.", 404)
+            raise AppError("lesson_hunt_not_found", "Reading exercise not found.", 404)
         return row
 
     async def replace(self, row: LessonHunt, **changes: Any) -> None:
@@ -35,4 +35,6 @@ class HuntRepository:
             .values(**changes)
         )
         if result.rowcount != 1:  # type: ignore[attr-defined]
-            raise AppError("lesson_hunt_changed", "L’exercice de lecture a changé. Relis-le.", 409)
+            raise AppError(
+                "lesson_hunt_changed", "The reading exercise has changed. Read it again.", 409
+            )

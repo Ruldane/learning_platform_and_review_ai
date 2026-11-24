@@ -1,4 +1,4 @@
-"""Épreuves comparatives du compte courant."""
+"""Comparative assessments of the current account."""
 
 from uuid import UUID
 

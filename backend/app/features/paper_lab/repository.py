@@ -1,4 +1,4 @@
-"""Accès par compte aux expériences issues d’un article."""
+"""Per-account access to the experiments drawn from a paper."""
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,7 +24,7 @@ class PaperLabRepository:
         query = select(PaperLab).where(PaperLab.id == lab_id, PaperLab.user_id == self.user_id)
         row = await self.db.scalar(query)
         if row is None:
-            raise AppError("paper_lab_not_found", "Expérience introuvable.", 404)
+            raise AppError("paper_lab_not_found", "Experiment not found.", 404)
         return row
 
     async def claim_publication(self, row: PaperLab) -> bool:

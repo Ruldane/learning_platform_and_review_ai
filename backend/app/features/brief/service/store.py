@@ -1,16 +1,15 @@
-"""Port du parcours `daily_brief` (`BriefStore`, D161) sur la feature `brief` : implémentation
-branchée par `bootstrap_agents.agent_ports(..., brief=...)`. Chaque appel ouvre sa propre session de
-base, courte.
+"""Port of the `daily_brief` flow (`BriefStore`, D161) on the `brief` feature: implementation wired
+by `bootstrap_agents.agent_ports(..., brief=...)`. Each call opens its own short database
+session.
 
-`context` relit le brief : les faits du conseil sont tirés des rubriques du code (jamais recomptés
-ici), le sujet de la ressource est « {domaine visé} actualités » (`service.topic` : poste du radar,
-poste de l'objectif, sujet tiré de son texte, titre du programme validé ; rien : `None`, aucune
-recherche), les nombres permis dans le conseil sont ceux des faits (`advice_numbers`, en chiffres).
-Les écritures sont **conditionnelles et idempotentes** (SPEC 9.4) : la ressource ne s'écrit que si
-elle est encore absente (`WHERE resource IS NULL`), le conseil que s'il est encore `pending` ; la
-première écriture gagne, y compris un conseil `None` (`failed` ou `unavailable`), qui reste donc
-tel toute la journée. Journaux : identifiants et nombres ; jamais un fait, un sujet, une ressource
-ni une phrase (17.2)."""
+`context` re-reads the brief: the advice facts come from the code sections (never recounted
+here), the resource topic is "{target field} news" (`service.topic`: radar role, goal role, a
+topic taken from the goal text, validated program title; none: `None`, no search), the numbers
+allowed in the advice are those of the facts (`advice_numbers`, as digits).
+Writes are **conditional and idempotent** (SPEC 9.4): the resource is written only if still
+absent (`WHERE resource IS NULL`), the advice only if still `pending`; the first write wins,
+including a `None` advice (`failed` or `unavailable`), which therefore stays so all day. Logs:
+ids and numbers; never a fact, a topic, a resource or a sentence (17.2)."""
 
 import logging
 from collections.abc import Awaitable, Callable
@@ -30,9 +29,9 @@ logger = logging.getLogger(__name__)
 
 
 def facts_of(sections: dict[str, Any]) -> AdviceFacts:
-    """Les faits du jour tels que les rubriques du brief les disent : le bloc, les fiches de la
-    file, les relances dues, les offres montrées, la semaine (sans programme : zéros). Le fait d'une
-    rubrique en panne (`unavailable`) est `None` : jamais un zéro inventé pour le conseil."""
+    """The day's facts as the brief sections state them: the block, the queued cards, the due
+    reminders, the offers shown, the week (no program: zeros). The fact of a failing section
+    (`unavailable`) is `None`: never a made-up zero for the advice."""
     down = frozenset(sections.get("unavailable", ()))
     block: dict[str, Any] | None = sections.get("block")
     week: dict[str, Any] = sections.get("week") or {}
@@ -54,7 +53,7 @@ def facts_of(sections: dict[str, Any]) -> AdviceFacts:
 
 
 def allowed_numbers(facts: AdviceFacts) -> frozenset[str]:
-    """Les nombres que le conseil peut citer : ceux des faits, en chiffres seulement."""
+    """Numbers the advice may quote: those of the facts, as digits only."""
     return frozenset(
         advice_numbers(
             {
@@ -98,7 +97,7 @@ class AgentBriefStore:
     async def _written(
         self, user_id: str, brief_id: str, write: Callable[[BriefRepository], Awaitable[bool]]
     ) -> bool:
-        """Applique l'écriture `write(repo)` ; 404 si le brief n'est pas à cette utilisatrice."""
+        """Apply the write `write(repo)`; 404 if the brief does not belong to this user."""
         async with self._rt.session_factory() as db:
             repo = BriefRepository(db, user_id)
             written = await write(repo)
@@ -113,7 +112,7 @@ class AgentBriefStore:
         data: dict[str, Any] = asdict(resource) if resource is not None else {}
         written = await self._written(user_id, brief_id, lambda r: r.save_resource(brief_id, data))
         logger.info(
-            "Ressource rangée : session %s, brief %s, première écriture %s, vide %s",
+            "Resource stored: session %s, brief %s, first write %s, empty %s",
             session_id,
             brief_id,
             written,
@@ -140,7 +139,7 @@ class AgentBriefStore:
                 user_id, brief_id, lambda r: r.close_advice(brief_id, status)
             )
         logger.info(
-            "Conseil rangé : session %s, brief %s, première écriture %s, écrit %s",
+            "Advice stored: session %s, brief %s, first write %s, written %s",
             session_id,
             brief_id,
             written,

@@ -15,7 +15,7 @@ class RecruitmentCases(UserScopedRepository[RecruitmentProcess]):
     async def require(self, process_id: str) -> RecruitmentProcess:
         row = await self.get(process_id)
         if row is None:
-            raise AppError("recruitment_not_found", "Parcours de recrutement introuvable.", 404)
+            raise AppError("recruitment_not_found", "Recruitment process not found.", 404)
         return row
 
     async def history(self) -> list[RecruitmentProcess]:

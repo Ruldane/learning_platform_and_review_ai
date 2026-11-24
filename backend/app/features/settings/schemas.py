@@ -15,8 +15,8 @@ SearchProviderName = Literal["searxng", "brave"]
 DEFAULT_PROVIDER_ORDER: tuple[SearchProviderName, ...] = ("searxng", "brave")
 LanguageCode = Annotated[str, Field(pattern=r"^[a-z]{2}$")]
 MAX_DOMAINS = 50
-# Liste de départ (SPEC 10.3, plan 3.6) : sources de référence en tête ; réseaux sociaux et
-# pages derrière une connexion (SPEC 10.2 : jamais contournées) exclus.
+# Starting list (SPEC 10.3, plan 3.6): reference sources first; social networks and
+# pages behind a login (SPEC 10.2: never bypassed) excluded.
 DEFAULT_PREFERRED_DOMAINS = (
     "wikipedia.org",
     "arxiv.org",
@@ -38,13 +38,13 @@ DEFAULT_EXCLUDED_DOMAINS = (
 
 def _no_duplicates[T](values: list[T]) -> list[T]:
     if len(set(values)) != len(values):
-        raise ValueError("valeur en double")  # message fixe : la valeur reçue n'est pas recopiée
+        raise ValueError("duplicate value")  # fixed message: the received value is not echoed
     return values
 
 
 def _domains(values: list[str]) -> list[str]:
-    """Normalise chaque domaine (même règle que le front et le classement des résultats) et
-    retire les doublons ; un domaine invalide refuse la liste, sans recopier la saisie."""
+    """Normalizes each domain (same rule as the front and the result ranking) and removes
+    duplicates; an invalid domain rejects the list, without echoing the input."""
     normalized: list[str] = []
     for value in values:
         domain = normalize_domain(value)
@@ -55,7 +55,7 @@ def _domains(values: list[str]) -> list[str]:
 
 def _zone(name: str) -> str:
     if not is_zone(name):
-        raise ValueError("fuseau inconnu")  # message fixe : la valeur reçue n'est pas recopiée
+        raise ValueError("unknown time zone")  # fixed message: the received value is not echoed
     return name
 
 
@@ -71,7 +71,7 @@ class Availability(BaseModel):
     @computed_field  # type: ignore[prop-decorator]
     @property
     def weekly_budget_minutes(self) -> int:
-        """Budget hebdomadaire : cinq jours de semaine plus un bloc de week-end (borne haute)."""
+        """Weekly budget: five weekdays plus one weekend block (upper bound)."""
         return 5 * self.weekday_minutes + self.weekend_block_max_minutes
 
 
@@ -84,8 +84,8 @@ DEMO_PREFIX = "demo_"
 
 
 def is_overridable(name: str) -> bool:
-    """Vrai si `name` est un agent du catalogue (P17) : au registre, hors agents de démonstration.
-    Le `PUT`, la lecture d'un réglage stocké et `GET /settings/agents` s'accordent sur lui."""
+    """True if `name` is an agent of the catalog (P17): in the registry, except demo agents.
+    The `PUT`, the read of a stored setting and `GET /settings/agents` agree on it."""
     return name in AGENTS and not name.startswith(DEMO_PREFIX)
 
 
@@ -113,71 +113,71 @@ class UserSettings(BaseModel):
         Field(min_length=1, max_length=2),
         AfterValidator(_no_duplicates),
     ] = Field(default_factory=lambda: list(DEFAULT_PROVIDER_ORDER))
-    # Plafonds d'une session de recherche (SPEC 10.4) : requêtes lancées, pages lues.
+    # Caps of a research session (SPEC 10.4): queries run, pages read.
     search_max_queries: int = Field(default=12, ge=1, le=50)
     search_max_pages: int = Field(default=30, ge=1, le=100)
-    # Session guidée (SPEC F14) : cycles de travail et de pause du minuteur, en minutes.
+    # Guided session (SPEC F14): timer work and break cycles, in minutes.
     study_work_minutes: int = Field(default=50, ge=10, le=120)
     study_break_minutes: int = Field(default=10, ge=0, le=60)
-    # Fuseau IANA de January (D98) : jours, semaines et bilan du dimanche se comptent en local.
+    # January's IANA time zone (D98): days, weeks and the Sunday review count in local time.
     timezone: TimeZoneName = DEFAULT_ZONE
-    # Radar du marché (P10, D160) : poste et zone du dernier relevé demandé ; sans poste, celui du
-    # dernier objectif. Données personnelles : jamais journalisées.
+    # Market radar (P10, D160): role and area of the last requested run; without a role, the
+    # one of the last goal. Personal data: never logged.
     radar_role: str = Field(default="", max_length=120)
     radar_zone: str = Field(default="France", max_length=120)
-    # Premier lancement fini (P20, phase 9) : posé par l'assistant d'accueil, vrai d'office pour les
-    # réglages déjà stockés (migration 0015). Le back ne le remet jamais à faux.
+    # First run done (P20, phase 9): set by the welcome wizard, true by default for
+    # settings already stored (migration 0015). The back never sets it back to false.
     onboarding_done: bool = False
 
     @field_validator("reminder_delays_days")
     @classmethod
     def _valid_delays(cls, delays: list[int]) -> list[int]:
-        """Trois délais strictement croissants de 1 à 90 jours (SPEC 6.2) : sinon le champ est
-        refusé, et une valeur déjà stockée retombe sur son défaut (`SettingsService`)."""
+        """Three strictly increasing delays from 1 to 90 days (SPEC 6.2): otherwise the field is
+        rejected, and an already stored value falls back to its default (`SettingsService`)."""
         if tuple(delays) != validated_delays(delays):
-            raise ValueError("trois délais croissants de 1 à 90 jours attendus")
+            raise ValueError("three increasing delays from 1 to 90 days expected")
         return delays
 
     @field_validator("agent_overrides", mode="before")
     @classmethod
     def _known_agents(cls, overrides: object) -> object:
-        """Une surcharge ne vise qu'un agent du catalogue (le registre sans `demo_*`). Contrôlé
-        avant la lecture des valeurs : le nom reçu n'apparaît ni dans le message ni dans le chemin
-        de l'erreur."""
+        """An override only targets a catalog agent (the registry without `demo_*`). Checked
+        before reading the values: the received name appears neither in the message nor in the
+        error path."""
         if isinstance(overrides, dict) and not all(is_overridable(name) for name in overrides):
-            raise ValueError("agent inconnu")  # message fixe : le nom reçu n'est pas recopié
+            raise ValueError("unknown agent")  # fixed message: the received name is not echoed
         return overrides
 
     @field_validator("tiers", mode="before")
     @classmethod
     def _known_tiers(cls, tiers: object) -> object:
-        """Un niveau inconnu est refusé avant la lecture des valeurs : pydantic mettrait sa clé
-        dans le chemin de l'erreur (`tiers.<clé>`), donc la saisie dans la réponse."""
+        """An unknown tier is rejected before reading the values: pydantic would put its key in
+        the error path (`tiers.<key>`), hence the input in the response."""
         if isinstance(tiers, dict) and any(name not in TIERS for name in tiers):
-            raise ValueError("niveau inconnu")  # message fixe : la clé reçue n'est pas recopiée
+            raise ValueError("unknown tier")  # fixed message: the received key is not echoed
         return tiers
 
     @field_validator("tiers")
     @classmethod
     def _complete_tiers(cls, tiers: dict[Tier, ModelChoice]) -> dict[Tier, ModelChoice]:
-        """Un niveau absent reprend sa valeur par défaut : la fabrique trouve toujours un modèle."""
+        """A missing tier takes its default value back: the factory always finds a model."""
         return {tier: tiers.get(tier, DEFAULT_TIERS[tier]) for tier in TIERS}
 
 
 class AgentOut(BaseModel):
-    """Un agent dont le modèle se choisit (surcharge par agent, P17) et le niveau qu'il suit."""
+    """An agent whose model can be chosen (per-agent override, P17) and the tier it follows."""
 
     name: str
     tier: Tier
 
 
 class SettingsOut(UserSettings):
-    """Réglages renvoyés par l'API : ajoute les valeurs calculées, jamais stockées."""
+    """Settings returned by the API: adds the computed values, never stored."""
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def vision_enabled(self) -> bool:
-        """Faux si le niveau `vision` pointe vers un modèle sans vision (spec 11.2)."""
+        """False if the `vision` tier points to a model without vision (spec 11.2)."""
         return supports_vision(self.tiers["vision"])
 
     @classmethod

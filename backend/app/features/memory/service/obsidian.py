@@ -1,4 +1,4 @@
-"""En-tête et renvois wiki d'une note Markdown synchronisée."""
+"""Header and wiki links of a synced Markdown note."""
 
 import re
 from typing import Any

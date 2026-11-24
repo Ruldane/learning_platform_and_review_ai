@@ -1,4 +1,4 @@
-"""Sources effectivement lues et catalogue des experts, bornés à la session."""
+"""Sources actually read and the expert catalogue, bounded to the session."""
 
 from textwrap import shorten
 

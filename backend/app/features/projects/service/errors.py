@@ -1,16 +1,16 @@
-"""Les erreurs de la feature `projects` (messages en français, jamais une donnée du rendu)."""
+"""Errors of the `projects` feature (never a piece of submission data)."""
 
 from app.core.errors import AppError
 
 
 def project_not_found() -> AppError:
-    return AppError("project_not_found", "Projet introuvable.", 404)
+    return AppError("project_not_found", "Project not found.", 404)
 
 
 def project_not_ready() -> AppError:
     return AppError(
         "project_not_ready",
-        "L'énoncé de ce projet n'est pas encore écrit : attends-le avant de rendre ton travail.",
+        "This project's brief is not written yet: wait for it before submitting your work.",
         409,
     )
 
@@ -18,7 +18,7 @@ def project_not_ready() -> AppError:
 def review_in_progress(session_id: str | None, message: str | None = None) -> AppError:
     return AppError(
         "review_in_progress",
-        message or "Ton rendu est en cours d'évaluation : attends son résultat.",
+        message or "Your submission is being reviewed: wait for the result.",
         409,
         {"session_id": session_id},
     )
@@ -26,32 +26,34 @@ def review_in_progress(session_id: str | None, message: str | None = None) -> Ap
 
 def project_validated() -> AppError:
     return AppError(
-        "project_validated", "Ce projet est déjà validé : il ne se rend pas une seconde fois.", 409
+        "project_validated",
+        "This project is already validated: it cannot be submitted a second time.",
+        409,
     )
 
 
 def invalid_submission(fields: list[str]) -> AppError:
-    """422 : les champs du rendu à corriger, jamais leur valeur."""
+    """422: the submission fields to fix, never their value."""
     return AppError(
         "validation_error",
-        "Requête invalide : vérifie les champs signalés.",
+        "Invalid request: check the flagged fields.",
         422,
         {"fields": fields},
     )
 
 
 def screenshot_too_large() -> AppError:
-    return AppError("file_too_large", "Capture trop volumineuse : 5 Mo au maximum par image.", 413)
+    return AppError("file_too_large", "Screenshot too large: 5 MB at most per image.", 413)
 
 
 def screenshot_not_found() -> AppError:
-    return AppError("screenshot_not_found", "Capture introuvable.", 404)
+    return AppError("screenshot_not_found", "Screenshot not found.", 404)
 
 
 def review_unavailable() -> AppError:
     return AppError(
         "review_unavailable",
-        "L'évaluation n'a pas pu démarrer : ton rendu n'est pas gardé, réessaie dans un instant.",
+        "The review could not start: your submission was not kept, try again in a moment.",
         503,
     )
 
@@ -59,33 +61,33 @@ def review_unavailable() -> AppError:
 def brief_unavailable() -> AppError:
     return AppError(
         "brief_unavailable",
-        "L'énoncé n'a pas pu être relancé : réessaie dans un instant.",
+        "The brief could not be restarted: try again in a moment.",
         503,
     )
 
 
 def brief_not_failed() -> AppError:
-    return AppError("brief_not_failed", "L'énoncé de ce projet n'est pas en échec.", 409)
+    return AppError("brief_not_failed", "This project's brief has not failed.", 409)
 
 
 def draft_not_found() -> AppError:
-    return AppError("draft_not_found", "Ce brouillon n'existe pas pour ce projet.", 404)
+    return AppError("draft_not_found", "This draft does not exist for this project.", 404)
 
 
 def project_not_validated(
-    message: str = "Seul un projet validé peut entrer dans ton profil.",
+    message: str = "Only a validated project can enter your profile.",
 ) -> AppError:
     return AppError("project_not_validated", message, 409)
 
 
 def entry_already_added() -> AppError:
-    return AppError("entry_already_added", "Ce projet est déjà dans ton profil maître.", 409)
+    return AppError("entry_already_added", "This project is already in your master profile.", 409)
 
 
 def profile_required() -> AppError:
     return AppError(
         "profile_required",
-        "Valide d'abord ton profil maître : le projet s'y ajoute comme une nouvelle version.",
+        "Validate your master profile first: the project is added to it as a new version.",
         409,
     )
 
@@ -93,36 +95,36 @@ def profile_required() -> AppError:
 def profile_projects_full() -> AppError:
     return AppError(
         "profile_projects_full",
-        "Ton profil maître a déjà 20 projets : retires-en un avant d'en ajouter un.",
+        "Your master profile already has 20 projects: remove one before adding another.",
         409,
     )
 
 
 def drafts_present() -> AppError:
-    return AppError("drafts_present", "Ce projet a déjà ses brouillons.", 409)
+    return AppError("drafts_present", "This project already has its drafts.", 409)
 
 
 def drafts_unavailable() -> AppError:
     return AppError(
         "drafts_unavailable",
-        "Les brouillons n'ont pas pu être relancés : réessaie dans un instant.",
+        "The drafts could not be restarted: try again in a moment.",
         503,
     )
 
 
 def project_exists() -> AppError:
     return AppError(
-        "project_exists", "Ce module a déjà son projet : retouche son énoncé (PATCH).", 409
+        "project_exists", "This module already has its project: edit its brief (PATCH).", 409
     )
 
 
 def project_not_editable() -> AppError:
     return AppError(
         "project_not_editable",
-        "L'énoncé de ce projet ne se retouche plus : il est rendu, évalué ou validé.",
+        "This project's brief can no longer be edited: it is submitted, reviewed or validated.",
         409,
     )
 
 
 def module_skipped() -> AppError:
-    return AppError("module_skipped", "Ce module est sauté : il n'a pas de projet.", 409)
+    return AppError("module_skipped", "This module is skipped: it has no project.", 409)

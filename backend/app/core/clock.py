@@ -1,9 +1,9 @@
-"""Temps local de January (D98) : le back tourne en UTC, mais ses jours et ses semaines (lundi →
-dimanche), sa série, l'échéance de ses fiches et son bilan se comptent dans son fuseau
-(`UserSettings.timezone`). Tout calcul de jour ou de semaine passe ici.
+"""January's local time (D98): the back runs in UTC, but her days and weeks (Monday ->
+Sunday), her streak, her cards' due dates and her review are counted in her time zone
+(`UserSettings.timezone`). Every day or week computation goes through here.
 
-Les données des fuseaux viennent du système, sinon du paquet `tzdata`, déclaré en dépendance
-pour ne jamais en manquer (image `python:*-slim`, Windows)."""
+Time zone data comes from the system, otherwise from the `tzdata` package, declared as a
+dependency so it is never missing (`python:*-slim` image, Windows)."""
 
 from datetime import UTC, date, datetime, time, timedelta
 from typing import Literal
@@ -23,7 +23,7 @@ DEFAULT_ZONE = "Europe/Paris"
 
 
 def _load(name: str) -> ZoneInfo | None:
-    """Le fuseau IANA `name`, ou `None` s'il est inconnu ou mal formé (chemin, vide…)."""
+    """The IANA time zone `name`, or `None` if unknown or malformed (path, empty...)."""
     if not name or name.startswith("/"):
         return None
     try:
@@ -33,17 +33,17 @@ def _load(name: str) -> ZoneInfo | None:
 
 
 def is_zone(name: str) -> bool:
-    """Vrai si `name` est un fuseau IANA connu."""
+    """True if `name` is a known IANA time zone."""
     return _load(name) is not None
 
 
 def user_zone(name: str) -> ZoneInfo:
-    """Le fuseau de January ; un nom inconnu donne `Europe/Paris`."""
+    """January's time zone; an unknown name gives `Europe/Paris`."""
     return _load(name) or ZoneInfo(DEFAULT_ZONE)
 
 
 def local_today(zone: ZoneInfo, now: datetime | None = None) -> date:
-    """Le jour de January à l'instant `now` (maintenant par défaut ; sans fuseau : UTC)."""
+    """January's day at instant `now` (now by default; without a time zone: UTC)."""
     moment = now or datetime.now(UTC)
     if moment.tzinfo is None:
         moment = moment.replace(tzinfo=UTC)
@@ -51,14 +51,14 @@ def local_today(zone: ZoneInfo, now: datetime | None = None) -> date:
 
 
 def week_start(day: date) -> date:
-    """Le lundi de la semaine de `day`."""
+    """The Monday of `day`'s week."""
     return day - timedelta(days=day.weekday())
 
 
 def local_moment(day: date, hhmm: str, zone: ZoneInfo) -> datetime:
-    """L'instant UTC (avec fuseau) où il est `hhmm` (« 18:00 ») le jour `day` chez January.
+    """The UTC instant (time-zone aware) when it is `hhmm` ("18:00") on `day` for January.
 
-    Une heure sautée au passage à l'heure d'été est lue avec le décalage d'avant (règle de
-    `zoneinfo`, `fold=0`)."""
+    An hour skipped at the switch to summer time is read with the offset from before (the
+    `zoneinfo` rule, `fold=0`)."""
     hours, minutes = (int(part) for part in hhmm.split(":"))
     return datetime.combine(day, time(hours, minutes), tzinfo=zone).astimezone(UTC)

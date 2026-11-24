@@ -35,8 +35,8 @@ class ReadingItemOut(BaseModel):
 
 
 class ReadingAnnotation(BaseModel):
-    start: int = Field(ge=0, description="Début du terme, en unités UTF-16.")
-    end: int = Field(gt=0, description="Fin exclusive du terme, en unités UTF-16.")
+    start: int = Field(ge=0, description="Start of the term, in UTF-16 units.")
+    end: int = Field(gt=0, description="Exclusive end of the term, in UTF-16 units.")
     term: str
     definition: str
     chapter: str

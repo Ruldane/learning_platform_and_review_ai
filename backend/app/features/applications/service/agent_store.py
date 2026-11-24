@@ -1,18 +1,18 @@
-"""Port de la création d'une fiche en une phrase (`ApplicationStore`, D141) sur la feature
-`applications` : implémentation branchée par `bootstrap_agents.agent_ports(..., applications=...)`.
-Chaque appel ouvre ses propres sessions de base, courtes.
+"""Port for creating a record from one sentence (`ApplicationStore`, D141) on the `applications`
+feature: implementation wired by `bootstrap_agents.agent_ports(..., applications=...)`. Each call
+opens its own short database sessions.
 
-- `intake_context` : le jour de January (fuseau de ses réglages) et la langue de son interface.
-- `intake_alerts` : les mêmes règles que la création à la main (`match`, 7.1) sur les fiches de
-  January, sans les simples informations (« même entreprise dans les 30 jours ») ; la fiche en
-  préparation n'a ni lien ni offre, seuls l'entreprise et l'intitulé comptent.
-- `intake_info` : les simples informations seules, que la session annonce à la création (M4) ;
-  une lecture en panne les rend vides (journal : le type de l'erreur).
-- `save_intake` : `create_application` (le service de `POST /applications` : même contrôle des
-  doublons, même verrou, même fil), idempotent par session (`ref_id` de l'événement `created`) ;
-  `distinct_from` : les fiches de l'alerte que January a confirmées « autre poste ».
+- `intake_context`: January's day (time zone from her settings) and her interface language.
+- `intake_alerts`: the same rules as manual creation (`match`, 7.1) on January's records, without
+  the plain information ("same company within 30 days"); the record being prepared has neither
+  link nor posting, only the company and job title count.
+- `intake_info`: the plain information only, which the session announces on creation (M4); a
+  failed read returns it empty (log: the error type).
+- `save_intake`: `create_application` (the service behind `POST /applications`: same duplicate
+  check, same lock, same timeline), idempotent per session (`ref_id` of the `created` event);
+  `distinct_from`: the alert's records that January confirmed as "another position".
 
-Journaux : identifiants seulement, jamais la phrase, l'entreprise, l'intitulé ni un contact."""
+Logs: ids only, never the sentence, the company, the job title or a contact."""
 
 import logging
 from typing import cast
@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 
 def application_in(draft: IntakeDraft, distinct_from: list[str]) -> ApplicationIn:
-    """La fiche confirmée, telle que la route `POST /applications` la reçoit."""
+    """The confirmed record, as the `POST /applications` route receives it."""
     contacts = (
         [ContactIn(name=draft.contact_name, role=draft.contact_role)] if draft.contact_name else []
     )
@@ -71,7 +71,7 @@ class AgentApplicationStore:
         return IntakeContext(local_today(zone, self._rt.now()), language)
 
     async def _alerts(self, user_id: str, draft: IntakeDraft, *, info: bool) -> list[AlertOut]:
-        """Les fiches qui ressemblent (les simples informations seules, ou sans elles)."""
+        """The look-alike records (plain information only, or without it)."""
         incoming = Incoming(
             url_norm=None,
             company_norm=company_key(draft.company),
@@ -95,13 +95,13 @@ class AgentApplicationStore:
         ]
 
     async def intake_info(self, user_id: str, draft: IntakeDraft) -> list[InfoView]:
-        """Les simples informations ; une lecture en panne les rend vides (la fiche se crée quand
-        même), le journal ne dit que le type de l'erreur."""
+        """The plain information; a failed read returns it empty (the record is created anyway),
+        the log only states the error type."""
         try:
             alerts = await self._alerts(user_id, draft, info=True)
-        except Exception as exc:  # noqa: BLE001 - une information de moins ne retient pas la fiche
+        except Exception as exc:  # noqa: BLE001 - one piece of information less does not hold the record
             logger.warning(
-                "Informations de l'intake non lues : utilisateur %s, %s",
+                "Intake information not read: user %s, %s",
                 user_id,
                 type(exc).__name__,
             )

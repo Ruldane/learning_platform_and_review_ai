@@ -1,6 +1,6 @@
-"""Service de l'IDE Python (phase 10) : exercices, séances, exécutions dans le bac à sable, notes.
-Au nom d'une utilisatrice ; `caller` dit qui fait le geste (l'interface, le professeur interne ou
-Claude par le MCP) : il fixe l'auteur des notes et l'origine des exercices."""
+"""Python IDE service (phase 10): exercises, sessions, runs in the sandbox, notes. On behalf of a
+user; `caller` says who makes the gesture (the interface, the internal professor or Claude through
+MCP): it sets the author of notes and the origin of exercises."""
 
 from typing import Literal
 
@@ -51,7 +51,7 @@ def _session_view(row: IdeSession) -> IdeSessionOut:
 
 
 class IdeService:
-    """Le commit appartient à l'appelant (la session de la requête)."""
+    """The commit belongs to the caller (the request's session)."""
 
     def __init__(
         self, db: AsyncSession, user_id: str, sandbox: CodeSandbox | None, caller: Caller
@@ -69,15 +69,15 @@ class IdeService:
         topic: str | None = None,
         agent_session_id: str | None = None,
     ) -> ExerciseOut:
-        """`origin` suit l'appelant (`user` ou `claude`) ; le graphe des exercices (10.A3) donne
-        `generated`, le sujet et sa session d'agents."""
+        """`origin` follows the caller (`user` or `claude`); the exercise graph (10.A3) gives
+        `generated`, the topic and its agent session."""
         row = await exercises.create(
             self._ctx, data, origin=origin, topic=topic, agent_session_id=agent_session_id
         )
         return ExerciseOut.model_validate(row)
 
     async def update_exercise(self, exercise_id: str, patch: ExercisePatch) -> ExerciseOut:
-        """Retouche un exercice (écriture directe, sans agent ni exécution)."""
+        """Edits an exercise (direct write, with no agent and no run)."""
         return ExerciseOut.model_validate(await exercises.update(self._ctx, exercise_id, patch))
 
     async def delete_exercise(self, exercise_id: str) -> None:
@@ -89,7 +89,7 @@ class IdeService:
     async def open_session(
         self, exercise_id: str | None = None, title: str | None = None
     ) -> IdeSessionOut:
-        """Une séance sur un exercice, ou une séance libre (sans `exercise_id`)."""
+        """A session on an exercise, or a free session (without `exercise_id`)."""
         row = await sessions.open_session(self._ctx, exercise_id, title)
         return _session_view(row)
 
@@ -104,9 +104,10 @@ class IdeService:
         base_hash: str | None = None,
         base_hashes: dict[str, str] | None = None,
     ) -> IdeSessionOut:
-        """L'interface remplace les fichiers (20 au plus, 200 Ko). Claude (MCP) écrit un fichier,
-        sous l'interrupteur de January et avec `base_hash` (`sessions.write_file_as_claude`). Les
-        propositions dont le fichier a changé deviennent `stale`."""
+        """The interface replaces the files (at most 20, 200 KB). Claude (MCP) writes one
+        file, under
+        January's switch and with `base_hash` (`sessions.write_file_as_claude`). Proposals whose
+        file changed become `stale`."""
         if self._ctx.caller.kind == "mcp":
             row = await sessions.write_file_as_claude(self._ctx, session_id, files, base_hash)
         else:
@@ -144,17 +145,17 @@ class IdeService:
     async def start_run(
         self, session_id: str, kind: Literal["run", "check"], entry: str | None = None
     ) -> RunOut:
-        """Une exécution à la fois par utilisatrice (409 `run_in_progress`) ; bac arrêté : 503
+        """One run at a time per user (409 `run_in_progress`); sandbox stopped: 503
         `sandbox_unavailable`."""
         return RunOut.model_validate(await runs.start(self._ctx, session_id, kind, entry))
 
     async def list_runs(self, session_id: str) -> list[RunOut]:
-        """Les 20 dernières exécutions de la séance, la plus récente d'abord."""
+        """The session's last 20 runs, most recent first."""
         found = await runs.list_for(self._ctx, session_id)
         return [RunOut.model_validate(row) for row in found]
 
     async def get_run(self, run_id: str, after: int = 0) -> RunProgress:
-        """La sortie depuis l'octet `after` ; fige la sortie et la signature à la fin."""
+        """The output since byte `after`; freezes the output and the signature at the end."""
         return await runs.progress(self._ctx, run_id, after)
 
     async def start_terminal(self, session_id: str) -> TerminalStarted:
@@ -193,7 +194,7 @@ class IdeService:
         error_key: str | None = None,
         level: int | None = None,
     ) -> NoteOut:
-        """L'auteur est tiré de l'appelant (`Caller`), jamais du corps."""
+        """The author is taken from the caller (`Caller`), never from the body."""
         row = await notes.add(
             self._ctx,
             session_id,
@@ -205,7 +206,7 @@ class IdeService:
         return NoteOut.model_validate(row)
 
     async def accept_note(self, note_id: str) -> IdeSessionOut:
-        """Geste de l'interface : applique la proposition si son fichier n'a pas changé."""
+        """Interface gesture: applies the proposal if its file has not changed."""
         return _session_view(await notes.accept(self._ctx, note_id))
 
     async def reject_note(self, note_id: str) -> NoteOut:

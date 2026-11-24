@@ -6,15 +6,15 @@ from app.providers.health import HealthStatus
 
 
 class HealthReport(BaseModel):
-    """`down` si la base échoue, `degraded` si un autre contrôle échoue, sinon `ok`."""
+    """`down` if the database fails, `degraded` if another check fails, otherwise `ok`."""
 
     status: Literal["ok", "degraded", "down"]
     checks: dict[str, HealthStatus]
 
 
 class EmbeddingProgress(BaseModel):
-    """Le modèle d'embeddings : présent, ou en cours de téléchargement (`percent` de 0 à 100, vide
-    tant que la taille n'est pas connue). `detail` est un texte français sans donnée personnelle."""
+    """The embeddings model: present, or being downloaded (`percent` from 0 to 100, empty
+    while the size is unknown). `detail` is a plain-language text without personal data."""
 
     model: str
     present: bool

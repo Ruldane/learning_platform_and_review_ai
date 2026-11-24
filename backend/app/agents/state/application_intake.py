@@ -1,17 +1,17 @@
-"""État du parcours `application_intake` (D141). La fiche est en base seulement après la
-confirmation de January : l'état garde la phrase (l'entrée), le brouillon lu, les alertes de
-doublon, la réponse à la question et l'identifiant de la fiche créée."""
+"""State of the `application_intake` flow (D141). The record reaches the database only after
+January confirms: the state keeps the sentence (the input), the parsed draft, the duplicate alerts,
+the answer to the question and the id of the created record."""
 
 from typing import Any, TypedDict
 
 
 class ApplicationIntakeState(TypedDict, total=False):
-    text: str  # la phrase de January : jamais journalisée (17.2)
-    today: str  # le jour de January (ISO 8601)
-    language: str  # la langue de son interface
-    draft: dict[str, Any]  # `IntakeDraft` en JSON
-    alerts: list[dict[str, Any]]  # `AlertView` en JSON, la plus forte d'abord
-    answer: dict[str, Any] | None  # réponse relue : `{choice, draft}` ; `None` : question reposée
-    application_id: str  # la fiche créée (`create`, `distinct`) ou ouverte (`open`)
-    info: list[dict[str, Any]]  # `InfoView` en JSON : « même entreprise » à la création
+    text: str  # January's sentence: never logged (17.2)
+    today: str  # January's day (ISO 8601)
+    language: str  # her interface language
+    draft: dict[str, Any]  # `IntakeDraft` as JSON
+    alerts: list[dict[str, Any]]  # `AlertView` as JSON, strongest first
+    answer: dict[str, Any] | None  # parsed answer: `{choice, draft}`; `None`: question asked again
+    application_id: str  # the record created (`create`, `distinct`) or opened (`open`)
+    info: list[dict[str, Any]]  # `InfoView` as JSON: "same company" at creation
     summary: str

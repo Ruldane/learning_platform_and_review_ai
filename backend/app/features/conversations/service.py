@@ -77,7 +77,7 @@ class ConversationThread:
     def for_subject(
         cls, user_id: str, scope: str, subject_id: str, *, graph: str = CONVERSATION_GRAPH
     ) -> "ConversationThread":
-        # Deux premières soumissions concurrentes réservent le même fil dans prepare.
+        # Two concurrent first submissions reserve the same thread in prepare.
         key = uuid5(NAMESPACE_URL, f"tremplin/conversations/{user_id}/{scope}/{subject_id}")
         return cls(str(key), scope, subject_id, graph)
 
@@ -109,7 +109,7 @@ def _same_request(previous: ConversationTurn, message: ConversationQuestionIn) -
     ):
         raise AppError(
             "conversation_request_conflict",
-            "L'identifiant de cette demande a déjà servi pour un autre message.",
+            "This request identifier was already used for another message.",
             409,
         )
     return previous.session_id
@@ -128,7 +128,7 @@ async def _check_limits(repo: TurnRepository, thread_id: str) -> None:
         return
     raise AppError(
         "conversation_budget_reached",
-        "Le budget de conversation est atteint.",
+        "The conversation budget has been reached.",
         429,
         {"scope": scope},
     )
@@ -276,7 +276,7 @@ async def submit_turn(
 async def _replayed_start(
     db: AsyncSession, user_id: str, sid: str, graph: str
 ) -> ConversationStarted:
-    """Rend le même lancement au MCP joué, si la session appartient bien à ce client."""
+    """Returns the same launch to the played MCP, if the session does belong to this client."""
     play = PLAY_CONTEXT.get()
     if play is not None and play.user_id == user_id and play.graph == graph:
         facts = await session_facts(db, user_id, sid)

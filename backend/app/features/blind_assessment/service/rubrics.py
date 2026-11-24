@@ -4,37 +4,37 @@ from app.features.blind_assessment.schemas import BlindRubric, RubricId
 RUBRICS: dict[RubricId, BlindRubric] = {
     "clarity": BlindRubric(
         id="clarity",
-        title="Clarté de lecture",
+        title="Reading clarity",
         criteria=[
             BlindCriterion(
                 label="Structure",
-                instructions="Les sections et leur ordre guident la lecture.",
+                instructions="The sections and their order guide the reader.",
             ),
             BlindCriterion(
-                label="Lisibilité",
-                instructions="Les formulations sont courtes, naturelles et sans jargon inutile.",
+                label="Readability",
+                instructions="The wording is short, natural and free of needless jargon.",
             ),
             BlindCriterion(
-                label="Précision",
-                instructions="Le rôle, les actions et les résultats sont distingués.",
+                label="Precision",
+                instructions="Role, actions and results are kept distinct.",
             ),
         ],
     ),
     "evidence": BlindRubric(
         id="evidence",
-        title="Solidité des preuves",
+        title="Strength of evidence",
         criteria=[
             BlindCriterion(
-                label="Résultats observables",
-                instructions="Les réalisations décrivent des effets qu’on peut constater.",
+                label="Observable results",
+                instructions="Achievements describe effects that can be observed.",
             ),
             BlindCriterion(
-                label="Contexte des chiffres",
-                instructions="Les chiffres utiles sont expliqués avec périmètre et période.",
+                label="Context for figures",
+                instructions="Useful figures are explained with their scope and period.",
             ),
             BlindCriterion(
-                label="Rôle personnel",
-                instructions="La contribution de la candidate est explicite.",
+                label="Personal role",
+                instructions="The candidate's contribution is explicit.",
             ),
         ],
     ),

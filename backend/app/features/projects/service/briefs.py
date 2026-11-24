@@ -1,17 +1,17 @@
-"""Les énoncés des mini projets (P1, D166) : un projet par module non sauté d'un programme validé,
-créé quand la semaine du module a commencé (lundi local ≤ aujourd'hui), par la tâche planifiée
-`project_briefs` (`app.scheduler`, jamais importé ici : contrat 8), toutes les 15 minutes et au
-démarrage. Un passage ne crée (donc ne lance) que `MAX_NEW_PER_PASS` projets par compte, les
-semaines les plus anciennes d'abord : sur un programme déjà avancé, les énoncés partent trois par
-trois, toutes les 15 minutes, au lieu d'un mur d'appels au même instant (D173).
+"""Mini project briefs (P1, D166): one project per non-skipped module of a validated program,
+created once the module's week has started (local Monday ≤ today), by the scheduled job
+`project_briefs` (`app.scheduler`, never imported here: contract 8), every 15 minutes and at
+startup. A pass only creates (and so only launches) `MAX_NEW_PER_PASS` projects per account,
+oldest weeks first: on a program already under way, briefs go out three by three, every
+15 minutes, instead of a wall of calls at the same instant (D173).
 
-La lecture des programmes validés de tous les comptes (`list_validated_programs`, D91) est la
-seule lecture sans `user_id` ; tout le reste se fait compte par compte. La création est gardée en
-SQL (`ON CONFLICT (user_id, module_id) DO NOTHING`) : **seul celui qui insère lance** la session
-`project_brief`, deux passages ne font donc qu'un projet et qu'une session. Chaque passage
-corrige aussi les projets dont la session est morte (`settle_all`) et relance un énoncé qui n'a
-pas abouti, trois essais au plus, puis `brief_failed` (« Réessayer » : `POST /projects/{id}/brief`).
-Une panne pour un compte n'arrête pas les autres. Journaux : identifiants et nombres."""
+Reading the validated programs of all accounts (`list_validated_programs`, D91) is the only
+read without `user_id`; everything else is done account by account. Creation is guarded in
+SQL (`ON CONFLICT (user_id, module_id) DO NOTHING`): **only the inserter launches** the
+`project_brief` session, so two passes make only one project and one session. Each pass also
+fixes projects whose session died (`settle_all`) and restarts a brief that did not succeed,
+three attempts at most, then `brief_failed` ("Retry": `POST /projects/{id}/brief`).
+A failure for one account does not stop the others. Logs: identifiers and numbers."""
 
 import logging
 from datetime import date, datetime
@@ -39,14 +39,14 @@ MAX_NEW_PER_PASS = 3
 async def _create_missing(
     rt: ProjectsRuntime, user_id: str, programs: list[str], now: datetime
 ) -> list[str]:
-    """Les projets créés (ids) pour les modules non sautés dont la semaine a commencé."""
+    """The projects created (ids) for non-skipped modules whose week has started."""
     created: list[str] = []
     async with rt.session_factory() as db:
         zone = user_zone((await SettingsService(db, user_id).get()).timezone)
         today = local_today(zone, now)
         repo = ProjectRepository(db, user_id)
         known = await repo.module_ids()
-        due: list[tuple[date, str, str, str]] = []  # (début de semaine, programme, module, titre)
+        due: list[tuple[date, str, str, str]] = []  # (week start, program, module, title)
         for program_id in programs:
             loaded = await load(db, user_id, program_id)
             starts = {week.id: week.start_date for week in loaded.weeks}
@@ -79,8 +79,8 @@ async def _ensure_user(
 
 
 async def ensure_project_briefs(rt: ProjectsRuntime, now: datetime) -> int:
-    """Un passage de la tâche planifiée ; rend le nombre de projets créés (un énoncé lancé
-    chacun)."""
+    """One pass of the scheduled job; returns the number of projects created (one brief launched
+    each)."""
     async with rt.session_factory() as db:
         pairs = await list_validated_programs(db)
     by_user: dict[str, list[str]] = {}
@@ -91,15 +91,16 @@ async def ensure_project_briefs(rt: ProjectsRuntime, now: datetime) -> int:
         try:
             created += await _ensure_user(rt, user_id, programs, now)
         except Exception as exc:
-            logger.warning("Énoncés : utilisateur %s non traité (%s)", user_id, type(exc).__name__)
+            logger.warning("Briefs: user %s not processed (%s)", user_id, type(exc).__name__)
     level = logging.INFO if created else logging.DEBUG
-    logger.log(level, "Énoncés : %d compte(s), %d projet(s) créé(s)", len(by_user), created)
+    logger.log(level, "Briefs: %d account(s), %d project(s) created", len(by_user), created)
     return created
 
 
 async def retry_brief(rt: ProjectsRuntime, user_id: str, project_id: str) -> SessionStarted:
-    """« Réessayer » : un énoncé en échec repart pour trois essais de plus ; 409
-    `brief_not_failed` sinon, 503 si le moteur refuse le lancement (le projet reste en échec)."""
+    """Retry: a failed brief starts again for three more attempts; 409
+    `brief_not_failed` otherwise, 503 if the engine refuses the launch (the project stays
+    failed)."""
     async with rt.project_lock(user_id, project_id):
         async with rt.session_factory() as db:
             row = await ProjectRepository(db, user_id).get_fresh(project_id)

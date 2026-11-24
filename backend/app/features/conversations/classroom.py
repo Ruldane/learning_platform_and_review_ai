@@ -1,4 +1,4 @@
-"""Un fil de classe par leçon prête, indépendant du fil du Professeur."""
+"""One classroom thread per ready lesson, independent of the Professor's thread."""
 
 from sqlalchemy.ext.asyncio import AsyncSession
 

@@ -1,13 +1,13 @@
-"""Lancements des parcours d'un objectif et leurs relances après échec (D87, D97).
+"""Starts of a goal's flows and their retries after a failure (D87, D97).
 
-- `launch_program` : lance `program_builder` et passe l'objectif à « chosen » ; appelé sous le
-  verrou de l'objectif par le port (`start_program`, nœud `finalize`) et par la route `choose`.
-- `retry_program` : la route `choose` relance le Stratège quand le même choix est déjà fait, le
-  Conseil fermé, et qu'il n'y a ni programme, ni session `program_builder` ouverte.
-- `retry_council` : `POST /goals/{id}/council` relance depuis le début un Conseil en échec, en
-  gardant l'objectif.
+- `launch_program`: starts `program_builder` and moves the goal to "chosen"; called under the
+  goal's lock by the port (`start_program`, `finalize` node) and by the `choose` route.
+- `retry_program`: the `choose` route restarts the Strategist when the same choice is already
+  made, the Council closed, and there is neither a program nor an open `program_builder` session.
+- `retry_council`: `POST /goals/{id}/council` restarts a failed Council from the beginning,
+  keeping the goal.
 
-Journaux : identifiants seulement (SPEC 17.2)."""
+Logs: identifiers only (SPEC 17.2)."""
 
 import logging
 from collections.abc import Sequence
@@ -34,15 +34,15 @@ MONDAY = 0
 
 
 def program_input(goal_id: str, choice: Choice) -> dict[str, Any]:
-    """Entrée de `program_builder` (`ProgramBuilderInput`) ; ids dédoublonnés dans l'ordre."""
+    """`program_builder` input (`ProgramBuilderInput`); ids deduplicated in order."""
     start = choice.start_date.isoformat() if choice.start_date is not None else None
     ids = list(dict.fromkeys(choice.proposal_ids))
     return {"goal_id": goal_id, "proposal_ids": ids, "start_date": start}
 
 
 async def program_session(db: AsyncSession, user_id: str, goal_id: str) -> str | None:
-    """Session du dernier programme écrit, sinon session `program_builder` ouverte, sinon
-    `None` (rien en cours : un lancement est permis)."""
+    """Session of the latest written program, otherwise the open `program_builder` session,
+    otherwise `None` (nothing in progress: a start is allowed)."""
     await goals.owned_goal(db, user_id, goal_id)
     program = await GoalRepository(db, user_id).latest_program(goal_id)
     if program is not None and program[1] is not None:
@@ -59,8 +59,8 @@ async def launch_program(
     goal_id: str,
     choice: Choice,
 ) -> str:
-    """Lance `program_builder` puis passe l'objectif à « chosen ». L'appelant tient le verrou
-    de l'objectif et a vérifié qu'aucun programme n'est en cours (`program_session`)."""
+    """Starts `program_builder` then moves the goal to "chosen". The caller holds the goal's
+    lock and has checked that no program is in progress (`program_session`)."""
     session_id = await launcher.start(
         user_id,
         goals.PROGRAM_GRAPH,
@@ -77,7 +77,7 @@ async def launch_program(
 
 
 def _coming_monday(value: object) -> date | None:
-    """Date de début reprise d'une entrée précédente, si c'est encore un lundi à venir."""
+    """Start date taken from a previous input, if it is still an upcoming Monday."""
     try:
         start = date.fromisoformat(str(value))
     except ValueError:
@@ -102,12 +102,12 @@ async def retry_program(
     start: date | None,
     council_session_id: str | None = None,
 ) -> str | None:
-    """Sous le verrou de l'objectif, le même choix étant déjà écrit : relance `program_builder`
-    si le Conseil est fermé (`finalize` passé ou arrêté), qu'aucun Conseil n'est ouvert pour
-    l'objectif, et qu'il n'y a ni programme ni session `program_builder` ouverte. Date de début :
-    `start`, sinon celle de l'entrée précédente si c'est encore un lundi à venir. Rend la
-    session lancée, `None` si rien n'est relancé. La source du Conseil (client joué ou
-    fournisseur forcé) est reprise."""
+    """Under the goal's lock, the same choice being already written: restarts
+    `program_builder` if the Council is closed (`finalize` done or stopped), no Council is open
+    for the goal, and there is neither a program nor an open `program_builder` session. Start
+    date: `start`, otherwise the previous input's if it is still an upcoming Monday. Returns the
+    started session, `None` if nothing is restarted. The Council's source (played client or
+    forced provider) is carried over."""
     if council_status in OPEN_STATUSES:
         return None
     async with learning.session_factory() as db:
@@ -130,16 +130,14 @@ async def retry_program(
         session_id = await launch_program(
             learning.session_factory, learning.launcher, user_id, goal_id, choice
         )
-    logger.info(
-        "Programme relancé : utilisateur %s, objectif %s, session %s", user_id, goal_id, session_id
-    )
+    logger.info("Program restarted: user %s, goal %s, session %s", user_id, goal_id, session_id)
     return session_id
 
 
 def council_not_failed(status: str | None) -> AppError:
     return AppError(
         "council_not_failed",
-        "Le Conseil de cet objectif n'a pas échoué : il n'y a rien à relancer.",
+        "This goal's Council has not failed: there is nothing to restart.",
         409,
         {"status": status},
     )
@@ -148,7 +146,7 @@ def council_not_failed(status: str | None) -> AppError:
 def goal_already_chosen() -> AppError:
     return AppError(
         "goal_already_chosen",
-        "Un programme a déjà été lancé pour cet objectif : le Conseil ne se relance plus.",
+        "A program has already been started for this goal: the Council can no longer restart.",
         409,
     )
 
@@ -168,16 +166,16 @@ async def _failed_council_goal(db: AsyncSession, user_id: str, goal_id: str) -> 
 
 
 async def retry_council(learning: LearningRuntime, user_id: str, goal_id: str) -> GoalStarted:
-    """Sous le verrou de l'objectif : la dernière session `learning_council` doit être `failed`
-    (sinon 409 `council_not_failed`, avec son statut) et aucun programme lancé (409
-    `goal_already_chosen`). Le Conseil repart du début : cadrage et compte rendu effacés, puis
-    nouvelle session, rangée sur l'objectif. Les lots et tableaux du Conseil en échec restent en
-    base ; ses propositions ne sont plus rendues ni choisissables (`latest_batch`)."""
+    """Under the goal's lock: the latest `learning_council` session must be `failed`
+    (otherwise 409 `council_not_failed`, with its status) and no program started (409
+    `goal_already_chosen`). The Council starts over: framing and minutes cleared, then a new
+    session, stored on the goal. The failed Council's batches and boards stay in the database;
+    its proposals are no longer returned nor choosable (`latest_batch`)."""
     async with learning.goal_lock(user_id, goal_id):
         async with learning.session_factory() as db:
             goal = await _failed_council_goal(db, user_id, goal_id)
             goal.framing, goal.minutes = {}, None
-            await db.commit()  # avant le lancement : le nœud `context` relit l'objectif
+            await db.commit()  # before the start: the `context` node reads the goal again
         session_id = await learning.launcher.start(
             user_id,
             goals.COUNCIL_GRAPH,
@@ -190,7 +188,5 @@ async def retry_council(learning: LearningRuntime, user_id: str, goal_id: str) -
             goal.council_session_id = session_id
             await db.commit()
             out = await goals.goal_out(db, user_id, goal)
-    logger.info(
-        "Conseil relancé : utilisateur %s, objectif %s, Conseil %s", user_id, goal_id, session_id
-    )
+    logger.info("Council restarted: user %s, goal %s, Council %s", user_id, goal_id, session_id)
     return GoalStarted(goal=out, session_id=session_id)

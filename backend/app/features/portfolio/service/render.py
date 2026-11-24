@@ -14,11 +14,11 @@ STYLE = (
     "p{white-space:pre-wrap;overflow-wrap:anywhere}"
 )
 SECTIONS: tuple[tuple[CandidateKind, str], ...] = (
-    ("profile", "Présentation"),
-    ("linkedin", "Parcours professionnel"),
-    ("skill", "Compétences"),
-    ("project", "Projets"),
-    ("github", "Preuves GitHub"),
+    ("profile", "About"),
+    ("linkedin", "Professional experience"),
+    ("skill", "Skills"),
+    ("project", "Projects"),
+    ("github", "GitHub proofs"),
 )
 
 
@@ -27,7 +27,7 @@ def _fact(item: Candidate) -> str:
     link = ""
     if item.url:
         address = escape(item.url, quote=True)
-        link = f'<a href="{address}" rel="noreferrer">Consulter la source</a>'
+        link = f'<a href="{address}" rel="noreferrer">View the source</a>'
     return f"<article>{title}<p>{escape(item.text)}</p>{link}</article>"
 
 
@@ -35,7 +35,7 @@ def html(selected: list[Candidate]) -> bytes:
     name = next((escape(item.text) for item in selected if item.id == "name"), "Portfolio")
     parts = [
         "<!doctype html>",
-        '<html lang="fr"><head><meta charset="utf-8">',
+        '<html lang="en"><head><meta charset="utf-8">',
         '<meta name="viewport" content="width=device-width, initial-scale=1">',
         f'<meta http-equiv="Content-Security-Policy" content="{escape(CSP, quote=True)}">',
         f"<title>{name}</title><style>{STYLE}</style></head><body><main><h1>{name}</h1>",

@@ -1,13 +1,13 @@
-"""Ce que la confrontation dit dans le fil (D129) : le verbe de chaque position et le message de
-l'agent. Pur : aucun port, aucun modèle."""
+"""What the confrontation says in the thread (D129): the verb of each stance and the agent's
+message. Pure: no port, no model."""
 
 from app.agents.nodes.review_common import LABEL
 from app.agents.tools.review_schema import Proposal, Stance
 
 AGENTS = ("ats_reader", "recruiter")
 _VERB = {
-    1: {"keep": "je garde", "drop": "à retirer", "amend": "autre formulation proposée"},
-    2: {"keep": "je maintiens", "drop": "je retire", "amend": "je reformule"},
+    1: {"keep": "I keep it", "drop": "to remove", "amend": "other wording proposed"},
+    2: {"keep": "I stand by it", "drop": "I withdraw it", "amend": "I rephrase it"},
 }
 
 
@@ -16,15 +16,16 @@ def other(agent: str) -> str:
 
 
 def verb_of(round_no: int, stance: Stance | None, critique: dict[str, str]) -> str:
-    """Le verbe du fil : ce qui arrive à la proposition (un auteur muet ne « maintient » rien)."""
+    """The thread verb: what happens to the proposal (a silent author does not
+    "stand by" anything)."""
     amended = "original" in critique
     if round_no == 2 and stance is None:
         if amended:
-            return "sans réponse, l'amendement de l'autre agent reste"
-        return "sans réponse, la proposition reste"
+            return "no answer, the other agent's amendment stands"
+        return "no answer, the proposal stands"
     kind = stance.stance if stance else "keep"
     if round_no == 2 and amended and kind == "keep":
-        return "je maintiens mon texte d'origine"
+        return "I stand by my original text"
     return _VERB[round_no][kind]
 
 
@@ -35,13 +36,13 @@ def debate_text(
     stances: dict[str, Stance],
     contested: dict[str, dict[str, str]] | None = None,
 ) -> str:
-    """Ce que l'agent dit dans le fil : sa position sur chaque proposition jugée."""
-    head = "Tour 2 : je réponds aux objections sur mes propositions."
+    """What the agent says in the thread: its stance on each judged proposal."""
+    head = "Round 2: I answer the objections to my proposals."
     if round_no == 1:
-        head = f"Tour 1 : mes positions sur les propositions du {LABEL[other(agent)]}."
+        head = f"Round 1: my stances on the {LABEL[other(agent)]}'s proposals."
     lines = [head]
     for p in judged:
         stance = stances.get(p.ref)
         verb = verb_of(round_no, stance, (contested or {}).get(p.ref, {}))
-        lines.append(f"- {p.ref} : {verb}." + (f" {stance.reason}" if stance else ""))
+        lines.append(f"- {p.ref}: {verb}." + (f" {stance.reason}" if stance else ""))
     return "\n".join(lines)

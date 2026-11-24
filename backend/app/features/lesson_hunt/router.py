@@ -1,4 +1,4 @@
-"""Lecture critique à la demande, hors du cycle de publication."""
+"""Critical reading on demand, outside the publication cycle."""
 
 from fastapi import APIRouter, Request
 

@@ -1,4 +1,4 @@
-"""La même base de comparaison est utilisée pour les deux offres."""
+"""The same comparison basis is used for both offers."""
 
 from dataclasses import dataclass
 from unicodedata import normalize

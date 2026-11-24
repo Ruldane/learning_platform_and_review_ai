@@ -1,10 +1,9 @@
-"""Schémas du comité de recrutement simulé (SPEC F19, D147). Une 422 nomme les champs
-(`details.fields`), jamais leur valeur : le CV et les paroles du comité sont des données
-personnelles.
+"""Simulated hiring committee schemas (SPEC F19, D147). A 422 names the fields
+(`details.fields`), never their value: the CV and the committee's words are personal data.
 
-`status` : `running` (en cours), `done` (verdict rangé), `failed` (la session s'est terminée sans
-résultat). `previous` : l'avant et l'après, `None` sans exécution terminée plus ancienne sur la
-même offre, ou tant que celle-ci n'est pas terminée. C'est une simulation, jamais une prédiction."""
+`status`: `running` (in progress), `done` (verdict stored), `failed` (the session ended without a
+result). `previous`: the before and after, `None` without an older finished run on the same
+posting, or while this one is not finished. It is a simulation, never a prediction."""
 
 from datetime import datetime
 
@@ -16,7 +15,7 @@ from app.features.applications.schemas import Id
 
 
 class CommitteeIn(BaseModel):
-    """La version de CV à faire juger : elle doit être prête (PDF rendu)."""
+    """The CV version to be judged: it must be ready (PDF rendered)."""
 
     cv_version_id: Id
 
@@ -27,7 +26,7 @@ class CommitteeStartOut(BaseModel):
 
 
 class VoteOut(BaseModel):
-    """Le vote d'une persona : oui, non ou peut-être, son objection principale, sa raison."""
+    """A persona's vote: yes, no or maybe, its main objection, its reason."""
 
     persona: Persona
     vote: Verdict
@@ -36,16 +35,16 @@ class VoteOut(BaseModel):
 
 
 class ObjectionOut(BaseModel):
-    """Une objection du comité (la plus lourde d'abord) et les personas qui la portent."""
+    """A committee objection (the heaviest first) and the personas who raise it."""
 
     text: str
     personas: list[Persona]
 
 
 class ChangeOut(BaseModel):
-    """Un des trois changements qui feraient basculer un vote : la persona visée, les faits du
-    profil à mettre en avant. `needs_skill` : il demande un terme que le profil ne dit pas
-    (`terms`), une compétence « à acquérir », jamais à écrire dans le CV telle quelle."""
+    """One of the three changes that would flip a vote: the targeted persona, the profile facts
+    to highlight. `needs_skill`: it calls for a term the profile does not state (`terms`), a
+    skill "to acquire", never to be written into the CV as is."""
 
     text: str
     persona: Persona
@@ -55,7 +54,7 @@ class ChangeOut(BaseModel):
 
 
 class VoteChange(BaseModel):
-    """Le vote d'une persona avant (exécution précédente) et après (celle-ci)."""
+    """A persona's vote before (previous run) and after (this one)."""
 
     persona: Persona
     before: Verdict
@@ -63,8 +62,8 @@ class VoteChange(BaseModel):
 
 
 class CommitteeDiff(BaseModel):
-    """L'avant et l'après (F19) : les votes, les objections disparues (`objections_resolved`) et les
-    nouvelles (`objections_new`) par rapport à l'exécution `previous_id`."""
+    """The before and after (F19): the votes, the objections that disappeared
+    (`objections_resolved`) and the new ones (`objections_new`) compared with run `previous_id`."""
 
     previous_id: str
     votes: list[VoteChange]
@@ -73,8 +72,8 @@ class CommitteeDiff(BaseModel):
 
 
 class CommitteeRunOut(BaseModel):
-    """Une exécution du comité. `votes`, `objections` et `changes` sont vides tant qu'elle n'est
-    pas terminée ; `verdict` est la majorité des quatre votes (égalité : peut-être)."""
+    """A committee run. `votes`, `objections` and `changes` are empty until it finishes;
+    `verdict` is the majority of the four votes (tie: maybe)."""
 
     id: str
     cv_version_id: str

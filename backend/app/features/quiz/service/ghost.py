@@ -1,4 +1,4 @@
-"""Version du questionnaire et repères consultables lors d’un nouvel essai."""
+"""Questionnaire version and markers viewable during a retry."""
 
 from collections.abc import Sequence
 

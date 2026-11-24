@@ -1,4 +1,4 @@
-"""Créer un projet de reproduction, avec une expérience explicite et sa source."""
+"""Create a reproduction project, with an explicit experiment and its source."""
 
 import ast
 import json
@@ -11,9 +11,7 @@ def notebook_files(url: str, experiment: ExperimentDraft) -> dict[str, str]:
     try:
         ast.parse(experiment.code)
     except SyntaxError:
-        raise AppError(
-            "paper_lab_code", "Le brouillon Python contient une erreur de syntaxe.", 422
-        ) from None
+        raise AppError("paper_lab_code", "The Python draft contains a syntax error.", 422) from None
     notebook = {
         "nbformat": 4,
         "nbformat_minor": 5,
@@ -25,8 +23,8 @@ def notebook_files(url: str, experiment: ExperimentDraft) -> dict[str, str]:
                 "id": "contexte",
                 "cell_type": "markdown",
                 "metadata": {},
-                "source": f"# Expérience guidée\n\nSource · {url}\n\n{experiment.method}\n\n"
-                f"Résultat attendu · {experiment.expected}",
+                "source": f"# Guided experiment\n\nSource · {url}\n\n{experiment.method}\n\n"
+                f"Expected result · {experiment.expected}",
             },
             {
                 "id": "experience",

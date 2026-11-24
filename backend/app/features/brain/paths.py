@@ -1,4 +1,4 @@
-"""Validation lexicale des racines et chemins du relais. Le serveur ne les ouvre jamais."""
+"""Lexical validation of the relay's roots and paths. The server never opens them."""
 
 import re
 from pathlib import PurePosixPath, PureWindowsPath
@@ -40,7 +40,7 @@ def root_path(path: str) -> str:
         or ".." in root.parts
         or root.name.lower() in _TECHNICAL
     ):
-        raise AppError("brain_root_invalid", "Le dossier doit avoir un chemin local absolu.", 422)
+        raise AppError("brain_root_invalid", "The folder must have an absolute local path.", 422)
     return str(root)
 
 
@@ -54,12 +54,12 @@ def relative_path(path: str, *, allow_technical: bool = False) -> str:
             for part in path.split("/")
         )
     ):
-        raise AppError("brain_path_invalid", "Le chemin relatif de la note est refusé.", 422)
+        raise AppError("brain_path_invalid", "The note's relative path is rejected.", 422)
     return path
 
 
 def path_excluded(path: str, directories: list[str], extensions: list[str]) -> bool:
-    """Les chemins sont relatifs à la racine du relais et comparés sans casse."""
+    """Paths are relative to the relay root and compared case-insensitively."""
     normalized = path.lower()
     return any(normalized.startswith(f"{directory.lower()}/") for directory in directories) or (
         PurePosixPath(normalized).suffix in extensions

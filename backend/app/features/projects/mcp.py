@@ -18,18 +18,19 @@ async def profile_entry_precheck(request: PrecheckInput) -> Verdict:
     except ValidationError:
         return Verdict(
             ok=False,
-            reasons=("L'entrée de projet n'est pas lisible : la route la refusera.",),
-            summary="Ajout d'un projet validé au profil maître (contenu illisible).",
+            reasons=("The project entry is unreadable: the route will reject it.",),
+            summary="Adding a validated project to the master profile (unreadable content).",
         )
     known = figures_in(f"{body.name} {body.description}")
     unknown = {figure for line in body.achievements for figure in figures_in(line)} - known
     reasons = (
-        (f"{len(unknown)} chiffre(s) des réalisations absent(s) de la description du projet.",)
+        (f"{len(unknown)} achievement figure(s) missing from the project description.",)
         if unknown
         else ()
     )
     summary = (
-        f"Ajout d'un projet validé au profil maître ({len(body.achievements)} réalisation(s))."
+        f"Adding a validated project to the master profile ({len(body.achievements)} "
+        "achievement(s)."
     )
     return Verdict(ok=not reasons, reasons=reasons, summary=summary)
 
@@ -41,33 +42,33 @@ MCP = FeatureMcp(
             "GET /projects",
             1,
             "projects_list_projects",
-            "Le Portfolio : projets, programme, semaine et rang ; `status` filtre.",
+            "The Portfolio: projects, program, week and rank; `status` filters.",
         ),
         McpAction(
             "GET /projects/{project_id}",
             1,
             "projects_get_project",
-            "Un projet : énoncé, rendus, évaluation, brouillons.",
+            "A project: brief, submissions, evaluation, drafts.",
         ),
         McpAction(
             "GET /projects/{project_id}/github-claims",
             1,
             "projects_list_verified_github_commits",
-            "Liste les commits publics dont le projet a vérifié l’attribution.",
+            "Lists the public commits whose authorship the project has verified.",
             untrusted=("[].commit_url",),
         ),
         McpAction(
             "PATCH /projects/{project_id}/drafts/{kind}",
             2,
             "projects_update_draft",
-            "Retouche un brouillon (`entry` ou `content`) ; un brouillon « à vérifier » est relu.",
+            'Edits a draft (`entry` or `content`); a draft marked "to check" is reviewed.',
         ),
         McpAction(
             "POST /projects/{project_id}/profile-entry",
             3,
             "projects_add_profile_entry",
-            "Ajoute le projet validé au profil maître (nouvelle version validée) : écriture au "
-            "profil, demande à confirmer, avec contrôle des chiffres.",
+            "Adds the validated project to the master profile (new validated version): a profile "
+            "write that needs confirmation, with a check of the figures.",
             side_effects="external",
             precheck=profile_entry_precheck,
         ),
@@ -75,42 +76,41 @@ MCP = FeatureMcp(
             "POST /projects/{project_id}/brief",
             2,
             "projects_retry_brief",
-            "Relance l'énoncé d'un projet dont les trois essais ont échoué.",
+            "Retries the brief of a project whose three attempts failed.",
             launches="project_brief",
         ),
         McpAction(
             "POST /projects/{project_id}/drafts",
             2,
             "projects_retry_drafts",
-            "Relance les brouillons d'un projet validé qui n'en a pas.",
+            "Retries the drafts of a validated project that has none.",
             launches="project_review",
         ),
         McpAction(
             "POST /projects",
             2,
             "projects_write_project",
-            "Écriture directe, aucun agent : écrit le mini projet d'un module (`module_id`, "
-            "`brief` : titre, contexte, objectif, contraintes, critères, heures, livrable) ; "
-            "le projet est à faire.",
+            "Direct write, no agent: writes the mini project of a module (`module_id`, "
+            "`brief`: title, context, objective, constraints, criteria, hours, deliverable); "
+            "the project is set to do.",
         ),
         McpAction(
             "PATCH /projects/{project_id}",
             2,
             "projects_update_project",
-            "Écriture directe, aucun agent : retouche l'énoncé d'un projet qui n'a pas encore "
-            "de rendu.",
+            "Direct write, no agent: edits the brief of a project that has no submission yet.",
         ),
         McpAction(
             "POST /projects/{project_id}/github-claims",
             3,
             "projects_start_github_claim",
-            "Prépare le défi de vérification GitHub. Demande à confirmer.",
+            "Prepares the GitHub verification challenge. Needs confirmation.",
         ),
         McpAction(
             "POST /projects/{project_id}/submit",
             3,
             "projects_submit_project",
-            "Remet le projet à partir d’un lien ou d’un texte. Demande à confirmer.",
+            "Submits the project from a link or a text. Needs confirmation.",
             encoding="form",
             launches="project_review",
         ),
@@ -118,18 +118,20 @@ MCP = FeatureMcp(
             "GET /projects/{project_id}/screenshots/{number}",
             1,
             "projects_get_project_screenshot",
-            "Lit les métadonnées d’une capture et donne son lien local.",
+            "Reads the metadata of a screenshot and gives its local link.",
             artifact=True,
         ),
     ),
     graphs=(
         McpGraph(
-            "project_brief", follow_only=True, summary="Écrit l'énoncé d'un projet (`project_id`)."
+            "project_brief",
+            follow_only=True,
+            summary="Writes the brief of a project (`project_id`).",
         ),
         McpGraph(
             "project_review",
             follow_only=True,
-            summary="Évalue le rendu d'un projet (`project_id`, `mode` review ou drafts).",
+            summary="Evaluates a project submission (`project_id`, `mode` review or drafts).",
             untrusted=("result",),
         ),
     ),

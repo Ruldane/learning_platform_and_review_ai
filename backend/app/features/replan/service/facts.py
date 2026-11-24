@@ -1,6 +1,6 @@
-"""Faits d'une semaine du programme pour le bilan hebdomadaire (SPEC F13) : temps prévu et fait,
-tâches, retard, quiz notés, avance prise, temps d'étude et captures. La semaine est celle de
-January (lundi → dimanche dans son fuseau, D98) ; les tâches comptent par leur jour prévu."""
+"""Facts of a program week for the weekly review (SPEC F13): planned and done time, tasks,
+delay, graded quizzes, progress ahead, study time and captures. The week is January's (Monday →
+Sunday in her time zone, D98); tasks count by their planned day."""
 
 from datetime import UTC, date, datetime, time, timedelta
 
@@ -16,15 +16,15 @@ DAYS = 7
 
 
 def _utc(day: date, zone_name: str) -> datetime:
-    """Minuit du jour `day` chez January, en UTC."""
+    """Midnight of day `day` in January's time zone, in UTC."""
     return datetime.combine(day, time(0), tzinfo=user_zone(zone_name)).astimezone(UTC)
 
 
 async def week_facts(
     db: AsyncSession, user_id: str, program_id: str, week_start: date
 ) -> WeekFacts:
-    """Les faits de la semaine qui commence le lundi `week_start` ; 404 si le programme est à
-    un autre."""
+    """The facts of the week starting on Monday `week_start`; 404 if the program belongs to
+    someone else."""
     loaded = await load(db, user_id, program_id)
     end = week_start + timedelta(days=DAYS)
     week = [t for t in loaded.tasks if week_start <= t.planned_date < end]

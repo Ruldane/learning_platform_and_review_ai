@@ -25,7 +25,7 @@ class PublicationIn(BaseModel):
     @classmethod
     def confirmation(cls, value: object) -> bool:
         if value is not True:
-            raise ValueError("La préparation sur GitHub doit être confirmée.")
+            raise ValueError("The GitHub preparation must be confirmed.")
         return True
 
     @field_validator("head")
@@ -40,7 +40,7 @@ class PublicationIn(BaseModel):
             )
             or value.endswith(".")
         ):
-            raise ValueError("Saisis une branche Git valide.")
+            raise ValueError("Enter a valid Git branch.")
         return value
 
 

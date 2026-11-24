@@ -1,4 +1,4 @@
-"""Le créneau retenu est exprimé dans le fuseau IANA choisi dans Tremplin."""
+"""The chosen slot is expressed in the IANA time zone selected in Tremplin."""
 
 from datetime import UTC, datetime, time, timedelta
 
@@ -18,7 +18,7 @@ def interview_period(source: Source, selection: InterviewSelection, now: datetim
         or start.utcoffset() != start.replace(fold=1).utcoffset()
     ):
         raise AppError(
-            "calendar_ambiguous_time", "Choisis une heure locale sans changement d’heure.", 422
+            "calendar_ambiguous_time", "Choose a local time outside a clock change.", 422
         )
     if instant < now:
         raise conflict()

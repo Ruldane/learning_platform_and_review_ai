@@ -1,1 +1,1 @@
-"""Atlas des erreurs et des hypothèses de prérequis."""
+"""Atlas of errors and prerequisite hypotheses."""

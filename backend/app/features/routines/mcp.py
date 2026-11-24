@@ -8,28 +8,26 @@ _NOTICE_TEXT = tuple(
 MCP = FeatureMcp(
     feature="routines",
     actions=(
-        McpAction("GET /routines", 1, "routines_rules_list", "Liste les routines du compte."),
-        McpAction(
-            "POST /routines", 2, "routines_rule_create", "Enregistre une routine quotidienne."
-        ),
+        McpAction("GET /routines", 1, "routines_rules_list", "Lists the account's routines."),
+        McpAction("POST /routines", 2, "routines_rule_create", "Saves a daily routine."),
         McpAction(
             "PATCH /routines/{routine_id}",
             2,
             "routines_rule_update",
-            "Modifie une routine du compte.",
+            "Edits one of the account's routines.",
         ),
         McpAction(
             "GET /routines/{routine_id}/executions",
             1,
             "routines_executions_list",
-            "Relit les exécutions de la routine.",
+            "Reads the routine's executions.",
             untrusted=tuple(f"[].{field}" for field in _NOTICE_TEXT),
         ),
         McpAction(
             "POST /routines/{routine_id}/executions",
             2,
             "routines_execution_start",
-            "Exécute la routine avec un reçu.",
+            "Runs the routine with a receipt.",
             untrusted=_NOTICE_TEXT,
         ),
     ),

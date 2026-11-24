@@ -1,13 +1,13 @@
-"""Créer le brief du jour local (P11, P12, D162), à l'ouverture (`GET /brief/today`) ou à l'heure
-réglée (tâche du matin) : jamais deux briefs pour le même jour, jamais deux sessions.
+"""Create the brief for the local day (P11, P12, D162), on opening (`GET /brief/today`) or at the
+set time (morning job): never two briefs for the same day, never two sessions.
 
-Sous le verrou de l'utilisatrice : le jour est celui de January (`brief_day`, jamais `now.date()`),
-le brief existant est rendu tel quel ; sinon les rubriques du code sont calculées et insérées par
-`INSERT … ON CONFLICT DO NOTHING` (unicité `(user_id, day)`). **Seul l'inserteur lance** la session
-`daily_brief` (sujet `brief`) et pose `session_id` ; un lancement refusé (moteur absent, session
-impossible) laisse le conseil `unavailable` (définitif pour la journée) et les rubriques du code
-intactes. Rien n'attend un agent : la session tourne en tâche de fond. Journaux : identifiants,
-codes ; jamais une rubrique."""
+Under the user's lock: the day is January's (`brief_day`, never `now.date()`), an existing brief
+is returned as is; otherwise the code sections are computed and inserted by
+`INSERT … ON CONFLICT DO NOTHING` (unique `(user_id, day)`). **Only the inserter launches** the
+`daily_brief` session (subject `brief`) and sets `session_id`; a refused launch (no engine,
+session impossible) leaves the advice `unavailable` (final for the day) and the code sections
+intact. Nothing waits for an agent: the session runs in the background. Logs: ids and codes;
+never a section."""
 
 import logging
 from datetime import date, datetime
@@ -32,8 +32,8 @@ logger = logging.getLogger(__name__)
 async def _insert(
     rt: BriefRuntime, db: AsyncSession, user_id: str, origin: BriefOrigin, now: datetime
 ) -> tuple[str, bool]:
-    """`(id du brief du jour, créé ?)`. Perdre la course contre un autre insérant (autre
-    processus) rend le brief de l'autre, `créé` faux."""
+    """`(id of the day's brief, created?)`. Losing the race against another inserter (another
+    process) returns the other one's brief, `created` false."""
     zone = user_zone((await SettingsService(db, user_id).get()).timezone)
     today: date = brief_day(now, zone)
     repo = BriefRepository(db, user_id)
@@ -49,13 +49,13 @@ async def _insert(
     if created is not None:
         return created, True
     rival = await repo.by_day(today)
-    if rival is None:  # impossible : le conflit vient d'une ligne de ce jour
+    if rival is None:  # impossible: the conflict comes from a row for this day
         raise brief_not_found()
     return rival.id, False
 
 
 async def _launch(rt: BriefRuntime, user_id: str, brief_id: str) -> None:
-    """Lance la session du conseil et la pose sur le brief ; un refus rend le conseil
+    """Launch the advice session and attach it to the brief; a refusal makes the advice
     `unavailable`."""
     try:
         session_id = await rt.launcher.start(
@@ -66,19 +66,19 @@ async def _launch(rt: BriefRuntime, user_id: str, brief_id: str) -> None:
         async with rt.session_factory() as db:
             await BriefRepository(db, user_id).close_advice(brief_id, "unavailable")
             await db.commit()
-        logger.warning("Brief sans session : brief %s, cause %s", brief_id, safe_code(code))
+        logger.warning("Brief without a session: brief %s, cause %s", brief_id, safe_code(code))
         return
     async with rt.session_factory() as db:
         await BriefRepository(db, user_id).set_session(brief_id, session_id)
         await db.commit()
-    logger.info("Brief lancé : utilisateur %s, brief %s, session %s", user_id, brief_id, session_id)
+    logger.info("Brief launched: user %s, brief %s, session %s", user_id, brief_id, session_id)
 
 
 async def ensure_today(
     rt: BriefRuntime, user_id: str, *, origin: BriefOrigin, now: datetime | None = None
 ) -> tuple[BriefOut, bool]:
-    """Le brief du jour local de l'utilisatrice (créé s'il manque) et `créé ?`. `now` : l'instant
-    de la tâche planifiée ; sans lui, l'horloge du runtime."""
+    """The user's brief for her local day (created if missing) and `created?`. `now`: the moment
+    of the scheduled job; without it, the runtime clock."""
     moment = now or rt.now()
     async with rt.ensure_lock(user_id):
         async with rt.session_factory() as db:
@@ -89,7 +89,7 @@ async def ensure_today(
         out = await brief_out(rt, db, user_id, brief_id)
     logger.log(
         logging.INFO if created else logging.DEBUG,
-        "Brief du jour : brief %s, créé %s, origine %s",
+        "Daily brief: brief %s, created %s, origin %s",
         brief_id,
         created,
         origin,

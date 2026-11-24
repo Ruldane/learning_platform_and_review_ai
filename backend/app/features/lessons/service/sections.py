@@ -1,17 +1,17 @@
-"""Découpe d'une leçon (SPEC 3.5) pour la séance guidée du Tuteur (D102, D103) : objectifs, les
-cinq sections de fond (L'essentiel, Explication, Schémas, Exemple travaillé, Erreurs fréquentes,
-dans cet ordre), l'exercice, son corrigé et les sources numérotées.
+"""Splitting a lesson (SPEC 3.5) for the Tutor's guided session (D102, D103): objectives, the
+five core sections (L'essentiel, Explication, Schémas, Exemple travaillé, Erreurs fréquentes, in
+that order), the exercise, its solution and the numbered sources.
 
-Les titres sont reconnus sur les `##` de premier niveau, casse, accents et apostrophe courbe
-ignorés (le Rédacteur écrit les titres de `SECTIONS` en français, D90) ; un `##` dans un bloc de
-code n'ouvre pas de section. Une section absente ou vide est omise ; en double, la première
-compte. Fonctions pures, sans base."""
+Headings are recognized on top-level `##`, ignoring case, accents and curly apostrophe (the
+Writer writes the `SECTIONS` headings in French, D90); a `##` inside a code block does not open
+a section. A missing or empty section is omitted; when duplicated, the first one counts. Pure
+functions, no database."""
 
 import re
 import unicodedata
 from dataclasses import dataclass
 
-# (préfixe replié, rang) des sections enseignées, dans l'ordre de la séance.
+# Folded prefixes of the taught sections, in session order.
 TAUGHT = ("l'essentiel", "explication", "schema", "exemple travaille", "erreurs frequentes")
 OBJECTIVES = "objectifs"
 EXERCISE = "exercice"
@@ -41,7 +41,7 @@ def _folded(text: str) -> str:
 
 
 def _chunks(markdown: str) -> list[tuple[str, str]]:
-    """`(titre, corps)` de chaque section `##` de premier niveau, dans l'ordre du document."""
+    """`(title, body)` of each top-level `##` section, in document order."""
     chunks: list[tuple[str, list[str]]] = []
     fence: str | None = None
     for line in markdown.splitlines():
@@ -82,8 +82,8 @@ def lesson_parts(markdown: str) -> LessonParts:
 
 
 def lesson_sources(markdown: str) -> list[tuple[int, str, str | None]]:
-    """`(numéro, titre, adresse)` de la section « Sources » (`n. [titre](adresse)`), dans
-    l'ordre des numéros ; un numéro en double garde la première ligne."""
+    """`(number, title, address)` of the « Sources » section (`n. [title](address)`), in
+    number order; a duplicated number keeps the first line."""
     body = (_first(_chunks(markdown), SOURCES) or ("", ""))[1]
     found: dict[int, tuple[str, str | None]] = {}
     for line in body.splitlines():

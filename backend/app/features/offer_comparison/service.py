@@ -37,7 +37,7 @@ async def replace_preferences(
 async def _facts(db: AsyncSession, user_id: str, posting_id: str) -> OfferFacts:
     row = await read_posting(db, user_id, posting_id)
     if row.status != "ready":
-        raise AppError("offer_comparison_pending", "Attends la fin de l’analyse des offres.", 409)
+        raise AppError("offer_comparison_pending", "Wait for the offer analysis to finish.", 409)
     return OfferFacts(
         id=row.id,
         title=row.title,
@@ -66,7 +66,7 @@ async def save(db: AsyncSession, user_id: str, body: OfferComparisonPair) -> Off
 async def read(db: AsyncSession, user_id: str, scenario_id: str) -> OfferComparisonSaved:
     row = await OfferScenarios(db, user_id).get(scenario_id)
     if row is None:
-        raise AppError("offer_comparison_not_found", "Comparaison d’offres introuvable.", 404)
+        raise AppError("offer_comparison_not_found", "Offer comparison not found.", 404)
     return OfferComparisonSaved.model_validate(row, from_attributes=True)
 
 

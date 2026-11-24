@@ -1,12 +1,12 @@
-"""Tentatives d'un quiz (SPEC F9, D101) : envoi des réponses, puis notation dans une session
-`quiz` (mode `grade`) ; lecture d'une tentative avec sa note, ses corrections et son suivi.
+"""Quiz attempts (SPEC F9, D101): submitting the answers, then grading in a `quiz` session
+(`grade` mode); reading an attempt with its grade, its corrections and its follow-up.
 
-Une tentative à la fois par quiz : sous le verrou du quiz, toute tentative `grading` dont la
-session est terminale (échouée, annulée, ou finie sans notes) passe d'abord à `failed` ; une
-tentative encore vivante donne 409 `attempt_in_progress`, et l'index unique partiel
-`uq_quiz_attempts_grading` rend la même 409 si deux envois passent quand même (F3).
-Les réponses sont rangées avec l'indice d'origine des choix (l'ordre affiché change au nouvel
-essai, F27). Une 422 ne recopie jamais la saisie : `details.fields` porte des chemins."""
+One attempt at a time per quiz: under the quiz lock, any `grading` attempt whose session is
+terminal (failed, cancelled, or finished without grades) first moves to `failed`; a still-live
+attempt gives 409 `attempt_in_progress`, and the partial unique index
+`uq_quiz_attempts_grading` returns the same 409 if two submissions still get through (F3).
+Answers are stored with the original index of the choices (the displayed order changes on a
+retry, F27). A 422 never echoes the input: `details.fields` carries paths."""
 
 import logging
 from collections.abc import Sequence
@@ -39,27 +39,25 @@ logger = logging.getLogger(__name__)
 
 
 def attempt_not_found() -> AppError:
-    return AppError("attempt_not_found", "Tentative introuvable.", 404)
+    return AppError("attempt_not_found", "Attempt not found.", 404)
 
 
 def quiz_incomplete() -> AppError:
     return AppError(
         "quiz_incomplete",
-        "Ce quiz n'est pas complet : il lui faut des questions de plus avant d'y répondre.",
+        "This quiz is not complete: it needs more questions before it can be answered.",
         409,
     )
 
 
 def attempt_in_progress() -> AppError:
-    return AppError(
-        "attempt_in_progress", "Une tentative de ce quiz est déjà en cours de notation.", 409
-    )
+    return AppError("attempt_in_progress", "An attempt at this quiz is already being graded.", 409)
 
 
 def _invalid(fields: list[str]) -> AppError:
     return AppError(
         "invalid_answers",
-        "Réponses invalides : question inconnue, en double ou choix hors des propositions.",
+        "Invalid answers: unknown or duplicate question, or a choice outside the options.",
         422,
         {"fields": fields},
     )
@@ -68,9 +66,9 @@ def _invalid(fields: list[str]) -> AppError:
 def stored_answers(
     quiz_id: str, round_: int, questions: Sequence[QuizQuestion], answers: Sequence[AnswerIn]
 ) -> list[dict[str, Any]]:
-    """Réponses rangées (choix ramené à son indice d'origine) ; 422 `invalid_answers` si une
-    question est inconnue ou en double, ou un choix hors des propositions (ou sur une question
-    qui n'est pas un QCM)."""
+    """Stored answers (choice mapped back to its original index); 422 `invalid_answers` if a
+    question is unknown or duplicated, or a choice is outside the options (or on a question
+    that is not an MCQ)."""
     by_id = {q.id: q for q in questions}
     seen: set[str] = set()
     fields: list[str] = []
@@ -95,8 +93,8 @@ def stored_answers(
 
 
 def retry_too_soon(attempts: Sequence[QuizAttempt], today: date) -> AppError | None:
-    """409 `retry_too_soon` si la dernière tentative notée a échoué et que son nouvel essai
-    (J+2 local) n'est pas encore venu."""
+    """409 `retry_too_soon` if the last graded attempt failed and its retry (local D+2) has
+    not come yet."""
     graded = [a for a in attempts if a.status == "graded" and a.score is not None]
     if not graded or passed(graded[-1].score or 0):
         return None
@@ -105,7 +103,7 @@ def retry_too_soon(attempts: Sequence[QuizAttempt], today: date) -> AppError | N
         return None
     return AppError(
         "retry_too_soon",
-        f"Nouvel essai possible le {retry_on:%d/%m}.",
+        f"Retry possible on {retry_on:%d/%m}.",
         409,
         {"retry_on": retry_on.isoformat()},
     )
@@ -114,15 +112,15 @@ def retry_too_soon(attempts: Sequence[QuizAttempt], today: date) -> AppError | N
 async def _insert(
     db: AsyncSession, user_id: str, rt: QuizRuntime, quiz_id: str, body: AttemptCreate
 ) -> str:
-    """Sous le verrou du quiz : contrôles, tentatives interrompues passées en échec, insertion
-    (commitée) ; rend l'id de la tentative."""
+    """Under the quiz lock: checks, interrupted attempts moved to failed, insertion
+    (committed); returns the attempt id."""
     quiz = await owned_quiz(db, user_id, quiz_id)
     open_ids = await open_sessions(db, user_id, quiz_id)
     quiz = await owned_quiz(db, user_id, quiz_id)
     if quiz.status == "generating" and quiz.failure_reason == DRAFT_REASON:
         raise quiz_incomplete()
     if quiz.status != "ready":
-        raise AppError("quiz_not_ready", "Ce quiz n'est pas encore prêt.", 409)
+        raise AppError("quiz_not_ready", "This quiz is not ready yet.", 409)
     repo = AttemptRepository(db, user_id)
     attempts = await repo.for_quizzes([quiz_id])
     questions = await QuestionRepository(db, user_id).for_quiz(quiz_id)
@@ -130,7 +128,7 @@ async def _insert(
     if (too_soon := retry_too_soon(attempts, await rt.today(db, user_id))) is not None:
         raise too_soon
     grading = [a for a in attempts if a.status == "grading"]
-    # Sous le verrou, une tentative sans session rangée n'est plus en cours de lancement.
+    # Under the lock, an attempt with no stored session is no longer being launched.
     stale = [
         a.id
         for a in grading
@@ -152,7 +150,7 @@ async def _insert(
         await db.rollback()
         raise attempt_in_progress() from None
     if stale:
-        logger.info("Tentatives interrompues : quiz %s, %d en échec", quiz_id, len(stale))
+        logger.info("Interrupted attempts: quiz %s, %d failed", quiz_id, len(stale))
     return attempt.id
 
 
@@ -169,7 +167,7 @@ async def _set_session(rt: QuizRuntime, user_id: str, attempt_id: str, sid: str 
 async def create_attempt(
     rt: QuizRuntime, user_id: str, quiz_id: str, body: AttemptCreate
 ) -> AttemptStarted:
-    """Range la tentative puis lance sa notation (202). Voir le module pour les erreurs."""
+    """Stores the attempt then starts its grading (202). See the module for errors."""
     async with rt.quiz_lock(user_id, quiz_id):
         async with rt.session_factory() as db:
             quiz = await owned_quiz(db, user_id, quiz_id)
@@ -190,12 +188,12 @@ async def create_attempt(
             await _set_session(rt, user_id, attempt_id, None)
             raise
         await _set_session(rt, user_id, attempt_id, sid)
-    logger.info("Tentative envoyée : quiz %s, tentative %s, session %s", quiz_id, attempt_id, sid)
+    logger.info("Attempt submitted: quiz %s, attempt %s, session %s", quiz_id, attempt_id, sid)
     return AttemptStarted(attempt_id=attempt_id, session_id=sid)
 
 
 async def get_attempt(db: AsyncSession, user_id: str, quiz_id: str, attempt_id: str) -> AttemptOut:
-    """La tentative avec sa note et ses corrections (une fois notée seulement)."""
+    """The attempt with its grade and corrections (only once graded)."""
     await owned_quiz(db, user_id, quiz_id)
 
     async def read() -> QuizAttempt:

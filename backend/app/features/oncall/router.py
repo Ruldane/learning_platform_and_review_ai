@@ -1,4 +1,4 @@
-"""Simulateur d'astreinte et son rapport soumis au responsable d'exploitation."""
+"""On-call simulator and its report submitted to the operations lead."""
 
 from typing import Annotated
 

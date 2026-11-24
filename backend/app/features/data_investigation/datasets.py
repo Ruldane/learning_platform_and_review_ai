@@ -10,18 +10,18 @@ from app.features.data_investigation.schemas import (
 
 _DELIVERIES = InvestigationDataset(
     key="deliveries-v1",
-    title="Contrôle des livraisons d’un festival",
+    title="Checking a festival's deliveries",
     brief=(
-        "Calcule le nombre de livraisons terminées et le nombre de kits remis. "
-        "Un même envoi peut être corrigé ou annulé par sa dernière révision."
+        "Compute the number of completed deliveries and the number of kits handed over. "
+        "A single shipment can be corrected or cancelled by its latest revision."
     ),
 )
 _SUPPLIES = InvestigationDataset(
     key="supplies-v1",
-    title="Réception du matériel d’un atelier",
+    title="Receiving a workshop's equipment",
     brief=(
-        "Calcule le nombre de livraisons terminées et le nombre de postes reçus. "
-        "Les lignes sans référence et les quantités invalides ne sont pas des preuves."
+        "Compute the number of completed deliveries and the number of workstations received. "
+        "Rows without a reference and invalid quantities are not evidence."
     ),
 )
 

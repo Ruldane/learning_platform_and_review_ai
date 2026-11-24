@@ -75,11 +75,13 @@ async def create(
     source = await _written(rt, db, user_id, project_id)
     if source is None:
         raise AppError(
-            "grade_appeal_source_missing", "Choisis une remise écrite déjà évaluée.", 409
+            "grade_appeal_source_missing",
+            "Choose a written submission that has already been graded.",
+            409,
         )
     chosen = next((item for item in source.criteria if item.index == body.criterion_index), None)
     if chosen is None:
-        raise AppError("grade_appeal_criterion_missing", "Ce critère est introuvable.", 404)
+        raise AppError("grade_appeal_criterion_missing", "This criterion cannot be found.", 404)
     frozen = GradeAppealSource(
         project=source.project,
         criterion=chosen,

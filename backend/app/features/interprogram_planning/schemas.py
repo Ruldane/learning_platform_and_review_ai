@@ -18,9 +18,9 @@ class SharedWeekCreate(BaseModel):
     @model_validator(mode="after")
     def valid_selection(self) -> Self:
         if self.week_start.weekday() != 0 or self.week_start > date.max - timedelta(days=7):
-            raise ValueError("La semaine doit commencer un lundi.")
+            raise ValueError("The week must start on a Monday.")
         if len(set(self.program_ids)) != len(self.program_ids):
-            raise ValueError("Choisis des programmes distincts.")
+            raise ValueError("Choose distinct programs.")
         return self
 
 
@@ -32,7 +32,7 @@ class SharedWeekAccept(BaseModel):
     @model_validator(mode="after")
     def must_confirm(self) -> Self:
         if not self.confirmed:
-            raise ValueError("Confirme l’application de cette semaine.")
+            raise ValueError("Confirm applying this week.")
         return self
 
 

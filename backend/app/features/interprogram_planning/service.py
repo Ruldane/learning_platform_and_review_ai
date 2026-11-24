@@ -98,7 +98,7 @@ async def _apply_lock(rt: SharedWeekRuntime, user_id: str) -> AsyncIterator[None
 
 def _changed() -> AppError:
     return AppError(
-        "shared_week_changed", "Les contraintes ont changé. Prépare une nouvelle proposition.", 409
+        "shared_week_changed", "The constraints have changed. Prepare a new proposal.", 409
     )
 
 
@@ -127,12 +127,12 @@ async def accept(rt: SharedWeekRuntime, user_id: str, proposal_id: str) -> Share
     async with _apply_lock(rt, user_id), rt.program.session_factory() as db:
         row = await repository.by_id(db, user_id, proposal_id)
         if row is None:
-            raise AppError("shared_week_not_found", "Proposition introuvable.", 404)
+            raise AppError("shared_week_not_found", "Proposal not found.", 404)
         draft = _view(row)
         if draft.status == "accepted":
             return draft
         if draft.status == "blocked":
-            raise AppError("shared_week_blocked", "La proposition ne peut pas être appliquée.", 409)
+            raise AppError("shared_week_blocked", "The proposal cannot be applied.", 409)
         now = rt.now()
         facts = await _recheck(db, user_id, row, draft, now)
         tasks = {task.id: task for task in facts.scheduled}

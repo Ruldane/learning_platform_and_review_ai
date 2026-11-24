@@ -5,12 +5,12 @@ from app.mcp.base import FeatureMcp, McpAction
 MCP = FeatureMcp(
     feature="health",
     actions=(
-        McpAction("GET /health", 1, "health_get_status", "État des services de l'application."),
+        McpAction("GET /health", 1, "health_get_status", "Status of the application's services."),
         McpAction(
             "GET /health/embedding",
             1,
             "health_get_embedding_progress",
-            "Progression du téléchargement du modèle d'embeddings.",
+            "Download progress of the embedding model.",
         ),
     ),
 )

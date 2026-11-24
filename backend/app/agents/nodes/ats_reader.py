@@ -1,10 +1,10 @@
-"""Le Lecteur ATS (SPEC 5.3, F9, D129) : il relit le CV comme un logiciel de recrutement le lirait
-(mots clés de l'offre, intitulés de sections, ordre) et propose des modifications adossées aux
-faits du profil maître (références `a1`, `a2`…). Il connaît la base datée des ATS
-(`_shared/ats_base.md`) ; aucune garantie de passage n'est promise.
+"""The ATS Reader (SPEC 5.3, F9, D129): it rereads the CV as recruiting software would
+(posting keywords, section headings, order) and proposes changes backed by facts from the master
+profile (references `a1`, `a2`...). It knows the dated ATS base (`_shared/ats_base.md`); no
+guarantee of passing is promised.
 
-Le nœud n'écrit rien : ses propositions passent par l'état, puis par la confrontation et le
-validateur. Journaux : identifiants et nombres seulement (17.2)."""
+The node writes nothing: its proposals go through the state, then the confrontation and the
+validator. Logs: identifiers and numbers only (17.2)."""
 
 from typing import Protocol
 
@@ -24,7 +24,8 @@ class Node(Protocol):
 def make_ats_reader(deps: GraphDeps) -> Node:
     @node_timeout(PROPOSE_TIMEOUT_S)
     async def ats_reader(state: CvReviewState) -> CvReviewState:
-        """Rejoué après un arrêt, il redemande sans rien écrire (l'état n'a rien gardé)."""
+        """Replayed after a stop, it asks again without writing anything
+        (the state kept nothing)."""
         ctx, _, variables = await review_inputs(deps, state)
         reading, kept = await ask_proposals(deps, AGENT, AtsReading, variables, ctx.profile)
         return {

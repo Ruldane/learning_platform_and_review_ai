@@ -9,21 +9,21 @@ MCP = FeatureMcp(
             "GET /research/usage",
             1,
             "research_get_usage",
-            "Compteur du mois de la recherche web (Brave).",
+            "This month's web search counter (Brave).",
         ),
         McpAction(
             "GET /research/sources",
             1,
             "research_list_sources",
-            "Les pages lues et jugées par une session de recherche (`session_id`).",
+            "The pages read and assessed by a research session (`session_id`).",
             untrusted=("[].title", "[].author", "[].reason", "[].url"),
         ),
     ),
     graphs=(
         McpGraph(
             "web_research",
-            summary="Recherche sur le web : une question (`query`) et des liens facultatifs "
-            "(`urls`) ; les pages utiles entrent en mémoire.",
+            summary="Web research: a question (`query`) and optional links "
+            "(`urls`); useful pages go into memory.",
             untrusted=("result",),
         ),
     ),

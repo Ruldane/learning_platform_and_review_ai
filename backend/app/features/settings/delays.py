@@ -1,6 +1,6 @@
-"""Délais des relances (SPEC 6.2, D138) : trois jours strictement croissants après la
-candidature. Fonction pure, lue par `UserSettings` (validation) et par les règles de relance des
-candidatures (`applications.service.schedule`, qui importe `settings.service` : un seul sens)."""
+"""Follow-up delays (SPEC 6.2, D138): three strictly increasing days after the application.
+Pure function, read by `UserSettings` (validation) and by the application follow-up rules
+(`applications.service.schedule`, which imports `settings.service`: one direction only)."""
 
 from collections.abc import Sequence
 
@@ -9,8 +9,8 @@ MIN_DELAY, MAX_DELAY = 1, 90
 
 
 def validated_delays(raw: Sequence[int]) -> tuple[int, int, int]:
-    """Les délais des trois relances d'attente (jours après la candidature) : trois entiers
-    strictement croissants de 1 à 90, sinon (7, 14, 21)."""
+    """The delays of the three waiting follow-ups (days after the application): three strictly
+    increasing integers from 1 to 90, otherwise (7, 14, 21)."""
     ok = (
         len(raw) == len(DEFAULT_DELAYS)
         and all(isinstance(n, int) and not isinstance(n, bool) for n in raw)

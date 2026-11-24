@@ -40,7 +40,7 @@ def view(row: Contribution) -> ContributionOut:
     publication = publication_of(row)
     pull_url = repo.pull_url(row.pull_number) if row.pull_number is not None else None
     cv_line = (
-        f"{row.issue_title} — contribution acceptée à {repo.name} ({pull_url})"
+        f"{row.issue_title} — contribution accepted to {repo.name} ({pull_url})"
         if row.status == "accepted"
         else None
     )

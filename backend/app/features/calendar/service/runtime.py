@@ -23,7 +23,7 @@ class CalendarRuntime:
 
     def provider(self) -> CalendarPort:
         if self.port is None:
-            raise AppError("calendar_not_configured", "Google Agenda n’est pas configuré.", 409)
+            raise AppError("calendar_not_configured", "Google Calendar is not configured.", 409)
         return self.port
 
     def lock(self, user_id: str) -> Lock:

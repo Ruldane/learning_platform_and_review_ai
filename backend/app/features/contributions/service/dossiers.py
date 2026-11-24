@@ -1,4 +1,4 @@
-"""Création de dossiers détenus par un compte, à partir d'une issue encore proposée."""
+"""Creates account-owned dossiers from an issue that is still suggested."""
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,7 +21,7 @@ async def get_dossier(db: AsyncSession, user_id: str, contribution_id: str) -> C
 
 
 def _issue_missing() -> AppError:
-    return AppError("contribution_issue_missing", "Cette issue n’est plus proposée.", 404)
+    return AppError("contribution_issue_missing", "This issue is no longer suggested.", 404)
 
 
 async def create_dossier(
@@ -73,6 +73,6 @@ async def approve_publication(
         return view(row)
     if row.status != "draft" or not await repo.change(row, publication=payload, status="confirmed"):
         raise AppError(
-            "contribution_already_confirmed", "Cette préparation est déjà confirmée.", 409
+            "contribution_already_confirmed", "This preparation is already confirmed.", 409
         )
     return view(await repo.owned(contribution_id))

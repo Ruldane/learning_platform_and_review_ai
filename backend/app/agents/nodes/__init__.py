@@ -1,1 +1,1 @@
-"""Nœuds des graphes d'agents : un module par agent."""
+"""Agent graph nodes: one module per agent."""

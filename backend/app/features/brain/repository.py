@@ -1,4 +1,4 @@
-"""Accès aux dossiers et inventaires, toujours limité au compte."""
+"""Access to folders and inventories, always scoped to the account."""
 
 import builtins
 from collections import Counter, defaultdict

@@ -1,8 +1,8 @@
-"""Un quiz écrit à la main est-il aux bornes de celui de l'Examinateur ? (phase 10, 10.W) : au moins
-`MIN_QUESTIONS` questions, `MIN_TYPES` types différents et des énoncés de `MIN_PROMPT_CHARS`
-caractères au moins, lues dans `app.agents.tools.quiz_port` (une seule source). Tant qu'il n'y est
-pas, le quiz reste « en préparation » (`status.DRAFT_REASON`) et refuse toute tentative : une
-réussite à 80 % fait passer les compétences du module à « validé »."""
+"""Is a hand-written quiz within the Examiner's bounds? (phase 10, 10.W): at least
+`MIN_QUESTIONS` questions, `MIN_TYPES` different types and prompts of at least
+`MIN_PROMPT_CHARS` characters, read from `app.agents.tools.quiz_port` (a single source). Until it
+is, the quiz stays "being prepared" (`status.DRAFT_REASON`) and refuses any attempt: an 80%
+pass moves the module's skills to "validated"."""
 
 from collections.abc import Sequence
 

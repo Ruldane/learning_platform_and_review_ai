@@ -1,4 +1,4 @@
-"""Accès aux mini-cours tirés des articles du compte."""
+"""Access to the mini-courses drawn from the account's papers."""
 
 from fastapi import APIRouter, Request
 

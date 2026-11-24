@@ -32,7 +32,7 @@ def _matched_skills(issue: GithubIssue, skills: Sequence[str]) -> tuple[str, ...
 def rank_issues(
     repo: RepoRef, issues: Sequence[GithubIssue], skills: Sequence[str]
 ) -> list[Suggestion]:
-    """Premières contributions dont au moins une compétence correspond au chapitre."""
+    """First contributions with at least one skill matching the chapter."""
     ranked = [
         Suggestion(repo, issue, matched)
         for issue in issues

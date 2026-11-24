@@ -24,7 +24,7 @@ def conversation_not_found() -> AppError:
 
 def conversation_busy() -> AppError:
     return AppError(
-        "conversation_busy", "Une réponse est déjà en cours dans cette conversation.", 409
+        "conversation_busy", "A reply is already in progress in this conversation.", 409
     )
 
 

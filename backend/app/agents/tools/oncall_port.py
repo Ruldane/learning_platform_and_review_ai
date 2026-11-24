@@ -1,4 +1,4 @@
-"""Port du responsable d'exploitation vers les exercices simulés."""
+"""Port from the operations lead to the simulated exercises."""
 
 from typing import Protocol
 
@@ -44,12 +44,12 @@ class OncallPort(Protocol):
 
 class _Unavailable:
     async def read(self, user_id: str, incident_id: str, session_id: str) -> ReviewInput:
-        raise AppError("oncall_unavailable", "Le simulateur d’astreinte est indisponible.", 503)
+        raise AppError("oncall_unavailable", "The on-call simulator is unavailable.", 503)
 
     async def record(
         self, user_id: str, incident_id: str, session_id: str, score: ReviewScore
     ) -> bool:
-        raise AppError("oncall_unavailable", "Le simulateur d’astreinte est indisponible.", 503)
+        raise AppError("oncall_unavailable", "The on-call simulator is unavailable.", 503)
 
 
 NO_ONCALL: OncallPort = _Unavailable()

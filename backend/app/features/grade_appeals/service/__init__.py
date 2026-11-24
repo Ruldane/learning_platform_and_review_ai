@@ -1,1 +1,1 @@
-"""Remises éligibles, seconde lecture et décision de January."""
+"""Eligible submissions, second reading and January's decision."""

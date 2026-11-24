@@ -1,4 +1,4 @@
-"""Les faits d’une semaine, relus dans le compte et sans fournisseur externe."""
+"""The facts of a week, read back from the account and without an external provider."""
 
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time, timedelta
@@ -62,13 +62,11 @@ async def read(
     zone = user_zone(settings.timezone)
     today = now.astimezone(zone).date()
     if week_start < today - timedelta(days=today.weekday()):
-        raise AppError(
-            "shared_week_past", "Choisis la semaine en cours ou une semaine à venir.", 409
-        )
+        raise AppError("shared_week_past", "Choose the current week or an upcoming week.", 409)
 
     programs = [await load(db, user_id, program_id) for program_id in program_ids]
     if any(item.program.status != "validated" for item in programs):
-        raise AppError("shared_week_program_not_validated", "Choisis des programmes validés.", 409)
+        raise AppError("shared_week_program_not_validated", "Choose validated programs.", 409)
 
     end_day = week_start + timedelta(days=DAYS)
     scheduled = await repository.week_tasks(db, user_id, week_start, end_day)

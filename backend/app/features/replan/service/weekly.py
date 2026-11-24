@@ -1,14 +1,14 @@
-"""Bilan hebdomadaire planifié (SPEC F13, 11.4 ; D106) : appelé par la tâche planifiée
-`weekly_review` (`app.scheduler`, qui n'est jamais importé ici : contrat 8).
+"""Scheduled weekly review (SPEC F13, 11.4; D106): called by the scheduled job `weekly_review`
+(`app.scheduler`, which is never imported here: contract 8).
 
-Pour chaque programme validé (lecture sans `user_id`, D18, D91, puis tout sous l'utilisateur) :
-le jour du bilan est le dernier `weekly_review.day` au plus aujourd'hui chez January, l'heure
-`weekly_review.time` dans son fuseau (D98). L'heure passée, la semaine relue est celle qui finit
-le jour du bilan (dimanche) ou la précédente : `week_start(jour − 6 jours)`. Le bilan est une
-ligne `weekly_review` du journal, clé « review:{programme}:{semaine} » (idempotent) ; puis une
-session `replan` est lancée pour lui s'il reste des semaines, si aucune replanification n'est
-ouverte et si aucune ne l'a déjà été pour ce bilan (un lancement refusé est repris au passage
-suivant). Une panne sur un programme n'arrête pas les autres. Journaux : identifiants seulement."""
+For each validated program (read without `user_id`, D18, D91, then everything under the user):
+the review day is the last `weekly_review.day` on or before today for January, the time
+`weekly_review.time` in her time zone (D98). Once that time has passed, the week reviewed is
+the one ending on the review day (Sunday) or the previous one: `week_start(day − 6 days)`. The
+review is a `weekly_review` journal row, key "review:{program}:{week}" (idempotent); then a
+`replan` session is launched for it if weeks remain, if no replanning is open and if none has
+already been launched for this review (a refused launch is retried on the next pass). A failure
+on one program does not stop the others. Logs: identifiers only."""
 
 import logging
 from dataclasses import asdict
@@ -33,7 +33,7 @@ DAYS = 7
 
 
 def review_day(today: date, day: Weekday) -> date:
-    """Le dernier jour `day` au plus `today`."""
+    """The last `day` on or before `today`."""
     return today - timedelta(days=(today.weekday() - WEEKDAYS[day]) % DAYS)
 
 
@@ -42,7 +42,7 @@ def review_key(program_id: str, week: date) -> str:
 
 
 def _covers(loaded: Loaded, week: date) -> bool:
-    """La semaine du lundi `week` touche-t-elle le programme ?"""
+    """Does the week of Monday `week` overlap the program?"""
     if not loaded.weeks:
         return False
     return loaded.weeks[0].start_date < week + timedelta(days=DAYS) and (
@@ -53,8 +53,8 @@ def _covers(loaded: Loaded, week: date) -> bool:
 async def _previous_ratio(
     db: AsyncSession, user_id: str, loaded: Loaded, week: date
 ) -> float | None:
-    """Le retard de la semaine d'avant : celui de son bilan, sinon recalculé, `None` hors du
-    programme."""
+    """The previous week's delay: its review's, otherwise recomputed, `None` outside the
+    program."""
     previous = week - timedelta(days=DAYS)
     entry = await ReviewRepository(db, user_id).by_key(review_key(loaded.program.id, previous))
     if entry is not None and isinstance(entry.data.get("ratio"), int | float):
@@ -106,8 +106,8 @@ async def _launch(rt: ReplanRuntime, user_id: str, program_id: str, entry_id: st
 
 
 async def review_program(rt: ReplanRuntime, user_id: str, program_id: str, now: datetime) -> bool:
-    """Écrit le bilan dû de ce programme et lance sa replanification ; rend vrai si le bilan
-    vient d'être écrit."""
+    """Writes this program's due review and launches its replanning; returns true if the review
+    has just been written."""
     async with rt.session_factory() as db:
         stored = await SettingsService(db, user_id).get()
         zone, when = user_zone(stored.timezone), stored.weekly_review
@@ -128,9 +128,9 @@ async def review_program(rt: ReplanRuntime, user_id: str, program_id: str, now: 
     if remaining:
         try:
             await _launch(rt, user_id, program_id, entry_id)
-        except Exception as exc:  # repris au passage suivant ; le bilan reste écrit
+        except Exception as exc:  # retried on the next pass; the review stays written
             logger.warning(
-                "Bilan hebdomadaire : replanification de %s non lancée (%s)",
+                "Weekly review: replanning of %s not launched (%s)",
                 program_id,
                 type(exc).__name__,
             )
@@ -140,7 +140,7 @@ async def review_program(rt: ReplanRuntime, user_id: str, program_id: str, now: 
 async def run_weekly_reviews(
     session_factory: async_sessionmaker[AsyncSession], runtime: ReplanRuntime, now: datetime
 ) -> int:
-    """Un passage de la tâche planifiée ; rend le nombre de bilans écrits."""
+    """One pass of the scheduled job; returns the number of reviews written."""
     async with session_factory() as db:
         programs = await list_validated_programs(db)
     written = 0
@@ -149,8 +149,8 @@ async def run_weekly_reviews(
             written += await review_program(runtime, user_id, program_id, now)
         except Exception as exc:
             logger.warning(
-                "Bilan hebdomadaire : programme %s non traité (%s)", program_id, type(exc).__name__
+                "Weekly review: program %s not processed (%s)", program_id, type(exc).__name__
             )
     level = logging.INFO if written else logging.DEBUG
-    logger.log(level, "Bilan hebdomadaire : %d programme(s), %d bilan(s)", len(programs), written)
+    logger.log(level, "Weekly review: %d program(s), %d review(s)", len(programs), written)
     return written

@@ -20,7 +20,7 @@ class WatchSource(BaseModel):
     @model_validator(mode="after")
     def address_without_credentials(self) -> Self:
         if self.url.username is not None or self.url.password is not None:
-            raise ValueError("Le lien de la source doit être dépourvu d’identifiants.")
+            raise ValueError("The source link must not contain credentials.")
         return self
 
 
@@ -36,7 +36,7 @@ class WatchExperimentIn(BaseModel):
     def two_distinct_references(self) -> Self:
         first, second = self.sources
         if (first.url, first.version) == (second.url, second.version):
-            raise ValueError("Choisis deux références distinctes.")
+            raise ValueError("Choose two different references.")
         return self
 
 

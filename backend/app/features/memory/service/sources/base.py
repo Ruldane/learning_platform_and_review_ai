@@ -1,5 +1,5 @@
-"""Contrat d'une source d'ingestion : du document en base (fichier stocké ou lien) au texte brut
-et à son titre. Aucune source ne journalise un nom de fichier, un lien ni un contenu."""
+"""Contract of an ingestion source: from the stored document (stored file or link) to raw text
+and its title. No source logs a file name, a link or any content."""
 
 from dataclasses import dataclass
 from typing import Any, Protocol
@@ -18,7 +18,7 @@ class SourceInput:
     name: str
     url: str | None
     storage_key: str | None
-    tags: tuple[str, ...] = ()  # étiquettes du document, reprises par son élément (D124)
+    tags: tuple[str, ...] = ()  # the document's tags, carried over to its item (D124)
     sync_metadata: dict[str, Any] | None = None
 
 
@@ -46,15 +46,15 @@ class SourceExtractor(Protocol):
 def _missing() -> AppError:
     return AppError(
         "document_source_missing",
-        "Fichier ou lien d'origine introuvable : importe ce document de nouveau.",
+        "Original file or link not found: import this document again.",
         422,
     )
 
 
 async def read_stored(source: SourceInput, tools: ExtractionTools) -> bytes:
-    """Octets du fichier enregistré, lus pour le propriétaire du document (`read(user_id, key)`
-    refuse la clé d'un autre utilisateur). Fichier disparu : erreur lisible, qu'un nouvel
-    import répare (il réécrit le fichier)."""
+    """Bytes of the stored file, read for the document's owner (`read(user_id, key)` rejects
+    another user's key). Missing file: readable error, which a new import repairs (it rewrites
+    the file)."""
     if source.storage_key is None:
         raise _missing()
     try:
@@ -70,11 +70,11 @@ def required_url(source: SourceInput) -> str:
 
 
 def stem(name: str) -> str:
-    """Nom sans son extension (« cours.v2.pdf » → « cours.v2 ») ; le nom entier s'il n'en a pas."""
+    """Name without its extension ("course.v2.pdf" → "course.v2"); the whole name if it has none."""
     dot = name.rfind(".")
     return name[:dot] if dot > 0 else name
 
 
 def decode_text(data: bytes) -> str:
-    """UTF-8 (BOM retiré) ; déjà vérifié à l'import, un octet invalide est remplacé."""
+    """UTF-8 (BOM removed); already checked on import, an invalid byte is replaced."""
     return data.decode("utf-8-sig", errors="replace")

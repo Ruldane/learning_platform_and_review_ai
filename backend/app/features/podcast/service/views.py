@@ -48,13 +48,11 @@ async def episode_today(
 async def audio_bytes(rt: PodcastRuntime, db: AsyncSession, user: str, episode_id: str) -> bytes:
     row = await get_episode(db, user, episode_id)
     if row.status != "ready" or row.audio_key is None:
-        raise AppError("podcast_audio_missing", "La piste audio n’est pas disponible.", 404)
+        raise AppError("podcast_audio_missing", "The audio track is not available.", 404)
     try:
         return await rt.storage.read(user, row.audio_key)
     except FileNotFoundError:
-        raise AppError(
-            "podcast_audio_missing", "La piste audio n’est pas disponible.", 404
-        ) from None
+        raise AppError("podcast_audio_missing", "The audio track is not available.", 404) from None
 
 
 async def correct_quiz(
@@ -62,7 +60,7 @@ async def correct_quiz(
 ) -> PodcastQuizOut:
     row = await get_episode(db, user, episode_id)
     if row.script is None:
-        raise AppError("podcast_quiz_missing", "Les questions sont encore en préparation.", 409)
+        raise AppError("podcast_quiz_missing", "The questions are still being prepared.", 409)
     script = PodcastScript.model_validate(row.script)
     corrections = [
         PodcastCorrection(

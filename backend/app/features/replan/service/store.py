@@ -1,13 +1,13 @@
-"""Port de la replanification (`ReplanStore`, D105) sur les features `replan` et `program` :
-implémentation branchée par `bootstrap.agent_ports` (D106). Chaque appel ouvre sa propre session
-de base, courte ; les écritures (`preview`, `apply`, `refuse`) passent par
-`program.service.replan_versions`, qui prend le verrou du programme avant sa transaction (F4).
+"""Replanning port (`ReplanStore`, D105) over the `replan` and `program` features:
+implementation wired by `bootstrap.agent_ports` (D106). Each call opens its own short database
+session; writes (`preview`, `apply`, `refuse`) go through `program.service.replan_versions`,
+which takes the program lock before its transaction (F4).
 
-Défense en profondeur : le port applique de nouveau les droits de l'option (réduire : retraits
-seuls ; approfondir : ajouts seuls ; sinon rien ; déclencheur `gap` de la session, D123 : ajouts
-seuls, dans `m0`, qui nomment une compétence de la session), ignore une référence inconnue
-(journal : leur nombre seulement) et ne retire jamais une tâche déjà faite. Le programme d'un
-autre : 404 à chaque appel. Journaux : identifiants et nombres seulement (SPEC 17.2)."""
+Defence in depth: the port enforces the option's rights again (reduce: removals only; deepen:
+additions only; otherwise nothing; the session's `gap` trigger, D123: additions only, in `m0`,
+that name one of the session's skills), ignores an unknown reference (log: their count only)
+and never removes a task already done. Someone else's program: 404 on every call. Logs:
+identifiers and counts only (SPEC 17.2)."""
 
 import logging
 from collections.abc import Mapping, Sequence
@@ -43,10 +43,10 @@ logger = logging.getLogger(__name__)
 def _resolved(
     draft: ReplanDraft, refs: Mapping[str, str], option: ReplanOption | None, skills: list[str]
 ) -> tuple[set[str], list[NewTask], list[str], int]:
-    """Retraits (ids des tâches) et ajouts (dans un module connu) que l'option permet, les
-    compétences nommées par les ajouts, et le nombre de références inconnues ou de propositions
-    ignorées. Déclencheur `gap` (`skills`, D123) : ajouts seuls, tous dans `m0`, et seulement
-    ceux qui nomment une compétence de la session."""
+    """Removals (task ids) and additions (in a known module) that the option allows, the skills
+    named by the additions, and the number of unknown references or ignored proposals. `gap`
+    trigger (`skills`, D123): additions only, all in `m0`, and only those that name one of the
+    session's skills."""
     drops = draft.drop if option == "reduce_scope" and not skills else []
     adds = draft.add if option == "deepen" or skills else []
     named: list[str] = []
@@ -66,7 +66,7 @@ def _resolved(
 
 
 def _gap_skills(facts_input: Mapping[str, object]) -> list[str]:
-    """Les compétences d'une session au déclencheur `gap` (vide sinon)."""
+    """The skills of a session with the `gap` trigger (empty otherwise)."""
     raw = facts_input.get("skills")
     if facts_input.get("trigger") != "gap" or not isinstance(raw, list):
         return []
@@ -86,7 +86,7 @@ async def _reading_additions(
     if task is None:
         return []
     return [
-        NewTask(task.module_id, f"Lire : {reading.title}"[:200], "lire", 15, f"Lire {reading.url}")
+        NewTask(task.module_id, f"Read: {reading.title}"[:200], "lire", 15, f"Read {reading.url}")
     ]
 
 
@@ -140,7 +140,7 @@ class AgentReplanStore:
                 reading = ReplanReading.model_validate(given.get("reading"))
                 add = await _reading_additions(db, user_id, program_id, reading)
                 drop, named, unknown = set[str](), list[str](), 0
-                reason = "Lecture choisie dans la pile de lecture"
+                reason = "Reading chosen from the reading stack"
             else:
                 drop, add, named, unknown = _resolved(draft, refs, option, _gap_skills(given))
         today = local_today(zone, now)
@@ -148,8 +148,8 @@ class AgentReplanStore:
         caps = await day_caps(calendar, user_id, today, zone, now) if calendar else {}
         if unknown:
             logger.info(
-                "Replanification : %d référence(s) inconnue(s) ou proposition(s) hors droits "
-                "ignorée(s) (session %s)",
+                "Replanning: %d unknown reference(s) or out-of-rights proposal(s) "
+                "ignored (session %s)",
                 unknown,
                 session_id,
             )

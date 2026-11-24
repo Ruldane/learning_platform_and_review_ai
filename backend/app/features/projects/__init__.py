@@ -1,1 +1,1 @@
-"""Mini projets preuves : énoncé, rendu, évaluation, brouillons (phase 8, F11, F12)."""
+"""Proof mini projects: brief, submission, review, drafts (phase 8, F11, F12)."""

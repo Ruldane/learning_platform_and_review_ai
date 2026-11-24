@@ -13,7 +13,7 @@ class ApiKeyIn(BaseModel):
 
 
 class ApiKeyOut(BaseModel):
-    """Une clé, jamais en clair : seuls les 4 derniers caractères sont exposés."""
+    """A key, never in clear text: only the last 4 characters are exposed."""
 
     provider: str
     label: str
@@ -28,7 +28,7 @@ class ProviderModels(BaseModel):
     name: str
     label: str
     has_key: bool
-    # `None` : fournisseur sans liste, clé absente ou illisible, ou liste indisponible.
+    # `None`: provider without a list, key missing or unreadable, or list unavailable.
     models: list[str] | None
 
 

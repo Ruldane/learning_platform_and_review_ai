@@ -1,4 +1,4 @@
-"""Le brouillon de veille devient une retouche P11 sur confirmation explicite."""
+"""The watch draft becomes a P11 edit on explicit confirmation."""
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,7 +15,7 @@ from app.features.sessions.service import session_facts
 
 
 def _missing() -> AppError:
-    return AppError("lesson_update_not_found", "Proposition de mise à jour introuvable.", 404)
+    return AppError("lesson_update_not_found", "Update proposal not found.", 404)
 
 
 async def _owned(db: AsyncSession, user_id: str, lesson_id: str, update_id: str) -> LessonUpdate:
@@ -67,7 +67,7 @@ def _documented(markdown: str, url: str) -> str:
     lines = markdown.splitlines(keepends=True)
     for index, line in enumerate(lines):
         if line.strip().casefold().startswith("## auto-évaluation"):
-            lines.insert(index, f"- [Journal de versions](<{url}>)\n\n")
+            lines.insert(index, f"- [Changelog](<{url}>)\n\n")
             return "".join(lines)
     return markdown
 
@@ -80,7 +80,9 @@ async def _restart_preparation(rt: LessonsRuntime, row: LessonUpdate) -> UpdateA
             claimed.preparation_session_id != row.preparation_session_id
             or await _state(db, claimed, lesson) != "failed"
         ):
-            raise AppError("lesson_update_changed", "La proposition a changé entre-temps.", 409)
+            raise AppError(
+                "lesson_update_changed", "The proposal has changed in the meantime.", 409
+            )
         claimed.preparation_session_id = session_id
 
     sid = await rt.launcher.start(
@@ -107,7 +109,7 @@ async def accept_update(
             return UpdateAccepted(session_id=row.preparation_session_id)
         if state == "stale":
             raise AppError(
-                "lesson_update_stale", "La leçon publiée a changé depuis cette proposition.", 409
+                "lesson_update_stale", "The published lesson has changed since this proposal.", 409
             )
     if row.draft is None:
         return await _restart_preparation(rt, row)
@@ -117,7 +119,9 @@ async def accept_update(
     async def attach(db: AsyncSession, session_id: str) -> None:
         claimed = await _owned(db, user_id, lesson_id, update_id)
         if claimed.publication_session_id != previous:
-            raise AppError("lesson_update_already_sent", "La correction est déjà soumise.", 409)
+            raise AppError(
+                "lesson_update_already_sent", "The correction has already been submitted.", 409
+            )
         claimed.publication_session_id = session_id
 
     submitted = await submit_revision(
@@ -128,4 +132,4 @@ async def accept_update(
             current = await _owned(db, user_id, lesson_id, update_id)
             if current.publication_session_id:
                 return UpdateAccepted(session_id=current.publication_session_id)
-    raise AppError("lesson_update_conflict", "Une autre retouche est déjà en cours.", 409)
+    raise AppError("lesson_update_conflict", "Another edit is already in progress.", 409)

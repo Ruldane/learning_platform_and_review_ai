@@ -1,5 +1,5 @@
-"""Lecture pour le programme (`followup.tick_week_quiz`) : les modules dont le quiz a une
-tentative notée. Les autres features passent par le service (contrat 2)."""
+"""Read for the program (`followup.tick_week_quiz`): the modules whose quiz has a graded
+attempt. The other features go through the service (contract 2)."""
 
 from collections.abc import Collection
 

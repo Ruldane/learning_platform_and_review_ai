@@ -1,1 +1,1 @@
-"""Projection de la carte des compétences et des notes actives du Cerveau."""
+"""Projection of the skill map and the active Brain notes."""

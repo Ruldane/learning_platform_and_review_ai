@@ -9,8 +9,7 @@ MCP = FeatureMcp(
             "GET /activity",
             1,
             "activity_list_events",
-            "Le fil d'activité : événements des agents et des tâches de fond, du plus récent "
-            "au plus ancien.",
+            "The activity feed: agent and background-job events, newest first.",
         ),
     ),
 )

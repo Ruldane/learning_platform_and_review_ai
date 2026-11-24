@@ -1,4 +1,4 @@
-"""Une tentative par programme et compte, réservée avant de créer la séance IDE."""
+"""One attempt per program and account, reserved before creating the IDE session."""
 
 from datetime import datetime
 from typing import Any
@@ -27,7 +27,7 @@ class BossRepository(UserScopedRepository[BossAttempt]):
     async def require(self, program_id: str) -> BossAttempt:
         row = await self.for_program(program_id)
         if row is None:
-            raise AppError("boss_not_found", "Démarre d’abord le défi.", 404)
+            raise AppError("boss_not_found", "Start the challenge first.", 404)
         return row
 
     async def reserve(self, program_id: str, at: datetime) -> tuple[BossAttempt, bool]:

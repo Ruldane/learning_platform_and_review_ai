@@ -1,4 +1,4 @@
-"""Instantané du programme, des leçons publiées et des notes explicitement liées."""
+"""Snapshot of the program, published lessons and explicitly linked notes."""
 
 import hashlib
 import json
@@ -15,7 +15,7 @@ from app.features.program.service.programs import Loaded, load
 
 
 def _module_ranks(loaded: Loaded, outline: ProgramOutline) -> dict[str, int]:
-    """Les chapitres sans rang historique suivent l'ordre des semaines et modules."""
+    """Chapters without a historical rank follow the order of weeks and modules."""
     ranks: dict[str, int] = {}
     taken: set[int] = set()
     for module in loaded.modules:
@@ -80,5 +80,5 @@ def source_hash(source: BookSource) -> str:
     data = asdict(source)
     data["modified_at"] = source.modified_at.isoformat()
     serialized = json.dumps(data, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-    # Les éditions déjà publiées doivent être recompilées quand leur rendu change.
+    # Already published editions must be recompiled when their rendering changes.
     return hashlib.sha256(b"book-diagrams-v1\0" + serialized.encode()).hexdigest()

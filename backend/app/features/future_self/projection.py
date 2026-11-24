@@ -1,4 +1,4 @@
-"""Projection de l'adéquation aux offres à partir du travail prévu et du rythme réel."""
+"""Projection of the fit with job postings from the planned work and the actual pace."""
 
 from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
@@ -41,7 +41,7 @@ class ProjectionInput:
     alternative_weekly_minutes: int | None = None
     target_percent: int = 60
     offers: tuple[tuple[GapRow, ...], ...] = ()
-    chapters: tuple[ChapterWork, ...] = ()  # dans l'ordre du travail prévu
+    chapters: tuple[ChapterWork, ...] = ()  # in the order of the planned work
     skill_aliases: Mapping[str, str] = field(default_factory=dict)
 
 
@@ -50,7 +50,7 @@ class Scenario:
     kind: ScenarioKind
     weekly_minutes: int | None
     target_date: date | None
-    projected_percent: int | None  # part à la fin du travail prévu
+    projected_percent: int | None  # share at the end of the planned work
 
 
 @dataclass(frozen=True)
@@ -197,10 +197,10 @@ def _uncertainty(
 
 
 def project(data: ProjectionInput) -> Projection:
-    """Une offre est crédible au seuil de bon match du radar et avec l'obligatoire acquis.
+    """A posting is credible at the radar's good-match threshold with the required skills acquired.
 
-    La projection suppose que finir un chapitre valide les compétences qu'il vise. Les
-    recommandations mesurent le gain d'un chapitre pris seul sur les compétences actuelles.
+    The projection assumes that finishing a chapter validates the skills it targets. The
+    recommendations measure the gain of a single chapter on top of the current skills.
     """
     weeks, observed = _observed(data)
     aliases = data.skill_aliases

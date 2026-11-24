@@ -1,4 +1,4 @@
-"""Déduit les usages réels et réserve une proposition indépendante de chaque miroir."""
+"""Infers actual usages and reserves an independent proposal for each mirror."""
 
 from dataclasses import asdict
 from uuid import NAMESPACE_URL, uuid5
@@ -114,5 +114,5 @@ async def scan_all(rt: ProductionContext) -> None:
         try:
             await scan_user(rt, user_id)
         except AppError:
-            # Un programme en cours de suppression sera relu au prochain passage.
+            # A program being deleted will be reread on the next pass.
             continue

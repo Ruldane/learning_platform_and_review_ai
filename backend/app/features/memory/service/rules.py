@@ -1,5 +1,5 @@
-"""Règles d'écriture de la mémoire (D65) : ce qu'un agent ou l'utilisateur peut écrire, à quel
-niveau, avec quelle raison, et dans quel statut l'élément naît. Fonctions pures."""
+"""Memory write rules (D65): what an agent or the user may write, at which level, with which
+reason, and in which status the item is born. Pure functions."""
 
 from dataclasses import dataclass
 from typing import Any
@@ -8,7 +8,7 @@ from app.core.errors import AppError
 from app.db.models.memory import USER_AUTHOR, ItemStatus, MasteryLevel, MemoryKind
 from app.features.memory.repository.writes import REASON_MAX
 
-# Niveaux qu'on peut écrire : `valide` et `prouve` se gagnent (SPEC 4.2, phase 4).
+# Levels that can be written: `valide` and `prouve` are earned (SPEC 4.2, phase 4).
 WRITABLE_LEVELS: tuple[MasteryLevel, ...] = ("declare", "en_cours")
 TAG_MAX_LENGTH = 40
 TAGS_MAX = 10
@@ -16,7 +16,7 @@ TAGS_MAX = 10
 
 @dataclass(frozen=True)
 class WriteDraft:
-    """Une écriture demandée, avant les règles. `author` est `user` ou le slug d'un agent."""
+    """A requested write, before the rules. `author` is `user` or an agent's slug."""
 
     kind: MemoryKind
     title: str
@@ -29,13 +29,13 @@ class WriteDraft:
     session_id: str | None = None
     source_id: str | None = None
     lang: str | None = None
-    # Capture rapide de January (D108) : l'Archiviste range sa page ou sa note en `document`.
+    # January's quick capture (D108): the Archivist files her page or note as a `document`.
     captured: bool = False
     sync_metadata: dict[str, Any] | None = None
 
 
 def clean_tags(tags: list[str] | tuple[str, ...]) -> list[str]:
-    """Étiquettes nettoyées : espaces retirés, vides et doublons écartés, bornées."""
+    """Cleaned tags: spaces stripped, empties and duplicates dropped, bounded."""
     seen: dict[str, None] = {}
     for tag in tags:
         cleaned = tag.strip()[:TAG_MAX_LENGTH]
@@ -47,33 +47,31 @@ def clean_tags(tags: list[str] | tuple[str, ...]) -> list[str]:
 def _level(draft: WriteDraft, is_agent: bool) -> MasteryLevel | None:
     if draft.kind != "acquis":
         if draft.level is not None:
-            raise AppError("memory_level_forbidden", "Seul un acquis a un niveau.", 422)
+            raise AppError("memory_level_forbidden", "Only a skill has a level.", 422)
         return None
     level = draft.level or "declare"
     if level not in WRITABLE_LEVELS:
         message = (
-            "Un agent n'écrit un acquis qu'au niveau déclaré ou en cours."
+            "An agent only writes a skill at the declared or in-progress level."
             if is_agent
-            else "Un acquis ne se crée qu'au niveau déclaré ou en cours."
+            else "A skill can only be created at the declared or in-progress level."
         )
         raise AppError("memory_level_forbidden", message, 422)
     return level
 
 
 def resolve_write(draft: WriteDraft) -> tuple[ItemStatus, dict[str, Any]]:
-    """Statut du nouvel élément et sa `meta` (`level`, `evidence`, `reason`, clés absentes si sans
-    objet). Un agent ne peut ni écrire un document ni écrire sans raison ; sa décision attend la
-    confirmation de l'utilisateur (`pending`) ; ses acquis restent déclarés ou en cours. Seule
-    exception au document : la capture rapide de January (`captured`, D108), rangée par la feature
-    `capture`, jamais par un outil d'agent."""
+    """Status of the new item and its `meta` (`level`, `evidence`, `reason`, keys absent when not
+    applicable). An agent can neither write a document nor write without a reason; its decision
+    awaits the user's confirmation (`pending`); its skills stay declared or in progress. Sole
+    exception for documents: January's quick capture (`captured`, D108), filed by the `capture`
+    feature, never by an agent tool."""
     is_agent = draft.author != USER_AUTHOR
     reason = (draft.reason or "").strip()
     if is_agent and draft.kind == "document" and not draft.captured:
-        raise AppError("memory_kind_forbidden", "Un agent ne peut pas écrire de document.", 422)
+        raise AppError("memory_kind_forbidden", "An agent cannot write a document.", 422)
     if is_agent and not reason:
-        raise AppError(
-            "memory_reason_required", "Chaque écriture d'agent doit donner sa raison.", 422
-        )
+        raise AppError("memory_reason_required", "Every agent write must give its reason.", 422)
     level = _level(draft, is_agent)
     meta: dict[str, Any] = {}
     if level is not None:

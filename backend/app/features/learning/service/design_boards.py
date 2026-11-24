@@ -1,4 +1,4 @@
-"""États d’un exercice Excalidraw, indépendants d’un objectif du Conseil."""
+"""States of an Excalidraw exercise, independent of a Council goal."""
 
 from typing import Any
 
@@ -18,7 +18,7 @@ def _out(row: DesignBoardVersion) -> BoardOut:
         session_id=row.session_id,
         step=row.step,
         kind="system_design",
-        title="Schéma d’architecture",
+        title="Architecture diagram",
         mermaid="",
         scene=row.scene,
         author="user",
@@ -44,7 +44,7 @@ async def read_design_board(
     repo = DesignBoards(db, user_id)
     row = await (repo.get(board_id) if board_id else repo.latest(interview_id))
     if row is None or row.interview_id != interview_id:
-        raise AppError("board_not_found", "État du tableau introuvable.", 404)
+        raise AppError("board_not_found", "Board state not found.", 404)
     return _out(row)
 
 
@@ -59,7 +59,7 @@ async def append_design_edit(
         return None
     elements = scene.get("elements")
     if not isinstance(elements, list) or not all(isinstance(item, dict) for item in elements):
-        raise AppError("board_scene_invalid", "La scène Excalidraw est invalide.", 422)
+        raise AppError("board_scene_invalid", "The Excalidraw scene is invalid.", 422)
     newest = await repo.latest(parent.interview_id)
     row = await repo.add(
         interview_id=parent.interview_id,

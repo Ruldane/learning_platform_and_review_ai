@@ -1,4 +1,4 @@
-"""Lire deux CV détenus et retirer les identifiants avant la copie d’évaluation."""
+"""Read two owned CVs and strip identifiers before the evaluation copy."""
 
 import re
 import unicodedata
@@ -19,7 +19,7 @@ from app.features.cv.service.versions import (
     version_ref,
 )
 
-_HIDDEN = "[masqué]"
+_HIDDEN = "[hidden]"
 _EMAIL = re.compile(r"(?<!\w)[\w.+%-]+@[\w.-]+\.[a-z]{2,}", re.IGNORECASE)
 _URL = re.compile(r"(?:https?://|www\.)\S+", re.IGNORECASE)
 _PHONE = re.compile(r"(?<!\w)(?:\+\d{1,3}[ .()-]*|0)(?:\d[ .()-]*){8,12}\d(?!\w)")
@@ -37,7 +37,7 @@ async def choices(rt: CvRuntime, user_id: str) -> list[BlindSourceOption]:
     return [
         BlindSourceOption(
             id=row.id,
-            label=f"CV n°{row.number} · {row.filename}",
+            label=f"CV #{row.number} · {row.filename}",
             created_at=row.created_at,
         )
         for row in await list_versions(rt, user_id, None)
@@ -99,7 +99,7 @@ def anonymized(cv: CvContent, redactions: re.Pattern[str]) -> str:
     value = scrubbed.strip()
     if not value or len(value) > _MAX_CHARACTERS:
         raise AppError(
-            "blind_source_length", "Le texte anonymisé est vide ou trop long pour la grille.", 422
+            "blind_source_length", "The anonymised text is empty or too long for the rubric.", 422
         )
     return value
 
@@ -107,10 +107,10 @@ def anonymized(cv: CvContent, redactions: re.Pattern[str]) -> str:
 async def _ready(db: AsyncSession, user_id: str, version_id: str) -> CvContent:
     ref = await version_ref(db, user_id, version_id)
     if ref is None or ref[1] != "ready":
-        raise AppError("blind_source_not_found", "Version de CV prête introuvable.", 404)
+        raise AppError("blind_source_not_found", "Ready CV version not found.", 404)
     content = await version_content(db, user_id, version_id)
     if content is None:
-        raise AppError("blind_source_unreadable", "Cette version de CV est illisible.", 409)
+        raise AppError("blind_source_unreadable", "This CV version is unreadable.", 409)
     return content
 
 
@@ -121,12 +121,12 @@ async def source_pair(
     right = await _ready(db, user_id, second)
     numbers = await version_numbers(db, user_id, [first, second])
     if first not in numbers or second not in numbers:
-        raise AppError("blind_source_not_found", "Version de CV prête introuvable.", 404)
+        raise AppError("blind_source_not_found", "Ready CV version not found.", 404)
     redactions = _redactions((left, right), await validated_profile(db, user_id))
-    a = BlindVersion(first, f"CV n°{numbers[first]}", anonymized(left, redactions))
-    b = BlindVersion(second, f"CV n°{numbers[second]}", anonymized(right, redactions))
+    a = BlindVersion(first, f"CV #{numbers[first]}", anonymized(left, redactions))
+    b = BlindVersion(second, f"CV #{numbers[second]}", anonymized(right, redactions))
     if a.text == b.text:
         raise AppError(
-            "blind_sources_identical", "Ces versions ont le même texte après anonymisation.", 409
+            "blind_sources_identical", "These versions have the same text after anonymisation.", 409
         )
     return a, b

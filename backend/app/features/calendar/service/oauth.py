@@ -1,4 +1,4 @@
-"""Consentement OAuth lié au compte, consommé avant l’échange et sans jeton en sortie."""
+"""OAuth consent bound to the account, consumed before the exchange and never returning a token."""
 
 from base64 import urlsafe_b64encode
 from dataclasses import dataclass
@@ -49,7 +49,7 @@ def _digest(state: str) -> str:
 
 async def start(rt: CalendarRuntime, user_id: str, consent: bool) -> tuple[str, str]:
     if not consent:
-        raise AppError("calendar_consent_required", "Confirme d’abord la connexion Agenda.", 422)
+        raise AppError("calendar_consent_required", "Confirm the Calendar connection first.", 422)
     port = rt.provider()
     state, verifier = token_urlsafe(32), token_urlsafe(48)
     challenge = urlsafe_b64encode(sha256(verifier.encode()).digest()).decode().rstrip("=")
@@ -57,7 +57,7 @@ async def start(rt: CalendarRuntime, user_id: str, consent: bool) -> tuple[str, 
         repo = Connections(db, user_id)
         row = await repo.current()
         if row and (row.encrypted_refresh_token or row.revoke_pending):
-            raise AppError("calendar_already_connected", "Déconnecte d’abord cet Agenda.", 409)
+            raise AppError("calendar_already_connected", "Disconnect this Calendar first.", 409)
         if row is None:
             row = await repo.add()
         row.oauth_state_hash = _digest(state)

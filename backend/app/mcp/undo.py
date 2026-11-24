@@ -45,7 +45,7 @@ async def undo_call(
         )
         rows = list((await db.execute(stmt)).scalars())
         if not rows:
-            raise AppError("call_not_found", "Aucun changement à annuler pour cet appel.", 404)
+            raise AppError("call_not_found", "No change to undo for this call.", 404)
         pending = [row for row in rows if row.undone_at is None]
         if not pending:
             raise _already_undone()
@@ -65,8 +65,8 @@ async def undo_call(
             await db.rollback()
             raise AppError(
                 "undo_refused",
-                "Annulation refusée : la base refuse de défaire ce changement (une contrainte "
-                "serait violée).",
+                "Undo refused: the database refuses to revert this change (a constraint would "
+                "be violated).",
                 409,
             ) from exc
         except AppError:
@@ -109,7 +109,7 @@ async def _cancel_session(db: AsyncSession, user_id: str, sid: str) -> bool:
 
 
 def _already_undone() -> AppError:
-    return AppError("already_undone", "Cet appel est déjà annulé.", 409)
+    return AppError("already_undone", "This call is already undone.", 409)
 
 
 async def _claim(db: AsyncSession, user_id: str, call_id: str, pending: list[McpChange]) -> None:
@@ -142,8 +142,8 @@ async def _check_dependents(db: AsyncSession, row: McpChange, added: set[tuple[s
             if not same_call and not derived(child):
                 raise AppError(
                     "undo_has_dependents",
-                    f"Annulation refusée : des lignes de « {child.name} » ont été ajoutées "
-                    "depuis et dépendent de cet ajout ; le défaire les supprimerait avec lui.",
+                    f"Undo refused: rows of '{child.name}' were added since and depend on this "
+                    "addition; reverting it would delete them with it.",
                     409,
                     {"table": child.name},
                 )
@@ -163,7 +163,7 @@ def _referrers(table: Table) -> list[tuple[Table, Column[Any], Column[Any]]]:
 def _table(row: McpChange) -> Table:
     table = Base.metadata.tables.get(row.table_name)
     if table is None or not recordable(table):
-        raise AppError("undo_refused", "Annulation refusée : table non annulable.", 409)
+        raise AppError("undo_refused", "Undo refused: table cannot be undone.", 409)
     return table
 
 
@@ -201,8 +201,8 @@ async def _check(db: AsyncSession, row: McpChange) -> None:
     if _without(current, ignored) != _without(expected, ignored):
         raise AppError(
             "undo_refused",
-            f"Annulation refusée : une ligne de « {row.table_name} » a changé depuis cet "
-            "appel ; la défaire écraserait un changement plus récent.",
+            f"Undo refused: a row of '{row.table_name}' has changed since this call; "
+            "reverting it would overwrite a more recent change.",
             409,
             {"table": row.table_name},
         )

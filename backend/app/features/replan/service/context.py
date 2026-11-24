@@ -1,10 +1,10 @@
-"""Contexte d'une replanification (port `ReplanStore.context`, D105, D106) : le programme validé
-de January, son bilan (et les options qu'il offre), son budget et le plan à faire par références.
+"""Context of a replanning (port `ReplanStore.context`, D105, D106): January's validated
+program, its review (and the options it offers), its budget and the plan to do, by references.
 
-Les références sont stables dans un instantané : `m1…` pour les modules non sautés dans l'ordre
-du programme, `t1…` pour toutes les tâches à faire, par jour puis par ordre du programme (les
-retards en tête : `late`, datées avant aujourd'hui) ; `m0` pour le module « Compétences des
-offres » du déclencheur `gap` (D123). Les ids ne vont jamais au modèle (F7)."""
+References are stable within a snapshot: `m1…` for non-skipped modules in program order,
+`t1…` for all tasks to do, by day then by program order (late ones first: `late`, dated before
+today); `m0` for the "Skills from postings" module of the `gap` trigger (D123). Ids never go
+to the model (F7)."""
 
 from collections.abc import Sequence
 from datetime import date, timedelta
@@ -35,13 +35,11 @@ STATES: tuple[ReviewState, ...] = ("late_twice", "late", "ahead", "on_track")
 
 
 def program_not_validated() -> AppError:
-    return AppError(
-        "program_not_validated", "Valide d'abord ton programme pour le replanifier.", 409
-    )
+    return AppError("program_not_validated", "Validate your program first to replan it.", 409)
 
 
 def review_not_found() -> AppError:
-    return AppError("review_not_found", "Bilan introuvable.", 404)
+    return AppError("review_not_found", "Review not found.", 404)
 
 
 async def _review(
@@ -71,7 +69,7 @@ def _refs(loaded: Loaded, today: date) -> tuple[list[ModuleRef], list[TaskRef]]:
         TaskRef(
             f"t{n}",
             t.title,
-            t.type,  # type: ignore[arg-type]  # colonne texte, valeurs de TaskType
+            t.type,  # type: ignore[arg-type]  # text column, TaskType values
             t.minutes,
             t.planned_date,
             refs[t.module_id],
@@ -95,10 +93,10 @@ async def build_context(
     message: str | None,
     skills: Sequence[str] = (),
 ) -> ReplanContext:
-    """404 `program_not_found` (programme d'un autre), 409 `program_not_validated`, 404
-    `review_not_found` (bilan d'un autre programme ou d'un autre utilisateur). Déclencheur
-    `gap` : le module cible « Compétences des offres » en `m0` (existant, ou provisoire tant
-    qu'aucune proposition n'a été acceptée, D123), sans option."""
+    """404 `program_not_found` (someone else's program), 409 `program_not_validated`, 404
+    `review_not_found` (review of another program or another user). `gap` trigger: the
+    target module "Skills from postings" as `m0` (existing, or provisional as long as no
+    proposal has been accepted, D123), with no option."""
     loaded = await load(db, user_id, program_id)
     program = loaded.program
     if program.status != "validated":

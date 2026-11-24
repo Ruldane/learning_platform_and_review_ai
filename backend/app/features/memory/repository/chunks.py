@@ -9,8 +9,8 @@ from app.db.repository import UserScopedRepository
 
 
 class ChunkDraftLike(Protocol):
-    """Forme d'un fragment à enregistrer (`service.text.ChunkDraft`) : la couche repository
-    ne peut pas importer la couche service, le typage structurel les relie."""
+    """Shape of a chunk to store (`service.text.ChunkDraft`): the repository layer cannot
+    import the service layer, structural typing links them."""
 
     @property
     def ordinal(self) -> int: ...
@@ -26,8 +26,8 @@ class ChunkRepository(UserScopedRepository[MemoryChunk]):
     async def replace_for_item(
         self, item_id: str, drafts: Sequence[ChunkDraftLike]
     ) -> builtins.list[MemoryChunk]:
-        """Remplace tous les fragments de l'élément (nouveaux `id` : l'appelant renouvelle
-        aussi les points de Qdrant)."""
+        """Replaces all the item's chunks (new `id`s: the caller also renews the Qdrant
+        points)."""
         await self.session.execute(
             delete(MemoryChunk).where(
                 MemoryChunk.user_id == self.user_id, MemoryChunk.item_id == item_id
@@ -48,7 +48,7 @@ class ChunkRepository(UserScopedRepository[MemoryChunk]):
         return rows
 
     async def for_item(self, item_id: str, limit: int | None = None) -> builtins.list[MemoryChunk]:
-        """Fragments de l'élément dans l'ordre ; `limit` : les premiers seulement."""
+        """The item's chunks in order; `limit`: only the first ones."""
         stmt = (
             select(MemoryChunk)
             .where(MemoryChunk.user_id == self.user_id, MemoryChunk.item_id == item_id)

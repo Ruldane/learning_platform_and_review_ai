@@ -68,19 +68,17 @@ class RateLimiter:
 
     def _rules(self, level: Level, bucket: str | None) -> list[_Rule]:
         lim = self._limits
-        rules = [_Rule("calls", MINUTE, lim.calls_per_minute, "appels")]
+        rules = [_Rule("calls", MINUTE, lim.calls_per_minute, "calls")]
         if lim.calls_per_day is not None:
-            rules.append(_Rule("calls", DAY, lim.calls_per_day, "appels"))
+            rules.append(_Rule("calls", DAY, lim.calls_per_day, "calls"))
         if level >= 2:
-            rules.append(_Rule("writes", MINUTE, lim.writes_per_minute, "écritures"))
+            rules.append(_Rule("writes", MINUTE, lim.writes_per_minute, "writes"))
             if lim.writes_per_day is not None:
-                rules.append(_Rule("writes", DAY, lim.writes_per_day, "écritures"))
+                rules.append(_Rule("writes", DAY, lim.writes_per_day, "writes"))
         if level == 3:
-            rules.append(_Rule("confirm", DAY, lim.confirmations_per_day, "demandes à confirmer"))
+            rules.append(_Rule("confirm", DAY, lim.confirmations_per_day, "requests to confirm"))
         if bucket == CODE_RUN_BUCKET:
-            rules.append(
-                _Rule(CODE_RUN_BUCKET, MINUTE, lim.code_runs_per_minute, "exécutions de code")
-            )
+            rules.append(_Rule(CODE_RUN_BUCKET, MINUTE, lim.code_runs_per_minute, "code runs"))
         return rules
 
     def _events_of(self, token_id: str, rule: _Rule, now: datetime) -> deque[datetime]:
@@ -119,7 +117,7 @@ class RateLimiter:
     async def check_request(self, token_id: str, now: datetime) -> None:
         """Plafond grossier de toute requête authentifiée (`ping`, `tools/list`, JSON invalide…),
         avant la moindre écriture en base. Même 429 lisible que `check`."""
-        rule = _Rule("requests", MINUTE, self._limits.requests_per_minute, "requêtes")
+        rule = _Rule("requests", MINUTE, self._limits.requests_per_minute, "requests")
         events = self._events_of(token_id, rule, now)
         wait = self._wait_seconds(events, rule, now)
         if wait is not None:
@@ -132,10 +130,10 @@ class RateLimiter:
 
 
 def _too_many(wait: int, rule: _Rule) -> AppError:
-    per = "par minute" if rule.window == MINUTE else "par jour"
+    per = "per minute" if rule.window == MINUTE else "per day"
     message = (
-        f"Trop de requêtes : la limite de {rule.limit} {rule.subject} {per} est atteinte. "
-        f"Réessaie dans {_wait_text(wait)}."
+        f"Too many requests: the limit of {rule.limit} {rule.subject} {per} is reached. "
+        f"Retry in {_wait_text(wait)}."
     )
     return AppError(
         "rate_limited",
@@ -144,6 +142,6 @@ def _too_many(wait: int, rule: _Rule) -> AppError:
         {
             "retry_after": wait,
             "limit": rule.limit,
-            "window": "minute" if per == "par minute" else "day",
+            "window": "minute" if per == "per minute" else "day",
         },
     )

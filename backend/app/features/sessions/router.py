@@ -1,5 +1,5 @@
-"""Sessions d'agents (SPEC 14.1). Toute action passe par REST ; le WebSocket ne fait que diffuser
-les événements (serveur → client)."""
+"""Agent sessions (SPEC 14.1). Every action goes through REST; the WebSocket only broadcasts
+events (server → client)."""
 
 from typing import Annotated
 
@@ -76,6 +76,6 @@ async def stream_session(
     runtime: RuntimeDep,
     after_seq: Annotated[int, Query(ge=0)] = 0,
 ) -> None:
-    """Rejoue les événements `seq > after_seq` puis diffuse le direct ; 4404 si la session est
-    inconnue ou d'un autre utilisateur ; les messages du client sont ignorés."""
+    """Replays events `seq > after_seq` then streams live; 4404 if the session is unknown
+    or belongs to another user; messages from the client are ignored."""
     await serve_session_stream(ws, runtime, current.id, session_id, after_seq)

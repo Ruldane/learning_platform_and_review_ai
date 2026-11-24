@@ -85,20 +85,20 @@ async def observe(rt: AtlasRuntime, user_id: str, action: AtlasObservationIn) ->
 
 
 def _steps(sources: list[AtlasEvidenceOut]) -> list[str]:
-    steps = ["À partir des corrections citées, formule la règle du prérequis en une phrase."]
+    steps = ["From the cited gradings, state the prerequisite rule in one sentence."]
     kinds = {source.reference.kind for source in sources}
     if "quiz" in kinds:
         steps.append(
-            "Invente une nouvelle question qui met cette règle à l’épreuve. Réponds avant "
-            "de comparer ta justification à celle de la correction."
+            "Make up a new question that puts this rule to the test. Answer before "
+            "comparing your reasoning with the grading's."
         )
     if "project" in kinds:
         steps.append(
-            "Construis un cas minimal où le critère du projet échoue. Note le résultat "
-            "attendu, corrige le cas sur une copie, puis vérifie le résultat."
+            "Build a minimal case where the project criterion fails. Write down the expected "
+            "result, fix the case on a copy, then check the result."
         )
     steps.append(
-        "Ajoute un contre-exemple qui distingue la règle corrigée du raisonnement initial."
+        "Add a counterexample that tells the corrected rule apart from the initial reasoning."
     )
     return steps
 
@@ -107,7 +107,7 @@ async def start_exercise(rt: AtlasRuntime, user_id: str, hypothesis_id: str) -> 
     async with rt.locks.get(user_id, "atlas"), rt.factory() as db:
         row = await repository.hypothesis(db, user_id, hypothesis_id)
         if row is None:
-            raise AppError("atlas_hypothesis_not_found", "Hypothèse introuvable.", 404)
+            raise AppError("atlas_hypothesis_not_found", "Hypothesis not found.", 404)
         if stored := _exercise(row):
             return stored
         observations = await repository.observations(db, user_id, row.id)

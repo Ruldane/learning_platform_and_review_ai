@@ -10,22 +10,22 @@ MCP = FeatureMcp(
             "POST /capture",
             2,
             "capture_start_capture",
-            "Lance la capture rapide d'une seule source : un texte, un lien ou un document déjà "
-            "importé ; l'Archiviste range le résultat en mémoire.",
+            "Starts a quick capture of a single source: a text, a link or an already imported "
+            "document; the Archivist files the result in memory.",
             launches="capture",
         ),
         McpAction(
             "GET /journal",
             1,
             "capture_read_journal",
-            "Le journal : captures, sessions, quiz et bilans, du plus récent au plus ancien.",
+            "The journal: captures, sessions, quizzes and reviews, newest first.",
         ),
     ),
     graphs=(
         McpGraph(
             "capture",
             follow_only=True,
-            summary="Capture rapide : une seule source parmi `url`, `text` ou `document_id`.",
+            summary="Quick capture: a single source among `url`, `text` or `document_id`.",
         ),
     ),
 )

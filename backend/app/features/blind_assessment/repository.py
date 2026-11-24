@@ -11,7 +11,7 @@ class BlindAssessments(UserScopedRepository[BlindAssessment]):
     async def require(self, assessment_id: str) -> BlindAssessment:
         row = await self.get(assessment_id)
         if row is None:
-            raise AppError("blind_assessment_not_found", "Épreuve en aveugle introuvable.", 404)
+            raise AppError("blind_assessment_not_found", "Blind assessment not found.", 404)
         return row
 
     async def recent(self) -> list[BlindAssessment]:

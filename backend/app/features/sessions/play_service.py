@@ -1,4 +1,4 @@
-"""Lecture d'un brief sous l'identité MCP et la portée métier du parcours."""
+"""Reads a brief under the MCP identity and the business scope of the workflow."""
 
 from datetime import UTC, datetime
 
@@ -19,10 +19,10 @@ async def owned_play(
     identity = play_identity(user_id, write=write)
     row = await SessionReadRepository(db, user_id).get(session_id)
     if row is None or row.played_by is None:
-        raise AppError("session_not_found", "Session jouée introuvable.", 404)
+        raise AppError("session_not_found", "Played session not found.", 404)
     feature = request.app.state.mcp_registry.graph_features.get(row.graph)
     if feature not in identity.features:
-        raise AppError("play_forbidden", "Ce parcours est hors de la portée du jeton.", 403)
+        raise AppError("play_forbidden", "This workflow is outside the token's scope.", 403)
     return row
 
 

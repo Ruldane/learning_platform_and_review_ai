@@ -1,4 +1,4 @@
-"""Sonde des fichiers remis et vérification de résultats fonctionnels bornés."""
+"""Probe of submitted files and bounded check of functional results."""
 
 import asyncio
 import json
@@ -15,17 +15,17 @@ from app.providers.sandbox.base import (
     check_job_limits,
 )
 
-# Données générées, conservées côté contrôleur. L'ordre ne dépend pas du tri des identifiants.
+# Generated data, kept on the controller side. The order does not depend on sorting ids.
 _CASES = (
-    ("Lot vide", (), ()),
-    ("Urgence prioritaire", (("D-1", False), ("D-2", True)), ("D-2", "D-1")),
+    ("Empty batch", (), ()),
+    ("Urgent first", (("D-1", False), ("D-2", True)), ("D-2", "D-1")),
     (
-        "Urgences dans l’ordre d’arrivée",
+        "Urgent requests in order of arrival",
         (("D-3", True), ("D-4", True), ("D-5", False)),
         ("D-3", "D-4", "D-5"),
     ),
     (
-        "Priorités mixtes et liste intacte",
+        "Mixed priorities and intact list",
         (("D-8", False), ("D-6", False), ("D-7", True), ("D-9", False)),
         ("D-7", "D-8", "D-6", "D-9"),
     ),
@@ -99,7 +99,7 @@ def job_for(run_id: str, files: dict[str, str]) -> SandboxJob:
     except ValueError:
         raise AppError(
             "boss_project_too_large",
-            "Réduis les fichiers pour laisser la place au diagnostic.",
+            "Shrink the files to leave room for the diagnostic.",
             422,
         ) from None
     return job
@@ -159,6 +159,6 @@ async def run(sandbox: CodeSandbox, job: SandboxJob) -> BossDiagnostic:
         return _failed("timeout")
     except (ValueError, OSError, UnknownRun):
         raise AppError(
-            "boss_sandbox_unavailable", "Le bac ne répond pas pour le Boss.", 503
+            "boss_sandbox_unavailable", "The sandbox is not responding for the Boss.", 503
         ) from None
     return evaluate(progress)

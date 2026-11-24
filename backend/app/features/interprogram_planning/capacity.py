@@ -1,4 +1,4 @@
-"""Charge journalière, en tenant compte des réservations horaires connues."""
+"""Daily load, taking known time bookings into account."""
 
 from collections import defaultdict
 from datetime import UTC, date, datetime, timedelta

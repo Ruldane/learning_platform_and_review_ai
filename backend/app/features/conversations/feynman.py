@@ -1,4 +1,4 @@
-"""Routes de conversation et remise idempotente du bilan Feynman."""
+"""Conversation routes and idempotent submission of the Feynman review."""
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -39,7 +39,7 @@ async def _check_source(db: AsyncSession, user: str, subject_id: str, scope: str
     if scope == FEYNMAN_LESSON:
         lesson = await get_lesson(db, user, subject_id)
         if lesson.status != "ready":
-            raise AppError("lesson_not_ready", "Cette leçon n'est pas encore prête.", 409)
+            raise AppError("lesson_not_ready", "This lesson is not ready yet.", 409)
     else:
         await IdeService(db, user, None, Caller("app", "feynman")).get_session(subject_id)
 
@@ -71,7 +71,7 @@ async def start(
     scope = FEYNMAN_IDE if file is not None else FEYNMAN_LESSON
     await _check_source(db, user, subject_id, scope)
     thread = ConversationThread.for_subject(user, scope, subject_id)
-    question = "Expliquer la leçon." if file is None else f"Expliquer « {file} »."
+    question = "Explain the lesson." if file is None else f"Explain '{file}'."
     message = ConversationQuestionIn(
         request_id=body.request_id, question=question, strong=body.strong
     )
@@ -82,7 +82,7 @@ async def start(
         else:
             data, raw = await file_source(tx, user, subject_id, file)
         if not raw.strip():
-            raise AppError("feynman_empty_source", "La source enregistrée est vide.", 422)
+            raise AppError("feynman_empty_source", "The saved source is empty.", 422)
         return TurnOptions(lesson_version=lesson_version(raw), feynman=data)
 
     return await submit_turn(runner, db, user, thread, message, authorize)
@@ -135,7 +135,7 @@ async def accept(db: AsyncSession, user: str, turn_id: str) -> FeynmanSaved:
         return report.saved
     cards = await _save_cards(db, user, turn_id, data, report)
     if report.proof_skill:
-        proof = evidence("feynman", turn.id, "Explication Feynman réussie", utcnow())
+        proof = evidence("feynman", turn.id, "Successful Feynman explanation", utcnow())
         await SkillsService(db, user).raise_levels([report.proof_skill], "en_cours", proof)
     report.saved = FeynmanSaved(cards_added=cards, proof_saved=report.proof_skill is not None)
     turn.feynman = data.model_dump(mode="json")

@@ -1,4 +1,4 @@
-"""Texte LinkedIn limité aux faits du profil maître."""
+"""LinkedIn text limited to the facts of the master profile."""
 
 from typing import Annotated, Literal
 
@@ -25,7 +25,7 @@ class LinkedInClaim(BaseModel):
 
 
 def check_text(text: LinkedInText, profile: MasterProfileData) -> list[LinkedInClaim]:
-    """Le même contrôle que le CV, plus un choix des compétences dans le profil."""
+    """The same check as the CV, plus skills chosen from the profile."""
     known = {normalize_skill_name(skill.name) for skill in profile.skills}
     return [
         *(

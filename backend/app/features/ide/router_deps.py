@@ -1,4 +1,4 @@
-"""Dépendances HTTP partagées dans les routes de l'IDE."""
+"""HTTP dependencies shared across the IDE routes."""
 
 from typing import Annotated
 

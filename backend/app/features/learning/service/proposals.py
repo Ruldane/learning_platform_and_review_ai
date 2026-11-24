@@ -1,5 +1,5 @@
-"""Propositions du Conseil par lot (SPEC 3.1, étape 5) : écriture idempotente du Stratège (port),
-relecture d'un lot rejoué, et lecture du dernier lot pour l'API."""
+"""Council proposals by batch (SPEC 3.1, step 5): idempotent write by the Strategist (port),
+re-read of a replayed batch, and read of the latest batch for the API."""
 
 import builtins
 from collections.abc import Sequence
@@ -15,7 +15,7 @@ from app.features.learning.service.goals import owned_goal
 
 
 def proposal_not_found() -> AppError:
-    return AppError("proposal_not_found", "Proposition introuvable.", 404)
+    return AppError("proposal_not_found", "Proposal not found.", 404)
 
 
 def _draft(row: Proposal) -> ProposalDraft:
@@ -43,8 +43,8 @@ async def save_proposals(
     batch: int,
     proposals: Sequence[ProposalDraft],
 ) -> list[ProposalRef]:
-    """Un lot du Stratège ; idempotent par `(session, lot)` : un lot déjà écrit est rendu tel
-    quel, sans ligne de plus."""
+    """A Strategist batch; idempotent by `(session, batch)`: a batch already written is
+    returned as is, without extra rows."""
     await owned_goal(db, user_id, goal_id)
     repo = ProposalRepository(db, user_id)
     existing = await repo.batch(session_id, batch)
@@ -71,22 +71,22 @@ async def saved_proposals(
 
 
 async def attach_board(db: AsyncSession, user_id: str, proposal_id: str, board_id: str) -> None:
-    """La frise du parcours au tableau : proposition, objectif et tableau à l'utilisateur, et
-    tableau du même objectif que la proposition (sinon 404)."""
+    """The path's timeline on the board: proposal, goal and board belong to the user, and the
+    board belongs to the same goal as the proposal (otherwise 404)."""
     proposal = await ProposalRepository(db, user_id).get_fresh(proposal_id)
     if proposal is None:
         raise proposal_not_found()
     await owned_goal(db, user_id, proposal.goal_id)
     board = await BoardRepository(db, user_id).get(board_id)
     if board is None or board.goal_id != proposal.goal_id:
-        raise AppError("board_not_found", "État du tableau introuvable.", 404)
+        raise AppError("board_not_found", "Board state not found.", 404)
     proposal.board_id = board_id
     await db.flush()
 
 
 async def latest_batch(db: AsyncSession, user_id: str, goal_id: str) -> builtins.list[Proposal]:
-    """Le dernier lot de l'objectif, par rang ; vide s'il n'y en a pas encore, ou s'il vient
-    d'un Conseil qui n'est plus celui de l'objectif (Conseil relancé, D97)."""
+    """The goal's latest batch, by rank; empty if there is none yet, or if it comes from a
+    Council that is no longer the goal's (Council restarted, D97)."""
     repo = ProposalRepository(db, user_id)
     latest = await repo.latest_batch(goal_id)
     if latest is None:
@@ -105,8 +105,8 @@ async def list_latest(db: AsyncSession, user_id: str, goal_id: str) -> builtins.
 async def proposal_drafts(
     db: AsyncSession, user_id: str, goal_id: str, proposal_ids: Sequence[str]
 ) -> builtins.list[ProposalDraft]:
-    """Les propositions choisies, dans l'ordre, pour le programme (port `ProgramStore`, D88) :
-    chacune à l'utilisateur et à l'objectif, sinon 404."""
+    """The chosen proposals, in order, for the program (port `ProgramStore`, D88): each one
+    belongs to the user and the goal, otherwise 404."""
     repo = ProposalRepository(db, user_id)
     drafts: builtins.list[ProposalDraft] = []
     for proposal_id in proposal_ids:

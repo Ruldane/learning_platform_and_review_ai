@@ -1,4 +1,4 @@
-"""Canal authentifié du relais. Une écriture ne s'applique qu'à la révision déclarée."""
+"""Authenticated relay channel. A write applies only to the declared revision."""
 
 import re
 from dataclasses import dataclass
@@ -36,7 +36,7 @@ class SyncIdentity:
 
 
 def _denied() -> AppError:
-    return AppError("brain_sync_auth_required", "Jeton de synchronisation requis ou invalide.", 401)
+    return AppError("brain_sync_auth_required", "Sync token missing or invalid.", 401)
 
 
 async def rotate_token(db: AsyncSession, user_id: str) -> SyncTokenOut:
@@ -77,9 +77,9 @@ async def _scope(
         await record_contact(db, identity)
     row = await owned_folder(db, identity.user_id, folder_id)
     if row.revision != revision:
-        raise AppError("brain_revision_conflict", "La configuration du dossier a changé.", 409)
+        raise AppError("brain_revision_conflict", "The folder configuration has changed.", 409)
     if row.paused:
-        raise AppError("brain_folder_paused", "La synchronisation de ce dossier est en pause.", 409)
+        raise AppError("brain_folder_paused", "Syncing for this folder is paused.", 409)
     return row
 
 
@@ -124,15 +124,11 @@ async def ingest_file(
     path = relative_path(incoming.path)
     data = incoming.data
     if sha256(data).hexdigest() != incoming.digest:
-        raise AppError(
-            "brain_digest_mismatch", "L'empreinte reçue ne correspond pas au fichier.", 422
-        )
+        raise AppError("brain_digest_mismatch", "The received digest does not match the file.", 422)
     draft = prepare_sync_document(path, data)
     folder = await _scope(db, identity, folder_id, revision, write=True)
     if path_excluded(path, folder.excluded_directories, folder.excluded_extensions):
-        raise AppError(
-            "brain_path_excluded", "Cette note correspond aux exclusions du dossier.", 422
-        )
+        raise AppError("brain_path_excluded", "This note matches the folder's exclusions.", 422)
     user_id = identity.user_id
     repo = FileRepository(db, user_id)
     before = await repo.by_path(folder_id, path)

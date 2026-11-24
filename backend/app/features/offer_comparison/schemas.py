@@ -22,7 +22,7 @@ class OfferComparisonWeights(BaseModel):
     @model_validator(mode="after")
     def _positive(self) -> Self:
         if not (self.match or self.work_mode or self.location):
-            raise ValueError("Au moins un poids doit être positif.")
+            raise ValueError("At least one weight must be positive.")
         return self
 
 
@@ -47,7 +47,7 @@ class OfferComparisonPair(BaseModel):
     @model_validator(mode="after")
     def _distinct(self) -> Self:
         if self.first_id == self.second_id:
-            raise ValueError("Choisis deux offres distinctes.")
+            raise ValueError("Choose two distinct offers.")
         return self
 
 

@@ -1,14 +1,14 @@
 export const concentration = {
-  title: "Pilote de concentration",
+  title: "Focus pilot",
   suggestion:
-    "Les dernières réponses ont demandé plus de temps et de corrections. Tu choisis la suite.",
-  pause: "Faire une pause",
-  review: "Révision plus facile",
-  summary: "Terminer avec le bilan",
-  continue: "Continuer",
-  paused: "Pause en cours",
-  resume: "Reprendre au même endroit",
-  oneQuestion: "Reprends une seule question avec sa correction.",
+    "Your last answers took more time and corrections. You choose what's next.",
+  pause: "Take a break",
+  review: "Easier review",
+  summary: "Finish with the summary",
+  continue: "Continue",
+  paused: "On a break",
+  resume: "Pick up where you left off",
+  oneQuestion: "Redo a single question with its correction.",
   trainingRequest:
-    "Propose-moi une révision plus facile du point que nous travaillons, avec un exemple guidé et une seule étape.",
+    "Give me an easier review of the point we're working on, with a guided example and a single step.",
 } as const;

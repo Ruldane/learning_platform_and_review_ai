@@ -1,8 +1,8 @@
-"""Lecture des lignes d'une utilisatrice, table par table.
+"""Reading a user's rows, table by table.
 
-Exception documentée à `UserScopedRepository` : l'export parcourt **toutes** les tables qui ont
-`user_id` (une table de plus n'y change rien), donc il n'a pas de modèle fixe ; chaque lecture
-filtre pourtant sur `user_id`, toujours."""
+Documented exception to `UserScopedRepository`: the export walks **every** table that has
+`user_id` (one more table changes nothing), so it has no fixed model; every read still filters
+on `user_id`, always."""
 
 from collections.abc import AsyncGenerator, Sequence
 from typing import Any
@@ -20,9 +20,8 @@ class AccountRepository:
         self.user_id = user_id
 
     def _select(self, table: Table, columns: Sequence[Column[Any]] | None) -> Select[Any]:
-        """Les lignes de `user_id` dans l'ordre de leur création puis de leur identifiant. Seules
-        les `columns` données sont lues (toutes par défaut) : une colonne écartée n'entre jamais
-        en mémoire."""
+        """The rows of `user_id`, ordered by creation then by id. Only the given `columns` are
+        read (all by default): an excluded column never enters memory."""
         stmt = select(*(table.c if columns is None else columns)).where(
             table.c.user_id == self.user_id
         )
@@ -32,8 +31,8 @@ class AccountRepository:
     async def batches(
         self, table: Table, columns: Sequence[Column[Any]] | None, size: int
     ) -> AsyncGenerator[list[dict[str, Any]], None]:
-        """Les lignes de `user_id` par lots d'au plus `size` : jamais plus d'un lot en mémoire,
-        quel que soit le volume de la table."""
+        """The rows of `user_id` in batches of at most `size`: never more than one batch in
+        memory, whatever the size of the table."""
         stream = await self.session.stream(
             self._select(table, columns).execution_options(yield_per=size)
         )
@@ -46,8 +45,8 @@ class AccountRepository:
     async def rows(
         self, table: Table, columns: Sequence[Column[Any]] | None = None
     ) -> list[dict[str, Any]]:
-        """Toutes les lignes d'un coup, pour une petite table (les sessions d'un compte). L'export
-        lit par lots (`batches`)."""
+        """All rows at once, for a small table (an account's sessions). The export reads in
+        batches (`batches`)."""
         result = await self.session.execute(self._select(table, columns))
         return [dict(row) for row in result.mappings()]
 
@@ -65,7 +64,7 @@ async def complete_vector_purge(db: AsyncSession, user_id: str) -> None:
 
 
 async def pending_vector_purges(db: AsyncSession) -> list[str]:
-    """File de travail du planificateur, indépendante des comptes et sans contenu utilisateur."""
+    """The scheduler's work queue, independent of accounts and free of user content."""
     result = await db.scalars(
         select(AccountVectorPurge.user_id).order_by(AccountVectorPurge.created_at)
     )

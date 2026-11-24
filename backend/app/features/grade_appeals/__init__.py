@@ -1,1 +1,1 @@
-"""Contestations sur une remise de projet évaluée."""
+"""Appeals against a graded project submission."""
