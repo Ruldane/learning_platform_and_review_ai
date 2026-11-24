@@ -17,10 +17,9 @@ interface OutputSectionProps {
 }
 
 /**
- * La question de sortie, en trois boutons : « Voir le rapport » et « Terminer » passent par la
- * reprise de la session ; « Générer le PDF » passe par la route de génération (jamais la reprise,
- * qui reposerait la question). Les boutons se grisent pendant le rendu et se rouvrent quand la
- * question revient, y compris après un rechargement de la page.
+ * Viewing the report and finishing resume the session. Generating the PDF calls the render route.
+ * The buttons are disabled during rendering and enabled when the question returns, even after a
+ * reload.
  */
 export function OutputSection({ review, run, generate }: OutputSectionProps) {
   const navigate = useNavigate();
@@ -39,7 +38,7 @@ export function OutputSection({ review, run, generate }: OutputSectionProps) {
       return;
     }
     void actions.resume(question.interrupt_id, value).then((ok) => {
-      if (ok && value === REPORT) void navigate({ hash: "#rapport" });
+      if (ok && value === REPORT) void navigate({ hash: "#report" });
     });
   };
   return (

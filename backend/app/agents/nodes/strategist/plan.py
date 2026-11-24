@@ -36,15 +36,14 @@ MAX_PLAN_ASKS = 3  # une demande + deux re-demandes avec les problèmes de `chec
 MAX_PROBLEMS_SHOWN = 30
 MAX_NOTE_CHARS = 2000
 PLAN_TIMEOUT_S = 600  # trois demandes d'un programme complet au modèle fort
-PLAN_REQUEST = "Écris le programme semaine par semaine."
+PLAN_REQUEST = "Write the program week by week."
 VALIDATION_INTERRUPT: dict[str, Any] = {
     "kind": "validate_program",
     "question": (
-        "Déplace, supprime ou ajoute des tâches dans le calendrier, puis valide le programme ou "
-        "demande une révision."
+        "Arrange the tasks in the calendar, then validate the program or request a revision."
     ),
-    "options": [{"value": "validate", "label": "Valider le programme"}],
-    "fields": [{"id": "note", "label": "Ce qu'il faut revoir (pour une révision)"}],
+    "options": [{"value": "validate", "label": "Validate the program"}],
+    "fields": [{"id": "note", "label": "What should change in a revision?"}],
 }
 
 logger = logging.getLogger(__name__)
@@ -242,7 +241,7 @@ def make_finalize(deps: GraphDeps) -> Node:
         program_id = state["saved"]["program_id"]
         await deps.ports.program.validate(deps.user_id, deps.session_id, program_id)
         logger.info("Programme validé : session %s, programme %s", deps.session_id, program_id)
-        summary = f"Programme validé : « {state['draft']['title']} »."
+        summary = f"Validated the program “{state['draft']['title']}”."
         emit("agent.message", {"message_id": f"{AGENT}-validation", "text": summary}, agent=AGENT)
         return {"summary": summary}
 

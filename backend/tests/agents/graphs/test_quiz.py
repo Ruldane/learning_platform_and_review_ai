@@ -62,7 +62,7 @@ async def test_quiz_generate_saves_questions_and_cards(make_quiz_runner: MakeQui
     assert len(saved.questions) == 10 and len(saved.flashcards) == 4
     assert len(run.prompts()) == 1 and done.pending_interrupt is None
     assert between_untrusted_markers(run.prompts()[0], "leçon") == LESSON
-    assert (await run.events("run.completed"))[0]["summary"] == f"Quiz prêt : « {TITLE} »."
+    assert (await run.events("run.completed"))[0]["summary"] == f"Quiz ready for “{TITLE}”."
     ready = (await run.events("artifact.ready"))[0]
     assert ready == {
         "artifact_id": QUIZ_ID,
@@ -71,7 +71,7 @@ async def test_quiz_generate_saves_questions_and_cards(make_quiz_runner: MakeQui
         "url": f"/study/quiz/{QUIZ_ID}",
     }
     said = await run.events("agent.message")
-    assert said[-1]["text"] == "Quiz prêt : 10 questions et 4 fiches de révision."
+    assert said[-1]["text"] == "Quiz ready with 10 questions and 4 review cards."
 
 
 def test_good_quiz_has_no_problems() -> None:
@@ -92,7 +92,7 @@ async def test_invalid_quiz_is_reasked_then_marked_failed(make_quiz_runner: Make
     assert len(run.prompts()) == 3 and run.store.saved == {}
     assert "Use at least 3 of the question types mcq, short, code and explain" in run.prompts()[1]
     summary = (await run.events("run.completed"))[0]["summary"]
-    assert summary == f"Quiz en échec : « {TITLE} »."
+    assert summary == f"Quiz generation failed for “{TITLE}”."
 
 
 async def test_invalid_quiz_is_fixed_on_second_ask(make_quiz_runner: MakeQuiz) -> None:
@@ -125,7 +125,7 @@ async def test_grade_only_open_questions_go_to_model(make_quiz_runner: MakeQuiz)
         "q4": (0.0, "Hors sujet."),
     }
     said = (await run.events("agent.message"))[-1]["text"]
-    assert said.startswith("Note : 50 %, il faut 80 %.") and "3 fiche(s)" in said
+    assert said.startswith("You scored 50%. Passing requires 80%.") and "3 review cards" in said
 
 
 async def test_no_open_question_skips_the_model(make_quiz_runner: MakeQuiz) -> None:
@@ -135,7 +135,7 @@ async def test_no_open_question_skips_the_model(make_quiz_runner: MakeQuiz) -> N
     await run.wait_status("completed")
     assert run.prompts() == [] and run.store.graded[ATTEMPT_ID].score == 100
     summary = (await run.events("run.completed"))[0]["summary"]
-    assert summary == f"Quiz noté : « {TITLE} », 100 %."
+    assert summary == f"Graded the quiz on “{TITLE}” at 100%."
 
 
 async def test_answer_is_framed_as_untrusted(make_quiz_runner: MakeQuiz) -> None:

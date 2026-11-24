@@ -75,7 +75,7 @@ def build(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
 
     async def voice(state: PodcastState) -> PodcastState:
         await deps.ports.podcast.render_audio(deps.user_id, state["episode_id"])
-        return {"summary": "Le podcast du matin est prêt."}
+        return {"summary": "The morning podcast is ready."}
 
     graph = StateGraph(PodcastState)
     graph.add_node("write", write)

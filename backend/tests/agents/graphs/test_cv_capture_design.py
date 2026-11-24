@@ -77,7 +77,7 @@ async def test_best_pass_is_kept_and_its_score_shown(
     await run.wait_status("completed")
     assert design_store.finished_pass == {"t1": 2}
     [done] = await run.events("run.completed")
-    assert done["summary"] == "Modèle de CV prêt : il ressemble à ton CV à 78 %."
+    assert done["summary"] == "CV template ready with a 78% match to your original CV."
 
 
 async def test_tie_keeps_the_later_pass(

@@ -56,7 +56,7 @@ async def test_graph_reflects_level_change_immediately(
     ]
     assert detail["next_action"] == {
         "kind": "project",
-        "label": "Projet preuve (bientôt)",
+        "label": "Evidence project (coming soon)",
         "url": None,
     }
 

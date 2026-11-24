@@ -5,9 +5,9 @@ import { openStream } from "./cvHarness";
 import type { FakeSocketServer } from "./fakeSocket";
 
 export const OUTPUT_OPTIONS = [
-  { value: "report", label: "Voir le rapport" },
-  { value: "pdf", label: "Générer le PDF" },
-  { value: "finish", label: "Terminer" },
+  { value: "report", label: "View the report" },
+  { value: "pdf", label: "Generate PDF" },
+  { value: "finish", label: "Finish" },
 ];
 
 /** La question de sortie de la revue, rejouée dans le flux `r1` (comme après un rechargement). */
@@ -15,12 +15,12 @@ export async function askOutput(sockets: FakeSocketServer) {
   const stream = await openStream(sockets, "r1");
   const e = councilEvents("r1");
   stream.push(
-    e.message("m1", "N modifications proposées.", "recruiter"),
+    e.message("m1", "Suggested changes are ready.", "recruiter"),
     e.interrupt("cv_output", "o1", {
-      question: "Que veux-tu faire du CV ciblé ?",
+      question: "What would you like to do next?",
       options: OUTPUT_OPTIONS,
     }),
   );
-  expect(await screen.findByRole("button", { name: "Générer le PDF" })).toBeInTheDocument();
+  expect(await screen.findByRole("button", { name: "Generate PDF" })).toBeInTheDocument();
   return stream;
 }

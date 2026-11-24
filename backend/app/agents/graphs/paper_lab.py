@@ -65,7 +65,7 @@ def build(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
             source = await _read(deps, context.url)
             draft = await _prepare(deps, source)
             await store.publish(deps.user_id, lab_id, deps.session_id, source, draft)
-        return {"summary": "Le mini-cours et le notebook sont prêts."}
+        return {"summary": "The short lesson and notebook are ready."}
 
     graph = StateGraph(PaperLabState)
     graph.add_node("prepare", prepare)

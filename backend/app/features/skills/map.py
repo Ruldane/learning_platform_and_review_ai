@@ -142,15 +142,15 @@ def next_action(level: SkillLevel | None, skill: str, facts: ActionFacts) -> Nex
     subject = facts.module or skill
     if level is None or level == "declared":
         url = f"{STUDY_URL}?lesson={quote(facts.lesson_id, safe='')}" if facts.lesson_id else None
-        return NextActionOut(kind="study", label=f"Étudier « {subject} »", url=url or STUDY_URL)
+        return NextActionOut(kind="study", label=f"Study “{subject}”", url=url or STUDY_URL)
     if level == "in_progress":
         url = f"{QUIZ_URL}/{quote(facts.quiz_id, safe='')}" if facts.quiz_id else QUIZ_URL
-        return NextActionOut(kind="quiz", label=f"Passer le quiz « {subject} »", url=url)
+        return NextActionOut(kind="quiz", label=f"Take the quiz on “{subject}”", url=url)
     if level == "validated":
         if facts.cards_due:
-            label = f"Réviser les fiches « {skill} »"
+            label = f"Review cards for “{skill}”"
             return NextActionOut(kind="review", label=label, url=REVIEW_URL)
-        return NextActionOut(kind="project", label="Projet preuve (bientôt)", url=None)
+        return NextActionOut(kind="project", label="Evidence project (coming soon)", url=None)
     return None
 
 

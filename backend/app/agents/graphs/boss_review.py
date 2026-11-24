@@ -52,7 +52,7 @@ def build(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
                 retries=0,
             )
             grade = await port.grade(deps.user_id, program_id, deps.session_id, rubric)
-        return {"summary": "Le Boss a été évalué.", "total": grade.total}
+        return {"summary": "The boss challenge has been graded.", "total": grade.total}
 
     graph = StateGraph(BossReviewState)
     graph.add_node("review", review)

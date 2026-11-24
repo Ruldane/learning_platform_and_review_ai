@@ -28,11 +28,11 @@ async def test_validate_finishes_ready(
     assert artifact == {
         "artifact_id": "modele-t1",
         "kind": "cv_template",
-        "title": "Modèle de CV",
+        "title": "CV template",
         "url": "/career/cv/templates/t1",
     }
     [done] = await run.events("run.completed")
-    assert done["summary"] == "Modèle de CV prêt : il ressemble à ton CV à 90 %."
+    assert done["summary"] == "CV template ready with a 90% match to your original CV."
 
 
 async def test_restart_finishes_failed(

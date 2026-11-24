@@ -142,7 +142,7 @@ def build(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
     async def research(state: ExpertState) -> ExpertState:
         draft = await deps.ports.expert_debates.draft(*_arguments(deps, state))
         if draft.saved:
-            return {"saved": True, "summary": "Débat terminé."}
+            return {"saved": True, "summary": "Debate complete."}
         sources = await debate_sources(deps, draft.question)
         return {"sources": [source.model_dump(mode="json") for source in sources]}
 
@@ -150,7 +150,7 @@ def build(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
         if not state.get("saved"):
             speeches = [ExpertSpeech.model_validate(entry) for entry in state["speeches"]]
             await deps.ports.expert_debates.publish(*_arguments(deps, state), speeches)
-        return {"summary": "Débat terminé."}
+        return {"summary": "Debate complete."}
 
     graph = StateGraph(ExpertState)
     graph.add_node("research", research)

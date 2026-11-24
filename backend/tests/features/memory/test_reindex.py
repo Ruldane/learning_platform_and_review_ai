@@ -251,7 +251,7 @@ async def test_unexpected_reindex_error_is_generic(
     await rt.jobs.join()
     state = rt.jobs.reindex_state(USER)
     assert state.status == "failed"
-    assert state.error == "La réindexation a échoué de façon inattendue."
+    assert state.error == "Reindexing failed unexpectedly."
 
 
 async def test_reindex_with_embeddings_down_keeps_the_existing_index(

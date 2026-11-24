@@ -76,7 +76,7 @@ def build(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
         elif context.stage == "reviewing":
             summary = await _assess(deps, hunt_id, context)
         else:
-            summary = "L’exercice de lecture est déjà disponible."
+            summary = "The reading exercise is already available."
         return {"summary": summary}
 
     graph = StateGraph(HuntGraphState)

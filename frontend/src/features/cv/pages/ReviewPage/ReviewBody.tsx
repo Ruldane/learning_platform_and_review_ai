@@ -19,16 +19,15 @@ import { VersionPanel } from "./VersionPanel";
 const OUTPUT_QUESTION = "cv_output";
 
 /**
- * Le lien `#rapport` (rapport demandé dans le fil) mène à la section du rapport et place le focus
- * sur son titre : au clavier ou au lecteur d'écran, la lecture continue là où l'on vient d'aller.
- * La clé de l'adresse change à chaque navigation, un second clic sur « Voir le rapport » compris.
+ * Focus the report heading when opening a report link. The location key also handles repeated
+ * visits to the same fragment.
  */
 function useScrollToReport(ready: boolean) {
   const { hash, key } = useLocation();
   useEffect(() => {
-    if (!ready || hash !== "#rapport") return;
-    document.getElementById("rapport")?.scrollIntoView?.();
-    document.getElementById("rapport-titre")?.focus();
+    if (!ready || (hash !== "#report" && hash !== "#rapport")) return;
+    document.getElementById("report")?.scrollIntoView?.();
+    document.getElementById("report-title")?.focus();
   }, [ready, hash, key]);
 }
 
@@ -63,7 +62,7 @@ export function ReviewBody({ review, createSocket }: ReviewBodyProps) {
         <DiffSection review={review} locked={closed} />
       </Section>
       {review.report ? (
-        <Section title={t("cv.reviewPage.report")} id="rapport">
+        <Section title={t("cv.reviewPage.report")} id="report">
           <ReviewReportView
             report={toReportView(review.report)}
             gapTerms={review.gap_terms}

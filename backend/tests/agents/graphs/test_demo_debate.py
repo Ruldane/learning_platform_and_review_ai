@@ -25,8 +25,8 @@ from tests.agents.runtime.runner_helpers import (
 type Factory = async_sessionmaker[AsyncSession]
 
 R = ["Défenseur 1", "Critique 1", "Défenseur 2", "Critique 2", "Défenseur 3", "Critique 3"]
-QUESTION = "Quel angle pour le second tour ?"
-OPTIONS = [{"value": "concret", "label": "Plus concret"}, {"value": "court", "label": "Plus court"}]
+QUESTION = "What approach should we take in round 2?"
+OPTIONS = [{"value": "concret", "label": "More concrete"}, {"value": "court", "label": "Shorter"}]
 
 
 async def _until_asked(d: Debate, db: Factory, user_id: str, sid: str, *, not_id: str = "") -> str:

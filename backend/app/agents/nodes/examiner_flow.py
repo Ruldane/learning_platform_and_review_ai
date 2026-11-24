@@ -78,7 +78,8 @@ def make_save_quiz(deps: GraphDeps) -> Node:
             material.quiz_id,
             count,
         )
-        text = f"Quiz prêt : {count} questions et {len(draft.flashcards)} fiches de révision."
+        cards = len(draft.flashcards)
+        text = f"Quiz ready with {count} questions and {cards} review cards."
         emit("agent.message", {"message_id": f"{AGENT}-quiz", "text": text}, agent=AGENT)
         artifact = {
             "artifact_id": material.quiz_id,
@@ -87,7 +88,7 @@ def make_save_quiz(deps: GraphDeps) -> Node:
             "url": f"/study/quiz/{material.quiz_id}",
         }
         emit("artifact.ready", artifact, agent=AGENT)
-        return {"questions": count, "summary": f"Quiz prêt : « {material.module_title} »."}
+        return {"questions": count, "summary": f"Quiz ready for “{material.module_title}”."}
 
     return save_quiz
 
@@ -101,9 +102,9 @@ def make_failed(deps: GraphDeps) -> Node:
         reason = state["failure"]
         await deps.ports.quiz.quiz_failed(deps.user_id, material.quiz_id, reason)
         logger.info("Quiz en échec : session %s, quiz %s", deps.session_id, material.quiz_id)
-        text = f"Quiz non écrit : {reason}"
+        text = f"Quiz generation failed. {reason}"
         emit("agent.message", {"message_id": f"{AGENT}-echec", "text": text}, agent=AGENT)
-        return {"summary": f"Quiz en échec : « {material.module_title} »."}
+        return {"summary": f"Quiz generation failed for “{material.module_title}”."}
 
     return failed
 
@@ -140,14 +141,16 @@ def make_save_grades(deps: GraphDeps) -> Node:
 def graded_text(saved: GradedSaved) -> str:
     """Ce que January lit à la fin de la notation."""
     if saved.passed:
-        text = f"Note : {saved.score} %. Acquis validés."
+        text = f"You scored {saved.score}% and validated the skills."
     else:
         text = (
-            f"Note : {saved.score} %, il faut {PASS_PERCENT} %. {saved.followup_tasks} tâche(s) "
-            "ajoutée(s) au programme, dont un nouvel essai dans 2 jours."
+            f"You scored {saved.score}%. Passing requires {PASS_PERCENT}%. "
+            f"Added {saved.followup_tasks} tasks to your program, including a retry in 2 days."
         )
     if saved.cards_created:
-        text += f" {saved.cards_created} fiche(s) de révision créée(s) depuis tes erreurs."
+        count = saved.cards_created
+        cards = "review card" if count == 1 else "review cards"
+        text += f" Created {count} {cards} from your mistakes."
     return text
 
 
@@ -159,6 +162,6 @@ def make_announce(deps: GraphDeps) -> Node:
         saved = GradedSaved(**state["graded"])
         message = {"message_id": f"{AGENT}-note", "text": graded_text(saved)}
         emit("agent.message", message, agent=AGENT)
-        return {"summary": f"Quiz noté : « {attempt.module_title} », {saved.score} %."}
+        return {"summary": f"Graded the quiz on “{attempt.module_title}” at {saved.score}%."}
 
     return announce

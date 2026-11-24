@@ -103,7 +103,7 @@ def build(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
         elif context.stage == "grading":
             summary = await _assess(deps, transfer_id, context)
         else:
-            summary = "Le contrôle de transfert a déjà été traité."
+            summary = "This skill transfer check has already been processed."
         return {"summary": summary}
 
     graph = StateGraph(TransferGraphState)

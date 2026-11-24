@@ -94,7 +94,8 @@ async def test_learned_document_creates_declare_acquis_with_reason(
     assert await _written(learned, user_id, sid) == [("archivist", "Attention", REASON, "active")]
     events = await all_events(learned.factory, user_id, sid)
     done = next(e for e in events if e.type == "run.completed")
-    assert done.payload.summary == "1 acquis ajouté(s), 1 déjà connu(s)."  # type: ignore[union-attr]
+    summary = done.payload.summary  # type: ignore[union-attr]
+    assert summary == "Added 1 skill to memory. 1 already known."
     async with learned.factory() as db:
         rows, _ = await MemoryItemRepository(db, user_id).filtered(
             ItemFilter(kind="skill", author="archivist"), limit=5, offset=0

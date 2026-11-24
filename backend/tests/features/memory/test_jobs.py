@@ -166,7 +166,7 @@ async def test_job_timeout_marks_error(
     done = await reload(db_session_factory, USER, doc.id)
     assert done.status == "error" and done.error == {
         "code": "ingestion_timeout",
-        "message": "L'import a dépassé 5 minutes.",
+        "message": "The import took longer than 5 minutes.",
     }
 
 

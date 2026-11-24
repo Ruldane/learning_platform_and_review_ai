@@ -49,7 +49,7 @@ def build(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
             )
         proved = await port.record(deps.user_id, incident_id, deps.session_id, score)
         return {
-            "summary": "Rapport d’astreinte évalué.",
+            "summary": "On-call report graded.",
             "score": score.total,
             "proof_recorded": proved,
         }

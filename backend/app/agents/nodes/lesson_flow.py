@@ -113,7 +113,7 @@ def make_publish(deps: GraphDeps) -> Node:
             },
             agent="writer",
         )
-        return {"published": asdict(done), "summary": f"Leçon publiée : « {brief.title} »."}
+        return {"published": asdict(done), "summary": f"Published the lesson “{brief.title}”."}
 
     return publish
 

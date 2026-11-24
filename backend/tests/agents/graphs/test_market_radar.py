@@ -39,7 +39,7 @@ async def test_radar_reads_extracts_and_finalizes(
     assert artifact == {
         "artifact_id": RUN_ID,
         "kind": "radar",
-        "title": "Radar du marché",
+        "title": "Market Radar",
         "url": f"/career/radar/{RUN_ID}",
     }
     assert await run.said() == [

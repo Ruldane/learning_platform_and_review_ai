@@ -266,5 +266,5 @@ async def finalize(state: WebResearchState) -> WebResearchState:
     rejected = len(verdicts) - kept
     unreadable = state.get("unreadable", 0)
     return {
-        "summary": f"{kept} source(s) retenue(s), {rejected} écartée(s), {unreadable} illisible(s)."
+        "summary": f"Kept {kept} sources, rejected {rejected}, and could not read {unreadable}."
     }

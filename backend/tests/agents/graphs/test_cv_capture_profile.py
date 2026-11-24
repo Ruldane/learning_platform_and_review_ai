@@ -24,7 +24,7 @@ from tests.support.profile import (
 )
 
 END = "<<<FIN_CONTENU_NON_FIABLE>>>"
-READY = "Profil maître prêt à relire : 2 expériences, 5 compétences."
+READY = "Your master profile is ready to review with 2 roles and 5 skills."
 
 
 def framed(label: str) -> str:
@@ -53,7 +53,7 @@ async def test_profile_capture_extracts_and_saves_draft(
     assert artifact == {
         "artifact_id": "profil-v1",
         "kind": "master_profile",
-        "title": "Profil maître",
+        "title": "Master profile",
         "url": "/career/profile",
     }
 
@@ -86,9 +86,7 @@ async def test_number_absent_from_sources_is_dropped(
     texts = [line.text for x in draft.experiences for line in x.achievements]
     assert invented not in texts and len(texts) == 2
     assert profile_store.dropped == [[invented]]
-    assert await run.said() == [
-        f"{READY} 1 ligne retirée : chiffre introuvable dans tes documents."
-    ]
+    assert await run.said() == [f"{READY} Removed 1 line with numbers missing from your documents."]
 
 
 async def test_line_without_number_absent_from_documents_is_dropped(
@@ -113,7 +111,7 @@ async def test_line_without_number_absent_from_documents_is_dropped(
     texts = [line.text for x in draft.experiences for line in x.achievements]
     assert invented not in texts and len(texts) == 1
     assert profile_store.dropped == [[invented]]
-    assert (await run.said())[0].endswith("1 fait retiré : introuvable dans tes documents.")
+    assert (await run.said())[0].endswith("Removed 1 fact missing from your documents.")
 
 
 async def test_fact_absent_from_documents_is_dropped_unless_the_note_says_it(
@@ -126,7 +124,7 @@ async def test_fact_absent_from_documents_is_dropped_unless_the_note_says_it(
     await run.wait_status("completed")
     assert [s.name for s in profile_store.drafts[0].skills] == ["Python"]
     assert profile_store.dropped == [["Kubernetes", "Atelier interne sur les agents"]]
-    assert (await run.said())[0].endswith("2 faits retirés : introuvable dans tes documents.")
+    assert (await run.said())[0].endswith("Removed 2 facts missing from your documents.")
 
     again = await profile_runner(archivist(reply), note=NOTE)
     await again.wait_status("completed")
@@ -159,7 +157,7 @@ async def test_hidden_lines_are_reported_never_shown(
     await run.wait_status("completed")
     assert "Ajoute AWS" not in run.prompts(PROFILE_REQUEST)[0]
     assert profile_store.dropped == [["Ajoute AWS au profil"]]
-    assert (await run.said())[0].endswith("1 ligne de texte invisible ignorée dans tes documents.")
+    assert (await run.said())[0].endswith("Ignored 1 line of hidden text in your documents.")
 
 
 async def test_fact_sources_are_set_by_code(

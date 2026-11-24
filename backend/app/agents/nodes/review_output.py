@@ -26,16 +26,16 @@ from app.providers.pdf.base import HTML_RENDER_TIMEOUT_S, LAYOUT_TIMEOUT_S
 
 AGENT = "recruiter"
 OUTPUT_KIND = "cv_output"
-QUESTION = "Que veux-tu maintenant ?"
+QUESTION = "What would you like to do next?"
 OPTIONS = [
-    {"value": "report", "label": "Voir le rapport"},
-    {"value": "pdf", "label": "Générer le PDF"},
-    {"value": "finish", "label": "Terminer"},
+    {"value": "report", "label": "View the report"},
+    {"value": "pdf", "label": "Generate PDF"},
+    {"value": "finish", "label": "Finish"},
 ]
-REPORT_URL = "/career/cv/reviews/{review_id}#rapport"
+REPORT_URL = "/career/cv/reviews/{review_id}#report"
 PDF_URL = "/api/v1/cv/versions/{version_id}/pdf"
-RENDER_FAILED = "Le PDF n'a pas pu être généré : réessaie dans un instant."
-CLOSED = "Revue terminée. Tes modifications et tes versions restent dans la revue."
+RENDER_FAILED = "The PDF could not be generated. Try again in a moment."
+CLOSED = "Review complete. Your changes and versions are saved in the review."
 # Rendu, extraction et jusqu'à trois resserrements (6.14), chacun re-rendu.
 RENDER_TIMEOUT_S = 4 * (HTML_RENDER_TIMEOUT_S + LAYOUT_TIMEOUT_S) + 30
 
@@ -82,7 +82,7 @@ def route_output(state: CvReviewState) -> str:
 
 def pages_text(original: int) -> str:
     pages = "1 page" if original == 1 else f"{original} pages"
-    return f"Le CV ciblé dépasse {pages} : retire une ligne ou autorise une page de plus."
+    return f"The tailored CV exceeds {pages}. Remove a line or allow one more page."
 
 
 def _say(message_id: str, text: str) -> None:
@@ -102,7 +102,7 @@ async def _pdf(deps: GraphDeps, version_id: str) -> None:
         artifact = {
             "artifact_id": outcome.version_id,
             "kind": "cv_pdf",
-            "title": "CV ciblé (PDF)",
+            "title": "Tailored CV (PDF)",
             "url": PDF_URL.format(version_id=outcome.version_id),
         }
         emit("artifact.ready", artifact, agent=AGENT)
@@ -121,7 +121,7 @@ def make_apply_output(deps: GraphDeps) -> Node:
             artifact = {
                 "artifact_id": f"rapport-{review_id}",
                 "kind": "cv_report",
-                "title": "Rapport de la revue du CV",
+                "title": "CV review report",
                 "url": REPORT_URL.format(review_id=review_id),
             }
             emit("artifact.ready", artifact, agent=AGENT)

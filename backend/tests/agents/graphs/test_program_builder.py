@@ -168,7 +168,7 @@ async def test_revise_note_produces_a_new_version(make_builder_runner: MakeBuild
     await c.resume("validate")
     done = await c.wait_status("completed")
     assert c.store.validated == [pid] and done.pending_interrupt is None
-    assert (await c.events("run.completed"))[0]["summary"] == "Programme validé : « Parcours IA »."
+    assert (await c.events("run.completed"))[0]["summary"] == "Validated the program “Parcours IA”."
 
 
 async def test_validate_calls_store_once_even_after_replay(

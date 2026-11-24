@@ -65,7 +65,7 @@ def build(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
                 retries=1,
             )
             await port.grade(deps.user_id, pid, deps.session_id, grade)
-        return {"summary": "L’appréciation de l’étape est enregistrée."}
+        return {"summary": "The feedback for this stage has been saved."}
 
     graph = StateGraph(RecruitmentGraphState)
     graph.add_node("work", work)

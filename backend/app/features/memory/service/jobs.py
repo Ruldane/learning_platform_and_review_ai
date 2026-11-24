@@ -23,10 +23,10 @@ from app.features.memory.service.runtime import MemoryRuntime
 logger = logging.getLogger(__name__)
 
 JOB_TIMEOUT_S: float = 300
-TIMEOUT_ERROR = {"code": "ingestion_timeout", "message": "L'import a dépassé 5 minutes."}
+TIMEOUT_ERROR = {"code": "ingestion_timeout", "message": "The import took longer than 5 minutes."}
 REINDEX_TIMEOUT_S: float = 3600
-REINDEX_TIMEOUT = "La réindexation a dépassé une heure."
-REINDEX_FAILED = "La réindexation a échoué de façon inattendue."
+REINDEX_TIMEOUT = "Reindexing took longer than an hour."
+REINDEX_FAILED = "Reindexing failed unexpectedly."
 IDLE = ReindexState(status="idle", done=0, total=0, error=None)
 
 

@@ -122,9 +122,10 @@ def make_write(deps: GraphDeps) -> Node:
 
 
 async def finalize(state: LearnedDocumentState) -> LearnedDocumentState:
+    added = state.get("created", 0)
+    skills = "skill" if added == 1 else "skills"
     return {
         "summary": (
-            f"{state.get('created', 0)} acquis ajouté(s), "
-            f"{state.get('already_known', 0)} déjà connu(s)."
+            f"Added {added} {skills} to memory. {state.get('already_known', 0)} already known."
         )
     }

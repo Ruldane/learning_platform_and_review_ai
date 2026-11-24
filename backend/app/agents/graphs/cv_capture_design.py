@@ -43,7 +43,7 @@ DESIGN_ENTRY = "prepare"
 PREPARE_TIMEOUT_S = LAYOUT_TIMEOUT_S + 4 * FONT_TIMEOUT_S + 30
 RENDER_TIMEOUT_S = HTML_RENDER_TIMEOUT_S + LAYOUT_TIMEOUT_S + 30
 ARTIFACT_URL = "/career/cv/templates/{template_id}"
-RESTARTED = "Capture abandonnée."
+RESTARTED = "Template capture cancelled."
 
 logger = logging.getLogger(__name__)
 
@@ -139,7 +139,7 @@ def _artifact(template_id: str) -> dict[str, Any]:
     return {
         "artifact_id": f"modele-{template_id}",
         "kind": "cv_template",
-        "title": "Modèle de CV",
+        "title": "CV template",
         "url": ARTIFACT_URL.format(template_id=template_id),
     }
 
@@ -158,10 +158,10 @@ def make_apply_answer(deps: GraphDeps) -> Node:
         store = deps.ports.cv_templates
         if answer.action == "validate":
             await store.finish(deps.user_id, template_id, "ready", None)
-            text = f"Modèle de CV prêt : il ressemble à ton CV à {kept_score_of(state)} %."
+            text = f"CV template ready with a {kept_score_of(state)}% match to your original CV."
         else:
             await store.finish(deps.user_id, template_id, "failed", RESTARTED)
-            text = f"{RESTARTED} Tu peux relancer la capture du modèle."
+            text = f"{RESTARTED} You can start the template capture again."
         logger.info(
             "Gabarit terminé : session %s, gabarit %s, %s, %d passe(s), %d ajustement(s)",
             deps.session_id,

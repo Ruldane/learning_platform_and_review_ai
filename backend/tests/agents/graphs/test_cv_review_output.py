@@ -25,13 +25,13 @@ async def test_output_loop_report_then_pdf_then_finish(
         {
             "artifact_id": f"rapport-{REVIEW_ID}",
             "kind": "cv_report",
-            "title": "Rapport de la revue du CV",
-            "url": f"/career/cv/reviews/{REVIEW_ID}#rapport",
+            "title": "CV review report",
+            "url": f"/career/cv/reviews/{REVIEW_ID}#report",
         },
         {
             "artifact_id": "v1",
             "kind": "cv_pdf",
-            "title": "CV ciblé (PDF)",
+            "title": "Tailored CV (PDF)",
             "url": "/api/v1/cv/versions/v1/pdf",
         },
     ]
@@ -49,9 +49,9 @@ async def test_pages_exceeded_is_said_then_question_again(
     await run.answer({"choice": "pdf", "version_id": "v2"})
     await run.question()
     assert (await run.said())[-1] == (
-        "Le CV ciblé dépasse 1 page : retire une ligne ou autorise une page de plus."
+        "The tailored CV exceeds 1 page. Remove a line or allow one more page."
     )
-    assert pages_text(2).startswith("Le CV ciblé dépasse 2 pages")
+    assert pages_text(2).startswith("The tailored CV exceeds 2 pages")
     assert await run.events("artifact.ready") == []
 
 
@@ -63,7 +63,7 @@ async def test_failed_render_is_said(
     await run.question()
     await run.answer({"choice": "pdf", "version_id": "v3"})
     await run.question()
-    assert (await run.said())[-1].startswith("Le PDF n'a pas pu être généré")
+    assert (await run.said())[-1].startswith("The PDF could not be generated")
 
 
 async def test_unknown_answer_asks_again_without_writing(

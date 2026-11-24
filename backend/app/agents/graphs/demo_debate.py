@@ -16,7 +16,7 @@ from app.agents.nodes.demo_proponent import make_proponent
 from app.agents.runtime.deps import GraphDeps
 from app.agents.state.demo_debate import DemoDebateState
 
-ANGLES = {"concret": "Plus concret", "court": "Plus court"}
+ANGLES = {"concret": "More concrete", "court": "Shorter"}
 
 
 class DemoDebateInput(BaseModel):
@@ -24,8 +24,7 @@ class DemoDebateInput(BaseModel):
 
 
 def _question(next_round: int) -> str:
-    which = "le second tour" if next_round == 2 else f"le tour {next_round}"
-    return f"Quel angle pour {which} ?"
+    return f"What approach should we take in round {next_round}?"
 
 
 def _ask_user(state: DemoDebateState) -> DemoDebateState:
@@ -41,11 +40,11 @@ def _ask_user(state: DemoDebateState) -> DemoDebateState:
 
 
 def _finalize(state: DemoDebateState) -> DemoDebateState:
-    angle = ANGLES.get(state.get("user_choice") or "", "libre")
+    angle = ANGLES.get(state.get("user_choice") or "", "open discussion")
     return {
         "summary": (
-            f"Débat sur « {state['topic']} » en {state.get('round', 0)} tour(s), "
-            f"{len(state.get('turns', []))} répliques. Dernier angle choisi : {angle}."
+            f"Debate on “{state['topic']}” finished after {state.get('round', 0)} rounds "
+            f"and {len(state.get('turns', []))} responses. Final approach was {angle}."
         )
     }
 

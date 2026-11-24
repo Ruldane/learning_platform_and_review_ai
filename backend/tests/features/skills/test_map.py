@@ -109,20 +109,20 @@ BASES = ActionFacts(module="Bases", lesson_id="L1", quiz_id="Q1")
 @pytest.mark.parametrize(
     ("level", "facts", "expected"),
     [
-        (None, BASES, ("study", "Étudier « Bases »", "/study/session?lesson=L1")),
-        ("declared", ActionFacts(), ("study", "Étudier « Pandas »", "/study/session")),
-        ("in_progress", BASES, ("quiz", "Passer le quiz « Bases »", "/study/quiz/Q1")),
+        (None, BASES, ("study", "Study “Bases”", "/study/session?lesson=L1")),
+        ("declared", ActionFacts(), ("study", "Study “Pandas”", "/study/session")),
+        ("in_progress", BASES, ("quiz", "Take the quiz on “Bases”", "/study/quiz/Q1")),
         (
             "in_progress",
             ActionFacts(module="Bases"),
-            ("quiz", "Passer le quiz « Bases »", "/study/quiz"),
+            ("quiz", "Take the quiz on “Bases”", "/study/quiz"),
         ),
         (
             "validated",
             ActionFacts(cards_due=True),
-            ("review", "Réviser les fiches « Pandas »", "/study/reviews"),
+            ("review", "Review cards for “Pandas”", "/study/reviews"),
         ),
-        ("validated", ActionFacts(), ("project", "Projet preuve (bientôt)", None)),
+        ("validated", ActionFacts(), ("project", "Evidence project (coming soon)", None)),
         ("proven", BASES, None),
     ],
 )
@@ -161,15 +161,15 @@ async def test_detail_next_action_reads_lesson_quiz_and_due_cards(
             found = (await skill_detail(db, ME, skill_id, NOW)).next_action
         return None if found is None else (found.kind, found.label, found.url)
 
-    assert await action() == ("study", "Étudier « Bases »", f"/study/session?lesson={lesson_id}")
+    assert await action() == ("study", "Study “Bases”", f"/study/session?lesson={lesson_id}")
     await set_level(db_session_factory, ME, skill_id, "in_progress")
-    assert await action() == ("quiz", "Passer le quiz « Bases »", f"/study/quiz/{quiz_id}")
+    assert await action() == ("quiz", "Take the quiz on “Bases”", f"/study/quiz/{quiz_id}")
     await set_level(db_session_factory, ME, skill_id, "validated")
     await add_card(db_session_factory, ME, "PANDAS ", NOW.date() + timedelta(days=1))
     await add_card(db_session_factory, OTHER, "pandas", NOW.date())
-    assert await action() == ("project", "Projet preuve (bientôt)", None)
+    assert await action() == ("project", "Evidence project (coming soon)", None)
     await add_card(db_session_factory, ME, "Pandas", NOW.date())
-    assert await action() == ("review", "Réviser les fiches « Pandas »", "/study/reviews")
+    assert await action() == ("review", "Review cards for “Pandas”", "/study/reviews")
 
 
 async def test_study_action_without_ready_lesson_opens_study_home(
@@ -186,7 +186,7 @@ async def test_study_action_without_ready_lesson_opens_study_home(
     async with db_session_factory() as db:
         quiz = (await skill_detail(db, ME, skill_id, NOW)).next_action
     assert study is not None and (study.label, study.url) == (
-        "Étudier « Bases »",
+        "Study “Bases”",
         "/study/session",
     )
     assert quiz is not None and quiz.url == "/study/quiz"

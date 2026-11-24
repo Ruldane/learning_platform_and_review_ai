@@ -46,7 +46,7 @@ def build(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
                 retries=1,
             )
             await port.prepare(deps.user_id, deps.session_id, proposal, result)
-        return {"summary": "Une retouche est prête à être validée."}
+        return {"summary": "A lesson update is ready to review."}
 
     graph = StateGraph(UpdateState)
     graph.add_node("review", review)

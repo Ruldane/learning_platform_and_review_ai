@@ -157,26 +157,26 @@ def make_save_draft(deps: GraphDeps) -> Node:
 
 
 def _count(n: int, one: str, many: str) -> str:
-    return f"{n} {one if n <= 1 else many}"
+    return f"{n} {one if n == 1 else many}"
 
 
 def announce_text(state: CvCaptureState) -> str:
-    """« Profil maître prêt à relire : 4 expériences, 18 compétences. », puis les retraits."""
+    """Summarize the draft profile and the claims omitted from it."""
     draft = MasterProfileData.model_validate(state["draft"])
     parts = [
-        "Profil maître prêt à relire : "
-        f"{_count(len(draft.experiences), 'expérience', 'expériences')}, "
-        f"{_count(len(draft.skills), 'compétence', 'compétences')}."
+        "Your master profile is ready to review with "
+        f"{_count(len(draft.experiences), 'role', 'roles')} and "
+        f"{_count(len(draft.skills), 'skill', 'skills')}."
     ]
     if n := state.get("unsupported", 0):
-        removed = _count(n, "ligne retirée", "lignes retirées")
-        parts.append(f"{removed} : chiffre introuvable dans tes documents.")
+        removed = _count(n, "line", "lines")
+        parts.append(f"Removed {removed} with numbers missing from your documents.")
     if n := state.get("untraced", 0):
-        removed = _count(n, "fait retiré", "faits retirés")
-        parts.append(f"{removed} : introuvable dans tes documents.")
+        removed = _count(n, "fact", "facts")
+        parts.append(f"Removed {removed} missing from your documents.")
     if n := len(state.get("hidden", [])):
-        hidden = _count(n, "ligne de texte invisible ignorée", "lignes de texte invisible ignorées")
-        parts.append(f"{hidden} dans tes documents.")
+        hidden = _count(n, "line", "lines")
+        parts.append(f"Ignored {hidden} of hidden text in your documents.")
     return " ".join(parts)
 
 
@@ -186,7 +186,7 @@ def announce(state: CvCaptureState) -> CvCaptureState:
     artifact = {
         "artifact_id": f"profil-v{state['version']}",
         "kind": "master_profile",
-        "title": "Profil maître",
+        "title": "Master profile",
         "url": ARTIFACT_URL,
     }
     emit("artifact.ready", artifact, agent=AGENT)

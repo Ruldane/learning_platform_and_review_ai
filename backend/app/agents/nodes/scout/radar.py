@@ -247,7 +247,7 @@ def make_finish(deps: GraphDeps) -> Node:
         artifact = {
             "artifact_id": run_id,
             "kind": "radar",
-            "title": "Radar du marché",
+            "title": "Market Radar",
             "url": f"/career/radar/{run_id}",
         }
         emit("artifact.ready", artifact, agent=AGENT)
