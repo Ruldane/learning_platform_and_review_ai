@@ -70,27 +70,27 @@ describe("ReviewsPage", () => {
     const sent = recordReviews((id) => reviewOut(id));
     const { user } = setup();
     expect(await screen.findByText("Que fait GET ?")).toBeInTheDocument();
-    expect(screen.getByText("2 fiches à réviser")).toBeInTheDocument();
-    expect(screen.getByText("Revues aujourd'hui : 4 sur 30")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /Voir la réponse/ }));
-    await user.click(screen.getByRole("button", { name: /Su/ }));
+    expect(screen.getByText("2 cards to review")).toBeInTheDocument();
+    expect(screen.getByText("Reviewed today: 4 of 30")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Show the answer/ }));
+    await user.click(screen.getByRole("button", { name: /Knew it/ }));
     expect(await screen.findByText("Que fait PUT ?")).toBeInTheDocument();
-    expect(screen.getByText("Revues aujourd'hui : 5 sur 30")).toBeInTheDocument();
+    expect(screen.getByText("Reviewed today: 5 of 30")).toBeInTheDocument();
     expect(sent).toEqual([{ card: "c1", body: { result: "ok" } }]);
   });
 
   it("reviews due cards and skips a 409", async () => {
     const sent = recordReviews((id) =>
       id === "c1"
-        ? HttpResponse.json(apiError("card_not_due", "Cette fiche a déjà été revue."), {
+        ? HttpResponse.json(apiError("card_not_due", "This card has already been reviewed."), {
             status: 409,
           })
         : reviewOut(id),
     );
     const { user } = setup();
     await screen.findByText("Que fait GET ?");
-    await user.click(screen.getByRole("button", { name: /Voir la réponse/ }));
-    await user.click(screen.getByRole("button", { name: /Raté/ }));
+    await user.click(screen.getByRole("button", { name: /Show the answer/ }));
+    await user.click(screen.getByRole("button", { name: /Missed/ }));
     expect(await screen.findByText("Que fait PUT ?")).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(sent[0]).toEqual({ card: "c1", body: { result: "fail" } });
@@ -101,18 +101,18 @@ describe("ReviewsPage", () => {
     const { user } = setup();
     await screen.findByText("Que fait GET ?");
     await user.keyboard(" ");
-    await user.keyboard("22"); // le second 2 tombe sur la fiche suivante, encore au recto : sans effet
+    await user.keyboard("22"); // The second key lands while the next card is still face down.
     expect(await screen.findByText("Que fait PUT ?")).toBeInTheDocument();
     expect(sent).toEqual([{ card: "c1", body: { result: "ok" } }]);
   });
 
   it("keeps the card and shows the error when the review fails", async () => {
-    recordReviews(() => HttpResponse.json(apiError("boom", "Panne du serveur."), { status: 500 }));
+    recordReviews(() => HttpResponse.json(apiError("boom", "Server error."), { status: 500 }));
     const { user } = setup();
     await screen.findByText("Que fait GET ?");
-    await user.click(screen.getByRole("button", { name: /Voir la réponse/ }));
-    await user.click(screen.getByRole("button", { name: /Su/ }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("Panne du serveur.");
+    await user.click(screen.getByRole("button", { name: /Show the answer/ }));
+    await user.click(screen.getByRole("button", { name: /Knew it/ }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Server error.");
     expect(screen.getByText("Que fait GET ?")).toBeInTheDocument();
   });
 
@@ -120,10 +120,10 @@ describe("ReviewsPage", () => {
     recordReviews((id) => reviewOut(id, { demoted_skill: "REST" }));
     const { user } = setup();
     await screen.findByText("Que fait GET ?");
-    await user.click(screen.getByRole("button", { name: /Voir la réponse/ }));
-    await user.click(screen.getByRole("button", { name: /Raté/ }));
+    await user.click(screen.getByRole("button", { name: /Show the answer/ }));
+    await user.click(screen.getByRole("button", { name: /Missed/ }));
     expect(
-      await screen.findByText(/La compétence « REST » repasse à « En cours »/),
+      await screen.findByText(/The skill “REST” goes back to “In progress”/),
     ).toBeInTheDocument();
   });
 
@@ -134,27 +134,27 @@ describe("ReviewsPage", () => {
     );
     await screen.findByText("Que fait GET ?");
     expect(
-      screen.getByText("3 autres fiches seront proposées les jours suivants."),
+      screen.getByText("3 more cards will be offered over the next few days."),
     ).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /Voir la réponse/ }));
-    await user.click(screen.getByRole("button", { name: /Su/ }));
+    await user.click(screen.getByRole("button", { name: /Show the answer/ }));
+    await user.click(screen.getByRole("button", { name: /Knew it/ }));
     expect(
-      await screen.findByRole("heading", { name: "Plus aucune fiche à réviser" }),
+      await screen.findByRole("heading", { name: "No more cards to review" }),
     ).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Voir les quiz" }));
+    await user.click(screen.getByRole("button", { name: "See the quizzes" }));
     await waitFor(() => expect(router.state.location.pathname).toBe("/etudier/quiz"));
   });
 
   it("has an empty state when nothing is due", async () => {
     setup(queue({ cards: [] }));
     expect(
-      await screen.findByRole("heading", { name: "Plus aucune fiche à réviser" }),
+      await screen.findByRole("heading", { name: "No more cards to review" }),
     ).toBeInTheDocument();
   });
 
   it("announces the loading", () => {
     setup(() => new Promise<Response>(() => {}));
-    expect(screen.getByRole("status")).toHaveTextContent("Chargement des fiches…");
+    expect(screen.getByRole("status")).toHaveTextContent("Loading cards…");
   });
 
   it("shows an error with a retry button", async () => {
@@ -162,11 +162,11 @@ describe("ReviewsPage", () => {
     const { user } = setup(() => {
       calls += 1;
       return calls === 1
-        ? HttpResponse.json(apiError("boom", "Panne du serveur."), { status: 500 })
+        ? HttpResponse.json(apiError("boom", "Server error."), { status: 500 })
         : HttpResponse.json(queue());
     });
-    expect(await screen.findByRole("alert")).toHaveTextContent("Panne du serveur.");
-    await user.click(screen.getByRole("button", { name: "Réessayer" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Server error.");
+    await user.click(screen.getByRole("button", { name: "Retry" }));
     expect(await screen.findByText("Que fait GET ?")).toBeInTheDocument();
   });
 });

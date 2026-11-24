@@ -12,6 +12,7 @@ describe("quizManifest", () => {
     expect(quizManifest.nav).toEqual([
       { section: "study", labelKey: "quiz.nav.reviews", path: "/etudier/revisions", order: 2 },
       { section: "study", labelKey: "quiz.nav.quiz", path: "/etudier/quiz", order: 3 },
+      { section: "study", labelKey: "mobile.title", path: "/mobile", order: 3.5 },
     ]);
   });
 });

@@ -44,11 +44,11 @@ def check_quiz(quiz: dict[str, Any]) -> None:
         raise CheckFailed("quiz", f"{len(types)} type(s) de questions : 3 au moins.")
     for question in questions:
         choices = len(question["choices"])
-        if question["type"] == "qcm" and not 3 <= choices <= 5:
+        if question["type"] == "mcq" and not 3 <= choices <= 5:
             raise CheckFailed(
                 "quiz", f"QCM n° {question['rank']} : {choices} choix, 3 à 5 attendus."
             )
-        if question["type"] != "qcm" and choices:
+        if question["type"] != "mcq" and choices:
             raise CheckFailed("quiz", f"Question n° {question['rank']} : des choix hors QCM.")
         if question["type"] == "code" and not (question.get("code") or "").strip():
             raise CheckFailed(

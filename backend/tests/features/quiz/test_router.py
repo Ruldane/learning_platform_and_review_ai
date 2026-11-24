@@ -193,7 +193,7 @@ async def test_retry_too_soon_after_failure(
     view = await quiz_view(client, quiz_id)
     order = [q["id"] for q in view["questions"]]
     assert order == first_order[::-1]
-    choices = [q["choices"] for q in view["questions"] if q["type"] == "qcm"]
+    choices = [q["choices"] for q in view["questions"] if q["type"] == "mcq"]
     assert choices and all(c.index("Elle normalise") == len(c) - 1 for c in choices)
     retry = await started_attempt(client, quiz_id, right=True)
     saved = await grade(seeded, retry, PASS_85[:7])
@@ -228,7 +228,7 @@ async def test_quiz_routes_isolate_users(
     act_as(app, "un-autre-utilisateur")
     body = {"answers": []}
     question = {
-        "type": "qcm",
+        "type": "mcq",
         "prompt": "Que vaut un plus un ?",
         "choices": ["1", "2", "3"],
         "correct_index": 1,

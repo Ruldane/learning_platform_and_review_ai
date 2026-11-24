@@ -14,7 +14,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Annotated, Protocol
 
-from pydantic import AfterValidator, BaseModel, Field, WithJsonSchema
+from pydantic import AfterValidator, BaseModel, BeforeValidator, Field, WithJsonSchema
 
 from app.agents.runtime.prose import Prose, ShortenToMax
 from app.agents.tools.study_schema import CardDraft
@@ -35,8 +35,13 @@ Choice = Annotated[str, Field(min_length=1, max_length=200)]
 Criterion = Annotated[str, Field(min_length=1, max_length=200), ShortenToMax()]
 
 
+def read_question_type(value: object) -> object:
+    """Read question types from checkpoints saved before migration 0080."""
+    return "mcq" if value == "qcm" else value
+
+
 class QuestionDraft(BaseModel):
-    type: QuestionType
+    type: Annotated[QuestionType, BeforeValidator(read_question_type)]
     prompt: str = Field(min_length=MIN_PROMPT_CHARS, max_length=600)
     code: str | None = Field(default=None, max_length=3000)
     choices: list[Choice] = Field(default_factory=list, max_length=MAX_CHOICES)
@@ -56,38 +61,38 @@ class QuizDraft(BaseModel):
 def _question_problems(number: int, question: QuestionDraft) -> list[str]:
     """Problèmes d'une question, sans recopier son contenu (rendus au modèle, journalisés)."""
     where = f"Question {number} ({question.type})"
-    if question.type == "qcm":
+    if question.type == "mcq":
         distinct = {" ".join(c.casefold().split()) for c in question.choices}
         problems = []
         if not MIN_CHOICES <= len(question.choices) <= MAX_CHOICES:
-            problems.append(f"{where} : il faut 3 à 5 choix (elle en a {len(question.choices)}).")
+            problems.append(f"{where}: give 3 to 5 choices, currently {len(question.choices)}.")
         elif len(distinct) != len(question.choices):
-            problems.append(f"{where} : ses choix doivent être tous différents.")
+            problems.append(f"{where}: all choices must be distinct.")
         index = question.correct_index
         if index is None or not 0 <= index < len(question.choices):
             problems.append(
-                f"{where} : `correct_index` doit désigner un de ses choix (de 0 à "
-                f"{max(len(question.choices) - 1, 0)})."
+                f"{where}: `correct_index` must select a choice "
+                f"(0 to {max(len(question.choices) - 1, 0)})."
             )
         return problems
     problems = []
     if question.type == "code" and not (question.code or "").strip():
-        problems.append(f"{where} : une question de lecture de code donne l'extrait dans `code`.")
+        problems.append(f"{where}: put the snippet for a code reading question in `code`.")
     if question.choices or question.correct_index is not None:
-        problems.append(f"{where} : seul un QCM a des choix et un `correct_index`.")
+        problems.append(
+            f"{where}: only multiple-choice questions have choices and a correct index."
+        )
     return problems
 
 
 def quiz_problems(draft: QuizDraft) -> list[str]:
-    """Règles du quiz que le schéma ne dit pas : au moins 3 types distincts ; un QCM a 3 à 5
-    choix distincts et un `correct_index` valide ; une lecture de code a son extrait ; les autres
-    types n'ont ni choix ni index. Phrases françaises rendues au modèle, sans son contenu."""
+    """Validate question shapes and variety without repeating the content in error messages."""
     problems: list[str] = []
     types = {q.type for q in draft.questions}
     if len(types) < MIN_TYPES:
         problems.append(
-            f"Le quiz doit mêler au moins 3 types de questions parmi qcm, short, code et explain "
-            f"(il en a {len(types)})."
+            f"Use at least 3 of the question types mcq, short, code and explain "
+            f"(currently {len(types)})."
         )
     for number, question in enumerate(draft.questions, start=1):
         problems += _question_problems(number, question)

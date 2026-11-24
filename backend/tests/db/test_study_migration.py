@@ -4,10 +4,13 @@ from datetime import date
 from pathlib import Path
 
 from alembic.config import Config
+from sqlalchemy import Connection, inspect, text
 from sqlalchemy import create_engine as create_sync_engine
-from sqlalchemy import inspect, text
 
 from alembic import command
+from app.db.models.learning import Goal
+from app.db.models.program import Module, Program, Week
+from app.db.models.study import Quiz, QuizQuestion
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 STUDY_TABLES = {
@@ -130,3 +133,108 @@ def test_migration_0006_downgrade(tmp_path: Path) -> None:
     assert "accepted_at" in _columns(db_file, "plan_versions")
     command.upgrade(cfg, "head")
     assert _tables(db_file) >= STUDY_TABLES
+
+
+def _seed_quiz_program(conn: Connection) -> None:
+    user = {"user_id": "u1"}
+    conn.execute(Goal.__table__.insert().values(id="g1", text="Apprendre SQL", **user))
+    conn.execute(
+        Program.__table__.insert().values(
+            id="p1",
+            goal_id="g1",
+            title="SQL",
+            start_date=DAY,
+            weekly_minutes=200,
+            cap_minutes=170,
+            **user,
+        )
+    )
+    conn.execute(
+        Week.__table__.insert().values(
+            id="w1",
+            program_id="p1",
+            rank=1,
+            theme="Requêtes",
+            objective="Filtrer des lignes",
+            deliverable="Un script",
+            start_date=DAY,
+            **user,
+        )
+    )
+    conn.execute(
+        Module.__table__.insert().values(
+            id="m1",
+            week_id="w1",
+            program_id="p1",
+            rank=1,
+            title="Bases",
+            **user,
+        )
+    )
+
+
+def _seed_quiz(conn: Connection) -> None:
+    _seed_quiz_program(conn)
+    user = {"user_id": "u1"}
+    conn.execute(
+        Quiz.__table__.insert().values(
+            id="quiz",
+            module_id="m1",
+            program_id="p1",
+            title="Quiz des bases",
+            status="ready",
+            **user,
+        )
+    )
+    conn.execute(
+        QuizQuestion.__table__.insert().values(
+            id="q1",
+            quiz_id="quiz",
+            rank=1,
+            type="qcm",
+            prompt="Quel filtre convient ?",
+            choices=["SELECT", "WHERE", "ORDER BY"],
+            correct_index=1,
+            skill="SQL",
+            **user,
+        )
+    )
+    conn.execute(
+        QuizQuestion.__table__.insert().values(
+            id="q2",
+            quiz_id="quiz",
+            rank=2,
+            type="short",
+            prompt="Explique ta requête.",
+            expected="Elle filtre les lignes.",
+            skill="SQL",
+            **user,
+        )
+    )
+
+
+def _quiz_questions(db_file: Path) -> list[dict[str, object]]:
+    engine = create_sync_engine(f"sqlite:///{db_file.as_posix()}")
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(text("SELECT * FROM quiz_questions ORDER BY rank")).mappings()
+            return [dict(row) for row in rows]
+    finally:
+        engine.dispose()
+
+
+def test_migration_0080_renames_only_multiple_choice_question_types(tmp_path: Path) -> None:
+    db_file = tmp_path / "app.db"
+    cfg = _config(db_file)
+    command.upgrade(cfg, "0079")
+    engine = create_sync_engine(f"sqlite:///{db_file.as_posix()}")
+    try:
+        with engine.begin() as conn:
+            _seed_quiz(conn)
+    finally:
+        engine.dispose()
+    before = _quiz_questions(db_file)
+    command.upgrade(cfg, "0080")
+    assert _quiz_questions(db_file) == [before[0] | {"type": "mcq"}, before[1]]
+    command.downgrade(cfg, "0079")
+    assert _quiz_questions(db_file) == before

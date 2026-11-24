@@ -14432,7 +14432,7 @@ export interface components {
              * Type
              * @enum {string}
              */
-            type: "qcm" | "short" | "code" | "explain";
+            type: "mcq" | "short" | "code" | "explain";
         };
         /** QuestionOut */
         QuestionOut: {
@@ -14450,7 +14450,7 @@ export interface components {
              * Type
              * @enum {string}
              */
-            type: "qcm" | "short" | "code" | "explain";
+            type: "mcq" | "short" | "code" | "explain";
         };
         /**
          * QuestionPatch

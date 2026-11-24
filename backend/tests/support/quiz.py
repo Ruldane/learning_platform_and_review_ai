@@ -21,7 +21,7 @@ QUIZ_ID = "cccccccc-bbbb-cccc-dddd-000000000001"
 ATTEMPT_ID = "cccccccc-bbbb-cccc-dddd-000000000002"
 TITLE = "Attention multi-têtes"
 LESSON = "# Attention multi-têtes\n\nLa softmax transforme des scores en poids qui somment à 1."
-TYPES = ("qcm", "short", "code", "explain")
+TYPES = ("mcq", "short", "code", "explain")
 
 
 def question(type_: str, number: int, **over: Any) -> dict[str, Any]:
@@ -34,7 +34,7 @@ def question(type_: str, number: int, **over: Any) -> dict[str, Any]:
         "explanation": "La softmax normalise les scores d'attention en une distribution.",
         "skill": "Attention",
     }
-    if type_ == "qcm":
+    if type_ == "mcq":
         found |= {"choices": ["Elle normalise", "Elle trie", "Elle filtre"], "correct_index": 0}
     if type_ == "code":
         found["code"] = "def double(x):\n    return x * 2"

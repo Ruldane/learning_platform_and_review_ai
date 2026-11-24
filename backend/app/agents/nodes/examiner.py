@@ -202,8 +202,8 @@ def make_grade_open(deps: GraphDeps) -> Node:
     async def grade_open(state: QuizState) -> QuizState:
         attempt = attempt_of(state)
         grades: dict[str, list[Any]] = {ref: [p, ""] for ref, p in attempt.qcm_points.items()}
-        # Défensif : un QCM n'est jamais montré au modèle, même si le port en glissait un.
-        items = [item for item in attempt.open_items if item.type != "qcm"]
+        # Multiple-choice questions are scored locally even if the port passes one here.
+        items = [item for item in attempt.open_items if item.type != "mcq"]
         if not items:
             return {"grades": grades}
         prompt = render_prompt(

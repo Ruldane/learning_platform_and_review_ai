@@ -56,7 +56,7 @@ def module_skills(ctx: GradeContext) -> list[str]:
 
 
 def _correct(question: QuizQuestion) -> str:
-    if question.type == "qcm" and question.correct_index is not None:
+    if question.type == "mcq" and question.correct_index is not None:
         choices = [str(c) for c in question.choices]
         if 0 <= question.correct_index < len(choices):
             return choices[question.correct_index]
@@ -70,7 +70,7 @@ def results_of(ctx: GradeContext, grades: Mapping[str, tuple[float, str]]) -> li
     out: list[dict[str, Any]] = []
     for q in ctx.questions:
         answer = answers.get(q.id, {})
-        if q.type == "qcm":
+        if q.type == "mcq":
             points, feedback = qcm_points(q.correct_index, answer.get("choice")), ""
         else:
             points, feedback = grades.get(f"q{q.rank}", (0.0, MISSING_FEEDBACK))

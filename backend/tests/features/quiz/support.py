@@ -43,7 +43,7 @@ async def answers(client: httpx.AsyncClient, quiz_id: str, right: bool = True) -
     """Une réponse par question : le bon choix (affiché) des QCM, ou le premier faux."""
     out: list[Any] = []
     for q in (await quiz_view(client, quiz_id))["questions"]:
-        if q["type"] == "qcm":
+        if q["type"] == "mcq":
             good = q["choices"].index(RIGHT)
             out.append({"question_id": q["id"], "choice": good if right else (good + 1) % 3})
         else:

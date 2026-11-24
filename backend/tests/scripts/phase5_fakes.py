@@ -41,7 +41,7 @@ class FakeApi:
 
 
 def quiz_view(attempts: list[dict[str, Any]]) -> dict[str, Any]:
-    kinds = ["qcm", "short", "code", "explain"] * 2
+    kinds = ["mcq", "short", "code", "explain"] * 2
     questions = [
         {
             "id": f"q{n}",
@@ -50,7 +50,7 @@ def quiz_view(attempts: list[dict[str, Any]]) -> dict[str, Any]:
             "prompt": "Énoncé",
             "code": "x = 1" if kind == "code" else None,
             # l'ordre des choix change d'un essai à l'autre
-            "choices": ["B", "A", "C"] if kind == "qcm" else [],
+            "choices": ["B", "A", "C"] if kind == "mcq" else [],
         }
         for n, kind in enumerate(kinds, start=1)
     ]

@@ -46,12 +46,12 @@ def _with(n: int, **over: object) -> dict[str, object]:
 
 
 DRAFTS = {
-    "qcm_two_choices": _with(1, **question("qcm", 1, choices=["Oui", "Non"])),
-    "qcm_index_out_of_range": _with(1, **question("qcm", 1, correct_index=3)),
-    "qcm_duplicate_choices": _with(1, **question("qcm", 1, choices=["A", "a", "B"])),
+    "mcq_two_choices": _with(1, **question("mcq", 1, choices=["Oui", "Non"])),
+    "mcq_index_out_of_range": _with(1, **question("mcq", 1, correct_index=3)),
+    "mcq_duplicate_choices": _with(1, **question("mcq", 1, choices=["A", "a", "B"])),
     "code_without_code": _with(3, **question("code", 3, code=None)),
     "open_with_choices": _with(2, **question("short", 2, choices=["A", "B", "C"])),
-    "two_types_only": quiz_draft(types=("qcm", "short")),
+    "two_types_only": quiz_draft(types=("mcq", "short")),
 }
 
 
@@ -90,7 +90,7 @@ async def test_invalid_quiz_is_reasked_then_marked_failed(make_quiz_runner: Make
     await run.wait_status("completed")
     assert run.store.failed[QUIZ_ID].startswith("Quiz invalide")
     assert len(run.prompts()) == 3 and run.store.saved == {}
-    assert "au moins 3 types" in run.prompts()[1]
+    assert "Use at least 3 of the question types mcq, short, code and explain" in run.prompts()[1]
     summary = (await run.events("run.completed"))[0]["summary"]
     assert summary == f"Quiz en échec : « {TITLE} »."
 
@@ -152,8 +152,8 @@ async def test_answer_is_framed_as_untrusted(make_quiz_runner: MakeQuiz) -> None
     assert TITLE not in outside_untrusted_markers(prompt)
 
 
-async def test_qcm_slipped_into_open_items_is_never_sent(make_quiz_runner: MakeQuiz) -> None:
-    """Défensif : un QCM glissé par le port parmi les ouvertes ne va jamais au modèle."""
+async def test_legacy_multiple_choice_item_is_never_sent(make_quiz_runner: MakeQuiz) -> None:
+    """A multiple-choice item from an old checkpoint is still scored locally."""
     run = await make_quiz_runner(start=False)
     run.store.add_attempt(run.user_id, open_items=[open_item("q1", "qcm"), open_item("q4")])
     run.sid = await run.runner.start(run.user_id, "quiz", GRADE)

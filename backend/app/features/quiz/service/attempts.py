@@ -81,7 +81,7 @@ def stored_answers(
         seen.add(answer.question_id)
         choice = answer.choice
         if choice is not None:
-            count = len(question.choices) if question.type == "qcm" else 0
+            count = len(question.choices) if question.type == "mcq" else 0
             if not 0 <= choice < count:
                 fields.append(f"answers.{index}.choice")
                 continue

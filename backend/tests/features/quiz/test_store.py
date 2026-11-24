@@ -28,7 +28,7 @@ async def test_material_then_save_quiz_is_idempotent(seeded: Seeded) -> None:
     started = await start_quiz(seeded.rt, seeded.user_id, seeded.modules[0])
     material = await store.material(seeded.user_id, started.quiz_id)
     assert (material.module_title, material.skills) == ("Module Bases", SKILLS)
-    assert material.lesson_markdown == LESSON and material.language == "fr"
+    assert material.lesson_markdown == LESSON and material.language == "en"
     draft = QuizDraft.model_validate(quiz_draft())  # compétence « Attention », hors du module
     assert await store.save_quiz(seeded.user_id, "s1", started.quiz_id, draft) == 10
     assert await store.save_quiz(seeded.user_id, "s1", started.quiz_id, draft) == 10
@@ -65,7 +65,7 @@ async def test_attempt_to_grade_sends_open_items_only(
     found = await AgentQuizStore(seeded.rt).attempt(seeded.user_id, attempt_id)
     assert found.qcm_points == {"q1": 1.0, "q5": 1.0, "q9": 1.0}
     assert [item.ref for item in found.open_items] == ["q2", "q3", "q4", "q6", "q7", "q8", "q10"]
-    assert all(item.type != "qcm" and item.answer == "Ma réponse." for item in found.open_items)
+    assert all(item.type != "mcq" and item.answer == "Ma réponse." for item in found.open_items)
     assert found.lesson_markdown == LESSON and found.module_title == "Module Bases"
 
 

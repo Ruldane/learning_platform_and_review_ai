@@ -9,7 +9,7 @@ export interface Given {
 const NONE: Given = { choice: null, text: "" };
 
 function isEmpty(question: QuestionView, given: Given): boolean {
-  return question.type === "qcm" ? given.choice === null : given.text.trim() === "";
+  return question.type === "mcq" ? given.choice === null : given.text.trim() === "";
 }
 
 /** Les réponses saisies, les questions restées vides et le brouillon à envoyer, dans l'ordre. */

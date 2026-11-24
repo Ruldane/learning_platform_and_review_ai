@@ -13,10 +13,10 @@ from app.agents.tools.quiz_port import (
     MIN_PROMPT_CHARS,
 )
 from app.core.practice import MAX_QUIZ_ELAPSED_MS
+from app.db.models.study import QuestionType
 
 QuizStatusOut = Literal["generating", "ready", "failed"]
 AttemptStatusOut = Literal["grading", "graded", "failed"]
-QuestionTypeOut = Literal["qcm", "short", "code", "explain"]
 
 
 class QuizStarted(BaseModel):
@@ -38,7 +38,7 @@ class QuizSummaryOut(BaseModel):
 class QuestionOut(BaseModel):
     id: str
     rank: int  # displayed rank (questions shuffled on a retry, F27)
-    type: QuestionTypeOut
+    type: QuestionType
     prompt: str
     code: str | None
     choices: list[str]
@@ -143,7 +143,7 @@ class QuestionIn(BaseModel):
     `code`, `explain`) has the expected answer and a rubric (1 to 4 criteria); `code` gives the
     snippet in `code`."""
 
-    type: Literal["qcm", "short", "code", "explain"]
+    type: QuestionType
     prompt: str = Field(min_length=MIN_PROMPT_CHARS, max_length=600)
     code: str | None = Field(default=None, max_length=3000)
     choices: list[_Choice] = Field(default_factory=list, max_length=MAX_CHOICES)
@@ -155,7 +155,7 @@ class QuestionIn(BaseModel):
 
     @model_validator(mode="after")
     def _shape(self) -> "QuestionIn":
-        if self.type == "qcm":
+        if self.type == "mcq":
             distinct = {" ".join(c.casefold().split()) for c in self.choices}
             ok = MIN_CHOICES <= len(self.choices) <= MAX_CHOICES and len(distinct) == len(
                 self.choices

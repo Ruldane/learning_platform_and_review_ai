@@ -36,10 +36,10 @@ const started = { attempt_id: "a1", session_id: "s9" };
 async function answerAndSend(user: ReturnType<typeof userEvent.setup>) {
   await user.click(await screen.findByRole("radio", { name: "GET" }));
   await user.type(
-    screen.getByRole("textbox", { name: "Ta réponse à la question 2" }),
+    screen.getByRole("textbox", { name: "Your answer to question 2" }),
     " Remplace ",
   );
-  await user.click(screen.getByRole("button", { name: "Envoyer" }));
+  await user.click(screen.getByRole("button", { name: "Submit" }));
 }
 
 describe("QuizPage", () => {
@@ -56,11 +56,11 @@ describe("QuizPage", () => {
       quizzes: [quizOut({ status: "generating" }), quizOut({ status: "generating" }), quizOut()],
       attempts: [attemptOut({ status: "grading", score: null, passed: null }), attemptOut()],
     });
-    expect(await screen.findByText(/Le quiz se prépare/)).toBeInTheDocument();
+    expect(await screen.findByText(/The quiz is being prepared/)).toBeInTheDocument();
     await answerAndSend(user);
-    expect(await screen.findByText("Correction en cours…")).toBeInTheDocument();
-    expect(await screen.findByRole("heading", { name: "Résultat du quiz" })).toBeInTheDocument();
-    expect(screen.getByText("50 %")).toBeInTheDocument();
+    expect(await screen.findByText("Grading…")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Quiz result" })).toBeInTheDocument();
+    expect(screen.getByText("50%")).toBeInTheDocument();
     expect(screen.getByText("Que fait PUT ?")).toBeInTheDocument();
     expect(posts).toEqual([
       {
@@ -83,7 +83,7 @@ describe("QuizPage", () => {
       ],
     });
     await answerAndSend(user);
-    expect(await screen.findByRole("heading", { name: "Résultat du quiz" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Quiz result" })).toBeInTheDocument();
     await waitFor(() => expect(state.quizReads).toBeGreaterThanOrEqual(2));
     // Les rangs du résultat sont ceux de l'envoi (PUT était la question 2), pas ceux du prochain essai.
     const second = screen
@@ -91,9 +91,9 @@ describe("QuizPage", () => {
       .find((item) => /Que fait PUT/.test(item.textContent ?? ""));
     expect(second).toHaveTextContent("Question 2");
     // Le prochain essai montre l'ordre mélangé : la réponse courte passe en premier.
-    await user.click(await screen.findByRole("button", { name: "Refaire le quiz" }));
+    await user.click(await screen.findByRole("button", { name: "Retake the quiz" }));
     const fields = await screen.findAllByRole("textbox");
-    expect(fields[0]).toHaveAccessibleName("Ta réponse à la question 1");
+    expect(fields[0]).toHaveAccessibleName("Your answer to question 1");
     expect(screen.getByRole("radio", { name: "POST" })).toBeInTheDocument();
     expect(screen.queryByRole("radio", { checked: true })).not.toBeInTheDocument();
   });
@@ -102,14 +102,14 @@ describe("QuizPage", () => {
     recordPosts(
       "/quizzes/z1/attempts",
       409,
-      apiError("retry_too_soon", "Trop tôt.", { retry_on: "2026-11-19" }),
+      apiError("retry_too_soon", "Too soon.", { retry_on: "2026-11-19" }),
     );
     const { user } = setup();
     await answerAndSend(user);
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Nouvel essai possible à partir du jeudi 19 novembre.",
+      "You can try again from Thursday 19 November.",
     );
-    expect(screen.getByRole("button", { name: "Envoyer" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Submit" })).toBeEnabled();
   });
 
   it("keeps the result on screen when the quiz cannot be read again (E-I2)", async () => {
@@ -120,13 +120,13 @@ describe("QuizPage", () => {
         reads += 1;
         return reads === 1
           ? HttpResponse.json(quizOut())
-          : HttpResponse.json(apiError("boom", "Panne du serveur."), { status: 500 });
+          : HttpResponse.json(apiError("boom", "Server error."), { status: 500 });
       },
     });
     await answerAndSend(user);
-    expect(await screen.findByRole("alert")).toHaveTextContent("Panne du serveur.");
-    expect(screen.getByRole("heading", { name: "Résultat du quiz" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Réessayer" })).toBeInTheDocument();
+    expect(await screen.findByRole("alert")).toHaveTextContent("Server error.");
+    expect(screen.getByRole("heading", { name: "Quiz result" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
   });
 
   it("sends the answers once on a double click", async () => {
@@ -134,11 +134,11 @@ describe("QuizPage", () => {
     const { user } = setup();
     await user.click(await screen.findByRole("radio", { name: "GET" }));
     await user.type(
-      screen.getByRole("textbox", { name: "Ta réponse à la question 2" }),
+      screen.getByRole("textbox", { name: "Your answer to question 2" }),
       "Remplace",
     );
-    await user.dblClick(screen.getByRole("button", { name: "Envoyer" }));
-    await screen.findByRole("heading", { name: "Résultat du quiz" });
+    await user.dblClick(screen.getByRole("button", { name: "Submit" }));
+    await screen.findByRole("heading", { name: "Quiz result" });
     expect(posts).toHaveLength(1);
   });
 
@@ -157,9 +157,9 @@ describe("QuizPage", () => {
       }),
     );
     await answerAndSend(user);
-    expect(await screen.findByText("La correction a échoué")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Renvoyer mes réponses" }));
-    expect(await screen.findByRole("heading", { name: "Résultat du quiz" })).toBeInTheDocument();
+    expect(await screen.findByText("Grading failed")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Resend my answers" }));
+    expect(await screen.findByRole("heading", { name: "Quiz result" })).toBeInTheDocument();
     expect(posts).toHaveLength(2);
     expect(posts[1]).toEqual(posts[0]);
   });
@@ -179,8 +179,8 @@ describe("QuizPage", () => {
       }),
     );
     await answerAndSend(user);
-    await user.dblClick(await screen.findByRole("button", { name: "Renvoyer mes réponses" }));
-    expect(await screen.findByRole("heading", { name: "Résultat du quiz" })).toBeInTheDocument();
+    await user.dblClick(await screen.findByRole("button", { name: "Resend my answers" }));
+    expect(await screen.findByRole("heading", { name: "Quiz result" })).toBeInTheDocument();
     expect(posts).toHaveLength(2);
   });
 
@@ -195,8 +195,8 @@ describe("QuizPage", () => {
       ],
       attempts: [attemptOut({ status: "grading", score: null, passed: null }), attemptOut()],
     });
-    expect(await screen.findByText("Correction en cours…")).toBeInTheDocument();
-    expect(await screen.findByRole("heading", { name: "Résultat du quiz" })).toBeInTheDocument();
+    expect(await screen.findByText("Grading…")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Quiz result" })).toBeInTheDocument();
     expect(state.attemptReads).toBeGreaterThanOrEqual(2);
   });
 
@@ -226,8 +226,8 @@ describe("QuizPage", () => {
       true,
     );
     await pollFor(PREPARE_POLL_MS, PREPARE_POLLS + 2);
-    expect(screen.getByText(/La préparation prend plus de temps/)).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Continuer d'attendre" }));
+    expect(screen.getByText(/Preparation is taking longer/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Keep waiting" }));
     await pollFor(PREPARE_POLL_MS, 3);
     expect(await screen.findByRole("form", { name: "Quiz" })).toBeInTheDocument();
   });
@@ -242,10 +242,10 @@ describe("QuizPage", () => {
     );
     await answerAndSend(user);
     await pollFor(GRADE_POLL_MS, GRADE_POLLS + 2);
-    expect(screen.getByText(/La correction prend plus de temps/)).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Relire la note" }));
+    expect(screen.getByText(/Grading is taking longer/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Check the grade again" }));
     await pollFor(GRADE_POLL_MS, 3);
-    expect(await screen.findByRole("heading", { name: "Résultat du quiz" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Quiz result" })).toBeInTheDocument();
   });
 
   it("relaunches a failed preparation", async () => {
@@ -260,9 +260,9 @@ describe("QuizPage", () => {
         quizOut(),
       ],
     });
-    expect(await screen.findByText("La préparation du quiz a échoué")).toBeInTheDocument();
+    expect(await screen.findByText("Quiz preparation failed")).toBeInTheDocument();
     expect(screen.getByText("Le modèle n'a pas répondu.")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Relancer la préparation" }));
+    await user.click(screen.getByRole("button", { name: "Restart preparation" }));
     expect(await screen.findByRole("form", { name: "Quiz" })).toBeInTheDocument();
     expect(posts).toHaveLength(1);
   });
@@ -270,10 +270,10 @@ describe("QuizPage", () => {
   it("has an empty state for an unknown quiz", async () => {
     const { user, router } = setup({
       quizReply: () =>
-        HttpResponse.json(apiError("quiz_not_found", "Quiz introuvable."), { status: 404 }),
+        HttpResponse.json(apiError("quiz_not_found", "Quiz not found."), { status: 404 }),
     });
-    expect(await screen.findByRole("heading", { name: "Quiz introuvable" })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Tous les quiz" }));
+    expect(await screen.findByRole("heading", { name: "Quiz not found" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "All quizzes" }));
     expect(router.state.location.pathname).toBe("/etudier/quiz");
   });
 
@@ -283,7 +283,7 @@ describe("QuizPage", () => {
       http.get(`${API}/quizzes/z1`, () => {
         calls += 1;
         return calls === 1
-          ? HttpResponse.json(apiError("boom", "Panne du serveur."), { status: 500 })
+          ? HttpResponse.json(apiError("boom", "Server error."), { status: 500 })
           : HttpResponse.json(quizOut());
       }),
     );
@@ -291,9 +291,9 @@ describe("QuizPage", () => {
       initialEntries: ["/etudier/quiz/z1"],
     });
     render(<RouterProvider router={router} />, { wrapper: createQueryWrapper() });
-    expect(screen.getByRole("status")).toHaveTextContent("Chargement du quiz…");
-    expect(await screen.findByRole("alert")).toHaveTextContent("Panne du serveur.");
-    await userEvent.click(screen.getByRole("button", { name: "Réessayer" }));
+    expect(screen.getByRole("status")).toHaveTextContent("Loading the quiz…");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Server error.");
+    await userEvent.click(screen.getByRole("button", { name: "Retry" }));
     expect(await screen.findByRole("form", { name: "Quiz" })).toBeInTheDocument();
     expect(firstOrder).toHaveLength(2);
   });

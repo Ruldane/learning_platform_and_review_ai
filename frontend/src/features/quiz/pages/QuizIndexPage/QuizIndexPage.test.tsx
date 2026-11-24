@@ -59,10 +59,10 @@ describe("QuizIndexPage", () => {
       ],
     });
     expect(
-      await screen.findByRole("button", { name: "Préparer le quiz : API REST" }),
+      await screen.findByRole("button", { name: "Prepare the quiz: API REST" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Meilleur score : 85 %")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Refaire le quiz : SQL" })).toBeInTheDocument();
+    expect(screen.getByText("Best score: 85%")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Retake the quiz: SQL" })).toBeInTheDocument();
   });
 
   it("prepares a quiz once, then opens its page", async () => {
@@ -72,23 +72,23 @@ describe("QuizIndexPage", () => {
       status: "generating",
     });
     const { router, user } = setup();
-    await user.dblClick(await screen.findByRole("button", { name: "Préparer le quiz : API REST" }));
+    await user.dblClick(await screen.findByRole("button", { name: "Prepare the quiz: API REST" }));
     await waitFor(() => expect(router.state.location.pathname).toBe("/etudier/quiz/z1"));
     expect(posts).toHaveLength(1);
   });
 
   it("opens a ready quiz", async () => {
     const { router, user } = setup({ quizzes: [row({ quiz_id: "z9", status: "ready" })] });
-    await user.click(await screen.findByRole("button", { name: "Passer le quiz : API REST" }));
+    await user.click(await screen.findByRole("button", { name: "Take the quiz: API REST" }));
     expect(router.state.location.pathname).toBe("/etudier/quiz/z9");
   });
 
   it("shows a refused preparation inline and keeps the button", async () => {
-    recordPosts("/modules/m1/quiz", 409, apiError("lesson_not_ready", "La leçon n'est pas prête."));
+    recordPosts("/modules/m1/quiz", 409, apiError("lesson_not_ready", "The lesson isn’t ready."));
     const { user } = setup();
-    await user.click(await screen.findByRole("button", { name: "Préparer le quiz : API REST" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("La leçon n'est pas prête.");
-    expect(screen.getByRole("button", { name: "Préparer le quiz : API REST" })).toBeEnabled();
+    await user.click(await screen.findByRole("button", { name: "Prepare the quiz: API REST" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("The lesson isn’t ready.");
+    expect(screen.getByRole("button", { name: "Prepare the quiz: API REST" })).toBeEnabled();
   });
 
   it("reads the list again while a quiz is being prepared", async () => {
@@ -103,31 +103,31 @@ describe("QuizIndexPage", () => {
         ]);
       },
     });
-    expect(await screen.findByText("Quiz en préparation…")).toBeInTheDocument();
+    expect(await screen.findByText("Preparing the quiz…")).toBeInTheDocument();
     expect(
-      await screen.findByRole("button", { name: "Passer le quiz : API REST" }),
+      await screen.findByRole("button", { name: "Take the quiz: API REST" }),
     ).toBeInTheDocument();
   });
 
   it("has an empty state with an action when there is no program", async () => {
     const { router, user } = setup({ programs: [] });
     expect(
-      await screen.findByRole("heading", { name: "Pas encore de programme" }),
+      await screen.findByRole("heading", { name: "No program yet" }),
     ).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Aller au Conseil" }));
+    await user.click(screen.getByRole("button", { name: "Go to the Council" }));
     expect(router.state.location.pathname).toBe("/apprendre/conseil");
   });
 
   it("has an empty state when the program has no module", async () => {
     setup({ quizzes: [] });
     expect(
-      await screen.findByRole("heading", { name: "Aucun quiz pour le moment" }),
+      await screen.findByRole("heading", { name: "No quizzes yet" }),
     ).toBeInTheDocument();
   });
 
   it("announces the loading", () => {
     setup({ programs: () => new Promise<Response>(() => {}) });
-    expect(screen.getByRole("status")).toHaveTextContent("Chargement des quiz…");
+    expect(screen.getByRole("status")).toHaveTextContent("Loading quizzes…");
   });
 
   it("shows an error with a retry button", async () => {
@@ -136,14 +136,14 @@ describe("QuizIndexPage", () => {
       quizzes: () => {
         calls += 1;
         return calls === 1
-          ? HttpResponse.json(apiError("boom", "Panne du serveur."), { status: 500 })
+          ? HttpResponse.json(apiError("boom", "Server error."), { status: 500 })
           : HttpResponse.json([row()]);
       },
     });
-    expect(await screen.findByRole("alert")).toHaveTextContent("Panne du serveur.");
-    await user.click(screen.getByRole("button", { name: "Réessayer" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Server error.");
+    await user.click(screen.getByRole("button", { name: "Retry" }));
     expect(
-      await screen.findByRole("button", { name: "Préparer le quiz : API REST" }),
+      await screen.findByRole("button", { name: "Prepare the quiz: API REST" }),
     ).toBeInTheDocument();
   });
 });

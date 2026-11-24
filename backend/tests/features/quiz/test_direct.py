@@ -14,7 +14,7 @@ from tests.support.direct import API, OTHER, Seed, assert_no_agent
 
 SECRET = "SECRET-DU-QUIZ"
 QCM: dict[str, Any] = {
-    "type": "qcm",
+    "type": "mcq",
     "prompt": "Que renvoie len([1, 2, 3]) ?",
     "choices": ["2", "3", "4"],
     "correct_index": 1,
@@ -73,7 +73,7 @@ async def test_write_quiz_is_ready_and_hides_the_answers(
         "Quiz des bases",
         drafted.modules[0],
     )
-    assert [q["type"] for q in quiz["questions"]][::4] == ["qcm", "short"] and quiz[
+    assert [q["type"] for q in quiz["questions"]][::4] == ["mcq", "short"] and quiz[
         "attempts"
     ] == []
     assert "correct_index" not in r.text and "expected" not in r.text  # jamais avant une note

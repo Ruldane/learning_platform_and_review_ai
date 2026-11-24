@@ -20,7 +20,7 @@ from app.db.base import Base, UserScopedMixin, UTCDateTime
 
 # Types partagés avec `app.agents`, qui ne peut pas importer une feature (contrat 6).
 QuizStatus = Literal["generating", "ready", "failed"]
-QuestionType = Literal["qcm", "short", "code", "explain"]
+QuestionType = Literal["mcq", "short", "code", "explain"]
 AttemptStatus = Literal["grading", "graded", "failed"]
 StudyMode = Literal["socratic", "feynman", "direct"]
 StudyStatus = Literal["open", "finished", "cancelled"]

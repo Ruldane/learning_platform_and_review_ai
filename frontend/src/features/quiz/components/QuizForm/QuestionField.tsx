@@ -44,7 +44,7 @@ export function QuestionField(props: QuestionFieldProps) {
         {question.prompt}
       </p>
       {question.code !== null ? <CodeBlock rank={rank} code={question.code} /> : null}
-      {type === "qcm" ? (
+      {type === "mcq" ? (
         <Choices
           question={question}
           choice={choice}

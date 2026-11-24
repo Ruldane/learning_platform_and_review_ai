@@ -6,7 +6,7 @@ export const firstOrder = [
   {
     id: "q1",
     rank: 1,
-    type: "qcm",
+    type: "mcq",
     prompt: "Quel verbe lit une ressource ?",
     code: null,
     choices: ["GET", "POST"],

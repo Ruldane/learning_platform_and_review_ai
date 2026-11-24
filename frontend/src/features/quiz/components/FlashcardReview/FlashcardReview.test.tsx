@@ -21,20 +21,20 @@ describe("FlashcardReview", () => {
   it("shows the front and hides the back", () => {
     setup();
     expect(screen.getByText("Que fait EXPLAIN ?")).toBeInTheDocument();
-    expect(screen.getByText("Compétence : SQL")).toBeInTheDocument();
+    expect(screen.getByText("Skill: SQL")).toBeInTheDocument();
     expect(screen.queryByText(CARD.back)).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Raté/ })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Voir la réponse/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Missed/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Show the answer/ })).toBeInTheDocument();
   });
 
   it("reveals the back with the button, then answers with the buttons", async () => {
     const { onResult } = setup();
-    await userEvent.click(screen.getByRole("button", { name: /Voir la réponse/ }));
+    await userEvent.click(screen.getByRole("button", { name: /Show the answer/ }));
     expect(screen.getByText(CARD.back)).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Voir la réponse/ })).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: /Raté/ }));
+    expect(screen.queryByRole("button", { name: /Show the answer/ })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: /Missed/ }));
     expect(onResult).toHaveBeenLastCalledWith("fail");
-    await userEvent.click(screen.getByRole("button", { name: /Su/ }));
+    await userEvent.click(screen.getByRole("button", { name: /Knew it/ }));
     expect(onResult).toHaveBeenLastCalledWith("ok");
   });
 
@@ -71,7 +71,7 @@ describe("FlashcardReview", () => {
     );
     expect(screen.getByText("Autre question")).toBeInTheDocument();
     expect(screen.queryByText("Autre réponse")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Voir la réponse/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Show the answer/ })).toBeInTheDocument();
   });
 
   it("leaves the keys alone while typing in a field", async () => {
@@ -85,8 +85,8 @@ describe("FlashcardReview", () => {
 
   it("leaves space to the focused button", async () => {
     const { onResult } = setup();
-    await userEvent.click(screen.getByRole("button", { name: /Voir la réponse/ }));
-    const fail = screen.getByRole("button", { name: /Raté/ });
+    await userEvent.click(screen.getByRole("button", { name: /Show the answer/ }));
+    const fail = screen.getByRole("button", { name: /Missed/ });
     fail.focus();
     fireEvent.keyDown(fail, { key: " " });
     expect(onResult).not.toHaveBeenCalled();
@@ -105,7 +105,7 @@ describe("FlashcardReview", () => {
     const { onResult } = setup({ busy: true });
     await userEvent.keyboard(" ");
     expect(screen.queryByText(CARD.back)).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Voir la réponse/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Show the answer/ })).toBeDisabled();
     expect(onResult).not.toHaveBeenCalled();
   });
 
@@ -113,24 +113,24 @@ describe("FlashcardReview", () => {
     const { onResult, rerender } = setup();
     await userEvent.keyboard(" ");
     rerender(<FlashcardReview card={CARD} onResult={onResult} busy />);
-    expect(screen.getByRole("button", { name: /Raté/ })).toBeDisabled();
-    expect(screen.getByRole("button", { name: /Su/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Missed/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Knew it/ })).toBeDisabled();
     await userEvent.keyboard("1");
     expect(onResult).not.toHaveBeenCalled();
   });
 
   it("announces the shortcuts", () => {
     setup();
-    expect(screen.getByRole("button", { name: /Voir la réponse/ })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: /Show the answer/ })).toHaveAttribute(
       "aria-keyshortcuts",
       "Space",
     );
-    expect(screen.getByText(/Raccourcis/)).toBeInTheDocument();
+    expect(screen.getByText(/Shortcuts/)).toBeInTheDocument();
   });
 
   it("moves focus to the back once it is shown", async () => {
     setup();
-    await userEvent.click(screen.getByRole("button", { name: /Voir la réponse/ }));
-    expect(screen.getByRole("group", { name: "Réponse" })).toHaveFocus();
+    await userEvent.click(screen.getByRole("button", { name: /Show the answer/ }));
+    expect(screen.getByRole("group", { name: "Answer" })).toHaveFocus();
   });
 });

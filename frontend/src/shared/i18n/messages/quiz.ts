@@ -4,13 +4,13 @@ export const quiz = {
     label: "Quiz",
     question: "Question {rank}",
     type: {
-      qcm: "Multiple choice",
+      mcq: "Multiple choice",
       short: "Short answer",
       code: "Code reading",
       explain: "Explain in your own words",
     },
     hint: {
-      qcm: "Only one correct answer.",
+      mcq: "Only one correct answer.",
       short: "Answer in one or two sentences.",
       code: "Read the code, then answer.",
       explain: "Only the meaning counts, not the wording.",

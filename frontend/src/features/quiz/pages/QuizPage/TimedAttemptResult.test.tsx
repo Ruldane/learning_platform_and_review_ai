@@ -20,8 +20,8 @@ const result: AttemptResultView = {
   })),
 };
 
-describe("Pilote après la correction du quiz", () => {
-  it("propose une révision courte, puis rend le résultat initial au même endroit", async () => {
+describe("Focus pilot after grading", () => {
+  it("offers a short review and returns to the original result", async () => {
     const timings = result.results.map(({ questionId: id }, index) => ({
       id,
       milliseconds: index < 3 ? 2_000 : 7_000,
@@ -32,12 +32,12 @@ describe("Pilote après la correction du quiz", () => {
       </MemoryRouter>,
     );
     const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: "Révision plus facile" }));
-    const review = screen.getByRole("complementary", { name: "Révision plus facile" });
+    await user.click(screen.getByRole("button", { name: "Easier review" }));
+    const review = screen.getByRole("complementary", { name: "Easier review" });
     expect(within(review).getByText("Énoncé 3")).toBeVisible();
-    expect(screen.queryByRole("heading", { name: "Résultat du quiz" })).toBeNull();
-    await user.click(within(review).getByRole("button", { name: "Reprendre au même endroit" }));
-    expect(screen.getByRole("heading", { name: "Résultat du quiz" })).toBeVisible();
-    expect(screen.getByText("67 %")).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "Quiz result" })).toBeNull();
+    await user.click(within(review).getByRole("button", { name: "Pick up where you left off" }));
+    expect(screen.getByRole("heading", { name: "Quiz result" })).toBeVisible();
+    expect(screen.getByText("67%")).toBeVisible();
   });
 });

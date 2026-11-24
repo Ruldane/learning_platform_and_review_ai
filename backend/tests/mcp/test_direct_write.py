@@ -52,7 +52,7 @@ BRIEF = {
     "deliverable": "repo",
 }
 QUESTION = {
-    "type": "qcm",
+    "type": "mcq",
     "prompt": "Que renvoie len([1, 2, 3]) ?",
     "choices": ["2", "3", "4"],
     "correct_index": 1,

@@ -18,14 +18,14 @@ Quiz rules (any deviation will be sent back to you for correction):
 - `title`: the quiz title, short;
 - `questions`: from {{ min_questions }} to {{ max_questions }} questions covering the lesson's
   essential notions, with no trick question and nothing outside the lesson;
-- mix at least 3 types among the 4: `qcm` (multiple choice), `short` (short answer), `code` (code
+- mix at least 3 types among the 4: `mcq` (multiple choice), `short` (short answer), `code` (code
   reading) and `explain` ("explain in your own words"); if the module has no code, leave `code`
   aside;
 - each question: `prompt` (the question, 600 characters at most), `expected` (the expected
   answer), `rubric` (the rubric: 1 to 4 short, verifiable criteria), `explanation` (why it is the
   right answer: it will be shown to January if she gets it wrong) and `skill` (a skill of the
   module, as written above);
-- `qcm`: `choices` of 3 to 5 short, all different choices, `correct_index` the index of the right
+- `mcq`: `choices` of 3 to 5 short, all different choices, `correct_index` the index of the right
   choice (0 for the first); only one right answer;
 - `code`: the excerpt to read in `code` (short, without a Markdown fence), the question asks what
   it does, what it prints or what is wrong;

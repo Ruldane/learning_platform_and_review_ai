@@ -20,6 +20,7 @@ from app.agents.tools.quiz_port import (
     GradingItem,
     ModuleMaterial,
     QuizDraft,
+    read_question_type,
 )
 
 AGENT = "examiner"
@@ -43,7 +44,10 @@ def material_of(state: QuizState) -> ModuleMaterial:
 
 def attempt_of(state: QuizState) -> AttemptToGrade:
     data = dict(state["attempt"])
-    items = [GradingItem(**item) for item in data.pop("open_items")]
+    items = [
+        GradingItem(**(item | {"type": read_question_type(item["type"])}))
+        for item in data.pop("open_items")
+    ]
     return AttemptToGrade(open_items=items, **data)
 
 

@@ -20746,7 +20746,7 @@
           },
           "type": {
             "enum": [
-              "qcm",
+              "mcq",
               "short",
               "code",
               "explain"
@@ -20797,7 +20797,7 @@
           },
           "type": {
             "enum": [
-              "qcm",
+              "mcq",
               "short",
               "code",
               "explain"

@@ -130,7 +130,7 @@ class AgentQuizStore:
         points: dict[str, float] = {}
         for q in ctx.questions:
             answer = answers.get(q.id, {})
-            if q.type == "qcm":
+            if q.type == "mcq":
                 points[f"q{q.rank}"] = qcm_points(q.correct_index, answer.get("choice"))
                 continue
             items.append(

@@ -25,7 +25,7 @@ API = "/api/v1/skill-transfers"
 
 @pytest.fixture
 def app(settings: Settings, db_engine: AsyncEngine) -> FastAPI:
-    reused = {**EXERCISE, "prompt": question("qcm", 1)["prompt"]}
+    reused = {**EXERCISE, "prompt": question("mcq", 1)["prompt"]}
     return build_app(
         settings,
         scripts={"verifier": [json.dumps(item) for item in (reused, EXERCISE, ASSESSMENT)]},

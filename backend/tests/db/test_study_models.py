@@ -106,7 +106,7 @@ async def test_quiz_tree_defaults(db_session: AsyncSession) -> None:
     module, quiz = await _quiz(db_session)
     assert quiz.status == "generating" and quiz.session_id is None
     question = QuizQuestion(
-        user_id="u1", quiz_id=quiz.id, rank=1, type="qcm", prompt="2 + 2 ?", skill="Calcul"
+        user_id="u1", quiz_id=quiz.id, rank=1, type="mcq", prompt="2 + 2 ?", skill="Calcul"
     )
     attempt = _attempt(quiz.id)
     db_session.add_all([question, attempt])
@@ -139,7 +139,7 @@ async def test_question_rank_is_unique_per_quiz(db_session: AsyncSession) -> Non
     _, quiz = await _quiz(db_session)
     for _ in range(2):
         db_session.add(
-            QuizQuestion(user_id="u1", quiz_id=quiz.id, rank=1, type="qcm", prompt="p", skill="s")
+            QuizQuestion(user_id="u1", quiz_id=quiz.id, rank=1, type="mcq", prompt="p", skill="s")
         )
     with pytest.raises(IntegrityError):
         await db_session.flush()
