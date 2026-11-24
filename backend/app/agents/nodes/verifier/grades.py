@@ -1,4 +1,4 @@
-"""Grille pédagogique qui complète la vérification des faits."""
+"""Teaching criteria used alongside fact-checking."""
 
 from pydantic import BaseModel, Field
 

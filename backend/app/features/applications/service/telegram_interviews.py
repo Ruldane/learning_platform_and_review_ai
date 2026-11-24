@@ -47,7 +47,7 @@ async def start_telegram_interview(
                 role=role,
                 mode="technical",
                 duration_min=15,
-                language="fr",
+                language="en",
                 session_id=session_id,
                 status="running",
             )

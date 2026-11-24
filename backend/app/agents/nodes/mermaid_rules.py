@@ -1,15 +1,13 @@
-"""Mermaid du Scribe (SPEC 3.3, 17.4, D85 §11f) : le code vient d'un modèle qui a lu des pages
-web, il est donc traité comme non fiable. Il n'est pas filtré mais **analysé** par une grammaire
-stricte (`mermaid_grammar`), puis **réémis** depuis l'arbre :
+"""Normalize untrusted Mermaid from the Scribe (SPEC 3.3, 17.4, D85 §11f).
 
-- les identifiants deviennent `n1`, `n2`… (ordre de première apparition) ;
-- chaque nœud porte, à sa première apparition, sa forme et son libellé, toujours entre guillemets ;
-- le texte des libellés est échappé par nos entités : `#`, `&`, `"`, `<`, `>`, `` ` ``, `%` et `|` ;
-  `<br>` est le seul HTML produit ;
-- une instruction par ligne, `subgraph` indentés.
+Parse the chart with the strict grammar and emit Mermaid from the resulting tree.
+IDs are assigned in order of first appearance. Each node declares its shape and quoted
+label on first use. Labels use entity escapes and emit only `<br>` as HTML. Each statement
+occupies one line, with subgraph contents indented.
 
-Seule la version normalisée sort : `board.update`, le port, puis le PDF (4.8). Taille bornée :
-lignes, nœuds, longueur des libellés ; caractères de contrôle ou de format invisibles refusés."""
+The board event, port, and PDF (4.8) use the normalized version. Limits apply to lines,
+nodes, and label lengths. Invisible format and control characters are rejected.
+"""
 
 import unicodedata
 
@@ -41,15 +39,15 @@ _ESCAPES = str.maketrans(
         "`": "#96;",
         "%": "#37;",
         "|": "#124;",
-        # Sans `:`, ni les icônes `fa:` ni la règle `style…:…#…;` de Mermaid (qui retire le `;`
-        # d'une entité) ne s'appliquent au texte.
+        # Escape colons to prevent icon handling and Mermaid's style rule that strips
+        # the trailing semicolon from an entity.
         ":": "#58;",
     }
 )
 
 
 def _invisible(char: str) -> bool:
-    """Caractère de contrôle (hors tabulation et fins de ligne) ou de format (U+200B…)."""
+    """Detect a control or format character other than tabs and line breaks."""
     return char not in _ALLOWED_CONTROLS and unicodedata.category(char) in ("Cc", "Cf")
 
 
@@ -77,25 +75,25 @@ def _chart_problems(chart: Flowchart) -> list[str]:
     problems: list[str] = []
     labels = _labels(chart)
     if any(_invisible(char) for label in labels for char in label):
-        problems.append("caractère invisible ou de contrôle dans un libellé")
+        problems.append("A label contains an invisible or control character")
     if len(chart.statements) + 1 > MAX_MERMAID_LINES:
-        problems.append(f"plus de {MAX_MERMAID_LINES} lignes")
+        problems.append(f"The diagram exceeds {MAX_MERMAID_LINES} lines")
     subgraphs = {s.key for s in chart.statements if isinstance(s, Subgraph)}
     nodes = {ref.key for ref in _refs(chart)} - subgraphs
     if not nodes:
-        problems.append("aucun nœud")
+        problems.append("Add at least one node")
     if len(nodes) > MAX_NODES:
-        problems.append(f"plus de {MAX_NODES} nœuds")
+        problems.append(f"The diagram exceeds {MAX_NODES} nodes")
     if any(len(label) > MAX_LABEL_CHARS for label in labels):
-        problems.append(f"libellé de plus de {MAX_LABEL_CHARS} caractères")
+        problems.append(f"A label exceeds {MAX_LABEL_CHARS} characters")
     return problems
 
 
 def _analysis(code: str) -> tuple[Flowchart | None, list[str]]:
-    if len(code) > MAX_CODE_CHARS:  # borne avant toute analyse (4.8 reprend cette fonction)
-        return None, [f"schéma de plus de {MAX_CODE_CHARS} caractères"]
+    if len(code) > MAX_CODE_CHARS:  # Apply the size limit before parsing for every caller.
+        return None, [f"The diagram exceeds {MAX_CODE_CHARS} characters"]
     if any(_invisible(char) for char in code):
-        return None, ["caractère invisible ou de contrôle interdit"]
+        return None, ["The diagram contains an invisible or control character"]
     chart, problems = parse_flowchart(code)
     if chart is None:
         return None, problems
@@ -104,7 +102,7 @@ def _analysis(code: str) -> tuple[Flowchart | None, list[str]]:
 
 
 def mermaid_problems(code: str) -> list[str]:
-    """Problèmes du code (en français, pour la nouvelle demande au Scribe) ; vide s'il passe."""
+    """Return diagnostics for the Scribe to revise, or an empty list for valid code."""
     return _analysis(code)[1]
 
 
@@ -113,7 +111,7 @@ def _escaped(label: str) -> str:
 
 
 class _Emitter:
-    """Réécrit l'arbre : identifiants renumérotés, libellés échappés, une instruction par ligne."""
+    """Emit statements with reassigned IDs, escaped labels, and one statement per line."""
 
     def __init__(self, chart: Flowchart) -> None:
         self.chart = chart
@@ -161,8 +159,7 @@ class _Emitter:
 
 
 def normalize_mermaid(code: str) -> str:
-    """Le schéma réémis depuis l'arbre (la seule version qui sort du back) ; `ValueError` si le
-    code ne passe pas (`mermaid_problems` non vide)."""
+    """Return the normalized diagram. Raise `ValueError` when validation fails."""
     chart, problems = _analysis(code)
     if chart is None:
         raise ValueError("; ".join(problems))

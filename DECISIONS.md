@@ -344,24 +344,94 @@ subject, decision, and reason. Historical entries describe the project at the ti
 
 ## D28
 
-- **Date** : 2026-11-11
-- **Sujet** : Santé des services et `GET /api/v1/health` (tâche 0.9)
-- **Décision** : (1) Routes de santé vérifiées dans la documentation (context7) : Qdrant `GET /readyz` (depuis 1.5.0, accessible même avec une clé d'API) ; Gotenberg `GET /health` (200 si Chromium et LibreOffice répondent, 503 sinon) ; SearXNG `GET /healthz` (route Flask de `searx/webapp.py`, texte « OK », exemptée du limiteur) : aucun écart avec le brief. SearXNG renvoie 403 pour un format absent de `search.formats` de `settings.yml` (page `search_api`). (2) `Providers` gagne `health_checks: list[HealthCheck]` (valeur par défaut : liste vide), rempli par `build_providers` : `db`, `qdrant`, `ollama`, `searxng`, `gotenberg`, `llm` (ces noms sont les clés de `HealthReport.checks`). `build_providers` reçoit en plus le client `httpx.AsyncClient` partagé (créé dans le lifespan avec un délai de 3 s, fermé à l'arrêt) et un appelant `local_user_id` (le lifespan lit `app.state.local_user_id` à chaque contrôle, car l'utilisateur local est créé après la composition). (3) `HealthStatus` et `HealthCheck` vivent dans `app/providers/health.py` (sans import de `app.features`) ; `DatabaseCheck` et `LlmKeysCheck` dans `app/features/health/checks.py`, qui appelle `ApiKeyService.list()` (service de la feature réglages uniquement). `LlmKeysCheck` : `ok` si une clé lisible existe pour l'utilisateur local ; sans utilisateur local (mode `google` avant la phase 9) il rapporte « Aucun utilisateur local. » et `ok=False`, donc un état « dégradé » permanent dans ce mode d'ici là. (4) Les sondes laissent remonter les exceptions réseau ; `HealthService` les convertit (« Délai dépassé » pour un délai, « Erreur : <type> » sinon, jamais le message), avec un plafond de 3 s par contrôle et exécution en parallèle ; un statut HTTP inattendu donne « Réponse inattendue : HTTP <code> ». `GET /api/v1/health` est toujours 200, sans authentification ni dépendance à la base de la requête. La dépendance `get_health_service` est dans le routeur de la feature (le brief citait `core/deps.py`, qui n'a pas à connaître une feature). (5) `SearxngProbe` : la vérification JSON n'est faite qu'une fois par instance de sonde, mémorisée après le premier succès seulement (un échec est retenté). Cette requête exécute une vraie recherche : si SearXNG met plus de 3 s à répondre, le contrôle affiche « Délai dépassé » et sera retenté. (6) `OllamaProbe` : le modèle est présent si un nom vaut `bge-m3` ou `bge-m3:<étiquette>` (pas `bge-m3-large`). **Reporté** : le pourcentage de téléchargement de `bge-m3` (spec 15.5) n'est pas exposé ici ; il relève de l'écran de premier lancement (phase 9), le détail se limite à « Le modèle bge-m3 est en cours de téléchargement. ».
-- **Raison** : un état de santé fiable qui ne divulgue ni clé ni adresse, sans appel réseau en test, et une composition qui reste dans `app/bootstrap.py`.
+- **Date** 2026-11-11
+- **Subject** Service health and `GET /api/v1/health` (task 0.9)
+- **Decision**
+  1. The docs accessed through Context7 confirmed Qdrant's `GET /readyz` from version 1.5.0,
+     accessible with or without keys. Gotenberg's `GET /health` returns 200 when Chromium
+     and LibreOffice respond and 503 otherwise. The SearXNG Flask route `GET /healthz` in
+     `searx/webapp.py` returns “OK” and is exempt from the limiter. Search returns 403 when
+     the requested format is absent from `search.formats` in `settings.yml`.
+  2. Add `Providers.health_checks: list[HealthCheck]` with an empty-list default.
+     `build_providers` registers `db`, `qdrant`, `ollama`, `searxng`, `gotenberg`, and `llm`
+     as the keys in `HealthReport.checks`. It receives the lifespan's shared
+     `httpx.AsyncClient` with a three-second timeout and a `local_user_id` callback
+     that reads state at each check because the local account is created later.
+  3. Define `HealthStatus` and `HealthCheck` in `app/providers/health.py`.
+     `DatabaseCheck` and `LlmKeysCheck` live in `app/features/health/checks.py`. The latter
+     uses `ApiKeyService.list()` and reports success when there is a usable key for the
+     local user. In Google mode before phase 9 the absence of that user kept health degraded.
+  4. `HealthService` handles probe exceptions, reports timeouts or the error type, and omits
+     the exception message. Unexpected HTTP responses include the status code. At this stage
+     each check ran in parallel with a three-second limit. `GET /api/v1/health` always returns
+     200 and needs neither authentication nor a request database session. Put
+     `get_health_service` in the feature router so core dependencies stay independent.
+  5. `SearxngProbe` remembers the first successful JSON check and retries previous failures.
+     The check runs a real search outside tests. A response exceeding three seconds initially
+     timed out and was retried.
+  6. `OllamaProbe` accepts `bge-m3` or a `bge-m3:<tag>`. Download progress belongs to the first
+     launch screen in phase 9. This probe reports whether the embeddings model is downloading.
+- **Reason** Health reports service state without revealing keys or addresses. Tests avoid
+  live requests, and `app/bootstrap.py` owns composition.
 
 ## D29
 
-- **Date** : 2026-11-11
-- **Sujet** : Retours de revue de la tâche 0.9 (sonde SearXNG, fermeture du client HTTP)
-- **Décision** : (1) La vérification JSON de `SearxngProbe` a son propre délai de 10 s (paramètre `timeout` de la requête, le client partagé reste à 3 s). Un contrôle peut désormais exposer un attribut `timeout` : `HealthService` utilise `max(plafond par défaut, timeout du contrôle)`, jamais moins que le plafond du service ; la sonde SearXNG demande 15 s (sonde `/healthz` + recherche). Choix le plus simple : pas de tâche de fond ni de cache. Conséquence assumée : tant que la vérification JSON n'a pas réussi, un `GET /health` peut durer jusqu'à 15 s (premier appel, ou SearXNG lent) ; après le premier succès il ne fait plus que `/healthz`. Le `HEALTHCHECK` Docker du back a donc un délai de 20 s. (2) Un 403 de la recherche dit : « Le format JSON est peut-être désactivé dans SearXNG, ou la requête a été bloquée par son limiteur. » (le limiteur est désactivé dans notre `settings.yml`). (3) Le lifespan crée le moteur et le client HTTP dans un `AsyncExitStack` : ils sont fermés même si `build_providers` ou le démarrage lève.
-- **Raison** : une première recherche réelle ne doit pas être comptée comme un échec, et aucune ressource ne doit fuir si la composition échoue.
+- **Date** 2026-11-11
+- **Subject** SearXNG timeouts and closing the HTTP client (task 0.9 review)
+- **Decision**
+  1. Give the SearXNG JSON search a ten-second request timeout and keep the shared client's
+     default at three seconds. A check can declare `timeout`. `HealthService` uses the larger
+     of that value and its default. SearXNG asks for 15 seconds for `/healthz` and the search.
+     Until JSON search succeeds, `GET /health` can therefore take 15 seconds. Subsequent calls
+     use `/healthz` alone. The backend Docker health check allows 20 seconds. This design
+     performs the check in the request.
+  2. Explain that a search 403 can mean JSON is disabled or the limiter blocked the request.
+     The repository's `settings.yml` disables the limiter.
+  3. Create the engine and HTTP client in an `AsyncExitStack` so both close if provider setup
+     or startup raises.
+- **Reason** The first real search needs enough time to succeed, and startup failures still
+  need to release resources.
 
 ## D30
 
-- **Date** : 2026-11-11
-- **Sujet** : Docker Compose, Dockerfiles et configuration SearXNG (tâche 0.10)
-- **Décision** : (1) **Versions figées** (relevées sur Docker Hub le 2026-11-11) : `qdrant/qdrant:v1.20.0` (21 octobre), `ollama/ollama:0.40.16` (9 novembre, dernière version non candidate), `searxng/searxng:2026.11.9-57ff753ad` (9 novembre, SearXNG n'a que des étiquettes datées), `gotenberg/gotenberg:8.40.0` (5 novembre ; la spec impose la branche 8, la 9.4.0 existe), `python:3.12.16-slim-trixie` (8 novembre), `node:22.22.3-alpine3.24`, `nginx:1.31.8-alpine3.24` (6 novembre), `uv==0.13.7` installé par pip dans l'image du back. (2) **Démarrage du back** : `uvicorn --factory app.main:create_app` au lieu de `app.main:app` (le brief), car `app/main.py` n'expose que la fabrique `create_app` : un `app = create_app()` au niveau du module lirait la configuration à chaque import (tests compris). (3) **Healthchecks** choisis selon les binaires présents : Qdrant (ni curl ni wget) : requête HTTP `GET /readyz` écrite en bash (`/dev/tcp`) ; Ollama : `ollama list` ; SearXNG : `wget` sur `/healthz` ; Gotenberg : `curl` sur `/health` ; back : `urllib` Python sur `/api/v1/health`, avec un délai de 20 s (D29). Les 4 services et le back passent `healthy`. (4) **`.env`** : `env_file` avec `required: false`, donc `docker compose config` marche sans `.env` (le back démarre alors sans clé LLM, état « dégradé »). `OLLAMA_BASE_URL` est interpolé depuis `.env` (défaut `http://ollama:11434`). (5) **SearXNG** : `settings.yml` étend les réglages par défaut (`use_default_settings`), ajoute `json` aux formats, désactive le limiteur et active explicitement duckduckgo, brave, wikipedia, github, arxiv, stackoverflow, youtube (noms vérifiés dans le `settings.yml` de l'image). Pas de `secret_key` dans le fichier : la variable `SEARXNG_SECRET` du compose (valeur fixe, service non publié) la fournit et prime. Les moteurs `ahmia` et `torch` des réglages par défaut échouent au chargement (journal SearXNG), sans effet sur la recherche. (6) **Image du back** : utilisateur `app` (uid 10001), environnement virtuel dans `/opt/venv`, `/data` créé et possédé par `app` avant le volume (le volume nommé en hérite les droits), `COPY --chmod=755` pour l'exécutable de l'entrypoint ; `.dockerignore` exclut tests, scripts et `infra/` (le fichier SearXNG est monté par le compose, pas copié). (7) **Frontend** : `Dockerfile`, `nginx.conf` (port 5173, repli SPA, cache long pour `/assets/`) et `.dockerignore` écrits sans projet front (créé en 0.11) ; non construits ici, vérification en 0.14. Le compose de dev construit l'étape `build` du Dockerfile front (Node + pnpm) pour `pnpm dev`. (8) `ollama-init` a `depends_on: ollama (service_healthy)` pour que le `pull` ne parte pas avant le serveur ; le back n'en dépend pas. (9) Environnement de vérification : les ports 5173 et 6333 de la machine étaient pris par d'autres projets ; la vérification a utilisé une surcharge temporaire (hors dépôt) avec Qdrant sur 16333. Sous Windows, `docker compose build` a besoin de `BUILDX_BAKE_ENTITLEMENTS_FS=0` (README).
-- **Raison** : versions reproductibles, healthchecks qui testent vraiment le service, et un démarrage en une commande qui ne dépend ni d'un `.env` ni de la fin du téléchargement du modèle.
+- **Date** 2026-11-11
+- **Subject** Compose, Dockerfiles, and SearXNG settings (task 0.10)
+- **Decision**
+  1. Image tags recorded on Docker Hub on 2026-11-11 were `qdrant/qdrant:v1.20.0`
+     (October 21), `ollama/ollama:0.40.16` (November 9, latest stable at the time),
+     `searxng/searxng:2026.11.9-57ff753ad` (November 9, dated tags),
+     `gotenberg/gotenberg:8.40.0` (November 5, version 8 required by the spec),
+     `python:3.12.16-slim-trixie` (November 8), `node:22.22.3-alpine3.24`, and
+     `nginx:1.31.8-alpine3.24` (November 6). The backend image installs `uv==0.13.7`
+     through pip. Gotenberg 9.4.0 already existed.
+  2. Start with `uvicorn --factory app.main:create_app` so importing `app/main.py` in
+     tests need not read app configuration.
+  3. Choose health commands available in each image. Qdrant uses Bash `/dev/tcp` for
+     `GET /readyz`. Ollama runs `ollama list`. SearXNG uses `wget` on `/healthz`.
+     Gotenberg uses `curl` on `/health`. The backend uses Python `urllib` on
+     `/api/v1/health` with a 20-second limit (D29). All five passed.
+  4. Compose uses an optional `env_file`, so the config command works without `.env`.
+     With no model key, the backend starts with degraded health. Compose interpolates
+     `OLLAMA_BASE_URL` and defaults to `http://ollama:11434`.
+  5. SearXNG extends its defaults using `use_default_settings`, adds JSON, disables the
+     limiter, and enables DuckDuckGo, Brave, Wikipedia, GitHub, arXiv, Stack Overflow, and
+     YouTube. The Compose variable `SEARXNG_SECRET` supplies the secret in this unpublished
+     service. No key is written to `settings.yml`. The default Ahmia and Torch engines
+     failed to load without affecting search.
+  6. The backend runs as `app` (UID 10001), with its venv in `/opt/venv`. Create `/data`
+     with app ownership before mounting the named volume so it inherits the permissions.
+     Use `COPY --chmod=755` for the entrypoint. Exclude tests, scripts, and `infra/` from the
+     image. Compose mounts the SearXNG settings.
+  7. Prepare the frontend Dockerfile, `.dockerignore`, and `nginx.conf` with port 5173,
+     SPA fallback, and long caching for `/assets/`. The frontend project arrives in 0.11
+     and image checks in 0.14. Dev Compose uses the Node and pnpm build stage for `pnpm dev`.
+  8. `ollama-init` waits for `ollama` to be healthy before pulling the model. The backend
+     can start while that runs.
+  9. Ports 5173 and 6333 were in use by other projects. Verification used an untracked
+     temporary override with Qdrant on 16333. Windows Docker Compose builds needed
+     `BUILDX_BAKE_ENTITLEMENTS_FS=0` as described in the README.
+- **Reason** Pin versions, probe real service health, and start with one command even while
+  embeddings download or the model environment file is absent.
 
 ## D31
 

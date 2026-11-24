@@ -45,20 +45,20 @@ def test_word_limits_are_inclusive(words: int) -> None:
         ("drop:Solution", 'Missing section "## Solution"'),
         ("drop:Sources", "Missing section"),
         ("objectives:4", "Use at most 3"),
-        ("words:900", "1 200"),
-        ("words:2600", "2 500"),
-        ("link:https://inconnu.example/page", "Lien absent des sources lues"),
-        ("bare:https://inconnu.example/nu", "Lien absent des sources lues"),
-        ("copy:40", "recopié"),
+        ("words:900", "1,200"),
+        ("words:2600", "2,500"),
+        ("link:https://inconnu.example/page", "The link does not appear in the sources"),
+        ("bare:https://inconnu.example/nu", "The link does not appear in the sources"),
+        ("copy:40", "copied from source"),
         ("no_mermaid", "Add at least one Mermaid flowchart"),
-        ("bad_mermaid", "Schéma Mermaid 1 refusé"),
-        ("marker:7", "Marqueur [7] inconnu"),
+        ("bad_mermaid", "Mermaid diagram 1 is invalid"),
+        ("marker:7", "No source matches citation [7]"),
         ("essential:4", '"Key points in 5 lines" has 4 bullets'),
         ("selftest:4", "Self-assessment has 4 questions"),
         ("title:Autre titre", 'Start the lesson with "# Attention multi-têtes"'),
         ("extra_section", "Unexpected section"),
         ("swap", "out of order"),
-        ("long_quote", "Citation de plus de 25 mots"),
+        ("long_quote", "A quotation exceeds 25 words"),
     ],
 )
 def test_check_lesson_reports(mutation: str, problem: str) -> None:
@@ -119,7 +119,7 @@ def test_short_attributed_quotation_is_not_a_copy() -> None:
 
 def test_long_copy_in_quotation_without_marker_is_a_copy() -> None:
     quoted = with_section_text(lesson_markdown(1500), "Explanation", f"« {LONG_PASSAGE} »")
-    assert any("recopié de la source [1]" in p for p in problems_of(quoted))
+    assert any("copied from source [1]" in p for p in problems_of(quoted))
 
 
 def test_copy_of_exactly_25_words_is_allowed() -> None:
@@ -133,7 +133,7 @@ def test_links_are_compared_loosely() -> None:
         "https://site0.exemple.org/article", "https://site0.EXEMPLE.org/article#haut"
     )
     found = check_lesson(lesson, title=TITLE, sources=sources).problems
-    assert not any("Lien absent" in p and "site0" in p for p in found)
+    assert not any("The link does not appear" in p and "site0" in p for p in found)
 
 
 def test_headings_inside_code_blocks_are_ignored() -> None:
@@ -158,13 +158,13 @@ def test_problems_are_in_french_and_never_empty_strings() -> None:
 def test_raw_html_outside_code_is_refused(raw: str) -> None:
     lesson = with_section_text(lesson_markdown(1500), "Explanation", raw)
     found = problems_of(lesson)
-    assert any("HTML brut hors d'un bloc de code" in p for p in found), found
+    assert any("Raw HTML outside code" in p for p in found), found
 
 
 def test_review_reproduction_keeps_sections_seen_by_the_renderer() -> None:
     """Revue finale de la phase 4, I2 : le Vérificateur lit comme le rendu (`html: True`)."""
     found = problems_of("## Objectives\n- a\n<pre>\nx\n## Explanation\nLong texte important.\n")
-    assert any("HTML brut" in p for p in found)
+    assert any("Raw HTML" in p for p in found)
     assert any('Missing section "## Explanation"' in p for p in found)
 
 

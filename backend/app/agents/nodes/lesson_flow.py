@@ -1,8 +1,8 @@
-"""Nœuds de bord du parcours `lesson_factory` (D90) : la fiche du module qui fixe la recherche,
-puis la publication, l'échec et le module suivant, tous par le port `LessonStore`.
+"""Load the module brief, report the outcome, and advance the lesson pipeline (D90).
 
-Chaque écriture du port est idempotente par module : un nœud rejoué après un arrêt (SPEC 9.4)
-rend la même chose sans ligne de plus. Aucun effet de bord avant la lecture de la fiche."""
+These nodes use `LessonStore`. Writes are idempotent per module so that a node can
+resume after a stop without inserting duplicate rows (SPEC 9.4).
+"""
 
 import logging
 from dataclasses import asdict, replace
@@ -17,16 +17,15 @@ from app.agents.tools.lesson_port import MAX_SEED_URLS, LessonReport, ResourcePi
 
 MAX_QUERY_CHARS = 300
 MAX_REASON_CHARS = 300
-MAX_FEEDBACK = 30  # problèmes de contrôle (dont 5 notes) et 20 affirmations au plus
+MAX_FEEDBACK = 30  # Include check problems, five grades, and up to twenty claims.
 MAX_FEEDBACK_CHARS = 600
-PUBLISH_TIMEOUT_S = 300  # le port range la leçon, copie des PDF et rend le PDF de la leçon
+PUBLISH_TIMEOUT_S = 300  # Allow time to store the lesson, copy PDFs, and render its PDF.
 NO_SOURCE = "No sources for this module met the minimum score of 60."
 logger = logging.getLogger(__name__)
 
 
 def module_query(title: str, skills: tuple[str, ...], theme: str) -> str:
-    """La recherche du module : son titre, ses compétences et le thème de la semaine, sur 300
-    caractères au plus (coupés à une limite de mot)."""
+    """Build a query from the title, skills, and weekly theme, clipped at a word boundary."""
     text = " ".join(", ".join([title, *skills, theme]).split())
     if len(text) <= MAX_QUERY_CHARS:
         return text
@@ -36,8 +35,7 @@ def module_query(title: str, skills: tuple[str, ...], theme: str) -> str:
 def make_brief(deps: GraphDeps) -> Node:
     @node_timeout()
     async def brief(state: LessonFactoryState) -> LessonFactoryState:
-        """Fiche du module (port) : la recherche part de son titre, de ses compétences et du
-        thème de la semaine, avec les pages du Conseil comme adresses de départ."""
+        """Load the module brief and use the Council's pages as initial source URLs."""
         found = await deps.ports.lessons.brief(deps.user_id, state["module_id"])
         query = module_query(found.title, found.skills, found.week_theme)
         extra: LessonFactoryState = {}
@@ -60,21 +58,21 @@ def make_brief(deps: GraphDeps) -> Node:
 
 
 def route_resources(state: LessonFactoryState) -> str:
-    """Sans aucune source retenue, rien ne peut être écrit ni sourcé : la leçon échoue."""
+    """Fail early if no accepted sources can support the lesson."""
     if not kept_verdicts(state):
         return "fail_lesson"
     return "verify" if state.get("verification") else "write"
 
 
 def route_next(state: LessonFactoryState) -> str:
-    """Une écriture directe vérifie le module demandé, sans démarrer la chaîne du programme."""
+    """Direct submissions verify one module and leave the rest of the program queued."""
     return "__end__" if state.get("verification") else "next"
 
 
 def make_publish(deps: GraphDeps) -> Node:
     @node_timeout(PUBLISH_TIMEOUT_S)
     async def publish(state: LessonFactoryState) -> LessonFactoryState:
-        """Leçon et ressources rangées par le port (idempotent par module), puis annoncées."""
+        """Store the lesson and resources idempotently, then announce publication."""
         brief = brief_of(state)
         report = LessonReport(
             words=state["words"],
@@ -94,14 +92,14 @@ def make_publish(deps: GraphDeps) -> Node:
             verification=state.get("verification", False),
         )
         logger.info(
-            "Leçon publiée : session %s, module %s, leçon %s, %d ressource(s)",
+            "Lesson published: session %s, module %s, lesson %s, %d resources",
             deps.session_id,
             brief.module_id,
             done.lesson_id,
             done.resources,
         )
-        pdf = "PDF prêt" if done.pdf_ok else "PDF indisponible pour le moment"
-        text = f"Leçon publiée : {state['words']} mots, {done.resources} ressource(s), {pdf}."
+        pdf = "The PDF is ready." if done.pdf_ok else "The PDF is temporarily unavailable."
+        text = f"Lesson published ({state['words']:,} words, {done.resources} resources). {pdf}"
         emit("agent.message", {"message_id": "writer-publication", "text": text}, agent="writer")
         emit(
             "artifact.ready",
@@ -122,10 +120,10 @@ def _reason(state: LessonFactoryState) -> str:
     if not kept_verdicts(state):
         return NO_SOURCE
     remaining = [*state.get("problems", []), *state.get("unsupported", [])]
-    text = f"Contrôles non satisfaits après {state.get('revisions', 0)} révision(s) : "
+    text = f"Checks still failing after revisions ({state.get('revisions', 0)}). "
     if state.get("verification"):
         return (text + ", ".join(_remaining_checks(state)))[:MAX_REASON_CHARS]
-    return (text + " ; ".join(remaining))[:MAX_REASON_CHARS]
+    return (text + "; ".join(remaining))[:MAX_REASON_CHARS]
 
 
 def _remaining_checks(state: LessonFactoryState) -> list[str]:
@@ -137,13 +135,12 @@ def _remaining_checks(state: LessonFactoryState) -> list[str]:
     ]
     items.extend(state.get("check_categories", []))
     if state.get("unsupported"):
-        items.append("affirmations non sourcées")
-    return items or ["contrôles du chapitre"]
+        items.append("unsupported claims")
+    return items or ["chapter checks"]
 
 
 def feedback_of(state: LessonFactoryState) -> list[str]:
-    """Remarques du dernier contrôle d'une soumission (D308) : problèmes (dont les notes
-    motivées), puis affirmations non sourcées, bornées en nombre et en longueur."""
+    """Return a bounded list of problems, grade feedback, and unsupported claims (D308)."""
     remarks = [*state.get("problems", []), *state.get("unsupported", [])]
     return [remark[:MAX_FEEDBACK_CHARS] for remark in remarks[:MAX_FEEDBACK]]
 
@@ -151,7 +148,7 @@ def feedback_of(state: LessonFactoryState) -> list[str]:
 def make_fail_lesson(deps: GraphDeps) -> Node:
     @node_timeout()
     async def fail_lesson(state: LessonFactoryState) -> LessonFactoryState:
-        """Leçon en échec, avec sa raison (idempotent) : la chaîne continue quand même."""
+        """Record the failure and its reason idempotently before advancing."""
         brief = brief_of(state)
         reason = _reason(state)
         verification = state.get("verification", False)
@@ -163,16 +160,16 @@ def make_fail_lesson(deps: GraphDeps) -> Node:
             verification=verification,
             feedback=feedback_of(state) if verification else (),
         )
-        logger.info("Leçon en échec : session %s, module %s", deps.session_id, brief.module_id)
+        logger.info("Lesson failed: session %s, module %s", deps.session_id, brief.module_id)
         emit(
             "agent.message",
             {"message_id": "writer-echec", "text": f"The lesson could not be published. {reason}"},
             agent="writer",
         )
         summary = (
-            "Le brouillon n'a pas été publié."
+            "The draft could not be published."
             if state.get("verification")
-            else f"Leçon en échec : « {brief.title} »."
+            else f'The lesson "{brief.title}" could not be published.'
         )
         return {"failure": reason, "summary": summary}
 
@@ -182,16 +179,15 @@ def make_fail_lesson(deps: GraphDeps) -> Node:
 def make_next(deps: GraphDeps) -> Node:
     @node_timeout()
     async def next_lesson(state: LessonFactoryState) -> LessonFactoryState:
-        """La chaîne continue, même après un échec : le port lance le module suivant du programme
-        (une seule chaîne par programme) et rend son id, ou `None` s'il n'en reste pas."""
+        """Continue the program after either outcome and return the next module ID, if any."""
         following = await deps.ports.lessons.next_module(
             deps.user_id, state["program_id"], exclude_session_id=deps.session_id
         )
         logger.info(
-            "Module suivant : session %s, programme %s, %s",
+            "Next module: session %s, program %s, %s",
             deps.session_id,
             state["program_id"],
-            following or "aucun",
+            following or "none",
         )
         return {"next_module": following}
 

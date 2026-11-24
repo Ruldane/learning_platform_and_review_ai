@@ -33,10 +33,10 @@ async def test_worse_revision_is_dropped_and_the_next_starts_from_the_best(
     assert c.writer_calls == 3
     third = c.prompt_of_writer(3)
     assert "notion1800" in third  # la meilleure version, pas la dernière
-    assert f"Affirmation non sourcée : {CLAIM}" in third
-    assert "La leçon fait 900 mots" not in third
+    assert f"Unsupported claim: {CLAIM}" in third
+    assert "The lesson has 900 words" not in third
     texts = [e["text"] for e in await c.events("agent.message") if "text" in e]
-    assert any("moins bonne que la précédente" in text for text in texts)
+    assert any("I kept the earlier draft because it scored better" in text for text in texts)
 
 
 async def test_revision_prompt_is_targeted_with_length_and_kept_criteria(

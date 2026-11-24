@@ -20,8 +20,8 @@ def normalize_response(réponse):
 ```"""
     draft = with_section_text(lesson_markdown(), "Worked example", code)
     problems = problems_of(draft)
-    assert any("identifiant" in problem and "réponse" in problem for problem in problems)
-    assert any("commentaire" in problem for problem in problems)
+    assert any("identifier" in problem and "réponse" in problem for problem in problems)
+    assert any("Python comment" in problem for problem in problems)
 
 
 def test_french_sample_values_in_english_python_code_are_allowed() -> None:

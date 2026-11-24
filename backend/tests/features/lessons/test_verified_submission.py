@@ -196,9 +196,9 @@ async def test_refusal_keeps_the_published_version_and_exposes_a_reason(
     denied = (await client.get(path)).json()
     assert denied["verification_session_id"] is None
     reason = denied.pop("verification_failure_reason")
-    assert "2 révision(s)" in reason and "Worked example (60/100)" in reason
+    assert "revisions (2)" in reason and "Worked example (60/100)" in reason
     # La dernière révision casse la structure : on revient à la meilleure version (D305).
-    assert "Structure du chapitre" not in reason and "SECRET-DU-TEXTE" not in reason
+    assert "Chapter structure" not in reason and "SECRET-DU-TEXTE" not in reason
     # Les remarques du Vérificateur sur la meilleure version, pour réviser à coup sûr (D308).
     feedback = denied.pop("verification_feedback")
     assert any("Un exemple trop bref." in item for item in feedback), feedback

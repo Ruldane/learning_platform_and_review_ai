@@ -17794,7 +17794,7 @@
             "type": "array"
           },
           "language": {
-            "default": "fr",
+            "default": "en",
             "pattern": "^[a-z]{2}$",
             "title": "Language",
             "type": "string"

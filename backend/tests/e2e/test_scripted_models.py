@@ -33,7 +33,7 @@ async def test_streamed_call_takes_one_reply() -> None:
     models = ScriptedModels({"writer": ["# Titre\n\nCorps de la leçon.", "suite"]})
     writer = await models.get_chat_model("u1", "strong", agent="writer")
 
-    chunks = [chunk async for chunk in writer.astream([HumanMessage("Écris la leçon.")])]
+    chunks = [chunk async for chunk in writer.astream([HumanMessage("Write the lesson.")])]
 
     assert "".join(str(c.content) for c in chunks) == "# Titre\n\nCorps de la leçon."
     assert len({c.id for c in chunks}) == 1

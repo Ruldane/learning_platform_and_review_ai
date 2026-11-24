@@ -137,17 +137,18 @@ class SkillNeedIn(BaseModel):
 
 
 class PostingAnalysisIn(BaseModel):
-    """L'analyse d'une offre écrite à la main ou par Claude (aucun agent) : les mêmes champs et les
-    mêmes bornes que celle de l'Analyste. Chaque mot clé doit figurer tel quel dans le texte de
-    l'offre, et chaque exigence obligatoire nomme des compétences listées dans `skills` (sinon 422
-    `posting_analysis_invalid`, qui nomme le champ)."""
+    """Analysis supplied with a posting using the same fields and limits as the Analyst.
+
+    Keywords must occur verbatim in the posting text. Required qualifications must name
+    entries from `skills`. A 422 `posting_analysis_invalid` identifies unsupported fields.
+    """
 
     title: str = Field(min_length=2, max_length=200)
     company: str | None = Field(default=None, max_length=200)
     level: PostingLevel = "unknown"
     location: str | None = Field(default=None, max_length=120)
     remote: str | None = Field(default=None, max_length=60)
-    language: str = Field(default="fr", pattern=r"^[a-z]{2}$")
+    language: str = Field(default="en", pattern=r"^[a-z]{2}$")
     requirements: list[RequirementIn] = Field(default_factory=list, max_length=40)
     keywords: list[KeywordIn] = Field(default_factory=list, max_length=40)
     eliminatory: list[EliminatoryIn] = Field(default_factory=list, max_length=10)

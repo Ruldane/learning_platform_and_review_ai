@@ -128,9 +128,9 @@ async def test_unsupported_claim_triggers_revision(make_lesson_runner: MakeLesso
     c = await make_lesson_runner(verifier=[claims(claim)])
     await c.wait_status("completed")
     assert c.writer_calls == 2
-    assert f"Affirmation non sourcée : {claim}" in c.prompt_of_writer(2)
-    assert 'source="contrôles du Vérificateur"' in c.prompt_of_writer(2)
-    assert "Affirmation non sourcée" not in c.prompt_of_writer(1)
+    assert f"Unsupported claim: {claim}" in c.prompt_of_writer(2)
+    assert 'source="Verifier feedback"' in c.prompt_of_writer(2)
+    assert "Unsupported claim" not in c.prompt_of_writer(1)
     assert "Revision no. 1" in c.prompt_of_writer(2)
     pub = c.store.published[0]
     assert pub.report.revisions == 1 and pub.report.unsupported == ()
@@ -141,11 +141,11 @@ async def test_check_problems_are_sent_to_the_writer(make_lesson_runner: MakeLes
     await c.wait_status("completed")
     assert c.writer_calls == 2
     prompt = c.prompt_of_writer(2)
-    assert "Problème : La leçon fait 900 mots" in prompt
+    assert "Problem: The lesson has 900 words" in prompt
     # Revue finale de la phase 4, M4 : les contrôles citent la leçon, donc le web.
-    frame = '<<<CONTENU_NON_FIABLE source="contrôles du Vérificateur">>>'
+    frame = '<<<CONTENU_NON_FIABLE source="Verifier feedback">>>'
     assert frame in prompt
-    assert prompt.index(frame) < prompt.index("Problème : La leçon fait 900 mots")
+    assert prompt.index(frame) < prompt.index("Problem: The lesson has 900 words")
     assert c.store.published[0].markdown == GOOD_LESSON.strip()
 
 
@@ -157,10 +157,10 @@ async def test_still_failing_after_two_revisions_marks_lesson_failed(
     assert MAX_REVISIONS == 2 and c.writer_calls == 3
     assert c.store.published == [] and len(c.store.failures) == 1
     module, reason = c.store.failures[0]
-    assert module == MODULE_ID and "2 révision(s)" in reason and len(reason) <= 300
+    assert module == MODULE_ID and "revisions (2)" in reason and len(reason) <= 300
     assert c.store.next_calls == [(PROGRAM_ID, c.sid)]  # la chaîne continue après un échec
     done = (await c.events("run.completed"))[0]
-    assert done["summary"].startswith("Leçon en échec")
+    assert done["summary"].endswith("could not be published.")
 
 
 async def test_writer_prompt_frames_sources_as_untrusted(make_lesson_runner: MakeLesson) -> None:
@@ -203,7 +203,7 @@ async def test_brief_sets_query_and_seed_pages(make_lesson_runner: MakeLesson) -
     seed = "https://praticien.exemple.org/blog"
     c = await make_lesson_runner(seeds=(seed,))
     await c.wait_status("completed")
-    plan_prompt = next(p for p in c.prompts_of("scout") if "Prépare les requêtes" in p)
+    plan_prompt = next(p for p in c.prompts_of("scout") if "prepare the web search queries" in p)
     assert "Attention multi-têtes, Attention, Transformers, Les bases" in plan_prompt
     found = await c.events("source.found")
     assert seed in {f["url"] for f in found}

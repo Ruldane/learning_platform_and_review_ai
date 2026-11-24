@@ -120,6 +120,4 @@ def test_converge_fails_when_a_cited_fragment_is_still_there(
     sources: list[LessonSource] = []
     update, removed = verify_module._converge(lesson, TITLE, sources, [claim])
     assert removed == 0 and "draft" not in update
-    assert update["problems"] == [
-        "Retrait incomplet : 1 affirmation(s) non sourcée(s) encore dans la leçon."
-    ]
+    assert update["problems"] == ["Unsupported claims remain in the lesson after removal (1)."]

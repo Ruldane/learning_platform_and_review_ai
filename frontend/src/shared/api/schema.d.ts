@@ -13333,7 +13333,7 @@ export interface components {
             keywords?: components["schemas"]["KeywordIn"][];
             /**
              * Language
-             * @default fr
+             * @default en
              */
             language: string;
             /**

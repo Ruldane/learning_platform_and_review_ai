@@ -183,6 +183,6 @@ def council_scripts() -> dict[str, list[Reply]]:
         "practitioner": [_speech("practitioner") for _ in range(ROUNDS)],
         "skeptic": [_speech("skeptic") for _ in range(ROUNDS)],
         "scribe": _scribe(),
-        "writer": [expect("Écris la leçon.", write_lesson) for _ in range(2)],
-        "verifier": [expect("Contrôle les faits de cette leçon.", NO_CLAIM) for _ in range(2)],
+        "writer": [expect("Write the lesson.", write_lesson) for _ in range(2)],
+        "verifier": [expect("Check the facts in this lesson.", NO_CLAIM) for _ in range(2)],
     }

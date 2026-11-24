@@ -36,7 +36,7 @@ class BookSource:
     modified_at: datetime
     chapters: tuple[BookChapter, ...]
     glossary: tuple[GlossaryEntry, ...] = ()
-    language: str = "fr"
+    language: str = "en"
 
     def __post_init__(self) -> None:
         ranks = {chapter.rank for chapter in self.chapters}

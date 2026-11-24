@@ -20,7 +20,7 @@ class User(UserScopedMixin, Base):
     email: Mapped[str | None] = mapped_column(String(320), unique=True, default=None)
     name: Mapped[str] = mapped_column(String(200), default="")
     google_sub: Mapped[str | None] = mapped_column(String(64), unique=True, default=None)
-    language: Mapped[str] = mapped_column(String(8), default="fr")
+    language: Mapped[str] = mapped_column(String(8), default="en")
 
 
 class UserSettingsRow(UserScopedMixin, Base):
