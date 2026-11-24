@@ -49,13 +49,13 @@ describe("GoalsPage", () => {
     );
     const { router, user } = setup();
     await user.type(
-      await screen.findByLabelText("Ce que tu veux apprendre ou atteindre"),
+      await screen.findByLabelText("What you want to learn or achieve"),
       "Devenir ingénieure data",
     );
-    await user.type(screen.getByLabelText("Poste visé (facultatif)"), "Data engineer");
-    await user.type(screen.getByLabelText("Heures disponibles par semaine (facultatif)"), "8");
-    await user.click(screen.getByRole("button", { name: "Convoquer le Conseil" }));
-    expect(await screen.findByRole("heading", { name: /Conseil/ })).toBeInTheDocument();
+    await user.type(screen.getByLabelText("Target role (optional)"), "Data engineer");
+    await user.type(screen.getByLabelText("Hours available per week (optional)"), "8");
+    await user.click(screen.getByRole("button", { name: "Convene the Council" }));
+    expect(await screen.findByRole("heading", { name: /Council/ })).toBeInTheDocument();
     expect(posted).toEqual([
       {
         text: "Devenir ingénieure data",
@@ -77,9 +77,9 @@ describe("GoalsPage", () => {
       }),
     );
     const { user } = setup();
-    await user.type(await screen.findByLabelText("Ce que tu veux apprendre ou atteindre"), "abc");
-    await user.click(screen.getByRole("button", { name: "Convoquer le Conseil" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("5 caractères au moins");
+    await user.type(await screen.findByLabelText("What you want to learn or achieve"), "abc");
+    await user.click(screen.getByRole("button", { name: "Convene the Council" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("at least 5 characters");
     expect(posted).toEqual([]);
   });
 
@@ -96,13 +96,13 @@ describe("GoalsPage", () => {
     );
     const { router, user } = setup();
     await user.type(
-      await screen.findByLabelText("Ce que tu veux apprendre ou atteindre"),
+      await screen.findByLabelText("What you want to learn or achieve"),
       "Apprendre Rust",
     );
-    await user.click(screen.getByRole("button", { name: "Convoquer le Conseil" }));
+    await user.click(screen.getByRole("button", { name: "Convene the Council" }));
     expect(await screen.findByText("Le moteur est arrêté.")).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/learn/goals");
-    expect(screen.getByRole("button", { name: "Convoquer le Conseil" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Convene the Council" })).toBeEnabled();
   });
 
   it("lists the goals, the newest first, with their links", async () => {
@@ -119,11 +119,11 @@ describe("GoalsPage", () => {
     const items = await screen.findAllByRole("listitem");
     expect(items).toHaveLength(2);
     expect(within(items[0]!).getByText("Devenir ingénieure data")).toBeInTheDocument();
-    expect(within(items[0]!).getByRole("link", { name: /Voir le programme/ })).toHaveAttribute(
+    expect(within(items[0]!).getByRole("link", { name: /View the program/ })).toHaveAttribute(
       "href",
       "/learn/programs/pr2",
     );
-    expect(within(items[1]!).getByRole("link", { name: /Ouvrir le Conseil/ })).toHaveAttribute(
+    expect(within(items[1]!).getByRole("link", { name: /Open the Council/ })).toHaveAttribute(
       "href",
       "/learn/goals/g1/council",
     );
@@ -131,8 +131,8 @@ describe("GoalsPage", () => {
 
   it("shows an empty state with the form above", async () => {
     setup([]);
-    expect(await screen.findByText("Aucun objectif pour l'instant")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Convoquer le Conseil" })).toBeInTheDocument();
+    expect(await screen.findByText("No goals yet")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Convene the Council" })).toBeInTheDocument();
   });
 
   it("offers « Réessayer » when the goals cannot be read", async () => {
@@ -148,7 +148,7 @@ describe("GoalsPage", () => {
     const router = createMemoryRouter([{ path: "/", element: <GoalsPage /> }]);
     render(<RouterProvider router={router} />, { wrapper: createQueryWrapper() });
     const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Réessayer" }));
+    await user.click(await screen.findByRole("button", { name: "Retry" }));
     await waitFor(() => expect(screen.getByText("Devenir ingénieure data")).toBeInTheDocument());
   });
 });

@@ -4,8 +4,8 @@ import { describe, expect, it, vi } from "vitest";
 import { makeApplication, makeApplications } from "../fixtures";
 import { KanbanBoard } from "./KanbanBoard";
 
-const MOVE_ACME = "Déplacer « Data engineer » (Acme)";
-const COLUMN = /^(À postuler|Postulée|Relancée|Entretien|Offre|Refus|Sans réponse|Retirée), \d+$/;
+const MOVE_ACME = "Move “Data engineer” (Acme)";
+const COLUMN = /^(To apply|Applied|Followed up|Interview|Offer|Rejected|No answer|Withdrawn), \d+$/;
 
 describe("KanbanBoard", () => {
   it("shows the eight columns in the order of the statuses, each with its count", () => {
@@ -13,10 +13,10 @@ describe("KanbanBoard", () => {
     const columns = screen.getAllByRole("group", { name: COLUMN });
     expect(columns.map((column) => column.getAttribute("aria-label"))).toEqual([
       "À postuler, 1",
-      "Postulée, 2",
+      "Applied, 2",
       "Relancée, 0",
       "Entretien, 1",
-      "Offre, 0",
+      "Offer, 0",
       "Refus, 0",
       "Sans réponse, 0",
       "Retirée, 0",
@@ -25,12 +25,12 @@ describe("KanbanBoard", () => {
 
   it("puts each card in the column of its status and says when a column is empty", () => {
     render(<KanbanBoard applications={makeApplications()} onMove={vi.fn()} />);
-    const applied = screen.getByRole("group", { name: "Postulée, 2" });
+    const applied = screen.getByRole("group", { name: "Applied, 2" });
     expect(within(applied).getByText("Acme")).toBeInTheDocument();
     expect(within(applied).getByText("Delta")).toBeInTheDocument();
     expect(within(applied).queryByText("Beta")).toBeNull();
     expect(
-      within(screen.getByRole("group", { name: "Offre, 0" })).getByText("Aucune candidature ici."),
+      within(screen.getByRole("group", { name: "Offer, 0" })).getByText("No applications here."),
     ).toBeInTheDocument();
   });
 
@@ -39,8 +39,8 @@ describe("KanbanBoard", () => {
     const onMove = vi.fn();
     render(<KanbanBoard applications={makeApplications()} onMove={onMove} />);
     await user.click(screen.getByRole("button", { name: MOVE_ACME }));
-    expect(screen.getByRole("menu", { name: "Déplacer vers…" })).toBeInTheDocument();
-    await user.click(screen.getByRole("menuitem", { name: "Entretien" }));
+    expect(screen.getByRole("menu", { name: "Move to…" })).toBeInTheDocument();
+    await user.click(screen.getByRole("menuitem", { name: "Interview" }));
     expect(onMove).toHaveBeenCalledWith("acme", "interview");
     expect(screen.queryByRole("menu")).toBeNull();
   });
@@ -49,7 +49,7 @@ describe("KanbanBoard", () => {
     const user = userEvent.setup();
     render(<KanbanBoard applications={makeApplications()} onMove={vi.fn()} />);
     await user.click(screen.getByRole("button", { name: MOVE_ACME }));
-    expect(screen.queryByRole("menuitem", { name: "Postulée" })).toBeNull();
+    expect(screen.queryByRole("menuitem", { name: "Applied" })).toBeNull();
     expect(screen.getAllByRole("menuitem")).toHaveLength(7);
   });
 
@@ -59,7 +59,7 @@ describe("KanbanBoard", () => {
     render(<KanbanBoard applications={makeApplications()} onMove={onMove} />);
     screen.getByRole("button", { name: MOVE_ACME }).focus();
     await user.keyboard("{Enter}");
-    expect(screen.getByRole("menuitem", { name: "À postuler" })).toHaveFocus();
+    expect(screen.getByRole("menuitem", { name: "To apply" })).toHaveFocus();
     await user.keyboard("{ArrowDown}{Enter}");
     expect(onMove).toHaveBeenCalledWith("acme", "followed_up");
   });
@@ -79,10 +79,10 @@ describe("KanbanBoard", () => {
   it("announces the move in a live region", async () => {
     const user = userEvent.setup();
     render(<KanbanBoard applications={makeApplications()} onMove={vi.fn()} />);
-    const message = "« Data engineer » déplacée vers Offre.";
+    const message = "“Data engineer” moved to Offer.";
     expect(screen.queryByText(message)).toBeNull();
     await user.click(screen.getByRole("button", { name: MOVE_ACME }));
-    await user.click(screen.getByRole("menuitem", { name: "Offre" }));
+    await user.click(screen.getByRole("menuitem", { name: "Offer" }));
     const live = screen.getByText(message);
     expect(live).toHaveAttribute("role", "status");
     expect(live).toHaveAttribute("aria-live", "polite");
@@ -90,7 +90,7 @@ describe("KanbanBoard", () => {
 
   it("offers a drag handle on each card, named after the position", () => {
     render(<KanbanBoard applications={makeApplications()} onMove={vi.fn()} />);
-    const handle = screen.getByRole("button", { name: "Glisser « Data engineer » (Acme)" });
+    const handle = screen.getByRole("button", { name: "Drag “Data engineer” (Acme)" });
     expect(handle).toBeInTheDocument();
     // Au doigt, le navigateur ne doit pas prendre le geste pour un défilement.
     expect(handle).toHaveClass("touch-none");
@@ -102,10 +102,10 @@ describe("KanbanBoard", () => {
       makeApplication({ id: "x2", company: "Omega", title: "Développeuse" }),
     ];
     render(<KanbanBoard applications={twins} onMove={vi.fn()} />);
-    expect(screen.getByRole("button", { name: "Glisser « Développeuse » (Alpha)" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Glisser « Développeuse » (Omega)" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Déplacer « Développeuse » (Alpha)" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Déplacer « Développeuse » (Omega)" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Drag “Développeuse” (Alpha)" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Drag “Développeuse” (Omega)" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Move “Développeuse” (Alpha)" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Move “Développeuse” (Omega)" })).toBeVisible();
   });
 
   it("opens an application from its card", async () => {
@@ -113,7 +113,7 @@ describe("KanbanBoard", () => {
     const onOpen = vi.fn();
     render(<KanbanBoard applications={makeApplications()} onMove={vi.fn()} onOpen={onOpen} />);
     await user.click(
-      screen.getByRole("button", { name: "Ouvrir la fiche de Beta, poste Analyste" }),
+      screen.getByRole("button", { name: "Open the Beta application, Analyste role" }),
     );
     expect(onOpen).toHaveBeenCalledWith("beta");
   });
@@ -121,7 +121,7 @@ describe("KanbanBoard", () => {
   it("is a named group", () => {
     render(<KanbanBoard applications={[]} onMove={vi.fn()} />);
     expect(
-      screen.getByRole("group", { name: "Tableau de suivi des candidatures" }),
+      screen.getByRole("group", { name: "Application tracking board" }),
     ).toBeInTheDocument();
   });
 });

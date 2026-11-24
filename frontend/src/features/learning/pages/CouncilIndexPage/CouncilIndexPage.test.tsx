@@ -13,7 +13,7 @@ function setup() {
     [
       { path: "/learn/council", element: <CouncilIndexPage /> },
       { path: "/learn/goals", element: <h1>Mes objectifs</h1> },
-      { path: "/learn/goals/:goalId/council", element: <h1>Conseil ouvert</h1> },
+      { path: "/learn/goals/:goalId/council", element: <h1>Council opened</h1> },
     ],
     { initialEntries: ["/learn/council"] },
   );
@@ -32,7 +32,7 @@ describe("CouncilIndexPage", () => {
       ),
     );
     const { router } = setup();
-    expect(await screen.findByRole("heading", { name: "Conseil ouvert" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Council opened" })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/learn/goals/new/council");
     // Remplacé dans l'historique : « Retour » ne boucle pas.
     expect(router.state.historyAction).toBe("REPLACE");
@@ -41,8 +41,8 @@ describe("CouncilIndexPage", () => {
   it("invites to enter a goal when there is none", async () => {
     server.use(http.get(`${API}/goals`, () => HttpResponse.json([])));
     const { router, user } = setup();
-    expect(await screen.findByText("Saisis un objectif")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Saisir un objectif" }));
+    expect(await screen.findByText("Enter a goal")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Enter a goal" }));
     expect(router.state.location.pathname).toBe("/learn/goals");
   });
 
@@ -57,7 +57,7 @@ describe("CouncilIndexPage", () => {
       }),
     );
     const { user } = setup();
-    await user.click(await screen.findByRole("button", { name: "Réessayer" }));
-    expect(await screen.findByRole("heading", { name: "Conseil ouvert" })).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: "Retry" }));
+    expect(await screen.findByRole("heading", { name: "Council opened" })).toBeInTheDocument();
   });
 });

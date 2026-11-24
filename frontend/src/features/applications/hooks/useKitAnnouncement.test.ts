@@ -41,11 +41,11 @@ const ready = { status: "ready", updatedAt: "2026-11-15T10:00:00Z" } as const;
 describe("describeKitChange", () => {
   it("names a piece that arrives, with how it arrived", () => {
     expect(describeKitChange(kit(true), kit(true, { letter: ready }))).toBe(
-      "Lettre de motivation : prête.",
+      "Cover letter: ready.",
     );
     expect(
       describeKitChange(kit(true), kit(true, { pitch: { ...ready, status: "to_check" } })),
-    ).toBe("Pitch de présentation : à vérifier.");
+    ).toBe("Elevator pitch: to check.");
     expect(describeKitChange(kit(true), kit(true, { cv: { ...ready, status: "failed" } }))).toBe(
       "CV ciblé : en échec.",
     );
@@ -62,7 +62,7 @@ describe("describeKitChange", () => {
       letter: { ...ready, updatedAt: "2026-11-15T11:00:00Z" },
       cv: { ...ready, edited: true, updatedAt: "2026-11-15T11:00:00Z" },
     });
-    expect(describeKitChange(before, after)).toBe("Lettre de motivation : prête.");
+    expect(describeKitChange(before, after)).toBe("Cover letter: ready.");
   });
 
   it("closes with the count when the run ends", () => {
@@ -85,7 +85,7 @@ describe("useKitAnnouncement", () => {
     });
     expect(result.current.message).toBe("");
     rerender({ view: kit(true, { cv: ready, letter: ready }) });
-    expect(result.current.message).toBe("Lettre de motivation : prête.");
+    expect(result.current.message).toBe("Cover letter: ready.");
   });
 
   it("changes its counter on a sentence it already said, so it is read again", () => {
@@ -103,6 +103,6 @@ describe("useKitAnnouncement", () => {
   it("counts the pieces by the plural: one piece, then several", () => {
     expect(
       describeKitChange(kit(true), kit(false, { cv: ready, letter: ready, pitch: ready })),
-    ).toContain("Le kit est terminé : 3 pièces prêtes, 0 pièces à vérifier, 0 pièces en échec.");
+    ).toContain("The kit is done: 3 pieces ready, 0 pieces to check, 0 pieces failed.");
   });
 });

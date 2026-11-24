@@ -62,7 +62,7 @@ describe("announcementOf", () => {
     const pending = ask(2);
     const feed = [turn("interviewer-q2"), pending];
     expect(announcementOf(feed, pending.interrupt, 7)).toBe(
-      "Question 2 sur 7. Texte de la question 2 ?",
+      "Question 2 of 7. Texte de la question 2 ?",
     );
   });
 
@@ -70,7 +70,7 @@ describe("announcementOf", () => {
     const pending = ask(3);
     const feed = [turn("interviewer-q2"), turn("interviewer-q2-relance"), pending];
     expect(announcementOf(feed, pending.interrupt, 7)).toBe(
-      "Relance sur la question 2. Texte de la question 3 ?",
+      "Follow-up on question 2. Texte de la question 3 ?",
     );
   });
 

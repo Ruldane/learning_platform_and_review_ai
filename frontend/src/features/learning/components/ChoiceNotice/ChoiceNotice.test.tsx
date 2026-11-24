@@ -16,13 +16,13 @@ describe("ChoiceNotice", () => {
     );
     expect(screen.getByText("Choisis un parcours.")).toBeInTheDocument();
     expect(screen.queryByRole("textbox")).toBeNull();
-    await user.click(screen.getByRole("button", { name: "Voir les propositions" }));
+    await user.click(screen.getByRole("button", { name: "View proposals" }));
     expect(onShowProposals).toHaveBeenCalledTimes(1);
   });
 
   it("says the answer was sent once answered", () => {
     render(<ChoiceNotice question="Choisis." answered onShowProposals={vi.fn()} />);
-    expect(screen.getByText("Réponse envoyée")).toBeInTheDocument();
+    expect(screen.getByText("Answer sent")).toBeInTheDocument();
     expect(screen.queryByRole("button")).toBeNull();
   });
 });

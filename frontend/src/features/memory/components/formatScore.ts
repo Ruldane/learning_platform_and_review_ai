@@ -1,4 +1,4 @@
-/** Score de similarité à deux décimales, avec la virgule française (`0.834` devient « 0,83 »). */
+/** Format a similarity score to two decimal places. */
 export function formatScore(score: number): string {
-  return score.toFixed(2).replace(".", ",");
+  return score.toFixed(2);
 }

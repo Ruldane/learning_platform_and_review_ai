@@ -18,7 +18,7 @@ const angle: InterruptPayload = {
   kind: "choice",
   question: "Quel angle pour le second tour ?",
   options: [
-    { label: "Plus concret", value: "concret" },
+    { label: "More concrete", value: "concret" },
     { label: "Plus court", value: "court" },
   ],
 };
@@ -67,7 +67,7 @@ function publish(fake: ReturnType<typeof createFakeSocketServer>, ...events: Ses
 const expectStatus = (label: string) =>
   waitFor(() =>
     expect(
-      within(screen.getByRole("region", { name: "État de la session" })).getByText(label),
+      within(screen.getByRole("region", { name: "Session status" })).getByText(label),
     ).toBeInTheDocument(),
   );
 
@@ -109,20 +109,20 @@ describe("DemoDebatePage : cycle de vie complet", () => {
     Object.assign(backend, { status: "waiting_user", pending: angle });
     publish(fake, ...round1);
     history.push(...round1);
-    const concret = await screen.findByRole("button", { name: "Plus concret" });
+    const concret = await screen.findByRole("button", { name: "More concrete" });
     expect(concret).toBeEnabled();
 
     // 1. Une remarque pendant la question : la carte reste active, le statut aussi (I1).
-    await user.type(screen.getByLabelText("Ton message"), "Pense aux débutants{Enter}");
+    await user.type(screen.getByLabelText("Your message"), "Pense aux débutants{Enter}");
     await waitFor(() => expect(history.at(-1)?.type).toBe("user.message"));
     publish(fake, history.at(-1) as SessionEvent);
     expect(await screen.findByText("Pense aux débutants")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Plus concret" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "More concrete" })).toBeEnabled();
     await expectStatus("En attente de ta réponse");
 
     // 2. Réponse, le Critique commence à écrire, puis pause.
-    await user.click(screen.getByRole("button", { name: "Plus concret" }));
-    expect(await screen.findByText("Réponse envoyée")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "More concrete" }));
+    expect(await screen.findByText("Answer sent")).toBeInTheDocument();
     const round2 = [started(6, "demo_critic"), tok(7, "c1", "Moitié")];
     publish(fake, ...round2);
     history.push(...round2);
@@ -141,11 +141,11 @@ describe("DemoDebatePage : cycle de vie complet", () => {
     await expectStatus("En pause");
     expect(screen.queryByRole("button", { name: "Pause" })).not.toBeInTheDocument();
     // La question répondue reste repliée après le rechargement : plus d'option à cliquer.
-    expect(screen.queryByRole("button", { name: "Plus concret" })).not.toBeInTheDocument();
-    expect(screen.getByText("Réponse envoyée")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "More concrete" })).not.toBeInTheDocument();
+    expect(screen.getByText("Answer sent")).toBeInTheDocument();
 
     // 4. Reprise : le Critique rejoue son tour coupé (nouvel id), une seule bulle (I5).
-    await user.click(screen.getByRole("button", { name: "Reprendre" }));
+    await user.click(screen.getByRole("button", { name: "Resume" }));
     await expectStatus("En cours");
     publish(
       fake,
@@ -156,8 +156,8 @@ describe("DemoDebatePage : cycle de vie complet", () => {
     );
     expect(await screen.findByText("Entier.")).toBeInTheDocument();
     expect(screen.queryByText("Moitié")).not.toBeInTheDocument();
-    expect(screen.getAllByRole("article", { name: "Critique" })).toHaveLength(1);
+    expect(screen.getAllByRole("article", { name: "Critic" })).toHaveLength(1);
     await expectStatus("Terminée");
-    expect(screen.getByRole("button", { name: "Nouveau débat" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "New debate" })).toBeInTheDocument();
   });
 });

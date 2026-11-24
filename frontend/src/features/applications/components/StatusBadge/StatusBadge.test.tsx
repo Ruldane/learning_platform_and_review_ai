@@ -4,11 +4,11 @@ import { STATUS_ORDER } from "../viewTypes";
 import { StatusBadge } from "./StatusBadge";
 
 const LABELS = [
-  "À postuler",
-  "Postulée",
+  "To apply",
+  "Applied",
   "Relancée",
-  "Entretien",
-  "Offre",
+  "Interview",
+  "Offer",
   "Refus",
   "Sans réponse",
   "Retirée",
@@ -25,6 +25,6 @@ describe("StatusBadge", () => {
 
   it("carries the status as a data attribute for styling and tests", () => {
     render(<StatusBadge status="offer" />);
-    expect(screen.getByText("Offre")).toHaveAttribute("data-status", "offer");
+    expect(screen.getByText("Offer")).toHaveAttribute("data-status", "offer");
   });
 });

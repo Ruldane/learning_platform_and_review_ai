@@ -24,7 +24,7 @@ def _reply(kind: str, grade: dict[str, Any]) -> Callable[[Sequence[BaseMessage]]
     def reply(messages: Sequence[BaseMessage]) -> str:
         data = extract_json_object(str(messages[1].content))
         assert data is not None
-        assert data["etape"] == kind and len(data["grille"]) == 3
+        assert data["stage"] == kind and len(data["rubric"]) == 3
         assert MISSING in data["attentes"]
         if kind == "project":
             assert data["projet_fixe"]["title"] == PROJECT

@@ -22,11 +22,11 @@ describe("ProfileVersionList", () => {
 
   it("flags only the latest validated version", () => {
     render(<ProfileVersionList versions={versions} />);
-    expect(screen.getAllByText("En vigueur")).toHaveLength(1);
+    expect(screen.getAllByText("Current")).toHaveLength(1);
   });
 
   it("says when there is no version", () => {
     render(<ProfileVersionList versions={[]} />);
-    expect(screen.getByText("Aucune version pour l'instant.")).toBeInTheDocument();
+    expect(screen.getByText("No versions yet.")).toBeInTheDocument();
   });
 });

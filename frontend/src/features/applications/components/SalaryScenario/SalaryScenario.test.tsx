@@ -19,14 +19,14 @@ it("sépare les montants du radar des règles et du bilan de la simulation", () 
       />
     </MemoryRouter>,
   );
-  const radar = screen.getByRole("region", { name: "Données du radar" });
-  expect(radar).toHaveTextContent("50 000 € à 70 000 € bruts par an");
-  expect(within(radar).getByRole("link", { name: "Consulter le relevé" })).toHaveAttribute(
+  const radar = screen.getByRole("region", { name: "Radar data" });
+  expect(radar).toHaveTextContent("€50,000 to €70,000 gross per year");
+  expect(within(radar).getByRole("link", { name: "View the snapshot" })).toHaveAttribute(
     "href",
     "/career/radar/r1",
   );
-  expect(screen.getByRole("region", { name: "Règles de la simulation" })).toBeVisible();
-  const outcome = screen.getByRole("region", { name: "Bilan de la simulation" });
-  expect(outcome).toHaveTextContent("20 000 €");
-  expect(outcome).toHaveTextContent("Le recruteur simulé a maintenu l’offre d’ouverture.");
+  expect(screen.getByRole("region", { name: "Simulation rules" })).toBeVisible();
+  const outcome = screen.getByRole("region", { name: "Simulation summary" });
+  expect(outcome).toHaveTextContent("€20,000");
+  expect(outcome).toHaveTextContent("The simulated recruiter held to the opening offer.");
 });

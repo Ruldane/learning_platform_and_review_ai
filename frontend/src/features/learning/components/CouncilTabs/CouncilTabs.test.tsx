@@ -30,20 +30,20 @@ function Harness({
 describe("CouncilTabs", () => {
   it("is a tablist with three tabs and the active one selected", () => {
     render(<Harness />);
-    expect(screen.getByRole("tablist", { name: "Espaces du Conseil" })).toBeInTheDocument();
+    expect(screen.getByRole("tablist", { name: "Council spaces" })).toBeInTheDocument();
     expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual([
-      "Tableau",
+      "Board",
       "Sources",
-      "Propositions",
+      "Proposals",
     ]);
-    expect(screen.getByRole("tab", { name: "Tableau" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "Board" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("tab", { name: "Sources" })).toHaveAttribute("aria-selected", "false");
   });
 
   it("links each tab to its panel", () => {
     render(<Harness />);
-    const tab = screen.getByRole("tab", { name: "Tableau" });
-    const panel = screen.getByRole("tabpanel", { name: "Tableau" });
+    const tab = screen.getByRole("tab", { name: "Board" });
+    const panel = screen.getByRole("tabpanel", { name: "Board" });
     expect(tab).toHaveAttribute("aria-controls", panel.id);
     expect(panel).toHaveAttribute("aria-labelledby", tab.id);
   });
@@ -67,7 +67,7 @@ describe("CouncilTabs", () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(<Harness onChange={onChange} />);
-    await user.click(screen.getByRole("tab", { name: "Propositions" }));
+    await user.click(screen.getByRole("tab", { name: "Proposals" }));
     expect(onChange).toHaveBeenCalledWith("proposals");
   });
 
@@ -75,25 +75,25 @@ describe("CouncilTabs", () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(<Harness onChange={onChange} />);
-    screen.getByRole("tab", { name: "Tableau" }).focus();
+    screen.getByRole("tab", { name: "Board" }).focus();
     await user.keyboard("{ArrowRight}");
     expect(onChange).toHaveBeenLastCalledWith("sources");
     expect(screen.getByRole("tab", { name: "Sources" })).toHaveFocus();
     await user.keyboard("{ArrowRight}{ArrowRight}");
     expect(onChange).toHaveBeenLastCalledWith("board");
-    expect(screen.getByRole("tab", { name: "Tableau" })).toHaveFocus();
+    expect(screen.getByRole("tab", { name: "Board" })).toHaveFocus();
     await user.keyboard("{ArrowLeft}");
     expect(onChange).toHaveBeenLastCalledWith("proposals");
     await user.keyboard("{Home}");
     expect(onChange).toHaveBeenLastCalledWith("board");
     await user.keyboard("{End}");
     expect(onChange).toHaveBeenLastCalledWith("proposals");
-    expect(screen.getByRole("tab", { name: "Propositions" })).toHaveFocus();
+    expect(screen.getByRole("tab", { name: "Proposals" })).toHaveFocus();
   });
 
   it("only the selected tab is in the tab order", () => {
     render(<Harness />);
-    expect(screen.getByRole("tab", { name: "Tableau" })).toHaveAttribute("tabindex", "0");
+    expect(screen.getByRole("tab", { name: "Board" })).toHaveAttribute("tabindex", "0");
     expect(screen.getByRole("tab", { name: "Sources" })).toHaveAttribute("tabindex", "-1");
   });
 
@@ -117,7 +117,7 @@ describe("CouncilTabs", () => {
       />,
     );
     expect(screen.getByText("Contenu des propositions")).toBeVisible();
-    expect(screen.getByRole("tab", { name: "Propositions" })).toHaveAttribute(
+    expect(screen.getByRole("tab", { name: "Proposals" })).toHaveAttribute(
       "aria-selected",
       "true",
     );

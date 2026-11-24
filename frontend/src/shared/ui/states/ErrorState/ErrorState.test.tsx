@@ -12,15 +12,15 @@ describe("ErrorState", () => {
   it("appelle onRetry au clic sur Réessayer", async () => {
     const onRetry = vi.fn();
     render(<ErrorState message="Panne du serveur." onRetry={onRetry} />);
-    await userEvent.click(screen.getByRole("button", { name: "Réessayer" }));
+    await userEvent.click(screen.getByRole("button", { name: "Retry" }));
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 
   it("remplace « Réessayer » par l'action donnée", async () => {
     const onRetry = vi.fn();
-    render(<ErrorState message="Introuvable." onRetry={onRetry} actionLabel="Nouveau débat" />);
-    expect(screen.queryByRole("button", { name: "Réessayer" })).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "Nouveau débat" }));
+    render(<ErrorState message="Introuvable." onRetry={onRetry} actionLabel="New debate" />);
+    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "New debate" }));
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 });

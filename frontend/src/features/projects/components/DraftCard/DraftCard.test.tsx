@@ -21,7 +21,7 @@ function setup(draft: DraftView = DRAFT, onCopy: () => void | Promise<void> = vi
 describe("DraftCard", () => {
   it("shows the kind and the text in an editable field", () => {
     setup();
-    expect(screen.getByLabelText("Post LinkedIn")).toHaveValue("J'ai construit un pipeline SQL.");
+    expect(screen.getByLabelText("LinkedIn post")).toHaveValue("J'ai construit un pipeline SQL.");
   });
 
   it("lists the flagged terms as given, joined with a comma, under « À vérifier »", () => {
@@ -33,7 +33,7 @@ describe("DraftCard", () => {
 
   it("shows a plain warning when a draft is to check without any term", () => {
     setup({ ...DRAFT, status: "to_check", flags: [] });
-    expect(screen.getByRole("note")).toHaveTextContent("À vérifier avant de l'utiliser.");
+    expect(screen.getByRole("note")).toHaveTextContent("Check before using it.");
   });
 
   it("shows no warning for a draft that is ready", () => {
@@ -43,9 +43,9 @@ describe("DraftCard", () => {
 
   it("saves the edited text, and only once it differs from the saved one", async () => {
     const { onSave, user } = setup();
-    const save = screen.getByRole("button", { name: "Enregistrer" });
+    const save = screen.getByRole("button", { name: "Save" });
     expect(save).toHaveAttribute("aria-disabled", "true");
-    await user.type(screen.getByLabelText("Post LinkedIn"), " Merci !");
+    await user.type(screen.getByLabelText("LinkedIn post"), " Merci !");
     expect(save).toHaveAttribute("aria-disabled", "false");
     await user.click(save);
     expect(onSave).toHaveBeenCalledWith("J'ai construit un pipeline SQL. Merci !");
@@ -60,9 +60,9 @@ describe("DraftCard", () => {
         onCopy={onCopy}
       />,
     );
-    expect(screen.getByLabelText("Post LinkedIn")).toHaveValue("Texte enregistré.");
-    expect(screen.getByText("Retouché par toi")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Enregistrer" })).toHaveAttribute(
+    expect(screen.getByLabelText("LinkedIn post")).toHaveValue("Texte enregistré.");
+    expect(screen.getByText("Edited by you")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save" })).toHaveAttribute(
       "aria-disabled",
       "true",
     );
@@ -70,23 +70,23 @@ describe("DraftCard", () => {
 
   it("copies the text on screen, including edits, and confirms in a status region", async () => {
     const { onCopy, user } = setup(DRAFT, vi.fn().mockResolvedValue(undefined));
-    await user.type(screen.getByLabelText("Post LinkedIn"), "!");
-    await user.click(screen.getByRole("button", { name: "Copier" }));
+    await user.type(screen.getByLabelText("LinkedIn post"), "!");
+    await user.click(screen.getByRole("button", { name: "Copy" }));
     expect(onCopy).toHaveBeenCalledWith("J'ai construit un pipeline SQL.!");
-    expect(await screen.findByText("Brouillon copié.")).toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent("Brouillon copié.");
+    expect(await screen.findByText("Draft copied.")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Draft copied.");
   });
 
   it("says when the copy failed", async () => {
     const { user } = setup(DRAFT, vi.fn().mockRejectedValue(new Error("denied")));
-    await user.click(screen.getByRole("button", { name: "Copier" }));
-    expect(await screen.findByText(/Copie impossible/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Copy" }));
+    expect(await screen.findByText(/Can’t copy/)).toBeInTheDocument();
   });
 
   it("keeps the focus on « Enregistrer » while it is busy (aria-disabled, never disabled)", async () => {
     const { user, onSave } = setup();
-    await user.type(screen.getByLabelText("Post LinkedIn"), "!");
-    const save = screen.getByRole("button", { name: "Enregistrer" });
+    await user.type(screen.getByLabelText("LinkedIn post"), "!");
+    const save = screen.getByRole("button", { name: "Save" });
     await user.click(save);
     expect(onSave).toHaveBeenCalledTimes(1);
     expect(save).toHaveFocus();
@@ -95,22 +95,22 @@ describe("DraftCard", () => {
 
   it("says on the card that a blank text cannot be saved, and sends nothing", async () => {
     const { user, onSave } = setup();
-    await user.clear(screen.getByLabelText("Post LinkedIn"));
-    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+    await user.clear(screen.getByLabelText("LinkedIn post"));
+    await user.click(screen.getByRole("button", { name: "Save" }));
     expect(onSave).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert")).toHaveTextContent("Le brouillon est vide");
-    expect(screen.getByLabelText("Post LinkedIn")).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("alert")).toHaveTextContent("The draft is empty");
+    expect(screen.getByLabelText("LinkedIn post")).toHaveAttribute("aria-invalid", "true");
   });
 
   it("says on the card that a text of more than 3 000 characters cannot be saved", async () => {
     const { user, onSave } = setup();
-    const area = screen.getByLabelText("Post LinkedIn");
+    const area = screen.getByLabelText("LinkedIn post");
     await user.clear(area);
     await user.click(area);
     await user.paste("a".repeat(3001));
-    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
     expect(onSave).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert")).toHaveTextContent("3000 caractères au plus");
+    expect(screen.getByRole("alert")).toHaveTextContent("3000 characters at most");
   });
 
   it("shows the server's refusal on its own card", () => {
@@ -121,7 +121,7 @@ describe("DraftCard", () => {
   it("reminds that nothing is published by the application", () => {
     setup();
     expect(
-      screen.getByText("Rien n'est publié par l'application : copie et publie toi-même."),
+      screen.getByText("The app publishes nothing: copy and publish it yourself."),
     ).toBeInTheDocument();
   });
 });

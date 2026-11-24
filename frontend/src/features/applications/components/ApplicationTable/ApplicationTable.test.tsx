@@ -22,11 +22,11 @@ describe("ApplicationTable", () => {
       "Statut",
       "Candidature",
       "Prochaine action",
-      "Relances dues",
+      "Follow-ups due",
     ]);
     expect(screen.getAllByRole("row")).toHaveLength(5);
     const acme = within(screen.getByRole("row", { name: /Acme/ }));
-    expect(acme.getByText("Postulée")).toBeInTheDocument();
+    expect(acme.getByText("Applied")).toBeInTheDocument();
     expect(acme.getByText("03/11/2026")).toBeInTheDocument();
     expect(acme.getByText("Relancer (20/11/2026)")).toBeInTheDocument();
     expect(acme.getByText("2")).toBeInTheDocument();
@@ -43,10 +43,10 @@ describe("ApplicationTable", () => {
   it("sorts by a column on click, then reverses on the next click, with aria-sort", async () => {
     const user = userEvent.setup();
     render(<ApplicationTable applications={makeApplications()} onOpen={vi.fn()} />);
-    await user.click(screen.getByRole("button", { name: "Trier par Entreprise" }));
+    await user.click(screen.getByRole("button", { name: "Sort by Company" }));
     expect(header(/Entreprise/)).toHaveAttribute("aria-sort", "ascending");
     expect(companies()).toEqual(["Acme", "Beta", "Delta", "Gamma"]);
-    await user.click(screen.getByRole("button", { name: "Trier par Entreprise" }));
+    await user.click(screen.getByRole("button", { name: "Sort by Company" }));
     expect(header(/Entreprise/)).toHaveAttribute("aria-sort", "descending");
     expect(companies()).toEqual(["Gamma", "Delta", "Beta", "Acme"]);
   });
@@ -54,8 +54,8 @@ describe("ApplicationTable", () => {
   it("marks only the sorted column and resets the others", async () => {
     const user = userEvent.setup();
     render(<ApplicationTable applications={makeApplications()} onOpen={vi.fn()} />);
-    await user.click(screen.getByRole("button", { name: "Trier par Entreprise" }));
-    await user.click(screen.getByRole("button", { name: "Trier par Poste" }));
+    await user.click(screen.getByRole("button", { name: "Sort by Company" }));
+    await user.click(screen.getByRole("button", { name: "Sort by Role" }));
     expect(header(/Entreprise/)).toHaveAttribute("aria-sort", "none");
     expect(header(/Poste/)).toHaveAttribute("aria-sort", "ascending");
   });
@@ -63,16 +63,16 @@ describe("ApplicationTable", () => {
   it("sorts the statuses in the order of the board, not alphabetically", async () => {
     const user = userEvent.setup();
     render(<ApplicationTable applications={makeApplications()} onOpen={vi.fn()} />);
-    await user.click(screen.getByRole("button", { name: "Trier par Statut" }));
+    await user.click(screen.getByRole("button", { name: "Sort by Status" }));
     expect(companies()).toEqual(["Beta", "Acme", "Delta", "Gamma"]);
   });
 
   it("sorts the dates and keeps the applications without a date at the end in both directions", async () => {
     const user = userEvent.setup();
     render(<ApplicationTable applications={makeApplications()} onOpen={vi.fn()} />);
-    await user.click(screen.getByRole("button", { name: "Trier par Candidature" }));
+    await user.click(screen.getByRole("button", { name: "Sort by Application" }));
     expect(companies()).toEqual(["Gamma", "Acme", "Delta", "Beta"]);
-    await user.click(screen.getByRole("button", { name: "Trier par Candidature" }));
+    await user.click(screen.getByRole("button", { name: "Sort by Application" }));
     expect(companies()).toEqual(["Delta", "Acme", "Gamma", "Beta"]);
   });
 
@@ -80,8 +80,8 @@ describe("ApplicationTable", () => {
     const user = userEvent.setup();
     const busy = makeApplication({ id: "busy", company: "Busy", dueReminders: 10 });
     render(<ApplicationTable applications={[...makeApplications(), busy]} onOpen={vi.fn()} />);
-    await user.click(screen.getByRole("button", { name: "Trier par Relances dues" }));
-    await user.click(screen.getByRole("button", { name: "Trier par Relances dues" }));
+    await user.click(screen.getByRole("button", { name: "Sort by Follow-ups due" }));
+    await user.click(screen.getByRole("button", { name: "Sort by Follow-ups due" }));
     // En texte, « 2 » passerait avant « 10 » : seul un tri numérique met Busy en tête.
     expect(companies().slice(0, 2)).toEqual(["Busy", "Acme"]);
   });
@@ -91,13 +91,13 @@ describe("ApplicationTable", () => {
     const onOpen = vi.fn();
     render(<ApplicationTable applications={makeApplications()} onOpen={onOpen} />);
     await user.click(
-      screen.getByRole("button", { name: "Ouvrir la fiche de Gamma, poste Chef de projet" }),
+      screen.getByRole("button", { name: "Open the Gamma application, Chef de projet role" }),
     );
     expect(onOpen).toHaveBeenCalledWith("gamma");
   });
 
   it("says so when there is no application", () => {
     render(<ApplicationTable applications={[]} onOpen={vi.fn()} />);
-    expect(screen.getByText("Aucune candidature pour l'instant.")).toBeInTheDocument();
+    expect(screen.getByText("No applications yet.")).toBeInTheDocument();
   });
 });

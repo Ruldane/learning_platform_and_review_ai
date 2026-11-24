@@ -22,7 +22,7 @@ vi.mock("@excalidraw/excalidraw/index.css", () => ({}));
 vi.mock("@excalidraw/mermaid-to-excalidraw", () => ({ parseMermaidToExcalidraw: vi.fn() }));
 vi.mock("mermaid", () => ({ default: { initialize: vi.fn(), render: vi.fn() } }));
 
-const RETRY = "Relancer le Conseil";
+const RETRY = "Restart the Council";
 const SESSIONS = ["c1", "c2", "pr1", "pr2"];
 
 const setup = (api: Parameters<typeof renderCouncil>[1] = {}) =>
@@ -62,12 +62,12 @@ describe("CouncilPage : relances", () => {
     await waitFor(() => expect(socketsOf(fake, "c2")).toHaveLength(1));
     socketsOf(fake, "c2")[0]!.open();
 
-    expect(await screen.findByText("Le Scribe n'a encore rien dessiné.")).toBeInTheDocument();
+    expect(await screen.findByText("The Scribe hasn’t drawn anything yet.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Carte du domaine/ })).toBeNull();
     expect(screen.queryByRole("button", { name: RETRY })).toBeNull();
-    await user.click(screen.getByRole("tab", { name: "Propositions" }));
+    await user.click(screen.getByRole("tab", { name: "Proposals" }));
     expect(
-      await screen.findByText("Aucune proposition pour l'instant : l'équipe y travaille."),
+      await screen.findByText("No proposals yet: the team is working on it."),
     ).toBeInTheDocument();
   });
 
@@ -75,7 +75,7 @@ describe("CouncilPage : relances", () => {
     const { fake } = setup({ status: "running" });
     const e = councilEvents("c1");
     (await openCouncil(fake)).push(e.message("moderator-tour-1", "Tour 1"));
-    await screen.findByText("Tour 1 / 4");
+    await screen.findByText("Round 1 / 4");
     expect(screen.queryByRole("button", { name: RETRY })).toBeNull();
   });
 
@@ -131,16 +131,18 @@ describe("CouncilPage : relances", () => {
       already_chosen: false,
     });
     const e = councilEvents("c1");
-    (await openCouncil(fake)).push(e.message("moderator-choix", "Parcours choisi"), e.completed());
+    (await openCouncil(fake)).push(e.message("moderator-choix", "Path chosen"), e.completed());
     await waitFor(() => expect(socketsOf(fake, "pr1")).toHaveLength(1));
     socketsOf(fake, "pr1")[0]!.open().push(councilEvents("pr1").failed("Le Stratège a échoué."));
 
-    expect(await screen.findByText("La préparation du programme a échoué.")).toBeInTheDocument();
+    expect(await screen.findByText("Program preparation failed.")).toBeInTheDocument();
     state.goal = goalOut({ status: "chosen", program_session_id: "pr2" });
-    await user.click(screen.getByRole("button", { name: "Relancer la préparation du programme" }));
+    await user.click(screen.getByRole("button", { name: "Retry program preparation" }));
     await waitFor(() => expect(chosen).toEqual([{ mix_with: null }]));
     await waitFor(() => expect(socketsOf(fake, "pr2")).toHaveLength(1));
-    expect(await screen.findByText("Le Stratège prépare ton programme…")).toBeInTheDocument();
+    expect(
+      await screen.findByText("The Strategist is preparing your program…"),
+    ).toBeInTheDocument();
   });
 
   it("retries a failed mix with both proposals", async () => {
@@ -167,7 +169,7 @@ describe("CouncilPage : relances", () => {
     await waitFor(() => expect(socketsOf(fake, "pr1")).toHaveLength(1));
     socketsOf(fake, "pr1")[0]!.open().push(councilEvents("pr1").failed());
     await user.click(
-      await screen.findByRole("button", { name: "Relancer la préparation du programme" }),
+      await screen.findByRole("button", { name: "Retry program preparation" }),
     );
     await waitFor(() => expect(chosen).toEqual([{ mix_with: "p3" }]));
   });

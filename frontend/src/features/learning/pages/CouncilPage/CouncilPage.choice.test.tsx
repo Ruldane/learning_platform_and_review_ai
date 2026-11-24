@@ -22,7 +22,7 @@ const proposals = [
   proposalOut("p2", 2),
   proposalOut("p3", 3),
 ];
-const anotherRound = { label: "Demander un autre tour", value: "another_round" };
+const anotherRound = { label: "Ask for another round", value: "another_round" };
 
 const setup = (api: Parameters<typeof renderCouncil>[1] = {}) =>
   renderCouncil((createSocket) => <CouncilPage createSocket={createSocket} />, {
@@ -57,8 +57,8 @@ describe("CouncilPage : propositions et choix", () => {
     await reachChoice(fake);
     const cards = await screen.findAllByRole("article", { name: /^Parcours/ });
     expect(cards).toHaveLength(3);
-    expect(screen.getByRole("tab", { name: "Propositions", selected: true })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Choisir « Parcours 2 »" }));
+    expect(screen.getByRole("tab", { name: "Proposals", selected: true })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Choose “Parcours 2”" }));
     await waitFor(() => expect(chosen).toEqual([{ mix_with: null }]));
   });
 
@@ -70,9 +70,9 @@ describe("CouncilPage : propositions et choix", () => {
     });
     const { fake, user } = setup();
     await reachChoice(fake);
-    await user.click(await screen.findByRole("checkbox", { name: "Mélanger « Parcours 1 »" }));
-    await user.click(screen.getByRole("checkbox", { name: "Mélanger « Parcours 3 »" }));
-    await user.click(screen.getByRole("button", { name: "Mélanger ces deux parcours" }));
+    await user.click(await screen.findByRole("checkbox", { name: "Mix “Parcours 1”" }));
+    await user.click(screen.getByRole("checkbox", { name: "Mix “Parcours 3”" }));
+    await user.click(screen.getByRole("button", { name: "Mix these two paths" }));
     await waitFor(() => expect(mixed).toEqual([{ mix_with: "p3" }]));
   });
 
@@ -80,40 +80,40 @@ describe("CouncilPage : propositions et choix", () => {
     const resumed = recordPosts("/sessions/c1/resume", 202, sessionOut("c1", "running"));
     const { fake, user } = setup();
     await reachChoice(fake);
-    await user.click(await screen.findByRole("button", { name: "Demander un autre tour" }));
+    await user.click(await screen.findByRole("button", { name: "Ask for another round" }));
     await waitFor(() => expect(resumed).toEqual([{ interrupt_id: "i2", value: "another_round" }]));
   });
 
   it("offers no other round at the round cap (the question has no option)", async () => {
     const { fake } = setup();
     await reachChoice(fake, []);
-    expect(await screen.findByRole("button", { name: "Choisir « Parcours 1 »" })).toBeEnabled();
-    expect(screen.queryByRole("button", { name: "Demander un autre tour" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Mélanger ces deux parcours" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Choose “Parcours 1”" })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: "Ask for another round" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Mix these two paths" })).toBeInTheDocument();
   });
 
   it("does not offer a free text field for the choice question", async () => {
     const { fake } = setup();
     await reachChoice(fake);
-    await screen.findByRole("button", { name: "Voir les propositions" });
-    expect(screen.queryByRole("textbox", { name: "Ta réponse" })).toBeNull();
+    await screen.findByRole("button", { name: "View proposals" });
+    expect(screen.queryByRole("textbox", { name: "Your answer" })).toBeNull();
   });
 
   it("keeps the choice closed while the debate is still running", async () => {
     const { fake, user } = setup({ status: "running" });
     const e = councilEvents();
     (await openCouncil(fake)).push(e.message("moderator-tour-1", "Tour 1"));
-    await user.click(await screen.findByRole("tab", { name: "Propositions" }));
-    const choose = await screen.findByRole("button", { name: "Choisir « Parcours 1 »" });
+    await user.click(await screen.findByRole("tab", { name: "Proposals" }));
+    const choose = await screen.findByRole("button", { name: "Choose “Parcours 1”" });
     expect(choose).toBeDisabled();
-    expect(screen.getByText(/Tu pourras choisir quand/)).toBeInTheDocument();
+    expect(screen.getByText(/You can choose once/)).toBeInTheDocument();
   });
 
   it("reloads the proposals on each proposal.ready", async () => {
     const { fake, state, user } = setup({ proposals: [proposalOut("p1", 1)], status: "running" });
     const e = councilEvents();
     const socket = await openCouncil(fake);
-    await user.click(await screen.findByRole("tab", { name: "Propositions" }));
+    await user.click(await screen.findByRole("tab", { name: "Proposals" }));
     expect(await screen.findAllByRole("article", { name: /^Parcours/ })).toHaveLength(1);
     state.proposals = [proposalOut("p8", 1), proposalOut("p9", 2)];
     socket.push(e.proposalReady("p8", "Nouveau 1"));
@@ -132,9 +132,9 @@ describe("CouncilPage : propositions et choix", () => {
     await reachChoice(fake);
     await screen.findAllByRole("article", { name: /^Parcours/ });
     state.proposals = [proposalOut("p7", 1), proposalOut("p8", 2)];
-    await user.click(screen.getByRole("button", { name: "Choisir « Parcours 2 »" }));
+    await user.click(screen.getByRole("button", { name: "Choose “Parcours 2”" }));
     expect(
-      await screen.findByText("Ces propositions ne sont plus d'actualité : voici les dernières."),
+      await screen.findByText("These proposals are out of date: here are the latest."),
     ).toBeInTheDocument();
     await waitFor(() =>
       expect(screen.getAllByRole("article", { name: /^Parcours/ })).toHaveLength(2),
@@ -162,7 +162,7 @@ describe("CouncilPage : propositions et choix", () => {
         ),
       ),
     );
-    await user.click(screen.getByRole("button", { name: "Choisir « Parcours 1 »" }));
+    await user.click(screen.getByRole("button", { name: "Choose “Parcours 1”" }));
     expect(
       await screen.findByText(
         /Le Conseil n'attend pas ton choix pour l'instant \(état : En cours\)/,
@@ -170,7 +170,7 @@ describe("CouncilPage : propositions et choix", () => {
     ).toBeInTheDocument();
     // L'état relu rend la main : les choix se referment.
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Choisir « Parcours 1 »" })).toBeDisabled(),
+      expect(screen.getByRole("button", { name: "Choose “Parcours 1”" })).toBeDisabled(),
     );
     expect(screen.queryByRole("alert")).toBeNull();
   });
@@ -183,8 +183,8 @@ describe("CouncilPage : propositions et choix", () => {
     });
     const { fake, user } = setup();
     await reachChoice(fake);
-    await user.click(await screen.findByRole("button", { name: "Choisir « Parcours 1 »" }));
-    expect(await screen.findByText(/la date de début est restée la même/)).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: "Choose “Parcours 1”" }));
+    expect(await screen.findByText(/the start date stayed the same/)).toBeInTheDocument();
   });
 
   it("shows another error as an alert and keeps the cards", async () => {
@@ -195,7 +195,7 @@ describe("CouncilPage : propositions et choix", () => {
     );
     const { fake, user } = setup();
     await reachChoice(fake);
-    await user.click(await screen.findByRole("button", { name: "Choisir « Parcours 1 »" }));
+    await user.click(await screen.findByRole("button", { name: "Choose “Parcours 1”" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Mélange impossible.");
     expect(screen.getAllByRole("article", { name: /^Parcours/ })).toHaveLength(3);
   });
@@ -210,7 +210,7 @@ describe("CouncilPage : propositions et choix", () => {
       }),
     );
     await reachChoice(fake);
-    await user.click(await screen.findByRole("button", { name: "Réessayer" }));
+    await user.click(await screen.findByRole("button", { name: "Retry" }));
     expect(await screen.findAllByRole("article", { name: /^Parcours/ })).toHaveLength(3);
   });
 });

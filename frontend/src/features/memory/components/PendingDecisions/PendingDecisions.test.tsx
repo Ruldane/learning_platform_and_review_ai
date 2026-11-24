@@ -26,9 +26,9 @@ describe("PendingDecisions", () => {
         onReject={onReject}
       />,
     );
-    await user.click(screen.getByRole("button", { name: "Confirmer" }));
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
     expect(onConfirm).toHaveBeenCalledWith("d1");
-    await user.click(screen.getByRole("button", { name: "Refuser" }));
+    await user.click(screen.getByRole("button", { name: "Reject" }));
     expect(onReject).toHaveBeenCalledWith("d1");
   });
 
@@ -36,9 +36,9 @@ describe("PendingDecisions", () => {
     render(
       <PendingDecisions items={[decision]} busyId={null} onConfirm={vi.fn()} onReject={vi.fn()} />,
     );
-    expect(screen.getByRole("heading", { name: "À confirmer" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "To confirm" })).toBeInTheDocument();
     expect(screen.getByText("Viser le NLP")).toBeInTheDocument();
-    expect(screen.getByText("Proposé par Stratège")).toBeInTheDocument();
+    expect(screen.getByText("Proposed by Strategist")).toBeInTheDocument();
     expect(screen.getByText("Tu as dit vouloir te spécialiser.")).toBeInTheDocument();
   });
 
@@ -52,14 +52,14 @@ describe("PendingDecisions", () => {
         onReject={vi.fn()}
       />,
     );
-    const confirms = screen.getAllByRole("button", { name: "Confirmer" });
+    const confirms = screen.getAllByRole("button", { name: "Confirm" });
     expect(confirms[0]).toBeDisabled();
     expect(confirms[1]).toBeEnabled();
   });
 
   it("shows an empty message and no button", () => {
     render(<PendingDecisions items={[]} busyId={null} onConfirm={vi.fn()} onReject={vi.fn()} />);
-    expect(screen.getByText("Aucune décision en attente.")).toBeInTheDocument();
+    expect(screen.getByText("No pending decisions.")).toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 });

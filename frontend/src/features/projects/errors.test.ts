@@ -8,7 +8,7 @@ const apiError = (code: string, status: number, details: unknown = null) =>
 describe("submitFailure", () => {
   it("ranks each named field on its own field", () => {
     const failure = submitFailure(apiError("validation_error", 422, { fields: ["repo_url"] }));
-    expect(failure.refusal).toEqual({ repoUrl: expect.stringContaining("adresse http ou https") });
+    expect(failure.refusal).toEqual({ repoUrl: expect.stringContaining("http or https address") });
     expect(failure.general).toBeNull();
   });
 
@@ -16,13 +16,13 @@ describe("submitFailure", () => {
     const failure = submitFailure(
       apiError("validation_error", 422, { fields: ["repo_url", "description"] }),
     );
-    expect(failure.refusal).toEqual({ missing: "Ajoute un lien de dépôt ou une description." });
+    expect(failure.refusal).toEqual({ missing: "Add a repository link or a description." });
   });
 
   it("names the description alone as too long", () => {
     const failure = submitFailure(apiError("validation_error", 422, { fields: ["description"] }));
     expect(failure.refusal).toEqual({
-      description: "La description fait 4 000 caractères au plus.",
+      description: "The description is 4,000 characters at most.",
     });
   });
 
@@ -30,7 +30,7 @@ describe("submitFailure", () => {
     "attaches %s to the screenshots",
     (field) => {
       const failure = submitFailure(apiError("validation_error", 422, { fields: [field] }));
-      expect(failure.refusal?.screenshots).toMatch(/Une capture n'est pas acceptée/);
+      expect(failure.refusal?.screenshots).toMatch(/A screenshot wasn’t accepted/);
       expect(failure.general).toBeNull();
     },
   );
@@ -41,12 +41,12 @@ describe("submitFailure", () => {
   });
 
   it("writes a conflict in clear, and any other refusal with the server message", () => {
-    expect(submitFailure(apiError("project_not_ready", 409)).general).toMatch(/pas encore écrit/);
+    expect(submitFailure(apiError("project_not_ready", 409)).general).toMatch(/isn’t written yet/);
     expect(submitFailure(apiError("file_too_large", 413)).general).toBe(
-      "Une capture est trop volumineuse : 5 Mo au plus chacune.",
+      "A screenshot is too large: 5 MB at most each.",
     );
     expect(submitFailure(apiError("review_unavailable", 503)).general).toBe("Message du serveur.");
-    expect(submitFailure(new Error("réseau")).general).toMatch(/erreur/i);
+    expect(submitFailure(new Error("réseau")).general).toMatch(/Something went wrong/i);
   });
 });
 

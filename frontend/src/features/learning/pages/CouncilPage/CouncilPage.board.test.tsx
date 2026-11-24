@@ -145,9 +145,9 @@ describe("CouncilPage : tableau", () => {
       status: "waiting_user",
     });
     await openCouncil(fakeSockets);
-    await user.click(await screen.findByRole("tab", { name: "Propositions" }));
-    await user.click(await screen.findByRole("button", { name: "Voir « Parcours 1 » au tableau" }));
-    expect(screen.getByRole("tab", { name: "Tableau", selected: true })).toBeInTheDocument();
+    await user.click(await screen.findByRole("tab", { name: "Proposals" }));
+    await user.click(await screen.findByRole("button", { name: "Show “Parcours 1” on the board" }));
+    expect(screen.getByRole("tab", { name: "Board", selected: true })).toBeInTheDocument();
     expect(await screen.findByRole("button", { name: /Comparaison/ })).toHaveAttribute(
       "aria-current",
       "true",

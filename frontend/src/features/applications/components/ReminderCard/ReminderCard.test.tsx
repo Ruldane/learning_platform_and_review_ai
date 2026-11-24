@@ -15,9 +15,9 @@ describe("ReminderCard", () => {
   it("shows who to contact with their role, the due date and the application", () => {
     setup();
     expect(screen.getByText("Camille Durand, Responsable data")).toBeInTheDocument();
-    expect(screen.getByText("À faire le 12/11/2026")).toBeInTheDocument();
-    expect(screen.getByText("Acme, poste Data engineer")).toBeInTheDocument();
-    expect(screen.getByText("Relance LinkedIn à 7 jours")).toBeInTheDocument();
+    expect(screen.getByText("Due on 12/11/2026")).toBeInTheDocument();
+    expect(screen.getByText("Acme, Data engineer role")).toBeInTheDocument();
+    expect(screen.getByText("LinkedIn follow-up after 7 days")).toBeInTheDocument();
   });
 
   it("shows only the name when the contact has no role", () => {
@@ -32,7 +32,7 @@ describe("ReminderCard", () => {
         linkedinSearchUrl: "https://www.linkedin.com/search/results/people/?keywords=Acme",
       }),
     );
-    const link = screen.getByRole("link", { name: /Chercher sur LinkedIn/ });
+    const link = screen.getByRole("link", { name: /Search on LinkedIn/ });
     expect(link).toHaveAttribute(
       "href",
       "https://www.linkedin.com/search/results/people/?keywords=Acme",
@@ -45,29 +45,29 @@ describe("ReminderCard", () => {
   it("never renders a link for an address that is not http or https", () => {
     setup(makeReminder({ contact: null, linkedinSearchUrl: "javascript:alert(1)" }));
     expect(screen.queryByRole("link")).toBeNull();
-    expect(screen.getByText("Aucun contact enregistré.")).toBeInTheDocument();
+    expect(screen.getByText("No contact saved.")).toBeInTheDocument();
   });
 
   it("shows the draft in a readable block", () => {
     setup();
-    const draft = screen.getByRole("group", { name: "Brouillon" });
+    const draft = screen.getByRole("group", { name: "Draft" });
     expect(draft).toHaveTextContent("J'ai postulé au poste de Data engineer chez Acme.");
   });
 
   it("always says that nothing is sent by the application", () => {
     setup();
     expect(
-      screen.getByText("Rien n'est envoyé par l'application : copie et envoie toi-même."),
+      screen.getByText("The app sends nothing: copy it and send it yourself."),
     ).toBeInTheDocument();
   });
 
   it("has the four buttons and each one calls its handler", async () => {
     const user = userEvent.setup();
     const handlers = setup();
-    await user.click(screen.getByRole("button", { name: "Copier" }));
-    await user.click(screen.getByRole("button", { name: "Fait" }));
-    await user.click(screen.getByRole("button", { name: "Reporter de 3 jours" }));
-    await user.click(screen.getByRole("button", { name: "Ignorer" }));
+    await user.click(screen.getByRole("button", { name: "Copy" }));
+    await user.click(screen.getByRole("button", { name: "Done" }));
+    await user.click(screen.getByRole("button", { name: "Postpone 3 days" }));
+    await user.click(screen.getByRole("button", { name: "Ignore" }));
     expect(handlers.onCopy).toHaveBeenCalledWith(makeReminder().draft);
     expect(handlers.onDone).toHaveBeenCalledWith("r1");
     expect(handlers.onPostpone).toHaveBeenCalledWith("r1");
@@ -77,14 +77,14 @@ describe("ReminderCard", () => {
   it("confirms the copy in a live region", async () => {
     const user = userEvent.setup();
     setup(makeReminder(), vi.fn().mockResolvedValue(undefined));
-    await user.click(screen.getByRole("button", { name: "Copier" }));
-    expect(await screen.findByRole("status")).toHaveTextContent("Brouillon copié.");
+    await user.click(screen.getByRole("button", { name: "Copy" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("Draft copied.");
   });
 
   it("says when the copy failed", async () => {
     const user = userEvent.setup();
     setup(makeReminder(), vi.fn().mockRejectedValue(new Error("denied")));
-    await user.click(screen.getByRole("button", { name: "Copier" }));
+    await user.click(screen.getByRole("button", { name: "Copy" }));
     expect(await screen.findByRole("status")).toHaveTextContent(
       "Copie impossible : sélectionne le texte du brouillon.",
     );
@@ -99,8 +99,8 @@ describe("ReminderCard", () => {
       onIgnore: vi.fn(),
     };
     const { rerender } = render(<ReminderCard reminder={makeReminder()} {...handlers} />);
-    await user.click(screen.getByRole("button", { name: "Copier" }));
-    expect(await screen.findByRole("status")).toHaveTextContent("Brouillon copié.");
+    await user.click(screen.getByRole("button", { name: "Copy" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("Draft copied.");
     rerender(<ReminderCard reminder={makeReminder({ id: "r2" })} {...handlers} />);
     expect(screen.getByRole("status")).toBeEmptyDOMElement();
   });
@@ -108,17 +108,17 @@ describe("ReminderCard", () => {
   it("offers to file the application as Sans réponse instead of Fait for close_21", async () => {
     const user = userEvent.setup();
     const handlers = setup(makeReminder({ kind: "close_21", draft: "Acme ne t'a pas répondu." }));
-    expect(screen.queryByRole("button", { name: "Fait" })).toBeNull();
-    expect(screen.getByText("Classer la fiche ?")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Classer en Sans réponse" }));
+    expect(screen.queryByRole("button", { name: "Done" })).toBeNull();
+    expect(screen.getByText("Close the application?")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Mark as No answer" }));
     expect(handlers.onDone).toHaveBeenCalledWith("r1");
-    expect(screen.getByRole("button", { name: "Reporter de 3 jours" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Ignorer" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Postpone 3 days" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ignore" })).toBeInTheDocument();
   });
 
   it("shows the question to January as the block for close_21", () => {
     setup(makeReminder({ kind: "close_21", draft: "Acme ne t'a pas répondu." }));
-    expect(screen.getByRole("group", { name: "Brouillon" })).toHaveTextContent(
+    expect(screen.getByRole("group", { name: "Draft" })).toHaveTextContent(
       "Acme ne t'a pas répondu.",
     );
   });
@@ -131,7 +131,7 @@ describe("ReminderCard", () => {
       />,
     );
     expect(
-      screen.getByRole("heading", { level: 2, name: "Relance LinkedIn à 7 jours" }),
+      screen.getByRole("heading", { level: 2, name: "LinkedIn follow-up after 7 days" }),
     ).toBeVisible();
     unmount();
     render(
@@ -149,11 +149,11 @@ describe("ReminderCard", () => {
     const handlers = { onCopy: vi.fn(), onDone: vi.fn(), onPostpone: vi.fn(), onIgnore: vi.fn() };
     render(<ReminderCard reminder={makeReminder()} pending {...handlers} />);
     expect(screen.getByRole("article")).toHaveAttribute("aria-busy", "true");
-    for (const name of ["Fait", "Reporter de 3 jours", "Ignorer"]) {
+    for (const name of ["Done", "Postpone 3 days", "Ignore"]) {
       expect(screen.getByRole("button", { name })).toHaveAttribute("aria-disabled", "true");
     }
-    expect(screen.getByRole("button", { name: "Copier" })).toBeEnabled();
-    await user.click(screen.getByRole("button", { name: "Fait" }));
+    expect(screen.getByRole("button", { name: "Copy" })).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: "Done" }));
     expect(handlers.onDone).not.toHaveBeenCalled();
   });
 });

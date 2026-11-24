@@ -75,7 +75,7 @@ describe("councilStage", () => {
 
   it("goes to the program once the choice is announced or a program is known", () => {
     const e = councilEvents();
-    const chosen = [e.proposalReady("p1", "A"), e.message("moderator-choix", "Parcours choisi")];
+    const chosen = [e.proposalReady("p1", "A"), e.message("moderator-choix", "Path chosen")];
     expect(councilStage(chosen, false).stage).toBe("program");
     expect(councilStage([e.proposalReady("p2", "B")], true).stage).toBe("program");
   });

@@ -21,20 +21,20 @@ describe("ApplicationCard", () => {
     );
     expect(screen.getByText("Acme")).toBeInTheDocument();
     expect(screen.getByText("Data engineer")).toBeInTheDocument();
-    expect(screen.getByText("Postulée le 03/11/2026")).toBeInTheDocument();
-    expect(screen.getByText("Prochaine action : Relancer (20/11/2026)")).toBeInTheDocument();
-    expect(screen.getByText("2 relances dues")).toBeInTheDocument();
+    expect(screen.getByText("Applied on 03/11/2026")).toBeInTheDocument();
+    expect(screen.getByText("Next action: Relancer (20/11/2026)")).toBeInTheDocument();
+    expect(screen.getByText("2 follow-ups due")).toBeInTheDocument();
   });
 
   it("says when the application is not sent yet and hides the due reminders when there is none", () => {
     render(<ApplicationCard application={makeApplication({ company: "Beta" })} />);
-    expect(screen.getByText("Pas encore postulée")).toBeInTheDocument();
+    expect(screen.getByText("Not applied yet")).toBeInTheDocument();
     expect(screen.queryByText(/relance/)).toBeNull();
   });
 
   it("uses the singular for one due reminder", () => {
     render(<ApplicationCard application={makeApplication({ dueReminders: 1 })} />);
-    expect(screen.getByText("1 relance due")).toBeInTheDocument();
+    expect(screen.getByText("1 follow-up due")).toBeInTheDocument();
   });
 
   it("opens the application from its name, with the company and position as the accessible name", async () => {
@@ -47,7 +47,7 @@ describe("ApplicationCard", () => {
       />,
     );
     await user.click(
-      screen.getByRole("button", { name: "Ouvrir la fiche de Acme, poste Data engineer" }),
+      screen.getByRole("button", { name: "Open the Acme application, Data engineer role" }),
     );
     expect(onOpen).toHaveBeenCalledWith("x");
   });
@@ -55,8 +55,8 @@ describe("ApplicationCard", () => {
   it("shows the status badge only when asked to", () => {
     const application = makeApplication({ status: "offer" });
     const { rerender } = render(<ApplicationCard application={application} />);
-    expect(screen.queryByText("Offre")).toBeNull();
+    expect(screen.queryByText("Offer")).toBeNull();
     rerender(<ApplicationCard application={application} showStatus />);
-    expect(screen.getByText("Offre")).toBeInTheDocument();
+    expect(screen.getByText("Offer")).toBeInTheDocument();
   });
 });

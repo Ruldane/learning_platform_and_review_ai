@@ -19,23 +19,23 @@ describe("ProjectBriefView", () => {
     expect(screen.getByRole("heading", { level: 2, name: "Pipeline de ventes" })).toBeVisible();
     expect(screen.getByText("Charger et agréger des ventes.")).toBeInTheDocument();
     expect(screen.getByText("Une boutique fictive, Société Fictive.")).toBeInTheDocument();
-    expect(screen.getByText("Un lien vers un dépôt ou une description.")).toBeInTheDocument();
-    expect(screen.getByText("Durée estimée : 6 h")).toBeInTheDocument();
+    expect(screen.getByText("A link to a repository or a description.")).toBeInTheDocument();
+    expect(screen.getByText("Estimated time: 6 h")).toBeInTheDocument();
   });
 
   it("lists the constraints and the numbered criteria", () => {
     render(<ProjectBriefView brief={BRIEF} />);
-    const constraints = screen.getByRole("heading", { name: "Contraintes" }).parentElement!;
+    const constraints = screen.getByRole("heading", { name: "Constraints" }).parentElement!;
     expect(constraints).toHaveTextContent("SQL uniquement");
     expect(constraints).toHaveTextContent("Moins de 200 lignes");
-    const criteria = screen.getByRole("heading", { name: "Critères de réussite" }).parentElement!;
+    const criteria = screen.getByRole("heading", { name: "Success criteria" }).parentElement!;
     expect(criteria.querySelector("ol")).not.toBeNull();
     expect(criteria).toHaveTextContent("Un test vérifie le total");
   });
 
   it("leaves out a section without items", () => {
     render(<ProjectBriefView brief={{ ...BRIEF, constraints: [] }} />);
-    expect(screen.queryByRole("heading", { name: "Contraintes" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Constraints" })).toBeNull();
   });
 
   it.each([

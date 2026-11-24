@@ -10,11 +10,11 @@ interface StatsBarProps {
 
 function delay(days: number | null): string {
   if (days === null) return t("applications.stats.none");
-  const key = days < 2 ? "one" : "many";
+  const key = days === 1 ? "one" : "many";
   return t(`applications.stats.delayValue.${key}`, { count: formatNumber(days) });
 }
 
-/** Les indicateurs : compte par statut, taux de réponse, délai moyen et relances dues (« — » sans donnée). */
+/** Counts by status, response rate and time, and follow-ups due. */
 export function StatsBar({ stats }: StatsBarProps) {
   const { byStatus, responseRate, meanResponseDays, dueReminders } = stats;
   return (

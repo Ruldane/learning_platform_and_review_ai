@@ -5,7 +5,7 @@ import { LoadingState } from "./LoadingState";
 describe("LoadingState", () => {
   it("annonce le chargement par défaut", () => {
     render(<LoadingState />);
-    expect(screen.getByRole("status")).toHaveTextContent("Chargement…");
+    expect(screen.getByRole("status")).toHaveTextContent("Loading…");
   });
 
   it("accepte un libellé personnalisé", () => {

@@ -34,18 +34,18 @@ describe("VersionList", () => {
       "Version 2",
       "Version 1",
     ]);
-    expect(items[0]).toHaveTextContent("Prête");
+    expect(items[0]).toHaveTextContent("Ready");
     expect(items[0]).toHaveTextContent("2 pages");
-    expect(items[0]).toHaveTextContent("Créée le 12/11/2026");
+    expect(items[0]).toHaveTextContent("Created on 12/11/2026");
     expect(items[0]).toHaveTextContent("CV_Camille-Exemple_3.pdf");
-    expect(items[1]).toHaveTextContent("Génération en cours");
+    expect(items[1]).toHaveTextContent("Generating");
     expect(items[2]).toHaveTextContent("1 page");
   });
 
   it("opens a version by its identifier, with a named button", async () => {
     const onOpen = vi.fn();
     render(<VersionList versions={[version(1), version(2)]} onOpen={onOpen} />);
-    await userEvent.click(screen.getByRole("button", { name: "Ouvrir la version 1" }));
+    await userEvent.click(screen.getByRole("button", { name: "Open version 1" }));
     expect(onOpen).toHaveBeenCalledWith("v1");
   });
 
@@ -61,13 +61,13 @@ describe("VersionList", () => {
       />,
     );
     expect(screen.getAllByRole("button")).toHaveLength(1);
-    expect(screen.getByRole("button", { name: "Ouvrir la version 1" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Open version 1" })).toBeInTheDocument();
     expect(screen.getByText("Le rendu a échoué.")).toBeInTheDocument();
-    expect(screen.getByText("Trop de pages")).toBeInTheDocument();
+    expect(screen.getByText("Too many pages")).toBeInTheDocument();
   });
 
   it("says when there is no version", () => {
     render(<VersionList versions={[]} onOpen={() => undefined} />);
-    expect(screen.getByText("Aucune version générée pour l'instant.")).toBeInTheDocument();
+    expect(screen.getByText("No versions generated yet.")).toBeInTheDocument();
   });
 });

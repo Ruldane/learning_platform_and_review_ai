@@ -15,13 +15,13 @@ describe("InterviewList", () => {
         onOpen={vi.fn()}
       />,
     );
-    const list = screen.getByRole("list", { name: "Entretiens passés" });
+    const list = screen.getByRole("list", { name: "Past interviews" });
     const [first, second] = list.querySelectorAll("li");
-    expect(first).toHaveTextContent("Technique, 30 minutes, en anglais");
-    expect(first).toHaveTextContent("Débrief écrit");
-    expect(first).toHaveTextContent("Moyenne : 3,5 sur 5");
-    expect(second).toHaveTextContent("Arrêté avant la première réponse");
-    expect(second).not.toHaveTextContent("Moyenne");
+    expect(first).toHaveTextContent("Technical, 30 minutes, in English");
+    expect(first).toHaveTextContent("Debrief written");
+    expect(first).toHaveTextContent("Average: 3.5 out of 5");
+    expect(second).toHaveTextContent("Stopped before the first answer");
+    expect(second).not.toHaveTextContent("Average");
   });
 
   it("says in words what happened to an interview without debrief", () => {
@@ -34,8 +34,8 @@ describe("InterviewList", () => {
         onOpen={vi.fn()}
       />,
     );
-    expect(screen.getByText("Débrief non écrit")).toBeVisible();
-    expect(screen.getByText("Sans résultat")).toBeVisible();
+    expect(screen.getByText("Debrief not written")).toBeVisible();
+    expect(screen.getByText("No result")).toBeVisible();
   });
 
   it("opens an interview by its button", async () => {
@@ -47,7 +47,7 @@ describe("InterviewList", () => {
         onOpen={onOpen}
       />,
     );
-    await user.click(screen.getByRole("button", { name: /Mixte, 15 minutes/ }));
+    await user.click(screen.getByRole("button", { name: /Mixed, 15 minutes/ }));
     expect(onOpen).toHaveBeenCalledWith("i7");
   });
 
@@ -58,6 +58,6 @@ describe("InterviewList", () => {
         onOpen={vi.fn()}
       />,
     );
-    expect(screen.getByText("Poste : Data engineer")).toBeVisible();
+    expect(screen.getByText("Role: Data engineer")).toBeVisible();
   });
 });

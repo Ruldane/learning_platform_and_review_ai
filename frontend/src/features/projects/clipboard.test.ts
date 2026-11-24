@@ -18,7 +18,7 @@ describe("copyText", () => {
 
   it("rejects when there is no clipboard", async () => {
     Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true });
-    await expect(copyText("x")).rejects.toThrow("Le presse-papiers n'est pas disponible.");
+    await expect(copyText("x")).rejects.toThrow("The clipboard isn’t available.");
   });
 
   it("rejects when the browser refuses", async () => {

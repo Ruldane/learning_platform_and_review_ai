@@ -9,9 +9,9 @@ describe("SearchHitList", () => {
     render(<SearchHitList hits={[hit()]} onOpen={vi.fn()} />);
     expect(screen.getByText("Document")).toBeInTheDocument();
     expect(screen.getByText("Cours NLP")).toBeInTheDocument();
-    expect(screen.getByText("Archiviste")).toBeInTheDocument();
+    expect(screen.getByText("Archivist")).toBeInTheDocument();
     expect(screen.getByText("L'attention relie chaque jeton aux autres.")).toBeInTheDocument();
-    expect(screen.getByText("0,83")).toBeInTheDocument();
+    expect(screen.getByText("0.83")).toBeInTheDocument();
   });
 
   it("opens the item of a hit", async () => {
@@ -39,6 +39,6 @@ describe("SearchHitList", () => {
 
   it("shows a message when there is no hit", () => {
     render(<SearchHitList hits={[]} onOpen={vi.fn()} />);
-    expect(screen.getByText("Aucun résultat")).toBeInTheDocument();
+    expect(screen.getByText("No results")).toBeInTheDocument();
   });
 });

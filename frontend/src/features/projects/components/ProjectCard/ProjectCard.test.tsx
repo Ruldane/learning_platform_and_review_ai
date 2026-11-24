@@ -27,9 +27,9 @@ describe("ProjectCard", () => {
       "href",
       "/projets/p1",
     );
-    expect(screen.getByText("Statut : À faire")).toBeInTheDocument();
-    expect(screen.getByText("6 h estimées")).toBeInTheDocument();
-    expect(screen.getByText("Compétences : SQL, dbt")).toBeInTheDocument();
+    expect(screen.getByText("Status: To do")).toBeInTheDocument();
+    expect(screen.getByText("6 h estimated")).toBeInTheDocument();
+    expect(screen.getByText("Skills: SQL, dbt")).toBeInTheDocument();
   });
 
   it.each([
@@ -52,7 +52,7 @@ describe("ProjectCard", () => {
     view({ id: "p2", title: PROJECT.title, status: "todo", hours: null, skills: [] });
     expect(screen.queryByRole("link")).toBeNull();
     expect(screen.getByRole("heading", { level: 3, name: "Pipeline de ventes" })).toBeVisible();
-    expect(screen.queryByText(/estimées/)).toBeNull();
-    expect(screen.queryByText(/Compétences/)).toBeNull();
+    expect(screen.queryByText(/estimated/)).toBeNull();
+    expect(screen.queryByText(/Skills/)).toBeNull();
   });
 });

@@ -16,7 +16,7 @@ function setup(overrides: Partial<Parameters<typeof DocumentUpload>[0]> = {}) {
   return { props, user: userEvent.setup() };
 }
 
-const fileInput = () => screen.getByLabelText("Choisir un fichier");
+const fileInput = () => screen.getByLabelText("Choose a file");
 const bigFile = () =>
   new File([new Uint8Array(20 * 1024 * 1024 + 1)], "gros.pdf", { type: "application/pdf" });
 
@@ -24,11 +24,11 @@ describe("DocumentUpload", () => {
   it("offers three tabs, the file tab first", () => {
     setup();
     expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual([
-      "Fichier",
-      "Lien",
-      "Texte collé",
+      "File",
+      "Link",
+      "Pasted text",
     ]);
-    expect(screen.getByRole("tab", { name: "Fichier", selected: true })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "File", selected: true })).toBeInTheDocument();
   });
 
   it("restricts the file picker to the supported types", () => {
@@ -46,7 +46,7 @@ describe("DocumentUpload", () => {
   it("refuses a file over 20 MB without calling back", async () => {
     const { props, user } = setup();
     await user.upload(fileInput(), bigFile());
-    expect(screen.getByText("Fichier trop volumineux : 20 Mo au maximum.")).toBeInTheDocument();
+    expect(screen.getByText("File too large: 20 MB max.")).toBeInTheDocument();
     expect(props.onUploadFile).not.toHaveBeenCalled();
   });
 
@@ -66,7 +66,7 @@ describe("DocumentUpload", () => {
       .setup({ applyAccept: false })
       .upload(fileInput(), new File(["x"], "image.png", { type: "image/png" }));
     expect(
-      screen.getByText("Type de fichier non pris en charge : PDF, DOCX, Markdown ou texte."),
+      screen.getByText("Unsupported file type: use PDF, DOCX, Markdown or text."),
     ).toBeInTheDocument();
     expect(props.onUploadFile).not.toHaveBeenCalled();
   });
@@ -79,49 +79,49 @@ describe("DocumentUpload", () => {
   it("disables the inputs while busy", async () => {
     const { user } = setup({ busy: true });
     expect(fileInput()).toBeDisabled();
-    await user.click(screen.getByRole("tab", { name: "Lien" }));
-    expect(screen.getByLabelText("Adresse du lien")).toBeDisabled();
+    await user.click(screen.getByRole("tab", { name: "Link" }));
+    expect(screen.getByLabelText("Link URL")).toBeDisabled();
   });
 
   it("submits a link, trimmed", async () => {
     const { props, user } = setup();
-    await user.click(screen.getByRole("tab", { name: "Lien" }));
-    const input = screen.getByLabelText("Adresse du lien");
+    await user.click(screen.getByRole("tab", { name: "Link" }));
+    const input = screen.getByLabelText("Link URL");
     expect(input).toHaveAttribute("type", "url");
-    expect(screen.getByRole("button", { name: "Importer le lien" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Import link" })).toBeDisabled();
     await user.type(input, "  https://exemple.fr/cours  ");
-    await user.click(screen.getByRole("button", { name: "Importer le lien" }));
+    await user.click(screen.getByRole("button", { name: "Import link" }));
     expect(props.onSubmitUrl).toHaveBeenCalledWith("https://exemple.fr/cours");
   });
 
   it("submits pasted text with an optional title, and requires the text", async () => {
     const { props, user } = setup();
-    await user.click(screen.getByRole("tab", { name: "Texte collé" }));
-    const submit = screen.getByRole("button", { name: "Importer le texte" });
+    await user.click(screen.getByRole("tab", { name: "Pasted text" }));
+    const submit = screen.getByRole("button", { name: "Import text" });
     expect(submit).toBeDisabled();
-    await user.type(screen.getByLabelText("Texte"), "Le contenu à retenir");
+    await user.type(screen.getByLabelText("Text"), "Le contenu à retenir");
     expect(submit).toBeEnabled();
     await user.click(submit);
     expect(props.onSubmitText).toHaveBeenCalledWith("", "Le contenu à retenir");
-    await user.type(screen.getByLabelText("Titre (facultatif)"), "Mes notes");
+    await user.type(screen.getByLabelText("Title (optional)"), "Mes notes");
     await user.click(submit);
     expect(props.onSubmitText).toHaveBeenLastCalledWith("Mes notes", "Le contenu à retenir");
   });
 
   it("switches tabs with the arrow keys", async () => {
     const { user } = setup();
-    screen.getByRole("tab", { name: "Fichier" }).focus();
+    screen.getByRole("tab", { name: "File" }).focus();
     await user.keyboard("{ArrowRight}");
-    expect(screen.getByRole("tab", { name: "Lien", selected: true })).toHaveFocus();
+    expect(screen.getByRole("tab", { name: "Link", selected: true })).toHaveFocus();
     await user.keyboard("{ArrowLeft}");
-    expect(screen.getByRole("tab", { name: "Fichier", selected: true })).toHaveFocus();
+    expect(screen.getByRole("tab", { name: "File", selected: true })).toHaveFocus();
   });
 
   it("clears the size error when another tab is opened", async () => {
     const { user } = setup();
     await user.upload(fileInput(), bigFile());
-    await user.click(screen.getByRole("tab", { name: "Lien" }));
-    expect(screen.queryByText(/trop volumineux/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: "Link" }));
+    expect(screen.queryByText(/too large/)).not.toBeInTheDocument();
   });
 
   it("empties the link and pasted-text forms when resetKey changes, on the same tab", async () => {
@@ -134,16 +134,16 @@ describe("DocumentUpload", () => {
     };
     const user = userEvent.setup();
     const { rerender } = render(<DocumentUpload {...props} resetKey={0} />);
-    await user.click(screen.getByRole("tab", { name: "Texte collé" }));
-    await user.type(screen.getByLabelText("Texte"), "À garder");
+    await user.click(screen.getByRole("tab", { name: "Pasted text" }));
+    await user.type(screen.getByLabelText("Text"), "À garder");
     rerender(<DocumentUpload {...props} resetKey={0} />);
-    expect(screen.getByLabelText("Texte")).toHaveValue("À garder");
+    expect(screen.getByLabelText("Text")).toHaveValue("À garder");
     rerender(<DocumentUpload {...props} resetKey={1} />);
-    expect(screen.getByRole("tab", { name: "Texte collé", selected: true })).toBeInTheDocument();
-    expect(screen.getByLabelText("Texte")).toHaveValue("");
-    await user.click(screen.getByRole("tab", { name: "Lien" }));
-    await user.type(screen.getByLabelText("Adresse du lien"), "https://exemple.fr");
+    expect(screen.getByRole("tab", { name: "Pasted text", selected: true })).toBeInTheDocument();
+    expect(screen.getByLabelText("Text")).toHaveValue("");
+    await user.click(screen.getByRole("tab", { name: "Link" }));
+    await user.type(screen.getByLabelText("Link URL"), "https://exemple.fr");
     rerender(<DocumentUpload {...props} resetKey={2} />);
-    expect(screen.getByLabelText("Adresse du lien")).toHaveValue("");
+    expect(screen.getByLabelText("Link URL")).toHaveValue("");
   });
 });

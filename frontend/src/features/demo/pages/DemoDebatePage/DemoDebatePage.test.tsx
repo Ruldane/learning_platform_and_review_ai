@@ -33,7 +33,7 @@ const choiceInterrupt = {
     kind: "choice" as const,
     question: "Quel angle pour le second tour ?",
     options: [
-      { label: "Plus concret", value: "concret" },
+      { label: "More concrete", value: "concret" },
       { label: "Plus court", value: "court" },
     ],
   },
@@ -50,8 +50,8 @@ function setup(route = "/demo") {
 }
 
 async function startDebate(user: ReturnType<typeof userEvent.setup>, topic = "apprendre Rust") {
-  await user.type(screen.getByLabelText("Sujet"), topic);
-  await user.click(screen.getByRole("button", { name: "Lancer le débat" }));
+  await user.type(screen.getByLabelText("Topic"), topic);
+  await user.click(screen.getByRole("button", { name: "Start the debate" }));
 }
 
 describe("DemoDebatePage", () => {
@@ -87,10 +87,10 @@ describe("DemoDebatePage", () => {
       .push(started(1, "demo_proponent"), tok(2, "m1", "Oui", "demo_proponent"));
     fake.last().push(choiceInterrupt);
     expect(await screen.findByText("Oui")).toBeInTheDocument();
-    expect(screen.getByText("Avocat")).toBeInTheDocument();
-    await user.click(await screen.findByRole("button", { name: "Plus concret" }));
+    expect(screen.getByText("Advocate")).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: "More concrete" }));
     await waitFor(() => expect(resumed).toEqual([{ interrupt_id: "i1", value: "concret" }]));
-    expect(await screen.findByText("Réponse envoyée")).toBeInTheDocument();
+    expect(await screen.findByText("Answer sent")).toBeInTheDocument();
   });
 
   it.each([undefined, "codex", "settings"] as const)(
@@ -107,7 +107,7 @@ describe("DemoDebatePage", () => {
       setRunSource("glm");
       try {
         const { user } = setup();
-        const menu = screen.getByLabelText("Qui fait tourner les agents pour ce lancement");
+        const menu = screen.getByLabelText("Who runs the agents for this launch");
         expect(menu).toHaveDisplayValue("Choix global · API GLM");
         if (source !== undefined) await user.selectOptions(menu, source);
         await startDebate(user);
@@ -121,7 +121,7 @@ describe("DemoDebatePage", () => {
 
   it("rejoint la session de l'URL après un rechargement, sans formulaire", async () => {
     const { fake } = setup("/demo?session=s1");
-    expect(screen.queryByLabelText("Sujet")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Topic")).not.toBeInTheDocument();
     await waitFor(() => expect(fake.sockets).toHaveLength(1));
     expect(fake.last().url).toContain("/sessions/s1/stream?after_seq=0");
     fake
@@ -135,10 +135,10 @@ describe("DemoDebatePage", () => {
     const { fake, router, user } = setup("/demo?session=s1");
     await waitFor(() => expect(fake.sockets).toHaveLength(1));
     fake.last().open().drop(4404);
-    expect(await screen.findByRole("alert")).toHaveTextContent("Cette session est introuvable.");
-    expect(screen.queryByRole("button", { name: "Réessayer" })).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Nouveau débat" }));
-    expect(await screen.findByLabelText("Sujet")).toBeInTheDocument();
+    expect(await screen.findByRole("alert")).toHaveTextContent("This session can’t be found.");
+    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "New debate" }));
+    expect(await screen.findByLabelText("Topic")).toBeInTheDocument();
     expect(router.state.location.search).toBe("");
   });
 
@@ -170,7 +170,7 @@ describe("DemoDebatePage", () => {
     const { user } = setup();
     await startDebate(user);
     expect(await screen.findByRole("alert")).toBeInTheDocument();
-    expect(screen.getByLabelText("Sujet")).toBeInTheDocument();
+    expect(screen.getByLabelText("Topic")).toBeInTheDocument();
   });
 
   it("demande confirmation dans la page avant d'annuler", async () => {
@@ -188,16 +188,16 @@ describe("DemoDebatePage", () => {
       .last()
       .open()
       .push(started(1, "demo_proponent"), tok(2, "m1", "Oui"));
-    await user.click(await screen.findByRole("button", { name: "Annuler" }));
+    await user.click(await screen.findByRole("button", { name: "Cancel" }));
     expect(cancelled).not.toHaveBeenCalled();
-    await user.click(screen.getByRole("button", { name: "Non, continuer" }));
-    expect(screen.queryByText("Annuler le débat ?")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "No, continue" }));
+    expect(screen.queryByText("Cancel the debate?")).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Annuler" }));
-    await user.click(screen.getByRole("button", { name: "Oui, annuler le débat" }));
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    await user.click(screen.getByRole("button", { name: "Yes, cancel the debate" }));
     await waitFor(() => expect(cancelled).toHaveBeenCalledTimes(1));
     expect(confirm).not.toHaveBeenCalled();
-    expect(await screen.findByText("Annulée")).toBeInTheDocument();
+    expect(await screen.findByText("Cancelled")).toBeInTheDocument();
   });
 
   it("envoie un message à l'équipe", async () => {
@@ -211,7 +211,7 @@ describe("DemoDebatePage", () => {
     const { fake, user } = setup("/demo?session=s1");
     await waitFor(() => expect(fake.sockets).toHaveLength(1));
     fake.last().open().push(started(1, "demo_proponent"), choiceInterrupt);
-    await user.type(await screen.findByLabelText("Ton message"), "Pense aux débutants{Enter}");
+    await user.type(await screen.findByLabelText("Your message"), "Pense aux débutants{Enter}");
     await waitFor(() => expect(messages).toEqual([{ text: "Pense aux débutants" }]));
   });
 
@@ -220,8 +220,8 @@ describe("DemoDebatePage", () => {
     const { fake, router, user } = setup("/demo?session=s1");
     await waitFor(() => expect(fake.sockets).toHaveLength(1));
     fake.last().open().push(started(1, "demo_proponent"), completed(2)).drop(1000);
-    await user.click(await screen.findByRole("button", { name: "Nouveau débat" }));
-    expect(await screen.findByLabelText("Sujet")).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: "New debate" }));
+    expect(await screen.findByLabelText("Topic")).toBeInTheDocument();
     expect(router.state.location.search).toBe("");
   });
 });
