@@ -58,18 +58,18 @@ class WriteRepository(UserScopedRepository[MemoryWrite]):
         before: datetime | None,
         limit: int,
         *,
-        skip: tuple[str, str, str],
+        skip: tuple[str, tuple[str, ...], tuple[str, ...]],
     ) -> builtins.list[MemoryWrite]:
         """Agent writes (author other than the user, deletions excluded) within `[after, before]`
-        (inclusive bounds), most recent first (activity feed). `skip` = (author, exact reason,
-        reason prefix): this author's writes carrying one of these reasons come from an action
-        of the user (her capture) and are dropped."""
-        author, reason, prefix = skip
+        (inclusive bounds), most recent first. Exclude the given author's writes when their
+        reason matches a capture reason or prefix in `skip`."""
+        author, reasons, prefixes = skip
         why = func.coalesce(MemoryWrite.reason, "")
+        capture_reason = or_(why.in_(reasons), *(why.startswith(prefix) for prefix in prefixes))
         stmt = self._ordered().where(
             MemoryWrite.author != USER_AUTHOR,
             MemoryWrite.action != "delete",
-            not_(and_(MemoryWrite.author == author, or_(why == reason, why.startswith(prefix)))),
+            not_(and_(MemoryWrite.author == author, capture_reason)),
         )
         if after is not None:
             stmt = stmt.where(MemoryWrite.created_at >= after)

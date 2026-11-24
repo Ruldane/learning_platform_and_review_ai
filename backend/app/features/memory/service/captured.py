@@ -3,14 +3,14 @@ January, and the writing of her summarised capture as a `document` item (author 
 reason `CAPTURE_REASON`), indexed after the caller's commit (D66). Reads and writes for the
 other features (contract 2). Logs: identifiers only.
 
-`CAPTURE_REASON` and `CAPTURE_REFLECT_PREFIX` are stored in the write log and matched there
-(`recent.py`): they keep their French values until a coordinated migration."""
+`recent.py` recognizes both current and legacy capture reasons in the write log."""
 
 from collections.abc import Sequence
 from dataclasses import dataclass
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agents.tools.capture_port import CAPTURE_REASON as CAPTURE_REASON
 from app.db.models.memory import MemoryItem
 from app.features.memory.repository import DocumentRepository, MemoryItemRepository
 from app.features.memory.service.items import MemoryService
@@ -18,13 +18,12 @@ from app.features.memory.service.rules import WriteDraft
 from app.features.memory.service.runtime import MemoryRuntime
 
 CAPTURE_AUTHOR = "archivist"
-CAPTURE_REASON = "Capture rapide de January."
-CAPTURE_REFLECT_PREFIX = "Capture « "  # start of the reason for skills reflected by a capture
+CAPTURE_REFLECT_PREFIX = "Capture “"
 
 
 def reflect_reason(title: str) -> str:
     """The reason for the skills that an "I learned" capture reflects in memory."""
-    return f"{CAPTURE_REFLECT_PREFIX}{title} » : January dit l'avoir appris."
+    return f"{CAPTURE_REFLECT_PREFIX}{title}”. January recorded this as learned."
 
 
 @dataclass(frozen=True)

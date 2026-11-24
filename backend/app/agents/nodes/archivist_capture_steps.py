@@ -7,6 +7,9 @@ from typing import Any
 
 from app.agents.prompts.loader import untrusted
 from app.agents.tools.capture_port import (
+    CAPTURE_REASON as CAPTURE_REASON,
+)
+from app.agents.tools.capture_port import (
     CaptureDigest,
     CaptureMaterial,
     CaptureSource,
@@ -19,23 +22,22 @@ from app.core.errors import AppError
 
 AGENT = "archivist"
 MAX_TEXT_CHARS = 20_000  # texte lu par l'Archiviste (page, document, texte collé)
-CAPTURE_REQUEST = "Range cette capture."
-UNREADABLE_TEXT = "Je n'arrive pas à lire ce lien. Colle son texte ci-dessous."
-CANCELLED_TEXT = "Capture abandonnée."
-CAPTURE_REASON = "Capture rapide de January."
+CAPTURE_REQUEST = "Summarize and save this capture."
+UNREADABLE_TEXT = "I couldn't read the link. Paste the page text below."
+CANCELLED_TEXT = "Capture cancelled."
 
 CAPTURE_TEXT = "capture_text"
 CAPTURE_TASK = "capture_task"
 CAPTURE_CARDS = "capture_cards"
 TEXT_INTERRUPT: dict[str, Any] = {
     "kind": CAPTURE_TEXT,
-    "question": "Colle le texte de la page.",
+    "question": "Paste the page text.",
     "fields": [
-        {"id": "text", "label": "Texte de la page", "required": True, "max_length": MAX_TEXT_CHARS}
+        {"id": "text", "label": "Page text", "required": True, "max_length": MAX_TEXT_CHARS}
     ],
-    "options": [{"value": "cancel", "label": "Abandonner"}],
+    "options": [{"value": "cancel", "label": "Cancel"}],
 }
-YES_NO: list[dict[str, str]] = [{"value": "yes", "label": "Oui"}, {"value": "no", "label": "Non"}]
+YES_NO: list[dict[str, str]] = [{"value": "yes", "label": "Yes"}, {"value": "no", "label": "No"}]
 
 
 def document_not_indexed() -> AppError:
@@ -71,12 +73,14 @@ def parse_yes(value: Any) -> bool:
 
 
 def task_payload(title: str) -> dict[str, Any]:
-    question = f"Cette capture couvre « {' '.join(title.split())} ». La cocher ?"
+    question = f"This capture covers “{' '.join(title.split())}.” Mark that task complete?"
     return {"kind": CAPTURE_TASK, "question": question, "options": YES_NO}
 
 
 def cards_payload(fronts: list[str]) -> dict[str, Any]:
-    head = "Créer cette fiche ?" if len(fronts) == 1 else f"Créer ces {len(fronts)} fiches ?"
+    head = (
+        "Create this flashcard?" if len(fronts) == 1 else f"Create these {len(fronts)} flashcards?"
+    )
     lines = "\n".join(f"- {' '.join(front.split())}" for front in fronts)
     return {"kind": CAPTURE_CARDS, "question": f"{head}\n{lines}", "options": YES_NO}
 
@@ -153,32 +157,32 @@ def unknown_refs(digest: CaptureDigest, links: ProgramLinks) -> int:
 
 def _modules_text(links: ProgramLinks) -> str:
     if not links.modules:
-        return "Aucun module."
+        return "No modules."
     return "\n".join(
-        f"{m.ref} : {' '.join(m.title.split())}"
-        + (f" (compétences : {', '.join(m.skills)})" if m.skills else "")
+        f"{m.ref}: {' '.join(m.title.split())}"
+        + (f" (skills: {', '.join(m.skills)})" if m.skills else "")
         for m in links.modules
     )
 
 
 def _tasks_text(links: ProgramLinks) -> str:
     if not links.tasks:
-        return "Aucune tâche."
+        return "No tasks."
     return "\n".join(
-        f"{t.ref} : {t.planned_date:%d/%m}, {' '.join(t.title.split())} "
+        f"{t.ref}: {t.planned_date.isoformat()}, {' '.join(t.title.split())} "
         f"({t.type}, {t.minutes} min, module {t.module_ref})"
         for t in links.tasks
     )
 
 
-_KINDS: dict[str, str] = {"url": "une page", "document": "un document", "text": "une note"}
+_KINDS: dict[str, str] = {"url": "a page", "document": "a document", "text": "a note"}
 
 
 def _kind(material: CaptureMaterial, source: CaptureSource, pasted: bool) -> str:
     if pasted:
-        return "le texte collé d'une page"
+        return "pasted page text"
     if source == "text" and not is_note(source, material.text):
-        return "un texte collé"
+        return "pasted text"
     return _KINDS[source]
 
 
@@ -191,10 +195,10 @@ def capture_vars(
         "mode": "capture",
         "kind": _kind(material, source, pasted),
         "note": is_note(source, material.text),
-        "title": untrusted(" ".join(material.title.split()) or "(sans titre)", "titre"),
+        "title": untrusted(" ".join(material.title.split()) or "(untitled)", "title"),
         "content": untrusted(material.text[:MAX_TEXT_CHARS], "capture"),
-        "modules": untrusted(_modules_text(links), "programme:modules"),
-        "tasks": untrusted(_tasks_text(links), "programme:taches"),
+        "modules": untrusted(_modules_text(links), "program:modules"),
+        "tasks": untrusted(_tasks_text(links), "program:tasks"),
     }
 
 
@@ -203,15 +207,15 @@ def capture_vars(
 
 def digest_text(digest: CaptureDigest) -> str:
     lines = "\n".join(f"- {line}" for line in digest.summary)
-    return f"« {digest.title} »\n{lines}"
+    return f"“{digest.title}”\n{lines}"
 
 
 def _cards_text(count: int) -> str:
     if count == 0:
         return ""
-    return " 1 fiche créée." if count == 1 else f" {count} fiches créées."
+    return " Created 1 flashcard." if count == 1 else f" Created {count} flashcards."
 
 
 def end_text(title: str, ticked: str | None, cards: int) -> str:
-    task = f" Tâche « {' '.join(ticked.split())} » cochée." if ticked else ""
-    return f"Capture rangée dans ta mémoire : « {title} ».{task}{_cards_text(cards)}"
+    task = f" Marked “{' '.join(ticked.split())}” complete." if ticked else ""
+    return f"Saved “{title}” to memory.{task}{_cards_text(cards)}"

@@ -88,7 +88,7 @@ async def test_invalid_quiz_is_reasked_then_marked_failed(make_quiz_runner: Make
     bad = DRAFTS["two_types_only"]
     run = await make_quiz_runner(_writer(bad, bad, bad))
     await run.wait_status("completed")
-    assert run.store.failed[QUIZ_ID].startswith("Quiz invalide")
+    assert run.store.failed[QUIZ_ID].startswith("Quiz still invalid")
     assert len(run.prompts()) == 3 and run.store.saved == {}
     assert "Use at least 3 of the question types mcq, short, code and explain" in run.prompts()[1]
     summary = (await run.events("run.completed"))[0]["summary"]

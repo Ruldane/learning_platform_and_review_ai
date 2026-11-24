@@ -119,7 +119,7 @@ def make_write(deps: GraphDeps) -> Node:
             len(problems),
             MAX_QUIZ_ASKS,
         )
-        reason = f"Quiz invalide après {MAX_QUIZ_ASKS} essais : " + " ; ".join(problems)
+        reason = f"Quiz still invalid after {MAX_QUIZ_ASKS} attempts. " + ". ".join(problems)
         return {"draft": None, "failure": reason[:MAX_REASON_CHARS]}
 
     return write

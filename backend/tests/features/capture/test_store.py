@@ -79,14 +79,14 @@ async def test_store_writes_summarized_document_and_journal_once(capture: Captur
     [item] = [i for i in await _rows(factory, MemoryItem) if i.kind == "document"]
     assert item.id == stored.memory_item_id and item.created_by == "archivist"
     assert item.title == "Les DataFrames pandas" and item.indexed_at is not None
-    assert item.text == "\n".join(f"- {line}" for line in SUMMARY) + f"\n\nSource : {URL}"
+    assert item.text == "\n".join(f"- {line}" for line in SUMMARY) + f"\n\nSource: {URL}"
     # Revue finale 5 (5.11 m1) : les concepts extraits de la page sont des étiquettes.
     assert item.tags == ["capture", "Module Bases", "pandas", "Docker"] and item.source_id is None
-    assert item.meta["reason"] == "Capture rapide de January." and item.session_id == "s-1"
+    assert item.meta["reason"] == "January's quick capture." and item.session_id == "s-1"
     [entry] = await _rows(factory, JournalEntry)
     assert entry.id == stored.journal_entry_id and entry.kind == "capture"
     assert entry.ref_key == "capture:s-1" and entry.memory_item_id == item.id
-    assert entry.text == "Lien capturé : « Les DataFrames pandas »"
+    assert entry.text == "Captured link “Les DataFrames pandas”"
     assert entry.occurred_on.isoformat() == "2026-11-18" and entry.session_id == "s-1"
     assert "Docker" not in str(await _levels(factory))  # une page ne déclare rien
 
@@ -108,7 +108,7 @@ async def test_learned_note_writes_declare_acquis(capture: Capture) -> None:
     assert levels["pandas"][0] == "in_progress" and levels["docker"][0] == "declared"
     proofs = [p for p in levels["docker"][1] if p["kind"] == "capture"]
     assert [p["ref_id"] for p in proofs] == [stored.journal_entry_id]  # une preuve, F14
-    assert proofs[0]["label"] == "Capture « Les DataFrames pandas » (18/11)"
+    assert proofs[0]["label"] == "Capture “Les DataFrames pandas” (2026-11-18)"
     acquis = {
         normalize_skill_name(i.title): i.meta["level"]
         for i in await _rows(factory, MemoryItem)

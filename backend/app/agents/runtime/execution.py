@@ -70,7 +70,7 @@ class RunContext:
 
 
 def unknown_graph(name: str) -> AppError:
-    return AppError("unknown_graph", f"Parcours inconnu : {name}", 404, {"graph": name})
+    return AppError("unknown_graph", f"Unknown workflow: {name}", 404, {"graph": name})
 
 
 async def run_session(

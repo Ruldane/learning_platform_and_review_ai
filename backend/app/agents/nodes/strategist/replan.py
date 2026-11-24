@@ -112,7 +112,7 @@ async def _write(
             messages,
             agent=AGENT,
             step=f"replanification-{revision}-{ask}",
-            intent="je replanifie" if ask == 1 else "je corrige la proposition",
+            intent="Updating the plan" if ask == 1 else "Revising the proposal",
         )
         draft = draft_of(found, option, ctx)
         problem = problem_text(draft, ctx)

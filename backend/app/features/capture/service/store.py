@@ -47,7 +47,7 @@ logger = logging.getLogger(__name__)
 
 MAX_CHUNKS = 40  # premiers fragments d'un document importé
 MAX_TEXT_CHARS = 20_000
-_SOURCE_LABEL = {"url": "Lien capturé", "document": "Document capturé", "text": "Note"}
+_SOURCE_LABEL = {"url": "Captured link", "document": "Captured document", "text": "Note"}
 
 
 def document_not_found() -> AppError:
@@ -60,11 +60,11 @@ def document_failed() -> AppError:
 
 def item_text(digest: CaptureDigest, material: CaptureMaterial) -> str:
     lines = "\n".join(f"- {line}" for line in digest.summary)
-    return f"{lines}\n\nSource : {material.url}" if material.url else lines
+    return f"{lines}\n\nSource: {material.url}" if material.url else lines
 
 
 def journal_text(source: CaptureSource, title: str) -> str:
-    return f"{_SOURCE_LABEL[source]} : « {title} »"
+    return f"{_SOURCE_LABEL[source]} “{title}”"
 
 
 def _learned(digest: CaptureDigest, material: CaptureMaterial, source: CaptureSource) -> list[str]:
@@ -178,7 +178,7 @@ class AgentCaptureStore:
             },
         )
         if concepts:
-            label = f"Capture « {digest.title} » ({today:%d/%m})"
+            label = f"Capture “{digest.title}” ({today.isoformat()})"
             await SkillsService(db, user_id).raise_levels(
                 concepts, "declared", evidence("capture", entry_id, label, self._rt.now())
             )

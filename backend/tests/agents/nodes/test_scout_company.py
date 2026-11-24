@@ -72,7 +72,7 @@ async def test_research_reads_three_pages_and_saves_brief(emitted: list[dict[str
     [prompt] = [c.prompt for c in models.calls]
     assert in_untrusted(prompt, "Société Fictive édite des assistants")
     assert in_untrusted(prompt, "Texte sur l'entreprise.")
-    assert _said(emitted) == ["Fiche entreprise prête (3 page(s) lue(s))."]
+    assert _said(emitted) == ["The company dossier is ready (3 pages read)."]
 
 
 async def test_unknown_company_is_skipped(emitted: list[dict[str, Any]]) -> None:

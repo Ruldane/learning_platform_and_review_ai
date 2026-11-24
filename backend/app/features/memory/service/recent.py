@@ -32,7 +32,11 @@ async def recent_agent_writes(
     recent first. Never included: the user's own writes, nor those of her quick capture (the
     Archivist writes them at her request: reason `CAPTURE_REASON`, or skills reflected by the
     capture), recognised by their author and reason."""
-    skip = (CAPTURE_AUTHOR, CAPTURE_REASON, CAPTURE_REFLECT_PREFIX)
+    skip = (
+        CAPTURE_AUTHOR,
+        (CAPTURE_REASON, "Capture rapide de January."),
+        (CAPTURE_REFLECT_PREFIX, "Capture « "),
+    )
     rows = await WriteRepository(db, user_id).by_agents_between(after, before, limit, skip=skip)
     return [
         AgentWrite(

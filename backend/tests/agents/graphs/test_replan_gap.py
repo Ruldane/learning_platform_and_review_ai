@@ -45,11 +45,11 @@ async def test_gap_trigger_adds_tasks_for_given_skills(make_replan_runner: MakeR
     assert call.option is None and call.draft.drop == []
     assert [t.title for t in call.draft.add] == ["Pratiquer LangGraph sur un agent", "Lire"]
     assert "LangGraph" in call.draft.add[0].title and {t.module for t in call.draft.add} == {"m0"}
-    assert call.refs["m0"] == GAP_MODULE_ID and call.reason == "Compétences des offres"
+    assert call.refs["m0"] == GAP_MODULE_ID and call.reason == "Skills from job postings"
     assert run.store.context_calls[0]["skills"] == ["LangGraph", "Évaluation de RAG"]
     prompt = run.prompts()[0]
-    assert 'source="competences des offres"' in prompt and "- Évaluation de RAG" in prompt
-    assert "m0 : Compétences des offres" in prompt
+    assert 'source="skills from job postings"' in prompt and "- Évaluation de RAG" in prompt
+    assert "m0: Skills from job postings" in prompt
     assert '"add"' in prompt and '"drop"' not in prompt  # ajouts seuls (ReplanAdds)
     await run.resume("accept")
     await run.wait_status("completed")
@@ -131,5 +131,5 @@ async def test_gap_with_nothing_added_says_what_happened(make_replan_runner: Mak
     assert done.pending_interrupt is None
     [summary] = [e["summary"] for e in await run.events("run.completed")]
     assert summary == GAP_EMPTY_TEXT and EMPTY_TEXT not in summary
-    assert "Ajouter au planning" in summary and "n'a pas changé" in summary
+    assert "Add to schedule" in summary
     assert await run.said() == [GAP_EMPTY_TEXT]

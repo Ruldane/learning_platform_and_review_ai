@@ -32,12 +32,12 @@ from app.agents.tools.web_port import PageRead
 from app.agents.tools.web_tools import page_agent_text, web_read, web_search
 from app.core.errors import AppError
 
-COMPANY_REQUEST = "Rédige la fiche de l'entreprise."
+COMPANY_REQUEST = "Write the company dossier."
 MAX_COMPANY_PAGES = 3
 COMPANY_TIMEOUT_S = 300  # une recherche, trois pages (15 s chacune), une sortie structurée
 MAX_POSTING_CHARS = 30_000
-UNKNOWN = "Entreprise inconnue : je passe la fiche entreprise."
-NO_BRIEF = "Je n'ai pas pu préparer la fiche entreprise : la revue continue sans elle."
+UNKNOWN = "The posting does not identify a company. Continuing with the CV review."
+NO_BRIEF = "The company dossier could not be prepared. The CV review will continue."
 
 logger = logging.getLogger(__name__)
 
@@ -68,9 +68,9 @@ async def _brief(deps: GraphDeps, name: str, posting: str, pages: list[PageRead]
     prompt = render_prompt(
         AGENT,
         mode="company",
-        company=untrusted(name, "entreprise"),
-        posting=untrusted(posting[:MAX_POSTING_CHARS], "offre"),
-        pages="\n\n".join(page_agent_text(page) for page in pages) or "Aucune page lue.",
+        company=untrusted(name, "company"),
+        posting=untrusted(posting[:MAX_POSTING_CHARS], "job posting"),
+        pages="\n\n".join(page_agent_text(page) for page in pages) or "No pages read.",
     )
     model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
     return await structured_call(
@@ -79,7 +79,7 @@ async def _brief(deps: GraphDeps, name: str, posting: str, pages: list[PageRead]
         [SystemMessage(prompt), HumanMessage(COMPANY_REQUEST)],
         agent=AGENT,
         step="fiche-entreprise",
-        intent="je prépare la fiche de l'entreprise",
+        intent="Preparing the company dossier",
     )
 
 
@@ -110,7 +110,8 @@ async def _research(
         len(pages),
         ats is not None,
     )
-    _say("fiche", f"Fiche entreprise prête ({len(pages)} page(s) lue(s)).")
+    read_count = "1 page read" if len(pages) == 1 else f"{len(pages)} pages read"
+    _say("fiche", f"The company dossier is ready ({read_count}).")
     return {"company": name, "company_brief": brief.model_dump(mode="json"), "ats": ats}
 
 
@@ -131,7 +132,7 @@ def make_company(deps: GraphDeps) -> Node:
             logger.info(
                 "Fiche entreprise reprise : session %s, revue %s", deps.session_id, ctx.review_id
             )
-            _say("fiche", "Fiche entreprise récente : je la reprends telle quelle.")
+            _say("fiche", "Using the recent company dossier for this review.")
             brief = ctx.company_brief.model_dump(mode="json")
             return {
                 "company": name,

@@ -229,7 +229,7 @@ class AgentCvTemplateStore:
                 row.active = await repo.active() is None
             else:
                 row.status = "failed"
-                row.failure_reason = (reason or "La capture du modèle a échoué.")[:MAX_REASON_CHARS]
+                row.failure_reason = (reason or "Template capture failed.")[:MAX_REASON_CHARS]
             active = row.active
             await db.commit()
         logger.info(

@@ -35,7 +35,8 @@ MODULE_REF = r"^m\d{1,3}$"
 # Déclencheur `gap` (« Ajouter au planning », D123) : le module cible des ajouts, créé en fin de
 # programme à la 1re application puis réutilisé, toujours montré au modèle sous `m0`.
 GAP_MODULE_REF = "m0"
-GAP_MODULE_TITLE = "Compétences des offres"
+GAP_MODULE_TITLE = "Skills from job postings"
+GAP_MODULE_TITLES = frozenset({GAP_MODULE_TITLE, "Compétences des offres"})
 
 
 def week_cap(available_minutes: int) -> int:

@@ -166,7 +166,7 @@ def make_fail_lesson(deps: GraphDeps) -> Node:
         logger.info("Leçon en échec : session %s, module %s", deps.session_id, brief.module_id)
         emit(
             "agent.message",
-            {"message_id": "writer-echec", "text": f"Leçon non publiée : {reason}"},
+            {"message_id": "writer-echec", "text": f"The lesson could not be published. {reason}"},
             agent="writer",
         )
         summary = (

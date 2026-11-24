@@ -183,7 +183,7 @@ async def test_fix_without_valid_spec_keeps_current_and_asks(
     question = await run.question()
     assert design_store.rendered == [1] and len(run.prompts(FIX_REQUEST)) == 3
     assert question["question"].startswith("Le modèle ressemble à ton CV à 60 %.")
-    assert "Je n'ai pas su corriger la description" in (await run.said())[-1]
+    assert "The description could not be adjusted" in (await run.said())[-1]
 
 
 async def test_images_are_sent_as_image_blocks(

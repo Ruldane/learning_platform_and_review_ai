@@ -233,7 +233,7 @@ def make_fix(deps: GraphDeps) -> Node:
                 "agent.message",
                 {
                     "message_id": f"{AGENT}-correction-{pass_no}-{state.get('adjustments', 0)}",
-                    "text": "Je n'ai pas su corriger la description : le modèle reste tel quel.",
+                    "text": "The description could not be adjusted. The template is unchanged.",
                 },
                 agent=AGENT,
             )

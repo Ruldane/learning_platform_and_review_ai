@@ -13,7 +13,7 @@ from dataclasses import replace
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.agents.tools.replan_port import GAP_MODULE_TITLE
+from app.agents.tools.replan_port import GAP_MODULE_TITLE, GAP_MODULE_TITLES
 from app.core.skills import normalize_skill_name
 from app.db.models.program import Module
 from app.features.program.repository import ModuleRepository, ProgramRepository
@@ -32,7 +32,7 @@ async def latest_validated(db: AsyncSession, user_id: str) -> str | None:
 
 def gap_module(loaded: Loaded) -> Module | None:
     """Le module « Compétences des offres » du programme (non sauté), s'il existe."""
-    found = [m for m in loaded.modules if m.title == GAP_MODULE_TITLE and not m.skipped]
+    found = [m for m in loaded.modules if m.title in GAP_MODULE_TITLES and not m.skipped]
     return found[-1] if found else None
 
 

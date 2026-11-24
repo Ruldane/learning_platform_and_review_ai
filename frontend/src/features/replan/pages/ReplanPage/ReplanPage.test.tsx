@@ -26,12 +26,12 @@ const setup = (api: Parameters<typeof renderReplan>[1] = {}) =>
 
 const acceptQuestion = (e: ReturnType<typeof councilEvents>) =>
   e.interrupt("accept_replan", "i1", {
-    question: "Voici le plan proposé, avant et après. L'accepter ?",
+    question: "Review the changes. Would you like to accept the new plan?",
     options: [
-      { value: "accept", label: "Accepter le nouveau plan" },
-      { value: "refuse", label: "Garder le plan actuel" },
+      { value: "accept", label: "Accept the new plan" },
+      { value: "refuse", label: "Keep the current plan" },
     ],
-    fields: [{ id: "note", label: "Ce qu'il faut revoir", max_length: 2000, required: false }],
+    fields: [{ id: "note", label: "What should change?", max_length: 2000, required: false }],
   });
 
 const resumed = {
@@ -50,11 +50,11 @@ describe("ReplanPage", () => {
     const posts = recordPosts("/programs/p1/replan", 202, { session_id: "s9" });
     const { user, fake } = setup();
     await user.type(
-      await screen.findByLabelText("Heures pour toute la semaine (déjà faites comprises)"),
+      await screen.findByLabelText("Hours for the whole week (including hours already done)"),
       "5",
     );
-    await user.type(screen.getByLabelText("Un message pour le Stratège"), "Je suis malade lundi.");
-    await user.click(screen.getByRole("button", { name: "Replanifier" }));
+    await user.type(screen.getByLabelText("A message for the Strategist"), "Je suis malade lundi.");
+    await user.click(screen.getByRole("button", { name: "Replan" }));
     await waitFor(() =>
       expect(posts).toEqual([{ available_minutes: 300, message: "Je suis malade lundi." }]),
     );
@@ -66,20 +66,20 @@ describe("ReplanPage", () => {
   it("says that the hours already done count (revue finale 5, C-m3)", async () => {
     setup();
     const field = await screen.findByLabelText(
-      "Heures pour toute la semaine (déjà faites comprises)",
+      "Hours for the whole week (including hours already done)",
     );
-    expect(field).toHaveAccessibleDescription(/y compris les heures déjà faites/);
+    expect(field).toHaveAccessibleDescription(/including hours already done/);
   });
 
   it("refuses hours outside the contract without calling the back", async () => {
     const posts = recordPosts("/programs/p1/replan", 202, { session_id: "s9" });
     const { user } = setup();
     await user.type(
-      await screen.findByLabelText("Heures pour toute la semaine (déjà faites comprises)"),
+      await screen.findByLabelText("Hours for the whole week (including hours already done)"),
       "500",
     );
-    await user.click(screen.getByRole("button", { name: "Replanifier" }));
-    expect(await screen.findByText(/compris entre 1 et 168/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Replan" }));
+    expect(await screen.findByText(/hours between 1 and 168/)).toBeInTheDocument();
     expect(posts).toEqual([]);
   });
 
@@ -90,7 +90,7 @@ describe("ReplanPage", () => {
       apiError("replan_open", "Déjà en cours.", { session_id: "s9" }),
     );
     const { user, fake } = setup();
-    await user.click(await screen.findByRole("button", { name: "Replanifier" }));
+    await user.click(await screen.findByRole("button", { name: "Replan" }));
     const e = councilEvents("s9");
     (await openReplanStream(fake)).push(e.message("m1", "Reprenons.", "strategist"));
     expect(await screen.findByText("Reprenons.")).toBeInTheDocument();
@@ -100,24 +100,24 @@ describe("ReplanPage", () => {
   it("shows a refused start (draft program) inline and keeps the form", async () => {
     recordPosts("/programs/p1/replan", 409, apiError("program_not_validated", "Valide d'abord."));
     const { user } = setup();
-    await user.click(await screen.findByRole("button", { name: "Replanifier" }));
+    await user.click(await screen.findByRole("button", { name: "Replan" }));
     expect(await screen.findByText("Valide d'abord.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Replanifier" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Replan" })).toBeEnabled();
   });
 
   it("shows before and after loads under the cap", async () => {
     setup({ versions: [versionOut(), buildVersion()], waiting: [waitingSession()] });
-    const panel = await screen.findByRole("region", { name: "Proposition du Stratège" });
+    const panel = await screen.findByRole("region", { name: "Strategist’s proposal" });
     const table = within(panel).getByRole("table");
     const rows = within(table).getAllByRole("row");
     expect(within(rows[1]!).getByText("10 h")).toBeInTheDocument();
     expect(within(rows[1]!).getByText("9 h")).toBeInTheDocument();
     expect(within(rows[1]!).getAllByText("11 h 54")).toHaveLength(1);
-    expect(within(rows[1]!).getByText("Sous le plafond")).toBeInTheDocument();
-    expect(within(rows[2]!).getByText("Au plafond")).toBeInTheDocument();
+    expect(within(rows[1]!).getByText("Under the cap")).toBeInTheDocument();
+    expect(within(rows[2]!).getByText("At the cap")).toBeInTheDocument();
     expect(within(panel).getByText("Tu as fait 3 tâches sur 8 cette semaine.")).toBeInTheDocument();
     expect(within(panel).getByText("Réviser les verbes")).toBeInTheDocument();
-    expect(within(panel).getByText("lun. 16 nov. → mer. 18 nov.")).toBeInTheDocument();
+    expect(within(panel).getByText("Mon 16 Nov → Wed 18 Nov")).toBeInTheDocument();
   });
 
   it("accepts the proposal through the interrupt", async () => {
@@ -130,7 +130,7 @@ describe("ReplanPage", () => {
     });
     const { user, fake } = setup({ versions: [versionOut()], waiting: [waitingSession()] });
     (await openReplanStream(fake)).push(acceptQuestion(councilEvents("s9")));
-    await user.click(await screen.findByRole("button", { name: "Accepter le nouveau plan" }));
+    await user.click(await screen.findByRole("button", { name: "Accept the new plan" }));
     await waitFor(() => expect(resumes).toEqual([{ interrupt_id: "i1", value: "accept" }]));
   });
 
@@ -138,8 +138,8 @@ describe("ReplanPage", () => {
     const resumes = recordPosts("/sessions/s9/resume", 202, resumed);
     const { user, fake } = setup({ versions: [versionOut()], waiting: [waitingSession()] });
     (await openReplanStream(fake)).push(acceptQuestion(councilEvents("s9")));
-    await user.type(await screen.findByLabelText("Ce qu'il faut revoir"), "Ok, garde le jeudi.");
-    await user.click(screen.getByRole("button", { name: "Accepter le nouveau plan" }));
+    await user.type(await screen.findByLabelText("What should change?"), "Ok, garde le jeudi.");
+    await user.click(screen.getByRole("button", { name: "Accept the new plan" }));
     await waitFor(() =>
       expect(resumes).toEqual([
         { interrupt_id: "i1", value: { action: "accept", note: "Ok, garde le jeudi." } },
@@ -151,8 +151,8 @@ describe("ReplanPage", () => {
     const resumes = recordPosts("/sessions/s9/resume", 202, resumed);
     const { user, fake } = setup({ versions: [versionOut()], waiting: [waitingSession()] });
     (await openReplanStream(fake)).push(acceptQuestion(councilEvents("s9")));
-    await user.type(await screen.findByLabelText("Ce qu'il faut revoir"), "Pas cette semaine.");
-    await user.click(screen.getByRole("button", { name: "Garder le plan actuel" }));
+    await user.type(await screen.findByLabelText("What should change?"), "Pas cette semaine.");
+    await user.click(screen.getByRole("button", { name: "Keep the current plan" }));
     await waitFor(() =>
       expect(resumes).toEqual([
         { interrupt_id: "i1", value: { action: "refuse", note: "Pas cette semaine." } },
@@ -169,21 +169,21 @@ describe("ReplanPage", () => {
     const e = councilEvents("s9");
     const socket = await openReplanStream(fake);
     socket.push(acceptQuestion(e));
-    await user.click(await screen.findByRole("button", { name: "Accepter le nouveau plan" }));
+    await user.click(await screen.findByRole("button", { name: "Accept the new plan" }));
     // Après la fin, le back ne rend plus de session en attente et la version est acceptée.
     state.waiting = [];
     state.versions = [versionOut({ status: "accepted" }), buildVersion()];
     socket.push(e.completed());
     expect(
-      await screen.findByText("Nouveau plan accepté : ton programme est à jour."),
+      await screen.findByText("New plan accepted: your program is up to date."),
     ).toBeInTheDocument();
-    const history = await screen.findByRole("list", { name: "Historique des versions" });
-    await waitFor(() => expect(within(history).getAllByText("Acceptée")).toHaveLength(2));
+    const history = await screen.findByRole("list", { name: "Version history" });
+    await waitFor(() => expect(within(history).getAllByText("Accepted")).toHaveLength(2));
     expect(
-      screen.getByText("Nouveau plan accepté : ton programme est à jour."),
+      screen.getByText("New plan accepted: your program is up to date."),
     ).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Replanifier" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Nouvelle replanification" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Replan" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "New replan" })).toBeInTheDocument();
   });
 
   it("says when the current plan was kept", async () => {
@@ -192,7 +192,7 @@ describe("ReplanPage", () => {
     state.waiting = [];
     state.versions = [versionOut({ status: "refused" })];
     socket.push(councilEvents("s9").completed());
-    expect(await screen.findByText("Plan actuel gardé : rien n'a changé.")).toBeInTheDocument();
+    expect(await screen.findByText("Current plan kept: nothing changed.")).toBeInTheDocument();
   });
 
   it("shows a pushed deadline in the proposal (revue finale 5, C-I3)", async () => {
@@ -200,14 +200,14 @@ describe("ReplanPage", () => {
       versions: [versionOut({ diff: { ...versionOut().diff, weeks_before: 8, weeks_after: 10 } })],
       waiting: [waitingSession()],
     });
-    const panel = await screen.findByRole("region", { name: "Proposition du Stratège" });
-    expect(within(panel).getByText("Durée du programme : 8 → 10 semaines")).toBeInTheDocument();
+    const panel = await screen.findByRole("region", { name: "Strategist’s proposal" });
+    expect(within(panel).getByText("Program length: 8 → 10 weeks")).toBeInTheDocument();
   });
 
   it("says nothing of the length when it does not change", async () => {
     setup({ versions: [versionOut()], waiting: [waitingSession()] });
-    const panel = await screen.findByRole("region", { name: "Proposition du Stratège" });
-    expect(within(panel).queryByText(/Durée du programme/)).not.toBeInTheDocument();
+    const panel = await screen.findByRole("region", { name: "Strategist’s proposal" });
+    expect(within(panel).queryByText(/Program length/)).not.toBeInTheDocument();
   });
 
   it("sends a revision note instead of accepting", async () => {
@@ -220,11 +220,8 @@ describe("ReplanPage", () => {
     });
     const { user, fake } = setup({ versions: [versionOut()], waiting: [waitingSession()] });
     (await openReplanStream(fake)).push(acceptQuestion(councilEvents("s9")));
-    await user.type(
-      await screen.findByLabelText("Ce qu'il faut revoir"),
-      "Garde le quiz du jeudi.",
-    );
-    await user.click(screen.getByRole("button", { name: "Répondre" }));
+    await user.type(await screen.findByLabelText("What should change?"), "Garde le quiz du jeudi.");
+    await user.click(screen.getByRole("button", { name: "Answer" }));
     await waitFor(() =>
       expect(resumes).toEqual([
         { interrupt_id: "i1", value: { answers: { note: "Garde le quiz du jeudi." } } },
@@ -239,9 +236,9 @@ describe("ReplanPage", () => {
         buildVersion(),
       ],
     });
-    expect(await screen.findByText("Rien à changer")).toBeInTheDocument();
-    expect(screen.queryByRole("region", { name: "Proposition du Stratège" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Replanifier" })).toBeInTheDocument();
+    expect(await screen.findByText("Nothing to change")).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Strategist’s proposal" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Replan" })).toBeInTheDocument();
   });
 
   it("lists version history", async () => {
@@ -252,15 +249,15 @@ describe("ReplanPage", () => {
         buildVersion(),
       ],
     });
-    const history = await screen.findByRole("list", { name: "Historique des versions" });
+    const history = await screen.findByRole("list", { name: "Version history" });
     const items = within(history).getAllByRole("listitem");
     expect(items).toHaveLength(3);
-    expect(within(items[0]!).getByText("Acceptée")).toBeInTheDocument();
+    expect(within(items[0]!).getByText("Accepted")).toBeInTheDocument();
     expect(within(items[0]!).getByText("Deux semaines de suite en retard.")).toBeInTheDocument();
-    expect(within(items[1]!).getByText("Refusée")).toBeInTheDocument();
-    expect(within(items[2]!).getByText("Construction du programme")).toBeInTheDocument();
+    expect(within(items[1]!).getByText("Declined")).toBeInTheDocument();
+    expect(within(items[2]!).getByText("Program build")).toBeInTheDocument();
     expect(
-      within(items[0]!).getByText(/1 ajoutée\(s\), 1 retirée\(s\), 1 déplacée\(s\)/),
+      within(items[0]!).getByText("1 added, 1 removed, 1 moved"),
     ).toBeInTheDocument();
   });
 
@@ -272,17 +269,17 @@ describe("ReplanPage", () => {
           ? HttpResponse.json(apiError("internal_error", "Panne du serveur."), { status: 500 })
           : HttpResponse.json([]),
     });
-    expect(screen.getByText("Chargement de la replanification…")).toBeInTheDocument();
+    expect(screen.getByText("Loading the replan…")).toBeInTheDocument();
     expect(await screen.findByText("Panne du serveur.")).toBeInTheDocument();
     failing = false;
-    await user.click(screen.getByRole("button", { name: "Réessayer" }));
-    expect(await screen.findByText("Aucune version pour l'instant")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+    expect(await screen.findByText("No versions yet")).toBeInTheDocument();
   });
 
   it("offers a way back from an empty history (revue finale 5, C-m5)", async () => {
     const { user, router } = setup({ versions: [] });
-    expect(await screen.findByText("Aucune version pour l'instant")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Voir le programme" }));
+    expect(await screen.findByText("No versions yet")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "See the program" }));
     expect(router.state.location.pathname).toBe("/learn/programs/p1");
   });
 });

@@ -103,7 +103,7 @@ async def _read_document(deps: GraphDeps, document_id: str) -> CaptureMaterial:
 def make_read(deps: GraphDeps) -> Node:
     @node_timeout(DOC_WAIT_S + 30)
     async def read(state: CaptureState) -> CaptureState:
-        emit("agent.started", {"step": "lecture", "intent": "je lis ta capture"}, agent=AGENT)
+        emit("agent.started", {"step": "lecture", "intent": "Reading your capture"}, agent=AGENT)
         source = source_of(dict(state))
         if source == "url":
             page = await _read_url(deps, state["url"] or "")
@@ -154,7 +154,7 @@ def make_digest(deps: GraphDeps) -> Node:
             [SystemMessage(prompt), HumanMessage(CAPTURE_REQUEST)],
             agent=AGENT,
             step="capture",
-            intent="je résume ta capture et la relie à ton programme",
+            intent="Summarizing your capture and linking it to your program",
         )
         if unknown := unknown_refs(found, links):
             logger.info(

@@ -61,10 +61,10 @@ async def test_on_track_without_changes_completes_without_question(
     call = run.store.previews[0]
     assert call.option is None and call.draft.drop == [] and call.draft.add == []
     prompt = run.prompts()[0]
-    assert "dans les temps" in prompt and REVIEW_TEXT in prompt
+    assert "on track" in prompt and REVIEW_TEXT in prompt
     assert '"drop"' not in prompt and '"add"' not in prompt  # aucun droit : un résumé seul
     assert "task-id-" not in prompt and "module-id-" not in prompt  # références seules (F7)
-    assert 'source="plan à faire"' in prompt and "t5 : 23/11, Lire la doc de l'API" in prompt
+    assert 'source="remaining plan"' in prompt and "t5: 2026-11-23, Lire la doc de l'API" in prompt
 
 
 async def test_late_twice_asks_option_then_proposes_with_it(
@@ -90,12 +90,12 @@ async def test_late_twice_asks_option_then_proposes_with_it(
     call = run.store.previews[0]
     assert call.option == "reduce_scope" and call.draft.drop == ["t5", "t6"]
     assert call.refs["t5"] == task_id("t5") and call.refs["m2"] == "module-id-m2"
-    assert call.reason == "Bilan hebdomadaire ; Réduire le périmètre"
+    assert call.reason == "Weekly review · Reduce the scope"
     prompt = run.prompts()[0]
-    assert "Réduire le périmètre" in prompt and "2 tâche(s) en retard" in prompt
+    assert "Reduce the scope" in prompt and "2 overdue task(s)" in prompt
     assert '"drop"' in prompt and '"add"' not in prompt
     said = (await run.said())[-1]
-    assert "1 tâche(s) retirée(s)" in said and "1 retrait(s) ignoré(s)" in said
+    assert "The proposal removes 1" in said and "Skipped removals (1)" in said
     ready = (await run.events("artifact.ready"))[0]
     assert ready == {
         "artifact_id": PROGRAM_ID,
@@ -143,7 +143,7 @@ async def test_accept_applies_once_after_replay(make_replan_runner: MakeReplan) 
     assert second.prompts() == [] and len(first.models.calls) == calls  # rien d'autre rejoué
     assert len(second.store.previews) == 1
     summary = (await second.events("run.completed"))[0]["summary"]
-    assert summary == f"Nouveau plan appliqué (version {version})."
+    assert summary == f"The new plan is in place (version {version})."
 
 
 def _moved_by_january() -> ReplanContext:
@@ -198,11 +198,11 @@ async def test_revise_note_is_untrusted_in_prompt(make_replan_runner: MakeReplan
     await run.resume({"answers": {"note": "Garde la pratique de l'API"}})
     await run.wait_question()
     last = run.prompts()[-1]
-    assert 'source="note de January"' in last and "Garde la pratique de l'API" in last
+    assert 'source="note from January"' in last and "Garde la pratique de l'API" in last
     assert "Proposition n° 2" in last and "Réduire le périmètre" in last  # l'option reste
     assert [c.revision for c in run.store.previews] == [0, 1]
     assert run.store.previews[1].reason == (
-        "Bilan hebdomadaire ; Réduire le périmètre ; proposition 2 : Garde la pratique de l'API"
+        "Weekly review · Reduce the scope · Proposal 2 — Garde la pratique de l'API"
     )
 
 
@@ -212,12 +212,12 @@ async def test_message_trigger_passes_week_cap(make_replan_runner: MakeReplan) -
     assert await run.kinds() == ["accept_replan"]  # aucune option hors du bilan
     call = run.store.previews[0]
     assert call.week_cap_override == 255 and call.option is None
-    assert call.reason == "Message de January"
+    assert call.reason == "Message from January"
     assert run.store.context_calls[0]["available_minutes"] == 300
     prompt = run.prompts()[0]
-    assert "255 min" in prompt and 'source="message de January"' in prompt
-    assert "réunion jeudi" in prompt and "Bilan de la semaine" not in prompt
-    assert "1 déplacée(s)" in (await run.said())[-1]
+    assert "255 min" in prompt and 'source="message from January"' in prompt
+    assert "réunion jeudi" in prompt and "Review of the past week" not in prompt
+    assert "moves 1" in (await run.said())[-1]
 
 
 async def test_long_summary_is_shortened(make_replan_runner: MakeReplan) -> None:

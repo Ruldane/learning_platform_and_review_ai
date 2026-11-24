@@ -28,39 +28,38 @@ from app.agents.tools.replan_port import (
 from app.agents.tools.study_schema import ReplanOption
 
 AGENT = "strategist"
-REPLAN_REQUEST = "Propose la replanification."
+REPLAN_REQUEST = "Propose an updated study plan."
 REPLAN_OPTION = "replan_option"
 ACCEPT_REPLAN = "accept_replan"
 OPTION_LABELS: dict[str, str] = {
-    "reduce_scope": "Réduire le périmètre",
-    "push_deadline": "Repousser l'échéance",
-    "advance": "Avancer la suite",
-    "deepen": "Approfondir",
+    "reduce_scope": "Reduce the scope",
+    "push_deadline": "Move the deadline",
+    "advance": "Bring work forward",
+    "deepen": "Study in more depth",
 }
 OPTION_QUESTIONS = {
-    "late_twice": "Deux semaines de suite en retard : comment veux-tu ajuster le plan ?",
-    "ahead": "Tu as pris de l'avance : comment veux-tu ajuster le plan ?",
+    "late_twice": "You're two weeks behind. How would you like to adjust the plan?",
+    "ahead": "You're ahead of schedule. How would you like to adjust the plan?",
 }
 ACCEPT_INTERRUPT: dict[str, Any] = {
     "kind": ACCEPT_REPLAN,
-    "question": "Voici le plan proposé, avant et après. L'accepter ?",
+    "question": "Review the changes. Would you like to accept the new plan?",
     "options": [
-        {"value": "accept", "label": "Accepter le nouveau plan"},
-        {"value": "refuse", "label": "Garder le plan actuel"},
+        {"value": "accept", "label": "Accept the new plan"},
+        {"value": "refuse", "label": "Keep the current plan"},
     ],
-    "fields": [{"id": "note", "label": "Ce qu'il faut revoir (pour une autre proposition)"}],
+    "fields": [{"id": "note", "label": "What should change in the next proposal?"}],
 }
-STALE_NOTE = "Le programme a changé entre-temps : nouvelle proposition sur le plan à jour."
-EMPTY_NOTE_HINT = "Écris ce que tu veux changer."
-EMPTY_TEXT = "Rien à changer : ton plan tient tel quel dans ton budget."
+STALE_NOTE = "The program changed. A new proposal will use the updated plan."
+EMPTY_NOTE_HINT = "Describe what you'd like to change."
+EMPTY_TEXT = "Your current plan fits your time budget. No changes are needed."
 GAP_EMPTY_TEXT = (
-    "Aucune tâche n'a pu être ajoutée pour ces compétences : ton plan n'a pas changé. "
-    "Relance « Ajouter au planning » pour une nouvelle proposition."
+    "No tasks could be added for these skills. Select Add to schedule to request another proposal."
 )
-IMPOSSIBLE_TEXT = "Le plafond de cette semaine ne tient pas une pratique et le quiz."
-FINISHED_TEXT = "Ton programme est terminé : plus aucune semaine à replanifier."
-REFUSED_TEXT = "Plan actuel gardé : la proposition est refusée."
-REASONS = {"weekly_review": "Bilan hebdomadaire", "gap": "Compétences des offres"}
+IMPOSSIBLE_TEXT = "This week's time budget is too small for a practice task and quiz."
+FINISHED_TEXT = "You've completed the program. There are no weeks left to reschedule."
+REFUSED_TEXT = "You declined the proposal and kept your current plan."
+REASONS = {"weekly_review": "Weekly review", "gap": "Skills from job postings"}
 MAX_NOTE_CHARS = 2000
 MAX_REASON_CHARS = 300
 
@@ -133,8 +132,8 @@ def without_unknown(draft: ReplanDraft, ctx: ReplanContext) -> ReplanDraft:
 
 def unknown_text(unknown: list[str]) -> str:
     return (
-        f"Ces références n'existent pas dans le plan : {', '.join(unknown)}. N'utilise que les "
-        "références de la liste (`t…` pour une tâche, `m…` pour un module) et réponds de nouveau."
+        f"The plan has no entries for {', '.join(unknown)}. Answer again using only listed "
+        "references. Tasks start with `t` and modules with `m`."
     )
 
 
@@ -145,7 +144,7 @@ def option_payload(ctx: ReplanContext) -> dict[str, Any]:
     state = ctx.review.state if ctx.review else ""
     return {
         "kind": REPLAN_OPTION,
-        "question": OPTION_QUESTIONS.get(state, "Comment veux-tu ajuster le plan ?"),
+        "question": OPTION_QUESTIONS.get(state, "How would you like to adjust the plan?"),
         "options": [{"value": o, "label": OPTION_LABELS[o]} for o in ctx.options],
     }
 
@@ -205,32 +204,30 @@ def accept_payload(hint: str) -> dict[str, Any]:
 
 
 def reason_text(state_trigger: str, option: str | None, revision: int, note: str) -> str:
-    parts = [REASONS.get(state_trigger, "Message de January")]
+    parts = [REASONS.get(state_trigger, "Message from January")]
     if option:
         parts.append(OPTION_LABELS[option])
     if revision:
-        parts.append(f"proposition {revision + 1}")
-    text = " ; ".join(parts)
-    return (f"{text} : {note}" if note else text)[:MAX_REASON_CHARS]
+        parts.append(f"Proposal {revision + 1}")
+    text = " · ".join(parts)
+    return (f"{text} — {note}" if note else text)[:MAX_REASON_CHARS]
 
 
 def preview_text(summary: str, saved: PreviewSaved) -> str:
     """Le résumé du Stratège, puis les chiffres de la proposition rangée par le code."""
     facts = (
-        f"Proposition : {saved.removed} tâche(s) retirée(s), {saved.added} ajoutée(s), "
-        f"{saved.moved} déplacée(s) ; {saved.weeks_before} semaine(s) avant, "
-        f"{saved.weeks_after} après, jamais plus de 85 % de ton budget par semaine."
+        f"The proposal removes {saved.removed}, adds {saved.added}, and moves {saved.moved} "
+        f"tasks. The plan goes from {saved.weeks_before} to {saved.weeks_after} weeks, using up "
+        "to 85% of your time budget each week."
     )
     if saved.kept:
-        facts += (
-            f" {saved.kept} retrait(s) ignoré(s) : chaque semaine garde sa pratique et son quiz."
-        )
+        facts += f" Skipped removals ({saved.kept}) preserve a practice task and quiz each week."
     return f"{summary}\n\n{facts}"
 
 
 def end_text(outcome: str, version: int, trigger: str = "") -> str:
     if outcome == "accepted":
-        return f"Nouveau plan appliqué (version {version})."
+        return f"The new plan is in place (version {version})."
     if outcome == "refused":
         return REFUSED_TEXT
     if outcome == "impossible":

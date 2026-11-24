@@ -35,7 +35,7 @@ class PlayedChat(BaseChatModel):
             value = interrupt(
                 {
                     "kind": PLAY_KIND,
-                    "question": "Réponse du client MCP en attente.",
+                    "question": "Waiting for the MCP client to respond.",
                     "brief": {
                         **brief,
                         "step_id": str(uuid4()),

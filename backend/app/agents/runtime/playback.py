@@ -25,7 +25,7 @@ def models_for(row: AgentSession, usual: ChatModelSource) -> ChatModelSource:
     fabrique, ou rien (réglages)."""
     if row.played_by is not None:
         if as_client(row.played_by) is None:
-            raise AppError("unknown_play_client", "Client MCP inconnu.", 409)
+            raise AppError("unknown_play_client", "Unknown MCP client.", 409)
         PLAY_CONTEXT.set(PlayContext(row.user_id, cast(PlayClient, row.played_by)))
         return PlayedModels(row.played_by)
     provider = as_provider(row.model_provider)

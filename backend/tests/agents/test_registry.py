@@ -11,7 +11,7 @@ def test_get_graph_unknown_raises_app_error() -> None:
     with pytest.raises(AppError) as e:
         get_graph("nope")
     assert e.value.code == "unknown_graph" and e.value.status_code == 404
-    assert e.value.message == "Parcours inconnu : nope"
+    assert e.value.message == "Unknown workflow: nope"
 
 
 def test_get_agent_unknown_raises_app_error() -> None:

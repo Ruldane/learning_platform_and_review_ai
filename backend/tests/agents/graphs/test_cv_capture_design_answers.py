@@ -13,7 +13,7 @@ from tests.support.cv_template import spec as cv_spec
 from tests.support.cv_templates import FakeCvTemplateStore, spec_reply
 
 NOT_JSON = "Voici la description corrigée, sans JSON."
-STALLED = "Je n'ai pas su corriger la description : le modèle reste tel quel."
+STALLED = "The description could not be adjusted. The template is unchanged."
 
 
 async def test_validate_finishes_ready(
