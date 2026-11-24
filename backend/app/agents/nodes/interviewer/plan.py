@@ -35,7 +35,7 @@ from app.agents.tools.interview_schema import (
     plan_schema,
 )
 
-PLAN_REQUEST = "Prépare les questions de l'entretien."
+PLAN_REQUEST = "Prepare the interview questions."
 PLAN_TIMEOUT_S = 300  # trois demandes au plus, chacune avec ses nouveaux essais (GLM)
 
 logger = logging.getLogger(__name__)
@@ -93,7 +93,7 @@ def make_plan(deps: GraphDeps) -> Node:
                 [SystemMessage(prompt), HumanMessage(PLAN_REQUEST)],
                 agent=AGENT,
                 step="plan",
-                intent="je prépare tes questions",
+                intent="Preparing your questions.",
             )
             questions = [question.model_dump() for question in planned.questions]
         logger.info("Plan écrit : session %s, %d question(s)", deps.session_id, len(questions))

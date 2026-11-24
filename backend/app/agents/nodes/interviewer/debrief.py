@@ -44,15 +44,14 @@ from app.agents.tools.study_schema import CardDraft
 from app.agents.tools.text_claims import text_claims
 from app.core.errors import AppError
 
-DEBRIEF_REQUEST = "Écris le débrief de l'entretien."
+DEBRIEF_REQUEST = "Write the interview debrief."
 DEBRIEF_TIMEOUT_S = 300  # plafond du nœud (`node_timeout`)
 DEBRIEF_CALL_TIMEOUT_S = 270.0  # plus court : le repli (rien à écrire) a de la marge
 MISSED_MAX_NOTE = 2
 FRONT_MAX = 300
-NOTHING_TO_GRADE = "L'entretien s'arrête ici : sans réponse, il n'y a rien à noter."
+NOTHING_TO_GRADE = "Interview ended. No answers to score."
 DEBRIEF_FAILED = (
-    "Je n'ai pas pu écrire le débrief : tes réponses sont gardées, mais l'entretien reste sans "
-    "notes ni fiches."
+    "The debrief couldn't be written. Your answers are saved. No scores or review cards were made."
 )
 
 logger = logging.getLogger(__name__)
@@ -130,7 +129,7 @@ async def _written(deps: GraphDeps, ctx: InterviewContext, exchanges: list[Excha
         [SystemMessage(prompt), HumanMessage(DEBRIEF_REQUEST)],
         agent=AGENT,
         step="debrief",
-        intent="j'écris ton débrief",
+        intent="Writing your debrief.",
     )
     update = {
         "weakest_index": weakest,
@@ -196,11 +195,16 @@ def make_debrief(deps: GraphDeps) -> Node:
 def _closing(debrief: Debrief | None, cards: list[CardDraft], answered: int) -> str:
     if debrief is None:  # sans réponse : arrêté ; avec des réponses : débrief en échec
         return DEBRIEF_FAILED if answered else NOTHING_TO_GRADE
-    text = f"Entretien terminé : {answered} question(s) notée(s), débrief prêt."
+    unscored = len(debrief.unrated)
+    scored = answered - unscored
+    questions = "question" if scored == 1 else "questions"
+    text = f"Interview complete. {scored} {questions} scored. Your debrief is ready."
     if cards:
-        text += f" {len(cards)} fiche(s) de révision créée(s)."
-    if debrief.unrated:
-        text += f" {len(debrief.unrated)} réponse(s) n'ont pas pu être notées."
+        noun = "card" if len(cards) == 1 else "cards"
+        text += f" {len(cards)} review {noun} created."
+    if unscored:
+        answers = "answer" if unscored == 1 else "answers"
+        text += f" {unscored} {answers} could not be scored."
     return text
 
 

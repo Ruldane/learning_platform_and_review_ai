@@ -8451,7 +8451,7 @@
             "type": "integer"
           },
           "language": {
-            "default": "fr",
+            "default": "en",
             "enum": [
               "fr",
               "en"
@@ -10636,7 +10636,7 @@
             "type": "integer"
           },
           "language": {
-            "default": "fr",
+            "default": "en",
             "enum": [
               "fr",
               "en"

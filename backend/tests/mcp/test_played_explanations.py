@@ -125,7 +125,9 @@ async def test_played_system_design_assesses_the_submitted_board(
     sid = started.json()["session_id"]
     path = f"{API}/interviews/{started.json()['interview_id']}/design"
     question = (await wait_status(client, sid, "waiting_user"))["pending_interrupt"]
+    assert question["question"] == "Submit your saved diagram and explain your design choices."
     assignment = (await client.get(path)).json()
+    assert assignment["subject"]["title"] == "Design a reminder service"
     version = await save_rectangle(client, assignment["board"]["id"], "Reminder queue")
     await save_rectangle(client, version, "Later draft")
     resumed = await client.post(

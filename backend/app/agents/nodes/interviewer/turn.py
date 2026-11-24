@@ -45,17 +45,17 @@ from app.core.errors import AppError
 
 KIND = "interview_answer"
 STOP = "stop"
-STOP_LABEL = "Terminer l'entretien"
-ANSWER_FIELD = {"id": "answer", "label": "Ta réponse", "required": True, "max_length": 4000}
+STOP_LABEL = "End the interview"
+ANSWER_FIELD = {"id": "answer", "label": "Your answer", "required": True, "max_length": 4000}
 MAX_ANSWER_CHARS = 4000
-TURN_REQUEST = "Lis la réponse et note-la."
+TURN_REQUEST = "Read and score the answer."
 TURN_CALL_TIMEOUT_S = 105.0  # plus court que le plafond d'un nœud (120 s) : le repli s'écrit
 NEUTRAL_NOTE = 3
 CRITERION_LABELS = {
-    "clarte": "clarté",
+    "clarte": "clarity",
     "structure": "structure",
-    "profondeur": "profondeur technique",
-    "adequation": "adéquation au poste",
+    "profondeur": "technical depth",
+    "adequation": "fit for the role",
 }
 
 logger = logging.getLogger(__name__)
@@ -102,7 +102,7 @@ def _previous(state: InterviewState) -> str:
     """L'échange de la question en cours jusqu'à sa relance (celle-ci attend sa note)."""
     last = Exchange.model_validate(state["exchanges"][-1])
     return untrusted(
-        exchange_text(last, with_note=False, pending_follow_up=True), "échange précédent"
+        exchange_text(last, with_note=False, pending_follow_up=True), "previous exchange"
     )
 
 
@@ -116,7 +116,7 @@ def turn_vars(
         "final": final,
         "criterion_label": CRITERION_LABELS[planned.criterion],
         "question": untrusted(planned.text, "question de l'entretien"),
-        "answer": untrusted(text, "réponse de January"),
+        "answer": untrusted(text, "January's answer"),
         "before": _previous(state) if final else "",
     }
 
@@ -139,7 +139,7 @@ async def _decide(
                 [SystemMessage(prompt), HumanMessage(TURN_REQUEST)],
                 agent=AGENT,
                 step=step,
-                intent="je lis ta réponse",
+                intent="Reading your answer.",
             )
             return decision, False
     except (AppError, TimeoutError) as exc:

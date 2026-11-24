@@ -9935,7 +9935,7 @@ export interface components {
             duration_min: 15 | 30 | 45;
             /**
              * Language
-             * @default fr
+             * @default en
              * @enum {string}
              */
             language: "fr" | "en";
@@ -10723,7 +10723,7 @@ export interface components {
             duration_min: 15 | 30 | 45;
             /**
              * Language
-             * @default fr
+             * @default en
              * @enum {string}
              */
             language: "fr" | "en";

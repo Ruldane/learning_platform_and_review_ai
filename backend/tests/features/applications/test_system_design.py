@@ -49,8 +49,17 @@ async def save_rectangle(client: httpx.AsyncClient, board_id: str, label: str) -
     return str(edited.json()["id"])
 
 
+@pytest.fixture(params=["System design", "Conception de systèmes"])
+async def design_skill(request: pytest.FixtureRequest, client: httpx.AsyncClient) -> str:
+    name: str = request.param
+    if name != "System design":
+        created = await client.post(f"{API}/skills", json={"name": name})
+        assert created.status_code == 201, created.text
+    return name
+
+
 async def test_design_assesses_the_submitted_board_version_and_records_one_proof(
-    design_model: list[str], client: httpx.AsyncClient, app: FastAPI
+    design_model: list[str], client: httpx.AsyncClient, app: FastAPI, design_skill: str
 ) -> None:
     started = await client.post(
         f"{API}/interviews", json={"mode": "case", "duration_min": 30, "system_design": True}
@@ -89,10 +98,11 @@ async def test_design_assesses_the_submitted_board_version_and_records_one_proof
         SystemDesignReview.model_validate(REVIEW),
     )
     graph = (await client.get(f"{API}/skills/graph")).json()
-    skill = next(node for node in graph["nodes"] if node["name"] == "Conception de systèmes")
+    [skill] = [node for node in graph["nodes"] if node["name"] == design_skill]
     assert skill["level"] == "en_cours"
     detail = (await client.get(f"{API}/skills/{skill['id']}")).json()
-    assert [item["kind"] for item in detail["evidence"]].count("system_design") == 1
+    [proof] = [item for item in detail["evidence"] if item["kind"] == "system_design"]
+    assert proof["label"] == "Passed system design interview"
 
 
 async def test_cancelled_session_cannot_save_a_design_review(

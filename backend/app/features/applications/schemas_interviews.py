@@ -27,7 +27,7 @@ class InterviewIn(BaseModel):
 
     mode: InterviewMode
     duration_min: Literal[15, 30, 45]
-    language: Literal["fr", "en"] = "fr"
+    language: Literal["fr", "en"] = "en"
     radar_role: RadarLabel | None = None
     radar_zone: RadarLabel | None = None
 

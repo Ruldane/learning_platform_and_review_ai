@@ -3,7 +3,7 @@ import { usePostingChoices } from "../../hooks/usePostingChoices";
 import { useStartInterview, type InterviewSettings } from "../../hooks/useStartInterview";
 import { EMPTY_TARGET, toTarget } from "./targetDraft";
 
-const DEFAULTS: InterviewSettings = { mode: "mixed", durationMin: 30, language: "fr" };
+const DEFAULTS: InterviewSettings = { mode: "mixed", durationMin: 30, language: "en" };
 
 /**
  * L'état du formulaire des réglages et son envoi. Sans fiche (`applicationId` nul), la cible

@@ -33,7 +33,7 @@ async def test_debrief_failure_keeps_the_answers(
     assert (saved.debrief, saved.flags, saved.cards) == (None, [], [])
     assert len(prompts(run.models, DEBRIEF_REQUEST)) == 3
     [done] = await run.events("run.completed")
-    assert "réponses sont gardées" in done["summary"] and "débrief" in done["summary"]
+    assert "Your answers are saved" in done["summary"] and "debrief" in done["summary"]
 
 
 async def test_debrief_timeout_keeps_the_answers(
@@ -92,9 +92,9 @@ async def test_unrated_answer_is_visible(
     assert [e.unrated for e in saved.exchanges] == [True, False, False, False]
     assert saved.debrief is not None and saved.debrief.unrated == [0]
     [debrief_prompt] = prompts(run.models, DEBRIEF_REQUEST)
-    assert "non notée" in debrief_prompt
+    assert "unscored" in debrief_prompt
     [done] = await run.events("run.completed")
-    assert "1 réponse(s) n'ont pas pu être notées" in done["summary"]
+    assert "1 answer could not be scored" in done["summary"]
 
 
 async def test_final_turn_prompt_does_not_say_the_follow_up_is_unanswered(

@@ -26,9 +26,9 @@ export function setup(options: InterviewApiOptions = {}, path = "/candidatures/a
   return { ...view, sockets, interviews };
 }
 
-/** Lance un entretien avec les réglages par défaut et ouvre le flux de sa session. */
+/** Start an interview with the default settings and open its session stream. */
 export async function startInterview(view: ReturnType<typeof setup>) {
-  await view.user.click(await screen.findByRole("button", { name: "Commencer l'entretien" }));
+  await view.user.click(await screen.findByRole("button", { name: "Start the interview" }));
   const stream = await openStream(view.sockets, SESSION);
   return { stream, e: councilEvents(SESSION) };
 }
@@ -42,7 +42,7 @@ export const ask = (
   e.message(`interviewer-q${n}`, text, "interviewer"),
   e.interrupt("interview_answer", interruptId, {
     question: text,
-    options: [{ value: "stop", label: "Terminer l'entretien" }],
-    fields: [{ id: "answer", label: "Ta réponse", required: true, max_length: 4000 }],
+    options: [{ value: "stop", label: "End the interview" }],
+    fields: [{ id: "answer", label: "Your answer", required: true, max_length: 4000 }],
   }),
 ];

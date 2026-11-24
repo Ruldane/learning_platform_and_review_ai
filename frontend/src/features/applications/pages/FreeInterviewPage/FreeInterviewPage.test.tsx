@@ -28,7 +28,7 @@ function setup(options: InterviewApiOptions = {}) {
   return { ...view, sockets, interviews };
 }
 
-const START = "Commencer l'entretien";
+const START = "Start the interview";
 
 describe("FreeInterviewPage", () => {
   beforeEach(() => useSessionStore.getState().reset("iv-s-new"));
@@ -36,15 +36,15 @@ describe("FreeInterviewPage", () => {
   it("is the free interview: no application, a choice between an offer and a job title", async () => {
     setup({ postings: [postingOut({ id: "p1", company: "Acme", title: "Data engineer" })] });
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Entretien blanc libre" }),
+      await screen.findByRole("heading", { level: 1, name: "Open mock interview" }),
     ).toBeVisible();
-    expect(screen.getByRole("link", { name: "Retour aux candidatures" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Back to applications" })).toHaveAttribute(
       "href",
       "/candidatures",
     );
-    const target = await screen.findByRole("group", { name: "Sur quoi porte l'entretien ?" });
-    expect(within(target).getByRole("radio", { name: "Une offre analysée" })).toBeChecked();
-    const posting = screen.getByRole("combobox", { name: "Offre" });
+    const target = await screen.findByRole("group", { name: "What is the interview about?" });
+    expect(within(target).getByRole("radio", { name: "An analyzed posting" })).toBeChecked();
+    const posting = screen.getByRole("combobox", { name: "Posting" });
     expect(within(posting).getByRole("option", { name: "Acme, Data engineer" })).toBeVisible();
   });
 
@@ -52,22 +52,22 @@ describe("FreeInterviewPage", () => {
     const view = setup({
       postings: [postingOut({ id: "p1", company: "Acme", title: "Data engineer" })],
     });
-    await view.user.selectOptions(await screen.findByRole("combobox", { name: "Offre" }), "p1");
-    await view.user.click(screen.getByRole("radio", { name: "Technique" }));
+    await view.user.selectOptions(await screen.findByRole("combobox", { name: "Posting" }), "p1");
+    await view.user.click(screen.getByRole("radio", { name: "Technical" }));
     await view.user.click(screen.getByRole("button", { name: START }));
     await waitFor(() => expect(view.interviews.state.starts).toHaveLength(1));
     expect(view.interviews.state.starts[0]).toEqual({
       applicationId: null,
-      body: { mode: "technical", duration_min: 30, language: "fr", posting_id: "p1" },
+      body: { mode: "technical", duration_min: 30, language: "en", posting_id: "p1" },
     });
     await openStream(view.sockets, "iv-s-new");
   });
 
   it("starts an interview on a job title: role, no posting_id", async () => {
     const view = setup({ postings: [postingOut({ id: "p1" })] });
-    await view.user.click(await screen.findByRole("radio", { name: "Un intitulé de poste" }));
+    await view.user.click(await screen.findByRole("radio", { name: "A job title" }));
     await view.user.type(
-      screen.getByRole("textbox", { name: /Intitulé du poste/ }),
+      screen.getByRole("textbox", { name: /^Job title/ }),
       "  Data engineer  ",
     );
     await view.user.click(screen.getByRole("button", { name: START }));
@@ -75,23 +75,23 @@ describe("FreeInterviewPage", () => {
     expect(view.interviews.state.starts[0]?.body).toEqual({
       mode: "mixed",
       duration_min: 30,
-      language: "fr",
+      language: "en",
       role: "Data engineer",
     });
   });
 
   it("goes straight to the job title when there is no analysed offer", async () => {
     setup({ postings: [postingOut({ id: "p2", status: "analyzing" })] });
-    expect(await screen.findByText(/Tu n'as pas encore d'offre analysée/)).toBeVisible();
-    expect(screen.queryByRole("combobox", { name: "Offre" })).toBeNull();
-    expect(screen.getByRole("textbox", { name: /Intitulé du poste/ })).toBeVisible();
+    expect(await screen.findByText(/You don't have an analyzed posting yet/)).toBeVisible();
+    expect(screen.queryByRole("combobox", { name: "Posting" })).toBeNull();
+    expect(screen.getByRole("textbox", { name: /^Job title/ })).toBeVisible();
   });
 
   it("asks for an offer or a title and sends nothing when both are empty", async () => {
     const view = setup({ postings: [] });
     await view.user.click(await screen.findByRole("button", { name: START }));
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Choisis une offre ou saisis un intitulé de poste.",
+      "Choose a posting or enter a job title.",
     );
     expect(view.interviews.state.starts).toHaveLength(0);
   });
@@ -104,11 +104,11 @@ describe("FreeInterviewPage", () => {
         interviewOut({ id: "k1", application_id: "a1" }),
       ],
     });
-    const list = await screen.findByRole("list", { name: "Entretiens passés" });
+    const list = await screen.findByRole("list", { name: "Past interviews" });
     expect(within(list).getAllByRole("listitem")).toHaveLength(1);
-    expect(within(list).getByText("Poste : Data engineer")).toBeVisible();
+    expect(within(list).getByText("Role: Data engineer")).toBeVisible();
     await view.user.click(within(list).getByRole("button"));
-    expect(await screen.findByRole("heading", { name: "Débrief de l'entretien" })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "Interview debrief" })).toBeVisible();
   });
 
   it("names a free interview on an offer by the offer", async () => {
@@ -116,26 +116,26 @@ describe("FreeInterviewPage", () => {
       postings: [postingOut({ id: "p1", company: "Acme", title: "Data engineer" })],
       interviews: [interviewOut({ id: "f2", application_id: null, posting_id: "p1", role: null })],
     });
-    const list = await screen.findByRole("list", { name: "Entretiens passés" });
-    expect(await within(list).findByText("Offre : Acme, Data engineer")).toBeVisible();
+    const list = await screen.findByRole("list", { name: "Past interviews" });
+    expect(await within(list).findByText("Posting: Acme, Data engineer")).toBeVisible();
   });
 
   it("asks the first question of a free interview like any other", async () => {
     const view = setup({ postings: [] });
     await view.user.type(
-      await screen.findByRole("textbox", { name: /Intitulé du poste/ }),
+      await screen.findByRole("textbox", { name: /^Job title/ }),
       "Data engineer",
     );
     await view.user.click(screen.getByRole("button", { name: START }));
     const stream = await openStream(view.sockets, "iv-s-new");
     const e = councilEvents("iv-s-new");
     stream.push(
-      e.message("interviewer-q1", "Présente-toi.", "interviewer"),
+      e.message("interviewer-q1", "Tell me about yourself.", "interviewer"),
       e.interrupt("interview_answer", "q1", {
-        question: "Présente-toi.",
-        options: [{ value: "stop", label: "Terminer l'entretien" }],
+        question: "Tell me about yourself.",
+        options: [{ value: "stop", label: "End the interview" }],
       }),
     );
-    expect(await screen.findByRole("region", { name: "Question 1 sur 7" })).toBeVisible();
+    expect(await screen.findByRole("region", { name: "Question 1 of 7" })).toBeVisible();
   });
 });
