@@ -3174,3 +3174,14 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
 - **Raison** : January réécrit ses leçons et ses programmes par le MCP en longues séances ; les
   100 écritures du jour, partagées avec les clients du relais, coupent le travail en plein milieu.
   Les limites de la minute suffisent à freiner un client qui boucle.
+
+## D312
+
+- **Date** 2026-11-24
+- **Subject** English throughout Tremplin
+- **Decision** Use English for the interface, generated text, MCP, documentation and code.
+  Move application codes to English with reversible data migrations. Regenerate the API
+  contract and frontend types when the codes change. Publish English page URLs and redirect
+  the previous French paths so bookmarks and saved links still resolve.
+- **Reason** January wants one language across the app and its tools. Migrations keep existing
+  records usable and leave user-authored text and previously generated content as written.
