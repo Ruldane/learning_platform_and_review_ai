@@ -26,10 +26,10 @@ from app.agents.state.hiring_committee import HiringCommitteeState
 from app.agents.tools.committee_schema import MAX_WORDS, Persona, speaking_order
 
 _NAME_PATTERNS: dict[str, re.Pattern[str]] = {
-    "ats_reader": re.compile(r"\b(?:Lecteur ATS|filtre machine)\b", re.IGNORECASE),
-    "recruiter": re.compile(r"\bRecruteu(?:r|se)\b"),
+    "ats_reader": re.compile(r"\b(?:ATS reader|Lecteur ATS|filtre machine)\b", re.IGNORECASE),
+    "recruiter": re.compile(r"\b(?:Recruiter|Recruteu(?:r|se))\b"),
     "manager": re.compile(r"\bManager\b"),
-    "colleague": re.compile(r"\b(?:Futur(?:e)? coll[èe]gue|Coll[èe]gue)\b"),
+    "colleague": re.compile(r"\b(?:Future colleague|Futur(?:e)? coll[èe]gue|Coll[èe]gue)\b"),
 }
 
 logger = logging.getLogger(__name__)

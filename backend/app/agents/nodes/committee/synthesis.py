@@ -28,7 +28,6 @@ from app.agents.state.hiring_committee import HiringCommitteeState
 from app.agents.tools.committee_schema import (
     LABELS,
     PERSONAS,
-    VERDICT_WORDS,
     CommitteeContext,
     PersonaVote,
     RankedObjection,
@@ -54,8 +53,8 @@ def allowed_phrases(ctx: CommitteeContext) -> list[str]:
 def votes_text(votes: list[PersonaVote]) -> str:
     """Les votes tels que le Modérateur les lit (l'objection et la raison viennent d'un agent)."""
     return "\n\n".join(
-        f"{LABELS[v.persona]} ({v.persona}) : {v.vote}\n"
-        + untrusted(f"Objection : {v.objection}\nRaison : {v.reason}", f"vote {v.persona}")
+        f"{LABELS[v.persona]} ({v.persona}): {v.vote}\n"
+        + untrusted(f"Objection: {v.objection}\nReason: {v.reason}", f"vote {v.persona}")
         for v in votes
     )
 
@@ -70,10 +69,10 @@ def known_personas(objections: list[RankedObjection]) -> list[RankedObjection]:
 
 
 def synthesis_text(synthesis: Synthesis) -> str:
-    lines = [f"Verdict du comité : {VERDICT_WORDS[synthesis.verdict]}.", "", "Objections :"]
+    lines = [f"The committee voted {synthesis.verdict}.", "", "Objections"]
     lines += [f"{rank}. {o.text}" for rank, o in enumerate(synthesis.objections, start=1)]
-    lines += ["", "Les trois changements qui feraient basculer un vote :"]
-    lines += [f"- {LABELS[c.persona]} : {c.text}" for c in synthesis.changes]
+    lines += ["", "Three changes that could change a vote"]
+    lines += [f"- {LABELS[c.persona]} · {c.text}" for c in synthesis.changes]
     return "\n".join(lines)
 
 
@@ -86,11 +85,11 @@ def make_synthesis(deps: GraphDeps) -> Node:
         prompt = render_prompt(
             AGENT,
             mode="committee",
-            verdict=VERDICT_WORDS[verdict],
+            verdict=verdict,
             votes=votes_text(votes),
             transcript=transcript_text(state["spoken"]),
             dossier=dossier_block(ctx),
-            facts=untrusted(facts_text(ctx.profile), "profil"),
+            facts=untrusted(facts_text(ctx.profile), "profile"),
             personas=", ".join(f"{slug} ({label})" for slug, label in LABELS.items()),
         )
         model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
@@ -100,7 +99,7 @@ def make_synthesis(deps: GraphDeps) -> Node:
             [SystemMessage(prompt), HumanMessage(SYNTHESIS_REQUEST)],
             agent=AGENT,
             step="synthese",
-            intent="je fais la synthèse du comité",
+            intent="Summarizing the committee's discussion",
         )
         result = Synthesis(
             verdict=verdict,

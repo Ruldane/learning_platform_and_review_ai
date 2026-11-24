@@ -13,7 +13,7 @@ citation sans source lue (`kit_dossier`)."""
 import datetime as dt
 from typing import Annotated, ClassVar, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, BeforeValidator, Field
 
 from app.agents.runtime.prose import Prose
 from app.agents.tools.cv_schema import MasterProfileData
@@ -212,6 +212,18 @@ class NewsItem(BaseModel):
     date: dt.date | None = None
 
 
+_LEGACY_COMPANY_SIZES = {"pme": "sme", "grand_groupe": "large_company", "inconnu": "unknown"}
+
+
+def _company_size(value: object) -> object:
+    return _LEGACY_COMPANY_SIZES.get(value, value) if isinstance(value, str) else value
+
+
+CompanySize = Annotated[
+    Literal["startup", "sme", "large_company", "unknown"], BeforeValidator(_company_size)
+]
+
+
 class CompanyDossier(BaseModel):
     """Le dossier d'une page sur l'entreprise (F16) : chaque texte cite ses sources par `[n]`."""
 
@@ -227,7 +239,7 @@ class CompanyDossier(BaseModel):
         min_length=5, max_length=5
     )
     watch_points: list[Cited] = Field(default_factory=list, max_length=6)
-    size: Literal["startup", "pme", "grand_groupe", "inconnu"] = "inconnu"
+    size: CompanySize = "unknown"
 
 
 class SourceRef(BaseModel):

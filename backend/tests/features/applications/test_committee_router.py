@@ -151,17 +151,15 @@ async def test_done_run_keeps_its_status_and_result(
 ) -> None:
     _, version = await ready_committee(client, app)
     started = await launch(client, version)
-    await save_done(
-        app, started, votes_of("oui", "oui", "non", "peut_etre"), synthesis_of("peut_etre")
-    )
+    await save_done(app, started, votes_of("yes", "yes", "no", "maybe"), synthesis_of("maybe"))
     await spy(app).end(str(app.state.local_user_id), started["session_id"])
     got = (await client.get(f"{ROOT}/committee/{started['run_id']}")).json()
-    assert (got["status"], got["verdict"]) == ("done", "peut_etre")
+    assert (got["status"], got["verdict"]) == ("done", "maybe")
     assert [(v["persona"], v["vote"]) for v in got["votes"]] == [
-        ("ats_reader", "oui"),
-        ("recruiter", "oui"),
-        ("manager", "non"),
-        ("colleague", "peut_etre"),
+        ("ats_reader", "yes"),
+        ("recruiter", "yes"),
+        ("manager", "no"),
+        ("colleague", "maybe"),
     ]
     assert got["votes"][0]["objection"] and got["votes"][0]["reason"]
     assert [o["text"] for o in got["objections"]][0] == "Aucun mot clé LangGraph dans le CV"

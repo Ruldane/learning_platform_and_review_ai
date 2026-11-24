@@ -98,7 +98,7 @@ async def test_committee_never_logged(
     speeches = {"manager": f"Je réponds au Recruteur : {secrets[2]}."}
     run = await committee_runner(committee(speeches=speeches))
     await run.wait_status("completed")
-    assert run.sid in caplog.text and "verdict oui" in caplog.text
+    assert run.sid in caplog.text and "verdict yes" in caplog.text
     for secret in secrets:
         assert secret not in caplog.text
         assert secret.lower() not in caplog.text.lower()
@@ -125,7 +125,7 @@ async def test_vote_values_never_logged(
     """M5 : le journal des votes dit la session et le nombre de votes, jamais ce que chaque persona
     a voté (oui, non, peut_etre) ; le verdict, résultat du comité, reste journalisé à part."""
     caplog.set_level(logging.INFO, logger="app")
-    votes = {"ats_reader": "non", "recruiter": "peut_etre", "manager": "oui", "colleague": "non"}
+    votes = {"ats_reader": "no", "recruiter": "maybe", "manager": "yes", "colleague": "no"}
     run = await committee_runner(committee(votes=votes))
     await run.wait_status("completed")
     [record] = [r for r in caplog.records if r.name == "app.agents.nodes.committee.votes"]
@@ -133,5 +133,5 @@ async def test_vote_values_never_logged(
     assert run.sid in text and "4 vote(s)" in text
     for persona in votes:
         assert persona not in text
-    assert not re.search(r"\b(oui|non|peut_etre|peut-être)\b", text)
-    assert not re.search(r"=(oui|non|peut_etre)\b", caplog.text)
+    assert not re.search(r"\b(yes|no|maybe)\b", text)
+    assert not re.search(r"=(yes|no|maybe)\b", caplog.text)

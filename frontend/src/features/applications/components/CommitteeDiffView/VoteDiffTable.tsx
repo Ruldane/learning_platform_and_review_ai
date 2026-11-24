@@ -3,7 +3,7 @@ import { agentIdentity } from "@/shared/session-ui";
 import { VoteLabel } from "../VoteLabel";
 import type { VoteChangeView, VoteValueView } from "../viewTypes";
 
-const WEIGHT: Record<VoteValueView, number> = { non: 0, peut_etre: 1, oui: 2 };
+const WEIGHT: Record<VoteValueView, number> = { no: 0, maybe: 1, yes: 2 };
 
 /** « Plus favorable » quand le vote monte (non, peut-être, oui), « Moins favorable » quand il descend. */
 function evolution(change: VoteChangeView): "same" | "better" | "worse" {

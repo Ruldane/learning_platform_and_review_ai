@@ -139,7 +139,7 @@ Rules:
 - `activity`: what the company does; `product`: its product or services; `stack`: the
   technologies it uses, one per entry, each cited; `culture`: its culture and its
   stated values; `interview_process`: its interview process if it is described; `size`:
-  `startup`, `pme`, `grand_groupe` or `inconnu`.
+  `startup`, `sme`, `large_company`, or `unknown`.
 - `news`: news items less than 6 months old relative to today's date, each with its date
   (`date`, YYYY-MM-DD) and its citation in `text`; a news item without a date is discarded.
 - `questions`: exactly five smart questions that January can ask in an interview,

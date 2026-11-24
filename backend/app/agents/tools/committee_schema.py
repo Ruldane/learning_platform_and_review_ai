@@ -10,11 +10,11 @@ Les textes lus par January sont raccourcis (`Prose`) plutôt que refusés ; le n
 from collections import Counter
 from typing import Annotated, Literal, get_args
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, BeforeValidator, Field
 
 from app.agents.runtime.prose import Prose, ShortenToMax
 from app.agents.tools.cv_schema import CvContent, MasterProfileData, facts_of
-from app.agents.tools.kit_schema import CompanyDossier
+from app.agents.tools.kit_schema import CompanyDossier, CompanySize
 from app.agents.tools.posting_schema import Keyword, PostingAnalysis, contains_term, normalize_term
 from app.agents.tools.text_claims import Claim, text_claims
 
@@ -30,8 +30,6 @@ __all__ = [
     "Persona",
     "PersonaVote",
     "RankedObjection",
-    "Size",
-    "VERDICT_WORDS",
     "Synthesis",
     "SynthesisDraft",
     "Verdict",
@@ -45,22 +43,28 @@ __all__ = [
 
 Persona = Literal["ats_reader", "recruiter", "manager", "colleague"]
 PERSONAS: tuple[Persona, ...] = get_args(Persona)  # filtre machine, RH, manager, futur collègue
-Verdict = Literal["oui", "non", "peut_etre"]
-Size = Literal["startup", "pme", "grand_groupe", "inconnu"]
+Verdict = Literal["yes", "no", "maybe"]
+_LEGACY_VERDICTS = {"oui": "yes", "non": "no", "peut_etre": "maybe"}
+
+
+def _verdict(value: object) -> object:
+    return _LEGACY_VERDICTS.get(value, value) if isinstance(value, str) else value
+
+
+_SavedVerdict = Annotated[Verdict, BeforeValidator(_verdict)]
 LABELS: dict[str, str] = {
-    "ats_reader": "Lecteur ATS",
-    "recruiter": "Recruteur",
+    "ats_reader": "ATS reader",
+    "recruiter": "Recruiter",
     "manager": "Manager",
-    "colleague": "Futur collègue",
+    "colleague": "Future colleague",
 }
 MAX_WORDS = 150  # une prise de parole (SPEC 9.3)
-VERDICT_WORDS: dict[str, str] = {"oui": "oui", "non": "non", "peut_etre": "peut-être"}
 MAX_OBJECTIONS = 6
 CHANGES = 3
 MAX_TERMS = 30
 Sentence = Annotated[str, Field(min_length=1, max_length=300), ShortenToMax()]
-ACQUIRE = "À acquérir : {terms}. Ton profil ne le dit pas : ne l'écris pas dans ton CV."
-CHECK = "À vérifier : ton profil ne dit pas {terms}. Ne l'écris pas dans ton CV."
+ACQUIRE = "Build evidence for {terms} before adding this to your CV."
+CHECK = "To check · Verify {terms} before adding these details to your CV."
 # Les mots d'une section de CV : une consigne sur le CV (« la section Compétences »), pas un nom.
 _SECTION_NAMES = (
     "Compétences Expériences Expérience Formation Formations Projets Langues Résumé Profil "
@@ -74,7 +78,7 @@ SECTION_WORDS = frozenset(normalize_term(word, plural=True) for word in _SECTION
 class Vote(BaseModel):
     """Le vote d'une persona : un entretien, oui, non ou peut-être, et son objection principale."""
 
-    vote: Verdict
+    vote: _SavedVerdict
     objection: Sentence
     reason: Prose = Field(min_length=1, max_length=500)
 
@@ -117,7 +121,7 @@ class SynthesisDraft(BaseModel):
 class Synthesis(BaseModel):
     """Le verdict (fixé par le code), les objections classées et les trois changements."""
 
-    verdict: Verdict
+    verdict: _SavedVerdict
     objections: list[RankedObjection] = Field(max_length=MAX_OBJECTIONS)
     changes: list[Change] = Field(min_length=CHANGES, max_length=CHANGES)
 
@@ -140,7 +144,7 @@ class CommitteeContext(BaseModel):
     posting_text: str
     analysis: PostingAnalysis
     dossier: CompanyDossier | None = None
-    size: Size = "inconnu"
+    size: CompanySize = "unknown"
     ats_terms: AtsTermsView = Field(default_factory=AtsTermsView)
     profile: MasterProfileData
     company: str | None = None
@@ -154,7 +158,7 @@ def majority_verdict(votes: list[PersonaVote]) -> Verdict:
     for answer in get_args(Verdict):
         if counts[answer] * 2 > len(votes):
             return answer  # type: ignore[no-any-return]
-    return "peut_etre"
+    return "maybe"
 
 
 def speaking_order(round_number: int) -> list[Persona]:

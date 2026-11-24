@@ -8,10 +8,10 @@ type Over = Record<string, unknown>;
 const PERSONAS = ["ats_reader", "recruiter", "manager", "colleague"] as const;
 
 /** Les quatre votes d'un comité (`VoteOut`) : trois oui, un non, par défaut. */
-export const votesOut = (votes: string[] = ["oui", "oui", "non", "oui"]) =>
+export const votesOut = (votes: string[] = ["yes", "yes", "no", "yes"]) =>
   PERSONAS.map((persona, index) => ({
     persona,
-    vote: votes[index] ?? "oui",
+    vote: votes[index] ?? "yes",
     objection: `Objection de ${persona}.`,
     reason: `Raison de ${persona}.`,
   }));
@@ -35,7 +35,7 @@ export const committeeOut = (over: Over = {}) => ({
   session_id: "cm-s1",
   status: "done",
   votes: votesOut(),
-  verdict: "oui",
+  verdict: "yes",
   objections: [
     { text: "Peu de résultats chiffrés.", personas: ["manager", "recruiter"] },
     { text: "Mot clé Kubernetes absent.", personas: ["ats_reader"] },
@@ -71,8 +71,8 @@ export const diffOut = (over: Over = {}) => ({
   previous_id: "c0",
   votes: PERSONAS.map((persona, index) => ({
     persona,
-    before: index === 0 ? "non" : "oui",
-    after: "oui",
+    before: index === 0 ? "no" : "yes",
+    after: "yes",
   })),
   objections_resolved: ["Mot clé Kubernetes absent."],
   objections_new: ["Résumé trop long."],

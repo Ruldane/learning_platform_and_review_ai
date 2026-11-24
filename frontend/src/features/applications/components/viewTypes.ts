@@ -244,7 +244,7 @@ export const PERSONA_ORDER = ["ats_reader", "recruiter", "manager", "colleague"]
 
 export type PersonaView = (typeof PERSONA_ORDER)[number];
 
-export type VoteValueView = "oui" | "non" | "peut_etre";
+export type VoteValueView = "yes" | "no" | "maybe";
 
 export type CommitteeStatusView = "running" | "done" | "failed" | "stopped";
 

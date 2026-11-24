@@ -4575,9 +4575,9 @@
             "anyOf": [
               {
                 "enum": [
-                  "oui",
-                  "non",
-                  "peut_etre"
+                  "yes",
+                  "no",
+                  "maybe"
                 ],
                 "type": "string"
               },
@@ -29212,18 +29212,18 @@
         "properties": {
           "after": {
             "enum": [
-              "oui",
-              "non",
-              "peut_etre"
+              "yes",
+              "no",
+              "maybe"
             ],
             "title": "After",
             "type": "string"
           },
           "before": {
             "enum": [
-              "oui",
-              "non",
-              "peut_etre"
+              "yes",
+              "no",
+              "maybe"
             ],
             "title": "Before",
             "type": "string"
@@ -29270,9 +29270,9 @@
           },
           "vote": {
             "enum": [
-              "oui",
-              "non",
-              "peut_etre"
+              "yes",
+              "no",
+              "maybe"
             ],
             "title": "Vote",
             "type": "string"

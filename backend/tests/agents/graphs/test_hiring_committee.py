@@ -37,12 +37,12 @@ async def test_committee_gives_four_votes_and_three_changes(
     saved = committee_store.only
     assert [v.persona for v in saved.votes] == list(PERSONAS)
     assert all(v.objection and v.reason for v in saved.votes)
-    assert saved.synthesis.verdict == "oui"
+    assert saved.synthesis.verdict == "yes"
     assert [o.text for o in saved.synthesis.objections][0] == "Aucun mot clé LangGraph dans le CV"
     assert [c.persona for c in saved.synthesis.changes] == ["recruiter", "manager", "ats_reader"]
     assert not any(c.needs_skill for c in saved.synthesis.changes)
     [done] = await run.events("run.completed")
-    assert "verdict oui" in done["summary"] and "simulation" in done["summary"]
+    assert "The simulated hiring committee voted yes" in done["summary"]
     assert committee_store.context_calls == 1
 
 
@@ -78,12 +78,12 @@ async def test_second_round_names_another_persona(committee_runner: MakeCommitte
     await run.wait_status("completed")
     asked = prompts(run.models, "recruiter", DEBATE_REQUEST)
     assert len(asked) == 2
-    assert "tour 1 sur 2" in asked[0] and "Réponds en particulier" not in asked[0]
-    assert "tour 2 sur 2" in asked[1] and "répondre nommément" not in asked[1]
-    assert "réponds nommément à au moins un autre membre du comité" in asked[1]
-    assert "Réponds en particulier au Futur collègue" in asked[1]  # le dernier du tour 1
+    assert "round 1 of 2" in asked[0] and "Reply in particular" not in asked[0]
+    assert "round 2 of 2" in asked[1]
+    assert "reply by name to at least one other committee member" in asked[1]
+    assert "Reply in particular to the Future colleague" in asked[1]
     second = prompts(run.models, "manager", DEBATE_REQUEST)[1]
-    assert "Réponds en particulier au Recruteur" in second
+    assert "Reply in particular to the Recruiter" in second
     assert all(names_other_persona(SPEECHES[p], p) for p in PERSONAS)
 
 
@@ -98,6 +98,8 @@ async def test_second_round_names_another_persona(committee_runner: MakeCommitte
         ("Le Manager, c'est moi.", "manager", False),
         ("Je pense que le CV est clair.", "recruiter", False),
         ("Un manager sceptique.", "recruiter", False),
+        ("The ATS reader made a good point.", "manager", True),
+        ("I agree with the Future colleague.", "ats_reader", True),
     ],
 )
 def test_names_other_persona(text: str, persona: str, expected: bool) -> None:
@@ -121,14 +123,14 @@ async def test_unnamed_reply_is_accepted_and_logged(
 @pytest.mark.parametrize(
     ("votes", "verdict"),
     [
-        (["oui", "oui", "oui", "oui"], "oui"),
-        (["oui", "oui", "oui", "non"], "oui"),
-        (["non", "non", "oui", "oui"], "peut_etre"),  # égalité 2-2
-        (["oui", "oui", "non", "peut_etre"], "peut_etre"),  # aucune majorité
-        (["oui", "non", "peut_etre", "peut_etre"], "peut_etre"),
-        (["non", "non", "non", "peut_etre"], "non"),
-        (["non", "non", "non", "non"], "non"),
-        (["peut_etre", "peut_etre", "peut_etre", "oui"], "peut_etre"),
+        (["yes", "yes", "yes", "yes"], "yes"),
+        (["yes", "yes", "yes", "no"], "yes"),
+        (["no", "no", "yes", "yes"], "maybe"),
+        (["yes", "yes", "no", "maybe"], "maybe"),
+        (["yes", "no", "maybe", "maybe"], "maybe"),
+        (["no", "no", "no", "maybe"], "no"),
+        (["no", "no", "no", "no"], "no"),
+        (["maybe", "maybe", "maybe", "yes"], "maybe"),
     ],
 )
 async def test_verdict_is_majority_by_code(
@@ -145,18 +147,17 @@ async def test_verdict_is_majority_by_code(
     assert committee_store.only.synthesis.verdict == verdict
     assert [v.vote for v in committee_store.only.votes] == votes
     [asked] = prompts(models, "moderator", SYNTHESIS_REQUEST)
-    wording = {"oui": "oui", "non": "non", "peut_etre": "peut-être"}[verdict]
-    assert f"Verdict du comité : **{wording}**" in asked
+    assert f"Committee verdict: **{verdict}**" in asked
 
 
 async def test_model_cannot_set_the_verdict(
     committee_runner: MakeCommittee, committee_store: FakeCommitteeStore
 ) -> None:
     """Un `verdict` dans la réponse du Modérateur est ignoré : seul celui du code est rangé."""
-    reply = synthesis_json().replace('{"objections"', '{"verdict": "non", "objections"')
+    reply = synthesis_json().replace('{"objections"', '{"verdict": "no", "objections"')
     run = await committee_runner(committee(synthesis=reply))
     await run.wait_status("completed")
-    assert committee_store.only.synthesis.verdict == "oui"
+    assert committee_store.only.synthesis.verdict == "yes"
 
 
 async def test_change_with_absent_term_marked_needs_skill(
@@ -177,7 +178,7 @@ async def test_change_with_absent_term_marked_needs_skill(
     await run.wait_status("completed")
     first, second, third = committee_store.only.synthesis.changes
     assert first.needs_skill and first.terms == ["Kubernetes"]
-    assert first.text.startswith("À acquérir : Kubernetes.") and "Ajoute" not in first.text
+    assert first.text.startswith("Build evidence for Kubernetes") and "Ajoute" not in first.text
     assert first.fact_ids == ["c1"] and first.persona == "ats_reader"
     assert not second.needs_skill and second.terms == []
     assert second.fact_ids == ["x1"]  # `z99` n'est pas un fait du profil
@@ -192,7 +193,7 @@ async def test_change_count_is_exactly_three(committee_runner: MakeCommittee) ->
     for persona in PERSONAS:
         models.when(persona, IMPRESSION_REQUEST, IMPRESSIONS[persona])
         models.when(persona, DEBATE_REQUEST, *[SPEECHES[persona]] * 2)
-        models.when(persona, VOTE_REQUEST, '{"vote": "oui", "objection": "o", "reason": "r"}')
+        models.when(persona, VOTE_REQUEST, '{"vote": "yes", "objection": "o", "reason": "r"}')
     models.when("moderator", SYNTHESIS_REQUEST, two, synthesis_json())
     run = await committee_runner(models)
     await run.wait_status("completed")
@@ -202,10 +203,10 @@ async def test_change_count_is_exactly_three(committee_runner: MakeCommittee) ->
 @pytest.mark.parametrize(
     ("size", "marker"),
     [
-        ("startup", "une startup"),
-        ("pme", "une PME"),
-        ("grand_groupe", "un grand groupe"),
-        ("inconnu", "Taille de l'entreprise inconnue"),
+        ("startup", "Company: a startup"),
+        ("sme", "Company: an SME"),
+        ("large_company", "Company: a large corporation"),
+        ("unknown", "Company size unknown"),
     ],
 )
 async def test_personas_adapt_to_company_size(
@@ -219,7 +220,12 @@ async def test_personas_adapt_to_company_size(
     committee_store.update(size=size)
     run = await committee_runner()
     await run.wait_status("completed")
-    others = {"une startup", "une PME", "un grand groupe", "Taille de l'entreprise inconnue"}
+    others = {
+        "Company: a startup",
+        "Company: an SME",
+        "Company: a large corporation",
+        "Company size unknown",
+    }
     for request in (IMPRESSION_REQUEST, DEBATE_REQUEST, VOTE_REQUEST):
         for persona in PERSONAS:
             for prompt in prompts(run.models, persona, request):
@@ -237,7 +243,7 @@ async def test_impression_sees_only_cv_and_posting(
     for persona in PERSONAS:
         [first] = prompts(run.models, persona, IMPRESSION_REQUEST)
         assert "Réduit de 30 %" in first and in_untrusted(first, "Réduit de 30 %")
-        assert DOSSIER_NOTE not in first and "Dossier de l'entreprise" not in first
+        assert DOSSIER_NOTE not in first and "Company dossier:" not in first
         assert not any(text in first for text in IMPRESSIONS.values())
         debate = prompts(run.models, persona, DEBATE_REQUEST)[0]
         assert DOSSIER_NOTE in debate and in_untrusted(debate, DOSSIER_NOTE)
@@ -251,13 +257,13 @@ async def test_only_the_ats_reader_sees_the_term_view(committee_runner: MakeComm
     """Le Lecteur ATS reçoit les termes de l'offre vus (ou non) dans le CV, calculés par le code."""
     run = await committee_runner()
     await run.wait_status("completed")
-    mark = "Termes de l'offre écrits dans le CV : Python"
+    mark = "Posting terms found in the CV: Python"
     [ats] = prompts(run.models, "ats_reader", IMPRESSION_REQUEST)
-    assert mark in ats and "Absents du CV : LangGraph" in ats and in_untrusted(ats, "LangGraph")
-    assert "quelles recherches de recruteur feraient remonter ce CV" in ats
+    assert mark in ats and "Missing from the CV: LangGraph" in ats
+    assert in_untrusted(ats, "LangGraph") and "which recruiter searches would surface" in ats
     for persona in ("recruiter", "manager", "colleague"):
         [prompt] = prompts(run.models, persona, IMPRESSION_REQUEST)
-        assert "Termes de l'offre écrits" not in prompt
+        assert "Posting terms found" not in prompt
 
 
 async def test_manager_and_colleague_share_the_recruiter_block(
@@ -265,7 +271,7 @@ async def test_manager_and_colleague_share_the_recruiter_block(
 ) -> None:
     run = await committee_runner()
     await run.wait_status("completed")
-    block = "comme une personne qui recrute pour cette offre"
+    block = "like a person recruiting for this posting"
     for persona in ("recruiter", "manager", "colleague"):
         assert block in prompts(run.models, persona, IMPRESSION_REQUEST)[0]
     assert block not in prompts(run.models, "ats_reader", IMPRESSION_REQUEST)[0]

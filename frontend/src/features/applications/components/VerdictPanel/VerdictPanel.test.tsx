@@ -21,53 +21,53 @@ const section = (name: RegExp) => screen.getByRole("heading", { name }).parentEl
 
 describe("VerdictPanel", () => {
   it("states the verdict in words with the vote count and its majority rule", () => {
-    render(<VerdictPanel verdict="oui" votes={makeVotes()} objections={objections} changes={[]} />);
-    expect(screen.getByText("Le comité dit :")).toBeVisible();
-    expect(screen.getByText("Oui")).toBeVisible();
-    expect(screen.getByText("Au moins 3 des 4 lecteurs ont voté oui.")).toBeVisible();
-    expect(screen.getByText("Les voix : 3 oui ; 1 non ; 0 peut-être.")).toBeVisible();
+    render(<VerdictPanel verdict="yes" votes={makeVotes()} objections={objections} changes={[]} />);
+    expect(screen.getByText("The committee says:")).toBeVisible();
+    expect(screen.getByText("Yes")).toBeVisible();
+    expect(screen.getByText("At least 3 of the 4 readers voted yes.")).toBeVisible();
+    expect(screen.getByText("The votes were 3 yes, 1 no, and 0 maybe.")).toBeVisible();
   });
 
   it("says that a split committee does not decide", () => {
     const votes = [
-      makeVote({ persona: "ats_reader", vote: "oui" }),
-      makeVote({ persona: "recruiter", vote: "oui" }),
-      makeVote({ persona: "manager", vote: "non" }),
-      makeVote({ persona: "colleague", vote: "non" }),
+      makeVote({ persona: "ats_reader", vote: "yes" }),
+      makeVote({ persona: "recruiter", vote: "yes" }),
+      makeVote({ persona: "manager", vote: "no" }),
+      makeVote({ persona: "colleague", vote: "no" }),
     ];
-    render(<VerdictPanel verdict="peut_etre" votes={votes} objections={[]} changes={[]} />);
-    expect(screen.getByText("Peut-être")).toBeVisible();
+    render(<VerdictPanel verdict="maybe" votes={votes} objections={[]} changes={[]} />);
+    expect(screen.getByText("Maybe")).toBeVisible();
     expect(
-      screen.getByText("Aucune réponse n'obtient 3 voix sur 4 : le comité ne tranche pas."),
+      screen.getByText("No answer got 3 votes out of 4: the committee can't decide."),
     ).toBeVisible();
-    expect(screen.getByText("Les voix : 2 oui ; 2 non ; 0 peut-être.")).toBeVisible();
+    expect(screen.getByText("The votes were 2 yes, 2 no, and 0 maybe.")).toBeVisible();
   });
 
-  it("says the committee hesitates, not that nobody has a majority, when three readers vote maybe", () => {
+  it("explains a majority of maybe votes", () => {
     const votes = [
-      makeVote({ persona: "ats_reader", vote: "peut_etre" }),
-      makeVote({ persona: "recruiter", vote: "peut_etre" }),
-      makeVote({ persona: "manager", vote: "peut_etre" }),
-      makeVote({ persona: "colleague", vote: "non" }),
+      makeVote({ persona: "ats_reader", vote: "maybe" }),
+      makeVote({ persona: "recruiter", vote: "maybe" }),
+      makeVote({ persona: "manager", vote: "maybe" }),
+      makeVote({ persona: "colleague", vote: "no" }),
     ];
-    render(<VerdictPanel verdict="peut_etre" votes={votes} objections={[]} changes={[]} />);
+    render(<VerdictPanel verdict="maybe" votes={votes} objections={[]} changes={[]} />);
     expect(
-      screen.getByText("Au moins 3 des 4 lecteurs ont voté peut-être : le comité hésite."),
+      screen.getByText("At least 3 of the 4 readers voted maybe: the committee is hesitant."),
     ).toBeVisible();
-    expect(screen.queryByText(/Aucune réponse n'obtient/)).toBeNull();
-    expect(screen.getByText("Les voix : 0 oui ; 1 non ; 3 peut-être.")).toBeVisible();
+    expect(screen.queryByText(/No answer got 3 votes/)).toBeNull();
+    expect(screen.getByText("The votes were 0 yes, 1 no, and 3 maybe.")).toBeVisible();
   });
 
   it("ranks the objections and names who raised each", () => {
-    render(<VerdictPanel verdict="oui" votes={makeVotes()} objections={objections} changes={[]} />);
-    const items = within(section(/Objections, de la plus importante/)).getAllByRole("listitem");
+    render(<VerdictPanel verdict="yes" votes={makeVotes()} objections={objections} changes={[]} />);
+    const items = within(section(/Objections, from most to least/)).getAllByRole("listitem");
     expect(items).toHaveLength(2);
     expect(items[0]).toHaveTextContent("Peu de résultats chiffrés.");
-    expect(items[0]).toHaveTextContent("Soulevée par : Manager, Recruteur");
-    expect(items[1]).toHaveTextContent("Soulevée par : Lecteur ATS");
+    expect(items[0]).toHaveTextContent("Raised by: Manager, Recruiter");
+    expect(items[1]).toHaveTextContent("Raised by: ATS reader");
   });
 
-  it("lists the changes and marks the ones that need a skill as « À acquérir », never as something to add", () => {
+  it("labels skills to acquire in the suggested changes", () => {
     const changes = [
       change(),
       change({
@@ -78,18 +78,18 @@ describe("VerdictPanel", () => {
       }),
       change({ text: "Resserre le résumé.", persona: "recruiter" }),
     ];
-    render(<VerdictPanel verdict="oui" votes={makeVotes()} objections={[]} changes={changes} />);
-    const items = within(section(/Trois changements/)).getAllByRole("listitem");
+    render(<VerdictPanel verdict="yes" votes={makeVotes()} objections={[]} changes={changes} />);
+    const items = within(section(/Three changes/)).getAllByRole("listitem");
     expect(items).toHaveLength(3);
-    expect(within(items[0]!).queryByText("À acquérir")).toBeNull();
-    expect(within(items[1]!).getByText("À acquérir")).toBeVisible();
-    expect(within(items[1]!).getByText("Compétences concernées : Kubernetes")).toBeVisible();
+    expect(within(items[0]!).queryByText("To acquire")).toBeNull();
+    expect(within(items[1]!).getByText("To acquire")).toBeVisible();
+    expect(within(items[1]!).getByText("Skills involved: Kubernetes")).toBeVisible();
     expect(items[1]).toHaveTextContent("ne l'écris pas dans ton CV");
     expect(items[1]).not.toHaveTextContent(/ajoute/i);
-    expect(items[1]).toHaveTextContent("Proposé par : Lecteur ATS");
+    expect(items[1]).toHaveTextContent("Suggested by: ATS reader");
   });
 
-  it("marks a proper noun the profile does not say as « À vérifier », not as a skill to acquire", () => {
+  it("marks an unsupported proper noun for review", () => {
     const changes = [
       change({
         text: "À vérifier : ton profil ne dit pas Capgemini. Ne l'écris pas dans ton CV.",
@@ -97,16 +97,16 @@ describe("VerdictPanel", () => {
         terms: ["Capgemini"],
       }),
     ];
-    render(<VerdictPanel verdict="oui" votes={makeVotes()} objections={[]} changes={changes} />);
-    const [item] = within(section(/Trois changements/)).getAllByRole("listitem");
-    expect(within(item!).getByText("À vérifier", { selector: "span" })).toBeVisible();
-    expect(within(item!).queryByText("À acquérir")).toBeNull();
-    expect(within(item!).queryByText(/Compétences concernées/)).toBeNull();
+    render(<VerdictPanel verdict="yes" votes={makeVotes()} objections={[]} changes={changes} />);
+    const [item] = within(section(/Three changes/)).getAllByRole("listitem");
+    expect(within(item!).getByText("To check", { selector: "span" })).toBeVisible();
+    expect(within(item!).queryByText("To acquire")).toBeNull();
+    expect(within(item!).queryByText(/Skills involved/)).toBeNull();
   });
 
   it("gives its title a focus target for the page", () => {
-    render(<VerdictPanel verdict="oui" votes={makeVotes()} objections={[]} changes={[]} />);
-    expect(screen.getByRole("heading", { name: "Verdict du comité" })).toHaveAttribute(
+    render(<VerdictPanel verdict="yes" votes={makeVotes()} objections={[]} changes={[]} />);
+    expect(screen.getByRole("heading", { name: "Committee verdict" })).toHaveAttribute(
       "tabindex",
       "-1",
     );

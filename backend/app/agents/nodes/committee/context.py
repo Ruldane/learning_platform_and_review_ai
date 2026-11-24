@@ -15,23 +15,23 @@ from app.agents.prompts.loader import untrusted
 from app.agents.tools.committee_schema import LABELS, MAX_WORDS, CommitteeContext, Persona
 
 MAX_POSTING_CHARS = 12_000
-NO_DOSSIER = "Aucun dossier sur l'entreprise."
-NO_SPEECH = "Personne n'a encore parlé."
-STEP_LABELS = {0: "première impression", 1: "tour 1", 2: "tour 2"}
+NO_DOSSIER = "No company dossier is available."
+NO_SPEECH = "The discussion has yet to start."
+STEP_LABELS = {0: "first impression", 1: "round 1", 2: "round 2"}
 
 
 def dossier_block(ctx: CommitteeContext) -> str:
     if ctx.dossier is None:
         return NO_DOSSIER
-    return untrusted("\n".join(dossier_lines(ctx.dossier)), "dossier de l'entreprise")
+    return untrusted("\n".join(dossier_lines(ctx.dossier)), "company dossier")
 
 
 def ats_terms_block(ctx: CommitteeContext) -> str:
     """Les termes de l'offre que le CV écrit ou n'écrit pas (ils viennent de l'offre : encadrés)."""
-    found = ", ".join(ctx.ats_terms.found) or "aucun"
-    missing = ", ".join(ctx.ats_terms.missing) or "aucun"
-    lines = [f"Termes de l'offre écrits dans le CV : {found}", f"Absents du CV : {missing}"]
-    return untrusted("\n".join(lines), "offre:termes")
+    found = ", ".join(ctx.ats_terms.found) or "none"
+    missing = ", ".join(ctx.ats_terms.missing) or "none"
+    lines = [f"Posting terms found in the CV: {found}", f"Missing from the CV: {missing}"]
+    return untrusted("\n".join(lines), "posting terms")
 
 
 def transcript_text(spoken: Sequence[dict[str, Any]]) -> str:
@@ -39,7 +39,7 @@ def transcript_text(spoken: Sequence[dict[str, Any]]) -> str:
     if not spoken:
         return NO_SPEECH
     return "\n\n".join(
-        f"{LABELS[item['persona']]}, {STEP_LABELS[item['round']]} :\n"
+        f"{LABELS[item['persona']]}, {STEP_LABELS[item['round']]}:\n"
         + untrusted(item["text"], f"{item['persona']} {STEP_LABELS[item['round']]}")
         for item in spoken
     )
@@ -61,8 +61,8 @@ def persona_vars(
         "persona_name": LABELS[persona],
         "size": ctx.size,
         "cv": untrusted(ctx.cv_text, "cv"),
-        "posting": untrusted(ctx.posting_text[:MAX_POSTING_CHARS], "offre"),
-        "analysis": untrusted(analysis_text(ctx.analysis), "offre:analyse"),
+        "posting": untrusted(ctx.posting_text[:MAX_POSTING_CHARS], "job posting"),
+        "analysis": untrusted(analysis_text(ctx.analysis), "posting analysis"),
         "dossier": "" if step == "impression" else dossier_block(ctx),
         "ats_terms": ats_terms_block(ctx),
         "transcript": transcript_text(spoken),

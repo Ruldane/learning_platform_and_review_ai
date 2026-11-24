@@ -8523,7 +8523,7 @@ export interface components {
              */
             status: "running" | "done" | "failed" | "stopped";
             /** Verdict */
-            verdict: ("oui" | "non" | "peut_etre") | null;
+            verdict: ("yes" | "no" | "maybe") | null;
             /** Votes */
             votes: components["schemas"]["VoteOut"][];
         };
@@ -17537,12 +17537,12 @@ export interface components {
              * After
              * @enum {string}
              */
-            after: "oui" | "non" | "peut_etre";
+            after: "yes" | "no" | "maybe";
             /**
              * Before
              * @enum {string}
              */
-            before: "oui" | "non" | "peut_etre";
+            before: "yes" | "no" | "maybe";
             /**
              * Persona
              * @enum {string}
@@ -17567,7 +17567,7 @@ export interface components {
              * Vote
              * @enum {string}
              */
-            vote: "oui" | "non" | "peut_etre";
+            vote: "yes" | "no" | "maybe";
         };
         /** WatchExperimentIn */
         WatchExperimentIn: {

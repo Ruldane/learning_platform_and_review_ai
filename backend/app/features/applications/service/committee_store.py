@@ -22,7 +22,6 @@ from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.tools.committee_schema import (
-    VERDICT_WORDS,
     CommitteeContext,
     PersonaVote,
     Synthesis,
@@ -76,9 +75,9 @@ def _analysis(posting: JobPosting, application: Application | None) -> PostingAn
 def timeline_text(synthesis: Synthesis, votes: list[PersonaVote]) -> str:
     counts = Counter(vote.vote for vote in votes)
     return (
-        f"Comité de recrutement simulé terminé : verdict {VERDICT_WORDS[synthesis.verdict]} "
-        f"({counts['oui']} oui, {counts['non']} non, {counts['peut_etre']} peut-être), "
-        f"{len(synthesis.changes)} changements proposés. Une simulation, pas une prédiction."
+        f"The simulated hiring committee voted {synthesis.verdict} "
+        f"({counts['yes']} yes, {counts['no']} no, {counts['maybe']} maybe) "
+        f"and proposed {len(synthesis.changes)} changes."
     )
 
 
@@ -114,7 +113,7 @@ class AgentCommitteeStore:
             posting_text=posting.text,
             analysis=analysis,
             dossier=dossier,
-            size=dossier.size if dossier else "inconnu",
+            size=dossier.size if dossier else "unknown",
             ats_terms=ats_terms_of(analysis, cv_text),
             profile=profile,
             company=company,

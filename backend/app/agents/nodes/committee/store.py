@@ -14,7 +14,7 @@ from app.agents.runtime.deps import GraphDeps
 from app.agents.runtime.emit import emit
 from app.agents.runtime.invoke import node_timeout
 from app.agents.state.hiring_committee import HiringCommitteeState
-from app.agents.tools.committee_schema import VERDICT_WORDS, PersonaVote, Synthesis
+from app.agents.tools.committee_schema import PersonaVote, Synthesis
 
 logger = logging.getLogger(__name__)
 
@@ -50,9 +50,8 @@ def make_save(deps: GraphDeps) -> Node:
             synthesis.verdict,
         )
         text = (
-            f"Comité terminé : verdict {VERDICT_WORDS[synthesis.verdict]}, "
-            f"{len(synthesis.objections)} objection(s), {len(synthesis.changes)} changements "
-            "proposés. C'est une simulation, pas une prédiction."
+            f"The simulated hiring committee voted {synthesis.verdict} and proposed "
+            f"{len(synthesis.changes)} changes."
         )
         emit("agent.message", {"message_id": f"{AGENT}-fin", "text": text}, agent=AGENT)
         return {"summary": text}

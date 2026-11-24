@@ -58,7 +58,7 @@ CHANGES = [
 ]  # fmt: skip
 
 
-def vote_json(vote: str = "oui", persona: str = "recruiter", **over: Any) -> str:
+def vote_json(vote: str = "yes", persona: str = "recruiter", **over: Any) -> str:
     data: dict[str, Any] = {
         "vote": vote,
         "objection": OBJECTIONS[persona],
@@ -93,7 +93,7 @@ def committee(
         said = (speeches or {}).get(persona, SPEECHES[persona])
         models.when(persona, IMPRESSION_REQUEST, *[IMPRESSIONS[persona]] * 3)
         models.when(persona, DEBATE_REQUEST, *[said] * 6)
-        vote = (votes or {}).get(persona, "oui")
+        vote = (votes or {}).get(persona, "yes")
         models.when(persona, VOTE_REQUEST, *[vote_json(vote, persona)] * 3)
     models.when("moderator", SYNTHESIS_REQUEST, *[synthesis or synthesis_json()] * 3)
     return models

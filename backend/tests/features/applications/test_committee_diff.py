@@ -26,17 +26,17 @@ def test_same_objection(first: str, second: str, same: bool) -> None:
 def test_diff_votes_before_after() -> None:
     diff = committee_diff(
         "prev",
-        votes_of("non", "non", "peut_etre", "non"),
-        votes_of("oui", "non", "oui", "peut_etre"),
+        votes_of("no", "no", "maybe", "no"),
+        votes_of("yes", "no", "yes", "maybe"),
         [],
         [],
     )
     assert diff.previous_id == "prev"
     assert [(v.persona, v.before, v.after) for v in diff.votes] == [
-        ("ats_reader", "non", "oui"),
-        ("recruiter", "non", "non"),
-        ("manager", "peut_etre", "oui"),
-        ("colleague", "non", "peut_etre"),
+        ("ats_reader", "no", "yes"),
+        ("recruiter", "no", "no"),
+        ("manager", "maybe", "yes"),
+        ("colleague", "no", "maybe"),
     ]
 
 
@@ -45,8 +45,8 @@ def test_diff_objections_resolved_and_new() -> None:
     after = ["Aucun mot-clé LangGraph dans le CV !", "Pas d'agent en production"]
     diff = committee_diff(
         "prev",
-        votes_of("oui", "oui", "oui", "oui"),
-        votes_of("oui", "oui", "oui", "oui"),
+        votes_of("yes", "yes", "yes", "yes"),
+        votes_of("yes", "yes", "yes", "yes"),
         before,
         after,
     )
@@ -55,7 +55,7 @@ def test_diff_objections_resolved_and_new() -> None:
 
 
 def test_diff_without_changes_is_empty() -> None:
-    votes = votes_of("oui", "non", "non", "oui")
+    votes = votes_of("yes", "no", "no", "yes")
     diff = committee_diff("prev", votes, votes, ["Même objection"], ["Même objection"])
     assert diff.objections_resolved == [] and diff.objections_new == []
     assert all(v.before == v.after for v in diff.votes)

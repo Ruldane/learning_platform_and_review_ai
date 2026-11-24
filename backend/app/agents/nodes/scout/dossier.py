@@ -31,8 +31,8 @@ from app.agents.tools.web_port import QUOTA_CODE, SEARCH_UNAVAILABLE_CODE, PageR
 from app.agents.tools.web_tools import page_agent_text, web_read, web_search
 from app.core.errors import AppError
 
-DOSSIER_REQUEST = "Rédige le dossier de l'entreprise."
-NO_SOURCE = "Aucune source lisible : dossier non produit."
+DOSSIER_REQUEST = "Write the company dossier."
+NO_SOURCE = "The dossier needs at least one readable source."
 NO_COMPANY = "Entreprise inconnue : dossier non produit."
 MAX_READS = 4
 DOSSIER_LIMIT_S = 360  # deux recherches, quatre pages (15 s chacune), une sortie structurée

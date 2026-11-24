@@ -29,9 +29,9 @@ from app.agents.tools.committee_schema import (
 )
 
 VOTE_WORDS = {
-    "oui": "oui, je donnerais un entretien",
-    "non": "non, je n'irais pas plus loin",
-    "peut_etre": "peut-être, je veux en savoir plus",
+    "yes": "yes, I'd offer an interview",
+    "no": "no, I wouldn't move forward",
+    "maybe": "maybe, I'd like to know more",
 }
 
 logger = logging.getLogger(__name__)
@@ -42,10 +42,10 @@ async def _vote(
 ) -> PersonaVote:
     model, messages = await persona_call(deps, ctx, persona, "vote", VOTE_REQUEST, spoken=spoken)
     found = await structured_call(
-        model, Vote, messages, agent=persona, step="vote", intent="je vote"
+        model, Vote, messages, agent=persona, step="vote", intent="Voting"
     )
     vote = PersonaVote(persona=persona, **found.model_dump())
-    text = f"Mon vote : {VOTE_WORDS[vote.vote]}.\nObjection principale : {vote.objection}"
+    text = f"I vote {VOTE_WORDS[vote.vote]}.\nMain objection: {vote.objection}"
     emit("agent.message", {"message_id": f"{persona}-vote", "text": text}, agent=persona)
     return vote
 

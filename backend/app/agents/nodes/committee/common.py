@@ -19,10 +19,10 @@ from app.agents.tools.committee_schema import PERSONAS, CommitteeContext, Person
 from app.core.played import played_by
 from app.providers.llm.base import Tier
 
-IMPRESSION_REQUEST = "Donne ta première impression."
-DEBATE_REQUEST = "Prends la parole au débat."
-VOTE_REQUEST = "Rends ton vote."
-SYNTHESIS_REQUEST = "Rédige la synthèse du comité."
+IMPRESSION_REQUEST = "Give your first impression."
+DEBATE_REQUEST = "Respond in the debate."
+VOTE_REQUEST = "Cast your vote."
+SYNTHESIS_REQUEST = "Summarize the committee's discussion."
 TURN_TIMEOUT_S = 300  # quatre prises de parole de suite, chacune avec ses nouveaux essais (GLM)
 
 
