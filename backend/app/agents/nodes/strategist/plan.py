@@ -97,7 +97,7 @@ async def _write(deps: GraphDeps, goal_id: str, prompt: str, revision: int) -> P
             messages,
             agent=AGENT,
             step=f"programme-{revision}-{ask}",
-            intent="j'écris le programme" if ask == 1 else "je corrige le programme",
+            intent="writing the program" if ask == 1 else "revising the program",
         )
         problems = await check(deps.user_id, goal_id, found)
         if not problems:

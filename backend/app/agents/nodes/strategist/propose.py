@@ -62,7 +62,7 @@ async def _draft(deps: GraphDeps, state: CouncilState, batch: int) -> list[Saved
         [SystemMessage(_prompt(state)), HumanMessage("Propose les parcours.")],
         agent=AGENT,
         step=f"propositions-{batch}",
-        intent="je propose des parcours",
+        intent="suggesting learning paths",
     )
     refs = await deps.ports.council.save_proposals(
         deps.user_id, deps.session_id, state["goal_id"], batch=batch, proposals=found.proposals

@@ -21,11 +21,11 @@ const row = async (title: string) => screen.findByRole("article", { name: title 
 describe("IdeHomePage", () => {
   it("lists exercises with status", async () => {
     renderHome({ exercises, sessions });
-    expect(within(await row("Additionner")).getByText("À faire")).toBeInTheDocument();
-    expect(within(await row("Trier une liste")).getByText("Réussi")).toBeInTheDocument();
-    expect(within(await row("Lire un CSV")).getByText("En cours")).toBeInTheDocument();
+    expect(within(await row("Additionner")).getByText("To do")).toBeInTheDocument();
+    expect(within(await row("Trier une liste")).getByText("Passed")).toBeInTheDocument();
+    expect(within(await row("Lire un CSV")).getByText("In progress")).toBeInTheDocument();
     expect(
-      within(await row("Trier une liste")).getByText(/Généré · Sujet : tri/),
+      within(await row("Trier une liste")).getByText(/Generated · Topic: tri/),
     ).toBeInTheDocument();
     expectCoherentOutline();
   });
@@ -33,16 +33,16 @@ describe("IdeHomePage", () => {
   it("starts a new session on an exercise and opens it", async () => {
     const { user, calls } = renderHome({ exercises, sessions });
     await user.click(
-      within(await row("Additionner")).getByRole("button", { name: "Commencer : Additionner" }),
+      within(await row("Additionner")).getByRole("button", { name: "Start: Additionner" }),
     );
-    expect(await screen.findByText("Séance ouverte")).toBeInTheDocument();
+    expect(await screen.findByText("Session opened")).toBeInTheDocument();
     expect(calls.sessions).toEqual([{ exercise_id: "e1" }]);
   });
 
   it("resumes the existing session instead of creating another", async () => {
     const { user, calls, router } = renderHome({ exercises, sessions });
     await user.click(
-      within(await row("Lire un CSV")).getByRole("button", { name: "Reprendre : Lire un CSV" }),
+      within(await row("Lire un CSV")).getByRole("button", { name: "Resume: Lire un CSV" }),
     );
     await waitFor(() => expect(router.state.location.pathname).toBe("/code/s3"));
     expect(calls.sessions).toEqual([]);
@@ -51,20 +51,20 @@ describe("IdeHomePage", () => {
   it("opens a free session, and lists the previous ones", async () => {
     const { user, calls } = renderHome({ exercises, sessions });
     expect(await screen.findByText("Brouillon")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Ouvrir une séance libre" }));
-    expect(await screen.findByText("Séance ouverte")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Open a free session" }));
+    expect(await screen.findByText("Session opened")).toBeInTheDocument();
     expect(calls.sessions).toEqual([{ exercise_id: null }]);
   });
 
   it("creates an exercise with its starter code and tests, then announces it", async () => {
     const { user, calls } = renderHome({ exercises: [] });
-    await screen.findByText(/Aucun exercice pour l'instant/);
-    await user.type(screen.getByRole("textbox", { name: "Titre" }), "Doubler");
-    await user.type(screen.getByRole("textbox", { name: "Énoncé" }), "Double un nombre.");
-    await user.type(screen.getByRole("textbox", { name: /Code de départ/ }), "x = 1");
+    await screen.findByText(/No exercises yet/);
+    await user.type(screen.getByRole("textbox", { name: "Title" }), "Doubler");
+    await user.type(screen.getByRole("textbox", { name: "Prompt" }), "Double un nombre.");
+    await user.type(screen.getByRole("textbox", { name: /Starter code/ }), "x = 1");
     await user.type(screen.getByRole("textbox", { name: /Tests/ }), "def test_x(): pass");
-    await user.click(screen.getByRole("button", { name: "Ajouter l'exercice" }));
-    expect(await screen.findByText("Exercice ajouté.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Add exercise" }));
+    expect(await screen.findByText("Exercise added.")).toBeInTheDocument();
     expect(calls.exercises).toEqual([
       {
         title: "Doubler",
@@ -77,18 +77,18 @@ describe("IdeHomePage", () => {
 
   it("generates an exercise and follows the agents until it is ready", async () => {
     const { user, calls, sockets } = renderHome({ exercises: [] });
-    await user.type(await screen.findByRole("textbox", { name: "Sujet" }), "les tuples");
-    await user.click(screen.getByRole("button", { name: "Générer" }));
+    await user.type(await screen.findByRole("textbox", { name: "Topic" }), "les tuples");
+    await user.click(screen.getByRole("button", { name: "Generate" }));
     await waitFor(() =>
       expect(calls.generated).toEqual([{ topic: "les tuples", level: "beginner" }]),
     );
-    expect(await screen.findByText("L'exercice est en cours d'écriture…")).toBeInTheDocument();
+    expect(await screen.findByText("The exercise is being written…")).toBeInTheDocument();
     await waitFor(() => expect(sockets.sockets.length).toBeGreaterThan(0));
     act(() => {
       sockets.last().open().push(councilEvents("g1").completed());
     });
     expect(
-      await screen.findByText("L'exercice est prêt : il apparaît dans la liste."),
+      await screen.findByText("The exercise is ready: it appears in the list."),
     ).toBeInTheDocument();
   });
 });

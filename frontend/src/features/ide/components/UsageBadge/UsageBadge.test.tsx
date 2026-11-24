@@ -13,14 +13,14 @@ const usage = {
 describe("UsageBadge", () => {
   it("shows session and day consumption", () => {
     render(<UsageBadge usage={usage} />);
-    expect(screen.getByText(/Séance : 12\s340 sur 100\s000 jetons/)).toBeInTheDocument();
-    expect(screen.getByText(/Jour : 45\s000 sur 300\s000 jetons/)).toBeInTheDocument();
-    expect(screen.queryByText("Sur demande")).toBeNull();
+    expect(screen.getByText(/Session: 12,340 of 100,000 tokens/)).toBeInTheDocument();
+    expect(screen.getByText(/Day: 45,000 of 300,000 tokens/)).toBeInTheDocument();
+    expect(screen.queryByText("On request")).toBeNull();
   });
 
   it("says Sur demande in words when the teacher no longer answers alone", () => {
     render(<UsageBadge usage={{ ...usage, sessionTokens: 100_000, onDemand: true }} />);
-    expect(screen.getByText("Sur demande")).toBeInTheDocument();
-    expect(screen.getByText("Le professeur ne répond plus tout seul.")).toBeInTheDocument();
+    expect(screen.getByText("On request")).toBeInTheDocument();
+    expect(screen.getByText("The professor no longer answers on its own.")).toBeInTheDocument();
   });
 });

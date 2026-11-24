@@ -8,7 +8,7 @@ import { noteOut, progress, runOut, sessionOut } from "@/test/ideApi";
 import { LIVE_MS } from "../../hooks/live";
 import { findEditor, refresh, renderSession, settle } from "../../ideTestkit";
 
-const outputRegion = () => screen.getByRole("region", { name: "Sortie" });
+const outputRegion = () => screen.getByRole("region", { name: "Output" });
 
 afterEach(() => {
   vi.useRealTimers();
@@ -55,7 +55,7 @@ describe("IdeSessionPage, live refresh", () => {
     await refresh();
     await waitFor(() => expect(reads).toBeGreaterThan(1));
     await settle(200);
-    expect(screen.queryByRole("button", { name: "Réessayer" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
     expect(editor).toHaveValue("print('bonjour')\nx");
   });
 });
@@ -70,12 +70,12 @@ describe("IdeSessionPage, Claude's runs", () => {
     renderSession(options);
     const editor = await findEditor();
     editor.focus();
-    expect(screen.getByText("Rien n'a été exécuté. Appuie sur Ctrl+Entrée.")).toBeInTheDocument();
+    expect(screen.getByText("Nothing has run yet. Press Ctrl+Enter.")).toBeInTheDocument();
     options.runs = [claudeRun({ status: "running" })];
     await refresh();
-    expect(await screen.findByText("Lancée par Claude")).toBeInTheDocument();
+    expect(await screen.findByText("Run by Claude")).toBeInTheDocument();
     await waitFor(() =>
-      expect(screen.getByRole("log", { name: "Sortie du programme" }).textContent).toBe(
+      expect(screen.getByRole("log", { name: "Program output" }).textContent).toBe(
         "salut de Claude\n",
       ),
     );
@@ -89,10 +89,10 @@ describe("IdeSessionPage, Claude's runs", () => {
     };
     const { calls } = renderSession(options);
     await findEditor();
-    await screen.findByText(/Séance : 12\s340/);
+    await screen.findByText(/Session: 12,340/);
     options.runs = [claudeRun()];
     await refresh();
-    expect(await screen.findByText(/Terminé \(code 1/)).toBeInTheDocument();
+    expect(await screen.findByText(/Finished \(code 1/)).toBeInTheDocument();
     await settle(500);
     expect(calls.teach).toHaveLength(0);
   });
@@ -101,8 +101,8 @@ describe("IdeSessionPage, Claude's runs", () => {
     renderSession({ runs: [claudeRun()] });
     await findEditor();
     await settle(300);
-    expect(screen.queryByText("Lancée par Claude")).toBeNull();
-    expect(screen.getByText("Rien n'a été exécuté. Appuie sur Ctrl+Entrée.")).toBeInTheDocument();
+    expect(screen.queryByText("Run by Claude")).toBeNull();
+    expect(screen.getByText("Nothing has run yet. Press Ctrl+Enter.")).toBeInTheDocument();
   });
 
   it("follows a run of Claude's that is still running when the page opens", async () => {
@@ -111,15 +111,15 @@ describe("IdeSessionPage, Claude's runs", () => {
       reads: [progress({ id: "rc1", output: "en cours\n", next_offset: 9 })],
     });
     await findEditor();
-    expect(await screen.findByText("Lancée par Claude")).toBeInTheDocument();
+    expect(await screen.findByText("Run by Claude")).toBeInTheDocument();
   });
 
   it("an own run stays unmarked and still takes the focus", async () => {
     const { user } = renderSession({ runs: [runOut({ id: "r1", origin: "app" })] });
     await findEditor();
-    await user.click(screen.getByRole("button", { name: /^Exécuter/ }));
-    await screen.findByText("Terminé (code 0, 120 ms).");
-    expect(screen.queryByText("Lancée par Claude")).toBeNull();
+    await user.click(screen.getByRole("button", { name: /^Run code/ }));
+    await screen.findByText("Finished (code 0, 120 ms).");
+    expect(screen.queryByText("Run by Claude")).toBeNull();
     await waitFor(() => expect(outputRegion()).toHaveFocus());
   });
 });
@@ -156,12 +156,12 @@ describe("IdeSessionPage, notes from Claude", () => {
 
 describe("IdeSessionPage, Claude's write switch", () => {
   const writes = () =>
-    screen.findByRole("switch", { name: "Claude peut écrire dans mes fichiers" });
+    screen.findByRole("switch", { name: "Claude can write to my files" });
 
   it("is off by default and says so", async () => {
     renderSession();
     expect(await writes()).not.toBeChecked();
-    expect(screen.getByText(/Non autorisé/)).toBeInTheDocument();
+    expect(screen.getByText(/^Not allowed$/)).toBeInTheDocument();
   });
 
   it("is set from the page and keeps the other settings", async () => {

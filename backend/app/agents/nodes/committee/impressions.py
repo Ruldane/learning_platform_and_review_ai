@@ -30,7 +30,7 @@ async def _impression(deps: GraphDeps, ctx: CommitteeContext, persona: Persona) 
         messages,
         agent=persona,
         step="impression",
-        intent="je donne ma première impression",
+        intent="giving my first impression",
         catalog=[],
         max_words=MAX_WORDS,
     )

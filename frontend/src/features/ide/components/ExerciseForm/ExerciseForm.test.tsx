@@ -21,12 +21,12 @@ function setup(over: Partial<Parameters<typeof ExerciseForm>[0]> = {}) {
 describe("ExerciseForm", () => {
   it("creates and generates", async () => {
     const { user, onCreate, onGenerate } = setup();
-    expect(screen.getByRole("button", { name: "Ajouter l'exercice" })).toBeDisabled();
-    await user.type(screen.getByRole("textbox", { name: "Titre" }), "Additionner");
-    await user.type(screen.getByRole("textbox", { name: "Énoncé" }), "Écris add.");
-    await user.type(screen.getByRole("textbox", { name: /Code de départ/ }), "x = 1");
+    expect(screen.getByRole("button", { name: "Add exercise" })).toBeDisabled();
+    await user.type(screen.getByRole("textbox", { name: "Title" }), "Additionner");
+    await user.type(screen.getByRole("textbox", { name: "Prompt" }), "Écris add.");
+    await user.type(screen.getByRole("textbox", { name: /Starter code/ }), "x = 1");
     await user.type(screen.getByRole("textbox", { name: /Tests/ }), "def test_a(): pass");
-    await user.click(screen.getByRole("button", { name: "Ajouter l'exercice" }));
+    await user.click(screen.getByRole("button", { name: "Add exercise" }));
     expect(onCreate).toHaveBeenCalledWith({
       title: "Additionner",
       statement: "Écris add.",
@@ -34,30 +34,30 @@ describe("ExerciseForm", () => {
       tests: "def test_a(): pass",
     });
     // Ajouté : les champs sont vidés.
-    expect(await screen.findByRole("textbox", { name: "Titre" })).toHaveValue("");
+    expect(await screen.findByRole("textbox", { name: "Title" })).toHaveValue("");
 
-    await user.type(screen.getByRole("textbox", { name: "Sujet" }), "les dictionnaires");
-    await user.selectOptions(screen.getByRole("combobox", { name: "Niveau" }), "advanced");
-    await user.click(screen.getByRole("button", { name: "Générer" }));
+    await user.type(screen.getByRole("textbox", { name: "Topic" }), "les dictionnaires");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Level" }), "advanced");
+    await user.click(screen.getByRole("button", { name: "Generate" }));
     expect(onGenerate).toHaveBeenCalledWith({ topic: "les dictionnaires", level: "advanced" });
   });
 
   it("keeps what was typed when the exercise is refused", async () => {
     const { user } = setup({ onCreate: vi.fn().mockResolvedValue(false) });
-    await user.type(screen.getByRole("textbox", { name: "Titre" }), "Additionner");
-    await user.type(screen.getByRole("textbox", { name: "Énoncé" }), "Écris add.");
-    await user.click(screen.getByRole("button", { name: "Ajouter l'exercice" }));
-    expect(screen.getByRole("textbox", { name: "Titre" })).toHaveValue("Additionner");
+    await user.type(screen.getByRole("textbox", { name: "Title" }), "Additionner");
+    await user.type(screen.getByRole("textbox", { name: "Prompt" }), "Écris add.");
+    await user.click(screen.getByRole("button", { name: "Add exercise" }));
+    expect(screen.getByRole("textbox", { name: "Title" })).toHaveValue("Additionner");
   });
 
   it("announces the notice and the server error", () => {
-    setup({ notice: "Exercice ajouté.", error: "Le titre est trop long." });
-    expect(screen.getByRole("status")).toHaveTextContent("Exercice ajouté.");
+    setup({ notice: "Exercise added.", error: "Le titre est trop long." });
+    expect(screen.getByRole("status")).toHaveTextContent("Exercise added.");
     expect(screen.getByRole("alert")).toHaveTextContent("Le titre est trop long.");
   });
 
   it("will not generate without a topic", () => {
     setup();
-    expect(screen.getByRole("button", { name: "Générer" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Generate" })).toBeDisabled();
   });
 });

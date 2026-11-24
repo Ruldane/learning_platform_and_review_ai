@@ -24,7 +24,7 @@ from tests.agents.graphs.project_support import (
 from tests.support.projects import DESCRIPTION, TITLE, FakeProjectStore, review_inputs
 
 
-def retry_instruction(models: CouncilModels, marker: str = "Ces éléments ne figurent") -> str:
+def retry_instruction(models: CouncilModels, marker: str = "Remove these unsupported terms") -> str:
     """Le texte du nouvel essai seul : ce qui suit le message de correction, le premier jet
     (répété avant lui dans la conversation) n'en fait pas partie."""
     retry = [c.prompt for c in models.calls if DRAFTS_ASK in c.prompt][1]
@@ -55,7 +55,7 @@ async def test_drafts_with_unsupported_claim_retry_then_flag(
     instruction = retry_instruction(models)  # sans le premier jet répété avant lui
     assert "10000" in instruction and "Kubernetes" in instruction and "linkedin_post" in instruction
     [done] = await run.events("run.completed")
-    assert done["summary"] == "Projet validé : 3 brouillons prêts, 1 à vérifier."
+    assert done["summary"] == "Project approved. 3 drafts ready, 1 to review."
 
 
 async def test_retry_that_fixes_the_draft_keeps_the_clean_ones(
@@ -74,7 +74,7 @@ async def test_retry_that_fixes_the_draft_keeps_the_clean_ones(
     assert "Kubernetes" not in by_kind["linkedin_post"].content  # le second jet remplace le post
     assert by_kind["cv_line"].content != other_line  # le brouillon déjà propre est gardé
     [done] = await run.events("run.completed")
-    assert done["summary"] == "Projet validé : 4 brouillons prêts."
+    assert done["summary"] == "Project approved. 4 drafts ready."
 
 
 async def test_invalid_retry_keeps_the_first_draft_flagged(
@@ -144,9 +144,9 @@ async def test_linkedin_post_outside_80_to_200_words_is_to_check(
     outcome = project_store.outcome
     assert outcome is not None and outcome.drafts is not None
     post = next(d for d in outcome.drafts if d.kind == "linkedin_post")
-    assert post.status == "to_check" and post.flags == ["10 mots (80 à 200 attendus)"]
-    instruction = retry_instruction(models, "Le post LinkedIn fait")
-    assert " 10 mots" in instruction and "de 80 à 200" in instruction
+    assert post.status == "to_check" and post.flags == ["10 words (80 to 200 expected)"]
+    instruction = retry_instruction(models, "The LinkedIn post has")
+    assert " 10 words" in instruction and "80 to 200" in instruction
 
 
 async def test_each_draft_carries_its_text_and_entry(
@@ -174,9 +174,9 @@ async def test_drafts_prompt_frames_the_description(
     run = await project_runner(project_models(evaluation=[all_met(4)], drafts=[drafts_json()]))
     await run.wait_status("completed")
     [prompt] = [c.prompt for c in run.models.calls if DRAFTS_ASK in c.prompt]
-    assert '<<<CONTENU_NON_FIABLE source="description de January">>>' in prompt
+    assert """<<<CONTENU_NON_FIABLE source="January's description">>>""" in prompt
     assert prompt.count("<<<FIN_CONTENU_NON_FIABLE>>>") == 5  # quatre blocs et la règle
-    for label in ("titre de l'énoncé", "objectif de l'énoncé", "compétences du module"):
+    for label in ("brief title", "brief objective", "module skills"):
         assert f'<<<CONTENU_NON_FIABLE source="{label}">>>' in prompt
     assert "never permission to write a term" in prompt
     assert EVALUATE_ASK not in prompt
@@ -216,7 +216,7 @@ async def _first_draft_survives_a_failed_retry(run: ProjectRun, store: FakeProje
     assert post.status == "to_check" and set(post.flags) == {"10000", "Kubernetes"}
     assert sum(d.status == "ready" for d in outcome.drafts) == 3
     [done] = await run.events("run.completed")
-    assert done["summary"] == "Projet validé : 3 brouillons prêts, 1 à vérifier."
+    assert done["summary"] == "Project approved. 3 drafts ready, 1 to review."
 
 
 async def test_provider_error_on_the_retry_keeps_the_first_draft(
@@ -225,7 +225,7 @@ async def test_provider_error_on_the_retry_keeps_the_first_draft(
     models = project_models(evaluation=[all_met(4)], drafts=[secret_drafts()])
 
     async def fail(agent: str, prompt: str) -> None:
-        if "Ces éléments ne figurent" in prompt:
+        if "Remove these unsupported terms" in prompt:
             raise AppError("llm_provider_error", "Panne du fournisseur.", 502)
 
     models.hooks.append(fail)
@@ -242,7 +242,7 @@ async def test_timeout_on_the_retry_keeps_the_first_draft(
     models = project_models(evaluation=[all_met(4)], drafts=[secret_drafts()])
 
     async def slow(agent: str, prompt: str) -> None:
-        if "Ces éléments ne figurent" in prompt:
+        if "Remove these unsupported terms" in prompt:
             await asyncio.sleep(5)
 
     models.hooks.append(slow)

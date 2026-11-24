@@ -10,8 +10,8 @@ describe("IdeSessionPage, 30 s idle option", () => {
   async function ready(options: Parameters<typeof renderSession>[0]) {
     const view = renderSession(options);
     await findEditor();
-    await screen.findByText(/Séance : 12\s340/);
-    await screen.findByRole("checkbox", { name: /30 s sans bouger de ligne/ });
+    await screen.findByText(/Session: 12,340/);
+    await screen.findByRole("checkbox", { name: /30 s on the same line/ });
     return view;
   }
 

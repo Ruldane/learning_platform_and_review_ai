@@ -5,7 +5,7 @@ import { fakeEditor } from "@/test/fakeMonacoReact";
 import { noteOut, progress } from "@/test/ideApi";
 import { findEditor, renderSession, settle } from "../../ideTestkit";
 
-const waitForUsage = () => screen.findByText(/Séance : 12\s340/);
+const waitForUsage = () => screen.findByText(/Session: 12,340/);
 
 describe("IdeSessionPage, asking the teacher", () => {
   it("the Indice button sends one hint call with the file, the line and the last run", async () => {
@@ -13,7 +13,7 @@ describe("IdeSessionPage, asking the teacher", () => {
     await findEditor();
     await waitForUsage();
     act(() => fakeEditor.moveCursor(4));
-    await user.click(screen.getByRole("button", { name: "Indice" }));
+    await user.click(screen.getByRole("button", { name: "Hint" }));
     await waitFor(() => expect(calls.teach).toHaveLength(1));
     expect(calls.teach[0]).toEqual({
       trigger: "hint",
@@ -30,16 +30,16 @@ describe("IdeSessionPage, asking the teacher", () => {
       usage: { mode_on_demand: true },
     });
     await findEditor();
-    const why = screen.getByRole("button", { name: "Pourquoi cette erreur ?" });
+    const why = screen.getByRole("button", { name: "Why this error?" });
     expect(why).toBeDisabled();
-    await user.click(screen.getByRole("button", { name: /^Exécuter/ }));
-    await screen.findByText(/Terminé \(code 1/);
+    await user.click(screen.getByRole("button", { name: /^Run code/ }));
+    await screen.findByText(/Finished \(code 1/);
     await waitFor(() => expect(why).toBeEnabled());
     await user.click(why);
     await waitFor(() => expect(calls.teach).toHaveLength(1));
     expect(calls.teach[0]).toMatchObject({
       trigger: "question",
-      question: "Pourquoi cette erreur ?",
+      question: "Why this error?",
       run_id: "r1",
     });
   });
@@ -47,10 +47,10 @@ describe("IdeSessionPage, asking the teacher", () => {
   it("sends a typed question, never an empty one", async () => {
     const { user, calls } = renderSession();
     await findEditor();
-    const field = screen.getByRole("textbox", { name: "Ta question" });
-    expect(screen.getByRole("button", { name: "Envoyer" })).toBeDisabled();
+    const field = screen.getByRole("textbox", { name: "Your question" });
+    expect(screen.getByRole("button", { name: "Send" })).toBeDisabled();
     await user.type(field, "C'est quoi une liste ?");
-    await user.click(screen.getByRole("button", { name: "Envoyer" }));
+    await user.click(screen.getByRole("button", { name: "Send" }));
     await waitFor(() => expect(calls.teach).toHaveLength(1));
     expect(calls.teach[0]).toMatchObject({
       trigger: "question",
@@ -71,29 +71,29 @@ describe("IdeSessionPage, asking the teacher", () => {
   it("says why nothing was started, and when it is the same error as before", async () => {
     const { user } = renderSession({ teach: { skipped: "cap_reached" } });
     await findEditor();
-    await user.click(screen.getByRole("button", { name: "Indice" }));
-    expect(await screen.findByText(/Le plafond de jetons est atteint/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Hint" }));
+    expect(await screen.findByText(/The token cap has been reached/)).toBeInTheDocument();
   });
 
   it("points to the previous note for the same error at the same place", async () => {
     const { user } = renderSession({ teach: { reference_note_id: "n0" } });
     await findEditor();
-    await user.click(screen.getByRole("button", { name: "Indice" }));
-    expect(await screen.findByText(/Même erreur au même endroit/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Hint" }));
+    expect(await screen.findByText(/Same error in the same place/)).toBeInTheDocument();
   });
 
   it("follows the teacher session and reloads the notes when it ends", async () => {
     const { user, sockets, calls } = renderSession({ teach: { session_id: "t1" } });
     await findEditor();
-    await user.click(screen.getByRole("button", { name: "Indice" }));
-    expect(await screen.findByText("Le professeur écrit…")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Hint" }));
+    expect(await screen.findByText("The professor is writing…")).toBeInTheDocument();
     await waitFor(() => expect(sockets.sockets.length).toBeGreaterThan(0));
     const stream = sockets.sockets.find((s) => s.url.includes("/sessions/t1/stream"));
     expect(stream).toBeDefined();
     act(() => {
       stream?.open().push(councilEvents("t1").completed());
     });
-    await waitFor(() => expect(screen.queryByText("Le professeur écrit…")).toBeNull());
+    await waitFor(() => expect(screen.queryByText("The professor is writing…")).toBeNull());
     expect(calls.teach).toHaveLength(1);
   });
 
@@ -127,12 +127,12 @@ describe("IdeSessionPage, asking the teacher", () => {
       ],
     });
     await findEditor();
-    const thread = await screen.findByRole("log", { name: "Conversation avec le professeur" });
+    const thread = await screen.findByRole("log", { name: "Conversation with the professor" });
     expect(within(thread).getByText("Regarde le signe.")).toBeVisible();
-    expect(within(thread).getByText(/Indice 2/)).toBeInTheDocument();
-    expect(within(thread).getByText(/Indice 3/)).toBeInTheDocument();
-    expect(within(thread).queryByText(/Indice 1/)).not.toBeInTheDocument();
-    const margin = within(thread).getByRole("article", { name: /dans la marge/ });
+    expect(within(thread).getByText(/Hint 2/)).toBeInTheDocument();
+    expect(within(thread).getByText(/Hint 3/)).toBeInTheDocument();
+    expect(within(thread).queryByText(/Hint 1/)).not.toBeInTheDocument();
+    const margin = within(thread).getByRole("article", { name: /in the margin/ });
     expect(within(margin).getByText("Ici.")).toBeVisible();
     await waitFor(() => expect(fakeEditor.decorations).toHaveLength(1));
     expect(fakeEditor.decorations[0]?.range.startLineNumber).toBe(1);

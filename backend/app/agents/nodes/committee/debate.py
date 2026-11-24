@@ -71,7 +71,7 @@ def make_round(deps: GraphDeps, number: int) -> Node:
                 messages,
                 agent=persona,
                 step=f"tour-{number}",
-                intent="je réponds au comité" if number >= 2 else "je donne ma position",
+                intent="responding to the committee" if number >= 2 else "stating my position",
                 catalog=[],
                 max_words=MAX_WORDS,
             )

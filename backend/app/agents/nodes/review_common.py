@@ -187,7 +187,7 @@ async def ask_proposals[T: ProposalList](
             messages,
             agent=agent,
             step=f"propositions-{ask}",
-            intent="je relis ton CV face à l'offre" if ask == 1 else "je corrige mes propositions",
+            intent="reviewing your CV for the posting" if ask == 1 else "revising my suggestions",
         )
         problems = proposal_issues(found.items, profile, prefix)
         if not problems or ask == MAX_PROPOSE_ASKS:

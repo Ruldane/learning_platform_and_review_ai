@@ -26,17 +26,17 @@ describe("PdfPreview", () => {
         downloadUrl="/x"
       />,
     );
-    expect(screen.getByRole("img", { name: "Page 1 sur 2 du CV" })).toHaveAttribute(
+    expect(screen.getByRole("img", { name: "Page 1 of 2 of the CV" })).toHaveAttribute(
       "src",
       "/p1.png",
     );
-    expect(screen.getByRole("img", { name: "Page 2 sur 2 du CV" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Page 2 of 2 of the CV" })).toBeInTheDocument();
     expect(container.querySelector("iframe, embed, object")).toBeNull();
   });
 
   it("says the page count matches the original", () => {
     setup();
-    expect(screen.getByText("1 page, comme ton CV d'origine")).toBeInTheDocument();
+    expect(screen.getByText("1 page, like your original CV")).toBeInTheDocument();
     expect(screen.getByRole("status")).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
@@ -44,20 +44,20 @@ describe("PdfPreview", () => {
   it("warns when the CV has more pages than the original", () => {
     setup({ pages: ["/p1.png", "/p2.png"], pageCount: 2 });
     expect(screen.getByRole("alert")).toHaveTextContent(
-      "2 pages : ton CV d'origine en a 1. Resserre le contenu ou accepte une page de plus.",
+      "2 pages: your original CV has 1. Tighten the content or accept one more page.",
     );
   });
 
   it("says when the CV is shorter than the original", () => {
     setup({ pageCount: 1, originalPageCount: 2 });
-    expect(screen.getByText("1 page, ton CV d'origine en avait 2.")).toBeInTheDocument();
+    expect(screen.getByText("1 page; your original CV had 2.")).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("offers the download of the named file", () => {
     setup();
     const link = screen.getByRole("link", {
-      name: "Télécharger CV_Camille-Exemple_Societe-Fictive.pdf",
+      name: "Download CV_Camille-Exemple_Societe-Fictive.pdf",
     });
     expect(link).toHaveAttribute("href", "/api/cv/versions/v1/pdf");
     expect(link).toHaveAttribute("download", "CV_Camille-Exemple_Societe-Fictive.pdf");
@@ -65,6 +65,6 @@ describe("PdfPreview", () => {
 
   it("says when there is no page to show", () => {
     setup({ pages: [] });
-    expect(screen.getByText("Aucune page à afficher.")).toBeInTheDocument();
+    expect(screen.getByText("No pages to display.")).toBeInTheDocument();
   });
 });

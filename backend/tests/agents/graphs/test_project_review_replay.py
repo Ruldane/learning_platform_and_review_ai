@@ -49,7 +49,7 @@ async def test_replay_saves_review_once(
     assert project_store.review_saves == 1 and project_store.repo_calls == [REPO_URL]
     assert project_store.outcome is not None and project_store.outcome.verdict == "validated"
     [done] = await second.events("run.completed")
-    assert done["summary"] == "Projet validé : 4 brouillons prêts."
+    assert done["summary"] == "Project approved. 4 drafts ready."
 
 
 async def test_project_texts_never_logged(
@@ -93,7 +93,7 @@ def test_graph_is_registered() -> None:
     assert len(sample_brief().criteria) == 4
 
 
-RETRY_MARK = "Ces éléments ne figurent"
+RETRY_MARK = "Remove these unsupported terms"
 
 
 def _blocked_models(first_jet: str) -> CouncilModels:
@@ -126,7 +126,7 @@ async def test_redo_resume_after_restart(
     assert project_store.review_saves == 1 and outcome is not None and outcome.drafts is not None
     assert {d.status for d in outcome.drafts} == {"ready"}
     [done] = await second.events("run.completed")
-    assert done["summary"] == "Projet validé : 4 brouillons prêts."
+    assert done["summary"] == "Project approved. 4 drafts ready."
 
 
 async def test_redo_with_nothing_left_to_fix_makes_no_call(

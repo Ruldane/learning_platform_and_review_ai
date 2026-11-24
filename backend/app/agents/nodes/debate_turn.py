@@ -131,7 +131,7 @@ def make_turn(deps: GraphDeps) -> Node:
             ],
             agent=agent,
             step="positions" if number == 1 else f"tour-{number}",
-            intent="je donne ma position" if number == 1 else "je réponds au Conseil",
+            intent="stating my position" if number == 1 else "responding to the Council",
             catalog=citation_entries(state),
             max_words=max_words,
             revise=revise,

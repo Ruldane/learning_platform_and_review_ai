@@ -61,18 +61,17 @@ __all__ = [
 ]
 
 AGENT = "practitioner"
-ASK = "Écris les brouillons du projet."
-NONE = "(aucun)"
+ASK = "Write the project drafts."
+NONE = "(none)"
 RETRY_BUDGET_S = 90.0  # son propre délai, plus court que `node_timeout` (120 s)
 DRAFTS_BUDGET_S = 100.0  # le premier appel : son propre délai, sous `node_timeout`
-LANGUAGES = {"fr": "français", "en": "anglais"}
+LANGUAGES = {"fr": "French", "en": "English"}
 RETRY = (
-    "Ces éléments ne figurent ni dans la description de January, ni dans les compétences du "
-    "module, ni dans le titre de l'énoncé : {terms}. Réécris sans eux les brouillons concernés "
-    "({kinds}), avec ce que January a dit seulement (l'objectif de l'énoncé n'autorise "
-    "aucun terme)."
+    "Remove these unsupported terms: {terms}. Rewrite the affected drafts ({kinds}) using "
+    "January's description, the module skills, and the brief title. Treat the brief objective "
+    "as context only."
 )
-LENGTH_RETRY = "Le post LinkedIn fait {words} mots : il doit en faire de {low} à {high}."
+LENGTH_RETRY = "The LinkedIn post has {words} words. Use {low} to {high} words."
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +87,7 @@ class Problems:
     def flags(self) -> list[str]:
         """Les termes, puis la longueur du post quand elle est hors bornes."""
         low, high = LINKEDIN_WORDS
-        length = [] if self.words is None else [f"{self.words} mots ({low} à {high} attendus)"]
+        length = [] if self.words is None else [f"{self.words} words ({low} to {high} expected)"]
         return [*self.terms, *length]
 
 
@@ -135,15 +134,14 @@ def results_of(drafts: ProjectDrafts, found: dict[DraftKind, Problems]) -> list[
 
 
 def prompt_of(inputs: ReviewInputs) -> str:
-    """Seuls la description, les compétences du module et le titre permettent un terme ; le titre,
-    l'objectif (écrits par un modèle) et les compétences sont encadrés comme données."""
+    """Wrap evidence and context as untrusted data for the drafting prompt."""
     return render_prompt(
         AGENT,
         mode="project_drafts",
-        title=untrusted(" ".join(inputs.brief.title.split()), "titre de l'énoncé"),
-        objective=untrusted(" ".join(inputs.brief.objective.split()), "objectif de l'énoncé"),
-        skills=untrusted(", ".join(inputs.skills) or NONE, "compétences du module"),
-        description=untrusted(inputs.description or NONE, "description de January"),
+        title=untrusted(" ".join(inputs.brief.title.split()), "brief title"),
+        objective=untrusted(" ".join(inputs.brief.objective.split()), "brief objective"),
+        skills=untrusted(", ".join(inputs.skills) or NONE, "module skills"),
+        description=untrusted(inputs.description or NONE, "January's description"),
         language=LANGUAGES[inputs.language],
     )
 
@@ -181,7 +179,7 @@ def make_drafts(deps: GraphDeps) -> Node:
                     messages,
                     agent=AGENT,
                     step="brouillons",
-                    intent="j'écris les brouillons du projet",
+                    intent="writing the project drafts",
                 )
         except GraphInterrupt:
             raise
@@ -246,7 +244,7 @@ def make_redo(deps: GraphDeps) -> Node:
                     conversation,
                     agent=AGENT,
                     step="brouillons-2",
-                    intent="je corrige les brouillons du projet",
+                    intent="revising the project drafts",
                 )
         except GraphInterrupt:
             raise

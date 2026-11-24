@@ -46,15 +46,15 @@ __all__ = [
 ]
 
 AGENT = "practitioner"
-ASK = "Évalue le rendu du projet."
+ASK = "Evaluate the project submission."
 README_MAX = 8_000
 NO_REPO_FEEDBACK = "I couldn't read the repository. Add a description of your work."
-NONE = "(aucun)"
-LANGUAGES = {"fr": "français", "en": "anglais"}
+NONE = "(none)"
+LANGUAGES = {"fr": "French", "en": "English"}
 REPO_NOTES = {
-    "read": "Le README du dépôt de January a été lu : il figure ci-dessus.",
-    "unreadable": "Le dépôt de January n'a pas pu être lu : n'évalue que sur sa description.",
-    "none": "January n'a donné aucun dépôt : n'évalue que sur sa description.",
+    "read": "The repository README is included above.",
+    "unreadable": "The repository could not be read. Assess the work from the description.",
+    "none": "January supplied no repository. Assess the work from the description.",
 }
 
 logger = logging.getLogger(__name__)
@@ -67,20 +67,19 @@ def _lines(items: list[str], *, numbered: bool = False) -> str:
 
 
 def statement_text(brief: ProjectBrief) -> str:
-    """L'énoncé (écrit par un modèle d'après une leçon) encadré comme contenu non fiable ; les
-    critères restent numérotés, un par ligne."""
+    """Wrap the project brief as untrusted data and number its criteria."""
     text = "\n".join(
         [
-            f"Énoncé : {brief.title}",
-            f"Contexte : {brief.context}",
-            f"Objectif : {brief.objective}",
-            "Contraintes :",
+            f"Brief: {brief.title}",
+            f"Context: {brief.context}",
+            f"Objective: {brief.objective}",
+            "Constraints:",
             _lines(brief.constraints),
-            "Critères :",
+            "Criteria:",
             _lines(brief.criteria, numbered=True),
         ]
     )
-    return untrusted(text, "énoncé du projet")
+    return untrusted(text, "project brief")
 
 
 def prompt_of(
@@ -90,16 +89,16 @@ def prompt_of(
     notes = [REPO_NOTES[repo_status]]
     if inputs.screenshots:
         notes.append(
-            f"January a joint {inputs.screenshots} capture(s) d'écran : tu ne les vois pas, ne les "
-            "compte ni pour ni contre."
+            f"January attached screenshots ({inputs.screenshots}) that are unavailable here. "
+            "Evaluate only the evidence you can read."
         )
     return render_prompt(
         AGENT,
         mode="project_review",
         statement=statement_text(brief),
         count=len(brief.criteria),
-        description=untrusted(inputs.description or NONE, "description de January"),
-        readme=untrusted(repo_text, "README du dépôt") if repo_text else "README : non lu.",
+        description=untrusted(inputs.description or NONE, "January's description"),
+        readme=untrusted(repo_text, "repository README") if repo_text else "README unavailable.",
         notes="\n".join(notes),
         language=LANGUAGES[inputs.language],
     )
@@ -209,7 +208,7 @@ def make_evaluate(deps: GraphDeps) -> Node:
             messages,
             agent=AGENT,
             step="evaluation",
-            intent="j'évalue le rendu du projet",
+            intent="evaluating the project submission",
         )
         outcome = _outcome(inputs, evaluation, status)
         logger.info(

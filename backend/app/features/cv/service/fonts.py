@@ -34,15 +34,15 @@ logger = logging.getLogger(__name__)
 
 Role = Literal["body", "heading"]
 FONT_CATEGORY = "cv_fonts"
-# Familles aux métriques compatibles avec la police propriétaire qu'elles remplacent.
+# Families with metrics compatible with the proprietary fonts they replace.
 CLOSE_FAMILIES = frozenset({DEFAULT_SANS, DEFAULT_SERIF, "Carlito", "Caladea"})
-# Familles installées dans l'image de Gotenberg : rendues même sans fichier joint.
+# Families available in the renderer without attaching font files.
 IMAGE_FAMILIES = (DEFAULT_SANS, DEFAULT_SERIF)
-SCANNED_GAP = "Les polices d'un CV scanné ne se lisent pas : le modèle emploie Liberation Sans."
+SCANNED_GAP = "The template uses Liberation Sans because scans do not identify their fonts."
 _LABELS: dict[tuple[Role, ...], str] = {
-    ("body",): "du texte",
-    ("heading",): "des titres",
-    ("body", "heading"): "du texte et des titres",
+    ("body",): "body",
+    ("heading",): "heading",
+    ("body", "heading"): "body and heading",
 }
 
 
@@ -124,19 +124,20 @@ def _fallback(family: str) -> str:
 
 def _sentence(label: str, role: FontRole, loaded: bool) -> str | None:
     if not loaded:
-        return (
-            f"La police {label} n'a pas pu être chargée : remplacée par {_fallback(role.family)}."
-        )
+        return f"The {label} font failed to load. The template uses {_fallback(role.family)}."
     if role.free:
         return None
     if role.known:
-        close = "très proche" if role.family in CLOSE_FAMILIES else "proche"
-        return f"La police {label} n'est pas libre : remplacée par {role.family}, {close}."
-    return f"La police {label} n'a pas d'équivalent connu : remplacée par {role.family}."
+        close = "very close" if role.family in CLOSE_FAMILIES else "close"
+        return (
+            f"The original {label} font is proprietary. "
+            f"The template uses {role.family}, a {close} match."
+        )
+    return f"No known match for the {label} font. The template uses {role.family}."
 
 
 def font_gaps(roles: Sequence[FontRole], loaded: Collection[str]) -> list[str]:
-    """Une phrase par écart ; deux rôles au même sort n'en font qu'une."""
+    """Group font roles that share the same replacement and reason."""
     if not roles:
         return [SCANNED_GAP]
     groups: dict[tuple[str, bool, bool, bool], list[Role]] = {}

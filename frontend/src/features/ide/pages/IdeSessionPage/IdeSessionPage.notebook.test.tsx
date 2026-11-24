@@ -35,11 +35,11 @@ it("ouvre une cellule sauvegardée et lance sa version éditée", async () => {
       ),
     ],
   });
-  const source = await screen.findByRole("textbox", { name: "Source de la cellule 1" });
+  const source = await screen.findByRole("textbox", { name: "Source of cell 1" });
   expect(source).toHaveValue("print(1)");
   await user.clear(source);
   await user.type(source, "print(2)");
-  await user.click(screen.getByRole("button", { name: "Exécuter la cellule 1" }));
+  await user.click(screen.getByRole("button", { name: "Run cell 1" }));
   await waitFor(() =>
     expect(calls).toEqual([
       { path, version: 4, cells: [{ id: "a", kind: "code", source: "print(2)" }] },
@@ -47,14 +47,14 @@ it("ouvre une cellule sauvegardée et lance sa version éditée", async () => {
     ]),
   );
   await waitFor(() =>
-    expect(screen.getByRole("log", { name: "Sortie de la cellule" })).toHaveTextContent("2"),
+    expect(screen.getByRole("log", { name: "Cell output" })).toHaveTextContent("2"),
   );
 });
 
 it("garde le brouillon de la cellule et sa version après un changement d’onglet", async () => {
   const path = "atelier.ipynb";
   const root = `${API}/ide/sessions/s1/notebook`;
-  const sourceName = "Source de la cellule 1";
+  const sourceName = "Source of cell 1";
   const cell = { id: "a", kind: "code", source: "print(1)", output: null };
   const reads: number[] = [];
   const writes: unknown[] = [];
@@ -91,14 +91,14 @@ it("garde le brouillon de la cellule et sa version après un changement d’ongl
   const source = await screen.findByRole("textbox", { name: sourceName });
   await user.clear(source);
   await user.type(source, "print(2)");
-  const tabs = within(screen.getByRole("navigation", { name: "Fichiers de la séance" }));
+  const tabs = within(screen.getByRole("navigation", { name: "Session files" }));
   await user.click(tabs.getByRole("button", { name: /^main\.py/ }));
   await findEditor();
   version = 5;
   await user.click(tabs.getByRole("button", { name: path }));
   await waitFor(() => expect(reads).toContain(5));
   expect(await screen.findByRole("textbox", { name: sourceName })).toHaveValue("print(2)");
-  await user.click(screen.getByRole("button", { name: "Enregistrer le notebook" }));
+  await user.click(screen.getByRole("button", { name: "Save notebook" }));
   expect(await screen.findByText("Le fichier a changé.")).toBeVisible();
   expect(writes).toEqual([
     { path, version: 4, cells: [{ id: "a", kind: "code", source: "print(2)" }] },

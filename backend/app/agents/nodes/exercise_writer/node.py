@@ -65,7 +65,7 @@ def make_write(deps: GraphDeps) -> Node:
                 _prompt(state, previous),
                 agent=AGENT,
                 step="exercice",
-                intent="j'écris l'exercice et ses tests",
+                intent="writing the exercise and its tests",
             )
             verdict = await ports.verify(deps.user_id, draft)
             logger.info(

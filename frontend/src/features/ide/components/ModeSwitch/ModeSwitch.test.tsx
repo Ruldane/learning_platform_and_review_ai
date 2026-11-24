@@ -15,10 +15,10 @@ describe("ModeSwitch", () => {
       />,
     );
     const auto = screen.getByRole("switch", {
-      name: "Le professeur intervient tout seul après une erreur",
+      name: "The professor steps in on its own after an error",
     });
     expect(auto).toBeChecked();
-    expect(screen.getByRole("checkbox", { name: /30 s sans bouger de ligne/ })).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: /30 s on the same line/ })).not.toBeChecked();
     await user.click(auto);
     expect(onChange).toHaveBeenLastCalledWith({
       auto: false,
@@ -26,7 +26,7 @@ describe("ModeSwitch", () => {
       style: "guide",
       claudeWrites: false,
     });
-    await user.click(screen.getByRole("checkbox", { name: /30 s sans bouger de ligne/ }));
+    await user.click(screen.getByRole("checkbox", { name: /30 s on the same line/ }));
     expect(onChange).toHaveBeenLastCalledWith({
       auto: true,
       idle: true,
@@ -44,7 +44,7 @@ describe("ModeSwitch", () => {
         onChange={onChange}
       />,
     );
-    expect(screen.getByText("Sur demande")).toBeInTheDocument();
+    expect(screen.getByText("On request")).toBeInTheDocument();
     const user = userEvent.setup();
     for (const toggle of screen.getAllByRole("switch")) await user.click(toggle);
     await user.click(screen.getByRole("checkbox"));
@@ -67,8 +67,8 @@ describe("ModeSwitch", () => {
       />,
     );
     expect(screen.getByRole("radio", { name: /Guide/ })).toBeChecked();
-    expect(screen.getByRole("radio", { name: /Binôme/ })).not.toBeChecked();
-    await user.click(screen.getByRole("radio", { name: /Binôme/ }));
+    expect(screen.getByRole("radio", { name: /Pair/ })).not.toBeChecked();
+    await user.click(screen.getByRole("radio", { name: /Pair/ }));
     expect(onChange).toHaveBeenLastCalledWith({
       auto: true,
       idle: false,
@@ -87,7 +87,7 @@ describe("ModeSwitch", () => {
         onChange={onChange}
       />,
     );
-    await user.click(screen.getByRole("radio", { name: /Binôme/ }));
+    await user.click(screen.getByRole("radio", { name: /Pair/ }));
     expect(onChange).not.toHaveBeenCalled();
   });
 
@@ -101,9 +101,9 @@ describe("ModeSwitch", () => {
         onChange={onChange}
       />,
     );
-    const writes = screen.getByRole("switch", { name: "Claude peut écrire dans mes fichiers" });
+    const writes = screen.getByRole("switch", { name: "Claude can write to my files" });
     expect(writes).not.toBeChecked();
-    expect(screen.getByText(/Non autorisé/)).toBeInTheDocument();
+    expect(screen.getByText(/^Not allowed$/)).toBeInTheDocument();
     await user.click(writes);
     expect(onChange).toHaveBeenLastCalledWith({
       auto: true,
@@ -123,9 +123,9 @@ describe("ModeSwitch", () => {
         onChange={onChange}
       />,
     );
-    const writes = screen.getByRole("switch", { name: "Claude peut écrire dans mes fichiers" });
+    const writes = screen.getByRole("switch", { name: "Claude can write to my files" });
     expect(writes).toBeChecked();
-    expect(screen.getByText(/Autorisé/)).toBeInTheDocument();
+    expect(screen.getByText(/^Allowed$/)).toBeInTheDocument();
     await user.click(writes);
     expect(onChange).not.toHaveBeenCalled();
   });

@@ -17,29 +17,29 @@ describe("AtsChecklist", () => {
     const items = screen.getAllByRole("listitem");
     expect(items).toHaveLength(5);
     const headings = within(items[2] as HTMLElement);
-    expect(headings.getByText("Titres de sections standard")).toBeInTheDocument();
-    expect(headings.getByText("À revoir")).toBeInTheDocument();
+    expect(headings.getByText("Standard section headings")).toBeInTheDocument();
+    expect(headings.getByText("To review")).toBeInTheDocument();
     expect(headings.getByText("Titre « Mon parcours » non standard.")).toBeInTheDocument();
-    expect(within(items[0] as HTMLElement).getByText("Réussi")).toBeInTheDocument();
+    expect(within(items[0] as HTMLElement).getByText("Passed")).toBeInTheDocument();
   });
 
   it("always shows the fixed mention that nothing guarantees passing", () => {
     render(<AtsChecklist checks={CHECKS} />);
     expect(
-      screen.getByText("Aucun outil ne garantit le passage d'un logiciel de recrutement."),
+      screen.getByText(/No tool can guarantee that a CV gets through/),
     ).toBeInTheDocument();
   });
 
   it("keeps the mention, and says so, when there is no check", () => {
     render(<AtsChecklist checks={[]} />);
-    expect(screen.getByText("Aucun contrôle pour l'instant.")).toBeInTheDocument();
-    expect(screen.getByText(/Aucun outil ne garantit/)).toBeInTheDocument();
+    expect(screen.getByText("No checks yet.")).toBeInTheDocument();
+    expect(screen.getByText(/No tool can guarantee/)).toBeInTheDocument();
   });
 
   it("is a named region", () => {
     render(<AtsChecklist checks={CHECKS} />);
     expect(
-      screen.getByRole("region", { name: "Lisibilité par un logiciel de recrutement" }),
+      screen.getByRole("region", { name: "Readability by applicant tracking systems" }),
     ).toBeInTheDocument();
   });
 });

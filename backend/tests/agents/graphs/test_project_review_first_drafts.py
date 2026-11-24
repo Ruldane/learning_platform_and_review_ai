@@ -26,7 +26,7 @@ async def _validated_without_drafts(run: ProjectRun, store: FakeProjectStore) ->
     assert outcome is not None and outcome.verdict == "validated" and store.review_saves == 1
     assert outcome.drafts == []
     [done] = await run.events("run.completed")
-    assert done["summary"] == "Projet validé : brouillons indisponibles."
+    assert done["summary"] == "Project approved. Drafts unavailable."
 
 
 async def test_invalid_drafts_keep_the_validated_evaluation_without_drafts(

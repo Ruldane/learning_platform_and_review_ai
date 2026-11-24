@@ -20,16 +20,16 @@ describe("IdeSessionPage, review fixes", () => {
     options.runs = [runOut({ kind: "check" })];
     await refresh();
     expect(
-      await screen.findByText("Tests réussis (exécution de Claude, non comptée)"),
+      await screen.findByText("Tests passed (run by Claude, not counted)"),
     ).toBeInTheDocument();
-    expect(screen.queryByText(/Vérification réussie/)).toBeNull();
+    expect(screen.queryByText(/Check passed/)).toBeNull();
   });
 
   it("a check of your own is counted as before", async () => {
     const { user } = renderSession();
     await findEditor();
-    await user.click(screen.getByRole("button", { name: "Vérifier" }));
-    expect(await screen.findByText(/Vérification réussie/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Check" }));
+    expect(await screen.findByText(/Check passed/)).toBeInTheDocument();
   });
 
   it("stops reading a run while the tab is hidden and goes on when it is back", async () => {
@@ -38,20 +38,20 @@ describe("IdeSessionPage, review fixes", () => {
       reads: [progress({ ...running, output: "a", next_offset: 1 }), progress({ output: "b" })],
     });
     await findEditor();
-    await user.click(screen.getByRole("button", { name: /^Exécuter/ }));
+    await user.click(screen.getByRole("button", { name: /^Run code/ }));
     await waitFor(() => expect(calls.reads).toHaveLength(1));
     act(() => focusManager.setFocused(false));
     await settle(1000);
     expect(calls.reads).toHaveLength(1);
     act(() => focusManager.setFocused(true));
-    expect(await screen.findByText(/Terminé \(code 0/)).toBeInTheDocument();
+    expect(await screen.findByText(/Finished \(code 0/)).toBeInTheDocument();
   });
 
   it("a setting changed in another tab is not undone by changing another one here", async () => {
     const options: Options = { preferences: { mcp_can_write_files: false } };
     const { user, calls } = renderSession(options);
     const auto = await screen.findByRole("switch", {
-      name: "Le professeur intervient tout seul après une erreur",
+      name: "The professor steps in on its own after an error",
     });
     options.preferences = { mcp_can_write_files: true, session_cap: 7000 }; // l'autre onglet
     await user.click(auto);
@@ -70,13 +70,13 @@ describe("IdeSessionPage, review fixes", () => {
     await user.type(editor, "b");
     options.session = { files: { "main.py": "a = 2\n" } };
     await refresh();
-    const card = await screen.findByRole("alert", { name: /pendant que tu écrivais/ });
-    await user.click(within(card).getByRole("button", { name: "Voir la version de Claude" }));
-    await user.click(within(card).getByRole("button", { name: "Prendre celle de Claude" }));
-    expect(within(card).getByText(/Tes retouches de main.py seront perdues/)).toBeInTheDocument();
+    const card = await screen.findByRole("alert", { name: /while you were typing/ });
+    await user.click(within(card).getByRole("button", { name: "View Claude's version" }));
+    await user.click(within(card).getByRole("button", { name: "Take Claude's" }));
+    expect(within(card).getByText(/Your edits to main\.py will be lost/)).toBeInTheDocument();
     expect(editor).toHaveValue("a = 1\nb");
-    await user.click(within(card).getByRole("button", { name: "Annuler" }));
-    expect(within(card).getByRole("button", { name: "Prendre celle de Claude" })).toBeVisible();
+    await user.click(within(card).getByRole("button", { name: "Cancel" }));
+    expect(within(card).getByRole("button", { name: "Take Claude's" })).toBeVisible();
     expect(editor).toHaveValue("a = 1\nb");
     expect(calls.puts).toHaveLength(0);
   });
@@ -103,6 +103,6 @@ describe("IdeSessionPage, review fixes", () => {
     release(); // ...et n'arrive qu'après l'enregistrement
     await settle(300);
     expect(editor).toHaveValue("print('bonjour')\nx");
-    expect(screen.queryByText("Claude a modifié ce fichier.")).toBeNull();
+    expect(screen.queryByText("Claude changed this file.")).toBeNull();
   });
 });

@@ -110,7 +110,7 @@ def make_round_start(deps: GraphDeps) -> Node:
             prompt,
             "Fixe l'ordre de parole du tour.",
             step=f"ordre-{number}",
-            intent="je fixe l'ordre de parole",
+            intent="setting the speaking order",
         )
         order: list[str] = list(plan.order)
         _say(
@@ -145,7 +145,7 @@ def make_round_end(deps: GraphDeps) -> Node:
             prompt,
             "Fais le point du tour.",
             step=f"bilan-{number}",
-            intent="je fais le point du tour",
+            intent="summarizing the round",
         )
         _say(review.summary, f"{AGENT}-bilan-{number}")
         return {**update, "stop": review.stable}

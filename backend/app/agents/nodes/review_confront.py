@@ -154,7 +154,7 @@ async def _ask(
         [SystemMessage(prompt), HumanMessage(CONFRONT_REQUEST[round_no])],
         agent=agent,
         step=f"confrontation-{round_no}",
-        intent="je prends position" if round_no == 1 else "je réponds aux objections",
+        intent="stating my position" if round_no == 1 else "replying to objections",
     )
 
 
@@ -222,7 +222,7 @@ async def _reask(
         messages,
         agent=agent,
         step=f"confrontation-{round_no}",
-        intent="je corrige mes positions",
+        intent="revising my positions",
     )
 
 

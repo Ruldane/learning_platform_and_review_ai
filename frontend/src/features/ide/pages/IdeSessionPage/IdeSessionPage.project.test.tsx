@@ -30,9 +30,9 @@ it("rouvre le dernier onglet choisi et ouvre un nouveau fichier créé", async (
   });
 
   expect(await findEditor()).toHaveValue("value = 3");
-  await user.click(screen.getByRole("button", { name: "Nouveau fichier" }));
-  await user.type(screen.getByRole("textbox", { name: "Chemin du fichier" }), "src/extra.py");
-  await user.click(screen.getByRole("button", { name: "Ajouter le fichier" }));
+  await user.click(screen.getByRole("button", { name: "New file" }));
+  await user.type(screen.getByRole("textbox", { name: "File path" }), "src/extra.py");
+  await user.click(screen.getByRole("button", { name: "Add file" }));
 
   await waitFor(() =>
     expect(writes).toEqual([

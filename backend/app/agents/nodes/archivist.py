@@ -85,7 +85,7 @@ def make_extract(deps: GraphDeps) -> Node:
             [SystemMessage(prompt), HumanMessage("Extrais les concepts du document.")],
             agent=AGENT,
             step="extraction",
-            intent="j'extrais les concepts du document",
+            intent="extracting concepts from the document",
         )
         concepts = [c for c in found.concepts if c.title.strip() and c.summary.strip()]
         return {"concepts": [c.model_dump() for c in concepts[:MAX_CONCEPTS]]}
