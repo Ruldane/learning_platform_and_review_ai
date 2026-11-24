@@ -564,249 +564,290 @@ For a posting, one click generates seven items in parallel and displays each as 
 - The company dossier adapts the roles to the organization, such as a startup or large enterprise.
 - The screen labels the result as a simulation.
 
-## 9. Agents et orchestration
+## 9. Agents and orchestration
 
-Chaque parcours est un graphe LangGraph. Les agents en sont les nœuds, les validations de January sont des interruptions, et chaque événement est diffusé à l'interface puis enregistré.
+Each workflow is a LangGraph graph. Agents are nodes, January's approvals are interrupts,
+and each event is streamed to the interface and saved.
 
-### 9.1 Les 17 agents
+### 9.1 The 17 agents
 
-| Agent | Rôle | Features | Niveau de modèle |
+| Agent | Role | Features | Model tier |
 | --- | --- | --- | --- |
-| Modérateur | Ordonne les tours, pose les questions de cadrage, résume | F1, F19 | Rapide |
-| Stratège | Architecte du parcours, des prérequis et du planning | F1, F2, F13, F15 | Fort |
-| Praticien | Voix du terrain : ce qui sert vraiment dans le métier, projets | F1, F11 | Standard |
-| Éclaireur | Recherche web, tri des sources, repère de vrais praticiens | F1, F2, F12, F16, F17 | Rapide |
-| Sceptique | Conteste, vérifie la faisabilité face au budget temps, coupe le superflu | F1 | Standard |
-| Scribe | Dessine au tableau, tient le compte rendu | F1, F14 | Rapide |
-| Rédacteur | Écrit les leçons | F2 | Fort |
-| Vérificateur | Contrôle les faits, les liens et l'originalité | F2, F16 | Standard |
-| Archiviste | Ingestion, extraction de concepts, profil maître | F3, F4, F18 | Rapide |
-| Lecteur ATS | Lecture machine du CV | F4, F19 | Standard |
-| Recruteur | Lecture humaine du CV | F4, F19 | Standard |
-| Maquettiste | Reproduit le design du CV, nécessite la vision | F4 | Vision |
-| Analyste | Extraction de compétences, scores de match | F8, F12 | Rapide |
-| Examinateur | Quiz, notation, fiches de révision | F9 | Standard |
-| Intervieweur | Entretiens blancs et débriefs | F10 | Fort |
-| Tuteur | Accompagne les sessions d'étude | F14 | Standard |
-| Assistant de suivi | Fiches candidatures en langage naturel, brouillons de messages | F5, F16 | Rapide |
+| Moderator | Orders turns, asks clarifying questions, and summarizes | F1, F19 | Fast |
+| Strategist | Designs paths, prerequisites, and schedules | F1, F2, F13, F15 | Strong |
+| Practitioner | Brings practical experience and reviews projects | F1, F11 | Standard |
+| Scout | Finds web sources and working practitioners | F1, F2, F12, F16, F17 | Fast |
+| Skeptic | Challenges ideas, checks the time budget, and trims scope | F1 | Standard |
+| Scribe | Draws on the whiteboard and records the discussion | F1, F14 | Fast |
+| Writer | Writes lessons | F2 | Strong |
+| Checker | Checks facts, links, and originality | F2, F16 | Standard |
+| Archivist | Imports content and extracts concepts and master profiles | F3, F4, F18 | Fast |
+| ATS Reader | Checks machine readability of CVs | F4, F19 | Standard |
+| Recruiter | Reviews CVs as a human reader would | F4, F19 | Standard |
+| Layout Designer | Recreates the CV design using vision | F4 | Vision |
+| Analyst | Extracts skills and calculates match scores | F8, F12 | Fast |
+| Examiner | Creates quizzes, grades answers, and writes flashcards | F9 | Standard |
+| Interviewer | Runs mock interviews and debriefs | F10 | Strong |
+| Tutor | Guides study sessions | F14 | Standard |
+| Tracking Assistant | Creates applications from text and drafts messages | F5, F16 | Fast |
 
-Les quatre agents qui débattent dans le conseil d'apprentissage sont le Stratège, le Praticien, l'Éclaireur et le Sceptique. Le Modérateur et le Scribe les servent sans prendre position.
+The Strategist, Practitioner, Scout, and Skeptic debate in the Learning Council. The Moderator
+and Scribe support the discussion without taking a position.
 
-Le comité de recrutement (F19) réutilise le Lecteur ATS et le Recruteur, et ajoute deux personas, le Manager et le Futur collègue, définis comme des variantes de prompt du Recruteur.
+The hiring panel (F19) uses the ATS Reader and Recruiter. Two Recruiter prompt variants play
+the Hiring Manager and Prospective Teammate.
 
-### 9.2 Un graphe par parcours
+### 9.2 A graph per workflow
 
-Seize graphes, un module chacun : `learning_council`, `program_builder`, `lesson_factory`, `cv_capture`, `cv_review`, `application_kit`, `gap_analysis`, `quiz`, `interview`, `market_radar`, `replan`, `study_session`, `capture`, `hiring_committee`, `daily_brief`, `project_review`.
+The initial design has sixteen graphs in separate modules. These are `learning_council`,
+`program_builder`, `lesson_factory`, `cv_capture`, `cv_review`, `application_kit`,
+`gap_analysis`, `quiz`, `interview`, `market_radar`, `replan`, `study_session`, `capture`,
+`hiring_committee`, `daily_brief`, and `project_review`.
 
-Tous suivent le même squelette : charger le contexte mémoire, travailler, s'arrêter pour validation, finaliser, écrire en mémoire.
+They load memory context, do the work, pause for approval, finalize, and write to memory.
 
-### 9.3 Règles du débat
+### 9.3 Debate rules
 
-- Le Modérateur fixe l'ordre de parole. Chaque agent voit tous les tours précédents.
-- 150 mots au maximum par prise de parole.
-- Toute affirmation sur le domaine cite une source récupérée ou un élément de la mémoire.
-- À partir du tour 2, chaque agent répond nommément à au moins un autre.
-- Le Sceptique formule au moins une objection par tour.
-- Les messages de January sont traités en priorité au tour suivant.
-- Le Modérateur arrête le débat plus tôt si les positions ne bougent plus.
-- Un plafond de tokens par session est réglable, et le coût estimé s'affiche en direct.
+- The Moderator sets the speaking order. Each agent sees all previous rounds.
+- Each turn is at most 150 words.
+- Claims about the domain cite a retrieved source or a memory entry.
+- Starting in round two, each agent addresses at least one other by name.
+- The Skeptic raises at least one objection per round.
+- The next round addresses January's messages first.
+- The Moderator can end the debate early once positions stop changing.
+- Each session can set a token cap and shows estimated cost in real time.
 
-### 9.4 Humain dans la boucle
+### 9.4 Human approval
 
-- Les points d'arrêt utilisent `interrupt()` de LangGraph avec une charge JSON : type, question, options ([documentation](https://docs.langchain.com/oss/python/langgraph/interrupts)).
-- Il faut un checkpointer et un `thread_id`. Le `thread_id` est l'identifiant de session. La reprise se fait avec `Command(resume=valeur)`.
-- Checkpointer : SQLite asynchrone, dans un fichier `checkpoints.db` séparé de la base métier.
-- **Piège à respecter.** À la reprise, le nœud interrompu redémarre depuis son début. Aucun effet de bord (écriture en base, appel payant) ne doit précéder `interrupt()` dans le même nœud.
+- Pause with LangGraph `interrupt()` and a JSON payload with type, question, and options.
+  [LangGraph interrupts][langgraph-interrupts]
+- Use a checkpointer with the session ID as `thread_id`. Resume with `Command(resume=value)`.
+- The async SQLite checkpointer uses `checkpoints.db`, a separate database file.
+- Resuming starts the interrupted node again from the beginning. Keep database writes, paid
+  calls, and other side effects after `interrupt()` or in their own node.
 
-### 9.5 Événements temps réel
+[langgraph-interrupts]: https://docs.langchain.com/oss/python/langgraph/interrupts
 
-Chaque exécution publie des événements typés, enregistrés dans `session_events` puis poussés par WebSocket.
+### 9.5 Real-time events
 
-| Type | Contenu |
+Each run publishes typed events, stores them in `session_events`, and streams them by WebSocket.
+
+| Type | Payload |
 | --- | --- |
-| `agent.started` | Agent, étape, phrase d'intention (« je cherche des cursus reconnus ») |
-| `agent.token` | Fragment de texte en cours d'écriture |
-| `agent.message` | Message final de l'agent |
-| `tool.called`, `tool.result` | Outil, arguments, résumé du résultat |
-| `source.found` | Titre, lien, auteur, date, langue, score |
-| `board.update` | Code Mermaid et numéro d'étape |
-| `memory.written` | Élément écrit et raison |
-| `interrupt.requested` | Question et options pour January |
-| `proposal.ready`, `artifact.ready` | Proposition ou fichier prêt (PDF, plan) |
-| `cost.updated` | Tokens et coût estimé cumulés |
-| `run.completed`, `run.failed` | Fin, avec résumé ou erreur |
+| `agent.started` | Agent, step, and intent, such as “Looking for recognized courses” |
+| `agent.token` | Fragment of a message in progress |
+| `agent.message` | Agent's final message |
+| `tool.called`, `tool.result` | Tool, arguments, and result summary |
+| `source.found` | Title, link, author, date, language, and score |
+| `board.update` | Mermaid code and step number |
+| `memory.written` | Written entry and reason |
+| `interrupt.requested` | Question and options for January |
+| `proposal.ready`, `artifact.ready` | Available proposal or file such as a PDF or plan |
+| `cost.updated` | Cumulative tokens and estimated cost |
+| `run.completed`, `run.failed` | End of run with a summary or error |
 
-- Enveloppe commune : `id`, `session_id`, `seq`, `ts`, `type`, `agent`, `payload`.
-- À la reconnexion, le client envoie son dernier `seq` et le serveur rejoue la suite.
-- La « pensée » affichée est la phrase d'intention et les appels d'outils de chaque étape, pas un raisonnement brut.
+- All events have `id`, `session_id`, `seq`, `ts`, `type`, `agent`, and `payload`.
+- On reconnect, the client sends its last `seq` and the server replays subsequent events.
+- For each step, the UI shows the intent statement and tool calls.
 
-### 9.6 Fiabilité
+### 9.6 Reliability
 
-- Toute sortie structurée (propositions, plan, modifications de CV, quiz) passe par un schéma Pydantic. Deux nouveaux essais en cas d'échec de validation, puis un événement d'erreur lisible.
-- Délai maximal de 120 secondes par nœud, nouveaux essais avec attente croissante sur les erreurs du fournisseur.
-- Un prompt par agent, dans un fichier Markdown versionné, avec variables.
-- Chaque appel LLM est journalisé dans `llm_calls` : modèle, tokens, latence, coût estimé. Un écran Journal des agents les affiche.
-- Tâches planifiées par APScheduler dans le processus du back end : brief, radar, bilan hebdomadaire, relances, leçons à 7 jours, rafraîchissement des connaissances ATS.
+- Pydantic validates proposals, plans, CV changes, quizzes, and other structured outputs.
+  Retry twice on validation failure, then emit a readable error.
+- Allow up to 120 seconds per node and retry provider errors with increasing delays.
+- Store each agent's prompt and variables in a versioned Markdown file.
+- Record model, token counts, latency, and estimated cost in `llm_calls`. Display calls
+  in the agent log.
+- APScheduler runs the brief, radar, weekly review, follow-ups, lesson generation seven days
+  ahead, and ATS knowledge refresh in the backend process.
 
-## 10. Recherche web gratuite
+## 10. Web search
 
-La recherche passe par SearXNG, un métamoteur open source lancé dans Docker : gratuit, sans clé et sans quota. Brave Search n'a plus de plan gratuit sans carte bancaire, il reste donc une option de secours.
+SearXNG runs in Docker as the default open-source metasearch engine. It needs no API key.
+Brave Search is an optional fallback.
 
-### 10.1 Fournisseurs
+### 10.1 Providers
 
-| Fournisseur | Coût | Clé API | Rôle |
+| Provider | Cost in the original design | API key | Use |
 | --- | --- | --- | --- |
-| SearXNG, conteneur local | Gratuit, open source | Aucune | Par défaut |
-| Brave Search API | 5 $ de crédit par mois, soit environ 1 000 requêtes, carte bancaire exigée | Oui | Optionnel, activé seulement si une clé est saisie |
+| Local SearXNG | Free and open source | None | Default |
+| Brave Search API | $5 monthly credit, about 1,000 queries | Required | Optional fallback |
 
-- Le code dépend d'une interface `SearchProvider` : `search(query, lang, time_range, categories)` renvoie une liste de résultats (titre, lien, extrait, moteur, date).
-- L'ordre de repli est réglable. Par défaut : SearXNG, puis Brave si une clé existe.
-- SearXNG doit avoir le format JSON activé dans `settings.yml` (`search.formats: [html, json]`). Le fichier est fourni dans le dépôt.
-- Moteurs activés : généralistes, plus Wikipedia, GitHub, arXiv, Stack Overflow et YouTube.
-- **Risque connu.** Un moteur généraliste peut bloquer temporairement une instance SearXNG trop active. Parades : plusieurs moteurs en parallèle, cache, débit limité.
+- The Brave plan described in the original design required a credit card.
+- `SearchProvider.search(query, lang, time_range, categories)` returns results with title,
+  link, excerpt, engine, and date.
+- The fallback order is configurable. By default use SearXNG and then Brave if a key is set.
+- The repository's SearXNG `settings.yml` enables JSON with `search.formats: [html, json]`.
+- Enabled engines include general search, Wikipedia, GitHub, arXiv, Stack Overflow, and YouTube.
+- General search engines may temporarily throttle a busy SearXNG instance. Query multiple
+  engines, cache results, and rate-limit requests.
 
-### 10.2 Lecture des pages
+### 10.2 Reading pages
 
-| Type de contenu | Méthode gratuite |
+| Content | Method |
 | --- | --- |
-| Page web | Téléchargement avec `httpx`, extraction du texte principal avec `trafilatura` |
-| Page rendue en JavaScript | Repli : conversion de l'adresse en PDF par Gotenberg, puis extraction du texte |
-| PDF | Téléchargement et extraction de texte |
-| Vidéo YouTube | Transcription quand elle est disponible, sinon titre et description |
-| Dépôt GitHub | API publique, lecture du README |
-| Papier de recherche | API arXiv |
+| Web page | Fetch with `httpx` and extract the main text with `trafilatura` |
+| JavaScript-rendered page | Fall back to a Gotenberg PDF conversion, then extract text |
+| PDF | Download and extract text |
+| YouTube video | Transcript when available, otherwise title and description |
+| GitHub repository | Read the README through the public API |
+| Research paper | arXiv API |
 
-- L'outil `web_read(url)` renvoie texte, titre, auteur, date, langue, et un statut `ok` ou `unreadable`.
-- Une page `unreadable` n'est jamais citée. Aucun contournement de page protégée par connexion.
-- Chaque page lue est mise en cache 7 jours dans `web_cache`.
-- Délai maximal de 15 secondes par page, une requête par seconde et par domaine.
+- `web_read(url)` returns text, title, author, date, language, and an `ok` or `unreadable` status.
+- Cite successfully read pages only and respect sign-in requirements.
+- Store each read page for seven days in `web_cache`.
+- Allow up to 15 seconds per page and one request per second per domain.
 
-### 10.3 Qualité des sources
+### 10.3 Source quality
 
-L'Éclaireur note chaque source sur 100. Il faut 60 pour entrer dans une leçon.
+The Scout scores sources out of 100. A lesson can use sources scoring at least 60.
 
-| Critère | Points |
+| Criterion | Points |
 | --- | --- |
-| Autorité : documentation officielle, institution reconnue, praticien au rôle vérifiable | 30 |
-| Fraîcheur : date de publication, moins de 12 mois privilégié pour les sujets IA | 20 |
-| Profondeur du contenu | 20 |
-| Auteur réel et identifiable | 15 |
-| Qualité pédagogique | 15 |
+| Authority, such as official docs, a recognized institution, or a verified practitioner | 30 |
+| Publication date, with a preference for the last 12 months on AI topics | 20 |
+| Depth | 20 |
+| Identifiable author | 15 |
+| Teaching quality | 15 |
 
-- **Vraies personnes.** Pour chaque objectif, l'Éclaireur repère 5 à 10 praticiens (nom, rôle, où ils publient). Leurs articles et conférences sont prioritaires. Seules des informations professionnelles publiques sont conservées.
-- **Langues.** Requêtes en français et en anglais par défaut, autres langues activables. La leçon résume en français et cite la source dans sa langue.
-- Listes de domaines privilégiés et exclus, modifiables dans les réglages.
-- L'interface montre les requêtes lancées, les sources retenues et les sources écartées avec la raison.
+- **Practitioners.** The Scout finds five to ten people per goal by name, role, and publication
+  venue. Prioritize their articles and talks and retain public professional information only.
+- **Languages.** Search in French and English by default, with other languages configurable.
+  Lessons summarize in English and cite sources in their original language.
+- Settings lets January edit preferred and excluded domains.
+- The interface shows queries, chosen sources, rejected sources, and rejection reasons.
 
-### 10.4 Plafonds
+### 10.4 Limits
 
-- 12 requêtes et 30 pages lues par session, réglables.
-- Sur Cloudflare, SearXNG ne pourra pas tourner dans un Worker. Le choix se fera à la migration : crédit mensuel Brave, ou SearXNG hébergé ailleurs.
+- Default to 12 queries and 30 page reads per session, with configurable limits.
+- A Cloudflare deployment would use Brave or a separately hosted SearXNG instance.
 
-## 11. Configuration des modèles et des clés (F6)
+## 11. Model and API key settings (F6)
 
-L'écran Réglages permet de choisir le fournisseur et le modèle par niveau, et de saisir les clés API. Une seule clé LLM suffit pour faire tourner toute l'application.
+Settings lets January choose a provider and model for each tier and enter API keys.
+One LLM key is enough to run the application.
 
-### 11.1 Fournisseurs
+### 11.1 Providers
 
-| Fournisseur | Intégration | Variable | Remarque |
+| Provider | Integration | Variable | Role |
 | --- | --- | --- | --- |
-| Anthropic | `langchain-anthropic`, classe `ChatAnthropic` | `ANTHROPIC_API_KEY` | Fournisseur par défaut |
-| OpenAI | `langchain-openai`, classe `ChatOpenAI` | `OPENAI_API_KEY` |  |
-| GLM (Z.ai) | `ChatOpenAI` avec `base_url` | `ZAI_API_KEY` | API compatible OpenAI. Adresse par défaut `https://api.z.ai/api/paas/v4/`, modifiable car elle diffère selon l'offre souscrite |
+| Anthropic | `langchain-anthropic` and `ChatAnthropic` | `ANTHROPIC_API_KEY` | Default |
+| OpenAI | `langchain-openai` and `ChatOpenAI` | `OPENAI_API_KEY` |  |
+| GLM (Z.ai) | `ChatOpenAI` with `base_url` | `ZAI_API_KEY` | OpenAI-compatible |
 
-Une fabrique unique, `get_chat_model(tier)`, construit le bon client. Aucun agent n'instancie un modèle lui même.
+The default Z.ai URL is `https://api.z.ai/api/paas/v4/` and is configurable for other plans.
+Agents obtain all model clients through `get_chat_model(tier)`.
 
-### 11.2 Niveaux de modèle
+### 11.2 Model tiers
 
-Les agents ne nomment jamais un modèle. Ils demandent un niveau, et les réglages associent chaque niveau à un fournisseur et un modèle.
+Agents request a tier. Settings maps the tier to a provider and model.
 
-| Niveau | Usage | Défaut au premier lancement |
+| Tier | Use | Initial default |
 | --- | --- | --- |
-| `rapide` | Recherche, extraction, modération | Claude Haiku |
-| `standard` | Débat, relecture, quiz, tutorat | Claude Haiku |
-| `fort` | Planning, rédaction des leçons, entretiens | Claude Haiku |
-| `vision` | Capture du design du CV | Claude Haiku |
+| Fast | Research, extraction, moderation | Claude Haiku |
+| Standard | Debate, review, quiz, tutoring | Claude Haiku |
+| Strong | Planning, lesson writing, interviews | Claude Haiku |
+| Vision | CV design capture | Claude Haiku |
 
-- **Préréglages en un clic.** Tout Haiku, Haiku avec Sonnet pour le niveau fort, Tout GLM, Tout OpenAI, Personnalisé.
-- La liste des modèles disponibles est chargée depuis l'API de chaque fournisseur quand elle existe. Sinon, saisie libre de l'identifiant.
-- Identifiants par défaut regroupés dans un seul fichier `model_defaults.py` : `claude-haiku-5-5` et `claude-sonnet-5-5`, à revérifier dans la documentation Anthropic au moment de coder.
-- Mode avancé : surcharge du modèle agent par agent.
-- Si le niveau `vision` pointe vers un modèle sans vision, la capture du design est désactivée avec un message clair.
+- **Presets.** All Haiku, Haiku with Sonnet for Strong, All GLM, All OpenAI, and Custom.
+- Fetch available models from each provider's API when supported. Otherwise accept a model ID.
+- `model_defaults.py` holds default IDs such as `claude-haiku-5-5` and `claude-sonnet-5-5`.
+  Check the provider's documentation when changing them.
+- Advanced settings allow model overrides per agent.
+- If the vision tier uses a model without vision, disable design capture and explain why.
 
-### 11.3 Clés API
+### 11.3 API keys
 
-- Deux façons de les fournir : le fichier `.env` à la racine, ou l'écran Réglages.
-- Une clé saisie dans l'interface est chiffrée en base avec `APP_SECRET`, généré automatiquement au premier démarrage dans un volume Docker.
-- Une clé n'est jamais renvoyée au navigateur (seuls les 4 derniers caractères s'affichent) ni écrite dans les journaux.
-- Le bouton « Tester » fait un appel minimal et affiche le résultat.
-- Les embeddings et la recherche web ne demandent aucune clé.
-- La clé Brave est optionnelle. Si elle est saisie, l'application s'arrête à 900 requêtes par mois, car Brave facture au delà du crédit.
+- Add keys through the root `.env` file or Settings.
+- Encrypt keys added in the app with `APP_SECRET`, generated on first start in a Docker volume.
+- Return only the final four characters to the browser. Keep keys out of logs.
+- The test button makes a minimal call and shows the result.
+- Local embeddings and default web search need no key.
+- An optional Brave key enables up to 900 queries per month in the original design to stay
+  within the credit.
 
-### 11.4 Autres réglages
+### 11.4 Other settings
 
-| Réglage | Défaut |
+| Setting | Default |
 | --- | --- |
-| Disponibilité | 2 h du lundi au vendredi, 3 à 4 h le week end |
-| Langue des leçons | Français |
-| Langues de recherche | Français, anglais |
-| Tours de débat | 3 |
-| Plafond par session | 300 000 tokens |
-| Heure du brief | 7 h |
-| Bilan hebdomadaire | Dimanche 18 h |
-| Délais de relance | 7, 14 et 21 jours |
-| Guide de style personnel | Vide |
-| Domaines privilégiés et exclus | Liste de départ fournie |
+| Availability | 2 hours each weekday, 3 to 4 on the weekend |
+| Lesson language | English |
+| Search languages | French and English |
+| Debate rounds | 3 |
+| Session cap | 300,000 tokens |
+| Brief time | 7 a.m. |
+| Weekly review | Sunday at 6 p.m. |
+| Follow-up delays | 7, 14, and 21 days |
+| Personal style guide | Empty |
+| Preferred and excluded domains | Starter list |
 
-### 11.5 Suivi des coûts
+### 11.5 Cost tracking
 
-Un écran affiche les tokens et le coût estimé par jour, par feature, par agent et par modèle. Les prix viennent d'un fichier `model_prices.json` modifiable, car ils changent.
+A screen shows token counts and estimated costs by day, feature, agent, and model.
+Update prices in `model_prices.json`.
 
-## 12. Architecture technique et structure du code
+## 12. Architecture and source layout
 
-Six conteneurs Docker : le front, le back end, et quatre services open source que le back end appelle à travers des interfaces. Ces interfaces sont ce qui rendra la migration vers Cloudflare possible sans réécrire les features.
+The original design uses six Docker containers for the frontend, backend, and four open-source
+services. Provider interfaces let a future Cloudflare deployment reuse the features.
 
-&#91;embedded content: architecture · 6 conteneurs, 2 dépendances externes\]
+```mermaid
+flowchart LR
+    Frontend --> Backend
+    Backend --> Providers["Provider interfaces"]
+    Providers --> Qdrant
+    Providers --> Ollama
+    Providers --> SearXNG
+    Providers --> Gotenberg
+    Providers --> Models["External model providers"]
+    Providers --> Search["Optional Brave Search"]
+```
 
-Seule la boîte Interfaces providers connaît les services. C'est elle que l'on réécrit pour passer sur Cloudflare.
+Only provider implementations know their services. A Cloudflare deployment would supply
+implementations for that platform.
 
 ### 12.1 Stack
 
-| Couche | Choix | Raison |
+| Layer | Choice | Purpose |
 | --- | --- | --- |
-| Back end | Python, FastAPI, Uvicorn | Asynchrone, WebSocket natif, FastAPI est supporté par Python Workers |
-| Agents | LangChain et LangGraph | Demande explicite, interruptions et reprises intégrées |
-| Schémas | Pydantic v2 | Sorties structurées et validation de l'API |
-| Base relationnelle | SQLite en mode WAL, SQLAlchemy 2 asynchrone, Alembic | Aucun conteneur en plus, schéma proche de Cloudflare D1 |
-| Base vectorielle | Qdrant | Section 4 |
-| Embeddings | Ollama avec `bge-m3` | Local, gratuit, multilingue |
-| Recherche web | SearXNG | Section 10 |
-| Génération de PDF | [Gotenberg](https://github.com/gotenberg/gotenberg) (Chromium) | HTML vers PDF fidèle au CSS, pour les leçons et les CV |
-| Lecture de PDF | `pdfplumber`, `pypdfium2` | Texte avec positions, images de pages |
-| Lecture du web | `httpx`, `trafilatura` | Extraction du contenu principal |
-| Tâches planifiées | APScheduler | Dans le processus, sans file externe |
-| Fichiers | Volume Docker derrière une interface `FileStorage` | Remplaçable par R2 |
-| Front end | React, TypeScript, Vite | Standard, rapide |
-| Interface | Tailwind CSS, shadcn/ui | Thème clair uniquement |
-| Données côté front | TanStack Query, Zustand | Cache serveur et état local |
-| Tableau | Excalidraw et `@excalidraw/mermaid-to-excalidraw` | Rendu dessiné à la main, éditable |
-| Carte de compétences | React Flow avec `elkjs` | Graphe structuré avec mise en page automatique |
-| Graphiques | Recharts | Radar, courbes, barres |
-| Tests | pytest, Vitest, Playwright | Unitaires, composants, 3 parcours de bout en bout |
-| Qualité | ruff, mypy, ESLint, Prettier | Contrôles avant chaque commit |
+| Backend | Python, FastAPI, Uvicorn | Async, WebSocket support, Python Workers target |
+| Agents | LangChain and LangGraph | Interrupts and resume |
+| Schemas | Pydantic v2 | Structured outputs and API validation |
+| Relational DB | SQLite WAL, async SQLAlchemy 2, Alembic | Embedded database, D1-like schema |
+| Vector DB | Qdrant | Section 4 |
+| Embeddings | Ollama with `bge-m3` | Local, free, multilingual |
+| Web search | SearXNG | Section 10 |
+| PDF rendering | [Gotenberg] with Chromium | HTML and CSS to PDF for lessons and CVs |
+| PDF reading | `pdfplumber`, `pypdfium2` | Positioned text and page images |
+| Web reading | `httpx`, `trafilatura` | Main content extraction |
+| Scheduled work | APScheduler | In-process scheduling |
+| Files | Docker volume behind `FileStorage` | Can use R2 later |
+| Frontend | React, TypeScript, Vite | UI and build tooling |
+| Interface | Tailwind CSS, shadcn/ui | Light theme |
+| Frontend data | TanStack Query, Zustand | Server cache and local state |
+| Whiteboard | Excalidraw, `@excalidraw/mermaid-to-excalidraw` | Editable hand-drawn style |
+| Skill map | React Flow with `elkjs` | Automatically laid-out graph |
+| Charts | Recharts | Radar, line, and bar charts |
+| Tests | pytest, Vitest, Playwright | Unit, component, and end-to-end checks |
+| Quality | ruff, mypy, ESLint, Prettier | Commit checks |
 
-Les versions sont les dernières stables au moment de coder, figées dans les fichiers de verrouillage.
+Use stable versions at implementation time and pin them with lockfiles.
 
-### 12.2 Règles de découpage
+[Gotenberg]: https://github.com/gotenberg/gotenberg
 
-- **300 lignes au maximum par fichier**, 50 par fonction. Contrôlé par ESLint (`max-lines`) côté front et par un script `scripts/check_file_length.py` côté back, tous deux bloquants en pre commit.
-- **Un dossier par feature**, des deux côtés, avec les mêmes noms.
-- **Trois couches côté back.** Le routeur reçoit et répond, le service porte la logique, le repository parle à la base. Un routeur n'appelle jamais la base.
-- **Tout service externe passe par une interface** dans `providers/` : LLM, recherche, embeddings, vecteurs, PDF, fichiers. Les features ne connaissent que l'interface.
-- **Un agent, deux fichiers** : son prompt en Markdown et son nœud en Python. Un graphe, un fichier.
-- Les types TypeScript de l'API sont générés depuis le schéma OpenAPI du back end, jamais écrits à la main.
+### 12.2 Source organization rules
 
-### 12.3 Arborescence du back end
+- Limit source files to **300 lines** and functions to 50. ESLint `max-lines` and backend
+  `scripts/check_file_length.py` enforce the limits at commit time.
+- Use matching feature directory names in the backend and frontend.
+- A router receives requests and returns responses. The service handles business logic.
+  The repository talks to the database.
+- Features use provider interfaces for external models, search, embeddings, vectors, PDFs,
+  and files.
+- Each agent has a Markdown prompt and Python node. Each graph has a module.
+- Generate TypeScript API types from the backend's OpenAPI schema.
+
+### 12.3 Backend source tree
 
 ```text
 backend/
@@ -815,10 +856,10 @@ backend/
   alembic/
   scripts/check_file_length.py
   app/
-    main.py              # création de l'app, montage des routeurs
-    config.py            # réglages lus depuis l'environnement
-    core/                # sécurité, chiffrement, erreurs, journalisation
-    db/                  # moteur, session, modèles (un fichier par groupe de tables)
+    main.py              # App construction and routers
+    config.py            # Settings read from the environment
+    core/                # Security, encryption, errors, and logging
+    db/                  # Engine, sessions, and models grouped by tables
     providers/
       llm/               # factory.py, anthropic.py, openai.py, glm.py
       search/            # base.py, searxng.py, brave.py
@@ -828,24 +869,24 @@ backend/
       storage/           # base.py, local.py
       web/               # reader.py, youtube.py, github.py, arxiv.py
     agents/
-      prompts/           # un fichier .md par agent (17)
-      nodes/             # un fichier .py par agent (17)
-      graphs/            # un fichier par graphe (16)
-      state/             # schéma d'état de chaque graphe
+      prompts/           # Markdown prompts by agent
+      nodes/             # Python nodes by agent
+      graphs/            # One module per graph
+      state/             # State schemas by graph
       tools/             # memory_tools.py, web_tools.py, board_tools.py
       runtime/           # runner.py, checkpointer.py, events.py, costs.py
-    features/            # chaque dossier : router, service, repository, schemas
+    features/            # Router, service, repository, and schemas per feature
       learning/  program/  lessons/  memory/  cv/  applications/
       gap/  quiz/  interview/  projects/  radar/  replan/
       study/  skills/  kit/  brief/  capture/  committee/
       settings/  auth/
     realtime/            # websocket.py, replay.py
-    scheduler/           # un fichier par tâche planifiée
-    templates/           # gabarits HTML et CSS : lesson, program, report, cv
+    scheduler/           # Modules for scheduled jobs
+    templates/           # HTML and CSS templates for lessons, programs, reports, and CVs
   tests/
 ```
 
-### 12.4 Arborescence du front end
+### 12.4 Frontend source tree
 
 ```text
 frontend/
@@ -856,20 +897,20 @@ frontend/
     main.tsx
     app/                 # routes, layout, providers
     shared/
-      api/               # client HTTP, types générés depuis OpenAPI
-      realtime/          # useSessionStream, rejeu des événements
-      ui/                # composants shadcn
-      i18n/              # fr.ts
+      api/               # HTTP client and generated OpenAPI types
+      realtime/          # useSessionStream and event replay
+      ui/                # shadcn components
+      i18n/              # en.ts and message catalogs
       lib/
-    features/            # chaque dossier : components, hooks, api.ts, types.ts
-      home/              # brief du matin
+    features/            # Components, hooks, api.ts, and types.ts per feature
+      home/              # Morning Brief
       learning/          # DebatePanel, AgentBubble, SourcesPanel, Board, ProposalCards
       program/           # WeekCalendar, TaskList, PlanDiff
       lessons/  study/  quiz/
-      memory/            # liste, carte 2D, banc d'essai
-      skills/            # carte de compétences
-      cv/                # profil maître, capture du design, revue, diff
-      applications/      # kanban, fiche, relances
+      memory/            # List, 2D map, and query preview
+      skills/            # Skill map
+      cv/                # Master profile, design capture, review, and diff
+      applications/      # Kanban, application records, and follow-ups
       kit/  committee/  interview/  radar/  projects/
       capture/  settings/  auth/
 ```
