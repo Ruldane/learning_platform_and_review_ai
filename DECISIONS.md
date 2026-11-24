@@ -435,378 +435,2687 @@ subject, decision, and reason. Historical entries describe the project at the ti
 
 ## D31
 
-- **Date** : 2026-11-11
-- **Sujet** : Commentaires de `.env.example` sur leur propre ligne (revue de la tâche 0.10)
-- **Décision** : les commentaires de `.env.example` sont déplacés sur une ligne `# ...` au-dessus de la clé qu'ils décrivent (`BRAVE_API_KEY`, `AUTH_MODE`, `GOOGLE_CLIENT_ID`). Écart de forme à la spec 16.2 (contenu, clés et valeurs inchangés). Un test (`backend/tests/infra/test_env_example.py`) interdit les commentaires en fin de ligne et impose la forme `CLÉ=VALEUR`.
-- **Raison** : Docker Compose lit un commentaire placé après une valeur vide (`KEY=   # texte`) comme la valeur elle-même : après `cp .env.example .env`, le back recevait `BRAVE_API_KEY=# optionnel`, ce qui fausse toute vérification « la clé est-elle configurée ».
+- **Date** 2026-11-11
+- **Subject** `.env.example` comments on their own line (task 0.10 review)
+- **Decision** The comments in `.env.example` move to a `# ...` line above the key they describe
+  (`BRAVE_API_KEY`, `AUTH_MODE`, `GOOGLE_CLIENT_ID`). This deviates in form from spec 16.2 (content,
+  keys, and values unchanged). A test (`backend/tests/infra/test_env_example.py`) forbids
+  end-of-line comments and enforces the `KEY=VALUE` form.
+- **Reason** Docker Compose reads a comment placed after an empty value (`KEY=   # text`) as the
+  value itself: after `cp .env.example .env`, the backend received `BRAVE_API_KEY=# optional`, which
+  breaks every “is the key configured” check.
 
 ## D32
 
-- **Date** : 2026-11-11
-- **Sujet** : Socle front, contrôles, contrat OpenAPI, client typé et textes (tâche 0.11)
-- **Décision** : (1) **Versions** (relevées le 2026-11-11) : Vite 8.3, React 19.3, Vitest 5.1, Tailwind 4.3 (`@tailwindcss/vite`), shadcn 4.23 (`pnpm dlx shadcn@latest init -t vite -b radix -d`, style `radix-nova`, `cn` officiel de shadcn-ui), openapi-fetch 0.17 / openapi-typescript 7.13, react-router 8.5, MSW 3.0, eslint-plugin-boundaries 7.4. **TypeScript 6.0.3 et ESLint 9.39** au lieu des dernières (TypeScript 7.0 et ESLint 10) : `typescript-eslint` 8.72 exige `typescript < 6.1` et `eslint-plugin-react` 7.37 exige `eslint <= 9`. À réexaminer quand ces plugins suivront. (2) **Préfixe `/api/v1`** : le contrat OpenAPI contient les chemins complets (`/api/v1/auth/me`), mais le client a pour `baseUrl` `${apiBaseUrl}/api/v1` et s'appelle `api.GET("/auth/me")` comme dans le brief : le type `paths` est donc recopié sans le préfixe (`WithoutPrefix<paths>` dans `client.ts`). (3) **Erreurs** : le middleware lève l'`ApiError` dans `onResponse` pour toute réponse non réussie (corps hors enveloppe : code `http_error`, message général français, status réel) ; une panne réseau devient une `ApiError` de code `network_error` et de status `0` (ajout au brief). `unwrap` convertit aussi une erreur restée dans le résultat. Le test écrit donc `api.GET(...).then(unwrap)` (le rejet vient du middleware). `fetch` du client est résolu à chaque appel (`(request) => globalThis.fetch(request)`) pour que MSW puisse le remplacer. (4) **MSW 3** : l'option `onUnhandledRequest` du brief s'appelle `onUnhandledFrame` (valeur `"error"`) ; un test (`src/test/server.test.ts`) vérifie qu'une requête sans handler échoue. (5) **Export du contrat** : `python -m scripts.export_openapi` (depuis `backend/`) au lieu de `python scripts/export_openapi.py` : le second ne trouve pas le paquet `app` (le dossier du script, et non `backend/`, est dans `sys.path`) ; le hook pre-commit utilise donc `-m`. Le fichier par défaut est `contracts/openapi.json` calculé depuis l'emplacement du script (même résultat que `../contracts/openapi.json` depuis `backend/`). L'application est construite avec `Settings(_env_file=None, ...)` : ni `.env`, ni base, ni lifespan. JSON trié, indenté de 2, UTF-8 non échappé, fins de ligne LF. (6) **Règles de découpage** (`eslint.config.js`, `boundaries/dependencies` en `default: disallow`) : éléments `app`, `feature-components`, `feature`, `shared` (capture du sous-dossier `area` : `ui`, `i18n`, `lib`, `api`), plus `test-support` (`src/test`, importable depuis les fichiers `*.test.*`). `src/main.tsx` est ignoré (point d'entrée). Un composant de `components/` ne peut importer que ses propres `components/`, `shared/ui`, `shared/i18n` et `shared/lib`. Vérifié avec des fichiers temporaires (voir le rapport). `max-lines-per-function` est désactivé pour `*.test.*` (un `describe` regroupe tous les cas du fichier) ; `max-lines: 300` s'y applique toujours. `schema.d.ts` est exclu d'ESLint et de Prettier. (7) **shadcn** : les alias de `components.json` pointent vers `@/shared/*` (`ui` = `@/shared/ui`, `lib` = `@/shared/lib`) ; les primitives shadcn sont à plat dans `shared/ui/` (`button.tsx`), la règle « un dossier par composant » vaut pour les composants de features. Les classes `dark:` du bouton sont retirées et le variant `dark` n'est pas déclaré : sans lui, Tailwind 4 appliquerait `prefers-color-scheme: dark`. (8) **Coquille** : `src/app/` contient un `App` minimal (fournisseurs React Query et routeur, lien d'évitement, accueil, page introuvable) pour que `pnpm build` produise un site ; les tâches suivantes la remplacent. `package.json` fixe `"packageManager": "pnpm@12.18.0"` (corepack, Dockerfile du front) ; l'installation avec `--frozen-lockfile` a été vérifiée dans un dossier vierge. Les hooks pre-commit ajoutés : `openapi-contract`, `frontend-lint`, `frontend-typecheck`.
-- **Raison** : un socle qui compile et se vérifie seul, dont les frontières d'architecture sont imposées par l'outil plutôt que par la discipline, et un contrat d'API unique dont les types front sont dérivés.
+- **Date** 2026-11-11
+- **Subject** Front-end foundation, checks, OpenAPI contract, typed client, and texts (task 0.11)
+- **Decision**
+  1. **Versions** (recorded 2026-11-11): Vite 8.3, React 19.3, Vitest 5.1, Tailwind 4.3
+     (`@tailwindcss/vite`), shadcn 4.23 (`pnpm dlx shadcn@latest init -t vite -b radix -d`, style
+     `radix-nova`, the official shadcn-ui `cn`), openapi-fetch 0.17 / openapi-typescript 7.13,
+     react-router 8.5, MSW 3.0, eslint-plugin-boundaries 7.4. **TypeScript 6.0.3 and ESLint 9.39**
+     instead of the latest (TypeScript 7.0 and ESLint 10): `typescript-eslint` 8.72 requires
+     `typescript < 6.1` and `eslint-plugin-react` 7.37 requires `eslint <= 9`. Revisit when those
+     plugins catch up.
+  2. **`/api/v1` prefix**: the OpenAPI contract contains the full paths (`/api/v1/auth/me`), but the
+     client has `${apiBaseUrl}/api/v1` as its `baseUrl` and is called as `api.GET("/auth/me")` as in
+     the brief: the `paths` type is therefore copied without the prefix (`WithoutPrefix<paths>` in
+     `client.ts`).
+  3. **Errors**: the middleware throws the `ApiError` in `onResponse` for every unsuccessful
+     response (body outside the envelope: code `http_error`, generic French message, real status); a
+     network failure becomes an `ApiError` with code `network_error` and status `0` (addition to the
+     brief). `unwrap` also converts an error left in the result. The test therefore writes
+     `api.GET(...).then(unwrap)` (the rejection comes from the middleware). The client's `fetch` is
+     resolved on each call (`(request) => globalThis.fetch(request)`) so that MSW can replace it.
+  4. **MSW 3**: the brief's `onUnhandledRequest` option is called `onUnhandledFrame` (value
+     `"error"`); a test (`src/test/server.test.ts`) checks that a request without a handler fails.
+  5. **Contract export**: `python -m scripts.export_openapi` (from `backend/`) instead of
+     `python scripts/export_openapi.py`: the latter cannot find the `app` package (the script's
+     folder, not `backend/`, is on `sys.path`); the pre-commit hook therefore uses `-m`. The default
+     file is `contracts/openapi.json`, computed from the script's location (same result as
+     `../contracts/openapi.json` from `backend/`). The application is built with
+     `Settings(_env_file=None, ...)`: no `.env`, no database, no lifespan. JSON is sorted, indented
+     by 2, unescaped UTF-8, LF line endings.
+  6. **Split rules** (`eslint.config.js`, `boundaries/dependencies` set to `default: disallow`):
+     elements `app`, `feature-components`, `feature`, `shared` (capturing the `area` subfolder:
+     `ui`, `i18n`, `lib`, `api`), plus `test-support` (`src/test`, importable from `*.test.*`
+     files). `src/main.tsx` is ignored (entry point). A component in `components/` may import only
+     its own `components/`, `shared/ui`, `shared/i18n`, and `shared/lib`. Verified with temporary
+     files (see the report). `max-lines-per-function` is disabled for `*.test.*` (one `describe`
+     groups all the file's cases); `max-lines: 300` still applies there. `schema.d.ts` is excluded
+     from ESLint and Prettier.
+  7. **shadcn**: the `components.json` aliases point to `@/shared/*` (`ui` = `@/shared/ui`, `lib` =
+     `@/shared/lib`); the shadcn primitives sit flat in `shared/ui/` (`button.tsx`), and the “one
+     folder per component” rule applies to feature components. The button's `dark:` classes are
+     removed and the `dark` variant is not declared: without that, Tailwind 4 would apply
+     `prefers-color-scheme: dark`.
+  8. **Shell**: `src/app/` contains a minimal `App` (React Query and router providers, skip link,
+     home page, not-found page) so that `pnpm build` produces a site; later tasks replace it.
+     `package.json` pins `"packageManager": "pnpm@12.18.0"` (corepack, front-end Dockerfile);
+     installation with `--frozen-lockfile` was verified in a clean folder. The pre-commit hooks
+     added: `openapi-contract`, `frontend-lint`, `frontend-typecheck`.
+- **Reason** A foundation that builds and checks itself, whose architecture boundaries are enforced
+  by tooling rather than discipline, and a single API contract from which the front-end types are
+  derived.
 
 ## D33
 
-- **Date** : 2026-11-11
-- **Sujet** : Retours de revue de la tâche 0.11 (annulation, test MSW, dossiers de `app/`)
-- **Décision** : (1) `onError` du client laisse passer une `AbortError` telle quelle (annulation par `AbortController` ou signal de TanStack Query) : seule une vraie panne réseau devient `ApiError` `network_error`. (2) Le test de `src/test/server.test.ts` vérifie l'erreur propre à MSW (cause « Cannot bypass a request when using the "error" strategy » et message `[MSW] ... without a matching request handler`) : il échoue si `onUnhandledFrame: "error"` est retiré (vérifié avec `bypass` et `warn`). (3) Les composants de `src/app/` suivent la règle un dossier par composant : `app/App/` et `app/pages/{HomePage,NotFoundPage}/`, chacun avec `Comp.tsx`, `Comp.test.tsx` et `index.ts`.
-- **Raison** : ne pas masquer une annulation en panne serveur, un test de garde qui garde vraiment, et une seule règle de découpage pour tous les composants (hors primitives shadcn, D32).
+- **Date** 2026-11-11
+- **Subject** Task 0.11 review feedback (cancellation, MSW test, `app/` folders)
+- **Decision**
+  1. The client's `onError` lets an `AbortError` through unchanged (cancellation by
+     `AbortController` or a TanStack Query signal): only a real network failure becomes an
+     `ApiError` `network_error`.
+  2. The test in `src/test/server.test.ts` checks MSW's own error (cause “Cannot bypass a request
+     when using the "error" strategy” and message `[MSW] ... without a matching request handler`):
+     it fails if `onUnhandledFrame: "error"` is removed (verified with `bypass` and `warn`).
+  3. The components in `src/app/` follow the one-folder-per-component rule: `app/App/` and
+     `app/pages/{HomePage,NotFoundPage}/`, each with `Comp.tsx`, `Comp.test.tsx`, and `index.ts`.
+- **Reason** Do not mask a cancellation as a server failure, keep a guard test that really guards,
+  and use a single split rule for all components (except shadcn primitives, D32).
 
 ## D34
 
-- **Date** : 2026-11-11
-- **Sujet** : Coquille front, registre des features, navigation et voyant de santé (tâche 0.12)
-- **Décision** : (1) **Rapport de santé** : la forme réelle du back (`HealthReport` : `status` `ok | degraded | down`, `checks` : nom de service vers `{ ok, detail }`) est celle de la fixture du brief, aucun écart. `HealthIndicator` décrit cette forme par un type local `HealthReportView` plutôt que d'importer le type généré : la règle de découpage interdit à un composant de `components/` d'importer `shared/api` ou `types.ts`. TypeScript vérifie la compatibilité structurelle à l'appel (`HealthStatus` passe `data` de `useHealth`). `HealthIndicator` reçoit en plus une propriété facultative `isError` (requête en échec : rouge « Serveur injoignable ») ; sans rapport, ou pendant le chargement : état neutre « Vérification des services… ». Le texte reste toujours présent (la couleur n'est jamais seule), `role="status"`. (2) **Branchement** : `useHealth` est branché dans `app/layout/HealthStatus/` (conteneur), rempli dans le slot `right` de `Topbar` par `AppLayout`, car un composant de feature n'a pas le droit d'importer un hook. `useHealth` : clé `["health"]`, `refetchInterval` 30 s, `signal` transmis à `api.GET`, `retry: false` (un serveur injoignable se voit tout de suite, le tour suivant retente). La feature `health` est dans le registre sans route ni entrée de navigation. (3) **Routeur** : `app/router.tsx` exporte `buildRoutes(features)` (racine `AppLayout`, routes des manifestes en enfants, `NotFoundPage` en `*` à la fin) et `buildRouter(features)` (`createBrowserRouter`) ; les tests utilisent `buildRoutes` avec `createMemoryRouter`. L'accueil est une route `index`. (4) **Dossiers** : `providers.tsx` du brief devient `app/Providers/` (un composant, un dossier) avec `createQueryClient()` (retry 1, pas de rechargement au focus, `staleTime` 15 s) ; l'ancien `App` est conservé comme racine `<Providers><RouterProvider router/></Providers>` (le routeur est passé en propriété, `main.tsx` le construit, ce qui permet de tester avec un routeur mémoire). `SidebarGroup/` s'ajoute à `Sidebar/` et `HealthStatus/` à `app/layout/`. Une section à une seule entrée s'affiche comme un lien portant l'icône de la section (évite « Accueil » deux fois) ; à plusieurs entrées, un titre de section précède la liste. (5) **Accueil** : `app/pages/HomePage` est supprimé ; `features/home/pages/HomePage` affiche le titre, l'introduction et un `EmptyState` ; les textes passent de `app.welcome.*` à `home.*` dans `fr.ts`, avec les blocs `nav.*` et `health.*`. (6) **Accessibilité** : `AppLayout` porte le lien « Aller au contenu » et `<main id="contenu" tabIndex={-1}>` (le lien déplace réellement le focus) ; l'anneau de focus du bouton shadcn passe de `ring-ring/50` (environ 2:1) à `ring-ring` plein (variant destructif : `ring-destructive`). (7) `src/test/queryWrapper.tsx` fournit un `QueryClient` de test (sans nouvelle tentative) et l'enveloppe pour `render` / `renderHook`.
-- **Raison** : respecter les frontières d'architecture imposées par ESLint tout en gardant le voyant testable, et corriger les deux points d'accessibilité laissés en suspens par la tâche 0.11.
+- **Date** 2026-11-11
+- **Subject** Front-end shell, feature registry, navigation, and health indicator (task 0.12)
+- **Decision**
+  1. **Health report**: the backend's real shape (`HealthReport`: `status` `ok | degraded | down`,
+     `checks`: service name mapped to `{ ok, detail }`) is the one in the brief's fixture, with no
+     deviation. `HealthIndicator` describes this shape with a local `HealthReportView` type rather
+     than importing the generated type: the split rule forbids a component in `components/` from
+     importing `shared/api` or `types.ts`. TypeScript checks structural compatibility at the call
+     site (`HealthStatus` passes `data` from `useHealth`). `HealthIndicator` additionally receives
+     an optional `isError` property (failed request: red “Server unreachable”); with no report, or
+     while loading, it shows the neutral state “Checking services…”. The text is always present
+     (color is never alone), `role="status"`.
+  2. **Wiring**: `useHealth` is wired in `app/layout/HealthStatus/` (container), placed in
+     `Topbar`'s `right` slot by `AppLayout`, because a feature component may not import a hook.
+     `useHealth`: key `["health"]`, `refetchInterval` 30 s, `signal` passed to `api.GET`,
+     `retry: false` (an unreachable server shows immediately; the next round retries). The `health`
+     feature is in the registry with no route and no navigation entry.
+  3. **Router**: `app/router.tsx` exports `buildRoutes(features)` (root `AppLayout`, manifest routes
+     as children, `NotFoundPage` at `*` at the end) and `buildRouter(features)`
+     (`createBrowserRouter`); tests use `buildRoutes` with `createMemoryRouter`. The home page is an
+     `index` route.
+  4. **Folders**: the brief's `providers.tsx` becomes `app/Providers/` (one component, one folder)
+     with `createQueryClient()` (retry 1, no refetch on focus, `staleTime` 15 s); the old `App` is
+     kept as the root `<Providers><RouterProvider router/></Providers>` (the router is passed as a
+     property, `main.tsx` builds it, which allows testing with a memory router). `SidebarGroup/` is
+     added to `Sidebar/` and `HealthStatus/` to `app/layout/`. A section with a single entry
+     displays as a link carrying the section's icon (avoids “Home” twice); with several entries, a
+     section title precedes the list.
+  5. **Home page**: `app/pages/HomePage` is removed; `features/home/pages/HomePage` shows the title,
+     the introduction, and an `EmptyState`; the texts move from `app.welcome.*` to `home.*` in
+     `fr.ts`, with the `nav.*` and `health.*` blocks.
+  6. **Accessibility**: `AppLayout` carries the “Skip to content” link and
+     `<main id="contenu" tabIndex={-1}>` (the link really moves focus); the shadcn button's focus
+     ring goes from `ring-ring/50` (about 2:1) to a full `ring-ring` (destructive variant:
+     `ring-destructive`).
+  7. `src/test/queryWrapper.tsx` provides a test `QueryClient` (no retries) and wraps `render` /
+     `renderHook` with it.
+- **Reason** Respect the architecture boundaries enforced by ESLint while keeping the indicator
+  testable, and fix the two accessibility points left open by task 0.11.
 
 ## D35
 
-- **Date** : 2026-11-11
-- **Sujet** : Écran Réglages > Modèles et clés, gabarit des features front (tâche 0.13)
-- **Décision** : (1) **Types des composants** : la règle de découpage interdit à `components/` d'importer `types.ts` et `shared/api`. Les composants gardent les noms et formes de props du brief (`entry`, `testResult`, `providers`, `value`, `presets`...) mais les typent structurellement avec les types locaux de `components/viewTypes.ts` (`ApiKeyEntry`, `ProviderOption`, `ModelChoice`, `TierChoices`, `PresetMap`...). `types.ts` dérive les types générés (`ApiKeyOut`, `SettingsOut`...) et vérifie à la compilation (`ViewTypesMatchContract`) que `ApiKeyOut` et `ProviderModels` satisfont ces types d'affichage ; `Tier` et `PresetName` (absents du schéma, qui type les clés en `string`) sont définis une fois dans `viewTypes.ts`. (2) **`PresetPicker` reçoit en plus `current: TierChoices`** (obligatoire) : sans les niveaux en vigueur il ne peut pas afficher « Personnalisé ». La comparaison (fournisseur et modèle de chaque niveau) est `matchPreset`, dans le dossier du composant. « Personnalisé » n'est pas un bouton (rien à appliquer) mais une pastille `aria-current` ; les préréglages sont des boutons `aria-pressed`. (3) **`onSave` de `ApiKeyCard` peut renvoyer une promesse** : le champ est vidé quand elle réussit et conservé quand elle échoue (pour réessayer) ; une fonction synchrone (le cas du test du brief) vide le champ aussitôt. La page transmet `mutateAsync`, l'erreur est affichée par la page dans une zone `role="alert"` (`InlineError`, ajouté à `shared/ui/states`). (4) **Clé jamais conservée** : champ `type="password"`, `autoComplete="new-password"` (mieux que `off` contre les gestionnaires de mots de passe ; ajusté au tour de correction 1), jamais prérempli, **non contrôlé** (un champ contrôlé recopie sa valeur dans l'attribut HTML `value`, donc la clé serait lisible dans le DOM, les extensions et les sélecteurs CSS ; seul un booléen « il y a du texte » passe par l'état, la clé est lue dans le champ à l'envoi) ; la clé n'est que dans le corps du `POST` et les variables de la mutation, qui sont effacées après succès comme après échec (`reset()` dans un `finally`, seulement si aucun enregistrement plus récent n'a pris le relais, et `gcTime: 0`, car TanStack Query garde sinon les variables 5 minutes dans le cache des mutations ; un test le vérifie dans les deux cas). L'état occupé des enregistrements est suivi dans `useKeyActions` (liste `pendingProviders`, une entrée par enregistrement en cours) et non via l'observateur de la mutation, qui ne voit que la dernière : deux enregistrements qui se chevauchent gardent chacun leur état occupé ; aucune clé de requête, URL ni toast ne la contient. Après enregistrement ou suppression, `["api-keys"]` et `["models"]` sont invalidés (`has_key` change) ; un test de clé invalide `["api-keys"]` (dernier test mémorisé par le back). (5) **Corps du `PUT /settings`** : `buildUserSettings(settingsOut, tiers)` choisit un à un les champs de `UserSettings` (jamais `...settings`), donc sans `vision_enabled` ni `weekly_budget_minutes` (calculés par le back). Appliquer un préréglage ou changer un niveau passe par lui ; la réponse est écrite dans le cache `["settings"]` puis `["settings"]` est invalidé. (6) **Saisie libre du modèle** (fournisseur dont `models` est `null` ou vide) : validée à la perte du focus ou à Entrée, une seule fois, et seulement si elle change. Choisir un fournisseur à saisie libre ne déclenche aucun `PUT` tant que le modèle n'est pas saisi (un modèle vide enregistré casserait la fabrique) : le choix reste local au composant et tombe si la valeur enregistrée change. Un fournisseur avec liste reprend son premier modèle et enregistre aussitôt. Un modèle ou un fournisseur courant absent des listes reste affiché. (7) **Découpage pour la limite de 50 lignes** : en plus des composants du brief, `ApiKeyForm`, `ApiKeySummary` (carte d'une clé), `ProviderSelect`, `ModelField` (choix d'un niveau), `KeysSection` et `TiersSection` (sections de la page), chacun dans son dossier avec test. Hooks de coordination de la page : `useActionError` (un seul message d'erreur d'action, effacé à chaque nouvelle action), `useKeyActions`, `useTierActions` ; `queryKeys.ts` regroupe les clés de requête ; `tierChoices.ts` convertit les enregistrements à clés libres du contrat en `Record<Tier, ...>`. `shared/` gagne `ui/fieldClass.ts` (classes des champs natifs), `ui/states/InlineError` et `errorMessage` (`shared/api/errors.ts`). `fixtures.ts` de la feature sert aux tests seulement. (8) **Accessibilité** : champs sans texte visible étiquetés par `sr-only` (« Clé API {fournisseur} », « Fournisseur ({niveau}) », « Modèle ({niveau}) ») ; une zone `role="status"` par carte, toujours présente (résultat du test annoncé) ; `VisionWarning` en `role="note"` pour ne pas entrer en conflit avec la zone d'erreur `role="alert"`. Une clé `.env` n'a pas de bouton Supprimer mais une phrase d'explication ; un fournisseur sans clé garde le bouton Tester désactivé. (9) **Navigation** : route relative `reglages/modeles`, entrée `settings.models.navLabel` (« Modèles et clés ») dans la section « Réglages », qui apparaît donc dans la barre latérale ; `registry.test.ts` attend maintenant `["home", "settings"]`.
-- **Raison** : un gabarit de feature qui respecte les frontières imposées par ESLint sans perdre le typage, une clé API qui ne vit nulle part hors du champ et de la requête, et un `PUT` complet qui n'envoie jamais de champ calculé.
+- **Date** 2026-11-11
+- **Subject** Settings > Models and keys screen, front-end feature template (task 0.13)
+- **Decision**
+  1. **Component types**: the split rule forbids `components/` from importing `types.ts` and
+     `shared/api`. The components keep the brief's prop names and shapes (`entry`, `testResult`,
+     `providers`, `value`, `presets`...) but type them structurally with the local types in
+     `components/viewTypes.ts` (`ApiKeyEntry`, `ProviderOption`, `ModelChoice`, `TierChoices`,
+     `PresetMap`...). `types.ts` derives the generated types (`ApiKeyOut`, `SettingsOut`...) and
+     checks at compile time (`ViewTypesMatchContract`) that `ApiKeyOut` and `ProviderModels` satisfy
+     these display types; `Tier` and `PresetName` (absent from the schema, which types the keys as
+     `string`) are defined once in `viewTypes.ts`.
+  2. **`PresetPicker` additionally receives `current: TierChoices`** (required): without the tiers
+     in force it cannot show “Custom”. The comparison (provider and model of each tier) is
+     `matchPreset`, in the component's folder. “Custom” is not a button (nothing to apply) but an
+     `aria-current` pill; the presets are `aria-pressed` buttons.
+  3. **`ApiKeyCard`'s `onSave` may return a promise**: the field is cleared when it succeeds and
+     kept when it fails (to retry); a synchronous function (the brief's test case) clears the field
+     at once. The page passes `mutateAsync`, and the page shows the error in a `role="alert"` area
+     (`InlineError`, added to `shared/ui/states`).
+  4. **Key never retained**: field `type="password"`, `autoComplete="new-password"` (better than
+     `off` against password managers; adjusted in review round 1), never prefilled, **uncontrolled**
+     (a controlled field copies its value into the HTML `value` attribute, so the key would be
+     readable in the DOM, extensions, and CSS selectors; only a “there is text” boolean goes through
+     state, and the key is read from the field on submit); the key exists only in the `POST` body
+     and the mutation variables, which are cleared after success as after failure (`reset()` in a
+     `finally`, only if no more recent save has taken over, and `gcTime: 0`, because TanStack Query
+     otherwise keeps the variables for 5 minutes in the mutation cache; a test checks both cases).
+     The busy state of saves is tracked in `useKeyActions` (a `pendingProviders` list, one entry per
+     save in progress) and not through the mutation observer, which sees only the last one: two
+     overlapping saves each keep their own busy state; no query key, URL, or toast contains it.
+     After saving or deleting, `["api-keys"]` and `["models"]` are invalidated (`has_key` changes);
+     a test of an invalid key invalidates `["api-keys"]` (the last test remembered by the backend).
+  5. **`PUT /settings` body**: `buildUserSettings(settingsOut, tiers)` picks the `UserSettings`
+     fields one by one (never `...settings`), so without `vision_enabled` or `weekly_budget_minutes`
+     (computed by the backend). Applying a preset or changing a tier goes through it; the response
+     is written to the `["settings"]` cache and then `["settings"]` is invalidated.
+  6. **Free-text model entry** (provider whose `models` is `null` or empty): validated on blur or
+     Enter, once, and only if it changes. Choosing a free-text provider triggers no `PUT` until the
+     model is entered (a saved empty model would break the factory): the choice stays local to the
+     component and drops if the saved value changes. A provider with a list takes its first model
+     and saves at once. A current model or provider missing from the lists stays displayed.
+  7. **Split for the 50-line limit**: in addition to the brief's components, `ApiKeyForm`,
+     `ApiKeySummary` (a key's card), `ProviderSelect`, `ModelField` (choice for one tier),
+     `KeysSection` and `TiersSection` (page sections), each in its own folder with a test.
+     Coordination hooks for the page: `useActionError` (a single action error message, cleared at
+     each new action), `useKeyActions`, `useTierActions`; `queryKeys.ts` groups the query keys;
+     `tierChoices.ts` converts the contract's free-key records into `Record<Tier, ...>`. `shared/`
+     gains `ui/fieldClass.ts` (native field classes), `ui/states/InlineError`, and `errorMessage`
+     (`shared/api/errors.ts`). The feature's `fixtures.ts` serves tests only.
+  8. **Accessibility**: fields without visible text are labeled by `sr-only` (“{provider} API key”,
+     “Provider ({tier})”, “Model ({tier})”); one `role="status"` area per card, always present (test
+     result announced); `VisionWarning` in `role="note"` so as not to conflict with the
+     `role="alert"` error area. A `.env` key has no Delete button but an explanatory sentence; a
+     provider without a key keeps the Test button disabled.
+  9. **Navigation**: relative route `reglages/modeles`, entry `settings.models.navLabel` (“Models
+     and keys”) in the “Settings” section, which therefore appears in the sidebar;
+     `registry.test.ts` now expects `["home", "settings"]`.
+- **Reason** A feature template that respects the boundaries enforced by ESLint without losing
+  typing, an API key that lives nowhere outside the field and the request, and a complete `PUT` that
+  never sends a computed field.
 
 ## D36
 
-- **Date** : 2026-11-11
-- **Sujet** : Contrôle de fin de phase 0 : ports configurables, contrats d'import, README (tâche 0.14)
-- **Décision** : (1) **Ports** : les ports publiés deviennent `127.0.0.1:${FRONTEND_PORT:-5173}:5173`, `127.0.0.1:${BACKEND_PORT:-8000}:8000` et `127.0.0.1:${QDRANT_PORT:-6333}:6333` (défauts de la spec conservés, écoute locale seulement : SPEC 17.4, rien au-delà du nécessaire). `CORS_ORIGIN` du back vaut `${CORS_ORIGIN:-http://localhost:${FRONTEND_PORT:-5173}}` et l'argument de construction `VITE_API_URL` du front (et la variable du compose de dev) `http://localhost:${BACKEND_PORT:-8000}`. Les trois variables sont ajoutées, commentées, à la fin de `.env.example` (commentaire sur sa propre ligne, D31). Aucun `container_name` dans les fichiers compose. `backend/tests/infra/test_compose.py` vérifie ces ports, la dérivation de `CORS_ORIGIN`/`VITE_API_URL`, l'absence de `container_name` et la présence des variables dans `.env.example`. (2) **Contrats import-linter** (`backend/pyproject.toml`, `[tool.importlinter]`, `root_packages = ["app"]`) écrits avec les modules existants : 1a `layers` sur chaque feature (`router | keys_router` > `service | keys_service` > `repository | keys_repository`, couches facultatives entre parenthèses car `health` n'a pas de repository) ; 1b `forbidden` : un `router`/`keys_router` n'importe ni `app.db` ni un `repository` en direct (`allow_indirect_imports`, puisque le service, lui, importe le repository) ; 2 `independence` entre `auth`, `health` et `settings`, en ignorant les imports vers `app.features.*.service` et `app.features.*.keys_service` ; 3 `forbidden` : `app.features` n'importe aucune implémentation concrète (`llm.anthropic`, `llm.openai`, `llm.glm`, `llm.fake`, `llm.registry`, les 4 sondes `*_probe`), même indirectement ; 4 `forbidden` : `app.providers` n'importe jamais `app.features`. Ajout d'un contrat 5 (`app.core`, `app.db`, `app.features`, `app.providers` n'importent jamais `app.bootstrap`), qui transcrit une règle des contraintes. `app.agents` n'est pas encore cité : import-linter refuse un module absent ; il s'ajoutera aux contrats 3 et 4 avec le paquet. Aucun contrat n'était rompu : aucun code modifié. Chaque contrat a été vérifié en injectant une violation (6/6 rompus), puis retiré. (3) **Hook `lint-imports`** : appelé par `python -c "from importlinter.cli import lint_imports_command; ..."` (même précaution que mypy pour les exécutables bloqués sous Windows), déclenché par `backend/app/**.py` et `backend/pyproject.toml` (modifier un contrat relance la vérification). `uv run lint-imports` marche aussi sur cette machine. (4) **README** : prérequis Compose 2.24 ou plus, démarrage, ports déjà pris, macOS avec Ollama de la machine (`ollama pull bge-m3` sur la machine), Windows (`BUILDX_BAKE_ENTITLEMENTS_FS=0`), section « Ce qui sort de la machine » (17.3, plus les appels de test de clé et de liste des modèles), développement du back (hors Docker : `mkdir -p data`, car Alembic ne crée pas le dossier de données) et du front ; la commande pre-commit s'écrit `--project backend` (forme des contraintes ; `--directory backend` marche aussi, pre-commit se place à la racine du dépôt). (5) **Écarts au brief** : le démarrage réel s'est fait sans clé LLM réelle (aucune sur la machine), avec `FRONTEND_PORT=5174` et `QDRANT_PORT=6335` (ports pris par d'autres projets) : `/api/v1/health` est `degraded` uniquement à cause du contrôle `llm` ; le parcours « Clé valide. » avec une vraie clé Anthropic reste à faire par l'utilisateur. L'affichage « fichier .env » a été vérifié avec une fausse clé Anthropic temporaire dans `.env`, retirée ensuite. Le tag `phase-0` n'est pas posé par cette tâche (posé après la revue de la phase).
-- **Raison** : faire tourner Tremplin à côté d'autres projets sans modifier le compose, ne rien exposer hors de la machine, et rendre les frontières du back bloquantes par l'outil comme celles du front.
+- **Date** 2026-11-11
+- **Subject** Phase 0 closing check: configurable ports, import contracts, README (task 0.14)
+- **Decision**
+  1. **Ports**: the published ports become `127.0.0.1:${FRONTEND_PORT:-5173}:5173`,
+     `127.0.0.1:${BACKEND_PORT:-8000}:8000`, and `127.0.0.1:${QDRANT_PORT:-6333}:6333` (spec
+     defaults kept, local listening only: SPEC 17.4, nothing beyond what is needed). The backend's
+     `CORS_ORIGIN` is `${CORS_ORIGIN:-http://localhost:${FRONTEND_PORT:-5173}}` and the front end's
+     `VITE_API_URL` build argument (and the dev compose variable) is
+     `http://localhost:${BACKEND_PORT:-8000}`. The three variables are added, commented, at the end
+     of `.env.example` (comment on its own line, D31). No `container_name` in the compose files.
+     `backend/tests/infra/test_compose.py` checks these ports, the derivation of
+     `CORS_ORIGIN`/`VITE_API_URL`, the absence of `container_name`, and the presence of the
+     variables in `.env.example`.
+  2. **import-linter contracts** (`backend/pyproject.toml`, `[tool.importlinter]`,
+     `root_packages = ["app"]`) written with the existing modules: 1a `layers` on each feature
+     (`router | keys_router` > `service | keys_service` > `repository | keys_repository`, layers
+     optional in parentheses because `health` has no repository); 1b `forbidden`: a
+     `router`/`keys_router` imports neither `app.db` nor a `repository` directly
+     (`allow_indirect_imports`, since the service does import the repository); 2 `independence`
+     between `auth`, `health`, and `settings`, ignoring imports toward `app.features.*.service` and
+     `app.features.*.keys_service`; 3 `forbidden`: `app.features` imports no concrete implementation
+     (`llm.anthropic`, `llm.openai`, `llm.glm`, `llm.fake`, `llm.registry`, the 4 `*_probe` probes),
+     even indirectly; 4 `forbidden`: `app.providers` never imports `app.features`. Added a contract
+     5 (`app.core`, `app.db`, `app.features`, `app.providers` never import `app.bootstrap`), which
+     transcribes a rule from the constraints. `app.agents` is not yet cited: import-linter refuses a
+     missing module; it will be added to contracts 3 and 4 with the package. No contract was broken:
+     no code modified. Each contract was verified by injecting a violation (6/6 broken), then
+     removed.
+  3. **`lint-imports` hook**: called through
+     `python -c "from importlinter.cli import lint_imports_command; ..."` (same precaution as mypy
+     for executables blocked on Windows), triggered by `backend/app/**.py` and
+     `backend/pyproject.toml` (changing a contract reruns the check). `uv run lint-imports` also
+     works on this machine.
+  4. **README**: Compose 2.24 or later prerequisite, startup, ports already taken, macOS with the
+     machine's own Ollama (`ollama pull bge-m3` on the machine), Windows
+     (`BUILDX_BAKE_ENTITLEMENTS_FS=0`), a section “What leaves the machine” (17.3, plus the key test
+     and model list calls), backend development (outside Docker: `mkdir -p data`, because Alembic
+     does not create the data folder) and front-end development; the pre-commit command is written
+     `--project backend` (the form in the constraints; `--directory backend` also works, pre-commit
+     runs at the repository root).
+  5. **Deviations from the brief**: the real startup was done without a real LLM key (none on the
+     machine), with `FRONTEND_PORT=5174` and `QDRANT_PORT=6335` (ports taken by other projects):
+     `/api/v1/health` is `degraded` only because of the `llm` check; the “Valid key.” flow with a
+     real Anthropic key remains for the user to do. The “.env file” display was verified with a
+     temporary fake Anthropic key in `.env`, removed afterwards. The `phase-0` tag is not set by
+     this task (set after the phase review).
+- **Reason** Run Tremplin next to other projects without changing the compose file, expose nothing
+  outside the machine, and make the backend's boundaries tool-enforced like the front end's.
 
 ## D37
 
-- **Date** : 2026-11-11
-- **Sujet** : Origines CORS : `localhost` et `127.0.0.1`, liste d'origines (correctifs de fin de phase 0)
-- **Décision** : `CORS_ORIGIN` accepte une origine ou une liste séparée par des virgules (espaces et `/` final ignorés). `Settings.cors_origins` ajoute à chaque origine locale sa forme jumelle, même schéma et même port (`http://localhost:5174` ⇄ `http://127.0.0.1:5174`), sans doublon ni changement d'ordre ; une origine non locale est reprise telle quelle, sans jumelle. Le défaut du compose reste `${CORS_ORIGIN:-http://localhost:${FRONTEND_PORT:-5173}}` : la jumelle `127.0.0.1` est dérivée par le back et non par le compose (un seul endroit, testable). `CORS_ORIGIN` est documenté, commenté sur sa propre ligne, à la fin de `.env.example`, et dans le README.
-- **Raison** : les ports sont publiés sur `127.0.0.1` (D36) ; ouvrir l'interface par `http://127.0.0.1:<port>` bloquait tous les appels à l'API.
+- **Date** 2026-11-11
+- **Subject** CORS origins: `localhost` and `127.0.0.1`, origin list (end-of-phase-0 fixes)
+- **Decision** `CORS_ORIGIN` accepts one origin or a comma-separated list (spaces and a trailing `/`
+  ignored). `Settings.cors_origins` adds to each local origin its twin form, same scheme and same
+  port (`http://localhost:5174` ⇄ `http://127.0.0.1:5174`), with no duplicates and no change of
+  order; a non-local origin is kept as is, with no twin. The compose default stays
+  `${CORS_ORIGIN:-http://localhost:${FRONTEND_PORT:-5173}}`: the `127.0.0.1` twin is derived by the
+  backend and not by the compose file (a single place, testable). `CORS_ORIGIN` is documented,
+  commented on its own line, at the end of `.env.example` and in the README.
+- **Reason** The ports are published on `127.0.0.1` (D36); opening the interface through
+  `http://127.0.0.1:<port>` blocked every API call.
 
 ## D38
 
-- **Date** : 2026-11-11
-- **Sujet** : Socle du back avant la phase 1 : 500 avec CORS, dépendances WebSocket, contrats d'import par joker
-- **Décision** : (1) **500** : le gestionnaire `Exception` de Starlette s'exécute dans `ServerErrorMiddleware`, hors de `CORSMiddleware`. Il est remplacé par `UnexpectedErrorMiddleware` (ASGI pur, `app/core/errors.py`), ajouté par `register_error_handlers` AVANT `CORSMiddleware` dans `create_app` (le dernier ajouté est le plus externe) : même enveloppe `internal_error`, même journalisation « Erreur non gérée ». Il ne traite que les requêtes HTTP (une WebSocket laisse remonter l'exception) et relance si la réponse a déjà commencé. (2) **WebSocket** : `get_current_user`, `get_providers`, `get_llm_factory` et `get_cipher` prennent `starlette.requests.HTTPConnection`, parent commun de `Request` et `WebSocket` ; `get_db` garde `Request` : une session de base ne doit pas rester ouverte pendant toute une connexion WebSocket, le flux de la phase 1 ouvrira des sessions courtes par `session_factory`. Le plan de phase 1 (`get_runtime`) suit la même règle. (3) **Contrats d'import** : 1a (`layers`) et 2 (`independence`) portent sur `app.features.*` ; le registre `app.features.registry` (simple module, aucune couche, toutes facultatives) est autorisé à importer `app.features.**`. Les motifs `app.features.*.service.**` et `*.keys_service.**` couvrent un service devenu paquet ; tant qu'aucun ne l'est ils ne correspondent à rien, d'où `unmatched_ignore_imports_alerting = "warn"` sur le contrat 2 (avertissement, pas échec). Vérifié par une feature temporaire `zztmp` (repository → service, service → repository d'une autre feature) : 1a et 2 rompus, puis retirée.
-- **Raison** : le front affichait « Impossible de joindre le serveur » sur une erreur interne ; le flux temps réel de la phase 1 a besoin des dépendances du socle sur une route WebSocket ; une nouvelle feature ne doit pas échapper silencieusement aux contrats.
+- **Date** 2026-11-11
+- **Subject** Backend foundation before phase 1: 500 with CORS, WebSocket dependencies, wildcard
+  import contracts
+- **Decision**
+  1. **500**: Starlette's `Exception` handler runs in `ServerErrorMiddleware`, outside
+     `CORSMiddleware`. It is replaced by `UnexpectedErrorMiddleware` (pure ASGI,
+     `app/core/errors.py`), added by `register_error_handlers` BEFORE `CORSMiddleware` in
+     `create_app` (the last one added is the outermost): same `internal_error` envelope, same
+     “Unhandled error” log. It handles only HTTP requests (a WebSocket lets the exception propagate)
+     and re-raises if the response has already started.
+  2. **WebSocket**: `get_current_user`, `get_providers`, `get_llm_factory`, and `get_cipher` take
+     `starlette.requests.HTTPConnection`, the common parent of `Request` and `WebSocket`; `get_db`
+     keeps `Request`: a database session must not stay open for a whole WebSocket connection, and
+     the phase 1 stream will open short sessions through `session_factory`. The phase 1 plan
+     (`get_runtime`) follows the same rule.
+  3. **Import contracts**: 1a (`layers`) and 2 (`independence`) apply to `app.features.*`; the
+     `app.features.registry` registry (a plain module, no layer, all optional) may import
+     `app.features.**`. The patterns `app.features.*.service.**` and `*.keys_service.**` cover a
+     service that has become a package; as long as none has, they match nothing, hence
+     `unmatched_ignore_imports_alerting = "warn"` on contract 2 (warning, not failure). Verified
+     with a temporary `zztmp` feature (repository → service, service → another feature's
+     repository): 1a and 2 broken, then removed.
+- **Reason** The front end showed “Cannot reach the server” on an internal error; the phase 1
+  real-time stream needs the foundation's dependencies on a WebSocket route; a new feature must not
+  silently escape the contracts.
 
 ## D39
 
-- **Date** : 2026-11-11
-- **Sujet** : Clé GLM (Z.ai) testée par `GET /models`, messages 429 lisibles (remplace la partie GLM de D26)
-- **Décision** : Z.ai expose `GET {base}/models` (forme OpenAI, 200 avec une clé valide, 401 « token expired or incorrect » sinon, gratuit), constaté avec la clé réelle de l'utilisateur. `GlmProvider` n'a donc plus de `test_key` ni de `list_models` propres : il hérite de `OpenAICompatibleProvider` (`GET {base}/models`) ; l'interface propose une liste déroulante, et `models: null` (saisie libre) reste le repli quand la liste échoue. `_http.check_key` traduit un échec ainsi : d'abord le code d'erreur du corps (`{"error": {"code"}}`) s'il figure dans `error_code_messages` du fournisseur (GLM : `1113` → « Crédit Z.ai insuffisant pour ce modèle. », `1305` → « Service Z.ai surchargé, réessaie plus tard. ») ; sinon un 429 donne « Limite de requêtes ou crédit épuisé chez <fournisseur>, réessaie plus tard. » ; sinon le message existant avec le statut. Seul le code sert : rien du corps (qui peut contenir la clé) n'est recopié.
-- **Raison** : l'appel d'un token sur `glm-4.7-flash` renvoyait des 429 intermittents (modèle gratuit saturé, code 1305) qu'on lisait comme une clé invalide.
+- **Date** 2026-11-11
+- **Subject** GLM (Z.ai) key tested through `GET /models`, readable 429 messages (replaces the GLM
+  part of D26)
+- **Decision** Z.ai exposes `GET {base}/models` (OpenAI shape, 200 with a valid key, 401 “token
+  expired or incorrect” otherwise, free), observed with the user's real key. `GlmProvider` therefore
+  no longer has its own `test_key` or `list_models`: it inherits from `OpenAICompatibleProvider`
+  (`GET {base}/models`); the interface offers a dropdown list, and `models: null` (free-text entry)
+  remains the fallback when the list fails. `_http.check_key` translates a failure as follows: first
+  the error code in the body (`{"error": {"code"}}`) if it appears in the provider's
+  `error_code_messages` (GLM: `1113` → “Insufficient Z.ai credit for this model.”, `1305` → “Z.ai is
+  overloaded. Try again later.”); otherwise a 429 gives “Rate limit or credit exhausted at
+  <provider>, try again later.”; otherwise the existing message with the status. Only the code is
+  used: nothing from the body (which may contain the key) is copied.
+- **Reason** A one-token call on `glm-4.7-flash` returned intermittent 429s (free model saturated,
+  code 1305) that were read as an invalid key.
 
 ## D40
 
-- **Date** : 2026-11-11
-- **Sujet** : Front : plusieurs entrées de navigation par feature, types API vérifiés contre le contrat
-- **Décision** : (1) `FeatureManifest.nav` devient `NavEntry[]` (`NavEntry` exporté par `shared/lib/feature.ts`) ; `buildNav` aplatit les entrées de toutes les features et les trie par `order` dans chaque section ; manifestes `home` et `settings` et plan directeur 1.3 mis à jour. (2) `pnpm gen:api:check` (`frontend/scripts/check-api-types.mjs`) lance la CLI `openapi-typescript` (même commande que `gen:api`) vers un dossier temporaire, compare au `schema.d.ts` versionné (fins de ligne normalisées) et sort en 1 avec un message en français s'ils diffèrent. Hook pre-commit `api-types` déclenché par `contracts/openapi.json`, `frontend/src/shared/api/schema.d.ts` et le script. ESLint couvre aussi `**/*.mjs` (globales Node). Vérifié : un `schema.d.ts` modifié, puis un contrat modifié (propriété renommée), font échouer le hook ; une contrainte sans effet sur les types (`minLength`) ne le fait pas, ce qui est voulu.
-- **Raison** : SPEC 15.1 place plusieurs écrans de Réglages dans une même feature ; un contrat régénéré sans `pnpm gen:api` laissait le front typé sur une API périmée.
+- **Date** 2026-11-11
+- **Subject** Front end: several navigation entries per feature, API types checked against the
+  contract
+- **Decision**
+  1. `FeatureManifest.nav` becomes `NavEntry[]` (`NavEntry` exported by `shared/lib/feature.ts`);
+     `buildNav` flattens the entries of all features and sorts them by `order` within each section;
+     the `home` and `settings` manifests and master plan 1.3 are updated.
+  2. `pnpm gen:api:check` (`frontend/scripts/check-api-types.mjs`) runs the `openapi-typescript` CLI
+     (same command as `gen:api`) into a temporary folder, compares with the versioned `schema.d.ts`
+     (line endings normalized), and exits with 1 and a French message if they differ. Pre-commit
+     hook `api-types` triggered by `contracts/openapi.json`, `frontend/src/shared/api/schema.d.ts`,
+     and the script. ESLint also covers `**/*.mjs` (Node globals). Verified: a modified
+     `schema.d.ts`, then a modified contract (renamed property), make the hook fail; a constraint
+     with no effect on the types (`minLength`) does not, which is intended.
+- **Reason** SPEC 15.1 puts several Settings screens in one feature; a regenerated contract without
+  `pnpm gen:api` left the front end typed against an outdated API.
 
 ## D41
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 1, tâches 1.1 et 1.2 : tables des sessions et catalogue des événements
-- **Décision** : (1) **Tables** (migration `0002_agents`, écrite à partir de l'autogénération puis nettoyée : `sa.DateTime(timezone=True)` comme la 0001, `upgrade` découpée en trois fonctions pour tenir les 50 lignes) : `sessions`, `session_events` (clé étrangère `session_id` vers `sessions.id` en `ON DELETE CASCADE` ; unicité `uq_session_events_session_seq (session_id, seq)` qui sert d'index de relecture ; `created_at` tient lieu de `ts`) et `llm_calls`. `llm_calls.session_id` n'est volontairement PAS une clé étrangère : l'historique des coûts survit à la suppression d'une session. Index `ix_sessions_user_status (user_id, status)` et `ix_llm_calls_user_created (user_id, created_at)`. Chaque table garde les colonnes du mixin (`id`, `user_id`, `created_at`, `updated_at`), y compris `session_events`. (2) **Reprise** : `list_sessions_to_recover(db)` est la seule requête sans filtre `user_id`, réservée au démarrage. (3) **Charge d'interruption** : le champ « type » de la charge de 9.4 s'appelle `kind` (`InterruptRequestedPayload.kind`), car `type` est le discriminant de l'enveloppe. (4) **OpenAPI** : `register_event_schemas(app)` (appelé par `create_app`) enveloppe `app.openapi` et fusionne le schéma JSON de l'adaptateur de `SessionEvent` en mode « serialization » (les champs à valeur par défaut, comme `citations` ou `options`, sont alors obligatoires côté TypeScript, puisque le serveur les envoie toujours) ; `contracts/openapi.json` et `schema.d.ts` régénérés (le tri des clés déplace aussi des schémas existants, sans changement de sens). `validate_payload` lève une `ValueError` qui ne cite que les chemins des champs fautifs, jamais les valeurs reçues (clés, données personnelles). Les charges ignorent les champs en trop (pas de `extra="forbid"`) pour que la relecture d'anciens événements ne casse pas si une charge perd un champ. `events.py` fait 250 lignes : pas de paquet. (5) **import-linter** : `app.agents` ajouté aux contrats 3 (source : n'importe aucune implémentation concrète de fournisseur), 4 (interdit à `app.providers`) et 5 (n'importe pas `app.bootstrap`), comme le prévoyait D36 ; les 6 contrats tiennent. (6) Les fixtures du brief (`db_factory`, `user_id`, `other_user_id`) vivent dans `backend/tests/agents/conftest.py`, à côté de celles, plus générales, de `tests/conftest.py`.
-- **Raison** : persister les sessions et leurs événements avec une séquence sans doublon, et exposer au front les types des événements du WebSocket par le contrat OpenAPI.
+- **Date** 2026-11-11
+- **Subject** Phase 1, tasks 1.1 and 1.2: session tables and event catalog
+- **Decision**
+  1. **Tables** (migration `0002_agents`, written from the autogeneration and then cleaned up:
+     `sa.DateTime(timezone=True)` like 0001, `upgrade` split into three functions to stay within 50
+     lines): `sessions`, `session_events` (foreign key `session_id` to `sessions.id` with
+     `ON DELETE CASCADE`; uniqueness `uq_session_events_session_seq (session_id, seq)` that serves
+     as the replay index; `created_at` stands in for `ts`), and `llm_calls`. `llm_calls.session_id`
+     is deliberately NOT a foreign key: cost history survives the deletion of a session. Indexes
+     `ix_sessions_user_status (user_id, status)` and
+     `ix_llm_calls_user_created (user_id, created_at)`. Each table keeps the mixin's columns (`id`,
+     `user_id`, `created_at`, `updated_at`), including `session_events`.
+  2. **Recovery**: `list_sessions_to_recover(db)` is the only query without a `user_id` filter,
+     reserved for startup.
+  3. **Interrupt payload**: the “type” field of the payload in 9.4 is called `kind`
+     (`InterruptRequestedPayload.kind`), because `type` is the envelope's discriminator.
+  4. **OpenAPI**: `register_event_schemas(app)` (called by `create_app`) wraps `app.openapi` and
+     merges the JSON schema of the `SessionEvent` adapter in “serialization” mode (fields with a
+     default value, such as `citations` or `options`, are then required on the TypeScript side,
+     since the server always sends them); `contracts/openapi.json` and `schema.d.ts` regenerated
+     (key sorting also moves some existing schemas, with no change of meaning). `validate_payload`
+     raises a `ValueError` that cites only the paths of the faulty fields, never the received values
+     (keys, personal data). Payloads ignore extra fields (no `extra="forbid"`) so that replaying old
+     events does not break if a payload loses a field. `events.py` is 250 lines: no package.
+  5. **import-linter**: `app.agents` added to contracts 3 (source: imports no concrete provider
+     implementation), 4 (forbidden to `app.providers`), and 5 (does not import `app.bootstrap`), as
+     D36 anticipated; the 6 contracts hold.
+  6. The brief's fixtures (`db_factory`, `user_id`, `other_user_id`) live in
+     `backend/tests/agents/conftest.py`, next to the more general ones in `tests/conftest.py`.
+- **Reason** Persist sessions and their events with a duplicate-free sequence, and expose the
+  WebSocket event types to the front end through the OpenAPI contract.
 
 ## D42
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 1, tâche 1.3 : bus d'événements persisté avec rejeu (`app/agents/runtime/bus.py`)
-- **Décision** : (1) **Numérotation** : verrou `asyncio.Lock` par `(user_id, session_id)` et cache du dernier `seq` (initialisé par `max_seq`, après vérification que la session appartient à `user_id`, sinon `AppError("session_not_found", 404)`) ; la ligne est écrite et validée, puis diffusée, sous ce verrou, si bien que l'ordre des files est celui des `seq`. L'unicité `(session_id, seq)` est le filet de sécurité : sur `IntegrityError` (écrivain hors du bus), le cache est invalidé et `max_seq` relu, 3 essais au plus ; toute autre erreur invalide aussi le cache. Un seul bus par processus : la diffusion en direct est en mémoire. (2) **Verrou SQLite** : la lecture de `max_seq` se fait dans sa propre transaction, l'écriture commence par l'INSERT (verrou d'écriture pris d'emblée, pas de montée lecture → écriture qui échouerait sans attendre en WAL) ; `PRAGMA busy_timeout=5000` est désormais posé explicitement par `app/db/engine.py` (c'était la valeur implicite de `sqlite3`) : un écrivain concurrent fait attendre `publish`, pas échouer. (3) **Annulation** : écriture + diffusion tournent dans une tâche protégée (`asyncio.shield`, référence forte jusqu'à la fin) : annuler l'appelant (session annulée en pleine publication) ne laisse jamais un événement écrit mais non diffusé. (4) **Abonnement** : algorithme du plan (file inscrite avant toute lecture, rejeu, direct en ignorant `seq <= last`) ; le rejeu lit par lots de 500 (`list_after(..., limit=)` ajouté), chaque lot dans une session de base courte, jamais tenue pendant qu'un abonné lent consomme. `subscribe` est un générateur asynchrone (`AsyncGenerator`, sous-type de l'`AsyncIterator` du plan) : l'inscription a lieu au premier `anext`, et l'appelant le ferme par `aclose`/`aclosing` (le WebSocket de 1.7 doit le faire). (5) **Débordement** : file de 1 000 ; pleine, elle cesse de recevoir (rien n'est bloqué ni accumulé) ; son abonné la vide puis repasse par le rejeu depuis son dernier `seq`, sans se déconnecter : ni trou ni doublon, mémoire bornée. (6) **Fin de session** : `close(user_id, session_id)` (ajouté au contrat) attend la publication en cours, libère l'état (verrou, cache, abonnés) et termine les abonnés après ce qu'ils ont en file (et un dernier rejeu s'ils avaient débordé) ; le runner (1.6) l'appelle sur un statut terminal (`completed`, `failed`, `cancelled`), jamais sur `paused`/`waiting_user`. Un `publish` après `close` repart de la base. Un état sans abonné, sans publication et sans cache (session jamais publiée ici, ou d'un autre utilisateur) est oublié dès le départ de son dernier abonné. Un abonné arrivé après `close` rejoue puis attend : au WebSocket de fermer selon le statut de la session. Introspection : `subscriber_count`, `queued`, `tracked_sessions`. (7) **Charges** : validées par `validate_payload`, stockées par `model_dump(mode="json")` : un champ hors catalogue (une clé, par exemple) n'est ni écrit ni diffusé.
-- **Raison** : Review Focus 2 et 4 : deux écrivains concurrents (flux du graphe, callback de coût) et une reconnexion pendant l'écriture ne doivent produire ni doublon ni trou ; un abonné lent ou parti ne doit ni bloquer les publieurs ni retenir de mémoire.
+- **Date** 2026-11-11
+- **Subject** Phase 1, task 1.3: persisted event bus with replay (`app/agents/runtime/bus.py`)
+- **Decision**
+  1. **Numbering**: an `asyncio.Lock` per `(user_id, session_id)` and a cache of the last `seq`
+     (initialized by `max_seq`, after checking that the session belongs to `user_id`, otherwise
+     `AppError("session_not_found", 404)`); the row is written and committed, then broadcast, under
+     that lock, so the order of the queues is that of the `seq` values. The `(session_id, seq)`
+     uniqueness is the safety net: on `IntegrityError` (a writer outside the bus), the cache is
+     invalidated and `max_seq` re-read, at most 3 attempts; any other error also invalidates the
+     cache. A single bus per process: live broadcast is in memory.
+  2. **SQLite lock**: the `max_seq` read happens in its own transaction, the write starts with the
+     INSERT (write lock taken immediately, no read → write upgrade that would fail without waiting
+     in WAL); `PRAGMA busy_timeout=5000` is now set explicitly by `app/db/engine.py` (it was
+     `sqlite3`'s implicit value): a concurrent writer makes `publish` wait, not fail.
+  3. **Cancellation**: write + broadcast run in a protected task (`asyncio.shield`, strong reference
+     until the end): cancelling the caller (session cancelled in the middle of a publication) never
+     leaves an event written but not broadcast.
+  4. **Subscription**: the plan's algorithm (queue registered before any read, replay, live ignoring
+     `seq <= last`); replay reads in batches of 500 (`list_after(..., limit=)` added), each batch in
+     a short database session, never held while a slow subscriber consumes. `subscribe` is an
+     asynchronous generator (`AsyncGenerator`, a subtype of the plan's `AsyncIterator`):
+     registration happens at the first `anext`, and the caller closes it with `aclose`/`aclosing`
+     (the 1.7 WebSocket must do so).
+  5. **Overflow**: queue of 1,000; once full, it stops receiving (nothing is blocked or
+     accumulated); its subscriber drains it and then goes back through replay from its last `seq`,
+     without disconnecting: no gap and no duplicate, bounded memory.
+  6. **End of session**: `close(user_id, session_id)` (added to the contract) waits for the
+     publication in progress, frees the state (lock, cache, subscribers), and ends the subscribers
+     after what they have in their queue (and one last replay if they had overflowed); the runner
+     (1.6) calls it on a terminal status (`completed`, `failed`, `cancelled`), never on
+     `paused`/`waiting_user`. A `publish` after `close` starts again from the database. A state with
+     no subscriber, no publication, and no cache (a session never published here, or another user's)
+     is forgotten as soon as its last subscriber leaves. A subscriber arriving after `close` replays
+     and then waits: it is up to the WebSocket to close according to the session's status.
+     Introspection: `subscriber_count`, `queued`, `tracked_sessions`.
+  7. **Payloads**: validated by `validate_payload`, stored through `model_dump(mode="json")`: a
+     field outside the catalog (a key, for example) is neither written nor broadcast.
+- **Reason** Review Focus 2 and 4: two concurrent writers (graph stream, cost callback) and a
+  reconnection during a write must produce neither a duplicate nor a gap; a slow or departed
+  subscriber must neither block publishers nor hold memory.
 
 ## D43
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 1, tâche 1.4 : registres d'agents et de graphes, prompts, `GraphDeps`
-- **Décision** : (1) **Paquets** : `app/agents/registry.py` (`AgentSpec`, `AGENTS`, `get_agent` → `unknown_agent` 404), `app/agents/graphs/registry.py` (`GraphSpec`, `GRAPHS`, `get_graph` → `unknown_graph` 404, `build` typé `Callable[[GraphDeps], StateGraph[Any, Any, Any, Any]]`), `app/agents/runtime/deps.py` (`ChatModelSource`, `GraphDeps`), `app/agents/prompts/` ; pas de paquet `app.graphs` (les parcours vivent sous `app.agents.graphs`), donc aucun contrat import-linter de plus (`app.agents` couvre déjà 3, 4, 5 ; les 6 contrats tiennent). (2) **Prompts** : `render_prompt(agent, **variables)` n'accepte qu'un slug (`^[a-z][a-z0-9_]*$`, pas de `../`) et rend `prompts/<agent>.md` avec Jinja2 (`StrictUndefined`, pas d'échappement HTML, `trim_blocks`) ; `PROMPTS_DIR` est lu à chaque appel (les tests le remplacent par monkeypatch). Les valeurs de variables ne sont jamais réinterprétées comme gabarit. (3) **`untrusted`** : retire du texte (et du libellé) toute occurrence des marqueurs ouvrant et fermant, insensible à la casse et aux espaces, en boucle jusqu'à stabilité (retirer un marqueur imbriqué peut en reconstituer un autre) ; le libellé perd en plus retours à la ligne, guillemets et chevrons. (4) **`GraphDeps.user_messages_since`** ouvre une session de base courte par appel (`EventRepository.list_after`) et filtre `user.message` en Python. (5) Dépendances ajoutées : `langgraph`, `langgraph-checkpoint-sqlite` (`jinja2` y était déjà).
-- **Raison** : fournir aux graphes de 1.8 un point unique pour déclarer agents et parcours, des prompts versionnés sûrs, et des dépendances injectées testables.
+- **Date** 2026-11-11
+- **Subject** Phase 1, task 1.4: agent and graph registries, prompts, `GraphDeps`
+- **Decision**
+  1. **Packages**: `app/agents/registry.py` (`AgentSpec`, `AGENTS`, `get_agent` → `unknown_agent`
+     404), `app/agents/graphs/registry.py` (`GraphSpec`, `GRAPHS`, `get_graph` → `unknown_graph`
+     404, `build` typed `Callable[[GraphDeps], StateGraph[Any, Any, Any, Any]]`),
+     `app/agents/runtime/deps.py` (`ChatModelSource`, `GraphDeps`), `app/agents/prompts/`; no
+     `app.graphs` package (the flows live under `app.agents.graphs`), hence no additional
+     import-linter contract (`app.agents` already covers 3, 4, 5; the 6 contracts hold).
+  2. **Prompts**: `render_prompt(agent, **variables)` accepts only a slug (`^[a-z][a-z0-9_]*$`, no
+     `../`) and renders `prompts/<agent>.md` with Jinja2 (`StrictUndefined`, no HTML escaping,
+     `trim_blocks`); `PROMPTS_DIR` is read on each call (tests replace it by monkeypatch). Variable
+     values are never reinterpreted as a template.
+  3. **`untrusted`**: removes from the text (and from the label) every occurrence of the opening and
+     closing markers, insensitive to case and spaces, in a loop until stable (removing a nested
+     marker can reconstitute another); the label additionally loses line breaks, quotation marks,
+     and angle brackets.
+  4. **`GraphDeps.user_messages_since`** opens a short database session per call
+     (`EventRepository.list_after`) and filters `user.message` in Python.
+  5. Dependencies added: `langgraph`, `langgraph-checkpoint-sqlite` (`jinja2` was already there).
+- **Reason** Give the 1.8 graphs a single point to declare agents and flows, safe versioned prompts,
+  and testable injected dependencies.
 
 ## D44
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 1, tâche 1.5 : outils de nœud, sorties structurées, coûts, et réglages GLM / nouveaux essais
-- **Décision** : (1) **Nouveaux essais** : les modèles de la fabrique sont construits avec `max_retries=0` (Anthropic, OpenAI, GLM) ; seul `call_with_retries` (`runtime/invoke.py`) retente, sur `is_transient` (`providers/llm/errors.py` : délai ou coupure réseau, 408/409/429/5xx des SDK Anthropic et OpenAI et de httpx), avec `RETRY_DELAYS_S = (1, 2, 4)` s, soit 4 appels au plus ; `node_timeout` (120 s, `asyncio.timeout`, `AppError("node_timeout")` 504, distingue son propre délai d'un `TimeoutError` du nœud) borne un nœud entier. (2) **GLM raisonne toujours** : `glm-5.3` et `glm-5.3-flash` ne permettent pas de désactiver le raisonnement (documentation Z.ai ; constaté en réel : `thinking: {"type": "disabled"}` donne un 400, code 1210, et sans réglage un petit `max_tokens` donne `content` vide + `reasoning_content`). `GlmProvider` envoie donc `extra_body={"reasoning_effort": "low"}` aux modèles `glm-5.3*` (configurable : `GlmProvider(reasoning_effort=...)`, `None` n'envoie rien) et `extra_body={"thinking": {"type": "disabled"}}` aux autres (`disable_thinking`). Vérifié avec la vraie clé : `content` non vide avec 40 tokens, `usage_metadata` renvoyé en flux. (3) **Réponse vide** : `invoke_agent` la retente comme une erreur transitoire puis lève `AppError("llm_empty_reply")` 502 ; `structured_call` la traite comme un essai raté (« La réponse était vide »), sans renvoyer au modèle un message assistant vide (refusé par certaines API). (4) **Pas de `with_structured_output`** (faux fournisseur et trois fournisseurs par le même chemin) : le schéma JSON est ajouté en dernier message utilisateur ; premier objet JSON de la réponse (`extract_json_object`, tolère texte et balises autour) ; en cas d'échec, la réponse fautive et les chemins/motifs de pydantic (jamais les valeurs reçues) sont renvoyés ; `structured_output_invalid` 502 après `1 + retries` essais, sans valeur reçue dans `details`. `structured_call` n'émet pas `agent.message` (le JSON brut n'est pas un message pour l'utilisatrice), un seul `agent.started`. (5) **Liste des modèles GLM** = ids de `GET /models` suivis des modèles des préréglages GLM absents (aucun doublon). (6) **Préréglage « Tout GLM »** : `glm-5.3-flash` sur les quatre niveaux (`GLM_FAST = GLM_STRONG = GLM_VISION`), déjà dans l'ensemble des modèles à vision ; tests des réglages mis à jour (le `OpenAPI` ne change pas). `glm-4.7-flash` reste dans `model_prices.json`. (7) **Coûts** : `CostTracker` est un callback asynchrone (`raise_error = True` ; `run_inline` vaut `False` depuis D46 §10, regroupé par `asyncio.gather`) sur la boucle de l'appelant (D42). `on_chat_model_start` lit les tokens cumulés de la session et lève `TokenBudgetExceeded` (`token_cap_reached`) avant l'appel s'ils atteignent le plafond ; `on_llm_end` écrit la ligne `llm_calls`, cumule dans `sessions` par un seul `UPDATE` relatif avec `RETURNING` (`SessionRepository.add_usage` : deux appels concurrents ne s'écrasent pas) puis publie `cost.updated` ; toute erreur de cette comptabilité est journalisée et ne fait pas échouer la réponse du modèle. Fournisseur et modèle : métadonnées `tremplin_provider` / `tremplin_model` posées par `build()` des fournisseurs réels et du faux (LangChain déduit `ls_provider` du nom de classe, ce qui donnerait « openai » pour GLM), à défaut `ls_provider` / `ls_model_name`, à défaut « inconnu ». L'agent vient de `metadata["agent"]` posé par `invoke_agent`. Pas de lecture de `PRICES_PATH` dans `app.agents` (le contrat 3 interdit `app.providers.llm.registry`) : `load_prices(path)` est appelée par la composition. `FakeLlmProvider` renvoyait déjà `usage_metadata` (mots, pas `len//4`) : inchangé. (8) **`emit`** : valide, puis écrit `{EVENT_KEY, agent, payload}` dans le `StreamWriter` ; hors d'un nœud, `RuntimeError("emit() appelé hors d'un nœud")` ; le runner (1.6) lit le mode `custom`.
-- **Raison** : une seule couche de nouveaux essais (sinon jusqu'à 9 appels), des réponses GLM jamais vides par construction, et un coût suivi de bout en bout sans bloquer ni doubler la comptabilité.
+- **Date** 2026-11-11
+- **Subject** Phase 1, task 1.5: node tools, structured outputs, costs, and GLM settings / retries
+- **Decision**
+  1. **Retries**: the factory's models are built with `max_retries=0` (Anthropic, OpenAI, GLM); only
+     `call_with_retries` (`runtime/invoke.py`) retries, on `is_transient`
+     (`providers/llm/errors.py`: network timeout or cut, 408/409/429/5xx from the Anthropic and
+     OpenAI SDKs and httpx), with `RETRY_DELAYS_S = (1, 2, 4)` s, so 4 calls at most; `node_timeout`
+     (120 s, `asyncio.timeout`, `AppError("node_timeout")` 504, distinguishes its own timeout from a
+     `TimeoutError` of the node) bounds a whole node.
+  2. **GLM always reasons**: `glm-5.3` and `glm-5.3-flash` do not allow disabling reasoning (Z.ai
+     documentation; observed in practice: `thinking: {"type": "disabled"}` gives a 400, code 1210,
+     and with no setting a small `max_tokens` gives an empty `content` + `reasoning_content`).
+     `GlmProvider` therefore sends `extra_body={"reasoning_effort": "low"}` to the `glm-5.3*` models
+     (configurable: `GlmProvider(reasoning_effort=...)`, `None` sends nothing) and
+     `extra_body={"thinking": {"type": "disabled"}}` to the others (`disable_thinking`). Verified
+     with the real key: non-empty `content` with 40 tokens, `usage_metadata` returned in the stream.
+  3. **Empty reply**: `invoke_agent` retries it like a transient error and then raises
+     `AppError("llm_empty_reply")` 502; `structured_call` treats it as a failed attempt (“The reply
+     was empty.”), without sending the model an empty assistant message (refused by some APIs).
+  4. **No `with_structured_output`** (fake provider and three providers through the same path): the
+     JSON schema is added as the last user message; first JSON object of the reply
+     (`extract_json_object`, tolerates text and tags around it); on failure, the faulty reply and
+     pydantic's paths/patterns (never the received values) are sent back;
+     `structured_output_invalid` 502 after `1 + retries` attempts, with no received value in
+     `details`. `structured_call` does not emit `agent.message` (the raw JSON is not a message for
+     the user), a single `agent.started`.
+  5. **GLM model list** = the ids from `GET /models` followed by the models of the GLM presets that
+     are missing (no duplicates).
+  6. **“All GLM” preset**: `glm-5.3-flash` on all four tiers (`GLM_FAST = GLM_STRONG = GLM_VISION`),
+     already in the set of vision models; settings tests updated (the `OpenAPI` does not change).
+     `glm-4.7-flash` stays in `model_prices.json`.
+  7. **Costs**: `CostTracker` is an asynchronous callback (`raise_error = True`; `run_inline` is
+     `False` since D46 §10, grouped by `asyncio.gather`) on the caller's loop (D42).
+     `on_chat_model_start` reads the session's cumulative tokens and raises `TokenBudgetExceeded`
+     (`token_cap_reached`) before the call if they reach the cap; `on_llm_end` writes the
+     `llm_calls` row, accumulates into `sessions` with a single relative `UPDATE` with `RETURNING`
+     (`SessionRepository.add_usage`: two concurrent calls do not overwrite each other), then
+     publishes `cost.updated`; any error in this accounting is logged and does not make the model's
+     reply fail. Provider and model: `tremplin_provider` / `tremplin_model` metadata set by
+     `build()` of the real providers and the fake one (LangChain infers `ls_provider` from the class
+     name, which would give “openai” for GLM), failing that `ls_provider` / `ls_model_name`, failing
+     that “unknown”. The agent comes from `metadata["agent"]` set by `invoke_agent`. No read of
+     `PRICES_PATH` in `app.agents` (contract 3 forbids `app.providers.llm.registry`):
+     `load_prices(path)` is called by the composition. `FakeLlmProvider` already returned
+     `usage_metadata` (words, not `len//4`): unchanged.
+  8. **`emit`**: validates, then writes `{EVENT_KEY, agent, payload}` to the `StreamWriter`; outside
+     a node, `RuntimeError("emit() called outside a node")`; the runner (1.6) reads the `custom`
+     mode.
+- **Reason** A single retry layer (otherwise up to 9 calls), GLM replies that are never empty by
+  construction, and a cost tracked end to end without blocking or doubling the accounting.
 
 ## D45
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 1, tâche 1.6 (préalable) : bus d'événements, trous du direct et arrêt propre
-- **Décision** : (1) `Subscriber`, `SessionState` et la conversion ligne → événement (`to_event`) quittent `bus.py` pour `runtime/bus_state.py` (`bus.py` passe de 296 à 253 lignes). (2) **Trou dans le direct** : un abonné qui reçoit en direct un `seq` supérieur à `dernier + 1` (écrivain hors du bus : le bus a relu `max_seq` après un refus d'unicité et sauté le numéro pris par l'autre) abandonne la file et repasse par le rejeu depuis son dernier `seq`, comme après un débordement ; les doublons qui restent en file sont ignorés (`seq <= dernier`). (3) **`EventBus.aclose()`** attend toutes les écritures protégées encore en vol (boucle jusqu'à ce que `_inflight` soit vide) ; elle ne ferme pas les abonnés. Le lifespan construit le bus (`app.state.bus`) et empile `aclose` après la fermeture du moteur : la pile dépilant à l'envers, le bus est vidé avant `engine.dispose`. Le cache de `last_seq()` (mineur reporté de la revue 1.3) est inchangé.
-- **Raison** : revue de la tâche 1.3 (Ruling 1.6) : rendre le Review Focus 2 robuste même face à un écrivain étranger, et ne jamais fermer le moteur sous une écriture en cours.
+- **Date** 2026-11-11
+- **Subject** Phase 1, task 1.6 (prerequisite): event bus, live gaps, and clean shutdown
+- **Decision**
+  1. `Subscriber`, `SessionState`, and the row → event conversion (`to_event`) leave `bus.py` for
+     `runtime/bus_state.py` (`bus.py` goes from 296 to 253 lines).
+  2. **Gap in the live stream**: a subscriber that receives live a `seq` greater than `last + 1` (a
+     writer outside the bus: the bus re-read `max_seq` after a uniqueness refusal and skipped the
+     number taken by the other) abandons the queue and goes back through replay from its last `seq`,
+     as after an overflow; duplicates left in the queue are ignored (`seq <= last`).
+  3. **`EventBus.aclose()`** waits for all protected writes still in flight (loops until `_inflight`
+     is empty); it does not close the subscribers. The lifespan builds the bus (`app.state.bus`) and
+     pushes `aclose` after the engine's closure: since the stack unwinds in reverse, the bus is
+     drained before `engine.dispose`. The `last_seq()` cache (minor item deferred from review 1.3)
+     is unchanged.
+- **Reason** Review of task 1.3 (Ruling 1.6): make Review Focus 2 robust even against a foreign
+  writer, and never close the engine under a write in progress.
 
 ## D46
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 1, tâche 1.6 : `SessionRunner` (interruptions, reprise, pause, annulation, récupération au démarrage)
-- **Décision** : (1) **Découpe** : `runtime/checkpointer.py` (`open_checkpointer`, `thread_config`), `stream.py` (pur), `control.py` (règles de statut, base seulement), `execution.py` (corps d'une tâche : compilation, `astream`, issue ; ajouté au plan pour tenir les 300 lignes), `runner.py` (API publique, suivi des tâches). `runtime/lifespan.py` (`AgentRuntime`, `agent_runtime`), prévu en 1.7, est fait ici pour que la reprise au démarrage et l'arrêt propre soient réels : signature du plan plus `prices` (`agent_runtime(settings, session_factory, models, prices)`), car `app.agents` ne peut pas lire `PRICES_PATH` (contrat 3) ; `app.bootstrap.model_prices()` appelle `load_prices(PRICES_PATH)` et `main.py` entre `agent_runtime` dans la pile après le moteur (fermé avant lui). `app.state.runtime` remplace `app.state.bus` de D45. (2) **API LangGraph vérifiées** (context7 + source installée, langgraph 1.2.20, checkpoint-sqlite 3.1.3) : `astream(stream_mode=[...])` au format « v1 » par défaut rend des tuples `(mode, donnée)` ; `messages` → `(AIMessageChunk, métadonnées)` avec `langgraph_node` et les métadonnées de `with_config` (`agent`) ; l'interruption arrive en `updates` sous `{"__interrupt__": (Interrupt(value, id),)}` ; `Interrupt.id` est stable quand le nœud rejoue ; `AsyncSqliteSaver.from_conn_string` est un gestionnaire de contexte asynchrone (une connexion `aiosqlite`), `setup()` appelé à l'ouverture. Conformes au plan. (3) **`durability="sync"`** : le checkpoint d'une étape est écrit avant la suivante ; un arrêt brutal ne fait rejouer que le nœud en cours, jamais un nœud terminé. (4) **Réponse** : `Command(resume={interrupt_id: valeur})` (forme « carte » de la doc, valable avec une ou plusieurs interruptions en attente). **Une question à la fois** : si plusieurs branches interrompent, seule la première est publiée et mise dans `pending_interrupt` ; les autres reviennent à la reprise suivante avec le même id. L'interruption n'est publiée qu'après l'écriture de `waiting_user` (qui reçoit la question peut répondre aussitôt). (5) **Statuts** : chaque changement est un `UPDATE` conditionnel (`SessionRepository.transition`, `from_` → `to`) ; l'issue d'une tâche (`waiting_user`, `completed`, `failed`) ne s'écrit que depuis `running`, puis seulement elle est publiée. Pause et annulation écrivent leur statut AVANT d'annuler la tâche : une tâche qui finissait au même moment n'écrase rien. Double clic : une seule transition `waiting_user → running` réussit, l'autre reçoit 409 ; le graphe ne repart qu'une fois. L'issue s'écrit en entier même si la tâche est annulée pendant (`_settle`). (6) **Reprise** (`resume`) : `waiting_user` + `interrupt_id` égal à celui en attente → `running` (question effacée avant le lancement) ; `paused` + `interrupt_id: null` → reprise sur le dernier checkpoint (décision du plan : `POST /resume` avec `interrupt_id: null` reprend une pause) ; un `interrupt_id` dans tout autre cas → `stale_interrupt` 409 « Cette question a déjà reçu une réponse. » ; `waiting_user` sans `interrupt_id` → `interrupt_required` 409 ; sinon `session_not_resumable` 409. La pause efface `pending_interrupt` : la reprise repose la même question (même id). (7) **Pause / annulation** : `paused` depuis `running`/`waiting_user` (déjà en pause : rendu tel quel), `cancelled` depuis `running`/`waiting_user`/`paused` ; sur une session terminée, 409 (`session_not_pausable`, `session_not_cancellable`). L'annulation ne publie aucun événement : statut puis `bus.close` (le WebSocket de 1.7 lit le statut, D42). `post_message` : `running`, `waiting_user`, `paused` seulement (`session_closed` 409). Tout est 404 pour une session d'un autre utilisateur. (8) **Démarrage** : `unknown_graph` 404, `invalid_input` 422 (chemins des champs seulement). L'entrée validée (`model_dump(mode="json")`) est stockée dans `sessions.input` et sert d'état initial ; une session sans aucun checkpoint (arrêt avant le premier) repart de cette entrée. **Récupération** : `recover_on_startup` relance les `running` (dernier checkpoint) ; `waiting_user`/`paused` n'ont rien à faire ; un parcours disparu échoue lisiblement (`unknown_graph`). (9) **Échecs** : `AppError` → `failed` + `run.failed {code, message}` (dont `llm_key_missing` levée par la fabrique et `token_cap_reached` par `CostTracker`) ; toute autre exception → `internal_error` « Une erreur inattendue a interrompu la session. », journal avec identifiants et type d'exception seulement (jamais le message). `CancelledError` relancée, statut laissé à l'appelant ; `shutdown` annule et attend toutes les tâches sans toucher aux statuts, puis refuse tout lancement (`server_stopping` 503). `bus.close` seulement sur `completed`, `failed`, `cancelled`. (10) **Coûts** : `CostTracker` passe en `run_inline = False` : « en ligne », sa levée de `TokenBudgetExceeded` laissait jamais attendues les coroutines des autres gestionnaires (`RuntimeWarning` de langchain_core) ; regroupé par `asyncio.gather`, il reste sur la boucle de l'appelant. Le plafond est lu dans les réglages au lancement de chaque tâche. (11) **Tokens** : seuls les `AIMessageChunk` au texte non vide deviennent `agent.token` (même `message_id` que l'`agent.message` final) ; `call_with_retries(stream=False)` ajoute l'étiquette `nostream` de LangGraph, utilisée par `structured_call` : le JSON brut n'est jamais diffusé token par token (D44). Résumé de `run.completed` = clé `summary` de l'état final, sinon vide.
-- **Raison** : Review Focus 1, 3 et 5 : reprise au même point après redémarrage sans rejouer d'effet, échec lisible sans 500 ni tâche orpheline, double réponse refusée sans relancer deux fois le graphe.
+- **Date** 2026-11-11
+- **Subject** Phase 1, task 1.6: `SessionRunner` (interrupts, resume, pause, cancellation, startup
+  recovery)
+- **Decision**
+  1. **Split**: `runtime/checkpointer.py` (`open_checkpointer`, `thread_config`), `stream.py`
+     (pure), `control.py` (status rules, database only), `execution.py` (body of a task:
+     compilation, `astream`, outcome; added to the plan to stay within 300 lines), `runner.py`
+     (public API, task tracking). `runtime/lifespan.py` (`AgentRuntime`, `agent_runtime`), planned
+     for 1.7, is done here so that startup recovery and clean shutdown are real: the plan's
+     signature plus `prices` (`agent_runtime(settings, session_factory, models, prices)`), because
+     `app.agents` cannot read `PRICES_PATH` (contract 3); `app.bootstrap.model_prices()` calls
+     `load_prices(PRICES_PATH)` and `main.py` enters `agent_runtime` in the stack after the engine
+     (closed before it). `app.state.runtime` replaces D45's `app.state.bus`.
+  2. **LangGraph APIs verified** (context7 + installed source, langgraph 1.2.20, checkpoint-sqlite
+     3.1.3): `astream(stream_mode=[...])` in the default “v1” format returns `(mode, data)` tuples;
+     `messages` → `(AIMessageChunk, metadata)` with `langgraph_node` and the `with_config` metadata
+     (`agent`); the interrupt arrives in `updates` under
+     `{"__interrupt__": (Interrupt(value, id),)}`; `Interrupt.id` is stable when the node replays;
+     `AsyncSqliteSaver.from_conn_string` is an asynchronous context manager (one `aiosqlite`
+     connection), `setup()` called on opening. As in the plan.
+  3. **`durability="sync"`**: a step's checkpoint is written before the next one; a hard stop
+     replays only the current node, never a finished node.
+  4. **Answer**: `Command(resume={interrupt_id: value})` (the docs' “map” form, valid with one or
+     several pending interrupts). **One question at a time**: if several branches interrupt, only
+     the first is published and put in `pending_interrupt`; the others come back on the next resume
+     with the same id. The interrupt is published only after `waiting_user` is written (whoever
+     receives the question can answer at once).
+  5. **Statuses**: each change is a conditional `UPDATE` (`SessionRepository.transition`, `from_` →
+     `to`); a task's outcome (`waiting_user`, `completed`, `failed`) is written only from `running`,
+     and only then published. Pause and cancellation write their status BEFORE cancelling the task:
+     a task finishing at the same moment overwrites nothing. Double click: a single
+     `waiting_user → running` transition succeeds, the other gets 409; the graph restarts only once.
+     The outcome is written in full even if the task is cancelled meanwhile (`_settle`).
+  6. **Resume** (`resume`): `waiting_user` + `interrupt_id` equal to the pending one → `running`
+     (question cleared before launch); `paused` + `interrupt_id: null` → resume from the last
+     checkpoint (plan decision: `POST /resume` with `interrupt_id: null` resumes a pause); an
+     `interrupt_id` in any other case → `stale_interrupt` 409 “This question has already been
+     answered.”; `waiting_user` without `interrupt_id` → `interrupt_required` 409; otherwise
+     `session_not_resumable` 409. Pausing clears `pending_interrupt`: resuming asks the same
+     question again (same id).
+  7. **Pause / cancellation**: `paused` from `running`/`waiting_user` (already paused: returned as
+     is), `cancelled` from `running`/`waiting_user`/`paused`; on a finished session, 409
+     (`session_not_pausable`, `session_not_cancellable`). Cancellation publishes no event: status
+     then `bus.close` (the 1.7 WebSocket reads the status, D42). `post_message`: `running`,
+     `waiting_user`, `paused` only (`session_closed` 409). Everything is 404 for another user's
+     session.
+  8. **Start**: `unknown_graph` 404, `invalid_input` 422 (field paths only). The validated input
+     (`model_dump(mode="json")`) is stored in `sessions.input` and serves as the initial state; a
+     session with no checkpoint at all (stopped before the first) restarts from this input.
+     **Recovery**: `recover_on_startup` relaunches the `running` ones (last checkpoint);
+     `waiting_user`/`paused` have nothing to do; a vanished flow fails readably (`unknown_graph`).
+  9. **Failures**: `AppError` → `failed` + `run.failed {code, message}` (including `llm_key_missing`
+     raised by the factory and `token_cap_reached` by `CostTracker`); any other exception →
+     `internal_error` “An unexpected error interrupted the session.”, logged with identifiers and
+     exception type only (never the message). `CancelledError` re-raised, status left to the caller;
+     `shutdown` cancels and waits for all tasks without touching statuses, then refuses any launch
+     (`server_stopping` 503). `bus.close` only on `completed`, `failed`, `cancelled`.
+  10. **Costs**: `CostTracker` goes to `run_inline = False`: “inline”, its raising of
+     `TokenBudgetExceeded` left the other handlers' coroutines never awaited (`RuntimeWarning` from
+     langchain_core); grouped by `asyncio.gather`, it stays on the caller's loop. The cap is read
+     from the settings at the launch of each task.
+  11. **Tokens**: only `AIMessageChunk`s with non-empty text become `agent.token` (same `message_id`
+     as the final `agent.message`); `call_with_retries(stream=False)` adds LangGraph's `nostream`
+     tag, used by `structured_call`: the raw JSON is never streamed token by token (D44). The
+     `run.completed` summary = the `summary` key of the final state, otherwise empty.
+- **Reason** Review Focus 1, 3, and 5: resume at the same point after a restart without replaying
+  any effect, a readable failure with no 500 or orphan task, a double answer refused without
+  launching the graph twice.
 
 ## D47
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 1, tâche 1.7 : API des sessions (REST 14.1) et WebSocket avec rejeu
-- **Décision** : (1) **Découpe** : feature `app/features/sessions/` (`router`, `service`, `schemas`, et un `repository` de lecture `SessionReadRepository` ajouté au plan : liste triée par `created_at` décroissant et dernier `seq` de chaque session en une requête groupée ; les écritures passent toutes par le runner) ; paquet `app/realtime/` (`websocket.py` : origine, propriété ; `replay.py` : `stream_to_socket`). La route WebSocket est déclarée dans le routeur de la feature (`/sessions/{id}/stream`, mince, délègue à `app.realtime.websocket.serve_session_stream`) : une seule ligne dans `FEATURE_ROUTERS`. `get_runtime(conn: HTTPConnection)` et l'alias `RuntimeDep` dans `app/core/deps.py` ; `app.state.runtime` et `agent_runtime()` de 1.6 réutilisés tels quels, runner et bus non modifiés. (2) **Réponses** : `POST /sessions` 202 (le runner crée la ligne puis lance la tâche), `POST /resume` 202 `SessionView` relue après l'action, `POST /message` 201 `SessionEvent`, `pause`/`cancel` 200 `SessionView` ; codes d'erreur de D46 inchangés (404 `session_not_found` pour une session d'un autre utilisateur sur toutes les routes, 409 avec `details.status`, 503 `server_stopping`). `ResumeRequest` a des valeurs par défaut (`interrupt_id = None`, `value = None`) : `{}` reprend une pause. `SessionView.last_seq` est lu en base (`max(seq)`), pas dans le cache du bus. `?status=` est validé contre `SessionStatus` (422 sinon). (3) **WebSocket** : dépendance `check_origin` (CORS ne s'applique pas aux WebSockets) : un en-tête `Origin` hors de `Settings.cors_origins` → poignée de main refusée avant `accept` (fermeture 1008 côté ASGI, visible ainsi par le client de test ; **un navigateur ne voit qu'un 1006 anonyme**, sans code ni motif) ; sans `Origin` (client hors navigateur, tests) → accepté, un navigateur l'envoyant toujours. Utilisateur par `CurrentUserDep` (en mode `google`, refus 401 avec l'enveloppe d'erreur, rendu par le gestionnaire d'`AppError` comme réponse de refus WebSocket). Session inconnue ou d'un autre → `accept` PUIS fermeture `4404` : c'est le seul refus que le navigateur voit avec son code (4404). `after_seq < 0` (1008 côté ASGI) et le 401 du mode `google` sont, comme l'origine refusée, des refus AVANT `accept` : **le navigateur ne voit que 1006** dans ces trois cas (le front plafonne ses reconnexions sur 1006, D49). Chaque lecture en base (propriété, statut) ouvre une session courte par `app.state.session_factory` (D38). (4) **Fin du flux** (remplacée par D50 : plus aucune fin déduite d'un silence) (`stream_to_socket`, groupe de tâches anyio : `forward`, `listen`, `watch` ; annulation structurée, aucun abonné ni tâche laissés, même quand le serveur annule le gestionnaire — un premier essai en tâches asyncio brutes laissait passer une `CancelledError` hors de la portée d'annulation du client de test) : `run.completed`/`run.failed` transmis → fermeture 1000 aussitôt (ce sont toujours les derniers événements, D46) ; abonnement terminé par `bus.close` → 1000 ; abonné arrivé après `close` (D42) : après un premier silence de `IDLE_CHECK_S` (1 s) l'abonnement est forcément inscrit, le statut est lu UNE fois ; non terminal → le `close` à venir terminera l'abonnement (plus aucune lecture) ; terminal → encore un silence (un `run.completed` en cours d'écriture passerait), puis 1000. Messages du client lus et ignorés (seule la déconnexion compte). Signature de `stream_to_socket` = celle du plan plus `read_status` (mot-clé), pour que `app.realtime.replay` ne touche pas à la base. (5) **Contrats d'import** (remplacé par D50 : plus aucune exception, contrat 6) : contrat 2, `app.agents.** -> app.features.*.service` et `-> app.features.*.schemas` ignorés : le moteur (socle partagé) lit les réglages par le service de `settings` et `UserSettings` ; sans cela, toute feature utilisant le moteur (sessions) « importerait » `settings` par transitivité. `app.realtime` ajouté aux contrats 3, 4 et 5. Les 6 contrats tiennent.
-- **Raison** : exposer au front (1.9+) l'API et le flux des sessions, avec rejeu sans trou ni doublon (Review Focus 2), double clic refusé (Review Focus 5), isolation par utilisateur partout et aucune fuite d'abonnement à la déconnexion.
+- **Date** 2026-11-11
+- **Subject** Phase 1, task 1.7: sessions API (REST 14.1) and WebSocket with replay
+- **Decision**
+  1. **Split**: feature `app/features/sessions/` (`router`, `service`, `schemas`, and a read
+     `repository`, `SessionReadRepository`, added to the plan: list sorted by `created_at`
+     descending and each session's last `seq` in one grouped query; all writes go through the
+     runner); package `app/realtime/` (`websocket.py`: origin, ownership; `replay.py`:
+     `stream_to_socket`). The WebSocket route is declared in the feature's router
+     (`/sessions/{id}/stream`, thin, delegates to `app.realtime.websocket.serve_session_stream`): a
+     single line in `FEATURE_ROUTERS`. `get_runtime(conn: HTTPConnection)` and the `RuntimeDep`
+     alias in `app/core/deps.py`; `app.state.runtime` and 1.6's `agent_runtime()` reused as is,
+     runner and bus unchanged.
+  2. **Responses**: `POST /sessions` 202 (the runner creates the row and then launches the task),
+     `POST /resume` 202 `SessionView` re-read after the action, `POST /message` 201 `SessionEvent`,
+     `pause`/`cancel` 200 `SessionView`; D46's error codes unchanged (404 `session_not_found` for
+     another user's session on all routes, 409 with `details.status`, 503 `server_stopping`).
+     `ResumeRequest` has default values (`interrupt_id = None`, `value = None`): `{}` resumes a
+     pause. `SessionView.last_seq` is read from the database (`max(seq)`), not from the bus cache.
+     `?status=` is validated against `SessionStatus` (422 otherwise).
+  3. **WebSocket**: `check_origin` dependency (CORS does not apply to WebSockets): an `Origin`
+     header outside `Settings.cors_origins` → handshake refused before `accept` (closure 1008 on the
+     ASGI side, visible that way to the test client; **a browser sees only an anonymous 1006**, with
+     no code or reason); with no `Origin` (non-browser client, tests) → accepted, since a browser
+     always sends it. User through `CurrentUserDep` (in `google` mode, refusal 401 with the error
+     envelope, rendered by the `AppError` handler as a WebSocket refusal response). Unknown session
+     or another user's → `accept` THEN closure `4404`: this is the only refusal the browser sees
+     with its code (4404). `after_seq < 0` (1008 on the ASGI side) and the `google` mode 401 are,
+     like the refused origin, refusals BEFORE `accept`: **the browser sees only 1006** in these
+     three cases (the front end caps its reconnections on 1006, D49). Each database read (ownership,
+     status) opens a short session through `app.state.session_factory` (D38).
+  4. **End of stream** (replaced by D50: no end is inferred from a silence any more)
+     (`stream_to_socket`, anyio task group: `forward`, `listen`, `watch`; structured cancellation,
+     no subscriber or task left behind, even when the server cancels the handler — a first attempt
+     with raw asyncio tasks let a `CancelledError` escape the test client's cancellation scope):
+     `run.completed`/`run.failed` forwarded → closure 1000 at once (these are always the last
+     events, D46); subscription ended by `bus.close` → 1000; subscriber arriving after `close`
+     (D42): after a first silence of `IDLE_CHECK_S` (1 s) the subscription is necessarily
+     registered, the status is read ONCE; non-terminal → the coming `close` will end the
+     subscription (no more reads); terminal → another silence (a `run.completed` being written would
+     get through), then 1000. Client messages are read and ignored (only the disconnection matters).
+     The signature of `stream_to_socket` is the plan's plus `read_status` (keyword), so that
+     `app.realtime.replay` does not touch the database.
+  5. **Import contracts** (replaced by D50: no exception any more, contract 6): contract 2,
+     `app.agents.** -> app.features.*.service` and `-> app.features.*.schemas` ignored: the engine
+     (shared foundation) reads the settings through the `settings` service and `UserSettings`;
+     without that, every feature using the engine (sessions) would “import” `settings` transitively.
+     `app.realtime` added to contracts 3, 4, and 5. The 6 contracts hold.
+- **Reason** Expose the sessions API and stream to the front end (1.9+), with replay with no gap or
+  duplicate (Review Focus 2), a double click refused (Review Focus 5), per-user isolation
+  everywhere, and no subscription leak on disconnection.
 
 ## D48
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 1, tâche 1.9 : réducteur et store de session côté front (`shared/realtime/`)
-- **Décision** : (1) **Tour provisoire** : `agent.started` ne porte pas de `message_id` ; il ouvre un tour d'identifiant provisoire `pending:<seq>` que le premier `agent.token` ou `agent.message` de cet agent (dernier tour de l'agent encore provisoire) renomme avec son vrai `message_id` ; sans `agent.started`, le tour est créé par le token. `tool.called` / `tool.result` s'attachent au dernier tour de l'agent (un tour provisoire est créé s'il n'existe pas) et se fusionnent par `call_id`. (2) **Reprise = réponse** : une interruption est aussi marquée répondue par un `agent.started` ultérieur (sinon un rejeu complet depuis `seq` 0 laisserait l'interruption « en attente ») ; **corrigé par D56** : seulement les questions posées avant cet `agent.started`, et jamais par un `user.message` (une remarque n'est pas une réponse, D4) ; `applyLocal("interrupt.answered")` reste le chemin immédiat côté client et ne change rien si l'`interruptId` est inconnu. `run.completed` / `run.failed` terminent aussi les tours encore en `streaming`. (3) **Découpe extensible** : un type d'événement dédié = une entrée dans `EVENT_HANDLERS` (`eventHandlers.ts`), les autres types (dont `source.found`, `board.update`, etc., en attendant le registre de rendu `eventRenderers.ts`) deviennent un item `event` ; `feedHelpers.ts` porte les opérations sur le fil. Types `SessionEvent`, `SessionStatus`, `InterruptPayload`, `CostPayload` dérivés de `schema.d.ts` (noms générés identiques à ceux du brief, `kind` et non `type` dans l'interruption). (4) **Store** : `createSessionStore()` (fabrique, une instance isolée par test) et `useSessionStore` (instance de l'application, un état par `sessionId` dans `sessions`) ; `ingest` trie le lot par `seq` et ne notifie pas si rien n'a changé ; `selectSession(id)` renvoie l'état vide partagé tant que la session est inconnue (référence stable pour les sélecteurs). `testEvents.ts` (fabriques d'événements) sert aux deux fichiers de test. `schema.d.ts` n'a pas dû être régénéré (le contrat de 1.2 contient déjà tous les événements). Zustand était déjà en dépendance.
-- **Raison** : le front reçoit un flux ordonné rejoué à la reconnexion : l'état doit être une fonction pure et idempotente du flux, et chaque nouveau type d'événement doit s'ajouter sans toucher au reste.
+- **Date** 2026-11-11
+- **Subject** Phase 1, task 1.9: front-end session reducer and store (`shared/realtime/`)
+- **Decision**
+  1. **Provisional turn**: `agent.started` carries no `message_id`; it opens a turn with the
+     provisional identifier `pending:<seq>` that the first `agent.token` or `agent.message` from
+     that agent (the agent's last turn still provisional) renames with its real `message_id`;
+     without `agent.started`, the turn is created by the token. `tool.called` / `tool.result` attach
+     to the agent's last turn (a provisional turn is created if there is none) and merge by
+     `call_id`.
+  2. **Resume = answer**: an interrupt is also marked answered by a later `agent.started` (otherwise
+     a full replay from `seq` 0 would leave the interrupt “pending”); **corrected by D56**: only the
+     questions asked before that `agent.started`, and never by a `user.message` (a remark is not an
+     answer, D4); `applyLocal("interrupt.answered")` remains the immediate path on the client side
+     and changes nothing if the `interruptId` is unknown. `run.completed` / `run.failed` also end
+     the turns still `streaming`.
+  3. **Extensible split**: a dedicated event type = one entry in `EVENT_HANDLERS`
+     (`eventHandlers.ts`); the other types (including `source.found`, `board.update`, etc., pending
+     the `eventRenderers.ts` render registry) become an `event` item; `feedHelpers.ts` carries the
+     operations on the feed. Types `SessionEvent`, `SessionStatus`, `InterruptPayload`,
+     `CostPayload` derived from `schema.d.ts` (generated names identical to the brief's, `kind` and
+     not `type` in the interrupt).
+  4. **Store**: `createSessionStore()` (factory, one isolated instance per test) and
+     `useSessionStore` (the application's instance, one state per `sessionId` in `sessions`);
+     `ingest` sorts the batch by `seq` and does not notify if nothing changed; `selectSession(id)`
+     returns the shared empty state while the session is unknown (stable reference for selectors).
+     `testEvents.ts` (event factories) serves both test files. `schema.d.ts` did not need
+     regenerating (the 1.2 contract already contains all the events). Zustand was already a
+     dependency.
+- **Reason** The front end receives an ordered stream replayed on reconnection: the state must be a
+  pure, idempotent function of the stream, and every new event type must be addable without touching
+  the rest.
 
 ## D49
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 1, tâche 1.10 : flux WebSocket front (reconnexion), actions de session, registre de rendu
-- **Décision** : (1) **Contrat réel du serveur, prioritaire sur le brief** (ruling corrigeant D47) : un refus avant `accept` (Origin, `after_seq < 0`, 401) arrive au navigateur en 1006 anonyme ; une session inconnue (ou d'un autre utilisateur) est, elle, fermée en 4404 APRÈS `accept` (D47 §3), seul code de refus que le navigateur lit. Donc : 1000 = fin définitive (`connection: "closed"`) ; toute autre fermeture → reconnexion après `RECONNECT_DELAYS_MS` (500, 1000, 2000, 4000, 8000) puis 10 000 ms, **plafonnée à `MAX_RECONNECT_ATTEMPTS` = 8** reconnexions : les 8 premières fermetures anormales d'affilée sont suivies d'une reconnexion, la 9e abandonne (≈ 45 s), puis `connection: "failed"` avec un message français (`error`) et `retry()` ; le compteur repart de zéro dès qu'un socket s'ouvre (**D56** ; à l'origine, seulement à la réception d'un événement, ce qui épuisait le plafond d'une session en attente au fil des redémarrages). 4404 (lisible, après `accept`) arrête (`failed`, « introuvable ») ; 1008 aussi (« refusé ») s'il arrivait un jour lisible, ce qui n'est pas le cas aujourd'hui (refus avant `accept`, donc 1006) ; le brief disait 4404 → `closed`, `failed` distingue l'abandon de la fin normale. (2) **Contrôle REST pendant l'attente** : à chaque fermeture anormale, `GET /sessions/{id}` en parallèle de la minuterie : 404 → `failed` (introuvable) ; statut terminal **et** `last_seq` du serveur ≤ dernier `seq` appliqué → statut posé dans le store, `closed`, plus de reconnexion ; terminal mais des événements manquent → la reconnexion suit (le serveur rejoue puis ferme en 1000 : rien n'est perdu) ; échec réseau → la reconnexion suit. Après un 1000, un `GET` pose le statut final (une annulation ne publie aucun événement, D46). (3) **Découpe** : `socket.ts` (adaptateur `WebSocket`, URL, délais, codes, `parseEventFrame` qui ignore toute trame qui n'est pas un événement), `streamConnection.ts` (ajouté au brief : la machine de connexion en TypeScript pur, testée sans React), `sessionApi.ts` (ajouté : appels REST typés partagés par le flux et les actions), `useSessionStream.ts` (branche la connexion au store), `useSessionActions.ts`, `eventRenderers.ts`, `src/test/fakeSocket.ts`. Les options `createSocket` / `fetchSession` sont lues par référence : une fonction recréée à chaque rendu ne rouvre pas le flux (sinon boucle). Démontage (et double montage de StrictMode) : gestionnaires débranchés avant `close()`, minuterie et `GET` en cours annulés, aucun rappel ensuite. (4) **Store** : `events` (par session) ajouté au store de 1.9 : seuls les événements acceptés par le réducteur (`seq` nouveau) y entrent, triés et sans doublon ; `selectEvents(id)` stable ; `reset` les oublie. (5) **Actions** : une mutation TanStack Query qui exécute l'action ; elles renvoient `Promise<boolean>` (et non `void`) et ne lèvent jamais : l'échec est dans `error` (pas de dialogue bloquant), le booléen permet à l'appelant de vider un champ seulement si l'envoi a réussi. Codes 409 de D46 (`stale_interrupt`, `interrupt_required`, `session_not_resumable`, `session_not_pausable`, `session_not_cancellable`, `session_closed`), `session_not_found` et `server_stopping` traduits dans `fr.ts` (`sessions.errors`) ; autre code → message de l'API. `resume` marque l'interruption répondue seulement si elle est encore celle en attente (le direct a pu livrer la question suivante avant la réponse REST ; `answerInterrupts` viderait sinon la nouvelle) ; la vue renvoyée par `resume`, `pause` et `cancel` est appliquée comme une lecture REST versionnée (D56, qui remplace « statut posé seulement si le store est encore `paused` » et « `pause` / `cancel` posent le statut renvoyé »). Le `user.message` renvoyé par `POST /message` **n'est pas ingéré** : arrivé avant des `seq` plus petits encore en route, il les ferait ignorer par le réducteur (perte) ; il vient par le flux. `pause` / `cancel` posent le statut renvoyé (par une lecture REST versionnée depuis D56). (6) **Registre** : `registerEventRenderer` renvoie une fonction de retrait (inoffensive si un autre composant a remplacé le premier) ; signature du brief sinon. (7) **Lint** : `test-support` (`src/test`) peut importer `shared` (le faux socket a besoin des types du flux), jamais `features` ni `app`.
-- **Raison** : Review Focus 2 (reconnexion pendant qu'un agent écrit : ni trou ni doublon, `test_reconnect_resumes_after_last_seq_without_duplicates`) avec le comportement réel du serveur, sans boucle infinie de reconnexion quand le navigateur ne voit pas la raison d'un refus.
+- **Date** 2026-11-11
+- **Subject** Phase 1, task 1.10: front-end WebSocket stream (reconnection), session actions, render
+  registry
+- **Decision**
+  1. **The server's real contract, taking precedence over the brief** (ruling correcting D47): a
+     refusal before `accept` (Origin, `after_seq < 0`, 401) reaches the browser as an anonymous
+     1006; an unknown session (or another user's) is closed with 4404 AFTER `accept` (D47 §3), the
+     only refusal code the browser reads. Hence: 1000 = definitive end (`connection: "closed"`); any
+     other closure → reconnection after `RECONNECT_DELAYS_MS` (500, 1000, 2000, 4000, 8000) then
+     10,000 ms, **capped at `MAX_RECONNECT_ATTEMPTS` = 8** reconnections: the first 8 abnormal
+     closures in a row are followed by a reconnection, the 9th gives up (≈ 45 s), then
+     `connection: "failed"` with a French message (`error`) and `retry()`; the counter restarts from
+     zero as soon as a socket opens (**D56**; originally only when an event was received, which
+     exhausted the cap of a waiting session over successive restarts). 4404 (readable, after
+     `accept`) stops (`failed`, “not found”); 1008 too (“refused”) if it ever became readable, which
+     is not the case today (refusal before `accept`, hence 1006); the brief said 4404 → `closed`,
+     `failed` distinguishes giving up from a normal end.
+  2. **REST check while waiting**: at each abnormal closure, `GET /sessions/{id}` in parallel with
+     the timer: 404 → `failed` (not found); terminal status **and** the server's `last_seq` ≤ last
+     applied `seq` → status set in the store, `closed`, no more reconnection; terminal but events
+     missing → the reconnection follows (the server replays and then closes with 1000: nothing is
+     lost); network failure → the reconnection follows. After a 1000, a `GET` sets the final status
+     (a cancellation publishes no event, D46).
+  3. **Split**: `socket.ts` (`WebSocket` adapter, URL, delays, codes, `parseEventFrame`, which
+     ignores any frame that is not an event), `streamConnection.ts` (added to the brief: the
+     connection machine in pure TypeScript, tested without React), `sessionApi.ts` (added: typed
+     REST calls shared by the stream and the actions), `useSessionStream.ts` (wires the connection
+     to the store), `useSessionActions.ts`, `eventRenderers.ts`, `src/test/fakeSocket.ts`. The
+     `createSocket` / `fetchSession` options are read by reference: a function recreated on every
+     render does not reopen the stream (otherwise a loop). Unmounting (and StrictMode's double
+     mount): handlers detached before `close()`, timer and in-flight `GET` cancelled, no callback
+     afterwards.
+  4. **Store**: `events` (per session) added to 1.9's store: only the events accepted by the reducer
+     (new `seq`) enter it, sorted and without duplicates; `selectEvents(id)` stable; `reset` forgets
+     them.
+  5. **Actions**: a TanStack Query mutation that runs the action; they return `Promise<boolean>`
+     (not `void`) and never throw: the failure is in `error` (no blocking dialog), and the boolean
+     lets the caller clear a field only if the send succeeded. D46's 409 codes (`stale_interrupt`,
+     `interrupt_required`, `session_not_resumable`, `session_not_pausable`,
+     `session_not_cancellable`, `session_closed`), `session_not_found`, and `server_stopping`
+     translated in `fr.ts` (`sessions.errors`); any other code → the API's message. `resume` marks
+     the interrupt answered only if it is still the pending one (the live stream may have delivered
+     the next question before the REST response; `answerInterrupts` would otherwise clear the new
+     one); the view returned by `resume`, `pause`, and `cancel` is applied like a versioned REST
+     read (D56, which replaces “status set only if the store is still `paused`” and “`pause` /
+     `cancel` set the returned status”). The `user.message` returned by `POST /message` **is not
+     ingested**: arriving before smaller `seq` values still in transit, it would make the reducer
+     ignore them (loss); it comes through the stream. `pause` / `cancel` set the returned status
+     (through a versioned REST read since D56).
+  6. **Registry**: `registerEventRenderer` returns a removal function (harmless if another component
+     has replaced the first one); the brief's signature otherwise.
+  7. **Lint**: `test-support` (`src/test`) may import `shared` (the fake socket needs the stream's
+     types), never `features` or `app`.
+- **Reason** Review Focus 2 (reconnection while an agent is writing: no gap and no duplicate,
+  `test_reconnect_resumes_after_last_seq_without_duplicates`) with the server's real behavior,
+  without an infinite reconnection loop when the browser cannot see the reason for a refusal.
 
 ## D50
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 1, tâche 1.7, correctifs de revue : fin du flux WebSocket déterministe, moteur sans feature, tests à délai
-- **Décision** : (1) **Fin du flux** (`app/realtime/replay.py`, remplace D47 §4 ; la règle de `watch` est généralisée par D52) : aucune fermeture n'est plus déduite d'un silence (un envoi bloqué par la contre-pression TCP pendant un long rejeu comptait comme silence et fermait en 1000 au milieu de l'historique). `completed`/`failed` : seul `forward` ferme, juste après avoir transmis `run.completed`/`run.failed` (ou quand `bus.close` termine l'abonnement) ; `watch` ne ferme jamais ces sessions. `cancelled` (aucun événement final) : `watch` attend que l'abonnement soit inscrit (signal posé par `forward` juste avant le premier pas de `anext`, qui inscrit la file avant toute attente, D42), lit le statut une seule fois ; s'il vaut `cancelled`, lit ENSUITE le dernier `seq` écrit (`EventRepository.max_seq`, session courte) et ferme quand `forward` a transmis jusqu'à ce `seq` et attend le bus (condition anyio, aucune attente à la durée) ; tout autre statut : plus aucune lecture, l'événement final ou le `close` du bus concluront. `stream_to_socket` reçoit `read_status` et `read_last_seq`. `IDLE_CHECK_S` supprimé. Un abonné tardif d'une session `failed` dont l'événement final n'a jamais pu être écrit reste ouvert jusqu'au départ du client (cas d'une base indisponible). (2) **Runner** (`execution.py`) : `bus.close` dans un `finally` après la publication de l'événement final : une publication qui échoue ne laisse plus d'abonné en attente. (3) **Réglages du moteur** (remplace D47 §5) : `app/agents/runtime/run_settings.py` définit `RunSettings` (`session_token_cap`, `debate_rounds`, `lesson_language`, `search_languages`, `style_guide`) et le protocole `RunSettingsSource` ; `GraphDeps.settings` est un `RunSettings` ; l'adaptateur `SettingsRunReader` (sur `SettingsService`, session courte, à côté de `SettingsModelReader`) est assemblé par `app.bootstrap.run_settings_source()` et passé à `agent_runtime(..., prices, run_settings)` puis à `SessionRunner(run_settings=...)` / `RunContext.run_settings`. Nouveau contrat import-linter 6 « app.agents n'importe jamais app.features » ; les deux exceptions `app.agents.** -> app.features.*` du contrat 2 sont retirées ; 7 contrats tiennent. (4) `AgentRuntime` déménage dans `app/agents/runtime/handle.py` (imports du bus et du runner sous `TYPE_CHECKING`) : `app.core.deps` ne charge plus LangGraph ni le runner à l'import. (5) **pytest-timeout** (dépendance de dev) : `timeout = 60`, `timeout_method = "thread"` (Windows n'a pas SIGALRM ; un dépassement arrête le processus pytest avec les piles des fils) ; `pytest.mark.timeout(10)` sur les tests du WebSocket et de `stream_to_socket` : une régression du flux échoue au lieu de geler la suite.
-- **Raison** : revue de la tâche 1.7 (trois points Important) : un client lent ne doit jamais recevoir un 1000 avant la fin de l'historique (le front tient 1000 pour définitif) ; le moteur d'agents ne doit dépendre d'aucune feature ; un test bloqué doit échouer.
+- **Date** 2026-11-11
+- **Subject** Phase 1, task 1.7, review fixes: deterministic WebSocket stream end, engine without
+  features, timed tests
+- **Decision**
+  1. **End of stream** (`app/realtime/replay.py`, replaces D47 §4; `watch`'s rule is generalized by
+     D52): no closure is inferred from a silence any more (a send blocked by TCP backpressure during
+     a long replay counted as silence and closed with 1000 in the middle of the history).
+     `completed`/`failed`: only `forward` closes, right after forwarding
+     `run.completed`/`run.failed` (or when `bus.close` ends the subscription); `watch` never closes
+     these sessions. `cancelled` (no final event): `watch` waits for the subscription to be
+     registered (signal set by `forward` just before the first step of `anext`, which registers the
+     queue before any wait, D42), reads the status once; if it is `cancelled`, it THEN reads the
+     last written `seq` (`EventRepository.max_seq`, short session) and closes when `forward` has
+     forwarded up to that `seq` and is waiting on the bus (anyio condition, no duration-based wait);
+     any other status: no more reads, the final event or the bus's `close` will conclude.
+     `stream_to_socket` receives `read_status` and `read_last_seq`. `IDLE_CHECK_S` removed. A late
+     subscriber of a `failed` session whose final event could never be written stays open until the
+     client leaves (the case of an unavailable database).
+  2. **Runner** (`execution.py`): `bus.close` in a `finally` after publishing the final event: a
+     failing publication no longer leaves a subscriber waiting.
+  3. **Engine settings** (replaces D47 §5): `app/agents/runtime/run_settings.py` defines
+     `RunSettings` (`session_token_cap`, `debate_rounds`, `lesson_language`, `search_languages`,
+     `style_guide`) and the `RunSettingsSource` protocol; `GraphDeps.settings` is a `RunSettings`;
+     the `SettingsRunReader` adapter (on `SettingsService`, short session, next to
+     `SettingsModelReader`) is assembled by `app.bootstrap.run_settings_source()` and passed to
+     `agent_runtime(..., prices, run_settings)` and then to `SessionRunner(run_settings=...)` /
+     `RunContext.run_settings`. New import-linter contract 6 “app.agents never imports
+     app.features”; the two `app.agents.** -> app.features.*` exceptions of contract 2 are removed;
+     7 contracts hold.
+  4. `AgentRuntime` moves to `app/agents/runtime/handle.py` (bus and runner imports under
+     `TYPE_CHECKING`): `app.core.deps` no longer loads LangGraph or the runner at import.
+  5. **pytest-timeout** (dev dependency): `timeout = 60`, `timeout_method = "thread"` (Windows has
+     no SIGALRM; an overrun stops the pytest process with the threads' stacks);
+     `pytest.mark.timeout(10)` on the WebSocket and `stream_to_socket` tests: a stream regression
+     fails instead of freezing the suite.
+- **Reason** Review of task 1.7 (three Important points): a slow client must never receive a 1000
+  before the end of the history (the front end treats 1000 as definitive); the agent engine must
+  depend on no feature; a blocked test must fail.
 
 ## D51
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 1, tâche 1.11 : composants de session partagés (`shared/session-ui/`)
-- **Décision** : (1) **Frontières ESLint** (ruling du registre : `features/*/components` peuvent importer `shared/session-ui`) : nouvel élément `session-ui` (déclaré avant `shared`, le premier qui correspond l'emporte) ; `session-ui` → lui-même + `shared/{ui,i18n,lib,realtime}` ; `feature`, `feature-components` et `app` → `session-ui` ; `shared` n'importe toujours que `shared` (donc jamais `session-ui`, ni `features`, ni `app`). Comme `realtime/` contient aussi le store et les hooks, un bloc `no-restricted-imports` limite les fichiers non-test de `session-ui` à `realtime/types` et `realtime/eventRenderers`, et interdit `shared/api`, TanStack Query et zustand : présentationnel vérifié par le lint, pas seulement par convention. (2) **Périmètre** : les neuf composants du brief, `agentColors.ts` et l'index public ; `Board` et `SourcesPanel` (cités au plan directeur 1.3) ne sont pas dans les fichiers du brief et relèvent de la phase 4 (Excalidraw, sources) : non créés. Ajout au brief : `FreeTextAnswer/` (champ de réponse libre de `InterruptCard`, extrait pour tenir la limite de 50 lignes par fonction et « un composant par fichier »). Aucun rendu n'est enregistré dans le registre `eventRenderers` : le brief ne l'exige pas ; `DebateFeed` n'affiche pas un événement générique sans composant enregistré (`null`, pas de repli bruyant), la page ou une phase ultérieure enregistre `source.found`, `board.update`, etc. (3) **Textes** : clés `session.*` et `agents.*` comme le brief (le bloc `sessions.*` de 1.10 reste pour les erreurs de flux et d'actions : deux espaces de noms voisins, volontairement non fusionnés pour ne pas toucher aux clés de 1.10) ; `fr.ts` passe à 184 lignes, pas de découpe nécessaire. (4) **Couleurs** : 19 couleurs distinctes, toutes ≥ 4,5:1 sur #FAFAF7 (test de contraste dans `agentColors.test.ts`, donc aussi en blanc sur la couleur pour l'avatar) ; slug inconnu → gris #57606A, `name = slug`, `role = ""` ; la recherche utilise `Object.hasOwn` (un slug « constructor » reste inconnu). La couleur n'est jamais le seul signal : nom de l'agent toujours écrit, état des outils et statut de session en texte. (5) **Accessibilité** : la zone de texte d'une bulle est toujours `aria-live="polite"` avec `aria-busy` vrai pendant l'écriture (le lecteur d'écran annonce la réponse entière à la fin, y compris le remplacement final par `agent.message`) ; la barre d'état est `role="status"` ; `DebateFeed` est une liste étiquetée (pas `role="log"`, qui doublerait les annonces de la bulle) ; `InterruptCard` donne le focus à la première option (ou au champ) tant qu'elle n'est pas répondue ou verrouillée, jamais de `window.confirm` ; activité « Réfléchit… / Cherche… / Écrit… » affichée dans l'en-tête de la bulle en cours (SPEC 15.2) ; animations `motion-safe:` de 200 ms. (6) **Choix de comportement** : `SessionControls` annule directement (pas de confirmation, une page peut en ajouter une en carte) ; Annuler reste proposé en `waiting_user` ; `extraActions` s'affiche aussi une fois la session terminée ; `MessageComposer` ignore Entrée pendant une composition IME et n'envoie jamais un message vide ; `CostBadge` utilise `Intl.NumberFormat("fr-FR")` et passe à 3 décimales sous 0,01 $ ; le texte des bulles est rendu en texte brut (`whitespace-pre-wrap`, pas de Markdown ni de HTML). Les citations d'un tour (`AgentTurn.citations`) ne sont pas affichées : `AgentBubble` n'a pas de prop `citations` dans le brief (pastilles numérotées de SPEC 15.2 à brancher avec `SourcesPanel`, phase 4).
-- **Raison** : écran Conseil, Comité (F19) et Tuteur (F14) partagent le fil du débat (D9) ; une frontière vérifiée par le lint garde ces composants réutilisables sans qu'ils dépendent d'une feature ni de la couche de données.
+- **Date** 2026-11-11
+- **Subject** Phase 1, task 1.11: shared session components (`shared/session-ui/`)
+- **Decision**
+  1. **ESLint boundaries** (registry ruling: `features/*/components` may import
+     `shared/session-ui`): new element `session-ui` (declared before `shared`, the first match
+     wins); `session-ui` → itself + `shared/{ui,i18n,lib,realtime}`; `feature`,
+     `feature-components`, and `app` → `session-ui`; `shared` still imports only `shared` (so never
+     `session-ui`, nor `features`, nor `app`). Since `realtime/` also contains the store and the
+     hooks, a `no-restricted-imports` block limits the non-test files of `session-ui` to
+     `realtime/types` and `realtime/eventRenderers`, and forbids `shared/api`, TanStack Query, and
+     zustand: presentational, checked by lint and not just by convention.
+  2. **Scope**: the brief's nine components, `agentColors.ts`, and the public index; `Board` and
+     `SourcesPanel` (cited in master plan 1.3) are not in the brief's files and belong to phase 4
+     (Excalidraw, sources): not created. Addition to the brief: `FreeTextAnswer/` (free-answer field
+     of `InterruptCard`, extracted to stay within the 50-line-per-function limit and “one component
+     per file”). No renderer is registered in the `eventRenderers` registry: the brief does not
+     require it; `DebateFeed` does not display a generic event without a registered component
+     (`null`, no noisy fallback), and the page or a later phase registers `source.found`,
+     `board.update`, etc.
+  3. **Texts**: `session.*` and `agents.*` keys as in the brief (the `sessions.*` block from 1.10
+     remains for stream and action errors: two neighboring namespaces, deliberately not merged so as
+     not to touch 1.10's keys); `fr.ts` goes to 184 lines, no split needed.
+  4. **Colors**: 19 distinct colors, all ≥ 4.5:1 on #FAFAF7 (contrast test in `agentColors.test.ts`,
+     so also in white on the color for the avatar); unknown slug → gray #57606A, `name = slug`,
+     `role = ""`; the lookup uses `Object.hasOwn` (a “constructor” slug stays unknown). Color is
+     never the only signal: the agent's name is always written, tool states and session status in
+     text.
+  5. **Accessibility**: a bubble's text area is always `aria-live="polite"` with `aria-busy` true
+     while writing (the screen reader announces the whole reply at the end, including the final
+     replacement by `agent.message`); the status bar is `role="status"`; `DebateFeed` is a labeled
+     list (not `role="log"`, which would double the bubble's announcements); `InterruptCard` gives
+     focus to the first option (or the field) as long as it is not answered or locked, never
+     `window.confirm`; the activity “Thinking… / Searching… / Writing…” is shown in the header of
+     the current bubble (SPEC 15.2); `motion-safe:` animations of 200 ms.
+  6. **Behavior choices**: `SessionControls` cancels directly (no confirmation, a page may add one
+     as a card); Cancel is still offered in `waiting_user`; `extraActions` also displays once the
+     session is finished; `MessageComposer` ignores Enter during IME composition and never sends an
+     empty message; `CostBadge` uses `Intl.NumberFormat("fr-FR")` and goes to 3 decimals below
+     $0.01; the bubbles' text is rendered as plain text (`whitespace-pre-wrap`, no Markdown or
+     HTML). A turn's citations (`AgentTurn.citations`) are not displayed: `AgentBubble` has no
+     `citations` prop in the brief (SPEC 15.2's numbered badges to be wired with `SourcesPanel`,
+     phase 4).
+- **Reason** The Council, Committee (F19), and Tutor (F14) screens share the debate feed (D9); a
+  lint-checked boundary keeps these components reusable without depending on a feature or on the
+  data layer.
 
 ## D52
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 1, tâche 1.7, correctif de revue 2 : session finie rouverte au-delà de sa fin ; statut final et événement final non atomiques (reporté)
-- **Décision** : (1) **Régression de D50 corrigée** : une session `completed`/`failed` rouverte avec `after_seq` égal ou postérieur à son événement final ne fermait jamais (rien à rejouer, `watch` dormait pour ces statuts) — cas réel côté front (store non remis à zéro, `retry()`, 1006 après `run.completed`). `stream_to_socket` reçoit désormais un seul lecteur `read_end_seq` (construit par `app.realtime.websocket.end_seq_reader`) : statut lu une fois l'abonnement inscrit, puis, dans une autre session courte, le `seq` de fin : celui du dernier `run.completed`/`run.failed` pour `completed`/`failed` (`EventRepository.last_seq_of`, ajouté), `max(seq)` pour `cancelled`, `None` pour une session ouverte. `None` aussi quand le statut final est écrit mais pas encore son événement : celui-ci arrivera en direct et `forward` fermera (garantie de la course « en direct » de D50 conservée). Sinon fermeture 1000 dès que `forward` a transmis jusqu'à ce `seq` et attend le bus — aussitôt, sans aucun envoi, si `after_seq` l'atteint déjà. Session disparue → fin `0` (fermeture). (2) **Atomicité statut final / événement final : reportée**. Le runner écrit le statut (`UPDATE` conditionnel) puis publie l'événement final dans une autre transaction (le bus numérote sous son verrou) ; un arrêt brutal entre les deux laisse une session `completed`/`failed` sans `run.completed`/`run.failed`. Effets : le front n'a pas l'événement final (le statut de `SessionView` reste juste) et un WebSocket ouvert sur cette session reste ouvert jusqu'au départ du client (`read_end_seq` rend `None`). Correction envisagée (hors 1.7, à faire avec le runner) : écrire le statut et la ligne d'événement dans la même transaction (le bus offrant une écriture « dans la transaction de l'appelant »), ou, au démarrage, publier l'événement final manquant des sessions terminales qui n'en ont pas. **Tranché par D61** : transaction unique (`EventBus.publish_with`), pas de réparation au démarrage.
-- **Raison** : seconde revue de la tâche 1.7 : une reconnexion après la fin ne doit jamais laisser le front bloqué sur « ouvert » avec un abonné inutile côté serveur.
+- **Date** 2026-11-11
+- **Subject** Phase 1, task 1.7, review fix 2: finished session reopened beyond its end; final
+  status and final event not atomic (deferred)
+- **Decision**
+  1. **D50 regression fixed**: a `completed`/`failed` session reopened with `after_seq` equal to or
+     after its final event never closed (nothing to replay, `watch` slept for these statuses) — a
+     real case on the front-end side (store not reset, `retry()`, 1006 after `run.completed`).
+     `stream_to_socket` now receives a single `read_end_seq` reader (built by
+     `app.realtime.websocket.end_seq_reader`): status read once the subscription is registered,
+     then, in another short session, the end `seq`: that of the last `run.completed`/`run.failed`
+     for `completed`/`failed` (`EventRepository.last_seq_of`, added), `max(seq)` for `cancelled`,
+     `None` for an open session. `None` also when the final status is written but not yet its event:
+     the event will arrive live and `forward` will close (D50's “live” race guarantee kept).
+     Otherwise closure 1000 as soon as `forward` has forwarded up to that `seq` and is waiting on
+     the bus — immediately, with no send, if `after_seq` already reaches it. Vanished session → end
+     `0` (closure).
+  2. **Atomicity of final status / final event: deferred**. The runner writes the status
+     (conditional `UPDATE`) and then publishes the final event in another transaction (the bus
+     numbers under its lock); a hard stop between the two leaves a `completed`/`failed` session
+     without `run.completed`/`run.failed`. Effects: the front end lacks the final event (the
+     `SessionView` status stays correct) and a WebSocket open on this session stays open until the
+     client leaves (`read_end_seq` returns `None`). Correction under consideration (outside 1.7, to
+     be done with the runner): write the status and the event row in the same transaction (the bus
+     offering a write “in the caller's transaction”), or, at startup, publish the missing final
+     event of the terminal sessions that lack one. **Settled by D61**: single transaction
+     (`EventBus.publish_with`), no repair at startup.
+- **Reason** Second review of task 1.7: a reconnection after the end must never leave the front end
+  stuck on “open” with a useless subscriber on the server side.
 
 ## D53
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 1, tâche 1.8 : graphe de démonstration `demo_debate`
-- **Décision** : (1) **Nombre de tours = `debate_rounds`** (`deps.settings`, lu par l'arête conditionnelle après le Critique) et non deux tours fixes : `START → proponent → critic → (ask_user → proponent → critic)* → finalize → END`, soit `debate_rounds − 1` interruptions ; avec 2 tours c'est exactement le graphe du brief, avec 1 tour il n'y a aucune question. La question du brief (« Quel angle pour le second tour ? ») est reprise telle quelle pour le tour 2, puis « Quel angle pour le tour N ? ». (2) **Lecture des messages** : chaque agent lit `user_messages_since(last_message_seq)`, ajoute les nouveaux à `user_notes` (réducteur `operator.add`) et avance `last_message_seq` ; le prompt reçoit TOUTES les remarques cumulées (`notes`), pas seulement les nouvelles, pour que le Critique voie aussi ce que le Défenseur a déjà reçu (sinon `last_message_seq`, avancé par le Défenseur, lui cacherait le message). `turns` est aussi cumulé par réducteur. (3) **Fichier ajouté** `app/agents/nodes/demo_turn.py` (`play_turn`) : le tour commun aux deux agents (lecture des messages, rendu du prompt, appel du modèle par `invoke_agent`), pour ne pas dupliquer ; `DebateNode` (Protocol, dans `state/demo_debate.py`) type les nœuds, car `StateGraph.add_node` exige le paramètre nommé `state` qu'un `Callable[[X], Y]` ne garantit pas. (4) **`finalize`** : résumé déterministe, sans appel au modèle (le brief écrit les 4 réponses scripté du Défenseur et du Critique seules). (5) **Variables des prompts** : `topic`, `round`, `rounds`, `previous` (dernière réplique de l'autre agent), `notes`, `angle` (`concret`, `court` ou rien) ; les remarques de January ne sont pas encadrées comme contenu non fiable (elles viennent de l'utilisatrice, pas du web). (6) **Enregistrement** : `AGENTS` et `GRAPHS` sont initialisés avec leurs entrées dans `registry.py` (pas de décorateur ni d'import de bas de fichier : `graphs/demo_debate.py` n'importe pas le registre, aucun cycle). (7) **Tests** : `fake_llm_with_provider` ajouté à `tests/agents/runtime/runner_helpers.py` (garde le faux fournisseur pour lire `received`) ; `tests/agents/graphs/conftest.py` fournit `make_debate` (registre réel `GRAPHS`, réglage `debate_rounds` fixé par une `RunSettingsSource` de test). Le contrat OpenAPI n'est pas touché (le nom du parcours n'y figure pas).
-- **Raison** : exigences de la tâche 1.8 et des constantes du plan (`debate_rounds` des réglages, aucun effet avant `interrupt()`, un prompt Markdown par agent).
+- **Date** 2026-11-11
+- **Subject** Phase 1, task 1.8: `demo_debate` demonstration graph
+- **Decision**
+  1. **Number of rounds = `debate_rounds`** (`deps.settings`, read by the conditional edge after the
+     Critic) and not two fixed rounds:
+     `START → proponent → critic → (ask_user → proponent → critic)* → finalize → END`, that is
+     `debate_rounds − 1` interrupts; with 2 rounds it is exactly the brief's graph, with 1 round
+     there is no question. The brief's question (“Which angle for the second round?”) is kept as is
+     for round 2, then “Which angle for round N?”.
+  2. **Reading messages**: each agent reads `user_messages_since(last_message_seq)`, adds the new
+     ones to `user_notes` (reducer `operator.add`), and advances `last_message_seq`; the prompt
+     receives ALL the accumulated remarks (`notes`), not only the new ones, so that the Critic also
+     sees what the Proponent already received (otherwise `last_message_seq`, advanced by the
+     Proponent, would hide the message from it). `turns` is also accumulated by a reducer.
+  3. **File added** `app/agents/nodes/demo_turn.py` (`play_turn`): the turn common to both agents
+     (reading messages, rendering the prompt, calling the model through `invoke_agent`), to avoid
+     duplication; `DebateNode` (Protocol, in `state/demo_debate.py`) types the nodes, because
+     `StateGraph.add_node` requires the named parameter `state`, which a `Callable[[X], Y]` does not
+     guarantee.
+  4. **`finalize`**: deterministic summary, no model call (the brief writes the 4 scripted replies
+     of the Proponent and the Critic only).
+  5. **Prompt variables**: `topic`, `round`, `rounds`, `previous` (the other agent's last reply),
+     `notes`, `angle` (`concret`, `court`, or nothing); January's remarks are not framed as
+     untrusted content (they come from the user, not from the web).
+  6. **Registration**: `AGENTS` and `GRAPHS` are initialized with their entries in `registry.py` (no
+     decorator or bottom-of-file import: `graphs/demo_debate.py` does not import the registry, no
+     cycle).
+  7. **Tests**: `fake_llm_with_provider` added to `tests/agents/runtime/runner_helpers.py` (keeps
+     the fake provider to read `received`); `tests/agents/graphs/conftest.py` provides `make_debate`
+     (real `GRAPHS` registry, `debate_rounds` setting fixed by a test `RunSettingsSource`). The
+     OpenAPI contract is not touched (the flow's name does not appear in it).
+- **Reason** Requirements of task 1.8 and the plan's constants (`debate_rounds` from the settings,
+  no effect before `interrupt()`, one Markdown prompt per agent).
 
 ## D54
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 1, tâche 1.12 : page de démonstration `/demo`
-- **Décision** : (1) **Route** : la démo reste accessible sur `/demo` comme test de fumée du moteur d'agents, hors navigation (`demoManifest` sans `nav`), car la spec la prévoit en phase 1 sans dire de la retirer. Le manifeste est en `manifest.ts` avec `Component` (comme les autres features) et non `element` (qui exigerait du JSX, donc `.tsx`). (2) **Session dans l'URL** : `?session=<id>` ; sans paramètre, `DemoTopicForm` ; recharger la page rejoint la session (le flux repart de `after_seq=0`, le rejeu reconstitue le fil). « Nouveau débat » (proposé une fois la session finie) retire le paramètre. (3) **Annulation** : `SessionControls` annule directement (D51) ; la page intercepte `onCancel` et affiche une carte de confirmation dans le fil (`CancelConfirmCard`, ajoutée au brief), jamais `window.confirm`. (4) **États** : `LoadingState` tant que le flux s'ouvre sans rien avoir reçu ; `ErrorState` quand le flux abandonne (`connection === "failed"`, dont 4404 « introuvable ») avec « Réessayer » = `retry()` ; reconnexion annoncée par une ligne `role="status"`. L'erreur d'une action ou d'un `run.failed` s'affiche en `InlineError`. (5) **Découpe** (limite de 50 lignes par fonction) : `DemoSession` (flux + actions + composition, ajouté au brief) sépare la page (formulaire, lancement, URL) de la session suivie. (6) **Injection du socket en test** : `DemoDebatePage` accepte une prop optionnelle `createSocket` (transmise à `useSessionStream`), seul point d'injection ; en production elle vaut `undefined` (WebSocket du navigateur). (7) **Sujet** : au moins 3 caractères côté formulaire (miroir du `min_length=3` du graphe), 200 au plus. (8) Le contrôle manuel Docker de fin de phase (étape 6) et le tag `phase-1` sont faits par le contrôleur après la revue finale.
-- **Raison** : critère 18.1 de la phase 1 (démo à deux agents, question, reprise après redémarrage) vérifiable à la main sans écran définitif.
+- **Date** 2026-11-11
+- **Subject** Phase 1, task 1.12: `/demo` demonstration page
+- **Decision**
+  1. **Route**: the demo stays reachable at `/demo` as a smoke test of the agent engine, outside the
+     navigation (`demoManifest` without `nav`), because the spec plans it for phase 1 without saying
+     to remove it. The manifest is in `manifest.ts` with `Component` (like the other features) and
+     not `element` (which would require JSX, hence `.tsx`).
+  2. **Session in the URL**: `?session=<id>`; without the parameter, `DemoTopicForm`; reloading the
+     page rejoins the session (the stream restarts from `after_seq=0`, the replay rebuilds the
+     feed). “New debate” (offered once the session is finished) removes the parameter.
+  3. **Cancellation**: `SessionControls` cancels directly (D51); the page intercepts `onCancel` and
+     shows a confirmation card in the feed (`CancelConfirmCard`, added to the brief), never
+     `window.confirm`.
+  4. **States**: `LoadingState` while the stream opens with nothing received yet; `ErrorState` when
+     the stream gives up (`connection === "failed"`, including 4404 “not found”) with “Retry” =
+     `retry()`; reconnection announced by a `role="status"` line. The error of an action or of a
+     `run.failed` is shown in `InlineError`.
+  5. **Split** (50-line-per-function limit): `DemoSession` (stream + actions + composition, added to
+     the brief) separates the page (form, launch, URL) from the followed session.
+  6. **Socket injection in tests**: `DemoDebatePage` accepts an optional `createSocket` prop (passed
+     to `useSessionStream`), the only injection point; in production it is `undefined` (the
+     browser's WebSocket).
+  7. **Topic**: at least 3 characters on the form side (mirroring the graph's `min_length=3`), 200
+     at most.
+  8. The manual Docker check at the end of the phase (step 6) and the `phase-1` tag are done by the
+     controller after the final review.
+- **Reason** Phase 1 criterion 18.1 (two-agent demo, question, resume after restart) verifiable by
+  hand without a final screen.
 
 ## D55
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 1, tâche 1.6, correctifs de revue : actions de contrôle sérialisées, arrêt du serveur (entrée numérotée D48 par erreur à l'origine, en double avec la D48 du réducteur front ; renumérotée et déplacée ici en fin de phase 1)
-- **Décision** : (1) **Verrou de contrôle par session** dans `SessionRunner` (`_Gate` : `asyncio.Lock` + compteur d'utilisateurs, oublié quand plus personne ne le tient ni ne l'attend) : `resume` le tient de la décision en base (`claim_resume`) jusqu'au lancement de la tâche, en passant par l'attente de la tâche qui finit de publier la question ; `pause` et `cancel` le tiennent de leur transition jusqu'à l'arrêt de la tâche (et `bus.close` pour `cancel`). Aucune attente avant l'acquisition : une action appelée prend sa place dans la file dès son premier pas. (2) **Toute tâche lancée attend ce verrou avant de démarrer** (`_run`) : `asyncio.Lock` réveille dans l'ordre d'arrivée, donc une pause ou une annulation arrivée pendant une reprise passe avant la tâche relancée et l'arrête avant tout progrès du graphe (corrige la course de la revue : annulation acceptée, puis graphe relancé quand même, appels payants et événements après `bus.close`). (3) **Garde de `prepare`** (défense en profondeur) : une tâche qui démarre alors que la session n'est plus `running` s'arrête sans rien écrire, publier ni créer de checkpoint. (4) **Arrêt du serveur** : `start` refuse (`server_stopping` 503) avant l'INSERT, `resume` avant `claim_resume` : aucune session créée ni question effacée pour un client qui reçoit une erreur. (5) `_settle` récupère et journalise (type seulement) l'exception d'une issue qui échoue pendant une annulation, au lieu de « Task exception was never retrieved ». (6) Vérifié pour 1.7 : `waiting_user` et `pending_interrupt` sont écrits par le même `UPDATE` (`_transition("waiting_user", pending_interrupt=...)`) ; un `GET` voit donc toujours la question avec le statut ; seul l'événement `interrupt.requested` peut arriver un instant après (voulu : statut d'abord, pour qu'une réponse immédiate soit acceptée).
-- **Raison** : revue de la tâche 1.6 (course Important + deux mineurs promus) : Review Focus 5 (le graphe ne repart qu'une fois et jamais après une annulation), pas de session fantôme au redémarrage.
+- **Date** 2026-11-11
+- **Subject** Phase 1, task 1.6, review fixes: serialized control actions, server shutdown (entry
+  originally numbered D48 by mistake, duplicating the front-end reducer's D48; renumbered and moved
+  here at the end of phase 1)
+- **Decision**
+  1. **Per-session control lock** in `SessionRunner` (`_Gate`: `asyncio.Lock` + user counter,
+     forgotten when no one holds or awaits it any more): `resume` holds it from the database
+     decision (`claim_resume`) until the task is launched, passing through the wait for the task
+     that finishes publishing the question; `pause` and `cancel` hold it from their transition until
+     the task stops (and `bus.close` for `cancel`). No wait before acquisition: a called action
+     takes its place in the queue from its first step.
+  2. **Every launched task waits for this lock before starting** (`_run`): `asyncio.Lock` wakes
+     waiters in arrival order, so a pause or a cancellation that arrives during a resume goes ahead
+     of the relaunched task and stops it before any progress of the graph (fixes the review's race:
+     cancellation accepted, then the graph relaunched anyway, paid calls and events after
+     `bus.close`).
+  3. **`prepare` guard** (defense in depth): a task that starts while the session is no longer
+     `running` stops without writing, publishing, or creating a checkpoint.
+  4. **Server shutdown**: `start` refuses (`server_stopping` 503) before the INSERT, `resume` before
+     `claim_resume`: no session created and no question cleared for a client that receives an error.
+  5. `_settle` retrieves and logs (type only) the exception of an outcome that fails during a
+     cancellation, instead of “Task exception was never retrieved”.
+  6. Verified for 1.7: `waiting_user` and `pending_interrupt` are written by the same `UPDATE`
+     (`_transition("waiting_user", pending_interrupt=...)`); a `GET` therefore always sees the
+     question with the status; only the `interrupt.requested` event may arrive a moment later
+     (intended: status first, so that an immediate answer is accepted).
+- **Reason** Review of task 1.6 (an Important race + two promoted minor items): Review Focus 5 (the
+  graph restarts only once and never after a cancellation), no ghost session at restart.
 
 ## D56
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 1, vague de correctifs finale : statut de session réconcilié avec le serveur (revue finale I1, I2, M1 ; reportés 1.10 n° 1 et 2)
-- **Décision** : (1) **Remarque ≠ réponse** : un `user.message` ajoute la remarque au fil et ne touche ni au statut ni à la question en attente (D4 ; corrige D48 §2). Le back continue d'attendre `POST /resume`. (2) **Lecture REST versionnée** : `SessionViewState.statusVersion = {seq, at}`. Une lecture (`snapshot` : statut, `last_seq`, `updated_at`, `pending_interrupt`) est faite à chaque ouverture du socket (la première et après chaque reconnexion), après un 1000, quand une attente de reconnexion trouve la session finie et complète, et c'est aussi la vue renvoyée par `resume`, `pause` et `cancel`. Elle s'applique si son `last_seq` dépasse `statusVersion.seq`, ou l'égale avec un `updated_at` au moins aussi récent (comparé à la microseconde). Un événement ne change le statut que si son `seq` dépasse la version, et n'avance la version que s'il change vraiment le statut ou la question (un `agent.started` d'une session déjà `running` ne prétend pas en savoir plus qu'une lecture faite juste avant lui). L'action locale `status.set`, non versionnée, est supprimée. Le réducteur reste pur et idempotent sur `seq`. (3) **Côté serveur**, pour que « statut au moins aussi récent que `last_seq` » soit vrai : `SessionsService.get` lit le dernier `seq` AVANT la ligne (SQLite : hors transaction d'écriture, chaque SELECT a sa propre image) ; pause et annulation attendent, après l'arrêt de la tâche, ses publications encore en vol (`EventBus.flush`), si bien que le `last_seq` de leur réponse compte tout ce que la tâche publiait. Le contrat OpenAPI ne change pas. (4) **Statuts collants** : aucun événement ne lève `paused` ni `cancelled` (pause et annulation ne publient rien, D46 §7 ; un événement publié juste avant elles peut arriver après), sauf `run.*` (final, écrit seulement depuis `running`). Pendant une pause, un événement plus récent que la version fait relire la session (`SessionStreamConnection.refresh()`, une lecture à la fois) : publié avant la pause, la lecture confirme `paused` ; session reprise dans un autre onglet, elle rend `running`. (5) **Questions** : `pendingInterrupt` suit le même versionnement que le statut. Une lecture qui annonce une question absente du fil ajoute sa carte (statut écrit sans son événement, D52 §2) ; l'événement arrivé ensuite la remplace. Une question reposée (même id, après une pause) remplace son ancienne carte. `agent.started` ne marque répondues que les questions posées avant lui. La carte n'est active que si `status === "waiting_user"` et que la question en attente est la sienne (`isAwaitingAnswer`) : en pause, elle reste visible mais désactivée, et « Reprendre » est proposé. (6) Une lecture qui dit la session arrêtée (tout statut sauf `running`) arrête les bulles en cours (marquées interrompues, D57) et vide `currentAgent`. (7) **M1** : le compteur de reconnexions repart de zéro à l'ouverture du socket (un navigateur ne signale jamais `open` pour un refus avant `accept`, et 4404 est traité à part) ; une session en attente ne s'épuise plus au fil des redémarrages du back. (8) **Résidu accepté** : un rechargement dont la lecture tombe dans la fenêtre d'une course pause/question (D46, `claim_pause` accepte `waiting_user`), avec un `interrupt.requested` en vol plus récent que la lecture, affiche la question active alors que la session est en pause ; répondre donne le 409 « Cette question a déjà reçu une réponse. » et la lecture suivante (reconnexion, rechargement) corrige. Test de bout en bout ajouté (`DemoDebatePage.lifecycle.test.tsx`) : question, remarque pendant l'attente (carte active), pause, rechargement (store vide, REST `paused`), reprise après un tour coupé, fin.
-- **Raison** : revue finale de la phase 1 et contrôle manuel : une remarque pendant la question bloquait la session, et une pause était perdue au rechargement ou levée par un événement tardif. Les deux sources du statut (flux et REST) doivent être ordonnées, sans nouvel événement hors du catalogue 9.5.
+- **Date** 2026-11-11
+- **Subject** Phase 1, final fix wave: session status reconciled with the server (final review I1,
+  I2, M1; deferred 1.10 items 1 and 2)
+- **Decision**
+  1. **Remark ≠ answer**: a `user.message` adds the remark to the feed and touches neither the
+     status nor the pending question (D4; corrects D48 §2). The backend keeps waiting for
+     `POST /resume`.
+  2. **Versioned REST read**: `SessionViewState.statusVersion = {seq, at}`. A read (`snapshot`:
+     status, `last_seq`, `updated_at`, `pending_interrupt`) is made on every socket opening (the
+     first and after each reconnection), after a 1000, when a reconnection wait finds the session
+     finished and complete, and it is also the view returned by `resume`, `pause`, and `cancel`. It
+     applies if its `last_seq` exceeds `statusVersion.seq`, or equals it with an `updated_at` at
+     least as recent (compared to the microsecond). An event changes the status only if its `seq`
+     exceeds the version, and advances the version only if it really changes the status or the
+     question (an `agent.started` on an already `running` session does not claim to know more than a
+     read made just before it). The local, unversioned `status.set` action is removed. The reducer
+     stays pure and idempotent on `seq`.
+  3. **Server side**, so that “status at least as recent as `last_seq`” is true:
+     `SessionsService.get` reads the last `seq` BEFORE the row (SQLite: outside a write transaction,
+     each SELECT has its own snapshot); pause and cancellation wait, after the task stops, for its
+     publications still in flight (`EventBus.flush`), so the `last_seq` of their response counts
+     everything the task was publishing. The OpenAPI contract does not change.
+  4. **Sticky statuses**: no event lifts `paused` or `cancelled` (pause and cancellation publish
+     nothing, D46 §7; an event published just before them may arrive after), except `run.*` (final,
+     written only from `running`). During a pause, an event more recent than the version makes the
+     session re-read (`SessionStreamConnection.refresh()`, one read at a time): published before the
+     pause, the read confirms `paused`; session resumed in another tab, it returns `running`.
+  5. **Questions**: `pendingInterrupt` follows the same versioning as the status. A read that
+     announces a question absent from the feed adds its card (status written without its event, D52
+     §2); the event arriving afterwards replaces it. A re-asked question (same id, after a pause)
+     replaces its old card. `agent.started` marks as answered only the questions asked before it.
+     The card is active only if `status === "waiting_user"` and the pending question is its own
+     (`isAwaitingAnswer`): during a pause, it stays visible but disabled, and “Resume” is offered.
+  6. A read that says the session is stopped (any status except `running`) stops the bubbles in
+     progress (marked interrupted, D57) and clears `currentAgent`.
+  7. **M1**: the reconnection counter restarts from zero when the socket opens (a browser never
+     signals `open` for a refusal before `accept`, and 4404 is handled separately); a waiting
+     session no longer runs out over successive backend restarts.
+  8. **Accepted residue**: a reload whose read falls within the window of a pause/question race
+     (D46, `claim_pause` accepts `waiting_user`), with an `interrupt.requested` in flight more
+     recent than the read, shows the active question while the session is paused; answering gives
+     the 409 “This question has already been answered.” and the next read (reconnection, reload)
+     corrects it. End-to-end test added (`DemoDebatePage.lifecycle.test.tsx`): question, remark
+     while waiting (active card), pause, reload (empty store, REST `paused`), resume after a cut
+     round, end.
+- **Reason** Final review of phase 1 and manual check: a remark during the question blocked the
+  session, and a pause was lost on reload or lifted by a late event. The two sources of the status
+  (stream and REST) must be ordered, with no new event outside the 9.5 catalog.
 
 ## D57
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 1, vague de correctifs finale : tours interrompus (revue finale I5)
-- **Décision** : (1) `AgentTurn.interrupted` (facultatif) marque un tour arrêté sans `agent.message` : `stopStreaming` (sur `run.*`, `interrupt.requested`, lecture REST non `running`) le pose au lieu de seulement couper `streaming`. (2) **Choix : retirer, pas finaliser.** Quand le même agent repart (`agent.started`), ses tours inachevés (`streaming` ou `interrupted`) sont retirés du fil. Le nœud rejoue depuis le début (`durability="sync"`, D46 §3) et son nouveau tour remplace l'ancien. Garder un tour « interrompu » ferait lire deux fois la même réplique, dont une tronquée, et cela durerait après un rechargement puisque les tokens sont rejoués. Exception : un tour qui a appelé des outils est gardé (trace des appels), arrêté et marqué interrompu. (3) **Nouvel essai dans `call_with_retries`** (aucun nouvel `agent.started`, autre `message_id`) : `upsertTurn` reprend le dernier tour inachevé de l'agent, vide son texte et lui donne le nouvel id. Effet voulu : un `agent.message` dont l'id diffère de celui des tokens (doute laissé ouvert par la revue finale) remplace la bulle au lieu d'en ouvrir une seconde. (4) Le résultat reste une fonction pure du flux : même fil au rejeu et au rechargement. (5) **Limite** : deux appels simultanés du même agent, sous deux `message_id`, se prendraient la bulle l'un l'autre ; aucun parcours ne le fait (un agent fait un appel à la fois).
-- **Raison** : contrôle manuel (back redémarré pendant que le Critique écrit le tour 3) : une demi-bulle « Écrit… » restait à côté de la bulle complète du même tour, y compris après rechargement.
+- **Date** 2026-11-11
+- **Subject** Phase 1, final fix wave: interrupted turns (final review I5)
+- **Decision**
+  1. `AgentTurn.interrupted` (optional) marks a turn stopped without `agent.message`:
+     `stopStreaming` (on `run.*`, `interrupt.requested`, a non-`running` REST read) sets it instead
+     of merely cutting `streaming`.
+  2. **Choice: remove, do not finalize.** When the same agent starts again (`agent.started`), its
+     unfinished turns (`streaming` or `interrupted`) are removed from the feed. The node replays
+     from the beginning (`durability="sync"`, D46 §3) and its new turn replaces the old one. Keeping
+     an “interrupted” turn would make the same reply read twice, one of them truncated, and it would
+     last after a reload since the tokens are replayed. Exception: a turn that called tools is kept
+     (trace of the calls), stopped and marked interrupted.
+  3. **Retry inside `call_with_retries`** (no new `agent.started`, a different `message_id`):
+     `upsertTurn` takes over the agent's last unfinished turn, clears its text, and gives it the new
+     id. Intended effect: an `agent.message` whose id differs from the tokens' (a doubt left open by
+     the final review) replaces the bubble instead of opening a second one.
+  4. The result remains a pure function of the stream: same feed on replay and on reload.
+  5. **Limit**: two simultaneous calls from the same agent, under two `message_id` values, would
+     take each other's bubble; no flow does that (an agent makes one call at a time).
+- **Reason** Manual check (backend restarted while the Critic was writing round 3): a half
+  “Writing…” bubble stayed next to the complete bubble of the same round, including after a reload.
 
 ## D58
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 1, vague de correctifs finale : pannes des fournisseurs lisibles, usage en flux, délai par appel (revue finale I3, I4, M3)
-- **Décision** : (1) `describe_provider_error(exc, provider=, label=)` dans `app/providers/llm/errors.py` est le seul endroit qui traduit une erreur de SDK (Anthropic, OpenAI) ou de httpx. Codes : `llm_key_rejected` (401/403), `llm_credit_exhausted` (429 avec un code de crédit épuisé : Z.ai `1113`, OpenAI `insufficient_quota`), `llm_rate_limited` (autre 429, dont Z.ai `1305` avec son message), `llm_unavailable` (5xx, connexion impossible), `llm_timeout` (délai, 504), `llm_request_rejected` (autre 4xx). Seuls le statut HTTP et le code du corps choisissent le message (table `PROVIDER_ERROR_CODES` par fournisseur, que `GlmProvider` et `OpenAIProvider` lisent aussi pour le test de clé) ; jamais le texte de l'exception (OpenAI y cite la fin de la clé) ni le corps de réponse. `details` = libellé du fournisseur et statut. (2) `call_with_retries` l'applique au dernier échec, ou à un échec non transitoire : `AppError` levée `from None` (aucune chaîne vers l'exception du SDK) ; journal WARNING avec agent, fournisseur, type d'exception et code, jamais le texte. Fournisseur et libellé viennent des métadonnées posées par `build()` (`tremplin_provider`, et `tremplin_provider_label`, nouveau) ; à défaut, « le fournisseur ». `run_session` publie ensuite `run.failed {code, message}` par son chemin `AppError` existant ; le moteur n'a aucun cas propre à un fournisseur. (3) Un crédit épuisé n'est plus transitoire : il n'est plus retenté trois fois pour rien (≈ 7 s). (4) **Usage en flux (I4)** : `OpenAICompatibleProvider.request_stream_usage` (ClassVar, `True`) donne `ChatOpenAI(stream_usage=True)` ; `langchain_openai` ne le demande d'office que sans `base_url`, que l'on passe toujours. GLM le met à `False` : rien n'est ajouté, car Z.ai renvoie l'usage sans qu'on le demande (D44, vérifié en réel) et ne documente pas `stream_options`, ce qui évite un éventuel 400. Vérifié sans réseau par un transport httpx2 simulé : la requête OpenAI porte `stream_options.include_usage` et l'usage arrive dans `usage_metadata` ; la requête GLM ne le porte pas et son usage spontané est lu. Le journal facultatif « appel réel à (0, 0) » proposé par la revue n'est pas ajouté. (5) **M3** : `LLM_CALL_TIMEOUT_S = 45` (`app/providers/llm/base.py`), utilisé par les trois fournisseurs ; un test garantit que deux appels complets et une attente tiennent dans `NODE_TIMEOUT_S` (2 × 45 + 1 < 120).
-- **Raison** : SPEC 9.6 (événement d'erreur lisible) et 9.3 (coût en direct, plafond de tokens) : une clé refusée ou un crédit épuisé finissaient en « Une erreur inattendue… », et le préréglage « Tout OpenAI » comptait 0 token.
+- **Date** 2026-11-11
+- **Subject** Phase 1, final fix wave: readable provider failures, streaming usage, per-call timeout
+  (final review I3, I4, M3)
+- **Decision**
+  1. `describe_provider_error(exc, provider=, label=)` in `app/providers/llm/errors.py` is the only
+     place that translates an SDK error (Anthropic, OpenAI) or an httpx error. Codes:
+     `llm_key_rejected` (401/403), `llm_credit_exhausted` (429 with an exhausted-credit code: Z.ai
+     `1113`, OpenAI `insufficient_quota`), `llm_rate_limited` (other 429, including Z.ai `1305` with
+     its message), `llm_unavailable` (5xx, connection impossible), `llm_timeout` (timeout, 504),
+     `llm_request_rejected` (other 4xx). Only the HTTP status and the body's code choose the message
+     (`PROVIDER_ERROR_CODES` table per provider, which `GlmProvider` and `OpenAIProvider` also read
+     for the key test); never the exception's text (OpenAI quotes the end of the key in it) nor the
+     response body. `details` = the provider's label and the status.
+  2. `call_with_retries` applies it to the last failure, or to a non-transient failure: `AppError`
+     raised `from None` (no chain to the SDK exception); WARNING log with agent, provider, exception
+     type, and code, never the text. Provider and label come from the metadata set by `build()`
+     (`tremplin_provider`, and `tremplin_provider_label`, new); failing that, “the provider”.
+     `run_session` then publishes `run.failed {code, message}` through its existing `AppError` path;
+     the engine has no provider-specific case.
+  3. An exhausted credit is no longer transient: it is no longer retried three times for nothing (≈
+     7 s).
+  4. **Streaming usage (I4)**: `OpenAICompatibleProvider.request_stream_usage` (ClassVar, `True`)
+     gives `ChatOpenAI(stream_usage=True)`; `langchain_openai` requests it by default only without
+     `base_url`, which we always pass. GLM sets it to `False`: nothing is added, because Z.ai
+     returns the usage without being asked (D44, verified in practice) and does not document
+     `stream_options`, which avoids a possible 400. Verified without network through a simulated
+     httpx2 transport: the OpenAI request carries `stream_options.include_usage` and the usage
+     arrives in `usage_metadata`; the GLM request does not carry it and its spontaneous usage is
+     read. The optional “real call at (0, 0)” log suggested by the review is not added.
+  5. **M3**: `LLM_CALL_TIMEOUT_S = 45` (`app/providers/llm/base.py`), used by the three providers; a
+     test guarantees that two full calls and one wait fit within `NODE_TIMEOUT_S` (2 × 45 + 1 <
+     120).
+- **Reason** SPEC 9.6 (readable error event) and 9.3 (live cost, token cap): a rejected key or an
+  exhausted credit ended as “An unexpected error…”, and the “All OpenAI” preset counted 0 tokens.
 
 ## D59
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 1, vague de correctifs finale : divers (revue finale M2, M6, M7, M8 ; indicateur de reconnexion du contrôle manuel)
-- **Décision** : (1) **M2** : une session introuvable (4404) affiche « Nouveau débat » au lieu de « Réessayer » (`ErrorState` reçoit un `actionLabel` facultatif ; `useSessionStream` expose `failure`). (2) **Indicateur de reconnexion : pas de défaut de code.** La machine publie `reconnecting` pendant toute la coupure (test de page ajouté : 1006, refus avant la poignée de main, puis réouverture). Le journal console du contrôle manuel (`.playwright-mcp/`) le confirme : coupure à t ≈ 29,1 s, essais à 29,6, 30,6 et 32,6 s (délais 500, 1000, 2000 ms), aucun échec ensuite, donc le 4e essai (≈ 36,6 s) a rouvert le flux. La capture « 10 s après » date de 40,7 s, flux déjà rouvert : d'où l'absence de la ligne. Le badge « Serveur injoignable » vient de la santé, rafraîchie toutes les 30 s (dernière lecture à 30,2 s). M1 (D56) évite en plus qu'une suite de redémarrages finisse en « injoignable ». (3) **M6** : `EventBus.last_seq()` est supprimé ; les tests lisent `max_seq` en base. `EventBus.flush()` est ajouté (D56) et `aclose` s'appuie dessus. (4) **M7** : `SessionRunner.post_message` passe par le verrou de contrôle de la session, comme pause et annulation : un message ne s'écrit plus après une annulation acceptée. (5) **M8** : la D48 du runner devient D55 (déplacée en fin de fichier pour garder l'ordre) ; D44 §7, D48 §2 et D49 sont corrigées ; le commentaire de `CLOSE_POLICY` dans `socket.ts` dit que 1008 est inatteignable aujourd'hui depuis un navigateur. (6) **Prettier** : les 5 fichiers de `shared/realtime` signalés sont formatés, dans un commit séparé. (7) **Reportés** (hors périmètre) : M4 (remarques renvoyées à chaque tour), M5 (INSERT par token), découpe de `fr.ts`, atomicité de D52 §2, fabrique de socket qui lève, pagination de `GET /sessions`, journal des appels LLM interrompus.
-- **Raison** : clôture de la phase 1 : tous les points retenus par le ruling de la revue finale.
+- **Date** 2026-11-11
+- **Subject** Phase 1, final fix wave: miscellaneous (final review M2, M6, M7, M8; manual-check
+  reconnection indicator)
+- **Decision**
+  1. **M2**: a session not found (4404) shows “New debate” instead of “Retry” (`ErrorState` receives
+     an optional `actionLabel`; `useSessionStream` exposes `failure`).
+  2. **Reconnection indicator: no code defect.** The machine publishes `reconnecting` for the whole
+     outage (page test added: 1006, refusal before the handshake, then reopening). The manual
+     check's console log (`.playwright-mcp/`) confirms it: outage at t ≈ 29.1 s, attempts at 29.6,
+     30.6, and 32.6 s (delays 500, 1000, 2000 ms), no failure afterwards, so the 4th attempt (≈ 36.6
+     s) reopened the stream. The “10 s after” capture dates from 40.7 s, stream already reopened:
+     hence the absence of the line. The “Server unreachable” badge comes from the health check,
+     refreshed every 30 s (last read at 30.2 s). M1 (D56) additionally prevents a series of restarts
+     from ending in “unreachable”.
+  3. **M6**: `EventBus.last_seq()` is removed; the tests read `max_seq` from the database.
+     `EventBus.flush()` is added (D56) and `aclose` relies on it.
+  4. **M7**: `SessionRunner.post_message` goes through the session's control lock, like pause and
+     cancellation: a message is no longer written after an accepted cancellation.
+  5. **M8**: the runner's D48 becomes D55 (moved to the end of the file to keep the order); D44 §7,
+     D48 §2, and D49 are corrected; the comment of `CLOSE_POLICY` in `socket.ts` says that 1008 is
+     unreachable today from a browser.
+  6. **Prettier**: the 5 flagged `shared/realtime` files are formatted, in a separate commit.
+  7. **Deferred** (out of scope): M4 (remarks sent back at every round), M5 (INSERT per token),
+     splitting `fr.ts`, atomicity of D52 §2, a socket factory that throws, pagination of
+     `GET /sessions`, a log of interrupted LLM calls.
+- **Reason** Close phase 1: all the points retained by the final review's ruling.
 
 ## D60
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 2, tâche 2.1 : textes du front découpés par zone, relecture REST mise en attente (N2)
-- **Décision** : 1. Les textes vivent dans `frontend/src/shared/i18n/messages/<zone>.ts` (`export const <zone> = {…} as const;`, 300 lignes max par fichier) ; `fr.ts` n'est que l'agrégateur. Règle : une nouvelle feature = un fichier + une ligne dans `fr.ts`. Les zones du squelette (`app`, `nav`, `home`, `health`, `errors`) sont regroupées dans `messages/app.ts` (`appMessages`). 2. `sessions` est fusionné dans `session` (`session.stream.*`, `session.errors.*`) : une seule zone par sujet ; aucun texte modifié, seulement déplacé. 3. N2 : `refresh()` ne saute plus une relecture demandée pendant une lecture en cours ; il la met en attente (un seul drapeau, demandes coalescées) et la lance quand la lecture en cours se termine, succès ou échec. Raison : la lecture en cours peut dater d'avant la demande (contrôle de reconnexion lancé avant l'ouverture du nouveau socket) et son résultat, non terminal, n'était pas appliqué : le statut REST était perdu. Pas d'annulation de la lecture en cours (le contrôle de reconnexion reste la source de « session terminée et reçue »). `dispose()` et la fin du flux annulent la relecture en attente. 4. Le matériel de test de `SessionStreamConnection` est dans `src/test/streamHarness.ts` (contrainte `boundaries`).
-- **Raison** : fr.ts approchait de la limite de 300 lignes et chaque feature de la phase 2 ajoute des textes ; N2 venait du bilan de la phase 1.
+- **Date** 2026-11-11
+- **Subject** Phase 2, task 2.1: front-end texts split by area, queued REST re-read (N2)
+- **Decision**
+  1. The texts live in `frontend/src/shared/i18n/messages/<area>.ts`
+     (`export const <area> = {…} as const;`, 300 lines max per file); `fr.ts` is only the
+     aggregator. Rule: a new feature = one file + one line in `fr.ts`. The skeleton's areas (`app`,
+     `nav`, `home`, `health`, `errors`) are grouped in `messages/app.ts` (`appMessages`).
+  2. `sessions` is merged into `session` (`session.stream.*`, `session.errors.*`): one area per
+     subject; no text modified, only moved.
+  3. N2: `refresh()` no longer skips a re-read requested during a read in progress; it queues it (a
+     single flag, requests coalesced) and launches it when the read in progress ends, success or
+     failure. Reason: the read in progress may predate the request (reconnection check launched
+     before the new socket opened) and its non-terminal result was not applied: the REST status was
+     lost. No cancellation of the read in progress (the reconnection check remains the source of
+     “session finished and received”). `dispose()` and the end of the stream cancel the queued
+     re-read.
+  4. The test harness of `SessionStreamConnection` is in `src/test/streamHarness.ts` (`boundaries`
+     constraint).
+- **Reason** fr.ts was nearing the 300-line limit and every phase 2 feature adds texts; N2 came from
+  the phase 1 review.
 
 ## D61
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 2, tâche 2.2 : issue d'une session atomique (D52 §2), `flush` par session (N5), tests laissés par la phase 1
-- **Décision** : (1) **D52 §2 tranché par une transaction unique**, sans réparation au démarrage : le statut d'issue et son événement sont validés par le même commit, ou pas du tout. Une session `completed`/`failed` a donc toujours son `run.completed`/`run.failed`, et `waiting_user` son `interrupt.requested`. Les lignes plus anciennes que D61, où le statut final existe sans son événement, ne sont pas réparées : elles ne viennent que des bases de développement. `end_seq_reader` garde son repli `None` (flux laissé ouvert). (2) **Forme** : `EventBus.publish_with(*, user_id, session_id, type, payload, guard, agent=None) -> SessionEvent | None`, avec `Guard = Callable[[AsyncSession], Awaitable[bool]]` (exporté par `bus.py`). La garde est appelée sous le verrou de la session, dans la transaction qui va recevoir l'événement. Si elle rend `False`, la transaction est annulée, rien n'est écrit ni diffusé, la méthode rend `None` et le cache `seq` reste valide. Si elle rend `True`, la ligne d'événement (`seq` suivant) est insérée dans la même transaction, puis viennent le commit et la diffusion. Si l'insertion ou le commit échoue, la garde est annulée avec eux. Un `seq` refusé par l'unicité (écrivain hors du bus) fait rejouer la transaction entière, garde comprise. La tâche est protégée comme `publish` (tâche + `shield`). Une garde doit commencer par son écriture : SQLite applique alors son délai d'attente au lieu d'échouer. (3) **Découpe** : l'écriture (numérotation, relecture de `max_seq`, insertion gardée) quitte `bus.py` pour `bus_write.py` (`EventWriter`, `bus._writer`). `bus.py` garde la publication, l'abonnement et la fin de session. `publish` et `publish_with` partagent la même tâche protégée. (4) **Runner** (`execution.py`) : `_Run.wait_user`, `complete` et `fail` passent par `publish_with`. Leur garde est `SessionRepository(db, user_id).transition(session_id, from_={"running"}, to=…, **values)` ; `control.transition` n'est plus utilisé par l'exécution. Une pause ou une annulation passée avant l'issue fait refuser la garde : ni statut ni événement. Passée pendant l'écriture, elle attend le verrou d'écriture de SQLite, trouve la session terminée et répond 409. **Écriture de l'issue en échec** (correctif de revue 1 : sinon la session restait `running` sans tâche dans le processus, et chaque WebSocket restait ouvert sans fin) : `_Run._issue`, commun à `wait_user`, `complete` et `fail`. (a) L'issue atomique est retentée deux fois (`OUTCOME_RETRY_DELAYS_S` = 0,05 s puis 0,25 s ; déclencheur réaliste : `busy_timeout` de 5 s dépassé, `OperationalError`). La garde rend ces essais sûrs : un essai qui a validé malgré son erreur fait refuser le suivant. (b) Garde refusée : le statut est relu. S'il est terminal (un commit précédent a abouti, ou une annulation), le bus est fermé. (c) Tous les essais en échec : repli sur un `failed` atomique par `publish_with` avec `run.failed {code: "outcome_not_written", message: « La fin de la session n'a pas pu être enregistrée : elle est marquée en échec. »}`, avec les mêmes nouveaux essais. (d) `bus.close` seulement si la session est en base dans un statut terminal : issue finale écrite, repli écrit, ou statut relu terminal. (e) Si même le repli échoue (base vraiment indisponible), la session reste `running`, rien n'est fermé et la reprise se fait au redémarrage : `_settle` lève, `_forget` journalise. Écart assumé avec le brief (« gardent `bus.close` dans un `finally` ») : fermer une session restée `running` enverrait au WebSocket un 1000, que le front tient pour une fin définitive (D49, D50). Il resterait alors sur une session `running` sans flux jusqu'au rechargement, même après la reprise. Sans `close`, le redémarrage coupe le flux (1006), le front se reconnecte et voit la reprise. Pire cas d'une base bloquée : 6 essais d'au plus 5 s chacun avant que la tâche ne rende la main ; une pause ou une annulation attend jusque-là. Le test `test_bus_is_closed_even_if_the_final_publish_fails` (D50 §2) est remplacé par `test_written_outcome_closes_the_bus`, `test_transient_write_failure_is_retried_and_keeps_the_original_outcome`, `test_failed_completion_write_falls_back_to_an_atomic_failure`, `test_failed_question_write_falls_back_to_an_atomic_failure`, `test_outcome_committed_despite_an_error_is_not_written_twice` et `test_when_nothing_can_be_written_the_session_stays_running_and_its_stream_open`. (5) **`flush` par session (N5)** : `EventBus.flush(*, user_id=None, session_id=None)`. Sans argument, elle attend toutes les publications en vol (`aclose`). Avec la clé `(user_id, session_id)`, seulement celles de cette session. Les deux arguments vont ensemble (`ValueError` sinon). `_inflight` devient `dict[(user_id, session_id), set[Task]]`, et une clé vide est retirée. `SessionRunner._stop(user_id, session_id)` appelle `flush(user_id=…, session_id=…)` : une pause n'attend plus les écritures des autres sessions. (6) **Tests ajoutés** : `test_bus_guard.py` couvre la garde refusée, garde et événement validés ensemble, le rollback de la garde quand l'insertion échoue, la garde rejouée après un conflit de `seq`, et l'absence de diffusion. `test_bus_delivery.py` couvre le `flush` limité à une session et ses arguments. `test_runner_outcome.py` couvre l'issue écrite qui ferme le bus, le nouvel essai, le repli en `failed` (fin ou question), le commit validé malgré une erreur, l'échec total qui laisse `running` et le flux ouvert, et la reprise au démarrage qui finit une seule fois sans rejouer de nœud. `test_runner_races.py` couvre une pause ou une annulation pendant l'écriture de l'issue, avant la garde (l'annulation tombe alors pendant `_settle`) puis dans la transaction. Un événement posé juste avant l'`UPDATE` de `control.transition` sert d'attente, sans durée fixe. `test_runner_recovery.py` couvre le redémarrage après `claim_resume` : même question, même `interrupt_id`, aucun nœud terminé rejoué (nouveau parcours de test `step_then_ask`). `test_websocket.py` couvre la reconnexion pendant une publication active : ni trou ni doublon. `_hold_questions` retient désormais la tâche juste après l'écriture atomique de la question. Les commentaires de `replay.py`, `websocket.py` et `sessions_support.py` qui supposaient « statut avant événement » sont mis à jour.
-- **Raison** : reliquat de la phase 1 (bilan : D52 §2, N5, tests manquants). Un arrêt brutal entre deux transactions laissait une session terminée sans événement final, avec un WebSocket ouvert sans fin. Une transaction unique supprime la fenêtre au lieu de la réparer après coup. La pause d'une session ne doit pas dépendre des écritures des autres sessions.
+- **Date** 2026-11-11
+- **Subject** Phase 2, task 2.2: atomic session outcome (D52 §2), per-session `flush` (N5), tests
+  left over from phase 1
+- **Decision**
+  1. **D52 §2 settled by a single transaction**, with no repair at startup: the outcome status and
+     its event are committed by the same commit, or not at all. A `completed`/`failed` session
+     therefore always has its `run.completed`/`run.failed`, and `waiting_user` its
+     `interrupt.requested`. Rows older than D61, where the final status exists without its event,
+     are not repaired: they come only from development databases. `end_seq_reader` keeps its `None`
+     fallback (stream left open).
+  2. **Shape**: `EventBus.publish_with(*, user_id, session_id,
+     type, payload, guard, agent=None) -> SessionEvent | None`, with
+     `Guard = Callable[[AsyncSession], Awaitable[bool]]` (exported by `bus.py`). The guard is called
+     under the session's lock, in the transaction that will receive the event. If it returns
+     `False`, the transaction is rolled back, nothing is written or broadcast, the method returns
+     `None`, and the `seq` cache stays valid. If it returns `True`, the event row (next `seq`) is
+     inserted in the same transaction, then come the commit and the broadcast. If the insert or the
+     commit fails, the guard is rolled back with them. A `seq` refused by the uniqueness constraint
+     (a writer outside the bus) makes the whole transaction replay, guard included. The task is
+     protected like `publish` (task + `shield`). A guard must begin with its write: SQLite then
+     applies its wait timeout instead of failing.
+  3. **Split**: the write (numbering, `max_seq` re-read, guarded insert) leaves `bus.py` for
+     `bus_write.py` (`EventWriter`, `bus._writer`). `bus.py` keeps publication, subscription, and
+     end of session. `publish` and `publish_with` share the same protected task.
+  4. **Runner** (`execution.py`): `_Run.wait_user`, `complete`, and `fail` go through
+     `publish_with`. Their guard is `SessionRepository(db, user_id).transition(session_id,
+     from_={"running"}, to=…, **values)`; `control.transition` is no longer used by the execution. A
+     pause or a cancellation that passed before the outcome makes the guard refuse: neither status
+     nor event. Passed during the write, it waits for SQLite's write lock, finds the session
+     finished, and answers 409. **Writing the outcome on failure** (review fix 1: otherwise the
+     session stayed `running` with no task in the process, and every WebSocket stayed open without
+     end): `_Run._issue`, common to `wait_user`, `complete`, and `fail`. (a) The atomic outcome is
+     retried twice (`OUTCOME_RETRY_DELAYS_S` = 0.05 s then 0.25 s; realistic trigger: the 5 s
+     `busy_timeout` exceeded, `OperationalError`). The guard makes these retries safe: an attempt
+     that committed despite its error makes the next one refuse. (b) Guard refused: the status is
+     re-read. If it is terminal (a previous commit succeeded, or a cancellation), the bus is closed.
+     (c) All attempts failed: fall back to an atomic `failed` through `publish_with` with
+     `run.failed {code: "outcome_not_written", message: “The session outcome could not be
+     saved. The session was marked as failed.”}`, with the same retries. (d) `bus.close` only if the
+     session is in the database in a terminal status: final outcome written, fallback written, or
+     status re-read as terminal. (e) If even the fallback fails (database really unavailable), the
+     session stays `running`, nothing is closed, and recovery happens at restart: `_settle` raises,
+     `_forget` logs. Deliberate deviation from the brief (“keep `bus.close` in a `finally`”):
+     closing a session left `running` would send the WebSocket a 1000, which the front end treats as
+     a definitive end (D49, D50). It would then stay on a `running` session with no stream until
+     reload, even after recovery. Without `close`, the restart cuts the stream (1006), the front end
+     reconnects and sees the recovery. Worst case of a blocked database: 6 attempts of at most 5 s
+     each before the task gives control back; a pause or a cancellation waits that long. The test
+     `test_bus_is_closed_even_if_the_final_publish_fails` (D50 §2) is replaced by
+     `test_written_outcome_closes_the_bus`,
+     `test_transient_write_failure_is_retried_and_keeps_the_original_outcome`,
+     `test_failed_completion_write_falls_back_to_an_atomic_failure`,
+     `test_failed_question_write_falls_back_to_an_atomic_failure`,
+     `test_outcome_committed_despite_an_error_is_not_written_twice`, and
+     `test_when_nothing_can_be_written_the_session_stays_running_and_its_stream_open`.
+  5. **Per-session `flush` (N5)**: `EventBus.flush(*, user_id=None, session_id=None)`. With no
+     argument, it waits for all publications in flight (`aclose`). With the `(user_id, session_id)`
+     key, only those of that session. The two arguments go together (`ValueError` otherwise).
+     `_inflight` becomes `dict[(user_id, session_id), set[Task]]`, and an empty key is removed.
+     `SessionRunner._stop(user_id, session_id)` calls `flush(user_id=…, session_id=…)`: a pause no
+     longer waits for the writes of other sessions.
+  6. **Tests added**: `test_bus_guard.py` covers the refused guard, guard and event committed
+     together, the guard's rollback when the insert fails, the guard replayed after a `seq`
+     conflict, and the absence of broadcast. `test_bus_delivery.py` covers the `flush` limited to
+     one session and its arguments. `test_runner_outcome.py` covers the written outcome that closes
+     the bus, the retry, the fallback to `failed` (end or question), the commit that succeeded
+     despite an error, the total failure that leaves `running` and the stream open, and the recovery
+     at startup that finishes exactly once without replaying a node. `test_runner_races.py` covers a
+     pause or a cancellation during the outcome write, before the guard (the cancellation then falls
+     during `_settle`) and then inside the transaction. An event set just before the `UPDATE` of
+     `control.transition` serves as the wait, with no fixed duration. `test_runner_recovery.py`
+     covers the restart after `claim_resume`: same question, same `interrupt_id`, no finished node
+     replayed (new test flow `step_then_ask`). `test_websocket.py` covers the reconnection during an
+     active publication: no gap and no duplicate. `_hold_questions` now holds the task just after
+     the atomic write of the question. The comments in `replay.py`, `websocket.py`, and
+     `sessions_support.py` that assumed “status before event” are updated.
+- **Reason** Phase 1 leftover (review: D52 §2, N5, missing tests). A hard stop between two
+  transactions left a finished session without a final event, with a WebSocket open without end. A
+  single transaction removes the window instead of repairing it afterwards. A session's pause must
+  not depend on the writes of other sessions.
 
 ## D69
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 2, tâches 2.10 à 2.12 : écrans de la mémoire (composants, carte, import, pages)
-- **Décision** : 1. **Couleurs par type** : `document #3d5a99` (bleu), `acquis #1b7e3b` (vert), `lecon #8a5a00` (ocre), `source #00798a` (sarcelle), `offre #b4461f` (rouille), `decision #8a2ea8` (violet). Six couleurs distinctes, chacune AA (>= 4,5:1) sur #FAFAF7, vérifié par test. La couleur n'est jamais le seul signal : `KindBadge` écrit toujours le nom du type. La carte (2.11) réutilisera `KIND_COLORS`. 2. **Règle de fusion côté interface** (`mergeRule.canMerge`) : actif seulement si au moins 2 éléments cochés, du même type, aucun `document`. La cible est le premier coché (`selected[0]`), les autres sont `otherIds`. Une sélection qui contient un élément absent de la page courante désactive la fusion (type inconnu, pas de fusion à l'aveugle). Le back reste l'autorité. 3. **Tiroir non bloquant** : `role="dialog"` sans `aria-modal` ni voile, la liste derrière reste utilisable. Focus initial sur le titre (`h2` `tabIndex=-1`), re-focalisé à chaque nouvel élément (clic sur un voisin). Échap ferme via un écouteur `document` (le focus peut être hors du tiroir). Pas de piège à focus. 4. **Suppression** : confirmation en ligne dans le tiroir (`DeleteConfirm`, « Supprimer définitivement ? », boutons « Oui, supprimer » / « Non, garder », focus sur « Non, garder »). 5. **Modification** : l'état « en modification » est lié à l'objet `item` reçu. Quand le parent relit le détail après l'enregistrement (nouvel objet), le tiroir repasse en lecture ; une sauvegarde en erreur laisse le formulaire ouvert avec la saisie. Seuls `declare` et `en_cours` sont éditables (SPEC 4.2) : le sélecteur de niveau n'apparaît que pour un acquis (création) ou si l'élément a l'un de ces deux niveaux (édition) ; sinon `level: null` (inchangé). 6. **Banc d'essai** : `k` vaut 8 par défaut, borné à 1..50 **à l'envoi** (champ vidé : 8), le champ est réécrit avec la valeur bornée ; `noValidate` sur le formulaire pour que la validation native (message dans la langue du navigateur) ne bloque pas silencieusement. `agentText` s'affiche dans un `<pre>` tel quel, jamais interprété. Les fragments retenus s'affichent avec leurs scores (`SearchHitList` sans `onOpen`, titre en simple texte). 7. **`SearchHitList.onOpen` est optionnel** (le banc d'essai n'ouvre pas d'élément) ; superset compatible avec le contrat de la tâche. 8. **`formatScore`** vit dans `formatScore.ts` (et non dans `authorLabel.ts`), `toFixed(2)` avec virgule : déterministe, sans dépendre de l'ICU. `formatDate.ts` (Intl `fr-FR`) rend une date illisible telle quelle. 9. **`viewFixtures.ts`** dans `components/` (et non `src/test/`) : `test-support` ne peut pas importer `features` (règle de frontières). Jamais importé par le code de production. 10. **Textes** : `messages/memory.ts` suit la règle de `fr.ts` ; libellés fixés par la tâche repris verbatim ; ajouts : « Toi », « Précédent/Suivant », « Annuler », « Fermer », « Modifier », filtres, formulaire, aides du tiroir et de la recherche. L'état vide d'À confirmer : « Aucune décision en attente. ». Les preuves (`evidence`) sont rendues comme du texte, jamais comme des liens. 11. **Pagination** : plage « 26–27 sur 60 » (de `offset + 1` à `offset + éléments affichés`), précédent/suivant par `limit`. 12. **Carte en SVG fait main**, sans dépendance. `viewBox` initial `-1.1 -1.1 2.2 2.2`, zoom 1 à 8 par facteur 2 (boutons, molette), `viewBox` arrondi à 4 décimales. La fenêtre est bornée à la carte entière (centre recadré). Au-delà du brief : glisser pour se déplacer quand le zoom est supérieur à 1 (sans cela le zoom est inutilisable sur 2 000 points), molette centrée sur le curseur, et un point qui reçoit le focus clavier hors de la fenêtre la recentre sur lui. Un glissement de plus de 4 px n'ouvre pas le point sous le curseur. 13. **Accessibilité de la carte** : `<svg role="group" aria-label>`, chaque point `role="button"`, `tabIndex=0`, `aria-label="{titre} ({type})"`, Entrée et Espace ouvrent, `<title>` pour l'infobulle. Rayon en unités de carte divisé par le zoom : taille d'écran constante. Seule animation : un fondu du contour (150 ms) sous `motion-safe:`. Légende : les six types via `KindBadge` (nom écrit, jamais la couleur seule). `touch-action` vaut `pan-y` au zoom 1 (le défilement de la page reste possible au doigt) et `none` quand on zoome. 14. **Molette** : écouteur natif `{ passive: false }` posé dans un effet (React attache `wheel` en mode passif, la page défilerait en même temps). L'état de la fenêtre vit dans `MapCanvas`, monté seulement quand il y a des points, pour que l'écouteur trouve toujours son SVG. 15. **Statistiques** : l'avertissement d'éléments non indexés a deux clés (« {n} élément pas encore indexé » / « {n} éléments pas encore indexés ») au lieu du « (s) » du brief. Pas d'écriture : « Aucune écriture pour l'instant. ». Réindexation : bouton désactivé si la demande est en cours (`reindexPending`) ou si le statut serveur est `queued` ou `running` ; la progression « Réindexation : {done} / {total} » est dans un `role="status"` ; un échec (`failed` avec `error`) s'affiche en `InlineError` et le bouton reste actif pour réessayer. Le lien « Tableau de bord Qdrant » n'est rendu que si l'adresse commence par `http(s)://` (jamais `javascript:`). 16. **Import** : onglets maison (`tablist`, flèches gauche et droite avec focus suivi, un seul onglet dans l'ordre de tabulation), contenu remonté à chaque changement d'onglet (le message de taille disparaît). Contrôle client en courtoisie : extension dans `UPLOAD_EXTENSIONS` (sinon « Type de fichier non pris en charge : PDF, DOCX, Markdown ou texte. », message écrit par nous, le serveur n'en impose pas la forme) puis taille supérieure à 20 Mo (message identique au serveur) ; exactement 20 Mo est accepté. Le champ fichier est vidé après chaque choix pour pouvoir rechoisir le même fichier. L'erreur du serveur (`error`) est rendue en `InlineError` ; `busy` désactive tous les champs et affiche « Import en cours… ». 17. **Liste des documents** : `source_kind` est affiché par une table (`pdf`, `docx`, `markdown`, `text`, `url`, `youtube`, `pasted`) avec repli sur la valeur brute (les valeurs réelles du back ne sont pas encore figées : à ajuster en 2.12 si elles diffèrent). Le message d'erreur du serveur est rendu comme texte. « Déjà appris » seulement si `indexed` et non `learned` ; désactivé si l'id est dans `learningIds` (double clic). 18. **`viewFixtures.ts`** reçoit `mapPoint`, `stats`, `documentRow` (même règle qu'en 2.10). 19. **Tâche 2.12, écrans et chemins** : `memoire` (explorateur), `memoire/carte`, `memoire/banc`, `memoire/documents`, section « Mémoire », libellés « Explorateur », « Carte 2D », « Banc d'essai », « Documents ». L'élément ouvert est dans l'adresse (`?item=<id>`) ; la carte et la recherche y mènent. « Ajouter » ouvre le tiroir en création (état local), puis ouvre l'élément créé. Un `?item=` introuvable affiche l'erreur du serveur avec « Fermer » (réessayer n'y changerait rien). Chaque écran a chargement, erreur avec « Réessayer » et état vide proposant « Importer un document » (`ImportEmptyState`). 20. **Texte collé en JSON, fichier et lien en multipart** : `POST /documents/text` reçoit `{text, title}` (titre vide : `null`), 500 000 caractères au plus, `paste_too_long` affiché tel quel ; `POST /documents` reçoit un `FormData` (`file` ou `url`) avec `bodySerializer: () => form` (openapi-fetch retire alors le `Content-Type` et le navigateur pose la frontière). Le contrat type `file` en `string` (limite d'openapi-typescript) : `body: {}` et le sérialiseur fournit le vrai corps. Une réponse 200 (`duplicate: true`) dit « Ce contenu est déjà dans ta mémoire. » ; 202 vaut un envoi réussi. 21. **Formulaires remis à zéro** (reste de 2.11) : `DocumentUpload` reçoit `resetKey` (compteur d'imports réussis, doublons compris) utilisé comme `key` des formulaires du lien et du texte collé ; un échec garde la saisie, l'onglet courant ne change pas. 22. **Libellés `source_kind`** : le back envoie `pdf`, `docx`, `markdown`, `text`, `url`, `youtube`, `paste` ; la clé `pasted` du front devient `paste` (repli sur la valeur brute conservé). 23. **`toStats`** replie `by_kind` (dictionnaire ouvert dans le contrat) sur les six types, 0 par défaut ; un type inconnu est ignoré, une valeur non numérique vaut 0. 24. **Fusion** : le point d'entrée est `MemoryTable.onMerge` (cocher deux éléments ou plus du même type, hors documents) : aucun ajout au tiroir. La cible est le premier coché, `POST /memory/items/{id}/merge {other_ids}`. Les refus du back (`merge_kind_mismatch`, `merge_document_forbidden`, `merge_pending_forbidden`, `merge_nothing`, `memory_duplicate`) ont déjà un message français : affiché tel quel, sans table de traduction. La sélection se vide au succès. 25. **Invalidation** : toute écriture (créer, modifier, supprimer, confirmer, refuser, fusionner) invalide tout le préfixe `["memory"]` (liste, détail, statistiques, carte, documents) et la mutation attend la relecture. Les éléments supprimés ou fondus sont exclus de cette relecture (prédicat sur la clé du détail) : pas de 404 parasite sur un détail resté ouvert avant la fermeture du tiroir. Les clés ne contiennent jamais de contenu : la recherche est une mutation. 26. **Confirmer = `PATCH {status: "active"}`, refuser = `DELETE`** ; « À confirmer » est une seconde lecture de la liste (`status=pending`, `kind=decision`, 50 au plus), masquée si vide ; ses boutons sont verrouillés pendant l'appel. 27. **Réindexation et export** : « Réindexer » fait `POST /memory/reindex` (202) puis relit les statistiques ; `useMemoryStats` s'interroge toutes les 2 s tant que `reindex.status` vaut `queued` ou `running`, et relit liste et carte quand elle se termine (indicateurs « indexé »). L'export est un lien direct vers `GET /memory/export` (`download`), sans appel de l'application. 28. **Interrogation des documents** : `GET /documents` toutes les 2 s tant qu'un document est `queued` ou `processing`, sinon rien. 29. **« Déjà appris »** : `POST /documents/{id}/learned` (202) donne `session_id` ; `LearnedProgress` suit la session par `useSessionStream` : « L'Archiviste extrait les concepts… » tant qu'elle n'est pas finie, puis « {n} acquis ajouté(s) » (événements `memory.written` dont `status` n'est pas `pending` : une décision proposée attend l'accord de l'utilisateur et n'est pas un acquis ajouté), ou le message de `run.failed` (repli : « L'Archiviste n'a pas pu terminer. »). À la fin, tout `["memory"]` est relu. Le bouton du document est verrouillé pendant l'appel et tant que sa session tourne ; un flux abandonné affiche « Réessayer ». 30. **Filtres de la liste** : une date saisie devient un instant UTC (début du jour local pour « Depuis », fin du jour local pour « Jusqu'au »), le back lisant une date sans fuseau en UTC. Pas d'endpoint des auteurs : la liste propose `user`, `archivist`, les auteurs de la page affichée et le filtre en cours. 31. **Limite de test** : sous jsdom, lire le corps d'une requête qui contient un `File` ne se termine pas (jsdom et undici n'ont pas la même classe `File`) ; les tests de fichier vérifient l'en-tête `multipart/form-data; boundary=` et ceux du lien lisent le corps. `src/test/renderRoutes.tsx` (routeur en mémoire + TanStack Query) et le faux back de `fixtures.ts` (lectures et écritures en mémoire) sont réservés aux tests. 32. **Points du contrat** : `StatsOut.by_kind` ouvert, `Body_create_document.file` typé `string` ; ni `openapi.json` ni `schema.d.ts` modifiés (contournés côté front). 33. **Revue de phase 2, correctifs du front (I1 à I5)** : (a) **I1, modification d'un élément** : le PATCH n'envoie que les champs modifiés (`ItemPatch = Partial<ItemEdit>`, `buildValue` compare le brouillon à `initial`) ; le texte d'un `document` (texte extrait entier, bien au-delà des 20 000 caractères que le back accepte en PATCH) n'est ni affiché ni envoyé : seuls titre et étiquettes s'éditent (`withText=false`), le texte se change en réimportant. (b) **I2, « Déjà appris »** : le back pose `learned` au lancement ; un document indexé et déjà appris montre donc « Relancer » tant qu'aucune session n'est suivie, et une session échouée ou annulée affiche « Relancer » (rappel de `POST /documents/{id}/learned`, sans danger : les acquis écrits sont reconnus). **Pas de reprise du suivi au rechargement** : `SessionView` n'expose ni `subject_id` ni `input` (contrairement à ce que supposait la revue), `GET /sessions?graph=learned_document` ne permet donc pas de rattacher une session à un document ; le contrat n'a pas été modifié. (c) **I3** : `ItemPanel` reçoit une `key` par élément ouvert (ou `new`) : les erreurs d'écriture ne passent pas d'un élément à l'autre. (d) **I4** : quand une suppression ou une fusion vide la dernière page, `ListSection` revient à la dernière page non vide (`lastPageOffset`), et `MemoryTable` garde le pager d'une page vide quand `total > limit`. (e) **I5** : « Fusionner » ouvre une confirmation en ligne (`MergeConfirm`, jamais `window.confirm`) et le bouton comme les cases sont verrouillés pendant l'appel (`merging`). Textes dans `messages/memory.ts`.
-- **Raison** : composants présentationnels écrits avant le contrat d'API (D34) ; points de la tâche 2.12 (19 à 32) ajoutés à la suite.
+- **Date** 2026-11-11
+- **Subject** Phase 2, tasks 2.10 to 2.12: memory screens (components, map, import, pages)
+- **Decision**
+  1. **Colors by type**: `document #3d5a99` (blue), `acquis #1b7e3b` (green), `lecon #8a5a00`
+     (ochre), `source #00798a` (teal), `offre #b4461f` (rust), `decision #8a2ea8` (purple). Six
+     distinct colors, each AA (>= 4.5:1) on #FAFAF7, verified by test. Color is never the only
+     signal: `KindBadge` always writes the type's name. The map (2.11) will reuse `KIND_COLORS`.
+  2. **Merge rule on the interface side** (`mergeRule.canMerge`): active only if at least 2 items
+     are checked, of the same type, none a `document`. The target is the first one checked
+     (`selected[0]`), the others are `otherIds`. A selection that contains an item absent from the
+     current page disables the merge (unknown type, no blind merge). The backend remains the
+     authority.
+  3. **Non-blocking drawer**: `role="dialog"` without `aria-modal` or veil, the list behind stays
+     usable. Initial focus on the title (`h2` `tabIndex=-1`), refocused on each new item (click on a
+     neighbor). Escape closes through a `document` listener (focus may be outside the drawer). No
+     focus trap.
+  4. **Deletion**: inline confirmation in the drawer (`DeleteConfirm`, “Delete permanently?”,
+     buttons “Yes, delete” / “No, keep”, focus on “No, keep”).
+  5. **Editing**: the “being edited” state is tied to the received `item` object. When the parent
+     re-reads the detail after saving (new object), the drawer returns to reading; a failed save
+     leaves the form open with the input. Only `declare` and `en_cours` are editable (SPEC 4.2): the
+     level selector appears only for an acquired skill (creation) or if the item has one of these
+     two levels (editing); otherwise `level: null` (unchanged).
+  6. **Test bench**: `k` is 8 by default, bounded to 1..50 **on submit** (emptied field: 8), and the
+     field is rewritten with the bounded value; `noValidate` on the form so that native validation
+     (message in the browser's language) does not block silently. `agentText` is displayed in a
+     `<pre>` as is, never interpreted. The retained fragments are displayed with their scores
+     (`SearchHitList` without `onOpen`, title as plain text).
+  7. **`SearchHitList.onOpen` is optional** (the test bench does not open an item); a compatible
+     superset of the task's contract.
+  8. **`formatScore`** lives in `formatScore.ts` (and not in `authorLabel.ts`), `toFixed(2)` with a
+     comma: deterministic, not depending on ICU. `formatDate.ts` (Intl `fr-FR`) returns an
+     unreadable date as is.
+  9. **`viewFixtures.ts`** in `components/` (and not `src/test/`): `test-support` cannot import
+     `features` (boundaries rule). Never imported by production code.
+  10. **Texts**: `messages/memory.ts` follows `fr.ts`'s rule; labels fixed by the task taken
+     verbatim; additions: “You”, “Previous/Next”, “Cancel”, “Close”, “Edit”, filters, form, drawer
+     and search helpers. The empty state of To confirm: “No pending decisions.” Evidence
+     (`evidence`) is rendered as text, never as links.
+  11. **Pagination**: range “26–27 of 60” (from `offset + 1` to `offset + displayed items`),
+     previous/next by `limit`.
+  12. **Hand-made SVG map**, no dependency. Initial `viewBox` `-1.1 -1.1 2.2 2.2`, zoom 1 to 8 by a
+     factor of 2 (buttons, wheel), `viewBox` rounded to 4 decimals. The window is bounded to the
+     whole map (center clamped). Beyond the brief: drag to pan when zoom is above 1 (without it,
+     zoom is unusable with 2,000 points), wheel centered on the cursor, and a point that receives
+     keyboard focus outside the window recenters it on itself. A drag of more than 4 px does not
+     open the point under the cursor.
+  13. **Map accessibility**: `<svg role="group" aria-label>`, each point `role="button"`,
+     `tabIndex=0`, `aria-label="{title} ({type})"`, Enter and Space open, `<title>` for the tooltip.
+     Radius in map units divided by the zoom: constant screen size. Only animation: an outline fade
+     (150 ms) under `motion-safe:`. Legend: the six types through `KindBadge` (name written, never
+     color alone). `touch-action` is `pan-y` at zoom 1 (page scrolling stays possible by finger) and
+     `none` when zoomed.
+  14. **Wheel**: native `{ passive: false }` listener set in an effect (React attaches `wheel` in
+     passive mode, the page would scroll at the same time). The window state lives in `MapCanvas`,
+     mounted only when there are points, so the listener always finds its SVG.
+  15. **Statistics**: the unindexed-items warning has two keys (“{n} item not indexed yet” / “{n}
+     items not indexed yet”) instead of the brief's “(s)”. No writes: “No writes yet.” Reindexing:
+     button disabled if the request is in progress (`reindexPending`) or if the server status is
+     `queued` or `running`; the progress “Reindexing: {done} / {total}” is in a `role="status"`; a
+     failure (`failed` with `error`) is shown in `InlineError` and the button stays active to retry.
+     The “Qdrant dashboard” link is rendered only if the address starts with `http(s)://` (never
+     `javascript:`).
+  16. **Import**: custom tabs (`tablist`, left and right arrows with tracked focus, a single tab in
+     the tab order), content lifted on every tab change (the size message disappears). Client-side
+     check as a courtesy: extension in `UPLOAD_EXTENSIONS` (otherwise “Unsupported file type: use
+     PDF, DOCX, Markdown or text.”, a message written by us, the server does not impose its form)
+     then size above 20 MB (message identical to the server's); exactly 20 MB is accepted. The file
+     field is cleared after each choice so that the same file can be chosen again. The server's
+     error (`error`) is rendered in `InlineError`; `busy` disables all fields and shows “Import in
+     progress…”.
+  17. **Document list**: `source_kind` is displayed through a table (`pdf`, `docx`, `markdown`,
+     `text`, `url`, `youtube`, `pasted`) with a fallback to the raw value (the backend's real values
+     are not yet fixed: to adjust in 2.12 if they differ). The server's error message is rendered as
+     text. “Already learned” only if `indexed` and not `learned`; disabled if the id is in
+     `learningIds` (double click).
+  18. **`viewFixtures.ts`** receives `mapPoint`, `stats`, `documentRow` (same rule as in 2.10).
+  19. **Task 2.12, screens and paths**: `memoire` (explorer), `memoire/carte`, `memoire/banc`,
+     `memoire/documents`, section “Memory”, labels “Explorer”, “2D map”, “Test bench”, “Documents”.
+     The open item is in the address (`?item=<id>`); the map and the search lead to it. “Add” opens
+     the drawer in creation (local state), then opens the created item. An `?item=` not found shows
+     the server's error with “Close” (retrying would change nothing). Each screen has loading, error
+     with “Retry”, and an empty state offering “Import a document” (`ImportEmptyState`).
+  20. **Pasted text as JSON, file and link as multipart**: `POST /documents/text` receives
+     `{text, title}` (empty title: `null`), 500,000 characters at most, `paste_too_long` displayed
+     as is; `POST /documents` receives a `FormData` (`file` or `url`) with
+     `bodySerializer: () => form` (openapi-fetch then removes the `Content-Type` and the browser
+     sets the boundary). The contract types `file` as `string` (an openapi-typescript limit):
+     `body: {}` and the serializer supplies the real body. A 200 response (`duplicate: true`) says
+     “This content is already in your memory.”; 202 counts as a successful send.
+  21. **Forms reset** (leftover from 2.11): `DocumentUpload` receives `resetKey` (counter of
+     successful imports, duplicates included) used as the `key` of the link and pasted-text forms; a
+     failure keeps the input, the current tab does not change.
+  22. **`source_kind` labels**: the backend sends `pdf`, `docx`, `markdown`, `text`, `url`,
+     `youtube`, `paste`; the front end's `pasted` key becomes `paste` (fallback to the raw value
+     kept).
+  23. **`toStats`** folds `by_kind` (an open dictionary in the contract) onto the six types, 0 by
+     default; an unknown type is ignored, a non-numeric value is 0.
+  24. **Merge**: the entry point is `MemoryTable.onMerge` (check two or more items of the same type,
+     excluding documents): no addition to the drawer. The target is the first one checked,
+     `POST /memory/items/{id}/merge {other_ids}`. The backend's refusals (`merge_kind_mismatch`,
+     `merge_document_forbidden`, `merge_pending_forbidden`, `merge_nothing`, `memory_duplicate`)
+     already have a French message: displayed as is, with no translation table. The selection is
+     cleared on success.
+  25. **Invalidation**: every write (create, edit, delete, confirm, reject, merge) invalidates the
+     whole `["memory"]` prefix (list, detail, statistics, map, documents) and the mutation waits for
+     the re-read. Deleted or merged items are excluded from this re-read (predicate on the detail's
+     key): no stray 404 on a detail left open before the drawer closes. The keys never contain
+     content: the search is a mutation.
+  26. **Confirm = `PATCH {status: "active"}`, reject = `DELETE`**; “To confirm” is a second read of
+     the list (`status=pending`, `kind=decision`, 50 at most), hidden if empty; its buttons are
+     locked during the call.
+  27. **Reindexing and export**: “Reindex” does `POST /memory/reindex` (202) then re-reads the
+     statistics; `useMemoryStats` polls every 2 s while `reindex.status` is `queued` or `running`,
+     and re-reads the list and the map when it ends (“indexed” indicators). The export is a direct
+     link to `GET /memory/export` (`download`), with no call from the application.
+  28. **Polling documents**: `GET /documents` every 2 s while a document is `queued` or
+     `processing`, otherwise nothing.
+  29. **“Already learned”**: `POST /documents/{id}/learned` (202) gives `session_id`;
+     `LearnedProgress` follows the session through `useSessionStream`: “The Archivist is extracting
+     the concepts…” while it is not finished, then “{n} acquired skill(s) added” (`memory.written`
+     events whose `status` is not `pending`: a proposed decision waits for the user's agreement and
+     is not an added acquired skill), or the `run.failed` message (fallback: “The Archivist could
+     not finish.”). At the end, all of `["memory"]` is re-read. The document's button is locked
+     during the call and while its session runs; an abandoned stream shows “Retry”.
+  30. **List filters**: a typed date becomes a UTC instant (start of the local day for “From”, end
+     of the local day for “Until”), since the backend reads a date without a time zone as UTC. No
+     authors endpoint: the list offers `user`, `archivist`, the authors of the displayed page, and
+     the current filter.
+  31. **Test limit**: under jsdom, reading the body of a request that contains a `File` never
+     finishes (jsdom and undici do not have the same `File` class); the file tests check the
+     `multipart/form-data; boundary=` header and the link tests read the body.
+     `src/test/renderRoutes.tsx` (in-memory router + TanStack Query) and the fake backend in
+     `fixtures.ts` (in-memory reads and writes) are reserved for tests.
+  32. **Contract points**: `StatsOut.by_kind` open, `Body_create_document.file` typed `string`;
+     neither `openapi.json` nor `schema.d.ts` modified (worked around on the front-end side).
+  33. **Phase 2 review, front-end fixes (I1 to I5)**: (a) **I1, editing an item**: the PATCH sends
+     only the modified fields (`ItemPatch = Partial<ItemEdit>`, `buildValue` compares the draft with
+     `initial`); the text of a `document` (the whole extracted text, far beyond the 20,000
+     characters the backend accepts in PATCH) is neither displayed nor sent: only title and tags are
+     editable (`withText=false`), and the text is changed by re-importing. (b) **I2, “Already
+     learned”**: the backend sets `learned` at launch; an indexed and already learned document
+     therefore shows “Retry” as long as no session is followed, and a failed or cancelled session
+     shows “Retry” (calls `POST /documents/{id}/learned` again, harmless: the written acquired
+     skills are recognized). **No resumption of tracking on reload**: `SessionView` exposes neither
+     `subject_id` nor `input` (contrary to what the review assumed), so
+     `GET /sessions?graph=learned_document` does not allow attaching a session to a document; the
+     contract was not modified. (c) **I3**: `ItemPanel` receives a `key` per open item (or `new`):
+     write errors do not pass from one item to another. (d) **I4**: when a deletion or a merge
+     empties the last page, `ListSection` goes back to the last non-empty page (`lastPageOffset`),
+     and `MemoryTable` keeps the pager of an empty page when `total > limit`. (e) **I5**: “Merge”
+     opens an inline confirmation (`MergeConfirm`, never `window.confirm`), and the button like the
+     checkboxes are locked during the call (`merging`). Texts in `messages/memory.ts`.
+- **Reason** Presentational components written before the API contract (D34); points of task 2.12
+  (19 to 32) added afterwards.
 
 ## D62
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 2, tâche 2.3 : fournisseurs d'embeddings et de vecteurs, composition injectable
-- **Décision** : 1. `MemoryRepository` (`app/providers/vector/base.py`) est notre port, implémenté avec `qdrant-client` (`QdrantMemoryRepository`) et non avec le `VectorStore` de LangChain : la carte, la réindexation et les statistiques ont besoin des vecteurs bruts, du `scroll` et du filtre `user_id` sur chaque requête. `Embedder` reste un sous-ensemble asynchrone de l'interface `Embeddings` de LangChain (`aembed_documents`, `aembed_query`) : une implémentation LangChain reste substituable. 2. Ollama est appelé par `httpx` sur `POST /api/embed` (`{model, input: [...]}`, réponse `embeddings`), par lots de 16, délai de 60 s, sans SDK (leçon de D26). Délai, connexion, tout statut non 2xx (404 : modèle absent, 5xx), corps non JSON ou mal formé et nombre de vecteurs différent du nombre de textes deviennent `EmbeddingsUnavailable` (`embeddings_unavailable`, 503, message français). Ni le texte envoyé ni le corps de réponse n'entrent dans le message ni dans le journal (type d'exception et statut seulement) ; l'erreur est levée `from None`. L'API tronque d'office un texte trop long (`truncate` vaut vrai par défaut) : sans conséquence pour des fragments d'environ 500 tokens. 3. La collection est créée paresseusement, sous un verrou `asyncio`, à la première opération (lecture ou écriture) : dimension `embedding_dimension` (1 024), distance cosinus, index de payload mot-clé sur `user_id`, `kind` et `item_id`. Le back démarre donc même si Qdrant est arrêté ; `AsyncQdrantClient` est construit avec `check_compatibility=False`, sinon il interroge le serveur dès la construction. 4. **Filtre `user_id` sur chaque requête** : `search`, `delete_items`, `delete_user` et `vectors` le portent ; `similar` lit d'abord le vecteur du fragment par un `scroll` filtré sur `user_id` et l'id (et non `query_points` par id, qui ne filtrerait pas la lecture du vecteur et laisserait un id d'un autre utilisateur servir de requête), puis cherche sous le même filtre en excluant le fragment lui-même et, si demandé, l'élément `exclude_item_id`. `search` avec `kinds` vide ou absent ne filtre pas par type. 5. Toute erreur du client (`httpx.HTTPError`, `UnexpectedResponse`, `ResponseHandlingException`) devient `VectorStoreUnavailable` (`memory_unavailable`, 503) ; une `EmbeddingsUnavailable` passe telle quelle. 6. **Contrainte** : l'id d'un point Qdrant est un entier non signé ou un UUID ; `chunk_id` doit donc être un UUID (`new_id()` en produit). Un point dont le payload ne correspond pas à `ChunkPayload` est ignoré à la lecture. 7. Injection : `create_app(settings, *, memory_providers=)` ; le lifespan pose sur `app.state.memory_providers` les fournisseurs injectés, sinon `bootstrap.memory_providers(settings)` (client httpx de 60 s pour Ollama, `AsyncQdrantClient(url, timeout=10)`, fermés à la sortie, aucune requête à la construction). Il est entré après `build_providers`, dans la même pile : un échec de composition ferme tout. Le contrat d'import 3 interdit désormais aux features, aux agents et au temps réel d'importer `embeddings.ollama`, `embeddings.fake` et `vector.qdrant`. 8. **Tests** : fixture `memory_providers` (`tests/support/memory.py` : `HashingEmbedder(64)` et Qdrant `:memory:` derrière le même port, `make_chunk` pour construire un fragment) passée par `app` et `client_google_mode` : aucune requête de la suite ne peut atteindre Ollama ni Qdrant. Qdrant `:memory:` plutôt qu'un faux magasin écrit à la main : le vrai client exerce les vrais filtres. Le mode local ignore les index de payload et l'avertit : `filterwarnings` l'écarte. Un test `live` (`QDRANT_URL`, collection jetable supprimée à la fin) est marqué `live` et désélectionné par défaut (`-m 'not live'` dans `addopts`) ; il est ignoré sans `QDRANT_URL`. Nouvelles dépendances : `qdrant-client` (1.20) et `numpy` (pour la PCA de la tâche 2.8).
-- **Raison** : SPEC 4.1 (une collection, texte source en SQLite, index reconstructible) et 17.2 (isolation par utilisateur partout) ; revue de la phase : Ollama ou Qdrant arrêtés ne doivent jamais donner de 500 ni empêcher le démarrage.
+- **Date** 2026-11-11
+- **Subject** Phase 2, task 2.3: embedding and vector providers, injectable composition
+- **Decision**
+  1. `MemoryRepository` (`app/providers/vector/base.py`) is our port, implemented with
+     `qdrant-client` (`QdrantMemoryRepository`) and not with LangChain's `VectorStore`: the map,
+     reindexing, and statistics need the raw vectors, `scroll`, and the `user_id` filter on every
+     query. `Embedder` remains an asynchronous subset of LangChain's `Embeddings` interface
+     (`aembed_documents`, `aembed_query`): a LangChain implementation stays substitutable.
+  2. Ollama is called by `httpx` on `POST /api/embed` (`{model, input: [...]}`, response
+     `embeddings`), in batches of 16, 60 s timeout, without an SDK (lesson from D26). Timeout,
+     connection failure, any non-2xx status (404: model absent, 5xx), a non-JSON or malformed body,
+     and a number of vectors different from the number of texts become `EmbeddingsUnavailable`
+     (`embeddings_unavailable`, 503, French message). Neither the text sent nor the response body
+     enters the message or the log (exception type and status only); the error is raised
+     `from None`. The API truncates an overly long text by default (`truncate` is true by default):
+     harmless for chunks of about 500 tokens.
+  3. The collection is created lazily, under an `asyncio` lock, at the first operation (read or
+     write): dimension `embedding_dimension` (1,024), cosine distance, keyword payload index on
+     `user_id`, `kind`, and `item_id`. The backend therefore starts even if Qdrant is stopped;
+     `AsyncQdrantClient` is built with `check_compatibility=False`, otherwise it queries the server
+     at construction.
+  4. **`user_id` filter on every query**: `search`, `delete_items`, `delete_user`, and `vectors`
+     carry it; `similar` first reads the chunk's vector through a `scroll` filtered on `user_id` and
+     the id (and not `query_points` by id, which would not filter the vector read and would let
+     another user's id serve as a query), then searches under the same filter excluding the chunk
+     itself and, if requested, the `exclude_item_id` item. `search` with empty or absent `kinds`
+     does not filter by type.
+  5. Any client error (`httpx.HTTPError`, `UnexpectedResponse`, `ResponseHandlingException`) becomes
+     `VectorStoreUnavailable` (`memory_unavailable`, 503); an `EmbeddingsUnavailable` passes through
+     as is.
+  6. **Constraint**: a Qdrant point's id is an unsigned integer or a UUID; `chunk_id` must therefore
+     be a UUID (`new_id()` produces one). A point whose payload does not match `ChunkPayload` is
+     ignored on read.
+  7. Injection: `create_app(settings, *, memory_providers=)`; the lifespan sets the injected
+     providers on `app.state.memory_providers`, otherwise `bootstrap.memory_providers(settings)` (60
+     s httpx client for Ollama, `AsyncQdrantClient(url, timeout=10)`, closed on exit, no request at
+     construction). It is entered after `build_providers`, in the same stack: a composition failure
+     closes everything. Import contract 3 now forbids features, agents, and real-time from importing
+     `embeddings.ollama`, `embeddings.fake`, and `vector.qdrant`.
+  8. **Tests**: `memory_providers` fixture (`tests/support/memory.py`: `HashingEmbedder(64)` and
+     Qdrant `:memory:` behind the same port, `make_chunk` to build a chunk) passed through `app` and
+     `client_google_mode`: no request in the suite can reach Ollama or Qdrant. Qdrant `:memory:`
+     rather than a hand-written fake store: the real client exercises the real filters. Local mode
+     ignores payload indexes and warns about it: `filterwarnings` dismisses the warning. A `live`
+     test (`QDRANT_URL`, throwaway collection deleted at the end) is marked `live` and deselected by
+     default (`-m 'not live'` in `addopts`); it is skipped without `QDRANT_URL`. New dependencies:
+     `qdrant-client` (1.20) and `numpy` (for task 2.8's PCA).
+- **Reason** SPEC 4.1 (one collection, source text in SQLite, rebuildable index) and 17.2 (per-user
+  isolation everywhere); phase review: Ollama or Qdrant stopped must never give a 500 or prevent
+  startup.
 
 ## D63
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 2, tâche 2.4 : stockage local, extraction PDF, lecture sûre du web, YouTube
-- **Décision** : 1. **Lecteur web minimal avancé de la phase 3** : garde SSRF, plafonds et `trafilatura` dès maintenant (`app/providers/web/`) ; la phase 3 l'étend (cache, débit par domaine, repli Gotenberg, GitHub, arXiv) sans changer les ports `WebFetcher`, `WebReader`, `YoutubeTranscripts`. 2. **Politique SSRF** (`SafeHttpFetcher`), sous un délai unique de 15 s (`asyncio.timeout`, résolution et redirections comprises) : (a) `http`/`https` seulement, hôte présent, aucun identifiant ; l'URL est analysée une fois par `httpx.URL` et c'est cet objet qui part (aucun écart d'analyse entre la garde et le client) ; (b) une adresse littérale est jugée telle quelle, sans résolution ; un nom l'est sur **toutes** ses adresses (`loop.getaddrinfo`), une seule non publique suffit à refuser ; résolution impossible ou vide → « Page injoignable. » ; nom refusé par le codec IDNA (`a..b`, label de plus de 63 caractères, `UnicodeError`) → `UrlForbidden` (correctif de revue M3 : c'était une 500) ; (c) `is_public_address` : `is_global` et pas multicast ; une IPv6 qui porte une IPv4 (mappée `::ffff:0:0/96`, NAT64 `64:ff9b::/96`, 6to4 `2002::/16`) est jugée sur cette IPv4 ; toute autre IPv6 doit en plus être unicast globale (`2000::/3`, correctif M4) : site-local `fec0::/10`, traduite `::ffff:0:0:0/96`, compatible `::/96`, NAT64 local `64:ff9b:1::/48` refusées ; Teredo refusé. Au-delà du brief : sous Python 3.12, `::127.0.0.1`, `64:ff9b::a00:1` et `ff02::1` sont `is_global` ; (d) redirections 301, 302, 303, 307, 308 suivies à la main (5 au plus, la 6e → « Page injoignable : trop de redirections. »), chaque cible repasse par (a) et (b) ; 3xx sans `Location`, 304 et tout statut non 2xx → « Page injoignable. » ; (e) **connexion sur l'adresse validée** (correctif de revue I1, rebinding DNS) : httpcore résolvait de nouveau l'hôte dans `connect_tcp`, et un DNS à TTL nul (public puis 127.0.0.1) recevait le GET avant tout contrôle. `GuardedTransport` (`web/transport.py`, un `httpx.AsyncHTTPTransport` dont le pool `httpcore.AsyncConnectionPool` reçoit `network_backend=GuardedBackend(resolve)`) résout avec le résolveur injecté, refuse si une adresse n'est pas publique (`AddressRefused`, rendue en `UrlForbidden`) et se connecte à l'**adresse** validée, chacune à son tour ; aucune seconde résolution. TLS reste vérifié sur le nom (httpcore passe `server_hostname=origin.host` à `start_tls`), l'en-tête `Host` est inchangé ; sockets Unix refusées, aucun proxy. Test : un DNS qui change d'avis entre la vérification et la connexion ne délivre **aucune** requête au serveur local. Remplacer `_pool` d'httpx est un détail interne d'httpx 0.28 : à revérifier à chaque montée de version (le test de rebinding échouerait). `_check_host` et le contrôle de l'adresse réellement connectée (`network_stream.get_extra_info("server_addr")`, httpcore 1.0.9) restent en défense en profondeur ; un test sur une vraie connexion en boucle locale prouve que ce dernier refuse 127.0.0.1 même sans le transport gardé. (f) client dédié (`bootstrap._reader_http`) : `follow_redirects=False`, `trust_env=False` (aucun proxy de l'environnement), `timeout=httpx.Timeout(15)`, et **aucun cookie retenu** (`refuse_all_cookies`, ajout : le client est partagé entre utilisateurs). 3. **Plafond de 20 Mo aussi pour les URL**, comme l'import : `Content-Length` déclaré au-delà → refus avant lecture ; sinon compté en flux. Écart avec la doc httpx suivi : `httpx` décompresse sans limite par morceau (bombe gzip, brotli ou zstd), donc le corps est lu brut (`aiter_raw`) et décompressé par `zlib` avec `max_length` (`web/_body.py`) ; octets reçus **et** décodés plafonnés. `Accept-Encoding: gzip, deflate` ; tout autre codage (`br`, `zstd`, empilés) → 415 ; deflate brut (sans enveloppe zlib) → illisible. Types acceptés : `text/html`, `application/xhtml+xml`, `text/plain`, `text/markdown`, `application/pdf` (paramètres ignorés, casse ignorée), absent → 415. Flux gzip ou deflate tronqué (fin de flux absente) ou suivi de données → illisible (correctif M8). Erreurs `url_forbidden` 422, `url_too_large` 413, `url_unsupported_content` 415, `url_unreadable` 422 ; messages fixes, jamais l'URL ni l'hôte, levées `from None` (la chaîne d'exceptions citerait l'URL dans un journal). `trafilatura` ne reçoit jamais l'URL (il la recopie dans ses journaux). **Journaux des bibliothèques** (correctifs I2 et M7, `configure_logging`) : `httpx` et `httpcore` en WARNING (httpx écrivait « HTTP Request: GET <URL complète> » en INFO à chaque requête et redirection, appels LLM de la phase 1 compris ; rien ne s'appuyait sur ces lignes), `pdfminer`, `trafilatura` et `htmldate` en ERROR (leurs avertissements citent des fragments de document). 4. **YouTube** : `youtube-transcript-api` 1.2.5 (`YouTubeTranscriptApi().fetch(video_id, languages=("fr", "en"))`, conforme à la doc 1.x), appelée dans un thread sous 15 s, avec une `requests.Session` à nous (`BoundedSession` : délai par défaut `(5, 10)` sur chaque requête, sinon le thread restait bloqué au-delà des 15 s, et `trust_env=False`, correctif M5), avec un identifiant validé (`^[A-Za-z0-9_-]{11}$`, hôtes `youtube.com`, `www.`, `m.`, `youtu.be` seulement, formes `watch?v=`, `youtu.be/<id>`, `/shorts/<id>`, `/embed/<id>`) : la bibliothèque n'appelle que YouTube. Toute erreur (désactivée, absente, bloquée, réseau, délai) mène au repli : la page `https://www.youtube.com/watch?v=<id>` lue par **notre** lecteur. **Écart de port** : `WebReader.read(url, *, require_text=True)` ; YouTube passe `require_text=False`, sinon la règle « texte < 200 caractères → illisible » rendait le repli toujours vain (une page YouTube n'a pas de texte principal). Le repli exige une description (texte = titre + description) ; ni transcription ni description → `url_unreadable` « Vidéo illisible : ni transcription ni description disponibles. ». Une transcription réussie lit aussi la page pour le titre, au mieux (échec → titre nul). Lien non YouTube → `url_unreadable` « Lien YouTube non reconnu. », sans aucun appel. 5. **PDF** : `pdfplumber` 0.11.10 dans un thread ; 500 pages au plus (paramètre `pages` : les suivantes ne sont pas construites), texte tronqué à 2 000 000 caractères (lecture arrêtée dès le plafond atteint) ; toute erreur → `pdf_unreadable` 422 (journal : type d'exception seul). **Risque accepté (revue M6)** : un PDF piégé peut faire décompresser sans limite ses flux Flate par pdfminer (déni de service mémoire et temps CPU dans un thread qu'on ne peut pas interrompre) ; le plafond de 20 Mo du fichier ne borne pas la taille décompressée. Atténuation prévue au plus tard avec le repli Gotenberg de la phase 3 : extraction dans un sous-processus avec un délai réel (environ 60 s) et `RLIMIT_AS` sous POSIX. Le lecteur web applique le même plafond de caractères au texte des pages. 6. **DOCX** traité dans sa source (2.7) par `python-docx` : lecture locale, pas un service externe ; la garde contre les bombes zip (`DOCX_MAX_UNCOMPRESSED`) est celle de 2.7 (`test_docx_zip_bomb_rejected`), rien ici. 7. **Stockage** (`LocalFileStorage(settings.storage_dir)`) : clé générée `<user_id>/<catégorie>/<uuid4><suffixe>` (`user_id` `^[A-Za-z0-9-]{1,64}$`, catégorie `^[a-z_]{1,32}$`, suffixe parmi `.pdf`, `.docx`, `.md`, `.txt`), nom reçu jamais utilisé ; lecture et suppression : `read(user_id, key)` et `delete(user_id, key)` (défense en profondeur, revue) refusent une clé qui ne commence pas par `<user_id>/` ; puis double garde, la clé doit avoir **exactement** la forme générée (aucun `..`, `\`, chemin absolu, lecteur, octet nul) **et** son chemin résolu (liens suivis) rester sous la racine résolue (`is_relative_to`) ; `storage_key_invalid` 400 « Chemin de fichier refusé. » ; écriture atomique (fichier temporaire du même dossier puis `os.replace`, temporaire supprimé en cas d'échec) ; suppression idempotente ; lecture d'une clé absente : `FileNotFoundError` (à l'appelant). 8. **Composition** : `MemoryProviders` reçoit `storage`, `pdf`, `web`, `youtube` ; contrat d'import 3 étendu à `storage.local`, `pdf.extract`, `web.fetch`, `web._body`, `web.reader`, `web.youtube` (`web.transport`, ajouté par le correctif, est à y inscrire : `pyproject.toml` était hors du périmètre du correctif). Tests sans réseau : résolveur injecté, `httpx.MockTransport` (corps en flux : `httpx.Response(content=bytes)` est déjà lu et refuserait `aiter_raw`), `FakeWebReader` et `FakeYoutube` dans `tests/support/memory.py`, stockage réel sous `tmp_path`, extracteur PDF réel sur `scripts/sample_pdf.make_pdf`. Nouvelles dépendances : `pdfplumber`, `trafilatura` (2.3.1), `youtube-transcript-api`.
-- **Raison** : SPEC 10.2 (15 s), 13.1 (dossier par utilisateur), 17.2 (journaux sans contenu ni URL) et 17.4 (lecture d'URL : SSRF) ; une URL fournie par l'utilisateur ne doit jamais permettre d'atteindre le réseau local, le service de métadonnées du cloud ni épuiser la mémoire.
+- **Date** 2026-11-11
+- **Subject** Phase 2, task 2.4: local storage, PDF extraction, safe web reading, YouTube
+- **Decision**
+  1. **Minimal web reader brought forward from phase 3**: SSRF guard, caps, and `trafilatura` now
+     (`app/providers/web/`); phase 3 extends it (cache, per-domain rate, Gotenberg fallback, GitHub,
+     arXiv) without changing the `WebFetcher`, `WebReader`, and `YoutubeTranscripts` ports.
+  2. **SSRF policy** (`SafeHttpFetcher`), under a single 15 s timeout (`asyncio.timeout`, resolution
+     and redirects included): (a) `http`/`https` only, host present, no credentials; the URL is
+     parsed once by `httpx.URL` and that object is what is sent (no parsing difference between the
+     guard and the client); (b) a literal address is judged as is, without resolution; a name is
+     judged on **all** its addresses (`loop.getaddrinfo`), a single non-public one is enough to
+     refuse; resolution impossible or empty → “Page unreachable.”; a name refused by the IDNA codec
+     (`a..b`, a label longer than 63 characters, `UnicodeError`) → `UrlForbidden` (review fix M3: it
+     was a 500); (c) `is_public_address`: `is_global` and not multicast; an IPv6 that carries an
+     IPv4 (mapped `::ffff:0:0/96`, NAT64 `64:ff9b::/96`, 6to4 `2002::/16`) is judged on that IPv4;
+     any other IPv6 must additionally be global unicast (`2000::/3`, fix M4): site-local
+     `fec0::/10`, translated `::ffff:0:0:0/96`, compatible `::/96`, local NAT64 `64:ff9b:1::/48`
+     refused; Teredo refused. Beyond the brief: under Python 3.12, `::127.0.0.1`, `64:ff9b::a00:1`,
+     and `ff02::1` are `is_global`; (d) redirects 301, 302, 303, 307, 308 followed by hand (5 at
+     most, the 6th → “Page unreachable: too many redirects.”), each target goes back through (a) and
+     (b); 3xx without `Location`, 304, and any non-2xx status → “Page unreachable.”; (e)
+     **connection to the validated address** (review fix I1, DNS rebinding): httpcore resolved the
+     host again in `connect_tcp`, and a zero-TTL DNS (public, then 127.0.0.1) received the GET
+     before any check. `GuardedTransport` (`web/transport.py`, an `httpx.AsyncHTTPTransport` whose
+     `httpcore.AsyncConnectionPool` pool receives `network_backend=GuardedBackend(resolve)`)
+     resolves with the injected resolver, refuses if an address is not public (`AddressRefused`,
+     rendered as `UrlForbidden`), and connects to the validated **address**, each in turn; no second
+     resolution. TLS is still verified on the name (httpcore passes `server_hostname=origin.host` to
+     `start_tls`), the `Host` header is unchanged; Unix sockets refused, no proxy. Test: a DNS that
+     changes its mind between the check and the connection delivers **no** request to the local
+     server. Replacing httpx's `_pool` is an internal detail of httpx 0.28: to recheck at each
+     version upgrade (the rebinding test would fail). `_check_host` and the check of the really
+     connected address (`network_stream.get_extra_info("server_addr")`, httpcore 1.0.9) remain as
+     defense in depth; a test on a real loopback connection proves that the latter refuses 127.0.0.1
+     even without the guarded transport. (f) dedicated client (`bootstrap._reader_http`):
+     `follow_redirects=False`, `trust_env=False` (no proxy from the environment),
+     `timeout=httpx.Timeout(15)`, and **no cookie retained** (`refuse_all_cookies`, addition: the
+     client is shared between users).
+  3. **20 MB cap for URLs too**, like the import: a declared `Content-Length` above it → refusal
+     before reading; otherwise counted while streaming. Deviation from the httpx docs followed:
+     `httpx` decompresses without a per-chunk limit (gzip, brotli, or zstd bomb), so the body is
+     read raw (`aiter_raw`) and decompressed by `zlib` with `max_length` (`web/_body.py`); bytes
+     received **and** decoded are capped. `Accept-Encoding: gzip, deflate`; any other encoding
+     (`br`, `zstd`, stacked) → 415; raw deflate (without a zlib wrapper) → unreadable. Accepted
+     types: `text/html`, `application/xhtml+xml`, `text/plain`, `text/markdown`, `application/pdf`
+     (parameters ignored, case ignored), absent → 415. A truncated gzip or deflate stream (missing
+     end of stream) or one followed by data → unreadable (fix M8). Errors `url_forbidden` 422,
+     `url_too_large` 413, `url_unsupported_content` 415, `url_unreadable` 422; fixed messages, never
+     the URL or the host, raised `from None` (the exception chain would quote the URL in a log).
+     `trafilatura` never receives the URL (it copies it into its logs). **Library logs** (fixes I2
+     and M7, `configure_logging`): `httpx` and `httpcore` at WARNING (httpx wrote “HTTP Request: GET
+     <full URL>” at INFO on every request and redirect, phase 1 LLM calls included; nothing relied
+     on these lines), `pdfminer`, `trafilatura`, and `htmldate` at ERROR (their warnings quote
+     document fragments).
+  4. **YouTube**: `youtube-transcript-api` 1.2.5 (`YouTubeTranscriptApi().fetch(video_id,
+     languages=("fr", "en"))`, conforming to the 1.x docs), called in a thread under 15 s, with a
+     `requests.Session` of our own (`BoundedSession`: default timeout `(5, 10)` on every request,
+     otherwise the thread stayed blocked beyond the 15 s, and `trust_env=False`, fix M5), with a
+     validated identifier (`^[A-Za-z0-9_-]{11}$`, hosts `youtube.com`, `www.`, `m.`, `youtu.be`
+     only, forms `watch?v=`, `youtu.be/<id>`, `/shorts/<id>`, `/embed/<id>`): the library calls only
+     YouTube. Any error (disabled, absent, blocked, network, timeout) leads to the fallback: the
+     page `https://www.youtube.com/watch?v=<id>` read by **our** reader. **Port deviation**:
+     `WebReader.read(url, *, require_text=True)`; YouTube passes `require_text=False`, otherwise the
+     rule “text < 200 characters → unreadable” made the fallback always futile (a YouTube page has
+     no main text). The fallback requires a description (text = title + description); neither
+     transcript nor description → `url_unreadable` “Unreadable video: neither transcript nor
+     description available.”. A successful transcript also reads the page for the title, on a
+     best-effort basis (failure → null title). A non-YouTube link → `url_unreadable` “YouTube link
+     not recognized.”, with no call at all.
+  5. **PDF**: `pdfplumber` 0.11.10 in a thread; 500 pages at most (`pages` parameter: the following
+     ones are not built), text truncated to 2,000,000 characters (reading stops as soon as the cap
+     is reached); any error → `pdf_unreadable` 422 (log: exception type only). **Accepted risk
+     (review M6)**: a booby-trapped PDF can make pdfminer decompress its Flate streams without limit
+     (memory and CPU denial of service in a thread that cannot be interrupted); the file's 20 MB cap
+     does not bound the decompressed size. Mitigation planned by the Gotenberg fallback of phase 3
+     at the latest: extraction in a subprocess with a real timeout (about 60 s) and `RLIMIT_AS`
+     under POSIX. The web reader applies the same character cap to page text.
+  6. **DOCX** handled in its source (2.7) by `python-docx`: local reading, not an external service;
+     the zip-bomb guard (`DOCX_MAX_UNCOMPRESSED`) is the one from 2.7
+     (`test_docx_zip_bomb_rejected`), nothing here.
+  7. **Storage** (`LocalFileStorage(settings.storage_dir)`): generated key
+     `<user_id>/<category>/<uuid4><suffix>` (`user_id` `^[A-Za-z0-9-]{1,64}$`, category
+     `^[a-z_]{1,32}$`, suffix among `.pdf`, `.docx`, `.md`, `.txt`), the received name never used;
+     reading and deletion: `read(user_id, key)` and `delete(user_id, key)` (defense in depth,
+     review) refuse a key that does not start with `<user_id>/`; then a double guard, the key must
+     have **exactly** the generated shape (no `..`, `\`, absolute path, drive, null byte) **and**
+     its resolved path (links followed) must stay under the resolved root (`is_relative_to`);
+     `storage_key_invalid` 400 “File path rejected.”; atomic write (temporary file in the same
+     folder then `os.replace`, temporary file deleted on failure); idempotent deletion; reading an
+     absent key: `FileNotFoundError` (left to the caller).
+  8. **Composition**: `MemoryProviders` receives `storage`, `pdf`, `web`, `youtube`; import contract
+     3 extended to `storage.local`, `pdf.extract`, `web.fetch`, `web._body`, `web.reader`,
+     `web.youtube` (`web.transport`, added by the fix, must be listed there: `pyproject.toml` was
+     outside the fix's scope). Tests without network: injected resolver, `httpx.MockTransport`
+     (streamed bodies: `httpx.Response(content=bytes)` is already read and would refuse
+     `aiter_raw`), `FakeWebReader` and `FakeYoutube` in `tests/support/memory.py`, real storage
+     under `tmp_path`, real PDF extractor on `scripts/sample_pdf.make_pdf`. New dependencies:
+     `pdfplumber`, `trafilatura` (2.3.1), `youtube-transcript-api`.
+- **Reason** SPEC 10.2 (15 s), 13.1 (one folder per user), 17.2 (logs without content or URLs), and
+  17.4 (URL reading: SSRF); a URL supplied by the user must never allow reaching the local network
+  or the cloud metadata service, nor exhaust memory.
 
 ## D64
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 2, tâche 2.5 : tables de la mémoire, repositories, découpage du texte
-- **Décision** : (1) **Schéma** (migration `0003`, `app/db/models/memory.py`) : `documents` (nom d'affichage nettoyé, jamais un chemin ; `source_kind`, `status` `queued|processing|indexed|error`, `url`, `storage_key`, `size_bytes`, `source_hash`, `item_id` vers `memory_items` en `SET NULL`, `learned`, `error` `{code, message}` ; unique `(user_id, source_hash)`, index `(user_id, status)`), `memory_items` (`kind`, `title`, `text`, `tags`, `created_by`, `session_id`, `source_id`, `lang`, `status` `active|pending`, `meta`, `content_hash`, `indexed_at` ; unique `(user_id, content_hash)`, index `(user_id, kind)` et `(user_id, status)`), `memory_chunks` (`item_id` en `CASCADE`, `ordinal`, `text`, `token_count` ; unique `(item_id, ordinal)`) et `memory_writes` (journal, `item_id` **sans clé étrangère** et `item_title` copié : la ligne survit à l'élément). **`memory_chunks.id` est l'identifiant du point Qdrant** (13.4) : un UUID, comme l'exige Qdrant (D62 §6). Remplacer les fragments d'un élément donne de nouveaux `id` : l'appelant renouvelle aussi les points. Les trois contraintes d'unicité gardent le nom de la convention de `Base` (`uq_documents_user_id`, `uq_memory_items_user_id`, `uq_memory_chunks_item_id`), les index composés un nom explicite. Les types partagés avec `app.agents` (`MemoryKind`, `MEMORY_KINDS`, `MasteryLevel`, `MASTERY_ORDER`, `ItemStatus`, `DocumentSourceKind`, `DocumentStatus`, `WriteAction`, `USER_AUTHOR`) vivent dans le module de modèles : `app.agents` ne peut pas importer une feature (contrat 6). (2) **Niveau, preuves et raison** dans `memory_items.meta` (`level`, `evidence`, `reason`), pas en colonnes : D6 reste vrai, `user_skills` fera foi en phase 4 et l'acquis en sera le reflet. (3) **`pending`** : statut de la boîte « À confirmer » (décision proposée par un agent) ; `ItemFilter.status` vaut `active` par défaut, donc une liste ordinaire ne montre jamais un élément en attente. (4) **Hash par utilisateur** : `source_hash` (sha256 des octets) et `content_hash` (sha256 de `{kind}\n{texte normalisé}`, casse et espaces ignorés) ne s'imposent qu'à l'intérieur d'un utilisateur ; un **acquis se dédoublonne par son titre**, les autres types par leur texte. (5) **Tokens approchés** par `\w+|[^\w\s]` : pas de tokenizer bge-m3 en dépendance ; fenêtres de 500 tokens, pas de 440 (recouvrement 60), arrêt quand la fenêtre atteint la fin ; le texte d'un fragment est une tranche du texte d'origine, du début du premier token à la fin du dernier. `chunk_text` refuse `size <= 0` ou `overlap` hors de `0..size-1` (`ValueError`). (6) **Journal pour toutes les écritures**, y compris celles de January (auteur `user`, `USER_AUTHOR`) ; `reason` est tronquée à 300 caractères. (7) **Deuxième lecture sans `user_id`** : `list_documents_to_resume(db)` rend `(user_id, document_id)` des documents `queued` ou `processing` de tous les utilisateurs, pour la reprise au démarrage (exception à D18, après `list_sessions_to_recover`) ; elle est réservée au démarrage, sa docstring le dit. **Écarts et précisions** : (a) `ChunkRepository.replace_for_item` type ses fragments par un `Protocol` (`ChunkDraftLike`, déclaré côté repository) et non par `service.text.ChunkDraft` : le contrat 1a interdit à la couche repository d'importer la couche service, le typage structurel relie les deux (un `ChunkDraft` convient). (b) `since` et `until` de `ItemFilter` bornent `created_at` de façon inclusive (`>=`, `<=`). (c) Le filtre par étiquette est exact (`json_each(tags)` de SQLite, pas une recherche de sous-chaîne). (d) `clear_indexed` ne touche que `indexed_at` : `updated_at` est conservé, une réindexation n'est pas une modification de l'élément. (e) `clean_text` retire aussi les blancs de début et de fin du texte entier, et traite l'espace fine insécable (`U+202F`) et l'espace chiffre (`U+2007`) comme l'espace insécable. (f) `display_name` ignore un segment final vide (`dossier/` donne `dossier`).
-- **Raison** : SPEC 4.1 à 4.3 (texte source en SQLite, index reconstructible, hash anti doublon, fragments d'environ 500 tokens) et 17.2 (filtre `user_id` partout) ; le journal doit survivre à la suppression pour répondre à « que savent les agents sur moi ? ».
+- **Date** 2026-11-11
+- **Subject** Phase 2, task 2.5: memory tables, repositories, text chunking
+- **Decision**
+  1. **Schema** (migration `0003`, `app/db/models/memory.py`): `documents` (cleaned display name,
+     never a path; `source_kind`, `status` `queued|processing|indexed|error`, `url`, `storage_key`,
+     `size_bytes`, `source_hash`, `item_id` to `memory_items` with `SET NULL`, `learned`, `error`
+     `{code, message}`; unique `(user_id, source_hash)`, index `(user_id, status)`), `memory_items`
+     (`kind`, `title`, `text`, `tags`, `created_by`, `session_id`, `source_id`, `lang`, `status`
+     `active|pending`, `meta`, `content_hash`, `indexed_at`; unique `(user_id, content_hash)`,
+     indexes `(user_id, kind)` and `(user_id, status)`), `memory_chunks` (`item_id` with `CASCADE`,
+     `ordinal`, `text`, `token_count`; unique `(item_id, ordinal)`), and `memory_writes` (log,
+     `item_id` **without a foreign key** and `item_title` copied: the row survives the item).
+     **`memory_chunks.id` is the Qdrant point's identifier** (13.4): a UUID, as Qdrant requires (D62
+     §6). Replacing an item's chunks gives new `id` values: the caller also renews the points. The
+     three uniqueness constraints keep the name from `Base`'s convention (`uq_documents_user_id`,
+     `uq_memory_items_user_id`, `uq_memory_chunks_item_id`), the composite indexes an explicit name.
+     The types shared with `app.agents` (`MemoryKind`, `MEMORY_KINDS`, `MasteryLevel`,
+     `MASTERY_ORDER`, `ItemStatus`, `DocumentSourceKind`, `DocumentStatus`, `WriteAction`,
+     `USER_AUTHOR`) live in the models module: `app.agents` cannot import a feature (contract 6).
+  2. **Level, evidence, and reason** in `memory_items.meta` (`level`, `evidence`, `reason`), not as
+     columns: D6 remains true, `user_skills` will be authoritative in phase 4 and the acquired skill
+     will be its reflection.
+  3. **`pending`**: status of the “To confirm” inbox (decision proposed by an agent);
+     `ItemFilter.status` is `active` by default, so an ordinary list never shows a pending item.
+  4. **Per-user hash**: `source_hash` (sha256 of the bytes) and `content_hash` (sha256 of
+     `{kind}\n{normalized text}`, case and spaces ignored) apply only within one user; an **acquired
+     skill is deduplicated by its title**, the other types by their text.
+  5. **Approximate tokens** by `\w+|[^\w\s]`: no bge-m3 tokenizer as a dependency; windows of 500
+     tokens, step of 440 (overlap 60), stop when the window reaches the end; a chunk's text is a
+     slice of the original text, from the start of the first token to the end of the last.
+     `chunk_text` refuses `size <= 0` or an `overlap` outside `0..size-1` (`ValueError`).
+  6. **Log for all writes**, including January's (author `user`, `USER_AUTHOR`); `reason` is
+     truncated to 300 characters.
+  7. **Second read without `user_id`**: `list_documents_to_resume(db)` returns
+     `(user_id, document_id)` for the `queued` or `processing` documents of all users, for resuming
+     at startup (exception to D18, after `list_sessions_to_recover`); it is reserved for startup,
+     its docstring says so.
+
+     **Deviations and clarifications**: (a) `ChunkRepository.replace_for_item` types its chunks with
+     a `Protocol` (`ChunkDraftLike`, declared on the repository side) and not with
+     `service.text.ChunkDraft`: contract 1a forbids the repository layer from importing the service
+     layer, and structural typing links the two (a `ChunkDraft` fits). (b) `since` and `until` of
+     `ItemFilter` bound `created_at` inclusively (`>=`, `<=`). (c) The tag filter is exact (SQLite's
+     `json_each(tags)`, not a substring search). (d) `clear_indexed` touches only `indexed_at`:
+     `updated_at` is kept, a reindexing is not a modification of the item. (e) `clean_text` also
+     removes leading and trailing whitespace from the whole text, and treats the narrow no-break
+     space (`U+202F`) and the figure space (`U+2007`) like the no-break space. (f) `display_name`
+     ignores an empty final segment (`dossier/` gives `dossier`).
+- **Reason** SPEC 4.1 to 4.3 (source text in SQLite, rebuildable index, anti-duplicate hash, chunks
+  of about 500 tokens) and 17.2 (`user_id` filter everywhere); the log must survive deletion to
+  answer “what do the agents know about me?”.
 
 ## D65
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 2, tâche 2.6 : service mémoire (écriture, indexation, recherche) et API des éléments
-- **Décision** : (1) **Règles d'écriture** (`service/rules.py`, `resolve_write`) : un auteur autre que `user` ne peut pas écrire de `document` (`memory_kind_forbidden`) et doit donner une raison non vide (`memory_reason_required`) ; son acquis est `declare` par défaut et reste `declare` ou `en_cours` (`memory_level_forbidden`) ; sa `decision` naît `pending`, les autres types `active`. L'utilisateur écrit en `active`, sans raison, niveau `declare` ou `en_cours` (`declare` par défaut pour un acquis). Un niveau sur un autre type qu'un acquis est refusé pour tous. Titre tronqué à 200 caractères, texte nettoyé (`clean_text`), étiquettes nettoyées (espaces, vides, doublons, 10 au plus de 40 caractères). (2) **January crée par l'API** (`POST /memory/items`) des `acquis`, `decision` et `offre` (colonne « Écrit par » de 4.2) ; les `lecon` et `source` viennent des agents, les `document` de l'import (`/documents`). Un contenu déjà présent rend l'élément existant (201), comme pour un agent. (3) **Ollama ou Qdrant en panne** : `MemoryIndexer.index_item` garde l'élément (fragments en base, `indexed_at` nul), journalise un avertissement (identifiants seulement) et rend `False` sans exception ; la réindexation (2.8) le rattrape. `unindex` avale la panne du magasin. Un élément `pending` n'est jamais indexé ni découpé. Chaque utilisateur a un verrou d'indexation (`MemoryIndexer.lock`). (4) **Recherche** : l'index ne rend que des identifiants et des scores ; fragments et éléments sont relus en base (texte, titre et auteur font foi) ; un vecteur sans fragment ou sans élément (orphelin) ou dont l'élément est `pending` est écarté ; score borné à 1. Une requête vide ou blanche est refusée par le service (422 `memory_query_empty`, message sans écho) avant toute vectorisation ; la requête est rognée ; `kinds` vide vaut tous les types. Ollama ou Qdrant en panne : 503 lisible (`embeddings_unavailable` ou `memory_unavailable`). (5) **Gabarit `format_for_agent`** (17.4) : en-tête `Mémoire — N fragment(s) pour « requête » :` ou `Mémoire — aucun fragment pour « requête ».`, puis par fragment une ligne `[i] type · titre · auteur x · score 0.83` et le texte encadré par `untrusted(texte, "memoire:<type>")` ; titre, auteur et requête sont ramenés sur une ligne et privés de toute suite de trois `<` ou `>` (un titre de document ne peut pas fermer l'encadrement). (6) **Boîte « À confirmer »** : confirmer une décision = `PATCH {status: "active"}` (journal `confirm`, indexation), la refuser = `DELETE` (journal `reject`) ; aucune route hors 14.2. `PATCH` : un champ absent ou `null` ne change rien ; titre ou texte modifiés donnent un nouveau hash (409 `memory_duplicate` si un autre élément l'a déjà), la réindexation et le journal `update` ; niveau accepté pour un acquis seulement. (7) **Raison de création** gardée dans `meta.reason` (avec `level` et `evidence`) pour l'afficher sans relire le journal. **Précisions** : (a) tout accès à un élément passe par `MemoryService._get` (filtré par `user_id`, 404 `memory_item_not_found` sinon) avant `replace_for_item`, qui ne revérifie pas le propriétaire (D64). (b) `since` et `until` du filtre sont **inclusifs** ; une date sans fuseau est lue en UTC. (c) **SAVEPOINT et pysqlite** : `begin_nested` ouvre, hors transaction, sa propre transaction que sa libération valide, hors de portée d'un `rollback` de la requête (vérifié) ; `MemoryItemRepository.begin_write` ouvre donc la transaction par une écriture sans effet avant l'insertion sous SAVEPOINT (écriture et modification de contenu). Une course sur le hash est tranchée par l'unicité : la perdante relit le gagnant, `created` faux, aucun second journal. (d) `MemoryItemRepository.set_indexed_at` ne touche pas `updated_at` (indexer n'est pas modifier). (e) Voisins d'un élément (`detail`) : `similar()` du premier fragment, 5 résultats, un par élément, titres relus en base ; non indexé ou index en panne : aucun voisin. (f) La suppression d'un document (fichier, ligne `documents`) est ajoutée en 2.7. (g) `MemoryRuntime` (`session_factory`, `providers`, `indexer`) est ouvert par `bootstrap.open_memory_runtime` dans le lifespan, avant le moteur d'agents. (h) L'indexation se fait dans la transaction de la requête : le verrou d'écriture SQLite reste pris pendant la vectorisation (délai d'attente de 5 s pour les autres écrivains).
-- **Raison** : SPEC 4.2, 4.4 et 4.5 (écritures d'agent journalisées, décision à confirmer, niveaux), 4.6 (explorateur), 17.2 (isolation) et 17.4 (contenu importé non fiable) ; revue de phase, points 3 (écriture rejouée), 4 (services en panne) et 5 (document piégé).
+- **Date** 2026-11-11
+- **Subject** Phase 2, task 2.6: memory service (writing, indexing, search) and items API
+- **Decision**
+  1. **Write rules** (`service/rules.py`, `resolve_write`): an author other than `user` cannot write
+     a `document` (`memory_kind_forbidden`) and must give a non-empty reason
+     (`memory_reason_required`); its acquired skill is `declare` by default and stays `declare` or
+     `en_cours` (`memory_level_forbidden`); its `decision` is born `pending`, the other types
+     `active`. The user writes as `active`, without a reason, level `declare` or `en_cours`
+     (`declare` by default for an acquired skill). A level on a type other than an acquired skill is
+     refused for everyone. Title truncated to 200 characters, text cleaned (`clean_text`), tags
+     cleaned (spaces, empties, duplicates, 10 at most of 40 characters).
+  2. **January creates through the API** (`POST /memory/items`) `acquis`, `decision`, and `offre`
+     items (the “Written by” column of 4.2); the `lecon` and `source` items come from the agents,
+     the `document` items from the import (`/documents`). Content already present returns the
+     existing item (201), as for an agent.
+  3. **Ollama or Qdrant down**: `MemoryIndexer.index_item` keeps the item (chunks in the database,
+     `indexed_at` null), logs a warning (identifiers only), and returns `False` without an
+     exception; reindexing (2.8) catches it up. `unindex` swallows the store's outage. A `pending`
+     item is never indexed or chunked. Each user has an indexing lock (`MemoryIndexer.lock`).
+  4. **Search**: the index returns only identifiers and scores; chunks and items are re-read from
+     the database (text, title, and author are authoritative); a vector with no chunk or no item
+     (orphan), or whose item is `pending`, is discarded; score capped at 1. An empty or blank query
+     is refused by the service (422 `memory_query_empty`, message without echo) before any
+     vectorization; the query is trimmed; empty `kinds` means all types. Ollama or Qdrant down:
+     readable 503 (`embeddings_unavailable` or `memory_unavailable`).
+  5. **`format_for_agent` template** (17.4): header `Memory — N chunk(s) for “query”:` or
+     `Memory — no chunk for “query”.`, then for each chunk a line `[i] type · title · author
+     x · score 0.83` and the text framed by `untrusted(text, "memoire:<type>")`; title, author, and
+     query are brought onto one line and stripped of any run of three `<` or `>` (a document title
+     cannot close the framing).
+  6. **“To confirm” inbox**: confirming a decision = `PATCH {status: "active"}` (log `confirm`,
+     indexing), refusing it = `DELETE` (log `reject`); no route outside 14.2. `PATCH`: an absent or
+     `null` field changes nothing; a modified title or text gives a new hash (409 `memory_duplicate`
+     if another item already has it), reindexing, and the `update` log; level accepted for an
+     acquired skill only.
+  7. **Creation reason** kept in `meta.reason` (with `level` and `evidence`) to display it without
+     re-reading the log.
+
+     **Clarifications**: (a) every access to an item goes through `MemoryService._get` (filtered by
+     `user_id`, otherwise 404 `memory_item_not_found`) before `replace_for_item`, which does not
+     recheck the owner (D64). (b) `since` and `until` of the filter are **inclusive**; a date
+     without a time zone is read as UTC. (c) **SAVEPOINT and pysqlite**: `begin_nested` opens,
+     outside a transaction, its own transaction that its release commits, out of reach of a
+     request's `rollback` (verified); `MemoryItemRepository.begin_write` therefore opens the
+     transaction with a no-effect write before the insert under SAVEPOINT (writing and content
+     modification). A race on the hash is decided by the uniqueness constraint: the loser re-reads
+     the winner, `created` false, no second log entry. (d) `MemoryItemRepository.set_indexed_at`
+     does not touch `updated_at` (indexing is not modifying). (e) Neighbors of an item (`detail`):
+     `similar()` of the first chunk, 5 results, one per item, titles re-read from the database; not
+     indexed or index down: no neighbors. (f) Deleting a document (file, `documents` row) is added
+     in 2.7. (g) `MemoryRuntime` (`session_factory`, `providers`, `indexer`) is opened by
+     `bootstrap.open_memory_runtime` in the lifespan, before the agent engine. (h) Indexing happens
+     in the request's transaction: SQLite's write lock stays held during vectorization (5 s timeout
+     for the other writers).
+- **Reason** SPEC 4.2, 4.4, and 4.5 (logged agent writes, decision to confirm, levels), 4.6
+  (explorer), 17.2 (isolation), and 17.4 (imported content untrusted); phase review, points 3
+  (replayed write), 4 (services down), and 5 (booby-trapped document).
 
 ## D66
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 2, tâche 2.7 : chaîne d'ingestion des documents (7 sources), worker et import (`/documents`)
-- **Décision** : (1) **`POST /documents` multipart** (`file` ou `url`) et **`POST /documents/text` en JSON** (`text`, `title`) pour le texte collé (un champ multipart autre qu'un fichier est plafonné à 1 Mio par Starlette, qui répondrait une 400 générique) : exactement une source, sinon 422 `invalid_document_source` ; 202 `DocumentCreated(duplicate=false)` pour un nouveau document ou un document en erreur remis en file, 200 `duplicate=true` pour un doublon ; `GET /documents` rend les 200 plus récents. Un lien est normalisé (schéma et hôte en minuscules, fragment retiré), `http(s)` avec un hôte seulement (sinon 422 `invalid_url`), sans identifiants (`url_forbidden`) ; la garde SSRF complète reste celle du lecteur, à la lecture. (2) **Deux hash** : `documents.source_hash` (octets du fichier, `url:` + lien normalisé, `text:` + texte collé nettoyé), par utilisateur, contrôlé à l'envoi ; `memory_items.content_hash` contrôlé par la chaîne. Un existant est rendu tel quel, sauf s'il est `error`, ou `queued`/`processing` sans job prévu dans ce processus (`MemoryJobs.is_scheduled`, statut final perdu) : il repart alors en file (erreur effacée, même id) avec le fichier reçu, l'ancien fichier supprimé après le commit. Course sur `source_hash` : l'unicité tranche ; la transaction de la requête, qui ne contient que l'insertion, est annulée (pas de SAVEPOINT, piège D65 c), le fichier de la perdante supprimé et le gagnant rendu (200). Contenu déjà en mémoire par un autre document : erreur `duplicate_content` « Ce contenu est déjà en mémoire. » (ni titre ni nom cité), `item_id` de l'existant gardé dans `error` (`DocumentError.item_id`, ajouté au schéma du brief). Le document a déjà son élément (reprise, lien relu dont la page a changé) : cet élément est mis à jour (titre, texte, hash, journal `update`), jamais doublé. (3) **Un seul worker en mémoire** (`MemoryJobs`, une tâche asyncio par processus, file non persistée) : jobs en série, chacun sous `asyncio.timeout(300 s)` (`ingestion_timeout`) ; une exception ne tue jamais la boucle (le document passe `ingestion_failed`) ; au démarrage, les documents `queued` et `processing` sont remis en file (la base fait foi) ; à l'arrêt, le worker est annulé et le document en cours reste `processing`. `memory_runtime()` démarre et arrête le worker ; l'utilisateur local est créé avant (indication `alembic upgrade head` si le schéma manque). **Transactions courtes** : (a) passage `processing` validé, (b) extraction hors base, (c) élément, fragments et `documents.item_id` validés ensemble, après avoir pris le verrou d'écriture puis vérifié que le document existe encore, (d) vectorisation et écriture dans Qdrant **sans transaction ouverte** (le verrou d'écriture de SQLite n'est jamais tenu pendant l'appel à Ollama), (e) statut final et `indexed_at`. `MemoryIndexer.index_item` est découpé en `prepare` (base) et `push` (index) ; le verrou asyncio de l'utilisateur ne couvre que `push` : jamais d'attente de SQLite sous ce verrou. **Chemin des requêtes, même schéma** : `index_item` valide la transaction de la requête après `prepare`, attend `push` hors transaction, puis pose `indexed_at` dans une seconde transaction courte ; la réponse garde `indexed: true` (contrat de 2.6). Le commit n'appartient donc plus seulement à la requête quand on indexe. Une panne après le premier commit laisse l'élément enregistré, lisible, non indexé, que la réindexation rattrape. Les écritures finales du worker (`finish`, `mark_error`) sont rejouées deux fois au plus (attente de 0,2 puis 0,4 s) si SQLite refuse le verrou. **Reprise** : l'élément est retrouvé par son hash (même `source_id`), ses fragments sont remplacés et tous les vecteurs de l'élément retirés avant réinsertion : ni fragment ni vecteur en double. Ollama ou Qdrant en panne : `error` avec le message du fournisseur (`embeddings_unavailable` / `memory_unavailable`), élément gardé non indexé (`item_id` conservé), jamais de 500. Exception inattendue : `ingestion_failed`, « L'import a échoué de façon inattendue. », journal avec l'identifiant et le type d'exception seulement. (4) **20 Mo appliqués deux fois** : `app.core.limits.BodySizeLimit` (ASGI pur, POST sous `/api/v1/documents`, placé entre la gestion des erreurs et CORS pour que la 413 soit lisible du navigateur) refuse un `Content-Length` supérieur à 20 Mo + 1 Mio sans lire le corps, sinon compte les octets et remplace la réponse par la 413 au dépassement ; puis le service lit le fichier par blocs d'1 Mio et refuse au-delà de `20 * 1024 * 1024` octets (exactement 20 Mo passe). Enveloppe `file_too_large`, « Fichier trop volumineux : 20 Mo au maximum. ». Type vérifié par extension **et** contenu : `%PDF-` ; zip contenant `word/document.xml` ; UTF-8 valide (BOM toléré) sans octet nul pour `.md`/`.markdown`/`.txt` ; sinon 415 `unsupported_file_type`. Le nom reçu n'est qu'un nom d'affichage (`display_name`) ; la clé est `<user_id>/documents/<uuid4><suffixe canonique>` ; aucun message ni journal ne cite un nom de fichier, un lien ou un contenu. (5) **DOCX contre les bombes zip** (`check_docx_zip`, à l'import et de nouveau juste avant python-docx) : au plus **1 000 entrées** (un DOCX ordinaire en a moins de 50, un DOCX riche en images quelques centaines) ; au plus **100 Mio décompressés au total** (valeur du brief : les images, déjà compressées, comptent pour leur taille) dont au plus **25 Mio de parties XML** (`.xml`, `.rels`, analysées par lxml dont l'arbre pèse plusieurs fois le texte ; le XML d'un document réel reste sous quelques Mo) ; **taux de compression par entrée borné à 100:1** au-delà d'1 Mio décompressé (le XML ordinaire se compresse de 5 à 20:1 ; un petit XML répétitif dépasse vite 100:1 sans danger, et la somme reste bornée par le plafond total) ; entrée chiffrée refusée ; zip illisible ou plafond dépassé : 422 `docx_invalid`. Les tailles lues sont celles du répertoire central, que `zipfile` fait respecter à la lecture (il ne rend jamais plus que la taille déclarée et vérifie le CRC). L'analyseur XML de python-docx n'interprète pas les entités (`resolve_entities=False`). (6) **Texte collé stocké en `.txt`** comme un fichier (nettoyé, UTF-8), 500 000 caractères au plus (au-delà : 422 `paste_too_long`, « Texte trop long : 500 000 caractères au maximum. »), titre saisi sinon « Texte collé du JJ/MM/AAAA » (date locale du serveur), posé comme nom du document. (7) **Langue non détectée** : `lang` nul sauf métadonnées de la page lue (source `url`). Texte extrait plafonné à 2 000 000 caractères (plafond du fournisseur PDF) ; moins de 20 caractères utiles (hors espaces) : `no_text`. (8) **Titres par source** : PDF, DOCX, Markdown et texte sans leur extension quand le nom est retenu ; DOCX : titre des propriétés, sinon premier paragraphe de style `Heading`/`Titre`/`Title`, sinon nom ; Markdown : première ligne `# `, sinon nom ; collé : titre saisi ; URL : titre de la page, sinon l'hôte ; YouTube : titre, sinon « Vidéo YouTube <id> ». Un document lien ou YouTube prend le titre trouvé comme nom une fois indexé. **Précisions** : (a) `MemoryService.delete` d'un élément `document` supprime ses lignes `documents` (`item_id` ou `source_id`), après le contrôle de propriété de `_get`, valide, puis seulement retire leurs fichiers (`storage.delete(user_id, key)`). Un fichier disparu à la lecture donne `document_source_missing`, « Fichier ou lien d'origine introuvable : importe ce document de nouveau. », qu'un réimport répare. (b) Tout accès au stockage passe `user_id` (`read`/`delete` refusent la clé d'un autre). (c) `MemoryService.write(..., index=False)` : écriture sans indexation, pour le worker. (d) **Noms affichés** : `clean_display` (NFC ; catégories Cc, Cf, Zl, Zp retirées, donc forçages et isolats bidirectionnels, espaces de largeur nulle, ESC, séparateurs de ligne ; espaces regroupés ; 200 caractères) sert à `display_name`, au titre du texte collé et au nom tiré du titre d'une page ou d'une vidéo. (e) `BodySizeLimit` garde `path` et `path/…`, pas `pathX`. (f) **Risques acceptés** : un élément supprimé pendant un `push` peut laisser des vecteurs orphelins (écartés à la recherche, purgés par la réindexation) ; le délai d'un job n'annule pas le thread d'analyse (pdfplumber, python-docx), risque déjà accepté en D63.
-- **Raison** : SPEC 4.3 (ingestion, hash anti doublon, statuts visibles), 13.1 (stockage), 17.2 (20 Mo, types vérifiés, nom jamais chemin, journaux sans contenu, isolation) ; revue de phase, points 1 (doublon et réimport après erreur), 2 (redémarrage pendant une ingestion) et 4 (services en panne) ; rapport 2.6 (verrou d'écriture SQLite pendant la vectorisation, verrou asyncio et attente de SQLite).
+- **Date** 2026-11-11
+- **Subject** Phase 2, task 2.7: document ingestion chain (7 sources), worker, and import
+  (`/documents`)
+- **Decision**
+  1. **`POST /documents` multipart** (`file` or `url`) and **`POST /documents/text` in JSON**
+     (`text`, `title`) for pasted text (a multipart field other than a file is capped at 1 MiB by
+     Starlette, which would answer a generic 400): exactly one source, otherwise 422
+     `invalid_document_source`; 202 `DocumentCreated(duplicate=false)` for a new document or an
+     errored document put back in the queue, 200 `duplicate=true` for a duplicate; `GET /documents`
+     returns the 200 most recent. A link is normalized (scheme and host lowercased, fragment
+     removed), `http(s)` with a host only (otherwise 422 `invalid_url`), without credentials
+     (`url_forbidden`); the full SSRF guard remains the reader's, at read time.
+  2. **Two hashes**: `documents.source_hash` (file bytes, `url:` + normalized link, `text:` +
+     cleaned pasted text), per user, checked on submission; `memory_items.content_hash` checked by
+     the chain. An existing one is returned as is, unless it is `error`, or `queued`/`processing`
+     with no job scheduled in this process (`MemoryJobs.is_scheduled`, final status lost): it then
+     goes back in the queue (error cleared, same id) with the received file, the old file deleted
+     after the commit. Race on `source_hash`: uniqueness decides; the request's transaction, which
+     contains only the insert, is rolled back (no SAVEPOINT, D65 c trap), the loser's file deleted
+     and the winner returned (200). Content already in memory through another document: error
+     `duplicate_content` “This content is already in memory.” (neither title nor name cited), the
+     existing item's `item_id` kept in `error` (`DocumentError.item_id`, added to the brief's
+     schema). The document already has its item (resume, re-read link whose page changed): that item
+     is updated (title, text, hash, `update` log), never duplicated.
+  3. **A single in-memory worker** (`MemoryJobs`, one asyncio task per process, non-persisted
+     queue): jobs in series, each under `asyncio.timeout(300 s)` (`ingestion_timeout`); an exception
+     never kills the loop (the document goes to `ingestion_failed`); at startup, the `queued` and
+     `processing` documents are put back in the queue (the database is authoritative); at shutdown,
+     the worker is cancelled and the document in progress stays `processing`. `memory_runtime()`
+     starts and stops the worker; the local user is created before (hint `alembic upgrade head` if
+     the schema is missing). **Short transactions**: (a) move to `processing` committed, (b)
+     extraction outside the database, (c) item, chunks, and `documents.item_id` committed together,
+     after taking the write lock and then checking that the document still exists, (d) vectorization
+     and write to Qdrant **with no open transaction** (SQLite's write lock is never held during the
+     Ollama call), (e) final status and `indexed_at`. `MemoryIndexer.index_item` is split into
+     `prepare` (database) and `push` (index); the user's asyncio lock covers only `push`: never a
+     wait on SQLite under this lock. **Request path, same scheme**: `index_item` commits the
+     request's transaction after `prepare`, awaits `push` outside a transaction, then sets
+     `indexed_at` in a second short transaction; the response keeps `indexed: true` (2.6's
+     contract). The commit therefore no longer belongs only to the request when indexing. A failure
+     after the first commit leaves the item saved, readable, not indexed, to be caught up by
+     reindexing. The worker's final writes (`finish`, `mark_error`) are replayed at most twice (wait
+     of 0.2 then 0.4 s) if SQLite refuses the lock. **Resume**: the item is found by its hash (same
+     `source_id`), its chunks are replaced and all the item's vectors removed before reinsertion: no
+     duplicate chunk or vector. Ollama or Qdrant down: `error` with the provider's message
+     (`embeddings_unavailable` / `memory_unavailable`), item kept not indexed (`item_id` kept),
+     never a 500. Unexpected exception: `ingestion_failed`, “The import failed unexpectedly.”, log
+     with the identifier and the exception type only.
+  4. **20 MB applied twice**: `app.core.limits.BodySizeLimit` (pure ASGI, POST under
+     `/api/v1/documents`, placed between error handling and CORS so that the 413 is readable by the
+     browser) refuses a `Content-Length` above 20 MB + 1 MiB without reading the body, otherwise
+     counts the bytes and replaces the response with the 413 on overflow; then the service reads the
+     file in 1 MiB blocks and refuses beyond `20 * 1024 * 1024` bytes (exactly 20 MB passes).
+     Envelope `file_too_large`, “File too large: 20 MB maximum.”. Type checked by extension **and**
+     content: `%PDF-`; zip containing `word/document.xml`; valid UTF-8 (BOM tolerated) with no null
+     byte for `.md`/`.markdown`/`.txt`; otherwise 415 `unsupported_file_type`. The received name is
+     only a display name (`display_name`); the key is `<user_id>/documents/<uuid4><canonical
+     suffix>`; no message or log cites a file name, a link, or content.
+  5. **DOCX against zip bombs** (`check_docx_zip`, at import and again just before python-docx): at
+     most **1,000 entries** (an ordinary DOCX has fewer than 50, a DOCX rich in images a few
+     hundred); at most **100 MiB decompressed in total** (the brief's value: images, already
+     compressed, count for their size) of which at most **25 MiB of XML parts** (`.xml`, `.rels`,
+     parsed by lxml whose tree weighs several times the text; a real document's XML stays under a
+     few MB); **per-entry compression ratio bounded to 100:1** beyond 1 MiB decompressed (ordinary
+     XML compresses 5 to 20:1; a small repetitive XML quickly exceeds 100:1 harmlessly, and the sum
+     remains bounded by the total cap); encrypted entry refused; unreadable zip or cap exceeded: 422
+     `docx_invalid`. The sizes read are those of the central directory, which `zipfile` enforces on
+     reading (it never returns more than the declared size and checks the CRC). python-docx's XML
+     parser does not resolve entities (`resolve_entities=False`).
+  6. **Pasted text stored as `.txt`** like a file (cleaned, UTF-8), 500,000 characters at most
+     (beyond: 422 `paste_too_long`, “Text too long: 500,000 characters maximum.”), title as entered
+     otherwise “Pasted text from DD/MM/YYYY” (server local date), set as the document's name.
+  7. **Language not detected**: `lang` null except from the read page's metadata (source `url`).
+     Extracted text capped at 2,000,000 characters (the PDF provider's cap); fewer than 20 useful
+     characters (excluding spaces): `no_text`.
+  8. **Titles by source**: PDF, DOCX, Markdown, and text without their extension when the name is
+     retained; DOCX: properties title, otherwise first paragraph of style `Heading`/`Titre`/`Title`,
+     otherwise name; Markdown: first `# ` line, otherwise name; pasted: title as entered; URL: page
+     title, otherwise the host; YouTube: title, otherwise “YouTube video <id>”. A link or YouTube
+     document takes the found title as its name once indexed.
+
+     **Clarifications**: (a) `MemoryService.delete` of a `document` item deletes its `documents`
+     rows (`item_id` or `source_id`), after `_get`'s ownership check, commits, and only then removes
+     their files (`storage.delete(user_id, key)`). A file missing at read time gives
+     `document_source_missing`, “Original file or link not found: import this document again.”,
+     which a re-import repairs. (b) Every storage access passes `user_id` (`read`/`delete` refuse
+     another user's key). (c) `MemoryService.write(..., index=False)`: write without indexing, for
+     the worker. (d) **Display names**: `clean_display` (NFC; categories Cc, Cf, Zl, Zp removed,
+     hence bidirectional overrides and isolates, zero-width spaces, ESC, line separators; spaces
+     collapsed; 200 characters) serves `display_name`, the pasted text's title, and the name taken
+     from a page or video title. (e) `BodySizeLimit` keeps `path` and `path/…`, not `pathX`. (f)
+     **Accepted risks**: an item deleted during a `push` may leave orphan vectors (discarded at
+     search, purged by reindexing); a job's timeout does not cancel the parsing thread (pdfplumber,
+     python-docx), a risk already accepted in D63.
+- **Reason** SPEC 4.3 (ingestion, anti-duplicate hash, visible statuses), 13.1 (storage), 17.2 (20
+  MB, checked types, name never a path, logs without content, isolation); phase review, points 1
+  (duplicate and re-import after error), 2 (restart during an ingestion), and 4 (services down);
+  report 2.6 (SQLite write lock during vectorization, asyncio lock and SQLite wait).
 
 ## D67
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 2, tâche 2.8 : explorateur de la mémoire (fusion, carte PCA, statistiques, réindexation, export)
-- **Décision** : (1) **Fusion** : route `POST /memory/items/{id}/merge` (`MergeRequest.other_ids`, 1 à 20), hors du tableau 14.2 mais exigée par 4.6 (`service/merge.py`). Même type exigé (`merge_kind_mismatch`, 422) ; un document ne se fusionne pas (`merge_document_forbidden`, 409) ; ajouts : une décision en attente non plus (`merge_pending_forbidden`, 409 : la confirmer ou la refuser d'abord), rien à fusionner (liste vide après retrait de la cible et des doublons) `merge_nothing` (422), contenu fusionné identique à un autre élément `memory_duplicate` (409). Texte = cible puis textes des autres, sans ceux identiques à casse et espaces près (même normalisation que le hash), séparés par une ligne vide ; étiquettes (`clean_tags`, 10 au plus) et preuves réunies dans l'ordre de première apparition ; acquis : niveau le plus haut (`MASTERY_ORDER`). Les autres sont journalisés `delete` (« Fusionné dans « {titre} ». ») et supprimés avant la mise à jour de la cible (leur hash est libéré), la cible est journalisée `merge` (« Fusion de {n} élément(s). »). Même schéma qu'une écriture (D66) : tout est validé en base (`begin_write` avant le SAVEPOINT, D65 c), puis vecteurs des autres retirés, puis `index_item` de la cible en dernier. (2) **Carte** (`GET /memory/map`, `service/explorer.py`, `service/projection.py`) : un point par élément actif = moyenne de ses vecteurs ; les 2 000 plus récents au plus (`truncated`) ; un élément sans vecteur n'a pas de point ; PCA numpy (centrage, SVD, 2 composantes, signe fixé par la plus grande charge, chaque axe divisé par son max absolu, d'où [-1, 1], axe nul à 0) ; 20 000 vecteurs lus au plus ; le port `MemoryRepository.vectors` gagne un filtre facultatif `item_ids` ; Qdrant ou Ollama arrêté : 503 lisible. (3) **Statistiques** (`GET /memory/stats`) : comptes par type des éléments actifs (les 6, zéro compris), fragments, décisions en attente, éléments non indexés, dernière écriture, dimension (`embedding_dimension`), part Vectorize = fragments × 1 024 / 5 000 000 (quota de référence, 4.1), état de la réindexation, lien du tableau de bord. (4) **Réindexation** (`POST /memory/reindex` → 202 `ReindexState`, `service/reindex.py`) : job du worker unique, en série avec les imports ; état par utilisateur en mémoire (`idle`, `queued`, `running` avec `done`/`total`, `done`, `failed` avec `error`), perdu au redémarrage (sans danger : les éléments non traités gardent `indexed_at` nul et la suivante les rattrape) ; déjà en file ou en cours : l'état courant, aucun second job. Algorithme, adapté à D66 (jamais de transaction ouverte pendant Ollama ou Qdrant, jamais le verrou asyncio pendant une attente de SQLite ; le brief prévoyait le verrou autour de chaque lot, lectures SQLite comprises) : (a) drapeau `reindexing` levé, puis attente des `index_item` déjà lancés (compteur d'écrivains par utilisateur dans `MemoryIndexer`) ; (b) `clear_indexed` en transaction courte, puis `delete_user` sous le verrou ; (c) lots de 16 : verrou d'écriture SQLite pris avant la lecture, fragments recalculés (`prepare`) et validés, `push` élément par élément (le verrou de l'utilisateur pris et rendu dans `push`), puis `indexed_at` posé en une transaction par lot ; (d) fin quand un lot est vide et qu'aucun écrivain n'a commencé ni fini depuis sa lecture, drapeau baissé dans le même pas synchrone, sinon on attend les écrivains et on relit. Pendant la réindexation, `index_item` d'un autre écrivain renouvelle les fragments, valide, laisse `indexed_at` nul et rend faux sans toucher Qdrant : la boucle le rattrape. **`indexed_at` conditionnel** (`MemoryItemRepository.mark_indexed`, aussi dans `index_item`) : posé seulement si un fragment qui vient d'être poussé est toujours en base, sinon une écriture concurrente a renouvelé les fragments et l'élément reste à rattraper ; un élément supprimé pendant son `push` voit ses vecteurs retirés après le commit. Panne d'Ollama ou de Qdrant : `failed` avec le message du port ; autre exception : « La réindexation a échoué de façon inattendue. » ; délai d'une heure : « La réindexation a dépassé une heure. ». (5) **Export** (`GET /memory/export`) : lien direct, `Content-Disposition: attachment; filename="tremplin-memoire-AAAA-MM-JJ.json"` (date UTC), `MemoryExport` version 1 : tous les éléments (actifs et en attente), tous les documents, tout le journal ; aucun vecteur. (6) **Tableau de bord Qdrant** : `Settings.qdrant_dashboard_url` (`http://localhost:6333/dashboard`), passé par compose en `QDRANT_DASHBOARD_URL: ${QDRANT_DASHBOARD_URL:-http://localhost:${QDRANT_PORT:-6333}/dashboard}`, dérivé de `QDRANT_PORT` comme `CORS_ORIGIN` (D36). Précisions : (a) `MemoryService` expose `db`, `user_id`, `runtime` et `get` (élément de l'utilisateur ou 404), `not_found` et `duplicate` deviennent publics, pour `merge.py` ; (b) risque accepté : deux modifications simultanées du même élément hors réindexation peuvent encore laisser l'index en retard (dernier `push` périmé) ; `indexed_at` conditionnel réduit la fenêtre, la réindexation répare. **Revue de phase 2 (corrections)** : (7) **Réindexation sondée d'abord** : avant `clear_indexed` et `delete_user`, `aembed_query("ping")` puis `vectors(user_id, limit=1)`, hors transaction et hors verrou ; Ollama ou Qdrant en panne : `failed` avec le message du port, vecteurs et `indexed_at` intacts (bge-m3 en téléchargement ne vide plus l'index). (8) **Fusion** : `indexed_at` de la cible remis à nul dans la transaction qui valide le texte fusionné : un arrêt ou un échec avant la fin de `index_item` la laisse à rattraper, jamais dite indexée avec ses anciens fragments. **Fin d'un import** : `finish_once` pose `indexed_at` par `mark_indexed` conditionnel (premier fragment poussé toujours en base), comme `index_item` et la réindexation : une modification pendant le `push` laisse l'élément à rattraper, le document passe tout de même `indexed`. (9) **Suppression** : `MemoryService.delete` valide sa transaction (élément, journal, lignes `documents`), puis retire les vecteurs hors transaction, puis supprime les fichiers : Qdrant lent ne tient plus le verrou d'écriture de SQLite ; un arrêt entre le commit et le retrait laisse des vecteurs orphelins, écartés à la recherche et purgés par la réindexation (risque accepté). (10) **Journaux sans contenu (17.2)** : moteur créé avec `hide_parameters=True` (une erreur SQL, tracée par le gestionnaire générique, ne cite jamais ses paramètres : texte, nom de fichier, lien) ; `AccessQueryFilter`, posé par `configure_logging` sur le logger `uvicorn.access` lui-même, retire la chaîne de requête du chemin du journal d'accès (`?tag=…&author=…`), `args` gardant sa forme de 5-tuple.
-- **Raison** : SPEC 4.1 (index reconstructible, quota Vectorize de référence), 4.6 (fusion, carte 2D colorée par type, statistiques, Réindexer, Exporter en JSON, lien Qdrant), 17.2 (isolation : chaque route filtre par utilisateur, journaux sans contenu) ; revue de phase, point 4 (Ollama ou Qdrant arrêté : erreur lisible, rattrapage par la réindexation) ; D66 (verrous et transactions courtes).
+- **Date** 2026-11-11
+- **Subject** Phase 2, task 2.8: memory explorer (merge, PCA map, statistics, reindexing, export)
+- **Decision**
+  1. **Merge**: route `POST /memory/items/{id}/merge` (`MergeRequest.other_ids`, 1 to 20), outside
+     table 14.2 but required by 4.6 (`service/merge.py`). Same type required (`merge_kind_mismatch`,
+     422); a document cannot be merged (`merge_document_forbidden`, 409); additions: nor can a
+     pending decision (`merge_pending_forbidden`, 409: confirm or refuse it first), nothing to merge
+     (empty list after removing the target and duplicates) `merge_nothing` (422), merged content
+     identical to another item `memory_duplicate` (409). Text = target then the others' texts,
+     without those identical up to case and spaces (same normalization as the hash), separated by a
+     blank line; tags (`clean_tags`, 10 at most) and evidence combined in order of first appearance;
+     acquired skill: highest level (`MASTERY_ORDER`). The others are logged `delete` (“Merged into
+     “{title}”.”) and deleted before the target's update (their hash is freed), the target is logged
+     `merge` (“Merge of {n} item(s).”). Same scheme as a write (D66): everything is committed in the
+     database (`begin_write` before the SAVEPOINT, D65 c), then the others' vectors removed, then
+     the target's `index_item` last.
+  2. **Map** (`GET /memory/map`, `service/explorer.py`, `service/projection.py`): one point per
+     active item = the average of its vectors; the 2,000 most recent at most (`truncated`); an item
+     with no vector has no point; numpy PCA (centering, SVD, 2 components, sign fixed by the largest
+     loading, each axis divided by its absolute maximum, hence [-1, 1], null axis at 0); 20,000
+     vectors read at most; the `MemoryRepository.vectors` port gains an optional `item_ids` filter;
+     Qdrant or Ollama stopped: readable 503.
+  3. **Statistics** (`GET /memory/stats`): counts by type of active items (all 6, zero included),
+     chunks, pending decisions, unindexed items, last write, dimension (`embedding_dimension`),
+     Vectorize share = chunks × 1,024 / 5,000,000 (reference quota, 4.1), reindexing state,
+     dashboard link.
+  4. **Reindexing** (`POST /memory/reindex` → 202 `ReindexState`, `service/reindex.py`): job of the
+     single worker, in series with the imports; per-user state in memory (`idle`, `queued`,
+     `running` with `done`/`total`, `done`, `failed` with `error`), lost at restart (harmless: the
+     unprocessed items keep `indexed_at` null and the next one catches them up); already queued or
+     running: the current state, no second job. Algorithm, adapted to D66 (never an open transaction
+     during Ollama or Qdrant, never the asyncio lock during a SQLite wait; the brief had the lock
+     around each batch, SQLite reads included): (a) `reindexing` flag raised, then wait for the
+     `index_item` calls already launched (writer counter per user in `MemoryIndexer`); (b)
+     `clear_indexed` in a short transaction, then `delete_user` under the lock; (c) batches of 16:
+     SQLite write lock taken before the read, chunks recomputed (`prepare`) and committed, `push`
+     item by item (the user's lock taken and released inside `push`), then `indexed_at` set in one
+     transaction per batch; (d) end when a batch is empty and no writer has started or finished
+     since its read, flag lowered in the same synchronous step, otherwise wait for the writers and
+     re-read. During reindexing, another writer's `index_item` renews the chunks, commits, leaves
+     `indexed_at` null, and returns false without touching Qdrant: the loop catches it up.
+     **Conditional `indexed_at`** (`MemoryItemRepository.mark_indexed`, also in `index_item`): set
+     only if a chunk that was just pushed is still in the database, otherwise a concurrent write
+     renewed the chunks and the item remains to be caught up; an item deleted during its `push` has
+     its vectors removed after the commit. Ollama or Qdrant outage: `failed` with the port's
+     message; other exception: “Reindexing failed unexpectedly.”; one-hour timeout: “Reindexing took
+     longer than an hour.”.
+  5. **Export** (`GET /memory/export`): direct link, `Content-Disposition:
+     attachment; filename="tremplin-memoire-YYYY-MM-DD.json"` (UTC date), `MemoryExport` version 1:
+     all items (active and pending), all documents, the whole log; no vectors.
+  6. **Qdrant dashboard**: `Settings.qdrant_dashboard_url` (`http://localhost:6333/dashboard`),
+     passed by compose as `QDRANT_DASHBOARD_URL:
+     ${QDRANT_DASHBOARD_URL:-http://localhost:${QDRANT_PORT:-6333}/dashboard}`, derived from
+     `QDRANT_PORT` like `CORS_ORIGIN` (D36).
+
+     Clarifications: (a) `MemoryService` exposes `db`, `user_id`, `runtime`, and `get` (the user's
+     item or 404), `not_found` and `duplicate` become public, for `merge.py`; (b) accepted risk: two
+     simultaneous modifications of the same item outside reindexing may still leave the index behind
+     (stale last `push`); the conditional `indexed_at` reduces the window, reindexing repairs.
+
+     **Phase 2 review (fixes)**:
+  7. **Reindexing probed first**: before `clear_indexed` and `delete_user`, `aembed_query("ping")`
+     then `vectors(user_id, limit=1)`, outside a transaction and outside the lock; Ollama or Qdrant
+     down: `failed` with the port's message, vectors and `indexed_at` intact (bge-m3 being
+     downloaded no longer empties the index).
+  8. **Merge**: the target's `indexed_at` is reset to null in the transaction that commits the
+     merged text: a stop or a failure before the end of `index_item` leaves it to be caught up,
+     never reported indexed with its old chunks. **End of an import**: `finish_once` sets
+     `indexed_at` through the conditional `mark_indexed` (first pushed chunk still in the database),
+     like `index_item` and reindexing: a modification during the `push` leaves the item to be caught
+     up, and the document still goes to `indexed`.
+  9. **Deletion**: `MemoryService.delete` commits its transaction (item, log, `documents` rows),
+     then removes the vectors outside the transaction, then deletes the files: a slow Qdrant no
+     longer holds SQLite's write lock; a stop between the commit and the removal leaves orphan
+     vectors, discarded at search and purged by reindexing (accepted risk).
+  10. **Logs without content (17.2)**: engine created with `hide_parameters=True` (an SQL error,
+     traced by the generic handler, never cites its parameters: text, file name, link);
+     `AccessQueryFilter`, set by `configure_logging` on the `uvicorn.access` logger itself, removes
+     the query string from the access log path (`?tag=…&author=…`), `args` keeping its 5-tuple
+     shape.
+- **Reason** SPEC 4.1 (rebuildable index, reference Vectorize quota), 4.6 (merge, 2D map colored by
+  type, statistics, Reindex, Export as JSON, Qdrant link), 17.2 (isolation: every route filters by
+  user, logs without content); phase review, point 4 (Ollama or Qdrant stopped: readable error,
+  catch-up by reindexing); D66 (locks and short transactions).
 
 ## D68
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 2, tâche 2.9 : outils mémoire des agents, Archiviste et parcours `learned_document` (« déjà appris »)
-- **Décision** : (1) **Port `MemoryGateway`** dans `app/agents/tools/memory_port.py` (`search`, `write`, `skills`, `document_text`), branché par la composition (`bootstrap.memory_gateway(runtime)`, comme `RunSettingsSource`) : `app.agents` n'importe aucune feature (contrat 6). `NO_MEMORY` (par défaut de `GraphDeps.memory`, `RunContext.memory`, `SessionRunner(memory=)` et `agent_runtime(..., *, memory=)`) lève `memory_unavailable` (503) : les tests et parcours existants ne changent pas. (2) **`memory_write` reçoit en plus `reason`** (journal 4.5) ; un contenu déjà présent rend `created=False`, n'émet pas `memory.written` et le résumé dit « Déjà en mémoire ». `MemoryWrittenPayload.status` (`active` par défaut, `pending` pour une décision « À confirmer ») signale la boîte de confirmation. (3) **Outils = fonctions de nœud** (`memory_search`, `memory_write`, `memory_get_skills`) qui émettent `tool.called` puis `tool.result`, puis `memory.written` ; sur `AppError` du port, `tool.result` `ok=false` (message de l'erreur) est émis avant de relancer. `memory_tools_for` fournit trois `StructuredTool` asynchrones pour l'appel d'outils par le LLM (phases suivantes) ; ils rendent du texte (`agent_text`, `Écrit : …`, `Acquis (n) : …`). (4) **`memory_get_skills` lit les acquis de la mémoire** jusqu'à la phase 4 (`user_skills`, D6, D7) : les 500 plus récents ; `total` exact, `by_level` calculé sur les acquis lus ; niveau absent = `declare`. Les titres sont ramenés sur une ligne dans `as_text`. (5) **Nouveau parcours `learned_document`** (17e, hors liste 9.2), sans interruption : 4.3 dit « crée des acquis au niveau declare ». `START → load_context → extract → write → finalize → END` ; agent `archivist` (niveau `rapide`). « Déjà appris » = `POST /documents/{id}/learned` (202 `{session_id}`), hors tableau 14.2. Le document est lu par ses 24 premiers fragments ; titre, acquis connus et document passent tous par `untrusted()` dans le prompt (le brief ne le demandait que pour le document : le titre vient du document, les titres d'acquis d'agents d'anciens documents). Concepts : 20 demandés au modèle, 30 tolérés par le schéma, tronqués à 20. (6) **Rejeu** : l'acquis se dédoublonne par son titre (D64 4) : un nœud `write` rejoué ou un double clic ne crée ni élément ni ligne de journal de plus (« 0 acquis ajouté(s), n déjà connu(s) »). (7) **Contexte mémoire (4.4)** : `nodes/memory_context.py` (`load_memory_context`) est un nœud réutilisable (acquis, 8 décisions, 8 documents) ; `demo_debate` n'est pas modifié. (8) **`AgentMemoryGateway`** (`service/gateway.py`) : une session de base courte par appel ; l'écriture passe par `MemoryService.write` (règles, dédoublonnage, journal avec l'agent en auteur et la session, indexation en dernière étape, D66/D67) ; un élément non indexé (décision `pending`) valide sa transaction par un commit explicite, jamais avant ni pendant l'indexation d'un élément actif. Panne d'Ollama ou de Qdrant : élément gardé non indexé, jamais d'erreur (D65 3). Requête de recherche rognée à 500 caractères, `k` borné à 1..50, type inconnu refusé (`memory_kind_invalid`, 422). `document_text` rend `None` (donc `document_not_found` côté parcours) si le document n'existe pas, n'est pas à l'utilisateur ou n'est pas `indexed`. **Précisions** : (a) `DocumentService.mark_learned` lance la session AVANT d'écrire `learned` : le runner ouvre ses propres sessions et écrit en base, la requête ne doit pas tenir le verrou d'écriture de SQLite pendant ce temps (même piège que D66), et un refus de lancement (arrêt du serveur) laisse le drapeau intact ; relancer est permis (réextraction, tout est dédoublonné). `document_not_found` (404) et `document_not_ready` (409) sont levés avant. (b) `ChunkRepository.for_item` gagne `limit`. (c) `tests/sessions_support.use_test_runtime(monkeypatch, replies=None)` transmet à `agent_runtime` tout argument nommé (`memory`) et accepte des réponses scriptées. (d) Les tests de la route vivent dans `test_documents_learned.py` (le fichier `test_documents_router.py` aurait dépassé 300 lignes). (e) Risque accepté : la session d'un « déjà appris » en cours n'est pas retrouvée au second clic ; deux sessions parallèles écrivent la même chose, l'unicité du hash tranche. **Revue de phase 2 (corrections)** : (9) **Titres non fiables** : toute chaîne venue d'un document ou d'une écriture et donnée à un agent passe par `untrusted()`. Le gabarit de `format_for_agent` (D65 5) change : la ligne d'un fragment ne garde que `[i] type · auteur x · score 0.83` ; le titre, ramené sur une ligne, ouvre l'encadrement du fragment (`Titre : …`, puis le texte), dont `untrusted` retire tout marqueur (un faux marqueur de fin dans un titre ne ferme rien). La requête reste hors encadrement (écrite par l'agent ou par January), sur une ligne et sans `<<<` ni `>>>`. (10) `SkillsSummary.as_agent_text()` encadre la liste des acquis (`memoire:acquis`) pour le nœud de contexte (`MemoryContext.as_prompt`) et l'outil `memory_get_skills` ; l'Archiviste garde `as_text()`, qu'il encadre déjà lui-même (`known`). Le port reste dans `app.agents` (contrat 6).
-- **Raison** : SPEC 4.3 (« Déjà appris » crée des acquis au niveau `declare`), 4.4 et 4.5 (outils mémoire, écritures journalisées avec agent, session et raison, décision « À confirmer »), 17.4 (contenu importé non fiable) ; revue de phase, points 3 (nœud rejoué, double clic) et 5 (document piégé) ; contrat d'import 6 (`app.agents` sans feature).
+- **Date** 2026-11-11
+- **Subject** Phase 2, task 2.9: agent memory tools, Archivist, and the `learned_document` flow
+  (“already learned”)
+- **Decision**
+  1. **`MemoryGateway` port** in `app/agents/tools/memory_port.py` (`search`, `write`, `skills`,
+     `document_text`), wired by the composition (`bootstrap.memory_gateway(runtime)`, like
+     `RunSettingsSource`): `app.agents` imports no feature (contract 6). `NO_MEMORY` (default of
+     `GraphDeps.memory`, `RunContext.memory`, `SessionRunner(memory=)`, and `agent_runtime(..., *,
+     memory=)`) raises `memory_unavailable` (503): existing tests and flows do not change.
+  2. **`memory_write` additionally receives `reason`** (log 4.5); content already present returns
+     `created=False`, does not emit `memory.written`, and the summary says “Already in memory”.
+     `MemoryWrittenPayload.status` (`active` by default, `pending` for a “To confirm” decision)
+     signals the confirmation inbox.
+  3. **Tools = node functions** (`memory_search`, `memory_write`, `memory_get_skills`) that emit
+     `tool.called` then `tool.result`, then `memory.written`; on an `AppError` from the port,
+     `tool.result` `ok=false` (the error's message) is emitted before re-raising. `memory_tools_for`
+     provides three asynchronous `StructuredTool`s for tool calling by the LLM (later phases); they
+     return text (`agent_text`, `Written: …`, `Acquired skills (n): …`).
+  4. **`memory_get_skills` reads the memory's acquired skills** until phase 4 (`user_skills`, D6,
+     D7): the 500 most recent; exact `total`, `by_level` computed on the acquired skills read;
+     absent level = `declare`. Titles are brought onto one line in `as_text`.
+  5. **New `learned_document` flow** (17th, outside the 9.2 list), without interruption: 4.3 says
+     “creates acquired skills at the declare level”. `START → load_context
+     → extract → write → finalize → END`; agent `archivist` (`rapide` tier). “Already learned” =
+     `POST /documents/{id}/learned` (202 `{session_id}`), outside table 14.2. The document is read
+     through its first 24 chunks; title, known acquired skills, and document all go through
+     `untrusted()` in the prompt (the brief asked it only for the document: the title comes from the
+     document, the acquired skills' titles from agents of earlier documents). Concepts: 20 requested
+     from the model, 30 tolerated by the schema, truncated to 20.
+  6. **Replay**: the acquired skill is deduplicated by its title (D64 4): a replayed `write` node or
+     a double click creates neither an extra item nor an extra log row (“0 acquired skill(s) added,
+     n already known”).
+  7. **Memory context (4.4)**: `nodes/memory_context.py` (`load_memory_context`) is a reusable node
+     (acquired skills, 8 decisions, 8 documents); `demo_debate` is not modified.
+  8. **`AgentMemoryGateway`** (`service/gateway.py`): a short database session per call; the write
+     goes through `MemoryService.write` (rules, deduplication, log with the agent as author and the
+     session, indexing as the last step, D66/D67); a non-indexed item (`pending` decision) commits
+     its transaction with an explicit commit, never before or during the indexing of an active item.
+     Ollama or Qdrant outage: item kept not indexed, never an error (D65 3). Search query trimmed to
+     500 characters, `k` bounded to 1..50, unknown type refused (`memory_kind_invalid`, 422).
+     `document_text` returns `None` (hence `document_not_found` on the flow side) if the document
+     does not exist, is not the user's, or is not `indexed`.
+
+     **Clarifications**: (a) `DocumentService.mark_learned` launches the session BEFORE writing
+     `learned`: the runner opens its own sessions and writes to the database, the request must not
+     hold SQLite's write lock meanwhile (same trap as D66), and a launch refusal (server shutdown)
+     leaves the flag intact; relaunching is allowed (re-extraction, everything is deduplicated).
+     `document_not_found` (404) and `document_not_ready` (409) are raised before. (b)
+     `ChunkRepository.for_item` gains `limit`. (c)
+     `tests/sessions_support.use_test_runtime(monkeypatch, replies=None)` passes any named argument
+     (`memory`) to `agent_runtime` and accepts scripted replies. (d) The route's tests live in
+     `test_documents_learned.py` (the file `test_documents_router.py` would have exceeded 300
+     lines). (e) Accepted risk: the session of an “already learned” in progress is not found again
+     on the second click; two parallel sessions write the same thing, the hash's uniqueness decides.
+
+     **Phase 2 review (fixes)**:
+  9. **Untrusted titles**: every string coming from a document or a write and given to an agent goes
+     through `untrusted()`. The `format_for_agent` template (D65 5) changes: a chunk's line keeps
+     only `[i] type · author x · score 0.83`; the title, brought onto one line, opens the chunk's
+     framing (`Title: …`, then the text), from which `untrusted` removes any marker (a fake closing
+     marker in a title closes nothing). The query stays outside the framing (written by the agent or
+     by January), on one line and without `<<<` or `>>>`.
+  10. `SkillsSummary.as_agent_text()` frames the list of acquired skills (`memoire:acquis`) for the
+     context node (`MemoryContext.as_prompt`) and the `memory_get_skills` tool; the Archivist keeps
+     `as_text()`, which it already frames itself (`known`). The port stays in `app.agents` (contract
+     6).
+- **Reason** SPEC 4.3 (“Already learned” creates acquired skills at the `declare` level), 4.4 and
+  4.5 (memory tools, writes logged with agent, session, and reason, “To confirm” decision), 17.4
+  (imported content untrusted); phase review, points 3 (replayed node, double click) and 5
+  (booby-trapped document); import contract 6 (`app.agents` without a feature).
 
 ## D70
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 2, tâche 2.13 : contrôle de fin de phase et clôture
-- **Décision** : (1) contrôle sous Docker avec Ollama `bge-m3` et Qdrant réels, et GLM 5.3 flash pour l'Archiviste : un PDF importé passe de « En cours » à « Indexé » en quelques secondes ; « Déjà appris » ajoute 5 acquis `declare` ; la recherche « comment un modèle pondère les mots » renvoie « Mécanisme d'attention » en tête (score 0,70) ; le détail montre « Archiviste » et la raison « Document « cours-nlp » marqué « déjà appris ». » ; la carte 2D affiche les 6 points colorés par type ; le journal du back ne cite ni contenu ni chaîne de requête. (2) La revue finale a été faite en deux parties (back, front) sur Opus high, suivie d'une vague de corrections par zone et de deux re-revues, toutes approuvées. (3) Limite connue : `SessionView` n'expose pas `subject_id`, donc le suivi de l'Archiviste n'est pas repris après un rechargement ; « Relancer » reste disponible. Point reporté à la phase 3.
-- **Raison** : critère de fin de phase du plan directeur (un PDF importé est retrouvé par la recherche ; une écriture d'agent est visible avec son auteur et sa raison) ; SPEC 4 et 17.2.
+- **Date** 2026-11-11
+- **Subject** Phase 2, task 2.13: end-of-phase check and closure
+- **Decision**
+  1. Check under Docker with real Ollama `bge-m3` and Qdrant, and GLM 5.3 flash for the Archivist:
+     an imported PDF goes from “In progress” to “Indexed” in a few seconds; “Already learned” adds 5
+     `declare` acquired skills; the search “how a model weights words” returns “Attention mechanism”
+     first (score 0.70); the detail shows “Archivist” and the reason “Document “cours-nlp” marked
+     “already learned”.”; the 2D map shows the 6 points colored by type; the backend's log cites
+     neither content nor query string.
+  2. The final review was done in two parts (backend, front end) on Opus high, followed by a wave of
+     fixes per area and two re-reviews, all approved.
+  3. Known limit: `SessionView` does not expose `subject_id`, so the Archivist's tracking is not
+     resumed after a reload; “Retry” remains available. Point deferred to phase 3.
+- **Reason** End-of-phase criterion of the master plan (an imported PDF is found by search; an
+  agent's write is visible with its author and reason); SPEC 4 and 17.2.
 
 ## D71
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 3, tâche 3.1 : reliquat de la phase 2 (suivi de l'Archiviste repris, « Déjà appris » idempotent, vecteurs orphelins, titre en mémoire encadré)
-- **Décision** : (1) **`SessionView` gagne `subject_type` et `subject_id`** (lus sur la ligne `sessions`, `null` pour une session sans objet) : le front retrouve la session de l'Archiviste d'un document après un rechargement (limite notée en D70 §3). Les deux champs sont requis dans le schéma de sortie ; seul le gabarit de test `frontend/src/test/streamHarness.ts` a dû les recevoir. (2) **« Déjà appris » idempotent** : `find_active_session(db, user_id, *, graph, subject_type, subject_id)` (`sessions/service.py`, lecture offerte aux autres features, contrat 2 ; requête dans `SessionReadRepository.latest_open`) rend la session la plus récente de ce graphe et de cet objet en `running`, `waiting_user` ou `paused`. `DocumentService.mark_learned` la rend (202, même `session_id`) au lieu d'en lancer une seconde ; une session finie (`completed`, `failed`, `cancelled`) ne compte plus, « Relancer » garde son sens. La paire « session ouverte ? sinon `runner.start` » est sous `MemoryRuntime.learn_lock(user_id)` (un `asyncio.Lock` par utilisateur, propre au processus : un seul worker, D66) ; sans lui, deux clics simultanés lancent deux sessions (vérifié : le test de concurrence échoue sans le verrou). Le drapeau `learned` est écrit après, hors du verrou. **Pas d'interblocage** : (a) la requête entre dans le verrou sans écriture en attente (la lecture du document est un `SELECT`, que pysqlite n'enveloppe pas dans une transaction) ; elle ne tient donc pas le verrou d'écriture de SQLite pendant que `runner.start` écrit la session avec sa propre connexion ; (b) dans le verrou, la seule attente de SQLite est l'écriture de `runner.start`, et aucun écrivain susceptible de la bloquer (tâche de session du runner, bus, worker d'import, drapeau d'une requête précédente) n'attend jamais `learn_lock` : il n'y a pas de cycle, l'attente est bornée par `busy_timeout` ; (c) aucun appel à Ollama ni Qdrant sous le verrou. (3) **M2 réglé par retrait après coup**, sans verrou de suppression : `finish_once` prend le verrou d'écriture (`begin_write`) avant de relire le document et l'élément ; si l'élément a disparu pendant le `push` (suppression, qui emporte le document), la transaction est annulée puis, hors transaction, `index.delete_items(user_id, [item_id])` retire les vecteurs poussés après la suppression (`drop_orphan_vectors`) ; une panne du magasin est avalée et journalisée avec l'identifiant de l'élément seulement. Si seul le document a disparu (l'élément reste), rien n'est retiré : l'élément, marqué non indexé par `prepare`, est rattrapé par la réindexation ; retirer ses vecteurs pourrait effacer ceux d'une réindexation concurrente. L'ordre reste prepare → commit → push → `mark_indexed` conditionnel (D66, D67). (4) **Titre en mémoire encadré** : quand `memory_write` trouve un contenu déjà présent, l'outil LLM rend `f"Déjà en mémoire : {untrusted(done.title, 'titre en mémoire')}"` (le titre vient de la mémoire, pas de l'agent : un document importé a pu le fixer) ; l'événement `tool.result` destiné à l'interface garde le titre en clair. (5) **Écart de fichiers** : les tests du M2 sont dans `tests/features/memory/test_ingest_orphans.py` (nouveau) plutôt que `test_pipeline.py`, qui aurait dépassé 300 lignes.
-- **Raison** : D70 §3 (suivi non repris après un rechargement), revue de phase 2 (point 3 : double clic ; M2 : vecteurs orphelins), SPEC 17.4 (contenu venu de la mémoire non fiable) ; D65 c, D66, D67 et D68 §9–10 (aucune transaction ouverte pendant Ollama ou Qdrant, aucun verrou asyncio tenu en attendant SQLite hors de la section critique bornée de `learn_lock`).
+- **Date** 2026-11-11
+- **Subject** Phase 3, task 3.1: phase 2 leftovers (Archivist tracking resumed, idempotent “Already
+  learned”, orphan vectors, framed title in memory)
+- **Decision**
+  1. **`SessionView` gains `subject_type` and `subject_id`** (read from the `sessions` row, `null`
+     for a session with no subject): the front end finds a document's Archivist session again after
+     a reload (limit noted in D70 §3). Both fields are required in the output schema; only the test
+     template `frontend/src/test/streamHarness.ts` had to receive them.
+  2. **Idempotent “Already learned”**: `find_active_session(db, user_id, *, graph, subject_type,
+     subject_id)` (`sessions/service.py`, a read offered to other features, contract 2; query in
+     `SessionReadRepository.latest_open`) returns the most recent session of that graph and that
+     subject in `running`, `waiting_user`, or `paused`. `DocumentService.mark_learned` returns it
+     (202, same `session_id`) instead of launching a second one; a finished session (`completed`,
+     `failed`, `cancelled`) no longer counts, “Retry” keeps its meaning. The pair “open session?
+     otherwise `runner.start`” is under `MemoryRuntime.learn_lock(user_id)` (one `asyncio.Lock` per
+     user, specific to the process: a single worker, D66); without it, two simultaneous clicks
+     launch two sessions (verified: the concurrency test fails without the lock). The `learned` flag
+     is written afterwards, outside the lock. **No deadlock**: (a) the request enters the lock with
+     no pending write (reading the document is a `SELECT`, which pysqlite does not wrap in a
+     transaction); it therefore does not hold SQLite's write lock while `runner.start` writes the
+     session with its own connection; (b) inside the lock, the only SQLite wait is `runner.start`'s
+     write, and no writer that could block it (runner session task, bus, import worker, a previous
+     request's flag) ever waits for `learn_lock`: there is no cycle, the wait is bounded by
+     `busy_timeout`; (c) no call to Ollama or Qdrant under the lock.
+  3. **M2 settled by after-the-fact removal**, without a deletion lock: `finish_once` takes the
+     write lock (`begin_write`) before re-reading the document and the item; if the item disappeared
+     during the `push` (deletion, which takes the document with it), the transaction is rolled back
+     and then, outside a transaction, `index.delete_items(user_id, [item_id])` removes the vectors
+     pushed after the deletion (`drop_orphan_vectors`); a store outage is swallowed and logged with
+     the item's identifier only. If only the document disappeared (the item remains), nothing is
+     removed: the item, marked not indexed by `prepare`, is caught up by reindexing; removing its
+     vectors could erase those of a concurrent reindexing. The order remains prepare → commit → push
+     → conditional `mark_indexed` (D66, D67).
+  4. **Framed title in memory**: when `memory_write` finds content already present, the LLM tool
+     returns `f"Already in memory: {untrusted(done.title, 'title in memory')}"` (the title comes
+     from memory, not from the agent: an imported document may have set it); the `tool.result` event
+     meant for the interface keeps the title in plain text.
+  5. **File deviation**: the M2 tests are in `tests/features/memory/test_ingest_orphans.py` (new)
+     rather than `test_pipeline.py`, which would have exceeded 300 lines.
+- **Reason** D70 §3 (tracking not resumed after a reload), phase 2 review (point 3: double click;
+  M2: orphan vectors), SPEC 17.4 (content coming from memory untrusted); D65 c, D66, D67, and D68
+  §9–10 (no transaction open during Ollama or Qdrant, no asyncio lock held while waiting for SQLite
+  outside `learn_lock`'s bounded critical section).
 
 ## D72
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 3, tâche 3.2 : PDF sûr (extraction en sous-processus, rendu d'URL par Gotenberg, liste de refus de Chromium)
-- **Décision** : (1) **Risque M6 de D63 levé** : `SubprocessPdfExtractor` (`app/providers/pdf/subprocess.py`) remplace `PdfPlumberExtractor` dans la composition (import de documents et lecteur web). Chaque appel lance `python -m app.providers.pdf.worker <pages> <caractères> <octets>` (`sys.executable`, répertoire de travail = racine du back) : **60 s** de délai réel (`asyncio.timeout`, puis `kill` et `wait` ; le worker est aussi tué si l'appel est annulé), **1 Gio** d'espace d'adressage (`RLIMIT_AS`, posé par le worker lui-même sous POSIX ; sans effet sous Windows, développement seulement), **2 workers au plus** (sémaphore ; l'attente d'une place n'est pas comptée dans les 60 s, l'appelant garde son propre délai). Délai → `PdfUnreadable(PDF_TIMEOUT_MESSAGE)` « PDF trop long à lire : délai dépassé. » ; tout code ≠ 0 (3 = illisible, `MemoryError`, plantage natif) → `PdfUnreadable()` ; stdout lu au plus 4 × `MAX_TEXT_CHARS` octets (au-delà : illisible), stderr jeté, jamais journalisé ; journaux : code de sortie seulement. Les plafonds de pages et de caractères sont relus dans `base` à chaque appel (les tests qui les abaissent valent pour les deux extracteurs). **Ajouts** : le worker ne reçoit que `PATH`, `SYSTEMROOT`, `TMPDIR`, `TEMP`, `TMP`, `LANG`, `LC_ALL` (pas les clés d'API de l'environnement) ; il n'importe ni FastAPI ni la base : `extract.py` n'importe plus `base` qu'à l'usage (`PdfUnreadable` hérite d'`AppError`, défini avec les gestionnaires FastAPI), vérifié par un test. `PdfPlumberExtractor` reste (fixtures de test, en thread). Vérifié dans l'image du back (Linux) : extraction réelle, refus d'une allocation de 2 Gio sous un plafond de 256 Mio, PDF ordinaire lu sous 1 Gio, worker tué (code -9) au délai. (2) **Le repli Gotenberg envoie une URL** (`POST /forms/chromium/convert/url`, multipart `url` + `skipNetworkIdleEvent=false`), **jamais du HTML** : la règle 17.4 « HTML nettoyé de tout script » vise les gabarits rendus en PDF des phases 4 et 6, pas la lecture d'une page publique dont on veut justement exécuter le JavaScript. `GotenbergRenderer(http, base_url).url_to_pdf(url, *, timeout_s)` : tout sous `asyncio.timeout`, corps lu en flux et refusé au-delà de `RENDER_MAX_BYTES` (20 Mio), réponse sans `%PDF-` refusée, statut ≠ 200, délai, erreur réseau → `RenderFailed` (`render_failed`, 502, « Rendu de la page impossible. »), levée `from None`, ni l'URL ni le corps dans un message ou un journal (type d'exception ou statut seulement). **Écart avec le brief, suivi tel que vérifié** : l'option d'attente `skipNetworkAlmostIdleEvent=false` n'aboutit jamais sous Gotenberg 8.40.0, même pour `https://example.org/` (30 s puis 503) ; `skipNetworkIdleEvent=false` rend example.org, react.dev et vuejs.org en 1,4 à 2,3 s. Une page dont le réseau ne s'arrête jamais tombe dans le délai de l'appel. Client dédié `bootstrap._render_http()` (`trust_env=False`, sans redirection, 15 s) et `bootstrap.page_renderer(settings, http)` (`None` si `WEB_RENDER_FALLBACK=false`, `Settings.web_render_fallback`, vrai par défaut, documenté dans `.env.example`). **Écart** : le client n'est pas encore ouvert dans `memory_providers` : sans consommateur avant 3.4 (repli du lecteur), il y serait un client ouvert inutilisé ; la tâche 3.4 l'ouvre là et passe `page_renderer(...)` à `TrafilaturaWebReader`. Contrat d'import 3 étendu à `pdf.subprocess`, `pdf.worker`, `pdf.gotenberg`. (3) **Chromium de Gotenberg** (`docker-compose.yml`, `command`) : documentation de l'image figée vérifiée (`gotenberg --help` de 8.40.0 et doc « Outbound URL Filtering ») : la liste de refus et les contrôles d'adresse s'appliquent aux navigations **et aux sous-ressources** (dont fetch/XHR et redirections), la liste de refus l'emporte toujours, sa valeur est découpée sur les virgules. **Ajout au brief** : `--chromium-deny-private-ips=true` est la garde principale (8.32+) : refus selon l'adresse **résolue** (boucle locale, RFC 1918, lien local dont 169.254.169.254, CGNAT, IPv6 locales, formes IPv6 qui portent une IPv4 privée), connexion épinglée sur l'adresse vérifiée par le proxy interne de Gotenberg ; vérifié : `http://localtest.me/` (nom public → 127.0.0.1) refusé en 403. `--chromium-deny-list` reste en défense en profondeur sur l'URL écrite (minuscules, sans identifiants) : `file:` ; tout hôte d'un seul label (couvre `backend`, `frontend`, `qdrant`, `ollama`, `searxng`, `gotenberg`, `localhost` et l'IPv4 décimale `2130706433`) ; `*.localhost`, `*.internal` (`host.docker.internal`), `*.local` ; IPv4 littérales 0/8 (formes octale et hexadécimale comprises), 10/8, 127/8, 169.254/16, 172.16/12, 192.168/16, 100.64/10, 198.18/15 ; **toute** IPv6 littérale (plus strict que le brief, qui ne visait que les non globales : une page publique n'est jamais servie par une IPv6 littérale). Aucune virgule ; `$` écrit `$$` pour compose. Le motif est vérifié en Python par `tests/infra/test_compose.py` et a été vérifié dans le moteur Go de Gotenberg 8.40.0 (conteneur jetable : 403 pour `backend:8000`, 169.254.169.254, `[::1]`, `2130706433`, `host.docker.internal`, 10.0.0.1, `gotenberg:3000`). `--api-disable-download-from=true` (fonction jamais utilisée). `--chromium-clear-cookies`/`--chromium-clear-storage`, envisagés, sont sans effet en 8.40.0 : chaque rendu a déjà son propre contexte de navigation, sauf `--chromium-shared-browser-context`, à ne jamais activer. **Risques résiduels** : (a) rebinding DNS d'un nom public vers une adresse interne entre la garde du back et le rendu : couvert par le proxy épinglé de Gotenberg, plus par le seul motif ; (b) une page rendue peut envoyer des requêtes sans prévol (GET, POST de formulaire) vers des adresses **publiques** quelconques ; vers le back, elles sont refusées par les deux gardes ; (c) WebSocket non cité par la documentation de filtrage ; (d) Gotenberg écrit l'URL refusée ou en échec dans **son** journal (niveau `error`, journal du conteneur, pas celui de l'application) : accepté, l'URL a déjà passé la garde SSRF ; (e) l'API de Gotenberg n'est publiée sur aucun port de la machine. **Revue de la tâche 3.2 (corrections)** : (4) **`file:///tmp/` de nouveau permis** : la liste de refus remplace le défaut de Gotenberg (`^file:(?!//\/tmp/).*`) ; avec `^file:` seul, `convert/html` et `convert/markdown`, qui font naviguer Chromium vers `file:///tmp/<requête>/index.html`, auraient été refusés (PDF des leçons et des CV, phases 4 et 6). L'entrée devient `^file:(?!//\/tmp/)`, l'exception du défaut ; `file:///etc/passwd`, `file:/etc/passwd` et `file:///tmpx/…` restent refusés, et les routes d'URL refusent `file://` d'elles-mêmes (protection toujours active). (5) **Casse ignorée** : le motif commence par `(?i)` (`HTTP://10.0.0.1/`, `FILE:///…`, `http://BACKEND:8000/` refusés). Gotenberg compile ses listes avec `dlclark/regexp2` (source : `FilterOutboundURL(…, denyList []*regexp2.Regexp, …)`), qui accepte `(?i)` et le lookahead, comme son propre défaut ; non revérifié dans un conteneur (démon Docker arrêté pendant la correction), vérifié en Python par `tests/infra/test_compose.py`. Le motif reste **au mieux** (comme la doc de Gotenberg le dit de son ancien motif textuel : deux `@`, nom compose qualifié par le réseau lui échappent) ; la garde est l'adresse résolue (1). (6) **Risques résiduels précisés** : (c) WebSocket : les données de test d'intégration de Gotenberg disent que la poignée de main WebSocket **échappe entièrement** au filtre (jamais vue comme `Fetch.requestPaused`), ni liste ni contrôle d'adresse ; une page rendue peut donc ouvrir `ws://` vers un service interne. Accepté : la route WebSocket du back refuse toute origine hors `cors_origins` (`check_origin`, 1008), aucun autre service interne ne sert de WebSocket, l'attaque se limite à sonder des ports ; (f) **WebRTC** : STUN et TURN (UDP, TCP pour TURN) contournent le proxy HTTP(S) de Gotenberg, donc `--chromium-deny-private-ips` ; une page peut envoyer des octets STUN/TURN vers des adresses internes, sans HTTP : impact faible, accepté. Correctif possible si besoin : réseau compose propre à Gotenberg (le back seul y joint Gotenberg, Gotenberg n'y voit aucun autre service), à étudier quand les gabarits des phases 4 et 6 arriveront.
-- **Raison** : D63 (risque M6 accepté jusqu'à la phase 3), SPEC 10.2 (repli Gotenberg pour les pages rendues en JavaScript), 17.2 (journaux sans URL), 17.4 (adresses privées, contenu non fiable) ; revue de la phase 3, point 5 (résultat piégé, Gotenberg jamais tourné vers le réseau interne).
-- **Revue de fin de phase 3** : une `OSError` au lancement du worker PDF devient `PdfUnreadable()` levée `from None` (journal : type d'exception seulement) ; une lecture web marque alors la page illisible au lieu d'un `internal_error`.
+- **Date** 2026-11-11
+- **Subject** Phase 3, task 3.2: safe PDF (subprocess extraction, URL rendering by Gotenberg,
+  Chromium deny list)
+- **Decision**
+  1. **D63's M6 risk lifted**: `SubprocessPdfExtractor` (`app/providers/pdf/subprocess.py`) replaces
+     `PdfPlumberExtractor` in the composition (document import and web reader). Each call launches
+     `python -m app.providers.pdf.worker <pages> <characters> <bytes>` (`sys.executable`, working
+     directory = backend root): **60 s** real timeout (`asyncio.timeout`, then `kill` and `wait`;
+     the worker is also killed if the call is cancelled), **1 GiB** of address space (`RLIMIT_AS`,
+     set by the worker itself under POSIX; no effect under Windows, development only), **2 workers
+     at most** (semaphore; waiting for a slot is not counted in the 60 s, the caller keeps its own
+     timeout). Timeout → `PdfUnreadable(PDF_TIMEOUT_MESSAGE)` “PDF took too long to read: timeout
+     exceeded.”; any code ≠ 0 (3 = unreadable, `MemoryError`, native crash) → `PdfUnreadable()`;
+     stdout read at most 4 × `MAX_TEXT_CHARS` bytes (beyond: unreadable), stderr discarded, never
+     logged; logs: exit code only. The page and character caps are re-read from `base` on every call
+     (tests that lower them apply to both extractors). **Additions**: the worker receives only
+     `PATH`, `SYSTEMROOT`, `TMPDIR`, `TEMP`, `TMP`, `LANG`, `LC_ALL` (not the environment's API
+     keys); it imports neither FastAPI nor the database: `extract.py` no longer imports `base`
+     except at use (`PdfUnreadable` inherits from `AppError`, defined with the FastAPI handlers),
+     verified by a test. `PdfPlumberExtractor` remains (test fixtures, in a thread). Verified in the
+     backend image (Linux): real extraction, refusal of a 2 GiB allocation under a 256 MiB cap,
+     ordinary PDF read under 1 GiB, worker killed (code -9) at the timeout.
+  2. **The Gotenberg fallback sends a URL** (`POST /forms/chromium/convert/url`, multipart `url` +
+     `skipNetworkIdleEvent=false`), **never HTML**: rule 17.4 “HTML cleaned of any script” targets
+     the templates rendered into PDF in phases 4 and 6, not the reading of a public page whose
+     JavaScript we precisely want to execute. `GotenbergRenderer(http, base_url).url_to_pdf(url,
+     *, timeout_s)`: everything under `asyncio.timeout`, body read as a stream and refused beyond
+     `RENDER_MAX_BYTES` (20 MiB), response without `%PDF-` refused, status ≠ 200, timeout, network
+     error → `RenderFailed` (`render_failed`, 502, “Page rendering failed.”), raised `from None`,
+     neither the URL nor the body in a message or a log (exception type or status only). **Deviation
+     from the brief, followed as verified**: the wait option `skipNetworkAlmostIdleEvent=false`
+     never completes under Gotenberg 8.40.0, even for `https://example.org/` (30 s then 503);
+     `skipNetworkIdleEvent=false` renders example.org, react.dev, and vuejs.org in 1.4 to 2.3 s. A
+     page whose network never stops falls under the call's timeout. Dedicated client
+     `bootstrap._render_http()` (`trust_env=False`, no redirects, 15 s) and
+     `bootstrap.page_renderer(settings, http)` (`None` if `WEB_RENDER_FALLBACK=false`,
+     `Settings.web_render_fallback`, true by default, documented in `.env.example`). **Deviation**:
+     the client is not yet opened in `memory_providers`: with no consumer before 3.4 (reader
+     fallback), it would be an unused open client there; task 3.4 opens it there and passes
+     `page_renderer(...)` to `TrafilaturaWebReader`. Import contract 3 extended to `pdf.subprocess`,
+     `pdf.worker`, `pdf.gotenberg`.
+  3. **Gotenberg's Chromium** (`docker-compose.yml`, `command`): documentation of the pinned image
+     checked (`gotenberg --help` of 8.40.0 and the “Outbound URL Filtering” doc): the deny list and
+     the address checks apply to navigations **and sub-resources** (including fetch/XHR and
+     redirects), the deny list always wins, its value is split on commas. **Addition to the brief**:
+     `--chromium-deny-private-ips=true` is the main guard (8.32+): refusal based on the **resolved**
+     address (loopback, RFC 1918, link-local including 169.254.169.254, CGNAT, local IPv6, IPv6
+     forms that carry a private IPv4), connection pinned to the address verified by Gotenberg's
+     internal proxy; verified: `http://localtest.me/` (public name → 127.0.0.1) refused with 403.
+     `--chromium-deny-list` remains as defense in depth on the written URL (lowercase, without
+     credentials): `file:`; any single-label host (covers `backend`, `frontend`, `qdrant`, `ollama`,
+     `searxng`, `gotenberg`, `localhost`, and the decimal IPv4 `2130706433`); `*.localhost`,
+     `*.internal` (`host.docker.internal`), `*.local`; literal IPv4 0/8 (octal and hexadecimal forms
+     included), 10/8, 127/8, 169.254/16, 172.16/12, 192.168/16, 100.64/10, 198.18/15; **any**
+     literal IPv6 (stricter than the brief, which targeted only non-global ones: a public page is
+     never served by a literal IPv6). No comma; `$` written `$$` for compose. The pattern is checked
+     in Python by `tests/infra/test_compose.py` and was verified in Gotenberg 8.40.0's Go engine
+     (throwaway container: 403 for `backend:8000`, 169.254.169.254, `[::1]`, `2130706433`,
+     `host.docker.internal`, 10.0.0.1, `gotenberg:3000`). `--api-disable-download-from=true` (a
+     function never used). `--chromium-clear-cookies`/`--chromium-clear-storage`, considered, have
+     no effect in 8.40.0: each render already has its own browsing context, except with
+     `--chromium-shared-browser-context`, which must never be enabled. **Residual risks**: (a) DNS
+     rebinding of a public name to an internal address between the backend's guard and the
+     rendering: covered by Gotenberg's pinned proxy, no longer by the pattern alone; (b) a rendered
+     page can send requests without preflight (GET, form POST) to any **public** address; toward the
+     backend, they are refused by both guards; (c) WebSocket not cited by the filtering
+     documentation; (d) Gotenberg writes the refused or failed URL in **its** log (`error` level,
+     container log, not the application's): accepted, the URL has already passed the SSRF guard; (e)
+     Gotenberg's API is published on no port of the machine.
+
+     **Review of task 3.2 (fixes)**:
+  4. **`file:///tmp/` allowed again**: the deny list replaces Gotenberg's default
+     (`^file:(?!//\/tmp/).*`); with `^file:` alone, `convert/html` and `convert/markdown`, which
+     make Chromium navigate to `file:///tmp/<request>/index.html`, would have been refused (lesson
+     and CV PDFs, phases 4 and 6). The entry becomes `^file:(?!//\/tmp/)`, the default's exception;
+     `file:///etc/passwd`, `file:/etc/passwd`, and `file:///tmpx/…` remain refused, and the URL
+     routes refuse `file://` on their own (protection still active).
+  5. **Case ignored**: the pattern begins with `(?i)` (`HTTP://10.0.0.1/`, `FILE:///…`,
+     `http://BACKEND:8000/` refused). Gotenberg compiles its lists with `dlclark/regexp2` (source:
+     `FilterOutboundURL(…, denyList []*regexp2.Regexp, …)`), which accepts `(?i)` and lookahead,
+     like its own default; not rechecked in a container (Docker daemon stopped during the fix),
+     verified in Python by `tests/infra/test_compose.py`. The pattern remains **best effort** (as
+     Gotenberg's doc says of its former text pattern: two `@`, a compose name qualified by the
+     network escape it); the guard is the resolved address (1).
+  6. **Residual risks clarified**: (c) WebSocket: Gotenberg's integration test data say the
+     WebSocket handshake **entirely escapes** the filter (never seen as `Fetch.requestPaused`),
+     neither list nor address check; a rendered page can therefore open `ws://` to an internal
+     service. Accepted: the backend's WebSocket route refuses any origin outside `cors_origins`
+     (`check_origin`, 1008), no other internal service serves a WebSocket, the attack is limited to
+     probing ports; (f) **WebRTC**: STUN and TURN (UDP, TCP for TURN) bypass Gotenberg's HTTP(S)
+     proxy, hence `--chromium-deny-private-ips`; a page can send STUN/TURN bytes to internal
+     addresses, without HTTP: low impact, accepted. Possible fix if needed: a compose network of
+     Gotenberg's own (the backend alone joins Gotenberg there, Gotenberg sees no other service), to
+     be studied when the templates of phases 4 and 6 arrive.
+- **Reason** D63 (M6 risk accepted until phase 3), SPEC 10.2 (Gotenberg fallback for pages rendered
+  in JavaScript), 17.2 (logs without URLs), 17.4 (private addresses, untrusted content); phase 3
+  review, point 5 (booby-trapped result, Gotenberg never turned toward the internal network).
+- **End-of-phase 3 review** An `OSError` at the launch of the PDF worker becomes `PdfUnreadable()`
+  raised `from None` (log: exception type only); a web read then marks the page unreadable instead
+  of an `internal_error`.
 
 ## D73
 
-- **Date** : 2026-11-12
-- **Sujet** : Phase 3, tâche 3.3 : fournisseurs de recherche (SearXNG, Brave) et clé Brave dans les réglages
-- **Décision** : (1) **`SearchProvider` est notre port** (`app/providers/search/base.py` : `SearchResult`, `TimeRange`, `MAX_RESULTS = 10`, `SEARCH_TIMEOUT_S = 10`, `SearchUnavailable` 503 « La recherche web est indisponible pour le moment. ») ; `SearxngSearch` et `BraveSearch` en `httpx` simple, sans SDK. Chaque fournisseur a son client (`bootstrap._search_http`) : hôte fixe et configuré, donc **sans la garde SSRF** du lecteur web (D63), mais `trust_env=False` (ni proxy ni réglage de l'environnement : SearXNG est sur le réseau interne et la clé Brave ne passe par aucun intermédiaire ; son test a un client du même type depuis D74), `follow_redirects=False`, 10 s (aussi posé par requête). Résultats : liens http(s) avec hôte seulement, doublons d'URL exacts retirés (premier gardé), 10 au plus. Journaux : statut HTTP ou type d'exception, jamais la requête, l'URL ni la clé ; erreurs levées `from None`. (2) **SearXNG** : `GET {SEARXNG_URL}/search?q=&format=json[&language=][&time_range=][&categories=a,b]`. Indisponible = erreur httpx, délai, statut ≠ 200, JSON illisible ou de forme inattendue, ou **zéro résultat avec `unresponsive_engines` non vide** (moteurs bloqués : l'appelant passe à Brave). Zéro résultat sans moteur en panne = liste vide. Écart avec la doc : elle annonce `time_range` ∈ {day, month, year}, mais `searx/webadapter.py` de l'image figée (57ff753ad) accepte aussi `week` : on l'envoie tel quel. (3) **Moteurs** (noms vérifiés dans le `settings.yml` par défaut de l'image figée `2026.11.9-57ff753ad`) : généralistes `duckduckgo`, `brave` (actifs par défaut), `mojeek` et `startpage` (`inactive: true` par défaut, donc réactivés par `inactive: false` : `disabled: false` seul ne les charge pas) ; plus `wikipedia`, `github`, `arxiv`, `stackoverflow`, `youtube`. `qwant`, `bing` et `google` restent désactivés (souvent bloqués). (4) **Brave** : `GET https://api.search.brave.com/res/v1/web/search`, en-têtes `X-Subscription-Token` et `Accept: application/json`, `count=10`, `search_lang` (codes ISO des réglages, sauf `pt` → `pt-pt`, `ja` → `jp`, `zh` → `zh-hans`, codes propres à Brave), `freshness` `pd`/`pw`/`pm`/`py` ; `categories` ignoré (l'API web n'en a pas). `web.results[]` : `title` et `description` débarrassés des balises (`<strong>`) et des entités, `page_age` comme date (`age` est un texte libre, ignoré) ; réponse sans `web` = aucun résultat. Tout statut ≠ 200 (401, 403, 422, 429, 5xx), délai ou erreur réseau = `SearchUnavailable` ; une clé non ASCII imprimable échoue sans requête. Le corps d'une erreur Brave n'est jamais lu pour un message (il peut citer la clé). (5) **Brave est construit par clé** : `ResearchProviders(searxng, brave: BraveFactory, web)` où `BraveFactory = Callable[[str], SearchProvider]` partage un client ; la clé sera lue à chaque recherche par `DbKeyReader` (interface d'abord, `.env` ensuite, D8) dans le service de la tâche 3.6. `web` est le même lecteur que `MemoryProviders.web`. `create_app(..., research_providers=)` remplace la composition (tests) ; le lifespan l'ouvre après la mémoire et la pose sur `app.state.research_providers` ; aucune requête à la construction. Toute la suite injecte `fake_research_providers` (`tests/support/research.py`, `FakeSearch`). (6) **`KeyProvider`** (`app/providers/keys.py` : `name`, `label`, `test_key`) : l'écran des clés gère Brave sans le traiter comme un LLM. `Providers.key_providers` = LLM puis `"brave"` ; `ApiKeyService(..., providers=key_providers, *, llm=)` : `list`, `set`, `delete`, `test` parcourent `key_providers`, `models_overview` et `list_models` seulement `llm` (Brave : 404 `unknown_provider` sur la liste des modèles). `LlmKeysCheck` (santé) reste limité aux LLM. `env_keys["brave"] = BRAVE_API_KEY` (déjà dans `KnownSecrets` au démarrage). Mêmes règles que D27 : chiffrement, 4 derniers caractères, 8 caractères au moins, 422 sans écho, résultat de test mémorisé pour une clé de l'interface. Le contrat OpenAPI ne change pas (Brave apparaît dans la liste existante). (7) **Test de clé Brave** : `BraveKeyProvider` fait une recherche minimale (`q=tremplin`, `count=1`) **hors du compteur des 900 requêtes mensuelles** (action rare et explicite de l'utilisatrice) ; 200 = valide ; 401, 403 ou 422 avec le code `SUBSCRIPTION_TOKEN_INVALID` = « Clé refusée par Brave Search. » ; 429 = limite atteinte ; autre = statut seul ; réseau = « Impossible de joindre Brave Search. » ; ne lève jamais. Il passe par le client partagé des sondes (comme les tests de clé LLM, `_http.check_key`), pas par le client de recherche, construit plus tard par le lifespan ; **amendé par D74** : il a désormais son propre client sans proxy de l'environnement (`bootstrap.key_test_http`, `trust_env=False`). Le code d'erreur 422 de Brave vient de la pratique connue de l'API, pas de la doc consultée (context7 ne le cite pas) ; un 422 sans ce code reste « erreur (422) ».
-- **Raison** : SPEC 10.1 (fournisseurs, SearXNG par défaut, Brave en secours), 11.3 (clé Brave comme les clés LLM, 900 requêtes par mois), 17.2 (journaux sans requête, URL ni clé) ; D8, D27, D63 ; revue de la phase 3, point 3 (SearXNG bloqué : moteurs non répondants = indisponible, pour le repli).
+- **Date** 2026-11-12
+- **Subject** Phase 3, task 3.3: search providers (SearXNG, Brave) and the Brave key in the settings
+- **Decision**
+  1. **`SearchProvider` is our port** (`app/providers/search/base.py`: `SearchResult`, `TimeRange`,
+     `MAX_RESULTS = 10`, `SEARCH_TIMEOUT_S = 10`, `SearchUnavailable` 503 “Web search is unavailable
+     for the moment.”); `SearxngSearch` and `BraveSearch` in plain `httpx`, without an SDK. Each
+     provider has its own client (`bootstrap._search_http`): fixed, configured host, hence **without
+     the SSRF guard** of the web reader (D63), but `trust_env=False` (no proxy or environment
+     setting: SearXNG is on the internal network and the Brave key passes through no intermediary;
+     its test has had a client of the same type since D74), `follow_redirects=False`, 10 s (also set
+     per request). Results: http(s) links with a host only, exact URL duplicates removed (first
+     kept), 10 at most. Logs: HTTP status or exception type, never the query, URL, or key; errors
+     raised `from None`.
+  2. **SearXNG**:
+     `GET {SEARXNG_URL}/search?q=&format=json[&language=][&time_range=][&categories=a,b]`.
+     Unavailable = httpx error, timeout, status ≠ 200, unreadable or unexpectedly shaped JSON, or
+     **zero results with non-empty `unresponsive_engines`** (blocked engines: the caller falls back
+     to Brave). Zero results with no engine down = empty list. Deviation from the docs: they
+     announce `time_range` ∈ {day, month, year}, but `searx/webadapter.py` of the pinned image
+     (57ff753ad) also accepts `week`: we send it as is.
+  3. **Engines** (names verified in the default `settings.yml` of the pinned image
+     `2026.11.9-57ff753ad`): general-purpose `duckduckgo`, `brave` (active by default), `mojeek` and
+     `startpage` (`inactive: true` by default, hence reactivated by `inactive: false`:
+     `disabled: false` alone does not load them); plus `wikipedia`, `github`, `arxiv`,
+     `stackoverflow`, `youtube`. `qwant`, `bing`, and `google` stay disabled (often blocked).
+  4. **Brave**: `GET https://api.search.brave.com/res/v1/web/search`, headers `X-Subscription-Token`
+     and `Accept: application/json`, `count=10`, `search_lang` (ISO codes from the settings, except
+     `pt` → `pt-pt`, `ja` → `jp`, `zh` → `zh-hans`, codes specific to Brave), `freshness`
+     `pd`/`pw`/`pm`/`py`; `categories` ignored (the web API has none). `web.results[]`: `title` and
+     `description` stripped of tags (`<strong>`) and entities, `page_age` as the date (`age` is free
+     text, ignored); a response without `web` = no results. Any status ≠ 200 (401, 403, 422, 429,
+     5xx), timeout, or network error = `SearchUnavailable`; a key that is not printable ASCII fails
+     without a request. The body of a Brave error is never read for a message (it may cite the key).
+  5. **Brave is built per key**: `ResearchProviders(searxng, brave: BraveFactory, web)` where
+     `BraveFactory = Callable[[str], SearchProvider]` shares a client; the key will be read at each
+     search by `DbKeyReader` (interface first, `.env` next, D8) in the service of task 3.6. `web` is
+     the same reader as `MemoryProviders.web`. `create_app(..., research_providers=)` replaces the
+     composition (tests); the lifespan opens it after memory and sets it on
+     `app.state.research_providers`; no request at construction. The whole suite injects
+     `fake_research_providers` (`tests/support/research.py`, `FakeSearch`).
+  6. **`KeyProvider`** (`app/providers/keys.py`: `name`, `label`, `test_key`): the keys screen
+     handles Brave without treating it as an LLM. `Providers.key_providers` = LLMs then `"brave"`;
+     `ApiKeyService(..., providers=key_providers, *, llm=)`: `list`, `set`, `delete`, `test` go
+     through `key_providers`, `models_overview` and `list_models` only `llm` (Brave: 404
+     `unknown_provider` on the model list). `LlmKeysCheck` (health) stays limited to the LLMs.
+     `env_keys["brave"] = BRAVE_API_KEY` (already in `KnownSecrets` at startup). Same rules as D27:
+     encryption, last 4 characters, 8 characters at least, 422 without echo, test result remembered
+     for an interface key. The OpenAPI contract does not change (Brave appears in the existing
+     list).
+  7. **Brave key test**: `BraveKeyProvider` makes a minimal search (`q=tremplin`, `count=1`)
+     **outside the counter of the 900 monthly requests** (a rare, explicit action by the user); 200
+     = valid; 401, 403, or 422 with the code `SUBSCRIPTION_TOKEN_INVALID` = “Key rejected by Brave
+     Search.”; 429 = limit reached; other = status alone; network = “Cannot reach Brave Search.”;
+     never raises. It goes through the probes' shared client (like the LLM key tests,
+     `_http.check_key`), not through the search client, built later by the lifespan; **amended by
+     D74**: it now has its own client without the environment's proxy (`bootstrap.key_test_http`,
+     `trust_env=False`). Brave's 422 error code comes from known practice with the API, not from the
+     doc consulted (context7 does not cite it); a 422 without this code stays “error (422)”.
+- **Reason** SPEC 10.1 (providers, SearXNG by default, Brave as backup), 11.3 (Brave key like the
+  LLM keys, 900 requests per month), 17.2 (logs without query, URL, or key); D8, D27, D63; phase 3
+  review, point 3 (SearXNG blocked: unresponsive engines = unavailable, for the fallback).
 
 ## D74
 
-- **Date** : 2026-11-12
-- **Sujet** : Phase 3, tâche 3.4 : lecteur web étendu (débit par hôte, GitHub, arXiv, repli Gotenberg) et correctifs de la revue 3.3
-- **Décision** : (1) **Port `WebFetcher.fetch` étendu par paramètres nommés avec défaut** (compatible D63 : un appel sans option se comporte comme avant) : `content_types` remplace la liste blanche des types pour cet appel (JSON de GitHub, Atom d'arXiv, PDF seul pour arXiv) ; `headers` s'ajoute aux en-têtes par défaut, sauf `Accept-Encoding` (il borne la décompression, `_body`), `Host`, `Cookie` (aucun cookie envoyé, D63) et `Content-Length`, jamais remplaçables. Messages `GITHUB_UNREADABLE` « Dépôt GitHub illisible : README absent ou API indisponible. » et `ARXIV_UNREADABLE` « Article arXiv introuvable ou API indisponible. ». (2) **Débit** (`web/throttle.py`, `DomainThrottle`) : un départ de requête par seconde et par **hôte exact** en minuscules (pas de domaine enregistrable : `a.example.org` et `b.example.org` sont distincts), **3 s pour `export.arxiv.org`** (consigne de l'API arXiv : une requête toutes les 3 s ; écart assumé avec la règle générale de 10.2) ; le créneau est réservé sous verrou (section sans `await`) puis attendu hors verrou, donc des appels simultanés s'échelonnent (0, 1, 2 s) ; hôtes dont le dernier départ date de plus de 60 s purgés ; une seule instance par processus (tous utilisateurs), créée par `bootstrap`. `SafeHttpFetcher(http, *, resolve, throttle)` attend **avant chaque saut, redirections comprises**, après les contrôles (a) et (b) de D63 : une adresse refusée ne consomme aucun créneau. L'attente compte dans les 15 s : **correctif de revue I1** : `wait(host, *, budget_s)` reçoit ce qui reste au fetch, ramené à l'échéance de la lecture en cours (`READ_DEADLINE`, variable de contexte posée par `RoutingWebReader`, `base.deadline_within`) ; un départ qui tomberait au-delà n'est **pas réservé** et l'appel échoue tout de suite en « délai dépassé », sans requête et sans repousser les suivants ; un appel annulé pendant son attente (délai du fetch ou de la lecture) rend son créneau s'il est encore le dernier réservé (départ précédent restauré), sinon un trou reste dans la file sans retarder personne. Ainsi une rafale vers un hôte (8 lectures arXiv simultanées : 4 servies à 0, 3, 6, 9 s, 4 refusées aussitôt) ne bloque pas l'hôte au-delà de la file réellement servie, et la mémoire reste bornée par la purge. La première version (créneau toujours réservé, jamais rendu) laissait une rafale bloquer durablement un hôte : la phrase « perte d'au plus un intervalle » était fausse. (3) **GitHub** (`web/github.py`) : `github_repo(url)` reconnaît `http(s)://(www.)github.com/<owner>/<repo>[/...]` (owner `^[A-Za-z0-9-]{1,39}$`, repo `^[A-Za-z0-9._-]{1,100}$`, `.git` retiré, `.` et `..` refusés, sans identifiants, premiers segments réservés du site refusés : `orgs`, `settings`, `marketplace`, `topics`…) ; seuls ces deux noms validés entrent dans l'URL de l'API. `GithubReader` : `GET https://api.github.com/repos/{o}/{r}` puis `/readme` (`Accept: application/vnd.github+json`, `content_types=("application/json",)`), README décodé du base64 (retours à la ligne retirés, `validate=True`, UTF-8 avec remplacement), tronqué à `MAX_TEXT_CHARS` ; `title = full_name`, `author = owner.login`, `date = pushed_at`, `description`, chacun `None` s'il n'est pas un texte. **Sans jeton** : 60 appels par heure et par IP, deux par dépôt (limite connue ; une 403 de limite devient `GITHUB_UNREADABLE`). Pas d'en-tête `X-GitHub-Api-Version` : la doc actuelle cite une version datée récente, mais une version figée finirait retirée (400) ; sans l'en-tête, GitHub applique sa version par défaut. Seules la racine du dépôt, `tree/<branche>` et `.git` vont à l'API (correctif de revue) : une issue, une PR, un wiki ou un fichier (`/blob/...`) restent au lecteur de pages (garde comprise), pour ne jamais citer leur URL avec le texte du README. Tout échec (statut, type, taille, JSON illisible ou trop imbriqué, base64 invalide, README vide) → `GITHUB_UNREADABLE` ; `UrlForbidden` et le délai dépassé passent tels quels. Pas de seuil `MIN_TEXT_CHARS` pour GitHub et arXiv (API structurées : un README court reste un dépôt lisible). (4) **arXiv** (`web/arxiv.py`) : `arxiv_id(url)` reconnaît `arxiv.org/abs/<id>` et `arxiv.org/pdf/<id>[.pdf]` (`www.` compris), identifiants récents (`1706.03762`) et anciens (`hep-th/9901001`, `math.GT/0309136`), version gardée. `ArxivReader` : `GET https://export.arxiv.org/api/query?id_list=<id>` (types `application/atom+xml`, `application/xml`, `text/xml`), analysé par `defusedxml.ElementTree.fromstring(..., forbid_dtd=True)` dans un thread (entités et DTD refusées : bombe XML → `ARXIV_UNREADABLE`) ; flux vide, entrée d'erreur de l'API (`id` en `/api/errors`, format vérifié dans la doc) ou entrée sans titre → `ARXIV_UNREADABLE`. Titre et résumé aux blancs réduits, auteurs joints par « , », `date = published`, `description` = résumé. Texte = PDF `https://arxiv.org/pdf/<id>` (même fetcher, `content_types=("application/pdf",)`, extraction en sous-processus D72) ; PDF en échec, vide ou **trop lent** → résumé seul (journal : code d'erreur seulement). **Correctif de revue I2** : l'étape du PDF (débit, téléchargement, extraction) a sa propre échéance, `15 % × FETCH_TIMEOUT_S` (2,25 s) avant celle de la lecture, publiée au fetcher par `READ_DEADLINE` ; à l'échéance, l'extraction en sous-processus est annulée (worker tué, D72) et le résumé est rendu, avec titre, auteurs et date. L'import mémoire d'un `arxiv.org/abs/<id>` aboutit donc toujours dans les 15 s dès que l'API répond. `export.arxiv.org/abs/<id>` est aussi reconnu. `defusedxml` ajouté aux dépendances (0.7.1, déjà présent en transitif) et `types-defusedxml` au groupe dev (mypy strict). (5) **Repli Gotenberg** (`TrafilaturaWebReader(fetcher, pdf, *, renderer=None)`) : seulement après un fetch **HTML réussi** dont le texte principal fait moins de `MIN_TEXT_CHARS`, et si `require_text` (le repli YouTube, qui n'attend que titre et description, ne rend jamais) ; jamais si le fetch a levé (adresse refusée, statut d'erreur, type refusé, trop gros). Gotenberg reçoit `final_url`, l'URL finale déjà validée par la garde SSRF, jamais du HTML ; `timeout_s` = ce qui reste des 15 s depuis le début de la lecture. Titre et métadonnées gardés de la page HTML, texte du rendu ; `RenderFailed`, PDF illisible ou texte encore court → `UrlUnreadable(NO_TEXT_MESSAGE)` levée `from None` ; journal : code d'erreur seulement. Risque résiduel : le Chromium de Gotenberg résout lui-même le nom (fenêtre de rebinding entre notre contrôle et sa navigation), couvert par sa liste de refus et `--chromium-deny-private-ips` (D72). (6) **Aiguillage** (`web/routing.py`, `RoutingWebReader(default, github, arxiv)`, qui satisfait `WebReader`) : `github_repo` → GitHub, `arxiv_id` → arXiv, sinon lecteur de pages ; **toute la lecture sous `asyncio.timeout_at(échéance)`** à 15 s (repli et extraction compris ; le sous-processus PDF est tué à l'annulation, D72) → `UrlUnreadable(TIMEOUT_MESSAGE)`. **Conséquence assumée** (SPEC 10.2) : un PDF importé par URL dans la mémoire (hors arXiv), qui disposait avant de 15 s de téléchargement puis de 60 s d'extraction (D72), doit désormais tenir en 15 s en tout ; un long PDF se lit par l'import de fichier, qui garde les 60 s. Les lecteurs GitHub et arXiv sont typés par un petit port `SourceReader` (`read(url)`) plutôt que par les classes concrètes du brief, pour les doublures de test. (7) **Composition** : `bootstrap._web_reader` : un `SafeHttpFetcher(reader_http, throttle=DomainThrottle())` partagé par les trois lecteurs, `renderer = page_renderer(settings, render_http)` (`None` si `WEB_RENDER_FALLBACK=false`) ; le client de Gotenberg (`_render_http`) est désormais ouvert et fermé par `memory_providers` (reliquat de D72 : trois clients), seulement si le repli est actif (`_render_client`, sinon aucun client ouvert inutilisé). La mémoire (import d'URL), YouTube (repli) et la recherche reçoivent ce même lecteur sans changement. Contrat d'import 3 étendu à `web.throttle`, `web.github`, `web.arxiv`, `web.routing`. (8) **Correctifs de la revue 3.3** : (a) SearXNG : `unresponsive_engines` d'une forme autre qu'une liste (nombre, booléen, objet, texte) ne lève plus `TypeError` : sans résultat, SearXNG est indisponible (`SearchUnavailable`, l'appelant passe à Brave) ; avec des résultats, ils sont rendus ; (b) Brave : un corps qui n'est pas un objet JSON, ou un `web` / `web.results` de forme inattendue → `SearchUnavailable` (un corps sans `web` reste « aucun résultat ») ; (c) le test de la clé Brave n'utilise plus le client des sondes (qui reprend les proxys de l'environnement) : `bootstrap.key_test_http()` (`trust_env=False`, sans redirection, 10 s) est ouvert par le lifespan et passé à `build_providers(..., *, key_http=)` ; la phrase de D73 « la clé Brave ne passe par aucun intermédiaire » vaut ainsi pour la recherche et pour le test. Contrat OpenAPI inchangé.
-- **Raison** : SPEC 10.2 (GitHub, arXiv, repli JavaScript, 15 s par page, une requête par seconde et par domaine), 17.2 (journaux sans URL), 17.4 (SSRF sur tout chemin de lecture, contenu non fiable) ; D63, D72, D73 ; consigne de l'API arXiv (3 s entre appels) ; revue de la phase 3, point 5 (Gotenberg jamais appelé pour une adresse refusée), et revue de la tâche 3.3.
+- **Date** 2026-11-12
+- **Subject** Phase 3, task 3.4: extended web reader (per-host rate, GitHub, arXiv, Gotenberg
+  fallback) and 3.3 review fixes
+- **Decision**
+  1. **`WebFetcher.fetch` port extended by named parameters with defaults** (compatible with D63: a
+     call with no option behaves as before): `content_types` replaces the type whitelist for this
+     call (GitHub's JSON, arXiv's Atom, PDF only for arXiv); `headers` adds to the default headers,
+     except `Accept-Encoding` (it bounds decompression, `_body`), `Host`, `Cookie` (no cookie sent,
+     D63), and `Content-Length`, which can never be replaced. Messages `GITHUB_UNREADABLE` “GitHub
+     repository unreadable: README missing or API unavailable.” and `ARXIV_UNREADABLE` “arXiv
+     article not found or API unavailable.”.
+  2. **Rate** (`web/throttle.py`, `DomainThrottle`): one request start per second per **exact host**
+     in lowercase (no registrable domain: `a.example.org` and `b.example.org` are distinct), **3 s
+     for `export.arxiv.org`** (arXiv API guidance: one request every 3 s; deliberate deviation from
+     10.2's general rule); the slot is reserved under a lock (section without `await`) then awaited
+     outside the lock, so simultaneous calls are staggered (0, 1, 2 s); hosts whose last start dates
+     from more than 60 s ago are purged; a single instance per process (all users), created by
+     `bootstrap`. `SafeHttpFetcher(http, *, resolve, throttle)` waits **before each hop, redirects
+     included**, after checks (a) and (b) of D63: a refused address consumes no slot. The wait
+     counts within the 15 s: **review fix I1**: `wait(host, *, budget_s)` receives what remains for
+     the fetch, capped at the current read's deadline (`READ_DEADLINE`, a context variable set by
+     `RoutingWebReader`, `base.deadline_within`); a start that would fall beyond it is **not
+     reserved** and the call fails at once with “timeout exceeded”, without a request and without
+     pushing back the following ones; a call cancelled during its wait gives back its slot if it is
+     still the last one reserved (previous start restored), otherwise a gap remains in the queue
+     without delaying anyone. Thus a burst toward a host (8 simultaneous arXiv reads: 4 served at 0,
+     3, 6, 9 s, 4 refused immediately) does not block the host beyond the queue actually served, and
+     memory stays bounded by the purge. The first version (slot always reserved, never given back)
+     let a burst block a host durably: the sentence “loss of at most one interval” was wrong.
+  3. **GitHub** (`web/github.py`): `github_repo(url)` recognizes
+     `http(s)://(www.)github.com/<owner>/<repo>[/...]` (owner `^[A-Za-z0-9-]{1,39}$`, repo
+     `^[A-Za-z0-9._-]{1,100}$`, `.git` removed, `.` and `..` refused, no credentials, the site's
+     reserved first segments refused: `orgs`, `settings`, `marketplace`, `topics`…); only these two
+     validated names enter the API URL. `GithubReader`: `GET https://api.github.com/repos/{o}/{r}`
+     then `/readme` (`Accept: application/vnd.github+json`, `content_types=("application/json",)`),
+     README decoded from base64 (line breaks removed, `validate=True`, UTF-8 with replacement),
+     truncated to `MAX_TEXT_CHARS`; `title = full_name`, `author = owner.login`, `date = pushed_at`,
+     `description`, each `None` if it is not text. **Without a token**: 60 calls per hour per IP,
+     two per repository (known limit; a rate-limit 403 becomes `GITHUB_UNREADABLE`). No
+     `X-GitHub-Api-Version` header: the current doc cites a recent dated version, but a pinned
+     version would end up retired (400); without the header, GitHub applies its default version.
+     Only the repository root, `tree/<branch>`, and `.git` go to the API (review fix): an issue, a
+     PR, a wiki, or a file (`/blob/...`) stay with the page reader (guard included), so as never to
+     cite their URL with the README's text. Any failure (status, type, size, unreadable or too
+     deeply nested JSON, invalid base64, empty README) → `GITHUB_UNREADABLE`; `UrlForbidden` and the
+     timeout pass as is. No `MIN_TEXT_CHARS` threshold for GitHub and arXiv (structured APIs: a
+     short README is still a readable repository).
+  4. **arXiv** (`web/arxiv.py`): `arxiv_id(url)` recognizes `arxiv.org/abs/<id>` and
+     `arxiv.org/pdf/<id>[.pdf]` (`www.` included), recent identifiers (`1706.03762`) and old ones
+     (`hep-th/9901001`, `math.GT/0309136`), version kept. `ArxivReader`:
+     `GET https://export.arxiv.org/api/query?id_list=<id>` (types `application/atom+xml`,
+     `application/xml`, `text/xml`), parsed by `defusedxml.ElementTree.fromstring(...,
+     forbid_dtd=True)` in a thread (entities and DTDs refused: XML bomb → `ARXIV_UNREADABLE`); empty
+     feed, API error entry (`id` under `/api/errors`, format verified in the doc), or entry without
+     a title → `ARXIV_UNREADABLE`. Title and abstract with whitespace collapsed, authors joined by
+     “, ”, `date = published`, `description` = abstract. Text = PDF `https://arxiv.org/pdf/<id>`
+     (same fetcher, `content_types=("application/pdf",)`, subprocess extraction D72); PDF failing,
+     empty, or **too slow** → abstract alone (log: error code only). **Review fix I2**: the PDF step
+     (rate, download, extraction) has its own deadline, `15 % × FETCH_TIMEOUT_S` (2.25 s) before the
+     read's, published to the fetcher by `READ_DEADLINE`; at the deadline, the subprocess extraction
+     is cancelled (worker killed, D72) and the abstract is returned, with title, authors, and date.
+     A memory import of an `arxiv.org/abs/<id>` therefore always succeeds within 15 s as soon as the
+     API responds. `export.arxiv.org/abs/<id>` is also recognized. `defusedxml` added to the
+     dependencies (0.7.1, already present transitively) and `types-defusedxml` to the dev group
+     (strict mypy).
+  5. **Gotenberg fallback** (`TrafilaturaWebReader(fetcher, pdf, *, renderer=None)`): only after a
+     **successful HTML fetch** whose main text is shorter than `MIN_TEXT_CHARS`, and if
+     `require_text` (the YouTube fallback, which expects only title and description, never renders);
+     never if the fetch raised (address refused, error status, type refused, too large). Gotenberg
+     receives `final_url`, the final URL already validated by the SSRF guard, never HTML;
+     `timeout_s` = what remains of the 15 s since the start of the read. Title and metadata kept
+     from the HTML page, text from the render; `RenderFailed`, unreadable PDF, or text still short →
+     `UrlUnreadable(NO_TEXT_MESSAGE)` raised `from None`; log: error code only. Residual risk:
+     Gotenberg's Chromium resolves the name itself (a rebinding window between our check and its
+     navigation), covered by its deny list and `--chromium-deny-private-ips` (D72).
+  6. **Routing** (`web/routing.py`, `RoutingWebReader(default, github, arxiv)`, which satisfies
+     `WebReader`): `github_repo` → GitHub, `arxiv_id` → arXiv, otherwise the page reader; **the
+     whole read under `asyncio.timeout_at(deadline)`** at 15 s (fallback and extraction included;
+     the PDF subprocess is killed on cancellation, D72) → `UrlUnreadable(TIMEOUT_MESSAGE)`.
+     **Accepted consequence** (SPEC 10.2): a PDF imported by URL into memory (outside arXiv), which
+     previously had 15 s of download then 60 s of extraction (D72), must now fit in 15 s overall; a
+     long PDF is read through file import, which keeps the 60 s. The GitHub and arXiv readers are
+     typed by a small `SourceReader` port (`read(url)`) rather than by the brief's concrete classes,
+     for test doubles.
+  7. **Composition**: `bootstrap._web_reader`: one `SafeHttpFetcher(reader_http,
+     throttle=DomainThrottle())` shared by the three readers, `renderer = page_renderer(settings,
+     render_http)` (`None` if `WEB_RENDER_FALLBACK=false`); Gotenberg's client (`_render_http`) is
+     now opened and closed by `memory_providers` (D72 leftover: three clients), only if the fallback
+     is active (`_render_client`, otherwise no unused client opened). Memory (URL import), YouTube
+     (fallback), and search receive this same reader without change. Import contract 3 extended to
+     `web.throttle`, `web.github`, `web.arxiv`, `web.routing`.
+  8. **3.3 review fixes**: (a) SearXNG: `unresponsive_engines` of a form other than a list (number,
+     boolean, object, text) no longer raises `TypeError`: without results, SearXNG is unavailable
+     (`SearchUnavailable`, the caller falls back to Brave); with results, they are returned; (b)
+     Brave: a body that is not a JSON object, or a `web` / `web.results` of unexpected shape →
+     `SearchUnavailable` (a body without `web` remains “no results”); (c) the Brave key test no
+     longer uses the probes' client (which picks up the environment's proxies):
+     `bootstrap.key_test_http()` (`trust_env=False`, no redirects, 10 s) is opened by the lifespan
+     and passed to `build_providers(..., *, key_http=)`; D73's sentence “the Brave key passes
+     through no intermediary” thus holds for search and for the test. OpenAPI contract unchanged.
+- **Reason** SPEC 10.2 (GitHub, arXiv, JavaScript fallback, 15 s per page, one request per second
+  per domain), 17.2 (logs without URLs), 17.4 (SSRF on every read path, untrusted content); D63,
+  D72, D73; arXiv API guidance (3 s between calls); phase 3 review, point 5 (Gotenberg never called
+  for a refused address), and review of task 3.3.
 
 ## D75
 
-- **Date** : 2026-11-12
-- **Sujet** : Phase 3, tâche 3.5 : tables de la recherche web, cache, nettoyage des requêtes et domaines
-- **Décision** : (1) **Quatre tables, migration 0004** : `web_cache` (SPEC 13.6), `sources` (13.3) et deux ajouts, `web_queries` (requête nettoyée par session : rejeu d'un nœud sans recompter ni refacturer, et affichage des requêtes lancées) et `search_usage` (compteur mensuel par fournisseur, utilisateur et empreinte de clé : plafond de 900 requêtes Brave par mois). Chacune porte `UserScopedMixin` et une unicité nommée par la convention de `Base` (`uq_<table>_user_id`) ; `sources` a en plus `ix_sources_user_session`. `session_id` n'est une clé étrangère nulle part : les sources et les requêtes survivent à leur session (comme `llm_calls`). Avec un `session_id` nul, l'unicité de `sources` ne joue pas (SQLite compte les NULL distincts) ; les sources de la phase 3 ont toujours une session. (2) **`web_cache` par utilisateur**, jamais partagé : 7 jours pour une page lue (`ok`), 24 h pour une page illisible et pour une liste de résultats (parade « cache » de 10.1). La clé stockée est une empreinte SHA-256 (de l'URL normalisée par `normalize_url`, D66, ou de la requête), jamais l'URL ni la requête en clair ; `search_key` ignore casse, espaces multiples et ordre des catégories. `put` est un upsert SQL en une instruction (`ON CONFLICT DO UPDATE`), sans lecture préalable ni SAVEPOINT : deux écritures simultanées de la même clé ne lèvent pas d'erreur (D65 c ne s'applique pas). Une entrée dont la forme a changé compte comme absente. L'appelant ne met pas en cache une liste vide due à une panne. (3) **`month_total`** est la deuxième lecture sans filtre `user_id` après D18 : elle additionne les compteurs d'une même clé (fournisseur, mois, empreinte) sur tous les utilisateurs, car une clé `.env` est partagée en mode Google et son plafond est celui du compte Brave. Elle ne renvoie qu'un nombre. `increment` est un upsert `count = count + 1` atomique. (4) **Nettoyage des requêtes (17.3)** : retirés, sans tenir compte de la casse ni des accents (repli par caractère avec table d'indices, accents séparés compris) : tout email, tout numéro (national français `0X XX XX XX XX` avec séparateurs facultatifs ; international `+` ou `00` suivi de 8 à 15 chiffres, séparateurs et parenthèses admis), le nom complet et le nom de famille (dernier mot du nom, 3 lettres au moins). Le prénom seul est gardé (faux positifs : « Jane » est aussi un mot ordinaire) ; un nom d'un seul mot est indiscernable d'un prénom et reste donc gardé. Les bornes de mot comptent le tiret (« doe-reader » n'est pas le nom « doe »). Aucune requête n'est journalisée. (5) **Domaines** : `normalize_domain` reprend à l'identique `normalizeDomain.ts` du front (mêmes entrées acceptées et refusées, mêmes tests), avec `[0-9]` et `fullmatch` pour ne pas dépendre de `\d` Unicode ni de `$` ; `host_matches` compare par suffixe (`docs.python.org` ⊂ `python.org`, `notpython.org` non) ; `rank_results` retire les exclus (l'exclusion l'emporte sur la préférence), met les privilégiés en tête et garde l'ordre d'origine dans chaque groupe ; une entrée invalide de la liste est ignorée.
-- **Raison** : SPEC 10.1 (cache des recherches), 10.2 (cache 7 jours), 10.3 (domaines), 10.4, 11.3 (900 requêtes), 13.3, 13.6, 17.3 (données personnelles hors des requêtes), 17.2 (journaux sans requête ni URL) ; D18 (filtre `user_id`), D63, D65, D66 ; revue de la phase 3, point 2 (nœud rejoué) et point 4 (compteur Brave atomique).
+- **Date** 2026-11-12
+- **Subject** Phase 3, task 3.5: web search tables, cache, query cleaning, and domains
+- **Decision**
+  1. **Four tables, migration 0004**: `web_cache` (SPEC 13.6), `sources` (13.3), and two additions,
+     `web_queries` (cleaned query per session: replaying a node without recounting or rebilling, and
+     displaying the queries launched) and `search_usage` (monthly counter per provider, user, and
+     key fingerprint: cap of 900 Brave requests per month). Each carries `UserScopedMixin` and a
+     uniqueness named by `Base`'s convention (`uq_<table>_user_id`); `sources` additionally has
+     `ix_sources_user_session`. `session_id` is a foreign key nowhere: sources and queries survive
+     their session (like `llm_calls`). With a null `session_id`, the uniqueness of `sources` does
+     not apply (SQLite counts NULLs as distinct); phase 3 sources always have a session.
+  2. **`web_cache` per user**, never shared: 7 days for a read page (`ok`), 24 h for an unreadable
+     page and for a result list (the “cache” countermeasure of 10.1). The stored key is a SHA-256
+     fingerprint (of the URL normalized by `normalize_url`, D66, or of the query), never the URL or
+     the query in plain text; `search_key` ignores case, multiple spaces, and category order. `put`
+     is a one-statement SQL upsert (`ON CONFLICT DO UPDATE`), with no prior read or SAVEPOINT: two
+     simultaneous writes of the same key raise no error (D65 c does not apply). An entry whose shape
+     has changed counts as absent. The caller does not cache an empty list caused by an outage.
+  3. **`month_total`** is the second read without a `user_id` filter after D18: it sums the counters
+     of one key (provider, month, fingerprint) across all users, because a `.env` key is shared in
+     Google mode and its cap is that of the Brave account. It returns only a number. `increment` is
+     an atomic `count = count + 1` upsert.
+  4. **Query cleaning (17.3)**: removed, regardless of case and accents (character-by-character
+     folding with an index table, separated accents included): any email, any number (French
+     national `0X XX XX XX XX` with optional separators; international `+` or `00` followed by 8 to
+     15 digits, separators and parentheses allowed), the full name and the family name (the name's
+     last word, 3 letters at least). The first name alone is kept (false positives: “Jane” is also
+     an ordinary word); a one-word name is indistinguishable from a first name and is therefore
+     kept. Word boundaries count the hyphen (“doe-reader” is not the name “doe”). No query is
+     logged.
+  5. **Domains**: `normalize_domain` replicates the front end's `normalizeDomain.ts` exactly (same
+     accepted and refused inputs, same tests), with `[0-9]` and `fullmatch` so as not to depend on
+     Unicode `\d` or `$`; `host_matches` compares by suffix (`docs.python.org` ⊂ `python.org`,
+     `notpython.org` not); `rank_results` removes the excluded (exclusion wins over preference),
+     puts the privileged first and keeps the original order within each group; an invalid entry in
+     the list is ignored.
+- **Reason** SPEC 10.1 (search cache), 10.2 (7-day cache), 10.3 (domains), 10.4, 11.3 (900
+  requests), 13.3, 13.6, 17.3 (personal data out of queries), 17.2 (logs without query or URL); D18
+  (`user_id` filter), D63, D65, D66; phase 3 review, point 2 (replayed node) and point 4 (atomic
+  Brave counter).
 
 ## D76
 
-- **Date** : 2026-11-12
-- **Sujet** : Phase 3, tâche 3.6 : service de recherche et de lecture, plafonds de session, Brave 900 par mois, réglages de recherche
-- **Décision** : (1) **Unités des plafonds** (10.4) : une « requête » est un appel de `search` (replis compris : SearXNG puis Brave ne comptent qu'une fois), cache compris ; une « page lue » est une URL normalisée distincte de la session (cache compris, page illisible comprise). Une requête qui échoue (`NoSearchProvider`) n'est pas comptée (rien à rejouer). Un domaine exclu n'est ni lu, ni compté, ni enregistré dans `sources` (`source_id` nul, raison « Domaine exclu dans les réglages. »). Plafonds réglables `search_max_queries` (12, 1 à 50) et `search_max_pages` (30, 1 à 100) ; dépassement : 429 `web_quota_reached`. (2) **Rejeu d'un nœud** : sous le verrou de la session (`ResearchRuntime.session_lock`, asyncio, propre au processus, tenu pendant l'appel réseau mais jamais avec une transaction ouverte, D66), une requête déjà dans `web_queries` (même empreinte de requête nettoyée, langue, période, catégories) ou une URL déjà dans `sources` est rendue avec `replayed=True`, sans compter ni créer de ligne. Requête rejouée dont la liste a quitté le cache (plus de 24 h) : nouvel essai **sans Brave** (jamais refacturé) ; page rejouée hors cache : relue (gratuit), même `source_id`. Le verrou sérialise les recherches et lectures d'une même session : la 3.7 ne doit pas compter sur des lectures parallèles dans une session. (3) **Repli** : ordre `search_provider_order` ; SearXNG toujours tenté ; Brave seulement avec une clé lisible (réglages puis `.env`, clé illisible = absente) et une requête réservée ; `SearchUnavailable` **ou zéro résultat** passe au suivant ; chaîne épuisée : 503 `search_unavailable` « Aucun moteur de recherche n'a répondu. ». Avant la chaîne, le cache de 24 h est cherché fournisseur par fournisseur dans l'ordre. Une liste vide n'est jamais mise en cache (ni panne ni zéro résultat). (4) **Brave 900 par mois** : compteur par empreinte de clé (`sha256(clé)[:16]`) et mois civil UTC (« AAAA-MM », celui de `BraveUsageView.month`, D79), additionné sur tous les utilisateurs. La réservation est **une seule instruction** `INSERT … SELECT … WHERE (somme du mois) < 900 ON CONFLICT DO UPDATE count = count + 1` (`SearchUsageRepository.reserve`), exécutée sous le verrou d'écriture de SQLite : contrôle et ajout indivisibles même entre processus ; en plus, `brave_lock` (un par processus) et une transaction à part commitée avant l'appel. Une lecture puis un `increment` dans la même transaction n'est pas atomique et bloque SQLite sous concurrence (essai fait) : interdit. Une requête réservée reste comptée si Brave échoue ensuite (prudence : le plafond est celui du compte). (5) **Domaines** : exclu jamais lu ni proposé (sous-domaines compris), privilégié en tête de liste et signalé (`RankedHit.preferred`) à l'Éclaireur, **sans bonus de points**. `normalize_domain` passe dans `app/core/domains.py` (réexporté par `research.service.domains`) : les réglages valident avec la même règle sans importer un service (contrat 2). (6) **Réglages** (`UserSettings`) : `search_provider_order` = `searxng`/`brave`, 1 ou 2 sans doublon ; `search_languages` = codes `^[a-z]{2}$`, 1 à 6 sans doublon ; `preferred_domains`/`excluded_domains` : 50 au plus, normalisés, doublons fusionnés, domaine invalide = 422 sans écho ; **liste de départ** (nouveaux utilisateurs ; une liste déjà enregistrée est gardée) : privilégiés wikipedia.org, arxiv.org, github.com, docs.python.org, developer.mozilla.org, pytorch.org, huggingface.co, scikit-learn.org ; exclus pinterest.com, facebook.com, instagram.com, tiktok.com, linkedin.com (pages derrière connexion, 10.2). Valeur stockée invalide : défaut (`_parse_stored`). La recherche lit ses réglages par `SettingsService` et les copie dans `ResearchPrefs` (contrat 2 : pas d'import des schémas d'une autre feature). (7) **Routes hors 14.2** : `GET /research/usage` (`{brave: {has_key, used, cap, month}}`, `used` = total du mois de la clé en vigueur, 0 sans clé) et `GET /research/sources?session_id=` (sources de la session de l'utilisateur, ordre d'insertion ; une session d'un autre rend `[]`). La dépendance `ResearchDep` vit dans `research/router.py` (comme `MemoryRuntimeDep`), pas dans `app/core/deps.py` : le noyau n'importe pas une feature. (8) **Lecture** : URL normalisée (`normalize_url`, sinon 422 `invalid_url`/`url_forbidden` sans lecture) ; `UrlForbidden`, `UrlTooLarge`, `UrlUnsupported`, `UrlUnreadable`, `PdfUnreadable` donnent `unreadable` avec le message (fixe) de l'erreur comme raison, mis en cache 24 h (7 jours pour `ok`). `record_verdict` : note bornée à 0..100, `kept` si ≥ 60 et page `ok`, sinon `rejected` ; une page illisible garde la raison de la lecture ; idempotent ; commit à l'appelant. (9) **Purge du cache** (`purge_expired`) : opportuniste, dans la transaction d'écriture d'une recherche ou d'une lecture, au plus une fois par heure et par utilisateur (`ResearchRuntime.purge_if_due`) ; pas de purge globale au démarrage (elle demanderait une suppression sans filtre `user_id`). (10) **Runtime** : `open_research_runtime` (bootstrap) ouvert dans le lifespan après la mémoire et avant le moteur d'agents, sur `app.state.research_providers`, avec un `DbKeyReader` (chiffreur et clés `.env` de la composition) ; horloge injectable (`now`). Journaux : utilisateur, session, fournisseur, statut, code d'erreur, `source_id` ; jamais la requête, l'URL ni le titre.
-- **Raison** : SPEC 10.1 (repli, cache), 10.2 (illisible jamais citée, connexion jamais contournée), 10.3 (domaines, liste de départ), 10.4 (12 requêtes, 30 pages), 11.3 (900 par mois), 11.4, 17.2 (journaux), 17.3 ; D18, D65 c, D66, D73, D74, D75, D79 ; revue de la phase 3, points 2 (nœud rejoué), 3 (SearXNG en panne), 4 (Brave à 899 en concurrence) et 5 (journaux sans URL).
-- **Revue de fin de phase 3** : (1) cadence de Brave, 1,1 s au moins entre deux départs par clé (`KeyPacer`, `service/pacing.py`), dans l'ordre réservation → attente du créneau hors transaction → appel ; budget de 10 s par recherche, un créneau hors budget saute Brave et rend la réservation ; la chaîne de repli vit dans `service/chain.py`. (2) Réservation rendue quand Brave n'a ni servi ni facturé (`SearchNotServed` : 429, 401, 403, erreurs de connexion, clé invalide, créneau hors budget), par une instruction gardée `count - 1 WHERE … AND count > 0` sur la ligne de l'utilisateur ; 422, 5xx, délai de lecture et erreurs de protocole restent comptés. (3) Le test de clé est exempté de la cadence. (4) Limites : une attente annulée garde sa réservation (une requête au plus) ; cadence propre au processus.
+- **Date** 2026-11-12
+- **Subject** Phase 3, task 3.6: search and reading service, session caps, Brave 900 per month,
+  search settings
+- **Decision**
+  1. **Cap units** (10.4): a “query” is a `search` call (fallbacks included: SearXNG then Brave
+     count only once), cache included; a “page read” is a distinct normalized URL of the session
+     (cache included, unreadable page included). A query that fails (`NoSearchProvider`) is not
+     counted (nothing to replay). An excluded domain is neither read, nor counted, nor recorded in
+     `sources` (`source_id` null, reason “Domain excluded in the settings.”). Adjustable caps
+     `search_max_queries` (12, 1 to 50) and `search_max_pages` (30, 1 to 100); exceeding: 429
+     `web_quota_reached`.
+  2. **Node replay**: under the session's lock (`ResearchRuntime.session_lock`, asyncio, specific to
+     the process, held during the network call but never with a transaction open, D66), a query
+     already in `web_queries` (same fingerprint of cleaned query, language, period, categories) or a
+     URL already in `sources` is returned with `replayed=True`, without counting or creating a row.
+     A replayed query whose list has left the cache (more than 24 h): new attempt **without Brave**
+     (never rebilled); a replayed page outside the cache: re-read (free), same `source_id`. The lock
+     serializes the searches and reads of one session: 3.7 must not rely on parallel reads within a
+     session.
+  3. **Fallback**: order `search_provider_order`; SearXNG always tried; Brave only with a readable
+     key (settings then `.env`, unreadable key = absent) and a reserved request; `SearchUnavailable`
+     **or zero results** moves to the next; chain exhausted: 503 `search_unavailable` “No search
+     engine responded.”. Before the chain, the 24 h cache is looked up provider by provider in
+     order. An empty list is never cached (neither outage nor zero results).
+  4. **Brave 900 per month**: counter per key fingerprint (`sha256(key)[:16]`) and UTC calendar
+     month (“YYYY-MM”, that of `BraveUsageView.month`, D79), summed across all users. The
+     reservation is **a single statement** `INSERT … SELECT … WHERE (month's sum) < 900 ON
+     CONFLICT DO UPDATE count = count + 1` (`SearchUsageRepository.reserve`), run under SQLite's
+     write lock: check and increment indivisible even between processes; in addition, `brave_lock`
+     (one per process) and a separate transaction committed before the call. A read then an
+     `increment` in the same transaction is not atomic and blocks SQLite under concurrency (tried):
+     forbidden. A reserved request stays counted if Brave fails afterwards (caution: the cap is the
+     account's).
+  5. **Domains**: excluded never read or offered (subdomains included), preferred put first in the
+     list and flagged (`RankedHit.preferred`) to the Scout, **with no bonus points**.
+     `normalize_domain` moves to `app/core/domains.py` (re-exported by `research.service.domains`):
+     the settings validate with the same rule without importing a service (contract 2).
+  6. **Settings** (`UserSettings`): `search_provider_order` = `searxng`/`brave`, 1 or 2 without
+     duplicates; `search_languages` = codes `^[a-z]{2}$`, 1 to 6 without duplicates;
+     `preferred_domains`/`excluded_domains`: 50 at most, normalized, duplicates merged, invalid
+     domain = 422 without echo; **starting list** (new users; an already saved list is kept):
+     preferred wikipedia.org, arxiv.org, github.com, docs.python.org, developer.mozilla.org,
+     pytorch.org, huggingface.co, scikit-learn.org; excluded pinterest.com, facebook.com,
+     instagram.com, tiktok.com, linkedin.com (pages behind login, 10.2). Invalid stored value:
+     default (`_parse_stored`). The search reads its settings through `SettingsService` and copies
+     them into `ResearchPrefs` (contract 2: no import of another feature's schemas).
+  7. **Routes outside 14.2**: `GET /research/usage` (`{brave: {has_key, used, cap, month}}`, `used`
+     = the month's total for the key in force, 0 without a key) and
+     `GET /research/sources?session_id=` (sources of the user's session, insertion order; another
+     user's session returns `[]`). The `ResearchDep` dependency lives in `research/router.py` (like
+     `MemoryRuntimeDep`), not in `app/core/deps.py`: the core does not import a feature.
+  8. **Reading**: normalized URL (`normalize_url`, otherwise 422 `invalid_url`/`url_forbidden`
+     without reading); `UrlForbidden`, `UrlTooLarge`, `UrlUnsupported`, `UrlUnreadable`,
+     `PdfUnreadable` give `unreadable` with the error's (fixed) message as the reason, cached 24 h
+     (7 days for `ok`). `record_verdict`: score bounded to 0..100, `kept` if ≥ 60 and page `ok`,
+     otherwise `rejected`; an unreadable page keeps the reason from the read; idempotent; commit
+     left to the caller.
+  9. **Cache purge** (`purge_expired`): opportunistic, in the write transaction of a search or a
+     read, at most once per hour per user (`ResearchRuntime.purge_if_due`); no global purge at
+     startup (it would require a deletion without a `user_id` filter).
+  10. **Runtime**: `open_research_runtime` (bootstrap) opened in the lifespan after memory and
+     before the agent engine, on `app.state.research_providers`, with a `DbKeyReader` (cipher and
+     `.env` keys from the composition); injectable clock (`now`). Logs: user, session, provider,
+     status, error code, `source_id`; never the query, URL, or title.
+- **Reason** SPEC 10.1 (fallback, cache), 10.2 (unreadable never cited, login never bypassed), 10.3
+  (domains, starting list), 10.4 (12 queries, 30 pages), 11.3 (900 per month), 11.4, 17.2 (logs),
+  17.3; D18, D65 c, D66, D73, D74, D75, D79; phase 3 review, points 2 (replayed node), 3 (SearXNG
+  down), 4 (Brave at 899 under concurrency), and 5 (logs without URLs).
+- **End-of-phase 3 review**
+  1. Brave's pacing, at least 1.1 s between two starts per key (`KeyPacer`, `service/pacing.py`), in
+     the order reservation → wait for the slot outside the transaction → call; 10 s budget per
+     search, a slot outside the budget skips Brave and gives the reservation back; the fallback
+     chain lives in `service/chain.py`.
+  2. Reservation given back when Brave neither served nor billed (`SearchNotServed`: 429, 401, 403,
+     connection errors, invalid key, slot outside the budget), by a guarded statement
+     `count - 1 WHERE … AND count > 0` on the user's row; 422, 5xx, read timeouts, and protocol
+     errors stay counted.
+  3. The key test is exempt from the pacing.
+  4. Limits: a cancelled wait keeps its reservation (one request at most); pacing specific to the
+     process.
 
 ## D77
 
-- **Date** : 2026-11-12
-- **Sujet** : Phase 3, tâche 3.7 : outils web des agents, Éclaireur et parcours `web_research`
-- **Décision** : (1) **Port `WebGateway`** (contrat 6), comme `MemoryGateway` (D68) : `app/agents/tools/web_port.py` décrit ce dont les agents ont besoin (`search`, `read`, `judge`, `limits`, `NO_WEB` qui lève `web_unavailable` 503), `AgentWebGateway` (`features/research/service/gateway.py`) l'implémente sur le service de 3.6, `bootstrap.web_gateway(runtime)` le branche (`GraphDeps.web`, `RunContext`, `SessionRunner(web=)`, `agent_runtime(web=)`). Chaque appel ouvre ses sessions de base courtes ; `search` et `read` n'en tiennent aucune pendant l'appel réseau (testé). Le moteur reconnaît `web_quota_reached` et `search_unavailable` par leur code (constantes du port, égales à celles de la feature : testé). (2) **Note sur 100 calculée par le code** : l'Éclaireur rend cinq critères bornés par le schéma pydantic (`SourceScore` : autorité 0-30, fraîcheur 0-20, profondeur 0-20, auteur 0-15, pédagogie 0-15), jamais le total ; la passerelle borne de nouveau chaque critère au barème (`CRITERIA_MAX`), additionne et `record_verdict` applique le seuil de 60. Un critère hors borne est refusé par le schéma : deux nouveaux essais, puis `structured_output_invalid` (session `failed`, message lisible), aucune note enregistrée. (3) **`SourceFoundPayload` complété** (`source_id`, `status`, `verdict`, `reason`, avec valeurs par défaut : compatible avec les événements stockés) : 10.3 exige l'affichage des écartées avec la raison et 18.1 « page illisible signalée ». Le contrat OpenAPI et `schema.d.ts` sont régénérés. (4) **18e parcours `web_research`** (banc d'essai, hors 9.2, réutilisé par le Conseil en phase 4), entrée `query` (2 à 300 caractères) et `urls` facultatif (5 au plus) ; `plan` (une à trois requêtes par langue réglée, tronquées au plafond) → `search` → `read` (10 pages au plus, plus les adresses de l'entrée, dans la limite du plafond de pages) → `judge` → `remember` → `finalize`. Agent `scout`, niveau `rapide`. Toute la page (titre, métadonnées dont l'adresse, texte) est encadrée par `untrusted()` dans le prompt de notation, chaque partie dans son propre cadre ; les outils `web_search` et `web_read` encadrent de même ce qu'ils rendent au modèle. (5) **Sources retenues** écrites en mémoire de type `source` (titre, résumé et adresse, étiquette de langue, `source_id` = ligne `sources`) ; un contenu identique n'est écrit qu'une fois. Le repérage des praticiens (personnes) est laissé à la phase 4. (6) **`PageRead.source_id` est optionnel** (le plan le disait `str`) : un domaine exclu (réglages) n'a pas de ligne `sources` (D76), donc `PageOutcome.source_id` est nul. Choix : le champ du port est `str | None` ; le parcours signale la page comme illisible (`source.found` avec `source_id` nul et la raison « Domaine exclu dans les réglages. ») plutôt que de la sauter en silence, et ne la note ni ne la cite ; l'outil `web_read` l'encadre sous un libellé neutre. (7) **Page illisible avec ligne `sources`** : le nœud `read` l'écarte aussitôt (`judge` avec zéro critère : verdict `rejected`, note 0 en base, raison de la lecture conservée) pour qu'elle ne reste pas « en attente » ; l'événement garde `verdict` et `score` nuls (elle n'est jamais notée). (8) **Événements** : les arguments de `tool.called` portent la requête NETTOYÉE renvoyée par la passerelle ; une recherche en échec n'émet aucune requête (l'événement part après l'appel). Résumés : « {n} résultat(s) via {fournisseur} », « Lue », « Illisible : {raison} ». (9) **Rejeu** : une reprise après `read` ne rejoue que `judge` et la suite (mêmes lignes `sources`, mêmes appels de recherche et de lecture) ; un nœud rejoué en entier ne recompte ni requête ni page (3.6). Limite connue : un nœud `read` ou `judge` rejoué réémet ses `source.found` (même `source_id`) ; l'interface doit les regrouper par `source_id` (3.8, 3.10). Journaux : identifiants seulement.
-- **Raison** : SPEC 4.2 (sources en mémoire), 9.1 (Éclaireur), 9.4 (nœud rejoué), 9.5 (`source.found`, `tool.called`), 10.1 à 10.4, 17.2 à 17.4 ; D68, D76 ; revue de la phase 3, points 1 (page piégée), 2 (nœud rejoué) et 3 (SearXNG en panne).
-- **Revue de fin de phase 3 (amende 2)** : `structured_output_invalid` est attrapé page par page dans `judge` ; la page est écartée sans note (`rejected`, score nul, raison « Note impossible à établir. ») et la session continue jusqu'à `remember` ; elle n'échoue que si aucune page n'a pu être notée ou si le fournisseur est en panne. Port : `WebGateway.judge(criteria=None)`, `SourceVerdictView.score: int | None`.
+- **Date** 2026-11-12
+- **Subject** Phase 3, task 3.7: agents' web tools, Scout, and the `web_research` flow
+- **Decision**
+  1. **`WebGateway` port** (contract 6), like `MemoryGateway` (D68): `app/agents/tools/web_port.py`
+     describes what the agents need (`search`, `read`, `judge`, `limits`, `NO_WEB` which raises
+     `web_unavailable` 503), `AgentWebGateway` (`features/research/service/gateway.py`) implements
+     it on 3.6's service, `bootstrap.web_gateway(runtime)` wires it (`GraphDeps.web`, `RunContext`,
+     `SessionRunner(web=)`, `agent_runtime(web=)`). Each call opens its short database sessions;
+     `search` and `read` hold none during the network call (tested). The engine recognizes
+     `web_quota_reached` and `search_unavailable` by their code (the port's constants, equal to the
+     feature's: tested).
+  2. **Score out of 100 computed by the code**: the Scout returns five criteria bounded by the
+     pydantic schema (`SourceScore`: authority 0-30, freshness 0-20, depth 0-20, author 0-15,
+     pedagogy 0-15), never the total; the gateway bounds each criterion again to the scale
+     (`CRITERIA_MAX`), adds them up, and `record_verdict` applies the threshold of 60. An
+     out-of-bounds criterion is refused by the schema: two retries, then `structured_output_invalid`
+     (session `failed`, readable message), no score recorded.
+  3. **`SourceFoundPayload` completed** (`source_id`, `status`, `verdict`, `reason`, with default
+     values: compatible with stored events): 10.3 requires showing the discarded ones with the
+     reason and 18.1 “unreadable page flagged”. The OpenAPI contract and `schema.d.ts` are
+     regenerated.
+  4. **18th flow `web_research`** (test bench, outside 9.2, reused by the Council in phase 4), input
+     `query` (2 to 300 characters) and optional `urls` (5 at most); `plan` (one to three queries per
+     configured language, truncated to the cap) → `search` → `read` (10 pages at most, plus the
+     input's addresses, within the page cap) → `judge` → `remember` → `finalize`. Agent `scout`,
+     `rapide` tier. The whole page (title, metadata including the address, text) is framed by
+     `untrusted()` in the scoring prompt, each part in its own frame; the `web_search` and
+     `web_read` tools frame likewise what they return to the model.
+  5. **Retained sources** written to memory as type `source` (title, summary and address, language
+     tag, `source_id` = `sources` row); identical content is written only once. Spotting
+     practitioners (people) is left to phase 4.
+  6. **`PageRead.source_id` is optional** (the plan said `str`): an excluded domain (settings) has
+     no `sources` row (D76), so `PageOutcome.source_id` is null. Choice: the port's field is
+     `str | None`; the flow flags the page as unreadable (`source.found` with null `source_id` and
+     the reason “Domain excluded in the settings.”) rather than skipping it silently, and neither
+     scores nor cites it; the `web_read` tool frames it under a neutral label.
+  7. **Unreadable page with a `sources` row**: the `read` node discards it at once (`judge` with
+     zero criteria: verdict `rejected`, score 0 in the database, the read's reason kept) so that it
+     does not stay “pending”; the event keeps `verdict` and `score` null (it is never scored).
+  8. **Events**: the arguments of `tool.called` carry the CLEANED query returned by the gateway; a
+     failed search emits no query (the event is sent after the call). Summaries: “{n} result(s) via
+     {provider}”, “Read”, “Unreadable: {reason}”.
+  9. **Replay**: a resume after `read` replays only `judge` and what follows (same `sources` rows,
+     same search and read calls); a fully replayed node recounts neither queries nor pages (3.6).
+     Known limit: a replayed `read` or `judge` node re-emits its `source.found` (same `source_id`);
+     the interface must group them by `source_id` (3.8, 3.10). Logs: identifiers only.
+- **Reason** SPEC 4.2 (sources in memory), 9.1 (Scout), 9.4 (replayed node), 9.5 (`source.found`,
+  `tool.called`), 10.1 to 10.4, 17.2 to 17.4; D68, D76; phase 3 review, points 1 (booby-trapped
+  page), 2 (replayed node), and 3 (SearXNG down).
+- **End-of-phase 3 review (amends 2)** `structured_output_invalid` is caught page by page in
+  `judge`; the page is discarded without a score (`rejected`, null score, reason “Rating could not
+  be established.”) and the session continues to `remember`; it fails only if no page could be
+  scored or if the provider is down. Port: `WebGateway.judge(criteria=None)`,
+  `SourceVerdictView.score: int | None`.
 
 ## D78
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 3, tâche 3.8 : reprise du suivi de l'Archiviste après rechargement, `SourcesPanel` et `SourceCard`
-- **Décision** : (1) Reprise après rechargement par `GET /sessions?graph=learned_document&status=running`, filtré côté front sur `subject_type === "document"` et `subject_id` non nul. Une seule lecture au montage, pas d'interrogation périodique (le flux de la session prend le relais) ; pas de relecture au focus. (2) Fusion : les suivis du serveur complètent `learnings` sans jamais écraser une entrée locale du même document (une relance locale prime sur l'ancienne session lue). Un suivi repris qui se termine est enregistré localement comme terminé, pour que la relecture déclenchée par l'invalidation de la mémoire ne le fasse pas revenir. (3) Une erreur de cette lecture n'est pas affichée : elle ne bloque pas l'écran, l'utilisateur garde « Déjà appris » comme avant. (4) `SourcesPanel` et `SourceCard` vivent dans `shared/session-ui/` (D9 : réutilisés par le Conseil), présentationnels, avec des types de vue locaux (D34) ; aucune dépendance à `realtime` ni à la 3.7. (5) Une source illisible n'est jamais un lien : son titre est du texte, quelle que soit son URL. Par défense, une URL qui n'est pas http(s) (`javascript:`, `data:`) n'est jamais un lien non plus. Lien externe : `target="_blank"`, `rel="noopener noreferrer"`. Le nom d'hôte est affiché en texte sous le titre. (6) La raison s'affiche pour une source écartée ou illisible, pas pour une retenue. La note s'affiche « 82/100 » (arrondie) seulement si elle existe. (7) Les blocs vides (Retenues, Écartées, Illisibles, Requêtes lancées) ne sont pas rendus ; si tout est vide et que la recherche n'est pas en cours, un état vide s'affiche. La région `role="status"` `aria-live="polite"` reste toujours dans le DOM (sinon l'annonce n'est pas fiable) et ne contient « L'Éclaireur cherche… » que si `pending`. (8) Dates : ISO `AAAA-MM-JJ…` formatée en français « 4 mars 2026 » (fuseau UTC, pour éviter un décalage d'un jour) ; tout autre texte est affiché tel quel. Langue : code brut en DOM, mis en majuscules par CSS.
-- **Raison** : SPEC 4.3 (« Déjà appris »), 10.3 (l'interface montre les requêtes, les sources retenues et les sources écartées avec la raison), 15.4 (états) ; D71 (`SessionView.subject_id`) ; D9 (`shared/session-ui` réutilisé par le Conseil) ; D34 (types de vue locaux).
+- **Date** 2026-11-11
+- **Subject** Phase 3, task 3.8: resuming Archivist tracking after reload, `SourcesPanel` and
+  `SourceCard`
+- **Decision**
+  1. Resume after reload through `GET /sessions?graph=learned_document&status=running`, filtered on
+     the front-end side on `subject_type === "document"` and non-null `subject_id`. A single read at
+     mount, no periodic polling (the session's stream takes over); no re-read on focus.
+  2. Merge: the server's trackings complete `learnings` without ever overwriting a local entry for
+     the same document (a local relaunch takes precedence over the old session read). A resumed
+     tracking that ends is recorded locally as finished, so that the re-read triggered by the memory
+     invalidation does not bring it back.
+  3. An error in this read is not displayed: it does not block the screen, and the user keeps
+     “Already learned” as before.
+  4. `SourcesPanel` and `SourceCard` live in `shared/session-ui/` (D9: reused by the Council),
+     presentational, with local view types (D34); no dependency on `realtime` or on 3.7.
+  5. An unreadable source is never a link: its title is text, whatever its URL. As a defense, a URL
+     that is not http(s) (`javascript:`, `data:`) is never a link either. External link:
+     `target="_blank"`, `rel="noopener noreferrer"`. The host name is displayed as text under the
+     title.
+  6. The reason is displayed for a discarded or unreadable source, not for a retained one. The score
+     is displayed “82/100” (rounded) only if it exists.
+  7. Empty blocks (Retained, Discarded, Unreadable, Queries launched) are not rendered; if
+     everything is empty and the search is not in progress, an empty state is displayed. The
+     `role="status"` `aria-live="polite"` region always stays in the DOM (otherwise the announcement
+     is unreliable) and contains “The Scout is searching…” only if `pending`.
+  8. Dates: ISO `YYYY-MM-DD…` formatted in English as “March 4, 2026” (UTC time zone, to avoid a
+     one-day shift); any other text is displayed as is. Language: raw code in the DOM, uppercased by
+     CSS.
+- **Reason** SPEC 4.3 (“Already learned”), 10.3 (the interface shows the queries, the retained
+  sources, and the discarded sources with the reason), 15.4 (states); D71
+  (`SessionView.subject_id`); D9 (`shared/session-ui` reused by the Council); D34 (local view
+  types).
 
 ## D79
 
-- **Date** : 2026-11-11
-- **Sujet** : Phase 3, tâche 3.9 : composants des réglages de recherche et de l'essai
-- **Décision** : (1) **Six langues proposées** (fr, en, es, de, it, pt), dans cet ordre canonique, rendu sous forme de codes ISO 639-1 comme `search_languages` du back (6 au plus). Au moins une langue : la dernière cochée est désactivée (pas de message d'erreur : le contrôle est impossible à enfreindre). Un code inconnu déjà enregistré est conservé en fin de liste plutôt que perdu en silence. (2) **Normalisation des domaines identique au back** (`normalize_domain`, plan 3.5) : minuscules, sans schéma, identifiants (`user@`), chemin, requête, fragment, port, point final ni « www. » ; refus si moins de deux étiquettes, étiquette hors `[a-z0-9-]` (1 à 63 caractères, sans tiret en bord), extension non alphabétique (adresses IP, « localhost » refusés), plus de 253 caractères. Les noms internationaux en `xn--` passent. Règle isolée dans `normalizeDomain.ts` (testée) : à aligner si le back 3.5 s'en écarte. Doublon détecté après normalisation (« WWW.python.org » = « python.org »). Maximum 50 par défaut (`max`), message en ligne à l'ajout au-delà. (3) **Brave grisé sans clé** : ligne `aria-disabled`, consigne affichée, et **tous** les boutons monter / descendre désactivés (sans Brave actif, l'ordre n'a pas d'effet ; permettre de passer Brave devant SearXNG n'aurait pas de sens). Avec une clé : premier sans « Monter », dernier sans « Descendre ». Pas de glisser-déposer (deux éléments au plus). (4) **Plafonds** : `CapField` garde un brouillon seulement pendant l'édition. Une valeur entière dans les bornes est transmise tout de suite (y compris les valeurs intermédiaires pendant la frappe : taper « 51 » transmet « 5 » puis refuse « 51 » ; l'écran appelant doit donc enregistrer par bouton, pas à chaque frappe). Valeur vide, décimale ou hors bornes : message « Entre 1 et 50. », rien transmis ; en quittant le champ, retour à la dernière valeur valide. `onChange({ maxQueries, maxPages })` rend toujours les deux valeurs. (5) **Compteur Brave** : `BraveUsageView.month` est au format `AAAA-MM` (UTC), converti en « novembre 2026 » par `Intl.DateTimeFormat("fr-FR", …, timeZone: "UTC")` ; un format inattendu s'affiche tel quel. À confirmer avec le contrat de 3.6 (sinon adapter la conversion dans `toView`). Plafond atteint : jauge rouge et message « Le plafond du mois est atteint : Brave est sauté jusqu'au mois prochain. ». (6) **Formulaire d'essai** : requête de 2 à 300 caractères (après `trim`) ; adresses saisies une par ligne dans un `textarea` (5 au plus après fusion des doublons), validées par `new URL` et protocole `http:` ou `https:`, rendues sous leur forme normalisée (`href`). Validation à l'envoi seulement ; l'erreur disparaît dès la frappe suivante. Message d'adresse refusée : « Cette adresse doit commencer par http:// ou https:// : {url} » (l'adresse est de la saisie de l'utilisateur, affichée côté interface seulement, jamais journalisée). `busy` verrouille champs et bouton (« Essai en cours… »). (7) **Hors formulaire parent** : tous les boutons des composants de réglages ont `type="button"`, et Entrée dans le champ de domaine est intercepté (`preventDefault`) : ils pourront vivre dans le formulaire des réglages (3.10) sans l'envoyer par erreur. Les deux `DomainListEditor` d'un même écran se distinguent par leur groupe (`aria-labelledby` = `label`) ; le champ garde l'étiquette fixe « Ajouter un domaine ». (8) **Découpage imposé par ESLint** (une fonction ≤ 50 lignes, un composant par fichier) : sous-composants `DomainChips`, `DomainInput`, `ProviderRow`, `CapField`, `BenchFields`, `BenchField` (champ à rendu par fonction qui fournit `id` et attributs `aria-*`). Tous restent présentationnels et locaux à leur dossier. (9) **Types de vue** (D34) : aucun import de `types.ts` ni de `shared/api` ; `toView` et la vérification de compatibilité avec le schéma généré restent à écrire en 3.10 (`SearchSettingsView.languages` est `string[]`, pas `SearchLanguage[]`, comme dans l'interface du plan). `contracts/openapi.json` et `schema.d.ts` non touchés.
-- **Raison** : SPEC 10.1 (ordre de repli des fournisseurs), 10.3 (langues de recherche, domaines privilégiés et exclus), 10.4 (plafonds réglables), 11.3 (Brave, 900 requêtes par mois), 15.4 ; D34, D60.
+- **Date** 2026-11-11
+- **Subject** Phase 3, task 3.9: search settings and test components
+- **Decision**
+  1. **Six languages offered** (fr, en, es, de, it, pt), in this canonical order, rendered as ISO
+     639-1 codes like the backend's `search_languages` (6 at most). At least one language: the last
+     one checked is disabled (no error message: the control cannot be violated). An unknown code
+     already saved is kept at the end of the list rather than silently lost.
+  2. **Domain normalization identical to the backend's** (`normalize_domain`, plan 3.5): lowercase,
+     without scheme, credentials (`user@`), path, query, fragment, port, trailing dot, or “www.”;
+     refused if fewer than two labels, a label outside `[a-z0-9-]` (1 to 63 characters, no hyphen at
+     the edges), a non-alphabetic extension (IP addresses, “localhost” refused), more than 253
+     characters. International names in `xn--` pass. Rule isolated in `normalizeDomain.ts` (tested):
+     to align if backend 3.5 departs from it. Duplicate detected after normalization
+     (“WWW.python.org” = “python.org”). Maximum 50 by default (`max`), inline message on adding
+     beyond.
+  3. **Brave grayed out without a key**: `aria-disabled` row, instruction displayed, and **all** the
+     up / down buttons disabled (without Brave active, the order has no effect; allowing Brave to be
+     put ahead of SearXNG would make no sense). With a key: first without “Move up”, last without
+     “Move down”. No drag and drop (two items at most).
+  4. **Caps**: `CapField` keeps a draft only during editing. An integer value within the bounds is
+     passed on immediately (including intermediate values while typing: typing “51” passes “5” then
+     refuses “51”; the calling screen must therefore save by button, not on each keystroke). Empty,
+     decimal, or out-of-bounds value: message “Between 1 and 50.”, nothing passed; on leaving the
+     field, back to the last valid value. `onChange({ maxQueries, maxPages })` always returns both
+     values.
+  5. **Brave counter**: `BraveUsageView.month` is in `YYYY-MM` format (UTC), converted to “November
+     2026” by `Intl.DateTimeFormat("fr-FR", …, timeZone: "UTC")`; an unexpected format is displayed
+     as is. To confirm with 3.6's contract (otherwise adapt the conversion in `toView`). Cap
+     reached: red gauge and message “The monthly cap is reached: Brave is skipped until next
+     month.”.
+  6. **Test form**: query of 2 to 300 characters (after `trim`); addresses entered one per line in a
+     `textarea` (5 at most after merging duplicates), validated by `new URL` and protocol `http:` or
+     `https:`, rendered in their normalized form (`href`). Validation on submit only; the error
+     disappears at the next keystroke. Refused address message: “This address must start with
+     http:// or https://: {url}” (the address is the user's input, displayed on the interface side
+     only, never logged). `busy` locks the fields and the button (“Test in progress…”).
+  7. **Outside a parent form**: all the buttons of the settings components have `type="button"`, and
+     Enter in the domain field is intercepted (`preventDefault`): they can live in the settings form
+     (3.10) without submitting it by mistake. The two `DomainListEditor`s of one screen are
+     distinguished by their group (`aria-labelledby` = `label`); the field keeps the fixed label
+     “Add a domain”.
+  8. **Split imposed by ESLint** (a function ≤ 50 lines, one component per file): sub-components
+     `DomainChips`, `DomainInput`, `ProviderRow`, `CapField`, `BenchFields`, `BenchField` (a
+     render-function field that provides `id` and `aria-*` attributes). All stay presentational and
+     local to their folder.
+  9. **View types** (D34): no import of `types.ts` or `shared/api`; `toView` and the compatibility
+     check with the generated schema remain to be written in 3.10 (`SearchSettingsView.languages` is
+     `string[]`, not `SearchLanguage[]`, as in the plan's interface). `contracts/openapi.json` and
+     `schema.d.ts` untouched.
+- **Reason** SPEC 10.1 (provider fallback order), 10.3 (search languages, preferred and excluded
+  domains), 10.4 (adjustable caps), 11.3 (Brave, 900 requests per month), 15.4; D34, D60.
 
 ## D80
 
-- **Date** : 2026-11-12
-- **Sujet** : Phase 3, tâche 3.10 : pages « Recherche web » et « Essai de recherche »
-- **Décision** : (1) **Navigation** : deux entrées sous Réglages (15.1 ne liste pas la recherche, 11.4 en fait des réglages) : « Recherche web » (`/reglages/recherche`, ordre 2, manifeste `settings`) et « Essai de recherche » (`/reglages/recherche/essai`, ordre 3, manifeste `research`). Feature front `research`, du même nom que le back ; l'entrée « Recherche web » est « active » aussi sur l'essai (préfixe d'URL), comme « Mémoire » sur ses sous-pages : comportement existant de la barre latérale, inchangé. (2) **Enregistrement par bouton** (D79 point 4) : `SearchSettingsEditor` garde un brouillon (`null` tant que rien n'est modifié : on montre alors les réglages du serveur) ; « Enregistrer » est actif seulement si le brouillon diffère des réglages enregistrés, envoie un `PUT /settings` **complet** (`withSearchSettings` : `buildUserSettings` étendu, les champs de recherche remplacés, jamais de `...settings`) et annonce « Réglages enregistrés. » (`role="status"`). En cas d'échec le brouillon et la saisie sont gardés, l'erreur s'affiche en ligne, un nouveau clic réessaie. Toute modification efface l'annonce précédente. (3) **Compteur Brave** : `GET /research/usage` (`useSearchUsage`, clé `["search-usage"]`) converti par `toBraveUsageView` ; `month` est « AAAA-MM » en UTC comme dans le contrat (D76), aucune adaptation de la conversion en « novembre 2026 » de la jauge. Enregistrer ou supprimer une clé (écran Modèles et clés) invalide aussi ce compteur : `has_key` change, donc l'activation de Brave dans l'ordre des fournisseurs. Une erreur de lecture des réglages ou du compteur remplace l'écran par « Réessayer » (les deux requêtes sont relancées). Pas d'état vide propre aux réglages : chaque liste de domaines a le sien (« Aucun domaine. »). (4) **Session dans l'URL** : l'essai courant est `?session=<id>` (`useResearchRun`, comme la démo) ; recharger rejoint la session, le flux rejoue les événements depuis le début (le store est vide au rechargement) : `GET /research/sources` n'est donc pas utilisée par l'interface. Une session inconnue (4404) propose « Nouvel essai » plutôt que « Réessayer ». Un échec de démarrage (503 `search_unavailable`, 429, 422) s'affiche sous le formulaire, qui garde la saisie. « Nouvel essai » est un lien qui retire `?session=` ; l'essai en cours côté serveur n'est pas annulé (aucun contrôle d'annulation dans le banc : le plafond de tokens et les plafonds de recherche le bornent). (5) **`sourcesFromEvents` partagé** (`shared/session-ui`, réutilisable par le Conseil en phase 4) : requêtes = `tool.called` de `web_search` (texte nettoyé et langue), complétées par le `tool.result` du même `call_id` (résumé, `ok`) ; une requête rejouée (même langue, même texte) garde une seule ligne ; une recherche en échec n'émet pas sa requête (D77) : ligne « Requête non affichée » avec son résumé d'échec. Sources = `source.found` regroupés par `source_id`, ou par adresse si `source_id` est nul (domaine exclu, « Domaine exclu dans les réglages. ») ; le dernier événement l'emporte et la source garde sa place d'arrivée ; rangement selon `status` (illisible) puis `verdict` (retenue, écartée) ; une page `ok` sans verdict n'est pas montrée (le contrat n'émet pas ce cas) ; un titre vide devient l'adresse. (6) **Écran de l'essai** : `SessionStatusBar` (qui contient déjà `CostBadge`, donc pas de second badge), `SourcesPanel` (`pending` tant que le statut est `running`), message de `run.failed` (`view.error`) en alerte, chargement tant que le premier événement n'est pas là, « Reconnexion au flux… » pendant une reconnexion. (7) **Clé Brave dans l'écran des clés** : la liste générique (`GET /settings/api-keys`) la montre comme une carte « Brave Search » (4 derniers caractères, test, suppression) sans changement de composant, et elle n'apparaît pas dans les fournisseurs des niveaux (`GET /settings/models`) : vérifié par un test de `ModelsAndKeysPage`. Limite : la carte n'indique pas que Brave est facultatif ; le texte d'introduction des clés parle de « clé API » en général. (8) **Types** : `types.ts` vérifie à la compilation que l'ordre des fournisseurs de `SearchSettingsView` est celui de `UserSettings` ; `toSearchSettingsView` applique les défauts du back si un champ facultatif manque. Fabrique d'événements de test `src/test/researchEvents.ts`.
-- **Raison** : SPEC 10.3 (l'interface montre requêtes, sources retenues et écartées avec la raison), 11.3, 11.4, 15.1, 15.4 ; D34, D76, D77, D78, D79 ; piège du nœud rejoué (9.4).
-- **Revue de fin de phase 3** : (1) un plafond invalide remonte (`onInvalidChange`) ; « Enregistrer » est désactivé et l'envoi par Entrée refusé tant qu'il l'est. (2) L'essai affiche `SessionControls` (pause, reprise, annulation directe) tant qu'il n'est pas fini. (3) `SidebarGroup` pose `end` quand une entrée sœur est une sous-route, pour qu'une seule entrée soit active.
+- **Date** 2026-11-12
+- **Subject** Phase 3, task 3.10: “Web search” and “Research test” pages
+- **Decision**
+  1. **Navigation**: two entries under Settings (15.1 does not list search, 11.4 makes it a
+     setting): “Web search” (`/reglages/recherche`, order 2, `settings` manifest) and “Research
+     test” (`/reglages/recherche/essai`, order 3, `research` manifest). Front-end feature
+     `research`, same name as the backend; the “Web search” entry is also “active” on the test (URL
+     prefix), like “Memory” on its subpages: existing sidebar behavior, unchanged.
+  2. **Saving by button** (D79 point 4): `SearchSettingsEditor` keeps a draft (`null` as long as
+     nothing is modified: the server's settings are then shown); “Save” is active only if the draft
+     differs from the saved settings, sends a **complete** `PUT /settings` (`withSearchSettings`:
+     `buildUserSettings` extended, the search fields replaced, never `...settings`) and announces
+     “Settings saved.” (`role="status"`). On failure the draft and the input are kept, the error is
+     displayed inline, a new click retries. Any modification clears the previous announcement.
+  3. **Brave counter**: `GET /research/usage` (`useSearchUsage`, key `["search-usage"]`) converted
+     by `toBraveUsageView`; `month` is “YYYY-MM” in UTC as in the contract (D76), no adaptation of
+     the gauge's conversion to “November 2026”. Saving or deleting a key (Models and keys screen)
+     also invalidates this counter: `has_key` changes, hence the activation of Brave in the provider
+     order. A read error on the settings or the counter replaces the screen with “Retry” (both
+     queries are relaunched). No empty state specific to the settings: each domain list has its own
+     (“No domain.”).
+  4. **Session in the URL**: the current test is `?session=<id>` (`useResearchRun`, like the demo);
+     reloading rejoins the session, the stream replays the events from the start (the store is empty
+     on reload): `GET /research/sources` is therefore not used by the interface. An unknown session
+     (4404) offers “New test” rather than “Retry”. A start failure (503 `search_unavailable`, 429,
+     422) is displayed under the form, which keeps the input. “New test” is a link that removes
+     `?session=`; the test in progress on the server side is not cancelled (no cancel control in the
+     bench: the token cap and the search caps bound it).
+  5. **Shared `sourcesFromEvents`** (`shared/session-ui`, reusable by the Council in phase 4):
+     queries = `tool.called` of `web_search` (cleaned text and language), completed by the
+     `tool.result` of the same `call_id` (summary, `ok`); a replayed query (same language, same
+     text) keeps a single line; a failed search does not emit its query (D77): line “Query not
+     displayed” with its failure summary. Sources = `source.found` grouped by `source_id`, or by
+     address if `source_id` is null (excluded domain, “Domain excluded in the settings.”); the last
+     event wins and the source keeps its arrival position; sorted by `status` (unreadable) then
+     `verdict` (retained, discarded); a page `ok` without a verdict is not shown (the contract does
+     not emit this case); an empty title becomes the address.
+  6. **Test screen**: `SessionStatusBar` (which already contains `CostBadge`, hence no second
+     badge), `SourcesPanel` (`pending` while the status is `running`), the `run.failed` message
+     (`view.error`) as an alert, loading until the first event is there, “Reconnecting to the feed…”
+     during a reconnection.
+  7. **Brave key in the keys screen**: the generic list (`GET /settings/api-keys`) shows it as a
+     “Brave Search” card (last 4 characters, test, deletion) without any component change, and it
+     does not appear in the tiers' providers (`GET /settings/models`): verified by a
+     `ModelsAndKeysPage` test. Limit: the card does not indicate that Brave is optional; the keys'
+     introductory text speaks of “API key” in general.
+  8. **Types**: `types.ts` checks at compile time that `SearchSettingsView`'s provider order is
+     `UserSettings`'s; `toSearchSettingsView` applies the backend's defaults if an optional field is
+     missing. Test event factory `src/test/researchEvents.ts`.
+- **Reason** SPEC 10.3 (the interface shows queries, retained and discarded sources with the
+  reason), 11.3, 11.4, 15.1, 15.4; D34, D76, D77, D78, D79; replayed-node trap (9.4).
+- **End-of-phase 3 review**
+  1. An invalid cap bubbles up (`onInvalidChange`); “Save” is disabled and sending with Enter
+     refused as long as it is.
+  2. The test displays `SessionControls` (pause, resume, direct cancellation) until it is finished.
+  3. `SidebarGroup` sets `end` when a sibling entry is a subroute, so that only one entry is active.
 
 ## D81
 
-- **Date** : 2026-11-12
-- **Sujet** : Phase 3, tâche 3.11 : contrôle de fin de phase et clôture
-- **Décision** : (1) contrôle sous Docker avec SearXNG, Gotenberg et GLM 5.3 flash réels. SearXNG renvoie 48 résultats de 4 moteurs (Startpage bloqué par un captcha, signalé comme non répondant). Gotenberg refuse `http://qdrant:6333/` et `http://169.254.169.254/` (403), rend `https://example.org/`, et convertit toujours le HTML (`convert/html`, 200). Un essai `web_research` (« bases du machine learning pour débutant », plus l'adresse piégée `http://127.0.0.1:8000/...`) lance 6 requêtes FR et EN, retient 3 sources (IBM 91/100, Stéphane Robert 77, data-bird 62), en écarte 7 avec leur raison, et signale l'adresse piégée illisible (« Adresse refusée ») sans la lire ; coût ≈ 0,03 $. Les journaux du back ne contiennent ni requête ni URL de page. (2) Brave n'a pas été essayé en réel (pas de clé dans `.env`). (3) Revue finale en deux parties (back, front) sur Opus high, une vague de corrections par zone et deux re-revues, toutes approuvées.
-- **Raison** : critère de fin de phase du plan directeur (une requête renvoie des sources notées et lues, une page illisible est signalée) ; SPEC 10 et 17.2.
+- **Date** 2026-11-12
+- **Subject** Phase 3, task 3.11: end-of-phase check and closure
+- **Decision**
+  1. Check under Docker with real SearXNG, Gotenberg, and GLM 5.3 flash. SearXNG returns 48 results
+     from 4 engines (Startpage blocked by a captcha, reported as unresponsive). Gotenberg refuses
+     `http://qdrant:6333/` and `http://169.254.169.254/` (403), renders `https://example.org/`, and
+     still converts HTML (`convert/html`, 200). A `web_research` test (“machine learning basics for
+     beginners”, plus the booby-trapped address `http://127.0.0.1:8000/...`) launches 6 queries in
+     FR and EN, retains 3 sources (IBM 91/100, Stéphane Robert 77, data-bird 62), discards 7 with
+     their reason, and reports the booby-trapped address as unreadable (“Address refused”) without
+     reading it; cost ≈ $0.03. The backend's logs contain neither query nor page URL.
+  2. Brave was not tried for real (no key in `.env`).
+  3. Final review in two parts (backend, front end) on Opus high, a wave of fixes per area, and two
+     re-reviews, all approved.
+- **Reason** End-of-phase criterion of the master plan (a query returns scored and read sources, an
+  unreadable page is flagged); SPEC 10 and 17.2.
 
 ## D82
 
-- **Date** : 2026-11-12
-- **Sujet** : Phase 4, tâche 4.1 : ports regroupés, lanceur de sessions, commandes du débat, prise de parole bornée, reliquat de la phase 3
-- **Décision** : (1) **`AgentPorts`** (`agents/runtime/ports.py`) : un seul objet de ports (`memory`, `web`, chacun avec sa valeur « non branché ») ; un port de plus = un champ ici et une ligne dans `bootstrap.agent_ports(memory_runtime, research_runtime)` (plan directeur §1). `GraphDeps.ports` remplace les champs `memory` et `web`, gardés en propriétés en lecture (`deps.memory is deps.ports.memory`) : aucun nœud ni outil ne change. `RunContext(..., ports)`, `SessionRunner(..., ports=)`, `agent_runtime(..., ports=)` remplacent `memory=` et `web=` (tests mis à jour mécaniquement). (2) **`SessionLauncher`** (`runtime/launcher.py`) : créé dans `_lifespan` avant la composition des ports (qui pourront le recevoir), lié au runner juste après `agent_runtime`, posé sur `app.state.launcher`, et délié par la pile avant l'arrêt du moteur (`unbind`). Non lié, ou runner en arrêt (`server_stopping`, constante `runner.STOPPING_CODE`) : 503 `engine_unavailable` « Le moteur d'agents n'est pas prêt. » ; les autres erreurs du runner (parcours inconnu, entrée invalide) passent telles quelles. Composition sans cycle : ports → moteur → lanceur. (3) **Commandes du débat = `user.message` avec `command`** (D4 étendue) : `UserCommand` = `another_round`, `to_proposals`, `more_concrete`, `shorter` ; texte facultatif (`""` par défaut). `MessageRequest(text="", command=None)` ; texte vide ou blanc sans commande : 422 `invalid_input`, `details.fields = ["text"]`, contrôlé dans `SessionsService.message` (une règle de validation pydantic aurait rendu `validation_error`), sans recopie ; le texte publié est débarrassé des blancs autour ; une commande hors catalogue est refusée par le schéma (422 `validation_error`, sans recopie). Les nœuds lisent `GraphDeps.user_inputs_since(seq) -> list[UserInput(seq, text, command)]` ; `user_messages_since` reste (démo) et s'appuie dessus. Une charge stockée avec une commande inconnue (autre version) donne `command=None` plutôt qu'une erreur en plein tour. (4) **Champs d'événements, tous avec défaut** (événements stockés compatibles, testé) : `InterruptRequestedPayload.fields: list[InterruptField]` (cadrage à plusieurs questions ; D14 gardée : `kind`, `question`, `options` inchangés ; `id` `^[a-z0-9_]{1,32}$`, `max_length` 1 à 4 000, 2 000 par défaut) ; `BoardUpdatePayload.board_id`, `kind` (`domain_map`, `prerequisites`, `timeline`, `comparison`), `title` ; `SourceFoundPayload.kind` (`page` par défaut, `person`) et `role` ; `SourceOut.kind`. **Écart de structure** : `events.py` aurait dépassé 300 lignes ; les charges vivent dans `runtime/payloads.py` et `events.py` les réexporte (`__all__`) : tous les imports existants restent valables et les noms du schéma OpenAPI sont inchangés. (5) **Prise de parole** (`runtime/speech.py`) : `speak` émet `agent.started`, laisse passer les tokens en direct, puis `agent.message` avec le texte coupé à `max_words` (150 pour le débat) et ses citations, sous le `message_id` des tokens (la bulle finale remplace celle des tokens, D57). `cap_words` : texte inchangé s'il tient ; sinon coupé après la dernière phrase complète (`.`, `!`, `?`, éventuellement suivis de fermants ou d'un marqueur `[n]`) qui tient dans la limite, à défaut les `limit` premiers mots suivis de « … » ; la mise en forme de la partie gardée (sauts de ligne) est conservée. Un mot est un bloc sans espace qui contient une lettre ou un chiffre ; un marqueur `[n]` n'en est pas un (150 mots de propos, citations en plus). Citations : marqueurs `[n]` et `[n, m]` connus d'un catalogue numéroté (`CitationEntry` : sources et éléments de la mémoire), ordre d'apparition, sans doublon, numéros inconnus ignorés, lus dans le texte **coupé** ; un marqueur séparé du point par une espace (`aide. [1]`, `aide. [1, 2]`) reste attaché à la phrase gardée. (6) **Reliquat de la phase 3** : (a) `httpx2` (SDK de Z.ai) en WARNING ; (b) **`judge` rejoué sans rappel au modèle** : `reading.read` rend le verdict d'une source déjà notée de la session (`PageOutcome.judged` : note, verdict, raison, résumé), la passerelle le pose sur `PageRead.verdict`, `read` le garde dans la page de l'état, `judge` le réémet (`source.found` identique) sans appeler le modèle, et `read` ne réécarte pas une page illisible déjà jugée. `SourceVerdictView` gagne `summary` (défaut `""`) : le résumé rejoué est celui de la notation, donc l'élément de mémoire écrit par `remember` est le même et n'est pas dédoublé. Cas couverts : nœud `read` rejoué puis `judge`, seconde recherche dans la même session (Conseil), et **`judge` coupé au milieu puis rejoué** depuis le checkpoint de `read` (relecture de la tâche 4.1) : avant de noter, `judge` demande au port les verdicts déjà enregistrés pour les pages de son état qui n'en portent pas (`WebGateway.verdicts(user_id, session_id, source_ids) -> dict[str, SourceVerdictView]`, une lecture filtrée par utilisateur et session), et les réémet sans rappeler le modèle ; testé par un arrêt du runner pendant `judge` puis une reprise (modèle non rappelé pour la page notée, `source.found` identique, un seul élément de mémoire). (c) **Délai par page** `PAGE_JUDGE_TIMEOUT_S = 90` (`asyncio.timeout` autour de `_score`, seul notre délai est reconnu) : dépassé, la page est écartée sans note (« Note impossible à établir. ») et la session continue ; l'erreur `page_judge_timeout` (504) compte comme une page non notée : si aucune page n'a pu être notée, la session échoue avec elle (même règle que `structured_output_invalid`). Le délai du nœud en découle : `JUDGE_TIMEOUT_S = MAX_PAGES_JUDGED × PAGE_JUDGE_TIMEOUT_S + 60` (15 pages au plus : 10 résultats lus plus les 5 adresses de l'entrée, `MAX_EXTRA_URLS`, soit 1 410 s), pour qu'une page lente soit toujours écartée seule, jamais avec tout le nœud. (d) **`chain._release`** : une erreur de base pendant le rendu d'une réservation Brave (`SQLAlchemyError`, `OSError`) est avalée et journalisée par son type (la requête reste comptée : au pire une de trop sur 900) ; `SearchNotServed` est relevée telle quelle et la chaîne passe au fournisseur suivant. (7) **Types du front** : `openapi-typescript` rend un champ de sortie avec défaut comme requis (nullable) : `UserMessagePayload.command`, `BoardUpdatePayload.board_id/kind/title`, `SourceFoundPayload.kind/role` sont présents dans `schema.d.ts` ; `InterruptRequestedPayload.fields` est facultatif ; `MessageRequest.text` est requis côté TS (envoyer `""` avec une commande). La fabrique de test `shared/realtime/testEvents.ts` (`userMsg`) a reçu `command: null` pour que `pnpm typecheck` passe.
-- **Raison** : plan directeur §1 (ports extensibles), SPEC 3.1 et 3.2 (cadrage, commandes permanentes), 3.3 (quatre tableaux), 9.3 (150 mots, citations), 9.4 (nœud rejoué), 9.5, 10.3 (praticiens), 14.1 (actions par REST), 17.2 (journaux : identifiants et types d'erreur seulement), 17.4 ; D4, D14, D57, D68, D77, D81 (reliquat).
+- **Date** 2026-11-12
+- **Subject** Phase 4, task 4.1: grouped ports, session launcher, debate commands, bounded speaking
+  turn, phase 3 leftovers
+- **Decision**
+  1. **`AgentPorts`** (`agents/runtime/ports.py`): a single object of ports (`memory`, `web`, each
+     with its “not wired” value); one more port = one field here and one line in
+     `bootstrap.agent_ports(memory_runtime, research_runtime)` (master plan §1). `GraphDeps.ports`
+     replaces the `memory` and `web` fields, kept as read properties
+     (`deps.memory is deps.ports.memory`): no node or tool changes. `RunContext(..., ports)`,
+     `SessionRunner(..., ports=)`, `agent_runtime(..., ports=)` replace `memory=` and `web=` (tests
+     updated mechanically).
+  2. **`SessionLauncher`** (`runtime/launcher.py`): created in `_lifespan` before the composition of
+     the ports (which may receive it), bound to the runner just after `agent_runtime`, set on
+     `app.state.launcher`, and unbound by the stack before the engine's shutdown (`unbind`). Not
+     bound, or runner shutting down (`server_stopping`, constant `runner.STOPPING_CODE`): 503
+     `engine_unavailable` “The agent engine is not ready.”; the runner's other errors (unknown flow,
+     invalid input) pass as is. Composition without a cycle: ports → engine → launcher.
+  3. **Debate commands = `user.message` with `command`** (D4 extended): `UserCommand` =
+     `another_round`, `to_proposals`, `more_concrete`, `shorter`; optional text (`""` by default).
+     `MessageRequest(text="", command=None)`; empty or blank text without a command: 422
+     `invalid_input`, `details.fields = ["text"]`, checked in `SessionsService.message` (a pydantic
+     validation rule would have returned `validation_error`), without echo; the published text is
+     stripped of surrounding whitespace; a command outside the catalog is refused by the schema (422
+     `validation_error`, without echo). The nodes read `GraphDeps.user_inputs_since(seq)
+     -> list[UserInput(seq, text, command)]`; `user_messages_since` remains (demo) and relies on it.
+     A payload stored with an unknown command (another version) gives `command=None` rather than an
+     error in the middle of a turn.
+  4. **Event fields, all with defaults** (stored events compatible, tested):
+     `InterruptRequestedPayload.fields: list[InterruptField]` (framing with several questions; D14
+     kept: `kind`, `question`, `options` unchanged; `id` `^[a-z0-9_]{1,32}$`, `max_length` 1 to
+     4,000, 2,000 by default); `BoardUpdatePayload.board_id`, `kind` (`domain_map`, `prerequisites`,
+     `timeline`, `comparison`), `title`; `SourceFoundPayload.kind` (`page` by default, `person`) and
+     `role`; `SourceOut.kind`. **Structure deviation**: `events.py` would have exceeded 300 lines;
+     the payloads live in `runtime/payloads.py` and `events.py` re-exports them (`__all__`): all
+     existing imports remain valid and the OpenAPI schema names are unchanged.
+  5. **Speaking turn** (`runtime/speech.py`): `speak` emits `agent.started`, lets the tokens through
+     live, then `agent.message` with the text cut to `max_words` (150 for the debate) and its
+     citations, under the tokens' `message_id` (the final bubble replaces the tokens' one, D57).
+     `cap_words`: text unchanged if it fits; otherwise cut after the last complete sentence (`.`,
+     `!`, `?`, possibly followed by closers or a `[n]` marker) that fits within the limit, failing
+     that the first `limit` words followed by “…”; the formatting of the kept part (line breaks) is
+     preserved. A word is a block without spaces that contains a letter or a digit; a `[n]` marker
+     is not one (150 words of content, citations on top). Citations: markers `[n]` and `[n, m]`
+     known to a numbered catalog (`CitationEntry`: sources and memory items), in order of
+     appearance, without duplicates, unknown numbers ignored, read in the **cut** text; a marker
+     separated from the period by a space (`help. [1]`, `help. [1, 2]`) stays attached to the kept
+     sentence.
+  6. **Phase 3 leftovers**: (a) `httpx2` (Z.ai's SDK) at WARNING; (b) **`judge` replayed without
+     calling the model again**: `reading.read` returns the verdict of a source already scored in the
+     session (`PageOutcome.judged`: score, verdict, reason, summary), the gateway sets it on
+     `PageRead.verdict`, `read` keeps it in the state's page, `judge` re-emits it (identical
+     `source.found`) without calling the model, and `read` does not discard again an unreadable page
+     already judged. `SourceVerdictView` gains `summary` (default `""`): the replayed summary is the
+     scoring's, so the memory item written by `remember` is the same and is not duplicated. Cases
+     covered: `read` node replayed then `judge`, a second search in the same session (Council), and
+     **`judge` cut in the middle then replayed** from `read`'s checkpoint (re-read of task 4.1):
+     before scoring, `judge` asks the port for the verdicts already recorded for the pages of its
+     state that carry none (`WebGateway.verdicts(user_id, session_id, source_ids)
+     -> dict[str, SourceVerdictView]`, one read filtered by user and session), and re-emits them
+     without calling the model again; tested by a runner stop during `judge` then a resume (model
+     not called again for the scored page, identical `source.found`, a single memory item). (c)
+     **Per-page timeout** `PAGE_JUDGE_TIMEOUT_S = 90` (`asyncio.timeout` around `_score`, only our
+     timeout is recognized): once exceeded, the page is discarded without a score (“Rating could not
+     be established.”) and the session continues; the `page_judge_timeout` error (504) counts as an
+     unscored page: if no page could be scored, the session fails with it (same rule as
+     `structured_output_invalid`). The node's timeout follows from it:
+     `JUDGE_TIMEOUT_S = MAX_PAGES_JUDGED × PAGE_JUDGE_TIMEOUT_S + 60` (15 pages at most: 10 results
+     read plus the input's 5 addresses, `MAX_EXTRA_URLS`, i.e. 1,410 s), so that a slow page is
+     always discarded alone, never with the whole node. (d) **`chain._release`**: a database error
+     while giving back a Brave reservation (`SQLAlchemyError`, `OSError`) is swallowed and logged by
+     its type (the request stays counted: at worst one too many out of 900); `SearchNotServed` is
+     re-raised as is and the chain moves to the next provider.
+  7. **Front-end types**: `openapi-typescript` renders an output field with a default as required
+     (nullable): `UserMessagePayload.command`, `BoardUpdatePayload.board_id/kind/title`,
+     `SourceFoundPayload.kind/role` are present in `schema.d.ts`; `InterruptRequestedPayload.fields`
+     is optional; `MessageRequest.text` is required on the TS side (send `""` with a command). The
+     test factory `shared/realtime/testEvents.ts` (`userMsg`) received `command: null` so that
+     `pnpm typecheck` passes.
+- **Reason** Master plan §1 (extensible ports), SPEC 3.1 and 3.2 (framing, permanent commands), 3.3
+  (four boards), 9.3 (150 words, citations), 9.4 (replayed node), 9.5, 10.3 (practitioners), 14.1
+  (actions through REST), 17.2 (logs: identifiers and error types only), 17.4; D4, D14, D57, D68,
+  D77, D81 (leftovers).
 
 ## D92
 
-- **Date** : 2026-11-12
-- **Sujet** : Phase 4, tâche 4.11 : tableau Excalidraw `Board` et repli Mermaid
-- **Décision** : (1) `Board` et `MermaidSvg` vivent dans `shared/session-ui` (D9) : le Conseil (4.12) et, en phase 5, le Tuteur les réutilisent ; `MermaidSvg` sert aussi au lecteur de leçons (4.13). Types de vue locaux (`BoardStateView`, `BoardEdit`, `BoardKind`), aucun import de `schema.d.ts` ni de `shared/api`. (2) Éléments du Scribe révélés un par un, 200 ms entre deux (`REVEAL_STEP_MS`, pas borné à 150–300 ms), dans l'ordre du convertisseur ; une étiquette liée apparaît avec sa forme (`revealUnits`). Mouvement réduit ou état déjà vu (même instance de `Board`) ou état de January (`scene` enregistrée) : scène entière tout de suite, sans animation. Pendant l'animation, et 250 ms après (`SETTLE_MS`), le canevas est en lecture seule. (3) Les modifications de January partent sur demande (bouton « Envoyer mes modifications aux agents », actif après une modification), jamais à chaque geste : `onSendEdit(boardId, { scene, note })`, `scene` = `serializeAsJSON(…, "local")` en objet, `note` = `annotationNote` (« Ajouté : « Docker » ; Modifié : … ; Supprimé : … ; 2 élément(s) déplacé(s) », cinq textes au plus, 60 caractères chacun, repli « Le schéma a été retouché (formes ou liens). »). Après l'envoi, la scène envoyée devient la référence. Modifications non envoyées perdues si January change d'état. (4) Repli (SPEC 3.3) : si `mermaidToScene` échoue (erreur ou scène vide) ou si une scène enregistrée est invalide, `MermaidSvg` s'affiche et le front journalise `console.error("board_fallback", { boardId })` : identifiant seulement, jamais le code ni le message de l'analyseur (17.4). `MermaidSvg` : `mermaid.initialize({ startOnLoad: false, securityLevel: "strict" })`, `render`, SVG assaini par Mermaid ; erreur : alerte et code en `<pre>`. (5) Excalidraw, `@excalidraw/mermaid-to-excalidraw` et `mermaid` sont chargés à la demande (`React.lazy` pour le canevas, `import()` pour le reste) : le paquet principal ne grossit pas. Le convertisseur 3.6.0 lit le Mermaid avec Pele (sans `mermaid`, il lui faut `DOMParser`) et rend une image pour un diagramme qu'il ne convertit pas ; limites `maxEdges: 300`, `maxTextSize: 20 000`. (6) Polices d'Excalidraw servies par le front : plugin Vite `excalidrawFonts` (dev : middleware ; build : copie dans `dist/excalidraw-assets/fonts`, sans Xiaolai), `window.EXCALIDRAW_ASSET_PATH = BASE_URL + "excalidraw-assets/"` fixé avant toute importation d'Excalidraw (le paquet le lit à l'évaluation). Le repli `esm.sh` du paquet reste actif si une police locale manque. (7) Détection des modifications : copie légère des éléments (`id, type, x, y, text, isDeleted, containerId`) comparée par signature triée, positions arrondies au pixel, sans la version ni l'ordre, sans la position d'une étiquette liée ; la référence est la scène du convertisseur (copiée avant de la confier à Excalidraw, qui modifie ses éléments sur place), pas le premier `onChange`. (8) `onChange` d'Excalidraw n'est écouté qu'une fois la scène entière affichée et stabilisée (250 ms), car il arrive avec une image de retard ; cadrage par `scrollToContent(…, { fitToViewport, viewportZoomFactor: 0.9, canvasOffsets })`. (9) Export : PNG (`exportToBlob`, fond blanc), SVG (`exportToSvg`, polices incorporées), `.excalidraw` (`serializeAsJSON`) ; nom de fichier `tremplin-<titre-en-minuscules>.<ext>` ; échec : alerte « L'export a échoué ».
-- **Raison** : le tableau est une pièce du débat qui doit rester lisible et sûr (Mermaid non fiable rendu en `strict`, rien de sensible dans les journaux), fluide (animation de 150 à 300 ms coupée par `prefers-reduced-motion`), léger pour le reste de l'application (chargement à la demande), utilisable hors ligne (polices locales) et fiable pour January (une note calculée plutôt qu'un envoi à chaque geste, détection de changement qui ignore les ajustements internes d'Excalidraw).
+- **Date** 2026-11-12
+- **Subject** Phase 4, task 4.11: Excalidraw `Board` and Mermaid fallback
+- **Decision**
+  1. `Board` and `MermaidSvg` live in `shared/session-ui` (D9): the Council (4.12) and, in phase 5,
+     the Tutor reuse them; `MermaidSvg` also serves the lesson reader (4.13). Local view types
+     (`BoardStateView`, `BoardEdit`, `BoardKind`), no import of `schema.d.ts` or `shared/api`.
+  2. Scribe elements revealed one at a time, 200 ms between two (`REVEAL_STEP_MS`, not bounded to
+     150–300 ms), in the converter's order; a bound label appears with its shape (`revealUnits`).
+     Reduced motion or an already seen state (same `Board` instance) or a January state (saved
+     `scene`): whole scene at once, without animation. During the animation, and 250 ms after
+     (`SETTLE_MS`), the canvas is read-only.
+  3. January's modifications are sent on request (button “Send my changes to the agents”, active
+     after a modification), never on every gesture: `onSendEdit(boardId, { scene, note })`, `scene`
+     = `serializeAsJSON(…, "local")` as an object, `note` = `annotationNote` (“Added: “Docker”;
+     Modified: …; Deleted: …; 2 element(s) moved”, five texts at most, 60 characters each, fallback
+     “The diagram was touched up (shapes or links).”). After sending, the sent scene becomes the
+     reference. Unsent modifications are lost if January changes state.
+  4. Fallback (SPEC 3.3): if `mermaidToScene` fails (error or empty scene) or if a saved scene is
+     invalid, `MermaidSvg` is displayed and the front end logs `console.error("board_fallback",
+     { boardId })`: identifier only, never the code or the parser's message (17.4). `MermaidSvg`:
+     `mermaid.initialize({ startOnLoad: false, securityLevel: "strict" })`, `render`, SVG sanitized
+     by Mermaid; error: alert and the code in `<pre>`.
+  5. Excalidraw, `@excalidraw/mermaid-to-excalidraw`, and `mermaid` are loaded on demand
+     (`React.lazy` for the canvas, `import()` for the rest): the main bundle does not grow.
+     Converter 3.6.0 reads the Mermaid with Pele (without `mermaid`, it needs `DOMParser`) and
+     returns an image for a diagram it does not convert; limits `maxEdges: 300`,
+     `maxTextSize: 20,000`.
+  6. Excalidraw's fonts served by the front end: Vite plugin `excalidrawFonts` (dev: middleware;
+     build: copy to `dist/excalidraw-assets/fonts`, without Xiaolai), `window.EXCALIDRAW_ASSET_PATH
+     = BASE_URL + "excalidraw-assets/"` set before any Excalidraw import (the package reads it at
+     evaluation). The package's `esm.sh` fallback remains active if a local font is missing.
+  7. Change detection: a light copy of the elements (`id, type, x, y, text, isDeleted, containerId`)
+     compared by sorted signature, positions rounded to the pixel, without the version or the order,
+     without a bound label's position; the reference is the converter's scene (copied before handing
+     it to Excalidraw, which modifies its elements in place), not the first `onChange`.
+  8. Excalidraw's `onChange` is listened to only once the whole scene is displayed and stabilized
+     (250 ms), because it arrives one frame late; framing by `scrollToContent(…, {
+     fitToViewport, viewportZoomFactor: 0.9, canvasOffsets })`.
+  9. Export: PNG (`exportToBlob`, white background), SVG (`exportToSvg`, fonts embedded),
+     `.excalidraw` (`serializeAsJSON`); file name `tremplin-<lowercase-title>.<ext>`; failure: alert
+     “Export failed”.
+- **Reason** The board is a piece of the debate that must stay readable and safe (untrusted Mermaid
+  rendered in `strict`, nothing sensitive in the logs), fluid (150 to 300 ms animation turned off by
+  `prefers-reduced-motion`), light for the rest of the application (on-demand loading), usable
+  offline (local fonts), and reliable for January (a computed note rather than a send on every
+  gesture, change detection that ignores Excalidraw's internal adjustments).
 
 ## D83
 
