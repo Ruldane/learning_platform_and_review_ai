@@ -41,7 +41,7 @@ async def test_both_tools_are_level_2_without_graph(
             None,
             "db",
         ), name
-        assert tool.description.count("Écriture directe, aucun agent") == 1, name
+        assert tool.description.count("Direct write, no agent") == 1, name
     assert registry.get("learning_create_goal").launches == "learning_council"  # l'autre : un agent
 
 

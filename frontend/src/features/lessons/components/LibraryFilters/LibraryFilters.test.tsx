@@ -19,20 +19,20 @@ function setup(value: LibraryFilterValue = NONE) {
 describe("LibraryFilters", () => {
   it("filters by program, type, language and status", async () => {
     const { onChange, user } = setup();
-    await user.selectOptions(screen.getByLabelText("Programme"), "p2");
+    await user.selectOptions(screen.getByLabelText("Program"), "p2");
     expect(onChange).toHaveBeenLastCalledWith({ ...NONE, programId: "p2" });
     await user.selectOptions(screen.getByLabelText("Type"), "video");
     expect(onChange).toHaveBeenLastCalledWith({ ...NONE, type: "video" });
-    await user.selectOptions(screen.getByLabelText("Langue"), "fr");
+    await user.selectOptions(screen.getByLabelText("Language"), "fr");
     expect(onChange).toHaveBeenLastCalledWith({ ...NONE, lang: "fr" });
-    await user.selectOptions(screen.getByLabelText("Statut"), "to_read");
+    await user.selectOptions(screen.getByLabelText("Status"), "to_read");
     expect(onChange).toHaveBeenLastCalledWith({ ...NONE, status: "to_read" });
   });
 
-  it("keeps the other filters when one changes, and clears one with « Tous »", async () => {
+  it("keeps the other filters when one changes, and clears one with All", async () => {
     const { onChange, user } = setup({ ...NONE, type: "video", status: "read" });
     expect(screen.getByLabelText("Type")).toHaveValue("video");
-    await user.selectOptions(screen.getByLabelText("Langue"), "en");
+    await user.selectOptions(screen.getByLabelText("Language"), "en");
     expect(onChange).toHaveBeenLastCalledWith({
       ...NONE,
       type: "video",

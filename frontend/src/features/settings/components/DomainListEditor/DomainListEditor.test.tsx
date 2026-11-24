@@ -4,8 +4,8 @@ import type { FormEvent } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { DomainListEditor } from "./DomainListEditor";
 
-const LABEL = "Domaines privilégiés";
-const FIELD = "Ajouter un domaine";
+const LABEL = "Preferred domains";
+const FIELD = "Add a domain";
 
 describe("DomainListEditor", () => {
   it("normalise la saisie puis ajoute le domaine", async () => {
@@ -22,7 +22,7 @@ describe("DomainListEditor", () => {
     const onChange = vi.fn();
     render(<DomainListEditor label={LABEL} value={["a.org"]} onChange={onChange} />);
     await user.type(screen.getByLabelText(FIELD), "b.org");
-    await user.click(screen.getByRole("button", { name: "Ajouter" }));
+    await user.click(screen.getByRole("button", { name: "Add" }));
     expect(onChange).toHaveBeenLastCalledWith(["a.org", "b.org"]);
   });
 
@@ -32,7 +32,7 @@ describe("DomainListEditor", () => {
     render(<DomainListEditor label={LABEL} value={["python.org"]} onChange={onChange} />);
     await user.type(screen.getByLabelText(FIELD), "WWW.python.org{Enter}");
     expect(onChange).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert")).toHaveTextContent("Ce domaine est déjà dans la liste.");
+    expect(screen.getByRole("alert")).toHaveTextContent("This domain is already in the list.");
     expect(screen.getByLabelText(FIELD)).toHaveAttribute("aria-invalid", "true");
   });
 
@@ -42,7 +42,7 @@ describe("DomainListEditor", () => {
     render(<DomainListEditor label={LABEL} value={[]} onChange={onChange} />);
     await user.type(screen.getByLabelText(FIELD), "pas un domaine{Enter}");
     expect(onChange).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert")).toHaveTextContent("Ce domaine n'est pas valide.");
+    expect(screen.getByRole("alert")).toHaveTextContent("This domain isn’t valid.");
     await user.type(screen.getByLabelText(FIELD), "x");
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
@@ -51,7 +51,7 @@ describe("DomainListEditor", () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(<DomainListEditor label={LABEL} value={[]} onChange={onChange} />);
-    await user.click(screen.getByRole("button", { name: "Ajouter" }));
+    await user.click(screen.getByRole("button", { name: "Add" }));
     expect(onChange).not.toHaveBeenCalled();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
@@ -60,7 +60,7 @@ describe("DomainListEditor", () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(<DomainListEditor label={LABEL} value={["a.org", "b.org"]} onChange={onChange} />);
-    await user.click(screen.getByRole("button", { name: "Retirer a.org" }));
+    await user.click(screen.getByRole("button", { name: "Remove a.org" }));
     expect(onChange).toHaveBeenCalledWith(["b.org"]);
   });
 
@@ -72,15 +72,13 @@ describe("DomainListEditor", () => {
     );
     await user.type(screen.getByLabelText(FIELD), "c.org{Enter}");
     expect(onChange).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      "La liste est pleine (2 domaines au plus).",
-    );
+    expect(screen.getByRole("alert")).toHaveTextContent("The list is full (2 domains at most).");
   });
 
   it("nomme le groupe et dit quand la liste est vide", () => {
     render(<DomainListEditor label={LABEL} value={[]} onChange={vi.fn()} />);
     expect(screen.getByRole("group", { name: LABEL })).toBeInTheDocument();
-    expect(screen.getByText("Aucun domaine.")).toBeInTheDocument();
+    expect(screen.getByText("No domains.")).toBeInTheDocument();
   });
 
   it("n'envoie pas un formulaire parent à Entrée", async () => {

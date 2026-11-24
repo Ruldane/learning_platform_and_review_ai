@@ -37,9 +37,9 @@ describe("TiersSection", () => {
   it("affiche le titre, les préréglages et les quatre niveaux", () => {
     renderSection();
     expect(
-      screen.getByRole("heading", { level: 2, name: "Modèle par niveau" }),
+      screen.getByRole("heading", { level: 2, name: "Model per tier" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Tout Haiku" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "All Haiku" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
@@ -49,7 +49,7 @@ describe("TiersSection", () => {
   it("remonte le préréglage choisi", async () => {
     const user = userEvent.setup();
     const onApplyPreset = renderSection();
-    await user.click(screen.getByRole("button", { name: "Tout GLM" }));
+    await user.click(screen.getByRole("button", { name: "All GLM" }));
     expect(onApplyPreset).toHaveBeenCalledWith("all_glm");
   });
 

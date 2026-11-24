@@ -20,8 +20,12 @@ const failure = (code: string, message: string, details: unknown = null) => ({
   error: { code, message, details },
 });
 
+const VALIDATE = "Validate the program";
+const REVISE = "Request a revision";
+const WORKING = "The Strategist is updating the program…";
+
 describe("ProgramPage validation", () => {
-  it("validates a draft and shows « Programme validé »", async () => {
+  it("validates a draft and shows Program validated", async () => {
     let called = 0;
     const { state, user } = setup();
     server.use(
@@ -34,11 +38,11 @@ describe("ProgramPage validation", () => {
         );
       }),
     );
-    await user.click(await screen.findByRole("button", { name: "Valider le programme" }));
-    expect(await screen.findByText("Programme validé")).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: VALIDATE }));
+    expect(await screen.findByText("Program validated")).toBeInTheDocument();
     expect(called).toBe(1);
-    expect(screen.getByText("Validé")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Valider le programme" })).toBeNull();
+    expect(screen.getByText("Validated")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: VALIDATE })).toBeNull();
   });
 
   it("shows a refused validation (422) inline and keeps the draft", async () => {
@@ -51,11 +55,11 @@ describe("ProgramPage validation", () => {
         ),
       ),
     );
-    await user.click(await screen.findByRole("button", { name: "Valider le programme" }));
+    await user.click(await screen.findByRole("button", { name: VALIDATE }));
     expect(
       await screen.findByText("Semaine 2 : il manque un quiz en fin de semaine."),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Valider le programme" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: VALIDATE })).toBeEnabled();
   });
 
   it("asks for a revision with a note, by resuming the validation question", async () => {
@@ -68,15 +72,15 @@ describe("ProgramPage validation", () => {
         return HttpResponse.json(state.session);
       }),
     );
-    await user.click(await screen.findByRole("button", { name: "Demander une révision" }));
-    await user.type(screen.getByLabelText("Ce qu'il faut revoir"), "Moins de vidéos.");
-    await user.click(screen.getByRole("button", { name: "Envoyer la demande" }));
-    expect(await screen.findByText("Le Stratège met à jour le programme…")).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: REVISE }));
+    await user.type(screen.getByLabelText("What needs revising"), "Moins de vidéos.");
+    await user.click(screen.getByRole("button", { name: "Send the request" }));
+    expect(await screen.findByText(WORKING)).toBeInTheDocument();
     expect(body).toEqual({
       interrupt_id: "i1",
       value: { action: "revise", note: "Moins de vidéos." },
     });
-    expect(screen.queryByRole("button", { name: "Valider le programme" })).toBeNull();
+    expect(screen.queryByRole("button", { name: VALIDATE })).toBeNull();
   });
 
   it("refuses an empty revision note without calling the server", async () => {
@@ -88,26 +92,26 @@ describe("ProgramPage validation", () => {
         return HttpResponse.json(validationSession("running"));
       }),
     );
-    await user.click(await screen.findByRole("button", { name: "Demander une révision" }));
-    await user.click(screen.getByRole("button", { name: "Envoyer la demande" }));
-    expect(await screen.findByText("Dis ce qu'il faut revoir.")).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: REVISE }));
+    await user.click(screen.getByRole("button", { name: "Send the request" }));
+    expect(await screen.findByText("Say what needs revising.")).toBeInTheDocument();
     expect(called).toBe(false);
   });
 
   it("reads the program again when the revision finishes", async () => {
     const { state } = setup({ session: validationSession("running") });
-    expect(await screen.findByText("Le Stratège met à jour le programme…")).toBeInTheDocument();
+    expect(await screen.findByText(WORKING)).toBeInTheDocument();
     state.session = validationSession("waiting_user");
     state.program = programOut({ version: 2, title: "Python pour la data (v2)" });
     expect(
       await screen.findByRole("heading", { name: "Python pour la data (v2)" }, { timeout: 5000 }),
     ).toBeInTheDocument();
     expect(
-      await screen.findByRole("button", { name: "Demander une révision" }),
+      await screen.findByRole("button", { name: REVISE }),
     ).toBeInTheDocument();
   }, 10_000);
 
-  it("says a second « Valider » during a revision is not accepted, and reads the state", async () => {
+  it("reports a rejected second validation during revision and reloads the state", async () => {
     const { state, user } = setup();
     server.use(
       http.post(`${API}/programs/p1/validate`, () => {
@@ -117,25 +121,25 @@ describe("ProgramPage validation", () => {
         });
       }),
     );
-    await user.click(await screen.findByRole("button", { name: "Valider le programme" }));
+    await user.click(await screen.findByRole("button", { name: VALIDATE }));
     expect(
-      await screen.findByText(/Le programme n'attend pas de validation pour l'instant/),
+      await screen.findByText(/The program isn’t waiting for validation right now/),
     ).toBeInTheDocument();
     await waitFor(() =>
-      expect(screen.queryByRole("button", { name: "Demander une révision" })).toBeNull(),
+      expect(screen.queryByRole("button", { name: REVISE })).toBeNull(),
     );
   });
 
   it("validates a draft whose session is over, without offering a revision", async () => {
     setup({ session: validationSession("completed") });
-    expect(await screen.findByRole("button", { name: "Valider le programme" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Demander une révision" })).toBeNull();
+    expect(await screen.findByRole("button", { name: VALIDATE })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: REVISE })).toBeNull();
   });
 
   it("shows a validated program without validation buttons", async () => {
     setup({ program: programOut({ status: "validated" }) });
-    expect(await screen.findByText("Programme validé")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Valider le programme" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Demander une révision" })).toBeNull();
+    expect(await screen.findByText("Program validated")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: VALIDATE })).toBeNull();
+    expect(screen.queryByRole("button", { name: REVISE })).toBeNull();
   });
 });

@@ -31,14 +31,14 @@ describe("LibraryPage", () => {
     expect(
       await screen.findByRole("link", { name: /Documentation officielle de Python/ }),
     ).toBeInTheDocument();
-    expect(screen.getByText("1 ressource(s)")).toBeInTheDocument();
+    expect(screen.getByText("1 resource(s)")).toBeInTheDocument();
   });
 
   it("filters by type and status", async () => {
     const { queries, user } = setup();
     await screen.findByRole("link", { name: /Documentation officielle de Python/ });
     await user.selectOptions(screen.getByLabelText("Type"), "video");
-    await user.selectOptions(screen.getByLabelText("Statut"), "to_read");
+    await user.selectOptions(screen.getByLabelText("Status"), "to_read");
     await waitFor(() => expect(queries).toContain("?type=video&status=to_read"));
   });
 
@@ -46,8 +46,8 @@ describe("LibraryPage", () => {
     const { queries, user } = setup();
     await screen.findByRole("link", { name: /Documentation officielle de Python/ });
     await screen.findByRole("option", { name: "Python pour la data" });
-    await user.selectOptions(screen.getByLabelText("Programme"), "p1");
-    await user.selectOptions(screen.getByLabelText("Langue"), "fr");
+    await user.selectOptions(screen.getByLabelText("Program"), "p1");
+    await user.selectOptions(screen.getByLabelText("Language"), "fr");
     await waitFor(() => expect(queries).toContain("?program_id=p1&lang=fr"));
   });
 
@@ -62,7 +62,7 @@ describe("LibraryPage", () => {
     );
     await user.click(
       await screen.findByRole("button", {
-        name: "Marquer « Documentation officielle de Python » comme lue",
+        name: "Mark “Documentation officielle de Python” as read",
       }),
     );
     await waitFor(() => expect(body).toEqual({ status: "read" }));
@@ -71,22 +71,22 @@ describe("LibraryPage", () => {
 
   it("explains an empty library and links to the program", async () => {
     const { router, user } = setup([]);
-    expect(await screen.findByText("Aucune ressource pour l'instant")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Voir le programme" }));
+    expect(await screen.findByText("No resources yet")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "View the program" }));
     expect(router.state.location.pathname).toBe("/apprendre/programme/p1");
   });
 
   it("offers to clear the filters when none matches", async () => {
     const { user } = setup([]);
-    await screen.findByText("Aucune ressource pour l'instant");
+    await screen.findByText("No resources yet");
     await user.selectOptions(screen.getByLabelText("Type"), "papier");
-    expect(await screen.findByText("Aucune ressource ne correspond")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Effacer les filtres" }));
-    expect(await screen.findByText("Aucune ressource pour l'instant")).toBeInTheDocument();
+    expect(await screen.findByText("No matching resources")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Clear filters" }));
+    expect(await screen.findByText("No resources yet")).toBeInTheDocument();
     expect(screen.getByLabelText("Type")).toHaveValue("");
   });
 
-  it("offers « Réessayer » when the resources cannot be read", async () => {
+  it("offers Retry when the resources cannot be read", async () => {
     let calls = 0;
     server.use(
       http.get(`${API}/programs`, () => HttpResponse.json([])),
@@ -98,7 +98,7 @@ describe("LibraryPage", () => {
       }),
     );
     const { user } = renderRoutes(routes, "/apprendre/bibliotheque");
-    await user.click(await screen.findByRole("button", { name: "Réessayer" }));
+    await user.click(await screen.findByRole("button", { name: "Retry" }));
     expect(
       await screen.findByRole("link", { name: /Documentation officielle de Python/ }),
     ).toBeInTheDocument();

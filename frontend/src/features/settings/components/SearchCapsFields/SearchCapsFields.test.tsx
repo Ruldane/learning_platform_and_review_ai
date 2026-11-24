@@ -3,14 +3,17 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { SearchCapsFields } from "./SearchCapsFields";
 
+const QUERIES = "Queries per session";
+const PAGES = "Pages read per session";
+
 describe("SearchCapsFields", () => {
   it("affiche les valeurs et les bornes", () => {
     render(<SearchCapsFields maxQueries={12} maxPages={30} onChange={vi.fn()} />);
-    const queries = screen.getByLabelText("Requêtes par session");
+    const queries = screen.getByLabelText(QUERIES);
     expect(queries).toHaveValue(12);
     expect(queries).toHaveAttribute("min", "1");
     expect(queries).toHaveAttribute("max", "50");
-    const pages = screen.getByLabelText("Pages lues par session");
+    const pages = screen.getByLabelText(PAGES);
     expect(pages).toHaveValue(30);
     expect(pages).toHaveAttribute("max", "100");
   });
@@ -19,17 +22,17 @@ describe("SearchCapsFields", () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(<SearchCapsFields maxQueries={12} maxPages={30} onChange={onChange} />);
-    const pages = screen.getByLabelText("Pages lues par session");
+    const pages = screen.getByLabelText(PAGES);
     await user.clear(pages);
     await user.type(pages, "45");
     expect(onChange).toHaveBeenLastCalledWith({ maxQueries: 12, maxPages: 45 });
   });
 
   it.each([
-    ["Requêtes par session", "51", "Entre 1 et 50."],
-    ["Requêtes par session", "0", "Entre 1 et 50."],
-    ["Pages lues par session", "101", "Entre 1 et 100."],
-    ["Pages lues par session", "2.5", "Entre 1 et 100."],
+    [QUERIES, "51", "Between 1 and 50."],
+    [QUERIES, "0", "Between 1 and 50."],
+    [PAGES, "101", "Between 1 and 100."],
+    [PAGES, "2.5", "Between 1 and 100."],
   ])("refuse %s = %s sans rien transmettre", async (label, typed, message) => {
     const user = userEvent.setup();
     const onChange = vi.fn();
@@ -47,7 +50,7 @@ describe("SearchCapsFields", () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(<SearchCapsFields maxQueries={12} maxPages={30} onChange={onChange} />);
-    const field = screen.getByLabelText("Requêtes par session");
+    const field = screen.getByLabelText(QUERIES);
     await user.clear(field);
     expect(screen.getByRole("alert")).toBeInTheDocument();
     await user.tab();
@@ -66,7 +69,7 @@ describe("SearchCapsFields", () => {
         onInvalidChange={onInvalidChange}
       />,
     );
-    const field = screen.getByLabelText("Requêtes par session");
+    const field = screen.getByLabelText(QUERIES);
     await user.clear(field);
     expect(onInvalidChange).toHaveBeenLastCalledWith(true);
     await user.type(field, "20");

@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { API, moduleOut, programApi, programOut, taskOut, weekOut } from "@/test/programApi";
 import { renderRoutes } from "@/test/renderRoutes";
 import { server } from "@/test/server";
@@ -19,20 +19,26 @@ function setup(program: Record<string, unknown> = programOut()) {
   return { ...view, state };
 }
 
-const MOVE_T1 = "Déplacer « Lire le chapitre 1 »";
+const MOVE_T1 = "Move “Lire le chapitre 1”";
 
 describe("ProgramPage", () => {
-  it("shows the program, its week with the calendar and the load against 85 %", async () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"], shouldAdvanceTime: true });
+    vi.setSystemTime(new Date(2026, 10, 16, 12));
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it("shows the program, its week with the calendar and the load against 85%", async () => {
     setup();
     expect(
       await screen.findByRole("heading", { name: "Python pour la data", level: 1 }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Brouillon")).toBeInTheDocument();
+    expect(screen.getByText("Draft")).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Semaine 1 : Premiers pas en Python" }),
+      screen.getByRole("heading", { name: "Week 1: Premiers pas en Python" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("group", { name: "Calendrier de la semaine 1" })).toBeInTheDocument();
-    expect(screen.getByText("3 h / 11 h 54 (85 %)")).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Week 1 calendar" })).toBeInTheDocument();
+    expect(screen.getByText("3 h / 11 h 54 (85%)")).toBeInTheDocument();
   });
 
   it("moves a task and reads the program again", async () => {
@@ -50,8 +56,8 @@ describe("ProgramPage", () => {
       }),
     );
     await user.click(await screen.findByRole("button", { name: MOVE_T1 }));
-    await user.click(screen.getByRole("menuitem", { name: /jeudi 19 novembre/ }));
-    await screen.findByRole("group", { name: "Calendrier de la semaine 1" });
+    await user.click(screen.getByRole("menuitem", { name: /Thursday 19 November/ }));
+    await screen.findByRole("group", { name: "Week 1 calendar" });
     expect(body).toEqual({ planned_date: "2026-11-19" });
     await waitFor(() => expect(reads).toBeGreaterThan(0));
   });
@@ -73,35 +79,35 @@ describe("ProgramPage", () => {
       ),
     );
     await user.click(await screen.findByRole("button", { name: MOVE_T1 }));
-    await user.click(screen.getByRole("menuitem", { name: /jeudi 19 novembre/ }));
+    await user.click(screen.getByRole("menuitem", { name: /Thursday 19 November/ }));
     expect(
       await screen.findByText("Semaine 2 : 760 min prévues, 714 au plus."),
     ).toBeInTheDocument();
-    const monday = screen.getByRole("group", { name: "lun. 16 nov." });
+    const monday = screen.getByRole("group", { name: "Mon 16 Nov" });
     expect(await within(monday).findByText("Lire le chapitre 1")).toBeInTheDocument();
   });
 
   it("chooses the week to show", async () => {
     const { user } = setup();
     await user.selectOptions(
-      await screen.findByRole("combobox", { name: "Semaine affichée" }),
+      await screen.findByRole("combobox", { name: "Displayed week" }),
       "2",
     );
     expect(
-      screen.getByRole("heading", { name: "Semaine 2 : Données et fichiers" }),
+      screen.getByRole("heading", { name: "Week 2: Données et fichiers" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Lire le module csv")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Semaine précédente" }));
+    await user.click(screen.getByRole("button", { name: "Previous week" }));
     expect(
-      screen.getByRole("heading", { name: "Semaine 1 : Premiers pas en Python" }),
+      screen.getByRole("heading", { name: "Week 1: Premiers pas en Python" }),
     ).toBeInTheDocument();
   });
 
   it("offers the PDF and .ics exports as links", async () => {
     setup();
-    const pdf = await screen.findByRole("link", { name: "Exporter en PDF" });
+    const pdf = await screen.findByRole("link", { name: "Export as PDF" });
     expect(pdf).toHaveAttribute("href", expect.stringMatching(/\/programs\/p1\/export\.pdf$/));
-    expect(screen.getByRole("link", { name: "Exporter le calendrier (.ics)" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Export the calendar (.ics)" })).toHaveAttribute(
       "href",
       expect.stringMatching(/\/programs\/p1\/export\.ics$/),
     );
@@ -109,13 +115,13 @@ describe("ProgramPage", () => {
 
   it("lists every task and the lesson of each module in the list view", async () => {
     const { user } = setup();
-    await user.click(await screen.findByRole("tab", { name: "Liste" }));
+    await user.click(await screen.findByRole("tab", { name: "List" }));
     expect(screen.getByText("Pratiquer le tri")).toBeInTheDocument();
-    const lessons = screen.getByRole("region", { name: "Leçons du programme" });
-    expect(within(lessons).getByText("Prête")).toBeInTheDocument();
-    expect(within(lessons).getByText("En préparation")).toBeInTheDocument();
+    const lessons = screen.getByRole("region", { name: "Program lessons" });
+    expect(within(lessons).getByText("Ready")).toBeInTheDocument();
+    expect(within(lessons).getByText("Being prepared")).toBeInTheDocument();
     await user.click(
-      within(lessons).getByRole("link", { name: /Ouvrir la leçons*: Bases du langage/ }),
+      within(lessons).getByRole("link", { name: /Open the lesson\s*: Bases du langage/ }),
     );
     expect(await screen.findByRole("heading", { name: "Leçon ouverte" })).toBeInTheDocument();
   });
@@ -123,9 +129,9 @@ describe("ProgramPage", () => {
   it("marks the lesson of a module finished once all its tasks are done", async () => {
     const done = moduleOut({ tasks: [taskOut({ status: "done" })] });
     const { user } = setup(programOut({ weeks: [weekOut({ modules: [done] })] }));
-    await user.click(await screen.findByRole("tab", { name: "Liste" }));
-    const lessons = screen.getByRole("region", { name: "Leçons du programme" });
-    expect(within(lessons).getByText("Terminée")).toBeInTheDocument();
+    await user.click(await screen.findByRole("tab", { name: "List" }));
+    const lessons = screen.getByRole("region", { name: "Program lessons" });
+    expect(within(lessons).getByText("Completed")).toBeInTheDocument();
   });
 
   it("toggles a task as done from the list view", async () => {
@@ -137,17 +143,17 @@ describe("ProgramPage", () => {
         return HttpResponse.json({});
       }),
     );
-    await user.click(await screen.findByRole("tab", { name: "Liste" }));
+    await user.click(await screen.findByRole("tab", { name: "List" }));
     await user.click(
-      screen.getByRole("checkbox", { name: "Marquer « Lire le chapitre 1 » comme faite" }),
+      screen.getByRole("checkbox", { name: "Mark “Lire le chapitre 1” as done" }),
     );
     await waitFor(() => expect(body).toEqual({ status: "done" }));
   });
 
   it("shows the overall progress", async () => {
     const { user } = setup();
-    await user.click(await screen.findByRole("tab", { name: "Avancement" }));
-    expect(screen.getByRole("region", { name: "Avancement du programme" })).toBeInTheDocument();
+    await user.click(await screen.findByRole("tab", { name: "Progress" }));
+    expect(screen.getByRole("region", { name: "Program progress" })).toBeInTheDocument();
     expect(screen.getByText("1 / 5")).toBeInTheDocument();
   });
 
@@ -171,13 +177,13 @@ describe("ProgramPage", () => {
       }),
     );
     const changes = await screen.findByRole("region", {
-      name: "Changements de la dernière version",
+      name: "Changes in the latest version",
     });
     expect(within(changes).getByText("Lire le module csv")).toBeInTheDocument();
-    expect(within(changes).getByText("lun. 16 nov. → mer. 18 nov.")).toBeInTheDocument();
+    expect(within(changes).getByText("Mon 16 Nov → Wed 18 Nov")).toBeInTheDocument();
   });
 
-  it("offers « Réessayer » when the program cannot be read", async () => {
+  it("offers Retry when the program cannot be read", async () => {
     let calls = 0;
     server.use(
       http.get(`${API}/programs/p1`, () => {
@@ -192,7 +198,7 @@ describe("ProgramPage", () => {
       [{ path: "/apprendre/programme/:programId", element: <ProgramPage /> }],
       "/apprendre/programme/p1",
     );
-    await user.click(await screen.findByRole("button", { name: "Réessayer" }));
+    await user.click(await screen.findByRole("button", { name: "Retry" }));
     expect(await screen.findByRole("heading", { name: "Python pour la data" })).toBeInTheDocument();
   });
 });

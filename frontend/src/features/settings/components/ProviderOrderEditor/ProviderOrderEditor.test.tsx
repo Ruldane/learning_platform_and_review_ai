@@ -15,7 +15,7 @@ describe("ProviderOrderEditor", () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(<ProviderOrderEditor value={["searxng", "brave"]} braveAvailable onChange={onChange} />);
-    await user.click(screen.getByRole("button", { name: "Monter Brave" }));
+    await user.click(screen.getByRole("button", { name: "Move Brave up" }));
     expect(onChange).toHaveBeenCalledWith(["brave", "searxng"]);
   });
 
@@ -23,14 +23,14 @@ describe("ProviderOrderEditor", () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(<ProviderOrderEditor value={["searxng", "brave"]} braveAvailable onChange={onChange} />);
-    await user.click(screen.getByRole("button", { name: "Descendre SearXNG" }));
+    await user.click(screen.getByRole("button", { name: "Move SearXNG down" }));
     expect(onChange).toHaveBeenCalledWith(["brave", "searxng"]);
   });
 
   it("désactive monter sur le premier et descendre sur le dernier", () => {
     render(<ProviderOrderEditor value={["searxng", "brave"]} braveAvailable onChange={vi.fn()} />);
-    expect(screen.getByRole("button", { name: "Monter SearXNG" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Descendre Brave" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Move SearXNG up" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Move Brave down" })).toBeDisabled();
   });
 
   it("grise Brave sans clé, avec la consigne, et fige l'ordre", async () => {
@@ -46,15 +46,15 @@ describe("ProviderOrderEditor", () => {
     const brave = screen.getAllByRole("listitem")[1] as HTMLElement;
     expect(brave).toHaveAttribute("aria-disabled", "true");
     expect(
-      within(brave).getByText("Ajoutez une clé Brave dans Modèles et clés"),
+      within(brave).getByText("Add a Brave key in Models and keys"),
     ).toBeInTheDocument();
     for (const button of screen.getAllByRole("button")) expect(button).toBeDisabled();
-    await user.click(screen.getByRole("button", { name: "Monter Brave" }));
+    await user.click(screen.getByRole("button", { name: "Move Brave up" }));
     expect(onChange).not.toHaveBeenCalled();
   });
 
   it("n'affiche pas la consigne quand Brave a une clé", () => {
     render(<ProviderOrderEditor value={["brave"]} braveAvailable onChange={vi.fn()} />);
-    expect(screen.queryByText(/Ajoutez une clé Brave/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Add a Brave key/)).not.toBeInTheDocument();
   });
 });

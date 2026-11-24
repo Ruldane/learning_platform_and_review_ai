@@ -10,8 +10,8 @@ describe("AdvancedSection", () => {
         <p>Contenu avancé</p>
       </AdvancedSection>,
     );
-    expect(screen.getByRole("heading", { name: "Mode avancé" })).toBeInTheDocument();
-    const toggle = screen.getByRole("button", { name: "Afficher le mode avancé" });
+    expect(screen.getByRole("heading", { name: "Advanced mode" })).toBeInTheDocument();
+    const toggle = screen.getByRole("button", { name: "Show advanced mode" });
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     expect(screen.queryByText("Contenu avancé")).not.toBeInTheDocument();
   });
@@ -24,7 +24,7 @@ describe("AdvancedSection", () => {
       </AdvancedSection>,
     );
     expect(screen.getByText("Contenu avancé")).toBeVisible();
-    const toggle = screen.getByRole("button", { name: "Masquer le mode avancé" });
+    const toggle = screen.getByRole("button", { name: "Hide advanced mode" });
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     await userEvent.setup().click(toggle);
     expect(onToggle).toHaveBeenCalledOnce();

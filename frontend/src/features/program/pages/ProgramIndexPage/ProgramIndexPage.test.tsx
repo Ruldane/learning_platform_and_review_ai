@@ -31,7 +31,7 @@ describe("ProgramIndexPage", () => {
       ),
     );
     const { router, user } = renderRoutes(routes, "/apprendre/programme");
-    expect(await screen.findByRole("heading", { name: "Mes programmes" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "My programs" })).toBeInTheDocument();
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
     await user.click(screen.getByRole("link", { name: "Python pour la data" }));
     expect(router.state.location.pathname).toBe("/apprendre/programme/old");
@@ -40,19 +40,19 @@ describe("ProgramIndexPage", () => {
   it("shows the list even for one program with « ?liste »", async () => {
     server.use(http.get(`${API}/programs`, () => HttpResponse.json([summaryOut({ id: "solo" })])));
     renderRoutes(routes, "/apprendre/programme?liste");
-    expect(await screen.findByRole("heading", { name: "Mes programmes" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "My programs" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Python pour la data" })).toBeInTheDocument();
   });
 
   it("sends to the council when there is no program", async () => {
     server.use(http.get(`${API}/programs`, () => HttpResponse.json([])));
     const { router, user } = renderRoutes(routes, "/apprendre/programme");
-    expect(await screen.findByText("Pas encore de programme")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Ouvrir le Conseil" }));
+    expect(await screen.findByText("No program yet")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Open the Council" }));
     expect(router.state.location.pathname).toBe("/apprendre/conseil");
   });
 
-  it("offers « Réessayer » when the programs cannot be read", async () => {
+  it("offers Retry when the programs cannot be read", async () => {
     let calls = 0;
     server.use(
       http.get(`${API}/programs`, () => {
@@ -63,7 +63,7 @@ describe("ProgramIndexPage", () => {
       }),
     );
     const { user } = renderRoutes(routes, "/apprendre/programme");
-    await user.click(await screen.findByRole("button", { name: "Réessayer" }));
+    await user.click(await screen.findByRole("button", { name: "Retry" }));
     expect(await screen.findByRole("heading", { name: "Programme ouvert" })).toBeInTheDocument();
   });
 });

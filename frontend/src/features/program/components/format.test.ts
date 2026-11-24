@@ -3,7 +3,7 @@ import { dayLoad, dayOfMonth, weekdayLabel } from "./format";
 
 describe("format", () => {
   it("labels a column with the weekday and the day of the month", () => {
-    expect(weekdayLabel("2026-11-16")).toBe("lun.");
+    expect(weekdayLabel("2026-11-16")).toBe("Mon");
     expect(dayOfMonth("2026-11-16")).toBe("16");
   });
 

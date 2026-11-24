@@ -7,22 +7,22 @@ const active = { id: "t1" } as never;
 const over = { id: "2026-11-18" } as never;
 
 describe("makeAnnouncements", () => {
-  it("names the task and the day in French", () => {
-    expect(announcements.onDragStart({ active })).toContain("« Lire le chapitre 1 »");
+  it("names the task and the day in English", () => {
+    expect(announcements.onDragStart({ active })).toContain("“Lire le chapitre 1”");
     expect(announcements.onDragOver({ active, over })).toBe(
-      "Tâche « Lire le chapitre 1 » au-dessus de mercredi 18 novembre.",
+      "Task “Lire le chapitre 1” is over Wednesday 18 November.",
     );
     expect(announcements.onDragEnd({ active, over })).toBe(
-      "Tâche « Lire le chapitre 1 » déposée sur mercredi 18 novembre.",
+      "Task “Lire le chapitre 1” dropped on Wednesday 18 November.",
     );
   });
 
   it("tells where the task stays when nothing is targeted or the move is cancelled", () => {
     expect(announcements.onDragEnd({ active, over: null })).toBe(
-      "Tâche « Lire le chapitre 1 » remise à sa place.",
+      "Task “Lire le chapitre 1” returned to its place.",
     );
     expect(announcements.onDragCancel({ active, over: null })).toBe(
-      "Déplacement annulé. La tâche « Lire le chapitre 1 » reste sur lundi 16 novembre.",
+      "Move cancelled. Task “Lire le chapitre 1” stays on Monday 16 November.",
     );
   });
 });

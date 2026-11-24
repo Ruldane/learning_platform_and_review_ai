@@ -12,7 +12,7 @@ describe("ProgramPicker", () => {
   it("shows the chosen program and reports another choice", async () => {
     const onChange = vi.fn();
     render(<ProgramPicker programs={programs} value="p2" onChange={onChange} />);
-    const select = screen.getByRole("combobox", { name: "Programme" });
+    const select = screen.getByRole("combobox", { name: "Program" });
     expect(select).toHaveValue("p2");
     await userEvent.selectOptions(select, "Python pour la data");
     expect(onChange).toHaveBeenCalledWith("p1");

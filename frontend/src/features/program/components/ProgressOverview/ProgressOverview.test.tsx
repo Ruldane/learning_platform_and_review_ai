@@ -20,9 +20,9 @@ describe("ProgressOverview", () => {
 
   it("gives the overall percentage on an accessible bar", () => {
     render(<ProgressOverview progress={PROGRESS} weeks={[makeWeek()]} />);
-    const bar = screen.getByRole("progressbar", { name: "Avancement global" });
+    const bar = screen.getByRole("progressbar", { name: "Overall progress" });
     expect(bar).toHaveAttribute("aria-valuenow", "28");
-    expect(screen.getByText("28 %")).toBeInTheDocument();
+    expect(screen.getByText("28%")).toBeInTheDocument();
   });
 
   it("draws one bar per week from its done tasks", () => {
@@ -42,23 +42,23 @@ describe("ProgressOverview", () => {
       ],
     });
     render(<ProgressOverview progress={PROGRESS} weeks={[week, second]} />);
-    const bars = screen.getAllByRole("progressbar", { name: /^Semaine / });
+    const bars = screen.getAllByRole("progressbar", { name: /^Week / });
     expect(bars).toHaveLength(2);
-    expect(screen.getByRole("progressbar", { name: "Semaine 2 : Les fonctions" })).toHaveAttribute(
+    expect(screen.getByRole("progressbar", { name: "Week 2: Les fonctions" })).toHaveAttribute(
       "aria-valuenow",
       "50",
     );
     expect(screen.getByText("30 min / 1 h")).toBeInTheDocument();
   });
 
-  it("copes with an empty programme", () => {
+  it("copes with an empty program", () => {
     render(
       <ProgressOverview
         progress={{ tasksDone: 0, tasksPlanned: 0, minutesDone: 0, minutesPlanned: 0 }}
         weeks={[]}
       />,
     );
-    expect(screen.getByText("Le programme ne contient pas encore de tâche.")).toBeInTheDocument();
+    expect(screen.getByText("The program has no tasks yet.")).toBeInTheDocument();
     expect(screen.queryByRole("progressbar")).toBeNull();
   });
 });

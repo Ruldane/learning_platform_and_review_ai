@@ -15,19 +15,19 @@ const report = {
 describe("ServiceChecklist", () => {
   it("writes the state of each service, in words", () => {
     render(<ServiceChecklist report={report} isLoading={false} isError={false} />);
-    const list = screen.getByRole("list", { name: "État des services" });
+    const list = screen.getByRole("list", { name: "Service status" });
     const items = within(list).getAllByRole("listitem");
     expect(items.map((item) => item.textContent)).toEqual([
-      "Base de données : répond",
-      "Mémoire vectorielle (Qdrant) : ne répond pas — Qdrant ne répond pas.",
-      "Clé d'un modèle de langage : à configurer à l'étape 3",
-      "horloge : répond",
+      "Database : responding",
+      "Vector memory (Qdrant) : not responding — Qdrant ne répond pas.",
+      "Language model key : to set up in step 3",
+      "horloge : responding",
     ]);
   });
 
   it("says it is checking while nothing has come back", () => {
     render(<ServiceChecklist isLoading isError={false} />);
-    expect(screen.getByRole("status")).toHaveTextContent("Vérification des services…");
+    expect(screen.getByRole("status")).toHaveTextContent("Checking services…");
     expect(screen.queryByRole("list")).toBeNull();
   });
 
@@ -37,10 +37,10 @@ describe("ServiceChecklist", () => {
     expect(zone).toBeEmptyDOMElement();
     rerender(<ServiceChecklist isLoading isError={false} />);
     expect(screen.getByRole("status")).toBe(zone);
-    expect(zone).toHaveTextContent("Vérification des services…");
+    expect(zone).toHaveTextContent("Checking services…");
     rerender(<ServiceChecklist report={report} isLoading={false} isError />);
     expect(screen.getByRole("status")).toBe(zone);
-    expect(zone).toHaveTextContent("Impossible de lire l'état des services");
+    expect(zone).toHaveTextContent("Could not read the service status");
     expect(screen.getAllByRole("status")).toHaveLength(1);
   });
 
@@ -54,14 +54,14 @@ describe("ServiceChecklist", () => {
     expect(zone).toBeEmptyDOMElement();
     rerender(<ServiceChecklist report={up} isLoading={false} isError={false} />);
     expect(screen.getByRole("status")).toBe(zone);
-    expect(zone).toHaveTextContent("Mémoire vectorielle (Qdrant) : répond de nouveau.");
+    expect(zone).toHaveTextContent("Vector memory (Qdrant): responding again.");
   });
 
   it("says the server cannot be read, and keeps the last report it had", () => {
     const { rerender } = render(<ServiceChecklist isLoading={false} isError />);
-    expect(screen.getByRole("status")).toHaveTextContent("Impossible de lire l'état des services");
+    expect(screen.getByRole("status")).toHaveTextContent("Could not read the service status");
     rerender(<ServiceChecklist report={report} isLoading={false} isError />);
-    expect(screen.getByText("Base de données : répond")).toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent("nouvel essai automatique");
+    expect(screen.getByText("Database : responding")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("retrying automatically");
   });
 });

@@ -10,10 +10,10 @@ interface ResourceItemProps {
   onToggleStatus: (resourceId: string, status: ResourceView["status"]) => void;
 }
 
-/** « Français », « anglais »… : le nom de la langue, ou son code si le navigateur ne le connaît pas. */
+/** Use the English language name, or the code if the browser cannot resolve it. */
 function languageName(code: string): string {
   try {
-    return new Intl.DisplayNames(["fr"], { type: "language" }).of(code) ?? code;
+    return new Intl.DisplayNames(["en"], { type: "language" }).of(code) ?? code;
   } catch {
     return code;
   }

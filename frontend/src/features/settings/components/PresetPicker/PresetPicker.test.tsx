@@ -37,17 +37,17 @@ describe("PresetPicker", () => {
     const user = userEvent.setup();
     const onApply = vi.fn();
     render(<PresetPicker presets={presets} current={presets.all_haiku} onApply={onApply} />);
-    await user.click(screen.getByRole("button", { name: "Tout GLM" }));
+    await user.click(screen.getByRole("button", { name: "All GLM" }));
     expect(onApply).toHaveBeenCalledWith("all_glm");
   });
 
   it("propose les quatre préréglages", () => {
     render(<PresetPicker presets={presets} current={presets.all_haiku} onApply={vi.fn()} />);
     for (const name of [
-      "Tout Haiku",
-      "Haiku avec Sonnet pour le niveau fort",
-      "Tout GLM",
-      "Tout OpenAI",
+      "All Haiku",
+      "Haiku with Sonnet for the strong tier",
+      "All GLM",
+      "All OpenAI",
     ]) {
       expect(screen.getByRole("button", { name })).toBeInTheDocument();
     }
@@ -55,21 +55,21 @@ describe("PresetPicker", () => {
 
   it("marque le préréglage en vigueur", () => {
     render(<PresetPicker presets={presets} current={presets.all_openai} onApply={vi.fn()} />);
-    expect(screen.getByRole("button", { name: "Tout OpenAI" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "All OpenAI" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
-    expect(screen.getByRole("button", { name: "Tout GLM" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "All GLM" })).toHaveAttribute(
       "aria-pressed",
       "false",
     );
-    expect(screen.getByText("Personnalisé")).not.toHaveAttribute("aria-current");
+    expect(screen.getByText("Custom")).not.toHaveAttribute("aria-current");
   });
 
   it("affiche « Personnalisé » quand les niveaux ne correspondent à aucun préréglage", () => {
     const current = { ...presets.all_haiku, fort: { provider: "glm", model: "glm-5.3" } };
     render(<PresetPicker presets={presets} current={current} onApply={vi.fn()} />);
-    expect(screen.getByText("Personnalisé")).toHaveAttribute("aria-current", "true");
+    expect(screen.getByText("Custom")).toHaveAttribute("aria-current", "true");
     for (const button of screen.getAllByRole("button")) {
       expect(button).toHaveAttribute("aria-pressed", "false");
     }

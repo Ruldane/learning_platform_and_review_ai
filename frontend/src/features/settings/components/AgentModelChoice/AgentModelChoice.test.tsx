@@ -8,21 +8,24 @@ const providers: ProviderOption[] = [
   { name: "openai", label: "OpenAI", has_key: true, models: ["gpt-6-luna", "gpt-6.1-sol"] },
   { name: "glm", label: "GLM", has_key: false, models: null },
 ];
-const base = { agentName: "Tuteur", defaultLabel: "Niveau par défaut (Standard)", providers };
+const DEFAULT_TIER = "Default tier (Standard)";
+const PROVIDER = "Provider (Tutor)";
+const MODEL = "Model (Tutor)";
+const base = { agentName: "Tutor", defaultLabel: DEFAULT_TIER, providers };
 const choice = { provider: "openai", model: "gpt-6-luna" };
 
 describe("AgentModelChoice", () => {
   it("offers the default tier first, with no model field while on it", () => {
     render(<AgentModelChoice {...base} value={undefined} onChange={vi.fn()} />);
-    expect(screen.getByLabelText("Fournisseur (Tuteur)")).toHaveValue("");
-    expect(screen.getAllByRole("option")[0]).toHaveTextContent("Niveau par défaut (Standard)");
-    expect(screen.queryByLabelText("Modèle (Tuteur)")).not.toBeInTheDocument();
+    expect(screen.getByLabelText(PROVIDER)).toHaveValue("");
+    expect(screen.getAllByRole("option")[0]).toHaveTextContent(DEFAULT_TIER);
+    expect(screen.queryByLabelText(MODEL)).not.toBeInTheDocument();
   });
 
   it("picks the first model of a provider that has a list", async () => {
     const onChange = vi.fn();
     render(<AgentModelChoice {...base} value={undefined} onChange={onChange} />);
-    await userEvent.setup().selectOptions(screen.getByLabelText("Fournisseur (Tuteur)"), "openai");
+    await userEvent.setup().selectOptions(screen.getByLabelText(PROVIDER), "openai");
     expect(onChange).toHaveBeenCalledWith(choice);
   });
 
@@ -30,11 +33,11 @@ describe("AgentModelChoice", () => {
     const onChange = vi.fn();
     const { rerender } = render(<AgentModelChoice {...base} value={choice} onChange={onChange} />);
     const user = userEvent.setup();
-    await user.selectOptions(screen.getByLabelText("Fournisseur (Tuteur)"), "");
+    await user.selectOptions(screen.getByLabelText(PROVIDER), "");
     expect(onChange).toHaveBeenCalledWith(null);
     onChange.mockClear();
     rerender(<AgentModelChoice {...base} value={undefined} onChange={onChange} />);
-    await user.selectOptions(screen.getByLabelText("Fournisseur (Tuteur)"), "");
+    await user.selectOptions(screen.getByLabelText(PROVIDER), "");
     expect(onChange).not.toHaveBeenCalled();
   });
 
@@ -42,13 +45,13 @@ describe("AgentModelChoice", () => {
     const onChange = vi.fn();
     render(<AgentModelChoice {...base} value={undefined} onChange={onChange} />);
     const user = userEvent.setup();
-    await user.selectOptions(screen.getByLabelText("Fournisseur (Tuteur)"), "glm");
+    await user.selectOptions(screen.getByLabelText(PROVIDER), "glm");
     expect(onChange).not.toHaveBeenCalled();
     // rien n'est envoyé encore : le champ le dit
-    expect(screen.getByLabelText("Modèle (Tuteur)")).toHaveAccessibleDescription(
-      "Saisis le modèle, puis Entrée.",
+    expect(screen.getByLabelText(MODEL)).toHaveAccessibleDescription(
+      "Type the model, then press Enter.",
     );
-    await user.type(screen.getByLabelText("Modèle (Tuteur)"), "  glm-5.3 {Enter}");
+    await user.type(screen.getByLabelText(MODEL), "  glm-5.3 {Enter}");
     expect(onChange).toHaveBeenCalledExactlyOnceWith({ provider: "glm", model: "glm-5.3" });
   });
 
@@ -56,8 +59,8 @@ describe("AgentModelChoice", () => {
     const { rerender } = render(
       <AgentModelChoice {...base} value={undefined} onChange={vi.fn()} />,
     );
-    await userEvent.setup().selectOptions(screen.getByLabelText("Fournisseur (Tuteur)"), "glm");
+    await userEvent.setup().selectOptions(screen.getByLabelText(PROVIDER), "glm");
     rerender(<AgentModelChoice {...base} value={choice} onChange={vi.fn()} />);
-    expect(screen.getByLabelText("Fournisseur (Tuteur)")).toHaveValue("openai");
+    expect(screen.getByLabelText(PROVIDER)).toHaveValue("openai");
   });
 });

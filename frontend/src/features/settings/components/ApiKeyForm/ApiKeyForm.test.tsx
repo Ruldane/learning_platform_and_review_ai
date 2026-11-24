@@ -3,53 +3,55 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { ApiKeyForm } from "./ApiKeyForm";
 
+const KEY_FIELD = "Anthropic API key";
+
 describe("ApiKeyForm", () => {
-  it("a un champ mot de passe étiqueté par le fournisseur", () => {
+  it("labels the password field with the provider name", () => {
     render(<ApiKeyForm providerLabel="Anthropic" pending={false} onSave={vi.fn()} />);
-    const input = screen.getByLabelText("Clé API Anthropic");
+    const input = screen.getByLabelText(KEY_FIELD);
     expect(input).toHaveAttribute("type", "password");
     expect(input).toHaveAttribute("autocomplete", "new-password");
     expect(input).toHaveValue("");
   });
 
-  it("enregistre à Entrée, sans espaces autour, puis vide le champ", async () => {
+  it("trims and saves the key on Enter, then clears the field", async () => {
     const user = userEvent.setup();
     const onSave = vi.fn();
     render(<ApiKeyForm providerLabel="Anthropic" pending={false} onSave={onSave} />);
-    await user.type(screen.getByLabelText(/clé/i), "  sk-ant-1234  {Enter}");
+    await user.type(screen.getByLabelText(KEY_FIELD), "  sk-ant-1234  {Enter}");
     expect(onSave).toHaveBeenCalledWith("sk-ant-1234");
-    expect(screen.getByLabelText(/clé/i)).toHaveValue("");
+    expect(screen.getByLabelText(KEY_FIELD)).toHaveValue("");
   });
 
-  it("n'enregistre rien tant que le champ est vide", async () => {
+  it("keeps Save disabled for an empty field", async () => {
     const user = userEvent.setup();
     const onSave = vi.fn();
     render(<ApiKeyForm providerLabel="Anthropic" pending={false} onSave={onSave} />);
-    await user.type(screen.getByLabelText(/clé/i), "   {Enter}");
+    await user.type(screen.getByLabelText(KEY_FIELD), "   {Enter}");
     expect(onSave).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: "Enregistrer" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
   });
 
-  it("désactive l'enregistrement pendant une opération", async () => {
+  it("disables saving while an operation is pending", async () => {
     const user = userEvent.setup();
     const onSave = vi.fn();
     render(<ApiKeyForm providerLabel="Anthropic" pending onSave={onSave} />);
-    await user.type(screen.getByLabelText(/clé/i), "sk-ant-1234{Enter}");
+    await user.type(screen.getByLabelText(KEY_FIELD), "sk-ant-1234{Enter}");
     expect(onSave).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: "Enregistrer" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
   });
 
-  it("n'écrit jamais la clé dans le DOM (attribut value), pendant la saisie ni après un échec", async () => {
+  it("keeps the key out of the DOM markup during input and after a failed save", async () => {
     const user = userEvent.setup();
     const onSave = vi.fn().mockRejectedValue(new Error("refus"));
     const { container } = render(
       <ApiKeyForm providerLabel="Anthropic" pending={false} onSave={onSave} />,
     );
-    const input = screen.getByLabelText(/clé/i);
+    const input = screen.getByLabelText(KEY_FIELD);
     await user.type(input, "sk-ant-secret-1234");
     expect(input.getAttribute("value") ?? "").not.toContain("sk-ant-secret");
     expect(container.innerHTML).not.toContain("sk-ant-secret");
-    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
     expect(onSave).toHaveBeenCalledWith("sk-ant-secret-1234");
     // Après l'échec, la saisie est gardée pour réessayer, mais seulement dans la valeur du champ.
     expect(input).toHaveValue("sk-ant-secret-1234");
@@ -57,13 +59,13 @@ describe("ApiKeyForm", () => {
     expect(container.innerHTML).not.toContain("sk-ant-secret");
   });
 
-  it("réactive puis désactive Enregistrer selon la présence de texte", async () => {
+  it("enables Save when the field has text and disables it when cleared", async () => {
     const user = userEvent.setup();
     render(<ApiKeyForm providerLabel="Anthropic" pending={false} onSave={vi.fn()} />);
-    const button = screen.getByRole("button", { name: "Enregistrer" });
-    await user.type(screen.getByLabelText(/clé/i), "a");
+    const button = screen.getByRole("button", { name: "Save" });
+    await user.type(screen.getByLabelText(KEY_FIELD), "a");
     expect(button).toBeEnabled();
-    await user.clear(screen.getByLabelText(/clé/i));
+    await user.clear(screen.getByLabelText(KEY_FIELD));
     expect(button).toBeDisabled();
   });
 });

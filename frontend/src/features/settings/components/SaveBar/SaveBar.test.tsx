@@ -18,10 +18,10 @@ describe("SaveBar", () => {
   it("says why the button is blocked, in text tied to it", () => {
     const { rerender } = render(<SaveBar {...props} />);
     const button = () => screen.getByRole("button");
-    expect(button()).toHaveAccessibleDescription("Rien à enregistrer.");
+    expect(button()).toHaveAccessibleDescription("Nothing to save.");
     rerender(<SaveBar {...props} dirty invalid />);
     expect(button()).toHaveAccessibleDescription(
-      "Corrige les champs signalés avant d'enregistrer.",
+      "Fix the flagged fields before saving.",
     );
     rerender(<SaveBar {...props} dirty blocked={false} />);
     expect(button()).not.toHaveAccessibleDescription();

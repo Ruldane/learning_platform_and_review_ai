@@ -49,20 +49,22 @@ function setup(props: Partial<Props> = {}) {
   };
 }
 
-const cvInput = () => screen.getByLabelText("Ton CV (PDF, 10 Mo au plus)");
-const linkedinInput = () => screen.getByLabelText("Ton profil LinkedIn (PDF, facultatif)");
-const send = () => screen.getByRole("button", { name: "Importer mes documents" });
+const cvInput = () => screen.getByLabelText("Your CV (PDF, 10 MB max)");
+const linkedinInput = () => screen.getByLabelText("Your LinkedIn profile (PDF, optional)");
+const send = () => screen.getByRole("button", { name: "Import my documents" });
+const KEY_STEP = "Go to the key step";
+const LINKEDIN_LEFT_OUT = /Your LinkedIn profile was not kept/;
 
 describe("CvImportStep", () => {
   it("cannot send without a CV, and says why", async () => {
     const { onImport, user: u } = setup();
     expect(send()).toHaveAttribute("aria-disabled", "true");
-    expect(send()).toHaveAccessibleDescription("Choisis d'abord ton CV.");
+    expect(send()).toHaveAccessibleDescription("Choose your CV first.");
     await u.click(send());
     expect(onImport).not.toHaveBeenCalled();
     await u.upload(cvInput(), pdf());
     expect(send()).toHaveAttribute("aria-disabled", "false");
-    expect(send()).not.toHaveAccessibleDescription("Choisis d'abord ton CV.");
+    expect(send()).not.toHaveAccessibleDescription("Choose your CV first.");
   });
 
   it("sends the CV alone, then the CV and the LinkedIn PDF", async () => {
@@ -81,13 +83,13 @@ describe("CvImportStep", () => {
   it("refuses a file that is not a PDF, or is over 10 Mo, and never sends it", async () => {
     const { onImport, user: u } = setup();
     await u.upload(cvInput(), new File(["x"], "cv.docx", { type: "application/msword" }));
-    expect(screen.getByRole("alert")).toHaveTextContent("Ce fichier n'est pas un PDF");
+    expect(screen.getByRole("alert")).toHaveTextContent("This file is not a PDF");
     expect(cvInput()).toHaveAttribute("aria-invalid", "true");
     await u.click(send());
     expect(onImport).not.toHaveBeenCalled();
 
     await u.upload(cvInput(), pdf("cv.pdf", 11 * 1024 * 1024));
-    expect(screen.getByRole("alert")).toHaveTextContent("dépasse 10 Mo");
+    expect(screen.getByRole("alert")).toHaveTextContent("This file is over 10 MB");
     await u.upload(cvInput(), pdf());
     expect(screen.queryByRole("alert")).toBeNull();
     expect(cvInput()).toHaveAttribute("aria-invalid", "false");
@@ -97,10 +99,10 @@ describe("CvImportStep", () => {
     const { onImport, user: u } = setup();
     const cv = pdf();
     await u.upload(cvInput(), cv);
-    expect(screen.queryByText(/Ton profil LinkedIn n'a pas été retenu/)).toBeNull();
+    expect(screen.queryByText(LINKEDIN_LEFT_OUT)).toBeNull();
     await u.upload(linkedinInput(), new File(["x"], "profil.docx", { type: "application/msword" }));
-    expect(screen.getByText(/Ton profil LinkedIn n'a pas été retenu/)).toBeInTheDocument();
-    expect(send()).toHaveAccessibleDescription(/Ton profil LinkedIn n'a pas été retenu/);
+    expect(screen.getByText(LINKEDIN_LEFT_OUT)).toBeInTheDocument();
+    expect(send()).toHaveAccessibleDescription(LINKEDIN_LEFT_OUT);
     await u.click(send());
     expect(onImport).toHaveBeenLastCalledWith({ cv });
   });
@@ -109,34 +111,34 @@ describe("CvImportStep", () => {
     const { onImport, onGoToKey, user: u } = setup({ hasKey: false });
     await u.upload(cvInput(), pdf());
     expect(send()).toHaveAttribute("aria-disabled", "true");
-    expect(send()).toHaveAccessibleDescription(/Sans clé d'API, Tremplin ne peut pas lire/);
+    expect(send()).toHaveAccessibleDescription(/Without an API key, Tremplin cannot read/);
     await u.click(send());
     expect(onImport).not.toHaveBeenCalled();
-    await u.click(screen.getByRole("button", { name: "Aller à l'étape de la clé" }));
+    await u.click(screen.getByRole("button", { name: KEY_STEP }));
     expect(onGoToKey).toHaveBeenCalledTimes(1);
   });
 
   it("does not offer the way to the key when there is one", () => {
     setup();
-    expect(screen.queryByRole("button", { name: "Aller à l'étape de la clé" })).toBeNull();
+    expect(screen.queryByRole("button", { name: KEY_STEP })).toBeNull();
   });
 
   it("reminds that nothing leaves until « Importer » is clicked, once a CV is chosen", async () => {
     const { user: u } = setup();
-    expect(screen.queryByText(/Rien n'est envoyé/)).toBeNull();
+    expect(screen.queryByText(/Nothing is sent until/)).toBeNull();
     await u.upload(cvInput(), pdf());
-    expect(screen.getByText(/Rien n'est envoyé tant que/)).toBeInTheDocument();
+    expect(screen.getByText(/Nothing is sent until/)).toBeInTheDocument();
   });
 
   it("ignores a second click while the import goes on", async () => {
     const { onImport, user: u, pendingNow } = setup();
     await u.upload(cvInput(), pdf());
     pendingNow();
-    expect(screen.getByRole("button", { name: "Envoi en cours…" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "Sending…" })).toHaveAttribute(
       "aria-disabled",
       "true",
     );
-    await u.click(screen.getByRole("button", { name: "Envoi en cours…" }));
+    await u.click(screen.getByRole("button", { name: "Sending…" }));
     expect(onImport).not.toHaveBeenCalled();
   });
 
@@ -147,7 +149,7 @@ describe("CvImportStep", () => {
 
   it("says the documents are sent, and drops the reminder", () => {
     setup({ imported: true });
-    expect(screen.getByRole("status")).toHaveTextContent("Tes documents sont envoyés");
-    expect(screen.queryByText(/Rien n'est envoyé/)).toBeNull();
+    expect(screen.getByRole("status")).toHaveTextContent("Your documents have been sent");
+    expect(screen.queryByText(/Nothing is sent until/)).toBeNull();
   });
 });

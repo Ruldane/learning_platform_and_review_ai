@@ -18,40 +18,40 @@ function setup(overrides: Partial<React.ComponentProps<typeof TaskList>> = {}) {
 }
 
 async function fillForm(user: ReturnType<typeof userEvent.setup>, minutes: string) {
-  await user.type(screen.getByLabelText("Titre"), "Écrire un test");
+  await user.type(screen.getByLabelText("Title"), "Écrire un test");
   await user.selectOptions(screen.getByLabelText("Type"), "pratiquer");
-  await user.clear(screen.getByLabelText("Durée (minutes)"));
-  if (minutes) await user.type(screen.getByLabelText("Durée (minutes)"), minutes);
-  await user.type(screen.getByLabelText("Critère de fin"), "Le test passe.");
-  await user.selectOptions(screen.getByLabelText("Jour"), "2026-11-19");
+  await user.clear(screen.getByLabelText("Duration (minutes)"));
+  if (minutes) await user.type(screen.getByLabelText("Duration (minutes)"), minutes);
+  await user.type(screen.getByLabelText("Done criterion"), "Le test passe.");
+  await user.selectOptions(screen.getByLabelText("Day"), "2026-11-19");
 }
 
 describe("TaskList", () => {
   it("groups the tasks by week and module", () => {
     setup();
     expect(
-      screen.getByRole("heading", { name: "Semaine 1 : Premiers pas en Python" }),
+      screen.getByRole("heading", { name: "Week 1: Premiers pas en Python" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Bases du langage" })).toBeInTheDocument();
     expect(screen.getByText("Pratiquer les boucles")).toBeInTheDocument();
-    expect(screen.getAllByText(/Critère de fin : /).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Done when: /).length).toBeGreaterThan(0);
   });
 
   it("toggles and deletes a task", async () => {
     const user = userEvent.setup();
     const props = setup();
     await user.click(
-      screen.getByRole("checkbox", { name: "Marquer « Lire le chapitre 1 » comme faite" }),
+      screen.getByRole("checkbox", { name: "Mark “Lire le chapitre 1” as done" }),
     );
     expect(props.onToggleDone).toHaveBeenCalledWith("t1", true);
-    await user.click(screen.getByRole("button", { name: "Supprimer « Lire le chapitre 1 »" }));
+    await user.click(screen.getByRole("button", { name: "Delete “Lire le chapitre 1”" }));
     expect(props.onDelete).toHaveBeenCalledWith("t1");
   });
 
   it("unchecks a task that is already done", async () => {
     const user = userEvent.setup();
     const props = setup();
-    const box = screen.getByRole("checkbox", { name: "Marquer « Réviser les types » comme faite" });
+    const box = screen.getByRole("checkbox", { name: "Mark “Réviser les types” as done" });
     expect(box).toBeChecked();
     await user.click(box);
     expect(props.onToggleDone).toHaveBeenCalledWith("t3", false);
@@ -60,16 +60,16 @@ describe("TaskList", () => {
   it("is read-only when not editable", () => {
     setup({ editable: false });
     expect(screen.getByRole("checkbox", { name: /Lire le chapitre 1/ })).toBeDisabled();
-    expect(screen.queryByRole("button", { name: /Supprimer/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Delete / })).toBeNull();
     expect(screen.queryByRole("form")).toBeNull();
-    expect(screen.queryByLabelText("Titre")).toBeNull();
+    expect(screen.queryByLabelText("Title")).toBeNull();
   });
 
   it("adds a task from the form", async () => {
     const user = userEvent.setup();
     const props = setup();
     await fillForm(user, "45");
-    await user.click(screen.getByRole("button", { name: "Ajouter la tâche" }));
+    await user.click(screen.getByRole("button", { name: "Add the task" }));
     expect(props.onAdd).toHaveBeenCalledWith({
       title: "Écrire un test",
       type: "pratiquer",
@@ -83,35 +83,35 @@ describe("TaskList", () => {
     const user = userEvent.setup();
     const props = setup();
     await fillForm(user, minutes);
-    await user.click(screen.getByRole("button", { name: "Ajouter la tâche" }));
+    await user.click(screen.getByRole("button", { name: "Add the task" }));
     expect(props.onAdd).not.toHaveBeenCalled();
     expect(
-      screen.getByText("La durée doit être un nombre entier de 15 à 120 minutes."),
+      screen.getByText("Duration must be a whole number from 15 to 120 minutes."),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText("Durée (minutes)")).toBeInvalid();
+    expect(screen.getByLabelText("Duration (minutes)")).toBeInvalid();
   });
 
   it("accepts the bounds 15 and 120", async () => {
     const user = userEvent.setup();
     const props = setup();
     await fillForm(user, "15");
-    await user.click(screen.getByRole("button", { name: "Ajouter la tâche" }));
+    await user.click(screen.getByRole("button", { name: "Add the task" }));
     expect(props.onAdd).toHaveBeenCalledWith(expect.objectContaining({ minutes: 15 }));
   });
 
   it("explains each missing field next to it", async () => {
     const user = userEvent.setup();
     const props = setup();
-    await user.click(screen.getByRole("button", { name: "Ajouter la tâche" }));
+    await user.click(screen.getByRole("button", { name: "Add the task" }));
     expect(props.onAdd).not.toHaveBeenCalled();
-    expect(screen.getByText("Donne un titre à la tâche.")).toBeInTheDocument();
-    expect(screen.getByText("Indique à quoi on voit que la tâche est faite.")).toBeInTheDocument();
-    expect(screen.getByText("Choisis le jour de la tâche.")).toBeInTheDocument();
+    expect(screen.getByText("Give the task a title.")).toBeInTheDocument();
+    expect(screen.getByText("Say how you’ll know the task is done.")).toBeInTheDocument();
+    expect(screen.getByText("Choose the day for the task.")).toBeInTheDocument();
   });
 
   it("shows a refusal coming from the server under the form", () => {
     setup({ addError: "La semaine dépasserait son plafond." });
-    const form = screen.getByRole("form", { name: "Ajouter une tâche" });
+    const form = screen.getByRole("form", { name: "Add a task" });
     expect(within(form).getByRole("alert")).toHaveTextContent(
       "La semaine dépasserait son plafond.",
     );
@@ -119,6 +119,6 @@ describe("TaskList", () => {
 
   it("shows an empty state without tasks", () => {
     setup({ weeks: [] });
-    expect(screen.getByText("Aucune tâche pour l'instant.")).toBeInTheDocument();
+    expect(screen.getByText("No tasks yet.")).toBeInTheDocument();
   });
 });
