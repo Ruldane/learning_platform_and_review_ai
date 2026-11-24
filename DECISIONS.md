@@ -1276,15 +1276,15 @@ subject, decision, and reason. Historical entries describe the project at the ti
   2. **Reading messages**: each agent reads `user_messages_since(last_message_seq)`, adds the new
      ones to `user_notes` (reducer `operator.add`), and advances `last_message_seq`; the prompt
      receives ALL the accumulated remarks (`notes`), not only the new ones, so that the Critic also
-     sees what the Proponent already received (otherwise `last_message_seq`, advanced by the
-     Proponent, would hide the message from it). `turns` is also accumulated by a reducer.
+     sees what the Advocate already received (otherwise `last_message_seq`, advanced by the
+     Advocate, would hide the message from it). `turns` is also accumulated by a reducer.
   3. **File added** `app/agents/nodes/demo_turn.py` (`play_turn`): the turn common to both agents
      (reading messages, rendering the prompt, calling the model through `invoke_agent`), to avoid
      duplication; `DebateNode` (Protocol, in `state/demo_debate.py`) types the nodes, because
      `StateGraph.add_node` requires the named parameter `state`, which a `Callable[[X], Y]` does not
      guarantee.
   4. **`finalize`**: deterministic summary, no model call (the brief writes the 4 scripted replies
-     of the Proponent and the Critic only).
+     of the Advocate and the Critic only).
   5. **Prompt variables**: `topic`, `round`, `rounds`, `previous` (the other agent's last reply),
      `notes`, `angle` (`concret`, `court`, or nothing); January's remarks are not framed as
      untrusted content (they come from the user, not from the web).
@@ -5636,7 +5636,7 @@ pagination by `before = next_before`, 50 entries per page.
      not “in the CV”: the targeted CV starts from these facts. `facts_of`: id → readable text
      (“Role — Company”, “Degree — School”, “Language — Level”, “Label —
      link”, a line's text).
-  3. **The Mockup designer describes, the code writes**: `TemplateSpec` (page, one or two columns,
+  3. **The Layout designer describes, the code writes**: `TemplateSpec` (page, one or two columns,
      fonts, colors, styles); the HTML and CSS are produced by the code. `template_problems` returns
      to the model, in French: widths totaling 100%, each section at most once, `identity` exactly
      once, fonts from the list (case ignored), colors `#rrggbb`. The colors are not constrained in
@@ -5805,7 +5805,7 @@ pagination by `before = next_before`, 50 entries per page.
 - **Subject** Phase 6, task 6.4: CV HTML/CSS template, similarity score, machine-readability checks,
   tightening
 - **Decision**
-  1. **Single template `cv/cv.html.j2` filled by the Mockup designer's spec**: no HTML or CSS
+  1. **Single template `cv/cv.html.j2` filled by the Layout designer's spec**: no HTML or CSS
      written by a model, no script, no image, CSP `CV_CSP` as `<meta>` (same value as the program);
      Jinja with automatic escaping and `StrictUndefined`; two attached sheets, `base.css` (fixed
      rules, on variables) and `cv.css` (`cv_css`: `@page { size: Wpt Hpt; margin: 0 }`, `@font-face`
@@ -5835,11 +5835,11 @@ pagination by `before = next_before`, 50 entries per page.
      divided by 441.7 (original without color: 1; render without color: 0); no cell on both sides:
      IoU 1; **score = nearest rounding of 100 × (0.45 · ink + 0.35 · text + 0.20 · colors)**;
      target 85, 3 passes at most. Zones (top, middle, bottom thirds; left, right halves): share of
-     ink on each side; `describe` tells the Mockup designer the gaps of more than 5 points, the
+     ink on each side; `describe` tells the Layout designer the gaps of more than 5 points, the
      largest first, 4 at most (“The render has 18% less ink on the left than the original.”),
      then “Pages: 1 instead of 2.”; empty string if there is nothing to report. “Faithful, not
      pixel-identical” (5.2). **Deliberate deviation from the plan**: the module lives in
-     `app/agents/tools/`, not in `features/cv/service/`, because the Mockup designer (6.9:
+     `app/agents/tools/`, not in `features/cv/service/`, because the Layout designer (6.9:
      `PassResult.similarity`, `make_fix`, `TARGET_SCORE`, `MAX_FIX_PASSES`) cannot import any
      feature (contract 6), like D118's shared types.
   4. **Five machine-readability checks** (`ats_checks`): `selectable_text` (selectable text and no
@@ -5928,7 +5928,7 @@ pagination by `before = next_before`, 50 entries per page.
 - **Reason** SPEC 5.2 (faithful design), 5.3 (steps 4 and 9), 5.4 (readability by an ATS, same page
   count), 17.2 (no CV data in a message), 17.4 (HTML from our template, without script); phase 6
   plan (task 6.4); preflight (G14, G20, G21, G32, P16 to P19, P47); contract 6 (engine without a
-  feature); D89 (Gotenberg rendering), D118 (the Mockup designer describes, the code writes), D119
+  feature); D89 (Gotenberg rendering), D118 (the Layout designer describes, the code writes), D119
   (72 dpi layout).
 
 ## D121
