@@ -47,7 +47,7 @@ async def test_github_attribution_and_replay(
     assert len((await env.row(project)).submissions) == 1
     [proof] = (await client.get(f"{path}/github-claims")).json()
     assert proof["commit_url"] == f"{REPO_URL}/commit/{SHA}"
-    assert await env.levels("pandas") == {"pandas": ("en_cours", {"github"})}
+    assert await env.levels("pandas") == {"pandas": ("in_progress", {"github"})}
     graph = (await client.get("/api/v1/skills/graph")).json()
     skill = next(node for node in graph["nodes"] if node["name"] == "pandas")
     [evidence] = (await client.get(f"/api/v1/skills/{skill['id']}")).json()["evidence"]

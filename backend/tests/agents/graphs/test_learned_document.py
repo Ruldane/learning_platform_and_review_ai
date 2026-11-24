@@ -101,7 +101,7 @@ async def test_learned_document_creates_declare_acquis_with_reason(
         )
         item = rows[0]
         log = await WriteRepository(db, user_id).for_item(item.id)
-    assert item.meta == {"level": "declare", "evidence": [doc_id], "reason": REASON}
+    assert item.meta == {"level": "declared", "evidence": [doc_id], "reason": REASON}
     assert (item.created_by, item.session_id, item.source_id) == ("archivist", sid, doc_id)
     assert item.tags == ["nlp"] and item.indexed_at is not None
     assert [(w.author, w.session_id, w.reason) for w in log] == [("archivist", sid, REASON)]
@@ -120,7 +120,7 @@ async def test_learned_document_sends_document_as_untrusted_and_known_titles(
     prompt = "\n".join(str(m.content) for m in learned.fake.received[0])
     assert prompt.count("<<<FIN_CONTENU_NON_FIABLE>>>") == prompt.count("<<<CONTENU_NON_FIABLE")
     assert '<<<CONTENU_NON_FIABLE source="document">>>' in prompt
-    assert "Parle de l'attention." in prompt and "- Rust — declare" in prompt
+    assert "Parle de l'attention." in prompt and "- Rust — declared" in prompt
     assert get_agent("archivist").tier == "rapide"
 
 

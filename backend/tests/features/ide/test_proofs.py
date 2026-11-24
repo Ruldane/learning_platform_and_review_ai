@@ -62,7 +62,7 @@ async def test_check_pass_marks_session_passed_and_adds_proof_capped_en_cours(
     summary = next(r for r in (await client.get(f"{API}/sessions")).json() if r["id"] == got["id"])
     assert summary["passed"] is True
     level, evidence = await level_of(app, skill_id) or ("", [])
-    assert level == "en_cours"  # la compétence n'avait aucun niveau : créée à « en cours »
+    assert level == "in_progress"  # la compétence n'avait aucun niveau : créée à « en cours »
     assert [(e["kind"], e["ref_id"]) for e in evidence] == [("ide", session["id"])]
     assert evidence[0]["label"].startswith("Exercice réussi") and evidence[0]["at"]
 
@@ -81,13 +81,13 @@ async def test_proof_never_reaches_valide(
     app: FastAPI, client: httpx.AsyncClient, use_sandbox: UseSandbox
 ) -> None:
     use_sandbox({"*": PASSED})
-    declared = await add_skill(app, "Boucles", "declare")
-    validated = await add_skill(app, "Fonctions", "valide")
-    proven = await add_skill(app, "Classes", "prouve")
+    declared = await add_skill(app, "Boucles", "declared")
+    validated = await add_skill(app, "Fonctions", "validated")
+    proven = await add_skill(app, "Classes", "proven")
     for title in ("Boucles", "Fonctions", "Classes"):
         await check(client, (await new_session(client, title=title))["id"])
-    assert (await level_of(app, declared) or ("",))[0] == "en_cours"  # jamais plus haut
-    for skill_id, level in ((validated, "valide"), (proven, "prouve")):
+    assert (await level_of(app, declared) or ("",))[0] == "in_progress"  # jamais plus haut
+    for skill_id, level in ((validated, "validated"), (proven, "proven")):
         found = await level_of(app, skill_id)
         assert found is not None and found[0] == level  # le niveau ne baisse pas
         assert [e["kind"] for e in found[1]] == ["ide"]
@@ -164,4 +164,4 @@ async def test_a_check_run_by_claude_never_passes_the_session_nor_adds_a_proof(
     # la vérification de January, elle, compte
     await check(client, session["id"])
     assert (await session_row(app, session["id"])).passed_at is not None
-    assert (await level_of(app, skill_id) or ("",))[0] == "en_cours"
+    assert (await level_of(app, skill_id) or ("",))[0] == "in_progress"

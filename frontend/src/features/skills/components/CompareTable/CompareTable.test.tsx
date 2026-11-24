@@ -4,9 +4,9 @@ import type { CompareRowView } from "../viewTypes";
 import { CompareTable } from "./CompareTable";
 
 const rows: CompareRowView[] = [
-  { skillId: "s1", name: "HTML", domain: "web", mine: "valide", target: "valide", gap: 0 },
-  { skillId: "s2", name: "React", domain: "web", mine: "declare", target: "valide", gap: 2 },
-  { skillId: "s3", name: "SQL", domain: "données", mine: null, target: "valide", gap: 4 },
+  { skillId: "s1", name: "HTML", domain: "web", mine: "validated", target: "validated", gap: 0 },
+  { skillId: "s2", name: "React", domain: "web", mine: "declared", target: "validated", gap: 2 },
+  { skillId: "s3", name: "SQL", domain: "données", mine: null, target: "validated", gap: 4 },
 ];
 
 function bodyRows() {
@@ -34,7 +34,7 @@ describe("CompareTable", () => {
   });
 
   it("uses the singular for a gap of one level", () => {
-    const row: CompareRowView = { ...rows[1]!, mine: "en_cours", gap: 1 };
+    const row: CompareRowView = { ...rows[1]!, mine: "in_progress", gap: 1 };
     render(<CompareTable rows={[row]} coverage={0} targetLabel="Cible" />);
     expect(screen.getByText("Manque 1 niveau")).toBeInTheDocument();
   });

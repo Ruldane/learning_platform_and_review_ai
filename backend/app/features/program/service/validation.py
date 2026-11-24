@@ -111,7 +111,7 @@ async def _raise_skills(
     if version is not None:
         await service.upsert_catalog(*_catalog(version.snapshot.get("catalog", {})))
     proof = evidence("program", loaded.program.id, f"Programme {loaded.program.title}", now)
-    return await service.raise_levels(_covered(loaded), "en_cours", proof)
+    return await service.raise_levels(_covered(loaded), "in_progress", proof)
 
 
 @dataclass(frozen=True)

@@ -23,7 +23,7 @@ async def test_mcp_can_read_and_schedule_with_confirmation_for_prepare_and_answe
     now = datetime.now(UTC)
     skills = SkillsService(db_session, app.state.local_user_id)
     await skills.raise_levels(
-        ["Transfert SQL"], "valide", evidence("quiz", "quiz-fictif", "Agrégations", now)
+        ["Transfert SQL"], "validated", evidence("quiz", "quiz-fictif", "Agrégations", now)
     )
     skill_id = await skills.skill_id_for("Transfert SQL")
     await db_session.commit()

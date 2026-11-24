@@ -59,7 +59,7 @@ def test_action_verbs_by_ending_or_list(budget: Budget) -> None:
 
 
 def test_valide_module_is_skipped_declare_is_reduced_to_review() -> None:
-    draft, skipped = apply_known(_known_draft(), {"python": "valide", "pandas": "declare"})
+    draft, skipped = apply_known(_known_draft(), {"python": "validated", "pandas": "declared"})
     assert skipped == ["Bases de Python"]
     review = draft.weeks[0].modules[0].tasks
     assert [(t.title, t.minutes, t.type) for t in review] == [
@@ -69,21 +69,23 @@ def test_valide_module_is_skipped_declare_is_reduced_to_review() -> None:
 
 
 def test_proved_and_in_progress_levels() -> None:
-    _, skipped = apply_known(_known_draft(), {"python": "prouve", "pandas": "valide"})
+    _, skipped = apply_known(_known_draft(), {"python": "proven", "pandas": "validated"})
     assert skipped == ["Bases de Python", "Manipuler des données avec pandas"]
-    draft, skipped = apply_known(_known_draft(), {"python": "en_cours", "pandas": "en_cours"})
+    draft, skipped = apply_known(_known_draft(), {"python": "in_progress", "pandas": "in_progress"})
     assert skipped == [] and all(is_review(m.tasks[0]) for m in draft.weeks[0].modules)
 
 
 def test_module_with_one_unknown_skill_is_kept_whole() -> None:
     mixed = module("Mixte", [task("Lire un chapitre")], skills=["Python", "Rust"])
-    draft, skipped = apply_known(plan([week("Mixte", [mixed])]), {"python": "prouve"})
+    draft, skipped = apply_known(plan([week("Mixte", [mixed])]), {"python": "proven"})
     assert skipped == [] and draft.weeks[0].modules[0].tasks == mixed.tasks
 
 
 def test_known_skill_names_are_matched_after_normalization() -> None:
     m = module("Réseaux", [task("Lire un cours")], skills=["  Réseaux de Neurones."])
-    _, skipped = apply_known(plan([week("Intelligence", [m])]), {"reseaux de neurones": "valide"})
+    _, skipped = apply_known(
+        plan([week("Intelligence", [m])]), {"reseaux de neurones": "validated"}
+    )
     assert skipped == ["Réseaux"]
 
 
@@ -91,7 +93,7 @@ def test_week_with_every_module_skipped_disappears() -> None:
     draft = plan(
         [week("Alpha", [module("Uno", [task("Lire un")], skills=["a"])]), full_week("Beta", [30])]
     )
-    reduced, skipped = apply_known(draft, {"a": "valide"})
+    reduced, skipped = apply_known(draft, {"a": "validated"})
     assert skipped == ["Uno"] and [w.theme for w in reduced.weeks] == ["Beta"]
 
 
@@ -185,7 +187,7 @@ def test_module_indexes_point_into_the_week_modules(budget: Budget) -> None:
 
 
 def test_known_skills_are_skipped_reviewed_and_flagged(budget: Budget) -> None:
-    result = schedule(_known_draft(), budget, {"python": "valide", "pandas": "declare"}, MONDAY)
+    result = schedule(_known_draft(), budget, {"python": "validated", "pandas": "declared"}, MONDAY)
     assert result.skipped_modules == ["Bases de Python"]
     known = [t for t in result.weeks[0].tasks if t.already_known]
     assert [(t.title, t.minutes) for t in known] == [
@@ -194,7 +196,7 @@ def test_known_skills_are_skipped_reviewed_and_flagged(budget: Budget) -> None:
 
 
 def test_everything_known_gives_an_empty_plan(budget: Budget) -> None:
-    result = schedule(_known_draft(), budget, {"python": "prouve", "pandas": "prouve"}, MONDAY)
+    result = schedule(_known_draft(), budget, {"python": "proven", "pandas": "proven"}, MONDAY)
     skipped = ["Bases de Python", "Manipuler des données avec pandas"]
     assert result == ScheduledPlan([], skipped, 0)
 

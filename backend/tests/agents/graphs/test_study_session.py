@@ -62,7 +62,7 @@ async def test_session_walks_sections_exercise_and_final(make_study_runner: Make
     assert said[0]["text"].startswith(f"On travaille « {MODULE} »")
     assert said[1]["citations"][0]["index"] == 1  # « [1] » du message de la section
     assert "Temps enregistré : 42 min." in said[-1]["text"]
-    assert "Acquis mis à jour : Attention (En cours)." in said[-1]["text"]
+    assert "Acquis mis à jour : Attention (In progress)." in said[-1]["text"]
     done = (await run.events("run.completed"))[0]["summary"]
     assert done == f"Session d'étude terminée : « {MODULE} », 42 min."
 

@@ -122,7 +122,7 @@ async def _write(
     names = [skill.name for skill in data.skills]
     proof = evidence("cv", row.id, EVIDENCE_LABEL, rt.now())
     skills = SkillsService(db, user_id)
-    changed = await skills.raise_levels(names, "declare", proof)
+    changed = await skills.raise_levels(names, "declared", proof)
     logger.info(
         "Profil validé : utilisateur %s, profil %s, version %d, %d compétence(s), %d niveau(x) "
         "monté(s)",

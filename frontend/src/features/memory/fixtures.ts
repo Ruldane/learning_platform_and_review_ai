@@ -27,7 +27,7 @@ export function itemOut(overrides: Partial<MemoryItemOut> = {}): MemoryItemOut {
     updated_at: NOW,
     status: "active",
     indexed: true,
-    level: "declare",
+    level: "declared",
     lang: "fr",
     reason: "Document « Cours NLP » marqué « déjà appris ».",
     session_id: "s1",

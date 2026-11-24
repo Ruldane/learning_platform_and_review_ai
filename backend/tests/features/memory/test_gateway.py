@@ -47,7 +47,7 @@ async def test_gateway_write_uses_agent_as_author_and_session(
         writes = await WriteRepository(db, "u1").for_item(done.item_id)
     assert item is not None and item.created_by == "archivist" and item.session_id == "s1"
     assert item.indexed_at is not None and item.source_id == "d1" and item.tags == ["nlp"]
-    assert item.meta == {"level": "declare", "evidence": ["d1"], "reason": "Vu."}
+    assert item.meta == {"level": "declared", "evidence": ["d1"], "reason": "Vu."}
     assert [(w.author, w.session_id, w.reason, w.action) for w in writes] == [
         ("archivist", "s1", "Vu.", "create")
     ]
@@ -97,13 +97,13 @@ async def test_gateway_skills_reads_acquis_levels(
 ) -> None:
     await gateway.write("u1", "s1", "archivist", _acquis("Python"))
     await gateway.write("u1", "s1", "archivist", _acquis("Rust"))
-    await gateway.write("u1", "s1", "archivist", _acquis("SQL", level="en_cours"))
+    await gateway.write("u1", "s1", "archivist", _acquis("SQL", level="in_progress"))
     await gateway.write("u1", "s1", "archivist", AgentWrite("lecon", "Autre", "x", "Cours."))
     await gateway.write("u2", "s2", "archivist", _acquis("Go"))
     summary = await gateway.skills("u1")
-    assert summary.total == 3 and summary.by_level == {"declare": 2, "en_cours": 1}
+    assert summary.total == 3 and summary.by_level == {"declared": 2, "in_progress": 1}
     assert sorted(s.title for s in summary.skills) == ["Python", "Rust", "SQL"]
-    assert {s.title: s.level for s in summary.skills}["SQL"] == "en_cours"
+    assert {s.title: s.level for s in summary.skills}["SQL"] == "in_progress"
     assert (await gateway.skills("nobody")).as_text() == "Aucun acquis en mémoire."
 
 

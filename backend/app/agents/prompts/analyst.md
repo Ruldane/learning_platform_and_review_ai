@@ -84,8 +84,8 @@ Answer: `items`, one item per need, with `need`: the **identifier** of the need 
 and `known`: the **identifier** of the framework skill that designates the same notion (same
 notion under another name, an acronym, a translation: `k1`, `k2`…), otherwise `null`. Do not
 copy the names, only the identifiers. If several framework skills designate the same notion,
-choose the one with the highest level ("prouvé" (proven), "validé" (validated), "en cours" (in
-progress), "déclaré" (declared), then "sans niveau" (no level)).
+choose the one with the highest level ("proven", "validated", "in progress", "declared",
+then "no level").
 A neighboring or broader skill is not the same: return `null`. Never invent an identifier absent
 from the framework.
 {% endif %}

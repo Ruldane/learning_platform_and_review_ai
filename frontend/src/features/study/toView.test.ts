@@ -16,7 +16,7 @@ const session: StudySessionOut = {
   summary: null,
   tasks_done: ["Lire la leçon"],
   flashcards_created: 3,
-  skills: [{ name: "REST", level: "en_cours" }],
+  skills: [{ name: "REST", level: "in_progress" }],
 };
 
 describe("toView", () => {
@@ -43,7 +43,7 @@ describe("toView", () => {
       summary: "",
       tasksDone: ["Lire la leçon"],
       flashcardsCreated: 3,
-      skills: [{ name: "REST", level: "en_cours" }],
+      skills: [{ name: "REST", level: "in_progress" }],
     });
   });
 

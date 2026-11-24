@@ -6,8 +6,8 @@ import type { SkillEdgeView, SkillNodeView } from "../viewTypes";
 import { SkillGraph } from "./SkillGraph";
 
 const nodes: SkillNodeView[] = [
-  { id: "s1", name: "HTML", domain: "web", level: "valide", demand: 0.9, evidenceCount: 3 },
-  { id: "s2", name: "CSS", domain: "web", level: "en_cours", demand: null, evidenceCount: 1 },
+  { id: "s1", name: "HTML", domain: "web", level: "validated", demand: 0.9, evidenceCount: 3 },
+  { id: "s2", name: "CSS", domain: "web", level: "in_progress", demand: null, evidenceCount: 1 },
   { id: "s3", name: "React", domain: "web", level: null, demand: 0.4, evidenceCount: 0 },
 ];
 const edges: SkillEdgeView[] = [
@@ -28,11 +28,11 @@ describe("SkillGraph", () => {
     renderGraph();
     const html = await screen.findByRole("button", { name: "HTML : Validé" });
     expect(within(html).getByText("HTML").closest("[data-level]")).toHaveStyle({
-      backgroundColor: LEVEL_COLORS.valide,
+      backgroundColor: LEVEL_COLORS.validated,
     });
     const css = await screen.findByRole("button", { name: "CSS : En cours" });
     expect(css.querySelector("[data-level]")).toHaveStyle({
-      backgroundColor: LEVEL_COLORS.en_cours,
+      backgroundColor: LEVEL_COLORS.in_progress,
     });
     const react = await screen.findByRole("button", { name: "React : Absent" });
     expect(react.querySelector("[data-level]")).toHaveStyle({

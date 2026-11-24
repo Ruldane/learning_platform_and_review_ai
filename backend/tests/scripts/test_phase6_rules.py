@@ -39,7 +39,7 @@ def test_missing_experience_is_refused() -> None:
 
 
 def test_skill_without_level_is_refused() -> None:
-    nodes: list[dict[str, Any]] = [{"name": "Python", "level": "declare"}, {"name": "Docker"}]
+    nodes: list[dict[str, Any]] = [{"name": "Python", "level": "declared"}, {"name": "Docker"}]
     with pytest.raises(CheckFailed, match=r"skills\.1"):
         skills_below_declared("profil", ["Python", "Docker"], nodes)
 

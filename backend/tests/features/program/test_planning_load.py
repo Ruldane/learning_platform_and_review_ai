@@ -46,14 +46,14 @@ def _two_weeks_first_known() -> PlanDraft:
     ],
 )
 def test_review_title_is_not_doubled(title: str) -> None:
-    draft, _ = apply_known(_draft_with_module(title, ["python"]), {"python": "declare"})
+    draft, _ = apply_known(_draft_with_module(title, ["python"]), {"python": "declared"})
     review = draft.weeks[0].modules[0].tasks[0]
     assert review.title == "Réviser : Python appliqué" and is_review(review)
 
 
 @pytest.mark.parametrize("title", ["Révisions générales", "Revoiture", "Réviser"])
 def test_review_title_keeps_other_titles(title: str) -> None:
-    draft, _ = apply_known(_draft_with_module(title, ["python"]), {"python": "declare"})
+    draft, _ = apply_known(_draft_with_module(title, ["python"]), {"python": "declared"})
     assert draft.weeks[0].modules[0].tasks[0].title == f"Réviser : {title}"
 
 
@@ -75,7 +75,7 @@ def test_week_at_the_floor_is_not_underloaded(budget: Budget) -> None:
 
 
 def test_schedule_pulls_tasks_forward_into_light_week() -> None:
-    plan_ = schedule(_two_weeks_first_known(), Budget(120, 240), {"python": "declare"}, MONDAY)
+    plan_ = schedule(_two_weeks_first_known(), Budget(120, 240), {"python": "declared"}, MONDAY)
     first, second = plan_.weeks
     assert first.load_minutes >= 428 and all(w.load_minutes <= 714 for w in plan_.weeks)
     assert second.tasks[-1].type == "quiz"  # quiz et pratique de la semaine 2 restés

@@ -132,7 +132,7 @@ async def test_known_skill_reduced_to_review(make_builder_runner: MakeBuilder) -
     charts = module("Tracer des graphiques", [task("Lire le guide", minutes=45)], ["matplotlib"])
     rest = module("Nettoyer", [task("Pratiquer le nettoyage", "practice"), task("Faire", "quiz")])
     draft = plan([week("Données", [pandas, charts, rest])]).model_dump_json()
-    known = {"pandas": "declare", "matplotlib": "valide"}
+    known = {"pandas": "declared", "matplotlib": "validated"}
     c = await make_builder_runner(_models(draft), prepare=lambda s: setattr(s, "known", known))
     await c.wait_question()
     assert "pandas (declared)" in c.prompt_of_call(1)

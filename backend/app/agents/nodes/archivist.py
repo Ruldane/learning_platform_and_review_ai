@@ -103,7 +103,7 @@ def _write_of(state: LearnedDocumentState, concept: dict[str, Any]) -> AgentWrit
         text=concept["summary"],
         tags=tuple(concept["tags"]),
         evidence=(document_id,),
-        level="declare",
+        level="declared",
         source_id=document_id,
         reason=f"Document « {state['title']} » marqué « déjà appris ».",
     )

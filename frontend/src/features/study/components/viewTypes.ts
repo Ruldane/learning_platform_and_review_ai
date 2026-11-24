@@ -28,7 +28,7 @@ export interface BlockView {
   tasks: BlockTaskView[];
 }
 
-export type SkillLevelView = "declare" | "en_cours" | "valide" | "prouve";
+export type SkillLevelView = "declared" | "in_progress" | "validated" | "proven";
 
 export interface SkillGainView {
   name: string;

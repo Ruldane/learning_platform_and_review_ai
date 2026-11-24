@@ -16,7 +16,7 @@ describe("SkillLegend", () => {
       "Prouvé",
     ]);
     const swatch = items[3]!.querySelector("[data-swatch]");
-    expect(swatch).toHaveStyle({ backgroundColor: LEVEL_COLORS.valide });
+    expect(swatch).toHaveStyle({ backgroundColor: LEVEL_COLORS.validated });
   });
 
   it("explains what color and size mean", () => {

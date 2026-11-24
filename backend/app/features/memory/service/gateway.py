@@ -124,7 +124,7 @@ class AgentMemoryGateway:
             SkillEntry(
                 item_id=row.id,
                 title=row.title,
-                level=str((row.meta or {}).get("level", "declare")),
+                level=str((row.meta or {}).get("level", "declared")),
                 tags=[str(tag) for tag in row.tags],
             )
             for row in rows

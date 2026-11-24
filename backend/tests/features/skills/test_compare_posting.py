@@ -55,10 +55,10 @@ async def test_compare_with_posting(
         "Agents LLM", "Évaluation de RAG", "Développement logiciel", "Docker",
         "Intégration continue", "Anglais professionnel",
     ]  # fmt: skip
-    assert rows["Python"] == ("valide", "valide", 0)
-    assert rows["Recherche vectorielle"] == ("prouve", "valide", -1)
-    assert rows["Docker"] == ("declare", "valide", 2)
-    assert rows["LangGraph"] == (None, "valide", 3)
+    assert rows["Python"] == ("validated", "validated", 0)
+    assert rows["Recherche vectorielle"] == ("proven", "validated", -1)
+    assert rows["Docker"] == ("declared", "validated", 2)
+    assert rows["LangGraph"] == (None, "validated", 3)
     assert body["coverage"] == 50  # 5 compétences atteintes sur 10 ; le permis n'en est pas
     goal_shape = set(body) == {"target_label", "coverage", "rows"}
     assert goal_shape and r.headers["cache-control"] == "no-store"

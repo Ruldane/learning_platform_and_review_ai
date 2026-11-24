@@ -97,8 +97,8 @@ async def test_known_skills_merge_user_skills_and_memory(
         skill = Skill(user_id=ME, name="Pandas", norm_name="pandas", synonyms=[])
         db.add(skill)
         await db.flush()
-        db.add(UserSkill(user_id=ME, skill_id=skill.id, level="declare", evidence=[]))
-        for title, level in (("pandas", "valide"), ("SQL avancé", "en_cours")):
+        db.add(UserSkill(user_id=ME, skill_id=skill.id, level="declared", evidence=[]))
+        for title, level in (("pandas", "validated"), ("SQL avancé", "in_progress")):
             db.add(
                 MemoryItem(
                     user_id=ME,
@@ -118,12 +118,12 @@ async def test_known_skills_merge_user_skills_and_memory(
                 text="Acquis Rust",
                 created_by="user",
                 content_hash="h-rust",
-                meta={"level": "prouve"},
+                meta={"level": "proven"},
             )
         )
         await db.commit()
     ctx = await store.context(ME, rows.goal_id, [rows.proposal_id], None)
-    assert dict(ctx.known_skills) == {"pandas": "valide", "sql avance": "en_cours"}
+    assert dict(ctx.known_skills) == {"pandas": "validated", "sql avance": "in_progress"}
     assert ctx.budget.cap_minutes == 714 and ctx.language == "fr"
     assert [p.name for p in ctx.proposals] == ["Parcours données"]
     assert ctx.current_plan is None
@@ -159,7 +159,7 @@ async def test_everything_known_is_nothing_to_plan(
             skill = Skill(user_id=ME, name=name, norm_name=name, synonyms=[])
             db.add(skill)
             await db.flush()
-            db.add(UserSkill(user_id=ME, skill_id=skill.id, level="prouve", evidence=[]))
+            db.add(UserSkill(user_id=ME, skill_id=skill.id, level="proven", evidence=[]))
         await db.commit()
     with pytest.raises(AppError) as caught:
         await _save(store, rows.goal_id, sample_plan())

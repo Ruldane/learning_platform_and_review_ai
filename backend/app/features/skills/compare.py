@@ -17,7 +17,7 @@ from app.features.skills.radar import as_level, domain_name
 from app.features.skills.repository import SkillRepository, UserSkillRepository
 from app.features.skills.schemas import CompareOut, CompareRowOut, CompareTarget
 
-TARGET_LEVEL: SkillLevel = "valide"
+TARGET_LEVEL: SkillLevel = "validated"
 LABEL_MAX = 120
 
 

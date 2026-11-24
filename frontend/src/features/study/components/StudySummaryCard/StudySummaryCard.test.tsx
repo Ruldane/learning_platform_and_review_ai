@@ -11,8 +11,8 @@ const SUMMARY: StudySummaryView = {
   tasksDone: ["Lire la leçon sur les index", "Écrire trois requêtes"],
   flashcardsCreated: 3,
   skills: [
-    { name: "SQL", level: "en_cours" },
-    { name: "Index", level: "declare" },
+    { name: "SQL", level: "in_progress" },
+    { name: "Index", level: "declared" },
   ],
 };
 

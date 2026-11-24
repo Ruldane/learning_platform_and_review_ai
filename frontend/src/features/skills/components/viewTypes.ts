@@ -1,7 +1,7 @@
 /** Types de vue des composants de la carte de compétences : indépendants du contrat d'API (D34). */
 
 /** Niveau de maîtrise d'une compétence ; `null` : aucune ligne `user_skills` (absente). */
-export type LevelView = "declare" | "en_cours" | "valide" | "prouve" | null;
+export type LevelView = "declared" | "in_progress" | "validated" | "proven" | null;
 
 export interface SkillNodeView {
   id: string;

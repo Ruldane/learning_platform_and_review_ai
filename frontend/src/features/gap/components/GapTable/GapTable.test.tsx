@@ -15,9 +15,9 @@ const row = (skill: string, patch: Partial<GapRowView>): GapRowView => ({
 });
 
 const ROWS: GapRowView[] = [
-  row("React", { required: true, level: "valide", action: "in_program", week: 4 }),
+  row("React", { required: true, level: "validated", action: "in_program", week: 4 }),
   row("Docker", { required: true }),
-  row("SQL", { level: "declare" }),
+  row("SQL", { level: "declared" }),
   row("SAP", { action: "out_of_scope" }),
   row("Kafka", { source: "cv_review" }),
 ];
@@ -66,9 +66,9 @@ describe("GapTable", () => {
   it("offers no checkbox for a skill already validated or proved", () => {
     setup({
       rows: [
-        row("Go", { level: "valide" }),
-        row("Rust", { level: "prouve" }),
-        row("SQL", { level: "en_cours" }),
+        row("Go", { level: "validated" }),
+        row("Rust", { level: "proven" }),
+        row("SQL", { level: "in_progress" }),
       ],
     });
     expect(within(rowOf("Go")).getByText("Already acquired")).toBeInTheDocument();

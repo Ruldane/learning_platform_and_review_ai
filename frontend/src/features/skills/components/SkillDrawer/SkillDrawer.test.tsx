@@ -10,7 +10,7 @@ const detail: SkillDetailView = {
   name: "CSS",
   domain: "web",
   synonyms: ["Feuilles de style"],
-  level: "en_cours",
+  level: "in_progress",
   evidence: [
     {
       kind: "lesson",
@@ -72,7 +72,7 @@ describe("SkillDrawer", () => {
   it("shows a next action that is not available yet as text", () => {
     renderDrawer({
       ...detail,
-      level: "valide",
+      level: "validated",
       nextAction: { kind: "project", label: "Projet preuve (bientôt)", url: null },
     });
     expect(screen.getByText("Projet preuve (bientôt)")).toBeInTheDocument();
@@ -80,7 +80,7 @@ describe("SkillDrawer", () => {
   });
 
   it("says nothing is left to do for a proven skill", () => {
-    renderDrawer({ ...detail, level: "prouve", nextAction: null });
+    renderDrawer({ ...detail, level: "proven", nextAction: null });
     expect(
       screen.getByText("Rien à faire de plus : cette compétence est prouvée."),
     ).toBeInTheDocument();

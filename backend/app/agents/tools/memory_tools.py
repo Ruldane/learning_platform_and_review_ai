@@ -125,7 +125,7 @@ class _WriteArgs(BaseModel):
     reason: str = Field(min_length=1, description="La raison de l'écriture, en une phrase.")
     tags: list[str] = Field(default_factory=list)
     evidence: list[str] = Field(default_factory=list)
-    level: Literal["declare", "en_cours"] | None = None
+    level: Literal["declared", "in_progress"] | None = None
     source_id: str | None = None
 
 

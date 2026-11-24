@@ -163,7 +163,7 @@ async def reflect_review(rt: QuizRuntime, user_id: str, out: ReviewOut) -> None:
                 rt.memory,
                 user_id,
                 title=demoted,
-                level="en_cours",
+                level="in_progress",
                 author="user",
                 session_id=None,
                 reason="Two failures in a row on the review cards",

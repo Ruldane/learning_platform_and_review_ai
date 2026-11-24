@@ -52,8 +52,8 @@ export function SkillRadar({ domains, emptyAction }: SkillRadarProps) {
             <Radar
               name={t("skills.radar.series")}
               dataKey="score"
-              stroke={LEVEL_COLORS.valide}
-              fill={LEVEL_COLORS.valide}
+              stroke={LEVEL_COLORS.validated}
+              fill={LEVEL_COLORS.validated}
               fillOpacity={0.3}
               isAnimationActive={!reduced}
             />

@@ -190,12 +190,14 @@ async def test_new_columns_defaults(db_session: AsyncSession) -> None:
 
 async def test_skill_snapshot_is_unique_per_user_and_week(db_session: AsyncSession) -> None:
     def snapshot(user_id: str) -> SkillSnapshot:
-        return SkillSnapshot(user_id=user_id, week_start=date(2026, 11, 9), levels={"s1": "valide"})
+        return SkillSnapshot(
+            user_id=user_id, week_start=date(2026, 11, 9), levels={"s1": "validated"}
+        )
 
     first = snapshot("u1")
     db_session.add_all([first, snapshot("u2")])
     await db_session.flush()
-    assert first.levels == {"s1": "valide"}
+    assert first.levels == {"s1": "validated"}
     db_session.add(snapshot("u1"))
     with pytest.raises(IntegrityError):
         await db_session.flush()

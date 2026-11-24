@@ -1,7 +1,7 @@
 import type { LevelView } from "./viewTypes";
 
 /** Les cinq états d'une compétence sur la carte, du moins au plus maîtrisé (« absent » : aucun niveau). */
-export const LEVEL_KEYS = ["absent", "declare", "en_cours", "valide", "prouve"] as const;
+export const LEVEL_KEYS = ["absent", "declared", "in_progress", "validated", "proven"] as const;
 export type LevelKey = (typeof LEVEL_KEYS)[number];
 
 /**
@@ -11,10 +11,10 @@ export type LevelKey = (typeof LEVEL_KEYS)[number];
  */
 export const LEVEL_COLORS: Record<LevelKey, string> = {
   absent: "#57606a",
-  declare: "#8a5200",
-  en_cours: "#1f5fa6",
-  valide: "#0f6b5c",
-  prouve: "#6a3d9a",
+  declared: "#8a5200",
+  in_progress: "#1f5fa6",
+  validated: "#0f6b5c",
+  proven: "#6a3d9a",
 };
 
 export function levelKey(level: LevelView): LevelKey {

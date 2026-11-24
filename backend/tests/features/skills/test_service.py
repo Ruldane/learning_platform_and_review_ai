@@ -51,20 +51,22 @@ async def test_upsert_catalog_dedups_and_links(db_session_factory: Factory) -> N
 async def test_raise_levels_never_lowers_and_reports_changes(db_session_factory: Factory) -> None:
     async with db_session_factory() as db:
         service = SkillsService(db, ME)
-        first = await service.raise_levels(["Pandas", "SQL"], "valide", _ev("Quiz", "quiz", "q1"))
-        second = await service.raise_levels(
-            ["pandas", "sql", "Rust"], "en_cours", _ev("Programme P")
+        first = await service.raise_levels(
+            ["Pandas", "SQL"], "validated", _ev("Quiz", "quiz", "q1")
         )
-        third = await service.raise_levels(["Rust"], "en_cours", _ev("Programme P"))
+        second = await service.raise_levels(
+            ["pandas", "sql", "Rust"], "in_progress", _ev("Programme P")
+        )
+        third = await service.raise_levels(["Rust"], "in_progress", _ev("Programme P"))
         known = await service.known_levels()
         await db.commit()
-    assert first == [("Pandas", "valide"), ("SQL", "valide")]
-    assert second == [("Rust", "en_cours")]
+    assert first == [("Pandas", "validated"), ("SQL", "validated")]
+    assert second == [("Rust", "in_progress")]
     assert third == []
-    assert known == {"pandas": "valide", "sql": "valide", "rust": "en_cours"}
+    assert known == {"pandas": "validated", "sql": "validated", "rust": "in_progress"}
     async with db_session_factory() as db:
         rows = (await db.execute(select(UserSkill))).scalars().all()
-    pandas = next(r for r in rows if r.level == "valide" and len(r.evidence) == 2)
+    pandas = next(r for r in rows if r.level == "validated" and len(r.evidence) == 2)
     assert [(e["kind"], e["label"]) for e in pandas.evidence] == [
         ("quiz", "Quiz"),
         ("program", "Programme P"),
@@ -74,12 +76,12 @@ async def test_raise_levels_never_lowers_and_reports_changes(db_session_factory:
 
 async def test_levels_are_per_user(db_session_factory: Factory) -> None:
     async with db_session_factory() as db:
-        await SkillsService(db, OTHER).raise_levels(["Pandas"], "prouve", _ev("Projet", "project"))
+        await SkillsService(db, OTHER).raise_levels(["Pandas"], "proven", _ev("Projet", "project"))
         await db.commit()
     async with db_session_factory() as db:
         assert await SkillsService(db, ME).known_levels() == {}
-        assert await SkillsService(db, ME).raise_levels(["Pandas"], "declare", _ev("x")) == [
-            ("Pandas", "declare")
+        assert await SkillsService(db, ME).raise_levels(["Pandas"], "declared", _ev("x")) == [
+            ("Pandas", "declared")
         ]
         await db.commit()
     assert await _count(db_session_factory, Skill) == 2
@@ -88,7 +90,7 @@ async def test_levels_are_per_user(db_session_factory: Factory) -> None:
 async def test_concurrent_raises_create_one_skill(db_session_factory: Factory) -> None:
     async def raise_once() -> None:
         async with db_session_factory() as db:
-            await SkillsService(db, ME).raise_levels(["Pandas"], "en_cours", _ev("P"))
+            await SkillsService(db, ME).raise_levels(["Pandas"], "in_progress", _ev("P"))
             await db.commit()
 
     await asyncio.gather(raise_once(), raise_once())
@@ -99,22 +101,22 @@ async def test_concurrent_raises_create_one_skill(db_session_factory: Factory) -
 async def test_levels_of_reads_current_levels_once_per_name(db_session_factory: Factory) -> None:
     async with db_session_factory() as db:
         service = SkillsService(db, ME)
-        await service.raise_levels(["Pandas"], "valide", _ev("Quiz", "quiz", "q1"))
+        await service.raise_levels(["Pandas"], "validated", _ev("Quiz", "quiz", "q1"))
         await service.upsert_catalog([SkillDraft(name="Polars", domain="Données")], [])
         levels = await service.levels_of(["pandas", "PANDAS", "Polars", "inconnue", ""])
-    assert levels == [("Pandas", "valide")]  # « Polars » n'a pas de niveau
+    assert levels == [("Pandas", "validated")]  # « Polars » n'a pas de niveau
 
 
 async def test_raise_levels_dedups_evidence_by_kind_and_ref(db_session_factory: Factory) -> None:
     async with db_session_factory() as db:
         service = SkillsService(db, ME)
-        await service.raise_levels(["Pandas"], "valide", _ev("Quiz : 90 %", "quiz", "q1"))
-        await service.raise_levels(["Pandas"], "valide", _ev("Quiz : 85 %", "quiz", "q1"))
-        await service.raise_levels(["Pandas"], "valide", _ev("Quiz : 80 %", "quiz", "q2"))
-        await service.raise_levels(["Pandas"], "en_cours", _ev("Étude", "study", "q1"))
-        await service.raise_levels(["Pandas"], "en_cours", _ev("Programme A", "program", None))
-        await service.raise_levels(["Pandas"], "en_cours", _ev("Programme B", "program", None))
-        await service.raise_levels(["Pandas"], "en_cours", _ev("Programme A", "program", None))
+        await service.raise_levels(["Pandas"], "validated", _ev("Quiz : 90 %", "quiz", "q1"))
+        await service.raise_levels(["Pandas"], "validated", _ev("Quiz : 85 %", "quiz", "q1"))
+        await service.raise_levels(["Pandas"], "validated", _ev("Quiz : 80 %", "quiz", "q2"))
+        await service.raise_levels(["Pandas"], "in_progress", _ev("Étude", "study", "q1"))
+        await service.raise_levels(["Pandas"], "in_progress", _ev("Programme A", "program", None))
+        await service.raise_levels(["Pandas"], "in_progress", _ev("Programme B", "program", None))
+        await service.raise_levels(["Pandas"], "in_progress", _ev("Programme A", "program", None))
         await db.commit()
     async with db_session_factory() as db:
         row = (await db.execute(select(UserSkill))).scalar_one()
@@ -129,12 +131,12 @@ async def test_raise_levels_dedups_evidence_by_kind_and_ref(db_session_factory: 
 
 async def test_raise_levels_reads_phase4_string_evidence(db_session_factory: Factory) -> None:
     async with db_session_factory() as db:
-        await SkillsService(db, ME).raise_levels(["Pandas"], "en_cours", _ev("Programme P"))
+        await SkillsService(db, ME).raise_levels(["Pandas"], "in_progress", _ev("Programme P"))
         row = (await db.execute(select(UserSkill))).scalar_one()
         row.evidence = ["Programme Ancien"]  # chaîne écrite avant la phase 5
         await db.commit()
     async with db_session_factory() as db:
-        await SkillsService(db, ME).raise_levels(["Pandas"], "valide", _ev("Quiz", "quiz", "q1"))
+        await SkillsService(db, ME).raise_levels(["Pandas"], "validated", _ev("Quiz", "quiz", "q1"))
         await db.commit()
     async with db_session_factory() as db:
         row = (await db.execute(select(UserSkill))).scalar_one()
@@ -148,7 +150,7 @@ async def test_evidence_keeps_the_latest_twenty(db_session_factory: Factory) -> 
     async with db_session_factory() as db:
         service = SkillsService(db, ME)
         for n in range(25):
-            await service.raise_levels(["Pandas"], "en_cours", _ev(f"p{n}", "program", f"p{n}"))
+            await service.raise_levels(["Pandas"], "in_progress", _ev(f"p{n}", "program", f"p{n}"))
         await db.commit()
     async with db_session_factory() as db:
         row = (await db.execute(select(UserSkill))).scalar_one()
@@ -160,20 +162,20 @@ async def test_record_review_demotes_valide_after_two_failures(
 ) -> None:
     async with db_session_factory() as db:
         service = SkillsService(db, ME)
-        await service.raise_levels(["Pandas"], "valide", _ev("quiz", "quiz", "q1"))
-        await service.raise_levels(["SQL"], "en_cours", _ev("programme"))
+        await service.raise_levels(["Pandas"], "validated", _ev("quiz", "quiz", "q1"))
+        await service.raise_levels(["SQL"], "in_progress", _ev("programme"))
         assert await service.record_review("inconnue", ok=False) is None
         assert await service.record_review("pandas", ok=False) is None
         assert await service.record_review("pandas", ok=True) is None  # série remise à 0
         assert await service.record_review("pandas", ok=False) is None
-        assert await service.record_review("PANDAS", ok=False) == "en_cours"
+        assert await service.record_review("PANDAS", ok=False) == "in_progress"
         assert await service.record_review("sql", ok=False) is None
         assert await service.record_review("sql", ok=False) is None  # pas `valide` : rien
         rows = {
             row.skill_id: (row.level, row.fail_streak)
             for row in (await db.execute(select(UserSkill))).scalars()
         }
-        assert sorted(rows.values()) == [("en_cours", 0), ("en_cours", 2)]
+        assert sorted(rows.values()) == [("in_progress", 0), ("in_progress", 2)]
         await service.reset_fail_streaks(["SQL"])
         assert sorted(r.fail_streak for r in (await db.execute(select(UserSkill))).scalars()) == [
             0,

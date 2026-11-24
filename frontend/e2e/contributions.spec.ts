@@ -39,7 +39,7 @@ async function checkProof(request: APIRequestContext, dossierPath: string) {
   expect(response.ok()).toBe(true);
   const graph = (await response.json()) as { nodes: { id: string; name: string; level: string }[] };
   const skill = graph.nodes.find((node) => node.name === "pandas");
-  expect(skill?.level).toBe("prouve");
+  expect(skill?.level).toBe("proven");
   const detail = await request.get(`${API}/skills/${skill?.id}`);
   expect(detail.ok()).toBe(true);
   const { evidence } = (await detail.json()) as { evidence: { kind: string }[] };

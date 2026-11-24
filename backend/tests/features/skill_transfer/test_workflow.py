@@ -38,7 +38,7 @@ async def _control_of_quiz(app: FastAPI, client: httpx.AsyncClient) -> tuple[str
     async with app.state.session_factory() as db:
         service = SkillsService(db, seeded.user_id)
         await service.raise_levels(
-            ["pandas"], "valide", evidence("quiz", quiz_id, "Quiz de pandas", datetime.now(UTC))
+            ["pandas"], "validated", evidence("quiz", quiz_id, "Quiz de pandas", datetime.now(UTC))
         )
         skill_id = await service.skill_id_for("pandas")
         await db.commit()

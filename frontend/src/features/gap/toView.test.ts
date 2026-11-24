@@ -49,7 +49,7 @@ describe("toView", () => {
         },
         {
           action: "to_add",
-          level: "declare",
+          level: "declared",
           required: false,
           skill: "Kafka",
           source: "cv_review",
@@ -67,7 +67,7 @@ describe("toView", () => {
       },
       {
         action: "to_add",
-        level: "declare",
+        level: "declared",
         required: false,
         skill: "Kafka",
         source: "cv_review",

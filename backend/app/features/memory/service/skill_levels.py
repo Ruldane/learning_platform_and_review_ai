@@ -20,8 +20,8 @@ from app.features.memory.service.runtime import MemoryRuntime
 
 
 def _level(item: MemoryItem) -> MasteryLevel:
-    raw = (item.meta or {}).get("level", "declare")
-    return cast(MasteryLevel, raw) if raw in MASTERY_ORDER else "declare"
+    raw = (item.meta or {}).get("level", "declared")
+    return cast(MasteryLevel, raw) if raw in MASTERY_ORDER else "declared"
 
 
 async def _acquis(db: AsyncSession, user_id: str) -> list[MemoryItem]:
@@ -82,7 +82,7 @@ async def _create(
         text=f"Compétence travaillée dans un programme d'apprentissage : {title}.",
         author=author,
         reason=reason,
-        level=level if level in WRITABLE_LEVELS else "en_cours",
+        level=level if level in WRITABLE_LEVELS else "in_progress",
         session_id=session_id,
     )
     return (await MemoryService(db, user_id, runtime).write(draft)).item

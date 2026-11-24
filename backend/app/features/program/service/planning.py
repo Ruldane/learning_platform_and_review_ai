@@ -49,7 +49,7 @@ REVIEW_PREFIX = "Réviser : "
 REVIEW_CRITERION = "Relire la fiche et répondre aux questions d'auto-évaluation"
 _PRACTICE_CRITERION = "Produire un résultat que l'on peut montrer et expliquer"
 _QUIZ_CRITERION = "Répondre à toutes les questions puis relire les erreurs"
-_SKILLED = ("valide", "prouve")
+_SKILLED = ("validated", "proven")
 
 
 class PlanningImpossible(AppError):

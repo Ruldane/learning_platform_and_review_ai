@@ -83,7 +83,7 @@ async def test_alerts_count_analyzed_postings_not_the_ones_read(radar: Radar) ->
 async def test_skill_in_the_program_or_acquired_gives_no_alert(radar: Radar) -> None:
     goal = await add_goal(radar.factory, ME)
     await add_program(radar.factory, ME, goal, [("Module Python", ["python"])])
-    await add_skill(radar.factory, ME, "Linux", "Système", "valide")
+    await add_skill(radar.factory, ME, "Linux", "Système", "validated")
     run_id = await radar.analyzed_run(_postings(10, python=10))
     assert (await _out(radar, run_id)).alerts == []  # Python au programme, Linux validé
 
@@ -132,7 +132,7 @@ async def test_run_says_how_many_were_read_but_not_analyzed(radar: Radar) -> Non
 
 
 async def test_enrich_catalog_without_level(radar: Radar) -> None:
-    await add_skill(radar.factory, ME, "Python", "Langages", "valide")
+    await add_skill(radar.factory, ME, "Python", "Langages", "validated")
     await radar.analyzed_run(_postings(10, python=4, rust=2))  # Linux 100 %, Python 40 %, Rust 20 %
     async with radar.factory() as db:
         names = {
@@ -142,11 +142,11 @@ async def test_enrich_catalog_without_level(radar: Radar) -> None:
             (await db.execute(select(UserSkill).where(UserSkill.user_id == ME))).scalars()
         )
     assert names == {"Python", "Linux"}  # ≥ 30 % des offres : Rust (20 %) reste dehors
-    assert [(row.level) for row in levels] == ["valide"]  # Linux est au référentiel sans niveau
+    assert [(row.level) for row in levels] == ["validated"]  # Linux est au référentiel sans niveau
 
 
 async def test_offers_have_scores_best_first_and_no_page_text(radar: Radar) -> None:
-    await add_skill(radar.factory, ME, "Python", "Langages", "valide")
+    await add_skill(radar.factory, ME, "Python", "Langages", "validated")
     run_id = await radar.analyzed_run([["Rust"], ["Python"], ["Python", "Rust"]])
     out = await _out(radar, run_id)
     scores = [offer.score for offer in out.offers]

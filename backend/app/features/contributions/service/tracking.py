@@ -51,7 +51,7 @@ async def track(
                 "contribution", contribution_id, row.issue_title[:200], datetime.now(UTC)
             )
             await SkillsService(db, user_id).raise_levels(
-                [name for name in row.skills if isinstance(name, str)], "prouve", proof
+                [name for name in row.skills if isinstance(name, str)], "proven", proof
             )
         result = view(await records.owned(contribution_id))
         await db.commit()

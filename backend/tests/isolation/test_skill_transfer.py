@@ -18,7 +18,7 @@ async def test_owner_can_schedule_one_check_and_other_accounts_cannot_read_it(
     user_id = (await owner.get("/api/v1/auth/me")).json()["id"]
     skills = SkillsService(db_session, user_id)
     await skills.raise_levels(
-        ["Idempotence"], "prouve", evidence("project", "projet-1", "Livraison sans doublons", now)
+        ["Idempotence"], "proven", evidence("project", "projet-1", "Livraison sans doublons", now)
     )
     skill_id = await skills.skill_id_for("Idempotence")
     await db_session.commit()

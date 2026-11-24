@@ -167,10 +167,10 @@ def test_alerts_need_half_the_postings() -> None:
 
 def test_alert_skips_program_and_valide() -> None:
     assert program_alerts(alerting(), 20, {"terraform"}, {}) == []  # dans un module
-    levels: dict[str, SkillLevel] = {"terraform": "valide"}
+    levels: dict[str, SkillLevel] = {"terraform": "validated"}
     assert program_alerts(alerting(), 20, set(), levels) == []
-    assert program_alerts(alerting(), 20, set(), {"terraform": "prouve"}) == []
-    lows: list[SkillLevel] = ["declare", "en_cours"]
+    assert program_alerts(alerting(), 20, set(), {"terraform": "proven"}) == []
+    lows: list[SkillLevel] = ["declared", "in_progress"]
     for low in lows:
         assert len(program_alerts(alerting(), 20, set(), {"terraform": low})) == 1
 
@@ -189,13 +189,13 @@ def test_alert_message_wording() -> None:
 
 
 def test_posting_score_uses_match_score() -> None:
-    levels: dict[str, SkillLevel] = {"python": "valide"}
+    levels: dict[str, SkillLevel] = {"python": "validated"}
     rows = [{"name": "Python", "required": True}, {"name": "Docker", "required": False}]
     assert posting_score(rows, levels) == 67  # requise valide + préférée absente
 
 
 def test_posting_score_reads_levels_by_normalized_name() -> None:
-    levels: dict[str, SkillLevel] = {"c#": "prouve", "elasticsearch": "declare"}
+    levels: dict[str, SkillLevel] = {"c#": "proven", "elasticsearch": "declared"}
     rows = [
         {"name": " C# ", "required": True},
         {"name": "ElasticSearch", "required": True},
@@ -204,12 +204,12 @@ def test_posting_score_reads_levels_by_normalized_name() -> None:
 
 
 def test_posting_score_without_skills_is_zero() -> None:
-    assert posting_score([], {"python": "valide"}) == 0
+    assert posting_score([], {"python": "validated"}) == 0
     assert posting_score([{"name": " ", "required": True}], {}) == 0
 
 
 def test_posting_score_counts_a_skill_once() -> None:
-    levels: dict[str, SkillLevel] = {"python": "valide"}
+    levels: dict[str, SkillLevel] = {"python": "validated"}
     rows = [
         {"name": "Python", "required": False},
         {"name": "python", "required": True},

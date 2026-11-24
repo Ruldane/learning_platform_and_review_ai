@@ -9,7 +9,7 @@ from app.db.models.memory import USER_AUTHOR, ItemStatus, MasteryLevel, MemoryKi
 from app.features.memory.repository.writes import REASON_MAX
 
 # Levels that can be written: `valide` and `prouve` are earned (SPEC 4.2, phase 4).
-WRITABLE_LEVELS: tuple[MasteryLevel, ...] = ("declare", "en_cours")
+WRITABLE_LEVELS: tuple[MasteryLevel, ...] = ("declared", "in_progress")
 TAG_MAX_LENGTH = 40
 TAGS_MAX = 10
 
@@ -49,7 +49,7 @@ def _level(draft: WriteDraft, is_agent: bool) -> MasteryLevel | None:
         if draft.level is not None:
             raise AppError("memory_level_forbidden", "Only a skill has a level.", 422)
         return None
-    level = draft.level or "declare"
+    level = draft.level or "declared"
     if level not in WRITABLE_LEVELS:
         message = (
             "An agent only writes a skill at the declared or in-progress level."

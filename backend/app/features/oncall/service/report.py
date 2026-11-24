@@ -107,7 +107,7 @@ class AgentOncallStore:
             if score.accepted and same_diagnostic and await service.repaired(row):
                 proof = evidence("ide", row.ide_session_id, "On-call simulation passed", utcnow())
                 await SkillsService(db, user_id).raise_levels(
-                    ["Diagnostic d’incident"], "en_cours", proof
+                    ["Diagnostic d’incident"], "in_progress", proof
                 )
                 row.proof_recorded = True
             await db.commit()

@@ -2,7 +2,7 @@
 import type { DuplicateAlertView } from "@/shared/ui/DuplicateAlert";
 
 /** Niveau de maîtrise d'une compétence ; `null` : aucune ligne (absente). */
-export type SkillLevelView = "declare" | "en_cours" | "valide" | "prouve";
+export type SkillLevelView = "declared" | "in_progress" | "validated" | "proven";
 
 export type DuplicateLevel = "certain" | "probable" | "possible";
 
@@ -35,7 +35,7 @@ export interface GapRowView {
  * compétence déjà validée ou prouvée n'est pas à apprendre).
  */
 export function isAddable(row: GapRowView): boolean {
-  return row.action === "to_add" && row.level !== "valide" && row.level !== "prouve";
+  return row.action === "to_add" && row.level !== "validated" && row.level !== "proven";
 }
 
 export function canPlan(row: GapRowView): boolean {

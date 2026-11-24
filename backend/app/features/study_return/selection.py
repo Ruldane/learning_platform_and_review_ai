@@ -27,7 +27,7 @@ async def _skills(
     catalog.sort(key=lambda item: normalize_skill_name(item[0]) not in priority)
     acquired = []
     for name, level in catalog:
-        if level not in ("valide", "prouve"):
+        if level not in ("validated", "proven"):
             continue
         skill_id = await service.skill_id_for(name)
         if skill_id is not None:

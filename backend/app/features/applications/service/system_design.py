@@ -154,7 +154,7 @@ async def _record_proof(db: AsyncSession, rt: ApplicationsRuntime, row: Intervie
     if await skills.skill_id_for(SKILL) is None and await skills.skill_id_for(LEGACY_SKILL):
         name = LEGACY_SKILL
     proof = evidence("system_design", row.id, "Passed system design interview", rt.now())
-    await skills.raise_levels([name], "en_cours", proof)
+    await skills.raise_levels([name], "in_progress", proof)
 
 
 async def save_review(

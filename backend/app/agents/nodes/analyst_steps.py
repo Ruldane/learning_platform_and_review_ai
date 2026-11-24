@@ -37,11 +37,11 @@ MAX_POSTING_CHARS = 30_000  # texte de l'offre montré à l'Analyste
 CITATION_CHARS = 120  # longueur d'un extrait cité dans une re-demande
 _DUPLICATE_ORDER = {"certain": 0, "probable": 1, "possible": 2}
 LEVEL_LABELS: dict[str | None, str] = {
-    "prouve": "prouvé",
-    "valide": "validé",
-    "en_cours": "en cours",
-    "declare": "déclaré",
-    None: "sans niveau",
+    "proven": "proven",
+    "validated": "validated",
+    "in_progress": "in progress",
+    "declared": "declared",
+    None: "no level",
 }
 
 # Un problème renvoyé au modèle : la phrase (rangs seulement) et l'extrait cité de l'offre.
@@ -138,7 +138,7 @@ def _need_line(rank: int, need: SkillNeed) -> str:
 
 
 def _known_line(rank: int, skill: KnownSkill) -> str:
-    return f"- k{rank} : {' '.join(skill.name.split())} (niveau : {LEVEL_LABELS[skill.level]})"
+    return f"- k{rank}: {' '.join(skill.name.split())} (level: {LEVEL_LABELS[skill.level]})"
 
 
 def match_vars(analysis: PostingAnalysis, known: Sequence[KnownSkill]) -> dict[str, Any]:
@@ -170,7 +170,7 @@ def _known_of(answer: str, known: Sequence[KnownSkill], by_key: dict[str, str]) 
     skill = _pick(known, _ref(answer, "k"))
     if skill is not None:
         return skill.name
-    plain = re.sub(r"\s*\(niveau\s*:[^)]*\)\s*$", "", answer)
+    plain = re.sub(r"\s*\((?:level|niveau)\s*:[^)]*\)\s*$", "", answer)
     return by_key.get(normalize_skill_name(plain))
 
 

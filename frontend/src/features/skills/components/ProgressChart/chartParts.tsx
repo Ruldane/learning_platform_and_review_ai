@@ -5,10 +5,10 @@ import { LEVEL_COLORS, type LevelKey } from "../levels";
 
 /** Les quatre niveaux d'une compétence présente, du premier au plus haut ; « absent » n'a pas de courbe. */
 export const LEVELS: readonly Exclude<LevelKey, "absent">[] = [
-  "declare",
-  "en_cours",
-  "valide",
-  "prouve",
+  "declared",
+  "in_progress",
+  "validated",
+  "proven",
 ];
 const COUNTS_AXIS = "counts";
 const SCORE_AXIS = "score";

@@ -19,12 +19,12 @@ def test_agent_cannot_write_documents() -> None:
 
 
 def test_agent_acquis_level_limited() -> None:
-    assert _code(kind="acquis", author="archivist", level="valide") == "memory_level_forbidden"
-    assert _code(kind="acquis", author="archivist", level="prouve") == "memory_level_forbidden"
+    assert _code(kind="acquis", author="archivist", level="validated") == "memory_level_forbidden"
+    assert _code(kind="acquis", author="archivist", level="proven") == "memory_level_forbidden"
     status, meta = resolve_write(draft(kind="acquis", author="archivist", level=None))
-    assert status == "active" and meta["level"] == "declare"
-    in_progress = resolve_write(draft(kind="acquis", author="archivist", level="en_cours"))
-    assert in_progress[1]["level"] == "en_cours"
+    assert status == "active" and meta["level"] == "declared"
+    in_progress = resolve_write(draft(kind="acquis", author="archivist", level="in_progress"))
+    assert in_progress[1]["level"] == "in_progress"
 
 
 def test_agent_decision_goes_pending() -> None:
@@ -42,19 +42,19 @@ def test_user_writes_are_active_without_reason() -> None:
     status, meta = resolve_write(draft(kind="decision", author="user", reason=None))
     assert (status, meta) == ("active", {})
     declared = resolve_write(draft(kind="acquis", author="user", reason=None))
-    assert declared[1] == {"level": "declare"}
-    in_progress = resolve_write(draft(kind="acquis", author="user", level="en_cours"))
-    assert in_progress[1]["level"] == "en_cours"
+    assert declared[1] == {"level": "declared"}
+    in_progress = resolve_write(draft(kind="acquis", author="user", level="in_progress"))
+    assert in_progress[1]["level"] == "in_progress"
     assert resolve_write(draft(kind="document", author="user", reason=None))[0] == "active"
 
 
 def test_user_cannot_set_a_level_above_en_cours() -> None:
-    assert _code(kind="acquis", author="user", level="valide") == "memory_level_forbidden"
+    assert _code(kind="acquis", author="user", level="validated") == "memory_level_forbidden"
 
 
 def test_a_level_only_concerns_an_acquis() -> None:
-    assert _code(kind="lecon", author="user", level="declare") == "memory_level_forbidden"
-    assert _code(kind="lecon", author="writer", level="declare") == "memory_level_forbidden"
+    assert _code(kind="lecon", author="user", level="declared") == "memory_level_forbidden"
+    assert _code(kind="lecon", author="writer", level="declared") == "memory_level_forbidden"
 
 
 def test_meta_keeps_evidence_and_reason_and_omits_the_rest() -> None:

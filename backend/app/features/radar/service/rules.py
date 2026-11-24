@@ -25,7 +25,7 @@ ENRICH_SHARE = 0.3
 ENRICH_MAX = 15
 
 _DIGITS = re.compile(r"\d+")
-_ACQUIRED: frozenset[str] = frozenset({"valide", "prouve"})
+_ACQUIRED: frozenset[str] = frozenset({"validated", "proven"})
 
 
 @dataclass(frozen=True)

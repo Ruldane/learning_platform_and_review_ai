@@ -3,7 +3,7 @@
  * l'API, mais locaux (les composants présentationnels n'importent jamais `shared/api`).
  */
 export type MemoryKindView = "document" | "acquis" | "lecon" | "source" | "offre" | "decision";
-export type MasteryLevelView = "declare" | "en_cours" | "valide" | "prouve";
+export type MasteryLevelView = "declared" | "in_progress" | "validated" | "proven";
 export type WriteActionView = "create" | "update" | "delete" | "confirm" | "reject" | "merge";
 
 export interface MemoryItemRow {
@@ -60,7 +60,7 @@ export interface ItemEdit {
   title: string;
   text: string;
   tags: string[];
-  level: "declare" | "en_cours" | null;
+  level: "declared" | "in_progress" | null;
 }
 
 /** Modification : seuls les champs changés sont envoyés (un champ absent ne change rien). */

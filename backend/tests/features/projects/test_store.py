@@ -119,7 +119,7 @@ async def test_validation_raises_module_skills_to_prouve(
     pid = await _validate(env, store)
     levels = await env.levels(*SKILLS)
     assert set(levels) == set(SKILLS)
-    assert all(level == "prouve" and "project" in kinds for level, kinds in levels.values())
+    assert all(level == "proven" and "project" in kinds for level, kinds in levels.values())
     row = await env.row(pid)
     assert row.status == "validated" and row.validated_at == NOW
     assert row.evaluation is not None and row.evaluation["verdict"] == "validated"
@@ -149,7 +149,7 @@ async def test_failed_cards_do_not_demote_prouve(env: Env, store: AgentProjectSt
         for _ in range(3):  # bien au-delà des deux échecs de suite
             assert await skills.record_review("pandas", False) is None
         await db.commit()
-    assert (await env.levels("pandas"))["pandas"][0] == "prouve"
+    assert (await env.levels("pandas"))["pandas"][0] == "proven"
 
 
 async def test_save_review_replay_writes_once(

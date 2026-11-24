@@ -96,7 +96,7 @@ async def test_learned_note_writes_declare_acquis(capture: Capture) -> None:
     factory = capture.rt.session_factory
     async with factory() as db:  # pandas déjà en cours : jamais baissé
         await SkillsService(db, ME).raise_levels(
-            ["pandas"], "en_cours", {"kind": "study", "ref_id": "x", "label": "S", "at": ""}
+            ["pandas"], "in_progress", {"kind": "study", "ref_id": "x", "label": "S", "at": ""}
         )
         await db.commit()
     note = CaptureMaterial("", "J'ai appris pandas et Docker.", None)
@@ -105,7 +105,7 @@ async def test_learned_note_writes_declare_acquis(capture: Capture) -> None:
     stored = await capture.store.store(ME, "s-2", digest, note, links, source="text")
     await capture.store.store(ME, "s-2", digest, note, links, source="text")  # rejeu
     levels = await _levels(factory)
-    assert levels["pandas"][0] == "en_cours" and levels["docker"][0] == "declare"
+    assert levels["pandas"][0] == "in_progress" and levels["docker"][0] == "declared"
     proofs = [p for p in levels["docker"][1] if p["kind"] == "capture"]
     assert [p["ref_id"] for p in proofs] == [stored.journal_entry_id]  # une preuve, F14
     assert proofs[0]["label"] == "Capture « Les DataFrames pandas » (18/11)"
@@ -114,7 +114,7 @@ async def test_learned_note_writes_declare_acquis(capture: Capture) -> None:
         for i in await _rows(factory, MemoryItem)
         if i.kind == "acquis"
     }
-    assert acquis["docker"] == "declare" and acquis["pandas"] == "en_cours"  # reflet (D6)
+    assert acquis["docker"] == "declared" and acquis["pandas"] == "in_progress"  # reflet (D6)
     [item] = [i for i in await _rows(factory, MemoryItem) if i.kind == "document"]
     assert "Source" not in item.text
     [entry] = await _rows(factory, JournalEntry)
@@ -187,7 +187,7 @@ async def test_failed_reflection_logs_error_type(
     note = CaptureMaterial("", "J'ai appris Docker.", None)
     digest = _digest(learned=True, covered_task=None)
     await capture.store.store(ME, "s-7", digest, note, links, source="text")
-    assert (await _levels(capture.rt.session_factory))["docker"][0] == "declare"
+    assert (await _levels(capture.rt.session_factory))["docker"][0] == "declared"
     [warning] = [r for r in caplog.records if "non reflétés" in r.getMessage()]
     assert warning.getMessage().endswith("session s-7 (RuntimeError)")
     assert "indisponible" not in warning.getMessage()

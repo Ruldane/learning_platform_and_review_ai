@@ -55,12 +55,12 @@ async def test_gap_rows_follow_current_levels(
     await set_levels(db_session_factory, LEVELS)
     posting = await ready_posting(store, db_session_factory)
     rows = await rows_of(db_session_factory, posting)
-    assert rows["RAG"] == GapRow("RAG", True, "valide", "to_add", None)  # nom rattaché
+    assert rows["RAG"] == GapRow("RAG", True, "validated", "to_add", None)  # nom rattaché
     assert rows["LangGraph"].level is None and match_score(list(rows.values())) == 62
     # LangGraph, entré au référentiel sans niveau par `save_gap`, est appris ensuite.
-    await set_levels(db_session_factory, {"LangGraph": "en_cours"})
+    await set_levels(db_session_factory, {"LangGraph": "in_progress"})
     rows = await rows_of(db_session_factory, posting)
-    assert rows["LangGraph"].level == "en_cours" and match_score(list(rows.values())) == 66
+    assert rows["LangGraph"].level == "in_progress" and match_score(list(rows.values())) == 66
 
 
 async def test_gap_row_in_program_has_week(

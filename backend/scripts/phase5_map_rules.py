@@ -13,8 +13,8 @@ from typing import Any
 from scripts.phase4_rules import CheckFailed
 
 EVIDENCE_MAX = 20  # preuves gardées par compétence (les plus récentes) : le compte plafonne
-STUDY_LEVELS = ("en_cours", "valide", "prouve")  # niveau minimal après une session guidée
-QUIZ_LEVELS = ("valide", "prouve")  # niveau après un quiz réussi (≥ 80 %)
+STUDY_LEVELS = ("in_progress", "validated", "proven")  # Minimum after a guided session.
+QUIZ_LEVELS = ("validated", "proven")  # Level after a passing quiz (at least 80%).
 _SPACES = re.compile(r"\s+")
 _EDGE = " .,;:!?'\"«»()[]{}-_/\\"
 

@@ -140,13 +140,13 @@ def next_action(level: SkillLevel | None, skill: str, facts: ActionFacts) -> Nex
     cours → passer le quiz ; validée → réviser ses fiches dues, sinon le projet preuve (bientôt) ;
     prouvée → rien. Sans module qui l'enseigne, le libellé nomme la compétence."""
     subject = facts.module or skill
-    if level is None or level == "declare":
+    if level is None or level == "declared":
         url = f"{STUDY_URL}?lecon={quote(facts.lesson_id, safe='')}" if facts.lesson_id else None
         return NextActionOut(kind="study", label=f"Étudier « {subject} »", url=url or STUDY_URL)
-    if level == "en_cours":
+    if level == "in_progress":
         url = f"{QUIZ_URL}/{quote(facts.quiz_id, safe='')}" if facts.quiz_id else QUIZ_URL
         return NextActionOut(kind="quiz", label=f"Passer le quiz « {subject} »", url=url)
-    if level == "valide":
+    if level == "validated":
         if facts.cards_due:
             label = f"Réviser les fiches « {skill} »"
             return NextActionOut(kind="review", label=label, url=REVIEW_URL)
@@ -157,16 +157,16 @@ def next_action(level: SkillLevel | None, skill: str, facts: ActionFacts) -> Nex
 async def _facts(
     db: AsyncSession, user_id: str, skill: Skill, level: SkillLevel | None, now: datetime
 ) -> ActionFacts:
-    if level == "prouve":
+    if level == "proven":
         return ActionFacts()
-    if level == "valide":
+    if level == "validated":
         zone = user_zone((await SettingsService(db, user_id).get()).timezone)
         due = await due_skill_names(db, user_id, local_today(zone, now))
         return ActionFacts(cards_due=skill.norm_name in due)
     module = await module_teaching(db, user_id, skill.norm_name)
     if module is None:
         return ActionFacts()
-    if level == "en_cours":
+    if level == "in_progress":
         quiz_id = await ready_quiz_of_module(db, user_id, module.module_id)
         return ActionFacts(module=module.title, quiz_id=quiz_id)
     lesson_id = await ready_lesson_id(db, user_id, module.module_id)

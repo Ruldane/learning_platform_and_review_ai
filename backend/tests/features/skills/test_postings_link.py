@@ -33,9 +33,9 @@ async def test_skill_detail_lists_postings(
     client: httpx.AsyncClient, app: FastAPI, launcher_spy: RecordingLauncher
 ) -> None:
     factory, me = app.state.session_factory, app.state.local_user_id
-    rag = await add_skill(factory, me, "Génération augmentée par recherche", level="valide")
+    rag = await add_skill(factory, me, "Génération augmentée par recherche", level="validated")
     agents = await add_skill(factory, me, "Graphes d'agents", synonyms=["LangGraph"])
-    kubernetes = await add_skill(factory, me, "Kubernetes", level="declare")
+    kubernetes = await add_skill(factory, me, "Kubernetes", level="declared")
     older = await analyzed_posting(client, app)
     newer = await analyzed_posting(
         client, app, f"{POSTING_TEXT}\nPoste basé à Lyon.", title="Lead IA"

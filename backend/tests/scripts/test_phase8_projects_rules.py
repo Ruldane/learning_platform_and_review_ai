@@ -192,13 +192,13 @@ def _graph(*levels: str | None) -> dict[str, Any]:
 def test_every_module_skill_must_be_proven_on_the_map() -> None:
     names = ["flask", "TESTS automatisés"]  # même clé que le back : sans casse ni accents
 
-    assert check_skills(STEP, _graph("prouve", "prouve"), names) == 2
+    assert check_skills(STEP, _graph("proven", "proven"), names) == 2
     with pytest.raises(CheckFailed, match="1 compétence\\(s\\) sur 2"):
-        check_skills(STEP, _graph("prouve", "valide"), names)
+        check_skills(STEP, _graph("proven", "validated"), names)
     with pytest.raises(CheckFailed, match="2 compétence"):
         check_skills(STEP, {"nodes": []}, names)
     with pytest.raises(CheckFailed, match="sans compétence"):
-        check_skills(STEP, _graph("prouve", "prouve"), [])
+        check_skills(STEP, _graph("proven", "proven"), [])
 
 
 def test_a_project_to_redo_names_its_unmet_criteria_and_carries_no_draft() -> None:

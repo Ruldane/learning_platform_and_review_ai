@@ -13,7 +13,7 @@ from app.features.radar.service.rules import HIGH_MATCH, low_sample
 HISTORY_WEEKS = 4
 _MIN_HISTORY_WEEKS = 2
 _DAYS_PER_WEEK = 7
-_ACQUIRED = frozenset({"valide", "prouve"})
+_ACQUIRED = frozenset({"validated", "proven"})
 _RECOMMENDATIONS = 5
 
 ScenarioKind = Literal["observed", "planned", "alternative"]
@@ -99,7 +99,7 @@ def _observed(data: ProjectionInput) -> tuple[int, int | None]:
 
 def _assess(rows: tuple[GapRow, ...], learned: frozenset[str]) -> _Assessment:
     forecast = [
-        replace(row, level="valide")
+        replace(row, level="validated")
         if row.action != "out_of_scope" and row.level not in _ACQUIRED and row.skill in learned
         else row
         for row in rows

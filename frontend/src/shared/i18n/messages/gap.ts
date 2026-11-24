@@ -46,10 +46,10 @@ export const gap = {
   },
   level: {
     absent: "Missing",
-    declare: "Declared",
-    en_cours: "In progress",
-    valide: "Validated",
-    prouve: "Proven",
+    declared: "Declared",
+    in_progress: "In progress",
+    validated: "Validated",
+    proven: "Proven",
   },
   table: {
     label: "Gap with the posting",

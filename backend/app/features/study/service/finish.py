@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 READING = ("read", "watch")
 PRACTICE = ("practice",)
 CARD_VERDICTS = ("partial", "wrong", "revealed")  # « Passer » ne crée pas de fiche (D103)
-CEILING: SkillLevel = "en_cours"  # jamais au-delà (4.5)
+CEILING: SkillLevel = "in_progress"  # Never above this level (4.5).
 EMPTY = StudyFinished(minutes=0, tasks_done=[], flashcards_created=0, skills=[])
 # Fin rangée par la route quand le Tuteur ne peut plus conclure : aucune question n'est connue.
 NO_OUTCOME = StudyOutcome(outcomes=[], exercise_done=False, ended_early=True, summary="")

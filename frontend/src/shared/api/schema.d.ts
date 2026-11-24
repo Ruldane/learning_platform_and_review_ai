@@ -8550,7 +8550,7 @@ export interface components {
             /** Gap */
             gap: number;
             /** Mine */
-            mine: ("declare" | "en_cours" | "valide" | "prouve") | null;
+            mine: ("declared" | "in_progress" | "validated" | "proven") | null;
             /** Name */
             name: string;
             /** Skill Id */
@@ -8559,7 +8559,7 @@ export interface components {
              * Target
              * @enum {string}
              */
-            target: "declare" | "en_cours" | "valide" | "prouve";
+            target: "declared" | "in_progress" | "validated" | "proven";
         };
         /** CompatibleOfferOut */
         CompatibleOfferOut: {
@@ -10021,7 +10021,7 @@ export interface components {
              */
             kind: "skill" | "note";
             /** Level */
-            level?: ("declare" | "en_cours" | "valide" | "prouve") | null;
+            level?: ("declared" | "in_progress" | "validated" | "proven") | null;
             /** Title */
             title: string;
         };
@@ -10061,7 +10061,7 @@ export interface components {
              */
             action: "in_program" | "to_add" | "out_of_scope";
             /** Level */
-            level: ("declare" | "en_cours" | "valide" | "prouve") | null;
+            level: ("declared" | "in_progress" | "validated" | "proven") | null;
             /** Required */
             required: boolean;
             /** Skill */
@@ -11341,14 +11341,14 @@ export interface components {
         };
         /** LevelCountsOut */
         LevelCountsOut: {
-            /** Declare */
-            declare: number;
-            /** En Cours */
-            en_cours: number;
-            /** Prouve */
-            prouve: number;
-            /** Valide */
-            valide: number;
+            /** Declared */
+            declared: number;
+            /** In Progress */
+            in_progress: number;
+            /** Proven */
+            proven: number;
+            /** Validated */
+            validated: number;
         };
         /** Line */
         Line: {
@@ -11904,7 +11904,7 @@ export interface components {
              */
             kind: "acquis" | "decision" | "offre";
             /** Level */
-            level?: ("declare" | "en_cours") | null;
+            level?: ("declared" | "in_progress") | null;
             /** Tags */
             tags?: string[];
             /** Text */
@@ -11937,7 +11937,7 @@ export interface components {
             /** Lang */
             lang: string | null;
             /** Level */
-            level: ("declare" | "en_cours" | "valide" | "prouve") | null;
+            level: ("declared" | "in_progress" | "validated" | "proven") | null;
             /** Linked Notes */
             linked_notes?: components["schemas"]["LinkedNoteOut"][];
             /** Neighbors */
@@ -11997,7 +11997,7 @@ export interface components {
             /** Lang */
             lang: string | null;
             /** Level */
-            level: ("declare" | "en_cours" | "valide" | "prouve") | null;
+            level: ("declared" | "in_progress" | "validated" | "proven") | null;
             /** Reason */
             reason: string | null;
             /** Session Id */
@@ -12028,7 +12028,7 @@ export interface components {
          */
         MemoryItemPatch: {
             /** Level */
-            level?: ("declare" | "en_cours") | null;
+            level?: ("declared" | "in_progress") | null;
             /** Status */
             status?: "active" | null;
             /** Tags */
@@ -15944,7 +15944,7 @@ export interface components {
             /** Id */
             id: string;
             /** Level */
-            level: ("declare" | "en_cours" | "valide" | "prouve") | null;
+            level: ("declared" | "in_progress" | "validated" | "proven") | null;
             /** Name */
             name: string;
             next_action: components["schemas"]["NextActionOut"] | null;
@@ -15989,7 +15989,7 @@ export interface components {
              * Level
              * @enum {string}
              */
-            level: "declare" | "en_cours" | "valide" | "prouve";
+            level: "declared" | "in_progress" | "validated" | "proven";
             /** Name */
             name: string;
         };
@@ -16049,7 +16049,7 @@ export interface components {
             /** Id */
             id: string;
             /** Level */
-            level: ("declare" | "en_cours" | "valide" | "prouve") | null;
+            level: ("declared" | "in_progress" | "validated" | "proven") | null;
             /** Name */
             name: string;
         };
@@ -16062,7 +16062,7 @@ export interface components {
             /** Key */
             key: string;
             /** Level */
-            level: ("declare" | "en_cours" | "valide" | "prouve") | null;
+            level: ("declared" | "in_progress" | "validated" | "proven") | null;
             /** Name */
             name: string;
             /** Opportunity */
@@ -16328,7 +16328,7 @@ export interface components {
              * Level
              * @enum {string}
              */
-            level: "valide" | "prouve";
+            level: "validated" | "proven";
             /** Name */
             name: string;
         };

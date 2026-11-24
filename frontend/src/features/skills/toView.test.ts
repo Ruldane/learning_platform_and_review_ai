@@ -9,7 +9,7 @@ describe("skills toView", () => {
       id: "s1",
       name: "HTML",
       domain: "web",
-      level: "valide",
+      level: "validated",
       demand: null,
       evidenceCount: 3,
     });
@@ -25,14 +25,14 @@ describe("skills toView", () => {
 
   it("keeps a negative gap as it comes", () => {
     const view = toCompareView(compareOut() as never);
-    expect(view.rows[0]).toMatchObject({ skillId: "s1", gap: -1, mine: "prouve" });
+    expect(view.rows[0]).toMatchObject({ skillId: "s1", gap: -1, mine: "proven" });
     expect(view.coverage).toBe(33);
   });
 
   it("renames the history points", () => {
     expect(toHistoryView(historyOut() as never)[1]).toEqual({
       weekStart: "2026-11-16",
-      counts: { declare: 0, en_cours: 2, valide: 1, prouve: 0 },
+      counts: { declared: 0, in_progress: 2, validated: 1, proven: 0 },
       score: 58,
     });
   });

@@ -20,7 +20,7 @@ export function toDraft(initial: ItemEdit | null): Draft {
     title: initial?.title ?? "",
     text: initial?.text ?? "",
     tags: initial?.tags.join(", ") ?? "",
-    level: initial?.level ?? "declare",
+    level: initial?.level ?? "declared",
   };
 }
 

@@ -42,7 +42,7 @@ class AgentWrite:
     reason: str
     tags: tuple[str, ...] = ()
     evidence: tuple[str, ...] = ()
-    level: Literal["declare", "en_cours"] | None = None
+    level: Literal["declared", "in_progress"] | None = None
     source_id: str | None = None
 
 

@@ -181,7 +181,7 @@ async def grade(
         skills = SkillsService(db, user_id)
         label = f"Quiz « {ctx.module.title} » : {score} % ({today:%d/%m})"
         await skills.raise_levels(
-            module_skills(ctx), "valide", evidence("quiz", ctx.quiz.id, label, now)
+            module_skills(ctx), "validated", evidence("quiz", ctx.quiz.id, label, now)
         )
         await skills.reset_fail_streaks(module_skills(ctx))
     else:

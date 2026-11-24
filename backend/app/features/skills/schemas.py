@@ -101,10 +101,10 @@ class CompareOut(BaseModel):
 
 
 class LevelCountsOut(BaseModel):
-    declare: int
-    en_cours: int
-    valide: int
-    prouve: int
+    declared: int
+    in_progress: int
+    validated: int
+    proven: int
 
 
 class HistoryPointOut(BaseModel):

@@ -13,10 +13,10 @@ from app.agents.tools.plan_schema import KnownSkills
 from app.agents.tools.program_port import ProgramContext
 
 _LEVELS = {
-    "declare": "declared",
-    "en_cours": "in progress",
-    "valide": "validated",
-    "prouve": "proven",
+    "declared": "declared",
+    "in_progress": "in progress",
+    "validated": "validated",
+    "proven": "proven",
 }
 _LANGUAGES = {"fr": "French", "en": "English"}
 

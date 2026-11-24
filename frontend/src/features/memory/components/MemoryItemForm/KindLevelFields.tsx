@@ -10,7 +10,7 @@ interface KindLevelFieldsProps {
   onChange: (patch: Partial<Draft>) => void;
 }
 
-const LEVELS: readonly EditableLevel[] = ["declare", "en_cours"];
+const LEVELS: readonly EditableLevel[] = ["declared", "in_progress"];
 
 /** Choix du type (création seulement) et du niveau (acquis déclaré ou en cours seulement). */
 export function KindLevelFields({

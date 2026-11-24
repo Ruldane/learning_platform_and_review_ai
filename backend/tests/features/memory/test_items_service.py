@@ -199,13 +199,15 @@ async def test_update_to_existing_content_conflicts(
 async def test_update_level_only_for_an_acquis(service: MemoryService, db: AsyncSession) -> None:
     lecon = await service.write(draft(author="writer"))
     with pytest.raises(AppError) as raised:
-        await service.update(lecon.item.id, MemoryItemPatch(level="en_cours"))
+        await service.update(lecon.item.id, MemoryItemPatch(level="in_progress"))
     assert raised.value.code == "memory_level_forbidden"
     acquis = await service.create_by_user(
         MemoryItemCreate(kind="acquis", title="SQL", text="Jointures et index.")
     )
-    assert acquis.level == "declare"
-    assert (await service.update(acquis.id, MemoryItemPatch(level="en_cours"))).level == "en_cours"
+    assert acquis.level == "declared"
+    assert (
+        await service.update(acquis.id, MemoryItemPatch(level="in_progress"))
+    ).level == "in_progress"
     assert [w.action for w in await _writes(db)][-1] == "update"
 
 

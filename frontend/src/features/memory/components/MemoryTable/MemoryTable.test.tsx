@@ -29,7 +29,7 @@ describe("MemoryTable", () => {
       <MemoryTable
         {...base}
         total={1}
-        items={[row({ kind: "acquis", created_by: "archivist", level: "declare" })]}
+        items={[row({ kind: "acquis", created_by: "archivist", level: "declared" })]}
       />,
     );
     const table = within(screen.getByRole("table"));

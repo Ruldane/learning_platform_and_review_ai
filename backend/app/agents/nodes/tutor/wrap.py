@@ -36,7 +36,12 @@ FINISH_OPTION = {"value": "finish", "label": "Terminer la session"}
 SUMMARY_REQUEST = "Rédige le bilan."
 # Plus court que le plafond du nœud (120 s) : au-delà, le bilan chiffré, jamais `node_timeout`.
 SUMMARY_TIMEOUT_S = 90.0
-LEVEL_NAMES = {"declare": "Déclaré", "en_cours": "En cours", "valide": "Validé", "prouve": "Prouvé"}
+LEVEL_NAMES = {
+    "declared": "Declared",
+    "in_progress": "In progress",
+    "validated": "Validated",
+    "proven": "Proven",
+}
 SAVE_TIMEOUT_S = 300  # la feature range le temps, les tâches, les fiches, les acquis, le journal
 
 logger = logging.getLogger(__name__)

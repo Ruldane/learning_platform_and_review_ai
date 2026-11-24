@@ -154,7 +154,7 @@ async def record_github_proof(
         f"Verified GitHub contribution ({claim.sha[:8]})",
         moment,
     )
-    await SkillsService(db, project.user_id).raise_levels(skills, "en_cours", proof)
+    await SkillsService(db, project.user_id).raise_levels(skills, "in_progress", proof)
 
 
 async def list_github_proofs(

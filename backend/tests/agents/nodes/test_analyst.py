@@ -38,9 +38,9 @@ from scripts.sample_posting import POSTING_TEXT
 from tests.support.gap import analysis_data, requirement
 
 KNOWN = [
-    KnownSkill("Python", "valide"),
-    KnownSkill("Génération augmentée par recherche", "valide"),
-    KnownSkill("Docker", "declare"),
+    KnownSkill("Python", "validated"),
+    KnownSkill("Génération augmentée par recherche", "validated"),
+    KnownSkill("Docker", "declared"),
 ]
 
 
@@ -152,8 +152,12 @@ def test_duplicate_needs_are_matched_once() -> None:
 
 def test_known_skills_are_ordered_and_capped_keeping_acquired_ones() -> None:
     plenty = [KnownSkill(f"Sans niveau {n}", None) for n in range(MAX_KNOWN_SKILLS)]
-    levels = [KnownSkill("D", "declare"), KnownSkill("E", "en_cours"), KnownSkill("P", "prouve")]
-    ordered = ordered_known([*plenty, *levels, KnownSkill("V", "valide")])
+    levels = [
+        KnownSkill("D", "declared"),
+        KnownSkill("E", "in_progress"),
+        KnownSkill("P", "proven"),
+    ]
+    ordered = ordered_known([*plenty, *levels, KnownSkill("V", "validated")])
     assert [s.name for s in ordered[:4]] == ["P", "V", "E", "D"]
     assert len(ordered) == MAX_KNOWN_SKILLS and ordered[-1].level is None
 
@@ -197,7 +201,7 @@ def test_prompts_frame_untrusted_content() -> None:
     match = render_prompt("analyst", **match_vars(_analysis(), KNOWN))
     needs = '<<<CONTENU_NON_FIABLE source="offre:competences">>>\n- n1 : Python (obligatoire)'
     assert needs in match and "- n8 : Docker (souhaitée)" in match
-    assert '<<<CONTENU_NON_FIABLE source="referentiel">>>\n- k1 : Python (niveau : validé)' in match
+    assert '<<<CONTENU_NON_FIABLE source="referentiel">>>\n- k1: Python (level: validated)' in match
     assert "- k3 : Docker (niveau : déclaré)" in match and "highest level" in match
 
 

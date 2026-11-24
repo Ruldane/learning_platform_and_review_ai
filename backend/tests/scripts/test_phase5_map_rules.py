@@ -21,13 +21,13 @@ STEP = "carte après"
 PROGRAM = {"weeks": [{"modules": [{"id": "m1", "skills": ["Séries", "pandas"]}]}]}
 GRAPH = {
     "nodes": [
-        {"id": "s1", "name": "series", "level": "en_cours", "evidence_count": 3},
-        {"id": "s2", "name": "Autre", "level": "valide", "evidence_count": 9},
+        {"id": "s1", "name": "series", "level": "in_progress", "evidence_count": 3},
+        {"id": "s2", "name": "Autre", "level": "validated", "evidence_count": 9},
     ]
 }
 
 
-def state(level: str | None = "en_cours", evidence: int = 1) -> SkillState:
+def state(level: str | None = "in_progress", evidence: int = 1) -> SkillState:
     return SkillState("s1", level, evidence)
 
 
@@ -41,7 +41,7 @@ def test_skill_names_are_matched_like_the_back() -> None:
 def test_a_skill_the_map_does_not_know_has_no_level_and_no_proof() -> None:
     found = read_states(GRAPH, ["Séries", "pandas"])
 
-    assert found["series"] == SkillState("s1", "en_cours", 3)
+    assert found["series"] == SkillState("s1", "in_progress", 3)
     assert found["pandas"] == SkillState("", None, 0)
 
 
@@ -49,34 +49,38 @@ A, B = {"a"}, {"b"}
 
 
 def test_the_session_raises_every_skill_to_in_progress_with_one_more_proof() -> None:
-    before = {"a": state(None, 0), "b": state("declare", 2)}
-    after = {"a": state("en_cours", 1), "b": state("valide", 4)}
+    before = {"a": state(None, 0), "b": state("declared", 2)}
+    after = {"a": state("in_progress", 1), "b": state("validated", 4)}
     check_states(STEP, before, after, studied={"a", "b"}, validated=set())
 
 
 def test_a_passed_quiz_needs_two_proofs_and_the_validated_level() -> None:
-    before = {"a": state("en_cours", 1)}
+    before = {"a": state("in_progress", 1)}
 
-    check_states(STEP, before, {"a": state("valide", 3)}, studied=A, validated=A)
+    check_states(STEP, before, {"a": state("validated", 3)}, studied=A, validated=A)
     with pytest.raises(CheckFailed, match="n° 1 au niveau en_cours : valide ou prouve"):
-        check_states(STEP, before, {"a": state("en_cours", 3)}, studied=A, validated=A)
+        check_states(STEP, before, {"a": state("in_progress", 3)}, studied=A, validated=A)
     with pytest.raises(CheckFailed, match=r"2 preuve\(s\), 3 au moins"):
-        check_states(STEP, before, {"a": state("valide", 2)}, studied=A, validated=A)
+        check_states(STEP, before, {"a": state("validated", 2)}, studied=A, validated=A)
 
 
 def test_a_quiz_passed_on_another_module_validates_its_skills_with_one_proof() -> None:
-    before = {"a": state("declare", 1), "b": state(None, 0)}
-    after = {"a": state("en_cours", 2), "b": state("valide", 1)}
+    before = {"a": state("declared", 1), "b": state(None, 0)}
+    after = {"a": state("in_progress", 2), "b": state("validated", 1)}
 
     check_states(STEP, before, after, studied=A, validated=B)
     with pytest.raises(CheckFailed, match="n° 2 au niveau en_cours"):
-        check_states(STEP, before, after | {"b": state("en_cours", 1)}, studied=A, validated=B)
+        check_states(STEP, before, after | {"b": state("in_progress", 1)}, studied=A, validated=B)
 
 
 def test_a_failed_quiz_on_another_module_changes_nothing_to_check() -> None:
-    before = {"a": state("declare", 1), "b": state(None, 0)}
+    before = {"a": state("declared", 1), "b": state(None, 0)}
     check_states(
-        STEP, before, {"a": state("en_cours", 2), "b": state(None, 0)}, studied=A, validated=set()
+        STEP,
+        before,
+        {"a": state("in_progress", 2), "b": state(None, 0)},
+        studied=A,
+        validated=set(),
     )
 
 
@@ -85,9 +89,9 @@ def test_a_failed_quiz_on_another_module_changes_nothing_to_check() -> None:
     [
         ({}, "n° 1 du module absente"),
         ({"a": SkillState("", None, 0)}, "n° 1 du module absente"),
-        ({"a": state("declare", 5)}, "niveau declare"),
+        ({"a": state("declared", 5)}, "niveau declare"),
         ({"a": state(None, 5)}, "niveau None"),
-        ({"a": state("en_cours", 1)}, r"1 preuve\(s\), 2 au moins"),
+        ({"a": state("in_progress", 1)}, r"1 preuve\(s\), 2 au moins"),
     ],
 )
 def test_the_map_must_show_the_session(after: dict[str, SkillState], message: str) -> None:
@@ -98,8 +102,8 @@ def test_the_map_must_show_the_session(after: dict[str, SkillState], message: st
 
 
 def test_the_proof_count_stops_at_twenty() -> None:
-    before = {"a": state("valide", 20)}
-    check_states(STEP, before, {"a": state("valide", 20)}, studied=A, validated=A)
+    before = {"a": state("validated", 20)}
+    check_states(STEP, before, {"a": state("validated", 20)}, studied=A, validated=A)
 
 
 def test_a_module_without_skills_is_a_failure() -> None:
@@ -124,7 +128,7 @@ def test_the_skill_page_cites_the_session_and_the_passed_quiz() -> None:
 
 
 def history(week: str = "2026-11-16", score: int = 25) -> dict[str, Any]:
-    counts = {"declare": 0, "en_cours": 3, "valide": 0, "prouve": 0}
+    counts = {"declared": 0, "in_progress": 3, "validated": 0, "proven": 0}
     return {
         "points": [
             {"week_start": "2026-11-09", "counts": counts, "score": 0},

@@ -55,7 +55,7 @@ def _merged(
         meta["evidence"] = evidence
     if target.kind == "acquis":
         levels = [
-            cast(MasteryLevel, (item.meta or {}).get("level") or "declare") for item in everyone
+            cast(MasteryLevel, (item.meta or {}).get("level") or "declared") for item in everyone
         ]
         meta["level"] = max(levels, key=MASTERY_ORDER.__getitem__)
     return SEPARATOR.join(texts.values()), tags, meta

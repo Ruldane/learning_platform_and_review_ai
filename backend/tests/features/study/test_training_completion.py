@@ -48,7 +48,7 @@ async def test_finish_twice_records_time_cards_and_study_evidence_without_tickin
     assert done.json()["status"] == "finished" and done.json()["minutes"] == 5
     assert done.json()["flashcards_created"] == 1
     assert {s["name"] for s in done.json()["skills"]} == set(SKILLS)
-    assert {s["level"] for s in done.json()["skills"]} == {"en_cours"}
+    assert {s["level"] for s in done.json()["skills"]} == {"in_progress"}
     assert (
         await client.patch(path, json={"action": "finish", "worked_minutes": 42})
     ).json() == done.json()

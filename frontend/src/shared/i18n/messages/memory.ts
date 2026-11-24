@@ -29,7 +29,12 @@ export const memory = {
     offre: "Posting",
     decision: "Decision",
   },
-  level: { declare: "Declared", en_cours: "In progress", valide: "Validated", prouve: "Proven" },
+  level: {
+    declared: "Declared",
+    in_progress: "In progress",
+    validated: "Validated",
+    proven: "Proven",
+  },
   action: {
     create: "Creation",
     update: "Edit",

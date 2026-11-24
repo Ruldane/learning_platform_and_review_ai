@@ -30,13 +30,13 @@ async def _snapshots(factory: Factory) -> list[tuple[str, date, dict[str, str]]]
 
 
 async def test_skill_snapshot_once_per_local_week(db_session_factory: Factory) -> None:
-    pandas = await _level(db_session_factory, ME, "pandas", "en_cours")
-    await _level(db_session_factory, OTHER, "sql", "valide")
+    pandas = await _level(db_session_factory, ME, "pandas", "in_progress")
+    await _level(db_session_factory, OTHER, "sql", "validated")
     sunday = datetime(2026, 11, 22, 22, 59, tzinfo=UTC)  # dimanche 23:59 à Paris
     assert await write_weekly_snapshots(db_session_factory, sunday) == 2
     async with db_session_factory() as db:
         row = (await db.execute(select(UserSkill).where(UserSkill.user_id == ME))).scalar_one()
-        row.level = "valide"
+        row.level = "validated"
         await db.commit()
     assert await write_weekly_snapshots(db_session_factory, sunday) == 0  # le premier gagne
     monday = datetime(2026, 11, 22, 23, 1, tzinfo=UTC)  # lundi 00:01 à Paris, dimanche en UTC
@@ -44,6 +44,6 @@ async def test_skill_snapshot_once_per_local_week(db_session_factory: Factory) -
     mine = [(week, levels) for user, week, levels in await _snapshots(db_session_factory)
             if user == ME]  # fmt: skip
     assert mine == [
-        (date(2026, 11, 16), {pandas: "en_cours"}),
-        (date(2026, 11, 23), {pandas: "valide"}),
+        (date(2026, 11, 16), {pandas: "in_progress"}),
+        (date(2026, 11, 23), {pandas: "validated"}),
     ]

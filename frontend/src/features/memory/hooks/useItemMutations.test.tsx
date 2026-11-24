@@ -76,7 +76,7 @@ describe("useItemMutations", () => {
 
   it("creates and edits an item", async () => {
     const { sent, hook } = setup();
-    const value = { title: "T", text: "X", tags: [], level: "declare" as const };
+    const value = { title: "T", text: "X", tags: [], level: "declared" as const };
     hook.result.current.m.create.mutate({ kind: "acquis", ...value });
     await waitFor(() => expect(hook.result.current.m.create.isSuccess).toBe(true));
     hook.result.current.m.update.mutate({ id: "i1", value });

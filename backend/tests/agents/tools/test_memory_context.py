@@ -19,7 +19,7 @@ async def test_load_memory_context_reads_skills_decisions_and_documents(
         "memory_search",
     ]
     prompt = context.as_prompt()
-    assert "- Python — declare" in prompt and prompt.count("Mémoire — 3 fragment(s)") == 2
+    assert "- Python — declared" in prompt and prompt.count("Mémoire — 3 fragment(s)") == 2
     assert context.skills.total == 1 and len(context.documents.hits) == 3
 
 

@@ -180,7 +180,7 @@ class AgentCaptureStore:
         if concepts:
             label = f"Capture « {digest.title} » ({today:%d/%m})"
             await SkillsService(db, user_id).raise_levels(
-                concepts, "declare", evidence("capture", entry_id, label, self._rt.now())
+                concepts, "declared", evidence("capture", entry_id, label, self._rt.now())
             )
         return entry_id, item.id
 

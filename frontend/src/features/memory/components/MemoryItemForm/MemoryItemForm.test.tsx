@@ -35,13 +35,13 @@ describe("MemoryItemForm", () => {
     const onSubmit = vi.fn();
     const user = userEvent.setup();
     render(<MemoryItemForm {...base} chooseKind onSubmit={onSubmit} />);
-    expect(screen.getByLabelText("Niveau")).toHaveValue("declare");
+    expect(screen.getByLabelText("Level")).toHaveValue("declared");
     await user.selectOptions(screen.getByLabelText("Niveau"), "En cours");
     await user.type(screen.getByLabelText("Titre"), "Attention");
     await user.type(screen.getByLabelText("Texte"), "Compris.");
     await user.click(save());
     expect(onSubmit).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: "acquis", level: "en_cours" }),
+      expect.objectContaining({ kind: "acquis", level: "in_progress" }),
     );
     await user.selectOptions(screen.getByLabelText("Type"), "Offre");
     expect(screen.queryByLabelText("Niveau")).not.toBeInTheDocument();
@@ -50,7 +50,12 @@ describe("MemoryItemForm", () => {
   it("edits an existing item without a kind field", async () => {
     const onSubmit = vi.fn();
     const user = userEvent.setup();
-    const initial = { title: "Attention", text: "Texte", tags: ["nlp"], level: "declare" as const };
+    const initial = {
+      title: "Attention",
+      text: "Texte",
+      tags: ["nlp"],
+      level: "declared" as const,
+    };
     render(<MemoryItemForm {...base} initial={initial} onSubmit={onSubmit} />);
     expect(screen.queryByLabelText("Type")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Étiquettes")).toHaveValue("nlp");
@@ -63,12 +68,17 @@ describe("MemoryItemForm", () => {
   it("sends only the changed fields when editing", async () => {
     const onSubmit = vi.fn();
     const user = userEvent.setup();
-    const initial = { title: "Attention", text: "Texte", tags: ["nlp"], level: "declare" as const };
+    const initial = {
+      title: "Attention",
+      text: "Texte",
+      tags: ["nlp"],
+      level: "declared" as const,
+    };
     render(<MemoryItemForm {...base} initial={initial} onSubmit={onSubmit} />);
     await user.type(screen.getByLabelText("Étiquettes"), ", cours");
     await user.selectOptions(screen.getByLabelText("Niveau"), "En cours");
     await user.click(save());
-    expect(onSubmit).toHaveBeenCalledWith({ tags: ["nlp", "cours"], level: "en_cours" });
+    expect(onSubmit).toHaveBeenCalledWith({ tags: ["nlp", "cours"], level: "in_progress" });
   });
 
   it("offers no text field for a document and never sends its text", async () => {

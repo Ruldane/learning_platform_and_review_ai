@@ -8,12 +8,12 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from app.db.models.program import TaskType
+from app.db.models.skills import SkillLevel
 
 StudyModeIn = Literal["socratic", "feynman", "direct"]
 # `interrupted` : session encore ouverte en base dont la session d'agents est terminée (échec,
 # annulation) ; lue ainsi sans écriture (D91). « Terminer » y enregistre quand même le temps.
 StudyStatusOut = Literal["open", "finished", "cancelled", "interrupted"]
-SkillLevelValue = Literal["declare", "en_cours", "valide", "prouve"]
 
 
 class StudyStart(BaseModel):
@@ -36,7 +36,7 @@ class StudyUpdate(BaseModel):
 
 class SkillLevelOut(BaseModel):
     name: str
-    level: SkillLevelValue
+    level: SkillLevel
 
 
 class StudySessionOut(BaseModel):

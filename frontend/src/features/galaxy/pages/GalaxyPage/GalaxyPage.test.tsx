@@ -28,7 +28,7 @@ it("ouvre le chapitre lié depuis la sélection au clavier", async () => {
             id: "skill:python",
             title: "Python",
             kind: "skill",
-            level: "declare",
+            level: "declared",
             gap: 2,
             domain: "Données",
             action: { kind: "lesson", ref: "lecon-test" },

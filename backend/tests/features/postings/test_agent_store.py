@@ -92,11 +92,11 @@ async def test_known_skills_are_ordered_with_levels(
     store: AgentGapStore, db_session_factory: Factory
 ) -> None:
     await set_levels(
-        db_session_factory, {"Kubernetes": None, "Docker": "declare", "Python": "valide"}
+        db_session_factory, {"Kubernetes": None, "Docker": "declared", "Python": "validated"}
     )
     assert await store.known_skills(ME) == [
-        KnownSkill("Python", "valide"),
-        KnownSkill("Docker", "declare"),
+        KnownSkill("Python", "validated"),
+        KnownSkill("Docker", "declared"),
         KnownSkill("Kubernetes", None),
     ]
 

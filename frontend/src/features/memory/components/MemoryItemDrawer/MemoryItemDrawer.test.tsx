@@ -60,7 +60,7 @@ describe("MemoryItemDrawer", () => {
     const item = detail({
       tags: ["nlp"],
       evidence: ["https://exemple.test/preuve"],
-      level: "valide",
+      level: "validated",
       indexed: false,
       chunks: [{ id: "c1", ordinal: 0, text: "Premier fragment", token_count: 42 }],
     });
@@ -114,7 +114,7 @@ describe("MemoryItemDrawer", () => {
     render(
       <MemoryItemDrawer
         {...base}
-        item={detail({ tags: ["nlp"], level: "declare" })}
+        item={detail({ tags: ["nlp"], level: "declared" })}
         onSave={onSave}
       />,
     );
@@ -143,7 +143,7 @@ describe("MemoryItemDrawer", () => {
   });
 
   it("does not offer the level of a validated acquis", async () => {
-    render(<MemoryItemDrawer {...base} item={detail({ level: "prouve" })} />);
+    render(<MemoryItemDrawer {...base} item={detail({ level: "proven" })} />);
     await userEvent.setup().click(screen.getByRole("button", { name: "Modifier" }));
     expect(screen.queryByLabelText("Niveau")).not.toBeInTheDocument();
   });

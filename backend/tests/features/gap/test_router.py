@@ -67,9 +67,9 @@ async def test_gap_rows_follow_current_levels(
         "skill": "LangGraph", "required": True, "level": None, "action": "to_add", "week": None,
         "source": "posting",
     }  # fmt: skip
-    await _levels(app, {"LangGraph": "valide"})
+    await _levels(app, {"LangGraph": "validated"})
     gap = (await client.get(f"{API}/postings/{created['id']}/gap")).json()
-    assert gap["rows"][1]["level"] == "valide" and gap["score"] == 74
+    assert gap["rows"][1]["level"] == "validated" and gap["score"] == 74
     listed = (await client.get(f"{API}/postings")).json()
     assert listed[0]["score"] == 74
 
@@ -93,7 +93,7 @@ async def test_top_missing_limits_to_ten(
     def need(name: str, required: bool) -> dict[str, Any]:
         return {"name": name, "required": required, "domain": None, "learnable": True}
 
-    await _levels(app, {"Python": "valide"})
+    await _levels(app, {"Python": "validated"})
     first = await _create(client)
     many = [need(f"Outil {n:02d}", n % 2 == 0) for n in range(12)] + [need("Python", True)]
     await _analyze(app, first, {"Python": "Python"}, skills=many)

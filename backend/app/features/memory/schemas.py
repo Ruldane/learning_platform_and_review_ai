@@ -51,7 +51,7 @@ __all__ = [
 # `document` de l'import (`/documents`).
 UserWritableKind = Literal["acquis", "decision", "offre"]
 # Niveaux qu'on peut donner à la main ou par un agent : `valide` et `prouve` se gagnent (phase 4).
-AgentLevel = Literal["declare", "en_cours"]
+AgentLevel = Literal["declared", "in_progress"]
 Tag = Annotated[str, Field(min_length=1, max_length=40)]
 
 

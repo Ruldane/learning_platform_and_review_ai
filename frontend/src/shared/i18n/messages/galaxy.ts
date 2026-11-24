@@ -26,10 +26,10 @@ export const galaxy = {
   reached: "Target level reached",
   levels: {
     absent: "Level to acquire",
-    declare: "Declared",
-    en_cours: "In progress",
-    valide: "Validated",
-    prouve: "Proven",
+    declared: "Declared",
+    in_progress: "In progress",
+    validated: "Validated",
+    proven: "Proven",
   },
   relations: "Links for this concept",
   relation: {

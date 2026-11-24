@@ -54,7 +54,7 @@ async def test_lesson_explanation_caps_the_proof_and_applies_the_report_once(
     async with app.state.session_factory() as db:
         skills = SkillsService(db, user)
         await skills.raise_levels(
-            ["pandas"], "declare", evidence("capture", None, "Acquis déclaré", utcnow())
+            ["pandas"], "declared", evidence("capture", None, "Acquis déclaré", utcnow())
         )
         await db.commit()
     path = f"{API}/lessons/{chapter.lesson_id}/explain"
@@ -76,7 +76,7 @@ async def test_lesson_explanation_caps_the_proof_and_applies_the_report_once(
     assert first.status_code == 200 and first.json() == {"cards_added": 1, "proof_saved": True}
     assert (await client.post(accept)).json() == first.json()
     async with app.state.session_factory() as db:
-        assert await SkillsService(db, user).levels_of(["pandas"]) == [("pandas", "en_cours")]
+        assert await SkillsService(db, user).levels_of(["pandas"]) == [("pandas", "in_progress")]
     graph = (await client.get(f"{API}/skills/graph")).json()
     skill = next(node for node in graph["nodes"] if node["name"] == "pandas")
     detail = (await client.get(f"{API}/skills/{skill['id']}")).json()

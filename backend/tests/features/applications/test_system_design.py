@@ -99,7 +99,7 @@ async def test_design_assesses_the_submitted_board_version_and_records_one_proof
     )
     graph = (await client.get(f"{API}/skills/graph")).json()
     [skill] = [node for node in graph["nodes"] if node["name"] == design_skill]
-    assert skill["level"] == "en_cours"
+    assert skill["level"] == "in_progress"
     detail = (await client.get(f"{API}/skills/{skill['id']}")).json()
     [proof] = [item for item in detail["evidence"] if item["kind"] == "system_design"]
     assert proof["label"] == "Passed system design interview"

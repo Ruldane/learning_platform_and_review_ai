@@ -4670,10 +4670,10 @@
             "anyOf": [
               {
                 "enum": [
-                  "declare",
-                  "en_cours",
-                  "valide",
-                  "prouve"
+                  "declared",
+                  "in_progress",
+                  "validated",
+                  "proven"
                 ],
                 "type": "string"
               },
@@ -4693,10 +4693,10 @@
           },
           "target": {
             "enum": [
-              "declare",
-              "en_cours",
-              "valide",
-              "prouve"
+              "declared",
+              "in_progress",
+              "validated",
+              "proven"
             ],
             "title": "Target",
             "type": "string"
@@ -8748,10 +8748,10 @@
             "anyOf": [
               {
                 "enum": [
-                  "declare",
-                  "en_cours",
-                  "valide",
-                  "prouve"
+                  "declared",
+                  "in_progress",
+                  "validated",
+                  "proven"
                 ],
                 "type": "string"
               },
@@ -8882,10 +8882,10 @@
             "anyOf": [
               {
                 "enum": [
-                  "declare",
-                  "en_cours",
-                  "valide",
-                  "prouve"
+                  "declared",
+                  "in_progress",
+                  "validated",
+                  "proven"
                 ],
                 "type": "string"
               },
@@ -12265,28 +12265,28 @@
       },
       "LevelCountsOut": {
         "properties": {
-          "declare": {
-            "title": "Declare",
+          "declared": {
+            "title": "Declared",
             "type": "integer"
           },
-          "en_cours": {
-            "title": "En Cours",
+          "in_progress": {
+            "title": "In Progress",
             "type": "integer"
           },
-          "prouve": {
-            "title": "Prouve",
+          "proven": {
+            "title": "Proven",
             "type": "integer"
           },
-          "valide": {
-            "title": "Valide",
+          "validated": {
+            "title": "Validated",
             "type": "integer"
           }
         },
         "required": [
-          "declare",
-          "en_cours",
-          "valide",
-          "prouve"
+          "declared",
+          "in_progress",
+          "validated",
+          "proven"
         ],
         "title": "LevelCountsOut",
         "type": "object"
@@ -13634,8 +13634,8 @@
             "anyOf": [
               {
                 "enum": [
-                  "declare",
-                  "en_cours"
+                  "declared",
+                  "in_progress"
                 ],
                 "type": "string"
               },
@@ -13736,10 +13736,10 @@
             "anyOf": [
               {
                 "enum": [
-                  "declare",
-                  "en_cours",
-                  "valide",
-                  "prouve"
+                  "declared",
+                  "in_progress",
+                  "validated",
+                  "proven"
                 ],
                 "type": "string"
               },
@@ -13930,10 +13930,10 @@
             "anyOf": [
               {
                 "enum": [
-                  "declare",
-                  "en_cours",
-                  "valide",
-                  "prouve"
+                  "declared",
+                  "in_progress",
+                  "validated",
+                  "proven"
                 ],
                 "type": "string"
               },
@@ -14033,8 +14033,8 @@
             "anyOf": [
               {
                 "enum": [
-                  "declare",
-                  "en_cours"
+                  "declared",
+                  "in_progress"
                 ],
                 "type": "string"
               },
@@ -24984,10 +24984,10 @@
             "anyOf": [
               {
                 "enum": [
-                  "declare",
-                  "en_cours",
-                  "valide",
-                  "prouve"
+                  "declared",
+                  "in_progress",
+                  "validated",
+                  "proven"
                 ],
                 "type": "string"
               },
@@ -25139,10 +25139,10 @@
         "properties": {
           "level": {
             "enum": [
-              "declare",
-              "en_cours",
-              "valide",
-              "prouve"
+              "declared",
+              "in_progress",
+              "validated",
+              "proven"
             ],
             "title": "Level",
             "type": "string"
@@ -25323,10 +25323,10 @@
             "anyOf": [
               {
                 "enum": [
-                  "declare",
-                  "en_cours",
-                  "valide",
-                  "prouve"
+                  "declared",
+                  "in_progress",
+                  "validated",
+                  "proven"
                 ],
                 "type": "string"
               },
@@ -25377,10 +25377,10 @@
             "anyOf": [
               {
                 "enum": [
-                  "declare",
-                  "en_cours",
-                  "valide",
-                  "prouve"
+                  "declared",
+                  "in_progress",
+                  "validated",
+                  "proven"
                 ],
                 "type": "string"
               },
@@ -26162,8 +26162,8 @@
           },
           "level": {
             "enum": [
-              "valide",
-              "prouve"
+              "validated",
+              "proven"
             ],
             "title": "Level",
             "type": "string"

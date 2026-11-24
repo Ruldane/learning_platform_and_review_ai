@@ -9,10 +9,10 @@ from app.db.models.skills import LEVEL_ORDER, SkillLevel
 
 LEVEL_SCORE: dict[SkillLevel | None, int] = {
     None: 0,
-    "declare": 25,
-    "en_cours": 50,
-    "valide": 75,
-    "prouve": 100,
+    "declared": 25,
+    "in_progress": 50,
+    "validated": 75,
+    "proven": 100,
 }
 OTHER_DOMAIN = "Autres"
 
@@ -22,7 +22,7 @@ def as_level(value: str) -> SkillLevel:
     for level in LEVEL_ORDER:
         if level == value:
             return level
-    return "declare"
+    return "declared"
 
 
 def domain_name(domain: str | None) -> str:

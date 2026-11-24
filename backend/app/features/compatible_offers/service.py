@@ -75,7 +75,9 @@ async def plan_offer(
     async with rt.session_factory() as db:
         source = await alert_source(db, user_id, run_id, ref)
         gaps = [
-            row for row in await _rows(db, user_id, source) if row.level not in {"prouve", "valide"}
+            row
+            for row in await _rows(db, user_id, source)
+            if row.level not in {"proven", "validated"}
         ]
         skills = chosen_skills(gaps, body.skills)
         program_id = body.program_id or await latest_validated(db, user_id)

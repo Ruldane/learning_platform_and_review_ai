@@ -46,13 +46,15 @@ async def test_passing_attempt_raises_skills_to_valide(
     saved = await grade(seeded, attempt_id, PASS_85)
     assert (saved.score, saved.passed, saved.followup_tasks) == (85, True, 0)
     levels = await _levels(seeded)
-    assert {name: level for name, (level, _) in levels.items()} == dict.fromkeys(SKILLS, "valide")
+    assert {name: level for name, (level, _) in levels.items()} == dict.fromkeys(
+        SKILLS, "validated"
+    )
     [proof] = read_evidence(levels["pandas"][1])
     assert (proof["kind"], proof["ref_id"]) == ("quiz", quiz_id)  # F21
     assert proof["label"] == "Quiz « Module Bases » : 85 % (17/11)"
     async with seeded.rt.session_factory() as db:
         memory = await acquis_levels(db, seeded.user_id)
-    assert memory["pandas"] == "valide" and memory["series"] == "valide"
+    assert memory["pandas"] == "validated" and memory["series"] == "validated"
     assert await _journal(seeded) == ["Quiz « Module Bases » : 85 % — acquis validés."]
     quiz_task = next(t for t in await _tasks(seeded) if t.title == "Faire le quiz 1")
     assert quiz_task.status == "done"  # un seul module en semaine 1
@@ -81,7 +83,7 @@ async def test_failing_attempt_adds_followup_within_budget(
     assert await _journal(seeded) == [
         "Quiz « Module Bases » : 35 % — 3 révisions et un nouvel essai le 19/11."
     ]
-    assert {level for level, _ in (await _levels(seeded)).values()} <= {"en_cours", "declare"}
+    assert {level for level, _ in (await _levels(seeded)).values()} <= {"in_progress", "declared"}
 
 
 async def test_followup_without_room_is_reported_unplaced(

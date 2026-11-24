@@ -28,21 +28,21 @@ async def test_compare_goal_targets_valide_with_coverage(db_session_factory: Fac
         status="draft", skipped=[2],
     )  # fmt: skip
     await add_goal(db_session_factory, ME)  # plus récent, sans programme : ignoré par défaut
-    pandas = await add_skill(db_session_factory, ME, "Pandas", "Données", "valide")
-    numpy = await add_skill(db_session_factory, ME, "NumPy", "Données", "en_cours")
+    pandas = await add_skill(db_session_factory, ME, "Pandas", "Données", "validated")
+    numpy = await add_skill(db_session_factory, ME, "NumPy", "Données", "in_progress")
     sql = await add_skill(db_session_factory, ME, "SQL", None)
-    git = await add_skill(db_session_factory, ME, "Git", "Outils", "prouve")
-    await add_skill(db_session_factory, ME, "Rust", "Système", "declare")  # hors programme
+    git = await add_skill(db_session_factory, ME, "Git", "Outils", "proven")
+    await add_skill(db_session_factory, ME, "Rust", "Système", "declared")  # hors programme
     async with db_session_factory() as db:
         default = await compare_with_goal(db, ME, None)
         chosen = await compare_with_goal(db, ME, goal)
     assert default == chosen
     assert (default.target_label, default.coverage) == ("Data engineer", 50)
     assert [(r.skill_id, r.name, r.domain, r.mine, r.target, r.gap) for r in default.rows] == [
-        (pandas, "Pandas", "Données", "valide", "valide", 0),
-        (numpy, "NumPy", "Données", "en_cours", "valide", 1),
-        (sql, "SQL", "Autres", None, "valide", 3),
-        (git, "Git", "Outils", "prouve", "valide", -1),
+        (pandas, "Pandas", "Données", "validated", "validated", 0),
+        (numpy, "NumPy", "Données", "in_progress", "validated", 1),
+        (sql, "SQL", "Autres", None, "validated", 3),
+        (git, "Git", "Outils", "proven", "validated", -1),
     ]
 
 
@@ -74,7 +74,7 @@ async def test_compare_without_target_or_with_foreign_goal_is_404(
 
 
 def test_gap_counts_absent_as_minus_one() -> None:
-    assert [gap(level, "valide") for level in (None, "declare", "valide", "prouve")] == [
+    assert [gap(level, "validated") for level in (None, "declared", "validated", "proven")] == [
         3,
         2,
         0,

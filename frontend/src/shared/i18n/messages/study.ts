@@ -66,7 +66,12 @@ export const study = {
     noCards: "No new cards.",
     skills: "Skills updated",
     noSkills: "No skills updated.",
-    level: { declare: "Declared", en_cours: "In progress", valide: "Validated", prouve: "Proven" },
+    level: {
+      declared: "Declared",
+      in_progress: "In progress",
+      validated: "Validated",
+      proven: "Proven",
+    },
   },
   home: {
     title: "Guided session",

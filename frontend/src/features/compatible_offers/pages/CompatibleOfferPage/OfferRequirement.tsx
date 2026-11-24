@@ -14,7 +14,7 @@ export function OfferRequirement({
   locked: boolean;
   onChange: () => void;
 }) {
-  const mastered = row.level === "valide" || row.level === "prouve";
+  const mastered = row.level === "validated" || row.level === "proven";
   const status = mastered ? "mastered" : row.week === null ? "missing" : "planned";
   return (
     <li className="grid gap-1">

@@ -170,7 +170,7 @@ async def test_an_unreadable_repo_is_a_failed_evaluation_step() -> None:
 
 async def test_a_skill_not_at_prouve_fails_before_the_profile_is_touched() -> None:
     fake = ProjectsApi()
-    fake.level = "valide"
+    fake.level = "validated"
 
     await fails(fake, "projets", "suites", "2 compétence(s) sur 2 pas à « prouve »")
     assert fake.entries == 0

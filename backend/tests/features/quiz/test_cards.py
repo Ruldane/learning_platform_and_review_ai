@@ -112,10 +112,10 @@ async def test_two_failures_demote_valide_to_en_cours(
 ) -> None:
     async with seeded.rt.session_factory() as db:
         proof = evidence("quiz", "q1", "Quiz", datetime(2026, 11, 16, tzinfo=UTC))
-        await SkillsService(db, seeded.user_id).raise_levels(["Pandas"], "valide", proof)
+        await SkillsService(db, seeded.user_id).raise_levels(["Pandas"], "validated", proof)
         await db.commit()
     await reflect_skill_levels(
-        seeded.rt.memory, seeded.user_id, [("Pandas", "valide")], author="examiner",
+        seeded.rt.memory, seeded.user_id, [("Pandas", "validated")], author="examiner",
         session_id=None, reason="Quiz réussi",
     )  # fmt: skip
     first, second, third = await _cards(seeded, 3, skill="pandas")
@@ -128,8 +128,8 @@ async def test_two_failures_demote_valide_to_en_cours(
         stmt = select(UserSkill.level, UserSkill.fail_streak).join(
             Skill, Skill.id == UserSkill.skill_id
         )
-        assert (await db.execute(stmt)).one() == ("en_cours", 0)
-        assert (await acquis_levels(db, seeded.user_id))["pandas"] == "en_cours"
+        assert (await db.execute(stmt)).one() == ("in_progress", 0)
+        assert (await acquis_levels(db, seeded.user_id))["pandas"] == "in_progress"
 
 
 async def test_review_of_unknown_or_foreign_card_is_404(

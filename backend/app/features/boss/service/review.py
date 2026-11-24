@@ -98,6 +98,6 @@ class AgentBossReview:
                 raise AppError("boss_review_stale", "The evaluation has changed.", 409)
             if proof:
                 item = evidence("ide", row.ide_session_id, "End-of-program Boss passed", utcnow())
-                await SkillsService(db, user_id).raise_levels([SKILL], "en_cours", item)
+                await SkillsService(db, user_id).raise_levels([SKILL], "in_progress", item)
             await db.commit()
             return grade

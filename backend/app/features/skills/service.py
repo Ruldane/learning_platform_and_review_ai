@@ -203,8 +203,8 @@ class SkillsService:
         row = found[1]
         row.fail_streak = 0 if ok else row.fail_streak + 1
         demoted: SkillLevel | None = None
-        if row.level == "valide" and row.fail_streak >= DEMOTE_AFTER:
-            row.level, row.fail_streak, demoted = "en_cours", 0, "en_cours"
+        if row.level == "validated" and row.fail_streak >= DEMOTE_AFTER:
+            row.level, row.fail_streak, demoted = "in_progress", 0, "in_progress"
         await self._db.flush()
         return demoted
 
@@ -219,14 +219,14 @@ class SkillsService:
         """Une preuve d'exercice de code réussi (`ide`, P20), dédoublonnée par `ref`. Elle ne
         monte jamais au-delà de `en_cours` : une compétence `declare` y passe, une compétence
         `en_cours`, `valide` ou `prouve` garde son niveau (un exercice ne valide rien)."""
-        await self._levels.ensure(skill_id, "en_cours")
+        await self._levels.ensure(skill_id, "in_progress")
         row = (await self._levels.for_skills([skill_id])).get(skill_id)
         if row is None:
             return
         proof = make_evidence(kind, ref, label[:200], datetime.now(UTC))
         row.evidence = list(_with_proof(row.evidence, proof))
-        if row.level == "declare":
-            row.level = "en_cours"
+        if row.level == "declared":
+            row.level = "in_progress"
         await self._db.flush()
 
     async def display_name(self, skill: str) -> str | None:

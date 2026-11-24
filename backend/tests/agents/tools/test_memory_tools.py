@@ -107,16 +107,19 @@ async def test_memory_tools_for_call_the_gateway(
         {"kind": "lecon", "title": "Titre", "text": "Texte", "reason": "Raison."}
     )
     assert "Titre" in done and gateway.writes[0][3].kind == "lecon"
-    assert "Python — declare" in await skills.ainvoke({})
+    assert "Python — declared" in await skills.ainvoke({})
 
 
 def test_skills_summary_text() -> None:
     summary = SkillsSummary(
         2,
-        {"declare": 1, "en_cours": 1},
-        [SkillEntry("a", "Python", "declare", []), SkillEntry("b", "Rust\nfaux", "en_cours", [])],
+        {"declared": 1, "in_progress": 1},
+        [
+            SkillEntry("a", "Python", "declared", []),
+            SkillEntry("b", "Rust\nfaux", "in_progress", []),
+        ],
     )
-    assert summary.as_text() == "Acquis (2) :\n- Python — declare\n- Rust faux — en_cours"
+    assert summary.as_text() == "Acquis (2) :\n- Python — declared\n- Rust faux — in_progress"
     assert SkillsSummary(0, {}, []).as_text() == "Aucun acquis en mémoire."
 
 
@@ -149,7 +152,7 @@ def _outside_frame(text: str) -> list[str]:
 
 
 def test_skills_agent_text_frames_titles_as_untrusted() -> None:
-    summary = SkillsSummary(1, {"declare": 1}, [SkillEntry("a", INJECTED, "declare", [])])
+    summary = SkillsSummary(1, {"declared": 1}, [SkillEntry("a", INJECTED, "declared", [])])
     text = summary.as_agent_text()
     assert text.startswith('<<<CONTENU_NON_FIABLE source="memoire:acquis">>>\nAcquis (1) :')
     assert text.endswith("<<<FIN_CONTENU_NON_FIABLE>>>")

@@ -36,7 +36,7 @@ async def test_merge_combines_text_tags_and_deletes_others(
     service: MemoryService, db: AsyncSession, runtime: MemoryRuntime
 ) -> None:
     # Acquis : reconnus à leur titre, deux acquis peuvent porter le même texte.
-    acquis = {"kind": "acquis", "level": "declare"}
+    acquis = {"kind": "acquis", "level": "declared"}
     target = await _write(
         service, title="Cible", text="A", tags=("nlp",), evidence=("e1",), **acquis
     )
@@ -83,10 +83,10 @@ async def test_merge_rejects_documents(service: MemoryService) -> None:
 
 
 async def test_merge_acquis_keeps_highest_level(service: MemoryService) -> None:
-    target = await _write(service, kind="acquis", title="Python", text="Scripts.", level="declare")
-    other = await _write(service, kind="acquis", title="Python 2", text="API.", level="en_cours")
+    target = await _write(service, kind="acquis", title="Python", text="Scripts.", level="declared")
+    other = await _write(service, kind="acquis", title="Python 2", text="API.", level="in_progress")
     out = await merge(service, target.id, [other.id])
-    assert out.level == "en_cours" and out.kind == "acquis"
+    assert out.level == "in_progress" and out.kind == "acquis"
 
 
 async def test_merge_refuses_pending_and_self(service: MemoryService) -> None:

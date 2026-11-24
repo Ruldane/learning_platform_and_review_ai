@@ -21,17 +21,17 @@ async def _create(client: httpx.AsyncClient, **fields: Any) -> dict[str, Any]:
 
 async def test_items_crud_roundtrip(client: httpx.AsyncClient) -> None:
     created = await _create(client, tags=["python"])
-    assert created["created_by"] == "user" and created["level"] == "declare"
+    assert created["created_by"] == "user" and created["level"] == "declared"
     assert created["status"] == "active" and created["indexed"] is True
     listing = (await client.get(API)).json()
     assert listing["total"] == 1 and listing["items"][0]["id"] == created["id"]
 
     patched = await client.patch(
         f"{API}/{created['id']}",
-        json={"text": "Je sais écrire des scripts et des API.", "level": "en_cours"},
+        json={"text": "Je sais écrire des scripts et des API.", "level": "in_progress"},
     )
     assert patched.status_code == 200
-    assert patched.json()["level"] == "en_cours" and "des API" in patched.json()["text"]
+    assert patched.json()["level"] == "in_progress" and "des API" in patched.json()["text"]
 
     detail = (await client.get(f"{API}/{created['id']}")).json()
     assert [c["ordinal"] for c in detail["chunks"]] == [0]
@@ -121,7 +121,7 @@ async def test_user_cannot_create_lecons_sources_or_documents(client: httpx.Asyn
 
 async def test_patch_cannot_set_a_high_level_or_pending(client: httpx.AsyncClient) -> None:
     created = await _create(client)
-    for body in ({"level": "valide"}, {"status": "pending"}, {"tags": ["x"] * 11}):
+    for body in ({"level": "validated"}, {"status": "pending"}, {"tags": ["x"] * 11}):
         assert (await client.patch(f"{API}/{created['id']}", json=body)).status_code == 422
 
 

@@ -4,8 +4,16 @@ import type { HistoryPointView } from "../viewTypes";
 import { ProgressChart } from "./ProgressChart";
 
 const points: HistoryPointView[] = [
-  { weekStart: "2026-11-02", counts: { declare: 4, en_cours: 1, valide: 0, prouve: 0 }, score: 18 },
-  { weekStart: "2026-11-09", counts: { declare: 3, en_cours: 2, valide: 1, prouve: 0 }, score: 31 },
+  {
+    weekStart: "2026-11-02",
+    counts: { declared: 4, in_progress: 1, validated: 0, proven: 0 },
+    score: 18,
+  },
+  {
+    weekStart: "2026-11-09",
+    counts: { declared: 3, in_progress: 2, validated: 1, proven: 0 },
+    score: 31,
+  },
 ];
 
 describe("ProgressChart", () => {

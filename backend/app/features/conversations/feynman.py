@@ -136,7 +136,7 @@ async def accept(db: AsyncSession, user: str, turn_id: str) -> FeynmanSaved:
     cards = await _save_cards(db, user, turn_id, data, report)
     if report.proof_skill:
         proof = evidence("feynman", turn.id, "Successful Feynman explanation", utcnow())
-        await SkillsService(db, user).raise_levels([report.proof_skill], "en_cours", proof)
+        await SkillsService(db, user).raise_levels([report.proof_skill], "in_progress", proof)
     report.saved = FeynmanSaved(cards_added=cards, proof_saved=report.proof_skill is not None)
     turn.feynman = data.model_dump(mode="json")
     await db.commit()

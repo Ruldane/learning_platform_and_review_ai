@@ -77,7 +77,7 @@ async def _validate(
     label = f"Projet « {row.title} » validé ({day:%d/%m})"
     if names:
         await SkillsService(db, user_id).raise_levels(
-            names, "prouve", evidence("project", row.id, label, now)
+            names, "proven", evidence("project", row.id, label, now)
         )
     await add_entry(
         db,

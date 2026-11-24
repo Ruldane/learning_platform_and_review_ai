@@ -184,7 +184,7 @@ async def test_direct_program_validates_like_an_agent_program(
         levels = (await db.execute(select(UserSkill.level))).scalars().all()
     assert goal.status == "planned"
     assert [v.status for v in await versions(app)] == ["accepted"]  # la version écrite, acceptée
-    assert list(levels) == ["en_cours", "en_cours"]  # les compétences des deux modules
+    assert list(levels) == ["in_progress", "in_progress"]  # les compétences des deux modules
 
 
 @pytest.mark.usefixtures("accept_lesson")
