@@ -220,7 +220,7 @@ async def test_brief_reads_the_module_and_council_seeds(
         await db.commit()
     brief = await store.brief(ME, program.modules[0])
     assert (brief.title, brief.week_rank, brief.week_theme) == ("Module Bases", 1, "Bases")
-    assert brief.goal_text == "Devenir data engineer" and brief.language == "fr"
+    assert brief.goal_text == "Devenir data engineer" and brief.language == "en"
     assert brief.skills == ("pandas",) and brief.program_id == program.program_id
     assert len(brief.seed_urls) == 5 and brief.seed_urls[0] == sources[6].url
 

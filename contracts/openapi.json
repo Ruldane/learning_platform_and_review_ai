@@ -24377,7 +24377,7 @@
             "type": "array"
           },
           "lesson_language": {
-            "default": "fr",
+            "default": "en",
             "title": "Lesson Language",
             "type": "string"
           },
@@ -28781,7 +28781,7 @@
             "type": "array"
           },
           "lesson_language": {
-            "default": "fr",
+            "default": "en",
             "title": "Lesson Language",
             "type": "string"
           },

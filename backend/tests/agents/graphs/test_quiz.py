@@ -168,7 +168,7 @@ async def test_grade_out_of_scale_is_refused(make_quiz_runner: MakeQuiz) -> None
     )
     await run.wait_status("completed")
     second = run.prompts()[1]  # refusée par le schéma, redemandée avec le motif
-    assert "items.0.score : Value error, la note vaut exactement 0, 0.5 ou 1" in second
+    assert "items.0.score: Value error, The score must be exactly 0, 0.5, or 1." in second
     assert run.store.grades[ATTEMPT_ID]["q2"] == (0.5, "Presque.")
 
 

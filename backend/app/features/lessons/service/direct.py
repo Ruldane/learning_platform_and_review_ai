@@ -9,7 +9,7 @@ from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.nodes.lesson_reference import source_url_key
-from app.agents.nodes.verifier.checks import change_heading, check_submission
+from app.agents.nodes.verifier.checks import change_heading, check_submission, has_legacy_headings
 from app.agents.runtime.creation import PrepareSession
 from app.agents.tools.lesson_port import MAX_SEED_URLS
 from app.core.errors import AppError
@@ -59,9 +59,14 @@ def module_without_lesson() -> AppError:
 
 
 def _draft(
-    title: str, markdown: str, readings: Sequence[ResourceWriteIn], *, is_mcp: bool
+    title: str,
+    markdown: str,
+    readings: Sequence[ResourceWriteIn],
+    *,
+    is_mcp: bool,
+    allow_legacy: bool = False,
 ) -> dict[str, Any]:
-    reasons, links = check_submission(markdown, title=title)
+    reasons, links = check_submission(markdown, title=title, allow_legacy=allow_legacy)
     urls = _source_links(links, reasons)
     if any(category(char) in {"Cc", "Cf"} for char in title):
         reasons.append("The title must fit on a single line, with no control character.")
@@ -245,7 +250,13 @@ async def patch_lesson(
                 return await get_lesson(db, user_id, lesson_id), False
             if patch.markdown is None:
                 markdown = change_heading(markdown, title)
-            draft = _draft(title, markdown, patch.resources, is_mcp=is_mcp)
+            draft = _draft(
+                title,
+                markdown,
+                patch.resources,
+                is_mcp=is_mcp,
+                allow_legacy=has_legacy_headings(lesson.markdown),
+            )
             if await _active(db, user_id, lesson, draft):
                 return await get_lesson(db, user_id, lesson_id), True
         module_id = lesson.module_id

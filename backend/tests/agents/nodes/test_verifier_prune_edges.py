@@ -15,7 +15,7 @@ KEEP_AFTER = "Dernière phrase gardée sur le sujet [2]."
 
 def _lesson(paragraph: str) -> str:
     """Leçon valide avec `paragraph` en tête de la section « Explication »."""
-    head = "## Explication\n\n"
+    head = "## Explanation\n\n"
     return lesson_markdown(1400).replace(head, head + paragraph + "\n\n", 1)
 
 

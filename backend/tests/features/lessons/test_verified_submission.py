@@ -69,7 +69,7 @@ async def test_post_keeps_the_draft_private_until_the_verifier_completes(
 async def test_invalid_structure_is_rejected_before_agent_launch(
     client: httpx.AsyncClient, app: FastAPI, drafted: Seed
 ) -> None:
-    invalid = DRAFT.replace("## Schémas", "## SECRET-DU-BROUILLON")
+    invalid = DRAFT.replace("## Diagrams", "## SECRET-DU-BROUILLON")
     response = await client.post(
         f"{API}/modules/{drafted.modules[0]}/lesson", json={"title": TITLE, "markdown": invalid}
     )
@@ -77,7 +77,7 @@ async def test_invalid_structure_is_rejected_before_agent_launch(
     assert response.status_code == 422, response.text
     error = response.json()["error"]
     assert error["code"] == "lesson_invalid"
-    assert any("Section manquante" in item for item in error["details"]["reasons"])
+    assert any("Missing section" in item for item in error["details"]["reasons"])
     assert "SECRET-DU-BROUILLON" not in response.text
     assert await lesson_memory(app) == []
     async with app.state.session_factory() as db:
@@ -187,7 +187,7 @@ async def test_refusal_keeps_the_published_version_and_exposes_a_reason(
     path = f"{API}/lessons/{seeded.lesson_id}"
     before = (await client.get(path)).json()
     lesson_models.when("verifier", "", low_grade(), low_grade(), low_grade())
-    lesson_models.when("writer", "", DRAFT, DRAFT.replace("## Schémas", "## SECRET-DU-TEXTE"))
+    lesson_models.when("writer", "", DRAFT, DRAFT.replace("## Diagrams", "## SECRET-DU-TEXTE"))
 
     response = await client.patch(path, json={"title": TITLE, "markdown": DRAFT})
 
@@ -196,7 +196,7 @@ async def test_refusal_keeps_the_published_version_and_exposes_a_reason(
     denied = (await client.get(path)).json()
     assert denied["verification_session_id"] is None
     reason = denied.pop("verification_failure_reason")
-    assert "2 révision(s)" in reason and "Exemple travaillé (60/100)" in reason
+    assert "2 révision(s)" in reason and "Worked example (60/100)" in reason
     # La dernière révision casse la structure : on revient à la meilleure version (D305).
     assert "Structure du chapitre" not in reason and "SECRET-DU-TEXTE" not in reason
     # Les remarques du Vérificateur sur la meilleure version, pour réviser à coup sûr (D308).

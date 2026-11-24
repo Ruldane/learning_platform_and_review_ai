@@ -46,10 +46,10 @@ async def test_revision_prompt_is_targeted_with_length_and_kept_criteria(
     await c.wait_status("completed")
 
     second = c.prompt_of_writer(2)
-    assert "1500 mots" in second and "2500" in second
-    assert "Définitions et prérequis (90/100)" in second
-    assert "Révise de façon ciblée" in second
-    assert "trop longue" not in second
+    assert "1500\nwords" in second and "2500" in second
+    assert "Definitions and prerequisites (90/100)" in second
+    assert "Revise in a targeted way" in second
+    assert "too long" not in second
 
 
 async def test_too_long_previous_version_asks_to_shorten_first(
@@ -59,4 +59,4 @@ async def test_too_long_previous_version_asks_to_shorten_first(
     c = await make_lesson_runner(writer=[long])
     await c.wait_status("completed")
 
-    assert "trop longue" in c.prompt_of_writer(2)
+    assert "The lesson is too long" in c.prompt_of_writer(2)

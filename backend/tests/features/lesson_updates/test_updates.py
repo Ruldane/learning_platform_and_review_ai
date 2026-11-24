@@ -1,9 +1,11 @@
 """Une version annoncée déclenche une seule correction, approuvée avant publication."""
 
 import httpx
+import pytest
 from fastapi import FastAPI
 
 from app.features.lesson_updates.impact import python_symbols
+from app.features.lesson_updates.service.actions import _documented
 from tests.agents.graphs.lesson_support import LessonModels
 from tests.features.lesson_updates.fixtures import (
     AFTER,
@@ -27,10 +29,11 @@ def test_does_not_infer_methods_after_a_reassignment() -> None:
     assert "pandas.DataFrame.append" not in python_symbols(example)
 
 
+@pytest.mark.parametrize("legacy", [False, True])
 async def test_update_is_grounded_deduplicated_and_published_only_after_acceptance(
-    lesson_models: LessonModels, app: FastAPI, client: httpx.AsyncClient
+    lesson_models: LessonModels, app: FastAPI, client: httpx.AsyncClient, legacy: bool
 ) -> None:
-    source = await seed_update(app)
+    source = await seed_update(app, legacy=legacy)
     root = f"/api/v1/lessons/{source.lesson_id}"
     path = root + "/updates"
     empty = await client.get(path)
@@ -60,5 +63,13 @@ async def test_update_is_grounded_deduplicated_and_published_only_after_acceptan
     assert verified["status"] == "completed", verified
     published = (await client.get(root)).json()["markdown"]
     assert AFTER in published and BEFORE not in published
+    assert ("## Exemple travaillé" if legacy else "## Worked example") in published
     assert "fictilib.unused_api" in published
     assert (await client.get(path)).json()[0]["state"] == "published"
+
+
+@pytest.mark.parametrize("heading", ["Self-assessment", "Auto-évaluation"])
+def test_changelog_goes_in_sources_above_the_self_assessment(heading: str) -> None:
+    markdown = f"## Sources\n\n```text\n## {heading}\n```\n\n## {heading}\n\nQuestions."
+    result = _documented(markdown, RELEASE)
+    assert f"```\n\n- [Changelog](<{RELEASE}>)\n\n## {heading}" in result

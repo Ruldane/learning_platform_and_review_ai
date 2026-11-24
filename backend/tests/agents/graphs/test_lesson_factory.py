@@ -73,21 +73,20 @@ async def test_lesson_factory_publishes_lesson_with_three_to_six_resources(
 
 async def test_resources_come_only_from_kept_sources(make_lesson_runner: MakeLesson) -> None:
     # Deux pages notées 41 (écartées) ; le modèle y ajoute un identifiant inventé et un doublon.
+    unknown = "resource-for-test-not-saved"
     c = await make_lesson_runner(
         scores=[SCORE_41, SCORE_41, SCORE_82, SCORE_82, SCORE_82, SCORE_82],
         writer=[lesson_markdown(1500, urls=(URLS[2], URLS[3]))],  # seules sources liables
-        picker=lambda ids: [pick("invente"), *[pick(i) for i in ids], pick(ids[0])],
+        picker=lambda ids: [pick(unknown), *[pick(i) for i in ids], pick(ids[0])],
     )
     await c.wait_status("completed")
     verdicts = await _verdicts(c)
     assert sorted(verdicts.values()).count("rejected") == 2
     resources = c.store.published[0].resources
     ids = [r.source_id for r in resources]
-    assert "invente" not in ids and len(ids) == len(set(ids)) == 3
+    assert unknown not in ids and len(ids) == len(set(ids)) == 3
     assert all(verdicts[i] == "kept" for i in ids)
-    assert (
-        "invente" not in c.prompts_of("scout")[-1]
-    )  # le prompt du choix ne liste que les retenues
+    assert unknown not in c.prompts_of("scout")[-1]
     assert c.store.published[0].report.problems == ()
 
 
@@ -99,7 +98,7 @@ async def test_invented_ids_trigger_one_new_ask_then_a_shortfall_note(
     pub = c.store.published[0]
     assert len(pub.resources) == 1  # jamais de ressource inventée pour compléter
     assert any("Ressources insuffisantes" in p for p in pub.report.problems)
-    resource_asks = [p for p in c.prompts_of("scout") if "choisir les ressources" in p]
+    resource_asks = [p for p in c.prompts_of("scout") if "choose the learning resources" in p]
     assert len(resource_asks) == 2
 
 
@@ -134,7 +133,7 @@ async def test_unsupported_claim_triggers_revision(make_lesson_runner: MakeLesso
     assert f"Affirmation non sourcée : {claim}" in c.prompt_of_writer(2)
     assert 'source="contrôles du Vérificateur"' in c.prompt_of_writer(2)
     assert "Affirmation non sourcée" not in c.prompt_of_writer(1)
-    assert "Révision n° 1" in c.prompt_of_writer(2)
+    assert "Revision no. 1" in c.prompt_of_writer(2)
     pub = c.store.published[0]
     assert pub.report.revisions == 1 and pub.report.unsupported == ()
 
@@ -171,7 +170,7 @@ async def test_writer_prompt_frames_sources_as_untrusted(make_lesson_runner: Mak
     c = await make_lesson_runner(page_text=attack)
     await c.wait_status("completed")
     for prompt in (c.prompt_of_writer(1), c.prompts_of("verifier")[0]):
-        assert 'source="source 1"' in prompt and "contenu non fiable" in prompt.lower()
+        assert 'source="source 1"' in prompt and "untrusted content" in prompt.lower()
         assert prompt.count(END) == prompt.count("<<<CONTENU_NON_FIABLE source=")
         assert 'source="faux"' not in prompt
     assert 'source="module"' in c.prompt_of_writer(1)

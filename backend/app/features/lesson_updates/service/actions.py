@@ -1,9 +1,11 @@
 """The watch draft becomes a P11 edit on explicit confirmation."""
 
+from markdown_it import MarkdownIt
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.tools.lesson_updates_port import GRAPH
 from app.core.errors import AppError
+from app.core.lesson_structure import SELF_ASSESSMENT, reading_section
 from app.db.models.agents import OPEN_SESSION_STATES
 from app.db.models.lesson_updates import LessonUpdate
 from app.features.lesson_updates.repository import UpdatesRepository
@@ -12,6 +14,8 @@ from app.features.lessons.service.direct import submit_revision
 from app.features.lessons.service.runtime import LessonsRuntime
 from app.features.lessons.service.versions import PublishedVersion, RevisionGuard, published_version
 from app.features.sessions.service import session_facts
+
+_MARKDOWN = MarkdownIt("commonmark", {"html": True})
 
 
 def _missing() -> AppError:
@@ -65,9 +69,12 @@ def _documented(markdown: str, url: str) -> str:
     if url in markdown:
         return markdown
     lines = markdown.splitlines(keepends=True)
-    for index, line in enumerate(lines):
-        if line.strip().casefold().startswith("## auto-évaluation"):
-            lines.insert(index, f"- [Changelog](<{url}>)\n\n")
+    tokens = _MARKDOWN.parse(markdown)
+    for index, token in enumerate(tokens):
+        if token.type != "heading_open" or token.tag != "h2" or token.level != 0 or not token.map:
+            continue
+        if reading_section(tokens[index + 1].content) == SELF_ASSESSMENT:
+            lines.insert(token.map[0], f"- [Changelog](<{url}>)\n\n")
             return "".join(lines)
     return markdown
 

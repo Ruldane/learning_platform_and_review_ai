@@ -1,9 +1,4 @@
-"""Contrôles déterministes d'une leçon (SPEC 3.5, D90) : structure en 11 sections, nombres
-d'éléments, schéma Mermaid, longueur, liens et marqueurs `[n]` connus des sources lues, absence
-de recopie. Le Vérificateur y ajoute le contrôle des faits (`verify`).
-
-Les titres de section sont toujours ceux de `SECTIONS`, en français, quelle que soit la langue de
-la leçon : le rendu HTML/PDF (D89) reconnaît ses encadrés sur ces titres."""
+"""Check new lessons against the English section structure and source rules (SPEC 3.5, D90)."""
 
 import re
 from collections.abc import Sequence
@@ -21,20 +16,15 @@ from app.agents.nodes.verifier.overlap import (
     copied_from,
     split_quotes,
 )
-
-SECTIONS = (
-    "Objectifs",
-    "Prérequis",
-    "L'essentiel en 5 lignes",
-    "Explication",
-    "Schémas",
-    "Exemple travaillé",
-    "Erreurs fréquentes",
-    "Exercice",
-    "Corrigé de l'exercice",
-    "Sources",
-    "Auto-évaluation",
+from app.core.lesson_structure import (
+    DIAGRAMS,
+    KEY_POINTS,
+    LEGACY_SECTIONS,
+    OBJECTIVES,
+    SELF_ASSESSMENT,
 )
+from app.core.lesson_structure import SECTIONS as SECTIONS
+
 MIN_WORDS = 1200
 MAX_WORDS = 2500
 MAX_OBJECTIVES = 3
@@ -75,6 +65,11 @@ def _key(text: str) -> str:
     return " ".join(text.replace("’", "'").split()).rstrip(":").casefold()
 
 
+_LEGACY_HEADINGS = {
+    _key(old): new for old, new in zip(LEGACY_SECTIONS, SECTIONS, strict=True) if old != new
+}
+
+
 def _inline_text(token: Token) -> str:
     parts: list[str] = []
     for child in token.children or []:
@@ -92,13 +87,15 @@ def _inline_links(token: Token) -> list[str]:
     return links
 
 
-def _parse(markdown: str, *, show_input: bool = True) -> _Parsed:
+def _parse(markdown: str, *, show_input: bool = True, allow_legacy: bool = False) -> _Parsed:
     parsed = _Parsed([], [], {}, [], [], [], [], [])
     section = ""
     tokens = _MD.parse(markdown)
     for index, token in enumerate(tokens):
         if token.type == "heading_open" and token.level == 0 and token.tag in ("h1", "h2"):
             title = " ".join(_inline_text(tokens[index + 1]).split())
+            if token.tag == "h2" and allow_legacy:
+                title = _LEGACY_HEADINGS.get(_key(title), title)
             (parsed.h1 if token.tag == "h1" else parsed.h2).append(title)
             if token.tag == "h2":
                 section = _key(title)
@@ -125,47 +122,43 @@ def _parse(markdown: str, *, show_input: bool = True) -> _Parsed:
 def _structure(parsed: _Parsed, title: str, *, show_input: bool) -> list[str]:
     problems: list[str] = []
     if not parsed.h1 or _key(parsed.h1[0]) != _key(title):
-        label = f"Titre « # {title} »" if show_input else "Titre principal attendu"
-        problems.append(f"{label} absent : la leçon commence par ce titre exact.")
+        label = f'"# {title}"' if show_input else "the expected main heading"
+        problems.append(f"Start the lesson with {label}.")
     expected = [_key(s) for s in SECTIONS]
     found = [_key(h) for h in parsed.h2]
     for name, key in zip(SECTIONS, expected, strict=True):
         if key not in found:
-            problems.append(f"Section manquante : « ## {name} ».")
+            problems.append(f'Missing section "## {name}".')
     extra = [h for h, key in zip(parsed.h2, found, strict=True) if key not in expected]
     if show_input:
-        problems += [f"Section en trop : « ## {h} » (la structure est fixe)." for h in extra]
+        problems += [f'Unexpected section "## {h}". Use the prescribed headings.' for h in extra]
     elif extra:
-        problems.append(f"{len(extra)} section(s) en trop : la structure est fixe.")
+        problems.append(f"Unexpected sections: {len(extra)}. Use the prescribed headings.")
     present = [key for key in found if key in expected]
     if present != [key for key in expected if key in present]:
-        problems.append("Sections dans le désordre : respecte l'ordre de la structure fixe.")
+        problems.append("The sections are out of order. Follow the prescribed order.")
     return problems
 
 
 def _counts(parsed: _Parsed) -> list[str]:
     problems: list[str] = []
-    objectives = parsed.items.get(_key("Objectifs"), 0)
+    objectives = parsed.items.get(_key(OBJECTIVES), 0)
     if objectives > MAX_OBJECTIVES:
-        problems.append(f"{objectives} objectifs : {MAX_OBJECTIVES} objectifs au plus.")
-    essential = parsed.items.get(_key("L'essentiel en 5 lignes"), 0)
+        problems.append(f"The lesson has {objectives} objectives. Use at most {MAX_OBJECTIVES}.")
+    essential = parsed.items.get(_key(KEY_POINTS), 0)
     if essential != ESSENTIAL_LINES:
-        problems.append(
-            f"« L'essentiel en 5 lignes » compte {essential} puce(s) : il en faut exactement "
-            f"{ESSENTIAL_LINES}."
-        )
-    questions = parsed.items.get(_key("Auto-évaluation"), 0)
+        problems.append(f'"{KEY_POINTS}" has {essential} bullets. Use exactly {ESSENTIAL_LINES}.')
+    questions = parsed.items.get(_key(SELF_ASSESSMENT), 0)
     if questions != SELF_TEST_QUESTIONS:
         problems.append(
-            f"L'auto-évaluation compte {questions} question(s) : il en faut exactement "
-            f"{SELF_TEST_QUESTIONS}."
+            f"Self-assessment has {questions} questions. Use exactly {SELF_TEST_QUESTIONS}."
         )
     return problems
 
 
 def _diagrams(parsed: _Parsed, *, show_input: bool) -> list[str]:
-    if not any(section == _key("Schémas") for section, _ in parsed.mermaid):
-        return ["Aucun schéma : au moins un bloc ```mermaid (flowchart) dans « Schémas »."]
+    if not any(section == _key(DIAGRAMS) for section, _ in parsed.mermaid):
+        return [f'Add at least one Mermaid flowchart in "{DIAGRAMS}".']
     problems: list[str] = []
     for number, (_, code) in enumerate(parsed.mermaid, start=1):
         try:
@@ -233,10 +226,14 @@ def _quotes_and_copies(parsed: _Parsed, sources: Sequence[tuple[int, str, str]])
 
 
 def check_lesson(
-    markdown: str, *, title: str, sources: Sequence[tuple[int, str, str]]
+    markdown: str,
+    *,
+    title: str,
+    sources: Sequence[tuple[int, str, str]],
+    allow_legacy: bool = False,
 ) -> LessonCheck:
     """`sources` : `(numéro, adresse, texte lu)` des seules sources admises dans la leçon."""
-    parsed = _parse(markdown)
+    parsed = _parse(markdown, allow_legacy=allow_legacy)
     words, groups = _offline_checks(parsed, title, show_input=True)
     groups.extend(
         (
@@ -268,12 +265,18 @@ def _offline_checks(
     ]
 
 
-def check_submission(markdown: str, *, title: str) -> tuple[list[str], list[str]]:
+def check_submission(
+    markdown: str, *, title: str, allow_legacy: bool = False
+) -> tuple[list[str], list[str]]:
     """Contrôles possibles avant la lecture des sources, sans citer l'entrée dans les refus."""
-    parsed = _parse(markdown, show_input=False)
+    parsed = _parse(markdown, show_input=False, allow_legacy=allow_legacy)
     _, groups = _offline_checks(parsed, title, show_input=False)
     problems = [problem for _, messages in groups for problem in messages]
     return [*problems, *_quotes_and_copies(parsed, ())], list(dict.fromkeys(parsed.links))
+
+
+def has_legacy_headings(markdown: str) -> bool:
+    return any(_key(title) in _LEGACY_HEADINGS for title in _parse(markdown).h2)
 
 
 def change_heading(markdown: str, title: str) -> str:

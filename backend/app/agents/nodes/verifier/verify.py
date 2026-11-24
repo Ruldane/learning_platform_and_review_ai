@@ -179,10 +179,17 @@ def _keep_best(state: LessonFactoryState, result: LessonFactoryState) -> bool:
 
 
 async def _check(
-    deps: GraphDeps, brief: ModuleBrief, draft: str, sources: list[LessonSource]
+    deps: GraphDeps,
+    brief: ModuleBrief,
+    draft: str,
+    sources: list[LessonSource],
+    *,
+    allow_legacy: bool,
 ) -> LessonFactoryState:
     """Contrôles déterministes et contrôle des faits d'une version, journalisés en nombres."""
-    check = check_lesson(draft, title=brief.title, sources=_numbered(sources))
+    check = check_lesson(
+        draft, title=brief.title, sources=_numbered(sources), allow_legacy=allow_legacy
+    )
     report = await _facts(deps, brief, draft, sources)
     claims = report.claims()
     unsupported = in_scope(draft, claims)
@@ -213,7 +220,9 @@ def make_verify(deps: GraphDeps) -> Node:
         draft = state["draft"]
         sources = lesson_sources(state)
         revisions = state.get("revisions", 0)
-        result = await _check(deps, brief, draft, sources)
+        result = await _check(
+            deps, brief, draft, sources, allow_legacy=state.get("verification", False)
+        )
         removed = 0
         reverted = _keep_best(state, result)
         draft, unsupported = result.get("draft", draft), result["unsupported"]

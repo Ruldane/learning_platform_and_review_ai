@@ -1,22 +1,23 @@
-"""Splitting a lesson (SPEC 3.5) for the Tutor's guided session (D102, D103): objectives, the
-five core sections (L'essentiel, Explication, Schémas, Exemple travaillé, Erreurs fréquentes, in
-that order), the exercise, its solution and the numbered sources.
-
-Headings are recognized on top-level `##`, ignoring case, accents and curly apostrophe (the
-Writer writes the `SECTIONS` headings in French, D90); a `##` inside a code block does not open
-a section. A missing or empty section is omitted; when duplicated, the first one counts. Pure
-functions, no database."""
+"""Extract objectives, core sections, exercises and sources for guided study (D102, D103).
+Preserve the headings in saved lessons. Use the first nonempty occurrence of each section."""
 
 import re
-import unicodedata
 from dataclasses import dataclass
 
-# Folded prefixes of the taught sections, in session order.
-TAUGHT = ("l'essentiel", "explication", "schema", "exemple travaille", "erreurs frequentes")
-OBJECTIVES = "objectifs"
-EXERCISE = "exercice"
-SOLUTION = "corrige"
-SOURCES = "sources"
+from app.core.lesson_structure import (
+    COMMON_MISTAKES,
+    DIAGRAMS,
+    EXERCISE,
+    EXPLANATION,
+    KEY_POINTS,
+    OBJECTIVES,
+    SOLUTION,
+    SOURCES,
+    WORKED_EXAMPLE,
+    reading_section,
+)
+
+TAUGHT = (KEY_POINTS, EXPLANATION, DIAGRAMS, WORKED_EXAMPLE, COMMON_MISTAKES)
 
 _FENCE = re.compile(r"^\s{0,3}(`{3,}|~{3,})")
 _H2 = re.compile(r"^\s{0,3}##(?!#)\s*(.*?)\s*#*\s*$")
@@ -32,12 +33,6 @@ class LessonParts:
     sections: list[tuple[str, str]]
     exercise: str
     solution: str
-
-
-def _folded(text: str) -> str:
-    decomposed = unicodedata.normalize("NFKD", text.replace("’", "'"))
-    plain = "".join(c for c in decomposed if not unicodedata.combining(c))
-    return " ".join(plain.split()).rstrip(" :").casefold()
 
 
 def _chunks(markdown: str) -> list[tuple[str, str]]:
@@ -59,16 +54,16 @@ def _chunks(markdown: str) -> list[tuple[str, str]]:
     return [(title, "\n".join(body).strip()) for title, body in chunks]
 
 
-def _first(chunks: list[tuple[str, str]], prefix: str) -> tuple[str, str] | None:
+def _first(chunks: list[tuple[str, str]], section: str) -> tuple[str, str] | None:
     return next(
-        ((title, body) for title, body in chunks if _folded(title).startswith(prefix) and body),
+        ((title, body) for title, body in chunks if reading_section(title) == section and body),
         None,
     )
 
 
 def lesson_parts(markdown: str) -> LessonParts:
     chunks = _chunks(markdown)
-    sections = [found for prefix in TAUGHT if (found := _first(chunks, prefix)) is not None]
+    sections = [found for section in TAUGHT if (found := _first(chunks, section)) is not None]
     objectives_body = (_first(chunks, OBJECTIVES) or ("", ""))[1]
     objectives = [
         item.group(1) for line in objectives_body.splitlines() if (item := _ITEM.match(line))

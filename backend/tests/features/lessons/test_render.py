@@ -88,7 +88,7 @@ async def test_lesson_page_has_toc_callouts_and_csp(fake_html_renderer: FakeHtml
     assert '<html lang="fr">' in html
     assert html.count("<h1") == 1  # titre en couverture seulement, pas en double (D97)
     assert "<title>Titre &lt;script&gt;alert(3)&lt;/script&gt; secret</title>" in html
-    assert '<nav class="toc">' in html and "Sommaire" in html
+    assert '<nav class="toc">' in html and "Contents" in html
     assert re.search(r'<a href="#s2-l-essentiel-en-5-lignes">L(&#39;|\')essentiel', html)
     assert "callout-key" in html and "callout-warning" in html
     [csp] = re.findall(r'http-equiv="Content-Security-Policy" content="([^"]*)"', html)
@@ -122,11 +122,14 @@ async def test_second_failure_is_raised() -> None:
 
 async def test_lesson_without_diagram_has_no_script_at_all() -> None:
     fake = FakeHtmlRenderer()
-    await render_lesson_pdf(fake, title="T", markdown="## A\n\ntexte", language="en")
+    markdown = "## Key points in 5 lines\n\nA note.\n\n## Common mistakes\n\nA warning."
+    await render_lesson_pdf(fake, title="T", markdown=markdown, language="en")
     [doc] = fake.documents
     assert "<script" not in doc.index_html and set(doc.assets) == {"lesson.css"}
     assert doc.wait_for_expression is None and "script-src" not in doc.index_html
     assert '<html lang="en">' in doc.index_html and "Contents" in doc.index_html
+    assert 'class="lesson-section callout callout-key"' in doc.index_html
+    assert 'class="lesson-section callout callout-warning"' in doc.index_html
 
 
 @pytest.mark.parametrize("language", ['fr" onload="x', "", "../x", "ZZZ"])

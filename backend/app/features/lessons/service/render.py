@@ -29,16 +29,12 @@ CSP_WITH_SCRIPTS = (
 CSP_WITHOUT_SCRIPTS = (
     "default-src 'none'; style-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'"
 )
-_LABELS = {
-    "fr": {"kicker": "Leçon", "toc": "Sommaire"},
-    "en": {"kicker": "Lesson", "toc": "Contents"},
-}
 _LANGUAGE = re.compile(r"[a-z]{2}")
 
 
 def _language(language: str) -> str:
     code = language.strip().lower()[:2]
-    return code if _LANGUAGE.fullmatch(code) else "fr"
+    return code if _LANGUAGE.fullmatch(code) else "en"
 
 
 def lesson_document(
@@ -53,7 +49,6 @@ def lesson_document(
         language=code,
         csp=CSP_WITH_SCRIPTS if scripts else CSP_WITHOUT_SCRIPTS,
         title=title,
-        labels=_LABELS.get(code, _LABELS["fr"]),
         toc=toc,
         body=Markup(body),  # noqa: S704  (sanitized by nh3, allow-list)
         scripts=scripts,

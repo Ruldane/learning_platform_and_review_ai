@@ -102,4 +102,4 @@ async def test_removal_that_breaks_the_checks_fails_the_lesson(
     assert c.store.published == []
     _module, reason = c.store.failures[0]
     assert "Retrait de 1 phrase(s) non sourcée(s) impossible" in reason
-    assert "L'essentiel en 5 lignes" in reason
+    assert "Key points in 5 lines" in reason

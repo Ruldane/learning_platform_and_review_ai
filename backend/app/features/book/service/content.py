@@ -4,6 +4,7 @@ import re
 from dataclasses import dataclass
 from xml.etree.ElementTree import Element, fromstring
 
+from app.core.lesson_structure import EXERCISE, SOLUTION, reading_section
 from app.core.skills import normalize_skill_name
 from app.features.book.service.models import BookChapter, BookSource, GlossaryEntry
 from app.features.lessons.service.markdown import markdown_to_html
@@ -72,8 +73,7 @@ def _fragment(markdown: str, prefix: str, heading_shift: int) -> Element:
 def _is_exercise(element: Element) -> bool:
     if element.tag != "section" or (heading := element.find("h3")) is None:
         return False
-    title = normalize_skill_name("".join(heading.itertext()))
-    return title.startswith(("exercice", "corrige"))
+    return reading_section("".join(heading.itertext())) in {EXERCISE, SOLUTION}
 
 
 def _prepare_chapter(chapter: BookChapter) -> PreparedChapter:

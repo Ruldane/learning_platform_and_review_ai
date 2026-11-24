@@ -129,7 +129,7 @@ class AttemptToGrade:
 
 def _on_scale(score: float) -> float:
     if score not in OPEN_SCORES:
-        raise ValueError("la note vaut exactement 0, 0.5 ou 1")
+        raise ValueError("The score must be exactly 0, 0.5, or 1.")
     return score
 
 

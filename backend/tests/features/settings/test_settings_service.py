@@ -29,7 +29,7 @@ async def test_spec_defaults(db_session: AsyncSession) -> None:
         weekday_minutes=120, weekend_block_min_minutes=180, weekend_block_max_minutes=240
     )
     assert s.weekly_review == WeeklyReview(day="sunday", time="18:00")
-    assert s.lesson_language == "fr" and s.search_languages == ["fr", "en"]
+    assert s.lesson_language == "en" and s.search_languages == ["fr", "en"]
     assert s.style_guide == "" and "wikipedia.org" in s.preferred_domains
     assert "linkedin.com" in s.excluded_domains
     assert s.agent_overrides == {} and s.search_provider_order == ["searxng", "brave"]
@@ -159,7 +159,11 @@ async def test_run_reader_gives_the_engine_the_stored_settings(
     """Adaptateur `RunSettingsSource` du moteur d'agents (assemblé par `app.bootstrap`)."""
     service = SettingsService(db_session, "u1")
     s = await service.get()
-    await service.replace(s.model_copy(update={"session_token_cap": 50_000, "debate_rounds": 5}))
+    await service.replace(
+        s.model_copy(
+            update={"session_token_cap": 50_000, "debate_rounds": 5, "lesson_language": "fr"}
+        )
+    )
     await db_session.commit()
     reader = SettingsRunReader(db_session_factory)
     assert await reader.get_run_settings("u1") == RunSettings(

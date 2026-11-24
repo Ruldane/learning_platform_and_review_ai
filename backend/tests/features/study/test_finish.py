@@ -201,7 +201,7 @@ async def test_context_drops_an_exercise_without_solution(
     async with seeded.rt.session_factory() as db:
         lesson = await db.get(Lesson, seeded.lessons[0])
         assert lesson is not None
-        start = lesson.markdown.index("## Corrigé de l'exercice")
+        start = lesson.markdown.index("## Solution")
         end = lesson.markdown.index("## Sources")
         lesson.markdown = lesson.markdown[:start] + lesson.markdown[end:]
         await db.commit()

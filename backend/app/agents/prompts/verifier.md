@@ -16,9 +16,9 @@ Lesson to check:
 
 Task: list the UNSOURCED claims of the lesson.
 
-Scope: only the factual claims of these sections are judged: « L'essentiel en 5
-lignes », « Explication », « Exemple travaillé » and « Erreurs fréquentes ». Flag NOTHING in
-the objectives, the prerequisites, the diagrams, the exercise, its solution, the sources or the
+Check factual claims in Key points in 5 lines, Explanation, Worked example and Common mistakes.
+For older lessons, apply the same scope to equivalent headings in the lesson's language.
+Flag NOTHING in the objectives, prerequisites, diagrams, exercise, solution, sources or the
 self-assessment questions: these are not facts. In the judged sections, do not flag a
 transition, a piece of method advice, an instruction given to the reader or a heading either.
 

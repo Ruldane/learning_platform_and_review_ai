@@ -6,11 +6,11 @@ from app.agents.runtime.prose import Prose
 
 MIN_GRADE = 75
 CRITERIA = {
-    "definitions": "Définitions et prérequis",
-    "depth": "Profondeur de l’explication",
-    "example": "Exemple travaillé",
-    "exercise": "Exercice et corrigé",
-    "continuity": "Progression du chapitre",
+    "definitions": "Definitions and prerequisites",
+    "depth": "Depth of explanation",
+    "example": "Worked example",
+    "exercise": "Exercise and solution",
+    "continuity": "Chapter progression",
 }
 
 

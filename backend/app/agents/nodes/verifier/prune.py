@@ -22,7 +22,16 @@ from dataclasses import dataclass
 from markdown_it import MarkdownIt
 from markdown_it.token import Token
 
-IN_SCOPE = ("L'essentiel en 5 lignes", "Explication", "Exemple travaillé", "Erreurs fréquentes")
+from app.core.lesson_structure import (
+    COMMON_MISTAKES,
+    EXPLANATION,
+    KEY_POINTS,
+    WORKED_EXAMPLE,
+    reading_section,
+)
+
+IN_SCOPE = (KEY_POINTS, EXPLANATION, WORKED_EXAMPLE, COMMON_MISTAKES)
+_SCOPE = set(IN_SCOPE)
 MIN_FRAGMENT_WORDS = 3  # en deçà, un fragment cité est trop ambigu pour situer une phrase
 SHORT_FRAGMENT_WORDS = 6  # en deçà, le fragment doit couvrir l'essentiel de sa phrase
 MIN_COVERAGE = 0.6
@@ -62,13 +71,6 @@ class _Block:
     prefix: str  # marque de liste ou de citation de sa première ligne
     sentences: list[str]
     words: list[tuple[str, int]]  # (mot normalisé, rang de sa phrase)
-
-
-def _key(text: str) -> str:
-    return " ".join(text.replace("’", "'").split()).rstrip(":").casefold()
-
-
-_SCOPE = {_key(name) for name in IN_SCOPE}
 
 
 def _words(text: str) -> list[str]:
@@ -120,7 +122,7 @@ def _parse(markdown: str) -> tuple[list[_Block], list[Span]]:
     for index, token in enumerate(tokens):
         span = _span(token)
         if token.type == "heading_open" and token.tag == "h2" and token.level == 0:
-            section = _key(tokens[index + 1].content)
+            section = reading_section(tokens[index + 1].content) or ""
         elif token.type in ("fence", "code_block") and span is not None:
             code.append(span)
         elif token.type == "paragraph_open" and span is not None:

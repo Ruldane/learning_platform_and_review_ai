@@ -73,7 +73,7 @@ def test_removing_an_essential_line_breaks_the_count_check() -> None:
     result = prune(LESSON, [C_PIP])
     assert result.removed == 1 and "pip" not in result.markdown
     problems = check_lesson(result.markdown, title=TITLE, sources=SOURCES).problems
-    assert any("L'essentiel en 5 lignes" in p for p in problems)
+    assert any("Key points in 5 lines" in p for p in problems)
 
 
 def test_fragments_are_matched_without_case_spacing_nor_punctuation() -> None:

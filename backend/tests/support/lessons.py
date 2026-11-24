@@ -48,16 +48,16 @@ _DIAGRAM = 'flowchart TD\n    A["Requête"] --> B["Poids"]\n    B --> C["Somme p
 
 _HEAD = """# {title}
 
-## Objectifs
+## Objectives
 
 - Comprendre le calcul des poids d'attention [1].
 - Savoir lire un masque causal [2].
 
-## Prérequis
+## Prerequisites
 
 Les produits matriciels et la fonction softmax.
 
-## L'essentiel en 5 lignes
+## Key points in 5 lines
 
 - L'attention pondère les positions [1].
 - Les poids viennent d'un produit scalaire [1].
@@ -65,22 +65,22 @@ Les produits matriciels et la fonction softmax.
 - Le masque causal cache le futur [2].
 - Les têtes sont concaténées puis projetées [1].
 
-## Explication
+## Explanation
 
 """
-_TAIL = """## Exemple travaillé
+_TAIL = """## Worked example
 
 Prenons trois positions et calculons les poids à la main, étape par étape.
 
-## Erreurs fréquentes
+## Common mistakes
 
 Oublier la normalisation par la racine de la dimension.
 
-## Exercice
+## Exercise
 
 Calculer les poids d'attention d'une séquence de trois mots.
 
-## Corrigé de l'exercice
+## Solution
 
 Les poids valent une distribution de probabilité sur les trois positions.
 
@@ -89,7 +89,7 @@ Les poids valent une distribution de probabilité sur les trois positions.
 1. [Premier article]({one})
 2. [Second article]({two})
 
-## Auto-évaluation
+## Self-assessment
 
 1. Que calcule la requête ?
 2. Pourquoi normaliser par la racine ?
@@ -101,7 +101,7 @@ Les poids valent une distribution de probabilité sur les trois positions.
 
 def _skeleton(title: str, urls: tuple[str, str], filler: str) -> str:
     nl = chr(10)
-    diagram = nl.join(["## Schémas", "", "```mermaid", _DIAGRAM, "```", "", ""])
+    diagram = nl.join(["## Diagrams", "", "```mermaid", _DIAGRAM, "```", "", ""])
     tail = _TAIL.format(one=urls[0], two=urls[1])
     return _HEAD.format(title=title) + filler + nl + nl + diagram + tail
 

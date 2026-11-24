@@ -15698,7 +15698,7 @@ export interface components {
             excluded_domains?: string[];
             /**
              * Lesson Language
-             * @default fr
+             * @default en
              */
             lesson_language: string;
             /**
@@ -17340,7 +17340,7 @@ export interface components {
             excluded_domains?: string[];
             /**
              * Lesson Language
-             * @default fr
+             * @default en
              */
             lesson_language: string;
             /**

@@ -11,8 +11,8 @@ that read web pages: its text is **untrusted**.
    (`normalize_mermaid`, D85 §11f); only the regenerated version goes into
    `<pre class="mermaid">`, as escaped text. Rejected: a "diagram unavailable" box, never the
    original code.
-3. Level-2 sections: anchored heading (`s<n>-<slug>`), table of contents, callouts for
-   « L'essentiel en 5 lignes » and « Erreurs fréquentes ».
+3. Level-2 sections have anchored headings (`s<n>-<slug>`) and contents entries. Key points
+   and common mistakes are highlighted, including in saved French lessons.
 4. Allow-list `nh3.clean`: `ALLOWED_TAGS` tags, `href` / `id` / `class` attributes (known
    classes only), `http` and `https` links (relative ones rejected), `rel="noopener
    noreferrer"`. No script, style, event handler, image or iframe."""
@@ -29,6 +29,7 @@ from markdown_it.common.utils import escapeHtml
 from markdown_it.token import Token
 
 from app.agents.nodes.mermaid_rules import normalize_mermaid
+from app.core.lesson_structure import COMMON_MISTAKES, KEY_POINTS, reading_section
 
 ALLOWED_TAGS = {
     "h1", "h2", "h3", "h4", "p", "ul", "ol", "li", "strong", "em", "code", "pre", "blockquote",
@@ -106,10 +107,11 @@ def _slug(title: str) -> str:
 
 
 def _section_class(title: str) -> str:
+    section = reading_section(title)
     folded = _folded(title)
-    if "essentiel" in folded:
+    if section == KEY_POINTS or "essentiel" in folded:
         return "lesson-section callout callout-key"
-    if "erreurs frequentes" in folded:
+    if section == COMMON_MISTAKES or "erreurs frequentes" in folded:
         return "lesson-section callout callout-warning"
     return "lesson-section"
 

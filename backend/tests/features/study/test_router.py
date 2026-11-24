@@ -89,11 +89,11 @@ async def test_start_with_question_passes_it_to_the_graph(
     assert found.question == "Pourquoi la racine ?" and found.mode == "feynman"
     assert found.module_title == "Module Bases"
     assert [s.title for s in found.sections] == [
-        "L'essentiel en 5 lignes",
-        "Explication",
-        "Schémas",
-        "Exemple travaillé",
-        "Erreurs fréquentes",
+        "Key points in 5 lines",
+        "Explanation",
+        "Diagrams",
+        "Worked example",
+        "Common mistakes",
     ]
     assert found.exercise.startswith("Calculer") and found.solution.startswith("Les poids")
     assert [(c.index, c.title) for c in found.sources] == [

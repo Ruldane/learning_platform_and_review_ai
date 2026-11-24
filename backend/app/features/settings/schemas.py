@@ -91,7 +91,7 @@ def is_overridable(name: str) -> bool:
 
 class UserSettings(BaseModel):
     availability: Availability = Field(default_factory=lambda: Availability())
-    lesson_language: str = "fr"
+    lesson_language: str = "en"
     search_languages: Annotated[
         list[LanguageCode], Field(min_length=1, max_length=6), AfterValidator(_no_duplicates)
     ] = Field(default_factory=lambda: ["fr", "en"])
