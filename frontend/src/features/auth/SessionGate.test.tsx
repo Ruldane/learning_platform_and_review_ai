@@ -30,7 +30,7 @@ describe("SessionGate", () => {
   it("gate renders children when signed in", async () => {
     server.use(...authApi({ me: camille }).handlers);
     renderAuth("/");
-    expect(screen.getByRole("status")).toHaveTextContent("Vérification de ta connexion");
+    expect(screen.getByRole("status")).toHaveTextContent("Checking your sign-in…");
     expect(await screen.findByText("Chemin : /")).toBeInTheDocument();
   });
 
@@ -38,7 +38,7 @@ describe("SessionGate", () => {
     const api401 = authApi({ me: null });
     server.use(...api401.handlers);
     const { visited } = renderAuth("/");
-    await waitFor(() => expect(screen.getByRole("heading", { name: "Connexion" })).toHaveFocus());
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Sign in" })).toHaveFocus());
     expect(screen.queryByText("Chemin : /")).toBeNull();
     expect(visited).toEqual(["/", "/connexion"]);
   });
@@ -48,9 +48,9 @@ describe("SessionGate", () => {
     server.use(...failing.handlers);
     const { user } = renderAuth("/");
     expect(await screen.findByRole("alert")).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Connexion" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Sign in" })).toBeNull();
     server.use(...authApi({ me: camille }).handlers);
-    await user.click(screen.getByRole("button", { name: "Réessayer" }));
+    await user.click(screen.getByRole("button", { name: "Retry" }));
     expect(await screen.findByText("Chemin : /")).toBeInTheDocument();
   });
 
@@ -63,13 +63,13 @@ describe("SessionGate", () => {
       ),
     );
     const { visited } = renderAuth("/", <Probes />);
-    await waitFor(() => expect(screen.getByRole("heading", { name: "Connexion" })).toHaveFocus());
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Sign in" })).toHaveFocus());
     await settle();
     // Une seule redirection malgré deux 401 : la porte ne relit pas `me` (il répondrait 401, donc
     // émettrait de nouveau) et la page de connexion ne renvoie pas vers la porte.
     expect(visited).toEqual(["/", "/connexion"]);
     expect(session.meCalls).toBe(1);
-    expect(screen.getByRole("link", { name: "Se connecter avec Google" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Sign in with Google" })).toBeInTheDocument();
   });
 
   it("a 401 mid-session does not loop when me itself answers 401 afterwards", async () => {
@@ -83,7 +83,7 @@ describe("SessionGate", () => {
       }),
     );
     const { visited, client } = renderAuth("/", <Probes />);
-    await screen.findByRole("heading", { name: "Connexion" });
+    await screen.findByRole("heading", { name: "Sign in" });
     await client.refetchQueries({ queryKey: ["auth", "me"] });
     await settle();
     expect(visited).toEqual(["/", "/connexion"]);
@@ -110,7 +110,7 @@ describe("SessionGate", () => {
       ),
     );
     renderAuth("/", <Probes />);
-    await screen.findByRole("heading", { name: "Connexion" });
+    await screen.findByRole("heading", { name: "Sign in" });
     expect(reset).toHaveBeenCalled();
   });
 
@@ -157,7 +157,7 @@ describe("SessionGate", () => {
       client.setQueryData(["settings"], { of: "camille" });
       server.use(...authApi({ me: null }).handlers);
       show();
-      await screen.findByRole("heading", { name: "Connexion" });
+      await screen.findByRole("heading", { name: "Sign in" });
       expect(client.getQueryData(["settings"])).toBeUndefined();
       expect(visited).toEqual(["/", "/connexion"]);
     });

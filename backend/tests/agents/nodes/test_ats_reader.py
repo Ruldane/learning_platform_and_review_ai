@@ -54,11 +54,11 @@ async def test_every_input_is_untrusted() -> None:
 
 async def test_prompt_has_dated_ats_base_and_honesty_rules() -> None:
     prompt = render_prompt("ats_reader", mode="propose", prefix="a", **await _vars())
-    assert "Mise à jour : 2026-11-13" in prompt and "Notes par ATS" in prompt
-    assert "N'ajoute aucun fait" in prompt and "Cite les identifiants de faits" in prompt
-    assert "Aucune garantie de passage ATS" in prompt
-    assert "tes références commencent toutes par « a »" in prompt
-    assert "Tu es le Lecteur ATS" in prompt and "Confrontation" not in prompt
+    assert "Updated: 2026-11-13" in prompt and "Notes per ATS" in prompt
+    assert "Add no fact" in prompt and "Cite the fact identifiers" in prompt
+    assert "No guarantee of passing an ATS" in prompt
+    assert 'your references all start with "a"' in prompt
+    assert "ATS Reader" in prompt and "Cross-examination" not in prompt
 
 
 def test_issues_name_refs_and_ids_only() -> None:

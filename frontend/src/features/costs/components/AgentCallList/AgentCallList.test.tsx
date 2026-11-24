@@ -33,14 +33,14 @@ describe("AgentCallList", () => {
   it("shows duration under a second in milliseconds and a small cost with three decimals", () => {
     renderList({ calls: [call("a")] });
     expect(screen.getByText("340 ms")).toBeInTheDocument();
-    expect(screen.getByText("0,004 $")).toBeInTheDocument();
-    expect(screen.getByText("1 appel affiché")).toBeInTheDocument();
+    expect(screen.getByText("$0.004")).toBeInTheDocument();
+    expect(screen.getByText("1 call shown")).toBeInTheDocument();
   });
 
   it("keeps the load button pressable by keyboard but inert while loading", async () => {
     const onLoadMore = vi.fn();
     renderList({ calls: [call("a")], hasMore: true, loadingMore: true, onLoadMore });
-    const button = screen.getByRole("button", { name: "Chargement…" });
+    const button = screen.getByRole("button", { name: "Loading…" });
     expect(button).toHaveAttribute("aria-disabled", "true");
     button.focus();
     await userEvent.keyboard("{Enter}");
@@ -50,12 +50,12 @@ describe("AgentCallList", () => {
   it("asks for the next page", async () => {
     const onLoadMore = vi.fn();
     renderList({ calls: [call("a")], hasMore: true, onLoadMore });
-    await userEvent.click(screen.getByRole("button", { name: "Voir plus" }));
+    await userEvent.click(screen.getByRole("button", { name: "Show more" }));
     expect(onLoadMore).toHaveBeenCalledTimes(1);
   });
 
   it("does not take the focus when the whole journal fits in one page", () => {
     renderList({ calls: [call("a")] });
-    expect(screen.getByText("C'est tout : le journal est affiché en entier.")).not.toHaveFocus();
+    expect(screen.getByText("That's all: the full log is shown.")).not.toHaveFocus();
   });
 });

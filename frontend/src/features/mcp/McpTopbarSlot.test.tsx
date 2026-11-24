@@ -26,14 +26,14 @@ describe("McpTopbarSlot", () => {
       confirmationOut({ id: "d", status: "confirmed" }),
       confirmationOut({ id: "e", status: "refused" }),
     ]);
-    const link = await screen.findByRole("link", { name: "2 demandes à confirmer" });
+    const link = await screen.findByRole("link", { name: "2 requests to confirm" });
     expect(link).toHaveAttribute("href", "/reglages/mcp");
-    expect(link).toHaveTextContent("À confirmer (2)");
+    expect(link).toHaveTextContent("To confirm (2)");
   });
 
   it("says one request in the singular", async () => {
     setup([confirmationOut()]);
-    expect(await screen.findByRole("link", { name: "1 demande à confirmer" })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "1 request to confirm" })).toBeInTheDocument();
   });
 
   it("shows nothing when nothing is waiting", async () => {

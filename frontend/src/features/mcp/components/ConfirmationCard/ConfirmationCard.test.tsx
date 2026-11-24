@@ -41,36 +41,36 @@ describe("ConfirmationCard", () => {
   it("confirmation card shows verdict and both buttons", async () => {
     const { onConfirm, onRefuse, user } = setup(view());
     expect(screen.getByText("Ajouter au profil maître : « Migration vers dbt »."));
-    expect(screen.getByText("Contrôle d'honnêteté")).toBeInTheDocument();
-    expect(screen.getByText("Réserves :")).toBeInTheDocument();
+    expect(screen.getByText("Honesty check")).toBeInTheDocument();
+    expect(screen.getByText("Concerns:")).toBeInTheDocument();
     expect(screen.getByText("Aucune preuve dans ton profil.")).toBeInTheDocument();
     expect(screen.getByText(/Claude Code \(portable\)/)).toBeInTheDocument();
-    expect(screen.getByText(/Expire le/)).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Confirmer" }));
-    await user.click(screen.getByRole("button", { name: "Refuser" }));
+    expect(screen.getByText(/Expires on/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+    await user.click(screen.getByRole("button", { name: "Refuse" }));
     expect(onConfirm).toHaveBeenCalledTimes(1);
     expect(onRefuse).toHaveBeenCalledTimes(1);
   });
 
   it("a verdict without reserve says so", () => {
     setup(view({ verdict: { ok: true, reasons: [], summary: "Tient face au profil." } }));
-    expect(screen.getByText("Aucune réserve.")).toBeInTheDocument();
+    expect(screen.getByText("No concerns.")).toBeInTheDocument();
     expect(screen.getByText("Tient face au profil.")).toBeInTheDocument();
   });
 
   it("a request without precheck never claims it was checked", () => {
     setup(view({ verdict: null }));
-    expect(screen.getByText("Pas de contrôle préalable pour cette action.")).toBeInTheDocument();
-    expect(screen.queryByText("Aucune réserve.")).toBeNull();
+    expect(screen.getByText("No prior check for this action.")).toBeInTheDocument();
+    expect(screen.queryByText("No concerns.")).toBeNull();
   });
 
   it("shows the request: method, route and every field with its value", () => {
     setup(view());
-    const request = screen.getByRole("group", { name: "Requête" });
+    const request = screen.getByRole("group", { name: "Request" });
     expect(within(request).getByText("POST /profile/entries")).toBeInTheDocument();
     expect(within(request).getByText("title")).toBeInTheDocument();
     expect(within(request).getByText("Migration d'un entrepôt vers dbt")).toBeInTheDocument();
-    expect(screen.queryByText(/coupé/)).toBeNull();
+    expect(screen.queryByText(/preview is truncated/)).toBeNull();
   });
 
   it("writes a field that was cut away as « (non montré) » and says the preview is cut", () => {
@@ -88,8 +88,8 @@ describe("ConfirmationCard", () => {
         },
       }),
     );
-    expect(screen.getByText("(non montré)")).toBeInTheDocument();
-    expect(screen.getByText(/aperçu est coupé/)).toBeInTheDocument();
+    expect(screen.getByText("(not shown)")).toBeInTheDocument();
+    expect(screen.getByText(/preview is truncated/)).toBeInTheDocument();
   });
 
   it("renders untrusted text as text, never as markup", () => {
@@ -110,14 +110,14 @@ describe("ConfirmationCard", () => {
         onRefuse={vi.fn()}
       />,
     );
-    expect(screen.getByText(`Cible : ${hostile}`)).toBeInTheDocument();
+    expect(screen.getByText(`Target: ${hostile}`)).toBeInTheDocument();
     expect(screen.getByText("<script>alert(1)</script>")).toBeInTheDocument();
     expect(container.querySelector("img, script")).toBeNull();
   });
 
   it("expired confirmation has no buttons", () => {
     setup(view({ state: "expired" }));
-    expect(screen.getByText("Expirée")).toBeInTheDocument();
+    expect(screen.getByText("Expired")).toBeInTheDocument();
     expect(screen.queryByRole("button")).toBeNull();
   });
 
@@ -128,7 +128,7 @@ describe("ConfirmationCard", () => {
 
   it("disables both buttons while a decision is in flight", () => {
     setup(view(), true);
-    expect(screen.getByRole("button", { name: "Confirmer" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Refuser" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Refuse" })).toBeDisabled();
   });
 });

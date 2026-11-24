@@ -19,32 +19,32 @@ function renderNav(due: number) {
   );
 }
 
-describe("pastilles de la navigation des candidatures", () => {
-  it("sums the due reminders on the section, read as « 3 relances dues »", async () => {
+describe("application navigation badges", () => {
+  it("announces the total number of follow-ups due on the section", async () => {
     renderNav(3);
-    const section = await screen.findByRole("button", { name: "Candidatures, 3 relances dues" });
-    expect(section).toHaveAccessibleName("Candidatures, 3 relances dues");
+    const section = await screen.findByRole("button", { name: "Applications, 3 follow-ups due" });
+    expect(section).toHaveAccessibleName("Applications, 3 follow-ups due");
     expect(screen.getByText("3")).toHaveAttribute("aria-hidden", "true");
   });
 
-  it("says « 1 relance due » in the singular", async () => {
+  it('says "1 follow-up due" in the singular', async () => {
     renderNav(1);
     expect(
-      await screen.findByRole("button", { name: "Candidatures, 1 relance due" }),
+      await screen.findByRole("button", { name: "Applications, 1 follow-up due" }),
     ).toBeVisible();
   });
 
-  it("keeps the badge on the Relances entry of the sub-menu", async () => {
+  it("keeps the badge on the follow-ups entry in the menu", async () => {
     renderNav(3);
-    await userEvent.click(await screen.findByRole("button", { name: /^Candidatures/ }));
-    const entry = await screen.findByRole("menuitem", { name: "Relances, 3 relances dues" });
+    await userEvent.click(await screen.findByRole("button", { name: /^Applications/ }));
+    const entry = await screen.findByRole("menuitem", { name: "Follow-ups, 3 follow-ups due" });
     expect(entry).toHaveAttribute("href", "/candidatures/relances");
-    expect(entry).toHaveAccessibleName("Relances, 3 relances dues");
+    expect(entry).toHaveAccessibleName("Follow-ups, 3 follow-ups due");
   });
 
   it("lists the board first, then the reminders and the free interview", async () => {
     renderNav(0);
-    await userEvent.click(screen.getByRole("button", { name: "Candidatures" }));
+    await userEvent.click(screen.getByRole("button", { name: "Applications" }));
     expect(screen.getAllByRole("menuitem").map((item) => item.getAttribute("href"))).toEqual([
       "/candidatures",
       "/candidatures/relances",
@@ -54,7 +54,7 @@ describe("pastilles de la navigation des candidatures", () => {
 
   it("shows no badge when nothing is due", () => {
     renderNav(0);
-    expect(screen.getByRole("button", { name: "Candidatures" })).toBeVisible();
-    expect(screen.queryByText(/relances? dues?/)).toBeNull();
+    expect(screen.getByRole("button", { name: "Applications" })).toBeVisible();
+    expect(screen.queryByText(/follow-ups? due/)).toBeNull();
   });
 });

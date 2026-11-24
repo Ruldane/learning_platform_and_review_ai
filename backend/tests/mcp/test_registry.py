@@ -32,9 +32,9 @@ def test_schema_merges_path_query_and_body(app: FastAPI) -> None:
     assert update.input_schema["additionalProperties"] is False
     assert {"status", "posting_id"} <= listing.input_schema["properties"].keys()  # requête
     assert update.route == ("PATCH", "/applications/{application_id}") and update.level == 2
-    assert "Écriture réversible" in update.description
+    assert "Reversible write" in update.description
     event = registry.get("applications_event")
-    assert event is not None and "À confirmer" in event.description
+    assert event is not None and "To confirm" in event.description
     # `$ref` des composants devenus `$defs` locaux, jamais de `#/components`.
     assert "#/components" not in str(update.input_schema)
     assert "$defs" in update.input_schema
@@ -71,16 +71,16 @@ def test_schema_prefixes_colliding_body_fields() -> None:
 
 
 def test_registry_fails_on_unknown_route(app: FastAPI) -> None:
-    with pytest.raises(McpConfigError, match="absente"):
+    with pytest.raises(McpConfigError, match="missing from the app"):
         build_registry(one("x", McpAction("GET /nope", 1, "x_nope")), app)
-    with pytest.raises(McpConfigError, match="mal formée"):
+    with pytest.raises(McpConfigError, match="malformed route"):
         build_registry(one("x", McpAction("FETCH /applications", 1, "x_bad")), app)
-    with pytest.raises(McpConfigError, match="graphe"):
+    with pytest.raises(McpConfigError, match="graph declared but unknown"):
         build_registry([FeatureMcp("x", graphs=(McpGraph("inconnu"),))], app, {})
 
 
 def test_external_side_effect_action_cannot_be_level_2(app: FastAPI) -> None:
-    with pytest.raises(ValueError, match="niveau 3"):
+    with pytest.raises(ValueError, match="external side effect is level 3"):
         McpAction("POST /memory/items", 2, "memory_add", side_effects="external")
     level_3 = McpAction("POST /memory/items", 3, "memory_add", side_effects="external")
     registry = build_registry(one("memory", level_3), app)
@@ -91,17 +91,17 @@ def test_external_side_effect_action_cannot_be_level_2(app: FastAPI) -> None:
 @pytest.mark.parametrize(
     ("feature", "action", "message"),
     [
-        ("auth", McpAction("GET /health", 1, "auth_health"), "n'expose jamais"),
-        ("x", McpAction("GET /auth/me", 1, "x_me"), "niveau 4"),
-        ("x", McpAction("GET /mcp/settings", 1, "x_mcp"), "niveau 4"),
-        ("x", McpAction("GET /account/credentials", 1, "x_export"), "niveau 4"),
-        ("x", McpAction("GET /settings/api-keys", 1, "x_keys"), "niveau 4"),
-        ("x", McpAction("GET /settings/models", 1, "x_models"), "niveau 4"),
-        ("x", McpAction("GET /settings/agents", 1, "x_agents"), "niveau 4"),
+        ("auth", McpAction("GET /health", 1, "auth_health"), "never exposes a tool"),
+        ("x", McpAction("GET /auth/me", 1, "x_me"), "level 4"),
+        ("x", McpAction("GET /mcp/settings", 1, "x_mcp"), "level 4"),
+        ("x", McpAction("GET /account/credentials", 1, "x_export"), "level 4"),
+        ("x", McpAction("GET /settings/api-keys", 1, "x_keys"), "level 4"),
+        ("x", McpAction("GET /settings/models", 1, "x_models"), "level 4"),
+        ("x", McpAction("GET /settings/agents", 1, "x_agents"), "level 4"),
         ("x", McpAction("PUT /settings", 2, "x_put"), "body_fields"),
         ("x", McpAction("GET /settings", 1, "x_get"), "response_fields"),
-        ("x", McpAction("POST /applications", 1, "x_add"), "niveau 1"),
-        ("x", McpAction("GET /health", 1, "Mauvais Nom"), "nom d'outil"),
+        ("x", McpAction("POST /applications", 1, "x_add"), "cannot be level 1"),
+        ("x", McpAction("GET /health", 1, "Invalid Name"), "invalid tool name"),
         ("x", McpAction("POST /documents", 2, "x_upload"), "JSON"),
     ],
 )
@@ -116,7 +116,7 @@ def test_duplicate_tool_names_stop_the_startup(app: FastAPI) -> None:
     twice = one(
         "x", McpAction("GET /health", 1, "x_same"), McpAction("GET /applications", 1, "x_same")
     )
-    with pytest.raises(McpConfigError, match="double"):
+    with pytest.raises(McpConfigError, match="duplicate tool name"):
         build_registry(twice, app)
 
 
@@ -129,7 +129,7 @@ def test_body_fields_must_exist(app: FastAPI) -> None:
         merge_from="GET /settings",
         response_fields=frozenset({"timezone"}),
     )
-    with pytest.raises(McpConfigError, match="inconnus"):
+    with pytest.raises(McpConfigError, match="unknown body fields"):
         build_registry(one("settings", bad), app)
 
 

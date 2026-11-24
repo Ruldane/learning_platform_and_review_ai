@@ -35,8 +35,8 @@ describe("DebateFeed", () => {
     } as FeedItem;
     const command: FeedItem = { kind: "user", seq: 4, text: "", command: "to_proposals" };
     render(<DebateFeed items={[cited, command]} renderInterrupt={() => null} />);
-    expect(screen.getByRole("link", { name: "Source 1 : Doc" })).toBeInTheDocument();
-    expect(screen.getByText("Commande : Passer aux propositions")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Source 1: Doc" })).toBeInTheDocument();
+    expect(screen.getByText("Command: Move on to proposals")).toBeInTheDocument();
   });
 
   it("renders turns, user messages and delegates interrupts to renderInterrupt", () => {
@@ -66,9 +66,9 @@ describe("DebateFeed", () => {
 
   it("is a labelled list in order, with a message when empty", () => {
     const { rerender } = render(<DebateFeed items={[turn, user]} renderInterrupt={() => null} />);
-    expect(screen.getByRole("list", { name: "Fil du débat" })).toBeInTheDocument();
+    expect(screen.getByRole("list", { name: "Debate feed" })).toBeInTheDocument();
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
     rerender(<DebateFeed items={[]} renderInterrupt={() => null} />);
-    expect(screen.getByText("Le débat va commencer…")).toBeInTheDocument();
+    expect(screen.getByText("The debate is about to start…")).toBeInTheDocument();
   });
 });

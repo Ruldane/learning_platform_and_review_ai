@@ -4,14 +4,14 @@ import { authApi, camille } from "@/test/authApi";
 import { server } from "@/test/server";
 import { renderAuth } from "../../authTestkit";
 
-const TAKE = "Reprendre les données de cet ordinateur";
+const TAKE = "Take over this computer's data";
 
 describe("ClaimPage", () => {
   it("claim take_local then home", async () => {
     const api = authApi({ me: null, claim: camille });
     server.use(...api.handlers);
     const { user, visited } = renderAuth("/connexion/reprise");
-    expect(screen.getByRole("heading", { name: "Reprendre tes données ?" })).toHaveFocus();
+    expect(screen.getByRole("heading", { name: "Take over your data?" })).toHaveFocus();
     await user.click(screen.getByRole("button", { name: TAKE }));
     expect(await screen.findByText("Chemin : /")).toBeInTheDocument();
     expect(api.claimBodies).toEqual([{ choice: "take_local" }]);
@@ -24,7 +24,7 @@ describe("ClaimPage", () => {
     const api = authApi({ me: null, claim: camille });
     server.use(...api.handlers);
     const { user } = renderAuth("/connexion/reprise");
-    await user.click(screen.getByRole("button", { name: "Commencer un espace vide" }));
+    await user.click(screen.getByRole("button", { name: "Start with an empty space" }));
     expect(await screen.findByText("Chemin : /")).toBeInTheDocument();
     expect(api.claimBodies).toEqual([{ choice: "fresh" }]);
   });
@@ -34,17 +34,17 @@ describe("ClaimPage", () => {
     const { user, router } = renderAuth("/connexion/reprise");
     await user.click(screen.getByRole("button", { name: TAKE }));
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Le choix de la reprise a expiré, reconnecte-toi.",
+      "The takeover choice expired, sign in again.",
     );
     expect(router.state.location.pathname).toBe("/connexion");
-    await waitFor(() => expect(screen.getByRole("heading", { name: "Connexion" })).toHaveFocus());
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Sign in" })).toHaveFocus());
   });
 
   it("claim already taken returns to login with its own message", async () => {
     server.use(...authApi({ me: null, claim: { conflict: "local_already_claimed" } }).handlers);
     const { user } = renderAuth("/connexion/reprise");
     await user.click(screen.getByRole("button", { name: TAKE }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("déjà reprises par un compte");
+    expect(await screen.findByRole("alert")).toHaveTextContent("taken over by an account");
   });
 
   it("claim replayed by the person who just took the space lets them in", async () => {

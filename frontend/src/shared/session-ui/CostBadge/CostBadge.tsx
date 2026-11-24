@@ -1,4 +1,5 @@
 import { t } from "@/shared/i18n/t";
+import { formatUsd } from "@/shared/lib/format";
 import type { CostPayload } from "@/shared/realtime/types";
 
 interface CostBadgeProps {
@@ -7,21 +8,12 @@ interface CostBadgeProps {
 
 const integer = new Intl.NumberFormat("en-GB");
 
-/**
- * « ≈ 0,04 » : deux décimales, trois sous le centime ; « < 0,001 » sous le millième, sans « ≈ »
- * devant (« ≈ < » ne se lit pas). Un coût non nul ne s'affiche jamais « 0,00 » ni « 0,000 ».
- */
 function formatCost(usd: number): string {
-  if (usd > 0 && usd < 0.001) return "< 0,001";
-  const digits = usd > 0 && usd < 0.01 ? 3 : 2;
-  const amount = usd.toLocaleString("en-GB", {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-  });
-  return `≈ ${amount}`;
+  const cost = formatUsd(usd);
+  return cost.startsWith("<") ? cost : `≈ ${cost}`;
 }
 
-/** Pastille « 12 340 tokens · ≈ 0,04 $ » ; les tokens et le plafond sont dans l'infobulle. */
+/** Shows token usage and the estimated cost. The tooltip includes the token cap. */
 export function CostBadge({ cost }: CostBadgeProps) {
   if (!cost) {
     return <span className="text-sm text-muted-foreground">{t("session.cost.none")}</span>;

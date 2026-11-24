@@ -40,11 +40,11 @@ export function setup(
   return { ...account, auth: authentication, client, router, user: userEvent.setup() };
 }
 
-export const word = () => screen.getByLabelText("Tape SUPPRIMER pour confirmer");
+export const word = () => screen.getByLabelText("Type SUPPRIMER to confirm");
 export const deleteButton = () =>
-  screen.getByRole("button", { name: /^(Tout supprimer|Suppression en cours…)$/ });
+  screen.getByRole("button", { name: /^(Delete everything|Deleting…)$/ });
 
 export async function confirmAndDelete(user: ReturnType<typeof userEvent.setup>) {
   await user.type(word(), "SUPPRIMER");
-  await user.click(screen.getByRole("button", { name: "Tout supprimer" }));
+  await user.click(screen.getByRole("button", { name: "Delete everything" }));
 }

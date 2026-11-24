@@ -20,7 +20,7 @@ MCP = FeatureMcp(
             "hours per week) without starting the Council, so at no API cost; the program "
             "is then written with `program_write_program`.",
         ),
-        McpAction("GET /goals", 1, "learning_list_goals", "The learning goals."),
+        McpAction("GET /goals", 1, "learning_list_goals", "Lists January's learning goals."),
         McpAction("GET /goals/{goal_id}", 1, "learning_get_goal", "A goal and its state."),
         McpAction(
             "POST /goals/{goal_id}/council",

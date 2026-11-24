@@ -29,7 +29,7 @@ def test_play_alias_cannot_downgrade_existing_confirmation(app: FastAPI) -> None
     features = [
         replace(f, play_actions=(alias,)) if f.feature == "program" else f for f in MCP_FEATURES
     ]
-    with pytest.raises(McpConfigError, match="niveau 3"):
+    with pytest.raises(McpConfigError, match="level 3"):
         build_registry(features, app, {name: spec.input_model for name, spec in GRAPHS.items()})
 
 

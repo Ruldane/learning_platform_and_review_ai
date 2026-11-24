@@ -15,9 +15,9 @@ describe("AccountMenu", () => {
         failed={false}
       />,
     );
-    const group = screen.getByRole("group", { name: "Compte" });
+    const group = screen.getByRole("group", { name: "Account" });
     expect(group).toHaveTextContent("camille.exemple@example.org");
-    await user.click(screen.getByRole("button", { name: "Se déconnecter" }));
+    await user.click(screen.getByRole("button", { name: "Sign out" }));
     expect(onLogout).toHaveBeenCalledTimes(1);
   });
 
@@ -27,9 +27,9 @@ describe("AccountMenu", () => {
     const { rerender } = render(
       <AccountMenu email="a@example.org" onLogout={onLogout} pending failed={false} />,
     );
-    await user.click(screen.getByRole("button", { name: "Déconnexion…" }));
+    await user.click(screen.getByRole("button", { name: "Signing out…" }));
     expect(onLogout).not.toHaveBeenCalled();
     rerender(<AccountMenu email="a@example.org" onLogout={onLogout} pending={false} failed />);
-    expect(screen.getByRole("alert")).toHaveTextContent("La déconnexion a échoué.");
+    expect(screen.getByRole("alert")).toHaveTextContent("Sign-out failed.");
   });
 });

@@ -41,7 +41,7 @@ describe("AuthGate", () => {
 
   it("announces the check while loading, without the children", () => {
     renderGate("loading");
-    expect(screen.getByRole("status")).toHaveTextContent("Vérification de ta connexion");
+    expect(screen.getByRole("status")).toHaveTextContent("Checking your sign-in…");
     expect(screen.queryByText("Contenu protégé")).toBeNull();
   });
 
@@ -49,7 +49,7 @@ describe("AuthGate", () => {
     const user = userEvent.setup();
     const { onRetry } = renderGate("error", vi.fn(), "Impossible de joindre le serveur.");
     expect(screen.getByRole("alert")).toHaveTextContent("Impossible de joindre le serveur.");
-    const retry = screen.getByRole("button", { name: "Réessayer" });
+    const retry = screen.getByRole("button", { name: "Retry" });
     retry.focus();
     await user.keyboard("{Enter}");
     expect(onRetry).toHaveBeenCalledTimes(1);
@@ -70,7 +70,7 @@ describe("AuthGate", () => {
       );
     }
     render(<RouterProvider router={createMemoryRouter([{ path: "/", element: <Harness /> }])} />);
-    await user.click(screen.getByRole("button", { name: "Réessayer" }));
+    await user.click(screen.getByRole("button", { name: "Retry" }));
     expect(await screen.findByText("Contenu protégé")).toHaveFocus();
   });
 

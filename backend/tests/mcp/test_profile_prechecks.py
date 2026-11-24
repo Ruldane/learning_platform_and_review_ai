@@ -29,8 +29,8 @@ async def test_profile_precheck_counts_facts_without_a_document() -> None:
     verdict = await profile_precheck(_request("/profile", _profile()))
     assert verdict.ok is False
     assert verdict.reasons == (
-        "1 expérience(s) sans source de document",
-        "1 compétence(s) sans source de document",
+        "1 experience(s) without a document source",
+        "1 skill(s) without a document source",
     )
     assert "version 2" in (verdict.summary or "")
     assert "Lead" not in str(verdict) and "Go" not in str(verdict)  # jamais le contenu
@@ -49,7 +49,7 @@ async def test_profile_precheck_ok_when_every_fact_has_a_document() -> None:
 async def test_profile_precheck_flags_title_and_summary_by_name() -> None:
     body = _profile(title={"text": "Lead", "sources": ["january"]}, experiences=[], skills=[])
     verdict = await profile_precheck(_request("/profile", body))
-    assert verdict.reasons == ("1 titre sans source de document",)
+    assert verdict.reasons == ("1 title without a document source",)
 
 
 async def test_profile_precheck_unreadable_body_does_not_echo_it() -> None:
@@ -62,7 +62,7 @@ def test_unsourced_counts_ignores_facts_with_a_document() -> None:
     from app.agents.tools.cv_schema import MasterProfileData
 
     data = MasterProfileData.model_validate(_profile()["data"])
-    assert unsourced_counts(data) == {"expérience(s)": 1, "compétence(s)": 1}
+    assert unsourced_counts(data) == {"experience(s)": 1, "skill(s)": 1}
 
 
 async def test_modification_precheck_warns_only_on_confirm() -> None:
@@ -102,9 +102,7 @@ async def test_profile_entry_precheck_flags_a_figure_the_description_lacks() -> 
         )
     )
     assert flagged.ok is False
-    assert flagged.reasons == (
-        "1 chiffre(s) des réalisations absent(s) de la description du projet.",
-    )
+    assert flagged.reasons == ("1 achievement figure(s) missing from the project description.",)
     assert "80" not in str(flagged)
     bad = await profile_entry_precheck(_request(path, {"description": 3}, "POST"))
     assert bad.ok is False

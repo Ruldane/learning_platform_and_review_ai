@@ -20,8 +20,8 @@ describe("DataPage, the account changed in another tab", () => {
     await confirmAndDelete(user);
 
     const message = await screen.findByTestId("delete-failure");
-    expect(message).toHaveTextContent("Le compte connecté a changé dans un autre onglet");
-    expect(message).toHaveTextContent("Rien n'a été supprimé");
+    expect(message).toHaveTextContent("The signed-in account changed in another tab");
+    expect(message).toHaveTextContent("Nothing was deleted");
     expect(deleteBodies).toEqual([]);
     expect(client.getQueryData(["settings"])).toBeUndefined();
     expect(client.getQueryData(["auth", "me"])).toEqual(dominique);
@@ -81,7 +81,7 @@ describe("DataPage, the account changed in another tab", () => {
     await confirmAndDelete(user);
 
     expect(await screen.findByTestId("delete-failure")).toHaveTextContent(
-      "Le compte connecté a changé dans un autre onglet",
+      "The signed-in account changed in another tab",
     );
     expect(received).toEqual([{ confirm: "SUPPRIMER", expected_user_id: camille.id }]);
     expect(word()).toHaveValue("");

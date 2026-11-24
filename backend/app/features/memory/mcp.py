@@ -32,7 +32,7 @@ MCP = FeatureMcp(
             untrusted=("hits[].title", "hits[].text", "agent_text"),
         ),
         McpAction("GET /memory/map", 1, "memory_get_map", "The 2D map of memory."),
-        McpAction("GET /memory/stats", 1, "memory_get_stats", "Memory statistics."),
+        McpAction("GET /memory/stats", 1, "memory_get_stats", "Returns the memory statistics."),
         McpAction(
             "GET /memory/export",
             1,

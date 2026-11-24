@@ -189,8 +189,8 @@ VARS = {
 def test_prompts_render_with_their_variables(agent: str):
     out = render_prompt(agent, **VARS)
     assert "apprendre Rust" in out and "Texte de l'autre agent" in out
-    assert "Réponds nommément à January sur" in out and "Pense aux débutants" in out
-    assert "80 mots" in out
+    assert "Reply to January by name about" in out and "Pense aux débutants" in out
+    assert "in 80 words at most" in out
 
 
 @pytest.mark.parametrize("agent", ["demo_proponent", "demo_critic"])
@@ -200,7 +200,7 @@ def test_prompts_without_notes_nor_angle_omit_those_parts(agent: str):
 
 
 def test_critic_answers_the_proponent_by_name():
-    assert "Défenseur" in render_prompt("demo_critic", **VARS)
+    assert 'answer by name ("Defender,' in render_prompt("demo_critic", **VARS)
 
 
 @pytest.mark.parametrize("agent", ["demo_proponent", "demo_critic"])

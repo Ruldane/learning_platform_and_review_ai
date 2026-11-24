@@ -7,27 +7,26 @@ const EXPORT_URL = "http://localhost:8000/api/v1/account/export";
 describe("ExportCard", () => {
   it("export link targets the API", () => {
     render(<ExportCard href={EXPORT_URL} />);
-    const link = screen.getByRole("link", { name: "Exporter toutes mes données" });
+    const link = screen.getByRole("link", { name: "Export all my data" });
     expect(link).toHaveAttribute("href", EXPORT_URL);
-    expect(screen.getByRole("heading", { name: "Exporter" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Export" })).toBeVisible();
   });
 
   it("says what the archive holds and that keys are never in it", () => {
     render(<ExportCard href="/x" />);
-    const text = screen.getByRole("region", { name: "Exporter" });
-    expect(text).toHaveTextContent("archive zip");
-    expect(text).toHaveTextContent("Elle ne contient jamais tes clés d'API");
+    const text = screen.getByRole("region", { name: "Export" });
+    expect(text).toHaveTextContent("zip archive");
+    expect(text).toHaveTextContent("It never contains your API keys");
   });
 
   it("opens the download in a new tab, so an error page never replaces the application", () => {
     render(<ExportCard href={EXPORT_URL} />);
-    const link = screen.getByRole("link", { name: "Exporter toutes mes données" });
+    const link = screen.getByRole("link", { name: "Export all my data" });
     expect(link).toHaveAttribute("target", "_blank");
     expect(link.getAttribute("rel")).toContain("noopener");
     expect(link).toHaveAttribute("download");
     expect(link).toHaveAccessibleDescription(
-      "Le téléchargement s'ouvre dans un nouvel onglet ; " +
-        "si la session a expiré, reconnecte-toi puis réessaie.",
+      "The download opens in a new tab; if your session has expired, sign in again and retry.",
     );
   });
 });

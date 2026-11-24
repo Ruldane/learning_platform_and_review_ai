@@ -7,14 +7,14 @@ import { server } from "@/test/server";
 import { renderAuth } from "../../authTestkit";
 
 const MESSAGES: [string, string][] = [
-  ["access_denied", "Connexion annulée."],
-  ["state_invalid", "La connexion a expiré, recommence."],
-  ["email_not_allowed", "Ce compte n'est pas autorisé sur cette instance."],
-  ["email_unverified", "Adresse Google non vérifiée."],
-  ["google_unavailable", "Google ne répond pas, réessaie dans un instant."],
-  ["token_invalid", "Réponse de Google refusée."],
-  ["claim_expired", "Le choix de la reprise a expiré, reconnecte-toi."],
-  ["local_already_claimed", "Les données de cet ordinateur sont déjà reprises par un compte."],
+  ["access_denied", "Sign-in cancelled."],
+  ["state_invalid", "The sign-in expired, start again."],
+  ["email_not_allowed", "This account isn't allowed on this instance."],
+  ["email_unverified", "Google address not verified."],
+  ["google_unavailable", "Google isn't responding, try again in a moment."],
+  ["token_invalid", "Google's response was rejected."],
+  ["claim_expired", "The takeover choice expired, sign in again."],
+  ["local_already_claimed", "This computer's data has already been taken over by an account."],
 ];
 
 describe("LoginPage", () => {
@@ -28,24 +28,24 @@ describe("LoginPage", () => {
     server.use(...authApi({ me: null }).handlers);
     renderAuth("/connexion?erreur=%3Cb%3Ecode_inventé%3C%2Fb%3E");
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent("La connexion a échoué, réessaie.");
+    expect(alert).toHaveTextContent("Sign-in failed, try again.");
     expect(alert).not.toHaveTextContent("inventé");
   });
 
   it("login error messages by code: no code, no message; inherited keys are unknown", async () => {
     server.use(...authApi({ me: null }).handlers);
     renderAuth("/connexion?erreur=constructor");
-    expect(await screen.findByRole("alert")).toHaveTextContent("La connexion a échoué");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Sign-in failed");
   });
 
   it("shows the Google link and no alert without an error code", async () => {
     server.use(...authApi({ me: null }).handlers);
     renderAuth("/connexion");
-    const link = await screen.findByRole("link", { name: "Se connecter avec Google" });
+    const link = await screen.findByRole("link", { name: "Sign in with Google" });
     expect(link).toHaveAttribute("href", "http://localhost:8000/api/v1/auth/google/login");
     expect(screen.queryByRole("alert")).toBeNull();
     await waitFor(() =>
-      expect(screen.getByRole("heading", { level: 1, name: "Connexion" })).toHaveFocus(),
+      expect(screen.getByRole("heading", { level: 1, name: "Sign in" })).toHaveFocus(),
     );
   });
 
@@ -59,7 +59,7 @@ describe("LoginPage", () => {
     server.use(...authApi({ me: camille }).handlers);
     const { visited } = renderAuth("/connexion");
     expect(
-      await screen.findByRole("link", { name: "Se connecter avec Google" }),
+      await screen.findByRole("link", { name: "Sign in with Google" }),
     ).toBeInTheDocument();
     expect(visited).toEqual(["/connexion"]);
   });
@@ -67,7 +67,7 @@ describe("LoginPage", () => {
   it("offers a retry when the server cannot say which mode it runs", async () => {
     server.use(...authApi({ me: camille, meFails: true }).handlers);
     renderAuth("/connexion");
-    expect(await screen.findByRole("button", { name: "Réessayer" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Retry" })).toBeInTheDocument();
   });
 
   it("gives the title the focus once a retry succeeds", async () => {
@@ -81,10 +81,10 @@ describe("LoginPage", () => {
       }),
     );
     const { user } = renderAuth("/connexion");
-    const retry = await screen.findByRole("button", { name: "Réessayer" });
+    const retry = await screen.findByRole("button", { name: "Retry" });
     await user.click(retry);
-    const title = await screen.findByRole("heading", { name: "Connexion" });
-    await screen.findByRole("link", { name: "Se connecter avec Google" });
+    const title = await screen.findByRole("heading", { name: "Sign in" });
+    await screen.findByRole("link", { name: "Sign in with Google" });
     expect(title).toHaveFocus();
   });
 });

@@ -7,8 +7,8 @@ import { confirmAndDelete, setup } from "./dataPageTestkit";
 describe("DataPage", () => {
   it("shows the export link and the delete card under one heading", () => {
     setup("local");
-    expect(screen.getByRole("heading", { level: 1, name: "Mes données" })).toBeVisible();
-    expect(screen.getByRole("link", { name: "Exporter toutes mes données" })).toHaveAttribute(
+    expect(screen.getByRole("heading", { level: 1, name: "My data" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "Export all my data" })).toHaveAttribute(
       "href",
       `${apiBaseUrl}/api/v1/account/export`,
     );
@@ -48,8 +48,8 @@ describe("DataPage", () => {
     const { user, router } = setup("local", { delete: "refused" });
     await confirmAndDelete(user);
     const message = await screen.findByTestId("delete-failure");
-    expect(message).toHaveTextContent("Le mot de confirmation n'est pas bon : tape SUPPRIMER");
-    expect(screen.getByLabelText("Tape SUPPRIMER pour confirmer")).toHaveAttribute(
+    expect(message).toHaveTextContent("The confirmation word is wrong: type SUPPRIMER");
+    expect(screen.getByLabelText("Type SUPPRIMER to confirm")).toHaveAttribute(
       "aria-invalid",
       "true",
     );
@@ -68,9 +68,9 @@ describe("DataPage", () => {
     await confirmAndDelete(user);
     const message = await screen.findByTestId("delete-failure");
     expect(message).toHaveTextContent("La mémoire ne répond pas.");
-    expect(message).toHaveTextContent("Tu peux réessayer");
+    expect(message).toHaveTextContent("You can retry");
     await waitFor(() => expect(message).toHaveFocus());
-    expect(screen.getByLabelText("Tape SUPPRIMER pour confirmer")).not.toHaveAttribute(
+    expect(screen.getByLabelText("Type SUPPRIMER to confirm")).not.toHaveAttribute(
       "aria-invalid",
       "true",
     );
@@ -81,7 +81,7 @@ describe("DataPage", () => {
     await confirmAndDelete(user);
     const message = await screen.findByTestId("delete-failure");
     expect(message).toHaveTextContent("Requête refusée.");
-    expect(screen.getByLabelText("Tape SUPPRIMER pour confirmer")).not.toHaveAttribute(
+    expect(screen.getByLabelText("Type SUPPRIMER to confirm")).not.toHaveAttribute(
       "aria-invalid",
       "true",
     );

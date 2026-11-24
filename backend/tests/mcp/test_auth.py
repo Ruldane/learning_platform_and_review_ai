@@ -231,6 +231,8 @@ async def test_get_current_user_reads_only_the_identity_posed_by_the_dispatcher(
     )
 
     class Conn:  # un appel qui ne porte aucun cookie
+        scope = {"method": "GET"}
+
         class url:  # noqa: N801
             path = "/api/v1/applications"
 

@@ -17,14 +17,14 @@ describe("AccountMenuSlot", () => {
     // `me` est lu : en mode local le menu n'a rien à montrer.
     await waitFor(() => expect(api.meCalls).toBe(1));
     await new Promise((resolve) => setTimeout(resolve, 30));
-    expect(screen.queryByRole("group", { name: "Compte" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Se déconnecter" })).toBeNull();
+    expect(screen.queryByRole("group", { name: "Account" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Sign out" })).toBeNull();
   });
 
   it("shows the signed-in address in Google mode", async () => {
     server.use(...authApi({ me: camille }).handlers);
     render(<AccountMenuSlot />, { wrapper: createQueryWrapper() });
-    expect(await screen.findByRole("group", { name: "Compte" })).toHaveTextContent(
+    expect(await screen.findByRole("group", { name: "Account" })).toHaveTextContent(
       "camille.exemple@example.org",
     );
   });
@@ -33,8 +33,8 @@ describe("AccountMenuSlot", () => {
     const api = authApi({ me: camille });
     server.use(...api.handlers);
     const { user, visited } = renderAuth("/", <AccountMenuSlot />);
-    await user.click(await screen.findByRole("button", { name: "Se déconnecter" }));
-    await waitFor(() => expect(screen.getByRole("heading", { name: "Connexion" })).toHaveFocus());
+    await user.click(await screen.findByRole("button", { name: "Sign out" }));
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Sign in" })).toHaveFocus());
     expect(api.logoutCalls).toBe(1);
     expect(visited).toEqual(["/", "/connexion"]);
   });
@@ -43,8 +43,8 @@ describe("AccountMenuSlot", () => {
     server.use(...authApi({ me: camille }).handlers);
     const { user, client } = renderAuth("/", <AccountMenuSlot />);
     client.setQueryData(["settings"], { secret: true });
-    await user.click(await screen.findByRole("button", { name: "Se déconnecter" }));
-    await screen.findByRole("heading", { name: "Connexion" });
+    await user.click(await screen.findByRole("button", { name: "Sign out" }));
+    await screen.findByRole("heading", { name: "Sign in" });
     expect(client.getQueryData(["settings"])).toBeUndefined();
     expect(client.getQueryData(["auth", "me"])).toBeNull();
   });
@@ -54,8 +54,8 @@ describe("AccountMenuSlot", () => {
     onLocalReset(reset);
     server.use(...authApi({ me: camille }).handlers);
     const { user } = renderAuth("/", <AccountMenuSlot />);
-    await user.click(await screen.findByRole("button", { name: "Se déconnecter" }));
-    await screen.findByRole("heading", { name: "Connexion" });
+    await user.click(await screen.findByRole("button", { name: "Sign out" }));
+    await screen.findByRole("heading", { name: "Sign in" });
     expect(reset).toHaveBeenCalledTimes(1);
   });
 
@@ -65,9 +65,9 @@ describe("AccountMenuSlot", () => {
     server.use(
       http.post(`${apiBaseUrl}/api/v1/auth/logout`, () => new HttpResponse(null, { status: 500 })),
     );
-    await user.click(await screen.findByRole("button", { name: "Se déconnecter" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("La déconnexion a échoué.");
+    await user.click(await screen.findByRole("button", { name: "Sign out" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Sign-out failed.");
     expect(router.state.location.pathname).toBe("/");
-    expect(screen.getByRole("button", { name: "Se déconnecter" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
   });
 });

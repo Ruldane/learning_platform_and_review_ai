@@ -40,7 +40,7 @@ describe("SourceCard", () => {
     expect(link).toHaveAttribute("rel", "noopener noreferrer");
     expect(screen.getByText("82/100")).toBeInTheDocument();
     expect(screen.getByText("Awa Diallo")).toBeInTheDocument();
-    expect(screen.getByText("4 mars 2026")).toBeInTheDocument();
+    expect(screen.getByText("4 March 2026")).toBeInTheDocument();
     expect(screen.getByText("fr")).toBeInTheDocument();
   });
 

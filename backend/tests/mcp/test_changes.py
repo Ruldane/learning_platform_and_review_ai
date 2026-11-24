@@ -123,7 +123,7 @@ async def test_undo_refused_when_row_changed_since(
     refused = await amcp.http.post(f"{API}/mcp/changes/{call_id}/undo")
 
     assert refused.status_code == 409 and refused.json()["error"]["code"] == "undo_refused"
-    assert "a changé depuis" in refused.json()["error"]["message"]
+    assert "has changed since" in refused.json()["error"]["message"]
     assert "retouchée" not in refused.text and "faite par Claude" not in refused.text
     kept = (await client.get(f"{API}/applications/{app_id}")).json()
     assert kept["notes"] == "retouchée"  # rien n'est écrasé

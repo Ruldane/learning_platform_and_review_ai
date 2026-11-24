@@ -34,7 +34,7 @@ async def test_rate_limit_per_minute_and_per_day_429_readable() -> None:
 
     assert error.status_code == 429 and error.code == "rate_limited"
     assert error.details is not None and 1 <= error.details["retry_after"] <= 60
-    assert "60 appels par minute" in error.message and "Réessaie dans" in error.message
+    assert "60 calls per minute" in error.message and "Retry in" in error.message
     # La minute suivante, ça repasse.
     await limiter.check(identity(), 1, T0 + timedelta(seconds=61))
 
@@ -42,9 +42,9 @@ async def test_rate_limit_per_minute_and_per_day_429_readable() -> None:
     for i in range(1_000):
         await daily.check(identity(), 1, T0 + timedelta(seconds=i))
     error = await refused(daily, 1, T0 + timedelta(seconds=1_001))
-    assert "1000 appels par jour" in error.message.replace("1 000", "1000")
+    assert "1000 calls per day" in error.message
     assert error.details is not None and error.details["retry_after"] > 3_600
-    assert "h" in error.message  # lisible : en heures
+    assert error.message.endswith(" h.")
     await daily.check(identity(), 1, T0 + timedelta(days=1, seconds=1))
 
 
@@ -53,13 +53,13 @@ async def test_writes_per_minute_and_per_day() -> None:
     for i in range(10):
         await limiter.check(identity(), 2, T0 + timedelta(seconds=i))
     error = await refused(limiter, 2, T0 + timedelta(seconds=11))
-    assert "10 écritures par minute" in error.message
+    assert "10 writes per minute" in error.message
     await limiter.check(identity(), 1, T0 + timedelta(seconds=12))  # une lecture passe
 
     wide = RateLimiter(Limits(writes_per_minute=10_000, calls_per_minute=10_000))
     for i in range(100):
         await wide.check(identity(), 2, T0 + timedelta(seconds=i))
-    assert "100 écritures par jour" in (await refused(wide, 2, T0 + timedelta(seconds=101))).message
+    assert "100 writes per day" in (await refused(wide, 2, T0 + timedelta(seconds=101))).message
 
 
 async def test_daily_limits_can_be_switched_off() -> None:
@@ -79,7 +79,7 @@ async def test_daily_limits_can_be_switched_off() -> None:
     for i in range(10):
         await minute.check(identity(), 2, T0 + timedelta(seconds=i))
     error = await refused(minute, 2, T0 + timedelta(seconds=11))
-    assert "10 écritures par minute" in error.message
+    assert "10 writes per minute" in error.message
 
 
 def test_daily_limits_from_settings_zero_means_none() -> None:
@@ -107,7 +107,7 @@ async def test_level3_daily_request_cap() -> None:
         # 5 par minute : sous la limite d'écritures de la minute
         await limiter.check(identity(), 3, T0 + timedelta(minutes=i, seconds=1))
     error = await refused(limiter, 3, T0 + timedelta(minutes=21))
-    assert "20 demandes à confirmer par jour" in error.message
+    assert "20 requests to confirm per day" in error.message
     await limiter.check(identity(), 2, T0 + timedelta(minutes=22))  # le niveau 2 n'est pas touché
     await limiter.check(identity(), 3, T0 + timedelta(days=1, minutes=1))
 
@@ -119,7 +119,7 @@ async def test_code_runs_per_minute_and_independent_tokens() -> None:
 
     error = await refused(limiter, 2, T0 + timedelta(seconds=2), bucket="code_run")
 
-    assert "2 exécutions de code par minute" in error.message
+    assert "2 code runs per minute" in error.message
     await limiter.check(identity(), 2, T0 + timedelta(seconds=3))  # un autre outil passe
     await limiter.check(identity("t2"), 2, T0 + timedelta(seconds=3), bucket="code_run")
 
@@ -142,7 +142,7 @@ async def test_429_over_http_is_readable(mcp: Mcp, gate: McpGate, inner: FakeDis
 
     assert response.status_code == 429
     error = response.json()["error"]
-    assert error["code"] == "rate_limited" and "Réessaie dans" in error["message"]
+    assert error["code"] == "rate_limited" and "Retry in" in error["message"]
     assert error["details"]["retry_after"] >= 1
     assert int(response.headers["retry-after"]) == error["details"]["retry_after"]
     assert len(inner.calls) == 2  # le troisième n'est jamais parti

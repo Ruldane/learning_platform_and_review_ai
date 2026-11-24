@@ -235,7 +235,7 @@ def build_registry(
                 target.append(_graph_tool(declared.feature, graph, graphs))
         for spec in (*built, *played):
             if spec.name in seen:
-                raise McpConfigError(f"nom d'outil en double : {spec.name}")
+                raise McpConfigError(f"duplicate tool name: {spec.name}")
             seen.add(spec.name)
         specs += built
         play_specs += played

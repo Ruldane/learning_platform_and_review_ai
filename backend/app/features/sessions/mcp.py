@@ -59,7 +59,7 @@ MCP = FeatureMcp(
             "POST /sessions/{session_id}/pause",
             2,
             "sessions_pause_session",
-            "Pauses a session.",
+            "Pauses a running agent session.",
         ),
         McpAction(
             "POST /sessions/{session_id}/cancel",

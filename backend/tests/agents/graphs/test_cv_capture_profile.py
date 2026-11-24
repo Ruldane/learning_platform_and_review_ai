@@ -230,7 +230,7 @@ async def test_profile_never_logged(
 
 
 def test_input_and_route() -> None:
-    assert ROUTE_ONLY["cv_capture"] == "POST /profile/import ou POST /cv/templates"
+    assert ROUTE_ONLY["cv_capture"] == "POST /profile/import or POST /cv/templates"
     assert get_graph("cv_capture").input_model is CvCaptureInput
     with pytest.raises(ValueError):
         CvCaptureInput.model_validate({"mode": "profile", "document_ids": []})

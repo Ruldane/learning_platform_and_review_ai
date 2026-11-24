@@ -24,7 +24,7 @@ describe("AgentBubble", () => {
 
   it("always names the agent and is no longer busy once finished", () => {
     render(<AgentBubble agent="demo_critic" text="Fini" streaming={false} tools={[]} />);
-    expect(screen.getByText("Critique")).toBeInTheDocument();
+    expect(screen.getByText("Critic")).toBeInTheDocument();
     expect(screen.getByText("Fini").closest("[aria-live]")).toHaveAttribute("aria-busy", "false");
   });
 
@@ -37,7 +37,7 @@ describe("AgentBubble", () => {
     const tools = [{ callId: "c1", tool: "search", args: { q: "rust" } }];
     render(<AgentBubble agent="scout" text="" streaming tools={tools} />);
     expect(screen.getByText("search")).toBeInTheDocument();
-    expect(screen.getByText("Cherche…")).toBeInTheDocument();
+    expect(screen.getByText("Searching…")).toBeInTheDocument();
   });
 
   it("shows numbered citations that open the source", () => {
@@ -50,7 +50,7 @@ describe("AgentBubble", () => {
         citations={[{ index: 1, title: "Doc", url: "https://a.org", memory_item_id: null }]}
       />,
     );
-    expect(screen.getByRole("link", { name: "Source 1 : Doc" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Source 1: Doc" })).toHaveAttribute(
       "rel",
       "noopener noreferrer",
     );
@@ -58,16 +58,16 @@ describe("AgentBubble", () => {
 
   it("has no citation list without citations", () => {
     render(<AgentBubble agent="scout" text="Seul" streaming={false} tools={[]} />);
-    expect(screen.queryByRole("list", { name: "Sources citées" })).toBeNull();
+    expect(screen.queryByRole("list", { name: "Cited sources" })).toBeNull();
   });
 
   it("says it is thinking while nothing is written yet", () => {
     render(<AgentBubble agent="scout" text="" streaming tools={[]} />);
-    expect(screen.getByText("Réfléchit…")).toBeInTheDocument();
+    expect(screen.getByText("Thinking…")).toBeInTheDocument();
   });
 
   it("says it is writing once text arrives", () => {
     render(<AgentBubble agent="scout" text="Début" streaming tools={[]} />);
-    expect(screen.getByText("Écrit…")).toBeInTheDocument();
+    expect(screen.getByText("Writing…")).toBeInTheDocument();
   });
 });

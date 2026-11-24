@@ -37,7 +37,7 @@ describe("AppLayout", () => {
     ),
   );
 
-  it("rend le lien d'évitement, la navigation, le voyant et le contenu", async () => {
+  it("renders the skip link, navigation, service status and main content", async () => {
     server.use(
       http.get(`${apiBaseUrl}/api/v1/health`, () =>
         HttpResponse.json({ status: "ok", checks: {} }),
@@ -48,19 +48,16 @@ describe("AppLayout", () => {
     ]);
     render(<RouterProvider router={router} />, { wrapper: createQueryWrapper() });
 
-    expect(await screen.findByRole("link", { name: "Aller au contenu" })).toHaveAttribute(
+    expect(await screen.findByRole("link", { name: "Skip to content" })).toHaveAttribute(
       "href",
       "#contenu",
     );
     const banner = screen.getByRole("banner");
-    const panel = screen.getByRole("complementary", { name: "Repères et informations" });
+    const panel = screen.getByRole("complementary", { name: "Landmarks and information" });
     expect(within(panel).getByRole("link", { name: "Tremplin" })).toHaveAttribute("href", "/");
-    const nav = within(banner).getByRole("navigation", { name: "Navigation principale" });
-    expect(within(nav).getByRole("link", { name: "Étudier" })).toHaveAttribute(
-      "href",
-      "/etudier",
-    );
-    expect(within(nav).getByRole("link", { name: "Accueil" })).toHaveAttribute(
+    const nav = within(banner).getByRole("navigation", { name: "Main navigation" });
+    expect(within(nav).getByRole("link", { name: "Learn" })).toHaveAttribute("href", "/etudier");
+    expect(within(nav).getByRole("link", { name: "Home" })).toHaveAttribute(
       "aria-current",
       "page",
     );
@@ -69,7 +66,7 @@ describe("AppLayout", () => {
     expect(main).toHaveAttribute("tabindex", "-1");
     expect(main).toHaveTextContent("Contenu");
     expect(
-      await within(panel).findByText("Tous les services répondent"),
+      await within(panel).findByText("All services are responding"),
     ).toBeInTheDocument();
   });
 
@@ -132,10 +129,10 @@ describe("AppLayout", () => {
     );
     render(<RouterProvider router={router} />, { wrapper: createQueryWrapper() });
     await screen.findByText("Nue");
-    expect(screen.queryByRole("navigation", { name: "Navigation principale" })).toBeNull();
+    expect(screen.queryByRole("navigation", { name: "Main navigation" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Tremplin" })).toBeNull();
     expect(screen.queryByRole("complementary")).toBeNull();
-    expect(screen.queryByText("Tous les services répondent")).toBeNull();
+    expect(screen.queryByText("All services are responding")).toBeNull();
     // La barre du haut reste (compte, déconnexion) ; seul le voyant, qui lit `/health`, s'en va.
     expect(within(screen.getByRole("banner")).getByText("Emplacement du haut")).toBeInTheDocument();
     expect(healthReads).toBe(0);
@@ -151,7 +148,7 @@ describe("AppLayout", () => {
       { path: "/", Component: AppLayout, children: [{ index: true, element: <p>Contenu</p> }] },
     ]);
     render(<RouterProvider router={router} />, { wrapper: createQueryWrapper() });
-    const panel = await screen.findByRole("complementary", { name: "Repères et informations" });
+    const panel = await screen.findByRole("complementary", { name: "Landmarks and information" });
     expect(within(panel).getByText("Emplacement du haut")).toBeInTheDocument();
     expect(within(screen.getByRole("banner")).queryByText("Emplacement du haut")).toBeNull();
     expect(screen.getByRole("dialog", { name: "Surcouche" })).toBeInTheDocument();

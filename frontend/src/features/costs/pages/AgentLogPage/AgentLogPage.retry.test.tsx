@@ -11,7 +11,7 @@ import { AgentLogPage } from "./AgentLogPage";
 
 const broken = () =>
   HttpResponse.json(
-    { error: { code: "boom", message: "Le serveur ne répond pas.", details: null } },
+    { error: { code: "boom", message: "The server is unavailable.", details: null } },
     { status: 500 },
   );
 
@@ -26,17 +26,17 @@ function setup(failing: { value: boolean }) {
   return { ...api, client, user: userEvent.setup() };
 }
 
-describe("AgentLogPage, « Réessayer » reads what failed", () => {
+describe("AgentLogPage retries the failed request", () => {
   it("a failed read of the next page is read again with the same cursor", async () => {
     const failing = { value: false };
     const { callRequests, user } = setup(failing);
-    await screen.findByText("2 appels affichés");
+    await screen.findByText("2 calls shown");
     failing.value = true;
-    await user.click(screen.getByRole("button", { name: "Voir plus" }));
-    expect(await screen.findByText("Le serveur ne répond pas.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Show more" }));
+    expect(await screen.findByText("The server is unavailable.")).toBeInTheDocument();
     failing.value = false;
-    await user.click(screen.getByRole("button", { name: "Réessayer" }));
-    await screen.findByText("3 appels affichés");
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+    await screen.findByText("3 calls shown");
     const retried = callRequests.at(-1)!;
     expect(retried.searchParams.get("before")).not.toBeNull();
   });
@@ -44,18 +44,18 @@ describe("AgentLogPage, « Réessayer » reads what failed", () => {
   it("a failed read of the first page, when pages are shown, reads the first page again", async () => {
     const failing = { value: false };
     const { callRequests, client, user } = setup(failing);
-    await screen.findByText("2 appels affichés");
+    await screen.findByText("2 calls shown");
     failing.value = true;
     await act(async () => {
       await client.refetchQueries();
     });
-    expect(await screen.findByText("Le serveur ne répond pas.")).toBeInTheDocument();
+    expect(await screen.findByText("The server is unavailable.")).toBeInTheDocument();
     failing.value = false;
-    await user.click(screen.getByRole("button", { name: "Réessayer" }));
-    await screen.findByText("2 appels affichés");
-    expect(screen.queryByText("Le serveur ne répond pas.")).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+    await screen.findByText("2 calls shown");
+    expect(screen.queryByText("The server is unavailable.")).toBeNull();
     // Rien n'a été lu au-delà de la première page : « Réessayer » n'a pas demandé la suivante.
     expect(callRequests.at(-1)!.searchParams.get("before")).toBeNull();
-    expect(screen.getByRole("button", { name: "Voir plus" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Show more" })).toBeInTheDocument();
   });
 });
