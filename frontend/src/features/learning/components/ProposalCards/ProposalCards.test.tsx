@@ -18,7 +18,7 @@ function setup(over: Partial<ComponentProps<typeof ProposalCards>> = {}) {
   return { user: userEvent.setup(), ...handlers };
 }
 
-const tick = (name: string) => ({ name: `Mélanger « ${name} »` });
+const tick = (name: string) => ({ name: `Mix “${name}”` });
 
 describe("ProposalCards", () => {
   it("lists twice the same item without mixing the rows (no duplicate key)", () => {
@@ -37,11 +37,11 @@ describe("ProposalCards", () => {
     expect(cards).toHaveLength(3);
     for (const card of cards) {
       for (const heading of [
-        "Durée",
-        "Charge",
-        "Compétences couvertes",
-        "Projet final",
-        "Compromis",
+        "Duration",
+        "Workload",
+        "Skills covered",
+        "Final project",
+        "Trade-offs",
       ]) {
         expect(within(card).getByText(heading)).toBeInTheDocument();
       }

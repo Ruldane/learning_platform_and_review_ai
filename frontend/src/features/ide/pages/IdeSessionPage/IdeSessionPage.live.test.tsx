@@ -161,7 +161,7 @@ describe("IdeSessionPage, Claude's write switch", () => {
   it("is off by default and says so", async () => {
     renderSession();
     expect(await writes()).not.toBeChecked();
-    expect(screen.getByText(/^Not allowed$/)).toBeInTheDocument();
+    expect(screen.getByText(/: Not allowed$/)).toBeInTheDocument();
   });
 
   it("is set from the page and keeps the other settings", async () => {

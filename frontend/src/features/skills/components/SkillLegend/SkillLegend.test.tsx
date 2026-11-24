@@ -6,14 +6,14 @@ import { SkillLegend } from "./SkillLegend";
 describe("SkillLegend", () => {
   it("names each level in words next to its color", () => {
     render(<SkillLegend />);
-    const list = screen.getByRole("list", { name: "Légende des niveaux" });
+    const list = screen.getByRole("list", { name: "Level legend" });
     const items = within(list).getAllByRole("listitem");
     expect(items.map((item) => item.textContent)).toEqual([
-      "Absent",
-      "Déclaré",
-      "En cours",
-      "Validé",
-      "Prouvé",
+      "Missing",
+      "Declared",
+      "In progress",
+      "Validated",
+      "Proven",
     ]);
     const swatch = items[3]!.querySelector("[data-swatch]");
     expect(swatch).toHaveStyle({ backgroundColor: LEVEL_COLORS.validated });
@@ -21,7 +21,7 @@ describe("SkillLegend", () => {
 
   it("explains what color and size mean", () => {
     render(<SkillLegend />);
-    expect(screen.getByText("Couleur : niveau de maîtrise.")).toBeInTheDocument();
-    expect(screen.getByText(/Taille : demande du marché/)).toBeInTheDocument();
+    expect(screen.getByText("Color: mastery level.")).toBeInTheDocument();
+    expect(screen.getByText(/Size: market demand/)).toBeInTheDocument();
   });
 });

@@ -12,7 +12,7 @@ import { authApi, camille } from "@/test/authApi";
 import { createQueryWrapper } from "@/test/queryWrapper";
 import { server } from "@/test/server";
 
-describe("« Tout supprimer » avec la porte de connexion", () => {
+describe("« Delete everything » avec la porte de connexion", () => {
   it("shares the identity query key with the auth feature", () => {
     expect(accountKeys.me).toEqual(authKeys.me);
     expect(AUTH_SCOPE).toBe(authKeys.me[0]);
@@ -25,7 +25,7 @@ describe("« Tout supprimer » avec la porte de connexion", () => {
     });
     const router = createMemoryRouter(
       [
-        { path: "/login", element: <p>Connexion</p> },
+        { path: "/login", element: <p>Sign in</p> },
         {
           path: "/",
           element: (
@@ -45,9 +45,9 @@ describe("« Tout supprimer » avec la porte de connexion", () => {
       </Wrapper>,
     );
     const user = userEvent.setup();
-    await user.type(await screen.findByLabelText("Tape SUPPRIMER pour confirmer"), "SUPPRIMER");
-    await user.click(screen.getByRole("button", { name: "Tout supprimer" }));
-    expect(await screen.findByText("Connexion")).toBeInTheDocument();
+    await user.type(await screen.findByLabelText("Type SUPPRIMER to confirm"), "SUPPRIMER");
+    await user.click(screen.getByRole("button", { name: "Delete everything" }));
+    expect(await screen.findByText("Sign in")).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/login");
   });
 });

@@ -92,8 +92,8 @@ describe("ProfileEntryForm", () => {
     await user.click(add());
     expect(onAdd).not.toHaveBeenCalled();
     const alerts = screen.getAllByRole("alert").map((a) => a.textContent);
-    expect(alerts).toContain("La description fait 600 caractères au plus.");
-    expect(alerts).toContain("Chaque réalisation fait 200 caractères au plus.");
+    expect(alerts).toContain("The description is 600 characters at most.");
+    expect(alerts).toContain("Each achievement is 200 characters at most.");
   });
 
   it("replaces the button by « Ajouté au profil (version N) » once added, and locks the form", async () => {

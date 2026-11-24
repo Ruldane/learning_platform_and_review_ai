@@ -35,7 +35,7 @@ function setup(route = "/settings/search/probe") {
         path: "/settings/search/probe",
         element: <ResearchBenchPage createSocket={fake.factory} />,
       },
-      { path: "/settings/search", element: <p>Réglages de recherche</p> },
+      { path: "/settings/search", element: <p>Research settings</p> },
     ],
     route,
   );
@@ -58,9 +58,9 @@ describe("ResearchBenchPage", () => {
       }),
     );
     const { fake, router, user } = setup();
-    await user.type(screen.getByLabelText("Requête"), "retrieval augmented generation");
-    await user.type(screen.getByLabelText("Adresses supplémentaires"), "https://exemple.fr/doc");
-    await user.click(screen.getByRole("button", { name: "Lancer l'essai" }));
+    await user.type(screen.getByLabelText("Query"), "retrieval augmented generation");
+    await user.type(screen.getByLabelText("Extra addresses"), "https://exemple.fr/doc");
+    await user.click(screen.getByRole("button", { name: "Run the test" }));
 
     await waitFor(() => expect(fake.sockets).toHaveLength(1));
     expect(posted).toEqual([
@@ -97,12 +97,12 @@ describe("ResearchBenchPage", () => {
     expect(screen.getByText("8 résultat(s) via searxng")).toBeInTheDocument();
     expect(screen.getByText("Trop superficielle.")).toBeInTheDocument();
     expect(
-      within(screen.getByRole("region", { name: "Illisibles" })).getByText(
+      within(screen.getByRole("region", { name: "Unreadable" })).getByText(
         "Page illisible : aucun texte principal trouvé.",
       ),
     ).toBeInTheDocument();
-    expect(await screen.findByText("Terminée")).toBeInTheDocument();
-    expect(screen.queryByText("L'Éclaireur cherche…")).not.toBeInTheDocument();
+    expect(await screen.findByText("Completed")).toBeInTheDocument();
+    expect(screen.queryByText("The Scout is searching…")).not.toBeInTheDocument();
   });
 
   it("keeps a replayed source once and shows an excluded domain without crashing", async () => {
@@ -128,7 +128,7 @@ describe("ResearchBenchPage", () => {
 
   it("resumes the session given in ?session= after a reload", async () => {
     const { fake } = setup("/settings/search/probe?session=s1");
-    expect(screen.queryByRole("button", { name: "Lancer l'essai" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Run the test" })).not.toBeInTheDocument();
     await waitFor(() => expect(fake.sockets).toHaveLength(1));
     expect(fake.last().url).toContain("/s1");
     const { sourceFound } = researchEvents();
@@ -147,10 +147,10 @@ describe("ResearchBenchPage", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Aucun moteur de recherche n'a répondu.",
     );
-    expect(screen.getByText("Échouée")).toBeInTheDocument();
+    expect(screen.getByText("Failed")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("link", { name: "Nouvel essai" }));
-    expect(await screen.findByRole("button", { name: "Lancer l'essai" })).toBeInTheDocument();
+    await user.click(screen.getByRole("link", { name: "New test" }));
+    expect(await screen.findByRole("button", { name: "Run the test" })).toBeInTheDocument();
     expect(router.state.location.search).toBe("");
   });
 
@@ -169,11 +169,11 @@ describe("ResearchBenchPage", () => {
       .last()
       .open()
       .push(sourceFound({ source_id: "a", title: "Guide RAG", score: 70, verdict: "kept" }));
-    await user.click(await screen.findByRole("button", { name: "Annuler" }));
+    await user.click(await screen.findByRole("button", { name: "Cancel" }));
 
     await waitFor(() => expect(cancelled).toHaveBeenCalledTimes(1));
-    expect(await screen.findByText("Annulée")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Annuler" })).not.toBeInTheDocument();
+    expect(await screen.findByText("Cancelled")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Cancel" })).not.toBeInTheDocument();
   });
 
   it("does not offer to cancel a run that has already completed", async () => {
@@ -181,8 +181,8 @@ describe("ResearchBenchPage", () => {
     await waitFor(() => expect(fake.sockets).toHaveLength(1));
     const { completed } = researchEvents();
     fake.last().open().push(completed());
-    expect(await screen.findByText("Terminée")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Annuler" })).not.toBeInTheDocument();
+    expect(await screen.findByText("Completed")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Cancel" })).not.toBeInTheDocument();
   });
 
   it("keeps the form and shows the error when the run cannot start", async () => {
@@ -194,10 +194,10 @@ describe("ResearchBenchPage", () => {
       ),
     );
     const { user } = setup();
-    await user.type(screen.getByLabelText("Requête"), "rag");
-    await user.click(screen.getByRole("button", { name: "Lancer l'essai" }));
+    await user.type(screen.getByLabelText("Query"), "rag");
+    await user.click(screen.getByRole("button", { name: "Run the test" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Recherche indisponible.");
-    expect(screen.getByLabelText("Requête")).toHaveValue("rag");
+    expect(screen.getByLabelText("Query")).toHaveValue("rag");
   });
 
   it("offers another attempt when the session is unknown", async () => {
@@ -205,13 +205,13 @@ describe("ResearchBenchPage", () => {
     await waitFor(() => expect(fake.sockets).toHaveLength(1));
     fake.last().drop(4404);
     expect(await screen.findByRole("alert")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Nouvel essai" }));
-    expect(await screen.findByRole("button", { name: "Lancer l'essai" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "New test" }));
+    expect(await screen.findByRole("button", { name: "Run the test" })).toBeInTheDocument();
   });
 
   it("links back to the search settings", async () => {
     const { user } = setup();
-    await user.click(screen.getByRole("link", { name: "Régler la recherche" }));
-    expect(await screen.findByText("Réglages de recherche")).toBeInTheDocument();
+    await user.click(screen.getByRole("link", { name: "Research settings" }));
+    expect(await screen.findByText("Research settings")).toBeInTheDocument();
   });
 });

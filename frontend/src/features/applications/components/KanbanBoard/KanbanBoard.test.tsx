@@ -12,14 +12,14 @@ describe("KanbanBoard", () => {
     render(<KanbanBoard applications={makeApplications()} onMove={vi.fn()} />);
     const columns = screen.getAllByRole("group", { name: COLUMN });
     expect(columns.map((column) => column.getAttribute("aria-label"))).toEqual([
-      "À postuler, 1",
+      "To apply, 1",
       "Applied, 2",
-      "Relancée, 0",
-      "Entretien, 1",
+      "Followed up, 0",
+      "Interview, 1",
       "Offer, 0",
-      "Refus, 0",
-      "Sans réponse, 0",
-      "Retirée, 0",
+      "Rejected, 0",
+      "No answer, 0",
+      "Withdrawn, 0",
     ]);
   });
 
@@ -34,7 +34,7 @@ describe("KanbanBoard", () => {
     ).toBeInTheDocument();
   });
 
-  it("moves a card with the Déplacer vers… menu and calls onMove", async () => {
+  it("moves a card with the Move to… menu and calls onMove", async () => {
     const user = userEvent.setup();
     const onMove = vi.fn();
     render(<KanbanBoard applications={makeApplications()} onMove={onMove} />);
@@ -92,7 +92,7 @@ describe("KanbanBoard", () => {
     render(<KanbanBoard applications={makeApplications()} onMove={vi.fn()} />);
     const handle = screen.getByRole("button", { name: "Drag “Data engineer” (Acme)" });
     expect(handle).toBeInTheDocument();
-    // Au doigt, le navigateur ne doit pas prendre le geste pour un défilement.
+    // A touch drag on the handle should move the card.
     expect(handle).toHaveClass("touch-none");
   });
 

@@ -11,7 +11,7 @@ describe("SkillViewTabs", () => {
       "Graph",
       "Radar",
       "Progress",
-      "Comparaison",
+      "Comparison",
     ]);
     expect(screen.getByRole("tab", { name: "Radar" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("tab", { name: "Graph" })).toHaveAttribute("aria-selected", "false");

@@ -165,7 +165,7 @@ describe("CouncilPage : propositions et choix", () => {
     await user.click(screen.getByRole("button", { name: "Choose “Parcours 1”" }));
     expect(
       await screen.findByText(
-        /Le Conseil n'attend pas ton choix pour l'instant \(état : En cours\)/,
+        /The Council is not waiting for your choice right now \(state: Running\)/,
       ),
     ).toBeInTheDocument();
     // L'état relu rend la main : les choix se referment.

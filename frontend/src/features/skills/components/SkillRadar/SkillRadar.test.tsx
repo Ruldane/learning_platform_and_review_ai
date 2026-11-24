@@ -23,9 +23,9 @@ describe("SkillRadar", () => {
     const list = screen.getByRole("list", { name: "Score by domain" });
     const items = within(list).getAllByRole("listitem");
     expect(items.map((item) => item.textContent)).toEqual([
-      "Web : 72 sur 100",
-      "Données : 35 sur 100",
-      "Cloud : 0 sur 100",
+      "Web: 72 out of 100",
+      "Données: 35 out of 100",
+      "Cloud: 0 out of 100",
     ]);
   });
 

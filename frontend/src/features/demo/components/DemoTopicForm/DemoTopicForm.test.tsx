@@ -4,13 +4,13 @@ import { describe, expect, it, vi } from "vitest";
 import { DemoTopicForm } from "./DemoTopicForm";
 
 describe("DemoTopicForm", () => {
-  it("envoie le sujet sans espaces autour", async () => {
+  it("submits the trimmed topic", async () => {
     const onSubmit = vi.fn();
     const user = userEvent.setup();
     render(<DemoTopicForm pending={false} error={null} onSubmit={onSubmit} />);
     await user.type(screen.getByLabelText("Topic"), "  apprendre Rust ");
     await user.click(screen.getByRole("button", { name: "Start the debate" }));
-    expect(onSubmit).toHaveBeenCalledWith("apprendre Rust");
+    expect(onSubmit).toHaveBeenCalledWith("apprendre Rust", undefined);
   });
 
   it("n'envoie pas un sujet trop court (le serveur exige 3 caractères)", async () => {

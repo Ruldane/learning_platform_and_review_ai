@@ -6,7 +6,7 @@ import { committeeOut, runningCommittee } from "@/test/committeeApi";
 import { councilEvents } from "@/test/councilEvents";
 import { setup, SESSION } from "./committeeTestkit";
 
-describe("CommitteePage, un comité qui délibère", () => {
+describe("CommitteePage, a deliberating committee", () => {
   beforeEach(() => {
     useSessionStore.getState().reset(SESSION);
     useSessionStore.getState().reset("cm-s1");
@@ -29,10 +29,10 @@ describe("CommitteePage, un comité qui délibère", () => {
       e.message("colleague-impression", "Je me vois travailler avec elle.", "colleague"),
     );
     const feed = await screen.findByRole("region", { name: "Committee debate" });
-    for (const name of ["Lecteur ATS", "Recruteur", "Manager", "Futur collègue"]) {
+    for (const name of ["ATS reader", "Recruiter", "Manager", "Future colleague"]) {
       expect(await within(feed).findByRole("article", { name })).toBeVisible();
     }
-    // Tant que le comité délibère, aucun résultat : seule la phrase qui le dit.
+    // Results appear after the committee finishes deliberating.
     const panel = screen.getByRole("tabpanel", { name: "Verdict" });
     expect(
       within(panel).getByText(/The committee is deliberating: the votes, verdict/),

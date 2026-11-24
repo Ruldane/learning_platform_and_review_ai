@@ -27,7 +27,7 @@ describe("DraftCard", () => {
   it("lists the flagged terms as given, joined with a comma, under « À vérifier »", () => {
     setup({ ...DRAFT, status: "to_check", flags: ["10000", "Kubernetes"] });
     expect(screen.getByRole("note")).toHaveTextContent(
-      "À vérifier : absent de ton profil et de ton rendu : 10000, Kubernetes",
+      "To check: not in your profile or your submission: 10000, Kubernetes",
     );
   });
 

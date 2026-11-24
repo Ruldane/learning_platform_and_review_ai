@@ -5,7 +5,7 @@ describe("format", () => {
   it("formatShare formats a percentage in French", () => {
     expect(formatShare(0.25)).toBe("25.0%");
     expect(formatShare(0)).toBe("0.0%");
-    expect(formatShare(0.0123)).toBe("1,2 %");
+    expect(formatShare(0.0123)).toBe("1.2%");
   });
 
   it("caps uploads at 20 MB", () => {

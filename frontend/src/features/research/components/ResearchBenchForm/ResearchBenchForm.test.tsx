@@ -41,7 +41,7 @@ describe("ResearchBenchForm", () => {
     await user.click(screen.getByRole("button", { name: SUBMIT }));
     expect(onSubmit).not.toHaveBeenCalled();
     expect(screen.getByRole("alert")).toHaveTextContent(
-      "La requête doit faire de 2 à 300 caractères.",
+      "The query must be from 2 to 300 characters.",
     );
     expect(screen.getByLabelText(QUERY)).toHaveAttribute("aria-invalid", "true");
   });
@@ -55,7 +55,7 @@ describe("ResearchBenchForm", () => {
     await user.click(screen.getByRole("button", { name: SUBMIT }));
     expect(onSubmit).not.toHaveBeenCalled();
     expect(screen.getByRole("alert")).toHaveTextContent(
-      "Cette adresse doit commencer par http:// ou https:// : ftp://exemple.org/fichier",
+      "This address must start with http:// or https://: ftp://exemple.org/fichier",
     );
   });
 

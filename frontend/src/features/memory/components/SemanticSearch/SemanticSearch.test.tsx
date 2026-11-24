@@ -9,16 +9,16 @@ const base = { hits: null, pending: false, onSearch: vi.fn(), onOpen: vi.fn() };
 describe("SemanticSearch", () => {
   it("shows scores", () => {
     render(<SemanticSearch {...base} hits={[hit()]} />);
-    expect(screen.getByText("0,83")).toBeInTheDocument();
+    expect(screen.getByText("0.83")).toBeInTheDocument();
   });
 
   it("searches with the trimmed query and the checked kinds", async () => {
     const onSearch = vi.fn();
     const user = userEvent.setup();
     render(<SemanticSearch {...base} onSearch={onSearch} />);
-    await user.type(screen.getByLabelText("Requête"), "  attention ");
-    await user.click(screen.getByRole("checkbox", { name: "Leçon" }));
-    await user.click(screen.getByRole("button", { name: "Rechercher" }));
+    await user.type(screen.getByLabelText("Query"), "  attention ");
+    await user.click(screen.getByRole("checkbox", { name: "Lesson" }));
+    await user.click(screen.getByRole("button", { name: "Search" }));
     expect(onSearch).toHaveBeenCalledWith("attention", ["lesson"]);
   });
 
@@ -26,7 +26,7 @@ describe("SemanticSearch", () => {
     const onSearch = vi.fn();
     const user = userEvent.setup();
     render(<SemanticSearch {...base} onSearch={onSearch} />);
-    await user.type(screen.getByLabelText("Requête"), "rust{Enter}");
+    await user.type(screen.getByLabelText("Query"), "rust{Enter}");
     expect(onSearch).toHaveBeenCalledWith("rust", []);
   });
 
@@ -34,21 +34,21 @@ describe("SemanticSearch", () => {
     const onSearch = vi.fn();
     const user = userEvent.setup();
     render(<SemanticSearch {...base} onSearch={onSearch} />);
-    await user.type(screen.getByLabelText("Requête"), "   {Enter}");
-    expect(screen.getByRole("button", { name: "Rechercher" })).toBeDisabled();
+    await user.type(screen.getByLabelText("Query"), "   {Enter}");
+    expect(screen.getByRole("button", { name: "Search" })).toBeDisabled();
     expect(onSearch).not.toHaveBeenCalled();
   });
 
   it("shows nothing before the first search and a message for no hit", () => {
     const { rerender } = render(<SemanticSearch {...base} />);
-    expect(screen.queryByText("Aucun résultat")).not.toBeInTheDocument();
+    expect(screen.queryByText("No results")).not.toBeInTheDocument();
     rerender(<SemanticSearch {...base} hits={[]} />);
-    expect(screen.getByText("Aucun résultat")).toBeInTheDocument();
+    expect(screen.getByText("No results")).toBeInTheDocument();
   });
 
   it("shows the pending state and locks the button", () => {
     render(<SemanticSearch {...base} pending />);
-    expect(screen.getByRole("button", { name: "Recherche…" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Searching…" })).toBeDisabled();
   });
 
   it("opens the item of a hit", async () => {

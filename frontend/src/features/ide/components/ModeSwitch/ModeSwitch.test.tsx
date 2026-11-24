@@ -103,7 +103,7 @@ describe("ModeSwitch", () => {
     );
     const writes = screen.getByRole("switch", { name: "Claude can write to my files" });
     expect(writes).not.toBeChecked();
-    expect(screen.getByText(/^Not allowed$/)).toBeInTheDocument();
+    expect(screen.getByText(/: Not allowed$/)).toBeInTheDocument();
     await user.click(writes);
     expect(onChange).toHaveBeenLastCalledWith({
       auto: true,
@@ -125,7 +125,7 @@ describe("ModeSwitch", () => {
     );
     const writes = screen.getByRole("switch", { name: "Claude can write to my files" });
     expect(writes).toBeChecked();
-    expect(screen.getByText(/^Allowed$/)).toBeInTheDocument();
+    expect(screen.getByText(/: Allowed$/)).toBeInTheDocument();
     await user.click(writes);
     expect(onChange).not.toHaveBeenCalled();
   });

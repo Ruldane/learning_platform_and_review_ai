@@ -33,15 +33,15 @@ describe("ProjectCard", () => {
   });
 
   it.each([
-    ["brief_pending", "Énoncé en préparation"],
-    ["brief_failed", "Énoncé impossible à écrire"],
-    ["todo", "À faire"],
-    ["reviewing", "En cours d'évaluation"],
-    ["to_redo", "À refaire"],
-    ["validated", "Validé"],
-  ] as const)("writes the status %s as « %s »", (status, label) => {
+    ["brief_pending", "Brief being prepared"],
+    ["brief_failed", "Brief couldn’t be written"],
+    ["todo", "To do"],
+    ["reviewing", "Under review"],
+    ["to_redo", "To redo"],
+    ["validated", "Validated"],
+  ] as const)("writes the status %s as “%s”", (status, label) => {
     view({ ...PROJECT, status });
-    expect(screen.getByText(`Statut : ${label}`)).toBeInTheDocument();
+    expect(screen.getByText(`Status: ${label}`)).toBeInTheDocument();
   });
 
   it("knows every status of the contract", () => {

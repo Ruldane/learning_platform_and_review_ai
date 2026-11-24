@@ -39,7 +39,7 @@ describe("ReminderCard", () => {
     );
     expect(link).toHaveAttribute("target", "_blank");
     expect(link).toHaveAttribute("rel", expect.stringContaining("noopener"));
-    expect(link).toHaveAccessibleName("Chercher sur LinkedIn (s'ouvre dans un nouvel onglet)");
+    expect(link).toHaveAccessibleName("Search on LinkedIn (opens in a new tab)");
   });
 
   it("never renders a link for an address that is not http or https", () => {
@@ -86,7 +86,7 @@ describe("ReminderCard", () => {
     setup(makeReminder(), vi.fn().mockRejectedValue(new Error("denied")));
     await user.click(screen.getByRole("button", { name: "Copy" }));
     expect(await screen.findByRole("status")).toHaveTextContent(
-      "Copie impossible : sélectionne le texte du brouillon.",
+      "Can't copy: select the draft text.",
     );
   });
 
@@ -105,7 +105,7 @@ describe("ReminderCard", () => {
     expect(screen.getByRole("status")).toBeEmptyDOMElement();
   });
 
-  it("offers to file the application as Sans réponse instead of Fait for close_21", async () => {
+  it("offers to file the application as No answer for close_21", async () => {
     const user = userEvent.setup();
     const handlers = setup(makeReminder({ kind: "close_21", draft: "Acme ne t'a pas répondu." }));
     expect(screen.queryByRole("button", { name: "Done" })).toBeNull();

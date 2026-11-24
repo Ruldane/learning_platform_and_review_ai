@@ -87,9 +87,9 @@ describe("EvaluationView", () => {
   });
 
   it.each([
-    ["read", "Dépôt lu par le Praticien."],
-    ["unreadable", "Le dépôt n'a pas pu être lu : l'évaluation s'appuie sur ta description."],
-    ["none", "Aucun dépôt fourni : l'évaluation s'appuie sur ta description."],
+    ["read", "Repository read by the Practitioner."],
+    ["unreadable", "The repository couldn’t be read: the review relies on your description."],
+    ["none", "No repository provided: the review relies on your description."],
   ] as const)("says how the repository was read (%s)", (repoStatus, text) => {
     renderView({ ...EVALUATION, repoStatus });
     expect(screen.getByText(text)).toBeInTheDocument();

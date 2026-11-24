@@ -29,40 +29,40 @@ const PROJECTS = [
 describe("PortfolioPage", () => {
   it("groups the projects by status, what waits for January first, each card a link", async () => {
     setup({ projects: PROJECTS });
-    await screen.findByRole("heading", { name: "À reprendre" });
+    await screen.findByRole("heading", { name: "To rework" });
     const headings = screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
     expect(headings).toEqual([
-      "À reprendre",
-      "À faire",
-      "En cours d'évaluation",
-      "Énoncé en préparation",
-      "Énoncé à relancer",
-      "Validés",
+      "To rework",
+      "To do",
+      "Under review",
+      "Brief being prepared",
+      "Brief to retry",
+      "Validated",
     ]);
-    const todo = screen.getByRole("region", { name: "À faire" });
+    const todo = screen.getByRole("region", { name: "To do" });
     expect(within(todo).getByRole("link", { name: "Tableau de bord" })).toHaveAttribute(
       "href",
       "/skills/portfolio/p2",
     );
-    expect(within(todo).getByText("Statut : À faire")).toBeVisible();
-    expect(within(todo).getByText("6 h estimées")).toBeVisible();
-    const validated = screen.getByRole("region", { name: "Validés" });
-    expect(within(validated).getByText("Statut : Validé")).toBeVisible();
+    expect(within(todo).getByText("Status: To do")).toBeVisible();
+    expect(within(todo).getByText("6 h estimated")).toBeVisible();
+    const validated = screen.getByRole("region", { name: "Validated" });
+    expect(within(validated).getByText("Status: Validated")).toBeVisible();
   });
 
   it("omits the groups that are empty", async () => {
     setup({ projects: [PROJECTS[1]!] });
-    await screen.findByRole("heading", { name: "À faire" });
+    await screen.findByRole("heading", { name: "To do" });
     expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(1);
   });
 
   it("says the projects come with the weeks of the program when there are none", async () => {
     setup({ projects: [] });
     expect(
-      await screen.findByRole("heading", { name: "Aucun projet pour l'instant" }),
+      await screen.findByRole("heading", { name: "No projects yet" }),
     ).toBeVisible();
     expect(
-      screen.getByText("Tes projets arrivent avec les semaines de ton programme."),
+      screen.getByText("Your projects arrive with the weeks of your program."),
     ).toBeVisible();
   });
 
@@ -84,11 +84,11 @@ describe("PortfolioPage", () => {
             })
           : HttpResponse.json([]),
     });
-    expect(screen.getByRole("status")).toHaveTextContent("Chargement du Portfolio…");
+    expect(screen.getByRole("status")).toHaveTextContent("Loading the Portfolio…");
     expect(await screen.findByRole("alert")).toHaveTextContent("Une erreur est survenue.");
     fail = false;
-    await user.click(screen.getByRole("button", { name: "Réessayer" }));
-    await screen.findByRole("heading", { name: "Aucun projet pour l'instant" });
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+    await screen.findByRole("heading", { name: "No projects yet" });
     expect(state.listReads).toBe(2);
   });
 

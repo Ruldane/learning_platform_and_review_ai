@@ -35,13 +35,13 @@ describe("ProjectPage : relecture de secours", () => {
       submissions: [submissionOut()],
     });
     const { state, settle, sockets } = setup({ projects: [reviewing] });
-    await screen.findByRole("heading", { name: "Évaluation en cours" });
+    await screen.findByRole("heading", { name: "Review in progress" });
     await openStream(sockets, "sess-r");
 
     const before = state.reads;
     await advance(5_500);
     expect(state.reads).toBeGreaterThan(before);
-    expect(screen.getByRole("heading", { name: "Évaluation en cours" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Review in progress" })).toBeVisible();
 
     settle("p1", {
       status: "to_redo",
@@ -49,8 +49,8 @@ describe("ProjectPage : relecture de secours", () => {
       evaluation: evaluationOut({ results: [criterionOut(1, true, "Requête correcte.")] }),
     });
     await advance(5_500);
-    expect(await screen.findByText("Projet à refaire")).toBeVisible();
-    expect(screen.queryByRole("heading", { name: "Évaluation en cours" })).toBeNull();
+    expect(await screen.findByText("Project to redo")).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "Review in progress" })).toBeNull();
 
     const settled = state.reads;
     await advance(21_000);
@@ -64,13 +64,13 @@ describe("ProjectPage : relecture de secours", () => {
       session_id: "sess-b",
     });
     const { state, settle, sockets } = setup({ projects: [pending] });
-    await screen.findByRole("heading", { name: "Énoncé en cours d'écriture" });
+    await screen.findByRole("heading", { name: "Brief being written" });
     await openStream(sockets, "sess-b");
 
     settle("p1", { status: "todo", brief: briefOut(), session_id: null });
     await advance(5_500);
-    expect(await screen.findByText("Durée estimée : 6 h")).toBeVisible();
-    expect(screen.queryByRole("heading", { name: "Énoncé en cours d'écriture" })).toBeNull();
+    expect(await screen.findByText("Estimated time: 6 h")).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "Brief being written" })).toBeNull();
 
     const settled = state.reads;
     await advance(21_000);
@@ -79,7 +79,7 @@ describe("ProjectPage : relecture de secours", () => {
 
   it("never polls a project that waits for January", async () => {
     const { state } = setup({ projects: [projectOut("p1")] });
-    await screen.findByText("Durée estimée : 6 h");
+    await screen.findByText("Estimated time: 6 h");
     const first = state.reads;
     await advance(21_000);
     expect(state.reads).toBe(first);

@@ -20,23 +20,23 @@ describe("TemplatesPage", () => {
     const { user, state } = setup({
       templates: [
         [
-          templateSummary({ id: "t1", name: "Mon CV", active: true }),
+          templateSummary({ id: "t1", name: "My CV", active: true }),
           templateSummary({ id: "t2", name: "CV sobre", active: false, score: 80, page_count: 2 }),
         ],
       ],
     });
-    const list = await screen.findByRole("list", { name: "Liste des modèles de CV" });
-    expect(list).toHaveTextContent("Modèle actif");
-    expect(list).toHaveTextContent("Ressemblance : 80 %");
+    const list = await screen.findByRole("list", { name: "CV template list" });
+    expect(list).toHaveTextContent("Active template");
+    expect(list).toHaveTextContent("Similarity: 80%");
     expect(list).toHaveTextContent("2 pages");
-    await user.click(screen.getByRole("button", { name: "Utiliser le modèle CV sobre" }));
+    await user.click(screen.getByRole("button", { name: "Use template CV sobre" }));
     await waitFor(() => expect(state.activated).toEqual(["t2"]));
   });
 
   it("creates a template from a PDF and opens it", async () => {
     const { user, state } = setup();
-    await user.upload(await screen.findByLabelText(/Ton CV \(PDF/), pdf());
-    await user.click(screen.getByRole("button", { name: "Créer le modèle" }));
+    await user.upload(await screen.findByLabelText(/Your CV \(PDF/), pdf());
+    await user.click(screen.getByRole("button", { name: "Create template" }));
     expect(await screen.findByText("Page du modèle")).toBeInTheDocument();
     expect(state.creates).toHaveLength(1);
   });
@@ -45,8 +45,9 @@ describe("TemplatesPage", () => {
     const { user, state } = setup({
       documents: [{ id: "d9", name: "cv-camille.pdf", source_kind: "pdf", status: "indexed" }],
     });
-    await user.selectOptions(await screen.findByLabelText("Ou utiliser un PDF déjà importé"), "d9");
-    await user.click(screen.getByRole("button", { name: "Créer le modèle" }));
+    const existing = await screen.findByLabelText("Or use a PDF you've already imported");
+    await user.selectOptions(existing, "d9");
+    await user.click(screen.getByRole("button", { name: "Create template" }));
     expect(await screen.findByText("Page du modèle")).toBeInTheDocument();
     expect(state.creates).toHaveLength(1);
   });
@@ -57,25 +58,25 @@ describe("TemplatesPage", () => {
       templates: [[]],
     });
     await user.selectOptions(
-      await screen.findByRole("combobox", { name: "Qui fait tourner les agents pour ce lancement" }),
+      await screen.findByRole("combobox", { name: "Who runs the agents for this launch" }),
       "codex",
     );
-    await user.click(await screen.findByRole("button", { name: "Utiliser le CV de mon profil" }));
+    await user.click(await screen.findByRole("button", { name: "Use my profile's CV" }));
     expect(await screen.findByText("Page du modèle")).toBeInTheDocument();
     expect(state.creates).toHaveLength(1);
-    expect(createSpy).toHaveBeenCalledWith({ name: "Mon CV", documentId: "d-profil" }, "codex");
+    expect(createSpy).toHaveBeenCalledWith({ name: "My CV", documentId: "d-profil" }, "codex");
   });
 
-  it("hides « Utiliser le CV de mon profil » without a source document", async () => {
+  it("hides « Use my profile's CV » without a source document", async () => {
     setup({ profiles: [{ ...emptyProfile, source_document_id: null }] });
-    await screen.findByRole("button", { name: "Créer le modèle" });
-    expect(screen.queryByRole("button", { name: "Utiliser le CV de mon profil" })).toBeNull();
+    await screen.findByRole("button", { name: "Create template" });
+    expect(screen.queryByRole("button", { name: "Use my profile's CV" })).toBeNull();
   });
 
   it("asks for a PDF before sending anything", async () => {
     const { user, state } = setup();
-    await user.click(await screen.findByRole("button", { name: "Créer le modèle" }));
-    expect(screen.getByText("Choisis un PDF, ou un PDF déjà importé.")).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: "Create template" }));
+    expect(screen.getByText("Choose a PDF, or one you've already imported.")).toBeInTheDocument();
     expect(state.creates).toHaveLength(0);
   });
 
@@ -84,14 +85,14 @@ describe("TemplatesPage", () => {
       createTemplate: () =>
         refusal(409, "vision_unavailable", "La capture du design demande un modèle."),
     });
-    await user.upload(await screen.findByLabelText(/Ton CV \(PDF/), pdf());
-    await user.click(screen.getByRole("button", { name: "Créer le modèle" }));
+    await user.upload(await screen.findByLabelText(/Your CV \(PDF/), pdf());
+    await user.click(screen.getByRole("button", { name: "Create template" }));
     expect(
       await screen.findByText(
-        "La capture du design demande un modèle qui lit les images. Active-le dans les réglages.",
+        "Capturing the design needs a model that can read images. Turn it on in settings.",
       ),
     ).toBeInTheDocument();
-    await user.click(screen.getByRole("link", { name: "Ouvrir les réglages des modèles" }));
+    await user.click(screen.getByRole("link", { name: "Open template settings" }));
     expect(await screen.findByText("Réglages des modèles")).toBeInTheDocument();
   });
 
@@ -100,8 +101,8 @@ describe("TemplatesPage", () => {
       createTemplate: () =>
         refusal(409, "capture_in_progress", "Une capture de modèle de CV est déjà en cours."),
     });
-    await user.upload(await screen.findByLabelText(/Ton CV \(PDF/), pdf());
-    await user.click(screen.getByRole("button", { name: "Créer le modèle" }));
+    await user.upload(await screen.findByLabelText(/Your CV \(PDF/), pdf());
+    await user.click(screen.getByRole("button", { name: "Create template" }));
     expect(
       await screen.findByText("Une capture de modèle de CV est déjà en cours."),
     ).toBeInTheDocument();
@@ -110,12 +111,12 @@ describe("TemplatesPage", () => {
 
   it("shows an empty state whose action leads to the file field", async () => {
     const { user } = setup({ templates: [[]] });
-    expect(await screen.findByText("Aucun modèle de CV pour l'instant")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Ajouter mon CV en PDF" }));
-    expect(screen.getByLabelText(/Ton CV \(PDF/)).toHaveFocus();
+    expect(await screen.findByText("No CV templates yet")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Add my CV as a PDF" }));
+    expect(screen.getByLabelText(/Your CV \(PDF/)).toHaveFocus();
   });
 
-  it("shows an error with « Réessayer » and reads again", async () => {
+  it("shows an error with « Retry » and reads again", async () => {
     let failing = true;
     const { user } = setup({
       templateList: () =>
@@ -123,9 +124,9 @@ describe("TemplatesPage", () => {
     });
     expect(await screen.findByRole("alert")).toBeInTheDocument();
     failing = false;
-    await user.click(screen.getByRole("button", { name: "Réessayer" }));
+    await user.click(screen.getByRole("button", { name: "Retry" }));
     expect(
-      await screen.findByRole("list", { name: "Liste des modèles de CV" }),
+      await screen.findByRole("list", { name: "CV template list" }),
     ).toBeInTheDocument();
   });
 });

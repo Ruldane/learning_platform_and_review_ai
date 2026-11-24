@@ -6,7 +6,7 @@ import { mapPoint } from "../viewFixtures";
 import { VectorMap } from "./VectorMap";
 
 const svg = () =>
-  screen.getByRole("group", { name: "Carte des éléments de la mémoire" }) as unknown as SVGElement;
+  screen.getByRole("group", { name: "Map of memory items" }) as unknown as SVGElement;
 
 describe("VectorMap", () => {
   it("draws one focusable point per item and opens it", async () => {
@@ -15,9 +15,9 @@ describe("VectorMap", () => {
     render(
       <VectorMap points={[mapPoint("i1"), mapPoint("i2")]} truncated={false} onOpen={onOpen} />,
     );
-    const points = screen.getAllByRole("button", { name: /\(Acquis\)/ });
+    const points = screen.getAllByRole("button", { name: /\(Acquired skill\)/ });
     expect(points).toHaveLength(2);
-    expect(points[0]).toHaveAttribute("aria-label", "Élément i1 (Acquis)");
+    expect(points[0]).toHaveAttribute("aria-label", "Élément i1 (Acquired skill)");
     points[0]!.focus();
     await user.keyboard("{Enter}");
     expect(onOpen).toHaveBeenCalledWith("i1");
@@ -27,7 +27,7 @@ describe("VectorMap", () => {
 
   it("colors a point by its kind", () => {
     render(<VectorMap points={[mapPoint("i1")]} truncated={false} onOpen={vi.fn()} />);
-    expect(screen.getByRole("button", { name: /Acquis/ })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: /Acquired skill/ })).toHaveAttribute(
       "fill",
       KIND_COLORS.skill,
     );
@@ -37,17 +37,17 @@ describe("VectorMap", () => {
     const user = userEvent.setup();
     render(<VectorMap points={[mapPoint("i1")]} truncated={false} onOpen={vi.fn()} />);
     expect(svg()).toHaveAttribute("viewBox", "-1.1 -1.1 2.2 2.2");
-    await user.click(screen.getByRole("button", { name: "Zoom avant" }));
+    await user.click(screen.getByRole("button", { name: "Zoom in" }));
     expect(svg()).toHaveAttribute("viewBox", "-0.55 -0.55 1.1 1.1");
-    await user.click(screen.getByRole("button", { name: "Zoom avant" }));
-    await user.click(screen.getByRole("button", { name: "Zoom avant" }));
+    await user.click(screen.getByRole("button", { name: "Zoom in" }));
+    await user.click(screen.getByRole("button", { name: "Zoom in" }));
     expect(svg()).toHaveAttribute("viewBox", "-0.1375 -0.1375 0.275 0.275");
-    expect(screen.getByRole("button", { name: "Zoom avant" })).toBeDisabled();
-    await user.click(screen.getByRole("button", { name: "Zoom arrière" }));
+    expect(screen.getByRole("button", { name: "Zoom in" })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Zoom out" }));
     expect(svg()).toHaveAttribute("viewBox", "-0.275 -0.275 0.55 0.55");
-    await user.click(screen.getByRole("button", { name: "Recentrer" }));
+    await user.click(screen.getByRole("button", { name: "Recenter" }));
     expect(svg()).toHaveAttribute("viewBox", "-1.1 -1.1 2.2 2.2");
-    expect(screen.getByRole("button", { name: "Zoom arrière" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Zoom out" })).toBeDisabled();
   });
 
   it("zooms with the mouse wheel", () => {
@@ -83,7 +83,7 @@ describe("VectorMap", () => {
 
   it("shows the legend of the six kinds", () => {
     render(<VectorMap points={[mapPoint("i1")]} truncated={false} onOpen={vi.fn()} />);
-    const legend = screen.getByRole("list", { name: "Légende des types" });
+    const legend = screen.getByRole("list", { name: "Type legend" });
     expect(legend.querySelectorAll("li")).toHaveLength(6);
   });
 
@@ -91,16 +91,16 @@ describe("VectorMap", () => {
     const { rerender } = render(
       <VectorMap points={[mapPoint("i1")]} truncated={false} onOpen={vi.fn()} />,
     );
-    expect(screen.queryByText(/2 000 éléments/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/2,000 most recent items/)).not.toBeInTheDocument();
     rerender(<VectorMap points={[mapPoint("i1")]} truncated onOpen={vi.fn()} />);
     expect(
-      screen.getByText("Carte limitée aux 2 000 éléments les plus récents."),
+      screen.getByText("Map limited to the 2,000 most recent items."),
     ).toBeInTheDocument();
   });
 
   it("shows an empty state without points", () => {
     render(<VectorMap points={[]} truncated={false} onOpen={vi.fn()} />);
-    expect(screen.getByText("La carte apparaîtra après le premier import.")).toBeInTheDocument();
+    expect(screen.getByText("The map will appear after the first import.")).toBeInTheDocument();
     expect(screen.queryByRole("group")).not.toBeInTheDocument();
   });
 });

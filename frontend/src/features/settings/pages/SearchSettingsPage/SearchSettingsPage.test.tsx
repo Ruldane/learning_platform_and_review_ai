@@ -38,13 +38,13 @@ const group = (name: string) => within(screen.getByRole("group", { name }));
 describe("SearchSettingsPage", () => {
   it("saves languages and domains with a full PUT", async () => {
     const { puts, user } = setup();
-    await user.click(await screen.findByRole("checkbox", { name: "Espagnol" }));
-    await user.type(group("Domaines exclus").getByLabelText("Ajouter un domaine"), "example.com");
-    await user.click(group("Domaines exclus").getByRole("button", { name: "Ajouter" }));
+    await user.click(await screen.findByRole("checkbox", { name: "Spanish" }));
+    await user.type(group("Excluded domains").getByLabelText("Add a domain"), "example.com");
+    await user.click(group("Excluded domains").getByRole("button", { name: "Add" }));
     expect(puts).toEqual([]); // rien n'est enregistré avant le bouton
-    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
 
-    expect(await screen.findByText("Réglages enregistrés.")).toBeInTheDocument();
+    expect(await screen.findByText("Settings saved.")).toBeInTheDocument();
     expect(puts).toHaveLength(1);
     expect(puts[0]).toMatchObject({
       search_languages: ["fr", "en", "es"],
@@ -62,11 +62,11 @@ describe("SearchSettingsPage", () => {
 
   it("saves edited caps and a reordered provider list", async () => {
     const { puts, user } = setup();
-    const queries = await screen.findByLabelText("Requêtes par session");
+    const queries = await screen.findByLabelText("Queries per session");
     await user.clear(queries);
     await user.type(queries, "20");
-    await user.click(screen.getByRole("button", { name: "Descendre SearXNG" }));
-    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+    await user.click(screen.getByRole("button", { name: "Move SearXNG down" }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() => expect(puts).toHaveLength(1));
     expect(puts[0]).toMatchObject({
       search_max_queries: 20,
@@ -76,18 +76,18 @@ describe("SearchSettingsPage", () => {
 
   it("refuses to save an invalid cap, even with Enter, and keeps the error", async () => {
     const { puts, user } = setup();
-    const queries = await screen.findByLabelText("Requêtes par session");
+    const queries = await screen.findByLabelText("Queries per session");
     await user.clear(queries);
     await user.type(queries, "60{Enter}"); // « 6 » est valide, « 60 » ne l'est pas
     expect(puts).toEqual([]);
     expect(queries).toHaveValue(60);
-    expect(screen.getByRole("alert")).toHaveTextContent("Entre 1 et 50.");
-    expect(screen.getByRole("button", { name: "Enregistrer" })).toBeDisabled();
-    expect(screen.queryByText("Réglages enregistrés.")).not.toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("Between 1 and 50.");
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+    expect(screen.queryByText("Settings saved.")).not.toBeInTheDocument();
 
     await user.clear(queries);
     await user.type(queries, "20");
-    expect(screen.getByRole("button", { name: "Enregistrer" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Save" })).toBeEnabled();
   });
 
   it("keeps the input and shows the error when saving fails, then saves on retry", async () => {
@@ -101,42 +101,42 @@ describe("SearchSettingsPage", () => {
             )
           : HttpResponse.json(stored),
     });
-    await user.click(await screen.findByRole("checkbox", { name: "Allemand" }));
-    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+    await user.click(await screen.findByRole("checkbox", { name: "German" }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Panne.");
-    expect(screen.getByRole("checkbox", { name: "Allemand" })).toBeChecked();
-    expect(screen.queryByText("Réglages enregistrés.")).not.toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "German" })).toBeChecked();
+    expect(screen.queryByText("Settings saved.")).not.toBeInTheDocument();
 
     failing = false;
-    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
-    expect(await screen.findByText("Réglages enregistrés.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    expect(await screen.findByText("Settings saved.")).toBeInTheDocument();
     expect(puts).toHaveLength(2);
   });
 
   it("disables saving until something changes", async () => {
     const { user } = setup();
-    const save = await screen.findByRole("button", { name: "Enregistrer" });
+    const save = await screen.findByRole("button", { name: "Save" });
     expect(save).toBeDisabled();
-    await user.click(screen.getByRole("checkbox", { name: "Italien" }));
+    await user.click(screen.getByRole("checkbox", { name: "Italian" }));
     expect(save).toBeEnabled();
-    await user.click(screen.getByRole("checkbox", { name: "Italien" }));
+    await user.click(screen.getByRole("checkbox", { name: "Italian" }));
     expect(save).toBeDisabled();
   });
 
   it("greys Brave without a key", async () => {
     setup({ usage: { brave: { has_key: false, used: 0, cap: 900, month: "2026-11" } } });
     expect(
-      await screen.findByText("Ajoutez une clé Brave dans Modèles et clés"),
+      await screen.findByText("Add a Brave key in Models and keys"),
     ).toBeInTheDocument();
-    expect(screen.getByText("Brave inactif (aucune clé)")).toBeInTheDocument();
-    for (const button of screen.getAllByRole("button", { name: /^(Monter|Descendre) / })) {
+    expect(screen.getByText("Brave inactive (no key)")).toBeInTheDocument();
+    for (const button of screen.getAllByRole("button", { name: /^Move .+ (up|down)$/ })) {
       expect(button).toBeDisabled();
     }
   });
 
   it("shows the Brave usage of the month", async () => {
     setup();
-    expect(await screen.findByText("120 / 900 requêtes en novembre 2026")).toBeInTheDocument();
+    expect(await screen.findByText("120 / 900 queries in November 2026")).toBeInTheDocument();
   });
 
   it("shows an error with a retry when the usage cannot be read", async () => {
@@ -155,12 +155,12 @@ describe("SearchSettingsPage", () => {
     );
     const { user } = renderRoutes([{ path: "/r", element: <SearchSettingsPage /> }], "/r");
     expect(await screen.findByText("Panne.")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Réessayer" }));
-    expect(await screen.findByRole("button", { name: "Enregistrer" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+    expect(await screen.findByRole("button", { name: "Save" })).toBeInTheDocument();
   });
 
   it("shows a loading state first", () => {
     setup();
-    expect(screen.getByText("Chargement des réglages de recherche…")).toBeInTheDocument();
+    expect(screen.getByText("Loading search settings…")).toBeInTheDocument();
   });
 });

@@ -41,17 +41,17 @@ it("attache les liens au bon expert et sauvegarde le jugement", async () => {
   );
   const routes = [{ path: "/study/debates/:debateId", element: <ExpertDebatesPage /> }];
   const { user } = renderRoutes(routes, `/study/debates/${debate.id}`);
-  const researcher = await screen.findByRole("article", { name: "Chercheur" });
+  const researcher = await screen.findByRole("article", { name: "Researcher" });
   expect(within(researcher).getByRole("link", { name: /Une méthode/ })).toHaveAttribute(
     "href",
     "https://example.test/methode",
   );
   expect(within(researcher).queryByRole("link", { name: /Un guide/ })).not.toBeInTheDocument();
   await user.type(
-    screen.getByRole("textbox", { name: "Ton jugement" }),
+    screen.getByRole("textbox", { name: "Your judgment" }),
     "Je retiens cette méthode.",
   );
-  await user.click(screen.getByRole("button", { name: "Enregistrer mon jugement" }));
-  expect(await screen.findByText("Jugement enregistré.")).toBeVisible();
+  await user.click(screen.getByRole("button", { name: "Save my judgment" }));
+  expect(await screen.findByText("Judgment saved.")).toBeVisible();
   expect(current.judgment).toBe("Je retiens cette méthode.");
 });

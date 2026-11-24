@@ -34,7 +34,7 @@ describe("MemoryItemDrawer", () => {
     render(<MemoryItemDrawer {...base} onClose={onClose} />);
     await user.keyboard("{Escape}");
     expect(onClose).toHaveBeenCalledTimes(1);
-    await user.click(screen.getByRole("button", { name: "Fermer" }));
+    await user.click(screen.getByRole("button", { name: "Close" }));
     expect(onClose).toHaveBeenCalledTimes(2);
   });
 
@@ -50,10 +50,10 @@ describe("MemoryItemDrawer", () => {
       },
     ];
     render(<MemoryItemDrawer {...base} item={detail({ writes })} />);
-    const journal = within(screen.getByRole("region", { name: "Journal des écritures" }));
+    const journal = within(screen.getByRole("region", { name: "Write log" }));
     expect(journal.getByText("Document « Cours NLP » marqué « déjà appris ».")).toBeInTheDocument();
-    expect(journal.getByText("Création")).toBeInTheDocument();
-    expect(journal.getByText("Archiviste")).toBeInTheDocument();
+    expect(journal.getByText("Creation")).toBeInTheDocument();
+    expect(journal.getByText("Archivist")).toBeInTheDocument();
   });
 
   it("shows the text, the tags, the evidence and the chunks", () => {
@@ -68,23 +68,23 @@ describe("MemoryItemDrawer", () => {
     expect(screen.getByText("Le mécanisme d'attention pondère les jetons.")).toBeInTheDocument();
     expect(screen.getByText("nlp")).toBeInTheDocument();
     expect(screen.getByText("https://exemple.test/preuve")).toBeInTheDocument();
-    expect(screen.getByText("Validé")).toBeInTheDocument();
-    expect(screen.getByText("Pas encore indexé")).toBeInTheDocument();
+    expect(screen.getByText("Validated")).toBeInTheDocument();
+    expect(screen.getByText("Not indexed yet")).toBeInTheDocument();
     expect(screen.getByText("Premier fragment")).toBeInTheDocument();
-    expect(screen.getByText("Fragment 1 · 42 jetons")).toBeInTheDocument();
+    expect(screen.getByText("Chunk 1 · 42 tokens")).toBeInTheDocument();
   });
 
   it("asks inline before deleting", async () => {
     const onDelete = vi.fn();
     const user = userEvent.setup();
     render(<MemoryItemDrawer {...base} onDelete={onDelete} />);
-    await user.click(screen.getByRole("button", { name: "Supprimer" }));
-    expect(screen.getByText("Supprimer définitivement ?")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+    expect(screen.getByText("Delete permanently?")).toBeInTheDocument();
     expect(onDelete).not.toHaveBeenCalled();
-    await user.click(screen.getByRole("button", { name: "Non, garder" }));
-    expect(screen.queryByText("Supprimer définitivement ?")).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Supprimer" }));
-    await user.click(screen.getByRole("button", { name: "Oui, supprimer" }));
+    await user.click(screen.getByRole("button", { name: "No, keep" }));
+    expect(screen.queryByText("Delete permanently?")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+    await user.click(screen.getByRole("button", { name: "Yes, delete" }));
     expect(onDelete).toHaveBeenCalledWith("a");
   });
 
@@ -94,7 +94,7 @@ describe("MemoryItemDrawer", () => {
       { item_id: "n1", title: "Transformeurs", kind: "lesson" as const, score: 0.71 },
     ];
     render(<MemoryItemDrawer {...base} item={detail({ neighbors })} onOpenItem={onOpenItem} />);
-    expect(screen.getByText("0,71")).toBeInTheDocument();
+    expect(screen.getByText("0.71")).toBeInTheDocument();
     await userEvent.setup().click(screen.getByRole("button", { name: /Transformeurs/ }));
     expect(onOpenItem).toHaveBeenCalledWith("n1");
   });
@@ -103,7 +103,7 @@ describe("MemoryItemDrawer", () => {
     const onOpenItem = vi.fn();
     const linkedNotes = [{ itemId: "note-obsidian", title: "Notions du dossier" }];
     render(<MemoryItemDrawer {...base} item={detail({ linkedNotes })} onOpenItem={onOpenItem} />);
-    expect(screen.getByRole("heading", { name: "Notes liées" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Linked notes" })).toBeVisible();
     await userEvent.setup().click(screen.getByRole("button", { name: "Notions du dossier" }));
     expect(onOpenItem).toHaveBeenCalledWith("note-obsidian");
   });
@@ -118,10 +118,10 @@ describe("MemoryItemDrawer", () => {
         onSave={onSave}
       />,
     );
-    await user.click(screen.getByRole("button", { name: "Modifier" }));
-    await user.clear(screen.getByLabelText("Titre"));
-    await user.type(screen.getByLabelText("Titre"), "Attention v2");
-    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    await user.clear(screen.getByLabelText("Title"));
+    await user.type(screen.getByLabelText("Title"), "Attention v2");
+    await user.click(screen.getByRole("button", { name: "Save" }));
     expect(onSave).toHaveBeenCalledWith({ title: "Attention v2" });
   });
 
@@ -135,39 +135,39 @@ describe("MemoryItemDrawer", () => {
         onSave={onSave}
       />,
     );
-    await user.click(screen.getByRole("button", { name: "Modifier" }));
-    expect(screen.queryByLabelText("Texte")).not.toBeInTheDocument();
-    await user.type(screen.getByLabelText("Étiquettes"), ", cours");
-    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    expect(screen.queryByLabelText("Text")).not.toBeInTheDocument();
+    await user.type(screen.getByLabelText("Tags"), ", cours");
+    await user.click(screen.getByRole("button", { name: "Save" }));
     expect(onSave).toHaveBeenCalledWith({ tags: ["nlp", "cours"] });
   });
 
   it("does not offer the level of a validated acquis", async () => {
     render(<MemoryItemDrawer {...base} item={detail({ level: "proven" })} />);
-    await userEvent.setup().click(screen.getByRole("button", { name: "Modifier" }));
-    expect(screen.queryByLabelText("Niveau")).not.toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole("button", { name: "Edit" }));
+    expect(screen.queryByLabelText("Level")).not.toBeInTheDocument();
   });
 
   it("creates an item when there is none", async () => {
     const onSave = vi.fn();
     const user = userEvent.setup();
     render(<MemoryItemDrawer {...base} item={null} onSave={onSave} />);
-    expect(screen.getByRole("dialog", { name: "Nouvel élément" })).toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText("Type"), "Offre");
-    await user.type(screen.getByLabelText("Titre"), "Stage NLP");
-    await user.type(screen.getByLabelText("Texte"), "Offre vue en ligne.");
-    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+    expect(screen.getByRole("dialog", { name: "New item" })).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText("Type"), "Posting");
+    await user.type(screen.getByLabelText("Title"), "Stage NLP");
+    await user.type(screen.getByLabelText("Text"), "Offre vue en ligne.");
+    await user.click(screen.getByRole("button", { name: "Save" }));
     expect(onSave).toHaveBeenCalledWith(
       expect.objectContaining({ kind: "posting", title: "Stage NLP" }),
     );
-    expect(screen.queryByRole("button", { name: "Supprimer" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Delete" })).not.toBeInTheDocument();
   });
 
   it("shows an error and locks the actions while busy", () => {
     render(<MemoryItemDrawer {...base} busy error="Suppression impossible." />);
     expect(screen.getByRole("alert")).toHaveTextContent("Suppression impossible.");
-    expect(screen.getByRole("button", { name: "Supprimer" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Modifier" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Delete" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Edit" })).toBeDisabled();
   });
 
   it("refocuses the title when another item is opened", () => {

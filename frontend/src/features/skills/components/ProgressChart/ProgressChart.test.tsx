@@ -21,7 +21,7 @@ describe("ProgressChart", () => {
     const { container } = render(<ProgressChart points={points} />);
     expect(container.querySelectorAll(".recharts-line")).toHaveLength(5);
     const legend = container.querySelector(".recharts-legend-wrapper");
-    for (const name of ["Déclaré", "En cours", "Validé", "Prouvé", "Score"]) {
+    for (const name of ["Declared", "In progress", "Validated", "Proven", "Score"]) {
       expect(legend).toHaveTextContent(name);
     }
   });
@@ -39,18 +39,18 @@ describe("ProgressChart", () => {
     render(<ProgressChart points={points} />);
     expect(
       screen.getByText(
-        "Dernier relevé, semaine du lun. 9 nov. : Déclaré 3, En cours 2, Validé 1, Prouvé 0 · score 31 sur 100",
+        /Latest snapshot, week of .+: Declared 3, In progress 2, Validated 1, Proven 0 · score 31/,
       ),
     ).toBeInTheDocument();
   });
 
   it("names the chart for assistive technologies", () => {
     render(<ProgressChart points={points} />);
-    expect(screen.getByRole("img", { name: "Progression par semaine" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Progress by week" })).toBeInTheDocument();
   });
 
   it("says when there is no reading yet", () => {
     render(<ProgressChart points={[]} />);
-    expect(screen.getByText("Aucun relevé pour l'instant")).toBeInTheDocument();
+    expect(screen.getByText("No snapshots yet")).toBeInTheDocument();
   });
 });

@@ -70,18 +70,18 @@ describe("ProfileImportForm", () => {
     const { onSubmit } = setup();
     await user().upload(cvInput(), docx);
     expect(screen.getByRole("alert")).toHaveTextContent(
-      "Ce fichier n'est pas un PDF : choisis un fichier .pdf.",
+      "This file isn't a PDF: choose a .pdf file.",
     );
     expect(cvInput()).toHaveAttribute("aria-invalid", "true");
     expect(send()).toBeDisabled();
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  it("refuses a file over 10 Mo", async () => {
+  it("refuses a file over 10 MB", async () => {
     setup();
     await user().upload(cvInput(), pdf("gros.pdf", 10 * 1024 * 1024 + 1));
     expect(screen.getByRole("alert")).toHaveTextContent(
-      "Ce fichier dépasse 10 Mo : choisis un PDF plus léger.",
+      "This file is over 10 MB: choose a smaller PDF.",
     );
     expect(send()).toBeDisabled();
   });

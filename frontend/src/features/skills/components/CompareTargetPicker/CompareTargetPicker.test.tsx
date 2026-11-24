@@ -42,7 +42,7 @@ describe("CompareTargetPicker", () => {
 
   it("lists the analysed postings and reports the choice", async () => {
     const { onPosting } = setup({ target: "posting" });
-    const select = screen.getByRole("combobox", { name: "Offre" });
+    const select = screen.getByRole("combobox", { name: "Posting" });
     expect(
       screen.getByRole("option", { name: "Ingénieure données (Société Fictive)" }),
     ).toBeVisible();

@@ -72,21 +72,21 @@ it("simule une autre disponibilité et ouvre le chapitre au clavier", async () =
     }),
   );
   const { user, router } = renderProjection();
-  expect(await screen.findByRole("heading", { name: "Rythme observé" })).toBeVisible();
-  const role = screen.getByRole("textbox", { name: "Poste visé" });
-  const hours = screen.getByRole("spinbutton", { name: "Heures par semaine à simuler" });
+  expect(await screen.findByRole("heading", { name: "Observed pace" })).toBeVisible();
+  const role = screen.getByRole("textbox", { name: "Target role" });
+  const hours = screen.getByRole("spinbutton", { name: "Hours per week to simulate" });
   await user.tab();
   expect(role).toHaveFocus();
   await user.tab();
-  expect(screen.getByRole("textbox", { name: "Zone du radar" })).toHaveFocus();
+  expect(screen.getByRole("textbox", { name: "Radar area" })).toHaveFocus();
   await user.tab();
   expect(hours).toHaveFocus();
   await user.keyboard("4{Enter}");
 
-  const alternative = await screen.findByRole("region", { name: "Disponibilité simulée" });
-  expect(within(alternative).getByText("vendredi 20 novembre")).toBeVisible();
+  const alternative = await screen.findByRole("region", { name: "Simulated availability" });
+  expect(within(alternative).getByText("Friday 20 November")).toBeVisible();
   expect(requests.at(-1)?.get("alternative_weekly_minutes")).toBe("240");
-  expect(screen.getByRole("link", { name: "Proposer une replanification" })).toHaveAttribute(
+  expect(screen.getByRole("link", { name: "Suggest a replanning" })).toHaveAttribute(
     "href",
     "/learn/programs/p1/replan",
   );
@@ -122,10 +122,10 @@ it("explique les données manquantes sans présenter de date", async () => {
   );
   renderProjection();
   expect(
-    await screen.findByText("Aucune offre exploitable pour ce poste et cette zone."),
+    await screen.findByText("No usable postings for this role and area."),
   ).toBeVisible();
   expect(
-    screen.getByText("Il faut deux semaines complètes pour estimer ton rythme."),
+    screen.getByText("Two full weeks are needed to estimate your pace."),
   ).toBeVisible();
-  expect(screen.queryByRole("link", { name: "Proposer une replanification" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Suggest a replanning" })).toBeNull();
 });

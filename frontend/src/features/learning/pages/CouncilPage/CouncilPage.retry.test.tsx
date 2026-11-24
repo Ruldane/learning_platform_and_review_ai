@@ -52,7 +52,7 @@ describe("CouncilPage : relances", () => {
       http.get(`${API}/sessions/c2`, () => HttpResponse.json(sessionOut("c2", "running"))),
     );
     await failCouncil(fake);
-    expect(await screen.findByRole("button", { name: /Carte du domaine/ })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /Domain map/ })).toBeInTheDocument();
 
     // Le back rend encore les tableaux de l'ancien Conseil ; les propositions, plus aucune.
     state.goal = goalOut({ council_session_id: "c2" });
@@ -63,7 +63,7 @@ describe("CouncilPage : relances", () => {
     socketsOf(fake, "c2")[0]!.open();
 
     expect(await screen.findByText("The Scribe hasn’t drawn anything yet.")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Carte du domaine/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Domain map/ })).toBeNull();
     expect(screen.queryByRole("button", { name: RETRY })).toBeNull();
     await user.click(screen.getByRole("tab", { name: "Proposals" }));
     expect(
@@ -83,12 +83,13 @@ describe("CouncilPage : relances", () => {
     [
       "council_not_failed",
       { status: "running" },
-      "Le Conseil n'est pas en échec (état : En cours) : l'état a été relu.",
+      "The Council has not failed (state: Running): its state was reloaded.",
     ],
     [
       "goal_already_chosen",
       null,
-      "Un programme est déjà lancé pour cet objectif : le Conseil ne peut plus être relancé. L'état a été relu.",
+      "A program has already started for this goal: the Council can no longer be restarted. " +
+        "Its state was reloaded.",
     ],
   ])("says so on %s (409) and reads the state again", async (code, details, text) => {
     let goalReads = 0;

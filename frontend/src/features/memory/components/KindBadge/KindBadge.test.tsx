@@ -6,11 +6,11 @@ import { KindBadge } from "./KindBadge";
 describe("KindBadge", () => {
   it("writes the kind name, never the color alone", () => {
     render(<KindBadge kind="lesson" />);
-    expect(screen.getByText("Leçon")).toBeInTheDocument();
+    expect(screen.getByText("Lesson")).toBeInTheDocument();
   });
 
   it("uses the color of the kind", () => {
     render(<KindBadge kind="decision" />);
-    expect(screen.getByText("Décision")).toHaveStyle({ color: KIND_COLORS.decision });
+    expect(screen.getByText("Decision")).toHaveStyle({ color: KIND_COLORS.decision });
   });
 });

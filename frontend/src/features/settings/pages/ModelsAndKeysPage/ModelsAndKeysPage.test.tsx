@@ -52,7 +52,7 @@ const card = (name: string) => within(screen.getByRole("article", { name }));
 
 async function openPage() {
   const user = renderPage();
-  await screen.findByRole("heading", { level: 1, name: "Modèles et clés" });
+  await screen.findByRole("heading", { level: 1, name: "Models and keys" });
   return user;
 }
 
@@ -67,19 +67,19 @@ describe("ModelsAndKeysPage", () => {
       },
     });
     const user = await openPage();
-    expect(screen.getByText(/clé exploitable.*OpenAI/)).toBeVisible();
-    await user.click(screen.getByRole("button", { name: /Appliquer le préréglage Tout Haiku/ }));
+    expect(screen.getByText(/usable key.*OpenAI/)).toBeVisible();
+    await user.click(screen.getByRole("button", { name: /Apply the All Haiku preset/ }));
     expect(backend.puts[0]?.tiers).toEqual(modelsFixture.presets.all_haiku);
   });
 
   it("affiche le chargement puis les clés, les préréglages et les niveaux", async () => {
     mockBackend();
     renderPage();
-    expect(screen.getByRole("status")).toHaveTextContent("Chargement");
-    expect(await screen.findByRole("heading", { name: "Clés API" })).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Loading");
+    expect(await screen.findByRole("heading", { name: "API keys" })).toBeInTheDocument();
     expect(screen.getAllByRole("article")).toHaveLength(3);
     expect(card("Anthropic").getByText("•••• 9876")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Tout Haiku" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "All Haiku" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
@@ -100,13 +100,13 @@ describe("ModelsAndKeysPage", () => {
       ),
     );
     const user = await openPage();
-    await user.type(screen.getByLabelText("Clé API Anthropic"), SECRET);
+    await user.type(screen.getByLabelText("Anthropic API key"), SECRET);
     expect(document.body.innerHTML).not.toContain(SECRET);
-    await user.click(card("Anthropic").getByRole("button", { name: "Enregistrer" }));
+    await user.click(card("Anthropic").getByRole("button", { name: "Save" }));
     expect(await card("Anthropic").findByText("•••• 1234")).toBeInTheDocument();
-    expect(screen.getByLabelText("Clé API Anthropic")).toHaveValue("");
+    expect(screen.getByLabelText("Anthropic API key")).toHaveValue("");
     expect(screen.queryByText(new RegExp(SECRET))).not.toBeInTheDocument();
-    await user.click(card("Anthropic").getByRole("button", { name: "Tester" }));
+    await user.click(card("Anthropic").getByRole("button", { name: "Test" }));
     expect(await card("Anthropic").findByRole("status")).toHaveTextContent("Clé valide.");
   });
 
@@ -120,9 +120,9 @@ describe("ModelsAndKeysPage", () => {
       }),
     );
     const user = await openPage();
-    await user.type(screen.getByLabelText("Clé API GLM (Z.ai)"), "glm-key-0000");
-    await user.click(card("GLM (Z.ai)").getByRole("button", { name: "Enregistrer" }));
-    await card("GLM (Z.ai)").findByRole("button", { name: "Enregistrer" });
+    await user.type(screen.getByLabelText("GLM (Z.ai) API key"), "glm-key-0000");
+    await user.click(card("GLM (Z.ai)").getByRole("button", { name: "Save" }));
+    await card("GLM (Z.ai)").findByRole("button", { name: "Save" });
     expect(received).toEqual({ provider: "glm", key: "glm-key-0000" });
   });
 
@@ -137,20 +137,20 @@ describe("ModelsAndKeysPage", () => {
       ),
     );
     const user = await openPage();
-    await user.type(screen.getByLabelText("Clé API Anthropic"), "sk-ant-short-0000");
-    await user.click(card("Anthropic").getByRole("button", { name: "Enregistrer" }));
+    await user.type(screen.getByLabelText("Anthropic API key"), "sk-ant-short-0000");
+    await user.click(card("Anthropic").getByRole("button", { name: "Save" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("La clé est trop courte.");
-    expect(screen.getByLabelText("Clé API Anthropic")).toHaveValue("sk-ant-short-0000");
+    expect(screen.getByLabelText("Anthropic API key")).toHaveValue("sk-ant-short-0000");
     expect(document.body.innerHTML).not.toContain("sk-ant-short");
   });
 
   it("n'offre la suppression que pour une clé saisie ici", async () => {
     mockBackend();
     await openPage();
-    expect(card("Anthropic").getByRole("button", { name: "Supprimer" })).toBeInTheDocument();
-    expect(card("OpenAI").queryByRole("button", { name: "Supprimer" })).not.toBeInTheDocument();
-    expect(card("OpenAI").getByText("fichier .env")).toBeInTheDocument();
-    expect(card("GLM (Z.ai)").queryByRole("button", { name: "Supprimer" })).not.toBeInTheDocument();
+    expect(card("Anthropic").getByRole("button", { name: "Delete" })).toBeInTheDocument();
+    expect(card("OpenAI").queryByRole("button", { name: "Delete" })).not.toBeInTheDocument();
+    expect(card("OpenAI").getByText(".env file")).toBeInTheDocument();
+    expect(card("GLM (Z.ai)").queryByRole("button", { name: "Delete" })).not.toBeInTheDocument();
   });
 
   it("supprime une clé saisie ici puis recharge la liste", async () => {
@@ -164,15 +164,15 @@ describe("ModelsAndKeysPage", () => {
       }),
     );
     const user = await openPage();
-    await user.click(card("Anthropic").getByRole("button", { name: "Supprimer" }));
-    expect(await card("Anthropic").findByText("Aucune clé enregistrée")).toBeInTheDocument();
+    await user.click(card("Anthropic").getByRole("button", { name: "Delete" }));
+    expect(await card("Anthropic").findByText("No key saved")).toBeInTheDocument();
   });
 
   it("applique un préréglage : PUT complet sans vision_enabled", async () => {
     const backend = mockBackend();
     const user = await openPage();
-    await user.click(screen.getByRole("button", { name: "Tout GLM" }));
-    expect(await screen.findByRole("button", { name: "Tout GLM", pressed: true })).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "All GLM" }));
+    expect(await screen.findByRole("button", { name: "All GLM", pressed: true })).toBeVisible();
     expect(backend.puts).toHaveLength(1);
     const body = backend.puts[0]!;
     expect(body.tiers).toEqual(modelsFixture.presets.all_glm);
@@ -182,15 +182,15 @@ describe("ModelsAndKeysPage", () => {
     expect(body.reminder_delays_days).toEqual([7, 14, 21]);
   });
 
-  it("change un seul niveau et passe en « Personnalisé »", async () => {
+  it("change un seul niveau et passe en « Custom »", async () => {
     const backend = mockBackend();
     const user = await openPage();
     await user.selectOptions(
-      screen.getByRole("combobox", { name: "Modèle (Rapide)" }),
+      screen.getByRole("combobox", { name: "Model (Fast)" }),
       "claude-sonnet-5-5",
     );
     await waitFor(() =>
-      expect(screen.getByText("Personnalisé")).toHaveAttribute("aria-current", "true"),
+      expect(screen.getByText("Custom")).toHaveAttribute("aria-current", "true"),
     );
     expect(backend.puts[0]!.tiers).toEqual({
       ...settingsFixture.tiers,
@@ -209,14 +209,14 @@ describe("ModelsAndKeysPage", () => {
       ),
     );
     const user = await openPage();
-    await user.click(screen.getByRole("button", { name: "Tout OpenAI" }));
+    await user.click(screen.getByRole("button", { name: "All OpenAI" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Réglages refusés.");
   });
 
   it("avertit quand le niveau vision n'a pas de vision", async () => {
     mockBackend({ settings: { ...settingsFixture, vision_enabled: false } });
     await openPage();
-    expect(screen.getByRole("note")).toHaveTextContent("la capture du design du CV est désactivée");
+    expect(screen.getByRole("note")).toHaveTextContent("CV design capture is turned off");
   });
 
   it("n'avertit pas quand la vision est disponible", async () => {
@@ -239,15 +239,15 @@ describe("ModelsAndKeysPage", () => {
     const user = renderPage();
     expect(await screen.findByRole("alert")).toHaveTextContent("Panne du serveur.");
     mockBackend();
-    await user.click(screen.getByRole("button", { name: "Réessayer" }));
-    expect(await screen.findByRole("heading", { name: "Clés API" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+    expect(await screen.findByRole("heading", { name: "API keys" })).toBeInTheDocument();
   });
 
   it("affiche un état vide sans fournisseur", async () => {
     mockBackend({ keys: [], models: { ...modelsFixture, providers: [] } });
     renderPage();
     expect(
-      await screen.findByRole("heading", { name: "Aucun fournisseur disponible" }),
+      await screen.findByRole("heading", { name: "No provider available" }),
     ).toBeInTheDocument();
   });
 
@@ -265,8 +265,8 @@ describe("ModelsAndKeysPage", () => {
     await openPage();
     const braveCard = card("Brave Search");
     expect(braveCard.getByText("•••• wxyz")).toBeInTheDocument();
-    expect(braveCard.getByRole("button", { name: "Tester" })).toBeEnabled();
-    expect(braveCard.getByRole("button", { name: "Supprimer" })).toBeEnabled();
+    expect(braveCard.getByRole("button", { name: "Test" })).toBeEnabled();
+    expect(braveCard.getByRole("button", { name: "Delete" })).toBeEnabled();
     // Brave ne sert pas de modèle : il n'est pas dans la liste des fournisseurs des niveaux.
     expect(screen.queryByRole("option", { name: "Brave Search" })).not.toBeInTheDocument();
   });

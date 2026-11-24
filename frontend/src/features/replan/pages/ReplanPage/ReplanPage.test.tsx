@@ -257,7 +257,7 @@ describe("ReplanPage", () => {
     expect(within(items[1]!).getByText("Declined")).toBeInTheDocument();
     expect(within(items[2]!).getByText("Program build")).toBeInTheDocument();
     expect(
-      within(items[0]!).getByText("1 added, 1 removed, 1 moved"),
+      within(items[0]!).getByText(/1 added, 1 removed, 1 moved/),
     ).toBeInTheDocument();
   });
 

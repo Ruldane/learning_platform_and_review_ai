@@ -25,9 +25,9 @@ describe("SearchBenchPage", () => {
       }),
     );
     const { user } = setup();
-    await user.type(screen.getByLabelText("Requête"), "attention");
-    await user.click(screen.getByRole("button", { name: "Lancer" }));
-    expect(await screen.findByText("0,83")).toBeInTheDocument();
+    await user.type(screen.getByLabelText("Query"), "attention");
+    await user.click(screen.getByRole("button", { name: "Run" }));
+    expect(await screen.findByText("0.83")).toBeInTheDocument();
     expect(screen.getByText(searchOut.agent_text)).toBeInTheDocument();
     expect(bodies).toEqual([{ query: "attention", kinds: null, k: 8 }]);
   });
@@ -43,11 +43,11 @@ describe("SearchBenchPage", () => {
       }),
     );
     const { user } = setup();
-    await user.type(screen.getByLabelText("Requête"), "attention");
-    await user.click(screen.getByRole("button", { name: "Lancer" }));
+    await user.type(screen.getByLabelText("Query"), "attention");
+    await user.click(screen.getByRole("button", { name: "Run" }));
     expect(await screen.findByText("Le service de vecteurs ne répond pas.")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Réessayer" }));
-    expect(await screen.findByText("0,83")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+    expect(await screen.findByText("0.83")).toBeInTheDocument();
     expect(calls).toBe(2);
   });
 
@@ -56,9 +56,9 @@ describe("SearchBenchPage", () => {
       http.post(`${API}/memory/search`, () => HttpResponse.json({ agent_text: "", hits: [] })),
     );
     const { router, user } = setup();
-    await user.type(screen.getByLabelText("Requête"), "rien");
-    await user.click(screen.getByRole("button", { name: "Lancer" }));
-    await user.click(await screen.findByRole("button", { name: "Importer un document" }));
+    await user.type(screen.getByLabelText("Query"), "rien");
+    await user.click(screen.getByRole("button", { name: "Run" }));
+    await user.click(await screen.findByRole("button", { name: "Import a document" }));
     await waitFor(() => expect(router.state.location.pathname).toBe("/memory/documents"));
   });
 });

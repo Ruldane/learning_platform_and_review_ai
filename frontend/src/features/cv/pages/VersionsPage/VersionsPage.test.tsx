@@ -22,39 +22,39 @@ describe("VersionsPage", () => {
       ],
     });
     const first = await screen.findByRole("region", {
-      name: "Versions pour l'offre Ingénieure données, Société Fictive",
+      name: "Versions for posting Ingénieure données, Société Fictive",
     });
     expect(within(first).getAllByRole("listitem")).toHaveLength(2);
     expect(
-      screen.getByRole("region", { name: "Versions pour l'offre offre supprimée" }),
+      screen.getByRole("region", { name: "Versions for posting deleted posting" }),
     ).toBeInTheDocument();
   });
 
   it("opens a version: preview of its pages and download of its PDF", async () => {
     const { user } = setup();
-    await user.click(await screen.findByRole("button", { name: "Ouvrir la version 1" }));
-    expect(await screen.findByAltText("Page 1 sur 1 du CV")).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: "Open version 1" }));
+    expect(await screen.findByAltText("Page 1 of 1 of the CV")).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "Télécharger CV_Camille_Exemple_Societe_Fictive.pdf" }),
+      screen.getByRole("link", { name: "Download CV_Camille_Exemple_Societe_Fictive.pdf" }),
     ).toHaveAttribute("href", expect.stringContaining("/api/v1/cv/versions/v1/pdf"));
-    await user.click(screen.getByRole("button", { name: "Fermer l'aperçu" }));
-    expect(screen.queryByAltText("Page 1 sur 1 du CV")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Close preview" }));
+    expect(screen.queryByAltText("Page 1 of 1 of the CV")).not.toBeInTheDocument();
   });
 
   it("links to the review of a posting", async () => {
     const { user } = setup();
-    await user.click(await screen.findByRole("link", { name: "Ouvrir la revue" }));
+    await user.click(await screen.findByRole("link", { name: "Open review" }));
     expect(await screen.findByText("Page de la revue")).toBeInTheDocument();
   });
 
   it("shows an empty state whose action leads to the postings", async () => {
     const { user } = setup({ versions: [] });
-    expect(await screen.findByText("Aucune version de CV pour l'instant")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Choisir une offre" }));
+    expect(await screen.findByText("No CV versions yet")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Choose a posting" }));
     expect(await screen.findByText("Liste des offres")).toBeInTheDocument();
   });
 
-  it("shows an error with « Réessayer »", async () => {
+  it("shows an error with « Retry »", async () => {
     let failing = true;
     const { user } = setup({
       versionList: () =>
@@ -62,7 +62,7 @@ describe("VersionsPage", () => {
     });
     expect(await screen.findByRole("alert", {}, { timeout: 3000 })).toBeInTheDocument();
     failing = false;
-    await user.click(screen.getByRole("button", { name: "Réessayer" }));
-    expect(await screen.findByRole("list", { name: "Versions du CV" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+    expect(await screen.findByRole("list", { name: "CV versions" })).toBeInTheDocument();
   });
 });

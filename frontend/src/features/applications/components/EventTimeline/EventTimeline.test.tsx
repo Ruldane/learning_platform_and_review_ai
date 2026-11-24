@@ -66,11 +66,11 @@ describe("EventTimeline", () => {
       />,
     );
     for (const label of [
-      "Relance",
-      "Kit de candidature",
-      "Entretien d'entraînement",
-      "Comité de recrutement",
-      "Version du CV",
+      "Follow-up",
+      "Application kit",
+      "Practice interview",
+      "Hiring committee",
+      "Résumé version",
     ]) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }

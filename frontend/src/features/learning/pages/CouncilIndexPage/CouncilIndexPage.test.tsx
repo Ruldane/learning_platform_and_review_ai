@@ -41,12 +41,12 @@ describe("CouncilIndexPage", () => {
   it("invites to enter a goal when there is none", async () => {
     server.use(http.get(`${API}/goals`, () => HttpResponse.json([])));
     const { router, user } = setup();
-    expect(await screen.findByText("Enter a goal")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Enter a goal" }));
+    const enter = await screen.findByRole("button", { name: "Enter a goal" });
+    await user.click(enter);
     expect(router.state.location.pathname).toBe("/learn/goals");
   });
 
-  it("offers « Réessayer » when the goals cannot be read", async () => {
+  it("offers Retry when the goals cannot be read", async () => {
     let calls = 0;
     server.use(
       http.get(`${API}/goals`, () => {

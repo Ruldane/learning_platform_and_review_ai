@@ -47,7 +47,7 @@ describe("describeKitChange", () => {
       describeKitChange(kit(true), kit(true, { pitch: { ...ready, status: "to_check" } })),
     ).toBe("Elevator pitch: to check.");
     expect(describeKitChange(kit(true), kit(true, { cv: { ...ready, status: "failed" } }))).toBe(
-      "CV ciblé : en échec.",
+      "Tailored résumé: failed.",
     );
   });
 
@@ -73,7 +73,8 @@ describe("describeKitChange", () => {
       cv: { ...ready, status: "failed" },
     });
     expect(describeKitChange(before, after)).toBe(
-      "CV ciblé : en échec. Pitch de présentation : à vérifier. Le kit est terminé : 1 pièce prête, 1 pièce à vérifier, 1 pièce en échec.",
+      "Tailored résumé: failed. Elevator pitch: to check. " +
+        "The kit is done: 1 piece ready, 1 piece to check, 1 piece failed.",
     );
   });
 });

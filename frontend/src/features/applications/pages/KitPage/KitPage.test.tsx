@@ -101,11 +101,8 @@ describe("KitPage", () => {
     expect(await followups.findByText("Failed")).toBeVisible();
     expect(followups.getByRole("note")).toHaveTextContent("The model did not respond.");
     expect((await piece("Tailored résumé")).textContent).toContain("Ready");
-    expect(
-      await screen.findByText(
-        "The kit is done: 1 piece ready, 0 pieces to check, 1 piece failed.",
-      ),
-    ).toBeInTheDocument();
+    const summary = /The kit is done: 1 piece ready, 0 pieces to check, 1 piece failed\./;
+    expect(await screen.findByText(summary)).toBeInTheDocument();
     expect(await screen.findByRole("button", { name: "Regenerate the kit" })).toBeVisible();
   });
 

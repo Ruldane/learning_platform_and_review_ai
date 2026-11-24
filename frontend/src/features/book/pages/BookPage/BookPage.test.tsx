@@ -36,18 +36,18 @@ it("demande une édition et affiche les deux téléchargements quand elle est pr
     [{ path: "/learn/book/:programId?", element: <BookPage pollMs={20} /> }],
     `/learn/book/${PROGRAM}`,
   );
-  await user.click(await screen.findByRole("button", { name: "Préparer le livre" }));
-  expect(await screen.findByText("L’édition est en préparation.")).toBeVisible();
-  expect(screen.queryByRole("link", { name: "Télécharger en PDF" })).toBeNull();
+  await user.click(await screen.findByRole("button", { name: "Prepare the book" }));
+  expect(await screen.findByText("The edition is being prepared.")).toBeVisible();
+  expect(screen.queryByRole("link", { name: "Download as PDF" })).toBeNull();
   status = "ready";
-  expect(await screen.findByRole("link", { name: "Télécharger en PDF" })).toHaveAttribute(
+  expect(await screen.findByRole("link", { name: "Download as PDF" })).toHaveAttribute(
     "href",
     `${BOOK}/pdf`,
   );
-  expect(screen.getByRole("link", { name: "Télécharger en EPUB" })).toHaveAttribute(
+  expect(screen.getByRole("link", { name: "Download as EPUB" })).toHaveAttribute(
     "href",
     `${BOOK}/epub`,
   );
-  expect(screen.getByRole("link", { name: "Télécharger en PDF" })).toHaveFocus();
-  expect(screen.getByText("Chapitres publiés dans l’édition : 2")).toBeVisible();
+  expect(screen.getByRole("link", { name: "Download as PDF" })).toHaveFocus();
+  expect(screen.getByText("Chapters published in the edition: 2")).toBeVisible();
 });

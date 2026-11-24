@@ -9,7 +9,7 @@ describe("DebateCommandBar", () => {
     const group = screen.getByRole("group", { name: "Debate commands" });
     expect(group.querySelectorAll("button")).toHaveLength(4);
     for (const name of [
-      "Relancer un tour",
+      "Run another round",
       "Move on to proposals",
       "More concrete",
       "Shorter",
@@ -27,7 +27,7 @@ describe("DebateCommandBar", () => {
   });
 
   it.each([
-    ["Relancer un tour", "another_round"],
+    ["Run another round", "another_round"],
     ["More concrete", "more_concrete"],
     ["Shorter", "shorter"],
   ])("%s sends %s", async (name, command) => {

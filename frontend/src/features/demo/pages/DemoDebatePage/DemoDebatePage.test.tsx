@@ -34,7 +34,7 @@ const choiceInterrupt = {
     question: "Quel angle pour le second tour ?",
     options: [
       { label: "More concrete", value: "concret" },
-      { label: "Plus court", value: "court" },
+      { label: "Shorter", value: "court" },
     ],
   },
 };
@@ -108,7 +108,7 @@ describe("DemoDebatePage", () => {
       try {
         const { user } = setup();
         const menu = screen.getByLabelText("Who runs the agents for this launch");
-        expect(menu).toHaveDisplayValue("Choix global · API GLM");
+        expect(menu).toHaveDisplayValue("Global choice · GLM API");
         if (source !== undefined) await user.selectOptions(menu, source);
         await startDebate(user);
         await waitFor(() => expect(headers).toEqual([source ?? "glm"]));
@@ -151,7 +151,7 @@ describe("DemoDebatePage", () => {
       .push(started(1, "demo_proponent"), tok(2, "m1", "Oui", "demo_proponent"));
     expect(await screen.findByText("Oui")).toBeInTheDocument();
     fake.last().drop(1006); // serveur arrêté : le navigateur ne voit qu'un 1006
-    const notice = "Connexion au direct perdue, reconnexion…";
+    const notice = "Live connection lost, reconnecting…";
     expect(await screen.findByText(notice)).toBeInTheDocument();
     await waitFor(() => expect(fake.sockets).toHaveLength(2), { timeout: 2000 });
     fake.last().drop(1006); // refusé avant la poignée de main : toujours en reconnexion

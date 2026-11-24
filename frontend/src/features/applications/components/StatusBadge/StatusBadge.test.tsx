@@ -6,16 +6,16 @@ import { StatusBadge } from "./StatusBadge";
 const LABELS = [
   "To apply",
   "Applied",
-  "Relancée",
+  "Followed up",
   "Interview",
   "Offer",
-  "Refus",
-  "Sans réponse",
-  "Retirée",
+  "Rejected",
+  "No answer",
+  "Withdrawn",
 ];
 
 describe("StatusBadge", () => {
-  it("writes the status out in French, whatever the status", () => {
+  it("writes the status out in English, whatever the status", () => {
     STATUS_ORDER.forEach((status, index) => {
       const { unmount } = render(<StatusBadge status={status} />);
       expect(screen.getByText(LABELS[index] as string)).toBeInTheDocument();

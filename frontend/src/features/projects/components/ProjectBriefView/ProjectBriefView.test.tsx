@@ -39,8 +39,8 @@ describe("ProjectBriefView", () => {
   });
 
   it.each([
-    ["repo", "Un lien vers un dépôt."],
-    ["description", "Une description de ce que tu as fait."],
+    ["repo", "A link to a repository."],
+    ["description", "A description of what you did."],
   ] as const)("writes the %s deliverable", (deliverable, text) => {
     render(<ProjectBriefView brief={{ ...BRIEF, deliverable }} />);
     expect(screen.getByText(text)).toBeInTheDocument();

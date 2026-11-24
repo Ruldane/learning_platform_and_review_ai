@@ -21,8 +21,8 @@ describe("BrainPage", () => {
     server.use(http.get(`${base}/folders`, () => HttpResponse.json([])));
     server.use(http.get(`${base}/status`, () => HttpResponse.json([])));
     setup();
-    expect(await screen.findByText("Relais de synchronisation à configurer")).toBeVisible();
-    const connection = screen.getByRole("complementary", { name: "État du relais" });
+    expect(await screen.findByText("Sync relay needs to be configured")).toBeVisible();
+    const connection = screen.getByRole("complementary", { name: "Relay status" });
     expect(within(connection).getByText(/TREMPLIN_BRAIN_SYNC_TOKEN/)).toBeVisible();
   });
 
@@ -68,16 +68,16 @@ describe("BrainPage", () => {
       }),
     );
     const { user } = setup();
-    await user.type(await screen.findByRole("textbox", { name: "Nom du dossier" }), "Cours");
-    await user.type(screen.getByRole("textbox", { name: "Chemin du dossier" }), "C:\\Notes");
-    await user.click(screen.getByRole("button", { name: "Ajouter le dossier" }));
+    await user.type(await screen.findByRole("textbox", { name: "Folder name" }), "Cours");
+    await user.type(screen.getByRole("textbox", { name: "Folder path" }), "C:\\Notes");
+    await user.click(screen.getByRole("button", { name: "Add folder" }));
     const card = await screen.findByRole("article", { name: "Cours" });
     expect(within(card).getByText("C:\\Notes")).toBeVisible();
-    expect(within(card).getByText("2 indexés sur 3")).toBeVisible();
-    await user.click(within(card).getByText("Bilan du dernier passage"));
-    expect(within(card).getByText("Fichiers binaires", { exact: false })).toBeVisible();
-    await user.click(within(card).getByRole("button", { name: "Mettre en pause" }));
-    expect(await within(card).findByRole("button", { name: "Reprendre" })).toBeVisible();
+    expect(within(card).getByText("2 of 3 indexed")).toBeVisible();
+    await user.click(within(card).getByText("Last pass summary"));
+    expect(within(card).getByText("Binary files", { exact: false })).toBeVisible();
+    await user.click(within(card).getByRole("button", { name: "Pause" }));
+    expect(await within(card).findByRole("button", { name: "Resume" })).toBeVisible();
   });
 
   it("confirms removal and returns focus to the folder form", async () => {
@@ -86,10 +86,10 @@ describe("BrainPage", () => {
     server.use(http.delete(`${base}/folders/notes`, () => new HttpResponse(null, { status: 204 })));
     const { user } = setup();
     const card = await screen.findByRole("article", { name: "Cours" });
-    await user.click(within(card).getByRole("button", { name: "Retirer le dossier" }));
+    await user.click(within(card).getByRole("button", { name: "Remove folder" }));
     const dialog = screen.getByRole("alertdialog");
-    await user.click(within(dialog).getByRole("button", { name: "Retirer le dossier" }));
-    expect(await screen.findByText("Aucun dossier synchronisé.")).toBeVisible();
-    expect(screen.getByRole("textbox", { name: "Nom du dossier" })).toHaveFocus();
+    await user.click(within(dialog).getByRole("button", { name: "Remove folder" }));
+    expect(await screen.findByText("No synced folders.")).toBeVisible();
+    expect(screen.getByRole("textbox", { name: "Folder name" })).toHaveFocus();
   });
 });

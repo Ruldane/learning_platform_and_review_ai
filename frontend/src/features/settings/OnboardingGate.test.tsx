@@ -36,7 +36,7 @@ function setup(over: Parameters<typeof onboardingApi>[0], at = "/") {
               </main>
             ),
           },
-          { path: "learn", element: <p>Apprendre</p> },
+          { path: "learn", element: <p>Learn</p> },
           { path: "welcome", element: <WelcomePage /> },
         ],
       },
@@ -64,9 +64,9 @@ describe("OnboardingGate", () => {
   it("gate sends a new account to /welcome", async () => {
     const { router, visited } = setup({ settings: fresh }, "/learn");
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Les services de Tremplin" }),
+      await screen.findByRole("heading", { level: 1, name: "Tremplin's services" }),
     ).toBeInTheDocument();
-    expect(screen.queryByText("Apprendre")).toBeNull();
+    expect(screen.queryByText("Learn")).toBeNull();
     expect(router.state.location.pathname).toBe("/welcome");
     // Un remplacement : « précédent » ne ramène pas à une porte qui renverrait aussitôt.
     expect(router.state.historyAction).toBe("REPLACE");
@@ -75,20 +75,20 @@ describe("OnboardingGate", () => {
 
   it("gate lets an onboarded account through", async () => {
     const { router, visited } = setup({ settings: settingsFixture }, "/learn");
-    expect(await screen.findByText("Apprendre")).toBeInTheDocument();
+    expect(await screen.findByText("Learn")).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/learn");
     expect(visited).toEqual(["/learn"]);
   });
 
   it("does not send a new account away from /welcome, nor loop", async () => {
     const { visited } = setup({ settings: fresh }, "/welcome");
-    await screen.findByRole("heading", { level: 1, name: "Les services de Tremplin" });
+    await screen.findByRole("heading", { level: 1, name: "Tremplin's services" });
     expect(visited).toEqual(["/welcome"]);
   });
 
   it("keeps the layout away while the settings are read", async () => {
     const { reads } = setup({ settings: settingsFixture });
-    expect(screen.getByRole("status")).toHaveTextContent("Préparation de ton espace");
+    expect(screen.getByRole("status")).toHaveTextContent("Preparing your space");
     expect(screen.queryByText("Accueil de Tremplin")).toBeNull();
     await screen.findByText("Accueil de Tremplin");
     expect(reads.settings).toBe(1);
@@ -98,7 +98,7 @@ describe("OnboardingGate", () => {
     const { user, reads } = setup({ settings: settingsFixture, settingsFailures: 1 });
     expect(await screen.findByRole("alert")).toHaveTextContent("Le serveur a échoué.");
     expect(screen.queryByText("Accueil de Tremplin")).toBeNull();
-    const retry = screen.getByRole("button", { name: "Réessayer" });
+    const retry = screen.getByRole("button", { name: "Retry" });
     retry.focus();
     await user.keyboard("{Enter}");
     expect(await screen.findByText("Accueil de Tremplin")).toHaveFocus();
@@ -107,10 +107,10 @@ describe("OnboardingGate", () => {
 
   it("after a retry that leads to /welcome, the focus is the title of the step", async () => {
     const { user, router } = setup({ settings: fresh, settingsFailures: 1 });
-    await user.click(await screen.findByRole("button", { name: "Réessayer" }));
+    await user.click(await screen.findByRole("button", { name: "Retry" }));
     const title = await screen.findByRole("heading", {
       level: 1,
-      name: "Les services de Tremplin",
+      name: "Tremplin's services",
     });
     await waitFor(() => expect(title).toHaveFocus());
     expect(router.state.location.pathname).toBe("/welcome");
@@ -136,7 +136,7 @@ describe("OnboardingGate", () => {
   it("lets an onboarded account open /welcome by hand, without sending it away", async () => {
     const { router, visited } = setup({ settings: settingsFixture }, "/welcome");
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Les services de Tremplin" }),
+      await screen.findByRole("heading", { level: 1, name: "Tremplin's services" }),
     ).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/welcome");
     expect(visited).toEqual(["/welcome"]);

@@ -30,7 +30,7 @@ describe("DebriefView", () => {
     expect(bar.firstElementChild).toHaveStyle({ width: "80%" });
   });
 
-  it("says « non noté » for a score the model did not give, and leaves the average out of it", () => {
+  it("omits the average and labels a missing score “not scored”", () => {
     const base = makeInterview();
     show({
       ...base,
@@ -71,11 +71,11 @@ describe("DebriefView", () => {
     expect(screen.queryByText("To check")).toBeNull();
   });
 
-  it("marks the improved answer « à vérifier » with the terms the profile does not say", () => {
+  it("marks the improved answer “to check” with the terms the profile does not say", () => {
     show(makeInterview({ flags: ["Kubernetes", "Terraform"] }));
     expect(screen.getByText("To check")).toBeVisible();
     expect(screen.getByRole("note")).toHaveTextContent(
-      "Ces termes ne sont pas dans ton profil : Kubernetes, Terraform.",
+      "These terms aren't in your profile: Kubernetes, Terraform.",
     );
   });
 
@@ -112,7 +112,8 @@ describe("DebriefView", () => {
     );
     expect(
       screen.getByText(
-        "Les réponses aux questions 1 et 3 n'ont pas pu être notées : elles ne comptent pas dans les notes.",
+        "The answers to questions 1 and 3 couldn't be scored: " +
+          "they don't count toward the scores.",
       ),
     ).toBeVisible();
     expect(screen.getAllByText("Not scored")).toHaveLength(2);
@@ -122,7 +123,7 @@ describe("DebriefView", () => {
     show(makeInterview({ debrief: makeDebrief({ unrated: [1] }) }));
     expect(
       screen.getByText(
-        "La réponse à la question 2 n'a pas pu être notée : elle ne compte pas dans les notes.",
+        "The answer to question 2 couldn't be scored: it doesn't count toward the scores.",
       ),
     ).toBeVisible();
   });

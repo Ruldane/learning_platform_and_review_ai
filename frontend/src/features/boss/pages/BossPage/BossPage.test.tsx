@@ -39,12 +39,12 @@ it("reprend le besoin modifié et permet d’ouvrir le projet remis", async () =
 
   renderRoutes([{ path: "/learn/programs/:programId/boss", element: <BossPage /> }], route);
   expect(
-    await screen.findByRole("heading", { name: "Changement demandé par le client" }),
+    await screen.findByRole("heading", { name: "Change requested by the client" }),
   ).toBeVisible();
   expect(screen.getByText("Les urgences passent en premier.")).toBeVisible();
-  expect(screen.getByRole("link", { name: "Ouvrir le projet Python" })).toHaveAttribute(
+  expect(screen.getByRole("link", { name: "Open the Python project" })).toHaveAttribute(
     "href",
     "/code/projet-test",
   );
-  expect(screen.getByRole("button", { name: "Remettre les fichiers sauvegardés" })).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Submit the saved files" })).toBeEnabled();
 });

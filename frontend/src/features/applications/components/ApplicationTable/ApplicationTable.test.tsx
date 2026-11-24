@@ -17,11 +17,11 @@ describe("ApplicationTable", () => {
   it("shows the six columns and one row per application", () => {
     render(<ApplicationTable applications={makeApplications()} onOpen={vi.fn()} />);
     expect(screen.getAllByRole("columnheader").map((item) => item.textContent)).toEqual([
-      "Entreprise",
-      "Poste",
-      "Statut",
-      "Candidature",
-      "Prochaine action",
+      "Company",
+      "Role",
+      "Status",
+      "Applied",
+      "Next action",
       "Follow-ups due",
     ]);
     expect(screen.getAllByRole("row")).toHaveLength(5);
@@ -44,10 +44,10 @@ describe("ApplicationTable", () => {
     const user = userEvent.setup();
     render(<ApplicationTable applications={makeApplications()} onOpen={vi.fn()} />);
     await user.click(screen.getByRole("button", { name: "Sort by Company" }));
-    expect(header(/Entreprise/)).toHaveAttribute("aria-sort", "ascending");
+    expect(header(/Company/)).toHaveAttribute("aria-sort", "ascending");
     expect(companies()).toEqual(["Acme", "Beta", "Delta", "Gamma"]);
     await user.click(screen.getByRole("button", { name: "Sort by Company" }));
-    expect(header(/Entreprise/)).toHaveAttribute("aria-sort", "descending");
+    expect(header(/Company/)).toHaveAttribute("aria-sort", "descending");
     expect(companies()).toEqual(["Gamma", "Delta", "Beta", "Acme"]);
   });
 
@@ -56,8 +56,8 @@ describe("ApplicationTable", () => {
     render(<ApplicationTable applications={makeApplications()} onOpen={vi.fn()} />);
     await user.click(screen.getByRole("button", { name: "Sort by Company" }));
     await user.click(screen.getByRole("button", { name: "Sort by Role" }));
-    expect(header(/Entreprise/)).toHaveAttribute("aria-sort", "none");
-    expect(header(/Poste/)).toHaveAttribute("aria-sort", "ascending");
+    expect(header(/Company/)).toHaveAttribute("aria-sort", "none");
+    expect(header(/Role/)).toHaveAttribute("aria-sort", "ascending");
   });
 
   it("sorts the statuses in the order of the board, not alphabetically", async () => {
@@ -70,9 +70,9 @@ describe("ApplicationTable", () => {
   it("sorts the dates and keeps the applications without a date at the end in both directions", async () => {
     const user = userEvent.setup();
     render(<ApplicationTable applications={makeApplications()} onOpen={vi.fn()} />);
-    await user.click(screen.getByRole("button", { name: "Sort by Application" }));
+    await user.click(screen.getByRole("button", { name: "Sort by Applied" }));
     expect(companies()).toEqual(["Gamma", "Acme", "Delta", "Beta"]);
-    await user.click(screen.getByRole("button", { name: "Sort by Application" }));
+    await user.click(screen.getByRole("button", { name: "Sort by Applied" }));
     expect(companies()).toEqual(["Delta", "Acme", "Gamma", "Beta"]);
   });
 
@@ -82,7 +82,7 @@ describe("ApplicationTable", () => {
     render(<ApplicationTable applications={[...makeApplications(), busy]} onOpen={vi.fn()} />);
     await user.click(screen.getByRole("button", { name: "Sort by Follow-ups due" }));
     await user.click(screen.getByRole("button", { name: "Sort by Follow-ups due" }));
-    // En texte, « 2 » passerait avant « 10 » : seul un tri numérique met Busy en tête.
+    // Only a numeric sort ranks 10 above 2.
     expect(companies().slice(0, 2)).toEqual(["Busy", "Acme"]);
   });
 

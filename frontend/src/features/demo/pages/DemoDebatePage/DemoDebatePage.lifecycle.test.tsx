@@ -19,7 +19,7 @@ const angle: InterruptPayload = {
   question: "Quel angle pour le second tour ?",
   options: [
     { label: "More concrete", value: "concret" },
-    { label: "Plus court", value: "court" },
+    { label: "Shorter", value: "court" },
   ],
 };
 
@@ -118,7 +118,7 @@ describe("DemoDebatePage : cycle de vie complet", () => {
     publish(fake, history.at(-1) as SessionEvent);
     expect(await screen.findByText("Pense aux débutants")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "More concrete" })).toBeEnabled();
-    await expectStatus("En attente de ta réponse");
+    await expectStatus("Waiting for your answer");
 
     // 2. Réponse, le Critique commence à écrire, puis pause.
     await user.click(screen.getByRole("button", { name: "More concrete" }));
@@ -127,7 +127,7 @@ describe("DemoDebatePage : cycle de vie complet", () => {
     publish(fake, ...round2);
     history.push(...round2);
     await user.click(await screen.findByRole("button", { name: "Pause" }));
-    await expectStatus("En pause");
+    await expectStatus("Paused");
 
     // 3. Rechargement : store vide, rejeu complet ; le statut vient du serveur (I2).
     page.unmount();
@@ -138,7 +138,7 @@ describe("DemoDebatePage : cycle de vie complet", () => {
       .last()
       .open()
       .push(...history);
-    await expectStatus("En pause");
+    await expectStatus("Paused");
     expect(screen.queryByRole("button", { name: "Pause" })).not.toBeInTheDocument();
     // La question répondue reste repliée après le rechargement : plus d'option à cliquer.
     expect(screen.queryByRole("button", { name: "More concrete" })).not.toBeInTheDocument();
@@ -146,7 +146,7 @@ describe("DemoDebatePage : cycle de vie complet", () => {
 
     // 4. Reprise : le Critique rejoue son tour coupé (nouvel id), une seule bulle (I5).
     await user.click(screen.getByRole("button", { name: "Resume" }));
-    await expectStatus("En cours");
+    await expectStatus("Running");
     publish(
       fake,
       started(8, "demo_critic"),
@@ -157,7 +157,7 @@ describe("DemoDebatePage : cycle de vie complet", () => {
     expect(await screen.findByText("Entier.")).toBeInTheDocument();
     expect(screen.queryByText("Moitié")).not.toBeInTheDocument();
     expect(screen.getAllByRole("article", { name: "Critic" })).toHaveLength(1);
-    await expectStatus("Terminée");
+    await expectStatus("Completed");
     expect(screen.getByRole("button", { name: "New debate" })).toBeInTheDocument();
   });
 });

@@ -23,20 +23,20 @@ function setup(init: Parameters<typeof memoryBackend>[0] = {}) {
 describe("MemoryMapPage", () => {
   it("opens the clicked item in the explorer through ?item=", async () => {
     const { router, user } = setup();
-    await user.click(await screen.findByRole("button", { name: "Attention (Acquis)" }));
+    await user.click(await screen.findByRole("button", { name: "Attention (Acquired skill)" }));
     await waitFor(() => expect(router.state.location.pathname).toBe("/memory"));
     expect(router.state.location.search).toBe("?item=i1");
   });
 
   it("notes a truncated map", async () => {
     setup({ map: { ...mapOut, truncated: true } });
-    expect(await screen.findByText(/limitée aux 2 000 éléments/)).toBeInTheDocument();
+    expect(await screen.findByText(/limited to the 2,000 most recent items/)).toBeInTheDocument();
   });
 
   it("offers to import a document when there is nothing to draw", async () => {
     const { router, user } = setup({ map: { ...mapOut, points: [] } });
-    expect(await screen.findByText("La carte apparaîtra après le premier import.")).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "Importer un document" }));
+    expect(await screen.findByText("The map will appear after the first import.")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Import a document" }));
     await waitFor(() => expect(router.state.location.pathname).toBe("/memory/documents"));
   });
 
@@ -54,7 +54,9 @@ describe("MemoryMapPage", () => {
     );
     expect(screen.getByRole("status")).toBeInTheDocument();
     expect(await screen.findByText("Carte indisponible.")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Réessayer" }));
-    expect(await screen.findByRole("button", { name: "Attention (Acquis)" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+    expect(
+      await screen.findByRole("button", { name: "Attention (Acquired skill)" }),
+    ).toBeInTheDocument();
   });
 });

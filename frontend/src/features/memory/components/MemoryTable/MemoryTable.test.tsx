@@ -21,7 +21,7 @@ const base = {
 };
 
 const two = [row({ id: "a", title: "Premier" }), row({ id: "b", title: "Second" })];
-const mergeButton = () => screen.getByRole("button", { name: "Fusionner" });
+const mergeButton = () => screen.getByRole("button", { name: "Merge" });
 
 describe("MemoryTable", () => {
   it("shows kind, author and level", () => {
@@ -33,14 +33,14 @@ describe("MemoryTable", () => {
       />,
     );
     const table = within(screen.getByRole("table"));
-    expect(table.getByText("Acquis")).toBeInTheDocument();
-    expect(table.getByText("Archiviste")).toBeInTheDocument();
-    expect(table.getByText("Déclaré")).toBeInTheDocument();
+    expect(table.getByText("Acquired skill")).toBeInTheDocument();
+    expect(table.getByText("Archivist")).toBeInTheDocument();
+    expect(table.getByText("Declared")).toBeInTheDocument();
   });
 
   it("shows the empty state", () => {
     render(<MemoryTable {...base} />);
-    expect(screen.getByText("Aucun élément en mémoire")).toBeInTheDocument();
+    expect(screen.getByText("No items in memory")).toBeInTheDocument();
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
   });
 
@@ -52,8 +52,8 @@ describe("MemoryTable", () => {
         items={[row({ indexed: false }), row({ id: "b", status: "pending", kind: "decision" })]}
       />,
     );
-    expect(screen.getByText("Pas encore indexé")).toBeInTheDocument();
-    expect(screen.getByText("À confirmer")).toBeInTheDocument();
+    expect(screen.getByText("Not indexed yet")).toBeInTheDocument();
+    expect(screen.getByText("To confirm")).toBeInTheDocument();
   });
 
   it("opens an item from its title", async () => {
@@ -69,10 +69,10 @@ describe("MemoryTable", () => {
     const { rerender } = render(
       <MemoryTable {...base} total={2} items={two} onSelect={onSelect} />,
     );
-    await user.click(screen.getByRole("checkbox", { name: "Sélectionner « Premier »" }));
+    await user.click(screen.getByRole("checkbox", { name: "Select “Premier”" }));
     expect(onSelect).toHaveBeenLastCalledWith(["a"]);
     rerender(<MemoryTable {...base} total={2} items={two} onSelect={onSelect} selected={["a"]} />);
-    await user.click(screen.getByRole("checkbox", { name: "Sélectionner « Premier »" }));
+    await user.click(screen.getByRole("checkbox", { name: "Select “Premier”" }));
     expect(onSelect).toHaveBeenLastCalledWith([]);
   });
 
@@ -81,7 +81,7 @@ describe("MemoryTable", () => {
     const user = userEvent.setup();
     render(<MemoryTable {...base} total={2} items={two} selected={["a", "b"]} onMerge={onMerge} />);
     await user.click(mergeButton());
-    await user.click(screen.getByRole("button", { name: "Oui, fusionner" }));
+    await user.click(screen.getByRole("button", { name: "Yes, merge" }));
     expect(onMerge).toHaveBeenCalledWith("a", ["b"]);
   });
 
@@ -90,7 +90,7 @@ describe("MemoryTable", () => {
     const user = userEvent.setup();
     render(<MemoryTable {...base} total={2} items={two} selected={["b", "a"]} onMerge={onMerge} />);
     await user.click(mergeButton());
-    await user.click(screen.getByRole("button", { name: "Oui, fusionner" }));
+    await user.click(screen.getByRole("button", { name: "Yes, merge" }));
     expect(onMerge).toHaveBeenCalledWith("b", ["a"]);
   });
 
@@ -99,9 +99,9 @@ describe("MemoryTable", () => {
     const user = userEvent.setup();
     render(<MemoryTable {...base} total={2} items={two} selected={["a", "b"]} onMerge={onMerge} />);
     await user.click(mergeButton());
-    expect(screen.getByText(/Fondre 2 éléments dans « Premier »/)).toBeInTheDocument();
+    expect(screen.getByText(/Merge 2 items into “Premier”/)).toBeInTheDocument();
     expect(onMerge).not.toHaveBeenCalled();
-    await user.click(screen.getByRole("button", { name: "Non, annuler" }));
+    await user.click(screen.getByRole("button", { name: "No, cancel" }));
     expect(onMerge).not.toHaveBeenCalled();
     expect(mergeButton()).toBeEnabled();
   });
@@ -109,7 +109,7 @@ describe("MemoryTable", () => {
   it("locks the merge and the selection while the merge is in flight", () => {
     render(<MemoryTable {...base} total={2} items={two} selected={["a", "b"]} merging />);
     expect(mergeButton()).toBeDisabled();
-    expect(screen.getByRole("checkbox", { name: "Sélectionner « Premier »" })).toBeDisabled();
+    expect(screen.getByRole("checkbox", { name: "Select “Premier”" })).toBeDisabled();
   });
 
   it("disables merge for one item, mixed kinds or documents", () => {
@@ -132,30 +132,30 @@ describe("MemoryTable", () => {
     const onPage = vi.fn();
     const user = userEvent.setup();
     render(<MemoryTable {...base} total={60} offset={25} limit={25} items={two} onPage={onPage} />);
-    expect(screen.getByText("26–27 sur 60")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Suivant" }));
+    expect(screen.getByText("26–27 of 60")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Next" }));
     expect(onPage).toHaveBeenLastCalledWith(50);
-    await user.click(screen.getByRole("button", { name: "Précédent" }));
+    await user.click(screen.getByRole("button", { name: "Previous" }));
     expect(onPage).toHaveBeenLastCalledWith(0);
   });
 
   it("still shows the pager when the page is empty but there are more pages", async () => {
     const onPage = vi.fn();
     render(<MemoryTable {...base} total={30} offset={50} limit={25} items={[]} onPage={onPage} />);
-    await userEvent.setup().click(screen.getByRole("button", { name: "Précédent" }));
+    await userEvent.setup().click(screen.getByRole("button", { name: "Previous" }));
     expect(onPage).toHaveBeenCalledWith(25);
   });
 
   it("disables the paging buttons at both ends", () => {
     render(<MemoryTable {...base} total={2} offset={0} limit={25} items={two} />);
-    expect(screen.getByRole("button", { name: "Précédent" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Suivant" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Previous" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
   });
 
   it("keeps the filters visible and forwards their changes", async () => {
     const onFiltersChange = vi.fn();
     render(<MemoryTable {...base} onFiltersChange={onFiltersChange} />);
-    await userEvent.setup().type(screen.getByLabelText("Étiquette"), "x");
+    await userEvent.setup().type(screen.getByLabelText("Tag"), "x");
     expect(onFiltersChange).toHaveBeenCalledWith({ ...NO_FILTERS, tag: "x" });
   });
 });

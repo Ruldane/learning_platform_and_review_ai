@@ -40,11 +40,11 @@ describe("MemoryExplorerPage (final review fixes)", () => {
       ),
     );
     const drawer = await screen.findByRole("dialog");
-    await user.click(await within(drawer).findByRole("button", { name: "Modifier" }));
-    await user.type(within(drawer).getByLabelText("Titre"), " v2");
-    await user.click(within(drawer).getByRole("button", { name: "Enregistrer" }));
+    await user.click(await within(drawer).findByRole("button", { name: "Edit" }));
+    await user.type(within(drawer).getByLabelText("Title"), " v2");
+    await user.click(within(drawer).getByRole("button", { name: "Save" }));
     expect(await within(drawer).findByText("Un élément identique existe déjà.")).toBeVisible();
-    await user.click(within(drawer).getByRole("button", { name: "Fermer" }));
+    await user.click(within(drawer).getByRole("button", { name: "Close" }));
     await user.click(await screen.findByRole("button", { name: "Backpropagation" }));
     const next = await screen.findByRole("dialog", { name: "Backpropagation" });
     expect(within(next).queryByText("Un élément identique existe déjà.")).not.toBeInTheDocument();
@@ -58,12 +58,12 @@ describe("MemoryExplorerPage (final review fixes)", () => {
       ),
     );
     const drawer = await screen.findByRole("dialog");
-    await user.click(await within(drawer).findByRole("button", { name: "Modifier" }));
-    await user.type(within(drawer).getByLabelText("Titre"), " v2");
-    await user.click(within(drawer).getByRole("button", { name: "Enregistrer" }));
+    await user.click(await within(drawer).findByRole("button", { name: "Edit" }));
+    await user.type(within(drawer).getByLabelText("Title"), " v2");
+    await user.click(within(drawer).getByRole("button", { name: "Save" }));
     await within(drawer).findByText("Un élément identique existe déjà.");
-    await user.click(screen.getByRole("button", { name: "Ajouter" }));
-    const form = await screen.findByRole("dialog", { name: "Nouvel élément" });
+    await user.click(screen.getByRole("button", { name: "Add" }));
+    const form = await screen.findByRole("dialog", { name: "New item" });
     expect(within(form).queryByText("Un élément identique existe déjà.")).not.toBeInTheDocument();
   });
 
@@ -74,13 +74,13 @@ describe("MemoryExplorerPage (final review fixes)", () => {
     const { backend, user } = setup("/memory", { items: many });
     paginate(backend);
     expect(await screen.findByText("Élément 01")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Suivant" }));
+    await user.click(screen.getByRole("button", { name: "Next" }));
     await user.click(await screen.findByRole("button", { name: "Élément 26" }));
     const drawer = await screen.findByRole("dialog", { name: "Élément 26" });
-    await user.click(await within(drawer).findByRole("button", { name: "Supprimer" }));
-    await user.click(within(drawer).getByRole("button", { name: "Oui, supprimer" }));
+    await user.click(await within(drawer).findByRole("button", { name: "Delete" }));
+    await user.click(within(drawer).getByRole("button", { name: "Yes, delete" }));
     expect(await screen.findByRole("button", { name: "Élément 01" })).toBeInTheDocument();
-    expect(screen.queryByText("Aucun élément en mémoire")).not.toBeInTheDocument();
+    expect(screen.queryByText("No items in memory")).not.toBeInTheDocument();
   });
 
   it("locks the merge while it is in flight and sends it once (I5)", async () => {
@@ -98,12 +98,12 @@ describe("MemoryExplorerPage (final review fixes)", () => {
         return HttpResponse.json(backend.items[0]);
       }),
     );
-    await user.click(await screen.findByLabelText("Sélectionner « Leçon A »"));
-    await user.click(screen.getByLabelText("Sélectionner « Leçon B »"));
-    await user.click(screen.getByRole("button", { name: "Fusionner" }));
-    await user.click(screen.getByRole("button", { name: "Oui, fusionner" }));
-    await waitFor(() => expect(screen.getByRole("button", { name: "Fusionner" })).toBeDisabled());
-    await user.click(screen.getByRole("button", { name: "Fusionner" }));
+    await user.click(await screen.findByLabelText("Select “Leçon A”"));
+    await user.click(screen.getByLabelText("Select “Leçon B”"));
+    await user.click(screen.getByRole("button", { name: "Merge" }));
+    await user.click(screen.getByRole("button", { name: "Yes, merge" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Merge" })).toBeDisabled());
+    await user.click(screen.getByRole("button", { name: "Merge" }));
     release();
     await waitFor(() => expect(screen.queryByText("Leçon B")).not.toBeInTheDocument());
     expect(calls).toBe(1);
