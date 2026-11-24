@@ -262,7 +262,7 @@ def announce(state: GapAnalysisState) -> GapAnalysisState:
         "artifact_id": posting_id,
         "kind": "posting_gap",
         "title": str(analysis.get("title") or "Offre"),
-        "url": f"/carriere/offres/{posting_id}",
+        "url": f"/career/postings/{posting_id}",
     }
     emit("artifact.ready", artifact, agent=AGENT)
     return {"summary": text}

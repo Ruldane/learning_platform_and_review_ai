@@ -67,7 +67,7 @@ export function ReviewBody({ review, createSocket }: ReviewBodyProps) {
           <ReviewReportView
             report={toReportView(review.report)}
             gapTerms={review.gap_terms}
-            gapHref={`/carriere/offres/${review.posting_id}`}
+            gapHref={`/career/postings/${review.posting_id}`}
           />
         </Section>
       ) : null}

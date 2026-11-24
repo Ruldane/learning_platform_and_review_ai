@@ -100,8 +100,8 @@ describe("PostingPage deletion", () => {
     });
     client.setQueryData(gapKeys.posting("p7"), posting7);
     const router = createMemoryRouter(
-      [{ path: "/carriere/offres/:postingId", element: <PostingPage /> }],
-      { initialEntries: ["/carriere/offres/p1"] },
+      [{ path: "/career/postings/:postingId", element: <PostingPage /> }],
+      { initialEntries: ["/career/postings/p1"] },
     );
     render(
       <QueryClientProvider client={client}>

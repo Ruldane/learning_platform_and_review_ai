@@ -53,11 +53,11 @@ async function createTemplate(page: Page): Promise<void> {
 
 /** 3. Offres : le texte de l'offre collé, son score de match et son tableau d'écarts. */
 async function addPosting(page: Page): Promise<void> {
-  await page.goto("/carriere/offres");
+  await page.goto("/career/postings");
   await page.getByRole("tab", { name: "Texte" }).click();
   await page.getByRole("textbox", { name: "Texte de l'offre" }).fill(POSTING_TEXT);
   await page.getByRole("button", { name: "Analyser l'offre" }).click();
-  await expect(page).toHaveURL(/\/carriere\/offres\/[^/]+$/);
+  await expect(page).toHaveURL(/\/career\/postings\/[^/]+$/);
 
   await expect(page.getByRole("meter", { name: /^Score de match : \d+ sur 100$/ })).toBeVisible({
     timeout: 90_000,

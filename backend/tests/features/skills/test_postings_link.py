@@ -43,8 +43,8 @@ async def test_skill_detail_lists_postings(
     pending = await client.post(f"{API}/postings", json={"text": f"{POSTING_TEXT}\nAutre."})
     assert pending.status_code == 201  # en analyse : jamais listée
     expected = [
-        {"id": newer, "title": "Lead IA", "url": f"/carriere/offres/{newer}"},
-        {"id": older, "title": "AI Product Engineer", "url": f"/carriere/offres/{older}"},
+        {"id": newer, "title": "Lead IA", "url": f"/career/postings/{newer}"},
+        {"id": older, "title": "AI Product Engineer", "url": f"/career/postings/{older}"},
     ]
     assert await _postings(client, await _skill_id(app, "LangGraph")) == expected  # besoin
     assert await _postings(client, rag) == expected  # rattachement de « RAG »

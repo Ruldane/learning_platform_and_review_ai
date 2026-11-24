@@ -10,11 +10,11 @@ function setup(api: Parameters<typeof postingsApi>[0] = {}) {
   server.use(...postingsApi(api).handlers);
   return renderRoutes(
     [
-      { path: "/carriere/ecarts", element: <GapOverviewPage /> },
-      { path: "/carriere/offres", element: <p>Postings list</p> },
+      { path: "/career/gaps", element: <GapOverviewPage /> },
+      { path: "/career/postings", element: <p>Postings list</p> },
       { path: "/competences", element: <p>Skills map</p> },
     ],
-    "/carriere/ecarts",
+    "/career/gaps",
   );
 }
 
@@ -39,7 +39,7 @@ describe("GapOverviewPage", () => {
     const { user, router } = setup({ top: () => HttpResponse.json([]) });
     expect(await screen.findByText("No gaps to show")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Add a posting" }));
-    expect(router.state.location.pathname).toBe("/carriere/offres");
+    expect(router.state.location.pathname).toBe("/career/postings");
   });
 
   it("shows a retryable error", async () => {

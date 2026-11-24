@@ -16,7 +16,7 @@ const REPORT: ReportView = {
 function setup(report: ReportView = REPORT, gapTerms: string[] = ["AWS"]) {
   render(
     <MemoryRouter>
-      <ReviewReportView report={report} gapTerms={gapTerms} gapHref="/carriere/ecarts/p1" />
+      <ReviewReportView report={report} gapTerms={gapTerms} gapHref="/career/postings/p1" />
     </MemoryRouter>,
   );
 }
@@ -25,9 +25,9 @@ describe("ReviewReportView", () => {
   it("shows strengths, risks and eliminatory criteria in their own lists", () => {
     setup();
     for (const [title, text] of [
-      ["Forces", "Cinq ans d'expérience en Python."],
-      ["Risques", "Peu d'expérience du cloud."],
-      ["Critères éliminatoires", "Permis B exigé."],
+      ["Strengths", "Cinq ans d'expérience en Python."],
+      ["Risks", "Peu d'expérience du cloud."],
+      ["Deal-breakers", "Permis B exigé."],
     ] as const) {
       const section = screen
         .getByRole("heading", { name: title })
@@ -38,33 +38,33 @@ describe("ReviewReportView", () => {
 
   it("shows the detected recruiting software and the company sheet", () => {
     setup();
-    expect(screen.getByText("Logiciel de recrutement détecté : Greenhouse")).toBeInTheDocument();
+    expect(screen.getByText("Applicant tracking system detected: Greenhouse")).toBeInTheDocument();
     expect(screen.getByText("Un seul fichier PDF, texte sélectionnable.")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Fiche entreprise" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Company profile" })).toBeInTheDocument();
     expect(screen.getByText("Société Fictive édite un logiciel de paie.")).toBeInTheDocument();
   });
 
   it("gap terms label", () => {
     setup(REPORT, ["AWS", "Kafka"]);
     expect(
-      screen.getByText(/Mots clés de l'offre à appuyer par un fait ou à acquérir : AWS, Kafka/),
+      screen.getByText(/Posting keywords to back up with a fact or to acquire: AWS, Kafka/),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Voir l'écart" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "View the gap" })).toHaveAttribute(
       "href",
-      "/carriere/ecarts/p1",
+      "/career/postings/p1",
     );
   });
 
   it("omits the gap line, the company sheet and the notes when there is nothing", () => {
     setup({ ...REPORT, ats: null, atsNotes: [], companySummary: null, strengths: [] }, []);
-    expect(screen.getByText("Logiciel de recrutement non détecté.")).toBeInTheDocument();
-    expect(screen.queryByText(/Mots clés de l'offre absents/)).not.toBeInTheDocument();
+    expect(screen.getByText("No applicant tracking system detected.")).toBeInTheDocument();
+    expect(screen.queryByText(/Posting keywords to back up/)).not.toBeInTheDocument();
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Fiche entreprise" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Company profile" })).not.toBeInTheDocument();
     const section = screen
-      .getByRole("heading", { name: "Forces" })
+      .getByRole("heading", { name: "Strengths" })
       .closest("section") as HTMLElement;
-    expect(within(section).getByText("Rien à signaler.")).toBeInTheDocument();
+    expect(within(section).getByText("Nothing to report.")).toBeInTheDocument();
   });
 
   it("renders everything as plain text", () => {

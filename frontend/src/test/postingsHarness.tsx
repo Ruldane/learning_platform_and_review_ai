@@ -19,8 +19,8 @@ export function renderPosting(
   server.use(...postings.handlers);
   const view = renderRoutes(
     [
-      { path: "/carriere/offres/:postingId", element: makePage(sockets.factory) },
-      { path: "/carriere/offres", element: <p>Postings list</p> },
+      { path: "/career/postings/:postingId", element: makePage(sockets.factory) },
+      { path: "/career/postings", element: <p>Postings list</p> },
       { path: "/candidatures/:applicationId", element: <p>Application details</p> },
       {
         path: "/apprendre/programme/:programId/replanification",
@@ -28,7 +28,7 @@ export function renderPosting(
       },
       { path: "/apprendre/objectifs", element: <p>Goals</p> },
     ],
-    "/carriere/offres/p1",
+    "/career/postings/p1",
   );
   return { ...view, ...postings, sockets };
 }

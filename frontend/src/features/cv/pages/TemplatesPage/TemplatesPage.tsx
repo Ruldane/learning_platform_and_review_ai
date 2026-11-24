@@ -36,7 +36,7 @@ export function TemplatesPage({ pollMs = POLL_MS }: { pollMs?: number }) {
           <Link to="/carriere/cv/versions" className={link}>
             {t("cv.templatesPage.versionsLink")}
           </Link>
-          <Link to="/carriere/offres" className={link}>
+          <Link to="/career/postings" className={link}>
             {t("cv.templatesPage.offersLink")}
           </Link>
         </nav>

@@ -39,7 +39,7 @@ export function ReadyBlock({ posting, pollMs, createSocket }: ReadyBlockProps) {
     <>
       <DuplicateNotice
         duplicates={duplicates}
-        onOpen={(postingId) => void navigate(`/carriere/offres/${postingId}`)}
+        onOpen={(postingId) => void navigate(`/career/postings/${postingId}`)}
         onDistinct={distinct}
       />
       {error ? <InlineError message={error} /> : null}

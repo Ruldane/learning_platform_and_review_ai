@@ -54,11 +54,11 @@ function candidacy(page: Page): Locator {
 
 /** 1. Offre collée en texte, analysée ; fiche créée depuis la page de l'offre. */
 async function createFromPosting(page: Page): Promise<void> {
-  await page.goto("/carriere/offres");
+  await page.goto("/career/postings");
   await page.getByRole("tab", { name: "Texte" }).click();
   await page.getByRole("textbox", { name: "Texte de l'offre" }).fill(PASTED_POSTING);
   await page.getByRole("button", { name: "Analyser l'offre" }).click();
-  await expect(page).toHaveURL(/\/carriere\/offres\/[^/]+$/);
+  await expect(page).toHaveURL(/\/career\/postings\/[^/]+$/);
 
   // Après le parcours n° 2, la fiche de son offre (même entreprise, texte voisin) est un doublon
   // « possible » : le serveur l'alerte, et January confirme que c'est un autre poste.
@@ -85,11 +85,11 @@ async function markApplied(page: Page): Promise<void> {
 
 /** 3. La même offre, par son lien : sa page porte l'alerte « tu as déjà postulé … ». */
 async function pasteSameLink(page: Page): Promise<void> {
-  await page.goto("/carriere/offres");
+  await page.goto("/career/postings");
   await page.getByRole("tab", { name: "Lien" }).click();
   await page.getByRole("textbox", { name: "Lien de l'offre" }).fill(POSTING_URL);
   await page.getByRole("button", { name: "Analyser l'offre" }).click();
-  await expect(page).toHaveURL(/\/carriere\/offres\/[^/]+$/);
+  await expect(page).toHaveURL(/\/career\/postings\/[^/]+$/);
 
   const alert = candidacy(page).getByRole("alert");
   await expect(alert).toBeVisible({ timeout: 90_000 });

@@ -44,6 +44,8 @@ export interface FeatureShell {
 export interface FeatureManifest {
   id: string;
   routes: RouteObject[];
+  /** Previous route patterns mapped to their current absolute paths. */
+  legacyRoutes?: Record<string, string>;
   publicRoutes?: RouteObject[];
   nav?: NavEntry[];
   shell?: FeatureShell;

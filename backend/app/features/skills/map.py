@@ -44,7 +44,7 @@ STUDY_URL = "/etudier/session"
 QUIZ_URL = "/etudier/quiz"
 REVIEW_URL = "/etudier/revisions"
 JOURNAL_URL = "/etudier/journal"
-POSTING_PAGE = "/carriere/offres/"
+POSTING_PAGE = "/career/postings/"
 # Page de chaque genre de preuve qui désigne un objet (`ref_id`) ; « capture » mène au journal.
 _EVIDENCE_PAGES: dict[EvidenceKind, str] = {
     "lesson": "/apprendre/lecons/",

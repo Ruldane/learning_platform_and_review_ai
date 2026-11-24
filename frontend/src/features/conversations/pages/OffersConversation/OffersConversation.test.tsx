@@ -68,8 +68,8 @@ function setup() {
     ),
   );
   return renderRoutes(
-    [{ path: "/carriere/offres", element: <OffersConversation /> }],
-    "/carriere/offres",
+    [{ path: "/career/postings", element: <OffersConversation /> }],
+    "/career/postings",
   );
 }
 
@@ -89,7 +89,7 @@ describe("OffersConversation", () => {
     expect(answer).toBeVisible();
     expect(within(dialog).getByRole("link", { name: "Northwind offer" })).toHaveAttribute(
       "href",
-      "/carriere/offres/northwind",
+      "/career/postings/northwind",
     );
     expect(within(dialog).getByRole("link", { name: "Northwind application" })).toHaveAttribute(
       "href",

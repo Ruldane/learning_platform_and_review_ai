@@ -11,10 +11,10 @@ function setup(api: Parameters<typeof postingsApi>[0] = {}, pollMs?: number) {
   server.use(...postings.handlers);
   const view = renderRoutes(
     [
-      { path: "/carriere/offres", element: <PostingsPage pollMs={pollMs} /> },
-      { path: "/carriere/offres/:postingId", element: <p>Posting detail</p> },
+      { path: "/career/postings", element: <PostingsPage pollMs={pollMs} /> },
+      { path: "/career/postings/:postingId", element: <p>Posting detail</p> },
     ],
-    "/carriere/offres",
+    "/career/postings",
   );
   return { ...view, state: postings.state };
 }
@@ -38,7 +38,7 @@ describe("PostingsPage", () => {
     expect(items).toHaveLength(2);
     expect(within(items[0]!).getByRole("link", { name: "Ingénieure données" })).toHaveAttribute(
       "href",
-      "/carriere/offres/p1",
+      "/career/postings/p1",
     );
     expect(within(items[0]!).getByText("Société Fictive")).toBeInTheDocument();
     expect(within(items[0]!).getByText("Match: 62/100")).toBeInTheDocument();
@@ -51,7 +51,7 @@ describe("PostingsPage", () => {
     await user.type(linkField(), "https://example.org/jobs/9");
     await user.click(screen.getByRole("button", { name: ANALYZE }));
     expect(await screen.findByText("Posting detail")).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe("/carriere/offres/p9");
+    expect(router.state.location.pathname).toBe("/career/postings/p9");
     expect(state.created).toEqual([{ url: "https://example.org/jobs/9" }]);
   });
 
@@ -96,7 +96,7 @@ describe("PostingsPage", () => {
     expect(await screen.findByText("You already added this posting on 03/11.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Open posting" })).toHaveAttribute(
       "href",
-      "/carriere/offres/p1",
+      "/career/postings/p1",
     );
     expect(state.created).toHaveLength(1);
     await waitFor(() => expect(state.reads.list).toBeGreaterThanOrEqual(2));

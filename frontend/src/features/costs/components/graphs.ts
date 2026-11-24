@@ -22,7 +22,7 @@ export const GRAPH_SCREENS: Partial<Record<GraphKey, string>> = {
   quiz: "/etudier/quiz",
   study_session: "/etudier/session",
   capture: "/etudier/journal",
-  gap_analysis: "/carriere/ecarts",
+  gap_analysis: "/career/gaps",
   cv_capture: "/carriere/profil",
   cv_review: "/carriere/cv",
   application_intake: "/candidatures",

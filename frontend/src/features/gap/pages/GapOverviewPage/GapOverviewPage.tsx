@@ -11,10 +11,10 @@ import { useTopMissing } from "../../hooks/useTopMissing";
 import { toMissingViews } from "../../toView";
 
 const SKILLS_PATH = "/competences";
-const POSTINGS_PATH = "/carriere/offres";
+const POSTINGS_PATH = "/career/postings";
 
 /**
- * Les écarts (`/carriere/ecarts`) : les 10 compétences qui manquent le plus souvent dans les
+ * Les écarts (`/career/gaps`) : les 10 compétences qui manquent le plus souvent dans les
  * offres ajoutées, avec un lien vers la carte des compétences. Une compétence mène à la carte.
  */
 export function GapOverviewPage() {

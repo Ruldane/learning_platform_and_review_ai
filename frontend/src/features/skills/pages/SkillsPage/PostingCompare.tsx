@@ -36,7 +36,7 @@ export function PostingCompare({ postings, choices, postingId }: PostingCompareP
         description={t("skills.compare.noPostingsDescription")}
         action={{
           label: t("skills.compare.noPostingsAction"),
-          onClick: () => void navigate("/carriere/offres"),
+          onClick: () => void navigate("/career/postings"),
         }}
       />
     );

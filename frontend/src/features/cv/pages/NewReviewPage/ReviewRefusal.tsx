@@ -39,7 +39,7 @@ export function ReviewRefusal({ code, postingId, fallback }: ReviewRefusalProps)
           description={t("cv.newReview.notReadyHint")}
           action={{
             label: t("cv.newReview.postingAction"),
-            onClick: to(`/carriere/offres/${postingId}`),
+            onClick: to(`/career/postings/${postingId}`),
           }}
         />
       );
@@ -47,7 +47,7 @@ export function ReviewRefusal({ code, postingId, fallback }: ReviewRefusalProps)
       return (
         <EmptyState
           title={t("cv.newReview.notFoundTitle")}
-          action={{ label: t("cv.newReview.postingsAction"), onClick: to("/carriere/offres") }}
+          action={{ label: t("cv.newReview.postingsAction"), onClick: to("/career/postings") }}
         />
       );
     default:

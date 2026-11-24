@@ -18,7 +18,7 @@ export function PostingVersions({ group }: { group: PostingGroup }) {
       <header className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
         <h2 className="text-lg font-medium">{title}</h2>
         {group.label !== null ? (
-          <Link to={`/carriere/offres/${group.postingId}`} className={link}>
+          <Link to={`/career/postings/${group.postingId}`} className={link}>
             {t("cv.versionsPage.openOffer")}
           </Link>
         ) : null}

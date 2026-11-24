@@ -69,8 +69,8 @@ describe("registre des features", () => {
     expect(groups[4]?.items).toEqual([
       { labelKey: "cv.nav.profile", path: "/carriere/profil" },
       { labelKey: "cv.nav.cv", path: "/carriere/cv" },
-      { labelKey: "gap.nav.postings", path: "/carriere/offres" },
-      { labelKey: "gap.nav.overview", path: "/carriere/ecarts" },
+      { labelKey: "gap.nav.postings", path: "/career/postings" },
+      { labelKey: "gap.nav.overview", path: "/career/gaps" },
       { labelKey: "radar.nav.radar", path: "/carriere/radar" },
       { labelKey: "portfolio.title", path: "/carriere/site-portfolio" },
       { labelKey: "missions.title", path: "/carriere/missions" },

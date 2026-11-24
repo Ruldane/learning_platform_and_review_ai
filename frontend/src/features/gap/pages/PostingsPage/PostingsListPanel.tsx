@@ -14,7 +14,7 @@ interface PostingsListPanelProps {
   onAdd: () => void;
 }
 
-const hrefOf = (postingId: string) => `/carriere/offres/${postingId}`;
+const hrefOf = (postingId: string) => `/career/postings/${postingId}`;
 
 /**
  * La liste des offres : chargement, erreur avec « Réessayer », état vide avec action, puis les

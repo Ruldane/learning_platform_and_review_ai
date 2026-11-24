@@ -16,7 +16,7 @@ function setup(api: Parameters<typeof skillsApi>[0] = {}) {
       { path: "/competences", element: <SkillsPage /> },
       { path: "/apprendre/objectifs", element: <p>Objectifs</p> },
       { path: "/etudier/session", element: <p>Session guidée</p> },
-      { path: "/carriere/offres", element: <p>Liste des offres</p> },
+      { path: "/career/postings", element: <p>Liste des offres</p> },
     ],
     "/competences",
   );
@@ -26,13 +26,15 @@ function setup(api: Parameters<typeof skillsApi>[0] = {}) {
 describe("SkillsPage", () => {
   it("shows the graph and opens a node", async () => {
     const { user, reads } = setup();
-    const node = await screen.findByRole("button", { name: "CSS : En cours" }, { timeout: 10_000 });
+    const node = await screen.findByRole("button", { name: "CSS: In progress" }, {
+      timeout: 10_000,
+    });
     node.focus();
     await user.keyboard("{Enter}");
     const drawer = await screen.findByRole("dialog", { name: "CSS" });
     expect(reads.detail).toBe(1);
     expect(within(drawer).getByText("Programme web")).toBeInTheDocument();
-    await user.click(within(drawer).getByRole("button", { name: "Fermer" }));
+    await user.click(within(drawer).getByRole("button", { name: "Close" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     await waitFor(() => expect(node).toHaveFocus());
   });
@@ -40,13 +42,13 @@ describe("SkillsPage", () => {
   it("switches to radar, progress and compare", async () => {
     const { user } = setup();
     await user.click(screen.getByRole("tab", { name: "Radar" }));
-    expect(await screen.findByText("web : 62 sur 100")).toBeInTheDocument();
-    await user.click(screen.getByRole("tab", { name: "Progression" }));
-    expect(await screen.findByText(/Dernier relevé, semaine du/)).toBeInTheDocument();
-    await user.click(screen.getByRole("tab", { name: "Comparaison" }));
-    expect(await screen.findByText("Cible : Data engineer")).toBeInTheDocument();
-    expect(screen.getByText("Atteint")).toBeInTheDocument();
-    expect(screen.getByText("Manque 3 niveaux")).toBeInTheDocument();
+    expect(await screen.findByText("web: 62 out of 100")).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: "Progress" }));
+    expect(await screen.findByText(/Latest snapshot, week of/)).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: "Comparison" }));
+    expect(await screen.findByText("Target: Data engineer")).toBeInTheDocument();
+    expect(screen.getByText("Reached")).toBeInTheDocument();
+    expect(screen.getByText("3 levels short")).toBeInTheDocument();
   });
 
   it("offers to create a goal when there is nothing to compare with", async () => {
@@ -54,8 +56,8 @@ describe("SkillsPage", () => {
       compare: () =>
         HttpResponse.json(apiError("no_compare_target", "Aucun objectif."), { status: 404 }),
     });
-    await user.click(screen.getByRole("tab", { name: "Comparaison" }));
-    await user.click(await screen.findByRole("button", { name: "Créer un objectif" }));
+    await user.click(screen.getByRole("tab", { name: "Comparison" }));
+    await user.click(await screen.findByRole("button", { name: "Create a goal" }));
     expect(router.state.location.pathname).toBe("/apprendre/objectifs");
   });
 
@@ -67,11 +69,11 @@ describe("SkillsPage", () => {
           ? HttpResponse.json(apiError("internal_error", "Panne du serveur."), { status: 500 })
           : HttpResponse.json(graphOut({ nodes: [], edges: [], domains: [] })),
     });
-    expect(screen.getByText("Chargement de la carte…")).toBeInTheDocument();
+    expect(screen.getByText("Loading map…")).toBeInTheDocument();
     expect(await screen.findByText("Panne du serveur.")).toBeInTheDocument();
     failing = false;
-    await user.click(screen.getByRole("button", { name: "Réessayer" }));
-    expect(await screen.findByText("Aucune compétence sur la carte")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+    expect(await screen.findByText("No skills on the map")).toBeInTheDocument();
   });
 
   describe("comparison with a posting", () => {
@@ -94,15 +96,15 @@ describe("SkillsPage", () => {
               })
             : HttpResponse.json(compareOut()),
       });
-      await user.click(screen.getByRole("tab", { name: "Comparaison" }));
-      expect(await screen.findByText("Cible : Data engineer")).toBeInTheDocument();
+      await user.click(screen.getByRole("tab", { name: "Comparison" }));
+      expect(await screen.findByText("Target: Data engineer")).toBeInTheDocument();
       expect(reads.postings).toBe(0);
-      await user.click(screen.getByRole("radio", { name: "Une offre" }));
-      const select = await screen.findByRole("combobox", { name: "Offre" });
+      await user.click(screen.getByRole("radio", { name: "A posting" }));
+      const select = await screen.findByRole("combobox", { name: "Posting" });
       expect(screen.getAllByRole("option")).toHaveLength(2);
-      expect(screen.getByText("Choisis une offre pour la comparer à ta carte.")).toBeVisible();
+      expect(screen.getByText("Choose a posting to compare with your map.")).toBeVisible();
       await user.selectOptions(select, "p1");
-      expect(await screen.findByText("Cible : Ingénieure données")).toBeInTheDocument();
+      expect(await screen.findByText("Target: Ingénieure données")).toBeInTheDocument();
       expect(reads.compareQueries.at(-1)).toBe("?target=posting&posting_id=p1");
     });
 
@@ -114,10 +116,10 @@ describe("SkillsPage", () => {
             ? HttpResponse.json(apiError("no_compare_target", "Pas d'écart."), { status: 404 })
             : HttpResponse.json(compareOut()),
       });
-      await user.click(screen.getByRole("tab", { name: "Comparaison" }));
-      await user.click(await screen.findByRole("radio", { name: "Une offre" }));
-      await user.selectOptions(await screen.findByRole("combobox", { name: "Offre" }), "p1");
-      expect(await screen.findByText(/n'a pas encore d'écart calculé/)).toBeInTheDocument();
+      await user.click(screen.getByRole("tab", { name: "Comparison" }));
+      await user.click(await screen.findByRole("radio", { name: "A posting" }));
+      await user.selectOptions(await screen.findByRole("combobox", { name: "Posting" }), "p1");
+      expect(await screen.findByText(/has no computed gap yet/)).toBeInTheDocument();
     });
 
     it("lets the user re-query a posting whose gap is not computed yet", async () => {
@@ -129,23 +131,23 @@ describe("SkillsPage", () => {
             ? HttpResponse.json(apiError("no_compare_target", "Pas d'écart."), { status: 404 })
             : HttpResponse.json({ ...compareOut(), target_label: "Ingénieure données" }),
       });
-      await user.click(screen.getByRole("tab", { name: "Comparaison" }));
-      await user.click(await screen.findByRole("radio", { name: "Une offre" }));
-      await user.selectOptions(await screen.findByRole("combobox", { name: "Offre" }), "p1");
-      expect(await screen.findByText(/n'a pas encore d'écart calculé/)).toBeInTheDocument();
+      await user.click(screen.getByRole("tab", { name: "Comparison" }));
+      await user.click(await screen.findByRole("radio", { name: "A posting" }));
+      await user.selectOptions(await screen.findByRole("combobox", { name: "Posting" }), "p1");
+      expect(await screen.findByText(/has no computed gap yet/)).toBeInTheDocument();
       ready = true;
-      await user.click(screen.getByRole("button", { name: "Réessayer" }));
-      expect(await screen.findByText("Cible : Ingénieure données")).toBeInTheDocument();
-      expect(screen.queryByText(/n'a pas encore d'écart calculé/)).toBeNull();
+      await user.click(screen.getByRole("button", { name: "Retry" }));
+      expect(await screen.findByText("Target: Ingénieure données")).toBeInTheDocument();
+      expect(screen.queryByText(/has no computed gap yet/)).toBeNull();
     });
 
     it("offers to add a posting when none is analysed", async () => {
       const { user, router } = setup({ postings: () => HttpResponse.json([]) });
-      await user.click(screen.getByRole("tab", { name: "Comparaison" }));
-      await user.click(await screen.findByRole("radio", { name: "Une offre" }));
-      expect(await screen.findByText("Aucune offre analysée")).toBeInTheDocument();
-      await user.click(screen.getByRole("button", { name: "Ajouter une offre" }));
-      expect(router.state.location.pathname).toBe("/carriere/offres");
+      await user.click(screen.getByRole("tab", { name: "Comparison" }));
+      await user.click(await screen.findByRole("radio", { name: "A posting" }));
+      expect(await screen.findByText("No analyzed postings")).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "Add a posting" }));
+      expect(router.state.location.pathname).toBe("/career/postings");
     });
 
     it("shows a retryable error when the postings cannot be read", async () => {
@@ -156,38 +158,38 @@ describe("SkillsPage", () => {
             ? HttpResponse.json(apiError("internal_error", "Panne du serveur."), { status: 500 })
             : postings(),
       });
-      await user.click(screen.getByRole("tab", { name: "Comparaison" }));
-      await user.click(await screen.findByRole("radio", { name: "Une offre" }));
+      await user.click(screen.getByRole("tab", { name: "Comparison" }));
+      await user.click(await screen.findByRole("radio", { name: "A posting" }));
       expect(await screen.findByText("Panne du serveur.")).toBeInTheDocument();
       failing = false;
-      await user.click(screen.getByRole("button", { name: "Réessayer" }));
-      expect(await screen.findByRole("combobox", { name: "Offre" })).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "Retry" }));
+      expect(await screen.findByRole("combobox", { name: "Posting" })).toBeInTheDocument();
     });
   });
 
-  describe("empty states with an action (revue finale 5, C-m5)", () => {
+  describe("empty states with an action (final review 5, C-m5)", () => {
     const empty = () => HttpResponse.json(graphOut({ nodes: [], edges: [], domains: [] }));
 
     it("offers to create a goal from an empty graph", async () => {
       const { user, router } = setup({ graph: empty });
-      expect(await screen.findByText("Aucune compétence sur la carte")).toBeInTheDocument();
-      await user.click(screen.getByRole("button", { name: "Créer un objectif" }));
+      expect(await screen.findByText("No skills on the map")).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "Create a goal" }));
       expect(router.state.location.pathname).toBe("/apprendre/objectifs");
     });
 
     it("offers to create a goal from an empty radar", async () => {
       const { user, router } = setup({ graph: empty });
       await user.click(screen.getByRole("tab", { name: "Radar" }));
-      expect(await screen.findByText("Aucun domaine à afficher")).toBeInTheDocument();
-      await user.click(screen.getByRole("button", { name: "Créer un objectif" }));
+      expect(await screen.findByText("No domains to show")).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "Create a goal" }));
       expect(router.state.location.pathname).toBe("/apprendre/objectifs");
     });
 
     it("offers to study from an empty progress", async () => {
       const { user, router } = setup({ history: () => HttpResponse.json({ points: [] }) });
-      await user.click(screen.getByRole("tab", { name: "Progression" }));
-      expect(await screen.findByText("Aucun relevé pour l'instant")).toBeInTheDocument();
-      await user.click(screen.getByRole("button", { name: "Commencer une session" }));
+      await user.click(screen.getByRole("tab", { name: "Progress" }));
+      expect(await screen.findByText("No snapshots yet")).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "Start a session" }));
       expect(router.state.location.pathname).toBe("/etudier/session");
     });
 
@@ -195,9 +197,9 @@ describe("SkillsPage", () => {
       const { user, router } = setup({
         compare: () => HttpResponse.json({ target_label: "Data", coverage: 0, rows: [] }),
       });
-      await user.click(screen.getByRole("tab", { name: "Comparaison" }));
-      expect(await screen.findByText("Aucune compétence à comparer")).toBeInTheDocument();
-      await user.click(screen.getByRole("button", { name: "Voir mes objectifs" }));
+      await user.click(screen.getByRole("tab", { name: "Comparison" }));
+      expect(await screen.findByText("No skills to compare")).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "See my goals" }));
       expect(router.state.location.pathname).toBe("/apprendre/objectifs");
     });
   });

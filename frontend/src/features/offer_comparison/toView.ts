@@ -22,7 +22,7 @@ function offerView(
     missing: offer.missing.length
       ? `${t("offerComparison.missing")} · ${offer.missing.map(criterion).join(", ")}`
       : t("offerComparison.noMissing"),
-    source: `/carriere/offres/${offer.id}`,
+    source: `/career/postings/${offer.id}`,
   };
 }
 

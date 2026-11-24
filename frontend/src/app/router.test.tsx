@@ -34,15 +34,15 @@ function renderAt(path: string, me: typeof camille | null = camille) {
 }
 
 describe("buildRoutes", () => {
-  it("monte les routes des manifestes dans AppLayout", async () => {
+  it("mounts manifest routes in AppLayout", async () => {
     renderAt("/demo");
     expect(await screen.findByRole("heading", { name: "Démo" })).toBeInTheDocument();
-    expect(screen.getByRole("navigation", { name: "Navigation principale" })).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "Main navigation" })).toBeInTheDocument();
   });
 
-  it("termine par la page introuvable", async () => {
+  it("ends with the not-found page", async () => {
     renderAt("/nimporte-quoi");
-    expect(await screen.findByRole("heading", { name: "Page introuvable" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Page not found" })).toBeInTheDocument();
   });
 
   it("public routes render without layout or gates", async () => {

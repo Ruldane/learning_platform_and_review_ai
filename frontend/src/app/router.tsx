@@ -1,4 +1,11 @@
-import { createBrowserRouter, type RouteObject } from "react-router";
+import {
+  createBrowserRouter,
+  generatePath,
+  Navigate,
+  type RouteObject,
+  useLocation,
+  useParams,
+} from "react-router";
 import type { FeatureManifest } from "@/shared/lib/feature";
 import { AppLayout } from "./layout/AppLayout";
 import { buildDestinations, descriptionKey, sectionLanding, type Hub } from "./navigation";
@@ -28,10 +35,24 @@ function withDescription(route: RouteObject, feature: FeatureManifest): RouteObj
   return description ? { ...route, handle: { ...route.handle, description } } : route;
 }
 
-/**
- * Routes publiques des manifestes (hors de la mise en page, sans porte), puis la racine `AppLayout`
- * avec les routes de chaque manifeste en enfants et la page introuvable en dernier.
- */
+function LegacyRedirect({ destination }: { destination: string }) {
+  const { search, hash, state } = useLocation();
+  const params = Object.fromEntries(
+    Object.entries(useParams()).map(([key, value]) => [key, encodeURIComponent(value ?? "")]),
+  );
+  const pathname = generatePath(destination, params);
+  return <Navigate to={{ pathname, search, hash }} state={state} replace />;
+}
+
+function featureRoutes(feature: FeatureManifest): RouteObject[] {
+  const redirects = Object.entries(feature.legacyRoutes ?? {}).map(([path, destination]) => ({
+    path,
+    element: <LegacyRedirect destination={destination} />,
+  }));
+  return [...feature.routes.map((route) => withDescription(route, feature)), ...redirects];
+}
+
+/** Mount public routes first, then the pages and redirects protected by the app layout. */
 export function buildRoutes(features: FeatureManifest[]): RouteObject[] {
   return [
     ...features.flatMap((feature) => feature.publicRoutes ?? []),
@@ -39,7 +60,7 @@ export function buildRoutes(features: FeatureManifest[]): RouteObject[] {
       path: "/",
       Component: AppLayout,
       children: [
-        ...features.flatMap((feature) => feature.routes.map((route) => withDescription(route, feature))),
+        ...features.flatMap(featureRoutes),
         ...landingRoutes(features),
         { path: "*", Component: NotFoundPage },
       ],

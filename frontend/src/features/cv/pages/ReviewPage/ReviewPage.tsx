@@ -50,7 +50,7 @@ export function ReviewPage({ pollMs = POLL_MS, createSocket }: ReviewPageProps) 
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-1">
         <nav className="flex flex-wrap gap-4 text-sm">
-          <Link to={`/carriere/offres/${review.posting_id}`} className="underline">
+          <Link to={`/career/postings/${review.posting_id}`} className="underline">
             {t("cv.reviewPage.back")}
           </Link>
           <Link to="/carriere/cv/versions" className="underline">

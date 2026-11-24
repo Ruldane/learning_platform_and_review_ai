@@ -5,7 +5,7 @@ import type { ConversationTurn } from "../../api";
 const paths = {
   lesson: (id: string) => `/apprendre/lecons/${id}`,
   memory: (id: string) => `/memoire?item=${id}`,
-  posting: (id: string) => `/carriere/offres/${id}`,
+  posting: (id: string) => `/career/postings/${id}`,
   application: (id: string) => `/candidatures/${id}`,
 } satisfies Record<ConversationTurn["sources"][number]["kind"], (id: string) => string>;
 

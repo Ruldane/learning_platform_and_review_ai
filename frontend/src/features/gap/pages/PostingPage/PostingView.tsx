@@ -8,7 +8,7 @@ import { PostingBody } from "./PostingBody";
 import { PostingHeader } from "./PostingHeader";
 import { PostingUnavailable } from "./PostingUnavailable";
 
-const LIST_PATH = "/carriere/offres";
+const LIST_PATH = "/career/postings";
 
 interface PostingViewProps {
   postingId: string;

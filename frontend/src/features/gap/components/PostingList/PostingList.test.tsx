@@ -15,7 +15,7 @@ describe("PostingList", () => {
   it("shows title, company, score and the state of each posting", () => {
     render(
       <MemoryRouter>
-        <PostingList postings={postings} hrefOf={(id) => `/carriere/offres/${id}`} />
+        <PostingList postings={postings} hrefOf={(id) => `/career/postings/${id}`} />
       </MemoryRouter>,
     );
     const items = within(screen.getByRole("list", { name: "Added postings" })).getAllByRole(
@@ -24,7 +24,7 @@ describe("PostingList", () => {
     expect(items).toHaveLength(4);
     expect(within(items[0]!).getByRole("link", { name: "Ingénieure données" })).toHaveAttribute(
       "href",
-      "/carriere/offres/p1",
+      "/career/postings/p1",
     );
     expect(within(items[0]!).getByText("Société Fictive")).toBeInTheDocument();
     expect(within(items[0]!).getByText("Match: 62/100")).toBeInTheDocument();

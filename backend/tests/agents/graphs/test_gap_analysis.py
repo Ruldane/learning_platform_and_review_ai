@@ -65,7 +65,7 @@ async def test_gap_analysis_analyzes_matches_and_saves(
         "artifact_id": pid,
         "kind": "posting_gap",
         "title": "AI Product Engineer",
-        "url": f"/carriere/offres/{pid}",
+        "url": f"/career/postings/{pid}",
     }
 
 

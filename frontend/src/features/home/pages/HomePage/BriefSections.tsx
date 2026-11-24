@@ -19,7 +19,7 @@ import type { BriefView } from "../../toView";
 /** Les routes où l'accueil mène (il n'importe jamais une autre feature : il ne connaît que ses chemins). */
 const STUDY_SESSION = "/etudier/session";
 const REVIEWS = "/etudier/revisions";
-const POSTINGS = "/carriere/offres";
+const POSTINGS = "/career/postings";
 const GOALS = "/apprendre/objectifs";
 const applicationPath = (applicationId: string) => `/candidatures/${applicationId}`;
 

@@ -58,7 +58,7 @@ describe("HomePage", () => {
     for (const [name, path] of [
       ["Start my block", "/etudier/session"],
       ["Review", "/etudier/revisions"],
-      ["Add a posting", "/carriere/offres"],
+      ["Add a posting", "/career/postings"],
     ] as const) {
       const group = await screen.findByRole("group", { name: "Quick actions" });
       await user.click(within(group).getByRole("button", { name }));

@@ -17,7 +17,7 @@ interface PostingsPageProps {
 const FIELD = '[role="tabpanel"]:not([hidden]) :is(input, textarea)';
 
 /**
- * Les offres (`/carriere/offres`) : le formulaire d'ajout en tête, puis la liste. Une offre
+ * Les offres (`/career/postings`) : le formulaire d'ajout en tête, puis la liste. Une offre
  * nouvelle (201) ouvre sa page ; une offre déjà ajoutée (200) est annoncée avec un lien, sans
  * doublon dans la liste.
  */
@@ -29,7 +29,7 @@ export function PostingsPage({
   const formRoot = useRef<HTMLDivElement>(null);
   const [existing, setExisting] = useState<PostingCreatedOut | null>(null);
   const create = useCreatePosting((result) => {
-    if (result.created) void navigate(`/carriere/offres/${result.posting.id}`);
+    if (result.created) void navigate(`/career/postings/${result.posting.id}`);
     else setExisting(result);
   });
 

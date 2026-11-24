@@ -14,8 +14,8 @@ const LANDINGS = [
   { path: "/carriere/cv/versions", element: <p>Page des versions</p> },
   { path: "/carriere/cv/modeles/:templateId", element: <p>Page du modèle</p> },
   { path: "/carriere/cv/revues/:reviewId", element: <p>Page de la revue</p> },
-  { path: "/carriere/offres", element: <p>Liste des offres</p> },
-  { path: "/carriere/offres/:postingId", element: <p>{"Page de l'offre"}</p> },
+  { path: "/career/postings", element: <p>Liste des offres</p> },
+  { path: "/career/postings/:postingId", element: <p>{"Page de l'offre"}</p> },
   { path: "/reglages/modeles", element: <p>Réglages des modèles</p> },
 ];
 

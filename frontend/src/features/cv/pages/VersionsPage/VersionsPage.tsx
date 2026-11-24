@@ -34,7 +34,7 @@ export function VersionsPage() {
           description={t("cv.versionsPage.emptyHint")}
           action={{
             label: t("cv.versionsPage.emptyAction"),
-            onClick: () => void navigate("/carriere/offres"),
+            onClick: () => void navigate("/career/postings"),
           }}
         />
       ) : (

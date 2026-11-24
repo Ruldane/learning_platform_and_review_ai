@@ -5,21 +5,25 @@ import { PostingPage } from "./pages/PostingPage";
 import { PostingsPage } from "./pages/PostingsPage";
 
 /**
- * Carrière, offres et écarts (SPEC 15.1, ordre G29 : Profil 1, CV 2, Offres 3, Écarts 4). Les
- * offres ajoutées, leur analyse et le tableau d'écarts avec le profil ; la vue d'ensemble des
- * compétences qui manquent le plus souvent.
+ * Saved postings, their analysis and profile gaps, and the most frequently missing skills.
+ * Career navigation follows SPEC 15.1 (G29).
  */
 export function makeGapManifest(offersChat?: ComponentType): FeatureManifest {
   return {
     id: "gap",
     routes: [
-      { path: "carriere/offres", element: createElement(PostingsPage, { offersChat }) },
-      { path: "carriere/offres/:postingId", Component: PostingPage },
-      { path: "carriere/ecarts", Component: GapOverviewPage },
+      { path: "career/postings", element: createElement(PostingsPage, { offersChat }) },
+      { path: "career/postings/:postingId", Component: PostingPage },
+      { path: "career/gaps", Component: GapOverviewPage },
     ],
+    legacyRoutes: {
+      "carriere/offres": "/career/postings",
+      "carriere/offres/:postingId": "/career/postings/:postingId",
+      "carriere/ecarts": "/career/gaps",
+    },
     nav: [
-      { section: "career", labelKey: "gap.nav.postings", path: "/carriere/offres", order: 3 },
-      { section: "career", labelKey: "gap.nav.overview", path: "/carriere/ecarts", order: 4 },
+      { section: "career", labelKey: "gap.nav.postings", path: "/career/postings", order: 3 },
+      { section: "career", labelKey: "gap.nav.overview", path: "/career/gaps", order: 4 },
     ],
   };
 }
