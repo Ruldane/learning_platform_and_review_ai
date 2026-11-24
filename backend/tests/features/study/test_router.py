@@ -60,7 +60,7 @@ async def test_no_block_today_is_404(client: httpx.AsyncClient, app: FastAPI) ->
     r = await start(client)
     assert r.status_code == 404
     assert r.json()["error"]["code"] == "no_block_today"
-    assert r.json()["error"]["message"] == "Rien de prévu aujourd'hui : choisis une leçon."
+    assert r.json()["error"]["message"] == "Nothing is scheduled today. Choose a lesson."
     assert (await client.get(f"{API}/summary")).json()["block"] is None
 
 
@@ -112,6 +112,9 @@ async def test_open_session_same_lesson_200_other_lesson_409(
     assert other.status_code == 409
     error = other.json()["error"]
     assert error["code"] == "study_already_open"
+    assert error["message"] == (
+        "Finish the open study session on the other lesson before starting this one."
+    )
     assert error["details"] == {"study_session_id": body["study_session_id"]}
 
 

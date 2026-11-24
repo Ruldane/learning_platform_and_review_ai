@@ -12,7 +12,7 @@ from app.agents.tools.feynman_port import FeynmanAssessment, FeynmanExchange
 from app.core.errors import AppError
 from app.providers.llm.limits import with_output_limit
 
-FIRST_QUESTION = "Peux-tu m’expliquer le sujet avec tes mots et me donner un exemple ?"
+FIRST_QUESTION = "Can you explain the topic in your own words and give an example?"
 MAX_REPLY = 2000
 
 
@@ -39,7 +39,7 @@ def _ask(question: str) -> str | None:
             "fields": [
                 {
                     "id": "answer",
-                    "label": "Ton explication",
+                    "label": "Your explanation",
                     "required": True,
                     "max_length": MAX_REPLY,
                 }
@@ -80,21 +80,23 @@ def make_assessment(deps: GraphDeps, *, final: bool) -> FeynmanNode:
         if context is None:
             return {"follow_up": None}
         text = [
-            "Référence : "
+            "Reference: "
             + untrusted(_fitted(context.title + "\n" + context.material, 2300), "source"),
-            "Explication : "
-            + untrusted(_fitted(state.get("explanation") or "", 1000), "explication"),
+            "Explanation: "
+            + untrusted(_fitted(state.get("explanation") or "", 1000), "explanation"),
         ]
         if final:
             exchange = (state.get("follow_up") or "") + "\n" + (state.get("clarification") or "")
-            text.append("Dernière réponse : " + untrusted(_fitted(exchange, 1200), "relance"))
-        text.append("Aucune nouvelle relance." if final else "Une relance est possible.")
+            text.append("Latest answer: " + untrusted(_fitted(exchange, 1200), "follow-up"))
+        text.append(
+            "Do not ask another question." if final else "You may ask a follow-up question."
+        )
         prompt = render_prompt("feynman")
         cap = min(TURN_TOKEN_LIMIT, deps.settings.session_token_cap)
         room = cap - context.used_tokens - len((prompt + "\n".join(text)).encode()) - 1900
         if room < 300:
             raise AppError(
-                "conversation_budget_reached", "Le budget de cet échange est atteint.", 429
+                "conversation_budget_reached", "This conversation has reached its budget.", 429
             )
         model = await deps.models.get_chat_model(
             deps.user_id, "fort" if context.strong else "rapide", agent=TRAINING_TUTOR
@@ -105,7 +107,7 @@ def make_assessment(deps: GraphDeps, *, final: bool) -> FeynmanNode:
             [SystemMessage(prompt), HumanMessage("\n\n".join(text))],
             agent=TRAINING_TUTOR,
             step="feynman_bilan" if final else "feynman_ecoute",
-            intent="J’identifie les points à éclaircir dans l’explication.",
+            intent="I am checking which parts of the explanation could be clearer.",
             retries=0,
         )
         result: FeynmanState = {"assessment": assessment.model_dump(mode="json")}
@@ -131,6 +133,6 @@ def make_save_feynman(deps: GraphDeps) -> FeynmanNode:
                 assessment=FeynmanAssessment.model_validate(result),
                 exchange=FeynmanExchange.model_validate(state),
             )
-        return {"summary": "Bilan de l’explication enregistré."}
+        return {"summary": "Explanation assessment saved."}
 
     return save

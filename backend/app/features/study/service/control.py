@@ -36,7 +36,7 @@ FINISH = {"action": "finish"}
 def study_not_waiting(status: str) -> AppError:
     return AppError(
         "study_not_waiting",
-        "Le tuteur écrit encore : tu pourras terminer dès qu'il t'aura posé sa question.",
+        "The tutor is still writing. You can finish after the next question.",
         409,
         {"status": status},
     )

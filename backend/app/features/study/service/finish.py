@@ -48,16 +48,18 @@ NO_OUTCOME = StudyOutcome(outcomes=[], exercise_done=False, ended_early=True, su
 
 
 def study_not_found() -> AppError:
-    return AppError("study_session_not_found", "Session d'étude introuvable.", 404)
+    return AppError("study_session_not_found", "Study session not found.", 404)
 
 
 def _plural(count: int, word: str) -> str:
-    return f"{count} {word}{'s' if count > 1 else ''}"
+    return f"{count} {word}{'s' if count != 1 else ''}"
 
 
 def journal_text(module: str, minutes: int, tasks: int, cards: int) -> str:
-    ticked = f"{_plural(tasks, 'tâche')} cochée{'s' if tasks > 1 else ''}"
-    return f"Session « {module} » : {minutes} min, {ticked}, {_plural(cards, 'fiche')}."
+    return (
+        f"Studied {module} for {minutes} min. {_plural(tasks, 'task')} completed, "
+        f"{_plural(cards, 'flashcard')} created."
+    )
 
 
 def finished_of(row: StudySession) -> StudyFinished:

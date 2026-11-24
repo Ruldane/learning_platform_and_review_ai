@@ -34,17 +34,17 @@ logger = logging.getLogger(__name__)
 
 
 def lesson_not_found() -> AppError:
-    return AppError("lesson_not_found", "Leçon introuvable.", 404)
+    return AppError("lesson_not_found", "Lesson not found.", 404)
 
 
 def no_block_today() -> AppError:
-    return AppError("no_block_today", "Rien de prévu aujourd'hui : choisis une leçon.", 404)
+    return AppError("no_block_today", "Nothing is scheduled today. Choose a lesson.", 404)
 
 
 def study_already_open(study_id: str) -> AppError:
     return AppError(
         "study_already_open",
-        "Une session d'étude est déjà ouverte sur une autre leçon : termine-la d'abord.",
+        "Finish the open study session on the other lesson before starting this one.",
         409,
         {"study_session_id": study_id},
     )
@@ -53,7 +53,7 @@ def study_already_open(study_id: str) -> AppError:
 def training_already_open(study_id: str) -> AppError:
     return AppError(
         "study_already_open",
-        "Une session training est déjà ouverte : termine-la d'abord.",
+        "Finish the open training session before starting this one.",
         409,
         {"study_session_id": study_id, "kind": "training"},
     )

@@ -96,7 +96,7 @@ async def _apply(
         if row is None:
             closed = await training_row(db, user_id, study_id)
             if isinstance(body, (TrainingModeUpdate, TrainingLessonsUpdate)):
-                raise AppError("training_closed", "Cette session training est terminée.", 409)
+                raise AppError("training_closed", "This training session has ended.", 409)
             return finished_of(closed) if isinstance(body, TrainingFinish) else None, None
         result, cancelled = None, None
         if isinstance(body, (TrainingModeUpdate, TrainingLessonsUpdate)):

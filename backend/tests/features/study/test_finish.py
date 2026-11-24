@@ -113,7 +113,9 @@ async def test_finish_ticks_block_tasks_and_raises_en_cours_not_valide(
         ("study", study_id, seeded.modules[0])
     }
     assert entry.kind == "study_session" and entry.ref_key == f"study:{study_id}"
-    assert entry.text == "Session « Module Bases » : 45 min, 3 tâches cochées, 3 fiches."
+    assert entry.text == (
+        "Studied Module Bases for 45 min. 3 tasks completed, 3 flashcards created."
+    )
     assert entry.study_session_id == study_id and entry.session_id is not None
 
 
