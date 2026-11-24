@@ -1,13 +1,12 @@
-"""Ce que l'Assistant de suivi lit pour écrire une pièce (D142) : le profil, l'offre, la fiche et le
-guide de style, chacun encadré par `untrusted` (17.4) ; la langue de l'offre."""
+"""Build kit prompts from the profile, posting, application and style guide (D142, SPEC 17.4)."""
 
 from app.agents.prompts.loader import untrusted
 from app.agents.tools.cv_schema import Education, Experience, MasterProfileData, facts_of
 from app.agents.tools.kit_schema import KitContext
 
 MAX_POSTING_CHARS = 30_000
-NO_CRITERIA = "Aucun critère repéré par l'analyse : relis l'offre."
-NO_STYLE = "Aucun guide de style : écris sobrement, en phrases courtes."
+NO_CRITERIA = "The analysis found no screening criteria. Read the posting again."
+NO_STYLE = "No style guide. Write in plain language and use short sentences."
 
 
 def profile_text(profile: MasterProfileData) -> str:
@@ -15,19 +14,19 @@ def profile_text(profile: MasterProfileData) -> str:
     formations avec leur période), ce que `fact_ids` cite."""
     dated: list[Experience | Education] = [*profile.experiences, *profile.education]
     periods = {
-        item.id: f" ({item.start or '?'} → {item.end or 'en cours'})"
+        item.id: f" ({item.start or '?'} → {item.end or 'present'})"
         for item in dated
         if item.start or item.end
     }
-    lines = [f"Nom : {profile.identity.name}"]
+    lines = [f"Name: {profile.identity.name}"]
     lines += [f"[{fact}] {text}{periods.get(fact, '')}" for fact, text in facts_of(profile).items()]
     return "\n".join(lines)
 
 
 def card_text(ctx: KitContext) -> str:
-    lines = [f"Entreprise : {ctx.company}", f"Intitulé exact du poste : {ctx.title}"]
+    lines = [f"Company: {ctx.company}", f"Exact job title: {ctx.title}"]
     if ctx.contact:
-        lines.append(f"Contact : {ctx.contact}")
+        lines.append(f"Contact: {ctx.contact}")
     return "\n".join(lines)
 
 
@@ -39,7 +38,6 @@ def _eliminatory(ctx: KitContext) -> str:
 
 def prompt_vars(ctx: KitContext, style_guide: str) -> dict[str, object]:
     return {
-        "language": ctx.language,
         "card": untrusted(card_text(ctx), "fiche de candidature"),
         "profile": untrusted(profile_text(ctx.profile), "profil de January"),
         "posting": untrusted(ctx.posting_text[:MAX_POSTING_CHARS], "offre"),

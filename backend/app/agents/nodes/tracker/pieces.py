@@ -118,10 +118,10 @@ async def write(deps: GraphDeps, ctx: KitContext, spec: TextSpec) -> Written:
     return Written(again, review(again, ctx))
 
 
-def piece_of(written: Written, ctx: KitContext) -> Piece:
+def piece_of(written: Written) -> Piece:
     """La pièce rangée : `ready` si rien ne reste, sinon `to_check` avec de quoi relire."""
     draft = written.draft
-    meta: dict[str, Any] = {"language": ctx.language}
+    meta: dict[str, Any] = {"language": "en"}
     words = meta_words(draft)
     if words is not None:
         meta["words"] = words
@@ -147,7 +147,7 @@ def make_text_piece(deps: GraphDeps, kind: str) -> Node:
         ctx = await deps.ports.kit.context(deps.user_id, state["application_id"])
 
         async def work() -> Piece:
-            return piece_of(await write(deps, ctx, spec), ctx)
+            return piece_of(await write(deps, ctx, spec))
 
         done = await guarded(PIECE_LIMIT_S, work)
         return await finish(deps, ctx.application_id, spec.kind, done, agent=AGENT)

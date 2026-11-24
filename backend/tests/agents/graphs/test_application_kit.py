@@ -76,7 +76,7 @@ async def test_letter_with_unsupported_claim_retries_then_flags(
     assert f"{RETRY_MARKER} : 5, Kubernetes" in second
     row = kit_store.piece("letter")
     assert row.status == "to_check" and row.meta["flags"] == ["5", "Kubernetes"]
-    assert row.meta["words"] == 301 and row.meta["language"] == "fr"
+    assert row.meta["words"] == 301 and row.meta["language"] == "en"
     assert "Kubernetes" in row.content  # le texte est gardé : January relit
 
 
@@ -144,22 +144,16 @@ async def test_followups_and_linkedin_use_the_separator_line(
         assert first and second and "---" not in first + second
 
 
-async def test_letter_in_posting_language(kit_runner: MakeKit, kit_store: FakeKitStore) -> None:
-    kit_store.update(language="en")
+@pytest.mark.parametrize("posting_language", ["fr", "en"])
+async def test_letter_in_english_for_either_posting_language(
+    kit_runner: MakeKit, kit_store: FakeKitStore, posting_language: str
+) -> None:
+    kit_store.update(language=posting_language)
     run = await kit_runner()
     await run.wait_status("completed")
     prompt = prompts(run.models, "letter")[0]
-    assert "l'anglais (English)" in prompt
-    assert "Langue de la pièce : le français" not in prompt
+    assert "Write the piece in English." in prompt
     assert kit_store.piece("letter").meta["language"] == "en"
-
-
-async def test_french_letter_prompt_says_french(kit_runner: MakeKit) -> None:
-    run = await kit_runner()
-    await run.wait_status("completed")
-    prompt = prompts(run.models, "letter")[0]
-    assert "Langue de la pièce : le français" in prompt
-    assert "English" not in prompt
 
 
 async def test_style_guide_reaches_every_piece_prompt(kit_runner: MakeKit) -> None:
@@ -212,7 +206,7 @@ async def test_failed_piece_does_not_stop_others(
     await run.wait_status("completed")
     row = kit_store.piece("letter")
     assert row.status == "failed" and row.content == ""
-    assert row.meta["code"] == "structured_output_invalid" and "format attendu" in row.meta["error"]
+    assert row.meta["code"] == "structured_output_invalid" and "wrong format" in row.meta["error"]
     assert {r.status for k, r in kit_store.rows.items() if k[1] != "letter"} == {"ready"}
     assert len(await run.events("artifact.ready")) == 6  # la pièce en échec n'est pas annoncée
     [done] = await run.events("run.completed")

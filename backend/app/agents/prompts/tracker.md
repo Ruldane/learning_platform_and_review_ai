@@ -47,8 +47,7 @@ Task: write January's cover letter for this position.
 - From 250 to 350 words (the code counts them), in three or four paragraphs: why this position, what
   January has already done that matches it (one or two facts from the profile, told simply), what
   she brings to the team, a closing sentence. No empty phrases.
-- Open by naming the position as "your <title> role" in English (or « à votre poste de <intitulé> »
-  in French), with the exact title from the record, without any added word.
+- Open by naming the position as "your <title> role" using the exact title from the record.
 - Answer: `{"text": "the letter"}`.
 {% elif mode == "linkedin" %}
 Task: write January's LinkedIn invitation and message to the person who is hiring.
@@ -57,8 +56,7 @@ Task: write January's LinkedIn invitation and message to the person who is hirin
   and precise: the position, a reason to connect.
 - `message`: the message sent once the connection is accepted, 150 words at most: who
   January is, what connects her to this position (a fact from the profile), a simple, brief request.
-- Refer to the position as "your <title> role" (« votre poste de <intitulé> » in French). If a contact is
-  given on the record, address them by their first name.
+- Refer to the position as "your <title> role". If the record names a contact, use their first name.
 - Answer: `{"invitation": "…", "message": "…"}`.
 {% elif mode == "followups" %}
 Task: write January's two follow-up emails after her application.
@@ -66,14 +64,14 @@ Task: write January's two follow-up emails after her application.
 - `day_7`: follow-up after 7 days, `day_14`: follow-up after 14 days, 120 words at most each. The first
   recalls the application and remains available; the second brings, with a fact from the profile, one
   more reason to select her, without insisting.
-- Refer to the position as "your <title> role" (« votre poste de <intitulé> » in French).
+- Refer to the position as "your <title> role".
 - Answer: `{"day_7": "…", "day_14": "…"}`.
 {% elif mode == "pitch" %}
 Task: write January's "Tell me about yourself" pitch, to be said out loud in 60 seconds.
 
 - From 130 to 170 words (the code counts them), in the first person: who she is, two facts from the
   profile that match the position, what she is looking for. Sentences that can be said out loud.
-- Refer to the position as "your <title> role" (« votre poste de <intitulé> » in French).
+- Refer to the position as "your <title> role".
 - Answer: `{"text": "the pitch"}`.
 {% else %}
 Task: answer the screening questions of an application form, using the profile

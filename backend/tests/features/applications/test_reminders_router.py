@@ -106,7 +106,7 @@ async def test_close_21_done_sets_no_answer(client: httpx.AsyncClient) -> None:
     application_id = await applied(client, 21)
     close = next(r for r in await due(client) if r["kind"] == "close_21")
     assert close["channel"] == "none" and close["linkedin_search_url"] is None
-    assert "Sans réponse" in close["draft"]
+    assert "No answer" in close["draft"]
     assert (await act(client, close["id"], "done")).status_code == 200
     detail = (await client.get(f"{API}/{application_id}")).json()
     assert detail["status"] == "no_answer"
@@ -177,22 +177,23 @@ async def test_contact_replaces_search_link(client: httpx.AsyncClient) -> None:
     [r] = await due(client)
     assert r["contact"]["name"] == "Julie Martin"  # la recruteuse d'abord
     assert r["linkedin_search_url"] is None
-    assert r["draft"].startswith("Bonjour Julie,")
+    assert r["draft"].startswith("Hello Julie,")
     await applied(client, 7, company="Autre SA", title="Poste", contacts=contacts[:1])
     [other] = [x for x in await due(client) if x["company"] == "Autre SA"]
     assert other["contact"]["name"] == "Paul Durand"  # sinon le premier
 
 
-async def test_english_posting_gives_english_draft(client: httpx.AsyncClient, app: FastAPI) -> None:
+async def test_drafts_are_english_for_both_posting_languages(
+    client: httpx.AsyncClient, app: FastAPI
+) -> None:
     posting = await add_posting(app, company="Exemple Tech", title="AI Engineer", language="en")
     await created_id(client, posting_id=posting, status="applied", applied_on=ago(7))
     [r] = await due(client)
     assert r["draft"].startswith("Hello,") and "AI Engineer" in r["draft"]
-    assert "Bonjour" not in r["draft"]
     french = await add_posting(app, company="Autre SA", title="Ingénieure")
     await created_id(client, posting_id=french, status="applied", applied_on=ago(7))
     texts = {x["company"]: x["draft"] for x in await due(client)}
-    assert texts["Autre SA"].startswith("Bonjour,")
+    assert texts["Autre SA"].startswith("Hello,") and "Ingénieure" in texts["Autre SA"]
 
 
 async def _kit(app: FastAPI, application_id: str, status: str, content: str) -> None:
@@ -234,7 +235,7 @@ async def test_interview_gives_thanks_and_news(client: httpx.AsyncClient) -> Non
     )
     kinds = {r["kind"]: r for r in await due(client)}
     assert set(kinds) == {"thanks", "news_7"}  # l'attente est levée par l'entretien
-    assert "7 novembre 2026" in kinds["thanks"]["draft"]
+    assert "7 November 2026" in kinds["thanks"]["draft"]
     assert kinds["thanks"]["channel"] == "email"
 
 

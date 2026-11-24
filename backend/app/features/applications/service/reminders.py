@@ -34,20 +34,20 @@ logger = logging.getLogger(__name__)
 
 POSTPONE_DAYS = 3
 LABELS: dict[ReminderKind, str] = {
-    "linkedin_7": "message LinkedIn",
-    "email_14": "email de relance",
-    "close_21": "classement sans réponse",
-    "thanks": "remerciement",
-    "news_7": "demande de nouvelles",
+    "linkedin_7": "LinkedIn follow-up",
+    "email_14": "Email follow-up",
+    "close_21": "No answer reminder",
+    "thanks": "Interview thank-you",
+    "news_7": "Interview follow-up",
 }
 
 
 def not_found() -> AppError:
-    return AppError("reminder_not_found", "Relance introuvable.", 404)
+    return AppError("reminder_not_found", "Reminder not found.", 404)
 
 
 def closed() -> AppError:
-    return AppError("reminder_closed", "Cette relance est déjà faite ou ignorée.", 409)
+    return AppError("reminder_closed", "This reminder was already completed or ignored.", 409)
 
 
 async def list_reminders(rt: ApplicationsRuntime, user_id: str, *, due: bool) -> list[ReminderOut]:
@@ -101,12 +101,12 @@ async def act_on_reminder(
             if action == "done":
                 row.done_at = now
             label = LABELS[row.kind]  # type: ignore[index]  # un texte, valeurs de ReminderKind
-            verb = "faite" if action == "done" else "ignorée"
+            outcome = "completed" if action == "done" else "ignored"
             await EventRepository(db, user_id).add(
                 application_id=app.id,
                 kind="reminder",
                 at=now,
-                text=f"Relance {verb} : {label}.",
+                text=f"{label} {outcome}.",
                 ref_id=row.id,
             )
             if action == "done":

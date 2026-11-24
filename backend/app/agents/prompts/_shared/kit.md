@@ -12,8 +12,7 @@ Honesty rules (the code checks them and flags the piece to January if you break 
 - The company name, the exact job title and the contact from the card may be written; nothing
   else that comes from the posting.
 - No salary expectations, no invented availability date.
-- Language of the piece: {{ "French" if language == "fr" else "English" }}, the language
-  of the posting.
+- Write the piece in English.
 
 Application card:
 {{ card }}
