@@ -791,18 +791,6 @@ Update prices in `model_prices.json`.
 The original design uses six Docker containers for the frontend, backend, and four open-source
 services. Provider interfaces let a future Cloudflare deployment reuse the features.
 
-```mermaid
-flowchart LR
-    Frontend --> Backend
-    Backend --> Providers["Provider interfaces"]
-    Providers --> Qdrant
-    Providers --> Ollama
-    Providers --> SearXNG
-    Providers --> Gotenberg
-    Providers --> Models["External model providers"]
-    Providers --> Search["Optional Brave Search"]
-```
-
 Only provider implementations know their services. A Cloudflare deployment would supply
 implementations for that platform.
 

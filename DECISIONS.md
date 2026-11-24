@@ -1,198 +1,346 @@
-# Décisions
+# Decisions
 
-> Tout écart entre la spec et une bibliothèque, ou tout choix que la spec ne tranche pas, est ajouté ici.
-
-Chaque entrée : date, sujet, décision, raison.
+Record deviations from the specification and choices it leaves open. Each entry gives its date,
+subject, decision, and reason. Historical entries describe the project at the time of the decision.
+[D312](#d312) records the move to English.
 
 ## D1
 
-- **Date** : 2026-11-11
-- **Sujet** : `POST /postings`, `/sessions`, `/health`, `/costs` n'ont pas de dossier feature dans 12.3
-- **Décision** : Ajouter `features/postings`, `features/sessions`, `features/health`, `features/costs`
-- **Raison** : les endpoints de la section 14 doivent avoir une feature qui les porte, sans quoi la règle « une feature = un dossier » est cassée.
+- **Date** 2026-11-11
+- **Subject** Feature directories for `POST /postings`, `/sessions`, `/health`, and `/costs`
+- **Decision** Add `features/postings`, `features/sessions`, `features/health`, and
+  `features/costs`.
+- **Reason** Each endpoint in section 14 needs a feature directory under the organization rule
+  in section 12.3.
 
 ## D2
 
-- **Date** : 2026-11-11
-- **Sujet** : Front `home` vs back `brief`, et front sans `gap` ni `replan` alors que les noms doivent être identiques
-- **Décision** : Front : ajouter `gap/` et `replan/`. Garder `home` (c'est un écran d'accueil), qui consomme l'API `brief` ; exception notée
-- **Raison** : la règle des noms identiques front/back doit rester vraie ; `home` est un écran d'accueil, pas une ressource, d'où l'exception documentée.
+- **Date** 2026-11-11
+- **Subject** Frontend and backend feature names
+- **Decision** Add `gap/` and `replan/` to the frontend. Keep `home` as the frontend screen that
+  reads the backend `brief` API.
+- **Reason** The directories follow the shared naming rule. `home` is a screen, so its name is
+  a documented exception to resource naming.
 
 ## D3
 
-- **Date** : 2026-11-11
-- **Sujet** : Statuts de session (`running`, `waiting_user`, `completed`, `failed`) sans état pour Pause et Annuler
-- **Décision** : Ajouter `paused` et `cancelled`
-- **Raison** : les boutons Pause et Annuler de la spec exigent un état persistant, sinon la reprise et l'affichage sont ambigus.
+- **Date** 2026-11-11
+- **Subject** Session states for Pause and Cancel
+- **Decision** Add `paused` and `cancelled` to `running`, `waiting_user`, `completed`, and `failed`.
+- **Reason** Persistent states let the app show the outcome of Pause and Cancel and resume
+  a paused session unambiguously.
 
 ## D4
 
-- **Date** : 2026-11-11
-- **Sujet** : Messages de l'utilisatrice pendant un débat : aucun type d'événement ni table
-- **Décision** : Nouveau type d'événement `user.message`, enregistré dans `session_events` ; les nœuds lisent les messages non traités au début de chaque tour
-- **Raison** : la spec ne dit pas comment un message de l'utilisatrice entre dans un débat ; un événement rejouable garde le journal complet et le replay cohérents.
+- **Date** 2026-11-11
+- **Subject** User messages during a debate
+- **Decision** Store `user.message` events in `session_events`. Nodes read unhandled messages
+  at the start of each round.
+- **Reason** A replayable event gives the debate a complete log and consistent replay.
 
 ## D5
 
-- **Date** : 2026-11-11
-- **Sujet** : Index « dès la première migration » sur des tables créées plus tard
-- **Décision** : Chaque index est créé dans la migration de la phase qui crée sa table
-- **Raison** : une migration ne peut pas indexer une table qui n'existe pas encore ; Alembic reste la seule source du schéma.
+- **Date** 2026-11-11
+- **Subject** Indexes on tables created after the first migration
+- **Decision** Add each index in the migration that creates its table.
+- **Reason** The table needs to exist before indexing, and Alembic owns the schema.
 
 ## D6
 
-- **Date** : 2026-11-11
-- **Sujet** : Niveau de maîtrise stocké à deux endroits (`user_skills` et éléments `acquis` en mémoire)
-- **Décision** : `user_skills` fait foi ; l'élément `acquis` en est le reflet indexé, resynchronisé à chaque changement de niveau
-- **Raison** : une seule source de vérité évite les divergences ; l'élément mémoire reste utile pour la recherche sémantique.
+- **Date** 2026-11-11
+- **Subject** Skill mastery in `user_skills` and vector memory
+- **Decision** Use `user_skills` as the source of truth. Update the indexed `acquis` memory item
+  whenever mastery changes.
+- **Reason** One authoritative value keeps mastery consistent while supporting semantic search.
 
 ## D7
 
-- **Date** : 2026-11-11
-- **Sujet** : Le Stratège crée le référentiel de compétences en phase 4, la carte F15 arrive en phase 5
-- **Décision** : Tables `skills`, `skill_edges`, `user_skills` créées en phase 4, interface en phase 5
-- **Raison** : le Stratège a besoin du référentiel dès la phase 4 ; l'interface de la carte peut venir plus tard sans changer le schéma.
+- **Date** 2026-11-11
+- **Subject** Skill catalog ahead of the F15 skill map
+- **Decision** Create `skills`, `skill_edges`, and `user_skills` in phase 4. Add the interface
+  in phase 5.
+- **Reason** The Strategist needs the catalog during phase 4. The skill map can reuse its schema
+  in phase 5.
 
 ## D8
 
-- **Date** : 2026-11-11
-- **Sujet** : Clé dans `.env` et clé saisie dans l'interface
-- **Décision** : La clé saisie dans l'interface est prioritaire ; `.env` sert de repli
-- **Raison** : l'utilisatrice doit pouvoir changer de clé sans toucher aux fichiers ; `.env` reste un point de départ pratique.
+- **Date** 2026-11-11
+- **Subject** API key precedence
+- **Decision** The key entered in the app takes precedence. Fall back to `.env`.
+- **Reason** January can change keys in Settings while `.env` remains available for setup.
 
 ## D9
 
-- **Date** : 2026-11-11
-- **Sujet** : Composants de débat utilisés par 3 features
-- **Décision** : Placés dans `shared/session-ui/`
-- **Raison** : trois features (Conseil, Comité, Tuteur) utilisent ces composants ; une feature n'importe jamais une autre, donc ils vivent dans `shared`.
+- **Date** 2026-11-11
+- **Subject** Shared debate components
+- **Decision** Put them in `shared/session-ui/`.
+- **Reason** Council, hiring panel, and Tutor use the same components. Shared modules let
+  features use them without importing one another.
 
 ## D10
 
-- **Date** : 2026-11-11
-- **Sujet** : Contrat front/back
-- **Décision** : `contracts/openapi.json` versionné, vérifié en CI
-- **Raison** : un contrat versionné permet de générer les types du front et de détecter toute dérive de l'API en CI.
+- **Date** 2026-11-11
+- **Subject** Frontend and backend contract
+- **Decision** Version `contracts/openapi.json` and check it in CI.
+- **Reason** The contract generates frontend types and lets CI detect API drift.
 
 ## D11
 
-- **Date** : 2026-11-11
-- **Sujet** : Router front
-- **Décision** : React Router (mode data), routes déclarées par les manifestes
-- **Raison** : routeur standard, avec chargeurs de données ; les manifestes de feature déclarent leurs routes sans toucher à un fichier central.
+- **Date** 2026-11-11
+- **Subject** Frontend router
+- **Decision** Use React Router in data mode with manifest-declared routes.
+- **Reason** The router supports loaders and lets each feature declare its own routes.
 
 ## D12
 
-- **Date** : 2026-11-11
-- **Sujet** : Le schéma d'architecture de la section 12 est absent du document (« embedded content »)
-- **Décision** : Le texte de 12 et 16.1 suffit ; rien à reconstituer
-- **Raison** : le schéma est absent (contenu embarqué) mais le texte des sections 12 et 16.1 décrit déjà l'architecture complète.
+- **Date** 2026-11-11
+- **Subject** Missing embedded architecture diagram in section 12
+- **Decision** Use the written description in sections 12 and 16.1.
+- **Reason** Those sections already describe the architecture that the missing embed represented.
 
 ## D13
 
-- **Date** : 2026-11-11
-- **Sujet** : `infra/searxng/settings.yml` dans `backend/` (16.2)
-- **Décision** : Respecté tel quel
-- **Raison** : la spec est explicite ; aucun écart à consigner.
+- **Date** 2026-11-11
+- **Subject** `infra/searxng/settings.yml` in `backend/` (16.2)
+- **Decision** Use the path in the specification.
+- **Reason** The specification gives the location explicitly.
 
 ## D14
 
-- **Date** : 2026-11-11
-- **Sujet** : Champ `type` de la charge d'interruption (9.4) en collision avec le `type` de l'enveloppe d'événement
-- **Décision** : La charge porte `kind` à la place
-- **Raison** : évite l'ambiguïté entre le `type` de l'enveloppe d'événement et celui de la charge.
+- **Date** 2026-11-11
+- **Subject** Event envelope and interrupt payload fields
+- **Decision** Use `kind` in the interrupt payload (9.4).
+- **Reason** The envelope already has a `type` field.
 
 ## D15
 
-- **Date** : 2026-11-11
-- **Sujet** : Reprise après Pause
-- **Décision** : `POST /sessions/{id}/resume` avec `interrupt_id: null`
-- **Raison** : réutilise l'endpoint de reprise existant au lieu d'en créer un second.
+- **Date** 2026-11-11
+- **Subject** Resume a paused session
+- **Decision** Send `POST /sessions/{id}/resume` with `interrupt_id: null`.
+- **Reason** The existing resume endpoint can handle paused sessions.
 
 ## D16
 
-- **Date** : 2026-11-11
-- **Sujet** : Sorties structurées
-- **Décision** : JSON validé par Pydantic (2 nouveaux essais), sans `with_structured_output`, pour un comportement identique sur les 3 fournisseurs
-- **Raison** : un comportement identique sur Anthropic, OpenAI et Ollama, sans dépendre des capacités propres à chaque fournisseur.
+- **Date** 2026-11-11
+- **Subject** Structured model output
+- **Decision** Validate JSON with Pydantic and allow two retries.
+- **Reason** This gives Anthropic, OpenAI, and Ollama the same behavior without relying on
+  provider-specific `with_structured_output` support.
 
 ## D17
 
-- **Date** : 2026-11-11
-- **Sujet** : Page de démonstration de la phase 1
-- **Décision** : Route `/demo` conservée hors navigation
-- **Raison** : la phase 1 a besoin d'une page pour vérifier de bout en bout les composants de session, avant les vraies features.
+- **Date** 2026-11-11
+- **Subject** Phase 1 demo page
+- **Decision** Keep the `/demo` route outside navigation.
+- **Reason** The demo provides end-to-end coverage for session components before the product
+  features are available.
 
 ## D18
 
-- **Date** : 2026-11-11
-- **Sujet** : Reprise des sessions au démarrage
-- **Décision** : `list_sessions_to_recover` est la seule lecture sans filtre `user_id`, réservée au démarrage du back
-- **Raison** : le démarrage du back doit reprendre les sessions de tous les utilisateurs ; c'est l'unique exception à la règle du filtre `user_id`, bornée et documentée.
+- **Date** 2026-11-11
+- **Subject** Recover sessions on startup
+- **Decision** Reserve `list_sessions_to_recover` for backend startup and let that read run
+  without a `user_id` filter.
+- **Reason** Startup must recover sessions for all users. The exception applies to that
+  single startup query.
 
 ## D19
 
-- **Date** : 2026-11-11
-- **Sujet** : Python du projet back
-- **Décision** : le back est épinglé à Python 3.12 (`.python-version`, `requires-python = ">=3.12,<3.13"`), sans paquet installable (`[tool.uv] package = false`, code dans `backend/app/`, scripts dans `backend/scripts/`).
-- **Raison** : le poste de développement a Python 3.14 alors que l'image Docker est `python:3.12-slim` ; l'épinglage garde les deux identiques. `uv init --package` aurait créé une disposition `src/` qui contredit l'arborescence cible.
+- **Date** 2026-11-11
+- **Subject** Backend Python version and layout
+- **Decision** Pin Python 3.12 in `.python-version` and `requires-python = ">=3.12,<3.13"`.
+  Use `[tool.uv] package = false`, with code in `backend/app/` and scripts in `backend/scripts/`.
+- **Reason** The development PC had Python 3.14, while Docker used `python:3.12-slim`.
+  Pinning aligns the environments. `uv init --package` would have generated a `src/` layout
+  that differed from the repository structure.
 
 ## D20
 
-- **Date** : 2026-11-11
-- **Sujet** : Branche de travail et outils de qualité sous Windows
-- **Décision** : le travail se fait sur la branche `dev` (le brief disait `main`). Les hooks pre-commit sont des hooks `local` en `language: system` qui passent par `uv run` ; pre-commit s'invoque via `uv run python -m pre_commit` car Windows bloque les exécutables `pre-commit.exe` et `mypy.exe` (stratégie de contrôle d'application). Le hook de longueur utilise `--project` au lieu de `--directory`, pour que les chemins transmis par pre-commit restent relatifs à la racine du dépôt. `asgi-lifespan` est ajouté aux dépendances de développement pour les clients de test des tâches suivantes.
-- **Raison** : fiabilité des hooks dans l'environnement Windows + Git Bash réel de l'utilisatrice.
+- **Date** 2026-11-11
+- **Subject** Working branch and quality checks on Windows
+- **Decision** Use `dev` as the working branch. Configure local pre-commit hooks with
+  `language: system` and `uv run`. Invoke pre-commit as `uv run python -m pre_commit` because
+  application control blocks `pre-commit.exe` and `mypy.exe`. Use `--project` for the file-length
+  hook so paths from pre-commit stay relative to the repository root. Add `asgi-lifespan` to the
+  development dependencies for upcoming test clients.
+- **Reason** These choices make hooks work in the Windows and Git Bash setup used for development.
+  The initial brief had named `main`.
 
 ## D21
 
-- **Date** : 2026-11-11
-- **Sujet** : Règles ruff du back
-- **Décision** : ruff avec `select = ["E", "F", "I", "UP", "B", "SIM"]` et `line-length = 100` (pycodestyle, pyflakes, tri des imports, pyupgrade, bugbear, simplifications).
-- **Raison** : un jeu restreint et sans bruit qui attrape les vrais défauts (imports inutilisés, bugs probables, syntaxe obsolète) sans imposer de règles de style discutables ; à étendre seulement si un défaut récurrent le justifie.
+- **Date** 2026-11-11
+- **Subject** Backend ruff rules
+- **Decision** Use `select = ["E", "F", "I", "UP", "B", "SIM"]` and `line-length = 100`.
+  The sets cover pycodestyle, pyflakes, import order, pyupgrade, bugbear, and simplification.
+- **Reason** This limited set catches unused imports, likely bugs, and outdated syntax. Expand
+  it when a recurring issue warrants another rule.
 
 ## D22
 
-- **Date** : 2026-11-11
-- **Sujet** : Socle de données (tâche 0.3)
-- **Décision** : (1) `created_at` / `updated_at` utilisent un `TypeDecorator` `UTCDateTime` (colonne `DateTime(timezone=True)`) qui restitue des datetimes UTC avec fuseau, car SQLite perd le fuseau à la lecture ; la migration 0001 écrit `sa.DateTime(timezone=True)` pour rester indépendante du code applicatif. (2) Les fixtures de test utilisent un vrai fichier `tmp_path/app.db` (schéma créé par `Base.metadata.create_all` avant le démarrage de l'app) plutôt qu'une base mémoire et un `get_db` surchargé : `client` et `db_session` voient les mêmes données. (3) `Settings.database_url` est une `str` (vide = calculée depuis `data_dir`), l'override `DATABASE_URL` reste valable. (4) `Base.metadata` porte une convention de nommage des contraintes (nécessaire au mode batch d'Alembic sur SQLite). (5) Aucune clé étrangère vers `users` pour l'instant : `user_id` est indexé mais non contraint (le filtre applicatif du repository est la garantie ; `User.user_id == User.id` rendrait une clé étrangère auto-référente sans valeur). (6) `User.email` et `google_sub` sont uniques et nullables (l'utilisateur local de la tâche 0.4 n'a pas d'e-mail ; SQLite autorise plusieurs NULL sous contrainte unique). (8) `get_db` doit être déclaré avec `Depends(get_db, scope="function")` (alias `Db` dans `app/core/deps.py`) : avec la portée « request » par défaut de FastAPI, le commit s'exécute après l'envoi de la réponse. (7) `alembic/env.py` lit `sqlalchemy.url` s'il est fixé (tests, scripts), sinon `get_settings().database_url`.
-- **Raison** : lectures fidèles au contrat « UTC tz aware », tests plus proches de la production (WAL, connexions distinctes), migrations vérifiables par `compare_metadata`.
+- **Date** 2026-11-11
+- **Subject** Data foundation (task 0.3)
+- **Decision**
+  1. Use a `UTCDateTime` `TypeDecorator` over `DateTime(timezone=True)` for `created_at` and
+     `updated_at`. SQLite loses the timezone on reads, so restore aware UTC datetimes.
+     Migration 0001 uses `sa.DateTime(timezone=True)` and stays independent of app code.
+  2. Test against `tmp_path/app.db` with `Base.metadata.create_all` before startup. The test
+     `client` and `db_session` share the file through separate connections.
+  3. `Settings.database_url` is a string. An empty string uses `data_dir` and `DATABASE_URL`
+     remains an override.
+  4. Set a constraint naming convention on `Base.metadata` for Alembic SQLite batch mode.
+  5. Index `user_id` and enforce scoping in repositories. `User.user_id == User.id` would make
+     a foreign key on `users` self-referential.
+  6. Make `User.email` and `google_sub` unique and nullable. SQLite permits multiple null
+     values under a unique constraint, and the local user in task 0.4 has no email.
+  7. Use `Depends(get_db, scope="function")`, aliased as `Db` in `app/core/deps.py`, so a
+     commit completes before FastAPI sends the response.
+  8. In `alembic/env.py`, use `sqlalchemy.url` when tests or scripts set it. Otherwise read
+     `get_settings().database_url`.
+- **Reason** These choices preserve timezone-aware reads, exercise WAL and separate connections
+  in tests, and let `compare_metadata` check migrations.
 
 ## D23
 
-- **Date** : 2026-11-11
-- **Sujet** : Utilisateur local et `get_current_user` (tâche 0.4)
-- **Décision** : (1) `UserRepository` (table `users`) est l'exception au filtrage par `user_id` : il filtre par `id` (ou retrouve le compte local) et n'hérite pas de `UserScopedRepository`. (2) En mode `local`, le lifespan appelle `AuthService.ensure_local_user()` (idempotent, `name="local"`, sans e-mail ni `google_sub`) dans sa propre session, commite et mémorise l'id sur `app.state.local_user_id` ; si la table `users` manque, le démarrage échoue avec un message français (`alembic upgrade head`). (3) En mode `google`, `get_current_user` lève `auth_required` (401) tant que la connexion n'existe pas (phase 9) ; le lifespan ne crée alors aucun utilisateur. (4) Alias `CurrentUserDep` dans `app/core/deps.py` pour les routeurs. (5) Les tests de `get_db` (0.3) filtrent désormais sur leurs propres lignes, l'utilisateur local existant dès le démarrage.
-- **Raison** : un utilisateur unique stable sans authentification en local, et un point d'extension net pour Google sans toucher aux features.
+- **Date** 2026-11-11
+- **Subject** Local user and `get_current_user` (task 0.4)
+- **Decision**
+  1. `UserRepository` filters the `users` table by `id` or looks up the local account. It
+     does not inherit `UserScopedRepository`.
+  2. In local mode, the lifespan calls idempotent `AuthService.ensure_local_user()` in its
+     own session. It creates `name="local"` without email or `google_sub`, commits, and sets
+     `app.state.local_user_id`. A missing `users` table fails startup with instructions to
+     run `alembic upgrade head`. The original message was in French.
+  3. In Google mode, `get_current_user` raises `auth_required` (401) until sign-in (phase 9).
+     The lifespan creates no local user.
+  4. Routers use `CurrentUserDep` from `app/core/deps.py`.
+  5. The task 0.3 `get_db` tests filter their own rows because startup creates the local user.
+- **Reason** Local mode gets a stable single account and Google mode gets a clear extension point.
 
 ## D24
 
-- **Date** : 2026-11-11
-- **Sujet** : Secret, chiffrement et filtre de journaux (tâche 0.5)
-- **Décision** : (1) `SecretUnreadable` hérite d'`AppError` (code `secret_unreadable`, 500, message français) ; elle est aussi levée si le fichier `secret.key` n'est pas une clé Fernet valide. (2) `load_or_create_secret` crée le dossier parent et le fichier de façon atomique (`O_EXCL`, `0o600`) ; sous Windows `chmod` est sans effet et les tests ne vérifient pas les droits. (3) `KnownSecrets` (registre de processus dans `security.py`, ignore les valeurs vides ou de moins de 8 caractères) alimente `configure_logging` ; le lifespan y ajoute les clés `.env` non vides. (4) `RedactingFilter` est posé sur les handlers (racine et uvicorn), pas sur des loggers, car un filtre de logger ne s'applique pas aux enregistrements propagés ; il masque aussi les traces d'exception (`exc_text`) et `stack_info`. `configure_logging` est idempotent (remplace le filtre existant, n'ajoute un handler que si la racine n'en a aucun). Le niveau est fixé à `INFO` dans `main.py` (pas de réglage dédié pour l'instant). (5) Le lifespan ne traduit en message « base non initialisée » que les `OperationalError` contenant « no such table » ; les autres sont relevées telles quelles.
-- **Raison** : aucune clé ne doit sortir en clair dans les journaux, y compris via une exception ; et un verrou ou une base illisible ne doit pas être pris pour un oubli de migration.
+- **Date** 2026-11-11
+- **Subject** Secrets, encryption, and log filtering (task 0.5)
+- **Decision**
+  1. `SecretUnreadable` extends `AppError` with code `secret_unreadable` and HTTP 500. Raise it
+     if `secret.key` is invalid for Fernet. The original error message was in French.
+  2. `load_or_create_secret` creates the parent directory and creates the file atomically with
+     `O_EXCL` and mode `0o600`. Windows `chmod` has no effect. Tests skip permission checks there.
+  3. The process-wide `KnownSecrets` registry in `security.py` feeds `configure_logging` and
+     ignores empty values and strings shorter than eight characters. The lifespan registers
+     nonempty keys from the environment.
+  4. Install `RedactingFilter` on root and uvicorn handlers to cover propagated records.
+     Redact `exc_text` and `stack_info` too. `configure_logging` replaces existing filters and
+     adds a root handler only if none exist. `main.py` sets `INFO` as the initial log level.
+  5. Startup reports an uninitialized database only for an `OperationalError` with
+     “no such table”. Other errors propagate.
+- **Reason** Logs must protect keys in records and exceptions. Database locks and unreadable
+  files require a different response from missing migrations.
 
 ## D25
 
-- **Date** : 2026-11-11
-- **Sujet** : Réglages utilisateur et identifiants de modèles (tâche 0.6)
-- **Décision** : (1) Identifiants relevés le 2026-11-11 : Anthropic `claude-haiku-5-5` (rapide) et `claude-sonnet-5-5` (fort), confirmés par le contrôleur ; OpenAI `gpt-6-luna` (rapide, « most efficient model for focused, high-volume tasks »), `gpt-6.1-sol` (fort, « near-Astra performance at a lower cost »), `gpt-6.1-terra` (vision, « visual reasoning ») d'après developers.openai.com/api/docs/models ; GLM (Z.ai) `glm-4.7-flash` (rapide, texte, gratuit), `glm-5.3` (fort, texte), `glm-5.3-flash` (vision : entrée image/vidéo/texte) d'après docs.z.ai (aperçu, tarifs, guide `glm-5.3-flash`). Sources consultées via context7, pas directement sur les sites : **à vérifier** avant la première utilisation réelle de OpenAI et GLM. (2) `supports_vision` : tout `claude-*` ; OpenAI et GLM par listes explicites (OpenAI : `gpt-6-astra`, `gpt-6.1-sol`, `gpt-6.1-terra` ; GLM : `glm-5.3-flash`, `glm-5.3-flashx`, `glm-4.6v`, `glm-4.6v-flash`, `glm-4.6v-flashx`, `glm-4.5v`) ; fournisseur ou modèle inconnu = pas de vision (on désactive plutôt que de casser). `gpt-6-luna`, `glm-4.7-flash` et `glm-5.3` sont donc traités comme sans vision. (3) Constante ajoutée `OPENAI_VISION` (absente du brief) pour que le préréglage « Tout OpenAI » ait un niveau vision valide. Préréglages : rapide et standard = modèle rapide, fort = modèle fort, vision = modèle vision (Haiku pour les deux préréglages Anthropic). (4) Lecture tolérante : les clés inconnues du stockage sont ignorées ; un champ stocké invalide retombe sur son défaut (un avertissement ne journalise que les noms de champs) ; si cela ne suffit pas, tous les défauts. (5) `tiers` reçu ou lu avec un niveau absent est complété par le défaut du niveau. (6) Les champs calculés (`weekly_budget_minutes`, `vision_enabled`) sont des `computed_field` renvoyés par l'API, jamais stockés ; un `PUT` accepte donc tel quel le corps d'un `GET` (champs en trop ignorés). (7) `UserSettingsRow.data` est une colonne JSON simple : le repository affecte toujours un nouveau dict. (8) `Field(default=...)` en mot-clé et `default_factory` en lambda : mypy est lancé sans le plugin pydantic. (9) `SettingsModelReader(session_factory)` ouvre sa propre session ; il n'est pas encore branché (la fabrique LLM arrive en 0.7, la composition ira dans `app/bootstrap.py`).
-- **Raison** : valeurs par défaut de la spec respectées, lecture qui ne casse jamais l'accueil à cause d'une donnée ancienne, et identifiants centralisés dans `model_defaults.py`.
+- **Date** 2026-11-11
+- **Subject** User settings and default models (task 0.6)
+- **Decision**
+  1. The initial catalog recorded Anthropic's `claude-haiku-5-5` for Fast and
+     `claude-sonnet-5-5` for Strong, confirmed in review. For OpenAI it recorded
+     `gpt-6-luna` for high-volume tasks, `gpt-6.1-sol` for Strong, and `gpt-6.1-terra`
+     for vision. For Z.ai it recorded free, text-only `glm-4.7-flash` for Fast, text-only
+     `glm-5.3` for Strong, and `glm-5.3-flash` for vision with image, video, and text.
+     The OpenAI model catalog and the Z.ai overview, pricing, and flash guide were read
+     through Context7. Confirm the IDs against the providers before their first real use.
+  2. `supports_vision` accepts all `claude-*` models. The OpenAI allowlist contains
+     `gpt-6-astra`, `gpt-6.1-sol`, and `gpt-6.1-terra`. The GLM allowlist contains
+     `glm-5.3-flash`, `glm-5.3-flashx`, `glm-4.6v`, `glm-4.6v-flash`,
+     `glm-4.6v-flashx`, and `glm-4.5v`. Unknown providers and models disable vision.
+     This also excludes `gpt-6-luna`, `glm-4.7-flash`, and `glm-5.3`.
+  3. Add `OPENAI_VISION` so the **All OpenAI** preset covers Vision. Presets use the fast
+     model for Fast and Standard, the strong model for Strong, and the vision model for
+     Vision. Both Anthropic presets use Haiku for Vision.
+  4. Ignore unknown saved keys and fall back on defaults for invalid fields. Warnings log
+     only field names. Use all defaults when field-level fallback still fails.
+  5. Fill a missing tier in a stored or submitted `tiers` map with its default.
+  6. Return `weekly_budget_minutes` and `vision_enabled` as `computed_field` properties.
+     They are not stored. A `PUT` can accept a `GET` response by ignoring extra fields.
+  7. Replace `UserSettingsRow.data` with a fresh dict because it is a plain JSON column.
+  8. Use keyword `Field(default=...)` and a lambda for `default_factory`. Mypy runs without
+     the Pydantic plugin.
+  9. `SettingsModelReader(session_factory)` opens its own session. The model factory in task
+     0.7 will use it through composition in `app/bootstrap.py`.
+- **Reason** Keep the specification's defaults and IDs in `model_defaults.py`. Older saved
+  settings should still let the home page load.
 
 ## D26
 
-- **Date** : 2026-11-11
-- **Sujet** : Fournisseurs LLM, fabrique `get_chat_model` et prix (tâche 0.7)
-- **Décision** : (1) Contrat d'import : `app/providers/` n'importe jamais `app/features/` ; la fabrique ne dépend que des protocoles `ModelChoiceReader` et `KeyReader` (définis dans `base.py`), la composition avec la feature réglages ira dans `app/bootstrap.py` (tâche 0.8). (2) Vérification des clés et listes de modèles en `httpx` simple (`_http.py`), pas via les SDK `anthropic` / `openai` : ces SDK (versions installées) utilisent `httpx2` et refusent un client `httpx` ; `respx` n'intercepte donc pas leurs appels et un test aurait atteint le vrai réseau (constaté lors du développement, corrigé). Les modèles de chat restent `ChatAnthropic` / `ChatOpenAI` ; `build` fixe `timeout=120`, `max_retries=2`, `streaming=True`. (3) `test_key` ne lève jamais (réseau, délai, 401/403 « Clé refusée par {fournisseur}. », autre statut) et ne reprend jamais la clé ; `list_models` lève `AppError("llm_models_unavailable", …, 502)`. (4) GLM : pas d'API de liste documentée par Z.ai (`list_models` renvoie `None`, saisie libre) ; `test_key` fait un appel `max_tokens=1` sur `glm-4.7-flash` (gratuit). Adresse par défaut `https://api.z.ai/api/paas/v4/`, remplacée par `base_urls["glm"]` (`Settings.zai_base_url`) à la construction. L'adresse « coding » (`/api/coding/paas/v4`) consomme le quota du forfait Coding Plan : non utilisée. (5) `FakeLlmProvider` (code applicatif, `fake.py`) : petit modèle `BaseChatModel` maison plutôt que `GenericFakeChatModel`, qui ne conserve pas les messages reçus et ne renseigne pas `usage_metadata` en flux. Il diffuse mot par mot, met `usage_metadata` (nombre de mots) sur le dernier morceau, et lève `RuntimeError` quand les réponses prévues sont épuisées. Il garde aussi `base_urls` (assertions). (6) `LlmFactory` : `SecretUnreadable` devient `llm_key_unreadable` (details `{provider}` ajouté), une clé vide ou absente `llm_key_missing`, un fournisseur absent du registre `llm_provider_unknown` ; aucun message ni détail ne contient la clé. (7) Prix (`model_prices.json`, USD par million de tokens, relevé du 2026-11-11 ; palier ≤ 100 K tokens d'entrée pour Haiku, ≤ 272 K pour OpenAI, les paliers supérieurs coûtent plus cher et ne sont pas modélisés) : `claude-haiku-5-5` 0,10 / 0,50 et `claude-sonnet-5-5` 2 / 10 (skill claude-api, tableau du 2026-11-03) ; `gpt-6-luna` 0,10 / 0,50, `gpt-6.1-sol` 2 / 10, `gpt-6.1-terra` 1 / 5 (developers.openai.com, pages des modèles) ; `glm-4.7-flash` 0 / 0 (docs.z.ai, tarifs). **À vérifier** : `glm-5.3` (1,40 / 4,40) et `glm-5.3-flash` (0,47 / 1,47) sont des estimations, absentes de la page des tarifs Z.ai consultée : `glm-5.3` reprend le tarif de `glm-5.1`, `glm-5.3-flash` en applique le tiers (rapport des multiplicateurs de crédits du forfait équipe, 2,3 / 6,9 et 8 / 24). Z.ai et OpenAI vérifiés via context7, pas sur les sites directement ; le fichier est éditable à la main.
-- **Raison** : respecter « aucun appel réseau réel en test », garder la fabrique indépendante des features, et des erreurs lisibles sans fuite de clé.
+- **Date** 2026-11-11
+- **Subject** Model providers, `get_chat_model`, and pricing (task 0.7)
+- **Decision**
+  1. Keep features outside the provider package's dependencies. The factory uses
+     `ModelChoiceReader` and `KeyReader` from `base.py`. Task 0.8 connects them in
+     `app/bootstrap.py`.
+  2. Use `httpx` in `_http.py` for key checks and model listings. The installed Anthropic
+     and OpenAI SDKs used `httpx2`. `respx` would have missed their requests in tests.
+     Use `ChatAnthropic` and `ChatOpenAI` for chat with `timeout=120`, `max_retries=2`,
+     and `streaming=True`.
+  3. `test_key` reports network failures, timeouts, refused keys (401/403), and other status
+     errors in its result and keeps the key private. `list_models` raises
+     `AppError("llm_models_unavailable", …, 502)` on failure.
+  4. GLM returns `None` from `list_models` for manual entry because Z.ai had no documented
+     list endpoint. The initial key test used one token on the free `glm-4.7-flash`.
+     The default `https://api.z.ai/api/paas/v4/` can be overridden with
+     `base_urls["glm"]` from `Settings.zai_base_url`. The coding endpoint
+     `/api/coding/paas/v4` draws on the Coding Plan quota and is excluded.
+  5. `FakeLlmProvider` in `fake.py` uses a small `BaseChatModel` implementation to retain
+     messages and track streamed usage. It streams word by word, attaches word counts as
+     `usage_metadata` to the last chunk, records base URLs for assertions, and raises
+     `RuntimeError` when scripted replies run out.
+  6. The factory maps unreadable keys to `llm_key_unreadable` with provider details, missing
+     or empty keys to `llm_key_missing`, and unregistered providers to `llm_provider_unknown`.
+     Messages and details omit the key.
+  7. `model_prices.json` records USD per million input and output tokens as of 2026-11-11.
+     Haiku uses the tier through 100K input tokens and OpenAI through 272K. Higher tiers
+     cost more and are outside this model. Initial estimates were Haiku $0.10/$0.50 and
+     Sonnet $2/$10 (Claude API skill, 2026-11-03 table), `gpt-6-luna` $0.10/$0.50,
+     `gpt-6.1-sol` $2/$10 and `gpt-6.1-terra` $1/$5 (OpenAI model pages), and
+     `glm-4.7-flash` $0/$0 (Z.ai pricing). GLM-5.3 used the GLM-5.1 estimate of
+     $1.40/$4.40. GLM-5.3 Flash was estimated at one third, $0.47/$1.47, from team
+     credit multipliers 2.3/6.9 and 8/24. The Z.ai page omitted those two estimates.
+     OpenAI and Z.ai sources were accessed through Context7. Confirm pricing before use.
+     The file is editable.
+- **Reason** Tests can intercept requests, providers stay independent of features, and key
+  errors are readable while keeping secrets private.
 
 ## D27
 
-- **Date** : 2026-11-11
-- **Sujet** : Clés API, test de clé, liste des modèles et composition (tâche 0.8)
-- **Décision** : (1) `app/bootstrap.py` : `Providers` (dataclass modifiable) et `build_providers(settings, session_factory, cipher)` ; GLM y est construit avec `GlmProvider(base_url=settings.zai_base_url)` pour que le test de clé et la liste honorent une adresse Z.ai surchargée (retour de revue 0.7) ; `env_keys` = `{anthropic, openai, glm}` issus de `Settings`. Le lifespan stocke le résultat dans `app.state.providers` ; `get_providers`, `get_llm_factory`, `get_cipher` (`core/deps.py`) lisent `app.state`, `Providers` n'y est importé que pour le typage. Correctif de revue : le dataclass `Providers` (données seulement) vit dans `app/core/providers.py`, `bootstrap.py` ne garde que `build_providers` ; ni `app.features.*` ni `app.core.*` n'importent `app.bootstrap`. (2) Clé : espaces autour retirés avant stockage ; vide = 422 `invalid_key` « La clé est vide. » ; moins de 8 caractères = 422 `invalid_key` « La clé est trop courte. » (contrôle fait dans le service, pas dans le schéma, pour que le 422 de validation Pydantic ne recopie jamais la valeur saisie). Le brief utilisait `"ui-key"` (6 caractères) dans un test : le test utilise `"ui-key-123"`. (3) `list()` ne lève jamais : une clé de la base qui ne se déchiffre plus donne `readable=False` (source `ui`, `last4` conservé) ; sans clé, `readable=True`, `source=None`. Une clé de la base illisible n'est pas remplacée par celle du `.env` (la clé de l'interface reste prioritaire, `get_plaintext` lève `SecretUnreadable`). (4) `test` : fournisseur sans clé = `KeyTestResult(ok=False, "Aucune clé enregistrée pour {label}.")` ; clé illisible = `ok=False` avec le message de `SecretUnreadable` ; le résultat (`last_tested_at`, `last_test_ok`) n'est mémorisé que pour une clé de l'interface (une clé `.env` n'a pas de ligne) ; remplacer une clé remet ce résultat à vide. (5) `GET /settings/models` : `has_key` = une clé lisible existe (interface ou `.env`) ; `list_models` n'est appelé que dans ce cas ; toute exception d'un fournisseur donne `models: None` et un avertissement qui ne contient que le nom du fournisseur et le type d'erreur. (6) `DELETE` est idempotent (204 même sans clé). `DbKeyReader` ouvre sa propre session et partage la résolution (base puis `.env`) avec `ApiKeyService` ; toute valeur déchiffrée ou saisie va dans `KnownSecrets`.
-- **Raison** : aucune fuite de clé (réponse, journal, erreur de validation), une page de réglages qui ne casse jamais à cause d'un secret régénéré ou d'un fournisseur en panne, et composition concentrée dans `bootstrap.py`.
-- **Correctif de revue (D27 bis)** : le gestionnaire d'erreurs de validation (`core/errors.py`) ne renvoie plus que `loc`, `msg` et `type` pour chaque erreur (ni `input`, ni `ctx`), pour toutes les routes : `input` recopiait la valeur reçue (clé d'API, plus tard données personnelles). `models_overview` réutilise `list_models`.
+- **Date** 2026-11-11
+- **Subject** API keys, key checks, model lists, and composition (task 0.8)
+- **Decision**
+  1. `build_providers(settings, session_factory, cipher)` in `app/bootstrap.py` builds
+     `GlmProvider(base_url=settings.zai_base_url)` so key tests and model listings honor
+     the override. It reads Anthropic, OpenAI, and GLM environment keys from `Settings`.
+     The lifespan sets `app.state.providers`. `get_providers`, `get_llm_factory`, and
+     `get_cipher` in `core/deps.py` read application state. Review moved the mutable
+     `Providers` dataclass to `app/core/providers.py`. Feature and core modules
+     avoid imports from `app.bootstrap`.
+  2. Trim keys before storing. Empty or shorter than eight characters returns 422
+     `invalid_key`. Validate in the service to avoid including key text in Pydantic
+     errors. The test fixture uses `"ui-key-123"` because `"ui-key"` is only six characters.
+  3. Listing always returns a result. An unreadable database key has `source="ui"` and
+     `readable=False` with its `last4` intact. A missing key has `readable=True` and no source.
+     A saved but unreadable key still takes precedence. `get_plaintext` raises `SecretUnreadable`.
+  4. A missing key returns a failed `KeyTestResult` for the provider. An unreadable key
+     returns that error's message. Persist `last_tested_at` and `last_test_ok` only for keys
+     saved in the app, and clear the result on replacement.
+  5. `GET /settings/models` sets `has_key` when a usable key exists in the app or
+     `.env`. Call `list_models` only in that case. A provider exception returns
+     `models: None` and logs the provider name and error type only.
+  6. Key deletion returns 204 even if the key is already absent. `DbKeyReader` opens
+     its own session and shares database-first lookup with `ApiKeyService`. Add decrypted
+     and entered values to `KnownSecrets`.
+- **Reason** Settings can handle regenerated secrets and provider outages without exposing
+  keys in responses, logs, or validation errors. Composition remains in `bootstrap.py`.
+- **Review correction (D27 bis)** Return only `loc`, `msg`, and `type` from validation
+  errors in `core/errors.py` for every route. The original `input` field echoed keys and could
+  echo personal data. Omit `ctx` as well. `models_overview` reuses `list_models`.
 
 ## D28
 
