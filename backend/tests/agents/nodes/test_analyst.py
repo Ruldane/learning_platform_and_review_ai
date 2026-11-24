@@ -202,7 +202,7 @@ def test_prompts_frame_untrusted_content() -> None:
     needs = '<<<CONTENU_NON_FIABLE source="offre:competences">>>\n- n1 : Python (obligatoire)'
     assert needs in match and "- n8 : Docker (souhaitée)" in match
     assert '<<<CONTENU_NON_FIABLE source="referentiel">>>\n- k1: Python (level: validated)' in match
-    assert "- k3 : Docker (niveau : déclaré)" in match and "highest level" in match
+    assert "- k3: Docker (level: declared)" in match and "highest level" in match
 
 
 def test_gap_result_round_trip() -> None:

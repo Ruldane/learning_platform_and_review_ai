@@ -7,5 +7,5 @@ def test_short_profile_names_also_disappear_from_the_text() -> None:
     two = CvContent(name="Aï", headline="Aï présente le rôle")
     profile = MasterProfileData(identity=Identity(name="Ng"))
     pattern = _redactions((one, two), profile)
-    assert anonymized(one, pattern) == "[masqué] présente une expérience en organisation"
-    assert anonymized(two, pattern) == "[masqué] présente le rôle"
+    assert anonymized(one, pattern) == "[hidden] présente une expérience en organisation"
+    assert anonymized(two, pattern) == "[hidden] présente le rôle"

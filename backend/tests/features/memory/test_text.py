@@ -92,9 +92,9 @@ def test_source_hash_is_sha256_hex() -> None:
     [
         ("../../etc/passwd", "passwd"),
         ("C:\\x\\cv.pdf", "cv.pdf"),
-        ("\x00\n", "Document sans nom"),
-        (None, "Document sans nom"),
-        ("", "Document sans nom"),
+        ("\x00\n", "Untitled document"),
+        (None, "Untitled document"),
+        ("", "Untitled document"),
         ("dossier/", "dossier"),
         ("  Mon CV\x07.pdf ", "Mon CV.pdf"),
     ],

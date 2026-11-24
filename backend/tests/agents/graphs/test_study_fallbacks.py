@@ -244,11 +244,11 @@ def test_final_questions_without_objectives_or_sections_are_still_three() -> Non
     context = study_context(sections=0, objectives=[])
     finals = final_questions_from_lesson(context, 3)
     assert [f["question"] for f in finals] == [
-        f"Qu'as-tu retenu de « {MODULE} » ?",
-        f"Quelle idée de « {MODULE} » vas-tu appliquer, et comment ?",
-        f"Quelle erreur éviter avec « {MODULE} », et pourquoi ?",
+        f"What did you learn from “{MODULE}”?",
+        f"What idea from “{MODULE}” will you apply, and how?",
+        f"What mistake should you avoid when applying “{MODULE}”, and why?",
     ]
-    assert all(f["expected"] == "" for f in finals)  # aucune réponse inventée
+    assert all(f["expected"] == "" for f in finals)  # No invented answers.
 
 
 def _check(verdict: str) -> str:

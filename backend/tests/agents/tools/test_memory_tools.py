@@ -78,7 +78,7 @@ async def test_memory_write_of_known_content_emits_no_memory_written(
     res = await memory_write(deps, AgentWrite("skill", "Python", "t", "Raison."), agent="archivist")
     assert res.created is False
     assert _types(emitted) == ["tool.called", "tool.result"]
-    assert "déjà en mémoire" in emitted[1]["payload"]["summary"].lower()  # type: ignore[index]
+    assert "already in memory" in emitted[1]["payload"]["summary"].lower()  # type: ignore[index]
 
 
 async def test_memory_get_skills_emits_tool_events(
@@ -87,7 +87,7 @@ async def test_memory_get_skills_emits_tool_events(
     summary = await memory_get_skills(deps, agent="archivist")
     assert summary.total == 1
     assert _types(emitted) == ["tool.called", "tool.result"]
-    assert emitted[1]["payload"]["summary"] == "1 acquis"  # type: ignore[index]
+    assert emitted[1]["payload"]["summary"] == "1 skill(s)"  # type: ignore[index]
 
 
 def test_memory_tools_for_names(deps: GraphDeps) -> None:

@@ -60,7 +60,7 @@ def test_pathological_boards_are_analysed_in_linear_time(opener: str, filler: st
 def test_oversized_code_is_refused_before_any_analysis() -> None:
     code = HEADER + "A -- " + " " * MAX_CODE_CHARS + "x"
     assert _elapsed(lambda: mermaid_problems(code)) < BUDGET_S
-    assert mermaid_problems(code) == [f"schéma de plus de {MAX_CODE_CHARS} caractères"]
+    assert mermaid_problems(code) == [f"The diagram exceeds {MAX_CODE_CHARS} characters"]
 
 
 def _patterns(module: ModuleType) -> Iterator[re.Pattern[str]]:

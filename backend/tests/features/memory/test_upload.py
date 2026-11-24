@@ -10,7 +10,7 @@ from scripts.sample_pdf import make_pdf
 from tests.features.memory.doc_support import make_docx, make_zip
 
 DOCX_INVALID = "The DOCX file is invalid or too large when decompressed."
-UNSUPPORTED = "Type de fichier non pris en charge : PDF, DOCX, Markdown ou texte uniquement."
+UNSUPPORTED = "Upload a PDF, DOCX, Markdown, or plain text file."
 
 
 def _error(filename: str | None, data: bytes) -> AppError:

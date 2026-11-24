@@ -20,7 +20,8 @@ def test_absent_employer_is_flagged_to_check() -> None:
     change = one("Mets en avant ton expérience chez Capgemini dans la section Expériences.")
     assert change.needs_skill and change.terms == ["Capgemini"]
     assert change.text.startswith("To check · Verify Capgemini")
-    assert "Ne l'écris pas dans ton CV" in change.text and "Mets en avant" not in change.text
+    assert "before adding these details to your CV" in change.text
+    assert "Mets en avant" not in change.text
 
 
 def test_absent_school_is_flagged_to_check() -> None:

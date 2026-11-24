@@ -175,7 +175,7 @@ def test_prompt_blocks_say_what_is_missing() -> None:
 
 def test_exchange_text_shows_follow_up_and_unanswered_follow_up() -> None:
     text = exchange_text(exchange(2, 3, follow_up="Et ensuite ?"), with_note=False)
-    assert "[index 2]" in text and "Et ensuite ?" in text and "(pas de réponse)" in text
+    assert "[index 2]" in text and "Et ensuite ?" in text and "(no answer)" in text
     assert "Note interne" not in text
 
 
@@ -183,10 +183,10 @@ def test_pending_follow_up_hides_the_unanswered_line() -> None:
     text = exchange_text(
         exchange(1, 3, follow_up="Et ensuite ?"), with_note=False, pending_follow_up=True
     )
-    assert "Relance : Et ensuite ?" in text and "(pas de réponse)" not in text
+    assert "Follow-up: Et ensuite ?" in text and "(no answer)" not in text
 
 
 def test_unrated_exchange_is_never_the_weakest_when_a_rated_one_exists() -> None:
     exchanges = [exchange(0, 3, unrated=True), exchange(1, 4)]
     assert weakest_index(exchanges) == 1
-    assert "non notée" in exchange_text(exchanges[0])
+    assert "unscored" in exchange_text(exchanges[0])
