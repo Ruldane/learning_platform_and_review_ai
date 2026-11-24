@@ -73,6 +73,13 @@ async def test_validation_error_is_english(
     assert r.status_code == 422
     assert r.json()["error"]["code"] == "validation_error"
     assert r.json()["error"]["message"] == "Invalid request."
+    (error,) = r.json()["error"]["details"]["errors"]
+    assert error == {"loc": ["query", "n"], "msg": "Enter a whole number.", "type": "int_parsing"}
+
+    missing = await client.get("/api/v1/_v")
+    assert missing.status_code == 422
+    (error,) = missing.json()["error"]["details"]["errors"]
+    assert error == {"loc": ["query", "n"], "msg": "This field is required.", "type": "missing"}
 
 
 async def test_validation_error_never_echoes_the_input(
@@ -141,9 +148,13 @@ async def test_validation_paths_only_contain_declared_fields_and_list_indices(
             ["body", "scores"],
             ["body", "scores"],
         ]
-        assert details["errors"][0]["msg"] == "Valeur invalide."
+        assert [err["msg"] for err in details["errors"]] == [
+            "Invalid value.",
+            "This field is not allowed.",
+            "Enter a whole number.",
+            "Enter a whole number.",
+        ]
         assert details["errors"][0]["type"] == "value_error"
-        assert details["errors"][2]["msg"] == "Un entier est attendu."
 
 
 async def test_unhandled_error_is_500_without_trace(

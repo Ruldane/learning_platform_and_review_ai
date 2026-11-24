@@ -1,4 +1,4 @@
-"""Informations publiques d'une erreur de validation d'après les champs déclarés par la route."""
+"""Public validation errors derived from the fields declared by the route."""
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -15,22 +15,22 @@ from pydantic_core.core_schema import ErrorType
 ROOTS = ("body", "query", "path", "header", "cookie")
 _TYPES = frozenset(get_args(ErrorType))
 _MESSAGES = {
-    "missing": "Champ obligatoire.",
-    "extra_forbidden": "Champ supplémentaire non autorisé.",
-    "json_invalid": "Corps JSON invalide.",
-    "int_parsing": "Un entier est attendu.",
-    "int_type": "Un entier est attendu.",
-    "string_type": "Un texte est attendu.",
-    "bool_parsing": "Une valeur vraie ou fausse est attendue.",
-    "bool_type": "Une valeur vraie ou fausse est attendue.",
-    "list_type": "Une liste est attendue.",
-    "dict_type": "Un objet est attendu.",
-    "string_too_short": "Le texte est trop court.",
-    "string_too_long": "Le texte est trop long.",
-    "too_short": "Il manque des éléments.",
-    "too_long": "Il y a trop d’éléments.",
-    "literal_error": "Choisis une des valeurs autorisées.",
-    "enum": "Choisis une des valeurs autorisées.",
+    "missing": "This field is required.",
+    "extra_forbidden": "This field is not allowed.",
+    "json_invalid": "Invalid JSON body.",
+    "int_parsing": "Enter a whole number.",
+    "int_type": "Enter a whole number.",
+    "string_type": "Enter text.",
+    "bool_parsing": "Choose true or false.",
+    "bool_type": "Choose true or false.",
+    "list_type": "A list is required.",
+    "dict_type": "An object is required.",
+    "string_too_short": "The text is too short.",
+    "string_too_long": "The text is too long.",
+    "too_short": "Add more items.",
+    "too_long": "Remove some items.",
+    "literal_error": "Choose one of the allowed values.",
+    "enum": "Choose one of the allowed values.",
 }
 
 type Location = tuple[str | int, ...]
@@ -38,7 +38,7 @@ type Location = tuple[str | int, ...]
 
 @dataclass(frozen=True)
 class KnownMappingKeys:
-    """Clés définies par le serveur pour un champ de type dictionnaire."""
+    """Server-defined keys for a dictionary field."""
 
     keys: frozenset[str]
 
@@ -135,13 +135,13 @@ def _route_location(route: APIRoute, root: str, parts: Location) -> Location:
 
 
 def validated_location(request: Request, error: Mapping[str, Any]) -> Location:
-    """Le plus long préfixe attesté par le type de chaque champ, jamais une clé dynamique."""
+    """Return the longest path prefix verified against the route's declared fields."""
     loc = error.get("loc")
     if not isinstance(loc, list | tuple) or not loc or loc[0] not in ROOTS:
         return ("body",)
     root, parts = loc[0], tuple(loc[1:])
     if error.get("type") == "json_invalid":
-        return ("body",)  # Le décodeur donne un décalage de caractère, pas un indice de champ.
+        return ("body",)  # A JSON decoder position is a character offset.
     if error.get("type") == "extra_forbidden":
         parts = parts[:-1]
     if not all(type(part) in (str, int) for part in parts):
@@ -158,6 +158,6 @@ def public_validation_error(request: Request, error: Mapping[str, Any]) -> dict[
         code = "value_error"
     return {
         "loc": validated_location(request, error),
-        "msg": _MESSAGES.get(code, "Valeur invalide."),
+        "msg": _MESSAGES.get(code, "Invalid value."),
         "type": code,
     }
