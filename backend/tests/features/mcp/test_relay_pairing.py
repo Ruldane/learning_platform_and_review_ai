@@ -40,6 +40,7 @@ async def test_code_exchange_is_single_use_and_renewal_replaces_token(
     token = exchanged.json()["token"]
     listed = (await client.get(f"{ROOT}/tokens", headers=HOST)).json()
     assert len(listed) == 1 and listed[0]["mode"] == "write"
+    assert listed[0]["label"] == "Tremplin relay"
     assert set(listed[0]["features"]) == {
         "sessions",
         *app.state.mcp_registry.graph_features.values(),
@@ -89,6 +90,7 @@ async def test_expired_or_cancelled_code_never_issues_a_token(
     monkeypatch.setattr(relay_pairing, "utcnow", lambda: later)
     expired = await client.post(EXCHANGE, json={"code": code}, headers=HOST)
     assert expired.status_code == 401 and code not in expired.text
+    assert expired.json()["error"]["message"] == "Pairing code is invalid or expired."
     assert (await client.get(STATUS, headers=HOST)).json()["state"] == "expired"
     code = await start(client)
     assert (await client.delete(PAIRING, headers=HOST)).status_code == 204
@@ -99,11 +101,14 @@ async def test_expired_or_cancelled_code_never_issues_a_token(
 async def test_exchange_rejects_browser_origins_and_refusal_does_not_use_the_code(
     client: httpx.AsyncClient,
 ) -> None:
-    assert (await client.post(PAIRING, headers=HOST)).status_code == 403
+    disabled = await client.post(PAIRING, headers=HOST)
+    assert disabled.status_code == 403
+    assert disabled.json()["error"]["message"] == "Enable MCP access in Tremplin's settings."
     await client.put(f"{ROOT}/settings", headers=HOST, json={"enabled": True})
     code = await start(client)
     refused = await client.post(
         EXCHANGE, json={"code": code}, headers={**HOST, "Origin": "http://localhost:5173"}
     )
     assert refused.status_code == 403 and code not in refused.text
+    assert refused.json()["error"]["message"] == "Only the local Tremplin relay can pair here."
     assert (await client.post(EXCHANGE, json={"code": code}, headers=HOST)).status_code == 201

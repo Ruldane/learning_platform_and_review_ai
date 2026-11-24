@@ -47,7 +47,7 @@ async def exchange_pairing(
     """Échange par le relais local. Le code désigne le compte, indépendamment des cookies."""
     check_local_origin(request)
     if "origin" in request.headers or MCP_IDENTITY.get() is not None:
-        raise AppError("relay_only", "Échange réservé au relais local de Tremplin.", 403)
+        raise AppError("relay_only", "Only the local Tremplin relay can pair here.", 403)
     allowed = request.app.state.mcp_gate.user_allowed
     token = await _service(request, db).exchange(code.code, allowed)
     response.headers["Cache-Control"] = "no-store"

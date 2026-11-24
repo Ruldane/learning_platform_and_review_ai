@@ -49,18 +49,22 @@ async def expire_due(session_factory: async_sessionmaker[AsyncSession], now: dat
     return count
 
 
-_REVOKED = "Le jeton qui a fait cette demande est révoqué : la demande est refusée."
-_EXPIRED = "Le jeton qui a fait cette demande a expiré : la demande est refusée."
+_REVOKED = "The token used for this request was revoked. The request was refused."
+_EXPIRED = "The token used for this request expired. The request was refused."
 
 
 def _closed(status: str) -> AppError:
-    names = {"confirmed": "déjà confirmée", "refused": "refusée", "expired": "expirée"}
-    state = names.get(status, "déjà traitée")
-    return AppError("confirmation_closed", f"Cette demande est {state} : rien à faire.", 409)
+    messages = {
+        "confirmed": "This request is already confirmed.",
+        "refused": "This request was refused.",
+        "expired": "This request has expired.",
+    }
+    message = messages.get(status, "This request has already been handled.")
+    return AppError("confirmation_closed", message, 409)
 
 
 def _not_found() -> AppError:
-    return AppError("confirmation_not_found", "Demande introuvable.", 404)
+    return AppError("confirmation_not_found", "Request not found.", 404)
 
 
 class _Claimed(NamedTuple):
@@ -120,8 +124,8 @@ class ConfirmationService:
         if await repo.pending_count(identity.token_id, now) >= MAX_PENDING_PER_TOKEN:
             raise AppError(
                 "too_many_pending",
-                f"{MAX_PENDING_PER_TOKEN} demandes sont déjà en attente pour ce jeton : "
-                "January doit en confirmer ou en refuser avant d'en ajouter.",
+                f"This token has {MAX_PENDING_PER_TOKEN} pending requests. "
+                "Confirm or refuse one before adding more.",
                 429,
                 {"limit": MAX_PENDING_PER_TOKEN},
             )
@@ -187,7 +191,7 @@ class ConfirmationService:
             result = await self._execute(identity, claimed.stored)
         except Exception as exc:  # la demande est prise : elle ne repart pas, elle échoue
             logger.error("MCP : exécution d'une demande impossible (%s)", type(exc).__name__)
-            error = {"error": {"code": "execution_failed", "message": "L'exécution a échoué."}}
+            error = {"error": {"code": "execution_failed", "message": "The request failed to run."}}
             result = ToolResult(data=error, code=500)
         elapsed = round((time.monotonic() - started) * 1000)
         async with self._factory() as db:
@@ -229,7 +233,7 @@ class ConfirmationService:
         if prefs is None or not prefs.enabled:
             raise AppError(
                 "mcp_disabled",
-                "L'accès MCP est coupé : rallume-le dans les réglages, puis confirme à nouveau.",
+                "Enable MCP access in settings, then confirm the request again.",
                 409,
             )
         stored = StoredRequest.from_json(row.request)
@@ -258,8 +262,7 @@ class ConfirmationService:
             await db.commit()
         raise AppError(
             "precheck_changed",
-            "Le contrôle préalable a changé depuis la demande : relis le nouveau verdict, puis "
-            "confirme à nouveau.",
+            "The precheck result has changed. Review the new result and confirm again.",
             409,
         )
 

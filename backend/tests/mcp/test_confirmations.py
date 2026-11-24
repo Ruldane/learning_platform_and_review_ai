@@ -101,6 +101,7 @@ async def test_confirm_twice_runs_once(amcp: Mcp, writer: str, client: httpx.Asy
 
     assert sorted([first.status_code, second.status_code]) == [200, 409]
     assert third.status_code == 409 and third.json()["error"]["code"] == "confirmation_closed"
+    assert third.json()["error"]["message"] == "This request is already confirmed."
     assert await events(client, app_id) == 2  # la note n'est ajoutée qu'une fois
 
 
@@ -119,7 +120,9 @@ async def test_expired_never_runs(
 
     late = await amcp.http.post(f"{API}/mcp/confirmations/{confirmation}/confirm")
 
-    assert late.status_code == 409 and "expirée" in late.json()["error"]["message"]
+    assert (
+        late.status_code == 409 and late.json()["error"]["message"] == "This request has expired."
+    )
     assert await events(client, app_id) == 1
     assert (await amcp.http.get(f"{API}/mcp/confirmations")).json()[0]["status"] == "expired"
     assert (
@@ -156,7 +159,9 @@ async def test_refused_never_runs(amcp: Mcp, writer: str, client: httpx.AsyncCli
     late = await amcp.http.post(f"{API}/mcp/confirmations/{confirmation}/confirm")
 
     assert refused.status_code == 200 and refused.json()["status"] == "refused"
-    assert late.status_code == 409 and "refusée" in late.json()["error"]["message"]
+    assert (
+        late.status_code == 409 and late.json()["error"]["message"] == "This request was refused."
+    )
     assert await events(client, app_id) == 1
     assert (await amcp.http.post(f"{API}/mcp/confirmations/inconnue/confirm")).status_code == 404
 
@@ -172,6 +177,9 @@ async def test_confirm_after_the_token_is_revoked_is_refused(
     late = await amcp.http.post(f"{API}/mcp/confirmations/{confirmation}/confirm")
 
     assert late.status_code == 409 and late.json()["error"]["code"] == "token_revoked"
+    assert late.json()["error"]["message"] == (
+        "The token used for this request was revoked. The request was refused."
+    )
     assert await events(client, app_id) == 1
     assert (await amcp.http.get(f"{API}/mcp/confirmations")).json()[0]["status"] == "refused"
 
