@@ -80,6 +80,11 @@ async def postings_by_ids(
     return await PostingRepository(db, user_id).by_ids(posting_ids)
 
 
+async def postings_for_chat(db: AsyncSession, user_id: str) -> list[JobPosting]:
+    """Read the account's saved offers without refreshing or starting analysis."""
+    return await PostingRepository(db, user_id).list_recent()
+
+
 def _score(rows: Sequence[GapRow] | None) -> int | None:
     return None if rows is None else match_score(rows)
 

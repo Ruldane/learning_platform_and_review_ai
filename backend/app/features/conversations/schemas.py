@@ -10,7 +10,7 @@ from app.db.models.agents import SessionStatus
 MAX_QUESTION = 2_000
 MAX_PASSAGE = 1_000
 MAX_TITLE = 120
-ChatScope = Literal["brain", "training"]
+ChatScope = Literal["brain", "training", "offers"]
 
 
 class ConversationSummary(BaseModel):

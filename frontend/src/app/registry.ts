@@ -13,6 +13,7 @@ import { contradictoryWatchManifest } from "@/features/contradictory_watch/manif
 import { contributionsManifest } from "@/features/contributions/manifest";
 import { conversationsManifest } from "@/features/conversations/manifest";
 import { BrainConversation } from "@/features/conversations/pages/BrainConversation";
+import { OffersConversation } from "@/features/conversations/pages/OffersConversation";
 import { LessonConversation } from "@/features/conversations/pages/LessonConversation";
 import { costsManifest } from "@/features/costs/manifest";
 import { cvManifest } from "@/features/cv/manifest";
@@ -24,7 +25,7 @@ import { expertDebatesManifest } from "@/features/expert_debates/manifest";
 import { futureSelfManifest } from "@/features/future_self/manifest";
 import { galaxyManifest } from "@/features/galaxy/manifest";
 import { gradeAppealsManifest } from "@/features/grade_appeals/manifest";
-import { gapManifest } from "@/features/gap/manifest";
+import { makeGapManifest } from "@/features/gap/manifest";
 import { IdeGhostPanel } from "@/features/ghost/pages/IdeGhostPanel";
 import { QuizGhostPanel } from "@/features/ghost/pages/QuizGhostPanel";
 import { healthManifest } from "@/features/health/manifest";
@@ -108,7 +109,7 @@ export const FEATURES: FeatureManifest[] = [
   portfolioManifest,
   compatibleOffersManifest,
   contributionsManifest,
-  gapManifest,
+  makeGapManifest(OffersConversation),
   radarManifest,
   futureSelfManifest,
   cvManifest,

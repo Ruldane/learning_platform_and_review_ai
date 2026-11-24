@@ -8,6 +8,7 @@ from app.agents.tools.conversation_port import (
     BRAIN_LIBRARIAN,
     CLASSROOM_SCOPE,
     LESSON_PROFESSOR,
+    OFFERS_ADVISER,
     TRAINING_TUTOR,
     ClassmateReply,
     ConversationContext,
@@ -34,6 +35,8 @@ from app.features.conversations.lesson_context import (
     ready_lesson,
     require_current_version,
 )
+from app.features.conversations.offers import OFFERS_SCOPE
+from app.features.conversations.offers_context import offers_references
 from app.features.conversations.repository import ConversationRepository, TurnRepository
 from app.features.conversations.service import BRAIN_SCOPE, LESSON_SCOPE, TRAINING_SCOPE
 from app.features.conversations.training_context import selected_refs
@@ -223,6 +226,8 @@ class AgentConversationStore:
             elif thread.scope == BRAIN_SCOPE:
                 agent = BRAIN_LIBRARIAN
                 history, refs, notes = await _brain_context(db, turn, history)
+            elif thread.scope == OFFERS_SCOPE:
+                agent, refs = OFFERS_ADVISER, await offers_references(db, turn, history)
             else:
                 raise AppError(
                     "conversation_scope_unknown", "This thread type is unavailable.", 409

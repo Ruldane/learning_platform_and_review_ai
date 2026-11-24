@@ -15,7 +15,7 @@ from app.features.conversations.repository import ConversationRepository, TurnRe
 from app.features.conversations.schemas import ChatScope, ConversationSummary
 from app.mcp.recorder import ACTIVE
 
-CHAT_SCOPES = frozenset({"brain", "training"})
+CHAT_SCOPES = frozenset({"brain", "training", "offers"})
 
 
 def conversation_not_found() -> AppError:
@@ -31,7 +31,7 @@ def conversation_busy() -> AppError:
 def _summary(row: Conversation) -> ConversationSummary:
     return ConversationSummary(
         id=UUID(row.id),
-        title=row.title or "Nouvelle conversation",
+        title=row.title or ("New chat" if row.scope == "offers" else "Nouvelle conversation"),
         updated_at=row.updated_at,
     )
 

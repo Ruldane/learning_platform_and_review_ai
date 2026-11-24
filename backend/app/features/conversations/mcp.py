@@ -21,14 +21,14 @@ MCP = FeatureMcp(
             f"GET {_CHAT}",
             1,
             "conversations_list",
-            "Lists the Brain or training conversations, with search by title.",
+            "Lists Brain, training, or Offers conversations, with search by title.",
             untrusted=("[].title",),
         ),
         McpAction(
             f"PATCH {_THREAD}",
             2,
             "conversations_rename",
-            "Renames a Brain or training conversation.",
+            "Renames a Brain, training, or Offers conversation.",
             untrusted=("title",),
         ),
         McpAction(
@@ -49,8 +49,29 @@ MCP = FeatureMcp(
             f"DELETE {_CHAT}",
             3,
             "conversations_wipe",
-            "Deletes all Brain or training threads. To confirm in Tremplin.",
+            "Deletes all threads in one Brain, training, or Offers scope. To confirm in Tremplin.",
             side_effects="external",
+        ),
+        McpAction(
+            "POST /conversations/offers",
+            2,
+            "conversations_create_offers",
+            "Creates an empty conversation about saved offers.",
+        ),
+        McpAction(
+            "GET /conversations/offers/{conversation_id}",
+            1,
+            "conversations_read_offers",
+            "Reads an Offers conversation and the citations in its replies.",
+            untrusted=("turns[].question", "turns[].answer", "turns[].sources[].title"),
+        ),
+        McpAction(
+            "POST /conversations/offers/{conversation_id}/messages",
+            2,
+            "conversations_ask_offers",
+            "Asks about saved offers and returns the reply session id. "
+            "Reuse the same request_id (UUID) to retry the submission.",
+            launches=CONVERSATION_GRAPH,
         ),
         McpAction(
             "GET /lessons/{lesson_id}/conversation",

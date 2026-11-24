@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type ComponentType } from "react";
 import { useNavigate } from "react-router";
 import { t } from "@/shared/i18n/t";
 import { PostingForm } from "../../components/PostingForm";
@@ -11,6 +11,7 @@ import { PostingsListPanel } from "./PostingsListPanel";
 interface PostingsPageProps {
   /** Intervalle de relecture de la liste, en ms (réduit par les tests). */
   pollMs?: number;
+  offersChat?: ComponentType;
 }
 
 const FIELD = '[role="tabpanel"]:not([hidden]) :is(input, textarea)';
@@ -20,7 +21,10 @@ const FIELD = '[role="tabpanel"]:not([hidden]) :is(input, textarea)';
  * nouvelle (201) ouvre sa page ; une offre déjà ajoutée (200) est annoncée avec un lien, sans
  * doublon dans la liste.
  */
-export function PostingsPage({ pollMs = ANALYSIS_POLL_MS }: PostingsPageProps) {
+export function PostingsPage({
+  pollMs = ANALYSIS_POLL_MS,
+  offersChat: OffersChat,
+}: PostingsPageProps) {
   const navigate = useNavigate();
   const formRoot = useRef<HTMLDivElement>(null);
   const [existing, setExisting] = useState<PostingCreatedOut | null>(null);
@@ -31,9 +35,12 @@ export function PostingsPage({ pollMs = ANALYSIS_POLL_MS }: PostingsPageProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold">{t("gap.postings.title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("gap.postings.intro")}</p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-semibold">{t("gap.postings.title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("gap.postings.intro")}</p>
+        </div>
+        {OffersChat ? <OffersChat /> : null}
       </header>
       <div ref={formRoot} className="flex flex-col gap-3">
         <PostingForm

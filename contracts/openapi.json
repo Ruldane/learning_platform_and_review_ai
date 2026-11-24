@@ -5096,7 +5096,9 @@
           "kind": {
             "enum": [
               "lesson",
-              "memory"
+              "memory",
+              "posting",
+              "application"
             ],
             "title": "Kind",
             "type": "string"
@@ -33198,6 +33200,123 @@
         ]
       }
     },
+    "/api/v1/conversations/offers": {
+      "post": {
+        "operationId": "create_offers_conversation_api_v1_conversations_offers_post",
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Create Offers Conversation",
+        "tags": [
+          "conversations"
+        ]
+      }
+    },
+    "/api/v1/conversations/offers/{conversation_id}": {
+      "get": {
+        "operationId": "read_offers_conversation_api_v1_conversations_offers__conversation_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read Offers Conversation",
+        "tags": [
+          "conversations"
+        ]
+      }
+    },
+    "/api/v1/conversations/offers/{conversation_id}/messages": {
+      "post": {
+        "operationId": "post_offers_message_api_v1_conversations_offers__conversation_id__messages_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConversationQuestionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationStarted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Post Offers Message",
+        "tags": [
+          "conversations"
+        ]
+      }
+    },
     "/api/v1/conversations/{scope}": {
       "delete": {
         "operationId": "wipe_conversations_api_v1_conversations__scope__delete",
@@ -33209,7 +33328,8 @@
             "schema": {
               "enum": [
                 "brain",
-                "training"
+                "training",
+                "offers"
               ],
               "title": "Scope",
               "type": "string"
@@ -33246,7 +33366,8 @@
             "schema": {
               "enum": [
                 "brain",
-                "training"
+                "training",
+                "offers"
               ],
               "title": "Scope",
               "type": "string"
@@ -33307,7 +33428,8 @@
             "schema": {
               "enum": [
                 "brain",
-                "training"
+                "training",
+                "offers"
               ],
               "title": "Scope",
               "type": "string"
@@ -33354,7 +33476,8 @@
             "schema": {
               "enum": [
                 "brain",
-                "training"
+                "training",
+                "offers"
               ],
               "title": "Scope",
               "type": "string"
@@ -33420,7 +33543,8 @@
             "schema": {
               "enum": [
                 "brain",
-                "training"
+                "training",
+                "offers"
               ],
               "title": "Scope",
               "type": "string"

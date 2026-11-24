@@ -6,9 +6,12 @@ from fastapi import APIRouter, Query
 from app.core.deps import ConfirmedUserDep, CurrentUserDep, Db, RuntimeDep
 from app.features.conversations.chats import erase_chat, list_chats, rename_chat
 from app.features.conversations.classroom import ask_classroom, read_classroom
+from app.features.conversations.offers import ask_offers_chat, create_offers_chat, read_offers_chat
 from app.features.conversations.schemas import (
     ChatScope,
     ConversationMessageIn,
+    ConversationOut,
+    ConversationQuestionIn,
     ConversationRename,
     ConversationStarted,
     ConversationSummary,
@@ -52,6 +55,29 @@ async def wipe_conversations(
     scope: ChatScope, db: Db, user: ConfirmedUserDep, runtime: RuntimeDep
 ) -> None:
     await erase_chat(runtime.runner, db, user.id, scope)
+
+
+@router.post("/conversations/offers", status_code=201)
+async def create_offers_conversation(db: Db, user: CurrentUserDep) -> ConversationOut:
+    return await create_offers_chat(db, user.id)
+
+
+@router.get("/conversations/offers/{conversation_id}")
+async def read_offers_conversation(
+    conversation_id: UUID, db: Db, user: CurrentUserDep
+) -> ConversationOut:
+    return await read_offers_chat(db, user.id, conversation_id)
+
+
+@router.post("/conversations/offers/{conversation_id}/messages", status_code=202)
+async def post_offers_message(
+    conversation_id: UUID,
+    body: ConversationQuestionIn,
+    db: Db,
+    user: CurrentUserDep,
+    runtime: RuntimeDep,
+) -> ConversationStarted:
+    return await ask_offers_chat(runtime.runner, db, user.id, conversation_id, body)
 
 
 @router.get("/lessons/{lesson_id}/conversation")

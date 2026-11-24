@@ -24,7 +24,7 @@ export function ConversationList(props: ListProps) {
         {t("conversations.list.label")}
       </Heading>
       <Button ref={newRef} type="button" size="sm" disabled={busy} onClick={onCreate}>
-        {t("conversations.list.create")}
+        {props.createLabel ?? t("conversations.list.create")}
       </Button>
       <ConversationSearch id={searchId} value={search} onChange={onSearch} />
       {error && <InlineError message={error} />}

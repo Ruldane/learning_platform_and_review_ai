@@ -1142,6 +1142,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/conversations/offers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Offers Conversation */
+        post: operations["create_offers_conversation_api_v1_conversations_offers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conversations/offers/{conversation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Offers Conversation */
+        get: operations["read_offers_conversation_api_v1_conversations_offers__conversation_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/conversations/offers/{conversation_id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Offers Message */
+        post: operations["post_offers_message_api_v1_conversations_offers__conversation_id__messages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/conversations/{scope}": {
         parameters: {
             query?: never;
@@ -8641,7 +8692,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "lesson" | "memory";
+            kind: "lesson" | "memory" | "posting" | "application";
             /** Title */
             title: string;
         };
@@ -20122,6 +20173,92 @@ export interface operations {
             };
         };
     };
+    create_offers_conversation_api_v1_conversations_offers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationOut"];
+                };
+            };
+        };
+    };
+    read_offers_conversation_api_v1_conversations_offers__conversation_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_offers_message_api_v1_conversations_offers__conversation_id__messages_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConversationQuestionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationStarted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_conversations_api_v1_conversations__scope__get: {
         parameters: {
             query?: {
@@ -20129,7 +20266,7 @@ export interface operations {
             };
             header?: never;
             path: {
-                scope: "brain" | "training";
+                scope: "brain" | "training" | "offers";
             };
             cookie?: never;
         };
@@ -20160,7 +20297,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                scope: "brain" | "training";
+                scope: "brain" | "training" | "offers";
             };
             cookie?: never;
         };
@@ -20189,7 +20326,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                scope: "brain" | "training";
+                scope: "brain" | "training" | "offers";
                 conversation_id: string;
             };
             cookie?: never;
@@ -20219,7 +20356,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                scope: "brain" | "training";
+                scope: "brain" | "training" | "offers";
                 conversation_id: string;
             };
             cookie?: never;
@@ -20255,7 +20392,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                scope: "brain" | "training";
+                scope: "brain" | "training" | "offers";
                 conversation_id: string;
             };
             cookie?: never;

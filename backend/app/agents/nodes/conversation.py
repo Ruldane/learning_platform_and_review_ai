@@ -17,6 +17,7 @@ from app.agents.tools.conversation_port import (
     BRAIN_LIBRARIAN,
     CLASSMATE_ROLES,
     CLASSROOM_SCOPE,
+    OFFERS_ADVISER,
     TRAINING_TUTOR,
     TURN_TOKEN_LIMIT,
     ClassmateReply,
@@ -239,7 +240,7 @@ def make_reply(deps: GraphDeps) -> Node:
         if context.mode == CLASSROOM_SCOPE:
             return await _classroom_reply(deps, context)
         refs = list(context.references)
-        if context.agent != BRAIN_LIBRARIAN:
+        if context.agent not in (BRAIN_LIBRARIAN, OFFERS_ADVISER):
             refs.extend(await _memory_sources(deps, context.question))
         sources = [reference.source for reference in refs]
         messages = _messages(context, refs)
@@ -260,7 +261,11 @@ def make_reply(deps: GraphDeps) -> Node:
             messages,
             agent=context.agent,
             step="reponse",
-            intent="Je t'accompagne dans ton étude.",
+            intent=(
+                "I help you make sense of your saved job offers."
+                if context.agent == OFFERS_ADVISER
+                else "Je t'accompagne dans ton étude."
+            ),
             catalog=catalog,
             max_words=600,
             retry=False,
