@@ -30,7 +30,7 @@ Task: write the committee's synthesis.
   "non"). Group those that say the same thing. Each one: `text` (300 characters at
   most) and `personas`: the identifiers of the personas who raise it ({{ personas }}).
 - `changes`: exactly 3 changes to the CV that would most likely tip a vote
-  towards "oui". Each one: `text` (300 characters at most, a precise action on the CV), `persona`
+  towards "yes". Each one: `text` (300 characters at most, a precise action on the CV), `persona`
   (the one whose vote would tip, an identifier from the list) and `fact_ids` (the identifiers
   of the profile facts to highlight, copied as is, like `x1a2`).
 - A change never asks for a fact, a tool, a figure or a title that the profile does not

@@ -60,11 +60,11 @@ async def test_salary_negotiation_uses_scoped_amounts_and_persists_the_simulatio
     }
     assert shown["salary_outcome"] is None
     first = await pending(client, session_id)
-    assert "50 000" in first["question"] and "70 000" in first["question"]
+    assert "€50,000" in first["question"] and "€70,000" in first["question"]
     await add_salary_run(app, app.state.local_user_id, day=19, salaries=["125 k€ brut annuel"])
     await resume(client, session_id, first, {"answers": {"answer": ANSWER}})
     second = await pending(client, session_id)
-    assert "70 000" in second["question"] and "99 000" not in second["question"]
+    assert "€70,000" in second["question"] and "99,000" not in second["question"]
     assert "simulation" in second["question"].lower()
     await resume(client, session_id, second, "stop")
     await wait_status(client, session_id, "completed")

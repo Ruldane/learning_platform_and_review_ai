@@ -1,4 +1,4 @@
-"""Un catalogue lu, puis trois voix du débat avec reprise entre les voix."""
+"""Read the source catalog and resume the debate between each of its three speakers."""
 
 import re
 from typing import Any, Protocol, TypedDict
@@ -81,7 +81,7 @@ def _prompt(
         ),
         "previous": untrusted(
             "\n".join(f"{_LABELS[entry.role]} — {entry.text[:320]}" for entry in speeches),
-            "prises de parole précédentes",
+            "previous statements",
         ),
     }
 
@@ -115,7 +115,7 @@ def make_speech(deps: GraphDeps, role: ExpertRole) -> ExpertNode:
             messages,
             agent=agent,
             step=f"debate_{role}",
-            intent="je réponds à la question en tenant compte des autres experts",
+            intent="answering the question in light of the other experts' statements",
             catalog=[
                 CitationEntry(source.index, source.title, str(source.url)) for source in sources
             ],

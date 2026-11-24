@@ -1,4 +1,4 @@
-"""Le jeu de rôle choisit ses montants aux deux bornes du relevé figé."""
+"""Use the bounds of the frozen salary snapshot during the negotiation."""
 
 from app.agents.state.interview import InterviewState
 from app.agents.tools.cv_lexicon import figures_in
@@ -36,12 +36,14 @@ _QUESTIONS = {
 }
 
 
-def _euros(amount: int) -> str:
-    return f"{amount:,}".replace(",", " ") + " €"
+def _euros(amount: int, language: str) -> str:
+    digits = f"{amount:,}"
+    return f"€{digits}" if language == "en" else digits.replace(",", " ") + " €"
 
 
 def salary_questions(sample: SalarySample, language: str, count: int) -> list[PlannedQuestion]:
-    low, high = _euros(sample.minimum_eur), _euros(sample.maximum_eur)
+    low = _euros(sample.minimum_eur, language)
+    high = _euros(sample.maximum_eur, language)
     if language == "en":
         first = (
             f"Simulation. The radar shows {low} to {high} gross per year. In this exercise I start "
@@ -58,7 +60,7 @@ def salary_questions(sample: SalarySample, language: str, count: int) -> list[Pl
 
 
 def _recruiter_reply(amount: int, raised: bool, language: str) -> str:
-    offer = _euros(amount)
+    offer = _euros(amount, language)
     if language == "en":
         stance = "can raise the offer to" if raised else "am keeping the offer at"
         return f"In this simulation, I {stance} {offer} gross per year. How do you respond?"

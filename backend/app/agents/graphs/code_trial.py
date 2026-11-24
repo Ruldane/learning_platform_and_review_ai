@@ -1,4 +1,4 @@
-"""Deux plaidoiries d’architecture sur la même copie, puis publication atomique."""
+"""Compare two architecture arguments on a frozen copy and publish both together."""
 
 import json
 from typing import Any, TypedDict
@@ -54,7 +54,7 @@ async def _argue(deps: GraphDeps, state: TrialState, role: str) -> CodeArgument:
     other = (
         CodeArgument.model_validate(state["prosecution"]).argument if "prosecution" in state else ""
     )
-    request = untrusted(json.dumps(catalog, ensure_ascii=False), "extraits du projet figé")
+    request = untrusted(json.dumps(catalog, ensure_ascii=False), "frozen project excerpts")
     if other:
         request += "\n\n" + untrusted(other, "plaidoirie du Procureur")
     model = await deps.models.get_chat_model(deps.user_id, get_agent(role).tier, agent=role)
@@ -64,7 +64,7 @@ async def _argue(deps: GraphDeps, state: TrialState, role: str) -> CodeArgument:
         [SystemMessage(render_prompt(role)), HumanMessage(request)],
         agent=role,
         step="plaidoirie",
-        intent="j’examine la conception du projet figé",
+        intent="reviewing the design of the frozen project",
         retries=1,
     )
     _citations(reply, available)

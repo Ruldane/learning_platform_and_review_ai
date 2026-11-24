@@ -1,4 +1,4 @@
-"""Le Vérificateur prépare et évalue une copie du chapitre."""
+"""Prepare a critical-reading copy of a chapter and assess the answers."""
 
 import json
 from typing import Any, TypedDict
@@ -29,7 +29,7 @@ class HuntGraphState(TypedDict, total=False):
 def _messages(data: dict[str, Any], task: str) -> list[BaseMessage]:
     return [
         SystemMessage(render_prompt("lesson_hunt", task=task)),
-        HumanMessage(untrusted(json.dumps(data, ensure_ascii=False), "données de l’exercice")),
+        HumanMessage(untrusted(json.dumps(data, ensure_ascii=False), "exercise data")),
     ]
 
 
@@ -38,14 +38,14 @@ async def _prepare(deps: GraphDeps, hunt_id: str, context: HuntContext) -> str:
     changes = await structured_call(
         model,
         ErrorPair,
-        _messages({"titre": context.title, "chapitre": context.source[:35_000]}, "préparation"),
+        _messages({"title": context.title, "chapter": context.source[:35_000]}, "preparation"),
         agent=AGENT,
         step="preparer_lecture",
-        intent="je prépare deux passages à examiner",
+        intent="preparing two passages to examine",
         retries=1,
     )
     await deps.ports.lesson_hunt.publish(deps.user_id, hunt_id, deps.session_id, changes)
-    return "Deux erreurs sont à repérer."
+    return "Find the two errors in the chapter."
 
 
 async def _assess(deps: GraphDeps, hunt_id: str, context: HuntContext) -> str:
@@ -56,15 +56,15 @@ async def _assess(deps: GraphDeps, hunt_id: str, context: HuntContext) -> str:
         model,
         HuntAssessment,
         _messages(
-            {"corrections": context.errors.model_dump(), "réponses": context.responses}, "bilan"
+            {"corrections": context.errors.model_dump(), "answers": context.responses}, "review"
         ),
         agent=AGENT,
         step="corriger_lecture",
-        intent="je compare les deux explications à la correction",
+        intent="checking the two explanations against the corrections",
         retries=1,
     )
     await deps.ports.lesson_hunt.assess(deps.user_id, hunt_id, deps.session_id, feedback)
-    return "La correction est disponible."
+    return "The corrections are available."
 
 
 def build(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:

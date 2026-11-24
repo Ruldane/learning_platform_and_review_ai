@@ -1,4 +1,4 @@
-"""Diagnostic borné, puis une demande de grille à l'évaluateur."""
+"""Collect bounded diagnostics and ask the reviewer to score the submission."""
 
 import json
 from typing import Any, TypedDict
@@ -45,10 +45,10 @@ def build(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
             rubric = await structured_call(
                 model,
                 BossRubric,
-                [SystemMessage(prompt), HumanMessage("Évalue la remise selon les deux critères.")],
+                [SystemMessage(prompt), HumanMessage("Assess the submission on both criteria.")],
                 agent=BOSS_AGENT,
                 step="boss",
-                intent="j’évalue la lisibilité et la maintenance",
+                intent="assessing readability and maintainability",
                 retries=0,
             )
             grade = await port.grade(deps.user_id, program_id, deps.session_id, rubric)

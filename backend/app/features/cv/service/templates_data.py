@@ -68,7 +68,7 @@ def _line(block: TextBlock) -> str:
         str(round(v)) for v in (block.x0, block.top, block.x1 - block.x0, block.bottom - block.top)
     )
     family = choose_font(block.font).family
-    bold = "oui" if block.bold else "non"
+    bold = "yes" if block.bold else "no"
     text = " ".join(block.text.split())[:MAX_BLOCK_CHARS]
     return f"{box} | {family} | {block.size:g} | {block.color} | {bold} | {text}"
 

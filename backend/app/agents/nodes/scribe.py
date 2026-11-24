@@ -59,7 +59,7 @@ class BoardDraft(BaseModel):
 
 def _title_problems(title: str) -> list[str]:
     if len(title) < MIN_TITLE_CHARS:
-        return [f"Titre trop court : {MIN_TITLE_CHARS} caractères au moins."]
+        return [f"Use a title with at least {MIN_TITLE_CHARS} characters."]
     return []
 
 

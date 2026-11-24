@@ -1,4 +1,4 @@
-"""Lecture de l’article par le port web et préparation du mini-cours par le Rédacteur."""
+"""Read the paper and prepare a short lesson on its method and experiment."""
 
 import json
 from typing import Any, TypedDict
@@ -51,7 +51,7 @@ async def _prepare(deps: GraphDeps, source: ArticleSource) -> PaperDraft:
         ],
         agent=AGENT,
         step="experience_article",
-        intent="je relie la méthode de l’article à une expérience",
+        intent="connecting the paper's method to an experiment",
         retries=1,
     )
 

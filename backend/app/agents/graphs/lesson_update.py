@@ -1,4 +1,4 @@
-"""Le Vérificateur prépare une retouche privée sans écrire dans la leçon."""
+"""Draft a private lesson update for review."""
 
 import json
 from typing import Any, TypedDict
@@ -42,7 +42,7 @@ def build(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
                 [SystemMessage(render_prompt("verifier_update")), HumanMessage(data)],
                 agent=AGENT,
                 step="préparer la correction",
-                intent="je prépare une retouche limitée à l’API modifiée",
+                intent="drafting an update for the API change",
                 retries=1,
             )
             await port.prepare(deps.user_id, deps.session_id, proposal, result)
