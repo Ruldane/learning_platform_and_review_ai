@@ -98,7 +98,7 @@ class AgentCommitteeStore:
             if cv is None or posting is None:
                 raise AppError(
                     "version_not_ready",
-                    "Le CV ou l'offre de cette exécution n'est plus lisible.",
+                    "The CV or the posting for this committee run is no longer available.",
                     409,
                 )
             application = await ApplicationRepository(db, user_id).by_posting(row.posting_id)

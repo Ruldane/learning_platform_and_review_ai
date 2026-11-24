@@ -49,13 +49,13 @@ SUBJECT = "committee_run"
 
 
 def committee_not_found() -> AppError:
-    return AppError("committee_not_found", "Exécution du comité introuvable.", 404)
+    return AppError("committee_not_found", "Hiring committee run not found.", 404)
 
 
 def committee_in_progress(run_id: str) -> AppError:
     return AppError(
         "committee_in_progress",
-        "Le comité de cette offre est déjà réuni : attends la fin de sa session.",
+        "A hiring committee is already reviewing this posting. Wait for the session to finish.",
         409,
         {"run_id": run_id},
     )
@@ -64,7 +64,7 @@ def committee_in_progress(run_id: str) -> AppError:
 def version_not_ready() -> AppError:
     return AppError(
         "version_not_ready",
-        "Cette version du CV n'est pas prête : attends la fin de son rendu.",
+        "Wait for this CV version to finish rendering before starting the hiring committee.",
         409,
     )
 

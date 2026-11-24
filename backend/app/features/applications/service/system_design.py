@@ -40,7 +40,7 @@ SUBJECT_CARD = DesignSubject(
 
 
 def _missing() -> AppError:
-    return AppError("design_not_found", "Entretien d’architecture introuvable.", 404)
+    return AppError("design_not_found", "System design interview not found.", 404)
 
 
 async def _row(db: AsyncSession, user_id: str, interview_id: str) -> Interview:
@@ -135,7 +135,7 @@ async def freeze(
     async with interview_lock(rt, user_id), rt.session_factory() as db:
         row = await _session_row(db, user_id, interview_id, session_id)
         if row.status != "running":
-            raise AppError("design_closed", "Cet entretien d’architecture est terminé.", 409)
+            raise AppError("design_closed", "This system design interview has ended.", 409)
         data: dict[str, Any] = dict(row.system_design or {})
         version_id = data.get("version_id") or str(submission.board_id)
         defense = data.get("defense") or submission.defense
@@ -169,7 +169,7 @@ async def save_review(
             return
         data = row.system_design or {}
         if "version_id" not in data:
-            raise AppError("design_missing_submission", "La version remise est introuvable.", 409)
+            raise AppError("design_missing_submission", "Submitted diagram version not found.", 409)
         proof_saved = review.earns_proof
         if proof_saved:
             proof = evidence("system_design", row.id, "Entretien d’architecture réussi", rt.now())

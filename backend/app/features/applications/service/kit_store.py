@@ -79,15 +79,13 @@ def company_name_key(name: str) -> str:
 def posting_required() -> AppError:
     return AppError(
         "posting_required",
-        "Cette fiche n'a ni offre ni texte d'offre : ajoute-le avant de préparer le kit.",
+        "Add a posting or its text before preparing the application kit.",
         409,
     )
 
 
 def profile_required() -> AppError:
-    return AppError(
-        "profile_required", "Valide d'abord ton profil maître : le kit s'appuie sur lui.", 409
-    )
+    return AppError("profile_required", "Validate your master profile to continue.", 409)
 
 
 def kit_lock(rt: ApplicationsRuntime, user_id: str, application_id: str) -> asyncio.Lock:

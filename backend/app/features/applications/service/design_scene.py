@@ -28,7 +28,7 @@ def _binding(value: object, names: dict[str, str]) -> str:
 def describe_scene(scene: dict[str, Any] | None) -> str:
     elements = _visible(scene)
     if not elements:
-        raise AppError("design_board_empty", "Ajoute des éléments au schéma et enregistre-le.", 422)
+        raise AppError("design_board_empty", "Add elements to the diagram and save it.", 422)
     names = {item["id"]: f"E{index}" for index, item in enumerate(elements, 1)}
     lines = []
     for item in elements:

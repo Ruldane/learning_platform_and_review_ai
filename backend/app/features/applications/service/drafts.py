@@ -6,23 +6,10 @@ from datetime import date
 from urllib.parse import quote
 
 from app.agents.tools.kit_schema import split_followups
+from app.core.clock import english_day
 from app.db.models.applications import ReminderKind
 
 LINKEDIN_SEARCH = "https://www.linkedin.com/search/results/people/?keywords="
-_MONTHS = (
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-)
 _KIT_INDEX: dict[ReminderKind, int] = {"linkedin_7": 0, "email_14": 1}
 
 _TEMPLATES: dict[ReminderKind, str] = {
@@ -56,7 +43,7 @@ _TEMPLATES: dict[ReminderKind, str] = {
 def _when(day: date | None) -> str:
     if day is None:
         return ""
-    return f" on {day.day} {_MONTHS[day.month - 1]} {day.year}"
+    return f" on {english_day(day)}"
 
 
 def _hello(contact_name: str | None) -> str:

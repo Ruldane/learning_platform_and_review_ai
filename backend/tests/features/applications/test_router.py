@@ -34,6 +34,7 @@ async def test_list_by_posting(client: httpx.AsyncClient, posting: str) -> None:
 async def test_detail_of_unknown_application_is_404(client: httpx.AsyncClient) -> None:
     r = await client.get(f"{API}/inconnue")
     assert (r.status_code, r.json()["error"]["code"]) == (404, "application_not_found")
+    assert r.json()["error"]["message"] == "Application not found."
 
 
 async def test_stats_route(client: httpx.AsyncClient) -> None:

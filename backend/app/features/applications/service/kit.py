@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 def kit_in_progress(session_id: str) -> AppError:
     return AppError(
         "kit_in_progress",
-        "Le kit de cette candidature est déjà en préparation : attends la fin de la session.",
+        "An application kit is already in progress. Wait for the session to finish.",
         409,
         {"session_id": session_id},
     )
@@ -49,14 +49,13 @@ def kit_in_progress(session_id: str) -> AppError:
 
 def piece_not_found() -> AppError:
     return AppError(
-        "kit_item_not_found", "Cette pièce n'existe pas encore : lance d'abord le kit.", 404
+        "kit_item_not_found", "This item doesn't exist yet. Start the application kit first.", 404
     )
 
 
 _EDIT_BLOCKED = {
-    "profile_required": "Valide ton profil maître : sans lui, ta modification n'est pas relue.",
-    "posting_required": "Cette fiche n'a plus d'offre ni de texte d'offre : ta modification "
-    "ne peut pas être relue.",
+    "profile_required": "Validate your master profile before we can recheck your edit.",
+    "posting_required": "Add a posting or its text before we can recheck your edit.",
 }
 
 

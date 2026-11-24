@@ -20,6 +20,26 @@ WEEKDAYS: dict[Weekday, int] = {
     "sunday": 6,
 }
 DEFAULT_ZONE = "Europe/Paris"
+_ENGLISH_MONTHS = (
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+)
+
+
+def english_day(day: date, *, include_year: bool = True) -> str:
+    """Render a calendar date in English independently of the server's locale."""
+    year = f" {day.year}" if include_year else ""
+    return f"{day.day} {_ENGLISH_MONTHS[day.month - 1]}{year}"
 
 
 def _load(name: str) -> ZoneInfo | None:

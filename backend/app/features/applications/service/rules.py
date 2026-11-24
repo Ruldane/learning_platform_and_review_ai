@@ -9,17 +9,17 @@ from typing import get_args
 
 from app.db.models.applications import ApplicationStatus
 
-# L'ordre des colonnes du Kanban (SPEC 6.1) : « À postuler » … « Retirée ».
+# Kanban column order (SPEC 6.1), from To apply to Withdrawn.
 STATUS_ORDER: tuple[ApplicationStatus, ...] = get_args(ApplicationStatus)
 STATUS_LABELS: dict[ApplicationStatus, str] = {
-    "to_apply": "À postuler",
-    "applied": "Postulée",
-    "followed_up": "Relancée",
-    "interview": "Entretien",
-    "offer": "Offre",
-    "rejected": "Refus",
-    "no_answer": "Sans réponse",
-    "withdrawn": "Retirée",
+    "to_apply": "To apply",
+    "applied": "Applied",
+    "followed_up": "Followed up",
+    "interview": "Interview",
+    "offer": "Offer",
+    "rejected": "Rejected",
+    "no_answer": "No answer",
+    "withdrawn": "Withdrawn",
 }
 ANSWERED: frozenset[ApplicationStatus] = frozenset({"interview", "offer", "rejected"})
 WAITING: frozenset[ApplicationStatus] = frozenset({"applied", "followed_up"})

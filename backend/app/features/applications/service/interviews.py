@@ -47,13 +47,13 @@ SUBJECT = "interview"
 
 
 def interview_not_found() -> AppError:
-    return AppError("interview_not_found", "Entretien introuvable.", 404)
+    return AppError("interview_not_found", "Interview not found.", 404)
 
 
 def interview_in_progress(interview_id: str) -> AppError:
     return AppError(
         "interview_in_progress",
-        "Un entretien blanc est déjà en cours : termine-le ou arrête-le d'abord.",
+        "Finish or stop the mock interview already in progress before starting another one.",
         409,
         {"interview_id": interview_id},
     )
@@ -133,8 +133,7 @@ async def _salary_snapshot(
     if sample is None:
         raise AppError(
             "radar_salary_missing",
-            "Aucun salaire annuel brut en euros exploitable dans le radar "
-            "pour ce poste et cette zone.",
+            "The radar has no usable gross annual salary in euros for this role and location.",
             409,
         )
     return sample

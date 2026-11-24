@@ -104,4 +104,4 @@ async def test_patch_speaks_of_the_edit_when_the_profile_is_gone(
     r = await client.patch(f"{API}/{application_id}/kit/letter", json={"content": "Mon texte."})
     assert (r.status_code, r.json()["error"]["code"]) == (409, "profile_required")
     message = r.json()["error"]["message"]
-    assert "modification" in message and "kit" not in message.lower()
+    assert message == "Validate your master profile before we can recheck your edit."

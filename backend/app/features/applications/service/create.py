@@ -62,7 +62,7 @@ class Source:
 def application_exists(application_id: str) -> AppError:
     return AppError(
         "application_exists",
-        "Une fiche existe déjà pour cette offre.",
+        "An application already exists for this posting.",
         409,
         {"application_id": application_id},
     )
@@ -71,7 +71,7 @@ def application_exists(application_id: str) -> AppError:
 def application_duplicate(alerts: list[AlertOut]) -> AppError:
     return AppError(
         "application_duplicate",
-        "Cette offre ressemble à une candidature existante.",
+        "This posting is similar to an existing application.",
         409,
         {"alerts": [alert.model_dump(mode="json") for alert in alerts]},
     )

@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Literal
 
+from app.core.clock import english_day
 from app.db.models.applications import ApplicationStatus
 from app.features.applications.service.rules import STATUS_LABELS, ApplicationView
 from app.features.postings.service.rules import PROBABLE_TITLE, title_similarity
@@ -15,20 +16,6 @@ DuplicateLevel = Literal["certain", "probable", "possible"]
 HitLevel = DuplicateLevel | Literal["info"]
 INFO_DAYS = 30  # une autre fiche chez la même entreprise, dans les 30 derniers jours
 _RANK: dict[HitLevel, int] = {"certain": 0, "probable": 1, "possible": 2, "info": 3}
-_MONTHS = [
-    "janvier",
-    "février",
-    "mars",
-    "avril",
-    "mai",
-    "juin",
-    "juillet",
-    "août",
-    "septembre",
-    "octobre",
-    "novembre",
-    "décembre",
-]
 
 
 @dataclass(frozen=True)
@@ -95,20 +82,13 @@ def match(incoming: Incoming, apps: Sequence[ApplicationView], today: date) -> l
     return [Hit(level, app.id) for level, app in found]
 
 
-def _day_text(day: date, today: date) -> str:
-    """« 3 novembre » (« 1er » pour le premier), l'année ajoutée si elle n'est pas la courante."""
-    number = "1er" if day.day == 1 else str(day.day)
-    year = f" {day.year}" if day.year != today.year else ""
-    return f"{number} {_MONTHS[day.month - 1]}{year}"
-
-
 def _ago(day: date | None, today: date) -> str:
     if day is None:
         return ""
     days = (today - day).days
     if days <= 0:
-        return " aujourd'hui"
-    return f" il y a {days} jour{'s' if days > 1 else ''}"
+        return " today"
+    return f" {days} day{'s' if days > 1 else ''} ago"
 
 
 def alert_message(
@@ -119,22 +99,15 @@ def alert_message(
     day: date | None,
     today: date,
 ) -> str:
-    """Le message de l'alerte (SPEC 6.3), en français, sans rien dire de plus que la fiche : la
-    date de candidature (ou de création d'une fiche à postuler) et le statut. Un niveau « info »
-    reste une simple information."""
+    """Describe an existing application or an informational match at the same company."""
     drafted = status == "to_apply"
+    role = f"the {title} role at {company}"
     if level == "info":
-        verb = f"tu as une fiche chez {company}" if drafted else f"tu as postulé chez {company}"
-        return f"Pour info : {verb}{_ago(day, today)}, pour le poste {title}."
-    when = f" le {_day_text(day, today)}" if day is not None else ""
+        action = "added an application for" if drafted else "applied for"
+        return f"For reference, you {action} {role}{_ago(day, today)}."
+    when = f" on {english_day(day, include_year=day.year != today.year)}" if day else ""
     label = STATUS_LABELS[status]
     if drafted:
-        created = f", créée{when}" if when else ""
-        return (
-            f"Attention, tu as déjà une fiche chez {company} pour le poste {title}{created}"
-            f" (statut : {label})."
-        )
-    return (
-        f"Attention, tu as déjà postulé chez {company} pour le poste {title}{when}"
-        f" (statut : {label})."
-    )
+        created = f", created{when}" if when else ""
+        return f"You already have an application for {role}{created} ({label})."
+    return f"You already applied for {role}{when} ({label})."

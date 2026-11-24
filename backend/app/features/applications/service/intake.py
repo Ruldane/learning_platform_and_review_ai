@@ -19,7 +19,7 @@ LOCK_KEY = "intake"
 def intake_in_progress(session_id: str) -> AppError:
     return AppError(
         "intake_in_progress",
-        "Une fiche est déjà en préparation : confirme-la ou annule-la d'abord.",
+        "Confirm or cancel the application already in progress before starting another one.",
         409,
         {"session_id": session_id},
     )

@@ -131,17 +131,17 @@ def test_alert_message_wording() -> None:
     assert alert_message(
         "certain", "Société Fictive", "Développeuse IA", "applied", day, TODAY
     ) == (
-        "Attention, tu as déjà postulé chez Société Fictive pour le poste Développeuse IA"
-        " le 3 novembre (statut : Postulée)."
+        "You already applied for the Développeuse IA role at Société Fictive"
+        " on 3 November (Applied)."
     )
     assert alert_message("probable", "Exemple Tech", "Data", "to_apply", day, TODAY) == (
-        "Attention, tu as déjà une fiche chez Exemple Tech pour le poste Data,"
-        " créée le 3 novembre (statut : À postuler)."
+        "You already have an application for the Data role at Exemple Tech,"
+        " created on 3 November (To apply)."
     )
-    assert "le 3 novembre 2025 (statut : Refus)" in alert_message(
+    assert "on 3 November 2025 (Rejected)" in alert_message(
         "certain", "Autre SA", "Data", "rejected", date(2025, 11, 3), TODAY
     )
-    assert "le 1er décembre" in alert_message(
+    assert "on 1 December" in alert_message(
         "certain", "Autre SA", "Data", "applied", date(2026, 12, 1), TODAY
     )
 
@@ -149,13 +149,14 @@ def test_alert_message_wording() -> None:
 def test_info_message_wording() -> None:
     past = TODAY - timedelta(days=12)
     assert alert_message("info", "Société Fictive", "Chef de projet", "applied", past, TODAY) == (
-        "Pour info : tu as postulé chez Société Fictive il y a 12 jours, pour le poste"
-        " Chef de projet."
+        "For reference, you applied for the Chef de projet role at Société Fictive 12 days ago."
     )
     one = alert_message("info", "Autre SA", "Data", "applied", TODAY - timedelta(days=1), TODAY)
-    assert "il y a 1 jour," in one
+    assert one.endswith("1 day ago.")
     draft = alert_message("info", "Autre SA", "Data", "to_apply", TODAY - timedelta(days=4), TODAY)
-    assert draft == "Pour info : tu as une fiche chez Autre SA il y a 4 jours, pour le poste Data."
+    assert (
+        draft == "For reference, you added an application for the Data role at Autre SA 4 days ago."
+    )
 
 
 def test_empty_company_key_never_probable() -> None:
