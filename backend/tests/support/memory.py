@@ -130,7 +130,7 @@ def fake_memory_providers(tmp_path: Path) -> MemoryProviders:
 
 
 def make_chunk(
-    user: str, text: str, *, kind: str = "acquis", item: str | None = None, ordinal: int = 0
+    user: str, text: str, *, kind: str = "skill", item: str | None = None, ordinal: int = 0
 ) -> ChunkToIndex:
     """Un fragment à indexer, avec un payload complet et un identifiant frais."""
     item_id = item or str(uuid.uuid4())

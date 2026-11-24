@@ -228,7 +228,7 @@ class MemoryService:
         `update` ; confirmer une décision en attente la rend active, l'indexe et journalise
         `confirm`."""
         item = await self.get(item_id)
-        if patch.level is not None and item.kind != "acquis":
+        if patch.level is not None and item.kind != "skill":
             raise AppError("memory_level_forbidden", "Seul un acquis a un niveau.", 422)
         content = await self._edit(item, patch)
         level = patch.level is not None and item.meta.get("level") != patch.level

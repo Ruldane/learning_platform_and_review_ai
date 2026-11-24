@@ -11450,7 +11450,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "document" | "acquis" | "lecon" | "source" | "offre" | "decision";
+            kind: "document" | "skill" | "lesson" | "source" | "posting" | "decision";
             /** Title */
             title: string;
             /** X */
@@ -11902,7 +11902,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "acquis" | "decision" | "offre";
+            kind: "skill" | "decision" | "posting";
             /** Level */
             level?: ("declared" | "in_progress") | null;
             /** Tags */
@@ -11933,7 +11933,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "document" | "acquis" | "lecon" | "source" | "offre" | "decision";
+            kind: "document" | "skill" | "lesson" | "source" | "posting" | "decision";
             /** Lang */
             lang: string | null;
             /** Level */
@@ -11993,7 +11993,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "document" | "acquis" | "lecon" | "source" | "offre" | "decision";
+            kind: "document" | "skill" | "lesson" | "source" | "posting" | "decision";
             /** Lang */
             lang: string | null;
             /** Level */
@@ -12595,7 +12595,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "document" | "acquis" | "lecon" | "source" | "offre" | "decision";
+            kind: "document" | "skill" | "lesson" | "source" | "posting" | "decision";
             /** Score */
             score: number;
             /** Title */
@@ -15561,7 +15561,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "document" | "acquis" | "lecon" | "source" | "offre" | "decision";
+            kind: "document" | "skill" | "lesson" | "source" | "posting" | "decision";
             /** Score */
             score: number;
             /** Text */
@@ -15577,7 +15577,7 @@ export interface components {
              */
             k: number;
             /** Kinds */
-            kinds?: ("document" | "acquis" | "lecon" | "source" | "offre" | "decision")[] | null;
+            kinds?: ("document" | "skill" | "lesson" | "source" | "posting" | "decision")[] | null;
             /** Query */
             query: string;
         };
@@ -25637,7 +25637,7 @@ export interface operations {
     list_items_api_v1_memory_items_get: {
         parameters: {
             query?: {
-                kind?: ("document" | "acquis" | "lecon" | "source" | "offre" | "decision") | null;
+                kind?: ("document" | "skill" | "lesson" | "source" | "posting" | "decision") | null;
                 tag?: string | null;
                 author?: string | null;
                 since?: string | null;

@@ -19,17 +19,17 @@ def test_agent_cannot_write_documents() -> None:
 
 
 def test_agent_acquis_level_limited() -> None:
-    assert _code(kind="acquis", author="archivist", level="validated") == "memory_level_forbidden"
-    assert _code(kind="acquis", author="archivist", level="proven") == "memory_level_forbidden"
-    status, meta = resolve_write(draft(kind="acquis", author="archivist", level=None))
+    assert _code(kind="skill", author="archivist", level="validated") == "memory_level_forbidden"
+    assert _code(kind="skill", author="archivist", level="proven") == "memory_level_forbidden"
+    status, meta = resolve_write(draft(kind="skill", author="archivist", level=None))
     assert status == "active" and meta["level"] == "declared"
-    in_progress = resolve_write(draft(kind="acquis", author="archivist", level="in_progress"))
+    in_progress = resolve_write(draft(kind="skill", author="archivist", level="in_progress"))
     assert in_progress[1]["level"] == "in_progress"
 
 
 def test_agent_decision_goes_pending() -> None:
     assert resolve_write(draft(kind="decision", author="archivist"))[0] == "pending"
-    assert resolve_write(draft(kind="lecon", author="writer"))[0] == "active"
+    assert resolve_write(draft(kind="lesson", author="writer"))[0] == "active"
     assert resolve_write(draft(kind="source", author="scout"))[0] == "active"
 
 
@@ -41,25 +41,25 @@ def test_agent_write_requires_reason(reason: str | None) -> None:
 def test_user_writes_are_active_without_reason() -> None:
     status, meta = resolve_write(draft(kind="decision", author="user", reason=None))
     assert (status, meta) == ("active", {})
-    declared = resolve_write(draft(kind="acquis", author="user", reason=None))
+    declared = resolve_write(draft(kind="skill", author="user", reason=None))
     assert declared[1] == {"level": "declared"}
-    in_progress = resolve_write(draft(kind="acquis", author="user", level="in_progress"))
+    in_progress = resolve_write(draft(kind="skill", author="user", level="in_progress"))
     assert in_progress[1]["level"] == "in_progress"
     assert resolve_write(draft(kind="document", author="user", reason=None))[0] == "active"
 
 
 def test_user_cannot_set_a_level_above_en_cours() -> None:
-    assert _code(kind="acquis", author="user", level="validated") == "memory_level_forbidden"
+    assert _code(kind="skill", author="user", level="validated") == "memory_level_forbidden"
 
 
 def test_a_level_only_concerns_an_acquis() -> None:
-    assert _code(kind="lecon", author="user", level="declared") == "memory_level_forbidden"
-    assert _code(kind="lecon", author="writer", level="declared") == "memory_level_forbidden"
+    assert _code(kind="lesson", author="user", level="declared") == "memory_level_forbidden"
+    assert _code(kind="lesson", author="writer", level="declared") == "memory_level_forbidden"
 
 
 def test_meta_keeps_evidence_and_reason_and_omits_the_rest() -> None:
     _, meta = resolve_write(
-        draft(kind="lecon", author="writer", reason=" Leçon 1 publiée. ", evidence=("e1", "e2"))
+        draft(kind="lesson", author="writer", reason=" Leçon 1 publiée. ", evidence=("e1", "e2"))
     )
     assert meta == {"evidence": ["e1", "e2"], "reason": "Leçon 1 publiée."}
-    assert resolve_write(draft(kind="lecon", author="user", reason=None))[1] == {}
+    assert resolve_write(draft(kind="lesson", author="user", reason=None))[1] == {}

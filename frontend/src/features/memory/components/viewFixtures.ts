@@ -14,7 +14,7 @@ export const NO_FILTERS: ItemFilterValue = { kind: "", tag: "", author: "", sinc
 export function row(overrides: Partial<MemoryItemRow> = {}): MemoryItemRow {
   return {
     id: "a",
-    kind: "acquis",
+    kind: "skill",
     title: "Attention",
     tags: [],
     created_by: "user",
@@ -55,12 +55,12 @@ export function hit(overrides: Partial<SearchHitView> = {}): SearchHitView {
 }
 
 export function mapPoint(id: string, overrides: Partial<MapPointView> = {}): MapPointView {
-  return { item_id: id, title: `Élément ${id}`, kind: "acquis", x: 0.2, y: -0.3, ...overrides };
+  return { item_id: id, title: `Élément ${id}`, kind: "skill", x: 0.2, y: -0.3, ...overrides };
 }
 
 export function stats(overrides: Partial<MemoryStatsView> = {}): MemoryStatsView {
   return {
-    by_kind: { document: 3, acquis: 5, lecon: 2, source: 1, offre: 0, decision: 1 },
+    by_kind: { document: 3, skill: 5, lesson: 2, source: 1, posting: 0, decision: 1 },
     total_items: 12,
     total_chunks: 48,
     pending_decisions: 1,

@@ -57,7 +57,7 @@ describe("SearchBench", () => {
     await user.type(screen.getByLabelText("Requête"), "cv");
     await user.click(screen.getByRole("checkbox", { name: "Offre" }));
     await user.click(screen.getByRole("button", { name: "Lancer" }));
-    expect(onRun).toHaveBeenCalledWith("cv", ["offre"], 8);
+    expect(onRun).toHaveBeenCalledWith("cv", ["posting"], 8);
   });
 
   it("needs a query and locks while pending", () => {

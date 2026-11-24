@@ -132,7 +132,7 @@ async def test_validation_reflects_levels_in_memory_and_writes_the_journal(
     env: Env, store: AgentProjectStore, client: httpx.AsyncClient
 ) -> None:
     pid = await _validate(env, store)
-    acquis = (await client.get("/api/v1/memory/items", params={"kind": "acquis"})).json()
+    acquis = (await client.get("/api/v1/memory/items", params={"kind": "skill"})).json()
     assert {item["title"] for item in acquis["items"]} >= set(SKILLS)
     journal = (await client.get("/api/v1/journal", params={"kind": "project"})).json()
     [entry] = journal["entries"]

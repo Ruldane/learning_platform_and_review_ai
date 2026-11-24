@@ -21,7 +21,7 @@ from tests.support.memory import FAKE_DIMENSION
 
 def draft(**fields: Any) -> WriteDraft:
     values: dict[str, Any] = {
-        "kind": "lecon",
+        "kind": "lesson",
         "title": "Attention",
         "text": "L'attention pondère les mots d'une phrase.",
         "author": "writer",

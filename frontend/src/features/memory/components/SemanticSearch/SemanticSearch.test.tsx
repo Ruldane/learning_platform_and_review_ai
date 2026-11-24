@@ -19,7 +19,7 @@ describe("SemanticSearch", () => {
     await user.type(screen.getByLabelText("Requête"), "  attention ");
     await user.click(screen.getByRole("checkbox", { name: "Leçon" }));
     await user.click(screen.getByRole("button", { name: "Rechercher" }));
-    expect(onSearch).toHaveBeenCalledWith("attention", ["lecon"]);
+    expect(onSearch).toHaveBeenCalledWith("attention", ["lesson"]);
   });
 
   it("searches on Enter and with no kind checked by default", async () => {

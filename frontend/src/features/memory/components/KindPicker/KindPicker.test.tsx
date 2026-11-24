@@ -13,10 +13,10 @@ describe("KindPicker", () => {
   it("adds and removes a kind", async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
-    const { rerender } = render(<KindPicker value={["acquis"]} onChange={onChange} />);
+    const { rerender } = render(<KindPicker value={["skill"]} onChange={onChange} />);
     await user.click(screen.getByRole("checkbox", { name: "Offre" }));
-    expect(onChange).toHaveBeenLastCalledWith(["acquis", "offre"]);
-    rerender(<KindPicker value={["acquis"]} onChange={onChange} />);
+    expect(onChange).toHaveBeenLastCalledWith(["skill", "posting"]);
+    rerender(<KindPicker value={["skill"]} onChange={onChange} />);
     await user.click(screen.getByRole("checkbox", { name: "Acquis" }));
     expect(onChange).toHaveBeenLastCalledWith([]);
   });

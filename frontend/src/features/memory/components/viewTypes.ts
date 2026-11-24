@@ -2,7 +2,7 @@
  * Types de vue des composants de l'explorateur de mémoire : miroir structurel des schémas de
  * l'API, mais locaux (les composants présentationnels n'importent jamais `shared/api`).
  */
-export type MemoryKindView = "document" | "acquis" | "lecon" | "source" | "offre" | "decision";
+export type MemoryKindView = "document" | "skill" | "lesson" | "source" | "posting" | "decision";
 export type MasteryLevelView = "declared" | "in_progress" | "validated" | "proven";
 export type WriteActionView = "create" | "update" | "delete" | "confirm" | "reject" | "merge";
 
@@ -67,7 +67,7 @@ export interface ItemEdit {
 export type ItemPatch = Partial<ItemEdit>;
 
 export interface NewItem extends ItemEdit {
-  kind: "acquis" | "decision" | "offre";
+  kind: "skill" | "decision" | "posting";
 }
 
 export interface MapPointView {

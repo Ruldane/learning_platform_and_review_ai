@@ -32,7 +32,7 @@ describe("t", () => {
   });
 
   it("aggregates the memory zone", () => {
-    expect(t("memory.kind.lecon")).toBe("Lesson");
+    expect(t("memory.kind.lesson")).toBe("Lesson");
     expect(t("memory.level.proven")).toBe("Proven");
     expect(t("memory.action.merge")).toBe("Merge");
     expect(t("memory.empty")).toBe("No items in memory");

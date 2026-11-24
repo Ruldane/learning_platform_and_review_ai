@@ -27,8 +27,8 @@ function paginate(backend: ReturnType<typeof memoryBackend>) {
 }
 
 const lessons = [
-  itemOut({ id: "l1", kind: "lecon", title: "Leçon A", level: null }),
-  itemOut({ id: "l2", kind: "lecon", title: "Leçon B", level: null }),
+  itemOut({ id: "l1", kind: "lesson", title: "Leçon A", level: null }),
+  itemOut({ id: "l2", kind: "lesson", title: "Leçon B", level: null }),
 ];
 
 describe("MemoryExplorerPage (final review fixes)", () => {

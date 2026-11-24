@@ -66,7 +66,7 @@ async def test_ordinary_memory_details_return_an_empty_link_list(client: httpx.A
     created = await client.post(
         f"{API}/memory/items",
         json={
-            "kind": "acquis",
+            "kind": "skill",
             "title": "Un acquis",
             "text": "Ce texte contient [[un renvoi fictif]].",
         },

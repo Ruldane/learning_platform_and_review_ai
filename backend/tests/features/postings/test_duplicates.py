@@ -32,9 +32,9 @@ def fake_search(monkeypatch: pytest.MonkeyPatch) -> dict[str, float]:
     async def search(
         self: AgentMemoryGateway, user_id: str, query: str, *, kinds: Any, k: int
     ) -> MemorySearchResult:
-        assert kinds == ["offre"] and len(query) <= 500
+        assert kinds == ["posting"] and len(query) <= 500
         hits = [
-            MemoryHitView(item_id, f"c-{item_id}", "offre", "t", "x", score, "analyst")
+            MemoryHitView(item_id, f"c-{item_id}", "posting", "t", "x", score, "analyst")
             for item_id, score in scores.items()
         ]
         return MemorySearchResult(hits, "")

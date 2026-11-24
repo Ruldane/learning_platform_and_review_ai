@@ -41,7 +41,7 @@ describe("MemoryItemForm", () => {
     await user.type(screen.getByLabelText("Texte"), "Compris.");
     await user.click(save());
     expect(onSubmit).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: "acquis", level: "in_progress" }),
+      expect.objectContaining({ kind: "skill", level: "in_progress" }),
     );
     await user.selectOptions(screen.getByLabelText("Type"), "Offre");
     expect(screen.queryByLabelText("Niveau")).not.toBeInTheDocument();

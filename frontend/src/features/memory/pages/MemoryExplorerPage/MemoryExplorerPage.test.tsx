@@ -109,8 +109,8 @@ describe("MemoryExplorerPage", () => {
 
   it("merges two selected items of the same kind", async () => {
     const lessons = [
-      itemOut({ id: "l1", kind: "lecon", title: "Leçon A", level: null }),
-      itemOut({ id: "l2", kind: "lecon", title: "Leçon B", level: null }),
+      itemOut({ id: "l1", kind: "lesson", title: "Leçon A", level: null }),
+      itemOut({ id: "l2", kind: "lesson", title: "Leçon B", level: null }),
     ];
     const { backend, user } = setup("/memoire", { items: lessons });
     await user.click(await screen.findByLabelText("Sélectionner « Leçon A »"));
@@ -127,8 +127,8 @@ describe("MemoryExplorerPage", () => {
 
   it("shows the readable refusal when the merge is rejected", async () => {
     const lessons = [
-      itemOut({ id: "l1", kind: "lecon", title: "Leçon A", level: null }),
-      itemOut({ id: "l2", kind: "lecon", title: "Leçon B", level: null }),
+      itemOut({ id: "l1", kind: "lesson", title: "Leçon A", level: null }),
+      itemOut({ id: "l2", kind: "lesson", title: "Leçon B", level: null }),
     ];
     const { user } = setup("/memoire", { items: lessons });
     server.use(
@@ -152,7 +152,7 @@ describe("MemoryExplorerPage", () => {
     await user.click(within(drawer).getByRole("button", { name: "Enregistrer" }));
     await waitFor(() => expect(backend.writes[0]?.method).toBe("POST"));
     expect(backend.writes[0]?.body).toEqual(
-      expect.objectContaining({ kind: "acquis", title: "Softmax", text: "Normalise les scores." }),
+      expect.objectContaining({ kind: "skill", title: "Softmax", text: "Normalise les scores." }),
     );
   });
 

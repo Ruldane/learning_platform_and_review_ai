@@ -5,7 +5,7 @@ import { KindBadge } from "./KindBadge";
 
 describe("KindBadge", () => {
   it("writes the kind name, never the color alone", () => {
-    render(<KindBadge kind="lecon" />);
+    render(<KindBadge kind="lesson" />);
     expect(screen.getByText("Leçon")).toBeInTheDocument();
   });
 

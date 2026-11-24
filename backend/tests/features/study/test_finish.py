@@ -234,7 +234,7 @@ NO_TRACE = StudyOutcome(outcomes=[], exercise_done=False, ended_early=True, summ
 
 async def _acquis(s: Seeded) -> dict[str, str]:
     async with s.rt.session_factory() as db:
-        items = (await db.execute(select(MemoryItem).where(MemoryItem.kind == "acquis"))).scalars()
+        items = (await db.execute(select(MemoryItem).where(MemoryItem.kind == "skill"))).scalars()
         return {item.title: (item.meta or {}).get("level", "") for item in items}
 
 

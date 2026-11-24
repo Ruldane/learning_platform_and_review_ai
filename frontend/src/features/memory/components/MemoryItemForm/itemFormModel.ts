@@ -12,11 +12,11 @@ export interface Draft {
   level: EditableLevel;
 }
 
-export const NEW_KINDS: readonly NewKind[] = ["acquis", "decision", "offre"];
+export const NEW_KINDS: readonly NewKind[] = ["skill", "decision", "posting"];
 
 export function toDraft(initial: ItemEdit | null): Draft {
   return {
-    kind: "acquis",
+    kind: "skill",
     title: initial?.title ?? "",
     text: initial?.text ?? "",
     tags: initial?.tags.join(", ") ?? "",
@@ -32,7 +32,7 @@ export function parseTags(raw: string): string[] {
 
 /** Le niveau n'existe que pour un acquis : à la création, selon le type ; en édition, s'il est modifiable. */
 export function showLevel(draft: Draft, chooseKind: boolean, initial: ItemEdit | null): boolean {
-  return chooseKind ? draft.kind === "acquis" : initial?.level != null;
+  return chooseKind ? draft.kind === "skill" : initial?.level != null;
 }
 
 export const isValid = (draft: Draft, withText = true): boolean =>

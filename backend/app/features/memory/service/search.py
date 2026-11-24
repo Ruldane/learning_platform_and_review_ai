@@ -4,10 +4,19 @@ the title and the author are reread from the database, which is authoritative (D
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
+from app.db.models.memory import PREVIOUS_MEMORY_KINDS, MemoryKind
 from app.features.memory.repository import ChunkRepository, MemoryItemRepository
 from app.features.memory.schemas import SearchHitOut, SearchRequest, SearchResponse
 from app.features.memory.service.agent_view import format_for_agent
 from app.features.memory.service.runtime import MemoryRuntime
+
+
+def _indexed_kinds(kinds: list[MemoryKind] | None) -> list[str] | None:
+    """Match existing index entries as well as entries indexed since the migration."""
+    if not kinds:
+        return None
+    previous = [PREVIOUS_MEMORY_KINDS[kind] for kind in kinds if kind in PREVIOUS_MEMORY_KINDS]
+    return [*kinds, *previous]
 
 
 async def search(
@@ -19,7 +28,9 @@ async def search(
     query = req.query.strip()
     if not query:
         raise AppError("memory_query_empty", "The search cannot be empty.", 422)
-    found = await runtime.providers.index.search(user_id, query, kinds=req.kinds or None, k=req.k)
+    found = await runtime.providers.index.search(
+        user_id, query, kinds=_indexed_kinds(req.kinds), k=req.k
+    )
     chunks = await ChunkRepository(db, user_id).get_many([h.chunk_id for h in found])
     items = await MemoryItemRepository(db, user_id).get_many(
         list({chunk.item_id for chunk in chunks.values()})

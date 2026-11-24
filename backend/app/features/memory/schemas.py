@@ -49,7 +49,7 @@ __all__ = [
 
 # Types qu'un utilisateur crée à la main ; les `lecon` et `source` viennent des agents, les
 # `document` de l'import (`/documents`).
-UserWritableKind = Literal["acquis", "decision", "offre"]
+UserWritableKind = Literal["skill", "decision", "posting"]
 # Niveaux qu'on peut donner à la main ou par un agent : `valide` et `prouve` se gagnent (phase 4).
 AgentLevel = Literal["declared", "in_progress"]
 Tag = Annotated[str, Field(min_length=1, max_length=40)]

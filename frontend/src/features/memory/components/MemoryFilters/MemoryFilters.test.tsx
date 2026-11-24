@@ -10,7 +10,7 @@ describe("MemoryFilters", () => {
     const user = userEvent.setup();
     render(<MemoryFilters value={NO_FILTERS} authors={[]} onChange={onChange} />);
     await user.selectOptions(screen.getByLabelText("Type"), "Acquis");
-    expect(onChange).toHaveBeenCalledWith({ ...NO_FILTERS, kind: "acquis" });
+    expect(onChange).toHaveBeenCalledWith({ ...NO_FILTERS, kind: "skill" });
   });
 
   it("changes the tag", async () => {
@@ -44,12 +44,12 @@ describe("MemoryFilters", () => {
   it("shows the current value", () => {
     render(
       <MemoryFilters
-        value={{ ...NO_FILTERS, kind: "lecon", tag: "nlp" }}
+        value={{ ...NO_FILTERS, kind: "lesson", tag: "nlp" }}
         authors={[]}
         onChange={vi.fn()}
       />,
     );
-    expect(screen.getByLabelText("Type")).toHaveValue("lecon");
+    expect(screen.getByLabelText("Type")).toHaveValue("lesson");
     expect(screen.getByLabelText("Étiquette")).toHaveValue("nlp");
   });
 });

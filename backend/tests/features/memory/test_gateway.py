@@ -23,7 +23,7 @@ def gateway(runtime: MemoryRuntime) -> AgentMemoryGateway:
 
 
 def _acquis(title: str, **fields: object) -> AgentWrite:
-    values = {"kind": "acquis", "title": title, "text": f"{title} : notions.", "reason": "Vu."}
+    values = {"kind": "skill", "title": title, "text": f"{title} : notions.", "reason": "Vu."}
     return AgentWrite(**{**values, **fields})  # type: ignore[arg-type]
 
 
@@ -37,7 +37,7 @@ async def test_gateway_write_uses_agent_as_author_and_session(
         _acquis("Attention", tags=("nlp",), evidence=("d1",), source_id="d1"),
     )
     assert (done.kind, done.title, done.status, done.created) == (
-        "acquis",
+        "skill",
         "Attention",
         "active",
         True,
@@ -98,7 +98,7 @@ async def test_gateway_skills_reads_acquis_levels(
     await gateway.write("u1", "s1", "archivist", _acquis("Python"))
     await gateway.write("u1", "s1", "archivist", _acquis("Rust"))
     await gateway.write("u1", "s1", "archivist", _acquis("SQL", level="in_progress"))
-    await gateway.write("u1", "s1", "archivist", AgentWrite("lecon", "Autre", "x", "Cours."))
+    await gateway.write("u1", "s1", "archivist", AgentWrite("lesson", "Autre", "x", "Cours."))
     await gateway.write("u2", "s2", "archivist", _acquis("Go"))
     summary = await gateway.skills("u1")
     assert summary.total == 3 and summary.by_level == {"declared": 2, "in_progress": 1}
@@ -145,9 +145,9 @@ async def test_gateway_search_returns_views_and_wrapped_agent_text(
     gateway: AgentMemoryGateway,
 ) -> None:
     await gateway.write("u1", "s1", "archivist", _acquis("Attention"))
-    found = await gateway.search("u1", "Attention : notions", kinds=["acquis"], k=8)
+    found = await gateway.search("u1", "Attention : notions", kinds=["skill"], k=8)
     assert [(h.kind, h.title, h.created_by) for h in found.hits] == [
-        ("acquis", "Attention", "archivist")
+        ("skill", "Attention", "archivist")
     ]
     assert "<<<CONTENU_NON_FIABLE" in found.agent_text
     assert (await gateway.search("u2", "Attention", kinds=None, k=8)).hits == []

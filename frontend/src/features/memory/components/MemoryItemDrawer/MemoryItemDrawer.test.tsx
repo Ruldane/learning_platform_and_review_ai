@@ -91,7 +91,7 @@ describe("MemoryItemDrawer", () => {
   it("opens a neighbor", async () => {
     const onOpenItem = vi.fn();
     const neighbors = [
-      { item_id: "n1", title: "Transformeurs", kind: "lecon" as const, score: 0.71 },
+      { item_id: "n1", title: "Transformeurs", kind: "lesson" as const, score: 0.71 },
     ];
     render(<MemoryItemDrawer {...base} item={detail({ neighbors })} onOpenItem={onOpenItem} />);
     expect(screen.getByText("0,71")).toBeInTheDocument();
@@ -158,7 +158,7 @@ describe("MemoryItemDrawer", () => {
     await user.type(screen.getByLabelText("Texte"), "Offre vue en ligne.");
     await user.click(screen.getByRole("button", { name: "Enregistrer" }));
     expect(onSave).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: "offre", title: "Stage NLP" }),
+      expect.objectContaining({ kind: "posting", title: "Stage NLP" }),
     );
     expect(screen.queryByRole("button", { name: "Supprimer" })).not.toBeInTheDocument();
   });

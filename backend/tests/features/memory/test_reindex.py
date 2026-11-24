@@ -92,7 +92,7 @@ async def test_reindex_rebuilds_vectors_from_text(app: FastAPI, client: httpx.As
     texts = ["Je sais écrire des scripts Python.", "Poste à Lyon.", "Viser le Rust."]
     for i, text in enumerate(texts):
         r = await client.post(
-            "/api/v1/memory/items", json={"kind": "offre", "title": f"T{i}", "text": text}
+            "/api/v1/memory/items", json={"kind": "posting", "title": f"T{i}", "text": text}
         )
         assert r.status_code == 201
     n = len(texts)

@@ -35,7 +35,7 @@ def body(**over: Any) -> dict[str, Any]:
 async def items(app: FastAPI) -> list[MemoryItem]:
     async with app.state.session_factory() as db:
         return list(
-            (await db.execute(select(MemoryItem).where(MemoryItem.kind == "offre"))).scalars()
+            (await db.execute(select(MemoryItem).where(MemoryItem.kind == "posting"))).scalars()
         )
 
 

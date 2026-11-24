@@ -11,7 +11,7 @@ from typing import Any, Literal
 from uuid import uuid4
 
 from langchain_core.tools import BaseTool, StructuredTool
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.agents.prompts.loader import untrusted
 from app.agents.runtime.deps import GraphDeps
@@ -24,6 +24,7 @@ from app.agents.tools.memory_port import (
     WriteResult,
 )
 from app.core.errors import AppError
+from app.db.models.memory import current_memory_kind
 
 DEFAULT_K = 8
 
@@ -113,7 +114,7 @@ class _SearchArgs(BaseModel):
     query: str = Field(description="Ce qu'on cherche, en une phrase.")
     kinds: list[str] | None = Field(
         default=None,
-        description="Types à chercher : document, acquis, lecon, source, offre, decision.",
+        description="Kinds to search: document, skill, lesson, source, posting, decision.",
     )
     k: int = Field(default=DEFAULT_K, ge=1, le=50, description="Nombre de fragments.")
 
@@ -127,6 +128,11 @@ class _WriteArgs(BaseModel):
     evidence: list[str] = Field(default_factory=list)
     level: Literal["declared", "in_progress"] | None = None
     source_id: str | None = None
+
+    @field_validator("kind", mode="before")
+    @classmethod
+    def read_checkpoint_kind(cls, value: object) -> object:
+        return current_memory_kind(value) if isinstance(value, str) else value
 
 
 class _NoArgs(BaseModel):

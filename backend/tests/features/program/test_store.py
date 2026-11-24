@@ -102,7 +102,7 @@ async def test_known_skills_merge_user_skills_and_memory(
             db.add(
                 MemoryItem(
                     user_id=ME,
-                    kind="acquis",
+                    kind="skill",
                     title=title,
                     text=f"Acquis {title}",
                     created_by="archivist",
@@ -113,7 +113,7 @@ async def test_known_skills_merge_user_skills_and_memory(
         db.add(
             MemoryItem(
                 user_id=OTHER,
-                kind="acquis",
+                kind="skill",
                 title="Rust",
                 text="Acquis Rust",
                 created_by="user",

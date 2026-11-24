@@ -12553,10 +12553,10 @@
           "kind": {
             "enum": [
               "document",
-              "acquis",
-              "lecon",
+              "skill",
+              "lesson",
               "source",
-              "offre",
+              "posting",
               "decision"
             ],
             "title": "Kind",
@@ -13623,9 +13623,9 @@
         "properties": {
           "kind": {
             "enum": [
-              "acquis",
+              "skill",
               "decision",
-              "offre"
+              "posting"
             ],
             "title": "Kind",
             "type": "string"
@@ -13712,10 +13712,10 @@
           "kind": {
             "enum": [
               "document",
-              "acquis",
-              "lecon",
+              "skill",
+              "lesson",
               "source",
-              "offre",
+              "posting",
               "decision"
             ],
             "title": "Kind",
@@ -13906,10 +13906,10 @@
           "kind": {
             "enum": [
               "document",
-              "acquis",
-              "lecon",
+              "skill",
+              "lesson",
               "source",
-              "offre",
+              "posting",
               "decision"
             ],
             "title": "Kind",
@@ -15470,10 +15470,10 @@
           "kind": {
             "enum": [
               "document",
-              "acquis",
-              "lecon",
+              "skill",
+              "lesson",
               "source",
-              "offre",
+              "posting",
               "decision"
             ],
             "title": "Kind",
@@ -23927,10 +23927,10 @@
           "kind": {
             "enum": [
               "document",
-              "acquis",
-              "lecon",
+              "skill",
+              "lesson",
               "source",
-              "offre",
+              "posting",
               "decision"
             ],
             "title": "Kind",
@@ -23976,10 +23976,10 @@
                 "items": {
                   "enum": [
                     "document",
-                    "acquis",
-                    "lecon",
+                    "skill",
+                    "lesson",
                     "source",
-                    "offre",
+                    "posting",
                     "decision"
                   ],
                   "type": "string"
@@ -25879,10 +25879,10 @@
             "propertyNames": {
               "enum": [
                 "document",
-                "acquis",
-                "lecon",
+                "skill",
+                "lesson",
                 "source",
-                "offre",
+                "posting",
                 "decision"
               ]
             },
@@ -40827,10 +40827,10 @@
                 {
                   "enum": [
                     "document",
-                    "acquis",
-                    "lecon",
+                    "skill",
+                    "lesson",
                     "source",
-                    "offre",
+                    "posting",
                     "decision"
                   ],
                   "type": "string"

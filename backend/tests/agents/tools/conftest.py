@@ -33,7 +33,7 @@ class FakeGateway:
     ) -> MemorySearchResult:
         self.searches.append((query, None if kinds is None else tuple(kinds), k))
         hits = [
-            MemoryHitView(f"i{n}", f"c{n}", "acquis", "Attention", "t", 0.8, "user") for n in "123"
+            MemoryHitView(f"i{n}", f"c{n}", "skill", "Attention", "t", 0.8, "user") for n in "123"
         ]
         return MemorySearchResult(hits, "Mémoire — 3 fragment(s)")
 

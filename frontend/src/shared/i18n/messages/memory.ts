@@ -23,10 +23,10 @@ export const memory = {
   },
   kind: {
     document: "Document",
-    acquis: "Acquired skill",
-    lecon: "Lesson",
+    skill: "Acquired skill",
+    lesson: "Lesson",
     source: "Source",
-    offre: "Posting",
+    posting: "Posting",
     decision: "Decision",
   },
   level: {

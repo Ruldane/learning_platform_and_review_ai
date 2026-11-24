@@ -49,7 +49,7 @@ async def _seed_camille(app: FastAPI, camille: httpx.AsyncClient) -> dict[str, s
         ids = {"goal": goal.id, "posting": posting.id, "entry": entry}
     item = await camille.post(
         f"{API}/memory/items",
-        json={"kind": "acquis", "title": "Python de Camille", "text": "Je sais écrire des API."},
+        json={"kind": "skill", "title": "Python de Camille", "text": "Je sais écrire des API."},
     )
     assert item.status_code == 201, item.text
     ids["item"] = item.json()["id"]

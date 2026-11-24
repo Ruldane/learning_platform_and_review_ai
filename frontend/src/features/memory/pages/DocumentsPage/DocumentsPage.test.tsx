@@ -38,7 +38,7 @@ const written = (seq: number, title: string): SessionEvent => ({
   ts: "2026-11-11T10:00:00Z",
   agent: "archivist",
   type: "memory.written",
-  payload: { item_id: `a${seq}`, kind: "acquis", title, reason: "Extrait.", status: "active" },
+  payload: { item_id: `a${seq}`, kind: "skill", title, reason: "Extrait.", status: "active" },
 });
 
 const sessionView = (status: string) => ({

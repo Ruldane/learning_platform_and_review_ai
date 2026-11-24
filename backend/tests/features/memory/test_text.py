@@ -1,3 +1,5 @@
+from hashlib import sha256
+
 import pytest
 
 from app.features.memory.service.text import (
@@ -70,12 +72,13 @@ def test_clean_text_details() -> None:
 
 
 def test_content_hash_rules() -> None:
-    assert content_hash("acquis", "Python ", "x") == content_hash("acquis", "python", "y")
+    assert content_hash("skill", "Python", "x") == sha256(b"acquis\npython").hexdigest()
+    assert content_hash("skill", "Python ", "x") == content_hash("skill", "python", "y")
     assert content_hash("document", "t", "Bonjour  le monde") == content_hash(
         "document", "autre", "bonjour le monde"
     )
-    assert content_hash("lecon", "t", "a") != content_hash("source", "t", "a")
-    assert len(content_hash("lecon", "t", "a")) == 64
+    assert content_hash("lesson", "t", "a") != content_hash("source", "t", "a")
+    assert len(content_hash("lesson", "t", "a")) == 64
 
 
 def test_source_hash_is_sha256_hex() -> None:

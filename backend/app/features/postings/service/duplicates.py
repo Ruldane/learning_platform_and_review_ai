@@ -69,7 +69,7 @@ async def _best_scores(
     aucune (le doublon possible n'est qu'un signal)."""
     gateway = AgentMemoryGateway(memory)
     try:
-        found = await gateway.search(user_id, query, kinds=["offre"], k=SEARCH_HITS + 1)
+        found = await gateway.search(user_id, query, kinds=["posting"], k=SEARCH_HITS + 1)
     except AppError as exc:
         logger.warning("Doublons possibles non cherchés : offre %s (%s)", label, exc.code)
         return {}

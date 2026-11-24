@@ -122,7 +122,7 @@ async def _save_content(
         db,
         rt.memory,
         lesson.user_id,
-        kind="lecon",
+        kind="lesson",
         title=draft.title,
         text=markdown,
         tags=(program_title,),

@@ -98,7 +98,7 @@ def _write_of(state: LearnedDocumentState, concept: dict[str, Any]) -> AgentWrit
     reconnue à son titre (D64 4) : jamais un second acquis."""
     document_id = state["document_id"]
     return AgentWrite(
-        kind="acquis",
+        kind="skill",
         title=concept["title"],
         text=concept["summary"],
         tags=tuple(concept["tags"]),

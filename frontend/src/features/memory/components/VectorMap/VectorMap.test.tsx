@@ -29,7 +29,7 @@ describe("VectorMap", () => {
     render(<VectorMap points={[mapPoint("i1")]} truncated={false} onOpen={vi.fn()} />);
     expect(screen.getByRole("button", { name: /Acquis/ })).toHaveAttribute(
       "fill",
-      KIND_COLORS.acquis,
+      KIND_COLORS.skill,
     );
   });
 

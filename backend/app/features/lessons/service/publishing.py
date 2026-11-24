@@ -147,7 +147,7 @@ async def remember(rt: LessonsRuntime, p: Published) -> None:
                 db,
                 rt.memory,
                 p.user_id,
-                kind="lecon",
+                kind="lesson",
                 title=p.title,
                 text=p.markdown,
                 tags=(p.program_title,),

@@ -49,7 +49,7 @@ async def _document(learned: Learned, user_id: str, **fields: Any) -> str:
 
 async def _user_acquis(learned: Learned, user_id: str, title: str) -> None:
     await AgentMemoryGateway(learned.memory).write(
-        user_id, "s0", "user", AgentWrite("acquis", title, "Déjà vu.", "Saisi à la main.")
+        user_id, "s0", "user", AgentWrite("skill", title, "Déjà vu.", "Saisi à la main.")
     )
 
 
@@ -64,7 +64,7 @@ async def _written(learned: Learned, user_id: str, sid: str) -> list[tuple[Any, 
 async def _acquis_titles(learned: Learned, user_id: str) -> list[str]:
     async with learned.factory() as db:
         rows, _ = await MemoryItemRepository(db, user_id).filtered(
-            ItemFilter(kind="acquis"), limit=50, offset=0
+            ItemFilter(kind="skill"), limit=50, offset=0
         )
     return sorted(row.title for row in rows)
 
@@ -97,7 +97,7 @@ async def test_learned_document_creates_declare_acquis_with_reason(
     assert done.payload.summary == "1 acquis ajouté(s), 1 déjà connu(s)."  # type: ignore[union-attr]
     async with learned.factory() as db:
         rows, _ = await MemoryItemRepository(db, user_id).filtered(
-            ItemFilter(kind="acquis", author="archivist"), limit=5, offset=0
+            ItemFilter(kind="skill", author="archivist"), limit=5, offset=0
         )
         item = rows[0]
         log = await WriteRepository(db, user_id).for_item(item.id)

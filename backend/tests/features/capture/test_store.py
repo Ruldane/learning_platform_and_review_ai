@@ -112,7 +112,7 @@ async def test_learned_note_writes_declare_acquis(capture: Capture) -> None:
     acquis = {
         normalize_skill_name(i.title): i.meta["level"]
         for i in await _rows(factory, MemoryItem)
-        if i.kind == "acquis"
+        if i.kind == "skill"
     }
     assert acquis["docker"] == "declared" and acquis["pandas"] == "in_progress"  # reflet (D6)
     [item] = [i for i in await _rows(factory, MemoryItem) if i.kind == "document"]

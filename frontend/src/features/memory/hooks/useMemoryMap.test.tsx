@@ -14,7 +14,7 @@ describe("useMemoryMap", () => {
     expect(result.current.data?.points[0]).toEqual({
       item_id: "i1",
       title: "Attention",
-      kind: "acquis",
+      kind: "skill",
       x: 0.2,
       y: -0.3,
     });

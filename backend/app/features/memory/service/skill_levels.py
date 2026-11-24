@@ -26,7 +26,7 @@ def _level(item: MemoryItem) -> MasteryLevel:
 
 async def _acquis(db: AsyncSession, user_id: str) -> list[MemoryItem]:
     """Tous les acquis actifs, du plus ancien au plus récent : lus une fois par appel."""
-    return await MemoryItemRepository(db, user_id).of_kind("acquis")
+    return await MemoryItemRepository(db, user_id).of_kind("skill")
 
 
 async def acquis_levels(db: AsyncSession, user_id: str) -> dict[str, MasteryLevel]:
@@ -77,7 +77,7 @@ async def _create(
     un niveau plus haut. Texte déterminé par le titre : deux créations simultanées du même nom
     tombent sur le même hash (une seule ligne)."""
     draft = WriteDraft(
-        kind="acquis",
+        kind="skill",
         title=title,
         text=f"Compétence travaillée dans un programme d'apprentissage : {title}.",
         author=author,

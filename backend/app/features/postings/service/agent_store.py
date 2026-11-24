@@ -132,12 +132,12 @@ class AgentGapStore:
         """L'élément `offre` (même contenu déjà là : l'existant), non indexé ni commité."""
         analysis = PostingAnalysis.model_validate(posting.analysis)
         draft = WriteDraft(
-            kind="offre",
+            kind="posting",
             title=item_title(analysis),
             text=posting.text,
             author=AUTHOR,
             reason=REASON,
-            tags=("offre",),
+            tags=("posting",),
             session_id=session_id,
         )
         return (await MemoryService(db, user_id, self._memory).write(draft, index=False)).item.id

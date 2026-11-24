@@ -14,7 +14,7 @@ USER = "u1"
 
 async def _items(factory: Factory) -> list[MemoryItem]:
     async with factory() as db:
-        stmt = select(MemoryItem).where(MemoryItem.kind == "acquis")
+        stmt = select(MemoryItem).where(MemoryItem.kind == "skill")
         return list((await db.execute(stmt)).scalars().all())
 
 
@@ -70,7 +70,7 @@ async def test_acquis_levels_keep_the_highest_per_name(
         db.add(
             MemoryItem(
                 user_id=USER,
-                kind="acquis",
+                kind="skill",
                 title="PANDAS",
                 text="autre",
                 created_by="user",
@@ -81,7 +81,7 @@ async def test_acquis_levels_keep_the_highest_per_name(
         db.add(
             MemoryItem(
                 user_id="autre",
-                kind="acquis",
+                kind="skill",
                 title="Rust",
                 text="r",
                 created_by="user",

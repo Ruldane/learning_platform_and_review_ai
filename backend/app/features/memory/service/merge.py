@@ -53,7 +53,7 @@ def _merged(
     meta = dict(target.meta or {})
     if evidence:
         meta["evidence"] = evidence
-    if target.kind == "acquis":
+    if target.kind == "skill":
         levels = [
             cast(MasteryLevel, (item.meta or {}).get("level") or "declared") for item in everyone
         ]

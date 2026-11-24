@@ -58,7 +58,7 @@ async def _levels(factory: Factory, user_id: str = ME) -> dict[str, str]:
 async def _acquis(factory: Factory, title: str, user_id: str = ME) -> MemoryItem:
     async with factory() as db:
         stmt = select(MemoryItem).where(
-            MemoryItem.user_id == user_id, MemoryItem.kind == "acquis", MemoryItem.title == title
+            MemoryItem.user_id == user_id, MemoryItem.kind == "skill", MemoryItem.title == title
         )
         return (await db.execute(stmt)).scalar_one()
 
@@ -94,7 +94,7 @@ async def test_validation_never_lowers_a_level(
         db.add(
             MemoryItem(
                 user_id=ME,
-                kind="acquis",
+                kind="skill",
                 title="pandas",
                 text="Pandas validé par un quiz.",
                 created_by="user",
@@ -127,7 +127,7 @@ async def test_validate_checks_ownership(
 async def _acquis_count(factory: Factory) -> tuple[int, int]:
     async with factory() as db:
         items = await db.execute(
-            select(func.count()).select_from(MemoryItem).where(MemoryItem.kind == "acquis")
+            select(func.count()).select_from(MemoryItem).where(MemoryItem.kind == "skill")
         )
         writes = await db.execute(select(func.count()).select_from(MemoryWrite))
         return int(items.scalar_one()), int(writes.scalar_one())

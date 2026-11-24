@@ -45,7 +45,7 @@ def clean_tags(tags: list[str] | tuple[str, ...]) -> list[str]:
 
 
 def _level(draft: WriteDraft, is_agent: bool) -> MasteryLevel | None:
-    if draft.kind != "acquis":
+    if draft.kind != "skill":
         if draft.level is not None:
             raise AppError("memory_level_forbidden", "Only a skill has a level.", 422)
         return None

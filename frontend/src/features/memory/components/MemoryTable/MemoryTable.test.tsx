@@ -29,7 +29,7 @@ describe("MemoryTable", () => {
       <MemoryTable
         {...base}
         total={1}
-        items={[row({ kind: "acquis", created_by: "archivist", level: "declared" })]}
+        items={[row({ kind: "skill", created_by: "archivist", level: "declared" })]}
       />,
     );
     const table = within(screen.getByRole("table"));
@@ -113,7 +113,7 @@ describe("MemoryTable", () => {
   });
 
   it("disables merge for one item, mixed kinds or documents", () => {
-    const mixed = [row({ id: "a" }), row({ id: "b", kind: "lecon" })];
+    const mixed = [row({ id: "a" }), row({ id: "b", kind: "lesson" })];
     const docs = [row({ id: "a", kind: "document" }), row({ id: "b", kind: "document" })];
     const { rerender } = render(<MemoryTable {...base} total={2} items={two} selected={["a"]} />);
     expect(mergeButton()).toBeDisabled();

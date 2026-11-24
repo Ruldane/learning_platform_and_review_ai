@@ -105,7 +105,7 @@ async def add_write(
             user_id=user or env.user_id,
             item_id="item-1",
             item_title=title,
-            kind="acquis",
+            kind="skill",
             action=action,
             author=author,
             reason=reason,

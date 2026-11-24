@@ -65,7 +65,7 @@ async def _memory_sources(deps: GraphDeps, question: str) -> list[ConversationRe
         memory = await deps.memory.search(
             deps.user_id,
             question,
-            kinds=("acquis", "document", "decision"),
+            kinds=("skill", "document", "decision"),
             k=MAX_HITS,
         )
     except AppError as exc:

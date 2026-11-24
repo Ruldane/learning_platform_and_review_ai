@@ -5,7 +5,7 @@ import re
 import unicodedata
 from dataclasses import dataclass
 
-from app.db.models.memory import MemoryKind
+from app.db.models.memory import PREVIOUS_MEMORY_KINDS, MemoryKind
 
 CHUNK_TOKENS = 500
 CHUNK_OVERLAP = 60
@@ -71,11 +71,12 @@ def chunk_text(
 
 
 def content_hash(kind: MemoryKind, title: str, text: str, *, document_id: str | None = None) -> str:
-    """Anti-duplicate hash of an item: a skill is recognised by its title, the other kinds by
-    their text; case and spaces do not count."""
-    basis = title if kind == "acquis" else text
+    """Deduplicate skills by title and other items by text, ignoring case and spaces."""
+    basis = title if kind == "skill" else text
     normalized = _SPACES.sub(" ", basis.casefold()).strip()
-    scope = kind if document_id is None else f"{kind}:{document_id}"
+    # Keep the hash compatible with stored items indexed before the kind migration.
+    hash_kind = PREVIOUS_MEMORY_KINDS.get(kind, kind)
+    scope = hash_kind if document_id is None else f"{hash_kind}:{document_id}"
     return hashlib.sha256(f"{scope}\n{normalized}".encode()).hexdigest()
 
 
@@ -103,7 +104,6 @@ def clean_display(text: str | None) -> str:
 
 
 def display_name(raw: str | None) -> str:
-    """Display name of a document: last segment of a path (`/` or `\`), cleaned by
-    `clean_display`. Never used as a path."""
+    """Clean the last path segment for display using `clean_display`."""
     segments = [clean_display(s) for s in _PATH_SEPARATORS.split(_visible(raw or ""))]
     return next((s for s in reversed(segments) if s), "") or DEFAULT_DOCUMENT_NAME

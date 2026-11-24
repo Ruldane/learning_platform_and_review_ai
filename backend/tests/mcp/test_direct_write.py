@@ -142,7 +142,7 @@ async def test_lesson_submission_is_journaled_and_undone_before_publication(
     assert undone.status_code == 200, undone.text
     assert (await client.get(f"{API}/lessons/{lesson_id}")).status_code == 404
     assert (await wait_session(client, sid))["status"] == "cancelled"
-    assert await count(app, MemoryItem, kind="lecon") == 0
+    assert await count(app, MemoryItem, kind="lesson") == 0
 
 
 async def write_chain(claude: Mcp, token: str, drafted: Seed) -> list[dict[str, Any]]:
@@ -254,12 +254,12 @@ async def test_posting_write_is_undone_with_its_memory_item_and_duplicates(
     assert levels == [
         "<donnee_non_fiable>probable</donnee_non_fiable>"
     ]  # texte venu du web : enclos
-    assert await count(app, JobPosting) == 2 and await count(app, MemoryItem, kind="offre") == 2
+    assert await count(app, JobPosting) == 2 and await count(app, MemoryItem, kind="posting") == 2
 
     undone = await undo_last(claude)  # la seconde offre : le doublon réciproque disparaît aussi
 
     assert undone.status_code == 200, undone.text
-    assert await count(app, JobPosting) == 1 and await count(app, MemoryItem, kind="offre") == 1
+    assert await count(app, JobPosting) == 1 and await count(app, MemoryItem, kind="posting") == 1
     kept = (await client.get(f"{API}/postings/{first_id}")).json()
     assert kept["duplicates"] == []
     await assert_no_agent(app)

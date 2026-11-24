@@ -8,10 +8,10 @@ import type { MemoryKindView } from "./viewTypes";
  */
 export const KIND_COLORS: Record<MemoryKindView, string> = {
   document: "#3d5a99",
-  acquis: "#1b7e3b",
-  lecon: "#8a5a00",
+  skill: "#1b7e3b",
+  lesson: "#8a5a00",
   source: "#00798a",
-  offre: "#b4461f",
+  posting: "#b4461f",
   decision: "#8a2ea8",
 };
 

@@ -23,7 +23,7 @@ from app.agents.tools.memory_port import (
     WriteResult,
 )
 from app.core.errors import AppError
-from app.db.models.memory import MEMORY_KINDS, MemoryKind
+from app.db.models.memory import MEMORY_KINDS, MemoryKind, current_memory_kind
 from app.features.memory.repository import (
     ChunkRepository,
     DocumentRepository,
@@ -46,11 +46,12 @@ SKILLS_MAX = 500  # acquis lus pour le résumé (les plus récents)
 def _kinds(kinds: Sequence[str] | None) -> list[MemoryKind] | None:
     if not kinds:
         return None
-    if unknown := [kind for kind in kinds if kind not in MEMORY_KINDS]:
+    resolved = [current_memory_kind(kind) for kind in kinds]
+    if unknown := [kind for kind in resolved if kind not in MEMORY_KINDS]:
         raise AppError(
             "memory_kind_invalid", "Type de mémoire inconnu.", 422, {"kinds": sorted(set(unknown))}
         )
-    return cast(list[MemoryKind], list(kinds))
+    return cast(list[MemoryKind], resolved)
 
 
 class AgentMemoryGateway:
@@ -118,7 +119,7 @@ class AgentMemoryGateway:
         dans la mémoire."""
         async with self._runtime.session_factory() as db:
             rows, total = await MemoryItemRepository(db, user_id).filtered(
-                ItemFilter(kind="acquis"), limit=SKILLS_MAX, offset=0
+                ItemFilter(kind="skill"), limit=SKILLS_MAX, offset=0
             )
         skills = [
             SkillEntry(

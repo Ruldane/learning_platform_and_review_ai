@@ -13,7 +13,7 @@ from app.agents.prompts.loader import untrusted
 from app.core.errors import AppError
 
 # Types qu'un agent peut écrire : jamais un `document` (réservé à l'import).
-AgentWritableKind = Literal["acquis", "lecon", "source", "offre", "decision"]
+AgentWritableKind = Literal["skill", "lesson", "source", "posting", "decision"]
 NO_SKILLS = "Aucun acquis en mémoire."
 
 

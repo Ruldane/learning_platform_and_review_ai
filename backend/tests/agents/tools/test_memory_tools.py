@@ -46,10 +46,11 @@ async def test_memory_search_failure_reports_tool_result_then_raises(
 ) -> None:
     broken = replace(deps, ports=AgentPorts(memory=NO_MEMORY))
     with pytest.raises(AppError) as exc:
-        await memory_search(broken, "x", ["acquis"], 3, agent="archivist")
+        await memory_search(broken, "x", ["skill"], 3, agent="archivist")
     assert exc.value.code == "memory_unavailable"
     assert _types(emitted) == ["tool.called", "tool.result"]
-    assert emitted[0]["payload"]["args"] == {"query": "x", "kinds": ["acquis"], "k": 3}  # type: ignore[index]
+    args = emitted[0]["payload"]["args"]  # type: ignore[index]
+    assert args == {"query": "x", "kinds": ["skill"], "k": 3}
     assert emitted[1]["payload"]["ok"] is False  # type: ignore[index]
 
 
@@ -74,9 +75,7 @@ async def test_memory_write_of_known_content_emits_no_memory_written(
     emitted: list[dict[str, object]], deps: GraphDeps, gateway: FakeGateway
 ) -> None:
     gateway.created = False
-    res = await memory_write(
-        deps, AgentWrite("acquis", "Python", "t", "Raison."), agent="archivist"
-    )
+    res = await memory_write(deps, AgentWrite("skill", "Python", "t", "Raison."), agent="archivist")
     assert res.created is False
     assert _types(emitted) == ["tool.called", "tool.result"]
     assert "déjà en mémoire" in emitted[1]["payload"]["summary"].lower()  # type: ignore[index]
@@ -104,9 +103,9 @@ async def test_memory_tools_for_call_the_gateway(
     text = await search.ainvoke({"query": "attention"})
     assert text.startswith("Mémoire") and gateway.searches == [("attention", None, 8)]
     done = await write.ainvoke(
-        {"kind": "lecon", "title": "Titre", "text": "Texte", "reason": "Raison."}
+        {"kind": "lesson", "title": "Titre", "text": "Texte", "reason": "Raison."}
     )
-    assert "Titre" in done and gateway.writes[0][3].kind == "lecon"
+    assert "Titre" in done and gateway.writes[0][3].kind == "lesson"
     assert "Python — declared" in await skills.ainvoke({})
 
 
@@ -128,7 +127,7 @@ async def test_no_memory_refuses_every_call() -> None:
         NO_MEMORY.search("u", "q", kinds=None, k=1),
         NO_MEMORY.skills("u"),
         NO_MEMORY.document_text("u", "d", max_chunks=1),
-        NO_MEMORY.write("u", "s", "a", AgentWrite("lecon", "t", "x", "r")),
+        NO_MEMORY.write("u", "s", "a", AgentWrite("lesson", "t", "x", "r")),
     ):
         with pytest.raises(AppError) as exc:
             await call
@@ -178,7 +177,7 @@ async def test_duplicate_write_frames_existing_title(
     gateway.created, gateway.existing_title = False, INJECTED
     _, write, _ = memory_tools_for(deps, agent="archivist")
     text = await write.ainvoke(
-        {"kind": "acquis", "title": "Python", "text": "Texte", "reason": "Raison."}
+        {"kind": "skill", "title": "Python", "text": "Texte", "reason": "Raison."}
     )
     framed = text.removeprefix("Déjà en mémoire : ")
     assert framed.startswith('<<<CONTENU_NON_FIABLE source="titre en mémoire">>>')

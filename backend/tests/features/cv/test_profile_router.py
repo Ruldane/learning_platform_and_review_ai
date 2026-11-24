@@ -51,7 +51,7 @@ async def test_put_profile_creates_validated_version_and_raises_skills(
     [proof] = levels["Python"][1]
     assert (proof["kind"], proof["label"]) == ("cv", "Profil maître") and proof["ref_id"]
     async with app.state.session_factory() as db:  # reflet dans les acquis de la mémoire (D6)
-        acquis = (await db.execute(select(MemoryItem).where(MemoryItem.kind == "acquis"))).scalars()
+        acquis = (await db.execute(select(MemoryItem).where(MemoryItem.kind == "skill"))).scalars()
         reflected = {item.title: item.meta["level"] for item in acquis}
     assert reflected == {name: "declared" for name in CV_FACTS["tools"].split(", ")}
     state = (await client.get(f"{API}/profile")).json()
@@ -75,7 +75,7 @@ async def test_put_profile_never_lowers_a_skill(client: httpx.AsyncClient, app: 
     async with app.state.session_factory() as db:  # l'acquis suit le niveau qui fait foi
         python = (
             await db.execute(
-                select(MemoryItem).where(MemoryItem.kind == "acquis", MemoryItem.title == "Python")
+                select(MemoryItem).where(MemoryItem.kind == "skill", MemoryItem.title == "Python")
             )
         ).scalar_one()
     assert python.meta["level"] == "validated"
