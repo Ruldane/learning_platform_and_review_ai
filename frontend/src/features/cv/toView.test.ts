@@ -59,10 +59,10 @@ describe("review view", () => {
   it("ignores a layout zone it does not know", () => {
     expect(
       toZoneViews([
-        { zone: "haut", original: 0.4, render: 0.3 },
-        { zone: "coin", original: 1, render: 1 },
+        { zone: "top", original: 0.4, render: 0.3 },
+        { zone: "corner", original: 1, render: 1 },
       ]),
-    ).toEqual([{ zone: "haut", original: 0.4, render: 0.3 }]);
+    ).toEqual([{ zone: "top", original: 0.4, render: 0.3 }]);
   });
 });
 

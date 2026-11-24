@@ -98,7 +98,7 @@ def similarity(score: int) -> Similarity:
         color=0.9,
         pages_original=1,
         pages_render=1,
-        zones=[ZoneDiff(zone="haut", original=0.30, render=0.20)],
+        zones=[ZoneDiff(zone="top", original=0.30, render=0.20)],
     )
 
 

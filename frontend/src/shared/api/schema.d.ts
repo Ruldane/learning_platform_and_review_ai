@@ -9909,7 +9909,7 @@ export interface components {
         };
         /**
          * FontUseOut
-         * @description Police libre employée pour un rôle ; `substitute` : elle remplace celle du PDF.
+         * @description The free font used for a role and whether it replaced the original font.
          */
         FontUseOut: {
             /** Family */
@@ -16822,7 +16822,7 @@ export interface components {
         };
         /**
          * TemplateCreated
-         * @description Capture du design lancée : le gabarit (`capturing`) et sa session `cv_capture`.
+         * @description The newly created template and its capture session.
          */
         TemplateCreated: {
             /** Session Id */
@@ -16832,8 +16832,7 @@ export interface components {
         };
         /**
          * TemplateOut
-         * @description `selectable` : faux pour un CV scanné ; `session_id` : la capture du design ;
-         *     `failure_reason` : phrase française d'un échec (sans donnée du CV).
+         * @description Template details, capture session, and any failure reason without CV content.
          */
         TemplateOut: {
             /** Active */
@@ -16873,8 +16872,7 @@ export interface components {
         };
         /**
          * TemplateSummaryOut
-         * @description `score` : ressemblance de la passe courante (0 à 100), `None` avant la première passe ;
-         *     `passes` : passes rendues.
+         * @description The current pass's similarity score and the number of completed passes.
          */
         TemplateSummaryOut: {
             /** Active */
@@ -17804,8 +17802,7 @@ export interface components {
         };
         /**
          * ZoneDiffOut
-         * @description Part d'encre (0 à 1) d'une zone de la page (`haut`, `milieu`, `bas`, `gauche`, `droite`)
-         *     dans l'original et dans le rendu de la passe courante.
+         * @description The original and rendered ink coverage in one page region, from 0 to 1.
          */
         ZoneDiffOut: {
             /** Original */

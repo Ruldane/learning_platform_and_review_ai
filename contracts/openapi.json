@@ -8411,7 +8411,7 @@
         "type": "object"
       },
       "FontUseOut": {
-        "description": "Police libre employée pour un rôle ; `substitute` : elle remplace celle du PDF.",
+        "description": "The free font used for a role and whether it replaced the original font.",
         "properties": {
           "family": {
             "title": "Family",
@@ -27521,7 +27521,7 @@
         "type": "object"
       },
       "TemplateCreated": {
-        "description": "Capture du design lancée : le gabarit (`capturing`) et sa session `cv_capture`.",
+        "description": "The newly created template and its capture session.",
         "properties": {
           "session_id": {
             "title": "Session Id",
@@ -27540,7 +27540,7 @@
         "type": "object"
       },
       "TemplateOut": {
-        "description": "`selectable` : faux pour un CV scanné ; `session_id` : la capture du design ;\n`failure_reason` : phrase française d'un échec (sans donnée du CV).",
+        "description": "Template details, capture session, and any failure reason without CV content.",
         "properties": {
           "active": {
             "title": "Active",
@@ -27657,7 +27657,7 @@
         "type": "object"
       },
       "TemplateSummaryOut": {
-        "description": "`score` : ressemblance de la passe courante (0 à 100), `None` avant la première passe ;\n`passes` : passes rendues.",
+        "description": "The current pass's similarity score and the number of completed passes.",
         "properties": {
           "active": {
             "title": "Active",
@@ -29861,7 +29861,7 @@
         "type": "object"
       },
       "ZoneDiffOut": {
-        "description": "Part d'encre (0 à 1) d'une zone de la page (`haut`, `milieu`, `bas`, `gauche`, `droite`)\ndans l'original et dans le rendu de la passe courante.",
+        "description": "The original and rendered ink coverage in one page region, from 0 to 1.",
         "properties": {
           "original": {
             "title": "Original",

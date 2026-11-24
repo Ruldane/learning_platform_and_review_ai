@@ -84,16 +84,16 @@ def test_identical_layouts_score_100() -> None:
 def test_blank_render_scores_low() -> None:
     sim = similarity([cv_page()], [blank_page()])
     assert sim.score < 30 and sim.ink == 0 and sim.text == 0 and sim.color == 0
-    assert "en moins" in describe(sim)
+    assert "less ink" in describe(sim)
 
 
 def test_wider_left_column_is_described() -> None:
     sim = similarity([cv_page(left=0.30)], [cv_page(left=0.45)])
     assert 30 < sim.score < 100
     text = describe(sim)
-    assert "gauche" in text and "d'encre en plus à gauche que l'original." in text
-    assert sim.shifts == {"haut": 0, "milieu": 0, "bas": 0} and "décalé" not in text
-    left = next(zone for zone in sim.zones if zone.zone == "gauche")
+    assert "more ink on the left than the original." in text
+    assert sim.shifts == {"top": 0, "middle": 0, "bottom": 0} and "shifts" not in text
+    left = next(zone for zone in sim.zones if zone.zone == "left")
     assert left.render > left.original
 
 
@@ -109,8 +109,8 @@ async def test_line_spacing_gap_stays_under_target_and_is_described() -> None:
     sim = similarity(await _text_pages(), await _text_pages(leading=15))
     assert sim.score < TARGET_SCORE
     text = describe(sim)
-    assert text.startswith(("L'encre du rendu ne recouvre", "Les blocs de texte du rendu"))
-    assert "surtout" in text
+    assert text.startswith(("Rendered ink overlaps", "Rendered text boxes overlap"))
+    assert "with the largest difference" in text
 
 
 async def test_large_shift_is_described() -> None:
@@ -118,38 +118,39 @@ async def test_large_shift_is_described() -> None:
     assert sim.score < TARGET_SCORE and describe(sim) != ""
 
 
-@pytest.mark.parametrize(("top", "way"), [(80, "vers le bas"), (64, "vers le haut")])
+@pytest.mark.parametrize(("top", "way"), [(80, "down"), (64, "up")])
 async def test_vertical_shift_is_described_with_its_direction(top: int, way: str) -> None:
     """Revue 6.4, round 2, R3 : un décalage de 8 pt est dit avec son sens, son ampleur et la
     piste de la marge haute, en plus de la zone du recouvrement le plus faible."""
     sim = similarity(await _text_pages(), await _text_pages(top=top))
-    assert sim.shifts == {"haut": top - 72, "milieu": top - 72, "bas": top - 72}, sim.shifts
+    assert sim.shifts == {"top": top - 72, "middle": top - 72, "bottom": top - 72}, sim.shifts
     text = describe(sim)
-    assert f"décalé {way} d'environ 8 pt dès le haut de la page : revoir la marge haute" in text
+    assert f"shifts {way} by about 8 pt from the top of the page" in text
+    assert "Check the top margin or header." in text
 
 
 async def test_growing_shift_points_to_line_spacing() -> None:
     """Interligne 15 au lieu de 14 : le décalage grandit en descendant ; la phrase nomme le tiers
     où il est le plus fort et l'interligne."""
     sim = similarity(await _text_pages(), await _text_pages(leading=15))
-    assert abs(sim.shifts["haut"]) < SHIFT_MIN_PT < sim.shifts["bas"], sim.shifts
+    assert abs(sim.shifts["top"]) < SHIFT_MIN_PT < sim.shifts["bottom"], sim.shifts
     text = describe(sim)
-    assert "décalé vers le bas d'au moins 30 pt, surtout en bas" in text
-    assert "revoir l'interligne" in text
+    assert "shifts down by at least 30 pt, mainly at the bottom" in text
+    assert "Check line spacing" in text
 
 
 def test_missing_page_counts() -> None:
     sim = similarity([cv_page(), cv_page()], [cv_page()])
     assert (sim.pages_original, sim.pages_render) == (2, 1)
-    assert sim.ink < 0.6 and "Pages : 1 au lieu de 2." in describe(sim)
-    assert describe(sim).endswith("Le rendu doit garder le nombre de pages de l'original.")
+    assert sim.ink < 0.6 and "The page count changed from 2 to 1." in describe(sim)
+    assert describe(sim).endswith("Match the original page count.")
 
 
 def test_page_count_gap_caps_score_under_target() -> None:
     """Une page de débordement presque vide : le reste est identique, la cible reste manquée."""
     overflow = PageLayout(WIDTH, HEIGHT, [_block(60, 60, 200, 70)], blank_page().image_png, "")
     sim = similarity([cv_page()], [cv_page(), overflow])
-    assert sim.score == TARGET_SCORE - 1 and "Pages : 2 au lieu de 1." in describe(sim)
+    assert sim.score == TARGET_SCORE - 1 and "The page count changed from 1 to 2." in describe(sim)
 
 
 def test_color_mismatch_lowers_color_part_and_names_the_accent() -> None:
@@ -158,34 +159,34 @@ def test_color_mismatch_lowers_color_part_and_names_the_accent() -> None:
     assert other.ink == same.ink == 1.0 and other.text == 1.0
     assert other.color < 0.9 and other.score < same.score
     assert other.accent_differs and not same.accent_differs
-    assert "La couleur d'accent du rendu diffère de celle de l'original." in describe(other)
+    assert "The rendered accent color differs from the original." in describe(other)
 
 
 def test_describe_keeps_four_largest_gaps_over_five_points() -> None:
     zones = [
-        ZoneDiff("haut", 0.50, 0.30),
-        ZoneDiff("milieu", 0.50, 0.53),  # 3 points : omis
-        ZoneDiff("bas", 0.10, 0.40),
-        ZoneDiff("gauche", 0.60, 0.18),
-        ZoneDiff("droite", 0.20, 0.27),
+        ZoneDiff("top", 0.50, 0.30),
+        ZoneDiff("middle", 0.50, 0.53),  # A three-point difference is below the threshold.
+        ZoneDiff("bottom", 0.10, 0.40),
+        ZoneDiff("left", 0.60, 0.18),
+        ZoneDiff("right", 0.20, 0.27),
     ]
     zone_sentences = (
-        "Le rendu a 42 % d'encre en moins à gauche que l'original. "
-        "Le rendu a 30 % d'encre en plus en bas que l'original. "
-        "Le rendu a 20 % d'encre en moins en haut que l'original. "
-        "Le rendu a 7 % d'encre en plus à droite que l'original."
+        "The render has 42% less ink on the left than the original. "
+        "The render has 30% more ink at the bottom than the original. "
+        "The render has 20% less ink at the top than the original. "
+        "The render has 7% more ink on the right than the original."
     )
     assert describe(Similarity(90, 0.9, 0.9, 0.9, 1, 1, zones)) == zone_sentences
-    # Sous la cible : la composante la plus faible d'abord.
+    # Below the target, put the lowest component score first.
     assert describe(Similarity(70, 0.6, 0.5, 0.9, 1, 1, zones)) == (
-        "Les blocs de texte du rendu ne recouvrent ceux de l'original qu'à 50 %. " + zone_sentences
+        "Rendered text boxes overlap the original by 50%. " + zone_sentences
     )
 
 
 def test_describe_under_target_always_says_something() -> None:
     weak_color = Similarity(80, 1.0, 1.0, 0.3, 1, 1, [])
     assert describe(weak_color) == (
-        "Les couleurs du rendu s'écartent de celles de l'original (ressemblance de 30 %)."
+        "The rendered colors differ from the original (30% similarity)."
     )
 
 

@@ -1,4 +1,4 @@
-/** Textes du CV ciblé : gabarit, revue des modifications, indicateurs, aperçu, versions, rapport. */
+/** Copy for templates, CV review, previews, and reports. */
 export const cvReview = {
   template: {
     compare: "Recreated template comparison",
@@ -27,11 +27,11 @@ export const cvReview = {
     zoneLess: "The recreated template has {n}% less ink {place} than your CV.",
     zoneMore: "The recreated template has {n}% more ink {place} than your CV.",
     place: {
-      haut: "at the top",
-      milieu: "in the middle",
-      bas: "at the bottom",
-      gauche: "on the left",
-      droite: "on the right",
+      top: "at the top",
+      middle: "in the middle",
+      bottom: "at the bottom",
+      left: "on the left",
+      right: "on the right",
     },
   },
   fontGap: {

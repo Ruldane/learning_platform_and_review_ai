@@ -16,6 +16,7 @@ from app.agents.tools.cv_schema import (
     MasterProfileData,
     SectionKey,
 )
+from app.agents.tools.template_grids import zone_code
 from app.agents.tools.template_similarity import Similarity, ZoneDiff, ZoneMatch
 from app.core.errors import AppError
 from app.providers.fonts.catalog import choose_font
@@ -96,9 +97,15 @@ def similarity_from_json(data: dict[str, Any]) -> Similarity:
     return Similarity(
         **{
             **data,
-            "zones": [ZoneDiff(**zone) for zone in data.get("zones", [])],
-            "matches": [ZoneMatch(**match) for match in data.get("matches", [])],
-            "shifts": dict(data.get("shifts", {})),
+            "zones": [
+                ZoneDiff(**{**entry, "zone": zone_code(entry["zone"])})
+                for entry in data.get("zones", [])
+            ],
+            "matches": [
+                ZoneMatch(**{**entry, "zone": zone_code(entry["zone"])})
+                for entry in data.get("matches", [])
+            ],
+            "shifts": {zone_code(zone): shift for zone, shift in data.get("shifts", {}).items()},
         }
     )
 

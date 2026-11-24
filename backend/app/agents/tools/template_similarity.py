@@ -1,13 +1,10 @@
-"""Score de ressemblance entre le CV d'origine et le rendu de son gabarit (SPEC 5.2 : « fidèle, pas
-identique au pixel » ; D120). Trois parts sur une grille de `GRID_PT` points : l'encre (cellules
-qui ont un pixel sombre), les boîtes de texte et les couleurs dominantes. L'encre et le texte se
-comparent **avec une cellule de tolérance** : une cellule compte si l'autre côté a de l'encre (du
-texte) dans son voisinage 3 × 3, pour qu'un décalage de quelques points (police substituée,
-moteur de rendu) ne fasse pas chuter le score, alors qu'un interligne différent le fait. Les
-écarts sont dits au Maquettiste en phrases françaises (`describe`).
+"""Score the resemblance between a CV and its rendered template (SPEC 5.2, D120).
 
-Module pur partagé par le Maquettiste (6.9) et les gabarits (6.10) : il vit dans `agents/tools`
-car le moteur n'importe aucune feature (contrat 6)."""
+Compare ink coverage, text boxes, and dominant colors on a grid. Allow one cell of
+tolerance in the ink and text overlap so small rendering shifts have less impact.
+`describe` explains the largest differences to the Layout Designer. Both the agent
+and the template feature use this module.
+"""
 
 import math
 from collections import Counter
@@ -55,25 +52,24 @@ __all__ = [
 TARGET_SCORE = 85
 MAX_FIX_PASSES = 3
 W_INK, W_TEXT, W_COLOR = 0.45, 0.35, 0.20
-# Description : écarts de part d'encre de plus de 5 points seulement, 4 phrases au plus.
+# Report up to four region differences larger than five percentage points.
 ZONE_THRESHOLD = 5
 MAX_ZONE_SENTENCES = 4
-TOLERANT_SHARE = 0.5  # part du recouvrement tolérant dans l'encre et le texte (D120)
-_FULL = 0.99  # une composante à 99 % ou plus n'est pas « la plus faible »
+TOLERANT_SHARE = 0.5  # Weight of the tolerance-adjusted ink and text overlap (D120).
+_FULL = 0.99  # Treat scores of 99% or more as fully matched.
 
 _ZONE_WORDS: dict[Zone, str] = {
-    "haut": "en haut",
-    "milieu": "au milieu",
-    "bas": "en bas",
-    "gauche": "à gauche",
-    "droite": "à droite",
+    "top": "at the top",
+    "middle": "in the middle",
+    "bottom": "at the bottom",
+    "left": "on the left",
+    "right": "on the right",
 }
 
 
 @dataclass(frozen=True)
 class ZoneDiff:
-    """Part d'encre (0 à 1 : cellules encrées / cellules de la zone, toutes pages) d'une zone :
-    tiers haut, milieu, bas ; moitiés gauche, droite."""
+    """Share of inked cells in a region across all pages."""
 
     zone: Zone
     original: float
@@ -82,7 +78,7 @@ class ZoneDiff:
 
 @dataclass(frozen=True)
 class ZoneMatch:
-    """Recouvrement (avec tolérance) de l'encre et du texte dans une zone, de 0 à 1."""
+    """Ink and text overlap scores in a region, from 0 to 1."""
 
     zone: Zone
     ink: float
@@ -91,9 +87,10 @@ class ZoneMatch:
 
 @dataclass(frozen=True)
 class Similarity:
-    """`score` est plafonné à `TARGET_SCORE − 1` si le nombre de pages diffère ;
-    `accent_differs` : la couleur d'accent du rendu n'est pas celle de l'original ; `shifts` :
-    décalage vertical du rendu (points, positif vers le bas) par tiers haut, milieu, bas."""
+    """Comparison with a score below the target when the page counts differ.
+
+    `shifts` reports vertical offsets in points per page third, positive downward.
+    """
 
     score: int
     ink: float
@@ -109,9 +106,7 @@ class Similarity:
 
 @dataclass
 class _Overlap:
-    """Comptes de l'encre (ou du texte) des deux côtés, au total et par zone : recouvrement
-    tolérant (cellules de A près de B + cellules de B près de A) / (cellules de A + de B), et IoU
-    stricte (A et B / A ou B)."""
+    """Track tolerance-adjusted overlap and strict intersection-over-union by region."""
 
     hit: Counter[Zone | None] = field(default_factory=Counter)
     total: Counter[Zone | None] = field(default_factory=Counter)
@@ -133,7 +128,7 @@ class _Overlap:
                 counter[zone] += int(view.sum())
 
     def ratio(self, zone: Zone | None = None) -> float:
-        """Moyenne du recouvrement tolérant et de l'IoU stricte (aucune cellule : 1)."""
+        """Average the two overlap scores. Two empty regions match fully."""
         tolerant = self.hit[zone] / self.total[zone] if self.total[zone] else 1.0
         strict = self.inter[zone] / self.union[zone] if self.union[zone] else 1.0
         return TOLERANT_SHARE * tolerant + (1 - TOLERANT_SHARE) * strict
@@ -185,10 +180,11 @@ class _Tally:
 
 
 def similarity(original: Sequence[PageLayout], render: Sequence[PageLayout]) -> Similarity:
-    """Pages appariées par rang (page absente : grille vide) ; encre et texte : recouvrement avec
-    une cellule de tolérance sur toutes les pages (aucune cellule des deux côtés : 1) ; score
-    arrondi au plus proche, plafonné sous la cible si le nombre de pages diffère. `ValueError` si
-    une image n'est pas à la taille de sa page (72 dpi)."""
+    """Compare pages in order, using a blank grid for a missing page.
+
+    Round the overall score and keep it below the target if the page counts differ.
+    Invalid image dimensions at 72 dpi raise `ValueError`.
+    """
     tally = _Tally()
     for index in range(max(len(original), len(render))):
         page_o = original[index] if index < len(original) else None
@@ -217,8 +213,7 @@ def similarity(original: Sequence[PageLayout], render: Sequence[PageLayout]) -> 
 
 
 def _weakest(sim: Similarity) -> str | None:
-    """La composante la plus faible et la zone où elle l'est le plus (`None` si toutes sont à
-    99 % ou plus)."""
+    """Describe the weakest component and region when the score is below 99%."""
     parts = {"ink": sim.ink, "text": sim.text, "color": sim.color}
     name = min(parts, key=lambda key: parts[key])
     value = parts[name]
@@ -226,52 +221,36 @@ def _weakest(sim: Similarity) -> str | None:
         return None
     percent = math.floor(100 * value)
     if name == "color":
-        return (
-            "Les couleurs du rendu s'écartent de celles de l'original "
-            f"(ressemblance de {percent} %)."
-        )
-    subject = (
-        "L'encre du rendu ne recouvre celle"
-        if name == "ink"
-        else "Les blocs de texte du rendu ne recouvrent ceux"
-    )
-    sentence = f"{subject} de l'original qu'à {percent} %"
+        return f"The rendered colors differ from the original ({percent}% similarity)."
+    lead = "Rendered ink overlaps" if name == "ink" else "Rendered text boxes overlap"
+    sentence = f"{lead} the original by {percent}%"
     if sim.matches:
         zone = min(sim.matches, key=lambda match: getattr(match, name)).zone
-        sentence += f", surtout {_ZONE_WORDS[zone]}"
+        sentence += f", with the largest difference {_ZONE_WORDS[zone]}"
     return sentence + "."
 
 
 def _shift_sentence(shifts: dict[Zone, int]) -> str | None:
-    """Sens et ampleur du plus grand décalage vertical (`SHIFT_MIN_PT` ou plus), et la piste de
-    correction : dès le haut et à peu près égal partout → marge haute ; plus fort plus bas →
-    interligne ou espaces entre blocs."""
+    """Describe the largest vertical shift and which layout settings could account for it."""
     if not shifts:
         return None
-    # À égalité (plafond atteint dans deux tiers), le tiers le plus bas : c'est là que l'écart naît.
+    # For equal shifts, prefer the lower affected region.
     zone, points = max(reversed(list(shifts.items())), key=lambda item: abs(item[1]))
     if abs(points) < SHIFT_MIN_PT:
         return None
-    amount = "d'au moins" if abs(points) >= SHIFT_MAX_PT else "d'environ"
-    sentence = (
-        f"Le contenu du rendu est décalé {'vers le bas' if points > 0 else 'vers le haut'} "
-        f"{amount} {abs(points)} pt"
-    )
-    if zone == "haut" or abs(points - shifts.get("haut", 0)) < SHIFT_MIN_PT:
-        return f"{sentence} dès le haut de la page : revoir la marge haute ou l'en-tête."
+    amount = "at least" if abs(points) >= SHIFT_MAX_PT else "about"
+    direction = "down" if points > 0 else "up"
+    sentence = f"The rendered content shifts {direction} by {amount} {abs(points)} pt"
+    if zone == "top" or abs(points - shifts.get("top", 0)) < SHIFT_MIN_PT:
+        return f"{sentence} from the top of the page. Check the top margin or header."
     return (
-        f"{sentence}, surtout {_ZONE_WORDS[zone]} (l'écart grandit en descendant) : "
-        "revoir l'interligne ou les espaces entre les blocs."
+        f"{sentence}, mainly {_ZONE_WORDS[zone]}. The gap grows down the page. "
+        "Check line spacing or gaps between blocks."
     )
 
 
 def describe(sim: Similarity) -> str:
-    """Phrases pour le Maquettiste. Sous `TARGET_SCORE`, toujours au moins une : la composante la
-    plus faible et sa zone ; puis le décalage vertical s'il atteint `SHIFT_MIN_PT` (sens, zone,
-    piste de correction) ; la couleur d'accent si elle diffère ; les zones dont la part d'encre
-    diffère de plus de `ZONE_THRESHOLD` points (les plus grands écarts d'abord,
-    `MAX_ZONE_SENTENCES` au plus) ; le nombre de pages s'il diffère. Chaîne vide si rien n'est à
-    signaler."""
+    """Describe the significant differences for the Layout Designer."""
     sentences: list[str] = []
     weakest = _weakest(sim) if sim.score < TARGET_SCORE else None
     if weakest:
@@ -280,18 +259,18 @@ def describe(sim: Similarity) -> str:
     if shift:
         sentences.append(shift)
     if sim.accent_differs:
-        sentences.append("La couleur d'accent du rendu diffère de celle de l'original.")
+        sentences.append("The rendered accent color differs from the original.")
     gaps = sorted(
         ((round(100 * (zone.render - zone.original)), zone.zone) for zone in sim.zones),
         key=lambda gap: -abs(gap[0]),
     )
     sentences += [
-        f"Le rendu a {abs(points)} % d'encre en {'plus' if points > 0 else 'moins'} "
-        f"{_ZONE_WORDS[zone]} que l'original."
+        f"The render has {abs(points)}% {'more' if points > 0 else 'less'} ink "
+        f"{_ZONE_WORDS[zone]} than the original."
         for points, zone in gaps
         if abs(points) > ZONE_THRESHOLD
     ][:MAX_ZONE_SENTENCES]
     if sim.pages_render != sim.pages_original:
-        sentences.append(f"Pages : {sim.pages_render} au lieu de {sim.pages_original}.")
-        sentences.append("Le rendu doit garder le nombre de pages de l'original.")
+        sentences.append(f"The page count changed from {sim.pages_original} to {sim.pages_render}.")
+        sentences.append("Match the original page count.")
     return " ".join(sentences)
