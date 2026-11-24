@@ -12912,8 +12912,11 @@ export interface components {
         OfferOut: {
             /** Company */
             company: string | null;
-            /** Level */
-            level: string;
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "junior" | "mid_level" | "senior" | "lead" | "unknown";
             /** Remote */
             remote: string | null;
             /** Salary */

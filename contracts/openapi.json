@@ -16523,6 +16523,13 @@
             "title": "Company"
           },
           "level": {
+            "enum": [
+              "junior",
+              "mid_level",
+              "senior",
+              "lead",
+              "unknown"
+            ],
             "title": "Level",
             "type": "string"
           },

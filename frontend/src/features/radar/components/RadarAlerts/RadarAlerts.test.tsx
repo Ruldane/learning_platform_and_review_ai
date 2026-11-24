@@ -15,8 +15,8 @@ describe("RadarAlerts", () => {
         ]}
       />,
     );
-    expect(screen.getByRole("heading", { level: 2, name: "Alertes" })).toBeVisible();
-    const list = screen.getByRole("list", { name: "Alertes du relevé" });
+    expect(screen.getByRole("heading", { level: 2, name: "Alerts" })).toBeVisible();
+    const list = screen.getByRole("list", { name: "Scan alerts" });
     expect(list).toHaveTextContent(
       "Kubernetes : Demandée dans 62 % des offres, absente de ton programme.",
     );
@@ -31,7 +31,7 @@ describe("RadarAlerts", () => {
 
   it("says there is no alert", () => {
     render(<RadarAlerts alerts={[]} />);
-    expect(screen.getByText("Aucune alerte pour ce relevé.")).toBeInTheDocument();
+    expect(screen.getByText("No alerts for this scan.")).toBeInTheDocument();
     expect(screen.queryByRole("list")).toBeNull();
   });
 });

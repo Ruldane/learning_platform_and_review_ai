@@ -35,7 +35,7 @@ _DEAD_CODES = {
 def radar_in_progress(run_id: str) -> AppError:
     return AppError(
         "radar_in_progress",
-        "Un relevé du radar est déjà en cours : attends sa fin.",
+        "A market scan is already running. Wait for it to finish.",
         409,
         {"run_id": run_id},
     )
@@ -44,13 +44,13 @@ def radar_in_progress(run_id: str) -> AppError:
 def radar_role_required() -> AppError:
     return AppError(
         "radar_role_required",
-        "Indique le poste visé pour lancer un relevé du radar.",
+        "Enter a target role to run a market scan.",
         409,
     )
 
 
 def radar_run_not_found() -> AppError:
-    return AppError("radar_run_not_found", "Relevé du radar introuvable.", 404)
+    return AppError("radar_run_not_found", "Market scan not found.", 404)
 
 
 async def defaults(db: AsyncSession, user_id: str) -> tuple[str, str]:

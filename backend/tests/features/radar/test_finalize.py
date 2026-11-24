@@ -47,8 +47,10 @@ async def test_finalize_ranking_evolution_alerts(radar: Radar) -> None:
     assert rust.new and rust.delta_share is None
     # 10 offres analysées, Python 60 %, Linux 100 % : demandées, absentes du programme.
     assert [a.skill for a in second.alerts] == ["Linux", "Python"]
-    assert second.alerts[0].message.startswith("Demandée dans 100 %")
-    assert second.alerts[1].message == "Demandée dans 60 % des offres, absente de ton programme."
+    assert second.alerts[0].message.startswith("Requested in 100%")
+    assert second.alerts[1].message == (
+        "Requested in 60% of postings and missing from your program."
+    )
 
 
 async def test_evolution_compares_the_same_role_and_zone_only(radar: Radar) -> None:

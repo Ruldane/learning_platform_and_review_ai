@@ -49,7 +49,7 @@ export const radar = {
     remote: "Remote work: {remote}",
     level: {
       junior: "Junior",
-      confirme: "Mid-level",
+      mid_level: "Mid-level",
       senior: "Senior",
       lead: "Lead",
     },

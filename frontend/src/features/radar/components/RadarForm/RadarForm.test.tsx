@@ -8,9 +8,9 @@ describe("RadarForm", () => {
     const user = userEvent.setup();
     const onRun = vi.fn();
     render(<RadarForm role="Data engineer" zone="France" onRun={onRun} running={false} />);
-    expect(screen.getByLabelText("Poste visé")).toHaveValue("Data engineer");
-    expect(screen.getByLabelText("Zone")).toHaveValue("France");
-    await user.click(screen.getByRole("button", { name: "Lancer un relevé" }));
+    expect(screen.getByLabelText("Target role")).toHaveValue("Data engineer");
+    expect(screen.getByLabelText("Area")).toHaveValue("France");
+    await user.click(screen.getByRole("button", { name: "Run a scan" }));
     expect(onRun).toHaveBeenCalledWith({ role: "Data engineer", zone: "France" });
   });
 
@@ -18,8 +18,8 @@ describe("RadarForm", () => {
     const user = userEvent.setup();
     const onRun = vi.fn();
     render(<RadarForm role="" zone="France" onRun={onRun} running={false} />);
-    await user.type(screen.getByLabelText("Poste visé"), "  Analyste données ");
-    await user.clear(screen.getByLabelText("Zone"));
+    await user.type(screen.getByLabelText("Target role"), "  Analyste données ");
+    await user.clear(screen.getByLabelText("Area"));
     await user.keyboard("{Enter}");
     expect(onRun).toHaveBeenCalledWith({ role: "Analyste données", zone: null });
   });
@@ -28,20 +28,20 @@ describe("RadarForm", () => {
     const user = userEvent.setup();
     const onRun = vi.fn();
     render(<RadarForm role="   " zone="France" onRun={onRun} running={false} />);
-    await user.click(screen.getByRole("button", { name: "Lancer un relevé" }));
+    await user.click(screen.getByRole("button", { name: "Run a scan" }));
     expect(onRun).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert")).toHaveTextContent("Indique le poste visé.");
-    expect(screen.getByLabelText("Poste visé")).toBeInvalid();
+    expect(screen.getByRole("alert")).toHaveTextContent("Enter the target role.");
+    expect(screen.getByLabelText("Target role")).toBeInvalid();
   });
 
   it("waits for the running run: fields and button are disabled and the form is busy", async () => {
     const user = userEvent.setup();
     const onRun = vi.fn();
     render(<RadarForm role="Data engineer" zone="France" onRun={onRun} running />);
-    const button = screen.getByRole("button", { name: "Relevé en cours…" });
+    const button = screen.getByRole("button", { name: "Scan in progress…" });
     expect(button).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByLabelText("Poste visé")).toHaveAttribute("readonly");
-    expect(screen.getByRole("form", { name: "Lancer un relevé du marché" })).toHaveAttribute(
+    expect(screen.getByLabelText("Target role")).toHaveAttribute("readonly");
+    expect(screen.getByRole("form", { name: "Run a market scan" })).toHaveAttribute(
       "aria-busy",
       "true",
     );
@@ -53,25 +53,25 @@ describe("RadarForm", () => {
     const user = userEvent.setup();
     const onRun = vi.fn();
     render(<RadarForm role="D" zone="France" onRun={onRun} running={false} />);
-    await user.click(screen.getByRole("button", { name: "Lancer un relevé" }));
+    await user.click(screen.getByRole("button", { name: "Run a scan" }));
     expect(onRun).not.toHaveBeenCalled();
     expect(screen.getByRole("alert")).toHaveTextContent(
-      "Le poste doit faire au moins 2 caractères.",
+      "The role must be at least 2 characters.",
     );
-    expect(screen.getByLabelText("Poste visé")).toBeInvalid();
+    expect(screen.getByLabelText("Target role")).toBeInvalid();
   });
 
   it("refuses a one-character zone, clears the error once corrected, and accepts 2 characters", async () => {
     const user = userEvent.setup();
     const onRun = vi.fn();
     render(<RadarForm role="Data engineer" zone="F" onRun={onRun} running={false} />);
-    await user.click(screen.getByRole("button", { name: "Lancer un relevé" }));
+    await user.click(screen.getByRole("button", { name: "Run a scan" }));
     expect(onRun).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert")).toHaveTextContent("La zone doit faire au moins 2 caractères");
-    expect(screen.getByLabelText("Zone")).toBeInvalid();
-    await user.type(screen.getByLabelText("Zone"), "R");
+    expect(screen.getByRole("alert")).toHaveTextContent("The area must be at least 2 characters");
+    expect(screen.getByLabelText("Area")).toBeInvalid();
+    await user.type(screen.getByLabelText("Area"), "R");
     expect(screen.queryByRole("alert")).toBeNull();
-    await user.click(screen.getByRole("button", { name: "Lancer un relevé" }));
+    await user.click(screen.getByRole("button", { name: "Run a scan" }));
     expect(onRun).toHaveBeenCalledWith({ role: "Data engineer", zone: "FR" });
   });
 
@@ -79,9 +79,9 @@ describe("RadarForm", () => {
     const user = userEvent.setup();
     const onRun = vi.fn();
     render(<RadarForm role="  D " zone="" onRun={onRun} running={false} />);
-    await user.click(screen.getByRole("button", { name: "Lancer un relevé" }));
+    await user.click(screen.getByRole("button", { name: "Run a scan" }));
     expect(onRun).not.toHaveBeenCalled();
-    expect(screen.getByLabelText("Poste visé")).toBeInvalid();
+    expect(screen.getByLabelText("Target role")).toBeInvalid();
   });
 
   it("shows the server's refusal on the field it names", () => {
@@ -91,16 +91,14 @@ describe("RadarForm", () => {
         zone="France"
         onRun={vi.fn()}
         running={false}
-        roleError="Indique le poste visé pour lancer un relevé."
-        zoneError="Cette zone n'est pas acceptée."
+        roleError="Enter the target role to run a scan."
+        zoneError="The area is invalid."
       />,
     );
-    expect(screen.getByLabelText("Poste visé")).toBeInvalid();
-    expect(screen.getByLabelText("Poste visé")).toHaveAccessibleDescription(
-      "Indique le poste visé pour lancer un relevé.",
+    expect(screen.getByLabelText("Target role")).toBeInvalid();
+    expect(screen.getByLabelText("Target role")).toHaveAccessibleDescription(
+      "Enter the target role to run a scan.",
     );
-    expect(screen.getByLabelText("Zone")).toHaveAccessibleDescription(
-      "Cette zone n'est pas acceptée.",
-    );
+    expect(screen.getByLabelText("Area")).toHaveAccessibleDescription("The area is invalid.");
   });
 });

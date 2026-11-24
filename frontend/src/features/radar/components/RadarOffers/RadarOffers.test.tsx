@@ -8,7 +8,7 @@ const offer = (over: Partial<RadarOfferView>): RadarOfferView => ({
   company: "Exemple Tech",
   url: "https://example.org/jobs/1",
   score: 78,
-  level: "confirme",
+  level: "mid_level",
   remote: null,
   salary: null,
   ...over,
@@ -19,7 +19,7 @@ function rowOf(title: string): HTMLElement {
 }
 
 describe("RadarOffers", () => {
-  it("writes the score and marks 70 and above with the words « Bon match »", () => {
+  it("shows a good match at scores of 70 and above", () => {
     render(
       <RadarOffers
         offers={[
@@ -29,11 +29,11 @@ describe("RadarOffers", () => {
         ]}
       />,
     );
-    expect(rowOf("Data engineer")).toHaveTextContent("score 78 sur 100");
-    expect(within(rowOf("Data engineer")).getByText("Bon match")).toBeInTheDocument();
-    expect(within(rowOf("Analyste")).getByText("Bon match")).toBeInTheDocument();
-    expect(rowOf("Chef de projet")).toHaveTextContent("score 69 sur 100");
-    expect(within(rowOf("Chef de projet")).queryByText("Bon match")).toBeNull();
+    expect(rowOf("Data engineer")).toHaveTextContent("score 78 out of 100");
+    expect(within(rowOf("Data engineer")).getByText("Good match")).toBeInTheDocument();
+    expect(within(rowOf("Analyste")).getByText("Good match")).toBeInTheDocument();
+    expect(rowOf("Chef de projet")).toHaveTextContent("score 69 out of 100");
+    expect(within(rowOf("Chef de projet")).queryByText("Good match")).toBeNull();
   });
 
   it("opens each offer in a new tab without opener or referrer", () => {
@@ -48,21 +48,21 @@ describe("RadarOffers", () => {
     render(
       <RadarOffers
         offers={[
-          offer({ remote: "partiel", salary: "45 000 à 55 000 €", level: "senior" }),
-          offer({ title: "Sans détail", url: "https://example.org/jobs/9", level: "inconnu" }),
+          offer({ remote: "partiel", salary: "45 000 à 55 000 €" }),
+          offer({ title: "Sans détail", url: "https://example.org/jobs/9", level: "unknown" }),
         ]}
       />,
     );
     expect(rowOf("Data engineer")).toHaveTextContent(
-      "Senior · Télétravail : partiel · Salaire indiqué : 45 000 à 55 000 €",
+      "Mid-level · Remote work: partiel · Stated salary: 45 000 à 55 000 €",
     );
-    expect(rowOf("Sans détail")).not.toHaveTextContent("Salaire");
-    expect(rowOf("Sans détail")).not.toHaveTextContent("Inconnu");
+    expect(rowOf("Sans détail")).not.toHaveTextContent("Stated salary");
+    expect(rowOf("Sans détail")).not.toHaveTextContent("Unknown");
   });
 
   it("says there is no offer", () => {
     render(<RadarOffers offers={[]} />);
-    expect(screen.getByText("Aucune offre à afficher pour ce relevé.")).toBeInTheDocument();
+    expect(screen.getByText("No postings to show for this scan.")).toBeInTheDocument();
     expect(screen.queryByRole("list")).toBeNull();
   });
 

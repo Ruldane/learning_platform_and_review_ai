@@ -11,7 +11,7 @@ import re
 import unicodedata
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, BeforeValidator, Field
 
 from app.agents.runtime.prose import Prose
 from app.core.skills import normalize_skill_name
@@ -25,6 +25,18 @@ PostingLevel = Literal["junior", "mid_level", "senior", "lead", "unknown"]
 # Assez de texte pour une offre (la route de 6.6 et l'Analyste appliquent la même borne).
 MIN_POSTING_CHARS = 300
 MIN_POSTING_WORDS = 50
+
+
+def _read_checkpoint_level(value: object) -> object:
+    """Normalize levels from sessions checkpointed before the English migration."""
+    if value == "confirme":
+        return "mid_level"
+    if value == "inconnu":
+        return "unknown"
+    return value
+
+
+CheckpointPostingLevel = Annotated[PostingLevel, BeforeValidator(_read_checkpoint_level)]
 
 
 def enough_text(text: str) -> bool:
@@ -94,7 +106,7 @@ class PostingAnalysis(BaseModel):
     is_job_posting: bool
     title: str = Field(min_length=2, max_length=200)
     company: str | None = Field(default=None, max_length=200)
-    level: PostingLevel
+    level: CheckpointPostingLevel
     location: str | None = Field(default=None, max_length=120)
     remote: str | None = Field(default=None, max_length=60)
     language: str = Field(pattern=r"^[a-z]{2}$")
@@ -104,16 +116,6 @@ class PostingAnalysis(BaseModel):
     tools: list[Short] = Field(default_factory=list, max_length=30)
     skills: list[SkillNeed] = Field(default_factory=list, max_length=40)
     apply_url: str | None = Field(default=None, max_length=2048)
-
-    @field_validator("level", mode="before")
-    @classmethod
-    def read_checkpoint_level(cls, value: object) -> object:
-        """Read analyses from sessions checkpointed before migration 0077."""
-        if value == "confirme":
-            return "mid_level"
-        if value == "inconnu":
-            return "unknown"
-        return value
 
 
 def keyword_problems(analysis: PostingAnalysis, text: str) -> list[str]:

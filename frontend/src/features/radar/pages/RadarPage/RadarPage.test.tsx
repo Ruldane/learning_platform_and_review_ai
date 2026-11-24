@@ -7,7 +7,7 @@ import { RadarPage } from "./RadarPage";
 const setup = (api: Parameters<typeof renderRadar>[1] = {}, path?: string) =>
   renderRadar((createSocket) => <RadarPage createSocket={createSocket} />, api, path);
 
-describe("RadarPage : résultat et historique", () => {
+describe("RadarPage results and history", () => {
   it("shows the latest finished run: what was read, the ranking, the alerts and the offers", async () => {
     setup({
       runs: [
@@ -29,30 +29,30 @@ describe("RadarPage : résultat et historique", () => {
         }),
       ],
     });
-    expect(await screen.findByText("47 offres lues · 6 bloquées · 41 analysées")).toBeVisible();
-    const ranking = screen.getByRole("list", { name: "Classement des compétences" });
+    expect(await screen.findByText("47 postings read · 6 blocked · 41 analyzed")).toBeVisible();
+    const ranking = screen.getByRole("list", { name: "Skills ranking" });
     expect(within(ranking).getByText("+8 pts")).toBeVisible();
-    expect(within(ranking).getByText("nouvelle")).toBeVisible();
+    expect(within(ranking).getByText("new")).toBeVisible();
     expect(within(ranking).getByText("−2 pts")).toBeVisible();
     expect(
       screen.getByText(/Demandée dans 55 % des offres, absente de ton programme./),
     ).toBeVisible();
-    expect(screen.getByText("score 78 sur 100")).toBeVisible();
-    expect(screen.getByText("Bon match")).toBeVisible();
+    expect(screen.getByText("score 78 out of 100")).toBeVisible();
+    expect(screen.getByText("Good match")).toBeVisible();
   });
 
-  it("writes « premier relevé » when there is nothing to compare with", async () => {
+  it("marks the first scan when there is nothing to compare with", async () => {
     setup({ runs: [radarRun("r1", { ranking: [trendOut("SQL", 1, 0.62)] })] });
-    expect(await screen.findByText("premier relevé")).toBeVisible();
+    expect(await screen.findByText("first scan")).toBeVisible();
   });
 
   it("warns about a reduced sample and says how many read offers were not analyzed", async () => {
     setup({
       runs: [radarRun("r1", { read_count: 18, analyzed: 12, low_sample: true, not_analyzed: 6 })],
     });
-    expect(await screen.findByRole("note")).toHaveTextContent("Échantillon réduit");
-    expect(screen.getByText("6 offres lues n'ont pas été analysées.")).toBeVisible();
-    expect(screen.getByText(/18 offres lues/)).toBeVisible();
+    expect(await screen.findByRole("note")).toHaveTextContent("Small sample");
+    expect(screen.getByText("6 postings read weren’t analyzed.")).toBeVisible();
+    expect(screen.getByText(/18 postings read/)).toBeVisible();
   });
 
   it("says why the latest run failed, in plain words", async () => {
@@ -60,10 +60,10 @@ describe("RadarPage : résultat et historique", () => {
       runs: [radarRun("r3", { status: "failed", error_code: "search_unavailable", ranking: [] })],
     });
     const failure = (
-      await screen.findByRole("heading", { name: "Ce relevé n'a pas abouti." })
+      await screen.findByRole("heading", { name: "This scan didn’t complete." })
     ).closest("section") as HTMLElement;
     expect(failure).toHaveTextContent(
-      "Raison : la recherche d'offres n'a répondu à aucune requête, donc aucune offre n'a pu être lue.",
+      "Reason: the job search didn’t answer any request, so no postings could be read.",
     );
     expect(screen.queryByText(/search_unavailable/)).toBeNull();
   });
@@ -73,20 +73,20 @@ describe("RadarPage : résultat et historique", () => {
       runs: [radarRun("r3", { status: "failed", error_code: "analysis_failed", ranking: [] })],
     });
     const failure = (
-      await screen.findByRole("heading", { name: "Ce relevé n'a pas abouti." })
+      await screen.findByRole("heading", { name: "This scan didn’t complete." })
     ).closest("section") as HTMLElement;
-    expect(failure).toHaveTextContent("n'ont pas pu être analysées");
+    expect(failure).toHaveTextContent("the postings read couldn’t be analyzed");
     expect(screen.queryByText(/analysis_failed/)).toBeNull();
   });
 
   it("falls back to a general reason for an unknown error code", async () => {
     setup({ runs: [radarRun("r3", { status: "failed", error_code: "RuntimeError" })] });
     const failure = (
-      await screen.findByRole("heading", { name: "Ce relevé n'a pas abouti." })
+      await screen.findByRole("heading", { name: "This scan didn’t complete." })
     ).closest("section") as HTMLElement;
-    expect(failure).toHaveTextContent("Raison : une panne inattendue a interrompu le relevé.");
-    const history = within(screen.getByRole("list", { name: "Relevés précédents" }));
-    expect(history.getByText(/Raison : une panne inattendue/)).toBeVisible();
+    expect(failure).toHaveTextContent("Reason: an unexpected failure interrupted the scan.");
+    const history = within(screen.getByRole("list", { name: "Previous scans" }));
+    expect(history.getByText(/Reason: an unexpected failure/)).toBeVisible();
   });
 
   it("lists the history and opens an older run in place", async () => {
@@ -108,19 +108,19 @@ describe("RadarPage : résultat et historique", () => {
         }),
       ],
     });
-    const history = await screen.findByRole("list", { name: "Relevés précédents" });
+    const history = await screen.findByRole("list", { name: "Previous scans" });
     const rows = within(history).getAllByRole("listitem");
     expect(rows).toHaveLength(2);
-    expect(rows[0]).toHaveTextContent("En échec");
-    expect(rows[0]).toHaveTextContent("le relevé a été arrêté avant la fin");
-    expect(rows[1]).toHaveTextContent("Terminé");
-    expect(rows[1]).toHaveTextContent("25 lues · 6 bloquées · 20 analysées · échantillon réduit");
+    expect(rows[0]).toHaveTextContent("Failed");
+    expect(rows[0]).toHaveTextContent("the scan was stopped before the end");
+    expect(rows[1]).toHaveTextContent("Done");
+    expect(rows[1]).toHaveTextContent("25 read · 6 blocked · 20 analyzed · small sample");
     expect(rows[0]).toHaveAttribute("aria-current", "true");
 
     await user.click(within(rows[1]!).getByRole("link"));
     expect(router.state.location.pathname).toBe("/carriere/radar/r2");
     expect(await screen.findByText("Excel")).toBeVisible();
-    const after = within(await screen.findByRole("list", { name: "Relevés précédents" }));
+    const after = within(await screen.findByRole("list", { name: "Previous scans" }));
     expect(after.getAllByRole("listitem")[1]).toHaveAttribute("aria-current", "true");
   });
 
@@ -129,12 +129,12 @@ describe("RadarPage : résultat et historique", () => {
       { runs: [radarRun("r1", { ranking: [trendOut("Excel", 1, 0.8)] })] },
       "/carriere/radar/zzz",
     );
-    expect(await screen.findByRole("heading", { name: "Relevé introuvable" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Voir le radar" })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "Scan not found" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "See the radar" })).toBeVisible();
   });
 
   it("says the history is empty before any run", async () => {
     setup();
-    expect(await screen.findByText("Aucun relevé pour l'instant.")).toBeVisible();
+    expect(await screen.findByText("No scans yet.")).toBeVisible();
   });
 });

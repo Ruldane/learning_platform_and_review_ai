@@ -19,38 +19,38 @@ const RUNNING = radarRun("r9", {
   blocked_domains: [],
 });
 
-describe("RadarPage : lancer et suivre un relevé", () => {
+describe("RadarPage launch and live updates", () => {
   it("launches a first run from the proposed values, follows it live, then shows the result", async () => {
     const { user, state, finish, sockets, router } = setup();
     expect(
-      await screen.findByText("Aucun relevé pour l'instant", { selector: "h2" }),
+      await screen.findByRole("heading", { name: "No scans yet" }),
     ).toBeVisible();
-    expect(screen.getByLabelText("Poste visé")).toHaveValue("Data engineer");
-    expect(screen.getByLabelText("Zone")).toHaveValue("France");
+    expect(screen.getByLabelText("Target role")).toHaveValue("Data engineer");
+    expect(screen.getByLabelText("Area")).toHaveValue("France");
 
-    await user.clear(screen.getByLabelText("Poste visé"));
-    await user.type(screen.getByLabelText("Poste visé"), "Analyste données");
-    await user.click(screen.getByRole("button", { name: "Lancer un relevé" }));
+    await user.clear(screen.getByLabelText("Target role"));
+    await user.type(screen.getByLabelText("Target role"), "Analyste données");
+    await user.click(screen.getByRole("button", { name: "Run a scan" }));
 
     expect(state.bodies).toEqual([{ role: "Analyste données", zone: "France" }]);
     await waitFor(() => expect(router.state.location.pathname).toBe("/carriere/radar/new1"));
-    const title = await screen.findByRole("heading", { name: "Relevé en cours" });
+    const title = await screen.findByRole("heading", { name: "Scan in progress" });
     expect(title).toBeVisible();
-    expect(title).toHaveFocus(); // le formulaire a été remplacé par la page du relevé : pas de body
-    expect(screen.getByRole("button", { name: "Relevé en cours…" })).toHaveAttribute(
+    expect(title).toHaveFocus(); // Focus moves to the scan as it replaces the form.
+    expect(screen.getByRole("button", { name: "Scan in progress…" })).toHaveAttribute(
       "aria-disabled",
       "true",
     );
 
     const stream = await openStream(sockets, "sess-new1");
-    // La session suivie est celle du 202 : le serveur ne la donne dans aucune liste.
+    // The launch response is the only source of this session ID.
     expect(state.sessionReads).toBe(0);
     const events = councilEvents("sess-new1");
-    stream.push(events.message("m1", "J'ai trouvé 52 pages d'offres à lire.", "scout"));
-    stream.push(events.message("m2", "Je classe les compétences demandées.", "analyst"));
-    expect(await screen.findByText("J'ai trouvé 52 pages d'offres à lire.")).toBeVisible();
-    expect(screen.getByText("Je classe les compétences demandées.")).toBeVisible();
-    expect(screen.queryByRole("heading", { name: "Compétences les plus demandées" })).toBeNull();
+    stream.push(events.message("m1", "I found 52 job postings to read.", "scout"));
+    stream.push(events.message("m2", "I’m ranking the requested skills.", "analyst"));
+    expect(await screen.findByText("I found 52 job postings to read.")).toBeVisible();
+    expect(screen.getByText("I’m ranking the requested skills.")).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "Most in-demand skills" })).toBeNull();
 
     finish("new1", {
       ranking: [trendOut("SQL", 1, 0.62)],
@@ -59,9 +59,9 @@ describe("RadarPage : lancer et suivre un relevé", () => {
       analyzed: 41,
     });
     stream.push(events.completed());
-    expect(await screen.findByText("47 offres lues · 6 bloquées · 41 analysées")).toBeVisible();
-    expect(screen.getByRole("heading", { name: "Compétences les plus demandées" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Lancer un relevé" })).toHaveAttribute(
+    expect(await screen.findByText("47 postings read · 6 blocked · 41 analyzed")).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Most in-demand skills" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Run a scan" })).toHaveAttribute(
       "aria-disabled",
       "false",
     );
@@ -73,8 +73,8 @@ describe("RadarPage : lancer et suivre un relevé", () => {
       sessions: [sessionOut("sess-r9", "running", radarSession("r9"))],
     });
     await waitFor(() => expect(router.state.location.pathname).toBe("/carriere/radar/r9"));
-    expect(await screen.findByRole("heading", { name: "Relevé en cours" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "Relevé en cours…" })).toHaveAttribute(
+    expect(await screen.findByRole("heading", { name: "Scan in progress" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Scan in progress…" })).toHaveAttribute(
       "aria-disabled",
       "true",
     );
@@ -82,20 +82,20 @@ describe("RadarPage : lancer et suivre un relevé", () => {
     const stream = await openStream(sockets, "sess-r9");
     finish("r9", { ranking: [trendOut("Python", 1, 0.5)], analyzed: 41 });
     stream.push(councilEvents("sess-r9").completed());
-    expect(await screen.findByText("47 offres lues · 6 bloquées · 41 analysées")).toBeVisible();
+    expect(await screen.findByText("47 postings read · 6 blocked · 41 analyzed")).toBeVisible();
     expect(screen.getByText("Python")).toBeVisible();
   });
 
   it("follows the open run on a 409 radar_in_progress instead of starting another", async () => {
     const { user, state, sockets, router } = setup({ runs: [radarRun("r1")] });
-    await screen.findByText("47 offres lues · 6 bloquées · 41 analysées");
-    // Un relevé démarre ailleurs (le lundi planifié, un autre onglet) après l'ouverture de la page.
+    await screen.findByText("47 postings read · 6 blocked · 41 analyzed");
+    // Another tab or the scheduler starts a scan after the page opens.
     state.runs.unshift(RUNNING);
     state.sessions.push(sessionOut("sess-r9", "running", radarSession("r9")));
 
-    await user.click(screen.getByRole("button", { name: "Lancer un relevé" }));
+    await user.click(screen.getByRole("button", { name: "Run a scan" }));
     await waitFor(() => expect(router.state.location.pathname).toBe("/carriere/radar/r9"));
-    expect(await screen.findByText("Un relevé était déjà en cours : on le suit.")).toBeVisible();
+    expect(await screen.findByText("A scan was already in progress: following it.")).toBeVisible();
     await openStream(sockets, "sess-r9");
     expect(state.runs.filter((run) => run.status === "running")).toHaveLength(1);
   });
@@ -103,34 +103,34 @@ describe("RadarPage : lancer et suivre un relevé", () => {
   it("says on the role field that a role is required (409 radar_role_required)", async () => {
     const { user } = setup({
       startReply: () =>
-        HttpResponse.json(apiError("radar_role_required", "Indique le poste visé."), {
+        HttpResponse.json(apiError("radar_role_required", "Enter a target role."), {
           status: 409,
         }),
     });
-    await user.click(await screen.findByRole("button", { name: "Lancer un relevé" }));
-    expect(await screen.findByLabelText("Poste visé")).toHaveAccessibleDescription(
-      "Indique le poste visé pour lancer un relevé.",
+    await user.click(await screen.findByRole("button", { name: "Run a scan" }));
+    expect(await screen.findByLabelText("Target role")).toHaveAccessibleDescription(
+      "Enter the target role to run a scan.",
     );
   });
 
   it("names the refused field of a 422 without echoing a value", async () => {
     const { user } = setup({
       startReply: () =>
-        HttpResponse.json(apiError("validation_error", "Requête invalide.", { fields: ["zone"] }), {
+        HttpResponse.json(apiError("validation_error", "Invalid request.", { fields: ["zone"] }), {
           status: 422,
         }),
     });
-    await user.click(await screen.findByRole("button", { name: "Lancer un relevé" }));
-    expect(await screen.findByLabelText("Zone")).toHaveAccessibleDescription(
-      "Cette zone n'est pas acceptée : il faut entre 2 et 120 caractères.",
+    await user.click(await screen.findByRole("button", { name: "Run a scan" }));
+    expect(await screen.findByLabelText("Area")).toHaveAccessibleDescription(
+      "This area isn’t accepted: it must be between 2 and 120 characters.",
     );
-    expect(screen.getByLabelText("Poste visé")).toBeValid();
+    expect(screen.getByLabelText("Target role")).toBeValid();
   });
 
   it("does not send a role or a zone of one character", async () => {
     const { user, state } = setup({ defaults: { role: "D", zone: "France" } });
-    await user.click(await screen.findByRole("button", { name: "Lancer un relevé" }));
-    expect(screen.getByLabelText("Poste visé")).toBeInvalid();
+    await user.click(await screen.findByRole("button", { name: "Run a scan" }));
+    expect(screen.getByLabelText("Target role")).toBeInvalid();
     expect(state.bodies).toEqual([]);
   });
 
@@ -145,7 +145,7 @@ describe("RadarPage : lancer et suivre un relevé", () => {
         }),
       ],
     });
-    const list = await screen.findByRole("list", { name: "Offres du relevé" });
+    const list = await screen.findByRole("list", { name: "Scan postings" });
     expect(within(list).getAllByRole("listitem")).toHaveLength(2);
   });
 });

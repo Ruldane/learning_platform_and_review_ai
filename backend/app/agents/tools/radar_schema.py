@@ -7,10 +7,12 @@ d'offres publics ; l'extraction est contrôlée par le code (`analyst_radar`) av
 import re
 from collections.abc import Sequence
 from itertools import zip_longest
-from typing import Literal, NamedTuple
+from typing import NamedTuple
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from pydantic import BaseModel, Field
+
+from app.agents.tools.posting_schema import CheckpointPostingLevel
 
 # Pages d'offres publiques (SPEC 10) : une requête ciblée par site.
 SITE_HINTS = (
@@ -26,8 +28,6 @@ TEXT_MAX = 4000  # caractères d'une offre montrés à l'Analyste
 READ_BATCH = 10  # liens lus par passage de la boucle de lecture
 READ_PARALLEL = 5  # lectures simultanées
 TIME_RANGE = "month"  # fenêtre de la recherche : les offres du mois
-
-type Level = Literal["junior", "confirme", "senior", "lead", "inconnu"]
 
 
 class RadarSearch(NamedTuple):
@@ -170,7 +170,7 @@ class RadarItem(BaseModel):
     is_job_posting: bool
     title: str | None = Field(default=None, max_length=200)
     company: str | None = Field(default=None, max_length=200)
-    level: Level = "inconnu"
+    level: CheckpointPostingLevel = "unknown"
     remote: str | None = Field(default=None, max_length=60)
     salary: str | None = Field(default=None, max_length=80)
     skills: list[SkillNeedLite] = Field(default_factory=list, max_length=15)

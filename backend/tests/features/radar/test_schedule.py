@@ -125,24 +125,26 @@ async def test_weekly_run_ended_without_any_analysis_is_retried_within_the_week(
 
 async def test_weekly_skipped_after_manual_run(radar: Radar, launcher: RecordingLauncher) -> None:
     await _settings(radar, radar_role=ROLE)
-    await radar.new_run(status="done", created_at=MONDAY_9H - timedelta(hours=40))  # samedi : 46
-    assert await run_weekly_radar(radar.rt, MONDAY_9H) == 1  # la semaine précédente ne compte pas
-    await _end_run(radar)
-    assert await run_weekly_radar(radar.rt, MONDAY_9H + timedelta(days=7)) == 1
-    # Un relevé manuel créé dans la semaine : le passage est sauté.
+    await radar.new_run(status="done", created_at=MONDAY_9H - timedelta(hours=40))
+    assert await run_weekly_radar(radar.rt, MONDAY_9H) == 1
+    await _end_run(radar, started_at=MONDAY_9H)
+    second_monday = MONDAY_9H + timedelta(days=7)
+    assert await run_weekly_radar(radar.rt, second_monday) == 1
     next_monday = MONDAY_9H + timedelta(days=14)
-    await _end_run(radar)
+    await _end_run(radar, started_at=second_monday)
     await radar.new_run(status="done", created_at=next_monday - timedelta(hours=2))
     assert await run_weekly_radar(radar.rt, next_monday) == 0
     assert (await _jobs(radar))[-1].status == "skipped"
     assert len(launcher.started) == 2
 
 
-async def _end_run(radar: Radar) -> None:
-    """Termine le dernier relevé (fini, session close) pour libérer la place du suivant."""
+async def _end_run(radar: Radar, *, started_at: datetime | None = None) -> None:
+    """Finish the latest scan and pin its start to the simulated week when provided."""
     async with radar.factory() as db:
         stmt = select(RadarRun).order_by(RadarRun.created_at.desc()).limit(1)
         row = (await db.execute(stmt)).scalar_one()
+        if started_at is not None:
+            row.created_at = started_at
         row.status = "done"
         await db.commit()
 

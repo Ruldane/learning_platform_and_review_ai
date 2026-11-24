@@ -182,8 +182,8 @@ def test_alerts_are_capped_in_ranking_order() -> None:
 
 
 def test_alert_message_wording() -> None:
-    assert alert_message(0.62) == "Demandée dans 62 % des offres, absente de ton programme."
-    assert alert_message(0.5) == "Demandée dans 50 % des offres, absente de ton programme."
+    assert alert_message(0.62) == "Requested in 62% of postings and missing from your program."
+    assert alert_message(0.5) == "Requested in 50% of postings and missing from your program."
     (alert,) = program_alerts(alerting(0.62), 20, set(), {})
     assert alert.message == alert_message(0.62)
 

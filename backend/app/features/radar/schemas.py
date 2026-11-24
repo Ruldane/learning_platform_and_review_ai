@@ -6,6 +6,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, StringConstraints
 
+from app.agents.tools.posting_schema import PostingLevel
 from app.db.models.daily import RadarStatus, RadarTrigger
 
 Label = Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=120)]
@@ -56,7 +57,7 @@ class OfferOut(BaseModel):
     url: str
     title: str | None
     company: str | None
-    level: str
+    level: PostingLevel
     remote: str | None
     salary: str | None
     score: int

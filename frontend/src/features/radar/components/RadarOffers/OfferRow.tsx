@@ -3,18 +3,13 @@ import { t } from "@/shared/i18n/t";
 import { ExternalLink } from "@/shared/ui/ExternalLink";
 import type { RadarOfferView } from "../viewTypes";
 
-/** Le score à partir duquel une offre est « Bon match » (`HIGH_MATCH` côté serveur). */
+/** The score at which a posting counts as a good match (`HIGH_MATCH` on the server). */
 const GOOD_MATCH = 70;
 
-const LEVELS: Record<string, "junior" | "confirme" | "senior" | "lead"> = {
-  junior: "junior",
-  confirme: "confirme",
-  senior: "senior",
-  lead: "lead",
-};
+const KNOWN_LEVELS = ["junior", "mid_level", "senior", "lead"] as const;
 
 function details(offer: RadarOfferView): string[] {
-  const known = LEVELS[offer.level];
+  const known = KNOWN_LEVELS.find((level) => level === offer.level);
   return [
     known ? t(`radar.offers.level.${known}`) : null,
     offer.remote ? t("radar.offers.remote", { remote: offer.remote }) : null,
@@ -22,7 +17,7 @@ function details(offer: RadarOfferView): string[] {
   ].filter((part): part is string => Boolean(part));
 }
 
-/** Une offre : titre (lien extérieur), entreprise, score écrit, libellé « Bon match » et détails lus. */
+/** Show the posting link, company, match score and details found in the source. */
 export function OfferRow({ offer }: { offer: RadarOfferView }) {
   const good = offer.score >= GOOD_MATCH;
   const facts = details(offer);

@@ -55,7 +55,7 @@ def item(ref: str, **over: Any) -> dict[str, Any]:
         "is_job_posting": True,
         "title": "Ingénieur IA",
         "company": "Société Fictive",
-        "level": "confirme",
+        "level": "mid_level",
         "remote": "partiel",
         "salary": "45 000 à 55 000 euros",
         "skills": [{"name": "Python", "required": True}, {"name": "RAG", "required": False}],

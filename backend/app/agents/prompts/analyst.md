@@ -56,7 +56,7 @@ Answer: `items`, **one item per page**, with:
 - `is_job_posting`: false if the page is not a job posting (article, login page, list of
   postings without details, CV, unrelated text); in that case leave everything else empty;
 - `title`: the job title as written, `company`: the company, otherwise `null`;
-- `level`: "junior", "confirme", "senior", "lead" or "inconnu" (unknown);
+- `level`: "junior", "mid_level", "senior", "lead" or "unknown";
 - `remote`: remote work as the page states it ("total", "partiel", "non"…), otherwise `null`;
 - `salary`: the pay **copied as written in the page**, otherwise `null`; never compute one and
   never infer one;
