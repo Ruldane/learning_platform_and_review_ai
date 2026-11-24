@@ -44,8 +44,8 @@ from app.providers.pdf.base import PdfLayout, PdfUnreadable, RenderFailed
 
 logger = logging.getLogger(__name__)
 
-RENDER_FAILED = "Le PDF n'a pas pu être généré : réessaie dans un instant."
-NO_TEMPLATE = "Le modèle de CV de cette revue n'est plus lisible : relance une revue."
+RENDER_FAILED = "The PDF could not be generated. Try again in a moment."
+NO_TEMPLATE = "The CV template could not be read. Start a new review."
 
 
 @dataclass(frozen=True)

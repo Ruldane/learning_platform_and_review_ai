@@ -26,21 +26,21 @@ _GENDER = re.compile(r"\(\s*[a-z](\s*/\s*[a-z]){1,2}\s*\)", re.IGNORECASE)
 
 
 def review_not_found() -> AppError:
-    return AppError("review_not_found", "Revue introuvable.", 404)
+    return AppError("review_not_found", "CV review not found.", 404)
 
 
 def modification_not_found() -> AppError:
-    return AppError("modification_not_found", "Modification introuvable.", 404)
+    return AppError("modification_not_found", "Modification not found.", 404)
 
 
 def version_not_found() -> AppError:
-    return AppError("version_not_found", "Version du CV introuvable.", 404)
+    return AppError("version_not_found", "CV version not found.", 404)
 
 
 def review_closed() -> AppError:
     return AppError(
         "review_closed",
-        "Cette revue est terminée : lance une nouvelle revue pour produire un autre CV.",
+        "Start a new review to generate another CV.",
         409,
     )
 

@@ -26,7 +26,7 @@ MAX_BLOCK_CHARS = 200
 
 
 def template_not_found() -> AppError:
-    return AppError("template_not_found", "Modèle de CV introuvable.", 404)
+    return AppError("template_not_found", "CV template not found.", 404)
 
 
 def _visible(page: PageLayout) -> list[TextBlock]:
@@ -115,7 +115,7 @@ def _sections(profile: MasterProfileData) -> list[CvSection]:
     sections: list[CvSection] = []
     if profile.summary is not None:
         sections.append(
-            CvSection(key="summary", title="Profil", items=_lines([profile.summary.text]))
+            CvSection(key="summary", title="Profile", items=_lines([profile.summary.text]))
         )
     experiences = [
         CvEntry(
@@ -139,10 +139,10 @@ def _sections(profile: MasterProfileData) -> list[CvSection]:
         [" ".join(filter(None, (lang.name, lang.level))) for lang in profile.languages]
     )
     groups: list[tuple[SectionKey, str, list[CvEntry], list[CvLine]]] = [
-        ("experience", "Expériences", experiences, []),
-        ("education", "Formation", education, []),
-        ("skills", "Compétences", [], skills),
-        ("languages", "Langues", [], languages),
+        ("experience", "Experience", experiences, []),
+        ("education", "Education", education, []),
+        ("skills", "Skills", [], skills),
+        ("languages", "Languages", [], languages),
     ]
     for key, title, entries, items in groups:
         if entries or items:

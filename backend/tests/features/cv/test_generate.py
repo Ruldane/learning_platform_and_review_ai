@@ -198,7 +198,7 @@ async def test_render_failure_is_failed_version(
     fake_renderer.failures = 1
     v = await generate(client, review_id)
     assert v["status"] == "failed"
-    assert v["failure_reason"] == "Le PDF n'a pas pu être généré : réessaie dans un instant."
+    assert v["failure_reason"] == "The PDF could not be generated. Try again in a moment."
     assert (await generate(client, review_id))["status"] == "ready"
 
 

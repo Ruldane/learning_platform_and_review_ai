@@ -33,13 +33,13 @@ from app.providers.pdf.base import PdfLayout
 logger = logging.getLogger(__name__)
 
 DESIGNER = "designer"  # l'agent qui capture le design (niveau `vision`, D125)
-LAUNCH_FAILED = "La capture du modèle n'a pas pu démarrer : relance-la."
+LAUNCH_FAILED = "Template capture could not start. Try again."
 
 
 def vision_unavailable() -> AppError:
     return AppError(
         "vision_unavailable",
-        "La capture du design demande un modèle qui lit les images. Active-le dans les réglages.",
+        "Template capture needs a model that can read images. Enable one in Settings.",
         409,
     )
 
@@ -47,7 +47,7 @@ def vision_unavailable() -> AppError:
 def one_source() -> AppError:
     return AppError(
         "validation_error",
-        "Requête invalide : vérifie les champs signalés.",
+        "Invalid request. Check the highlighted fields.",
         422,
         {"fields": ["file", "document_id"]},
     )

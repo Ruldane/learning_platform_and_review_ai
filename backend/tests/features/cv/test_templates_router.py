@@ -104,10 +104,7 @@ async def test_vision_disabled_is_409(
     assert r.status_code == 409
     assert r.json()["error"] == {
         "code": "vision_unavailable",
-        "message": (
-            "La capture du design demande un modèle qui lit les images. "
-            "Active-le dans les réglages."
-        ),
+        "message": "Template capture needs a model that can read images. Enable one in Settings.",
         "details": None,
     }
     assert launcher_spy.started == []

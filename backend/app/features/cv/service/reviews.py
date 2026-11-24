@@ -52,26 +52,22 @@ OUTPUT_KIND = "cv_output"  # la question de sortie du parcours (« Que veux-tu m
 
 def profile_required() -> AppError:
     return AppError(
-        "profile_required", "Valide d'abord ton profil maître : la revue s'appuie sur lui.", 409
+        "profile_required", "Approve your master profile before starting the CV review.", 409
     )
 
 
 def template_required() -> AppError:
-    return AppError(
-        "template_required", "Choisis d'abord un modèle de CV prêt : le CV ciblé le reprend.", 409
-    )
+    return AppError("template_required", "Choose a ready CV template for the tailored CV.", 409)
 
 
 def posting_not_ready() -> AppError:
-    return AppError(
-        "posting_not_ready", "Cette offre n'est pas encore analysée : attends son analyse.", 409
-    )
+    return AppError("posting_not_ready", "Wait for the posting analysis to finish.", 409)
 
 
 def review_in_progress(review_id: str) -> AppError:
     return AppError(
         "review_in_progress",
-        "Une revue de CV de cette offre est en cours : termine-la d'abord.",
+        "Finish the CV review already in progress for this posting.",
         409,
         {"review_id": review_id},
     )

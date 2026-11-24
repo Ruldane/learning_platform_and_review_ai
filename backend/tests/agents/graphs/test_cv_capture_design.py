@@ -42,7 +42,7 @@ async def test_design_capture_reaches_target_in_two_passes(
         }
     ]
     [fix] = run.prompts(FIX_REQUEST)
-    assert "Passe 1 : ressemblance de 72 %." in fix and "Écarts mesurés" in fix
+    assert "Pass 1: similarity of 72 %." in fix and "Gaps measured by the code" in fix
     assert await run.said() == [
         "Passe 1 : le rendu ressemble à ton CV à 72 %.",
         "Passe 2 : le rendu ressemble à ton CV à 88 %.",
@@ -97,7 +97,7 @@ async def test_replay_between_passes_renders_once(
     G34 : on compte les appels au port, pas les rendus du faux)."""
     design_store.scores = [60, 70, 90]
     models = designer()
-    models.block = lambda agent, prompt: FIX_REQUEST in prompt and "Passe 2 :" in prompt
+    models.block = lambda agent, prompt: FIX_REQUEST in prompt and "Pass 2:" in prompt
     first = await design_runner(models)
     await wait_until(lambda: models.blocked == 1)
     assert design_store.render_calls == {1: 1, 2: 1}

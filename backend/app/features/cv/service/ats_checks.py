@@ -1,7 +1,5 @@
-"""Lisibilité d'un CV par une machine (SPEC 5.3 étape 4, 5.4 ; D120) : cinq contrôles sur la mise
-en page extraite du PDF (`PdfLayout`) et le contenu attendu (`CvContent`). Aucune garantie de
-passage n'est promise. Les `detail` sont des phrases françaises faites de nombres et de noms de
-section du code, **jamais** de texte du CV (donnée personnelle, 17.2)."""
+"""Check CV readability from the PDF layout and expected content (SPEC 5.3, 5.4, D120).
+Details use counts and standard section names to protect CV content (SPEC 17.2)."""
 
 import re
 from collections.abc import Iterator, Sequence
@@ -34,13 +32,13 @@ STANDARD_HEADINGS: dict[SectionKey, tuple[str, ...]] = {
     "links": ("Liens", "Sites", "En ligne", "Links", "Online", "Portfolio"),
 }  # fmt: skip
 _SECTION_NAMES: dict[SectionKey, str] = {
-    "summary": "profil",
-    "experience": "expérience",
-    "education": "formation",
-    "skills": "compétences",
-    "projects": "projets",
-    "languages": "langues",
-    "links": "liens",
+    "summary": "profile",
+    "experience": "experience",
+    "education": "education",
+    "skills": "skills",
+    "projects": "projects",
+    "languages": "languages",
+    "links": "links",
 }
 MIN_BODY_PT = 10.0
 BODY_SHARE = 0.95
@@ -64,11 +62,11 @@ def _visible(layout: PdfLayout) -> Iterator[tuple[float, TextBlock]]:
 def _selectable(layout: PdfLayout) -> AtsCheck:
     hidden = sum(block.invisible for page in layout.pages for block in page.blocks)
     if not layout.selectable:
-        detail = "Le texte n'est pas sélectionnable : un parseur ne lit rien (PDF scanné ?)."
+        detail = "The text is not selectable. The PDF may be a scan."
     elif hidden:
-        detail = f"{hidden} ligne(s) de texte invisible (couleur du fond ou taille minuscule)."
+        detail = f"Hidden lines: {hidden}. The text is too small or matches the background."
     else:
-        detail = "Texte sélectionnable, aucun texte invisible."
+        detail = "Text is selectable and all lines are visible."
     return AtsCheck("selectable_text", layout.selectable and not hidden, detail)
 
 
@@ -139,9 +137,9 @@ def _reading_order(layout: PdfLayout, content: CvContent) -> AtsCheck:
         found += sum(needle in segment for needle in expected[rank])
     passed = total == 0 or found >= READING_SHARE * total
     detail = (
-        f"{found} ligne(s) sur {total} lues dans leur section, dans l'ordre du texte du PDF."
+        f"{found} of {total} lines appear in their section in the PDF reading order."
         if total
-        else "Aucune ligne à retrouver."
+        else "There are no lines to match."
     )
     return AtsCheck("reading_order", passed, detail)
 
@@ -155,9 +153,9 @@ def _standard_headings(content: CvContent) -> AtsCheck:
     ]
     total = len(content.sections)
     if odd:
-        detail = f"Intitulé peu courant pour : {', '.join(odd)} ({total - len(odd)} sur {total})."
+        detail = f"Unusual headings for {', '.join(odd)} ({total - len(odd)} of {total} standard)."
     else:
-        detail = f"Intitulés standard ({total} sur {total})."
+        detail = f"Standard headings: {total} of {total}."
     return AtsCheck("standard_headings", not odd, detail)
 
 
@@ -195,11 +193,11 @@ def _contact_in_body(layout: PdfLayout, content: CvContent) -> AtsCheck:
         if found:
             break
     if not emails and not phones:
-        detail = "Aucun email ni téléphone dans les coordonnées."
+        detail = "No email address or phone number was provided."
     elif found:
-        detail = "Email ou téléphone lisible dans le corps de la page."
+        detail = "The email address or phone number is readable in the page body."
     else:
-        detail = "Email et téléphone introuvables hors des bandes haute et basse de la page."
+        detail = "No email address or phone number was found in the page body."
     return AtsCheck("contact_in_body", found, detail)
 
 
@@ -213,9 +211,9 @@ def _font_sizes(layout: PdfLayout) -> AtsCheck:
     share = large / total if total else 0.0
     percent = int(share * 100)
     detail = (
-        f"{percent} % des caractères à {MIN_BODY_PT:g} pt ou plus."
+        f"{percent}% of characters are {MIN_BODY_PT:g} pt or larger."
         if total
-        else "Aucun caractère visible."
+        else "No characters are visible."
     )
     return AtsCheck("font_sizes", total > 0 and share >= BODY_SHARE, detail)
 

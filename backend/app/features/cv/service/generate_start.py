@@ -47,7 +47,7 @@ _NOT_WAITING = ("stale_interrupt", "session_not_resumable", "interrupt_required"
 def generation_in_progress(version_id: str) -> AppError:
     return AppError(
         "generation_in_progress",
-        "Un PDF de cette revue est déjà en cours de génération : attends-le.",
+        "A PDF for this review is being generated. Wait for it to finish.",
         409,
         {"version_id": version_id},
     )
@@ -56,8 +56,7 @@ def generation_in_progress(version_id: str) -> AppError:
 def review_not_waiting() -> AppError:
     return AppError(
         "review_not_waiting",
-        "La revue n'attend pas encore ton choix : attends la question « Que veux-tu "
-        "maintenant ? ».",
+        "Wait until the CV review asks what you want to do next.",
         409,
     )
 
