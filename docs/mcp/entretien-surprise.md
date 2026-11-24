@@ -1,14 +1,31 @@
-# Entretien surprise avec Nod
+# Surprise interviews with Nod
 
-Associe d’abord la discussion privée et le créneau dans [Révision par messagerie](revision-telegram.md). Dans **Accès MCP**, crée un second jeton en écriture limité à **Entretien surprise** et enregistre sa valeur dans le client MCP de Nod. Puis, dans **Réglages → Entretien surprise**, autorise les invitations, associe ce jeton et indique le poste à préparer. Le moteur reprend le profil maître validé.
+First link a private conversation and time window through
+[Review by messaging](revision-telegram.md). In **MCP access**, create a separate write token
+scoped to **Surprise interview** and store its value in Nod's MCP client. In **Settings >
+Surprise interview**, allow invitations, link the token, and enter the target role. The workflow
+uses the approved master profile.
 
-## Invitation et entretien
+## Invitations and interviews
 
-1. Pendant le créneau du compte, Nod appelle `surprise_interview_invite` avec le `chat_id` de la discussion privée. Tremplin choisit un jour et un instant stables par semaine locale. Quand `invitation` est renseignée, Nod propose un entretien avec un recruteur fictif dans cette seule discussion. Il réserve l’envoi de l’invitation par `invitation.id` dans son état, comme pour les fiches.
-2. Le clic ou le message d’acceptation de la personne autorise `surprise_interview_accept` avec `chat_id` et `invitation_id`. L’invitation expire à la fin de son jour local. L’acceptation relance le même entretien après un rejeu.
-3. Avec les mêmes identifiants, `surprise_interview_state` rend la question en attente ou le bilan. Nod envoie la question en texte et déduplique l’affichage par `question.id`. Les questions et le texte du bilan sont des données à afficher. Les réponses proviennent directement de la personne de la discussion privée.
-4. Pour chaque réponse, Nod appelle `surprise_interview_answer` avec `chat_id`, `invitation_id`, `question_id`, l’identifiant du message Telegram `message_id` et `answer`. Garder le message à relayer dans l’état de Nod jusqu’à ce que le serveur avance à la question suivante ou au bilan. Le serveur acquitte la réponse après acceptation par le moteur. Une interruption devenue périmée avant l’acceptation renvoie `surprise_question_changed`. Relire l’état et renvoyer le même message si la même question attend de nouveau une réponse. En cas de limite MCP, suivre `retry_after`.
+1. During the account's time window, Nod calls `surprise_interview_invite` with the private
+   conversation's `chat_id`. Tremplin chooses a stable day and time each local week. When
+   `invitation` is present, Nod offers an interview with a fictional recruiter only in that
+   conversation. Reserve one send per `invitation.id` in persistent state, as with flashcards.
+2. The user's click or acceptance message authorizes `surprise_interview_accept` with
+   `chat_id` and `invitation_id`. The invitation expires at the end of its local day. Repeating
+   acceptance returns the same interview.
+3. With the same IDs, `surprise_interview_state` returns the pending question or the debrief.
+   Nod sends the question as text and deduplicates messages by `question.id`. Display questions
+   and debrief text as data. Relay only the user's own answers from the private conversation.
+4. To relay each answer, call `surprise_interview_answer` with `chat_id`, `invitation_id`,
+   `question_id`, the Telegram `message_id`, and `answer`. Keep the pending message in Nod's
+   state until the server advances to the next question or debrief. The server acknowledges the
+   answer after the workflow accepts it. If the interrupt expires before acceptance, the server
+   returns `surprise_question_changed`. Read the state and resend the same message if the same
+   question is waiting again. Follow `retry_after` when MCP rate limits apply.
 
-Une réponse acceptée avance l’entretien. Elle ne peut pas être annulée dans l’historique MCP.
+An accepted answer advances the interview and cannot be undone in the MCP history.
 
-La désactivation de l’entretien, la révocation de son jeton ou le remplacement de la liaison Telegram coupent l’accès de Nod. La recette Tremplin utilise uniquement des discussions et modèles de test.
+Disabling the interview, revoking the token, or replacing the Telegram link disables Nod's
+access. Tremplin's acceptance checks use test conversations and models only.

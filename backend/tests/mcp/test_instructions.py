@@ -6,7 +6,7 @@ from app.mcp.instructions import INSTRUCTIONS
 from tests.mcp.support import Mcp
 
 DOCS = Path(__file__).resolve().parents[3] / "docs" / "mcp"
-BEGIN, END = "<!-- instructions-serveur:début -->", "<!-- instructions-serveur:fin -->"
+BEGIN, END = "<!-- server-instructions:begin -->", "<!-- server-instructions:end -->"
 
 
 async def test_initialize_and_discover_carry_the_instructions(mcp: Mcp) -> None:
