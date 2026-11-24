@@ -29,7 +29,7 @@ def week(theme: str, minutes: list[int], skill: str) -> dict[str, Any]:
     tasks = [
         {
             "title": f"Lire le chapitre {i}",
-            "type": "lire",
+            "type": "read",
             "minutes": m,
             "done_criterion": "Notes prises",
         }
@@ -38,7 +38,7 @@ def week(theme: str, minutes: list[int], skill: str) -> dict[str, Any]:
     tasks += [
         {
             "title": f"Pratiquer {theme}",
-            "type": "pratiquer",
+            "type": "practice",
             "minutes": 45,
             "done_criterion": "Un résultat montrable",
         },

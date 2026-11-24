@@ -67,7 +67,7 @@ def next_monday(today: date) -> date:
 def is_review(task: TaskDraft) -> bool:
     """Révision d'un acquis (produite par `apply_known`) : tâche « déjà acquise »."""
     return (
-        task.type == "lire"
+        task.type == "read"
         and task.minutes == REVIEW_MINUTES
         and task.title.startswith(REVIEW_PREFIX)
         and task.done_criterion == REVIEW_CRITERION
@@ -81,7 +81,7 @@ def _week_tasks(week: WeekDraft) -> list[TaskDraft]:
 def _review_of(module: ModuleDraft) -> ModuleDraft:
     task = TaskDraft(
         title=(REVIEW_PREFIX + review_subject(module.title))[:120],
-        type="lire",
+        type="read",
         minutes=REVIEW_MINUTES,
         done_criterion=REVIEW_CRITERION,
     )
@@ -128,11 +128,11 @@ def ensure_week_rules(week: WeekDraft, rank: int) -> WeekDraft:
     body = [t for t in last.tasks if t.type != "quiz"]
     quizzes = [t for t in last.tasks if t.type == "quiz"]
     tasks = [task for module in modules for task in module.tasks]
-    if not any(task.type == "pratiquer" for task in tasks):
+    if not any(task.type == "practice" for task in tasks):
         body.append(
             TaskDraft(
                 title=f"Pratiquer : {week.theme}"[:120],
-                type="pratiquer",
+                type="practice",
                 minutes=PRACTICE_MINUTES,
                 done_criterion=_PRACTICE_CRITERION,
             )

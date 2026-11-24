@@ -71,7 +71,7 @@ async def seed_task(
         module_id=module.id,
         rank=0,
         title=title,
-        type="pratiquer",
+        type="practice",
         minutes=minutes,
         done_criterion="Résultat vérifié",
         planned_date=MONDAY,

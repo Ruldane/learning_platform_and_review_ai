@@ -3,7 +3,6 @@ réponses, instantané des liens en JSON, nettoyage du résumé (références in
 variables du prompt et textes annoncés. Aucune entrée-sortie ici."""
 
 from dataclasses import asdict
-from datetime import date
 from typing import Any
 
 from app.agents.prompts.loader import untrusted
@@ -97,10 +96,6 @@ def _task_json(task: TaskRef) -> dict[str, Any]:
     return {**asdict(task), "planned_date": task.planned_date.isoformat()}
 
 
-def _task_of(data: dict[str, Any]) -> TaskRef:
-    return TaskRef(**{**data, "planned_date": date.fromisoformat(data["planned_date"])})
-
-
 def links_json(links: ProgramLinks) -> dict[str, Any]:
     return {
         "modules": [asdict(m) for m in links.modules],
@@ -111,7 +106,7 @@ def links_json(links: ProgramLinks) -> dict[str, Any]:
 def links_of(data: dict[str, Any]) -> ProgramLinks:
     return ProgramLinks(
         [ModuleRef(**m) for m in data.get("modules", [])],
-        [_task_of(t) for t in data.get("tasks", [])],
+        [TaskRef.from_checkpoint(t) for t in data.get("tasks", [])],
     )
 
 

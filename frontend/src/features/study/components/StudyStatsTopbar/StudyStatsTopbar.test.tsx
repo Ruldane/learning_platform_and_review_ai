@@ -5,8 +5,8 @@ import { StudyStatsTopbar } from "./StudyStatsTopbar";
 describe("StudyStatsTopbar", () => {
   it("shows streak and week hours", () => {
     render(<StudyStatsTopbar stats={{ streakDays: 5, weekMinutes: 210 }} failed={false} />);
-    expect(screen.getByText("Série : 5 jours")).toBeInTheDocument();
-    expect(screen.getByText("Cette semaine : 3 h 30")).toBeInTheDocument();
+    expect(screen.getByText("Streak: 5 days")).toBeInTheDocument();
+    expect(screen.getByText("This week: 3 h 30")).toBeInTheDocument();
   });
 
   it("stays silent while loading", () => {
@@ -16,6 +16,6 @@ describe("StudyStatsTopbar", () => {
 
   it("says in one line that the figures are unavailable", () => {
     render(<StudyStatsTopbar stats={null} failed />);
-    expect(screen.getByText("Rythme d'étude indisponible")).toBeInTheDocument();
+    expect(screen.getByText("Study pace unavailable")).toBeInTheDocument();
   });
 });

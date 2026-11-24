@@ -39,7 +39,7 @@ def week_breaks(tasks: Sequence[tuple[int, TaskType]], cap_minutes: int) -> list
     breaks: list[WeekRule] = []
     if sum(minutes for minutes, _ in tasks) > cap_minutes:
         breaks.append("week_over_budget")
-    if not any(kind == "pratiquer" for _, kind in tasks):
+    if not any(kind == "practice" for _, kind in tasks):
         breaks.append("week_needs_practice")
     if not any(kind == "quiz" for _, kind in tasks):
         breaks.append("week_needs_quiz")

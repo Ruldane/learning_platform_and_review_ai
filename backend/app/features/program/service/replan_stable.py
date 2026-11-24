@@ -36,7 +36,7 @@ def _reserved(items: list[PlannedTask]) -> set[int]:
     """Rangs du dernier quiz, de la première pratique et des « Refaire le quiz » d'une semaine
     (jamais avancés)."""
     quizzes = [i for i, t in enumerate(items) if t.type == "quiz"]
-    practices = [i for i, t in enumerate(items) if t.type == "pratiquer"]
+    practices = [i for i, t in enumerate(items) if t.type == "practice"]
     retries = [i for i, t in enumerate(items) if is_retry(t.title, t.type)]
     return set(quizzes[-1:] + practices[:1] + retries)
 

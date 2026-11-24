@@ -7746,7 +7746,7 @@ export interface components {
              * Type
              * @enum {string}
              */
-            type: "lire" | "regarder" | "pratiquer" | "quiz" | "projet";
+            type: "read" | "watch" | "practice" | "quiz" | "project";
         };
         /**
          * BoardEdit
@@ -16622,7 +16622,7 @@ export interface components {
              * Type
              * @enum {string}
              */
-            type: "lire" | "regarder" | "pratiquer" | "quiz" | "projet";
+            type: "read" | "watch" | "practice" | "quiz" | "project";
         };
         /**
          * TaskOut
@@ -16660,7 +16660,7 @@ export interface components {
              * Type
              * @enum {string}
              */
-            type: "lire" | "regarder" | "pratiquer" | "quiz" | "projet";
+            type: "read" | "watch" | "practice" | "quiz" | "project";
         };
         /** TaskPatch */
         TaskPatch: {
@@ -16689,7 +16689,7 @@ export interface components {
              * Type
              * @enum {string}
              */
-            type: "lire" | "regarder" | "pratiquer" | "quiz" | "projet";
+            type: "read" | "watch" | "practice" | "quiz" | "project";
         };
         /**
          * TeachIn

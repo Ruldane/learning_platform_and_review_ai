@@ -109,7 +109,7 @@ async def test_ahead_offers_advance_and_deepen(make_replan_runner: MakeReplan) -
     extra = {
         "module": "m2",
         "title": "Lire un article sur le RAG",
-        "type": "lire",
+        "type": "read",
         "minutes": 30,
         "done_criterion": "Trois idées notées",
     }

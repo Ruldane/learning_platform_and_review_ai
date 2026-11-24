@@ -72,12 +72,12 @@ def program_plan() -> str:
         "Appeler une API de LLM",
         "API de LLM",
         [
-            _task("Lire la documentation de l'API", "lire", 60, "Notes prises sur l'API"),
-            _task("Regarder une démonstration d'appel", "regarder", 30, "Démo comprise"),
-            _task("Lire des exemples d'appels", "lire", 90, "Trois exemples annotés"),
-            _task("Lire le guide des erreurs de l'API", "lire", 120, "Erreurs classées"),
-            _task("Lire la référence des paramètres", "lire", 60, "Paramètres notés"),
-            _task("Coder un premier appel", "pratiquer", 60, "Script qui répond"),
+            _task("Lire la documentation de l'API", "read", 60, "Notes prises sur l'API"),
+            _task("Regarder une démonstration d'appel", "watch", 30, "Démo comprise"),
+            _task("Lire des exemples d'appels", "read", 90, "Trois exemples annotés"),
+            _task("Lire le guide des erreurs de l'API", "read", 120, "Erreurs classées"),
+            _task("Lire la référence des paramètres", "read", 60, "Paramètres notés"),
+            _task("Coder un premier appel", "practice", 60, "Script qui répond"),
             _task("Faire le quiz de la semaine", "quiz", 20, "Quiz réussi"),
         ],
     )
@@ -86,8 +86,8 @@ def program_plan() -> str:
         "Évaluer les réponses d'un LLM",
         "Évaluation de LLM",
         [
-            _task("Lire un guide d'évaluation", "lire", 45, "Critères notés"),
-            _task("Construire un jeu de tests", "pratiquer", 90, "Vingt cas écrits"),
+            _task("Lire un guide d'évaluation", "read", 45, "Critères notés"),
+            _task("Construire un jeu de tests", "practice", 90, "Vingt cas écrits"),
             _task("Faire le quiz de la semaine", "quiz", 20, "Quiz réussi"),
         ],
     )

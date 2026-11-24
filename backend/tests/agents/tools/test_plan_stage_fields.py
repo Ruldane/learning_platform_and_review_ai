@@ -8,7 +8,7 @@ from pydantic import ValidationError
 
 from app.agents.tools.plan_schema import PlanDraft
 
-TASK = {"title": "Lire la doc", "type": "lire", "minutes": 30, "done_criterion": "Notes prises"}
+TASK = {"title": "Lire la doc", "type": "read", "minutes": 30, "done_criterion": "Notes prises"}
 MODULE: dict[str, Any] = {"title": "Modèles et messages", "skills": ["LangChain"], "tasks": [TASK]}
 PLAN: dict[str, Any] = {
     "title": "LangChain de zéro à expert",
@@ -49,6 +49,13 @@ def test_legacy_stage_is_normalized_and_the_rationale_is_kept() -> None:
     )
     assert draft.weeks[0].stage == "practice"
     assert draft.weeks[0].rationale == "Les outils viennent après les messages."
+
+
+def test_task_from_an_old_checkpoint_keeps_its_title_and_gets_the_english_code() -> None:
+    draft = PlanDraft.model_validate(with_module(tasks=[{**TASK, "type": "lire"}]))
+    task = draft.weeks[0].modules[0].tasks[0]
+    assert task.type == "read"
+    assert task.title == "Lire la doc"
 
 
 @pytest.mark.parametrize("stage", ["debutant", "", "Fondations"])

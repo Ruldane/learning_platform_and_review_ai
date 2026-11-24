@@ -88,10 +88,7 @@ def context_from_state(data: dict[str, Any]) -> ReplanContext:
         else ReviewView(**{**review, "week_start": date.fromisoformat(review["week_start"])}),
         options=tuple(data["options"]),
         modules=[ModuleRef(**m) for m in data["modules"]],
-        tasks=[
-            TaskRef(**{**t, "planned_date": date.fromisoformat(t["planned_date"])})
-            for t in data["tasks"]
-        ],
+        tasks=[TaskRef.from_checkpoint(t) for t in data["tasks"]],
         week_cap_override=data["week_cap_override"],
         message=data["message"],
         skills=tuple(data.get("skills", ())),  # absent d'un instantané d'avant D123

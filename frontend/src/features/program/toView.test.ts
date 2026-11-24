@@ -74,7 +74,7 @@ describe("toWeekViews", () => {
       id: "t1",
       moduleTitle: "Bases du langage",
       title: "Lire le chapitre 1",
-      type: "lire",
+      type: "read",
       minutes: 60,
       doneCriterion: "Je sais expliquer les variables.",
       plannedDate: "2026-11-16",

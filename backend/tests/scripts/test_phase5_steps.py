@@ -33,9 +33,9 @@ async def test_the_block_of_the_day_picks_the_lesson_and_its_reading_tasks() -> 
     block = {
         "lesson_id": "l3",
         "tasks": [
-            {"title": "Lire 1", "type": "lire"},
-            {"title": "Pratiquer", "type": "pratiquer"},
-            {"title": "Regarder", "type": "regarder"},
+            {"title": "Lire 1", "type": "read"},
+            {"title": "Pratiquer", "type": "practice"},
+            {"title": "Regarder", "type": "watch"},
         ],
     }
     routes = {

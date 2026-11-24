@@ -80,9 +80,9 @@ def test_retry_quiz_is_never_before_its_day(late: bool) -> None:
         2,
         W2,
         [
-            t("w2-r", "lire", 60, d(W2, 1)),
+            t("w2-r", "read", 60, d(W2, 1)),
             retry(d(W2, 3)),
-            t("w2-p", "pratiquer", 45, d(W2, 4)),
+            t("w2-p", "practice", 45, d(W2, 4)),
             t("w2-q", "quiz", 20, d(W2, 5)),
         ],
     )
@@ -98,8 +98,8 @@ def test_advance_never_pulls_a_retry_quiz() -> None:
         2,
         W2,
         [
-            t("w2-r", "lire", 60, d(W2, 1)),
-            t("w2-p", "pratiquer", 45, d(W2, 2)),
+            t("w2-r", "read", 60, d(W2, 1)),
+            t("w2-p", "practice", 45, d(W2, 2)),
             t("w2-q", "quiz", 20, d(W2, 5)),
         ],
     )

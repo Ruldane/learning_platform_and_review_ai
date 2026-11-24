@@ -21,7 +21,7 @@ describe("StudyTimer", () => {
   it("starts on the work phase and counts down", () => {
     render(<StudyTimer workMinutes={50} breakMinutes={10} onWorkedChange={vi.fn()} />);
     expect(screen.getByRole("timer")).toHaveTextContent("50:00");
-    expect(screen.getByText("Travail")).toBeInTheDocument();
+    expect(screen.getByText("Work")).toBeInTheDocument();
     pass(90_000);
     expect(screen.getByRole("timer")).toHaveTextContent("48:30");
   });
@@ -30,11 +30,11 @@ describe("StudyTimer", () => {
     const onWorked = vi.fn();
     render(<StudyTimer workMinutes={50} breakMinutes={10} onWorkedChange={onWorked} />);
     pass(50 * MINUTE);
-    expect(screen.getByText("Pause")).toBeInTheDocument();
+    expect(screen.getByText("Break")).toBeInTheDocument();
     expect(screen.getByRole("timer")).toHaveTextContent("10:00");
     expect(lastWorked(onWorked)).toBe(3000);
     pass(10 * MINUTE);
-    expect(screen.getByText("Travail")).toBeInTheDocument();
+    expect(screen.getByText("Work")).toBeInTheDocument();
     expect(lastWorked(onWorked)).toBe(3000);
     pass(MINUTE);
     expect(lastWorked(onWorked)).toBe(3060);
@@ -51,15 +51,15 @@ describe("StudyTimer", () => {
     const onWorked = vi.fn();
     render(<StudyTimer workMinutes={50} breakMinutes={10} onWorkedChange={onWorked} />);
     pass(MINUTE);
-    fireEvent.click(screen.getByRole("button", { name: "Mettre en pause" }));
+    fireEvent.click(screen.getByRole("button", { name: "Pause" }));
     pass(5 * MINUTE);
     expect(screen.getByRole("timer")).toHaveTextContent("49:00");
     expect(lastWorked(onWorked)).toBe(60);
-    expect(screen.getByText("Minuteur en pause")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Reprendre" }));
+    expect(screen.getByText("Timer paused")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Resume" }));
     pass(30_000);
     expect(lastWorked(onWorked)).toBe(90);
-    expect(screen.getByRole("button", { name: "Mettre en pause" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Pause" })).toBeInTheDocument();
   });
 
   it("announces phase changes politely", () => {
@@ -68,9 +68,9 @@ describe("StudyTimer", () => {
     expect(status).toHaveAttribute("aria-live", "polite");
     expect(status).toBeEmptyDOMElement();
     pass(50 * MINUTE);
-    expect(status).toHaveTextContent("Pause de 10 min");
+    expect(status).toHaveTextContent("10 min break");
     pass(10 * MINUTE);
-    expect(status).toHaveTextContent("reprise du travail");
+    expect(status).toHaveTextContent("Break over: back to work.");
   });
 
   it("does not announce the countdown itself", () => {
@@ -92,7 +92,7 @@ describe("StudyTimer", () => {
   it("shows the worked time", () => {
     render(<StudyTimer workMinutes={50} breakMinutes={10} onWorkedChange={vi.fn()} />);
     pass(12 * MINUTE);
-    expect(screen.getByText("Temps travaillé : 12 min")).toBeInTheDocument();
+    expect(screen.getByText("Time worked: 12 min")).toBeInTheDocument();
   });
 
   it("uses motion only where the user allows it", () => {
@@ -105,7 +105,7 @@ describe("StudyTimer", () => {
     expect(bare).toEqual([]);
   });
 
-  describe("kept across a reload (revue finale 5, E-I2 et E-m8)", () => {
+  describe("kept across a reload (final review 5, E-I2 and E-m8)", () => {
     const key = "study-timer:st1";
     afterEach(() => window.sessionStorage.clear());
 
@@ -159,7 +159,7 @@ describe("StudyTimer", () => {
       pass(5 * MINUTE);
       expect(screen.getByRole("timer")).toHaveTextContent("50:00");
       expect(onWorked).not.toHaveBeenCalled();
-      expect(screen.getByRole("button", { name: "Reprendre" })).toBeDisabled();
+      expect(screen.getByRole("button", { name: "Resume" })).toBeDisabled();
     });
   });
 });

@@ -38,8 +38,8 @@ from app.features.study.service.runtime import StudyRuntime
 
 logger = logging.getLogger(__name__)
 
-READING = ("lire", "regarder")
-PRACTICE = ("pratiquer",)
+READING = ("read", "watch")
+PRACTICE = ("practice",)
 CARD_VERDICTS = ("partial", "wrong", "revealed")  # « Passer » ne crée pas de fiche (D103)
 CEILING: SkillLevel = "en_cours"  # jamais au-delà (4.5)
 EMPTY = StudyFinished(minutes=0, tasks_done=[], flashcards_created=0, skills=[])

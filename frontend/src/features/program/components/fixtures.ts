@@ -5,7 +5,7 @@ export function makeTask(overrides: Partial<TaskView> = {}): TaskView {
     id: "t1",
     moduleTitle: "Bases du langage",
     title: "Lire le chapitre 1",
-    type: "lire",
+    type: "read",
     minutes: 60,
     doneCriterion: "Je sais expliquer les variables.",
     plannedDate: "2026-11-16",
@@ -31,7 +31,7 @@ export function makeWeek(overrides: Partial<WeekView> = {}): WeekView {
   const tasksByDate: Record<string, TaskView[]> = {
     "2026-11-16": [
       makeTask(),
-      makeTask({ id: "t2", title: "Pratiquer les boucles", type: "pratiquer", minutes: 90 }),
+      makeTask({ id: "t2", title: "Pratiquer les boucles", type: "practice", minutes: 90 }),
     ],
     "2026-11-18": [
       makeTask({

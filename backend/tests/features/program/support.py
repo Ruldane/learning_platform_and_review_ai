@@ -33,7 +33,7 @@ def sample_plan(skills: tuple[str, str] = ("pandas", "numpy")) -> PlanDraft:
                 "Module Bases",
                 [task(f"Lire le chapitre {i}", minutes=120) for i in range(1, 6)]
                 + [
-                    task("Pratiquer les bases", "pratiquer", 45),
+                    task("Pratiquer les bases", "practice", 45),
                     task("Faire le quiz 1", "quiz", 20),
                 ],
                 skills=[first],
@@ -49,7 +49,7 @@ def sample_plan(skills: tuple[str, str] = ("pandas", "numpy")) -> PlanDraft:
                     task("Lire l'article A", minutes=40),
                     task("Lire l'article B", minutes=40),
                     task("Lire l'article C", minutes=60),
-                    task("Pratiquer le projet", "pratiquer", 45),
+                    task("Pratiquer le projet", "practice", 45),
                     task("Faire le quiz 2", "quiz", 20),
                 ],
                 skills=[second],

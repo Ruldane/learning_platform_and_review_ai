@@ -67,7 +67,7 @@ async def _apply(plan: Plan, session_id: str, program_id: str, skill: str, title
     )  # fmt: skip
     assert ctx.modules[0].ref == "m0" and ctx.modules[0].title == GAP_MODULE_TITLE
     task = ReplanTaskDraft(
-        module="m0", title=title, type="pratiquer", minutes=45, done_criterion="Montré"
+        module="m0", title=title, type="practice", minutes=45, done_criterion="Montré"
     )
     draft = ReplanDraft(summary="J'ajoute.", add=[task], drop=["t1"])
     saved = await plan.store.preview(
@@ -245,7 +245,7 @@ async def test_refused_proposal_creates_no_module(client: httpx.AsyncClient, pla
         message=None, skills=["LangGraph"],
     )  # fmt: skip
     task = ReplanTaskDraft(
-        module="m0", title="Pratiquer LangGraph", type="pratiquer", minutes=45,
+        module="m0", title="Pratiquer LangGraph", type="practice", minutes=45,
         done_criterion="Montré",
     )  # fmt: skip
     saved = await plan.store.preview(

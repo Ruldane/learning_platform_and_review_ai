@@ -29,7 +29,7 @@ async def _program(rt: ProgramRuntime) -> tuple[str, list[str]]:
 
 
 def _revision(earliest: date, minutes: int = 20) -> FollowupTask:
-    return FollowupTask("Réviser : pandas", "lire", minutes, "Relu.", earliest)
+    return FollowupTask("Réviser : pandas", "read", minutes, "Relu.", earliest)
 
 
 async def test_followup_fills_week_then_spills_within_cap(program_rt: ProgramRuntime) -> None:

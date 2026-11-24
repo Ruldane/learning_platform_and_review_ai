@@ -114,7 +114,7 @@ def followup_tasks(ctx: GradeContext, points: Sequence[float], today: date) -> l
     tasks = [
         FollowupTask(
             f"Réviser : {skill}",
-            "lire",
+            "read",
             REVISION_MINUTES,
             "Leçon relue sur ce point et fiches revues.",
             today + timedelta(days=1),

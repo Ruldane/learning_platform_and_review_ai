@@ -173,7 +173,7 @@ def suite_tasks(week: NewWeek) -> list[PlannedTask]:
             "",
             day,
             f"Pratiquer : {theme}"[:120],
-            "pratiquer",
+            "practice",
             PRACTICE_MINUTES,
             PRACTICE_CRITERION,
             "",

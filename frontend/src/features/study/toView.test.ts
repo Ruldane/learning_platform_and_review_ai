@@ -26,12 +26,12 @@ describe("toView", () => {
         lesson_id: "l1",
         lesson_title: "Les API REST",
         module_title: "Web",
-        tasks: [{ id: "t1", title: "Lire", minutes: 30, type: "lire" }],
+        tasks: [{ id: "t1", title: "Lire", minutes: 30, type: "read" }],
       }),
     ).toEqual({
       lessonTitle: "Les API REST",
       moduleTitle: "Web",
-      tasks: [{ id: "t1", title: "Lire", minutes: 30, type: "lire" }],
+      tasks: [{ id: "t1", title: "Lire", minutes: 30, type: "read" }],
     });
   });
 

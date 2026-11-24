@@ -114,7 +114,7 @@ async def test_preview_ignores_unknown_refs_and_option_rights(
     program_id = await validated(program_rt)
     ctx = await _context(store, program_id)
     added = ReplanTaskDraft(
-        module="m1", title="Lire un article secret", type="lire", minutes=30,
+        module="m1", title="Lire un article secret", type="read", minutes=30,
         done_criterion="Notes prises",
     )  # fmt: skip
     ghost = added.model_copy(update={"module": "m9"})
@@ -174,7 +174,7 @@ async def test_concurrent_apply_and_task_move_never_exceed_cap(
     version = (await _preview(store, program_id)).version
     tasks = await tasks_of(program_rt.session_factory, program_id)
     # January avance une lecture de la semaine 2 au samedi de la semaine 1, déjà chargée.
-    late = next(t for t in tasks if t.planned_date >= date(2026, 11, 23) and t.type == "lire")
+    late = next(t for t in tasks if t.planned_date >= date(2026, 11, 23) and t.type == "read")
     patch = TaskPatch(planned_date=date(2026, 11, 21))
     results = await asyncio.gather(
         store.apply(ME, "s-replan", program_id, version),

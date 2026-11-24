@@ -3,7 +3,7 @@ import { fieldClass } from "@/shared/ui/fieldClass";
 import type { TaskType } from "../viewTypes";
 import { TaskField } from "./TaskField";
 
-const TYPES: TaskType[] = ["lire", "regarder", "pratiquer", "quiz", "projet"];
+const TYPES: TaskType[] = ["read", "watch", "practice", "quiz", "project"];
 
 interface TypeFieldProps {
   value: TaskType;

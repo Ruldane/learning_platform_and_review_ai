@@ -7,7 +7,7 @@ from app.agents.tools.plan_schema import PlanDraft
 def plan_with_chapters() -> dict[str, object]:
     task = {
         "title": "Expliquer la recherche",
-        "type": "lire",
+        "type": "read",
         "minutes": 30,
         "done_criterion": "Écrire un exemple",
     }

@@ -23,7 +23,7 @@ def _task(
     return {
         "module": module,
         "title": title,
-        "type": "pratiquer",
+        "type": "practice",
         "minutes": 45,
         "done_criterion": criterion,
     }

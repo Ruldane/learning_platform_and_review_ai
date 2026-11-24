@@ -106,7 +106,7 @@ async def _material(
             module_id=module.id,
             rank=rank,
             title="Projet",
-            type="pratiquer",
+            type="practice",
             minutes=minutes,
             done_criterion="Résultat vérifié",
             planned_date=TODAY,

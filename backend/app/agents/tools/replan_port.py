@@ -17,11 +17,12 @@ import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
-from typing import Annotated, Protocol
+from typing import Annotated, Any, Protocol, Self
 
 from pydantic import BaseModel, Field
 
 from app.agents.runtime.prose import Prose
+from app.agents.tools.plan_schema import CheckpointTaskType, read_checkpoint_task_type
 from app.agents.tools.program_port import BudgetView
 from app.agents.tools.study_schema import ReplanOption, ReplanTrigger, ReviewState
 from app.core.errors import AppError
@@ -63,6 +64,16 @@ class TaskRef:
     module_ref: str
     late: bool  # datée avant aujourd'hui et pas faite
     task_id: str  # jamais rendu au modèle (F7)
+
+    @classmethod
+    def from_checkpoint(cls, data: dict[str, Any]) -> Self:
+        return cls(
+            **{
+                **data,
+                "type": read_checkpoint_task_type(data["type"]),
+                "planned_date": date.fromisoformat(data["planned_date"]),
+            }
+        )
 
 
 @dataclass(frozen=True)
@@ -107,7 +118,7 @@ class ReplanContext:
 class ReplanTaskDraft(BaseModel):
     module: str = Field(pattern=MODULE_REF)
     title: str = Field(min_length=3, max_length=120)
-    type: TaskType
+    type: CheckpointTaskType
     minutes: int = Field(ge=15, le=120)
     done_criterion: Prose = Field(min_length=3, max_length=200)
 

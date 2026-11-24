@@ -12,7 +12,7 @@ export interface TimerState {
   running: boolean;
 }
 
-export type BlockTaskType = "lire" | "regarder" | "pratiquer" | "quiz" | "projet";
+export type BlockTaskType = "read" | "watch" | "practice" | "quiz" | "project";
 
 export interface BlockTaskView {
   id: string;

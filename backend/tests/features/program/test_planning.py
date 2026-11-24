@@ -24,7 +24,7 @@ def _known_draft() -> PlanDraft:
     first = module("Bases de Python", [task("Lire la doc")], skills=["Python"])
     second = module(
         "Manipuler des données avec pandas",
-        [task("Lire la doc de pandas"), task("Pratiquer sur un jeu", "pratiquer", 60)],
+        [task("Lire la doc de pandas"), task("Pratiquer sur un jeu", "practice", 60)],
         skills=["Pandas"],
     )
     return plan([week("Données", [first, second])])
@@ -32,13 +32,13 @@ def _known_draft() -> PlanDraft:
 
 def test_check_draft_reports_week_over_cap(budget: Budget) -> None:
     reads = [task("Lire un chapitre", minutes=120)] * 6
-    extra = [task("Pratiquer le sujet", "pratiquer", 40), task("Faire le quiz", "quiz", 20)]
+    extra = [task("Pratiquer le sujet", "practice", 40), task("Faire le quiz", "quiz", 20)]
     draft = plan([week("Gros", [module("Beaucoup", reads + extra)])])
     assert "Week 1: 780 min planned. The limit is 714 min." in check_draft(draft, budget)
 
 
 def test_check_draft_reports_missing_practice_quiz_and_verb(budget: Budget) -> None:
-    draft = plan([week("Bases", [module("Intro", [task("Théorie des graphes", "lire")])])])
+    draft = plan([week("Bases", [module("Intro", [task("Théorie des graphes", "read")])])])
     problems = check_draft(draft, budget)
     assert "Week 1: add at least one practice task." in problems
     assert "Week 1: add a quiz at the end of the week." in problems
@@ -54,7 +54,7 @@ def test_action_verbs_by_ending_or_list(budget: Budget) -> None:
     titles += ["Voir les cas", "Fais un schéma"]
     titles += ["Read the guide", "Watch the demo", "Code a parser", "Write a test"]
     tasks = [task(t) for t in titles]
-    tasks += [task("Practise the skill", "pratiquer"), task("Take the quiz", "quiz")]
+    tasks += [task("Practise the skill", "practice"), task("Take the quiz", "quiz")]
     assert check_draft(plan([week("Bases", [module("Intro", tasks)])]), budget) == []
 
 
@@ -63,7 +63,7 @@ def test_valide_module_is_skipped_declare_is_reduced_to_review() -> None:
     assert skipped == ["Bases de Python"]
     review = draft.weeks[0].modules[0].tasks
     assert [(t.title, t.minutes, t.type) for t in review] == [
-        ("Réviser : Manipuler des données avec pandas", 20, "lire")
+        ("Réviser : Manipuler des données avec pandas", 20, "read")
     ]
     assert is_review(review[0]) and len(draft.weeks[0].modules) == 1
 
@@ -99,14 +99,14 @@ def test_week_gets_practice_and_ends_with_quiz() -> None:
     bare = week("Bases", [module("Intro", [task("Lire un"), task("Faire un test", "quiz")])])
     tasks = ensure_week_rules(bare, 3).modules[-1].tasks
     assert [(t.title, t.type, t.minutes) for t in tasks] == [
-        ("Lire un", "lire", 30),
-        ("Pratiquer : Bases", "pratiquer", 45),
+        ("Lire un", "read", 30),
+        ("Pratiquer : Bases", "practice", 45),
         ("Faire un test", "quiz", 30),
     ]
     added = ensure_week_rules(week("Bases", [module("Intro", [task("Lire un")])]), 3)
     last = added.modules[-1].tasks[-2:]
     assert [(t.title, t.type, t.minutes) for t in last] == [
-        ("Pratiquer : Bases", "pratiquer", 45),
+        ("Pratiquer : Bases", "practice", 45),
         ("Faire le quiz de la semaine 3", "quiz", 20),
     ]
 
@@ -119,9 +119,9 @@ def test_ensure_week_rules_is_idempotent_and_keeps_input() -> None:
 
 
 def test_quiz_inside_a_module_moves_after_its_other_tasks() -> None:
-    tasks = [task("Faire le quiz", "quiz"), task("Lire un"), task("Pratiquer", "pratiquer")]
+    tasks = [task("Faire le quiz", "quiz"), task("Lire un"), task("Pratiquer", "practice")]
     fixed = ensure_week_rules(week("Bases", [module("Intro", tasks)]), 1)
-    assert [t.type for t in fixed.modules[0].tasks] == ["lire", "pratiquer", "quiz"]
+    assert [t.type for t in fixed.modules[0].tasks] == ["read", "practice", "quiz"]
 
 
 def test_schedule_never_exceeds_85_percent(budget: Budget) -> None:
@@ -144,7 +144,7 @@ def test_overflow_moves_tasks_to_next_week_and_appends_a_week(budget: Budget) ->
     assert result.moved_tasks > 0 and len(result.weeks) == 2
     second = result.weeks[1]
     assert second.theme == "Suite : Gros" and second.objective.endswith("(suite)")
-    assert {"pratiquer", "quiz"} <= {t.type for t in second.tasks}
+    assert {"practice", "quiz"} <= {t.type for t in second.tasks}
     assert second.start_date == date(2026, 11, 23)
     assert second.modules[0].title == "Module Gros (suite)"
     assert sum(1 for w in result.weeks for t in w.tasks if t.title.startswith("Lire")) == 8
@@ -227,13 +227,13 @@ def test_next_monday() -> None:
 
 def test_week_problems(budget: Budget) -> None:
     day = date(2026, 11, 16)
-    ok = [(day, 100, "lire"), (day, 45, "pratiquer"), (day, 20, "quiz")]
+    ok = [(day, 100, "read"), (day, 45, "practice"), (day, 20, "quiz")]
     assert week_problems(ok, MONDAY, budget) == []
-    over = [(day, 700, "lire"), (day, 15, "pratiquer"), (day, 20, "quiz")]
+    over = [(day, 700, "read"), (day, 15, "practice"), (day, 20, "quiz")]
     assert week_problems(over, MONDAY, budget) == [
         "Week of 16/11: 735 min planned. The limit is 714 min."
     ]
-    bare = week_problems([(day, 30, "lire")], MONDAY, budget)
+    bare = week_problems([(day, 30, "read")], MONDAY, budget)
     assert bare == [
         "Week of 16/11: add at least one practice task.",
         "Week of 16/11: add a quiz at the end of the week.",
@@ -242,7 +242,7 @@ def test_week_problems(budget: Budget) -> None:
 
 def test_random_drafts_keep_every_rule(budget: Budget) -> None:
     rng = random.Random(83)
-    kinds: list[TaskType] = ["lire", "regarder", "pratiquer", "quiz", "projet"]
+    kinds: list[TaskType] = ["read", "watch", "practice", "quiz", "project"]
     for _ in range(40):
         weeks = []
         for index in range(rng.randint(1, 6)):
@@ -260,5 +260,5 @@ def test_random_drafts_keep_every_rule(budget: Budget) -> None:
                 per_day[t.planned_date] = per_day.get(t.planned_date, 0) + t.minutes
             assert w.load_minutes <= budget.cap_minutes
             assert all(m <= budget.day_capacity(d) for d, m in per_day.items())
-            assert w.tasks[-1].type == "quiz" and any(t.type == "pratiquer" for t in w.tasks)
+            assert w.tasks[-1].type == "quiz" and any(t.type == "practice" for t in w.tasks)
             assert w.tasks[-1].planned_date == max(per_day)

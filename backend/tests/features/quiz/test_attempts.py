@@ -116,7 +116,7 @@ async def test_week_quiz_task_ticked_when_all_modules_graded(
     client: httpx.AsyncClient, app: FastAPI
 ) -> None:
     reads = [task(f"Lire {n}", minutes=120) for n in range(1, 4)]
-    first = module("Module A", [*reads, task("Pratiquer", "pratiquer", 45), task("Quiz", "quiz")])
+    first = module("Module A", [*reads, task("Pratiquer", "practice", 45), task("Quiz", "quiz")])
     second = module("Module B", [task("Lire B", minutes=60)])
     draft = plan([week("Bases", [first, second]), week("Suite", [first.model_copy()])])
     s = await seed(app, draft, ready=2)

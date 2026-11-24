@@ -48,8 +48,8 @@ describe("StudySessionPage", () => {
       e.message("t1", "Qu'est-ce qu'un verbe HTTP ?", "tutor"),
       tutorQuestion(e),
     );
-    await user.type(await screen.findByLabelText("Ta réponse"), "Il lit une ressource");
-    await user.click(screen.getByRole("button", { name: "Répondre" }));
+    await user.type(await screen.findByLabelText("Your answer"), "Il lit une ressource");
+    await user.click(screen.getByRole("button", { name: "Answer" }));
     await waitFor(() =>
       expect(resumes).toEqual([
         { interrupt_id: "i1", value: { answers: { answer: "Il lit une ressource" } } },
@@ -73,28 +73,28 @@ describe("StudySessionPage", () => {
     await waitFor(() => expect(resumes).toEqual([{ interrupt_id: "i1", value: "skip" }]));
   });
 
-  it("disables Terminer while the tutor writes", async () => {
+  it("disables Finish while the tutor writes", async () => {
     const { fake } = setup();
     const e = councilEvents("s1");
     const socket = await openStudyStream(fake);
     socket.push(e.started("tutor"));
-    const finish = await screen.findByRole("button", { name: "Terminer" });
+    const finish = await screen.findByRole("button", { name: "Finish" });
     expect(finish).toBeDisabled();
-    expect(screen.getByText(/Le tuteur écrit/)).toBeInTheDocument();
+    expect(screen.getByText(/The tutor is writing/)).toBeInTheDocument();
     socket.push(
       e.interrupt("tutor_question", "i1", { question: "Que fait GET ?", options: tutorOptions }),
     );
-    await waitFor(() => expect(screen.getByRole("button", { name: "Terminer" })).toBeEnabled());
+    await waitFor(() => expect(screen.getByRole("button", { name: "Finish" })).toBeEnabled());
   });
 
-  it("explains an interrupted session and keeps Terminer and a new start", async () => {
+  it("explains an interrupted session and offers to finish or start over", async () => {
     const patches = recordPatches("/study-sessions/st1", 202, finishedOut());
     const { fake, user, router } = setup({ sessions: [studyOut({ status: "interrupted" })] });
-    expect(await screen.findByText(/La session du tuteur s'est arrêtée/)).toBeInTheDocument();
+    expect(await screen.findByText(/The tutor’s session stopped/)).toBeInTheDocument();
     expect(fake.sockets).toHaveLength(0);
-    await user.click(screen.getByRole("button", { name: "Terminer" }));
+    await user.click(screen.getByRole("button", { name: "Finish" }));
     await waitFor(() => expect(patches).toEqual([{ action: "finish", worked_minutes: 2 }]));
-    expect(await screen.findByRole("heading", { name: "Session terminée" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Session complete" })).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/etudier/session/st1");
   });
 
@@ -112,7 +112,7 @@ describe("StudySessionPage", () => {
     const { user, router } = setup({
       sessions: [studyOut({ status: "interrupted", mode: "feynman" })],
     });
-    await user.click(await screen.findByRole("button", { name: "Commencer un nouveau bloc" }));
+    await user.click(await screen.findByRole("button", { name: "Start a new block" }));
     await waitFor(() => expect(router.state.location.pathname).toBe("/etudier/session/st2"));
     expect(starts).toEqual([{ mode: "feynman" }]);
   });
@@ -120,7 +120,7 @@ describe("StudySessionPage", () => {
   it("goes to the start page when no block is planned today", async () => {
     recordPosts("/study-sessions", 404, apiError("no_block_today", "Aucun bloc."));
     const { user, router } = setup({ sessions: [studyOut({ status: "interrupted" })] });
-    await user.click(await screen.findByRole("button", { name: "Commencer un nouveau bloc" }));
+    await user.click(await screen.findByRole("button", { name: "Start a new block" }));
     await waitFor(() => expect(router.state.location.pathname).toBe("/etudier/session"));
   });
 
@@ -130,8 +130,8 @@ describe("StudySessionPage", () => {
       sessions: [studyOut(), studyOut({ status: "interrupted" })],
     });
     (await openStudyStream(fake)).push(councilEvents("s1").failed());
-    expect(await screen.findByText(/La session du tuteur s'est arrêtée/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Terminer" })).toBeEnabled();
+    expect(await screen.findByText(/The tutor’s session stopped/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Finish" })).toBeEnabled();
   });
 
   it("keeps the session on screen when a background read fails", async () => {
@@ -149,30 +149,30 @@ describe("StudySessionPage", () => {
     (await openStudyStream(fake)).push(councilEvents("s1").failed());
     expect(await screen.findByRole("alert")).toHaveTextContent("Panne du serveur.");
     expect(screen.getByText("Minuteur de test")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Réessayer" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
   });
 
   it("shows the board of the tutor on the right", async () => {
     const { fake } = setup();
     const socket = await openStudyStream(fake);
     // Revue finale 5 (E-m2) : le tableau est celui du Tuteur, pas « Carte du domaine · Scribe ».
-    expect(await screen.findByText("Le tuteur n'a encore rien dessiné.")).toBeInTheDocument();
+    expect(await screen.findByText("The tutor hasn’t drawn anything yet.")).toBeInTheDocument();
     socket.push(councilEvents("s1").boardUpdate("b1", 1, { kind: null, title: null }));
-    expect(await screen.findByRole("region", { name: "Tableau du tuteur" })).toBeInTheDocument();
-    expect(await screen.findByText("Schéma de la leçon · Tuteur")).toBeInTheDocument();
+    expect(await screen.findByRole("region", { name: "Tutor’s board" })).toBeInTheDocument();
+    expect(await screen.findByText("Lesson diagram · Tutor")).toBeInTheDocument();
     expect(screen.queryByText(/Scribe/)).not.toBeInTheDocument();
   });
 
   it("shows the summary of a session that is already finished, without a stream", async () => {
     const { fake } = setup({ sessions: [finishedOut()] });
-    expect(await screen.findByRole("heading", { name: "Session terminée" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Session complete" })).toBeInTheDocument();
     expect(fake.sockets).toHaveLength(0);
   });
 
   it("says that a cancelled session wrote nothing", async () => {
     const { user, router } = setup({ sessions: [studyOut({ status: "cancelled" })] });
-    expect(await screen.findByRole("heading", { name: "Session abandonnée" })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Commencer un nouveau bloc" }));
+    expect(await screen.findByRole("heading", { name: "Session abandoned" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Start a new block" }));
     expect(router.state.location.pathname).toBe("/etudier/session");
   });
 
@@ -183,8 +183,8 @@ describe("StudySessionPage", () => {
           status: 404,
         }),
     });
-    expect(await screen.findByRole("heading", { name: "Session introuvable" })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Retour à la session guidée" }));
+    expect(await screen.findByRole("heading", { name: "Session not found" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Back to guided session" }));
     expect(router.state.location.pathname).toBe("/etudier/session");
   });
 
@@ -198,9 +198,9 @@ describe("StudySessionPage", () => {
           : HttpResponse.json(finishedOut());
       },
     });
-    expect(screen.getByRole("status")).toHaveTextContent("Ouverture de la session…");
+    expect(screen.getByRole("status")).toHaveTextContent("Opening the session…");
     expect(await screen.findByRole("alert")).toHaveTextContent("Panne du serveur.");
-    await user.click(screen.getByRole("button", { name: "Réessayer" }));
-    expect(await screen.findByRole("heading", { name: "Session terminée" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+    expect(await screen.findByRole("heading", { name: "Session complete" })).toBeInTheDocument();
   });
 });

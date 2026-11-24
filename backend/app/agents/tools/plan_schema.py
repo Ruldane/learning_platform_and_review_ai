@@ -12,6 +12,7 @@ from urllib.parse import urlsplit
 from pydantic import (
     AfterValidator,
     BaseModel,
+    BeforeValidator,
     Field,
     PrivateAttr,
     StringConstraints,
@@ -28,6 +29,12 @@ from app.db.models.skills import SkillLevel
 KnownSkills = Mapping[str, SkillLevel]
 NotionName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=120)]
 _LEGACY_STAGES = {"fondations": "foundations", "pratique": "practice", "avance": "advanced"}
+_LEGACY_TASK_TYPES = {
+    "lire": "read",
+    "regarder": "watch",
+    "pratiquer": "practice",
+    "projet": "project",
+}
 MAX_OFFICIAL_URLS = 3
 MAX_LEGACY = 5
 
@@ -45,9 +52,16 @@ Rationale = Annotated[str, Field(min_length=3, max_length=300), ShortenToMax()]
 LegacyName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=120)]
 
 
+def read_checkpoint_task_type(value: object) -> object:
+    return _LEGACY_TASK_TYPES.get(value, value) if isinstance(value, str) else value
+
+
+CheckpointTaskType = Annotated[TaskType, BeforeValidator(read_checkpoint_task_type)]
+
+
 class TaskDraft(BaseModel):
     title: str = Field(min_length=3, max_length=120)
-    type: TaskType
+    type: CheckpointTaskType
     minutes: int = Field(ge=15, le=120)
     done_criterion: Prose = Field(min_length=3, max_length=200)
 

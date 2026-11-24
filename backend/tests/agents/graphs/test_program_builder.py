@@ -118,7 +118,7 @@ async def test_third_bad_draft_is_packed_by_rules(make_builder_runner: MakeBuild
     assert all(w.load_minutes <= 714 for w in scheduled.weeks)
     for each in scheduled.weeks:
         kinds = [t.type for t in each.tasks]
-        assert "pratiquer" in kinds and kinds[-1] == "quiz"
+        assert "practice" in kinds and kinds[-1] == "quiz"
     said = await c.events("agent.message")
     assert "reportée(s)" in said[-1]["text"]
 
@@ -126,11 +126,11 @@ async def test_third_bad_draft_is_packed_by_rules(make_builder_runner: MakeBuild
 async def test_known_skill_reduced_to_review(make_builder_runner: MakeBuilder) -> None:
     pandas = module(
         "Manipuler pandas",
-        [task("Lire la documentation de pandas", minutes=60), task("Pratiquer", "pratiquer", 60)],
+        [task("Lire la documentation de pandas", minutes=60), task("Pratiquer", "practice", 60)],
         ["pandas"],
     )
     charts = module("Tracer des graphiques", [task("Lire le guide", minutes=45)], ["matplotlib"])
-    rest = module("Nettoyer", [task("Pratiquer le nettoyage", "pratiquer"), task("Faire", "quiz")])
+    rest = module("Nettoyer", [task("Pratiquer le nettoyage", "practice"), task("Faire", "quiz")])
     draft = plan([week("Données", [pandas, charts, rest])]).model_dump_json()
     known = {"pandas": "declare", "matplotlib": "valide"}
     c = await make_builder_runner(_models(draft), prepare=lambda s: setattr(s, "known", known))

@@ -16,7 +16,7 @@ export type TaskErrors = Partial<
 
 export const EMPTY_DRAFT: TaskDraft = {
   title: "",
-  type: "lire",
+  type: "read",
   minutes: "30",
   doneCriterion: "",
   plannedDate: "",

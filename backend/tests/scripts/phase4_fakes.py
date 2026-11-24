@@ -13,10 +13,10 @@ type Route = Callable[[httpx.Request], httpx.Response]
 
 def week(rank: int, *, module: str | None = None, load: int = 200, **kinds: str) -> dict[str, Any]:
     """Une semaine d'un module : lecture lundi, pratique mercredi, quiz vendredi (dates fictives
-    dont l'ordre suffit). `kinds` remplace le type d'une tâche (`practice="lire"`, …)."""
+    dont l'ordre suffit). `kinds` remplace le type d'une tâche (`practice="read"`, …)."""
     tasks = [
-        {"type": kinds.get("reading", "lire"), "planned_date": f"2026-12-0{rank}-1"},
-        {"type": kinds.get("practice", "pratiquer"), "planned_date": f"2026-12-0{rank}-3"},
+        {"type": kinds.get("reading", "read"), "planned_date": f"2026-12-0{rank}-1"},
+        {"type": kinds.get("practice", "practice"), "planned_date": f"2026-12-0{rank}-3"},
         {"type": kinds.get("quiz", "quiz"), "planned_date": f"2026-12-0{rank}-5"},
     ]
     modules = [{"id": module or f"m{rank}", "tasks": tasks}]

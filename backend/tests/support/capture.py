@@ -37,11 +37,11 @@ def capture_links() -> ProgramLinks:
             ModuleRef("m2", "API de LLM", ["API de LLM"], "module-id-m2"),
         ],
         [
-            TaskRef("t1", "Lire l'article sur l'attention", "lire", 40, TODAY, "m1", False,
+            TaskRef("t1", "Lire l'article sur l'attention", "read", 40, TODAY, "m1", False,
                     "task-id-t1"),
-            TaskRef("t2", "Regarder la vidéo sur les têtes", "regarder", 30, TODAY, "m1", False,
+            TaskRef("t2", "Regarder la vidéo sur les têtes", "watch", 30, TODAY, "m1", False,
                     "task-id-t2"),
-            TaskRef("t3", "Pratiquer un appel d'API", "pratiquer", 45, TODAY, "m2", False,
+            TaskRef("t3", "Pratiquer un appel d'API", "practice", 45, TODAY, "m2", False,
                     "task-id-t3"),
         ],
     )  # fmt: skip

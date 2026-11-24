@@ -10,11 +10,11 @@ from app.features.program.schemas import ModuleOut, ProgramOut, TaskOut
 
 PRODID = "-//Tremplin//Program//EN"
 TASK_TYPE_LABELS = {
-    "lire": "Read",
-    "regarder": "Watch",
-    "pratiquer": "Practice",
+    "read": "Read",
+    "watch": "Watch",
+    "practice": "Practice",
     "quiz": "Quiz",
-    "projet": "Project",
+    "project": "Project",
 }
 
 

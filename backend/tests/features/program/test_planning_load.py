@@ -23,7 +23,7 @@ def _draft_with_module(title: str, skills: list[str]) -> PlanDraft:
 
 def _light_then_full() -> PlanDraft:
     light = [task("Lire un chapitre", minutes=60)]
-    light += [task("Pratiquer le sujet", "pratiquer", 45), task("Faire le quiz", "quiz", 20)]
+    light += [task("Pratiquer le sujet", "practice", 45), task("Faire le quiz", "quiz", 20)]
     return plan([week("Léger", [module("Module Léger", light)]), full_week("Plein", [120] * 5)])
 
 
@@ -79,7 +79,7 @@ def test_schedule_pulls_tasks_forward_into_light_week() -> None:
     first, second = plan_.weeks
     assert first.load_minutes >= 428 and all(w.load_minutes <= 714 for w in plan_.weeks)
     assert second.tasks[-1].type == "quiz"  # quiz et pratique de la semaine 2 restés
-    assert "pratiquer" in {t.type for t in second.tasks}
+    assert "practice" in {t.type for t in second.tasks}
     assert (
         first.tasks[-1].type == "quiz" and first.tasks[-1].title == "Faire le quiz de la semaine 1"
     )

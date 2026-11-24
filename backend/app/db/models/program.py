@@ -7,7 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base, UserScopedMixin, UTCDateTime
 
 # Types partagés avec `app.agents`, qui ne peut pas importer une feature (contrat 6).
-TaskType = Literal["lire", "regarder", "pratiquer", "quiz", "projet"]
+TaskType = Literal["read", "watch", "practice", "quiz", "project"]
 TaskStatus = Literal["todo", "done"]
 ProgramStatus = Literal["draft", "validated"]
 Stage = Literal["foundations", "practice", "advanced"]

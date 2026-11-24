@@ -37,11 +37,11 @@ describe("StudySessionPage: minuteur gardé (revue finale 5)", () => {
       (createSocket) => <StudySessionPage createSocket={createSocket} pollMs={5} />,
       { sessions: [studyOut({ status: "interrupted" })] },
     );
-    expect(await screen.findByText("Temps travaillé : 40 min")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Reprendre" })).toBeDisabled();
-    await user.click(screen.getByRole("button", { name: "Terminer" }));
+    expect(await screen.findByText("Time worked: 40 min")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Resume" })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Finish" }));
     await waitFor(() => expect(patches).toEqual([{ action: "finish", worked_minutes: 40 }]));
-    expect(await screen.findByRole("heading", { name: "Session terminée" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Session complete" })).toBeInTheDocument();
     await waitFor(() => expect(window.sessionStorage.getItem(KEY)).toBeNull());
   });
 
@@ -71,9 +71,9 @@ describe("StudySessionPage: minuteur gardé (revue finale 5)", () => {
         },
       },
     );
-    expect(await screen.findByText("Cette semaine : 3 h 30")).toBeInTheDocument();
-    await user.click(await screen.findByRole("button", { name: "Terminer" }));
-    expect(await screen.findByRole("heading", { name: "Session terminée" })).toBeInTheDocument();
-    expect(await screen.findByText("Cette semaine : 4 h 20")).toBeInTheDocument();
+    expect(await screen.findByText("This week: 3 h 30")).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: "Finish" }));
+    expect(await screen.findByRole("heading", { name: "Session complete" })).toBeInTheDocument();
+    expect(await screen.findByText("This week: 4 h 20")).toBeInTheDocument();
   });
 });

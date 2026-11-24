@@ -19,7 +19,7 @@ function setup(overrides: Partial<React.ComponentProps<typeof TaskList>> = {}) {
 
 async function fillForm(user: ReturnType<typeof userEvent.setup>, minutes: string) {
   await user.type(screen.getByLabelText("Title"), "Écrire un test");
-  await user.selectOptions(screen.getByLabelText("Type"), "pratiquer");
+  await user.selectOptions(screen.getByLabelText("Type"), "practice");
   await user.clear(screen.getByLabelText("Duration (minutes)"));
   if (minutes) await user.type(screen.getByLabelText("Duration (minutes)"), minutes);
   await user.type(screen.getByLabelText("Done criterion"), "Le test passe.");
@@ -72,7 +72,7 @@ describe("TaskList", () => {
     await user.click(screen.getByRole("button", { name: "Add the task" }));
     expect(props.onAdd).toHaveBeenCalledWith({
       title: "Écrire un test",
-      type: "pratiquer",
+      type: "practice",
       minutes: 45,
       doneCriterion: "Le test passe.",
       plannedDate: "2026-11-19",

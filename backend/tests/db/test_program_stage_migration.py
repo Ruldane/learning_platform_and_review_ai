@@ -1,6 +1,7 @@
-"""Migration 0074 : étape et justification des semaines, pages officielles et API anciennes."""
+"""Migrations for program stages, scheduled tasks and their history."""
 
 import json
+from datetime import date
 from pathlib import Path
 
 from alembic.config import Config
@@ -8,6 +9,8 @@ from sqlalchemy import Connection, Engine, inspect, text
 from sqlalchemy import create_engine as create_sync_engine
 
 from alembic import command
+from app.db.models.mcp import McpChange
+from app.db.models.program import Module, PlanVersion, Task
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 NOW = "'2026-11-23 08:00:00'"
@@ -115,5 +118,121 @@ def test_program_stage_codes_preserve_the_rationale_and_undo(tmp_path: Path) -> 
         assert _stages(engine) == ("advanced", "Étape finale.", "practice", "advanced")
         command.downgrade(cfg, "0082")
         assert _stages(engine) == original
+    finally:
+        engine.dispose()
+
+
+TASKS_BEFORE = [
+    {"type": "lire", "title": "Lire la leçon"},
+    {"type": "regarder", "title": "Regarder la vidéo"},
+    {"type": "pratiquer", "title": "Pratiquer le tri"},
+    {"type": "quiz", "title": "Quiz"},
+    {"type": "projet", "title": "Projet personnel"},
+]
+TASKS_AFTER = [
+    {"type": "read", "title": "Lire la leçon"},
+    {"type": "watch", "title": "Regarder la vidéo"},
+    {"type": "practice", "title": "Pratiquer le tri"},
+    {"type": "quiz", "title": "Quiz"},
+    {"type": "project", "title": "Projet personnel"},
+]
+
+
+def _plan_snapshot(tasks: list[dict[str, str]]) -> dict[str, object]:
+    return {"weeks": [{"modules": [{"title": "Mon cours", "tasks": tasks}]}]}
+
+
+def _seed_task_rows(conn: Connection) -> dict[str, object]:
+    _seed_week(conn)
+    module = Module.__table__.insert()
+    task = Task.__table__.insert()
+    version = PlanVersion.__table__.insert()
+    conn.execute(
+        module,
+        {
+            "id": "m1",
+            "user_id": "u1",
+            "week_id": "w1",
+            "program_id": "p1",
+            "rank": 1,
+            "title": "Mon cours",
+        },
+    )
+    conn.execute(
+        task,
+        {
+            "id": "t1",
+            "user_id": "u1",
+            "module_id": "m1",
+            "program_id": "p1",
+            "rank": 1,
+            "minutes": 15,
+            "done_criterion": "Lire la leçon.",
+            "planned_date": date(2026, 11, 23),
+            **TASKS_BEFORE[0],
+        },
+    )
+    snapshot = _plan_snapshot(TASKS_BEFORE)
+    conn.execute(
+        version,
+        {"id": "v1", "user_id": "u1", "program_id": "p1", "version": 1, "snapshot": snapshot},
+    )
+    return snapshot
+
+
+def _seed_task_codes(conn: Connection) -> None:
+    snapshot = _seed_task_rows(conn)
+    for table, row, content in (
+        ("tasks", "t1", TASKS_BEFORE[0]),
+        ("plan_versions", "v1", {"snapshot": snapshot}),
+    ):
+        conn.execute(
+            McpChange.__table__.insert(),
+            {
+                "id": table,
+                "user_id": "u1",
+                "call_id": "call",
+                "table_name": table,
+                "row_id": row,
+                "op": "update",
+                "before": content,
+                "after": content,
+            },
+        )
+
+
+def _task_states(engine: Engine) -> tuple[dict[str, object], object, list[tuple[object, ...]]]:
+    with engine.connect() as conn:
+        task = conn.execute(text("SELECT type, title FROM tasks")).mappings().one()
+        version = conn.execute(text("SELECT snapshot FROM plan_versions")).scalar_one()
+        entries = conn.execute(
+            text('SELECT table_name, "before", "after" FROM mcp_changes ORDER BY table_name')
+        )
+        return (
+            dict(task),
+            json.loads(version),
+            [(table, json.loads(before), json.loads(after)) for table, before, after in entries],
+        )
+
+
+def test_task_code_migration_preserves_versions_and_undo_history(tmp_path: Path) -> None:
+    db_file = tmp_path / "app.db"
+    cfg = _config(db_file)
+    command.upgrade(cfg, "0083")
+    engine = create_sync_engine(f"sqlite:///{db_file.as_posix()}")
+    try:
+        with engine.begin() as conn:
+            _seed_task_codes(conn)
+        before = _task_states(engine)
+        command.upgrade(cfg, "0084")
+        snapshot = _plan_snapshot(TASKS_AFTER)
+        version = {"snapshot": snapshot}
+        assert _task_states(engine) == (
+            TASKS_AFTER[0],
+            snapshot,
+            [("plan_versions", version, version), ("tasks", TASKS_AFTER[0], TASKS_AFTER[0])],
+        )
+        command.downgrade(cfg, "0083")
+        assert _task_states(engine) == before
     finally:
         engine.dispose()

@@ -37,7 +37,7 @@ async def test_start_block_picks_today_tasks_of_first_ready_module(
         "id": seeded.tasks["Pratiquer les bases"],
         "title": "Pratiquer les bases",
         "minutes": 45,
-        "type": "pratiquer",
+        "type": "practice",
     }
 
 

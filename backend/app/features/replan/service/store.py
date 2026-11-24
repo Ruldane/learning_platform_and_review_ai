@@ -86,7 +86,7 @@ async def _reading_additions(
     if task is None:
         return []
     return [
-        NewTask(task.module_id, f"Read: {reading.title}"[:200], "lire", 15, f"Read {reading.url}")
+        NewTask(task.module_id, f"Read: {reading.title}"[:200], "read", 15, f"Read {reading.url}")
     ]
 
 

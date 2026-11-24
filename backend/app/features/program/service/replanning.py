@@ -123,7 +123,7 @@ def _drops(found: list[_Row], starts: list[date], drop: Set[str]) -> tuple[set[s
             and _span(starts, r.task.planned_date) == week
             and r.task.task_id not in removed
         ]
-        if task.type in ("pratiquer", "quiz") and len(same) == 1:
+        if task.type in ("practice", "quiz") and len(same) == 1:
             kept += 1
             continue
         removed.add(task.task_id)
@@ -217,7 +217,7 @@ def _pack(
             for row in found
             if row.task.status == "done"
             and start <= row.task.planned_date < end
-            and row.task.type in ("pratiquer", "quiz")
+            and row.task.type in ("practice", "quiz")
         }
     if not completed:
         raise PlanningImpossible()

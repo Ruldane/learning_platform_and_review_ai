@@ -19,7 +19,7 @@ URLS = ["https://docs.exemple.org/models", "https://docs.exemple.org/messages"]
 def _tasks(minutes: int = 40) -> list:
     return [
         task("Lire la doc", minutes=minutes),
-        task("Pratiquer les modèles", "pratiquer", 45),
+        task("Pratiquer les modèles", "practice", 45),
         task("Faire le quiz", "quiz", 20),
     ]
 

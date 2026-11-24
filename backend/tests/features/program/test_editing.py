@@ -90,7 +90,7 @@ async def test_add_task_over_budget_is_refused_without_echo(
     new = {
         "module_id": module_id,
         "title": "Titre-unique-xyz",
-        "type": "lire",
+        "type": "read",
         "minutes": 60,
         "done_criterion": "Critere-unique-abc",
         "planned_date": "2026-11-18",
@@ -107,7 +107,7 @@ async def test_add_task_within_budget(client: httpx.AsyncClient, draft_program: 
     new = {
         "module_id": module_id,
         "title": "Relire les notes",
-        "type": "lire",
+        "type": "read",
         "minutes": 30,
         "done_criterion": "Notes relues",
         "planned_date": "2026-11-25",
@@ -121,7 +121,7 @@ async def test_add_task_within_budget(client: httpx.AsyncClient, draft_program: 
 async def test_invalid_task_is_refused_without_echo(
     client: httpx.AsyncClient, draft_program: Draft
 ) -> None:
-    new = {"module_id": "m", "title": "Titre-unique-xyz", "type": "lire", "minutes": 200}
+    new = {"module_id": "m", "title": "Titre-unique-xyz", "type": "read", "minutes": 200}
     r = await client.patch(f"{API}/programs/{draft_program.program_id}", json={"add_tasks": [new]})
     assert r.status_code == 422 and "Titre-unique-xyz" not in r.text
 
@@ -218,7 +218,7 @@ async def test_concurrent_move_and_add_never_exceed_85_percent(
     new = {
         "module_id": program["weeks"][0]["modules"][0]["id"],
         "title": "Relire le chapitre 2",
-        "type": "lire",
+        "type": "read",
         "minutes": 40,
         "done_criterion": "Notes relues",
         "planned_date": "2026-11-19",

@@ -32,7 +32,7 @@ from tests.support.council import GOAL_ID, GOAL_TEXT
 MONDAY = date(2026, 11, 16)
 
 
-def task(title: str, kind: TaskType = "lire", minutes: int = 30) -> TaskDraft:
+def task(title: str, kind: TaskType = "read", minutes: int = 30) -> TaskDraft:
     return TaskDraft(title=title, type=kind, minutes=minutes, done_criterion="Notes prises")
 
 
@@ -51,7 +51,7 @@ def plan(weeks: list[WeekDraft], title: str = "Parcours IA") -> PlanDraft:
 def full_week(theme: str, minutes: list[int]) -> WeekDraft:
     """Une semaine d'un module : des lectures, puis la pratique et le quiz de la semaine."""
     tasks = [task(f"Lire le chapitre {i}", minutes=m) for i, m in enumerate(minutes, start=1)]
-    tasks += [task(f"Pratiquer {theme}", "pratiquer", 45), task("Faire le quiz", "quiz", 20)]
+    tasks += [task(f"Pratiquer {theme}", "practice", 45), task("Faire le quiz", "quiz", 20)]
     return week(theme, [module(f"Module {theme}", tasks)])
 
 

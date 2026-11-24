@@ -15,7 +15,7 @@ MIN_QUESTIONS, MAX_QUESTIONS = 8, 12
 MIN_TYPES = 3
 PASS_SCORE = 80
 RETRY_DAYS = 2
-READING_TYPES = ("lire", "regarder")
+READING_TYPES = ("read", "watch")
 # Libellés de l'option « Je bloque » : le back compte les indices (F15).
 STUCK_LABELS = ("Je bloque (1/3)", "Je bloque (2/3)", "Je bloque (3/3)", "Voir la solution")
 STUDY_DEAD = ("interrupted", "cancelled")

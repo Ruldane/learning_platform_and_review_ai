@@ -2512,11 +2512,11 @@
           },
           "type": {
             "enum": [
-              "lire",
-              "regarder",
-              "pratiquer",
+              "read",
+              "watch",
+              "practice",
               "quiz",
-              "projet"
+              "project"
             ],
             "title": "Type",
             "type": "string"
@@ -26993,11 +26993,11 @@
           },
           "type": {
             "enum": [
-              "lire",
-              "regarder",
-              "pratiquer",
+              "read",
+              "watch",
+              "practice",
               "quiz",
-              "projet"
+              "project"
             ],
             "title": "Type",
             "type": "string"
@@ -27058,11 +27058,11 @@
           },
           "type": {
             "enum": [
-              "lire",
-              "regarder",
-              "pratiquer",
+              "read",
+              "watch",
+              "practice",
               "quiz",
-              "projet"
+              "project"
             ],
             "title": "Type",
             "type": "string"
@@ -27164,11 +27164,11 @@
           },
           "type": {
             "enum": [
-              "lire",
-              "regarder",
-              "pratiquer",
+              "read",
+              "watch",
+              "practice",
               "quiz",
-              "projet"
+              "project"
             ],
             "title": "Type",
             "type": "string"

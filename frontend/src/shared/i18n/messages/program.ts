@@ -73,11 +73,11 @@ export const program = {
     link: "{module}: {status}",
   },
   taskType: {
-    lire: "Read",
-    regarder: "Watch",
-    pratiquer: "Practice",
+    read: "Read",
+    watch: "Watch",
+    practice: "Practice",
     quiz: "Quiz",
-    projet: "Project",
+    project: "Project",
   },
   task: {
     alreadyKnown: "already known",

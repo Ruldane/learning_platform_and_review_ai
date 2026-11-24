@@ -18,7 +18,7 @@ def _snap(titles_by_day: dict[str, date]) -> dict[str, object]:
     tasks = [
         {
             "title": t,
-            "type": "lire",
+            "type": "read",
             "minutes": 30,
             "planned_date": d.isoformat(),
             "already_known": False,
@@ -94,7 +94,7 @@ def test_snapshot_from_program_rows_matches_the_plan_form() -> None:
                     ModuleRow("Python", skipped=True),
                     ModuleRow(
                         "Pandas",
-                        tasks=[TaskRow("Réviser : Pandas", "lire", 20, date(2026, 11, 16), True)],
+                        tasks=[TaskRow("Réviser : Pandas", "read", 20, date(2026, 11, 16), True)],
                     ),
                 ],
             )
@@ -106,7 +106,7 @@ def test_snapshot_from_program_rows_matches_the_plan_form() -> None:
     task_json = snap["weeks"][0]["modules"][0]["tasks"][0]
     assert task_json == {
         "title": "Réviser : Pandas",
-        "type": "lire",
+        "type": "read",
         "minutes": 20,
         "planned_date": "2026-11-16",
         "already_known": True,

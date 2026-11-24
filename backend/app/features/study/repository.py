@@ -16,7 +16,7 @@ from app.db.models.program import Module, Program, Task
 from app.db.models.study import StudySession
 from app.db.repository import UserScopedRepository
 
-BLOCK_TYPES = ("lire", "regarder", "pratiquer")  # hors quiz et projet (D103)
+BLOCK_TYPES = ("read", "watch", "practice")  # hors quiz et projet (D103)
 
 
 class StudyRepository(UserScopedRepository[StudySession]):

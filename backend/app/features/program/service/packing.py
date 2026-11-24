@@ -61,7 +61,7 @@ def final_quiz(own: list[Entry]) -> Entry | None:
 
 def first_practice(own: list[Entry]) -> Entry | None:
     """La première pratique de la semaine : sa place est réservée d'avance."""
-    practices = [entry for entry in own if entry.task.type == "pratiquer"]
+    practices = [entry for entry in own if entry.task.type == "practice"]
     return practices[0] if practices else None
 
 
@@ -106,7 +106,7 @@ def pack_week(
     days = week_days(start)
     remaining = {day: budget.day_capacity(day) for day in days}
     quiz = None if "quiz" in completed_kinds else final_quiz(own)
-    practice = None if "pratiquer" in completed_kinds else first_practice(own)
+    practice = None if "practice" in completed_kinds else first_practice(own)
     reserved = [entry for entry in (quiz, practice) if entry is not None]
     reserve = sum(entry.task.minutes for entry in reserved)
     if reserve > budget.cap_minutes:
@@ -180,7 +180,7 @@ SUITE = " (suite)"
 def _reserved(tasks: list[ScheduledTask]) -> set[int]:
     """Rangs du quiz qui ferme la semaine (le dernier) et de sa première pratique."""
     quizzes = [i for i, task in enumerate(tasks) if task.type == "quiz"]
-    practices = [i for i, task in enumerate(tasks) if task.type == "pratiquer"]
+    practices = [i for i, task in enumerate(tasks) if task.type == "practice"]
     return set(quizzes[-1:] + practices[:1])
 
 

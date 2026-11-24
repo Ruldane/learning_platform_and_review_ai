@@ -62,7 +62,7 @@ async def test_add_module_then_tasks_through_the_existing_patch(
             {
                 "module_id": module["id"],
                 "title": "Lire sur les métriques",
-                "type": "lire",
+                "type": "read",
                 "minutes": 30,
                 "done_criterion": "Notes prises",
                 "planned_date": "2026-11-17",
@@ -74,6 +74,7 @@ async def test_add_module_then_tasks_through_the_existing_patch(
     program = await view(client, drafted.program_id)
     mine = [m for w in program["weeks"] for m in w["modules"] if m["id"] == module["id"]]
     assert [t["title"] for t in mine[0]["tasks"]] == ["Lire sur les métriques"]
+    assert [t["type"] for t in mine[0]["tasks"]] == ["read"]
     await assert_no_agent(app)
 
 
