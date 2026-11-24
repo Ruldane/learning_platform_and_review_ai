@@ -38,15 +38,15 @@ describe("KitPage", () => {
   it("introduces the kit before it is generated: the application, the promise, one button", async () => {
     setup();
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Kit de candidature" }),
+      await screen.findByRole("heading", { level: 1, name: "Application kit" }),
     ).toBeVisible();
     expect(await screen.findByText("Acme, Data engineer")).toBeVisible();
-    expect(screen.getByText(/Rien n'est envoyé par l'application/)).toBeVisible();
-    expect(await screen.findByText(/Le kit n'a pas encore été généré/)).toBeVisible();
-    expect(screen.getByRole("button", { name: "Générer le kit" })).toBeEnabled();
-    expect(screen.queryByRole("region", { name: "Lettre de motivation" })).toBeNull();
-    expect(screen.queryByRole("link", { name: "Télécharger l'archive" })).toBeNull();
-    expect(screen.getByRole("link", { name: "Retour à la fiche" })).toHaveAttribute(
+    expect(screen.getByText(/The app sends nothing/)).toBeVisible();
+    expect(await screen.findByText(/The kit hasn't been generated yet/)).toBeVisible();
+    expect(screen.getByRole("button", { name: "Generate the kit" })).toBeEnabled();
+    expect(screen.queryByRole("region", { name: "Cover letter" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Download the archive" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Back to the application" })).toHaveAttribute(
       "href",
       "/applications/a1",
     );
@@ -54,75 +54,73 @@ describe("KitPage", () => {
 
   it("starts the kit, follows its session and shows each piece as it arrives, announced aloud", async () => {
     const { user, sockets, kit } = setup();
-    await user.click(await screen.findByRole("button", { name: "Générer le kit" }));
+    await user.click(await screen.findByRole("button", { name: "Generate the kit" }));
     await waitFor(() => expect(kit.state.starts).toBe(1));
     const stream = await openStream(sockets, "k1");
-    expect(await screen.findByText(/Le kit se prépare/)).toHaveFocus();
-    expect(screen.queryByRole("button", { name: "Générer le kit" })).toBeNull();
-    expect((await piece("Lettre de motivation")).textContent).toContain("En préparation");
+    expect(await screen.findByText(/The kit is being prepared/)).toHaveFocus();
+    expect(screen.queryByRole("button", { name: "Generate the kit" })).toBeNull();
+    expect((await piece("Cover letter")).textContent).toContain("Preparing");
 
     const e = councilEvents("k1");
     kit.arrive("letter", { content: "Madame, Monsieur,", words: 2 });
     stream.push(e.artifactReady("kit_item", "k-letter", null));
-    const letter = within(await piece("Lettre de motivation"));
+    const letter = within(await piece("Cover letter"));
     await waitFor(() =>
-      expect(letter.getByLabelText("Texte : Lettre de motivation")).toHaveValue(
-        "Madame, Monsieur,",
-      ),
+      expect(letter.getByLabelText("Text: Cover letter")).toHaveValue("Madame, Monsieur,"),
     );
-    expect(letter.getByText("Prête")).toBeVisible();
-    expect(await screen.findByText("Lettre de motivation : prête.")).toBeInTheDocument();
-    expect(screen.getByText("1 pièce sur 7 est arrivée.")).toBeVisible();
+    expect(letter.getByText("Ready")).toBeVisible();
+    expect(await screen.findByText("Cover letter: ready.")).toBeInTheDocument();
+    expect(screen.getByText("1 of 7 pieces has arrived.")).toBeVisible();
 
     kit.arrive("pitch", { status: "to_check", flags: ["Kubernetes"], content: "Je suis Camille." });
     stream.push(e.artifactReady("kit_item", "k-pitch", null));
-    expect(await screen.findByText("Pitch de présentation : à vérifier.")).toBeInTheDocument();
-    expect(within(await piece("Pitch de présentation")).getByRole("note")).toHaveTextContent(
-      "Absent de ton profil : Kubernetes.",
+    expect(await screen.findByText("Elevator pitch: to check.")).toBeInTheDocument();
+    expect(within(await piece("Elevator pitch")).getByRole("note")).toHaveTextContent(
+      "Not in your profile: Kubernetes.",
     );
-    // La lettre déjà là n'est pas réannoncée, ni remplacée.
-    expect(screen.getByText("2 pièces sur 7 sont arrivées.")).toBeVisible();
+    // The letter remains ready without another announcement.
+    expect(screen.getByText("2 of 7 pieces have arrived.")).toBeVisible();
   });
 
   it("reads the kit again at the end of the run even when an artifact.ready was lost", async () => {
     const { user, sockets, kit } = setup();
-    await user.click(await screen.findByRole("button", { name: "Générer le kit" }));
+    await user.click(await screen.findByRole("button", { name: "Generate the kit" }));
     const stream = await openStream(sockets, "k1");
     const e = councilEvents("k1");
-    // Le serveur a rangé deux pièces, mais aucun artifact.ready n'est arrivé (coupure du back).
+    // The server saved two pieces while the connection was down.
     kit.arrive("cv", { content: "CV ciblé" });
     kit.arrive("followups", {
       status: "failed",
       content: "",
-      error: "Le modèle n'a pas répondu.",
+      error: "The model did not respond.",
       words: null,
     });
     kit.finish();
     stream.push(e.completed());
-    const followups = within(await piece("Relances"));
-    expect(await followups.findByText("Échec")).toBeVisible();
-    expect(followups.getByRole("note")).toHaveTextContent("Le modèle n'a pas répondu.");
-    expect((await piece("CV ciblé")).textContent).toContain("Prête");
+    const followups = within(await piece("Follow-ups"));
+    expect(await followups.findByText("Failed")).toBeVisible();
+    expect(followups.getByRole("note")).toHaveTextContent("The model did not respond.");
+    expect((await piece("Tailored résumé")).textContent).toContain("Ready");
     expect(
       await screen.findByText(
-        /Le kit est terminé : 1 pièce prête, 0 pièces à vérifier, 1 pièce en échec\./,
+        "The kit is done: 1 piece ready, 0 pieces to check, 1 piece failed.",
       ),
     ).toBeInTheDocument();
-    expect(await screen.findByRole("button", { name: "Relancer le kit" })).toBeVisible();
+    expect(await screen.findByRole("button", { name: "Regenerate the kit" })).toBeVisible();
   });
 
   it.each([
-    ["posting_required", /ni offre liée ni texte d'offre.*Ajouter le texte de l'offre/],
-    ["profile_required", /Aucun profil maître validé/],
+    ["posting_required", /no linked posting or posting text.*Add the posting text/],
+    ["profile_required", /No validated master profile/],
   ])("explains a refused start (%s) and keeps the button", async (code, message) => {
     const { user } = setup({
-      start: () => HttpResponse.json(apiError(code, "Refusé."), { status: 409 }),
+      start: () => HttpResponse.json(apiError(code, "Refused."), { status: 409 }),
     });
-    await user.click(await screen.findByRole("button", { name: "Générer le kit" }));
+    await user.click(await screen.findByRole("button", { name: "Generate the kit" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(message);
-    expect(screen.getByRole("button", { name: "Générer le kit" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Generate the kit" })).toBeEnabled();
     if (code === "profile_required") {
-      expect(screen.getByRole("link", { name: "Ouvrir mon profil" })).toHaveAttribute(
+      expect(screen.getByRole("link", { name: "Open my profile" })).toHaveAttribute(
         "href",
         "/career/profile",
       );
@@ -144,13 +142,13 @@ describe("KitPage", () => {
         }),
       ],
     });
-    const form = within(await piece("Réponses au formulaire"));
-    expect(form.getByRole("note")).toHaveTextContent("1 réponse salariale est à remplir par toi");
+    const form = within(await piece("Form answers"));
+    expect(form.getByRole("note")).toHaveTextContent("1 salary answer is for you to fill in");
     expect(form.getByLabelText("Quelles sont vos prétentions ?")).toHaveAccessibleDescription(
-      "À remplir par toi",
+      "For you to fill in",
     );
-    const brief = within(await piece("Dossier sur l'entreprise"));
-    expect(brief.getByRole("note")).toHaveTextContent(/passages sans source ont été retirés/);
+    const brief = within(await piece("Company brief"));
+    expect(brief.getByRole("note")).toHaveTextContent(/Unsourced passages were removed/);
     expect(brief.getByRole("link", { name: /Acme, le site/ })).toHaveAttribute(
       "href",
       "https://example.org/acme",
@@ -167,17 +165,17 @@ describe("KitPage", () => {
         }),
       ],
     });
-    const letter = within(await piece("Lettre de motivation"));
-    await user.clear(letter.getByLabelText("Texte : Lettre de motivation"));
-    await user.type(letter.getByLabelText("Texte : Lettre de motivation"), "Sans le terme.");
+    const letter = within(await piece("Cover letter"));
+    await user.clear(letter.getByLabelText("Text: Cover letter"));
+    await user.type(letter.getByLabelText("Text: Cover letter"), "Sans le terme.");
     expect(kit.state.patches).toEqual([]);
-    await user.click(letter.getByRole("button", { name: "Enregistrer : Lettre de motivation" }));
+    await user.click(letter.getByRole("button", { name: "Save: Cover letter" }));
     await waitFor(() =>
       expect(kit.state.patches).toEqual([{ kind: "letter", body: { content: "Sans le terme." } }]),
     );
-    expect(await letter.findByText("Modification enregistrée. La pièce est prête.")).toBeVisible();
-    expect(letter.getByText("Prête")).toBeVisible();
-    expect(letter.getByText("Modifiée par toi")).toBeVisible();
+    expect(await letter.findByText("Change saved. The piece is ready.")).toBeVisible();
+    expect(letter.getByText("Ready")).toBeVisible();
+    expect(letter.getByText("Edited by you")).toBeVisible();
     expect(letter.queryByRole("note")).toBeNull();
   });
 
@@ -187,11 +185,11 @@ describe("KitPage", () => {
       sessionId: "k9",
       items: [kitItem("letter", { content: "Ancienne." })],
     });
-    const letter = within(await piece("Lettre de motivation"));
-    await user.type(letter.getByLabelText("Texte : Lettre de motivation"), " Corrigée.");
-    await user.click(letter.getByRole("button", { name: "Enregistrer : Lettre de motivation" }));
+    const letter = within(await piece("Cover letter"));
+    await user.type(letter.getByLabelText("Text: Cover letter"), " Corrigée.");
+    await user.click(letter.getByRole("button", { name: "Save: Cover letter" }));
     await waitFor(() => expect(kit.state.patches).toHaveLength(1));
-    expect(await letter.findByText(/Modification enregistrée/)).toBeVisible();
+    expect(await letter.findByText(/Change saved/)).toBeVisible();
   });
 
   it("shows the refusal of a save under the piece", async () => {
@@ -199,29 +197,29 @@ describe("KitPage", () => {
       items: [kitItem("letter")],
       patch: () =>
         HttpResponse.json(
-          apiError("profile_required", "Ta modification n'est pas relue : aucun profil validé."),
+          apiError("profile_required", "Your edit could not be checked without a validated profile."),
           { status: 409 },
         ),
     });
-    const letter = within(await piece("Lettre de motivation"));
-    await user.type(letter.getByLabelText("Texte : Lettre de motivation"), "!");
-    await user.click(letter.getByRole("button", { name: "Enregistrer : Lettre de motivation" }));
+    const letter = within(await piece("Cover letter"));
+    await user.type(letter.getByLabelText("Text: Cover letter"), "!");
+    await user.click(letter.getByRole("button", { name: "Save: Cover letter" }));
     expect(await letter.findByRole("alert")).toHaveTextContent(
-      "Ta modification n'est pas relue : aucun profil validé.",
+      "Your edit could not be checked without a validated profile.",
     );
   });
 
   it("copies the text of a piece to the clipboard", async () => {
     const { user } = setup({ items: [kitItem("pitch", { content: "Je suis Camille." })] });
-    const pitch = within(await piece("Pitch de présentation"));
-    await user.click(pitch.getByRole("button", { name: "Copier : Pitch de présentation" }));
-    expect(await pitch.findByText("Copié dans le presse-papiers.")).toBeVisible();
+    const pitch = within(await piece("Elevator pitch"));
+    await user.click(pitch.getByRole("button", { name: "Copy: Elevator pitch" }));
+    expect(await pitch.findByText("Copied to clipboard.")).toBeVisible();
     expect(await navigator.clipboard.readText()).toBe("Je suis Camille.");
   });
 
   it("offers the archive once a piece exists, as a download of kit.zip", async () => {
     setup({ items: [kitItem("cv")] });
-    const link = await screen.findByRole("link", { name: "Télécharger l'archive" });
+    const link = await screen.findByRole("link", { name: "Download the archive" });
     expect(link).toHaveAttribute(
       "href",
       expect.stringMatching(/\/api\/v1\/applications\/a1\/kit\.zip$/),
@@ -231,16 +229,15 @@ describe("KitPage", () => {
 
   it("lets January cancel a running kit", async () => {
     const { user, state } = setup({ running: true, sessionId: "k9", items: [kitItem("cv")] });
-    await user.click(await screen.findByRole("button", { name: "Annuler le kit" }));
+    await user.click(await screen.findByRole("button", { name: "Cancel the kit" }));
     await waitFor(() => expect(state.cancels).toEqual(["k9"]));
   });
 
   it("says the application is gone on a 404", async () => {
     setup({}, { applications: [] });
-    expect(await screen.findByText("Cette candidature n'existe plus.")).toBeVisible();
-    expect(screen.getByRole("button", { name: "Retour au suivi" })).toBeVisible();
-    // La page n'a plus que cet état : son titre est le seul h1.
-    expect(screen.getByRole("heading", { level: 1, name: "Fiche introuvable" })).toBeVisible();
+    expect(await screen.findByText("This application no longer exists.")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Back to tracking" })).toBeVisible();
+    expect(screen.getByRole("heading", { level: 1, name: "Application not found" })).toBeVisible();
   });
 
   it("offers to retry when the kit cannot be read", async () => {
@@ -249,10 +246,10 @@ describe("KitPage", () => {
       items: [kitItem("cv")],
       read: () => {
         if (failures-- <= 0) return undefined;
-        return HttpResponse.json(apiError("internal_error", "Panne du serveur."), { status: 500 });
+        return HttpResponse.json(apiError("internal_error", "Server error."), { status: 500 });
       },
     });
-    await user.click(await screen.findByRole("button", { name: "Réessayer" }, { timeout: 5000 }));
-    expect((await piece("CV ciblé")).textContent).toContain("Prête");
+    await user.click(await screen.findByRole("button", { name: "Retry" }, { timeout: 5000 }));
+    expect((await piece("Tailored résumé")).textContent).toContain("Ready");
   });
 });

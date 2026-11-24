@@ -10,8 +10,7 @@ NO_STYLE = "No style guide. Write in plain language and use short sentences."
 
 
 def profile_text(profile: MasterProfileData) -> str:
-    """Le profil validé : son nom, puis un fait par ligne `[identifiant] texte` (les expériences et
-    formations avec leur période), ce que `fact_ids` cite."""
+    """List the name and facts by ID, including dates for experience and education."""
     dated: list[Experience | Education] = [*profile.experiences, *profile.education]
     periods = {
         item.id: f" ({item.start or '?'} → {item.end or 'present'})"
@@ -31,18 +30,16 @@ def card_text(ctx: KitContext) -> str:
 
 
 def _eliminatory(ctx: KitContext) -> str:
-    """Les critères éliminatoires que l'analyse a repérés (venus de l'offre : encadrés)."""
+    """Return the posting's screening criteria as untrusted data."""
     texts = [item.text for item in ctx.analysis.eliminatory]
-    return untrusted("\n".join(texts), "critères de l'offre") if texts else NO_CRITERIA
+    return untrusted("\n".join(texts), "screening criteria") if texts else NO_CRITERIA
 
 
 def prompt_vars(ctx: KitContext, style_guide: str) -> dict[str, object]:
     return {
-        "card": untrusted(card_text(ctx), "fiche de candidature"),
-        "profile": untrusted(profile_text(ctx.profile), "profil de January"),
-        "posting": untrusted(ctx.posting_text[:MAX_POSTING_CHARS], "offre"),
-        "style_guide": untrusted(style_guide, "guide de style")
-        if style_guide.strip()
-        else NO_STYLE,
+        "card": untrusted(card_text(ctx), "application"),
+        "profile": untrusted(profile_text(ctx.profile), "January's profile"),
+        "posting": untrusted(ctx.posting_text[:MAX_POSTING_CHARS], "posting"),
+        "style_guide": untrusted(style_guide, "style guide") if style_guide.strip() else NO_STYLE,
         "eliminatory": _eliminatory(ctx),
     }

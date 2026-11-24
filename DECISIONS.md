@@ -3397,9 +3397,11 @@ D114 (5.17, front : carte des compétences, replanification, capture rapide, jou
 
 - **Date** 2026-11-24
 - **Subject** English throughout Tremplin
-- **Decision** Use English for the interface, generated text, MCP, documentation and code.
+- **Decision** Write all feature code in English, including identifiers, comments, docstrings,
+  and tests. Use English for the interface, generated text, and MCP.
   Move application codes to English with reversible data migrations. Regenerate the API
   contract and frontend types when the codes change. Publish English page URLs and redirect
   the previous French paths so bookmarks and saved links still resolve.
+  Translation of existing documentation in `docs/` and earlier decision entries is deferred.
 - **Reason** January wants one language across the app and its tools. Migrations keep existing
   records usable and leave user-authored text and previously generated content as written.

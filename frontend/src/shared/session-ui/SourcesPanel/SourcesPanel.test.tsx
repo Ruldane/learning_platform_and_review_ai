@@ -63,37 +63,37 @@ const none: SourcesViewModel = { queries: [], kept: [], rejected: [], unreadable
 describe("SourcesPanel", () => {
   it("groups kept, rejected and unreadable sources", () => {
     render(<SourcesPanel model={model} pending={false} />);
-    const kept = screen.getByRole("region", { name: "Retenues" });
+    const kept = screen.getByRole("region", { name: "Kept" });
     expect(within(kept).getByText("82/100")).toBeInTheDocument();
-    const rejected = screen.getByRole("region", { name: "Écartées" });
+    const rejected = screen.getByRole("region", { name: "Discarded" });
     expect(within(rejected).getByText("Contenu trop superficiel.")).toBeInTheDocument();
-    const unreadable = screen.getByRole("region", { name: "Illisibles" });
+    const unreadable = screen.getByRole("region", { name: "Unreadable" });
     expect(within(unreadable).getByText("Page vide")).toBeInTheDocument();
     expect(within(unreadable).queryByRole("link")).toBeNull();
   });
 
   it("lists the practitioners found apart from the pages", () => {
     render(<SourcesPanel model={model} pending={false} />);
-    const people = screen.getByRole("region", { name: "Praticiens repérés" });
+    const people = screen.getByRole("region", { name: "Practitioners found" });
     expect(within(people).getByRole("link", { name: "Ada Lovelace" })).toHaveAttribute(
       "href",
       "https://exemple.fr/ada",
     );
     expect(within(people).getByText("Ingénieure ML")).toBeInTheDocument();
-    expect(within(people).getByText("Publie sur exemple.fr")).toBeInTheDocument();
+    expect(within(people).getByText("Publishes on exemple.fr")).toBeInTheDocument();
     expect(within(people).queryByText(/\/100/)).toBeNull();
-    const kept = screen.getByRole("region", { name: "Retenues" });
+    const kept = screen.getByRole("region", { name: "Kept" });
     expect(within(kept).queryByText("Ada Lovelace")).toBeNull();
   });
 
   it("is not empty when only practitioners were found", () => {
     render(<SourcesPanel model={{ ...none, people: model.people }} pending={false} />);
-    expect(screen.queryByText("Aucune source pour l'instant.")).toBeNull();
+    expect(screen.queryByText("No sources yet.")).toBeNull();
   });
 
   it("shows the queries that were sent with their language", () => {
     render(<SourcesPanel model={model} pending={false} />);
-    const queries = screen.getByRole("region", { name: "Requêtes lancées" });
+    const queries = screen.getByRole("region", { name: "Queries run" });
     expect(within(queries).getByText("rag evaluation")).toBeInTheDocument();
     expect(within(queries).getByText("en")).toBeInTheDocument();
     expect(within(queries).getByText("8 résultats")).toBeInTheDocument();
@@ -103,26 +103,26 @@ describe("SourcesPanel", () => {
   it("says when a query failed", () => {
     const query = { id: "q", text: "x", lang: null, summary: null, ok: false };
     render(<SourcesPanel model={{ ...none, queries: [query] }} pending={false} />);
-    expect(screen.getByText("Sans réponse")).toBeInTheDocument();
+    expect(screen.getByText("No response")).toBeInTheDocument();
   });
 
   it("omits the blocks that have nothing in them", () => {
     render(<SourcesPanel model={{ ...none, kept: [base] }} pending={false} />);
-    expect(screen.getByRole("region", { name: "Retenues" })).toBeInTheDocument();
-    expect(screen.queryByRole("region", { name: "Écartées" })).toBeNull();
-    expect(screen.queryByRole("region", { name: "Illisibles" })).toBeNull();
-    expect(screen.queryByRole("region", { name: "Requêtes lancées" })).toBeNull();
+    expect(screen.getByRole("region", { name: "Kept" })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Discarded" })).toBeNull();
+    expect(screen.queryByRole("region", { name: "Unreadable" })).toBeNull();
+    expect(screen.queryByRole("region", { name: "Queries run" })).toBeNull();
   });
 
   it("shows an empty state when nothing was found yet", () => {
     render(<SourcesPanel model={none} pending={false} />);
-    expect(screen.getByText("Aucune source pour l'instant.")).toBeInTheDocument();
+    expect(screen.getByText("No sources yet.")).toBeInTheDocument();
   });
 
-  it("announces that the Éclaireur is searching, politely", () => {
+  it("announces that the Scout is searching, politely", () => {
     render(<SourcesPanel model={none} pending />);
-    const status = screen.getByText("L'Éclaireur cherche…");
+    const status = screen.getByText("The Scout is searching…");
     expect(status).toHaveAttribute("aria-live", "polite");
-    expect(screen.queryByText("Aucune source pour l'instant.")).toBeNull();
+    expect(screen.queryByText("No sources yet.")).toBeNull();
   });
 });

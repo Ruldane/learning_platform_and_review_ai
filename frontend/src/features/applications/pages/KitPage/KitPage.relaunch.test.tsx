@@ -28,18 +28,18 @@ function setup(options: KitApiOptions = {}, api: Parameters<typeof renderApplica
   return { ...view, sockets, kit };
 }
 
-describe("KitPage, relance", () => {
+describe("KitPage, regenerating a kit", () => {
   beforeEach(() => useSessionStore.getState().reset("k1"));
 
   it("says the pieces January edited are kept when she relaunches the kit", async () => {
     const { user, kit, sockets } = setup({
       items: [kitItem("letter", { edited: true }), kitItem("cv")],
     });
-    expect(await screen.findByText("Modifiée par toi")).toBeVisible();
+    expect(await screen.findByText("Edited by you")).toBeVisible();
     expect(
-      screen.getByText(/Les pièces que tu as modifiées sont gardées telles quelles/),
+      screen.getByText(/Pieces you edited are kept as they are/),
     ).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "Relancer le kit" }));
+    await user.click(screen.getByRole("button", { name: "Regenerate the kit" }));
     await waitFor(() => expect(kit.state.starts).toBe(1));
     await openStream(sockets, "k1");
   });
@@ -48,12 +48,12 @@ describe("KitPage, relance", () => {
     const { user, kit, sockets } = setup({
       items: [kitItem("cv"), kitItem("letter"), kitItem("pitch", { edited: true })],
     });
-    await user.click(await screen.findByRole("button", { name: "Relancer le kit" }));
+    await user.click(await screen.findByRole("button", { name: "Regenerate the kit" }));
     const stream = await openStream(sockets, "k1");
-    // Seule la pièce modifiée par January est déjà « arrivée » : elle est gardée telle quelle.
-    expect(await screen.findByText("1 pièce sur 7 est arrivée.")).toBeVisible();
+    // The edited piece carries over and is already counted when the run starts.
+    expect(await screen.findByText("1 of 7 pieces has arrived.")).toBeVisible();
     kit.arrive("letter", { content: "Refaite.", updated_at: "2026-11-15T12:00:00Z" });
     stream.push(councilEvents("k1").artifactReady("kit_item", "k-letter", null));
-    expect(await screen.findByText("2 pièces sur 7 sont arrivées.")).toBeVisible();
+    expect(await screen.findByText("2 of 7 pieces have arrived.")).toBeVisible();
   });
 });

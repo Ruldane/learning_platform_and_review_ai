@@ -27,7 +27,7 @@ from tests.agents.runtime.runner_helpers import wait_until
 from tests.support.kit import APPLICATION_ID, COMPANY, TITLE, FakeKitStore
 
 LETTER_TITLE = "Cover letter"
-RETRY_MARKER = "N'écris rien qui ne soit pas dans le profil"
+RETRY_MARKER = "Remove terms unsupported by the profile"
 
 
 def unsupported_letter() -> str:
@@ -55,7 +55,7 @@ async def test_pieces_are_announced_as_they_finish(kit_runner: MakeKit) -> None:
     models = writers()
 
     async def slow_letter(agent: str, prompt: str) -> None:
-        if "Rédige la lettre de motivation." in prompt:
+        if "Write the cover letter." in prompt:
             await asyncio.sleep(0.4)
 
     models.hooks.append(slow_letter)
@@ -73,7 +73,7 @@ async def test_letter_with_unsupported_claim_retries_then_flags(
     await run.wait_status("completed")
     first, second = prompts(run.models, "letter")
     assert RETRY_MARKER not in first
-    assert f"{RETRY_MARKER} : 5, Kubernetes" in second
+    assert f"{RETRY_MARKER}: 5, Kubernetes" in second
     row = kit_store.piece("letter")
     assert row.status == "to_check" and row.meta["flags"] == ["5", "Kubernetes"]
     assert row.meta["words"] == 301 and row.meta["language"] == "en"
@@ -105,7 +105,7 @@ async def test_letter_word_count_enforced(
     run = await kit_runner(writers(letter=[letter(words), letter(words)]))
     await run.wait_status("completed")
     first, second = prompts(run.models, "letter")
-    assert "250" in second and "350" in second and "Respecte les longueurs" in second
+    assert "250" in second and "350" in second and "Follow the word limits" in second
     row = kit_store.piece("letter")
     assert row.status == "to_check" and row.meta["words"] == words and "flags" not in row.meta
 

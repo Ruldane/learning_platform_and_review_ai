@@ -166,7 +166,7 @@ async def test_unknown_company_skips_the_dossier(
     run = await kit_runner()
     await run.wait_status("completed")
     row = kit_store.piece("company_brief")
-    assert row.status == "to_check" and "Entreprise inconnue" in row.content
+    assert row.status == "to_check" and "company is required" in row.content
     assert kit_web.searches == []
 
 

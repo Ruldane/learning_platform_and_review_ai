@@ -1,13 +1,9 @@
-"""Ce que les sept branches du kit de candidature ont en commun (D142) : le nœud `load`,
-l'aiguillage vers les pièces non gardées, une pièce rangée puis annoncée, la pièce en échec
-qui n'arrête pas les autres, et le nœud `close`.
+"""Load, route, save, and announce the seven application kit pieces (D142).
 
-Une pièce est rangée par le port (`save_piece`, idempotent par fiche, pièce et session, SPEC 9.4)
-puis annoncée par `artifact.ready` (`kind = "kit_item"`) dès qu'elle est prête, sans attendre les
-autres branches. Une pièce « en échec » (`failed`, motif lisible dans `meta.error`) est rangée mais
-pas annoncée comme prête.
-
-Journaux : identifiants, nombres et statuts seulement, jamais une pièce ni l'entreprise (17.2)."""
+The port saves each piece idempotently by application, kind, and session (SPEC 9.4).
+Completed pieces emit a `kit_item` artifact independently. Failed pieces instead record
+a reason in `meta.error`. Logs use IDs, counts, and status codes (SPEC 17.2).
+"""
 
 import asyncio
 import logging
@@ -44,10 +40,7 @@ def say(agent: str, message_id: str, text: str) -> None:
 
 
 async def guarded(limit_s: float, work: Callable[[], Awaitable[Piece]]) -> Piece:
-    """La pièce de `work`, ou une pièce en échec si l'agent échoue (`AppError`, message lisible) ou
-    dépasse `limit_s` : une branche en échec n'arrête pas les autres. Le plafond de tokens de la
-    session (`TokenBudgetExceeded`) n'est pas une pièce en échec : il remonte et arrête la
-    session."""
+    """Record a branch failure on errors or timeouts and end the run at the token cap."""
     try:
         async with asyncio.timeout(limit_s):
             return await work()
@@ -62,12 +55,12 @@ async def guarded(limit_s: float, work: Callable[[], Awaitable[Piece]]) -> Piece
 async def finish(
     deps: GraphDeps, application_id: str, kind: KitKind, piece: Piece, *, agent: str
 ) -> ApplicationKitState:
-    """Range la pièce par le port, puis l'annonce (prête ou à vérifier) ou dit son échec."""
+    """Save the piece, then announce the artifact or its failure."""
     piece_id = await deps.ports.kit.save_piece(
         deps.user_id, deps.session_id, application_id, kind, piece.status, piece.content, piece.meta
     )
     logger.info(
-        "Pièce rangée : session %s, fiche %s, pièce %s, statut %s",
+        "Piece saved: session %s, application %s, piece %s, status %s",
         deps.session_id,
         application_id,
         kind,
@@ -86,7 +79,7 @@ def make_load(deps: GraphDeps) -> Node:
     async def load(state: ApplicationKitState) -> ApplicationKitState:
         ctx = await deps.ports.kit.context(deps.user_id, state["application_id"])
         logger.info(
-            "Kit lu : session %s, fiche %s, %d pièce(s) gardée(s)",
+            "Kit loaded: session %s, application %s, %d pieces kept",
             deps.session_id,
             ctx.application_id,
             len(ctx.keep),
@@ -97,13 +90,13 @@ def make_load(deps: GraphDeps) -> Node:
 
 
 def route_pieces(state: ApplicationKitState) -> list[str]:
-    """Une branche par pièce non gardée ; toutes gardées : directement `close`."""
+    """Run one branch for each missing piece or close if all pieces are kept."""
     kept = set(state.get("keep", []))
     return [kind for kind in KIT_KINDS if kind not in kept] or ["close"]
 
 
 def close(state: ApplicationKitState) -> ApplicationKitState:
-    """`run.completed` : le compte des pièces par statut."""
+    """Summarize counts by status for `run.completed`."""
     outcomes = list(state.get("outcomes", {}).values())
     kept = len(state.get("keep", []))
     text = (

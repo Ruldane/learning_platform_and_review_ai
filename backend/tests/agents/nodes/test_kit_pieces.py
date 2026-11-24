@@ -47,12 +47,12 @@ def test_invitation_and_message_are_both_checked() -> None:
 
 def test_length_bounds_per_piece() -> None:
     assert length_problems(Letter(text=letter_text(300))) == []
-    assert length_problems(Letter(text=filler(249)))[0].startswith("le champ `text` fait 249 mots")
-    assert "de 250 à 350 mots" in length_problems(Letter(text=filler(351)))[0]
+    assert length_problems(Letter(text=filler(249)))[0].startswith("The `text` field has 249 words")
+    assert "250 to 350 words" in length_problems(Letter(text=filler(351)))[0]
     assert length_problems(Pitch(text=filler(130))) == []
     assert length_problems(Pitch(text=filler(171)))
     short = LinkedInMessages(invitation="Bonjour.", message=filler(151))
-    assert "150 mots au plus" in length_problems(short)[0]
+    assert "at most 150 words" in length_problems(short)[0]
     two = Followups(day_7=filler(121), day_14=filler(120))
     assert [p.split("`")[1] for p in length_problems(two)] == ["day_7"]
 
@@ -67,8 +67,8 @@ def test_meta_words_is_a_number_or_one_count_per_part() -> None:
 def test_retry_message_names_terms_and_lengths() -> None:
     found = review(Letter(text=f"{filler(100)} 5 ans sur Kubernetes."), CTX)
     message = retry_message(found)
-    assert message.startswith("N'écris rien qui ne soit pas dans le profil : 5, Kubernetes.")
-    assert "Respecte les longueurs" in message and "de 250 à 350 mots" in message
+    assert message.startswith("Remove terms unsupported by the profile: 5, Kubernetes.")
+    assert "Follow the word limits" in message and "250 to 350 words" in message
     assert not review(Letter(text=letter_text(300)), CTX)
 
 

@@ -16,9 +16,8 @@ interface KitBodyProps {
 }
 
 /**
- * Le kit lu : une zone vocale (pièce arrivée, kit terminé), les commandes, la session suivie et les
- * sept pièces. Quand January lance le kit, le focus passe à la note « le kit se prépare » : le
- * bouton qu'elle vient d'activer disparaît.
+ * Announce arriving pieces and the run result. Move focus to the preparation note
+ * when starting the kit removes the Generate button.
  */
 export function KitBody({ applicationId, kit, createSocket }: KitBodyProps) {
   const start = useStartKit(applicationId);

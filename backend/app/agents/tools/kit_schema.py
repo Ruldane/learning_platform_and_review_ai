@@ -1,14 +1,12 @@
-"""Schémas du kit de candidature (SPEC 6.4, F16, D142) : les sept pièces écrites au nom de January
-et le dossier de l'entreprise. Les longueurs en mots sont comptées par le code (un modèle ne
-compte pas) : une pièce hors bornes après le seul nouvel essai reste « à vérifier ».
+"""Schemas for the seven application kit pieces and the company dossier (SPEC 6.4, F16, D142).
 
-Chaque brouillon de texte expose `parts()` (les textes comptés et contrôlés par `text_claims`),
-`limits` (mots min et max de chaque partie qui en a) et `render()` (le contenu rangé). Conventions
-du contenu rangé, lues par d'autres tâches : `followups` = courriel de 7 jours, une ligne `---`,
-courriel de 14 jours (7.3) ; `linkedin` = invitation, une ligne `---`, message.
+Drafts expose `parts()` for claim checks and word counts, `limits` for each bounded
+part, and `render()` for storage. Drafts outside the limits after one retry need review.
 
-Un texte de dossier cite ses sources par `[n]` (rang de la page lue) : le code retire toute
-citation sans source lue (`kit_dossier`)."""
+Saved follow-ups put the 7-day email before a line of three dashes and the 14-day email
+after it (SPEC 7.3). LinkedIn drafts use the same separator between invitation and message.
+Company dossiers cite pages by number. The dossier checks drop claims without read sources.
+"""
 
 import datetime as dt
 from typing import Annotated, ClassVar, Literal
@@ -69,15 +67,13 @@ NO_QUESTION = "No screening questions were found in the posting."
 
 
 def is_separator(line: str) -> bool:
-    """Une ligne de trois tirets ou plus, seule (espaces autour permis) : le séparateur des deux
-    textes d'une pièce (`followups`, `linkedin`). Des tirets collés à du texte n'en sont pas."""
+    """A line of at least three dashes, optionally surrounded by whitespace."""
     stripped = line.strip()
     return len(stripped) >= len(SEPARATOR) and set(stripped) == {"-"}
 
 
 def split_parts(content: str) -> list[str]:
-    """Les textes d'une pièce, séparés par une ligne `---` (`is_separator`) ; une seule règle pour
-    le graphe, la route et les brouillons de relance."""
+    """Split a stored piece for the graph, route, and follow-up drafts."""
     parts: list[list[str]] = [[]]
     for line in content.splitlines():
         if is_separator(line):
@@ -88,14 +84,13 @@ def split_parts(content: str) -> list[str]:
 
 
 def split_followups(content: str) -> tuple[str, str]:
-    """`(courriel de 7 jours, courriel de 14 jours)` du contenu rangé de `followups` : avant la
-    première ligne `---`, et après la dernière ; `("texte", "")` sans séparateur."""
+    """Use the first and last sections as the 7-day and 14-day emails."""
     parts = split_parts(content)
     return parts[0], parts[-1] if len(parts) > 1 else ""
 
 
 def join_parts(first: str, second: str) -> str:
-    """Deux textes séparés par une ligne `---` (une ligne de séparation d'un texte est retirée)."""
+    """Remove separators within each part and join the two parts with one separator."""
     clean = [
         "\n".join(line for line in text.splitlines() if not is_separator(line)).strip()
         for text in (first, second)
@@ -104,7 +99,7 @@ def join_parts(first: str, second: str) -> str:
 
 
 class Draft(BaseModel):
-    """Un brouillon de texte : ce que le code compte (`limits`) et contrôle (`parts`)."""
+    """A text draft with parts to check, word limits, and a storage representation."""
 
     limits: ClassVar[dict[str, tuple[int, int]]] = {}
 
@@ -116,7 +111,7 @@ class Draft(BaseModel):
 
 
 class Letter(Draft):
-    """Lettre de motivation : 250 à 350 mots, dans la langue de l'offre."""
+    """A 250- to 350-word cover letter."""
 
     limits: ClassVar[dict[str, tuple[int, int]]] = {"text": (250, 350)}
     text: Prose = Field(min_length=1, max_length=4000)
@@ -129,7 +124,7 @@ class Letter(Draft):
 
 
 class LinkedInMessages(Draft):
-    """Invitation (300 caractères au plus, plafond de LinkedIn) et message (150 mots au plus)."""
+    """A connection request of up to 300 characters and a message of up to 150 words."""
 
     limits: ClassVar[dict[str, tuple[int, int]]] = {"message": (1, 150)}
     invitation: str = Field(min_length=1, max_length=300)
@@ -143,7 +138,7 @@ class LinkedInMessages(Draft):
 
 
 class Followups(Draft):
-    """Courriels de relance à 7 et à 14 jours, 120 mots au plus chacun."""
+    """Follow-up emails for days 7 and 14, up to 120 words each."""
 
     limits: ClassVar[dict[str, tuple[int, int]]] = {"day_7": (1, 120), "day_14": (1, 120)}
     day_7: Prose = Field(min_length=1, max_length=2000)
@@ -157,7 +152,7 @@ class Followups(Draft):
 
 
 class Pitch(Draft):
-    """« Parle-moi de toi » : 130 à 170 mots, soit 60 secondes à voix haute."""
+    """A 130- to 170-word answer to “Tell me about yourself,” about a minute aloud."""
 
     limits: ClassVar[dict[str, tuple[int, int]]] = {"text": (130, 170)}
     text: Prose = Field(min_length=1, max_length=2000)
@@ -172,19 +167,18 @@ class Pitch(Draft):
 class FormAnswer(BaseModel):
     question: str = Field(min_length=1, max_length=300)
     answer: str = Field(max_length=800)
-    fact_ids: list[str] = Field(default_factory=list, max_length=10)  # faits qui l'appuient
+    fact_ids: list[str] = Field(default_factory=list, max_length=10)  # Supporting facts.
 
     @property
     def state(self) -> Literal["ok", "salary", "to_complete"]:
-        """« À remplir par toi » : question salariale (réponse vidée par le code) ; « À
-        compléter » : aucun fait du profil n'appuie la réponse."""
+        """Distinguish a supported answer, a salary question, and an unsupported answer."""
         if self.answer.strip():
             return "ok"
         return "salary" if is_salary_question(self.question) else "to_complete"
 
 
 class FormAnswers(Draft):
-    """Réponses aux questions éliminatoires de l'offre, tirées du profil seulement."""
+    """Answers to the posting's screening questions based only on the profile."""
 
     items: list[FormAnswer] = Field(default_factory=list, max_length=10)
 
@@ -206,7 +200,7 @@ Cited = Annotated[str, Field(min_length=1, max_length=300)]
 
 
 class NewsItem(BaseModel):
-    """Une actualité : datée (moins de 6 mois) et citée `[n]` dans son texte."""
+    """A news item from the past six months with a numbered citation in its text."""
 
     text: Prose = Field(min_length=1, max_length=300)
     date: dt.date | None = None
@@ -225,7 +219,7 @@ CompanySize = Annotated[
 
 
 class CompanyDossier(BaseModel):
-    """Le dossier d'une page sur l'entreprise (F16) : chaque texte cite ses sources par `[n]`."""
+    """A one-page company dossier with numbered citations for each claim (F16)."""
 
     activity: Prose = Field(max_length=700)
     product: Prose = Field(max_length=700)
@@ -243,7 +237,7 @@ class CompanyDossier(BaseModel):
 
 
 class SourceRef(BaseModel):
-    """Une page lue, citée par son rang (`[n]` = rang + 1) dans le dossier."""
+    """A page cited in the dossier using its one-based position."""
 
     url: str = Field(max_length=2048)
     title: str = Field(default="", max_length=300)
@@ -251,17 +245,18 @@ class SourceRef(BaseModel):
 
 
 class CvVersionRef(BaseModel):
-    """La version de CV prête la plus récente de l'offre."""
+    """The posting's latest ready résumé version."""
 
     version_id: str
     number: int = Field(ge=1)
 
 
 class KitContext(BaseModel):
-    """Ce que le kit lit (lecture seule) : la fiche, son offre analysée, le profil validé, le
-    dossier de moins de 30 jours (`company_dossier`, ses pages dans `company_dossier_sources`), la
-    version de CV prête, les pièces que January a modifiées (`keep` : jamais refaites), son jour
-    (`today`, fuseau de ses réglages) et le nom du contact s'il y en a un."""
+    """Read-only inputs for the kit, including a validated profile and analyzed posting.
+
+    Reuse a dossier younger than 30 days with its source pages. Keep user-edited pieces
+    on regeneration. `today` uses the user's time zone.
+    """
 
     application_id: str
     language: Literal["fr", "en"]

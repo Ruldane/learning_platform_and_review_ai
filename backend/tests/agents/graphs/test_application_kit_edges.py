@@ -1,4 +1,4 @@
-"""Branche `cv` du kit et plafond de tokens (D142)."""
+"""The kit's résumé branch and token budget (D142)."""
 
 from app.agents.runtime.costs import TokenBudgetExceeded
 from tests.agents.graphs.kit_support import MakeKit, writers
@@ -13,7 +13,7 @@ async def test_cv_piece_points_at_the_latest_ready_version(
     cv = kit_store.piece("cv")
     assert (cv.status, cv.content, cv.meta) == (
         "ready",
-        "CV ciblé : version n° 3",
+        "Tailored résumé (version 3)",
         {"version_id": "version-3"},
     )
 
@@ -26,7 +26,7 @@ async def test_cv_piece_without_version_asks_for_the_review(
     await run.wait_status("completed")
     cv = kit_store.piece("cv")
     assert cv.status == "to_check"
-    assert cv.content == "Lance la revue de CV de cette offre pour obtenir ton CV ciblé."
+    assert cv.content == "Run the résumé review for this posting to create a tailored résumé."
 
 
 async def test_token_cap_stops_the_session_instead_of_failing_pieces(
@@ -35,7 +35,7 @@ async def test_token_cap_stops_the_session_instead_of_failing_pieces(
     models = writers()
 
     async def over_budget(agent: str, prompt: str) -> None:
-        if "Rédige la lettre de motivation." in prompt:
+        if "Write the cover letter." in prompt:
             raise TokenBudgetExceeded(1000)
 
     models.hooks.append(over_budget)

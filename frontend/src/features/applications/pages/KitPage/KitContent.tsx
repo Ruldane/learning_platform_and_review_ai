@@ -18,7 +18,7 @@ interface KitContentProps {
   createSocket?: SocketFactory;
 }
 
-/** La page du kit : l'en-tête de la fiche, puis le kit lu (chargement, panne, ou le kit lui-même). */
+/** The application header and the kit's loading, error, or ready state. */
 export function KitContent({ applicationId, createSocket }: KitContentProps) {
   const navigate = useNavigate();
   const application = useApplication(applicationId);

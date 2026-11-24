@@ -38,14 +38,14 @@ const shapes = [
   { id: "b", type: "rectangle", x: 200, y: 0 },
   { id: "e", type: "arrow", x: 100, y: 20 },
 ];
-/** Ce qu'Excalidraw signale au montage : flèche recalculée, formes décalées de quelques pixels. */
+/** Excalidraw moves shapes a few pixels and recalculates arrows on mount. */
 const normalized = (elements: { id: string }[]) =>
   elements.map((element) => {
     const shape = element as { x?: number; y?: number };
     return { ...element, x: (shape.x ?? 0) + 3, y: (shape.y ?? 0) + 2 };
   });
 const annotated = [...shapes, { id: "t1", type: "text", x: 9, y: 9, text: "Docker" }];
-const SEND = "Envoyer mes modifications aux agents";
+const SEND = "Send my changes to the agents";
 
 function reducedMotion(matches: boolean) {
   vi.stubGlobal("matchMedia", (query: string) => ({
@@ -74,7 +74,7 @@ function board(props: Partial<React.ComponentProps<typeof Board>> = {}) {
   );
 }
 
-describe("Board : retouches de January", () => {
+describe("Board edits", () => {
   beforeEach(() => {
     resetExcalidrawMock();
     parse.mockReset();
@@ -125,7 +125,7 @@ describe("Board : retouches de January", () => {
     expect(screen.getByRole("button", { name: SEND })).toBeEnabled();
 
     rerender(board({ states: [domainMap, prerequisites] }));
-    const list = screen.getByRole("navigation", { name: "États du tableau" });
+    const list = screen.getByRole("navigation", { name: "Board states" });
     expect(within(list).getByRole("button", { name: /^Carte du domaine/ })).toHaveAttribute(
       "aria-current",
       "true",

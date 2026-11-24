@@ -13,7 +13,7 @@ from tests.agents.graphs.kit_support import (
 )
 from tests.support.kit import FakeKitStore
 
-RETRY_MARKER = "N'écris rien qui ne soit pas dans le profil"
+RETRY_MARKER = "Remove terms unsupported by the profile"
 
 
 async def test_salary_answer_forced_empty(kit_runner: MakeKit, kit_store: FakeKitStore) -> None:
@@ -43,7 +43,7 @@ async def test_form_answer_with_unsupported_claim_retries(
     bad = answer("Avez-vous le permis B ?", "Oui, depuis 12 ans.", "x1")
     run = await kit_runner(writers(form_answers=[form(bad), form(PERMIT)]))
     await run.wait_status("completed")
-    assert f"{RETRY_MARKER} : 12" in prompts(run.models, "form_answers")[1]
+    assert f"{RETRY_MARKER}: 12" in prompts(run.models, "form_answers")[1]
     assert kit_store.piece("form_answers").status == "ready"
 
 

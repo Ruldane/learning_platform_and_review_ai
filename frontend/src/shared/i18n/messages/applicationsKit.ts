@@ -1,4 +1,4 @@
-/** Textes de la page du kit de candidature : les sept pièces, leur statut, leurs explications. */
+/** Copy for the seven application kit pieces and their statuses. */
 export const applicationsKit = {
   kitPage: {
     title: "Application kit",

@@ -7,7 +7,7 @@ interface KitHeaderProps {
   application: { company: string; title: string } | undefined;
 }
 
-/** Le titre de la page, la fiche dont c'est le kit, le retour à la fiche et la promesse « rien n'est envoyé ». */
+/** Identify the application, link back to it, and explain how the kit works. */
 export function KitHeader({ applicationId, application }: KitHeaderProps) {
   return (
     <header className="flex flex-col gap-1">
