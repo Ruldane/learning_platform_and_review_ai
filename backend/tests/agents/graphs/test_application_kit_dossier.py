@@ -76,7 +76,7 @@ async def test_dossier_researched_and_rendered_with_sources(
         "## Sources",
     ):
         assert heading in row.content
-    assert "2026-10-01 : Levée de fonds annoncée [2]" in row.content
+    assert "2026-10-01 · Levée de fonds annoncée [2]" in row.content
     assert "1. Question a sur l'équipe ?" in row.content
     [(company, saved, sources)] = kit_store.dossiers
     assert (
@@ -113,7 +113,7 @@ async def test_dossier_citation_without_source_removed(
     assert "Éditeur de logiciels [1]" in row.content and "- Python [1]" in row.content
     assert "Rust" not in row.content and "Rumeur" not in row.content
     assert "Ancienne levée" not in row.content and "sans date" not in row.content
-    assert "non lue" not in row.content and "2026-11-02 : Nouveau bureau ouvert [3]" in row.content
+    assert "non lue" not in row.content and "2026-11-02 · Nouveau bureau ouvert [3]" in row.content
     assert "Des produits variés" not in row.content  # aucune affirmation sans source lue
     assert "## Product\nNo evidence found in the sources read." in row.content
     assert row.status == "to_check" and row.meta["emptied"] == 1 and row.meta["dropped"] == 5

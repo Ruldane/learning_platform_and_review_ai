@@ -263,7 +263,7 @@ async def test_search_when_vector_store_down_returns_503_readable(
     assert r.status_code == 503
     error = r.json()["error"]
     assert error["code"] in {"memory_unavailable", "embeddings_unavailable"}
-    assert "indisponible" in error["message"]
+    assert "unavailable" in error["message"]
 
 
 async def test_item_creation_survives_the_services_being_down(

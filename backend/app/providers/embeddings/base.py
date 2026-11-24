@@ -14,22 +14,23 @@ class Embedder(Protocol):
 
 
 class EmbeddingsUnavailable(AppError):
-    """Ollama injoignable, trop lent, modèle absent ou réponse inexploitable."""
+    """Ollama is unreachable, too slow, missing the model, or returned an invalid reply."""
 
     def __init__(self) -> None:
         super().__init__(
             "embeddings_unavailable",
-            "Le service d'embeddings (Ollama) est indisponible ou le modèle bge-m3 "
-            "n'est pas encore téléchargé.",
+            "The embedding service (Ollama) is unavailable or the bge-m3 model "
+            "has not been downloaded yet.",
             status_code=503,
         )
 
 
 @dataclass(frozen=True)
 class EmbeddingProgressData:
-    """État du modèle d'embeddings : présent, ou en cours de téléchargement (`percent` de 0 à 99
-    tant qu'il n'est pas là, 100 quand il l'est, `None` tant que la taille n'est pas connue).
-    `detail` est un texte français sans donnée personnelle."""
+    """Embedding model download status with an English, privacy-safe status detail.
+
+    Percent is 0 to 99 during the download, 100 when ready, or None until the size is known.
+    """
 
     model: str
     present: bool

@@ -131,15 +131,15 @@ async def test_invalid_answer_reasks_same_question(make_study_runner: MakeStudy)
     assert again["interrupt_id"] != first["interrupt_id"]
     assert again["question"] == first["question"] and again["options"] == first["options"]
     assert again["fields"] == [
-        {"id": "answer", "label": "Ta réponse", "required": False, "max_length": 4000}
+        {"id": "answer", "label": "Your answer", "required": False, "max_length": 4000}
     ]
     assert run.prompts(CHECK_REQUEST) == [] and len(run.prompts(TEACH_REQUEST)) == 1
 
 
 MODE_MARKERS = {
-    "feynman": "demande à January d'expliquer avec ses mots",
-    "socratic": "une question qui mène January à l'idée clé",
-    "direct": "explique la section clairement",
+    "feynman": "ask January to explain in her own words",
+    "socratic": "a question that leads January to the key idea",
+    "direct": "explain the section clearly",
 }
 
 
@@ -165,7 +165,7 @@ async def test_feynman_question_asks_january_to_explain(make_study_runner: MakeS
     await run.wait_question()
     [teach] = run.prompts(TEACH_REQUEST)
     assert "Session mode: Feynman" in teach
-    assert "demande à January d'expliquer avec ses mots" in teach
+    assert "ask January to explain in her own words" in teach
 
 
 async def test_user_message_is_answered_first(make_study_runner: MakeStudy) -> None:
@@ -176,7 +176,7 @@ async def test_user_message_is_answered_first(make_study_runner: MakeStudy) -> N
     await run.wait_question()
     first, second = run.prompts(TEACH_REQUEST)
     assert "Pourquoi une exponentielle ?" not in first
-    assert "réponds-y d'abord" in second and "- Pourquoi une exponentielle ?" in second
+    assert "answer them first" in second and "- Pourquoi une exponentielle ?" in second
 
 
 async def test_opening_question_is_answered_before_teaching(make_study_runner: MakeStudy) -> None:

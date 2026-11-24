@@ -70,7 +70,7 @@ async def test_write_is_403_when_off_and_nothing_is_written(
             client, session["id"], {"main.py": "pris = 1\n"}, base_hash=file_hash(SECRET)
         )
     assert (refused.status_code, code(refused)) == (403, "mcp_ide_write_off")
-    assert "interrupteur" in refused.json()["error"]["message"].lower()
+    assert "switch is off" in refused.json()["error"]["message"].lower()
     assert "NE-JAMAIS-JOURNALISER" not in refused.text and "pris" not in refused.text
     assert await files_of(client, session["id"]) == FILES
     assert any("mcp_ide_write_off" in r.getMessage() for r in caplog.records)
@@ -136,7 +136,7 @@ async def test_a_stale_base_hash_is_409_and_nothing_is_written(client: httpx.Asy
     with acting_as_claude():
         refused = await write(client, session["id"], {"main.py": "ecrase = 1\n"}, base_hash=stale)
     assert (refused.status_code, code(refused)) == (409, "stale_base")
-    assert "relis" in refused.json()["error"]["message"].lower()
+    assert "re-read the session" in refused.json()["error"]["message"].lower()
     assert file_hash(typed) not in refused.text  # la nouvelle empreinte n'est pas donnée : il relit
     assert (await files_of(client, session["id"]))["main.py"] == typed
 

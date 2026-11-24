@@ -42,7 +42,7 @@ async def test_restart_finishes_failed(
     await run.question()
     await run.answer("restart")
     await run.wait_status("completed")
-    assert design_store.finished == {"t1": ("failed", "Capture abandonnée.")}
+    assert design_store.finished == {"t1": ("failed", "Template capture cancelled.")}
     assert await run.events("artifact.ready") == []
 
 
@@ -145,7 +145,7 @@ async def test_adjust_after_a_worse_last_pass_starts_from_the_kept_pass(
     await run.question()
     third = run.prompts(FIX_REQUEST)[2]
     assert "#a11111" in third and "#a22222" not in third  # la description de la passe 2
-    assert "Passe 2 : ressemblance de 78 %." in third
+    assert "Pass 2: similarity of 78 %." in third
     assert design_store.passes[4][0].accent == "#a33333" and design_store.kept == 4
 
 

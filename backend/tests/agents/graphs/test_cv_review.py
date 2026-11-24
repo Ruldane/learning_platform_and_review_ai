@@ -36,11 +36,11 @@ async def test_review_proposes_validates_and_waits_for_output(
     run = await review_runner()
     question = await run.question()
     assert review_store.saved_refs == ["a1", "a2", "r1"] and question["kind"] == "cv_output"
-    assert question["question"] == "Que veux-tu maintenant ?"
+    assert question["question"] == "What would you like to do next?"
     assert [o["label"] for o in question["options"]] == [
-        "Voir le rapport",
-        "Générer le PDF",
-        "Terminer",
+        "View the report",
+        "Generate PDF",
+        "Finish",
     ]
     assert "3 modifications proposées, 0 à confirmer." in await run.said()
     report = review_store.report

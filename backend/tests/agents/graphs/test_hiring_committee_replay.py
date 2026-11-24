@@ -49,7 +49,7 @@ async def test_restart_during_debate_does_not_vote(
     sont demandés qu'une fois, après le débat."""
     first_models = committee()
 
-    first_models.block = lambda agent, prompt: DEBATE_REQUEST in prompt and "tour 2 sur 2" in prompt
+    first_models.block = lambda agent, prompt: DEBATE_REQUEST in prompt and "round 2 of 2" in prompt
     first = await committee_runner(first_models)
     await wait_until(lambda: first_models.blocked >= 1)
     assert [c for c in first_models.calls if VOTE_REQUEST in c.prompt] == []

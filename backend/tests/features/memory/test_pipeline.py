@@ -144,7 +144,7 @@ async def test_ingestion_marks_error_when_embeddings_down(
     assert done.status == "error" and done.item_id is not None
     assert done.error is not None
     assert done.error["code"] in ("embeddings_unavailable", "memory_unavailable")
-    assert "indisponible" in done.error["message"]
+    assert "unavailable" in done.error["message"]
     async with db_session_factory() as db:
         item = await MemoryItemRepository(db, USER).get(done.item_id)
         chunks = await ChunkRepository(db, USER).for_item(done.item_id)
@@ -174,7 +174,7 @@ async def test_unexpected_exception_message_is_generic(
     done = await reload(db_session_factory, USER, doc.id)
     assert done.error == {
         "code": "ingestion_failed",
-        "message": "L'import a échoué de façon inattendue.",
+        "message": "The import failed unexpectedly.",
     }
     assert "secret" not in caplog.text and doc.id in caplog.text and "RuntimeError" in caplog.text
 

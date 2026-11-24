@@ -32,19 +32,9 @@ def draft(**over: Any) -> str:
     return json.dumps(data | over)
 
 
-class RecordingSandbox(FakeSandbox):
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.jobs: list[SandboxJob] = []
-
-    async def submit(self, job: SandboxJob) -> None:
-        self.jobs.append(job)
-        await super().submit(job)
-
-
 @pytest.fixture
-def sandbox(app: Any) -> RecordingSandbox:
-    box = RecordingSandbox({"*": "1 passed in 0.01s"})
+def sandbox(app: Any) -> FakeSandbox:
+    box = FakeSandbox({"*": "1 passed in 0.01s"})
     app.state.providers.sandbox = box
     return box
 
@@ -57,7 +47,7 @@ async def generate(client: httpx.AsyncClient) -> str:
 
 
 async def test_generated_exercise_solution_passes_checks_in_sandbox(
-    client: httpx.AsyncClient, models: ScriptedModels, sandbox: RecordingSandbox
+    client: httpx.AsyncClient, models: ScriptedModels, sandbox: FakeSandbox
 ) -> None:
     models.replies.append(draft())
     sid = await generate(client)
@@ -85,19 +75,18 @@ async def test_generated_exercise_with_failing_solution_regenerates_once_then_fa
     sid = await generate(client)
     view = await wait_status(client, sid, "failed")
     assert view["error"]["code"] == "exercise_unverified"
-    assert "relance" in view["error"]["message"]
+    assert "Generate it again" in view["error"]["message"]
     assert len(models.calls) == 2  # une seule redemande, jamais plus
     assert (await client.get(f"{API}/exercises")).json() == []  # rien de non vérifié n'est rangé
     assert fake is app.state.providers.sandbox
 
 
 async def test_failing_solution_then_good_one_is_stored(
-    client: httpx.AsyncClient, models: ScriptedModels, sandbox: RecordingSandbox
+    client: httpx.AsyncClient, models: ScriptedModels, sandbox: FakeSandbox
 ) -> None:
     results = iter([SandboxResult("done", 1, 5, False), "1 passed"])
 
     async def submit(job: SandboxJob) -> None:
-        sandbox.jobs.append(job)
         sandbox._scripted = {"*": next(results)}  # type: ignore[assignment]
         await FakeSandbox.submit(sandbox, job)
 
@@ -112,7 +101,7 @@ async def test_failing_solution_then_good_one_is_stored(
 
 
 async def test_draft_without_tests_is_refused_after_the_retries(
-    client: httpx.AsyncClient, models: ScriptedModels, sandbox: RecordingSandbox
+    client: httpx.AsyncClient, models: ScriptedModels, sandbox: FakeSandbox
 ) -> None:
     no_tests = draft(files={"main.py": "x = 1\n"})
     models.replies += [no_tests, no_tests, no_tests]

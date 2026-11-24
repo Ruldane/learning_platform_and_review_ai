@@ -124,7 +124,7 @@ async def test_known_skills_merge_user_skills_and_memory(
         await db.commit()
     ctx = await store.context(ME, rows.goal_id, [rows.proposal_id], None)
     assert dict(ctx.known_skills) == {"pandas": "validated", "sql avance": "in_progress"}
-    assert ctx.budget.cap_minutes == 714 and ctx.language == "fr"
+    assert ctx.budget.cap_minutes == 714 and ctx.language == "en"
     assert [p.name for p in ctx.proposals] == ["Parcours données"]
     assert ctx.current_plan is None
 
@@ -137,7 +137,7 @@ async def test_context_with_program_reads_current_plan(
     ctx = await store.context(ME, rows.goal_id, [rows.proposal_id], program_id)
     assert ctx.current_plan is not None
     assert "Semaine 1 (du 16/11) : Bases" in ctx.current_plan
-    assert "17/11 : Lire le chapitre 1 (lire, 120 min)" in ctx.current_plan
+    assert "17/11 : Lire le chapitre 1 (read, 120 min)" in ctx.current_plan
 
 
 async def test_goal_weekly_minutes_scale_the_budget(
@@ -147,7 +147,7 @@ async def test_goal_weekly_minutes_scale_the_budget(
     ctx = await store.context(ME, rows.goal_id, [rows.proposal_id], None)
     assert (ctx.budget.weekday_minutes, ctx.budget.weekend_minutes) == (60, 120)
     problems = await store.check_draft(ME, rows.goal_id, sample_plan())
-    assert any("au plus" in problem for problem in problems)
+    assert any("at most" in problem for problem in problems)
 
 
 async def test_everything_known_is_nothing_to_plan(

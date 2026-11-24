@@ -149,7 +149,7 @@ async def test_youtube_title_from_video_else_id(memory_providers: MemoryProvider
     got = await get_source("youtube").extract(src, tools)
     assert (got.title, got.text) == ("Ma vidéo", "La transcription.")
     youtube.videos[VIDEO] = Transcript("dQw4w9WgXcQ", None, "La transcription.", True)
-    assert (await get_source("youtube").extract(src, tools)).title == "Vidéo YouTube dQw4w9WgXcQ"
+    assert (await get_source("youtube").extract(src, tools)).title == "YouTube video dQw4w9WgXcQ"
 
 
 async def test_file_source_reads_only_the_owner_storage(

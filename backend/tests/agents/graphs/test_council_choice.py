@@ -119,7 +119,7 @@ async def test_council_replay_does_not_duplicate_boards_or_proposals(
 ) -> None:
     # Arrêt du back en plein `proposal_boards` : les frises sont écrites, la comparaison se fige.
     models = CouncilModels()
-    models.block = lambda agent, prompt: agent == "scribe" and "comparaison des parcours" in prompt
+    models.block = lambda agent, prompt: agent == "scribe" and "comparison of the paths" in prompt
     first = await make_council_runner(models=models)
     await first.wait_question("framing")
     await first.resume("go")
@@ -190,7 +190,7 @@ async def test_logs_never_contain_debate_content(
     models = CouncilModels()
     bad = '{"title": "Carte secrète", "mermaid": "sequenceDiagram\\nA->>B: x"}'
     models.when("scribe", "dessiner la carte du domaine", bad, bad)
-    models.when("practitioner", "Tour en cours : 2\n", "Avis sans nom ni source.", "Toujours.")
+    models.when("practitioner", "Current round: 2\n", "Avis sans nom ni source.", "Toujours.")
     c = await make_council_runner(models=models)
     await c.wait_question("framing")
     await c.resume("go")

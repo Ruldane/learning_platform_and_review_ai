@@ -43,7 +43,7 @@ async def test_last_round_removes_unsupported_sentences_and_publishes(
     assert pub.report.words == words and pub.report.revisions == 2
     texts = [m["text"] for m in await c.events("agent.message")]
     assert any("Lesson passed after removing unsupported sentences (1)" in t for t in texts)
-    assert "1 phrase(s) retirée(s)" in caplog.text and "1 hors périmètre" in caplog.text
+    assert "1 sentences removed" in caplog.text and "1 out of scope" in caplog.text
     for content in ("applications", "Alice", "Python", "VS Code"):
         assert content not in caplog.text
 

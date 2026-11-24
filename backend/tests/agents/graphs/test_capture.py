@@ -40,7 +40,7 @@ async def test_url_capture_becomes_summarized_memory_item(make_capture_runner: M
     assert call.digest.summary == SUMMARY and len(call.digest.summary) <= 5  # 6 lignes : refusé
     assert len(run.prompts()) == 2 and call.digest.modules == ["m1"]
     said = await run.said()
-    assert said[0].startswith("« L'attention multi-têtes »\n- L'attention pondère")
+    assert said[0].startswith("“L'attention multi-têtes”\n- L'attention pondère")
     assert said[-1] == "Saved “L'attention multi-têtes” to memory."
     written = (await run.events("memory.written"))[0]
     assert written["item_id"] == "item-1" and written["kind"] == "document"
@@ -66,9 +66,9 @@ async def test_unreadable_link_asks_text_immediately(
     ]
     assert await run.said() == [UNREADABLE_TEXT]
     assert pending["fields"] == [
-        {"id": "text", "label": "Texte de la page", "required": True, "max_length": 20000}
+        {"id": "text", "label": "Page text", "required": True, "max_length": 20000}
     ]  # F6 : 20 000 caractères
-    assert pending["options"] == [{"value": "cancel", "label": "Abandonner"}]
+    assert pending["options"] == [{"value": "cancel", "label": "Cancel"}]
     pasted = "x" * 19_984 + " La page collée."  # 20 000 caractères tout juste
     await run.resume({"answers": {"text": pasted}})
     await run.wait_status("completed")
@@ -147,11 +147,11 @@ async def test_learned_only_from_a_note(make_capture_runner: MakeCapture) -> Non
     call = note.store.store_calls[-1]
     assert call.source == "text" and call.digest.learned
     assert call.digest.concepts == ["Attention multi-têtes"]
-    assert "vrai seulement si January écrit" in note.prompts()[0]
+    assert "true only if January writes" in note.prompts()[0]
     web = await make_capture_runner(archivist(learned), pages={PAGE_URL: page()})
     await web.wait_status("completed")
     assert not web.store.store_calls[-1].digest.learned  # une page ne déclare rien
-    assert "toujours faux" in web.prompts()[0]
+    assert "always false" in web.prompts()[0]
 
 
 async def test_long_pasted_text_never_declares_learned(make_capture_runner: MakeCapture) -> None:
@@ -163,7 +163,7 @@ async def test_long_pasted_text_never_declares_learned(make_capture_runner: Make
     await run.wait_status("completed")
     call = run.store.store_calls[-1]
     assert call.source == "text" and not call.digest.learned
-    assert "toujours faux" in run.prompts()[0] and "un texte collé" in run.prompts()[0]
+    assert "always false" in run.prompts()[0] and "captured pasted text" in run.prompts()[0]
 
 
 async def test_capture_page_is_untrusted(make_capture_runner: MakeCapture) -> None:
@@ -235,7 +235,7 @@ async def test_document_capture_waits_for_indexing(
     assert run.store.document_calls == 3
     [call] = run.store.store_calls
     assert call.source == "document" and call.material == material
-    assert "un document" in run.prompts()[-1]
+    assert "captured a document" in run.prompts()[-1]
 
 
 async def test_document_not_indexed_in_time_fails(

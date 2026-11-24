@@ -19,7 +19,7 @@ from tests.features.memory.helpers import with_embeddings_down
 
 API = "/api/v1/documents"
 MAX = 20 * 1024 * 1024
-TOO_LARGE = "Fichier trop volumineux : 20 Mo au maximum."
+TOO_LARGE = "The maximum file size is 20 MB."
 
 
 def _stored(tmp_path: Path) -> list[Path]:
@@ -98,7 +98,7 @@ async def test_embeddings_down_marks_error_never_500(
     doc = listing.json()[0]
     assert doc["status"] == "error" and doc["item_id"] is not None
     assert doc["error"]["code"] == "embeddings_unavailable"
-    assert doc["error"]["message"].startswith("Le service d'embeddings (Ollama) est indisponible")
+    assert doc["error"]["message"].startswith("The embedding service (Ollama) is unavailable")
 
 
 async def test_concurrent_identical_uploads_make_one_document(

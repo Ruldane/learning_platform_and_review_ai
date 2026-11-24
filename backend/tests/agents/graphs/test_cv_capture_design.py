@@ -119,7 +119,7 @@ async def test_sample_lines_are_verbatim(
     reply = sample_reply(sections=sections)
     run = await design_runner(designer(sample=[reply, reply]))
     await run.question()
-    first, second = run.prompts("Recopie le contenu")[:2]
+    first, second = run.prompts("Transcribe the contents")[:2]
     assert "ne figurent pas tels quels" in second and invented in second
     framed = second.split('<<<CONTENU_NON_FIABLE source="cv:textes à recopier">>>')[1]
     assert invented in framed.split("<<<FIN_CONTENU_NON_FIABLE>>>")[0]  # encadré (revue BA-M3)
@@ -137,7 +137,7 @@ async def test_scanned_cv_uses_profile_content(
     design_store.selectable, design_store.profile_content = False, profile_sample()
     run = await design_runner()
     await run.question()
-    assert run.prompts("Recopie le contenu") == []
+    assert run.prompts("Transcribe the contents") == []
     _, content, _ = design_store.passes[1]
     assert content == profile_sample()
 

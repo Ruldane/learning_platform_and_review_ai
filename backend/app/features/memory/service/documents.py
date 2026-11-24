@@ -103,7 +103,7 @@ def _from_url(raw: str) -> _Incoming:
     url = normalize_url(raw)
     kind = classify_url(url)
     video = youtube_video_id(url)
-    name = f"Vidéo YouTube {video}" if video else (urlsplit(url).hostname or "")
+    name = f"YouTube video {video}" if video else (urlsplit(url).hostname or "")
     return _Incoming(kind, display_name(name), source_hash(f"url:{url}".encode()), url=url)
 
 

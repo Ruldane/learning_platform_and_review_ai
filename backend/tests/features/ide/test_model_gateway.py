@@ -29,7 +29,7 @@ async def test_gateway_validates_model_and_reserves_budget_before_invoking(
     models = Models()
     gateway = ModelGateway(db_session_factory, models, day_cap=64)
     ask = {
-        "model": "fictif-rapide",
+        "model": "fictif-fast",
         "messages": [{"role": "user", "content": "Bonjour"}],
         "max_tokens": 32,
     }
@@ -57,7 +57,7 @@ async def test_gateway_only_accepts_an_owned_running_interface_job(
             session_id="session-fictive", kind="terminal"
         )
         await db.commit()
-    request = {"model": "fictif-rapide", "messages": [{"role": "user", "content": "Salut"}]}
+    request = {"model": "fictif-fast", "messages": [{"role": "user", "content": "Salut"}]}
     envelope = {"run_id": row.id, "request": request}
     with pytest.raises(AppError) as refused:
         await _complete(gateway, {**envelope, "user_id": "autre-compte"})

@@ -117,9 +117,7 @@ async def test_unavailable_family_attaches_no_file(cv_runtime: CvRuntime) -> Non
     pdf = await cv_runtime.layout.extract_layout(make_cv_pdf(SampleCv(font="Calibri")))
     files, uses, gaps = await resolve_fonts(cv_runtime, "u1", pdf)
     assert files == [] and {use.family for use in uses} == {"Liberation Sans"}
-    assert gaps == [
-        "La police du texte et des titres n'a pas pu être chargée : remplacée par Liberation Sans."
-    ]
+    assert gaps == ["The body and heading font failed to load. The template uses Liberation Sans."]
 
 
 def test_available_families_always_offer_the_image_fonts() -> None:

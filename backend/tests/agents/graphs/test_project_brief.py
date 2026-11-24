@@ -131,7 +131,7 @@ async def test_brief_texts_never_logged(
     run = await project_runner(project_models(brief=[brief_json()]), graph="project_brief")
     await run.wait_status("completed")
     logged = logged_of(caplog)
-    assert "Énoncé rangé" in logged
+    assert "Brief saved" in logged
     inputs = project_store.brief
     secrets = [inputs.module_title, inputs.lesson_excerpt or "", inputs.week_deliverable or ""]
     secrets += [inputs.role or "", "Une API de suivi de lecture", "Trois routes documentées."]

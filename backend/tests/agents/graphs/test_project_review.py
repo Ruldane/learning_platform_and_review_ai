@@ -28,7 +28,7 @@ from tests.support.projects import (
     sample_brief,
 )
 
-FIXED = "Je n'ai pas pu lire ton dépôt : ajoute une description de ce que tu as fait."
+FIXED = "I couldn't read the repository. Add a description of your work."
 START = '<<<CONTENU_NON_FIABLE source="{label}">>>'
 
 
@@ -215,7 +215,7 @@ async def test_statement_is_framed_and_criteria_stay_numbered(
     run = await project_runner(project_models(evaluation=[evaluation_json([False] * 4)]))
     await run.wait_status("completed")
     [prompt] = [c.prompt for c in run.models.calls]
-    block = prompt.split(START.format(label="énoncé du projet"))[1].split("<<<FIN_CONTENU")[0]
+    block = prompt.split(START.format(label="project brief"))[1].split("<<<FIN_CONTENU")[0]
     assert f"\n1. {trap}" in block and "\n4. d" in block and TITLE in block
 
 

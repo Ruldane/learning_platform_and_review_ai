@@ -170,7 +170,7 @@ async def test_writer_prompt_frames_sources_as_untrusted(make_lesson_runner: Mak
         assert prompt.count(END) == prompt.count("<<<CONTENU_NON_FIABLE source=")
         assert 'source="faux"' not in prompt
     assert 'source="module"' in c.prompt_of_writer(1)
-    assert 'source="leçon"' in c.prompts_of("verifier")[0]
+    assert 'source="lesson"' in c.prompts_of("verifier")[0]
 
 
 async def test_chain_continues_with_next_module(make_lesson_runner: MakeLesson) -> None:

@@ -24,16 +24,16 @@ async def test_ats_updates_are_untrusted_in_prompt(
     ]
     run = await review_runner()
     await run.question()
-    [first, *_] = calls(run.models, "ats_reader", "Tu es le Lecteur ATS")
+    [first, *_] = calls(run.models, "ats_reader", "You are Tremplin's Lecteur ATS (ATS Reader).")
     assert ATS_LABEL in first and in_untrusted(first, TRAP)
     assert in_untrusted(first, "Greenhouse change son analyseur")
     assert "2026-11-02" in first and "https://exemple.invalid/greenhouse" in first
-    dated, block = first.index("Mise à jour : 2026-11-13"), first.index(ATS_LABEL)
+    dated, block = first.index("Updated: 2026-11-13"), first.index(ATS_LABEL)
     assert (
         dated
-        < first.index("Notes par ATS")
+        < first.index("Notes per ATS")
         < block
-        < first.index("Règles d'honnêteté, sans exception")
+        < first.index("Honesty rules, without exception")
     )
     others = [p for agent in ("recruiter", "scout") for p in calls(run.models, agent)]
     assert all(ATS_LABEL not in p for p in others)
@@ -44,6 +44,6 @@ async def test_no_ats_update_changes_nothing_in_prompt(
 ) -> None:
     run = await review_runner()
     await run.question()
-    [first, *_] = calls(run.models, "ats_reader", "Tu es le Lecteur ATS")
-    assert "mises à jour du web" not in first and "Mises à jour récentes" not in first
-    assert "- ATS inconnu : appliquer les règles générales.\n\n" in first
+    [first, *_] = calls(run.models, "ats_reader", "You are Tremplin's Lecteur ATS (ATS Reader).")
+    assert "mises à jour du web" not in first and "Recent updates read on the web" not in first
+    assert "- Unknown ATS: apply the general rules.\n\n" in first

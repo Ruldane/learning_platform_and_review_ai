@@ -17,7 +17,7 @@ LONG_TAIL = " " + " ".join(f"mot{n}" for n in range(200))
 
 
 def round_marker(number: int) -> str:
-    return f"Tour en cours : {number}\n"
+    return f"Current round: {number}\n"
 
 
 def once_in_round(c: Council, number: int, action: Callable[[], Awaitable[None]]) -> None:
@@ -125,13 +125,13 @@ async def test_message_during_round_one_is_answered_by_name_in_round_two(
     models = CouncilModels()
     first_of_round_two = "Je réponds au Praticien : un socle d'abord [1]."
     for agent in DEBATERS:
-        models.when(agent, round_marker(2) + "Réponds", first_of_round_two)
+        models.when(agent, round_marker(2) + "Reply by name", first_of_round_two)
     c = await make_council_runner(models=models)
     once_in_round(c, 1, lambda: c.post_message("Je préfère les projets pratiques"))
     await c.to_choice()
     first = (await c.agent_messages(step_prefix="tour-2"))[0]
     assert "January" in first.payload["text"] and "projets pratiques" in c.prompt_of(first)
-    assert "Tu parles en premier" in c.prompt_of(first)
+    assert "You speak first" in c.prompt_of(first)
     positions = await c.agent_messages(step_prefix="positions")
     assert all("projets pratiques" not in c.prompt_of(m) for m in positions)
 
@@ -145,9 +145,9 @@ async def test_shorter_command_caps_turns_at_80_words(make_council_runner: MakeC
     await c.to_choice()
     shorter = await c.agent_messages(step_prefix="tour-2")
     assert len(shorter) == 4 and all(count_words(m.payload["text"]) <= 80 for m in shorter)
-    assert all("80 mots au maximum" in c.prompt_of(m) for m in shorter)
+    assert all("80 words at most" in c.prompt_of(m) for m in shorter)
     after = await c.agent_messages(step_prefix="tour-3")  # l'angle vaut pour un tour
-    assert all("150 mots au maximum" in c.prompt_of(m) for m in after)
+    assert all("150 words at most" in c.prompt_of(m) for m in after)
 
 
 async def test_to_proposals_command_skips_remaining_rounds(
@@ -196,7 +196,9 @@ async def test_scribe_draws_domain_map_after_round_one(make_council_runner: Make
     ]
     assert [x["step"] for x in b] == [1, 2, 3, 4, 5]
     assert len(c.store.boards) == 5 and len(c.store.attached) == 2  # une frise par proposition
-    domain_prompt = next(p.prompt for p in c.models.calls if "carte du domaine" in p.prompt)
+    domain_prompt = next(
+        p.prompt for p in c.models.calls if "draw the map of the domain" in p.prompt
+    )
     assert "Stratège, tour 1" in domain_prompt
 
 
@@ -206,7 +208,7 @@ async def test_scribe_publishes_and_saves_only_the_normalized_mermaid(
     models = CouncilModels()
     raw = 'flowchart LR\nA["x < y"] -->|suite| B(List<String>)'
     board = json.dumps({"title": "Carte", "mermaid": raw})
-    models.when("scribe", "dessiner la carte du domaine", board)
+    models.when("scribe", "draw the map of the domain", board)
     c = await make_council_runner(models=models)
     await c.to_choice()
     domain = next(x for x in await c.events("board.update") if x["kind"] == "domain_map")
@@ -220,7 +222,7 @@ async def test_invalid_board_twice_is_skipped_without_failing(
 ) -> None:
     models = CouncilModels()
     bad = '{"title": "Carte", "mermaid": "flowchart TD\\nA-->B\\nclick A \\"https://x\\""}'
-    models.when("scribe", "dessiner la carte du domaine", bad, bad)
+    models.when("scribe", "draw the map of the domain", bad, bad)
     c = await make_council_runner(models=models)
     await c.to_choice()
     kinds = [x["kind"] for x in await c.events("board.update")]
@@ -254,7 +256,7 @@ async def test_board_invalid_once_cleaned_is_asked_again(make_council_runner: Ma
     models = CouncilModels()
     short = json.dumps({"title": "  ab ", "mermaid": 'flowchart TD\nA["Bases"] --> B["Projet"]'})
     fenced = json.dumps({"title": "Carte", "mermaid": "```\nA-->B\n```"})
-    models.when("scribe", "dessiner la carte du domaine", short, fenced)
+    models.when("scribe", "draw the map of the domain", short, fenced)
     c = await make_council_runner(models=models)
     await c.to_choice()
     kinds = [x["kind"] for x in await c.events("board.update")]

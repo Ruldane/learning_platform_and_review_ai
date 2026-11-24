@@ -19,10 +19,9 @@ from tests.support.program import full_week, module, plan, task, week
 VALIDATE_PROGRAM = {
     "kind": "validate_program",
     "question": (
-        "Déplace, supprime ou ajoute des tâches dans le calendrier, puis valide le programme ou "
-        "demande une révision."
+        "Arrange the tasks in the calendar, then validate the program or request a revision."
     ),
-    "options": [{"value": "validate", "label": "Valider le programme"}],
+    "options": [{"value": "validate", "label": "Validate the program"}],
 }
 OVER = plan([full_week("Bases", [120] * 8)]).model_dump_json()  # 1 025 min > 714
 
@@ -46,7 +45,7 @@ async def test_builder_saves_draft_and_stops_for_validation(
     assert pending["kind"] == "validate_program" and c.store.drafts[0].revision == 0
     assert {k: pending[k] for k in VALIDATE_PROGRAM} == VALIDATE_PROGRAM
     assert [(f["id"], f["label"]) for f in pending["fields"]] == [
-        ("note", "Ce qu'il faut revoir (pour une révision)")
+        ("note", "What should change in a revision?")
     ]
     ready = (await c.events("artifact.ready"))[0]
     pid = ready["artifact_id"]

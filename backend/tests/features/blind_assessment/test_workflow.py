@@ -39,7 +39,7 @@ def blind_reply(messages: Sequence[BaseMessage]) -> str:
     assert '"id"' not in prompt
     assert FIRST in prompt and SECOND in prompt
     assert prompt.index(SECOND) < prompt.index(FIRST)
-    assert "Lisibilité" in prompt and "Les sections et leur ordre guident la lecture." in prompt
+    assert "Readability" in prompt and "The sections and their order guide the reader." in prompt
     return json.dumps(GRADE)
 
 

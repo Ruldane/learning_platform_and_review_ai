@@ -78,7 +78,7 @@ async def test_late_twice_asks_option_then_proposes_with_it(
         OPTION_LABELS["reduce_scope"],
         OPTION_LABELS["push_deadline"],
     ]
-    assert first["question"].startswith("Deux semaines de suite en retard")
+    assert first["question"].startswith("You're two weeks behind")
     await run.resume("deepen")  # pas offerte : la question revient
     await run.wait_question("replan_option")
     await run.resume("reduce_scope")
@@ -199,7 +199,7 @@ async def test_revise_note_is_untrusted_in_prompt(make_replan_runner: MakeReplan
     await run.wait_question()
     last = run.prompts()[-1]
     assert 'source="note from January"' in last and "Garde la pratique de l'API" in last
-    assert "Proposition n° 2" in last and "Réduire le périmètre" in last  # l'option reste
+    assert "Proposal no. 2" in last and "Reduce the scope" in last  # l'option reste
     assert [c.revision for c in run.store.previews] == [0, 1]
     assert run.store.previews[1].reason == (
         "Weekly review · Reduce the scope · Proposal 2 — Garde la pratique de l'API"

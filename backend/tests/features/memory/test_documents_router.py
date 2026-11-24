@@ -57,8 +57,15 @@ async def test_same_file_twice_returns_existing_document(
     assert len((await client.get(API)).json()) == 1
 
 
-async def test_same_link_twice_is_one_document(app: FastAPI, client: httpx.AsyncClient) -> None:
+async def test_same_link_twice_is_one_document(
+    app: FastAPI, client: httpx.AsyncClient, memory_providers: MemoryProviders
+) -> None:
+    web = memory_providers.web
+    assert isinstance(web, FakeWebReader)
+    url = "https://example.org/page"
+    web.pages[url] = WebDocument(url, "Article", PHRASE, None, None, None, None)
     first = await client.post(API, data={"url": "https://Example.org/page#haut"})
+    await _settle(app)
     second = await client.post(API, data={"url": "HTTPS://EXAMPLE.ORG/page"})
     assert (first.status_code, second.status_code) == (202, 200)
     assert first.json()["document"]["id"] == second.json()["document"]["id"]
@@ -96,7 +103,7 @@ async def test_paste_is_stored_as_a_text_file(
 async def test_youtube_link_is_classified(app: FastAPI, client: httpx.AsyncClient) -> None:
     r = await client.post(API, data={"url": "https://youtu.be/dQw4w9WgXcQ"})
     doc = r.json()["document"]
-    assert doc["source_kind"] == "youtube" and doc["name"] == "Vidéo YouTube dQw4w9WgXcQ"
+    assert doc["source_kind"] == "youtube" and doc["name"] == "YouTube video dQw4w9WgXcQ"
 
 
 async def test_unsupported_type_is_415(client: httpx.AsyncClient, tmp_path: Path) -> None:
@@ -121,7 +128,7 @@ async def test_exactly_one_source_required(client: httpx.AsyncClient, kwargs: An
     assert r.status_code == 422
     assert r.json()["error"] == {
         "code": "invalid_document_source",
-        "message": "Fournis un fichier, un lien ou un texte (un seul).",
+        "message": "Provide one file, link, or text entry.",
         "details": None,
     }
 

@@ -112,7 +112,7 @@ async def test_export_contains_items_documents_writes_without_vectors(
     r = await client.get(EXPORT)
     assert r.status_code == 200, r.text
     assert re.fullmatch(
-        r'attachment; filename="tremplin-memoire-\d{4}-\d{2}-\d{2}\.json"',
+        r'attachment; filename="tremplin-memory-\d{4}-\d{2}-\d{2}\.json"',
         r.headers["content-disposition"],
     )
     body: dict[str, Any] = r.json()

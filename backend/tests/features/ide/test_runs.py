@@ -148,7 +148,7 @@ async def test_sandbox_down_gives_readable_error(
     app.state.providers.sandbox = _DownSandbox()
     response = await start_run(client, session["id"])
     assert (response.status_code, code(response)) == (503, "sandbox_unavailable")
-    assert "bac à sable" in response.json()["error"]["message"]
+    assert "The sandbox is not available" in response.json()["error"]["message"]
     # rien n'est resté « en cours » : le bac revenu, l'exécution part
     use_sandbox({"*": "ok"})
     run = await start_run(client, session["id"])

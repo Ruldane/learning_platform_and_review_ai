@@ -52,13 +52,13 @@ async def test_merge_combines_text_tags_and_deletes_others(
     assert out.text == "A\n\nB" and out.tags == ["nlp", "python"]
     assert out.evidence == ["e1", "e2"] and out.indexed is True
     target_writes = await WriteRepository(db, "u1").for_item(target.id)
-    assert [(w.action, w.reason) for w in target_writes][0] == ("merge", "Fusion de 2 élément(s).")
+    assert [(w.action, w.reason) for w in target_writes][0] == ("merge", "Merge of 2 item(s).")
     for gone in (other, twin):
         assert await MemoryItemRepository(db, "u1").get(gone.id) is None
         assert await ChunkRepository(db, "u1").for_item(gone.id) == []
         assert await _vectors(runtime, gone.id) == 0
         log = await WriteRepository(db, "u1").for_item(gone.id)
-        assert [(w.action, w.reason) for w in log][0] == ("delete", "Fusionné dans « Cible ».")
+        assert [(w.action, w.reason) for w in log][0] == ("delete", 'Merged into "Cible".')
     assert await _vectors(runtime, target.id) == 1
     found = await search(db, "u1", runtime, SearchRequest(query="B"))
     assert [h.item_id for h in found.hits] == [target.id]
@@ -70,7 +70,7 @@ async def test_merge_requires_same_kind(service: MemoryService) -> None:
     with pytest.raises(AppError) as err:
         await merge(service, target.id, [other.id])
     assert (err.value.code, err.value.status_code) == ("merge_kind_mismatch", 422)
-    assert err.value.message == "On ne fusionne que des éléments du même type."
+    assert err.value.message == "Only items of the same kind can be merged."
 
 
 async def test_merge_rejects_documents(service: MemoryService) -> None:
@@ -79,7 +79,7 @@ async def test_merge_rejects_documents(service: MemoryService) -> None:
     with pytest.raises(AppError) as err:
         await merge(service, target.id, [other.id])
     assert (err.value.code, err.value.status_code) == ("merge_document_forbidden", 409)
-    assert err.value.message == "Un document ne se fusionne pas : supprime le doublon."
+    assert err.value.message == "A document cannot be merged: delete the duplicate."
 
 
 async def test_merge_acquis_keeps_highest_level(service: MemoryService) -> None:
