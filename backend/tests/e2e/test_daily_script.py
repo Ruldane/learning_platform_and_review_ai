@@ -139,6 +139,7 @@ async def test_the_batch_is_read_by_the_reference_of_each_page_not_by_its_place(
         offer = OFFERS[number - 1]
         assert finding.ref == page.ref
         assert finding.title == offer.title
+        assert finding.level == offer.level
         assert finding.tools == list(offer.tools)  # le code ne retire aucun outil : ils sont lus
         assert finding.salary == offer.salary  # ni un salaire : ses chiffres sont dans la page
         assert [s.name for s in finding.skills] == [name for name, _ in offer.skills]

@@ -117,7 +117,7 @@ OFFERS = [
     Offer(
         "Ingénieur données",
         "Société Fictive",
-        "mid_level",
+        "confirme",
         "partiel",
         "45 000 à 55 000 euros",
         (("Python", True), ("SQL", True), ("Modélisation de données", False)),
@@ -153,7 +153,7 @@ OFFERS = [
     Offer(
         "Analytics engineer",
         "Autre SA",
-        "mid_level",
+        "confirme",
         "partiel",
         None,
         (("SQL", True), ("Modélisation de données", True)),
@@ -162,7 +162,7 @@ OFFERS = [
     Offer(
         "Ingénieur données, équipe produit",
         "Exemple Tech",
-        "mid_level",
+        "confirme",
         "total",
         None,
         (("Python", True), ("Pipelines de données", True), ("Communication", False)),
@@ -180,7 +180,7 @@ OFFERS = [
     Offer(
         "Ingénieure données, finance",
         "Autre SA",
-        "mid_level",
+        "confirme",
         "non",
         None,
         (("Python", True), ("SQL", True), ("Qualité des données", True)),
