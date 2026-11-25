@@ -63,6 +63,110 @@ Claude Code and Codex can also start workflows and follow their sessions through
 local MCP server. You choose the tools a token can use. Actions that require your
 approval wait for you in Tremplin.
 
+## How Tremplin works
+
+### The pieces
+
+Everything runs on your computer. The browser talks to one FastAPI backend, which holds
+the business rules and stores your workspace in SQLite. Qdrant stores the vectors that make
+your documents searchable, and a local Ollama instance computes them with the `bge-m3`
+model. Code you run in the IDE goes to a separate sandbox container with no network access.
+The same backend also serves the MCP endpoint (`/mcp`) used by Claude Code and Codex. A
+small relay, installed outside Docker, connects the parts that live on your computer.
+
+```mermaid
+flowchart LR
+    Browser["Browser (React)"] <-->|"HTTP and WebSocket"| API["FastAPI backend"]
+    MCPClient["Claude Code or Codex"] <-->|"MCP"| API
+    API --> SQLite[("SQLite: your workspace")]
+    API --> Qdrant[("Qdrant: search vectors")]
+    API --> Ollama["Ollama: bge-m3 embeddings"]
+    API --> Sandbox["IDE sandbox container"]
+    API --> LLM["Model providers or played steps"]
+    Relay["Relay on your computer"] -->|"Brain sync and played steps"| API
+```
+
+### What happens when you launch a workflow
+
+Each workflow (the Council, the Lesson Factory, a résumé review, an interview) is a graph
+of agents. When you launch one, the backend creates a session, returns its id at once, and
+runs the graph in the background. Each agent asks for a model of a given tier (`fast`,
+`standard`, `strong`, or `vision`) and the backend resolves it from your settings. Progress,
+sources, and costs stream to the browser over a WebSocket. When the graph needs a decision,
+it pauses and waits for you; nothing is approved on your behalf. Results and the session
+history are saved in your workspace, so you can close the tab and come back.
+
+```mermaid
+sequenceDiagram
+    participant You
+    participant API as Backend
+    participant Graph as Agent graph
+    participant Model
+    You->>API: Launch a workflow
+    API-->>You: session_id
+    API->>Graph: Run in the background
+    loop Each agent step
+        Graph->>Model: Prompt for the agent's tier
+        Model-->>Graph: Answer
+        Graph-->>You: Progress over WebSocket
+    end
+    Graph-->>You: Question or approval needed
+    You->>Graph: Your decision
+    Graph-->>You: Result saved in your workspace
+```
+
+### Who runs the agents
+
+The **Who runs the agents** menu chooses where the model answers come from, globally or for
+a single launch:
+
+- **Use my settings**: each agent uses the model chosen for its tier in
+  **Settings > Models and keys**, with your Claude, OpenAI, or GLM key.
+- **Claude API**, **OpenAI API**, or **GLM API**: every agent of the launch uses that
+  provider.
+- **Claude Code (MCP)** or **Codex (MCP)**: the steps are *played*. Tremplin prepares each
+  agent's brief and waits. The relay checks Tremplin every two minutes, starts the client in
+  the background (`claude -p --model sonnet` by default), and the client answers through
+  `agents_play_brief` and `agents_play_submit`. The client uses its own subscription, so the
+  launch costs nothing in Tremplin. Tremplin still checks every answer and keeps the
+  approvals for you.
+
+See [relay/README.md](relay/README.md) to install and pair the relay.
+
+### The Brain: how your notes are connected
+
+The Brain makes your own notes and documents (for example an Obsidian vault) part of
+Tremplin's memory. You declare folders on the **Brain** page and connect the sync relay.
+The backend never opens your disk: it only checks the folder names lexically. The relay
+reads the folders on your computer, skips technical folders (`.git`, `.obsidian`, and the
+exclusions you set), and sends new or changed Markdown, text, PDF, Word, and code files to
+the backend with its own token. The backend indexes them: it extracts the text, computes
+vectors with `bge-m3`, and stores them in Qdrant under your account. A note you edit or
+delete is replaced or removed at the next sync, and older versions stop being searched.
+
+```mermaid
+flowchart LR
+    Folders["Folders on your computer"] --> Relay["Sync relay"]
+    Relay -->|"Changed files, own token"| Sync["Backend: Brain sync"]
+    Sync --> Index["Text extraction and bge-m3 vectors"]
+    Index --> Qdrant[("Qdrant, per account")]
+    Qdrant --> Librarian["Ask the Brain (librarian)"]
+    Qdrant --> Tutor["Learning conversations, podcast, book"]
+    Qdrant --> Galaxy["Knowledge galaxy and Memory"]
+```
+
+The indexed notes are then used across the app:
+
+- **Ask the Brain** opens a conversation with the librarian, who answers from your
+  documents and cites them.
+- Learning conversations, the podcast, and the book bring in your most relevant active
+  notes (up to five per request) as study material.
+- The **Knowledge galaxy** links your notes to your skills and shows the gaps of your
+  current program; every note stays readable in **Memory**.
+
+The Brain page shows the relay status: connected when the relay has called in the last ten
+minutes, with the import progress and an estimate for the remaining files.
+
 ## Setup
 
 - Docker and Docker Compose **2.24 or later** for optional `env_file` entries. Check

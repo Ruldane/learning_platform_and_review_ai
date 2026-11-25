@@ -1,23 +1,23 @@
-# Relais Tremplin
+# Tremplin relay
 
-Quand le menu « Qui fait tourner les agents » vaut **Claude Code (MCP)** ou **Codex (MCP)**, un parcours lancé dans Tremplin attend son client. Le relais interroge Tremplin toutes les deux minutes et lance ce client en arrière-plan. Au repos, il consomme au plus 720 des 1 000 appels quotidiens de son jeton. Il lance au plus deux clients à la fois, un par session, et arrête un client au bout de 20 min.
+When **Who runs the agents** is set to **Claude Code (MCP)** or **Codex (MCP)**, a workflow launched in Tremplin waits for its client. The relay checks Tremplin every two minutes and starts that client in the background. When idle, it uses at most 720 of its token's 1,000 daily calls. It runs at most two clients at a time, one per session, and stops a client after 20 minutes.
 
-## Installation (une fois)
+## Installation (once)
 
-1. Lancer `node relay/install.mjs`. Le relais démarre aussitôt, fenêtre cachée, puis à chaque ouverture de la session Windows.
-2. Ouvrir **Réglages → Accès MCP** et allumer l’accès MCP. Dans **Relais local**, cliquer sur **Connecter le relais**.
+1. Run `node relay/install.mjs`. The relay starts right away in a hidden window, then at every Windows sign-in.
+2. Open **Settings → MCP access** and turn MCP access on. Under **Local relay**, click **Connect the relay**.
 
-Le navigateur remet un code à usage unique, valable deux minutes, au relais sur `127.0.0.1:8770`. Le relais l’échange auprès de son API configurée et conserve son jeton dédié dans `%APPDATA%\Tremplin\relay-pairing.json`. Le jeton expire après 30 jours. Renouveler l’appairage révoque le jeton précédent. Le même écran permet de vérifier les portées manquantes et de révoquer l’appairage.
+The browser hands a single-use code, valid for two minutes, to the relay on `127.0.0.1:8770`. The relay exchanges it with its configured API and keeps its dedicated token in `%APPDATA%\Tremplin\relay-pairing.json`. The token expires after 30 days. Renewing the pairing revokes the previous token. The same screen lets you check missing scopes and revoke the pairing.
 
-Avant le premier appairage, le relais accepte aussi `TREMPLIN_MCP_TOKEN` ou le champ `token` de `%APPDATA%\Tremplin\relay.json`.
+Before the first pairing, the relay also accepts `TREMPLIN_MCP_TOKEN` or the `token` field of `%APPDATA%\Tremplin\relay.json`.
 
-Pour le retirer : `node relay/uninstall.mjs`. Son journal est dans `%APPDATA%\Tremplin\relay.log` et ne contient que des identifiants.
+To remove it: `node relay/uninstall.mjs`. Its log is in `%APPDATA%\Tremplin\relay.log` and contains only identifiers.
 
 ## Variables
 
-- `TREMPLIN_MCP_URL` : l'adresse du serveur MCP, `http://127.0.0.1:8000/mcp` par défaut.
-- `TREMPLIN_RELAY_ORIGINS` : les origines exactes de l’interface autorisées à appairer ce relais, séparées par des virgules. Les valeurs par défaut sont `http://localhost:5173` et `http://127.0.0.1:5173`. Utiliser une origine `localhost` ou `127.0.0.1` pour un autre port local.
-- `TREMPLIN_RELAY_CLAUDE_MODEL` : le modèle de Claude Code pour les étapes jouées, `sonnet` par défaut (lettres, chiffres, `.`, `_` et `-` seulement ; sinon `sonnet`).
-- `TREMPLIN_RELAY_MCP_CONFIG` : une configuration MCP pour Claude Code, quand la pile visée n'est pas celle qui y est branchée (pile de recette).
+- `TREMPLIN_MCP_URL`: the MCP server address, `http://127.0.0.1:8000/mcp` by default.
+- `TREMPLIN_RELAY_ORIGINS`: the exact interface origins allowed to pair this relay, separated by commas. The defaults are `http://localhost:5173` and `http://127.0.0.1:5173`. Use a `localhost` or `127.0.0.1` origin for another local port.
+- `TREMPLIN_RELAY_CLAUDE_MODEL`: the Claude Code model for played steps, `sonnet` by default (letters, digits, `.`, `_` and `-` only; otherwise `sonnet`).
+- `TREMPLIN_RELAY_MCP_CONFIG`: an MCP configuration for Claude Code, when the target stack is not the one connected there (a test stack).
 
-Claude Code est lancé depuis la racine du dépôt, là où le serveur `tremplin` est branché. Il ne reçoit que les outils de jeu (`agents_play_brief`, `agents_play_submit`, `sessions_get_session`) et la recherche web. La consigne envoyée au client est dans `prompt.md`.
+Claude Code starts from the repository root, where the `tremplin` server is connected. It receives only the play tools (`agents_play_brief`, `agents_play_submit`, `sessions_get_session`) and web search. The instructions sent to the client are in `prompt.md`.
