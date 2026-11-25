@@ -8,29 +8,29 @@ export * from "./projectsFixtures";
 type Over = Record<string, unknown>;
 
 export interface ProjectsApiOptions {
-  /** Les projets (`projectOut`), dans l'ordre du programme. */
+  /** Projects (`projectOut`), in program order. */
   projects?: Over[];
-  /** La version du profil maître que l'ajout d'une entrée crée (défaut 4). */
+  /** The master-profile version that adding an entry creates (default 4). */
   nextVersion?: number;
-  /** Les termes qu'un brouillon « à vérifier » retouché garde (défaut : aucun, il devient prêt). */
+  /** The terms a « à vérifier » draft keeps when edited (default: none, it becomes ready). */
   recheckFlags?: string[];
-  /** Remplace la réponse de `POST /projects/{id}/submit`. */
+  /** Overrides the response of `POST /projects/{id}/submit`. */
   submitReply?: () => Response;
-  /** Remplace la réponse de `PATCH /projects/{id}/drafts/{kind}`. */
+  /** Overrides the response of `PATCH /projects/{id}/drafts/{kind}`. */
   draftReply?: () => Response;
-  /** Remplace la réponse de `POST /projects/{id}/profile-entry`. */
+  /** Overrides the response of `POST /projects/{id}/profile-entry`. */
   entryReply?: () => Response;
-  /** Remplace la réponse de `POST /projects/{id}/brief`. */
+  /** Overrides the response of `POST /projects/{id}/brief`. */
   briefReply?: () => Response;
-  /** Remplace la réponse de `POST /projects/{id}/drafts`. */
+  /** Overrides the response of `POST /projects/{id}/drafts`. */
   draftsReply?: () => Response;
-  /** La session que `POST /projects/{id}/drafts` donne (défaut `sess-drafts-<id>`). */
+  /** The session that `POST /projects/{id}/drafts` returns (default `sess-drafts-<id>`). */
   draftsSessionId?: string;
-  /** Remplace la réponse de `GET /projects`. */
+  /** Overrides the response of `GET /projects`. */
   listReply?: () => Response;
 }
 
-/** Un rendu reçu : le corps multipart n'est pas relisible sous jsdom (voir `api.test.ts`). */
+/** A received render: the multipart body cannot be re-read under jsdom (see `api.test.ts`). */
 export interface SubmitRecord {
   id: string;
   contentType: string;
@@ -43,10 +43,10 @@ interface ProjectsState {
   patches: { id: string; kind: string; body: Over }[];
   entries: { id: string; body: Over }[];
   briefs: string[];
-  /** Les demandes de régénération des brouillons (`POST /projects/{id}/drafts`). */
+  /** The draft regeneration requests (`POST /projects/{id}/drafts`). */
   regenerations: string[];
   listReads: number;
-  /** Les lectures de `GET /projects/{id}`. */
+  /** The reads of `GET /projects/{id}`. */
   reads: number;
   sessions: number;
 }
@@ -64,7 +64,7 @@ const update = (state: ProjectsState, id: string, over: Over) => {
   return find(state, id)!;
 };
 
-/** Ce que le serveur refuse avant d'accepter un rendu (409), ou `null`. */
+/** What the server refuses before accepting a render (409), or `null`. */
 function submitRefusal(project: Over): Response | null {
   if (project.status === "validated") {
     return conflict(
@@ -97,7 +97,7 @@ function readHandlers(state: ProjectsState) {
         state.projects.filter((p) => !status || p.status === status).map(summaryOf),
       );
     }),
-    // Le suivi d'une session lit son état avant d'ouvrir le flux.
+    // A session's tracking reads its state before opening the stream.
     http.get(`${API}/sessions/:id`, ({ params }) =>
       HttpResponse.json(sessionOut(String(params.id), "running", { graph: "project_review" })),
     ),
@@ -222,9 +222,9 @@ function regenerateHandler(state: ProjectsState) {
 }
 
 /**
- * Les projets en mémoire : `projects` est à la main du test (`settle` change un projet, comme le
- * serveur quand sa session se termine) ; `submits`, `patches`, `entries` et `briefs` gardent ce que
- * la page a envoyé.
+ * In-memory projects: `projects` is the test's to edit (`settle` changes a project, as the
+ * server does when its session ends); `submits`, `patches`, `entries` and `briefs` keep what
+ * the page sent.
  */
 export function projectsApi(options: ProjectsApiOptions = {}) {
   const state: ProjectsState = {

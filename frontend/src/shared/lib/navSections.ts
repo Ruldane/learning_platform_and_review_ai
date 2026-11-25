@@ -12,12 +12,12 @@ import {
 import type { MessageKey } from "@/shared/i18n/t";
 import type { NavSection } from "./feature";
 
-/** Sections de la navigation latérale, dans l'ordre d'affichage (spec 15.1). */
+/** Side-navigation sections, in display order (spec 15.1). */
 export interface NavSectionDef {
   id: NavSection;
   labelKey: MessageKey;
   icon: LucideIcon;
-  /** Jeton de couleur du thème (voir `index.css`) : repère la section dans le menu et le panneau. */
+  /** Theme color token (see `index.css`): marks the section in the menu and the panel. */
   color: string;
 }
 

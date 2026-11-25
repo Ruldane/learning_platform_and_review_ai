@@ -1,4 +1,4 @@
-/** Textes des mini projets : énoncé, rendu, évaluation, brouillons et entrée du profil maître. */
+/** Texts for mini projects: brief, submission, evaluation, drafts and master-profile entry. */
 export const projects = {
   nav: { portfolio: "Portfolio" },
   portfolio: {

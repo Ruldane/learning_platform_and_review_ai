@@ -7,7 +7,7 @@ import { createFakeSocketServer, type FakeSocketServer } from "./fakeSocket";
 import { renderRoutes } from "./renderRoutes";
 import { server } from "./server";
 
-/** Les pages où les liens du CV mènent, pour vérifier qu'on y arrive. */
+/** The pages the CV links lead to, to check that we arrive there. */
 const LANDINGS = [
   { path: "/career/profile", element: <p>Page du profil</p> },
   { path: "/career/cv", element: <p>Page des modèles</p> },
@@ -20,8 +20,8 @@ const LANDINGS = [
 ];
 
 /**
- * Monte une page du CV à `path` avec les routes de `cvApi` et des faux sockets ; les pages où ses
- * liens mènent sont des repères. `route` est le motif de la page (`/career/cv/reviews/:reviewId`).
+ * Mounts a CV page at `path` with the routes of `cvApi` and fake sockets; the pages its
+ * links lead to are landmarks. `route` is the page pattern (`/career/cv/reviews/:reviewId`).
  */
 export function renderCv(
   route: string,
@@ -37,7 +37,7 @@ export function renderCv(
   return { ...view, ...cv, sockets };
 }
 
-/** Attend l'ouverture du flux de la session `id` et le branche. */
+/** Waits for session `id`'s stream to open and plugs into it. */
 export async function openStream(sockets: FakeSocketServer, id: string) {
   const streams = () => sockets.sockets.filter((s) => s.url.includes(`/sessions/${id}/stream`));
   await waitFor(() => expect(streams()).toHaveLength(1));

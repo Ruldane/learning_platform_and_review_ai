@@ -1,7 +1,7 @@
 import type { NavSection } from "@/shared/lib/feature";
 import type { NavGroup } from "./buildNav";
 
-/** L'entrée de navigation de la page courante : sa section et son chemin. */
+/** The navigation entry of the current page: its section and its path. */
 export interface CurrentNav {
   section: NavSection;
   path: string;
@@ -11,9 +11,9 @@ const covers = (path: string, pathname: string) =>
   path === "/" ? pathname === "/" : pathname === path || pathname.startsWith(`${path}/`);
 
 /**
- * L'entrée active : « / » seulement sur l'accueil ; les autres restent actives sur leurs
- * sous-routes (la fiche ouverte sous `/applications/:id`), l'entrée la plus précise l'emportant
- * quand une autre entrée est elle-même une sous-route (jamais deux entrées actives à la fois).
+ * The active entry: "/" only on home; others stay active on their
+ * sub-routes (the open record under `/applications/:id`), the most precise entry winning
+ * when another entry is itself a sub-route (never two active entries at once).
  */
 export function currentNav(groups: NavGroup[], pathname: string): CurrentNav | null {
   let best: CurrentNav | null = null;

@@ -4,7 +4,7 @@ import { settingsApi } from "./settingsApi";
 
 type Body = Record<string, unknown>;
 
-/** Un rapport de `GET /health` : un état par service. */
+/** A `GET /health` report: one state per service. */
 export const healthReport = (checks: Record<string, [boolean, string]>, status = "ok") => ({
   status,
   checks: Object.fromEntries(
@@ -12,7 +12,7 @@ export const healthReport = (checks: Record<string, [boolean, string]>, status =
   ),
 });
 
-/** Une réponse de `GET /health/embedding`. */
+/** A `GET /health/embedding` response. */
 export const embeddingOut = (percent: number | null, present = false, detail = "") => ({
   model: "bge-m3",
   present,
@@ -21,26 +21,26 @@ export const embeddingOut = (percent: number | null, present = false, detail = "
 });
 
 interface OnboardingApiOptions {
-  /** Les réglages lus : le premier état du faux serveur (`onboarding_done: false`, compte neuf). */
+  /** The settings read: the fake server's first state (`onboarding_done: false`, new account). */
   settings: Body;
-  /** Les clés lues : le premier état, qu'un enregistrement fait évoluer. */
+  /** The keys read: the first state, which a save changes. */
   keys?: Body[];
   models?: object;
-  /** Lectures successives de `GET /health` ; la dernière se répète. */
+  /** Successive reads of `GET /health`; the last one repeats. */
   health?: object[];
-  /** Lectures successives de `GET /health/embedding` ; la dernière se répète. */
+  /** Successive reads of `GET /health/embedding`; the last one repeats. */
   embedding?: object[];
-  /** Les premières lectures de `GET /settings` qui échouent (500). */
+  /** The first reads of `GET /settings` that fail (500). */
   settingsFailures?: number;
-  /** Les premières lectures de `GET /settings/api-keys` qui échouent (500). */
+  /** The first reads of `GET /settings/api-keys` that fail (500). */
   keysFailures?: number;
-  /** Réponse de `POST /settings/api-keys/{provider}/test`. */
+  /** Response of `POST /settings/api-keys/{provider}/test`. */
   keyTest?: { ok: boolean; message: string };
-  /** Réponse à un `PUT /settings` (une 422, par exemple), ou rien pour l'accepter. */
+  /** Response to a `PUT /settings` (a 422, for example), or nothing to accept it. */
   put?: (body: Body) => Response | undefined;
-  /** Réponse à `POST /profile/import`, ou rien pour l'accepter (202). */
+  /** Response to `POST /profile/import`, or nothing to accept it (202). */
   importProfile?: (request: Request) => Response | undefined;
-  /** Tient chaque `PUT /settings` jusqu'à l'ouverture de la porte. */
+  /** Holds each `PUT /settings` until the gate opens. */
   gate?: Promise<void>;
 }
 
@@ -54,7 +54,7 @@ const failure = () =>
 
 type Reads = Record<"settings" | "keys" | "health" | "embedding", number>;
 
-/** Les clés : lecture (qui peut échouer d'abord), enregistrement et test. */
+/** The keys: read (which may fail first), save and test. */
 function keyHandlers(
   options: OnboardingApiOptions,
   keys: Body[],
@@ -84,10 +84,10 @@ function keyHandlers(
 }
 
 /**
- * Faux serveur du premier lancement : réglages en mémoire (une écriture se relit), clés (un
- * enregistrement les fait évoluer), santé, progression du modèle d'embeddings et import du profil.
- * Les compteurs et les corps reçus servent aux assertions ; une clé enregistrée n'est gardée que
- * pour son fournisseur (jamais la valeur).
+ * Fake first-run server: settings in memory (a write reads back), keys (a save
+ * changes them), health, embedding model progress and profile import.
+ * The counters and bodies received serve as assertions; a saved key is kept only
+ * for its provider (never the value).
  */
 export function onboardingApi(options: OnboardingApiOptions) {
   const base = settingsApi({

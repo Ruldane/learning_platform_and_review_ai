@@ -58,7 +58,7 @@ const resourceRubric = {
   url: "https://example.org/index",
 };
 
-/** Un brief complet (`BriefOut`) fictif : les sept rubriques sont remplies, le conseil est prêt. */
+/** A full brief (`BriefOut`), fake: all seven sections filled, the advice ready. */
 export const briefOut = (over: Over = {}) => ({
   id: "b1",
   day: "2026-11-16",
@@ -79,7 +79,7 @@ export const briefOut = (over: Over = {}) => ({
   ...over,
 });
 
-/** Un événement du fil (`ActivityItem`) fictif. */
+/** A fake feed event (`ActivityItem`). */
 export const activityItem = (id: string, at: string, over: Over = {}) => ({
   id,
   kind: "lesson",
@@ -96,7 +96,7 @@ interface ActivityRow {
   [key: string]: unknown;
 }
 
-/** Plus grand que le couple `(at, id)` ? Les instants se comparent comme des dates, l'`id` départage. */
+/** Greater than the `(at, id)` pair? Instants compare as dates; the `id` breaks ties. */
 function after(row: ActivityRow, at: string, id: string | null): boolean {
   const gap = Date.parse(row.at) - Date.parse(at);
   if (gap !== 0) return gap > 0;
@@ -112,16 +112,16 @@ function before(row: ActivityRow, at: string, id: string | null): boolean {
 export interface HomeApiOptions {
   brief?: Over;
   events?: ActivityRow[];
-  /** Les n premières lectures du brief échouent (500). */
+  /** The first n brief reads fail (500). */
   briefFailures?: number;
-  /** Les lectures du fil échouent tant que c'est vrai. */
+  /** Feed reads fail for as long as this is true. */
   activityFails?: boolean;
 }
 
 /**
- * Le brief et le fil d'activité en mémoire. Le fil applique le curseur `(at, id)` comme le serveur
- * (bornes exclusives sur le couple, le plus récent d'abord, `limit`) ; `queries` garde les
- * paramètres reçus de chaque lecture, pour vérifier que le couple part bien.
+ * The brief and the activity feed in memory. The feed applies the `(at, id)` cursor as the server
+ * does (exclusive bounds on the pair, most recent first, `limit`); `queries` keeps the
+ * parameters received on each read, to check that the pair is sent.
  */
 export function homeApi(options: HomeApiOptions = {}) {
   const state = {

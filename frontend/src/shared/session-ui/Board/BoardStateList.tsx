@@ -8,7 +8,7 @@ interface BoardStateListProps {
   onSelect: (id: string) => void;
 }
 
-/** Les états enregistrés du tableau, du plus ancien au plus récent : titre, type, auteur. */
+/** The board's saved states, oldest to newest: title, type, author. */
 export function BoardStateList({ states, activeId, onSelect }: BoardStateListProps) {
   const ordered = [...states].sort((a, b) => a.step - b.step);
   return (

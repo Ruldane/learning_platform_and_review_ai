@@ -6,17 +6,17 @@ import type { FakeSocketServer } from "./fakeSocket";
 import { renderRoutes } from "./renderRoutes";
 import { server } from "./server";
 
-/** Les pages où les liens des candidatures mènent : des repères, pour vérifier qu'on y arrive. */
+/** The pages application links lead to: landmarks, to check that we arrive there. */
 const LANDINGS: RouteObject[] = [
   { path: "/career/cv/versions", element: <p>Page des versions de CV</p> },
   { path: "/career/postings/:postingId", element: <p>{"Page de l'offre"}</p> },
 ];
 
 /**
- * Monte `routes` (celles du manifeste de la feature : le tiroir est bien un enfant du suivi, à
- * `path`) avec les routes en mémoire de `applicationsApi` ; les pages des autres tâches sont des
- * repères. Renvoie le routeur, un `userEvent`, les corps reçus (`state`) et les données (`rows`,
- * `reminders`) que le test peut changer.
+ * Mounts `routes` (the feature manifest's: the drawer is a child of tracking, at
+ * `path`) with the in-memory routes of `applicationsApi`; pages of other tasks are
+ * landmarks. Returns the router, a `userEvent`, the bodies received (`state`) and the data
+ * (`rows`, `reminders`) that the test can change.
  */
 export function renderApplications(
   routes: RouteObject[],
@@ -29,7 +29,7 @@ export function renderApplications(
   return { ...view, ...backend };
 }
 
-/** Attend l'ouverture du flux de la session `id` et le branche. */
+/** Waits for session `id`'s stream to open and plugs into it. */
 export async function openStream(sockets: FakeSocketServer, id: string) {
   const streams = () => sockets.sockets.filter((s) => s.url.includes(`/sessions/${id}/stream`));
   await waitFor(() => expect(streams()).toHaveLength(1));

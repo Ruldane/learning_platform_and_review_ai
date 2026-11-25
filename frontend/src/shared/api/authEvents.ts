@@ -1,14 +1,14 @@
 /**
- * Événement « connexion requise » : le client API l'émet quand n'importe quel appel reçoit un 401
- * `auth_required` ; la porte de la coquille l'écoute (une seule fois montée) et mène à
- * `/login`. `shared/` n'importe aucune feature : le lien entre les deux passe par cet
- * événement.
+ * "Sign-in required" event: the API client emits it when any call gets a 401
+ * `auth_required`; the shell gate listens (mounted once) and leads to
+ * `/login`. `shared/` imports no feature: the link between the two goes through this
+ * event.
  */
 type Listener = () => void;
 
 const listeners = new Set<Listener>();
 
-/** S'abonne à l'événement ; renvoie la fonction qui se désabonne. */
+/** Subscribes to the event; returns the function that unsubscribes. */
 export function onAuthRequired(listener: Listener): () => void {
   listeners.add(listener);
   return () => {
@@ -16,11 +16,11 @@ export function onAuthRequired(listener: Listener): () => void {
   };
 }
 
-/** Prévient les écouteurs qu'une réponse a dit « connexion requise ». */
+/** Notifies listeners that a response said "sign-in required". */
 export function emitAuthRequired(): void {
   for (const listener of [...listeners]) {
-    // Un écouteur qui lève ne coupe pas les suivants (le plan prévoit plusieurs portes) ; on ne
-    // journalise que le fait, jamais l'erreur.
+    // A listener that throws does not stop the next ones (the plan expects several gates);
+    // we only log the fact, never the error.
     try {
       listener();
     } catch {

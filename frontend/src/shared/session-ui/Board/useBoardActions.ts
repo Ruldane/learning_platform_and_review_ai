@@ -14,8 +14,8 @@ interface Options {
 }
 
 /**
- * Les deux actions de la barre : exporter le tableau (son échec se dit dans `error`), envoyer les
- * modifications aux agents (son échec se dit sur la page, qui envoie).
+ * The two actions of the bar: export the board (its failure is said in `error`), send
+ * changes to the agents (its failure is said on the page, which sends).
  */
 export function useBoardActions({ boardId, title, edits, onSendEdit }: Options) {
   const [api, setApi] = useState<BoardApi | null>(null);
@@ -43,15 +43,15 @@ export function useBoardActions({ boardId, title, edits, onSendEdit }: Options) 
     try {
       scene = await serializeScene(api);
     } catch {
-      // Échec local, avant tout envoi : seul le tableau peut le dire.
+      // Local failure, before any sending: only the board can say so.
       return setError(t("session.board.sendFailed"));
     }
     try {
       await onSendEdit(boardId, { scene, note });
       edits.markSent();
     } catch {
-      // L'envoi a échoué : la page qui envoie le dit (une seule fois, avec le message du
-      // serveur) ; le bouton reste actif pour réessayer.
+      // Sending failed: the page that sends reports it (once, with the server's message);
+      // the button stays active to retry.
     }
   }, [api, boardId, edits, onSendEdit]);
 

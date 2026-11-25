@@ -12,7 +12,7 @@ interface SessionStatusBarProps {
   cost: CostPayload | null;
 }
 
-/** Barre d'état : statut (annoncé poliment), étape, tour, tokens et coût (SPEC 15.2). */
+/** Status bar: status (announced politely), step, turn, tokens and cost (SPEC 15.2). */
 export function SessionStatusBar({
   status, stepLabel, round, cost, playedBy, waitingForClient,
 }: SessionStatusBarProps) {

@@ -4,7 +4,7 @@ import { apiError } from "./councilHarness";
 
 type Over = Record<string, unknown>;
 
-/** Une fiche de la liste (`ApplicationOut`) fictive. */
+/** A fake record from the list (`ApplicationOut`). */
 export const applicationOut = (over: Over = {}) => ({
   id: "a1",
   company: "Acme",
@@ -25,7 +25,7 @@ export const applicationOut = (over: Over = {}) => ({
   ...over,
 });
 
-/** Une relance complète (`ReminderOut`). */
+/** A full follow-up (`ReminderOut`). */
 export const reminderOut = (over: Over = {}) => ({
   id: "r1",
   application_id: "a1",
@@ -49,7 +49,7 @@ export const statsOut = (over: Over = {}) => ({
   ...over,
 });
 
-/** Une alerte de doublon (`AlertOut`). */
+/** A duplicate alert (`AlertOut`). */
 export const alertOut = (over: Over = {}) => ({
   application_id: "a9",
   level: "probable",
@@ -73,7 +73,7 @@ export const eventOut = (over: Over = {}) => ({
   ...over,
 });
 
-/** La fiche ouverte (`ApplicationDetail`) : une fiche de la liste et ce que le détail y ajoute. */
+/** The open record (`ApplicationDetail`): a list record and what the detail adds to it. */
 export const detailOut = (row: Over = applicationOut(), extra: Over = {}) => ({
   ...row,
   posting_text: row.posting_text ?? null,
@@ -86,29 +86,29 @@ export const detailOut = (row: Over = applicationOut(), extra: Over = {}) => ({
 });
 
 export interface ApplicationsApiOptions {
-  /** Les fiches de la liste. */
+  /** The list records. */
   applications?: Over[];
-  /** Ce que le détail d'une fiche ajoute à sa ligne, par identifiant. */
+  /** What the record's detail adds to its row, by id. */
   details?: Record<string, Over>;
-  /** Les relances (toutes, `pending` par défaut). */
+  /** The follow-ups (all, `pending` by default). */
   reminders?: Over[];
   stats?: Over;
-  /** Remplace la lecture de la liste (une panne, par exemple). */
+  /** Overrides the list read (a failure, for example). */
   list?: () => Response;
-  /** Remplace la création (`POST /applications`) : `body` est le corps reçu. */
+  /** Overrides creation (`POST /applications`): `body` is the body received. */
   create?: (body: Over) => Response;
-  /** Remplace l'écriture d'un événement. */
+  /** Overrides writing an event. */
   event?: (id: string, body: Over) => Response;
-  /** Remplace la lecture des relances dues (une panne, par exemple). */
+  /** Overrides reading the due follow-ups (a failure, for example). */
   reminderList?: () => Response;
-  /** Remplace l'action sur une relance (asynchrone : elle peut attendre, pour voir l'état « en cours »). */
+  /** Overrides the action on a follow-up (async: it may wait, to show the "in progress" state). */
   reminderAction?: (
     id: string,
     action: string,
   ) => Response | undefined | Promise<Response | undefined>;
-  /** Remplace le démarrage de la saisie en une phrase. */
+  /** Overrides starting the one-sentence input. */
   intake?: (body: Over) => Response;
-  /** Réponse de `GET /applications/check` (sans `own` ni alerte par défaut). */
+  /** Response of `GET /applications/check` (no `own` or default alert). */
   check?: (query: URLSearchParams) => Response;
 }
 
@@ -124,7 +124,7 @@ const newState = () => ({
 
 export type ApplicationsState = ReturnType<typeof newState>;
 
-/** Ce que les routes partagent : les options, les corps reçus et les données en mémoire. */
+/** What the routes share: the options, the bodies received and the in-memory data. */
 interface Context {
   options: ApplicationsApiOptions;
   state: ApplicationsState;
@@ -134,7 +134,7 @@ interface Context {
 }
 
 let tick = 0;
-/** Une écriture change `updated_at`, comme le serveur : la page qui en dépend le voit. */
+/** A write changes `updated_at`, as the server does: the page depending on it sees it. */
 const touch = (row: Over) => {
   tick += 1;
   row.updated_at = `2026-11-15T10:00:${String(tick % 60).padStart(2, "0")}.${String(tick).padStart(3, "0")}Z`;
@@ -273,9 +273,9 @@ function sessionRoutes(ctx: Context) {
 }
 
 /**
- * Les routes des candidatures et des relances, en mémoire : une écriture (déplacement, retouche,
- * relance traitée) change ce que les lectures suivantes rendent, comme le vrai serveur. `state`
- * garde les corps reçus.
+ * The application and follow-up routes, in memory: a write (move, edit,
+ * follow-up handled) changes what the following reads return, as the real server does. `state`
+ * keeps the bodies received.
  */
 export function applicationsApi(options: ApplicationsApiOptions = {}) {
   const state = newState();

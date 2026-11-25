@@ -1,4 +1,4 @@
-/** Nom et rôle de chaque agent. */
+/** Name and role of each agent. */
 export const agents = {
   moderator: { name: "Moderator", role: "Leads the debate" },
   strategist: { name: "Strategist", role: "Sets the direction and priorities" },

@@ -1,4 +1,4 @@
-/** Extrait et rang (à partir de zéro) parmi les occurrences du texte dans la leçon. */
+/** Excerpt, and rank (from zero) among the occurrences of the text in the lesson. */
 export interface LessonPassage {
   text: string;
   occurrence: number;

@@ -2,7 +2,7 @@ import type { InterruptPayload } from "@/shared/realtime/types";
 
 export type InterruptField = NonNullable<InterruptPayload["fields"]>[number];
 
-/** Réponses saisies : un texte rogné par champ, les champs vides omis. */
+/** Typed answers: text trimmed per field, empty fields omitted. */
 export function fieldAnswers(
   fields: InterruptField[],
   draft: Record<string, string>,

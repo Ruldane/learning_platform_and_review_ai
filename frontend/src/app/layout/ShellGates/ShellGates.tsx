@@ -4,14 +4,14 @@ import type { FeatureManifest } from "@/shared/lib/feature";
 
 interface ShellGatesProps {
   children: ReactNode;
-  /** Les features à interroger : toutes celles de l'application par défaut. */
+  /** Features to query: all app features by default. */
   features?: FeatureManifest[];
 }
 
 /**
- * Enveloppe la mise en page des portes (`shell.gate`) des features, dans l'ordre de `FEATURES` :
- * la première est la plus extérieure, donc la première à devoir s'ouvrir (la connexion avant le
- * premier lancement). Une porte ferme ses enfants tant qu'elle n'est pas ouverte.
+ * Wraps the layout in the features' gates (`shell.gate`), in `FEATURES` order:
+ * the first is the outermost, so the first to open (sign-in before
+ * first run). A gate keeps its children unmounted until it opens.
  */
 export function ShellGates({ children, features = FEATURES }: ShellGatesProps) {
   return features.reduceRight<ReactNode>((inner, feature) => {

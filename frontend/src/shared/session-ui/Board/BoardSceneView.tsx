@@ -8,7 +8,7 @@ import { MermaidSvg } from "../MermaidSvg";
 import type { BoardApi } from "./boardApi";
 import type { BoardScene } from "./useBoardScene";
 
-// Le canevas (Excalidraw et ses styles) n'entre pas dans le paquet principal.
+// The canvas (Excalidraw and its styles) is kept out of the main bundle.
 const BoardCanvas = lazy(() => import("./BoardCanvas"));
 
 interface BoardSceneViewProps {
@@ -20,11 +20,11 @@ interface BoardSceneViewProps {
   readOnly: boolean;
   onReady: (api: BoardApi) => void;
   onSceneChange: (elements: readonly SceneElementLike[]) => void;
-  /** Texte de l'attente pendant la conversion du schéma. */
+  /** Waiting text during the schema conversion. */
   drawingLabel: string;
 }
 
-/** Selon la conversion : attente, repli Mermaid simple (SPEC 3.3) ou canevas Excalidraw. */
+/** Depending on the conversion: waiting, simple Mermaid fallback (SPEC 3.3) or Excalidraw. */
 export function BoardSceneView(props: BoardSceneViewProps) {
   const { scene, title, mermaid, animate, reducedMotion, readOnly } = props;
   if (scene.status === "loading") return <LoadingState label={props.drawingLabel} />;

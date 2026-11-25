@@ -1,4 +1,4 @@
-/** Textes du radar du marché : relevé, classement, alertes, offres, lancement, page et historique. */
+/** Texts for the market radar: scan, ranking, alerts, offers, launch, page and history. */
 export const radar = {
   nav: { radar: "Radar" },
   summary: {

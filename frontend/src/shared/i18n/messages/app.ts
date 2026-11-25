@@ -1,4 +1,4 @@
-/** Textes du squelette : application, navigation, accueil, état des services, erreurs communes. */
+/** Texts for the shell: app, navigation, home, service status, common errors. */
 export const appMessages = {
   app: {
     name: "Tremplin",

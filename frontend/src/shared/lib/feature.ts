@@ -2,14 +2,14 @@ import type { ComponentType, ReactNode } from "react";
 import type { RouteObject } from "react-router";
 import type { MessageKey } from "@/shared/i18n/t";
 
-/** Les 8 sections de la navigation latérale, dans l'ordre de la spec (15.1). */
+/** The 8 side-navigation sections, in spec order (15.1). */
 export type NavSection =
   "home" | "learn" | "study" | "skills" | "career" | "applications" | "memory" | "settings" | "code" | "lab";
 
 /**
- * Une entrée de la navigation latérale ; `order` trie les entrées d'une même section. `useBadge`
- * est un hook (appelé à chaque rendu de l'entrée) qui rend le nombre à signaler dans une pastille :
- * rien, ou zéro, n'en affiche aucune.
+ * One side-navigation entry; `order` sorts the entries of the same section. `useBadge`
+ * is a hook (called on each render of the entry) that returns the number to flag in a badge:
+ * nothing, or zero, shows none.
  */
 export interface NavEntry {
   section: NavSection;
@@ -17,17 +17,17 @@ export interface NavEntry {
   path: string;
   order: number;
   useBadge?: () => number | undefined;
-  /** Le texte lu par les lecteurs d'écran pour la pastille (« 3 relances dues »). */
+  /** The text read by screen readers for the badge (« 3 relances dues »). */
   badgeLabel?: (count: number) => string;
 }
 
 /**
- * Emplacements de la coquille qu'une feature peut occuper sans toucher à la mise en page :
- * `topbar` est rendu dans le panneau de gauche (une info par ligne ; dans la barre du haut sur une
- * page nue), `overlay` dans la mise en page (par-dessus les pages) ;
- * `gate` enveloppe toute la mise en page (connexion, premier lancement) : la porte de la première
- * feature de `FEATURES` est la plus extérieure, et la mise en page ne se monte qu'une fois les
- * portes ouvertes.
+ * Shell slots a feature can occupy without touching the layout:
+ * `topbar` is rendered in the left panel (one item per line; in the top bar on a
+ * bare page), `overlay` in the layout (above the pages);
+ * `gate` wraps the whole layout (sign-in, first run): the first feature of
+ * `FEATURES` has the outermost gate, and the layout mounts only once the
+ * gates are open.
  */
 export interface FeatureShell {
   topbar?: ComponentType;
@@ -36,10 +36,10 @@ export interface FeatureShell {
 }
 
 /**
- * Ce qu'une feature déclare pour s'intégrer à l'application : ses routes, ses entrées de
- * navigation (plusieurs possibles, éventuellement dans la même section : SPEC 15.1) et, au besoin,
- * ses emplacements de coquille. `publicRoutes` sont des routes hors de la mise en page et sans
- * porte (la connexion) : jamais d'entrée de navigation.
+ * What a feature declares to plug into the app: its routes, its
+ * navigation entries (several possible, possibly in the same section: SPEC 15.1) and, if needed,
+ * its shell slots. `publicRoutes` are routes outside the layout and without a
+ * gate (sign-in): never a navigation entry.
  */
 export interface FeatureManifest {
   id: string;

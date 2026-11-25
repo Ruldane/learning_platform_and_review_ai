@@ -7,19 +7,19 @@ import { InterruptTextField } from "./InterruptTextField";
 
 interface InterruptFieldsProps {
   fields: InterruptField[];
-  /** Texte saisi par champ : la carte le garde, pour que les options puissent l'envoyer aussi. */
+  /** Text typed per field: the card keeps it, so the options can send it too. */
   draft: Record<string, string>;
   onDraft: Dispatch<SetStateAction<Record<string, string>>>;
   disabled: boolean;
-  /** Reçoit `{ answers: { <id du champ>: <texte> } }` : les champs vides sont omis. */
+  /** Receives `{ answers: { <field id>: <text> } }`: empty fields are omitted. */
   onSubmit: (value: { answers: Record<string, string> }) => void;
   voice?: boolean;
 }
 
 /**
- * Cadrage à plusieurs questions : un champ par question (l'étiquette est la question). « Répondre »
- * envoie les réponses données ; il reste inactif tant que tous les champs sont vides ou qu'un
- * champ obligatoire manque. Le premier champ reçoit le focus.
+ * Several questions: one field per question (the label is the question). « Répondre »
+ * sends the answers given; it stays inactive while all fields are empty or a required
+ * field is missing. The first field gets the focus.
  */
 export function InterruptFields({
   fields,

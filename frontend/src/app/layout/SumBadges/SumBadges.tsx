@@ -4,7 +4,7 @@ import { BadgeChain, type BadgePart, type BadgedItem } from "./BadgeChain";
 
 const hasBadge = (item: NavItem): item is BadgedItem => !!item.useBadge && !!item.badgeLabel;
 
-/** Rend à `children` les pastilles non nulles des entrées qui en déclarent une. */
+/** Renders to `children` the non-zero badges of the entries that declare one. */
 export function SumBadges({
   items,
   children,

@@ -10,7 +10,7 @@ const CHIP =
   "inline-flex size-6 items-center justify-center rounded-full border border-border bg-muted text-xs font-medium";
 const LINK = `${CHIP} hover:border-primary hover:text-primary focus-visible:ring-3 focus-visible:ring-ring outline-none`;
 
-/** Adresse à ouvrir : la page web (http ou https), sinon l'élément de la mémoire ; `null` si aucune. */
+/** Address to open: the web page (http or https), else the memory item; `null` if none. */
 function targetOf(citation: Citation): string | null {
   const address = citation.url === null ? null : webUrl(citation.url);
   if (address) return address.href;
@@ -21,9 +21,9 @@ function targetOf(citation: Citation): string | null {
 }
 
 /**
- * Pastilles numérotées des sources d'un message d'agent (SPEC 9.3) : « 1 », « 2 »… Une page web
- * s'ouvre dans un nouvel onglet, un élément de la mémoire ouvre la mémoire (aussi dans un nouvel
- * onglet : le débat en cours reste ouvert). Une adresse qui n'est pas http(s) n'est jamais un lien.
+ * Numbered chips for an agent message's sources (SPEC 9.3): « 1 », « 2 »… A web page
+ * opens in a new tab; a memory item opens the memory (also in a new tab: the current debate
+ * stays open). An address that is not http(s) is never a link.
  */
 export function CitationChips({ citations }: CitationChipsProps) {
   if (citations.length === 0) return null;

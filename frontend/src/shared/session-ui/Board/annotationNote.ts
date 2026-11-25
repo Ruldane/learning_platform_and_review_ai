@@ -24,7 +24,7 @@ function texts(elements: Iterable<SceneElementLike>): string[] {
   return [...elements].filter((el) => el.type === "text" && label(el) !== "").map(label);
 }
 
-/** Les formes qui bougent d'elles-mêmes : une étiquette ou une flèche suit sa forme. */
+/** Shapes that move on their own: a label or arrow follows its shape. */
 function isMovable(element: SceneElementLike): boolean {
   return element.type !== "text" && element.type !== "arrow" && element.type !== "line";
 }
@@ -37,8 +37,8 @@ function moved(before: SceneElementLike, after: SceneElementLike): boolean {
 }
 
 /**
- * Résume en une ligne ce que January a changé sur le tableau, pour le message envoyé aux agents :
- * textes ajoutés, modifiés, supprimés, et nombre de formes déplacées. Rien de changé : `""`.
+ * Summarizes in one line what January changed on the board, for the message sent to the agents:
+ * texts added, edited, deleted, and the number of shapes moved. Nothing changed: `""`.
  */
 export function annotationNote(
   before: readonly SceneElementLike[],

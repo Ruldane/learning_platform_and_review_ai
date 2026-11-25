@@ -24,13 +24,13 @@ function download(blob: Blob, name: string): void {
   URL.revokeObjectURL(url);
 }
 
-/** Excalidraw se charge à la demande : il pèse lourd et n'est utile qu'une fois le tableau ouvert. */
+/** Excalidraw loads on demand: it is heavy and only useful once the board is open. */
 async function serialize(api: BoardApi): Promise<string> {
   const { serializeAsJSON } = await loadExcalidraw();
   return serializeAsJSON(api.getSceneElements(), api.getAppState(), api.getFiles(), "local");
 }
 
-/** La scène telle que l'enregistre Excalidraw (`.excalidraw`), en objet, fichiers compris. */
+/** The scene as Excalidraw saves it (`.excalidraw`), as an object, files included. */
 export async function serializeScene(api: BoardApi): Promise<Record<string, unknown>> {
   return JSON.parse(await serialize(api)) as Record<string, unknown>;
 }
@@ -50,7 +50,7 @@ async function makeBlob(format: ExportFormat, api: BoardApi): Promise<Blob> {
   return new Blob([new XMLSerializer().serializeToString(svg)], { type: "image/svg+xml" });
 }
 
-/** Exporte le tableau affiché et déclenche le téléchargement du fichier. */
+/** Exports the displayed board and triggers the file download. */
 export async function exportBoard(
   format: ExportFormat,
   api: BoardApi,

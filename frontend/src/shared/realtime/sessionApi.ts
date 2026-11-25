@@ -4,7 +4,7 @@ import type { components } from "@/shared/api/schema";
 import { runSourceHeaders, type RunSource } from "@/shared/lib/runSource";
 import type { UserCommand } from "./types";
 
-/** Appels REST des sessions (14.1) : toute action passe par ici, jamais par le WebSocket. */
+/** REST calls for sessions (14.1): every action goes through here, never through the WebSocket. */
 export type SessionView = components["schemas"]["SessionView"];
 
 const path = (sessionId: string) => ({ params: { path: { session_id: sessionId } } });
@@ -41,7 +41,7 @@ export async function postMessage(sessionId: string, text: string): Promise<void
   unwrap(await api.POST("/sessions/{session_id}/message", { ...path(sessionId), body: { text } }));
 }
 
-/** Commande du débat (« Plus court », « Passer aux propositions »…) : un message sans texte (D82). */
+/** Debate command (« Plus court », « Passer aux propositions »…): a message with no text (D82). */
 export async function postCommand(
   sessionId: string,
   command: NonNullable<UserCommand>,
@@ -63,8 +63,8 @@ export async function postCancel(sessionId: string): Promise<SessionView> {
 }
 
 /**
- * `GET /sessions?graph=&status=` : les sessions d'un parcours dans un état donné, par exemple les
- * replanifications qui attendent une réponse. Le sujet suivi est dans `subject_type` / `subject_id`.
+ * `GET /sessions?graph=&status=`: sessions of a run in a given state, for example the
+ * replannings waiting for an answer. The tracked subject is in `subject_type` / `subject_id`.
  */
 export async function listSessions(
   graph: string,

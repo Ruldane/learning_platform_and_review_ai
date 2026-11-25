@@ -8,11 +8,11 @@ interface AnswerFieldProps {
   multiline: boolean;
   maxLength?: number;
   onChange: (value: string) => void;
-  /** Ctrl+Entrée (ou Cmd+Entrée) dans la zone de texte. */
+  /** Ctrl+Enter (or Cmd+Enter) in the text area. */
   onSend: () => void;
 }
 
-/** La saisie d'une réponse libre : une ligne, ou une zone de texte où Entrée va à la ligne et Ctrl+Entrée envoie. */
+/** Free-text input: one line, or a text area where Enter adds a line and Ctrl+Enter sends. */
 export function AnswerField({
   value,
   disabled,

@@ -121,8 +121,8 @@ function outcomeEvents(base: Base) {
 }
 
 /**
- * Fabrique d'événements du Conseil pour les tests. Chaque appel de `councilEvents(sessionId)`
- * repart d'un compteur `seq` à 1 : un test = une session.
+ * Council event factory for tests. Each call to `councilEvents(sessionId)`
+ * restarts a `seq` counter at 1: one test = one session.
  */
 export function councilEvents(sessionId = "c1") {
   let seq = 0;

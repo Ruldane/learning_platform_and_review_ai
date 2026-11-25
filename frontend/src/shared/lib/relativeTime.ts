@@ -8,7 +8,7 @@ const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 
-/** « il y a 5 min », « il y a 3 h », « il y a 2 j » ; « à l'instant » sous une minute (ou dans le futur). */
+/** « il y a 5 min », « il y a 3 h »; « à l'instant » under one minute (or in the future). */
 export function relativeTime(iso: string, now: Date = new Date()): string {
   const at = new Date(iso).getTime();
   if (Number.isNaN(at)) return iso;
@@ -19,19 +19,19 @@ export function relativeTime(iso: string, now: Date = new Date()): string {
   return t("time.days", { count: Math.floor(elapsed / DAY) });
 }
 
-/** « 16 novembre 2026 à 10:05 » : la date complète d'un instant, dans le fuseau du poste. */
+/** « 16 novembre 2026 à 10:05 »: the full date of an instant, in the device's time zone. */
 export function fullDateTime(iso: string): string {
   const date = new Date(iso);
   return Number.isNaN(date.getTime()) ? iso : FULL.format(date);
 }
 
-/** « 10 novembre 2026 » : un jour (ou un instant) lu en UTC, jamais décalé par le fuseau du poste. */
+/** « 10 novembre 2026 »: a day (or instant) read in UTC, never shifted by the device's zone. */
 export function longDate(iso: string): string {
   const date = new Date(iso);
   return Number.isNaN(date.getTime()) ? iso : DATE.format(date);
 }
 
-/** « 07:00 » : l'heure d'un instant, dans le fuseau du poste. */
+/** « 07:00 »: the time of an instant, in the device's time zone. */
 export function clockTime(iso: string): string {
   const date = new Date(iso);
   return Number.isNaN(date.getTime()) ? iso : CLOCK.format(date);

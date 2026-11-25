@@ -2,7 +2,7 @@ type Over = Record<string, unknown>;
 
 export const CRITERIA = ["Ventes agrégées par mois", "Un test vérifie le total", "README clair"];
 
-/** L'énoncé d'un projet (`ProjectBriefOut`) fictif. */
+/** A project's brief (`ProjectBriefOut`), fake. */
 export const briefOut = (over: Over = {}) => ({
   title: "Pipeline de ventes",
   objective: "Agréger les ventes de « Société Fictive » par mois.",
@@ -14,7 +14,7 @@ export const briefOut = (over: Over = {}) => ({
   ...over,
 });
 
-/** Le résultat d'un critère (`CriterionOut`) ; `criterion` est le texte de l'énoncé de même rang. */
+/** A criterion result (`CriterionOut`); `criterion` is the brief's text at the same rank. */
 export const criterionOut = (index: number, met: boolean, comment = "") => ({
   index,
   criterion: CRITERIA[index - 1] ?? "Critère hors énoncé",
@@ -22,7 +22,7 @@ export const criterionOut = (index: number, met: boolean, comment = "") => ({
   comment,
 });
 
-/** Une évaluation (`EvaluationOut`) fictive : le premier critère atteint, les autres non. */
+/** A fake evaluation (`EvaluationOut`): the first criterion met, the others not. */
 export const evaluationOut = (over: Over = {}) => ({
   at: "2026-11-16T10:30:00Z",
   verdict: "to_redo",
@@ -47,7 +47,7 @@ export const draftOut = (kind: string, over: Over = {}) => ({
   ...over,
 });
 
-/** L'entrée de projet proposée au profil maître (`ProfileEntryIn`). */
+/** The project entry proposed to the master profile (`ProfileEntryIn`). */
 export const entryOut = (over: Over = {}) => ({
   name: "Pipeline de ventes",
   description: "Agrégation mensuelle des ventes.",
@@ -55,7 +55,7 @@ export const entryOut = (over: Over = {}) => ({
   ...over,
 });
 
-/** Les quatre brouillons d'un projet validé, dans l'ordre du serveur. */
+/** The four drafts of a validated project, in server order. */
 export const fourDrafts = (over: Record<string, Over> = {}) => [
   draftOut("cv_line", over.cv_line),
   draftOut("profile_entry", {
@@ -76,7 +76,7 @@ export const submissionOut = (over: Over = {}) => ({
   ...over,
 });
 
-/** Un projet (`ProjectOut`) fictif : à faire, énoncé écrit, aucun rendu. */
+/** A fake project (`ProjectOut`): to do, brief written, no submission. */
 export const projectOut = (id: string, over: Over = {}) => ({
   id,
   module_id: `m-${id}`,
@@ -93,7 +93,7 @@ export const projectOut = (id: string, over: Over = {}) => ({
   ...over,
 });
 
-/** `ProjectSummary` : la ligne du Portfolio d'un projet. */
+/** `ProjectSummary`: the row of a project in the Portfolio. */
 export const summaryOf = (project: Over, position: number) => {
   const brief = project.brief as { hours: number } | null;
   return {

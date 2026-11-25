@@ -19,8 +19,8 @@ interface NavMobileMenuProps {
 }
 
 /**
- * Écran étroit : un bouton « Menu » ouvre un panneau qui liste toutes les sections et leurs pages
- * (rien ne déborde de la barre). Échap, un clic dehors ou un clic sur une page le referment.
+ * Narrow screen: a « Menu » button opens a panel listing all sections and their pages
+ * (nothing overflows the bar). Escape, a click outside or a click on a page closes it.
  */
 export function NavMobileMenu({ groups, current, open, onOpenChange, pins, pathname }: NavMobileMenuProps) {
   const wrapRef = useRef<HTMLDivElement>(null);

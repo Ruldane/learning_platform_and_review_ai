@@ -9,8 +9,8 @@ interface ExternalLinkProps {
 }
 
 /**
- * Un lien vers un site extérieur, dans un nouvel onglet (`noopener noreferrer`), annoncé comme tel.
- * Une adresse qui n'est ni http ni https n'est jamais un lien : le texte est rendu sans lien.
+ * A link to an external site, in a new tab (`noopener noreferrer`), announced as such.
+ * An address that is neither http nor https is never a link: the text is rendered without one.
  */
 export function ExternalLink({ href, children }: ExternalLinkProps) {
   const url = webUrl(href);

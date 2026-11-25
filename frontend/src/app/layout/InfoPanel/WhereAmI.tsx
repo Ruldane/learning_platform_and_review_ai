@@ -5,8 +5,8 @@ import type { NavGroup } from "../../buildNav";
 import { currentNav } from "../../navActive";
 
 /**
- * Le bloc « Tu es ici » : la pastille de la section, son nom et la page (« Réglages › Coûts » ; le
- * nom seul pour une section d'une page). Rien sur une page hors navigation.
+ * The « Tu es ici » block: the section badge, its name and the page (« Réglages › Coûts »; the
+ * name alone for a single-page section). Nothing on a page outside the navigation.
  */
 export function WhereAmI({ groups, compact }: { groups: NavGroup[]; compact: boolean }) {
   const { pathname } = useLocation();

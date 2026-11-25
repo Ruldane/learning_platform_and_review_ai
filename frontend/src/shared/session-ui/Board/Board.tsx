@@ -8,17 +8,17 @@ import { BoardWorkspace } from "./BoardWorkspace";
 export interface BoardProps {
   states: readonly BoardStateView[];
   /**
-   * L'état affiché ; absent ou inconnu : le plus récent, sauf si January retouche un état sans
-   * avoir envoyé ses modifications (il reste affiché quand le Scribe en publie un nouveau).
+   * The state displayed; absent or unknown: the most recent, unless January edits a state without
+   * having sent their changes (it stays displayed when the Scribe publishes a new one).
    */
   activeId: string | null;
   onSelect: (id: string) => void;
-  /** Les modifications de January, envoyées sur demande (bouton), jamais à chaque geste. */
+  /** January's changes, sent on request (button), never on each gesture. */
   onSendEdit: (boardId: string, edit: BoardEdit) => void | Promise<void>;
   onDirtyChange?: (dirty: boolean) => void;
   sending: boolean;
   readOnly?: boolean;
-  /** Textes propres à la page (titre, tableau vide, dessin en cours) ; absents, ceux du Scribe. */
+  /** Page-specific texts (title, empty table, drawing in progress); when absent, the Scribe's. */
   labels?: BoardLabels;
 }
 
@@ -30,9 +30,9 @@ function latestOf(states: readonly BoardStateView[]): BoardStateView | undefined
 }
 
 /**
- * Le tableau que le Scribe remplit pendant le débat (Excalidraw, SPEC 3.3) : liste des états
- * enregistrés, canevas animé, exports et envoi des modifications de January aux agents.
- * Présentationnel : la page lui passe des états de vue et reçoit les modifications (D34).
+ * The board the Scribe fills during the debate (Excalidraw, SPEC 3.3): list of saved
+ * states, animated canvas, exports and sending January's changes to the agents.
+ * Presentational: the page passes it view states and receives the changes (D34).
  */
 export function Board(props: BoardProps) {
   const { states, activeId, onSelect, onSendEdit, sending, readOnly = false, onDirtyChange } = props;
@@ -46,7 +46,7 @@ export function Board(props: BoardProps) {
     (id: string) => setSeen((prev) => (prev.has(id) ? prev : new Set(prev).add(id))),
     [],
   );
-  // État retouché et pas encore envoyé : un nouvel état du Scribe ne le remplace pas à l'écran.
+  // Edited state not yet sent: a new Scribe state does not replace it on screen.
   const [editing, setEditing] = useState<string | null>(null);
   const trackEdit = useCallback(
     (id: string, dirty: boolean) => {
@@ -62,8 +62,8 @@ export function Board(props: BoardProps) {
     return <EmptyState title={labels.label} description={labels.empty} />;
   }
   return (
-    // Mise en page selon la largeur de la zone (et non de l'écran) : dans la colonne de droite du
-    // Conseil, la liste des états passe au-dessus du canevas au lieu de lui prendre 14 rem.
+    // Layout by the width of the area (not the screen): in the Council's right column, the state
+    // list goes above the canvas instead of taking 14 rem from it.
     <section aria-label={labels.label} className="@container">
       <div className="grid gap-4 @2xl:grid-cols-[14rem_minmax(0,1fr)]">
         <BoardStateList states={states} activeId={active.id} onSelect={onSelect} />

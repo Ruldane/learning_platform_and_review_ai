@@ -13,24 +13,24 @@ interface InterruptCardProps {
   disabled?: boolean;
   voice?: boolean;
   /**
-   * Une option envoie sa valeur ; des champs envoient `{ answers: { id: texte } }` (et une option
-   * clique après saisie envoie ces réponses, jamais perdues) ; sinon le texte libre.
+   * An option sends its value; fields send `{ answers: { id: text } }` (and an option
+   * clicked after typing sends these answers, never lost); otherwise the free text.
    */
   onAnswer: (value: unknown) => void;
   /**
-   * Valeur envoyée quand une option est cliquée alors que des champs sont remplis ; par défaut
-   * `{ answers }`. Sert quand l'option doit garder le dessus (« Accepter » avec une note).
+   * Value sent when an option is clicked while fields are filled in; by default
+   * `{ answers }`. Used when the option must take precedence (« Accepter » with a note).
    */
   optionWithAnswers?: (value: string, answers: Record<string, string>) => unknown;
 }
 
 /**
- * Question de l'équipe, affichée comme une carte dans le fil (jamais `window.confirm`). Les
- * options sont des boutons ; sans option ni champ, un champ libre apparaît ; avec des champs
- * (cadrage à plusieurs questions), un champ par question et un bouton « Répondre ». Au clavier :
- * le focus arrive sur la première option (ou sur le premier champ), Tab passe de l'un à l'autre.
- * Une fois répondue, la carte se replie : la question, « Réponse envoyée » et les réponses saisies
- * dans cet onglet en lecture seule, sans plus aucun champ, option ni texte libre.
+ * Team question, shown as a card in the feed (never `window.confirm`). The
+ * options are buttons; with no option or field, a free-text field appears; with fields
+ * (several questions), one field per question and a « Répondre » button. Keyboard:
+ * focus lands on the first option (or the first field), Tab moves from one to the other.
+ * Once answered, the card folds: the question, « Réponse envoyée » and the answers typed
+ * in this tab, read-only, with no more fields, options or free text.
  */
 export function InterruptCard({
   interrupt,

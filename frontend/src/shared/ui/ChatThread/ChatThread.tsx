@@ -8,7 +8,7 @@ interface ChatThreadProps {
   label: string;
   emptyText: string;
   footer?: ReactNode;
-  /** Change quand une réponse en cours ou le pied du fil se met à jour. */
+  /** Changes when a reply in progress or the thread footer updates. */
   scrollSignal?: string;
 }
 

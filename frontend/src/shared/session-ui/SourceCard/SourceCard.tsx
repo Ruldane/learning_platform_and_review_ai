@@ -5,7 +5,7 @@ import { webUrl } from "../webUrl";
 const DAY = new Intl.DateTimeFormat("en-GB", { dateStyle: "long", timeZone: "UTC" });
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}/;
 
-/** Date ISO → « 4 mars 2026 » ; tout autre texte est rendu tel quel. */
+/** ISO date → « 4 mars 2026 »; any other text is rendered as is. */
 function formatDate(value: string): string {
   if (!ISO_DAY.test(value)) return value;
   const date = new Date(value);
@@ -13,9 +13,9 @@ function formatDate(value: string): string {
 }
 
 /**
- * Une page lue par l'Éclaireur : titre (lien vers la page, sauf si elle est illisible), note,
- * auteur, date, langue, et la raison quand la page est écartée ou illisible. Une page illisible
- * n'est jamais un lien : aucun texte n'en a été lu, elle ne peut pas être citée.
+ * A page read by the Scout: title (link to the page unless unreadable), score,
+ * author, date, language, and why the page is discarded or unreadable. An unreadable page
+ * is never a link: no text was read from it, so it cannot be cited.
  */
 export function SourceCard({ source }: { source: SourceView }) {
   const unreadable = source.status === "unreadable";

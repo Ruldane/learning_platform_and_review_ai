@@ -2,9 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SceneElementLike } from "../boardTypes";
 
 /**
- * Ce qui compte comme un changement : la forme, sa position (au pixel), son texte, sa suppression.
- * Ni l'ordre (Excalidraw range les étiquettes après leur forme), ni la version : Excalidraw la fait monter à chaque ajustement interne (police chargée…). Une
- * étiquette liée suit sa forme : sa position propre ne compte pas.
+ * What counts as a change: the shape, its position (to the pixel), its text, its deletion.
+ * Not the order (Excalidraw sorts labels after their shape), nor the version
+ * (Excalidraw bumps it on each internal adjustment, such as a font loading…).
+ * A linked label follows its shape: its own position does not count.
  */
 function signature(elements: readonly SceneElementLike[]): string {
   return elements
@@ -18,8 +19,8 @@ function signature(elements: readonly SceneElementLike[]): string {
 }
 
 /**
- * Copie légère des éléments. Excalidraw modifie ses éléments sur place (un glissement change `x` et
- * `y` de l'objet déjà reçu) : sans copie, la référence suivrait les gestes de January.
+ * Light copy of the elements. Excalidraw edits its elements in place (a drag changes `x` and
+ * `y` of the object already received): without a copy, the reference would track January's moves.
  */
 function snapshotOf(elements: readonly SceneElementLike[]): SceneElementLike[] {
   return elements.map((el) => ({
@@ -34,14 +35,14 @@ function snapshotOf(elements: readonly SceneElementLike[]): SceneElementLike[] {
 }
 
 /**
- * Suit ce que January change sur le tableau. La référence est la dernière scène signalée par le
- * canevas encore en lecture seule (`reference`, la scène telle qu'Excalidraw l'a ajustée), à défaut
- * celle du convertisseur, puis la scène envoyée ; `dirty` devient vrai dès qu'un élément en diffère.
+ * Tracks what January changes on the board. The reference is the last scene reported by the
+ * read-only canvas (`reference`, the scene as Excalidraw adjusted it), failing that
+ * the converter's, then the scene sent; `dirty` becomes true as soon as an element differs.
  */
 export function useBoardEdits(initial: readonly SceneElementLike[] | null) {
   const first = useMemo(() => (initial ? snapshotOf(initial) : null), [initial]);
   const firstRef = useRef(first);
-  /** Scène ajustée par Excalidraw, puis scène envoyée : prime sur celle du convertisseur. */
+  /** Scene adjusted by Excalidraw, then scene sent: takes precedence over the converter's. */
   const shown = useRef<readonly SceneElementLike[] | null>(null);
   const current = useRef<readonly SceneElementLike[]>([]);
   const [dirty, setDirty] = useState(false);
@@ -66,7 +67,7 @@ export function useBoardEdits(initial: readonly SceneElementLike[] | null) {
     [],
   );
 
-  /** Après l'envoi, ce qui est affiché devient la nouvelle référence. */
+  /** After sending, what is displayed becomes the new reference. */
   const markSent = useCallback(() => {
     shown.current = current.current;
     setDirty(false);

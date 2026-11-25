@@ -1,4 +1,4 @@
-/** Textes de l'IDE Python (phase 10, 10.C1) : éditeur, sortie, professeur, exercices. */
+/** Texts for the Python IDE (phase 10, 10.C1): editor, output, professor, exercises. */
 export const ide = {
   nav: { code: "Code" },
   authors: {

@@ -1,4 +1,4 @@
-/** Textes de l'explorateur de mémoire (liste, détail, À confirmer, recherche, carte, statistiques, documents). */
+/** Texts for the memory explorer (list, detail, « À confirmer », search, map, stats, documents). */
 export const memory = {
   nav: {
     explorer: "Explorer",

@@ -1,4 +1,4 @@
-/** Textes des offres d'emploi et de l'analyse d'écart : saisie, doublons, analyse, score, tableau. */
+/** Texts for job postings and gap analysis: input, duplicates, analysis, score, table. */
 export const gap = {
   form: {
     label: "Add a job posting",

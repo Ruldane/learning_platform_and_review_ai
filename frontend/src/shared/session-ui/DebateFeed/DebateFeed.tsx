@@ -9,7 +9,7 @@ type InterruptItem = Extract<FeedItem, { kind: "interrupt" }>;
 
 interface DebateFeedProps {
   items: FeedItem[];
-  /** Les cartes de question sont branchées par la page (elle seule connaît l'action de reprise). */
+  /** Question cards are wired in by the page (only it knows the resume action). */
   renderInterrupt: (item: InterruptItem) => ReactNode;
 }
 
@@ -24,7 +24,7 @@ function itemKey(item: FeedItem): string {
   }
 }
 
-/** Contenu d'un élément du fil ; `null` si rien ne l'affiche (événement sans composant enregistré). */
+/** Content of a feed item; `null` if nothing renders it (event with no registered component). */
 function itemContent(item: FeedItem, renderInterrupt: DebateFeedProps["renderInterrupt"]) {
   switch (item.kind) {
     case "turn":
@@ -49,7 +49,7 @@ function itemContent(item: FeedItem, renderInterrupt: DebateFeedProps["renderInt
   }
 }
 
-/** Fil du débat : une bulle par tour, les messages de l'utilisateur, les cartes de question et les événements enregistrés. */
+/** The debate feed: one bubble per turn, user messages, question cards and registered events. */
 export function DebateFeed({ items, renderInterrupt }: DebateFeedProps) {
   const entries = items
     .map((item) => ({ key: itemKey(item), content: itemContent(item, renderInterrupt) }))

@@ -3,11 +3,11 @@ import { Button } from "@/shared/ui/button";
 
 interface InlineErrorProps {
   message: string;
-  /** Avec `onRetry`, un bouton « Réessayer » suit le message (relecture ratée en arrière-plan). */
+  /** With `onRetry`, a « Réessayer » button follows the message (failed background re-read). */
   onRetry?: () => void;
 }
 
-/** Erreur d'une action, affichée dans la page sans la remplacer (annoncée par `role="alert"`). */
+/** An action's error, shown in the page without replacing it (announced by `role="alert"`). */
 export function InlineError({ message, onRetry }: InlineErrorProps) {
   const text = (
     <p

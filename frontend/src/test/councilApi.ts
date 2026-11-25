@@ -3,7 +3,7 @@ import { apiBaseUrl } from "@/shared/api/client";
 
 export const API = `${apiBaseUrl}/api/v1`;
 
-/** Un objectif tel que le back le rend (`GoalOut`). */
+/** An objective as the back returns it (`GoalOut`). */
 export const goalOut = (over: Record<string, unknown> = {}) => ({
   id: "g1",
   text: "Devenir ingénieure data",
@@ -18,7 +18,7 @@ export const goalOut = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
-/** Un statut de session (`SessionView`). */
+/** A session status (`SessionView`). */
 export const sessionOut = (id: string, status: string, over: Record<string, unknown> = {}) => ({
   id,
   graph: "learning_council",
@@ -74,13 +74,13 @@ interface CouncilApi {
   proposals?: Record<string, unknown>[];
   boards?: Record<string, unknown>[];
   rounds?: number;
-  /** Remplace la réponse de `GET /goals/g1` (une erreur, une réponse qui change d'une lecture à l'autre). */
+  /** Overrides the response of `GET /goals/g1` (an error, or one that changes between reads). */
   goalReply?: () => Response;
 }
 
 /**
- * Les lectures REST d'une page du Conseil : l'objectif, son statut, ses propositions, ses tableaux
- * et les réglages. `proposals` et `boards` sont lus à chaque requête : un test peut les changer.
+ * The REST reads of a Council page: the objective, its status, its proposals, its boards
+ * and the settings. `proposals` and `boards` are read on each request: a test can change them.
  */
 export function councilApi(api: CouncilApi = {}) {
   const state = {

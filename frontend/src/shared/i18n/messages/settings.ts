@@ -1,4 +1,4 @@
-/** Textes des réglages (modèles et clés). */
+/** Texts for settings (models and keys). */
 export const settings = {
   models: {
     navLabel: "Models and keys",
@@ -21,7 +21,7 @@ export const settings = {
     range: "Between {min} and {max}.",
     atLeast: "At least {min}.",
     refused: "The server refused this value: check it.",
-    /** Devant l'aide d'un champ en erreur : l'état ne tient jamais à la couleur seule. */
+    /** Before the help text of a field in error: the state never relies on color alone. */
     errorPrefix: "Error: ",
     saveClean: "Nothing to save.",
     saveInvalid: "Fix the flagged fields before saving.",

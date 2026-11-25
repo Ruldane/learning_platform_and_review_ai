@@ -8,7 +8,7 @@ function text(value: unknown): string | null {
   return typeof value === "string" && value.trim() !== "" ? value : null;
 }
 
-/** Les requêtes rejouées (nœud repris) ont la même langue et le même texte : une seule ligne. */
+/** Replayed queries (resumed node) have the same language and text: one line only. */
 interface Queries {
   byKey: Map<string, QueryView>;
   keyOfCall: Map<string, string>;
@@ -18,7 +18,7 @@ function addQuery({ byKey, keyOfCall }: Queries, event: EventOf<"tool.called">) 
   const { call_id, args } = event.payload;
   const query = text(args.query);
   const lang = text(args.lang);
-  // Une recherche en échec n'émet pas sa requête (D77) : elle garde sa ligne, sous l'appel.
+  // A failed search does not emit its query (D77): it keeps its line, under the call.
   const key = query ? `${lang ?? ""}|${query}` : call_id;
   keyOfCall.set(call_id, key);
   const previous = byKey.get(key);
@@ -42,7 +42,7 @@ function toSource(event: EventOf<"source.found">): SourceView {
   const p = event.payload;
   return {
     id: p.source_id ?? p.url,
-    // Un événement stocké avant D82 n'a pas de `kind` : c'est une page.
+    // An event stored before D82 has no `kind`: it is a page.
     kind: p.kind === "person" ? "person" : "page",
     url: p.url,
     title: p.title.trim() === "" ? p.url : p.title,
@@ -58,11 +58,11 @@ function toSource(event: EventOf<"source.found">): SourceView {
 }
 
 /**
- * Convertit les événements d'une session de recherche web en modèle du `SourcesPanel` (D34).
- * Une source est identifiée par son `source_id` (son adresse si elle n'en a pas : domaine exclu) :
- * un nœud rejoué réémet ses `source.found` (D77), le dernier événement l'emporte. Une page lue mais
- * pas encore jugée n'est pas montrée (le contrat n'émet pas ce cas). Les praticiens (`kind:
- * "person"`) forment un bloc à part, sans note : ils sont montrés sauf s'ils sont écartés.
+ * Converts the events of a web search session into the SourcesPanel model (D34).
+ * A source is identified by its `source_id` (its address if it has none: excluded domain):
+ * a replayed node re-emits its `source.found` (D77), the last event wins. A page read but
+ * not yet judged is not shown (the contract does not emit this case). Practitioners (`kind:
+ * "person"`) form a separate block, without a score: they are shown unless discarded.
  */
 export function sourcesFromEvents(events: SessionEvent[]): SourcesViewModel {
   const queries: Queries = { byKey: new Map(), keyOfCall: new Map() };
@@ -74,7 +74,7 @@ export function sourcesFromEvents(events: SessionEvent[]): SourcesViewModel {
       addResult(queries, event);
     } else if (event.type === "source.found") {
       const source = toSource(event);
-      // Page et praticien ne se remplacent jamais, même avec la même adresse.
+      // A page and a practitioner never replace each other, even with the same address.
       sources.set(`${source.kind}:${source.id}`, source);
     }
   }

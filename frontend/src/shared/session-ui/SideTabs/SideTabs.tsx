@@ -5,22 +5,22 @@ interface SideTabsProps {
   tabs: SideTab[];
   active: string;
   onChange: (id: string) => void;
-  /** Nom de la rangée d'onglets. */
+  /** Name of the tab row. */
   label: string;
-  /** Le contenu de chaque onglet, par identifiant. */
+  /** The content of each tab, by id. */
   panels: Record<string, ReactNode>;
 }
 
 /**
- * Onglets ARIA de la colonne de droite d'une session (le Conseil, le comité). Un panneau n'est
- * monté qu'à sa première ouverture, puis reste monté (masqué) : son état survit au changement
- * d'onglet. Au clavier : flèches, Début et Fin changent d'onglet et déplacent le focus
- * (activation immédiate).
+ * ARIA tabs for a session's right column (the Council, the committee). A panel is
+ * mounted only on first opening, then stays mounted (hidden): its state survives switching
+ * tabs. Keyboard: arrows, Home and End switch tabs and move focus
+ * (immediate activation).
  */
 export function SideTabs({ tabs, active, onChange, label, panels }: SideTabsProps) {
   const prefix = useId();
   const [shown, setShown] = useState<string[]>([active]);
-  // Un onglet ouvert depuis la page (pas seulement par un clic) compte aussi : état dérivé du rendu.
+  // A tab opened from the page (not only by a click) counts too: state derived from the render.
   if (!shown.includes(active)) setShown([...shown, active]);
 
   return (

@@ -3,15 +3,15 @@ import { useLayoutEffect, useRef, useState, type RefObject } from "react";
 const NEAR_BOTTOM_PX = 24;
 
 interface Follow {
-  /** Le fil est tout en bas : les nouveaux messages l'y gardent. */
+  /** The thread is at the very bottom: new messages keep it there. */
   atBottom: boolean;
-  /** Le nombre de messages vus quand elle est remontée lire. */
+  /** The number of messages seen when the user scrolled back up to read. */
   seen: number;
 }
 
 /**
- * Garde le fil au dernier message tant qu'on y est. En remontant lire, le fil reste en place et
- * `unread` dit qu'il est arrivé des messages (bouton « Nouveaux messages »). `jump` redescend.
+ * Keeps the thread on the last message as long as the user is there. When scrolling up to read,
+ * the thread stays put and `unread` flags new messages (« Nouveaux messages »). `jump` goes down.
  */
 export function useStickToBottom(count: number, signal: unknown) {
   const ref: RefObject<HTMLDivElement | null> = useRef(null);

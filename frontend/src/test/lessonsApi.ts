@@ -1,6 +1,6 @@
 export { API } from "./councilApi";
 
-/** Une ressource telle que le back la rend (`ResourceOut`). */
+/** A resource as the back returns it (`ResourceOut`). */
 export const resourceOut = (over: Record<string, unknown> = {}) => ({
   id: "r1",
   module_id: "m1",
@@ -21,7 +21,7 @@ export const resourceOut = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
-/** Une leçon telle que le back la rend (`LessonOut`). */
+/** A lesson as the back returns it (`LessonOut`). */
 export const lessonOut = (over: Record<string, unknown> = {}) => ({
   id: "l1",
   module_id: "m1",
@@ -40,7 +40,7 @@ export const lessonOut = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
-/** Une ligne de la liste des leçons d'un programme (`LessonSummaryOut`). */
+/** A row of a program's lesson list (`LessonSummaryOut`). */
 export const lessonSummary = (over: Record<string, unknown> = {}) => ({
   id: "l1",
   module_id: "m1",

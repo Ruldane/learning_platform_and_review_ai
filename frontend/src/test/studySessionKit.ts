@@ -1,7 +1,7 @@
 import { councilEvents } from "./councilEvents";
 import { studyOut } from "./studyApi";
 
-/** Les options d'une question du Tuteur : libellés et valeurs viennent du back (F15). */
+/** The options of a tutor question: labels and values come from the back (F15). */
 export const tutorOptions = [
   { value: "stuck", label: "Je bloque (1/3)" },
   { value: "skip", label: "Passer" },
@@ -9,7 +9,7 @@ export const tutorOptions = [
 
 export const answerField = { id: "answer", label: "Ta réponse", max_length: 4000, required: false };
 
-/** Une session terminée avec son bilan. */
+/** A finished session with its wrap-up. */
 export const finishedOut = (over: Record<string, unknown> = {}) =>
   studyOut({
     status: "finished",
@@ -22,7 +22,7 @@ export const finishedOut = (over: Record<string, unknown> = {}) =>
     ...over,
   });
 
-/** La question d'une section du Tuteur (`tutor_question`), prête à pousser dans le flux. */
+/** A tutor section question (`tutor_question`), ready to push into the stream. */
 export const tutorQuestion = (e: ReturnType<typeof councilEvents>, id = "i1") =>
   e.interrupt("tutor_question", id, {
     question: "Que fait GET ?",
@@ -30,7 +30,7 @@ export const tutorQuestion = (e: ReturnType<typeof councilEvents>, id = "i1") =>
     fields: [answerField],
   });
 
-/** La réponse de reprise d'une session d'agents que le back rend après une réponse. */
+/** The resume response of an agent session that the back returns after an answer. */
 export const resumedSession = {
   id: "s1",
   graph: "study_session",

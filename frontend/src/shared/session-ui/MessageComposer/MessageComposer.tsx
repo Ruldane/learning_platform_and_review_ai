@@ -11,7 +11,7 @@ interface MessageComposerProps {
   voice?: boolean;
 }
 
-/** Champ de message : Entrée envoie, Maj+Entrée ajoute un retour à la ligne. */
+/** Message field: Enter sends, Shift+Enter adds a line break. */
 export function MessageComposer({ disabled, onSend, voice = false }: MessageComposerProps) {
   const [text, setText] = useState("");
   const [sent, setSent] = useState(0);
@@ -25,7 +25,7 @@ export function MessageComposer({ disabled, onSend, voice = false }: MessageComp
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    // Pendant une composition (IME), Entrée valide le texte saisi et n'envoie pas.
+    // During an IME composition, Enter confirms the typed text and does not send.
     if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return;
     event.preventDefault();
     send();

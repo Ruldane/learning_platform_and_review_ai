@@ -6,14 +6,14 @@ interface FoldedCardProps {
   question: string;
   className: string;
   fields: InterruptField[];
-  /** Ce qui a été saisi dans cet onglet ; vide quand la réponse vient d'ailleurs (autre onglet, rechargement). */
+  /** What was typed in this tab; empty when the answer came from elsewhere (other tab, reload). */
   draft: Record<string, string>;
 }
 
 /**
- * Carte répondue, repliée : la question, « Réponse envoyée » et les réponses saisies dans cet
- * onglet (étiquette du champ et texte envoyé), en lecture seule. Plus aucun champ, option ni texte
- * libre ; les champs laissés vides sont omis.
+ * Answered card, folded: the question, « Réponse envoyée » and the answers typed in this
+ * tab (field label and text sent), read-only. No more fields, options or free text;
+ * fields left empty are omitted.
  */
 export function FoldedCard({ questionId, question, className, fields, draft }: FoldedCardProps) {
   const answers = fieldAnswers(fields, draft);

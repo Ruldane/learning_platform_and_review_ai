@@ -1,4 +1,4 @@
-/** Textes des pages du CV : profil maître, modèles, revue, versions, et leurs refus du back. */
+/** Texts for CV pages: master profile, templates, review, versions, and the back's refusals. */
 export const cvPages = {
   nav: { profile: "Profile", cv: "CV" },
   errors: {

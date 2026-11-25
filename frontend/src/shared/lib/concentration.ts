@@ -29,7 +29,7 @@ function median(group: Observation[]) {
   return ordered[1]!;
 }
 
-/** Compare deux groupes disjoints de réponses réellement mesurées et évaluées. */
+/** Compares two disjoint groups of really measured and evaluated answers. */
 export function concentrationDrop(observations: readonly Observation[]): boolean {
   const observed = observations.filter(({ milliseconds }) => eligible(milliseconds));
   if (observed.length < 2 * GROUP_SIZE) return false;
@@ -45,7 +45,7 @@ export function concentrationDrop(observations: readonly Observation[]): boolean
   );
 }
 
-/** Un intervalle trop long ou un onglet masqué invalide la mesure en cours. */
+/** An interval that is too long, or a hidden tab, invalidates the current measurement. */
 export class ResponseClock {
   private readonly now: () => number;
   private last: number | null = null;

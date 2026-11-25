@@ -1,4 +1,4 @@
-/** Textes de la page « Mes données » : export et suppression de tout le compte (SPEC 17.3). */
+/** Texts for the « Mes données » page: export and deletion of the whole account (SPEC 17.3). */
 export const account = {
   nav: { data: "My data" },
   title: "My data",

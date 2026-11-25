@@ -1,4 +1,4 @@
-/** Textes des leçons : lecteur, liste, état de production, bibliothèque de ressources. */
+/** Texts for lessons: reader, list, production status, resource library. */
 export const lessons = {
   nav: { lessons: "Lessons", library: "Library" },
   reader: {

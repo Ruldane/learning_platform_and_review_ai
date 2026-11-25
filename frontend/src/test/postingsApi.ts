@@ -2,7 +2,7 @@ import { http, HttpResponse } from "msw";
 import { API, sessionOut } from "./councilApi";
 import { apiError } from "./councilHarness";
 
-/** L'analyse d'une offre fictive telle que le back la rend (`PostingAnalysisOut`). */
+/** The analysis of a fake job posting as the back returns it (`PostingAnalysisOut`). */
 export const analysisOut = (over: Record<string, unknown> = {}) => ({
   title: "Ingénieure données",
   company: "Société Fictive",
@@ -25,7 +25,7 @@ export const analysisOut = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
-/** Une offre (`PostingOut`) analysée par défaut. */
+/** A posting (`PostingOut`) analysed by default. */
 export const postingOut = (over: Record<string, unknown> = {}) => ({
   id: "p1",
   status: "ready",
@@ -44,7 +44,7 @@ export const postingOut = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
-/** Une offre dont l'analyse tourne (session `a1`), sans titre ni fiche. */
+/** A posting whose analysis is running (session `a1`), with no title or record. */
 export const analyzingPosting = (over: Record<string, unknown> = {}) =>
   postingOut({
     status: "analyzing",
@@ -56,7 +56,7 @@ export const analyzingPosting = (over: Record<string, unknown> = {}) =>
     ...over,
   });
 
-/** Une ligne de la liste (`PostingSummaryOut`). */
+/** A list row (`PostingSummaryOut`). */
 export const summaryOut = (over: Record<string, unknown> = {}) => ({
   id: "p1",
   status: "ready",
@@ -69,7 +69,7 @@ export const summaryOut = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
-/** Une ligne du tableau d'écarts (`GapRowOut`). */
+/** A gap table row (`GapRowOut`). */
 export const gapRow = (skill: string, over: Record<string, unknown> = {}) => ({
   skill,
   required: false,
@@ -80,7 +80,7 @@ export const gapRow = (skill: string, over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
-/** L'écart d'une offre (`GapOut`) : Python à ajouter, SQL au programme, Go déjà validé. */
+/** A posting's gap (`GapOut`): Python to add, SQL in the program, Go already validated. */
 export const gapOut = (over: Record<string, unknown> = {}) => ({
   posting_id: "p1",
   status: "ready",
@@ -104,15 +104,15 @@ type Reply = (request: Request) => Response | Promise<Response>;
 
 interface PostingsApi {
   programs?: Record<string, unknown>[];
-  /** Lectures successives de la liste ; la dernière se répète. */
+  /** Successive reads of the list; the last one repeats. */
   lists?: Record<string, unknown>[][];
-  /** Lectures successives de `GET /postings/p1`. */
+  /** Successive reads of `GET /postings/p1`. */
   postings?: Record<string, unknown>[];
-  /** Lectures successives de `GET /postings/p1/gap`. */
+  /** Successive reads of `GET /postings/p1/gap`. */
   gaps?: Record<string, unknown>[];
-  /** Remplace la lecture de la liste (une panne, par exemple). */
+  /** Overrides reading the list (a failure, for example). */
   list?: () => Response;
-  /** Remplace la lecture de l'offre `p1` (404, panne). */
+  /** Overrides reading posting `p1` (404, failure). */
   posting?: () => Response;
   top?: () => Response;
   create?: Reply;
@@ -120,9 +120,9 @@ interface PostingsApi {
   remove?: Reply;
   relaunch?: Reply;
   distinct?: Reply;
-  /** Réponse de `GET /applications/check` (sans fiche ni alerte par défaut). */
+  /** Response of `GET /applications/check` (no record or alert by default). */
   check?: () => Response;
-  /** Remplace la création de la candidature (`POST /applications`). */
+  /** Overrides creating the application (`POST /applications`). */
   application?: Reply;
 }
 
@@ -142,7 +142,7 @@ const newState = () => ({
   reads: { list: 0, posting: 0, gap: 0 },
 });
 
-/** Liste, création, lecture et suppression des offres. */
+/** List, create, read and delete postings. */
 function postingRoutes(api: PostingsApi, state: State) {
   const lists = api.lists ?? [[summaryOut()]];
   const postings = api.postings ?? [postingOut()];
@@ -174,7 +174,7 @@ function postingRoutes(api: PostingsApi, state: State) {
   ];
 }
 
-/** Écart, relance, ajout au planning et compétences les plus manquantes. */
+/** Gap, follow-up, planning addition and the most missing skills. */
 function gapRoutes(api: PostingsApi, state: State) {
   const gaps = api.gaps ?? [gapOut()];
   return [
@@ -194,7 +194,7 @@ function gapRoutes(api: PostingsApi, state: State) {
   ];
 }
 
-/** La candidature de l'offre : la recherche de fiche existante et la création. */
+/** The posting's application: existing-record search and creation. */
 function applicationRoutes(api: PostingsApi, state: State) {
   return [
     http.get(`${API}/applications/check`, ({ request }) => {
@@ -215,7 +215,7 @@ function applicationRoutes(api: PostingsApi, state: State) {
   ];
 }
 
-/** `r1` : une replanification du programme `pg1` ; `a1` : l'analyse de l'offre. */
+/** `r1`: a replanning of program `pg1`; `a1`: the posting's analysis. */
 const sessionRoutes = () => [
   http.get(`${API}/sessions/r1`, () =>
     HttpResponse.json(
@@ -230,8 +230,8 @@ const sessionRoutes = () => [
 ];
 
 /**
- * Les routes des offres et de l'écart. `state` garde les corps reçus (créations, ajouts au
- * planning, « distinctes ») et le nombre de lectures.
+ * The posting and gap routes. `state` keeps the bodies received (creations, additions to the
+ * planning, « distinctes ») and the number of reads.
  */
 export function postingsApi(api: PostingsApi = {}) {
   const state = newState();
@@ -244,6 +244,6 @@ export function postingsApi(api: PostingsApi = {}) {
   return { state, handlers };
 }
 
-/** Un refus du back au format d'erreur (`code`, message français, détails). */
+/** A back refusal in the error format (`code`, French message, details). */
 export const refusal = (status: number, code: string, message: string, details: unknown = null) =>
   HttpResponse.json(apiError(code, message, details), { status });

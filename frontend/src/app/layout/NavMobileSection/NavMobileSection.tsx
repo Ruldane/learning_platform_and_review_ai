@@ -9,7 +9,7 @@ interface NavMobileSectionProps {
   onClose: () => void;
 }
 
-/** Une section dans le panneau « Menu » : un lien direct (une page) ou un titre et ses pages. */
+/** A section in the « Menu » panel: a direct link (one page) or a heading and its pages. */
 export function NavMobileSection({ group, current, onClose }: NavMobileSectionProps) {
   const Icon = group.icon;
   const single = group.landing ?? (group.items.length === 1 ? group.items[0] : undefined);

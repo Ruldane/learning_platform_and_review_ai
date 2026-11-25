@@ -22,7 +22,7 @@ type SessionErrorCode = keyof typeof en.session.errors;
 const isSessionErrorCode = (code: string): code is SessionErrorCode =>
   Object.hasOwn(en.session.errors, code);
 
-/** Message français d'un échec d'action : codes connus (409, 503) traduits ici, sinon celui de l'API. */
+/** French message for an action failure: known codes (409, 503) translated here, else the API's. */
 export function sessionActionError(error: unknown): string {
   if (error instanceof ApiError && isSessionErrorCode(error.code)) {
     return t(`session.errors.${error.code}`);
@@ -31,23 +31,23 @@ export function sessionActionError(error: unknown): string {
 }
 
 export interface SessionActions {
-  /** Répond à la question `interruptId` (ou reprend une pause avec `null`). `true` si accepté. */
+  /** Answers question `interruptId` (or resumes a pause with `null`). `true` if accepted. */
   resume(interruptId: string | null, value: unknown): Promise<boolean>;
   sendMessage(text: string): Promise<boolean>;
-  /** Commande du débat (REST, jamais le WebSocket) ; `true` si acceptée. */
+  /** Debate command (REST, never the WebSocket); `true` if accepted. */
   sendCommand(command: NonNullable<UserCommand>): Promise<boolean>;
   pause(): Promise<boolean>;
   cancel(): Promise<boolean>;
   pending: boolean;
-  /** Message français du dernier échec, effacé par l'action suivante. */
+  /** French message of the last failure, cleared by the next action. */
   error: string | null;
 }
 
 type Action = () => Promise<void>;
 
 /**
- * Actions de session par REST (le WebSocket ne fait que descendre). Une action en échec ne lève
- * pas : elle renvoie `false` et l'erreur est exposée dans `error` (jamais de dialogue bloquant).
+ * Session actions over REST (the WebSocket only goes down). A failed action does not throw:
+ * it returns `false` and the error is exposed in `error` (never a blocking dialog).
  */
 export function useSessionActions(sessionId: string): SessionActions {
   const { mutateAsync, isPending, error } = useMutation({
@@ -65,22 +65,22 @@ export function useSessionActions(sessionId: string): SessionActions {
   return useMemo(() => {
     const store = useSessionStore.getState;
     const view = () => selectSession(sessionId)(store());
-    // La réponse REST est une lecture du statut : appliquée seulement si rien de plus récent
-    // n'est arrivé par le flux (question suivante, fin), D56.
+    // The REST response is a status read: applied only if nothing more recent
+    // came in over the stream (next question, end), D56.
     const applyView = (updated: SessionView) =>
       store().local(sessionId, { type: "snapshot", snapshot: snapshotOf(updated) });
     return {
       resume: (interruptId, value) =>
         run(async () => {
           const updated = await postResume(sessionId, interruptId, value);
-          // Garde : le direct a pu livrer la question suivante avant cette réponse REST.
+          // Guard: the stream may have delivered the next question before this REST response.
           if (interruptId !== null && view().pendingInterrupt?.interrupt_id === interruptId) {
             store().local(sessionId, { type: "interrupt.answered", interruptId });
           }
           applyView(updated);
         }),
-      // L'événement `user.message` renvoyé n'est pas ingéré : il arrivera par le flux, dans
-      // l'ordre ; l'ingérer avant des `seq` plus petits encore en route les ferait ignorer.
+      // The returned `user.message` event is not ingested: it will arrive over the stream, in
+      // order; ingesting it before smaller `seq` still in transit would make them be ignored.
       sendMessage: (text) => run(() => postMessage(sessionId, text)),
       sendCommand: (command) => run(() => postCommand(sessionId, command)),
       pause: () => run(async () => applyView(await postPause(sessionId))),
@@ -91,7 +91,7 @@ export function useSessionActions(sessionId: string): SessionActions {
   }, [sessionId, run, isPending, error]);
 }
 
-/** Lance une session et renvoie son identifiant ; lève une `ApiError` en cas d'échec. */
+/** Starts a session and returns its id; throws an `ApiError` on failure. */
 export function useStartSession(): (
   graph: string,
   input: Record<string, unknown>,

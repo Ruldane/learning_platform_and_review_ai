@@ -8,14 +8,14 @@ export const apiBaseUrl: string = import.meta.env.VITE_API_URL ?? "http://localh
 
 const API_PREFIX = "/api/v1";
 
-/** Chemins du contrat sans le préfixe `/api/v1` (porté par la `baseUrl` du client). */
+/** Contract paths without the `/api/v1` prefix (carried by the client's `baseUrl`). */
 type WithoutPrefix<P> = {
   [K in keyof P as K extends `${typeof API_PREFIX}${infer Rest}` ? Rest : K]: P[K];
 };
 
 /**
- * Toute réponse en échec devient une `ApiError` ; une panne réseau aussi. Un 401 `auth_required`
- * prévient en plus la porte de connexion (`authEvents`), qui mène à `/login`.
+ * Any failed response becomes an `ApiError`; so does a network failure. A 401 `auth_required`
+ * also notifies the sign-in gate (`authEvents`), which leads to `/login`.
  */
 const errorMiddleware: Middleware = {
   async onResponse({ response }) {
@@ -27,7 +27,7 @@ const errorMiddleware: Middleware = {
     return undefined;
   },
   onError({ error }) {
-    // Une annulation volontaire (AbortController, signal de TanStack Query) n'est pas une panne.
+    // A deliberate cancellation (AbortController, TanStack Query signal) is not a failure.
     if (error instanceof Error && error.name === "AbortError") return undefined;
     return networkError();
   },
@@ -35,14 +35,14 @@ const errorMiddleware: Middleware = {
 
 export const api = createClient<WithoutPrefix<paths>>({
   baseUrl: `${apiBaseUrl}${API_PREFIX}`,
-  // Le cookie de session (`tremplin_session`) part avec chaque appel, même vers un autre port.
+  // The session cookie (`tremplin_session`) goes with every call, even to another port.
   credentials: "include",
-  // Résolu à chaque appel (et non à la création) : MSW peut remplacer `fetch` après coup.
+  // Resolved on each call (not at creation): MSW may replace `fetch` afterwards.
   fetch: (request) => globalThis.fetch(request),
 });
 
-/** Le choix du menu « Qui fait tourner les agents » part avec chaque appel (lu par le back au
- * lancement d'un parcours seulement). */
+/** The « Qui fait tourner les agents » menu choice goes with every call (read by the back only at
+ * launch of a run). */
 const runSourceMiddleware: Middleware = {
   onRequest({ request }) {
     const source = getRunSource();

@@ -2,7 +2,7 @@ import { http, HttpResponse } from "msw";
 import { addDays } from "@/shared/lib/format";
 import { API } from "./councilApi";
 
-/** Une ligne du rapport des coûts (`CostRow`). */
+/** One row of the cost report (`CostRow`). */
 export const costRow = (key: string, over: Record<string, unknown> = {}) => ({
   key,
   calls: 3,
@@ -16,9 +16,9 @@ export const costRow = (key: string, over: Record<string, unknown> = {}) => ({
 const UNTIL = "2026-11-16";
 
 /**
- * Un rapport (`CostsReport`) sur `days` jours finissant le 16 novembre 2026 : trois jours d'appels,
- * les autres à zéro ; quatre features (dont « hors session » et un graphe inconnu), trois agents
- * (dont un inconnu), deux modèles.
+ * A report (`CostsReport`) over `days` days ending 16 November 2026: three days of calls,
+ * the others at zero; four features (including « hors session » and an unknown run), three agents
+ * (including an unknown one), two models.
  */
 export function costsReport(days = 30, over: Record<string, unknown> = {}) {
   const since = addDays(UNTIL, 1 - days);
@@ -54,7 +54,7 @@ export function costsReport(days = 30, over: Record<string, unknown> = {}) {
   };
 }
 
-/** Un appel du journal (`AgentCallOut`). */
+/** One call from the journal (`AgentCallOut`). */
 export const callOut = (id: string, over: Record<string, unknown> = {}) => ({
   id,
   at: "2026-11-16T09:30:00Z",
@@ -74,8 +74,8 @@ export const callOut = (id: string, over: Record<string, unknown> = {}) => ({
 export const FIRST_CURSOR = "cursor-1";
 
 /**
- * Les pages du journal : sans `before`, la première ; avec `FIRST_CURSOR`, la seconde ; un filtre,
- * une page seule.
+ * Journal pages: without `before`, the first; with `FIRST_CURSOR`, the second; a filter,
+ * a single page.
  */
 export function callPage(url: URL) {
   if (url.searchParams.get("agent") || url.searchParams.get("graph")) {
@@ -97,9 +97,9 @@ export function callPage(url: URL) {
 }
 
 interface CostsApiOptions {
-  /** `GET /costs` : le rapport (défaut `costsReport(days)`) ou une réponse brute. */
+  /** `GET /costs`: the report (default `costsReport(days)`) or a raw response. */
   report?: (days: number) => object | Response;
-  /** `GET /costs/calls` : la page (défaut `callPage`) ou une réponse brute. */
+  /** `GET /costs/calls`: the page (default `callPage`) or a raw response. */
   calls?: (url: URL) => object | Response;
 }
 
@@ -107,7 +107,7 @@ const reply = (value: object | Response) =>
   value instanceof Response ? value : HttpResponse.json(value);
 
 /**
- * Faux serveur des coûts et du journal ; garde les adresses reçues pour vérifier les paramètres.
+ * Fake server for costs and the journal; keeps the addresses received to check the parameters.
  */
 export function costsApi(options: CostsApiOptions = {}) {
   const costRequests: URL[] = [];

@@ -8,7 +8,7 @@ import type {
   StatusSnapshot,
 } from "./types";
 
-/** Fabriques d'événements pour les tests du réducteur et du store. */
+/** Event factories for the reducer and store tests. */
 function base(seq: number, agent: string | null) {
   return { id: `e${seq}`, session_id: "s1", seq, ts: "2026-11-11T10:00:00Z", agent };
 }
@@ -93,7 +93,7 @@ export const failed = (seq: number): EventOf<"run.failed"> => ({
   type: "run.failed",
   payload: { code: "llm_key_missing", message: "Clé manquante pour ce niveau." },
 });
-/** Type connu du contrat mais sans gestionnaire dédié : doit finir en item générique. */
+/** A type known to the contract but with no dedicated handler: must end up as a generic item. */
 export const sourceFound = (seq: number): SessionEvent =>
   ({
     ...base(seq, "demo_critic"),
@@ -105,7 +105,7 @@ export function turn(state: SessionViewState, messageId: string): AgentTurn | un
   return state.feed.find((i): i is AgentTurn => i.kind === "turn" && i.messageId === messageId);
 }
 
-/** Lecture REST du statut (`GET /sessions/{id}`, réponse d'une action) telle que le store la reçoit. */
+/** REST read of the status (`GET /sessions/{id}`, action response) as the store receives it. */
 export const snapshot = (
   status: SessionStatus,
   lastSeq: number,

@@ -14,8 +14,8 @@ function snapshot(): boolean {
 }
 
 /**
- * `true` sous 1024 px : les menus tiennent alors dans un panneau « Menu » et le panneau de gauche
- * se replie en une ligne sous la barre.
+ * `true` below 1024 px: menus then live in a « Menu » panel and the left panel
+ * collapses into one line below the bar.
  */
 export function useNarrowScreen(): boolean {
   return useSyncExternalStore(subscribe, snapshot, () => false);

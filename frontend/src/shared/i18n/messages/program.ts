@@ -1,4 +1,4 @@
-/** Textes du programme : semaine, calendrier, liste, changements et avancement. */
+/** Texts for the program: week, calendar, list, changes and progress. */
 export const program = {
   nav: { program: "Programs" },
   page: {

@@ -22,8 +22,8 @@ function plannedEntry(task: PlanDiffTask) {
 }
 
 /**
- * Changements d'un programme : tâches ajoutées, retirées et déplacées (avant → après). Partagé par
- * le programme (diff de version) et la replanification (avant / après).
+ * Changes to a program: tasks added, removed and moved (before → after). Shared by
+ * the program (version diff) and replanning (before / after).
  */
 export function PlanDiff({ diff }: PlanDiffProps) {
   if (diff.added.length + diff.removed.length + diff.moved.length === 0) {

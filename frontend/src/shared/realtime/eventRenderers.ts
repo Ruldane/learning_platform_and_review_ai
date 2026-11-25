@@ -2,15 +2,15 @@ import type { ComponentType } from "react";
 import type { SessionEvent } from "./types";
 
 /**
- * Registre de rendu : `type` d'événement → composant. Le fil (`DebateFeed`) demande le composant
- * d'un événement générique ; un nouveau type s'affiche en enregistrant son composant, sans toucher
- * au fil. Pour un type sans composant (`undefined`), le fil choisit son repli.
+ * Render registry: event `type` → component. The feed (`DebateFeed`) asks for the component
+ * of a generic event; a new type displays by registering its component, without touching
+ * the feed. For a type without a component (`undefined`), the feed picks its own fallback.
  */
 export type EventRenderer = ComponentType<{ event: SessionEvent }>;
 
 const renderers = new Map<SessionEvent["type"], EventRenderer>();
 
-/** Enregistre (ou remplace) le composant d'un type ; renvoie de quoi le retirer. */
+/** Registers (or replaces) a type's component; returns what is needed to remove it. */
 export function registerEventRenderer(
   type: SessionEvent["type"],
   renderer: EventRenderer,

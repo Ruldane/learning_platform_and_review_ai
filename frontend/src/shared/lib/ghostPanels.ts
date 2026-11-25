@@ -1,4 +1,4 @@
-/** Repères des parcours hôtes. L’interface du fantôme est branchée par le registre. */
+/** Landmarks of the host runs. The ghost's interface is plugged in through the registry. */
 export interface LiveQuizPractice {
   elapsedMs: number;
   answered: number;

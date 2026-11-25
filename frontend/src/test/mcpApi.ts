@@ -3,7 +3,7 @@ import { API } from "./councilApi";
 
 type Over = Record<string, unknown>;
 
-/** Un jeton sans sa valeur (`McpTokenOut`). */
+/** A token without its value (`McpTokenOut`). */
 export const tokenOut = (over: Over = {}) => ({
   id: "tk1",
   label: "Claude Code (portable)",
@@ -16,7 +16,7 @@ export const tokenOut = (over: Over = {}) => ({
   ...over,
 });
 
-/** Une demande « À confirmer » (`McpConfirmationOut`), en attente par défaut. */
+/** A « À confirmer » request (`McpConfirmationOut`), pending by default. */
 export const confirmationOut = (over: Over = {}) => ({
   id: "cf1",
   token_id: "tk1",
@@ -37,7 +37,7 @@ export const confirmationOut = (over: Over = {}) => ({
   ...over,
 });
 
-/** Les changements d'un appel de niveau 2 (`McpChangeOut`). */
+/** The changes of a level-2 call (`McpChangeOut`). */
 export const changeOut = (over: Over = {}) => ({
   call_id: "call1",
   action: "skills_add_proof",
@@ -48,7 +48,7 @@ export const changeOut = (over: Over = {}) => ({
   ...over,
 });
 
-/** Une ligne du journal (`McpCallOut`). */
+/** A journal line (`McpCallOut`). */
 export const callRow = (over: Over = {}) => ({
   id: "call1",
   token_id: "tk1",
@@ -61,7 +61,7 @@ export const callRow = (over: Over = {}) => ({
   ...over,
 });
 
-/** Un outil exposé (`McpActionOut`). */
+/** An exposed tool (`McpActionOut`). */
 export const actionOut = (over: Over = {}) => ({
   name: "cv_list_documents",
   feature: "cv",
@@ -105,9 +105,9 @@ interface McpApiOptions {
   changes?: Over[];
   calls?: Over[];
   actions?: Over[];
-  /** Délai d'une décision (confirmer, refuser) : de quoi cliquer deux fois. */
+  /** Delay for a decision (confirm, refuse): enough time to click twice. */
   decideDelayMs?: number;
-  /** Réponse d'une annulation refusée, au lieu de la réussite. */
+  /** Response for a refused cancellation, instead of success. */
   undoError?: { status: number; code: string; message: string };
 }
 
@@ -118,7 +118,7 @@ interface McpState {
   changes: Over[];
 }
 
-/** L'interrupteur et les jetons : ce qu'ils reçoivent est rangé dans `seen`. */
+/** The switch and the tokens: what they receive is stored in `seen`. */
 function tokenHandlers(
   state: McpState,
   seen: { created: Over[]; revoked: string[]; puts: boolean[] },
@@ -157,7 +157,7 @@ function tokenHandlers(
   ];
 }
 
-/** Les demandes à confirmer : confirmer ou refuser change leur état, comme le vrai serveur. */
+/** Pending requests: confirming or refusing changes their state, as the real server does. */
 function confirmationHandlers(state: McpState, decisions: string[], delayMs?: number) {
   return [
     http.get(`${API}/mcp/confirmations`, () => HttpResponse.json(state.confirmations)),
@@ -176,8 +176,8 @@ function confirmationHandlers(state: McpState, decisions: string[], delayMs?: nu
 }
 
 /**
- * Faux serveur de l'accès MCP, avec un petit état (jetons, interrupteur, demandes, changements) ;
- * garde ce qu'il reçoit pour vérifier combien de requêtes sont parties et avec quel corps.
+ * Fake MCP access server, with a small state (tokens, switch, requests, changes);
+ * keeps what it receives to check how many requests were sent and with which body.
  */
 export function mcpApi(options: McpApiOptions = {}) {
   const state: McpState = {

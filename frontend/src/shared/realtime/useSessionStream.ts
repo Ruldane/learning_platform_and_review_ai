@@ -15,9 +15,9 @@ import type { InterruptPayload, SessionEvent, SessionStatus, SessionViewState } 
 export type { ConnectionState, StreamFailure } from "./streamConnection";
 
 export interface SessionStreamOptions {
-  /** Fabrique de socket (un faux en test). Lue à chaque (re)connexion ; la changer ne rouvre rien. */
+  /** Socket factory (a fake in tests). Read on each (re)connection; changing it reopens nothing. */
   createSocket?: SocketFactory;
-  /** Lecture REST de la session (statut, dernier `seq`). */
+  /** REST read of the session (status, last `seq`). */
   fetchSession?: StreamConnectionDeps["fetchSession"];
 }
 
@@ -27,11 +27,11 @@ export interface SessionStream {
   status: SessionStatus;
   pendingInterrupt: InterruptPayload | null;
   connection: ConnectionState;
-  /** Message français quand le flux a abandonné (`connection === "failed"`). */
+  /** French message when the stream gave up (`connection === "failed"`). */
   error: string | null;
-  /** Raison de l'abandon : une session introuvable ne se « réessaie » pas. */
+  /** Reason for giving up: a missing session cannot be retried. */
   failure: StreamFailure | null;
-  /** Relance le flux après un abandon (bouton « Réessayer »). */
+  /** Restarts the stream after giving up (« Réessayer » button). */
   retry: () => void;
 }
 
@@ -43,7 +43,7 @@ interface Link {
 
 type StreamIo = Pick<StreamConnectionDeps, "createSocket" | "fetchSession">;
 
-/** Branche une connexion de flux sur le store de l'application et la démarre. */
+/** Plugs a stream connection into the app store and starts it. */
 function openStream(
   sessionId: string,
   io: { current: StreamIo },
@@ -70,11 +70,11 @@ function openStream(
 }
 
 /**
- * Suit une session en direct : ouvre le WebSocket après le dernier `seq` du store, ingère chaque
- * événement (le réducteur ignore les doublons d'un rejeu), relit le statut en REST à chaque
- * ouverture, reconnecte sur fermeture anormale. Pendant une pause, un événement plus récent que
- * le statut connu (publié avant la pause, ou session reprise ailleurs) fait relire la session.
- * Démontage : socket fermé, minuteries coupées, aucune reconnexion (StrictMode compris).
+ * Follows a session live: opens the WebSocket after the store's last `seq`, ingests each
+ * event (the reducer ignores duplicates from a replay), re-reads the status over REST on each
+ * open, reconnects after an abnormal close. During a pause, an event more recent than the
+ * known status (published before the pause, or session resumed elsewhere) triggers a re-read.
+ * Teardown: socket closed, timers stopped, no reconnection (StrictMode included).
  */
 export function useSessionStream(
   sessionId: string | null,
@@ -84,7 +84,7 @@ export function useSessionStream(
   const fetchSession = options?.fetchSession ?? fetchSessionRest;
   const [attempt, setAttempt] = useState(0);
   const [link, setLink] = useState<Link>({ sessionId: null, state: "closed", failure: null });
-  // Options lues par référence : une fonction recréée à chaque rendu ne relance pas le flux.
+  // Options read by reference: a function recreated on each render does not restart the stream.
   const io = useRef<StreamIo>({ createSocket, fetchSession });
   useEffect(() => {
     io.current = { createSocket, fetchSession };
@@ -102,7 +102,7 @@ export function useSessionStream(
   const view = useSessionStore(useMemo(() => selectSession(id), [id]));
   const events = useSessionStore(useMemo(() => selectEvents(id), [id]));
   const retry = useCallback(() => setAttempt((n) => n + 1), []);
-  // Tant que le flux de cette session n'a rien signalé, il est en cours d'ouverture.
+  // While this session's stream has reported nothing, it is still opening.
   const current = link.sessionId === sessionId ? link : null;
   const connection: ConnectionState = !sessionId ? "closed" : (current?.state ?? "connecting");
   const failure = current?.state === "failed" ? current.failure : null;

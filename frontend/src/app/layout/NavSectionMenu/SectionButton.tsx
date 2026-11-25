@@ -9,7 +9,7 @@ import { SumLabel } from "../SumLabel";
 
 interface SectionButtonProps {
   group: NavGroup;
-  /** La page courante est dans cette section. */
+  /** The current page is in this section. */
   active: boolean;
   open: boolean;
   onToggle: () => void;
@@ -17,7 +17,7 @@ interface SectionButtonProps {
   ref: Ref<HTMLButtonElement>;
 }
 
-/** Le bouton d'une section : icône, nom (avec la somme des pastilles), flèche. */
+/** A section button: icon, name (with the sum of badges), arrow. */
 export function SectionButton(props: SectionButtonProps) {
   const { group, active, open, onToggle, onKeyDown, ref } = props;
   const Icon = group.icon;

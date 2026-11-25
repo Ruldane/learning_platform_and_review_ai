@@ -9,31 +9,31 @@ import type {
 } from "./types";
 
 /**
- * Statut affiché = celui du serveur. Deux sources : les événements du flux et les lectures REST
- * (ouverture du flux, réponse d'une action). Chacune porte une version (`seq`, puis `updated_at`
- * pour départager deux lectures du même `seq`) ; la plus récente gagne, l'autre est ignorée.
- * Pause et annulation ne publient aucun événement (D46 §7) : un événement publié juste avant elles
- * peut arriver après ; il ne lève donc jamais `paused` ni `cancelled` (seul `run.*`, final, le peut).
+ * Displayed status = the server's. Two sources: stream events and REST reads
+ * (stream opening, action response). Each carries a version (`seq`, then `updated_at`
+ * to break ties between reads at the same `seq`); the most recent wins, the other is ignored.
+ * Pause and cancel publish no event (D46 §7): an event published just before them
+ * may arrive after; it therefore never raises `paused` or `cancelled` (only `run.*`, final, can).
  */
 const STICKY: ReadonlySet<SessionStatus> = new Set(["paused", "cancelled", "expired"]);
 
 interface StatusChange {
   status: SessionStatus;
   pendingInterrupt: InterruptPayload | null;
-  /** `run.completed` / `run.failed` : toujours vrais (l'issue n'est écrite que depuis `running`). */
+  /** `run.completed` / `run.failed`: always true (the outcome is only written from `running`). */
   final?: boolean;
 }
 
-/** Statut posé par un événement de `seq` donné, si rien de plus récent n'est connu. */
+/** Status set by an event of a given `seq`, if nothing more recent is known. */
 export function statusFromEvent(
   state: SessionViewState,
   seq: number,
   change: StatusChange,
 ): SessionViewState {
-  if (seq <= state.statusVersion.seq) return state; // une lecture REST plus récente fait foi
+  if (seq <= state.statusVersion.seq) return state; // a more recent REST read wins
   if (STICKY.has(state.status) && !change.final) return state;
-  // Rien ne change (`agent.started` d'une session déjà en cours) : l'événement ne prétend pas
-  // mieux connaître le statut qu'une lecture REST faite juste avant lui.
+  // Nothing changes (`agent.started` of a session already running): the event claims no
+  // better knowledge of the status than a REST read made just before it.
   const samePending =
     state.pendingInterrupt?.interrupt_id === change.pendingInterrupt?.interrupt_id;
   if (change.status === state.status && samePending) return state;
@@ -45,7 +45,7 @@ export function statusFromEvent(
   };
 }
 
-/** Microsecondes d'un horodatage ISO du serveur (`Date.parse` s'arrête à la milliseconde). */
+/** Microseconds of a server ISO timestamp (`Date.parse` stops at the millisecond). */
 export function serverInstant(iso: string): number {
   const seconds = Date.parse(iso.replace(/\.\d+/, ""));
   if (Number.isNaN(seconds)) return 0;
@@ -61,7 +61,7 @@ export const snapshotOf = (view: SessionView): StatusSnapshot => ({
   pendingInterrupt: view.pending_interrupt,
 });
 
-/** La question en attente selon le serveur a sa carte (active), même si son événement manque. */
+/** The server's pending question has its card (active), even if its event is missing. */
 function withPendingCard(feed: FeedItem[], pending: InterruptPayload | null, seq: number) {
   if (!pending) return feed;
   const id = pending.interrupt_id;
@@ -75,8 +75,8 @@ function withPendingCard(feed: FeedItem[], pending: InterruptPayload | null, seq
 }
 
 /**
- * Applique une lecture REST, vraie au moins à `lastSeq` (le serveur lit le dernier `seq` avant le
- * statut, D56) : ignorée si les événements ou une lecture plus récente en savent plus.
+ * Applies a REST read, true at least up to `lastSeq` (the server reads the last `seq` before
+ * the status, D56): ignored if events or a more recent read know more.
  */
 export function applySnapshot(state: SessionViewState, snap: StatusSnapshot): SessionViewState {
   const at = serverInstant(snap.updatedAt);
@@ -84,7 +84,7 @@ export function applySnapshot(state: SessionViewState, snap: StatusSnapshot): Se
   if (snap.lastSeq < seq || (snap.lastSeq === seq && at < knownAt)) return state;
   if (snap.lastSeq === seq && at === knownAt && snap.status === state.status) return state;
   const running = snap.status === "running";
-  const feed = running ? state.feed : stopStreaming(state.feed); // plus rien n'écrit
+  const feed = running ? state.feed : stopStreaming(state.feed); // nothing writes any more
   return {
     ...state,
     status: snap.status,

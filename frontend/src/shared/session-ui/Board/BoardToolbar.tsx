@@ -3,9 +3,9 @@ import { Button } from "@/shared/ui/button";
 import type { ExportFormat } from "./exportBoard";
 
 interface BoardToolbarProps {
-  /** Le canevas est prêt : on peut exporter. */
+  /** The canvas is ready: export is possible. */
   canExport: boolean;
-  /** January a modifié le tableau depuis la dernière référence. */
+  /** January changed the board since the last reference. */
   canSend: boolean;
   sending: boolean;
   readOnly: boolean;
@@ -21,7 +21,7 @@ const EXPORTS: { format: ExportFormat; label: "exportPng" | "exportSvg" | "expor
   { format: "scene", label: "exportScene" },
 ];
 
-/** Exports (PNG, SVG, .excalidraw) et envoi des modifications de January aux agents. */
+/** Exports (PNG, SVG, .excalidraw) and sending January's changes to the agents. */
 export function BoardToolbar(props: BoardToolbarProps) {
   const { canExport, canSend, sending, readOnly, error, onExport, onSend } = props;
   return (

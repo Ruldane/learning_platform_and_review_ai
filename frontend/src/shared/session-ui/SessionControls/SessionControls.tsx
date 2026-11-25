@@ -8,13 +8,13 @@ interface SessionControlsProps {
   onPause: () => void;
   onResume: () => void;
   onCancel: () => void;
-  /** Actions propres à un écran (ex. « Relancer un tour »). */
+  /** Actions specific to one screen (e.g. « Relancer un tour »). */
   extraActions?: ReactNode;
 }
 
 const FINISHED: readonly SessionStatus[] = ["completed", "failed", "cancelled", "expired"];
 
-/** Pause si la session tourne, Reprendre si elle est en pause, Annuler tant qu'elle n'est pas terminée. */
+/** Pause while the session runs, Resume when paused, Cancel until it ends. */
 export function SessionControls({
   status,
   onPause,

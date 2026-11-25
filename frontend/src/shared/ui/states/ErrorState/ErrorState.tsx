@@ -4,11 +4,11 @@ import { Button } from "@/shared/ui/button";
 interface ErrorStateProps {
   message: string;
   onRetry: () => void;
-  /** Libellé du bouton quand réessayer n'a pas de sens (ex. « Nouveau débat »). */
+  /** Button label when retrying makes no sense (e.g. « Nouveau débat »). */
   actionLabel?: string;
 }
 
-/** Erreur affichée en place du contenu, avec un bouton pour réessayer (ou une autre issue). */
+/** Error shown in place of the content, with a button to retry (or another outcome). */
 export function ErrorState({ message, onRetry, actionLabel }: ErrorStateProps) {
   return (
     <div

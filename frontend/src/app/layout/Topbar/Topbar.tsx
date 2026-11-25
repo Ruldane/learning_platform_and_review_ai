@@ -4,14 +4,14 @@ import { ShellSlots } from "../Shell";
 
 interface TopbarProps {
   /**
-   * Les menus de navigation, centrés dans la barre. Absents sur une page nue : la barre garde
-   * alors le nom (en simple texte) et les emplacements `topbar` des features (compte,
-   * déconnexion), car le panneau de gauche n'y est pas.
+   * Navigation menus, centered in the bar. Absent on a bare page: the bar then keeps
+   * the name (as plain text) and the `topbar` slots of features (account,
+   * sign-out), since the left panel is not there.
    */
   menus?: ReactNode;
 }
 
-/** Barre du haut : les menus au centre ; le reste vit dans le panneau de gauche (`InfoPanel`). */
+/** Top bar: menus in the center; the rest lives in the left panel (`InfoPanel`). */
 export function Topbar({ menus }: TopbarProps) {
   if (menus) {
     return (

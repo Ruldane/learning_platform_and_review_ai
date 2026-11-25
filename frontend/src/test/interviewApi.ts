@@ -5,7 +5,7 @@ import { postingOut } from "./postingsApi";
 
 type Over = Record<string, unknown>;
 
-/** Un débrief (`DebriefOut`) : quatre notes, trois points forts, trois points à corriger. */
+/** A debrief (`DebriefOut`): four scores, three strengths, three points to fix. */
 export const debriefOut = (over: Over = {}) => ({
   scores: { clarity: 4, structure: 3, technical_depth: 2, role_fit: 5 },
   strengths: ["Exemples concrets", "Ton posé", "Résultats chiffrés"],
@@ -18,7 +18,7 @@ export const debriefOut = (over: Over = {}) => ({
   ...over,
 });
 
-/** Un échange (`ExchangeOut`). */
+/** An exchange (`ExchangeOut`). */
 export const exchangeOut = (index: number, over: Over = {}) => ({
   index,
   question: `Question ${index + 1} du recruteur ?`,
@@ -32,7 +32,7 @@ export const exchangeOut = (index: number, over: Over = {}) => ({
   ...over,
 });
 
-/** Un entretien (`InterviewOut`) terminé par défaut. */
+/** An interview (`InterviewOut`) finished by default. */
 export const interviewOut = (over: Over = {}) => ({
   id: "iv1",
   application_id: "a1",
@@ -52,13 +52,13 @@ export const interviewOut = (over: Over = {}) => ({
 });
 
 export interface InterviewApiOptions {
-  /** Les entretiens déjà là (le plus récent d'abord). */
+  /** Interviews already there (most recent first). */
   interviews?: Over[];
-  /** Les offres de `GET /postings`. */
+  /** The offers from `GET /postings`. */
   postings?: Over[];
-  /** Remplace le lancement (`POST …/interviews`) : `body` est le corps reçu. */
+  /** Overrides the launch (`POST …/interviews`): `body` is the body received. */
   start?: (body: Over) => Response | undefined;
-  /** Remplace la lecture de la liste (une panne, par exemple). */
+  /** Overrides reading the list (a failure, for example). */
   list?: () => Response | undefined;
 }
 
@@ -68,7 +68,7 @@ const newState = () => ({
   postingReads: 0,
 });
 
-/** Ce qu'un lancement accepté range : un entretien en cours, au début de la liste. */
+/** What an accepted launch stores: an interview in progress, at the top of the list. */
 function accept(interviews: Over[], applicationId: string | null, body: Over) {
   const interview = interviewOut({
     id: "iv-new",
@@ -93,8 +93,8 @@ function accept(interviews: Over[], applicationId: string | null, body: Over) {
 }
 
 /**
- * Les routes des entretiens, en mémoire : un lancement range un entretien `running`, `finish`
- * le termine, comme le vrai serveur. `state` garde les corps reçus.
+ * The interview routes, in memory: a launch stores a `running` interview, `finish`
+ * ends it, as the real server does. `state` keeps the bodies received.
  */
 export function interviewApi(options: InterviewApiOptions = {}) {
   const interviews: Over[] = [...(options.interviews ?? [])];
@@ -137,7 +137,7 @@ export function interviewApi(options: InterviewApiOptions = {}) {
         return HttpResponse.json(options.postings ?? [postingOut({ id: "p1" })]);
       }),
     ],
-    /** Le serveur termine l'entretien `id` (ce que fait la session en rangeant son résultat). */
+    /** The server finishes interview `id` (what the session does when it stores its result). */
     finish(id: string, over: Over = {}) {
       const row = interviews.find((candidate) => candidate.id === id);
       if (!row) return;

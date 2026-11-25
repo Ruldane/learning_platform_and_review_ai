@@ -9,9 +9,9 @@ interface MermaidSvgProps {
 type Rendered = { code: string; svg: string } | { code: string; failed: true };
 
 /**
- * Schéma Mermaid en SVG, en niveau de sécurité `strict` (balises encodées, `click` coupé : SPEC
- * 17.2). Sert de repli au tableau Excalidraw et de rendu des schémas des leçons. Mermaid ne se
- * charge qu'au premier schéma affiché. Erreur : le code s'affiche dans un bloc `<pre>`.
+ * Mermaid diagram as SVG, at the `strict` security level (encoded tags, `click` cut: SPEC
+ * 17.2). Serves as the fallback for the Excalidraw board and renders lesson diagrams. Mermaid
+ * loads only when the first diagram is shown. On error, the code is shown in a `<pre>` block.
  */
 export function MermaidSvg({ code, title }: MermaidSvgProps) {
   const id = `mermaid-${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
@@ -26,7 +26,7 @@ export function MermaidSvg({ code, title }: MermaidSvgProps) {
         const { svg } = await mermaid.render(id, code);
         if (!cancelled) setRendered({ code, svg });
       } catch {
-        // Mermaid laisse un élément de travail dans le document quand le rendu échoue.
+        // Mermaid leaves a working element in the document when rendering fails.
         document.getElementById(`d${id}`)?.remove();
         if (!cancelled) setRendered({ code, failed: true });
       }
@@ -59,7 +59,7 @@ export function MermaidSvg({ code, title }: MermaidSvgProps) {
       role="img"
       aria-label={t("session.mermaid.label", { title })}
       className="overflow-x-auto [&_svg]:mx-auto [&_svg]:h-auto [&_svg]:max-w-full"
-      // Le SVG vient de Mermaid en `securityLevel: "strict"`, qui l'assainit.
+      // The SVG comes from Mermaid with `securityLevel: "strict"`, which sanitizes it.
       dangerouslySetInnerHTML={{ __html: current.svg }}
     />
   );

@@ -5,7 +5,7 @@ import { SessionStreamConnection, type ConnectionState } from "@/shared/realtime
 import { tok } from "@/shared/realtime/testEvents";
 import type { SessionEvent, SessionStatus } from "@/shared/realtime/types";
 
-/** Matériel commun aux tests de `SessionStreamConnection`. */
+/** Shared fixtures for the `SessionStreamConnection` tests. */
 export const sessionView = (status: SessionStatus, lastSeq: number): SessionView => ({
   id: "s1",
   graph: "demo",

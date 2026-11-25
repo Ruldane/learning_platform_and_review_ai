@@ -3,7 +3,7 @@ import { API, sessionOut } from "./councilApi";
 
 export { API, sessionOut };
 
-/** Une tâche telle que le back la rend (`TaskOut`). */
+/** A task as the back returns it (`TaskOut`). */
 export const taskOut = (over: Record<string, unknown> = {}) => ({
   id: "t1",
   module_id: "m1",
@@ -90,7 +90,7 @@ const WEEK_2 = weekOut({
   ],
 });
 
-/** Un programme tel que le back le rend (`ProgramOut`) : deux semaines, 5 tâches. */
+/** A program as the back returns it (`ProgramOut`): two weeks, 5 tasks. */
 export const programOut = (over: Record<string, unknown> = {}) => ({
   id: "p1",
   goal_id: "g1",
@@ -120,7 +120,7 @@ export const summaryOut = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
-/** La session du Stratège en attente de la validation (point d'arrêt n° 3). */
+/** The Strategist's session waiting for validation (breakpoint no. 3). */
 export const validationSession = (status = "waiting_user", id = "s1") =>
   sessionOut(id, status, {
     graph: "program_builder",
@@ -138,14 +138,14 @@ export const validationSession = (status = "waiting_user", id = "s1") =>
         : null,
   });
 
-/** Lectures d'un programme et de sa session ; `program` et `session` sont relus à chaque requête. */
+/** Reads of a program and its session; `program` and `session` are re-read on each request. */
 export function programApi(
   initial: { program?: Record<string, unknown>; session?: Record<string, unknown> | null } = {},
 ) {
   const state = {
     program: initial.program ?? programOut(),
     session: initial.session === undefined ? validationSession() : initial.session,
-    /** Les replanifications qui attendent une réponse (`GET /sessions?graph=replan`). */
+    /** Replannings waiting for an answer (`GET /sessions?graph=replan`). */
     waitingReplans: [] as Record<string, unknown>[],
   };
   const handlers = [

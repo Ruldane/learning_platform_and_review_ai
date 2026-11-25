@@ -6,9 +6,9 @@ import { useSessionStream } from "@/shared/realtime/useSessionStream";
 const OVER = ["completed", "failed", "cancelled", "expired"];
 
 /**
- * Suit la session d'un parcours du CV (lecture du profil, capture d'un modèle, revue) : le flux, les
- * actions par REST, et un rappel à chaque changement d'état ou nouvelle question, pour que la page
- * relise ce que la session vient d'écrire. `createSocket` ne sert qu'aux tests.
+ * Follows a CV run (profile reading, model capture, review): the stream, actions over
+ * REST, and a callback on each state change or new question, so the page re-reads what the
+ * session has just written. `createSocket` is only for tests.
  */
 export function useRun(
   sessionId: string | null,

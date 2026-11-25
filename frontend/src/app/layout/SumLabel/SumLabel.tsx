@@ -1,8 +1,8 @@
 import type { BadgePart } from "../SumBadges";
 
 /**
- * Le nom d'une section (ou du bouton « Menu ») avec la somme des pastilles de ses entrées. Le
- * texte lu par les lecteurs d'écran est d'un seul tenant (« Candidatures, 3 relances dues »).
+ * A section name (or the « Menu » button) with the sum of its entries' badges. The
+ * text read by screen readers is one piece (« Candidatures, 3 relances dues »).
  */
 export function SumLabel({ name, parts }: { name: string; parts: BadgePart[] }) {
   if (parts.length === 0) return <>{name}</>;

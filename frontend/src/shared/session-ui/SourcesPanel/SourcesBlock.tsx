@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useId } from "react";
 
-/** Un bloc nommé (région) du panneau ; il ne s'affiche pas quand `count` est nul. */
+/** A named block (region) of the panel; hidden when `count` is zero. */
 export function SourcesBlock({
   title,
   count,

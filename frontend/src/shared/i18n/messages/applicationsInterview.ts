@@ -1,4 +1,4 @@
-/** Textes de l'entretien blanc : réglages, échange écrit, débrief, entretiens passés. */
+/** Texts for the mock interview: settings, written exchange, debrief, past interviews. */
 export const applicationsInterview = {
   interviewPage: {
     title: "Mock interview",

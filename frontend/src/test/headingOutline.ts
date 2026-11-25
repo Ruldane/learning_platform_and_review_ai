@@ -1,14 +1,14 @@
 import { expect } from "vitest";
 
-/** Les niveaux des titres de la page, dans l'ordre du document. */
+/** The heading levels of the page, in document order. */
 export const headingLevels = (root: ParentNode = document): number[] =>
   Array.from(root.querySelectorAll("h1, h2, h3, h4, h5, h6")).map((node) =>
     Number(node.tagName.slice(1)),
   );
 
 /**
- * Le plan de la page est cohérent : un seul `h1`, en premier, puis jamais de saut de niveau vers le
- * bas (un `h3` ne suit pas un `h1`).
+ * The page outline is consistent: a single `h1`, first, then never a level skip downwards
+ * (an `h3` does not follow an `h1`).
  */
 export function expectCoherentOutline(root: ParentNode = document): void {
   const levels = headingLevels(root);

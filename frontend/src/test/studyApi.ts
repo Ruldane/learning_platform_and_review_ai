@@ -1,7 +1,7 @@
 import { http, HttpResponse } from "msw";
 import { API, sessionOut } from "./councilApi";
 
-/** Une session d'étude telle que le back la rend (`StudySessionOut`). */
+/** A study session as the back returns it (`StudySessionOut`). */
 export const studyOut = (over: Record<string, unknown> = {}) => ({
   id: "st1",
   lesson_id: "l1",
@@ -20,7 +20,7 @@ export const studyOut = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
-/** Le résumé de l'étude (`StudySummaryOut`) avec un bloc du jour par défaut. */
+/** The study summary (`StudySummaryOut`) with a daily block by default. */
 export const summaryOut = (over: Record<string, unknown> = {}) => ({
   streak_days: 5,
   week_minutes: 210,
@@ -38,18 +38,18 @@ export const summaryOut = (over: Record<string, unknown> = {}) => ({
 
 interface StudyApi {
   summary?: Record<string, unknown>;
-  /** Remplace la réponse de `GET /study-sessions/summary` (une lecture qui change). */
+  /** Overrides the response of `GET /study-sessions/summary` (a read that changes). */
   summaryReply?: () => Response;
-  /** Les lectures successives de `GET /study-sessions/st1` (la dernière est répétée). */
+  /** Successive reads of `GET /study-sessions/st1` (the last one repeats). */
   sessions?: Record<string, unknown>[];
   status?: string;
-  /** Remplace la réponse de `GET /study-sessions/st1` (une erreur, une lecture qui change). */
+  /** Overrides the response of `GET /study-sessions/st1` (an error, or a read that changes). */
   sessionReply?: () => Response;
 }
 
 /**
- * Lectures REST d'une page de la session d'étude : résumé, session `st1` (les lectures se suivent)
- * et statut de la session d'agents `s1`.
+ * REST reads of a study session page: summary, session `st1` (the reads follow each other)
+ * and the agent session's status `s1`.
  */
 export function studyApi(api: StudyApi = {}) {
   const reads = api.sessions ?? [studyOut()];

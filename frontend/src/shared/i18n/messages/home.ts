@@ -1,4 +1,4 @@
-/** Textes de l'accueil : brief du jour, actions rapides, fil d'activité, notifications de fond. */
+/** Texts for home: daily brief, quick actions, activity feed, background notifications. */
 export const home = {
   loading: "Preparing your brief…",
   noProgram: {

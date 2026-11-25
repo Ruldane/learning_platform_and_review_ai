@@ -7,7 +7,7 @@ type Over = Record<string, unknown>;
 
 const PERSONAS = ["ats_reader", "recruiter", "manager", "colleague"] as const;
 
-/** Les quatre votes d'un comité (`VoteOut`) : trois oui, un non, par défaut. */
+/** A committee's four votes (`VoteOut`): three yes, one no, by default. */
 export const votesOut = (votes: string[] = ["yes", "yes", "no", "yes"]) =>
   PERSONAS.map((persona, index) => ({
     persona,
@@ -16,7 +16,7 @@ export const votesOut = (votes: string[] = ["yes", "yes", "no", "yes"]) =>
     reason: `Raison de ${persona}.`,
   }));
 
-/** Un changement (`ChangeOut`). */
+/** A change (`ChangeOut`). */
 export const changeOut = (over: Over = {}) => ({
   text: "Chiffre le résultat de ton projet principal.",
   persona: "manager",
@@ -26,7 +26,7 @@ export const changeOut = (over: Over = {}) => ({
   ...over,
 });
 
-/** Une exécution du comité (`CommitteeRunOut`) terminée par défaut : verdict « oui », trois changements. */
+/** A committee run (`CommitteeRunOut`) finished by default: verdict "yes", three changes. */
 export const committeeOut = (over: Over = {}) => ({
   id: "c1",
   cv_version_id: "v1",
@@ -55,7 +55,7 @@ export const committeeOut = (over: Over = {}) => ({
   ...over,
 });
 
-/** Une exécution qui délibère encore : rien à lire que le fil. */
+/** A run still deliberating: nothing to read but the feed. */
 export const runningCommittee = (over: Over = {}) =>
   committeeOut({
     status: "running",
@@ -66,7 +66,7 @@ export const runningCommittee = (over: Over = {}) =>
     ...over,
   });
 
-/** L'avant et l'après (`CommitteeDiff`). */
+/** Before and after (`CommitteeDiff`). */
 export const diffOut = (over: Over = {}) => ({
   previous_id: "c0",
   votes: PERSONAS.map((persona, index) => ({
@@ -80,13 +80,13 @@ export const diffOut = (over: Over = {}) => ({
 });
 
 export interface CommitteeApiOptions {
-  /** Les exécutions déjà là (la plus récente d'abord). */
+  /** Runs already there (most recent first). */
   runs?: Over[];
-  /** Les versions de CV de l'offre (`VersionOut`) ; une version prête par défaut. */
+  /** The offer's CV versions (`VersionOut`); one ready version by default. */
   versions?: Over[];
-  /** Remplace le lancement (`POST /committee`) : `body` est le corps reçu. */
+  /** Overrides the launch (`POST /committee`): `body` is the body received. */
   start?: (body: Over) => Response | undefined;
-  /** Remplace la lecture d'une exécution (une panne, par exemple). */
+  /** Overrides reading a run (a failure, for example). */
   read?: (id: string) => Response | undefined;
 }
 
@@ -97,7 +97,7 @@ const newState = () => ({
   versionReads: [] as string[],
 });
 
-/** Ce qu'un lancement accepté range : une exécution qui délibère, la précédente terminée devient son « avant ». */
+/** What an accepted launch stores: a deliberating run; the last finished one is its "before". */
 function accept(runs: Over[], body: Over) {
   const run = runningCommittee({
     id: `c${runs.length + 1}-new`,
@@ -136,7 +136,7 @@ function readRoutes(runs: Over[], versions: Over[], state: State, options: Commi
   ];
 }
 
-/** Ce que `finish` range : le résultat, avec l'avant / après si une exécution terminée précède. */
+/** What `finish` stores: the result, with before / after if a finished run precedes it. */
 function finishRun(runs: Over[], id: string, over: Over) {
   const row = runs.find((candidate) => candidate.id === id);
   if (!row) return;
@@ -147,9 +147,9 @@ function finishRun(runs: Over[], id: string, over: Over) {
 }
 
 /**
- * Les routes du comité, en mémoire : un lancement range une exécution `running`, `finish` la termine
- * (avec son avant / après si une exécution terminée la précède), comme le vrai serveur. `state` garde
- * les corps et les lectures reçus.
+ * The committee routes, in memory: a launch stores a `running` run, `finish` ends it
+ * (with its before / after if a finished run precedes it), as the real server does. `state` keeps
+ * the bodies and reads received.
  */
 export function committeeApi(options: CommitteeApiOptions = {}) {
   const runs: Over[] = [...(options.runs ?? [])];
@@ -165,7 +165,7 @@ export function committeeApi(options: CommitteeApiOptions = {}) {
     runs,
     versions,
     handlers: [...readRoutes(runs, versions, state, options), start],
-    /** Le serveur termine l'exécution `id` (ce que fait la session en rangeant son résultat). */
+    /** The server finishes run `id` (what the session does when it stores its result). */
     finish: (id: string, over: Over = {}) => finishRun(runs, id, over),
   };
 }

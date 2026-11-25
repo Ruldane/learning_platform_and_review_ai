@@ -13,17 +13,17 @@ interface NavMenuLinkProps {
   active: boolean;
   current?: "page" | "location";
   badgeItems?: NavItem[];
-  /** La couleur de la section de l'entrée : teinte et liseré quand elle est active. */
+  /** Color of the entry's section: tint and underline when active. */
   color: string;
-  /** Appelé au clic, pour refermer le menu qui contient le lien (même sur la page courante). */
+  /** Called on click, to close the menu that contains the link (even on the current page). */
   onNavigate?: () => void;
-  /** `menuitem` dans un sous-menu ; aucun rôle ajouté ailleurs. */
+  /** `menuitem` in a submenu; no role added elsewhere. */
   role?: "menuitem";
-  /** Icône de la section, pour un lien direct (section d'une seule page). */
+  /** Section icon, for a direct link (section with a single page). */
   icon?: LucideIcon;
 }
 
-/** Un lien de navigation : page courante en évidence (`aria-current`), pastille de l'entrée. */
+/** A nav link: current page highlighted (`aria-current`), entry badge. */
 export function NavMenuLink({
   item,
   active,

@@ -15,19 +15,19 @@ export const initialSessionState: SessionViewState = {
 };
 
 /**
- * Pur et idempotent sur `seq` : un événement déjà appliqué (rejeu après reconnexion) renvoie le
- * même objet, sans rien dupliquer.
+ * Pure and idempotent on `seq`: an event already applied (replay after reconnect) returns the
+ * same object, without duplicating anything.
  */
 export function applyEvent(state: SessionViewState, event: SessionEvent): SessionViewState {
   if (event.seq <= state.lastSeq) return state;
   const next = reduceEvent(state, event);
-  // Seule une session en cours écrit : un jeton rejoué après une pause ou une annulation lue en
-  // REST ne rallume pas « Écrit… ».
+  // Only a running session writes: a token replayed after a pause, or a cancellation read over
+  // REST, does not turn « Écrit… » back on.
   const feed = next.status === "running" ? next.feed : stopStreaming(next.feed);
   return { ...next, feed, lastSeq: event.seq };
 }
 
-/** Actions locales du client (réponse envoyée, statut lu en REST : flux ou réponse d'action). */
+/** Local client actions (answer sent, status read over REST: stream or action response). */
 export function applyLocal(state: SessionViewState, action: LocalAction): SessionViewState {
   if (action.type === "snapshot") return applySnapshot(state, action.snapshot);
   const known = state.feed.some(

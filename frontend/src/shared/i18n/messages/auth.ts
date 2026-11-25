@@ -1,4 +1,4 @@
-/** Textes de la connexion, de la reprise de l'espace local et du menu du compte. */
+/** Texts for sign-in, resuming the local space, and the account menu. */
 export const auth = {
   gate: {
     checking: "Checking your sign-in…",
@@ -10,7 +10,7 @@ export const auth = {
     google: "Sign in with Google",
     privacy: "Tremplin only receives your email address and name from Google.",
   },
-  // Un message par code de `/login?error=<code>` ; `unknown` sert à tout autre code.
+  // One message per `/login?error=<code>` code; `unknown` covers any other code.
   errors: {
     access_denied: "Sign-in cancelled.",
     state_invalid: "The sign-in expired, start again.",

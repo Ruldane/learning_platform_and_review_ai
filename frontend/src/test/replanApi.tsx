@@ -9,7 +9,7 @@ import { createFakeSocketServer, type FakeSocketServer } from "./fakeSocket";
 import { createQueryWrapper } from "./queryWrapper";
 import { server } from "./server";
 
-/** Une version du plan telle que le back la rend (`PlanVersionOut`) : une proposition en attente. */
+/** A plan version as the back returns it (`PlanVersionOut`): one pending proposal. */
 export const versionOut = (over: Record<string, unknown> = {}) => ({
   version: 2,
   kind: "replan",
@@ -33,7 +33,7 @@ export const versionOut = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
-/** La première version d'un programme : sa construction, acceptée. */
+/** The first version of a program: its construction, accepted. */
 export const buildVersion = () =>
   versionOut({
     version: 1,
@@ -47,18 +47,18 @@ export const buildVersion = () =>
     week_loads: [],
   });
 
-/** La session de replanification du programme `p1` qui attend une réponse. */
+/** The replanning session of program `p1` waiting for an answer. */
 export const waitingSession = (id = "s9") =>
   sessionOut(id, "waiting_user", { graph: "replan", subject_type: "program", subject_id: "p1" });
 
 interface ReplanApi {
   versions?: Record<string, unknown>[];
-  /** Les replanifications qui attendent une réponse. */
+  /** Replannings waiting for an answer. */
   waiting?: Record<string, unknown>[];
   versionsReply?: () => Response;
 }
 
-/** Lectures de l'écran : historique du plan, replanifications en attente, statut de la session `s9`. */
+/** Screen reads: plan history, pending replannings, status of session `s9`. */
 export function replanApi(api: ReplanApi = {}) {
   const state = { versions: api.versions ?? [buildVersion()], waiting: api.waiting ?? [] };
   const handlers = [
@@ -80,7 +80,7 @@ export function replanApi(api: ReplanApi = {}) {
   return { state, handlers };
 }
 
-/** Monte l'écran de replanification du programme `p1` avec ses lectures et des faux sockets. */
+/** Mounts the replanning screen of program `p1` with its reads and fake sockets. */
 export function renderReplan(
   makePage: (createSocket: FakeSocketServer["factory"]) => ReactElement,
   api: ReplanApi = {},
@@ -102,7 +102,7 @@ export function renderReplan(
   return { fake: sockets, state: replan.state, router, user: userEvent.setup() };
 }
 
-/** Attend l'ouverture du flux de la session `s9` et le branche. */
+/** Waits for session `s9`'s stream to open and plugs into it. */
 export async function openReplanStream(fake: FakeSocketServer) {
   const streams = () => fake.sockets.filter((s) => s.url.includes("/sessions/s9/stream"));
   await waitFor(() => expect(streams()).toHaveLength(1));

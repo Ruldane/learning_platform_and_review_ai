@@ -26,22 +26,22 @@ export function formatUsd(usd: number): string {
   return format.format(usd);
 }
 
-/** Un jour `AAAA-MM-JJ` lu comme minuit UTC : le fuseau du poste ne décale jamais le jour. */
+/** A `YYYY-MM-DD` day read as UTC midnight: the device's time zone never shifts the day. */
 export function parseDay(iso: string): Date {
   return new Date(`${iso}T00:00:00Z`);
 }
 
-/** « mercredi 18 novembre » : nomme un jour en toutes lettres. */
+/** Example: « mercredi 18 novembre », the day named in full. */
 export function longDay(iso: string): string {
   return LONG_DAY.format(parseDay(iso));
 }
 
-/** « lun. 16 nov. » : forme courte, pour les comparaisons. */
+/** Example: « lun. 16 nov. », short form for comparisons. */
 export function shortDay(iso: string): string {
   return SHORT_DAY.format(parseDay(iso));
 }
 
-/** « 11 h 30 », « 2 h » ou « 45 min ». */
+/** Examples: « 11 h 30 », « 2 h » or « 45 min ». */
 export function formatMinutes(total: number): string {
   const minutes = Math.max(0, Math.round(total));
   const hours = Math.floor(minutes / 60);
@@ -50,14 +50,14 @@ export function formatMinutes(total: number): string {
   return rest === 0 ? `${hours} h` : `${hours} h ${String(rest).padStart(2, "0")}`;
 }
 
-/** Le jour `AAAA-MM-JJ` d'un instant, dans le fuseau du poste (aujourd'hui par défaut). */
+/** The `YYYY-MM-DD` day of an instant, in the device's time zone (today by default). */
 export function localDay(at: Date = new Date()): string {
   const month = String(at.getMonth() + 1).padStart(2, "0");
   const day = String(at.getDate()).padStart(2, "0");
   return `${at.getFullYear()}-${month}-${day}`;
 }
 
-/** Le jour `AAAA-MM-JJ` situé `days` jours après `iso` (calcul en UTC : pas de saut d'heure). */
+/** The `YYYY-MM-DD` day `days` days after `iso` (computed in UTC: no DST jump). */
 export function addDays(iso: string, days: number): string {
   const date = parseDay(iso);
   date.setUTCDate(date.getUTCDate() + days);

@@ -3,13 +3,13 @@ import { loadExcalidraw } from "./excalidrawAssets";
 export type SceneResult =
   { ok: true; elements: unknown[]; files: unknown } | { ok: false; error: string };
 
-// Un schéma du Scribe tient en quelques dizaines de nœuds : au-delà, mieux vaut le repli.
+// A Scribe diagram has a few dozen nodes at most: beyond that, the fallback is better.
 const LIMITS = { maxEdges: 300, maxTextSize: 20_000 };
 
 /**
- * Convertit le `flowchart` Mermaid du Scribe en éléments Excalidraw. Les deux paquets sont chargés
- * à la demande (ils pèsent lourd). L'erreur rendue ne contient jamais le code : un message de
- * l'analyseur peut le citer, et le code ne se journalise pas (SPEC 17.4).
+ * Converts the Scribe's Mermaid `flowchart` into Excalidraw elements. Both packages are loaded
+ * on demand (they are heavy). The error rendered never contains the code: a parser message
+ * may quote it, and the code is not logged (SPEC 17.4).
  */
 export async function mermaidToScene(mermaid: string): Promise<SceneResult> {
   try {

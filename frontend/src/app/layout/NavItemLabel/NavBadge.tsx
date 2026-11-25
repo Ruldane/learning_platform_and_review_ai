@@ -1,15 +1,15 @@
 interface NavBadgeProps {
-  /** Le libellé de l'entrée (« Relances »). */
+  /** The entry label (« Relances »). */
   name: string;
   useBadge: () => number | undefined;
   label: (count: number) => string;
 }
 
 /**
- * Le libellé d'une entrée de navigation avec sa pastille : le libellé et le nombre sont visibles,
- * et un seul texte pour les lecteurs d'écran, d'un seul tenant (« Relances, 3 relances dues »),
- * pour qu'aucun espace ne s'insère avant la virgule. Le libellé seul tant que le nombre est
- * inconnu ou nul.
+ * An entry label with its badge: the label and the count are visible,
+ * and one text for screen readers, in one piece (« Relances, 3 relances dues »),
+ * so no space is inserted before the comma. The label alone while the count is
+ * unknown or zero.
  */
 export function NavBadge({ name, useBadge, label }: NavBadgeProps) {
   const count = useBadge();

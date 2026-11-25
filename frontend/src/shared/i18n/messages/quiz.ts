@@ -1,4 +1,4 @@
-/** Textes des quiz et des révisions : formulaire, résultat, fiches, file du jour, liste des modules. */
+/** Texts for quizzes and reviews: form, result, flashcards, daily queue, module list. */
 export const quiz = {
   form: {
     label: "Quiz",

@@ -8,16 +8,16 @@ import { AnswerField } from "./AnswerField";
 interface FreeTextAnswerProps {
   disabled: boolean;
   onSubmit: (value: string) => void;
-  /** Une réponse écrite longue : une zone de texte (Entrée va à la ligne, Ctrl+Entrée envoie). */
+  /** A long written answer: a text area (Enter adds a line, Ctrl+Enter sends). */
   multiline?: boolean;
-  /** Nombre de caractères au plus. */
+  /** Maximum number of characters. */
   maxLength?: number;
-  /** Nom du champ lu aux lecteurs d'écran ; « Ta réponse » par défaut. */
+  /** Name of the field read by screen readers; « Ta réponse » by default. */
   label?: string;
   voice?: boolean;
 }
 
-/** Champ de réponse libre d'une interruption : Entrée ou « Répondre » envoie, une réponse vide est refusée. */
+/** Free-text answer field: Enter or « Répondre » sends; an empty answer is refused. */
 export function FreeTextAnswer({
   disabled,
   onSubmit,

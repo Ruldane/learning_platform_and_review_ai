@@ -7,7 +7,7 @@ export type BoardScene =
   | { status: "failed" }
   | { status: "ready"; elements: unknown[]; files: unknown; animate: boolean };
 
-/** Une scène enregistrée (états de January) s'affiche telle quelle ; sinon on convertit le Mermaid. */
+/** A saved scene (January's states) is shown as is; otherwise the Mermaid is converted. */
 function savedScene(scene: Record<string, unknown> | null): BoardScene | null {
   if (scene === null) return null;
   if (!Array.isArray(scene.elements)) return { status: "failed" };
@@ -15,8 +15,8 @@ function savedScene(scene: Record<string, unknown> | null): BoardScene | null {
 }
 
 /**
- * La scène à dessiner pour un état du tableau. Les états du Scribe sans scène passent par
- * `mermaidToScene` (animés) ; un échec rend `failed` et la page affiche le repli Mermaid.
+ * The scene to draw for a board state. Scribe states without a scene go through
+ * `mermaidToScene` (animated); a failure gives `failed`, and the page shows the Mermaid fallback.
  */
 export function useBoardScene(state: BoardStateView): BoardScene {
   const saved = savedScene(state.scene);

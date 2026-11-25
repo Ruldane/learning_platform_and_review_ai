@@ -4,7 +4,7 @@ import { apiError } from "./councilHarness";
 
 type Over = Record<string, unknown>;
 
-/** Une compétence du classement (`TrendOut`) fictive. */
+/** A fake ranking skill (`TrendOut`). */
 export const trendOut = (skill: string, rank: number, share: number, over: Over = {}) => ({
   skill,
   count: Math.round(share * 41),
@@ -28,7 +28,7 @@ export const offerOut = (url: string, over: Over = {}) => ({
   ...over,
 });
 
-/** Un relevé complet (`RadarRunOut`) fictif : fini, 47 lues, 6 bloquées, 41 analysées. */
+/** A fake complete scan (`RadarRunOut`): finished, 47 read, 6 blocked, 41 analysed. */
 export const radarRun = (id: string, over: Over = {}) => ({
   id,
   role: "Data engineer",
@@ -68,17 +68,17 @@ const SUMMARY_KEYS = [
   "low_sample",
 ];
 
-/** `RadarRunSummary` : la forme courte d'un relevé, pour l'historique. */
+/** `RadarRunSummary`: the short shape of a scan, for the history. */
 const summaryOf = (run: Over) => Object.fromEntries(SUMMARY_KEYS.map((key) => [key, run[key]]));
 
 export interface RadarApiOptions {
-  /** Les relevés, le plus récent d'abord. */
+  /** Scans, most recent first. */
   runs?: Over[];
-  /** Poste et zone proposés. */
+  /** Suggested role and area. */
   defaults?: { role: string; zone: string };
-  /** Les sessions de relevé connues du serveur (`GET /sessions`). */
+  /** Scan sessions known to the server (`GET /sessions`). */
   sessions?: Over[];
-  /** Remplace la réponse de `POST /radar/runs` (un refus, un 409 particulier). */
+  /** Overrides the response of `POST /radar/runs` (a refusal, a specific 409). */
   startReply?: () => Response;
 }
 
@@ -93,7 +93,7 @@ interface RadarState {
   created: number;
 }
 
-/** Les lectures : `latest` suit les relevés (le plus récent fini est `latest`, un `running` est `running`). */
+/** Reads: `latest` follows the scans (latest finished one; a `running` one stays `running`). */
 function readHandlers(state: RadarState) {
   return [
     http.get(`${API}/radar/latest`, () => {
@@ -124,8 +124,8 @@ function readHandlers(state: RadarState) {
 }
 
 /**
- * Un relevé `running` tout neuf et sa session `sess-<id>`, donnée par le 202 seulement : elle
- * n'est pas dans `GET /sessions` (un test qui la lit autrement la retrouverait par hasard).
+ * A brand-new `running` scan and its session `sess-<id>`, given only by the 202: it is
+ * not in `GET /sessions` (a test reading it another way would find it by chance).
  */
 function openRun(state: RadarState, body: Over): Response {
   state.created += 1;
@@ -147,7 +147,7 @@ function openRun(state: RadarState, body: Over): Response {
   return HttpResponse.json({ run_id: id, session_id: `sess-${id}` }, { status: 202 });
 }
 
-/** `POST /radar/runs` : refuse comme le serveur (un seul relevé en cours, un poste obligatoire). */
+/** `POST /radar/runs`: refuses like the server (one scan at a time, a role required). */
 function startHandler(state: RadarState) {
   return http.post(`${API}/radar/runs`, async ({ request }) => {
     const body = ((await request.json().catch(() => null)) ?? {}) as Over;
@@ -173,8 +173,8 @@ function startHandler(state: RadarState) {
 }
 
 /**
- * Le radar en mémoire : `bodies` garde les corps reçus, `runs` et `sessions` sont à la main du
- * test, `finish` clôt un relevé.
+ * The radar in memory: `bodies` keeps the bodies received, `runs` and `sessions` are the
+ * test's to edit, `finish` closes a scan.
  */
 export function radarApi(options: RadarApiOptions = {}) {
   const state: RadarState = {
@@ -197,7 +197,7 @@ export function radarApi(options: RadarApiOptions = {}) {
   return { handlers: [...readHandlers(state), startHandler(state)], state, finish };
 }
 
-/** Les champs d'une session de relevé : le parcours et le sujet suivi (le relevé). */
+/** The fields of a scan session: the course and the tracked subject (the scan). */
 export const radarSession = (runId: string): Over => ({
   graph: "market_radar",
   subject_type: "radar_run",

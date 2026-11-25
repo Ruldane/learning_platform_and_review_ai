@@ -3,8 +3,8 @@ import { cleanup } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll } from "vitest";
 import { server } from "./server";
 
-// jsdom n'a pas de `ResizeObserver`, que React Flow et Recharts exigent. Ce faux ne notifie jamais
-// de mesure : les composants rendent avec les dimensions qu'on leur donne (voir `SkillGraph`).
+// jsdom has no `ResizeObserver`, which React Flow and Recharts require. This fake never reports
+// a measurement: components render with the dimensions given to them (see `SkillGraph`).
 class ResizeObserverStub {
   observe(): void {}
   unobserve(): void {}
@@ -12,8 +12,8 @@ class ResizeObserverStub {
 }
 globalThis.ResizeObserver ??= ResizeObserverStub;
 
-// Recharts (`ResponsiveContainer`) mesure son conteneur avec `getBoundingClientRect`, toujours vide
-// dans jsdom : sans taille, aucun graphique ne se dessine. Les conteneurs de graphiques en reçoivent une.
+// Recharts (`ResponsiveContainer`) measures its container with `getBoundingClientRect`, empty
+// in jsdom: without a size, no chart is drawn. Chart containers get one.
 const measure = Element.prototype.getBoundingClientRect;
 Element.prototype.getBoundingClientRect = function getBoundingClientRect(this: Element) {
   return this.classList.contains("recharts-responsive-container")
@@ -21,7 +21,7 @@ Element.prototype.getBoundingClientRect = function getBoundingClientRect(this: E
     : measure.call(this);
 };
 
-// Aucune requête réseau réelle : toute requête sans handler fait échouer le test.
+// No real network request: any request without a handler makes the test fail.
 beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
 afterEach(() => {
   cleanup();

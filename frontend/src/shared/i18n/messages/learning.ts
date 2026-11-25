@@ -1,4 +1,4 @@
-/** Textes de l'espace d'apprentissage : objectifs, Conseil (étapes, commandes, propositions, onglets). */
+/** Texts for the learning space: goals, Council (steps, commands, proposals, tabs). */
 export const learning = {
   nav: { goals: "Goals", council: "Council" },
   goals: {

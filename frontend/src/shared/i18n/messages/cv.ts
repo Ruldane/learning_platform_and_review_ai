@@ -1,7 +1,7 @@
 import { cvPages } from "./cvPages";
 import { cvReview } from "./cvReview";
 
-/** Textes du CV : profil maître (import, formulaire, versions) ; le CV ciblé est dans `cvReview.ts`. */
+/** CV texts: master profile (import, form, versions); the targeted CV is in `cvReview.ts`. */
 export const cv = {
   ...cvReview,
   ...cvPages,

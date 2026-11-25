@@ -1,7 +1,7 @@
-/** Les objets que le back rend pour le profil, les modèles, les revues et les versions de CV (fictifs). */
+/** The objects the back returns for the profile, templates, reviews and CV versions (fake). */
 type Over = Record<string, unknown>;
 
-/** Un profil maître fictif (`MasterProfileData`) : « Camille Exemple », domaines `example.org`. */
+/** A fake master profile (`MasterProfileData`): « Camille Exemple », domains `example.org`. */
 export const profileData = (over: Over = {}) => ({
   identity: {
     name: "Camille Exemple",
@@ -32,7 +32,7 @@ export const profileData = (over: Over = {}) => ({
   ...over,
 });
 
-/** Une version du profil (`ProfileOut`). */
+/** A profile version (`ProfileOut`). */
 export const profileOut = (over: Over = {}) => ({
   version: 2,
   status: "draft",
@@ -50,7 +50,7 @@ export const emptyProfile = {
   source_document_id: null,
 };
 
-/** Un modèle de CV (`TemplateOut`) prêt et actif, après deux passes. */
+/** A CV template (`TemplateOut`) ready and active, after two passes. */
 export const templateOut = (over: Over = {}) => ({
   id: "t1",
   name: "Mon CV",
@@ -69,7 +69,7 @@ export const templateOut = (over: Over = {}) => ({
   ...over,
 });
 
-/** Une ligne de la liste des modèles (`TemplateSummaryOut`). */
+/** A row of the template list (`TemplateSummaryOut`). */
 export const templateSummary = (over: Over = {}) => {
   const { id, name, status, active, score, passes, page_count, created_at } = templateOut(over);
   return { id, name, status, active, score, passes, page_count, created_at };
@@ -117,7 +117,7 @@ export const versionOut = (over: Over = {}) => ({
   ...over,
 });
 
-/** Une revue (`CvReviewOut`) qui attend la décision : une modification à décider, une à confirmer. */
+/** A review (`CvReviewOut`) awaiting a decision: one change to decide, one to confirm. */
 export const reviewOut = (over: Over = {}) => ({
   id: "rv1",
   posting_id: "p1",

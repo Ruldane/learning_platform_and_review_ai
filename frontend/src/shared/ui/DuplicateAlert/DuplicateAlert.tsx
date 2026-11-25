@@ -4,7 +4,7 @@ import { Button } from "@/shared/ui/button";
 
 export type DuplicateLevel = "certain" | "probable" | "possible" | "info";
 
-/** Une fiche proche de l'offre qui entre : le `message` est celui du serveur (SPEC 6.3). */
+/** A record close to the incoming job posting: the `message` is the server's (SPEC 6.3). */
 export interface DuplicateAlertView {
   level: DuplicateLevel;
   applicationId: string;
@@ -24,9 +24,9 @@ export interface DuplicateAlertView {
 
 interface DuplicateAlertProps {
   alerts: DuplicateAlertView[];
-  /** Ouvre la fiche existante la plus proche. */
+  /** Opens the closest existing record. */
   onOpen: (applicationId: string) => void;
-  /** January confirme que c'est un autre poste. */
+  /** January confirms it is a different job. */
   onDistinct: () => void;
   onCancel: () => void;
 }
@@ -42,9 +42,9 @@ const TONE: Record<DuplicateLevel, string> = {
 const strength = (alert: DuplicateAlertView) => STRENGTH.indexOf(alert.level);
 
 /**
- * L'alerte de doublon : le message du serveur pour l'alerte la plus forte, la liste des autres, et
- * les trois choix (ouvrir la fiche, « c'est un autre poste », annuler). Le niveau est écrit en
- * toutes lettres ; une simple information (`info`) n'est qu'une note, sans choix.
+ * The duplicate alert: the server's message for the strongest alert, the list of the others, and
+ * the three choices (open the record, « c'est un autre poste », cancel). The level is written in
+ * full words; a simple notice (`info`) is only a note, with no choices.
  */
 export function DuplicateAlert({ alerts, onOpen, onDistinct, onCancel }: DuplicateAlertProps) {
   const sorted = [...alerts].sort((a, b) => strength(a) - strength(b));

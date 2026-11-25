@@ -8,19 +8,19 @@ import { WhereAmI } from "./WhereAmI";
 
 interface InfoPanelProps {
   groups: NavGroup[];
-  /** Le voyant de santé. */
+  /** The health indicator. */
   health: ReactNode;
-  /** Écran étroit : une ligne compacte sous la barre, au lieu du panneau de gauche. */
+  /** Narrow screen: a compact line below the bar, instead of the left panel. */
   compact?: boolean;
 }
 
 /**
- * Le panneau de gauche : le nom (lien vers l'accueil), « Tu es ici », le voyant de santé, puis ce
- * que les features déclarent dans leur emplacement `topbar` (série, heures, capture, compte…), une
- * info par ligne. Fixe sous la barre ; sous 1024 px, une ligne compacte (voir `AppLayout`).
+ * The left panel: the name (link to home), « Tu es ici », the health indicator, then what
+ * features declare in their `topbar` slot (streak, hours, capture, account...), one
+ * item per line. Fixed below the bar; below 1024 px, a compact line (see `AppLayout`).
  *
- * C'est ici que l'emplacement `topbar` est rendu : le nom de l'emplacement ne change pas, les
- * features n'ont donc pas à être retouchées quand on le redirige.
+ * This is where the `topbar` slot is rendered: the slot name does not change, so
+ * features need not be touched when it is redirected.
  */
 export function InfoPanel({ groups, health, compact = false }: InfoPanelProps) {
   return (

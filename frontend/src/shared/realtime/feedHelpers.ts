@@ -1,11 +1,11 @@
 import type { AgentTurn, FeedItem, SessionViewState, ToolCallView } from "./types";
 
-/** Identifiant provisoire d'un tour ouvert par `agent.started` avant son premier `message_id`. */
+/** Provisional id of a turn opened by `agent.started` before its first `message_id`. */
 const PENDING_PREFIX = "pending:";
 
 const isPending = (turn: AgentTurn): boolean => turn.messageId.startsWith(PENDING_PREFIX);
 
-/** Tour sans `agent.message` : en cours d'écriture, ou arrêté en route (`interrupted`). */
+/** Turn without `agent.message`: still being written, or stopped midway (`interrupted`). */
 const isUnfinished = (turn: AgentTurn): boolean => turn.streaming || turn.interrupted === true;
 
 export function newTurn(agent: string, messageId: string, intent?: string): AgentTurn {
@@ -37,9 +37,9 @@ function lastTurnIndex(feed: FeedItem[], agent: string): number {
 }
 
 /**
- * Un nœud rejoué republie un message déjà fini sous le même `message_id` : l'`agent.started` de la
- * relance a ouvert une bulle provisoire que ce message ne remplira jamais. Elle est retirée (même
- * agent, après le tour connu, encore vide et sans outil appelé) : pas de bulle fantôme en double.
+ * A replayed node republishes an already finished message under the same `message_id`: the
+ * `agent.started` of the rerun opened a provisional bubble this message never fills. It is
+ * removed (same agent, after the known turn, still empty, no tool called): no duplicate.
  */
 function dropReplayShells(feed: FeedItem[], agent: string, known: number): FeedItem[] {
   const shell = (item: FeedItem, index: number) =>
@@ -53,10 +53,10 @@ function dropReplayShells(feed: FeedItem[], agent: string, known: number): FeedI
 }
 
 /**
- * Applique `update` au tour de ce `messageId`. S'il manque, le dernier tour de l'agent en prend
- * l'identifiant s'il est provisoire (ouvert par `agent.started`) ou inachevé : un nouvel essai
- * de l'appel (autre `message_id`, sans nouvel `agent.started`) remplace alors le texte à moitié
- * écrit au lieu d'ouvrir une seconde bulle. Sinon un nouveau tour est créé.
+ * Applies `update` to the turn of this `messageId`. If missing, the agent's last turn takes
+ * its id if provisional (opened by `agent.started`) or unfinished: a new try of the call
+ * (another `message_id`, no new `agent.started`) then replaces the half-written text
+ * instead of opening a second bubble. Otherwise a new turn is created.
  */
 export function upsertTurn(
   feed: FeedItem[],
@@ -80,7 +80,7 @@ export function upsertTurn(
   return [...feed, update(newTurn(agent, messageId))];
 }
 
-/** Applique `update` au dernier tour de l'agent (en crée un provisoire si aucun n'existe). */
+/** Applies `update` to the agent's last turn (creates a provisional one if none exists). */
 export function updateLastTurn(
   feed: FeedItem[],
   agent: string,
@@ -92,14 +92,14 @@ export function updateLastTurn(
   return [...feed, update(pendingTurn(agent, seq))];
 }
 
-/** Fusionne un appel d'outil par `callId` (le résultat peut précéder l'appel en cas de rejeu partiel). */
+/** Merges a tool call by `callId` (the result may precede the call on a partial replay). */
 export function mergeTool(tools: ToolCallView[], patch: ToolCallView): ToolCallView[] {
   const index = tools.findIndex((t) => t.callId === patch.callId);
   if (index < 0) return [...tools, patch];
   return tools.map((t, i) => (i === index ? { ...t, ...patch } : t));
 }
 
-/** Arrête les bulles encore en écriture ; sans `agent.message`, elles sont marquées interrompues. */
+/** Stops bubbles still being written; without `agent.message`, they are marked interrupted. */
 export function stopStreaming(feed: FeedItem[]): FeedItem[] {
   if (!feed.some((i) => i.kind === "turn" && i.streaming)) return feed;
   return feed.map((i) =>
@@ -108,9 +108,9 @@ export function stopStreaming(feed: FeedItem[]): FeedItem[] {
 }
 
 /**
- * L'agent repart (`agent.started`) : ses tours inachevés ont été interrompus (redémarrage, pause)
- * et le nœud rejoue depuis le début. Ils sont retirés, le tour rejoué les remplace ; un tour qui
- * a appelé des outils est gardé (trace des appels), arrêté et marqué interrompu.
+ * The agent restarts (`agent.started`): its unfinished turns were interrupted (restart, pause)
+ * and the node replays from the start. They are removed and the replay replaces them. A turn
+ * that called tools is kept (call trace), stopped and marked interrupted.
  */
 export function retireUnfinished(feed: FeedItem[], agent: string): FeedItem[] {
   const stale = (i: FeedItem): i is AgentTurn =>
@@ -122,19 +122,19 @@ export function retireUnfinished(feed: FeedItem[], agent: string): FeedItem[] {
   });
 }
 
-/** Marque répondues les questions posées avant `seq` (le graphe est reparti après elles). */
+/** Marks as answered the questions asked before `seq` (the graph resumed after them). */
 export function answerAskedBefore(feed: FeedItem[], seq: number): FeedItem[] {
   const asked = (i: FeedItem) => i.kind === "interrupt" && !i.answered && i.seq < seq;
   if (!feed.some(asked)) return feed;
   return feed.map((i) => (asked(i) && i.kind === "interrupt" ? { ...i, answered: true } : i));
 }
 
-/** La question `interruptId` peut-elle encore recevoir une réponse (carte active) ? */
+/** Can question `interruptId` still receive an answer (card still active)? */
 export function isAwaitingAnswer(state: SessionViewState, interruptId: string): boolean {
   return state.status === "waiting_user" && state.pendingInterrupt?.interrupt_id === interruptId;
 }
 
-/** Marque répondues toutes les interruptions en attente (ou celle de `interruptId`) et vide `pendingInterrupt`. */
+/** Marks all pending interrupts answered (or only `interruptId`) and clears `pendingInterrupt`. */
 export function answerInterrupts(state: SessionViewState, interruptId?: string): SessionViewState {
   const matches = (i: FeedItem) =>
     i.kind === "interrupt" &&

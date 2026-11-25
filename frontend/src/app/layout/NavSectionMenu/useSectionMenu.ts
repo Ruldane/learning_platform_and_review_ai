@@ -5,7 +5,7 @@ function menuItems(menu: HTMLElement | null): HTMLElement[] {
   return menu ? Array.from(menu.querySelectorAll<HTMLElement>('[role="menuitem"]')) : [];
 }
 
-/** Le prochain élément à focaliser dans le sous-menu selon la touche pressée (en boucle). */
+/** The next item to focus in the submenu for the key pressed (wraps around). */
 function nextItem(
   items: HTMLElement[],
   from: Element | null,
@@ -19,8 +19,8 @@ function nextItem(
 }
 
 /**
- * Le comportement d'un sous-menu : Échap le ferme et rend le focus au bouton, un clic dehors ou la
- * sortie du focus aussi, la flèche bas ouvre et entre, les flèches parcourent les pages.
+ * Submenu behavior: Escape closes it and returns focus to the button, a click outside or
+ * focus leaving does too, the down arrow opens and enters it, the arrows move through pages.
  */
 export function useSectionMenu(open: boolean, onOpenChange: (open: boolean) => void) {
   const wrapRef = useRef<HTMLDivElement>(null);

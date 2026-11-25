@@ -1,4 +1,4 @@
-/** Textes de la replanification : formulaire, proposition avant / après, fil, historique des versions. */
+/** Texts for replanning: form, before / after proposal, feed, version history. */
 export const replan = {
   title: "Replan",
   back: "Back to the program",

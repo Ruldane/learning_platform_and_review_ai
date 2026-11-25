@@ -1,16 +1,16 @@
 import { create } from "zustand";
 
 interface CaptureRequestState {
-  /** Nombre de demandes d'ouverture de la capture depuis le démarrage de l'application. */
+  /** Number of capture-open requests since the app started. */
   count: number;
-  /** Demande l'ouverture de la capture ; la feature `capture` l'écoute, aucune autre n'en dépend. */
+  /** Requests the capture to open; the `capture` feature listens, no other one depends on it. */
   request: () => void;
 }
 
 /**
- * Le magasin partagé « ouvre la capture » : une feature qui veut offrir l'action (l'accueil) appelle
- * `request()` sans importer `capture` ; `CaptureOverlay` ouvre son dialogue quand `count` change
- * (jamais au montage : un compteur déjà levé n'est pas une demande).
+ * The shared "open capture" store: a feature that wants to offer the action (home) calls
+ * `request()` without importing `capture`; `CaptureOverlay` opens its dialog when `count` changes
+ * (never on mount: a counter already raised is not a request).
  */
 export const useCaptureRequest = create<CaptureRequestState>((set) => ({
   count: 0,

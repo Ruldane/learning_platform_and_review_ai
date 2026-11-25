@@ -1,16 +1,16 @@
 import type { components } from "@/shared/api/schema";
 
-/** Tous les types sont dérivés du contrat généré (`pnpm gen:api`). */
+/** All types are derived from the generated contract (`pnpm gen:api`). */
 export type SessionEvent = components["schemas"]["SessionEvent"];
 export type SessionEventType = SessionEvent["type"];
 export type SessionStatus = components["schemas"]["SessionView"]["status"];
 export type InterruptPayload = components["schemas"]["InterruptRequestedPayload"];
 export type CostPayload = components["schemas"]["CostUpdatedPayload"];
 export type Citation = components["schemas"]["Citation"];
-/** Commande du débat (D82) ; `null` : un message libre. */
+/** Debate command (D82); `null`: a free message. */
 export type UserCommand = components["schemas"]["UserMessagePayload"]["command"];
 
-/** Variante de `SessionEvent` pour un `type` donné (ex. `EventOf<"agent.token">`). */
+/** Variant of `SessionEvent` for a given `type` (e.g. `EventOf<"agent.token">`). */
 export type EventOf<T extends SessionEventType> = Extract<SessionEvent, { type: T }>;
 
 export interface ToolCallView {
@@ -28,7 +28,7 @@ export interface AgentTurn {
   intent?: string;
   text: string;
   streaming: boolean;
-  /** Arrêté sans `agent.message` (pause, redémarrage, fin) : le même agent qui repart le remplace. */
+  /** Stopped without `agent.message` (pause, restart, end): the restarting agent replaces it. */
   interrupted?: boolean;
   tools: ToolCallView[];
   citations: Citation[];
@@ -38,19 +38,19 @@ export type FeedItem =
   | AgentTurn
   | { kind: "user"; seq: number; text: string; command: UserCommand }
   | { kind: "interrupt"; seq: number; interrupt: InterruptPayload; answered: boolean }
-  | { kind: "event"; event: SessionEvent }; // autres types : registre de rendu
+  | { kind: "event"; event: SessionEvent }; // other types: render registry
 
-/** Statut lu en REST (`GET /sessions/{id}` ou réponse d'une action), vrai au moins à `lastSeq`. */
+/** Status read over REST (`GET /sessions/{id}` or action response), true up to `lastSeq`. */
 export interface StatusSnapshot {
   playedBy?: string | null;
   status: SessionStatus;
   lastSeq: number;
-  /** `updated_at` du serveur : départage deux lectures du même `lastSeq`. */
+  /** The server's `updated_at`: breaks ties between two reads at the same `lastSeq`. */
   updatedAt: string;
   pendingInterrupt: InterruptPayload | null;
 }
 
-/** D'où vient le statut affiché : `seq` de l'événement ou de la lecture REST, instant serveur (µs). */
+/** Source of the displayed status: the event's or REST read's `seq`, server instant (µs). */
 export interface StatusVersion {
   seq: number;
   at: number;

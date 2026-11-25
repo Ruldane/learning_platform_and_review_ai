@@ -14,19 +14,19 @@ import {
 import type { SessionEvent, SessionStatus } from "./types";
 
 export type ConnectionState = "connecting" | "open" | "reconnecting" | "closed" | "failed";
-/** Raison d'un abandon (`failed`) : session introuvable, connexion refusée, serveur injoignable. */
+/** Reason for an abort (`failed`): session not found, connection refused, server unreachable. */
 export type StreamFailure = "not_found" | "refused" | "unreachable";
 
 export interface StreamConnectionDeps {
   sessionId: string;
   createSocket: SocketFactory;
   fetchSession: (sessionId: string, signal?: AbortSignal) => Promise<SessionView>;
-  /** Dernier `seq` appliqué, relu à chaque (re)connexion. */
+  /** Last applied `seq`, read again on each (re)connection. */
   lastSeq: () => number;
   onEvent: (event: SessionEvent) => void;
   /**
-   * Session lue en REST (ouverture du flux, fin, `refresh`) : statut et question en attente du
-   * serveur ; une pause ou une annulation ne publient aucun événement (D46 §7, D56).
+   * Session read over REST (stream opening, end, `refresh`): status and pending question from the
+   * server; a pause or a cancellation publishes no event (D46 §7, D56).
    */
   onSnapshot: (view: SessionView) => void;
   onState: (state: ConnectionState, failure: StreamFailure | null) => void;
@@ -36,10 +36,10 @@ const TERMINAL: ReadonlySet<SessionStatus> = new Set(["completed", "failed", "ca
 export const isTerminalStatus = (status: SessionStatus): boolean => TERMINAL.has(status);
 
 /**
- * Un flux de session : ouvre le WebSocket après le dernier `seq` et relit la session en REST à
- * chaque ouverture, reconnecte sur fermeture anormale (attente croissante, nombre d'essais
- * plafonné), s'arrête sur 1000 / 4404 / 1008 ou quand le serveur dit la session terminée et déjà
- * toute reçue. `dispose()` coupe tout, sans rappel.
+ * A session stream: opens the WebSocket after the last `seq` and re-reads the session over REST
+ * on each open, reconnects after an abnormal close (growing wait, capped retry count),
+ * stops on 1000 / 4404 / 1008, or when the server says the session is over and all events
+ * have been received. `dispose()` closes everything, with no callbacks.
  */
 export class SessionStreamConnection {
   private readonly deps: StreamConnectionDeps;
@@ -48,7 +48,7 @@ export class SessionStreamConnection {
   private check: AbortController | null = null;
   private attempts = 0;
   private done = false;
-  /** Une relecture a été demandée pendant une lecture en cours : elle part dès que celle-ci finit. */
+  /** A re-read was requested during a read in progress: it starts as soon as that one ends. */
   private refreshQueued = false;
 
   constructor(deps: StreamConnectionDeps) {
@@ -60,9 +60,9 @@ export class SessionStreamConnection {
   }
 
   /**
-   * Relit la session en REST. Si une lecture est déjà en cours, la relecture est mise en attente
-   * (une seule, quel que soit le nombre de demandes) et lancée à la fin de celle-ci : sa réponse
-   * peut dater d'avant la demande (contrôle de reconnexion, ouverture précédente).
+   * Re-reads the session over REST. If a read is already running, the re-read is queued
+   * (only one, however many requests) and started when it ends: its response
+   * may predate the request (reconnection check, previous opening).
    */
   refresh(): void {
     if (this.done) return;
@@ -73,7 +73,7 @@ export class SessionStreamConnection {
     this.readView((view) => this.deps.onSnapshot(view));
   }
 
-  /** Démontage : socket fermé, minuteries et requêtes annulées, plus aucun rappel. */
+  /** Teardown: socket closed, timers and requests cancelled, no more callbacks. */
   dispose(): void {
     this.done = true;
     this.clearPending();
@@ -93,8 +93,8 @@ export class SessionStreamConnection {
   }
 
   /**
-   * Le serveur a accepté : les essais repartent de zéro (un navigateur ne signale jamais `open`
-   * pour un refus avant `accept`, et 4404 est traité à part), puis le statut est relu en REST.
+   * The server accepted: retries start again from zero (a browser never reports `open`
+   * for refusals before `accept`; 4404 is handled apart), then the status is re-read over REST.
    */
   private opened(): void {
     this.attempts = 0;
@@ -122,7 +122,7 @@ export class SessionStreamConnection {
     }
   }
 
-  /** 1006 & co. : le navigateur ne voit pas la raison d'un refus, d'où le plafond d'essais. */
+  /** 1006 and co.: the browser does not see the reason for a refusal, hence the retry cap. */
   private scheduleReconnect(): void {
     this.attempts += 1;
     if (this.attempts > MAX_RECONNECT_ATTEMPTS) {
@@ -137,33 +137,33 @@ export class SessionStreamConnection {
     this.checkSession();
   }
 
-  /** Pendant l'attente, demande au serveur si la session existe encore et si elle est finie. */
+  /** While waiting, asks the server whether the session still exists and whether it is over. */
   private checkSession(): void {
     this.readView(
       (view) => {
-        // Terminée mais des événements manquent encore : la reconnexion les rejouera, puis 1000.
+        // Over but events are still missing: reconnecting will replay them, then 1000.
         if (!isTerminalStatus(view.status) || view.last_seq > this.deps.lastSeq()) return;
         this.deps.onSnapshot(view);
         this.end("closed", null);
       },
       (error) => {
         if (error instanceof ApiError && error.status === 404) this.end("failed", "not_found");
-        // Autre échec (réseau, serveur arrêté) : la reconnexion prévue suit son cours.
+        // Other failure (network, server stopped): the planned reconnection goes ahead.
       },
     );
   }
 
-  /** Après une fin normale : statut final (une session annulée n'a pas d'événement de fin). */
+  /** After a normal end: final status (a cancelled session has no end event). */
   private refreshStatus(): void {
-    // Un échec laisse le statut tel quel : le flux est déjà complet.
+    // A failure leaves the status as it is: the stream is already complete.
     this.readView((view) => this.deps.onSnapshot(view));
   }
 
   /**
-   * Une lecture REST à la fois : la précédente est abandonnée. Rappels muets une fois la lecture
-   * abandonnée (nouvelle lecture, `dispose`, abandon du flux) ; une lecture lancée après `end`
-   * (statut final après 1000) répond encore. Une relecture mise en attente part après les rappels
-   * de la lecture qui se termine, sauf si le flux est fini entre-temps.
+   * One REST read at a time: the previous one is abandoned. Callbacks are silent once the read
+   * is abandoned (new read, `dispose`, stream abort); a read started after `end`
+   * (final status after 1000) still answers. A queued re-read starts after the callbacks
+   * of the ending read, unless the stream has ended in the meantime.
    */
   private readView(onView: (view: SessionView) => void, onError?: (error: unknown) => void) {
     const abort = this.newCheck();
@@ -184,7 +184,7 @@ export class SessionStreamConnection {
     );
   }
 
-  /** Lance la relecture en attente une fois la lecture `finished` terminée (et non remplacée). */
+  /** Starts the queued re-read once the read `finished` ends (and is not replaced). */
   private runQueuedRefresh(finished: AbortController): void {
     if (!this.refreshQueued || this.check !== null || finished.signal.aborted) return;
     this.refreshQueued = false;
@@ -212,7 +212,7 @@ export class SessionStreamConnection {
     this.check = null;
   }
 
-  /** Débranche le socket courant (plus aucun rappel) et le rend à l'appelant. */
+  /** Unplugs the current socket (no more callbacks) and hands it back to the caller. */
   private detach(): SocketLike | null {
     const socket = this.socket;
     this.socket = null;

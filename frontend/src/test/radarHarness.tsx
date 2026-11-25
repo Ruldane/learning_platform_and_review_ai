@@ -7,8 +7,8 @@ import { renderRoutes } from "./renderRoutes";
 import { server } from "./server";
 
 /**
- * Monte la page du radar à `path` (`makeUi` reçoit la fabrique de faux sockets) sur ses deux routes
- * (`/career/radar` et `/career/radar/:runId`, comme le manifeste) avec le radar en mémoire.
+ * Mounts the radar page at `path` (`makeUi` receives the fake-socket factory) on its two routes
+ * (`/career/radar` and `/career/radar/:runId`, as in the manifest) with the in-memory radar.
  */
 export function renderRadar(
   makeUi: (createSocket: FakeSocketServer["factory"]) => ReactElement,
@@ -28,7 +28,7 @@ export function renderRadar(
   return { ...view, ...backend, sockets };
 }
 
-/** Attend l'ouverture du flux de la session `id` et le branche. */
+/** Waits for session `id`'s stream to open and plugs into it. */
 export async function openStream(sockets: FakeSocketServer, id: string) {
   const streams = () => sockets.sockets.filter((s) => s.url.includes(`/sessions/${id}/stream`));
   await waitFor(() => expect(streams()).toHaveLength(1));

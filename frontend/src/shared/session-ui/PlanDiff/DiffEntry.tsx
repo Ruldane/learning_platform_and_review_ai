@@ -6,7 +6,7 @@ interface DiffEntryProps {
   detail?: string | null;
 }
 
-/** Une tâche du diff : son titre, son module (omis s'il est inconnu) et ce qui la concerne (jour ou déplacement). */
+/** A diff task: its title, its module (omitted if unknown), and its change (day or move). */
 export function DiffEntry({ title, moduleTitle, detail }: DiffEntryProps) {
   return (
     <li className="flex flex-col gap-0.5">

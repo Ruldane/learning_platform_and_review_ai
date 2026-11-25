@@ -1,13 +1,13 @@
 import { useEffect, useRef, type RefObject } from "react";
 
-/** Excalidraw mesure son conteneur à son tour : on lui laisse ce temps avant de cadrer. */
+/** Excalidraw measures its container in turn: leave it that time before fitting. */
 export const REFIT_DELAY_MS = 100;
 
 /**
- * Cadre le contenu quand le canevas redevient visible. Un onglet masqué ramène son conteneur à une
- * taille nulle : tout cadrage fait à ce moment (nouvel état du Scribe, fenêtre redimensionnée) est
- * faux. Dès que la zone retrouve une taille, `refit` recadre. Une taille qui change sans être passée
- * par zéro ne recadre pas : January garde le zoom et la position qu'il a choisis.
+ * Fits the content when the canvas becomes visible again. A hidden tab brings its container back to
+ * zero size: any fit done at that moment (new Scribe state, resized window) is
+ * wrong. As soon as the area has a size again, `refit` fits. A size that changes without passing
+ * through zero does not refit: January keeps the zoom and position they chose.
  */
 export function useRefitOnShow(frame: RefObject<HTMLElement | null>, refit: () => void): void {
   const latest = useRef(refit);

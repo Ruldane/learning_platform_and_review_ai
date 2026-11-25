@@ -17,7 +17,7 @@ interface AnswerInputsProps {
   optionWithAnswers?: (value: string, answers: Record<string, string>) => unknown;
 }
 
-/** Ce que la carte ouverte propose : des champs, des options, ou à défaut un texte libre. */
+/** What the open card offers: fields, options, or else a free text. */
 export function AnswerInputs({
   questionId,
   fields,
@@ -29,7 +29,7 @@ export function AnswerInputs({
   onAnswer,
   optionWithAnswers,
 }: AnswerInputsProps) {
-  // Des réponses déjà saisies partent avec l'option (« Lancer la recherche ») : jamais perdues.
+  // Answers already typed go with the option (« Lancer la recherche »): never lost.
   const pickOption = (value: string) => {
     const answers = fieldAnswers(fields, draft);
     if (Object.keys(answers).length === 0) onAnswer(value);

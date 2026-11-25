@@ -13,15 +13,15 @@ export type InterruptItem = Extract<FeedItem, { kind: "interrupt" }>;
 interface RunFeedProps {
   run: Run;
   label: string;
-  /** Une carte propre à une question ; `undefined` laisse la carte commune. */
+  /** A card specific to one question; `undefined` keeps the common card. */
   renderInterrupt?: (item: InterruptItem) => ReactNode | undefined;
 }
 
-/** La question est-elle encore ouverte et la page libre d'y répondre ? */
+/** Is the question still open, and is the page free to answer it? */
 export const canAnswer = (run: Run, item: InterruptItem): boolean =>
   isAwaitingAnswer(run.stream.view, item.interrupt.interrupt_id) && !run.actions.pending;
 
-/** Le fil d'une session suivie par `useRun` (CV, candidatures) : état, bulles des agents, questions ; la carte commune sert de repli. */
+/** Feed of a session followed by `useRun` (CV, applications); the common card is the fallback. */
 export function RunFeed({ run, label, renderInterrupt }: RunFeedProps) {
   const { stream, actions } = run;
   const common = (item: InterruptItem) => (

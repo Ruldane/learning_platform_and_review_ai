@@ -7,7 +7,7 @@ interface DiffSectionProps {
   children: ReactNode;
 }
 
-/** Une rubrique du diff (Ajoutées, Retirées ou Déplacées) ; absente quand elle est vide. */
+/** A diff section (Added, Removed or Moved); absent when empty. */
 export function DiffSection({ title, count, children }: DiffSectionProps) {
   const headingId = useId();
   if (count === 0) return null;

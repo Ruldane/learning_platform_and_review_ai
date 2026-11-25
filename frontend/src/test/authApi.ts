@@ -3,7 +3,7 @@ import { apiBaseUrl } from "@/shared/api/client";
 
 const AUTH = `${apiBaseUrl}/api/v1/auth`;
 
-/** Identité fictive des tests (jamais une vraie adresse). */
+/** Fake test identity (never a real address). */
 export const camille = {
   id: "u-camille",
   email: "camille.exemple@example.org",
@@ -24,31 +24,31 @@ export const authRequired = {
   error: { code: "auth_required", message: "Connexion requise.", details: null },
 };
 
-/** Enveloppe d'erreur du back pour un test (`{error: {code, message, details}}`). */
+/** Back error envelope for a test (`{error: {code, message, details}}`). */
 export function errorBody(code: string, message = "Erreur.", details: unknown = null) {
   return { error: { code, message, details } };
 }
 
 export interface AuthApi {
   handlers: ReturnType<typeof http.get>[];
-  /** Nombre d'appels reçus par `GET /auth/me`. */
+  /** Number of calls received by `GET /auth/me`. */
   readonly meCalls: number;
-  /** Nombre d'appels reçus par `POST /auth/logout`. */
+  /** Number of calls received by `POST /auth/logout`. */
   readonly logoutCalls: number;
-  /** Corps reçu par `POST /auth/google/claim`. */
+  /** Body received by `POST /auth/google/claim`. */
   readonly claimBodies: unknown[];
 }
 
 interface AuthApiOptions {
-  /** Réponse de `GET /auth/me` : une identité (200) ou `null` (401 `auth_required`). */
+  /** Response of `GET /auth/me`: an identity (200) or `null` (401 `auth_required`). */
   me?: typeof camille | typeof dominique | typeof localMe | null;
-  /** `GET /auth/me` répond 500. */
+  /** `GET /auth/me` answers 500. */
   meFails?: boolean;
-  /** Réponse de `POST /auth/google/claim` : l'identité (200) ou une erreur 409. */
+  /** Response of `POST /auth/google/claim`: the identity (200) or a 409 error. */
   claim?: typeof camille | { conflict: string };
 }
 
-/** Faux serveur d'authentification : `me`, `logout`, `claim`, avec des compteurs d'appels. */
+/** Fake auth server: `me`, `logout`, `claim`, with call counters. */
 export function authApi(options: AuthApiOptions = {}): AuthApi {
   const state = { meCalls: 0, logoutCalls: 0, claimBodies: [] as unknown[] };
   let signedIn = options.me ?? null;

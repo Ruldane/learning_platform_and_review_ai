@@ -1,10 +1,10 @@
-/** Types de vue du diff d'un programme : indépendants du contrat d'API (D34). */
+/** View types for a program diff: independent of the API contract (D34). */
 
 export interface PlanDiffTask {
   id: string;
   title: string;
   moduleTitle: string;
-  /** Jour prévu ; `null` quand il n'est plus connu (tâche retirée). */
+  /** Planned day; `null` when no longer known (task removed). */
   plannedDate: string | null;
 }
 

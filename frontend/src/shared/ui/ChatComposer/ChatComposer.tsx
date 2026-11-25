@@ -10,7 +10,7 @@ interface ChatComposerProps {
   placeholder: string;
   initialText?: string;
   actions?: ReactNode;
-  /** Rend `true` quand la question est partie : la saisie n'est vidée que dans ce cas. */
+  /** Renders `true` when the question was sent: the input is cleared only in that case. */
   onSend: (question: string) => Promise<boolean>;
 }
 
@@ -21,8 +21,8 @@ function submitOnEnter(event: KeyboardEvent, submit: () => Promise<void>) {
 }
 
 /**
- * Entrée envoie, Maj+Entrée fait un retour à la ligne. Une question refusée ou en erreur reste
- * dans la zone de texte.
+ * Enter sends, Shift+Enter adds a line break. A question refused or in error stays
+ * in the text area.
  */
 export function ChatComposer({
   busy,

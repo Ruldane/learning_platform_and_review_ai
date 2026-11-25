@@ -1,9 +1,9 @@
 import { useEffect, useRef, type KeyboardEvent } from "react";
 
 /**
- * Faux de `@monaco-editor/react` pour Vitest (alias dans `vitest.config.ts`) : jsdom ne sait pas
- * faire tourner Monaco (ni workers, ni mesures). Une zone de texte rend le champ ; les gestes que
- * l'éditeur réel rend (curseur, Ctrl+Entrée, décorations de la marge) se pilotent par `fakeEditor`.
+ * Fake of `@monaco-editor/react` for Vitest (alias in `vitest.config.ts`): jsdom cannot
+ * run Monaco (no workers, no measurements). A textarea renders the field; the gestures the
+ * real editor renders (cursor, Ctrl+Enter, margin decorations) are driven through `fakeEditor`.
  */
 
 const CTRL_CMD = 2048;
@@ -29,7 +29,7 @@ class Range {
 
 const fakeMonaco = { KeyMod: { CtrlCmd: CTRL_CMD }, KeyCode: { Enter: ENTER }, Range };
 
-/** L'état du dernier éditeur monté, et les gestes pour le piloter depuis un test. */
+/** The state of the last mounted editor, and the gestures to drive it from a test. */
 export const fakeEditor = {
   commands: new Map<number, () => void>(),
   cursorListeners: [] as Array<(event: { position: { lineNumber: number } }) => void>,
@@ -41,7 +41,7 @@ export const fakeEditor = {
     this.decorations = [];
     this.mounts = 0;
   },
-  /** Déplace le curseur sur `lineNumber`, comme le ferait un clic dans l'éditeur. */
+  /** Moves the cursor to `lineNumber`, as a click in the editor would. */
   moveCursor(lineNumber: number) {
     for (const listener of this.cursorListeners) listener({ position: { lineNumber } });
   },
@@ -102,5 +102,5 @@ export default function Editor({ value, path, options, onChange, onMount }: Fake
 }
 
 export { Editor };
-/** Le chargeur réel est coupé : `monacoSetup` ne fait que l'appeler avec le paquet local. */
+/** The real loader is cut: `monacoSetup` only calls it with the local package. */
 export const loader = { config: () => undefined, init: () => Promise.resolve(fakeMonaco) };

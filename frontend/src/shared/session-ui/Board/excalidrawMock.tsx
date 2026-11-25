@@ -1,5 +1,5 @@
 /**
- * Faux `@excalidraw/excalidraw` pour les tests du tableau : jsdom n'a ni canevas ni polices.
+ * Fake `@excalidraw/excalidraw` for board tests: jsdom has no canvas or fonts.
  * Usage : `vi.mock("@excalidraw/excalidraw", async () => (await import("./excalidrawMock")).module)`.
  */
 import { act } from "@testing-library/react";
@@ -25,15 +25,15 @@ export const fakeApi = {
 export const fake: {
   props: FakeExcalidrawProps | null;
   /**
-   * Ajustements d'Excalidraw au montage (flèches liées recalculées, texte mesuré) : la scène
-   * qu'il signale aussitôt, à partir des éléments reçus. `null` : aucun `onChange` au montage.
+   * Excalidraw's adjustments on mount (linked arrows recalculated, text measured): the scene
+   * it reports at once, from the elements received. `null`: no `onChange` on mount.
    */
   mountChange: ((elements: { id: string }[]) => unknown[]) | null;
-  /** Nombre d'ajustements de montage déjà signalés. */
+  /** Number of mount adjustments already reported. */
   adjusted: number;
   /**
-   * Comme le vrai `componentDidUpdate` d'Excalidraw : `onChange` à chaque mise à jour du composant
-   * (nouvelles props comprises), avec la scène du moment, même inchangée.
+   * Like Excalidraw's real `componentDidUpdate`: `onChange` on each component update
+   * (new props included), with the current scene, even if unchanged.
    */
   changeOnUpdate: boolean;
 } = { props: null, mountChange: null, adjusted: 0, changeOnUpdate: false };
@@ -51,7 +51,7 @@ function Excalidraw(props: FakeExcalidrawProps) {
   useEffect(() => {
     props.excalidrawAPI?.(fakeApi);
     const adjust = fake.mountChange;
-    // Comme Excalidraw : un peu après le montage (polices chargées), avec les props du moment.
+    // Like Excalidraw: a little after mount (fonts loaded), with the current props.
     const timer = adjust
       ? setTimeout(() => {
           act(() => fake.props?.onChange?.(adjust(props.initialData?.elements ?? []), {}, {}));
@@ -59,7 +59,7 @@ function Excalidraw(props: FakeExcalidrawProps) {
         })
       : undefined;
     return () => clearTimeout(timer);
-    // Excalidraw ne rend son API qu'une fois monté.
+    // Excalidraw only exposes its API once mounted.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return <div data-testid="excalidraw" data-view-mode={String(props.viewModeEnabled)} />;
@@ -79,7 +79,7 @@ export const module = {
   convertToExcalidrawElements,
 };
 
-/** Les éléments de la dernière mise à jour de scène envoyée au canevas. */
+/** The elements of the last scene update sent to the canvas. */
 export function lastSceneIds(): string[] {
   const call = fakeApi.updateScene.mock.calls.at(-1)?.[0] as { elements: { id: string }[] };
   return call.elements.map((element) => element.id);

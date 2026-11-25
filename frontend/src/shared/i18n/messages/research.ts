@@ -1,4 +1,4 @@
-/** Textes de la recherche web (essai de l'Éclaireur). */
+/** Texts for web research (the Scout trial). */
 export const research = {
   nav: { bench: "Research test" },
   page: {

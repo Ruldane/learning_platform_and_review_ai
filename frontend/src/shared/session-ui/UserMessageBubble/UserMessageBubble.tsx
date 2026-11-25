@@ -3,11 +3,11 @@ import type { UserCommand } from "@/shared/realtime/types";
 
 interface UserMessageBubbleProps {
   text: string;
-  /** Commande du débat (« Plus court »…) ; `null` ou absente : un message libre. */
+  /** Debate command (« Plus court »…); `null` or absent: a free message. */
   command?: UserCommand;
 }
 
-/** Message de l'utilisateur dans le fil, aligné à droite et étiqueté « Toi ». */
+/** The user's message in the feed, right-aligned and labeled « Toi ». */
 export function UserMessageBubble({ text, command = null }: UserMessageBubbleProps) {
   return (
     <article className="ml-auto max-w-[85%] rounded-xl bg-accent px-3 py-2 text-accent-foreground motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200">

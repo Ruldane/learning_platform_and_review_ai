@@ -12,8 +12,8 @@ import { server } from "./server";
 const ROUTE = "/learn/goals/:goalId/council";
 
 /**
- * Monte la page du Conseil (`makePage` reçoit la fabrique de faux sockets) sur l'objectif `g1` avec
- * les lectures REST de `councilApi`. Renvoie les faux sockets, l'état modifiable de l'API et un
+ * Mounts the Council page (`makePage` receives the fake-socket factory) on objective `g1` with
+ * the REST reads of `councilApi`. Returns the fake sockets, the API's editable state and a
  * `userEvent`.
  */
 export function renderCouncil(
@@ -30,17 +30,17 @@ export function renderCouncil(
   return { fake: sockets, state: council.state, user: userEvent.setup() };
 }
 
-/** Les sockets ouverts sur le flux de cette session. */
+/** The sockets open on this session's stream. */
 export const socketsOf = (fake: FakeSocketServer, session: string) =>
   fake.sockets.filter((s) => s.url.includes(`/sessions/${session}/stream`));
 
-/** Attend l'ouverture du flux du Conseil (`c1`) et le branche. */
+/** Waits for the Council stream (`c1`) to open and plugs into it. */
 export async function openCouncil(fake: FakeSocketServer) {
   await waitFor(() => expect(socketsOf(fake, "c1")).toHaveLength(1));
   return socketsOf(fake, "c1")[0]!.open();
 }
 
-/** Enregistre les corps reçus par une route POST du back et répond `status` avec `response`. */
+/** Records the bodies received by a back POST route and answers `status` with `response`. */
 export function recordPosts(path: string, status = 202, response: Record<string, unknown> = {}) {
   const bodies: unknown[] = [];
   server.use(
@@ -52,7 +52,7 @@ export function recordPosts(path: string, status = 202, response: Record<string,
   return bodies;
 }
 
-/** Corps d'erreur du back. */
+/** The back's error body. */
 export const apiError = (code: string, message: string, details: unknown = null) => ({
   error: { code, message, details },
 });

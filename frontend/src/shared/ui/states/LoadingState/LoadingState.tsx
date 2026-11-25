@@ -1,7 +1,7 @@
 import { Loader2 } from "lucide-react";
 import { t } from "@/shared/i18n/t";
 
-/** Indicateur de chargement annoncé aux lecteurs d'écran (`role="status"`). */
+/** Loading indicator announced to screen readers (`role="status"`). */
 export function LoadingState({ label }: { label?: string }) {
   return (
     <div

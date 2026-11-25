@@ -1,7 +1,7 @@
 import { http, HttpResponse } from "msw";
 import { API } from "./councilApi";
 
-/** Un graphe de compétences tel que le back le rend (`SkillGraphOut`). */
+/** A skill graph as the back returns it (`SkillGraphOut`). */
 export const graphOut = (over: Record<string, unknown> = {}) => ({
   nodes: [
     { id: "s1", name: "HTML", domain: "web", level: "validated", demand: null, evidence_count: 3 },
@@ -16,7 +16,7 @@ export const graphOut = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
-/** Le détail de la compétence `s2` (`SkillDetailOut`) avec une preuve ancienne, sans date. */
+/** The detail of skill `s2` (`SkillDetailOut`) with an old proof, without a date. */
 export const detailOut = (over: Record<string, unknown> = {}) => ({
   id: "s2",
   name: "CSS",
@@ -66,11 +66,11 @@ interface SkillsApi {
   detail?: () => Response;
   history?: () => Response;
   compare?: (request: Request) => Response;
-  /** `GET /postings` : les offres proposées à la comparaison. */
+  /** `GET /postings`: the offers proposed for comparison. */
   postings?: () => Response;
 }
 
-/** Les quatre lectures de la carte ; `reads.graph` compte les relectures du graphe. */
+/** The four reads of the map; `reads.graph` counts the graph re-reads. */
 export function skillsApi(api: SkillsApi = {}) {
   const reads = { graph: 0, detail: 0, postings: 0, compareQueries: [] as string[] };
   const handlers = [

@@ -2,7 +2,7 @@ import { t } from "@/shared/i18n/t";
 import type { QueryView } from "../sourceTypes";
 import { SourcesBlock } from "./SourcesBlock";
 
-/** Les requêtes lancées : texte, langue, et leur issue (résumé ou « Sans réponse »). */
+/** The queries run: text, language, and their outcome (summary or « Sans réponse »). */
 export function QueryList({ queries }: { queries: QueryView[] }) {
   return (
     <SourcesBlock title={t("session.sources.queries")} count={queries.length}>

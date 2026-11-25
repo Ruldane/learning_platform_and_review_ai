@@ -16,13 +16,13 @@ type Handler<T extends SessionEventType> = (
 ) => SessionViewState;
 type HandlerMap = { [T in SessionEventType]?: Handler<T> };
 
-/** L'agent d'un événement ; repli sur l'agent courant quand l'enveloppe n'en porte pas. */
+/** An event's agent; falls back to the current agent when the envelope does not carry one. */
 const agentOf = (state: SessionViewState, event: SessionEvent): string =>
   event.agent ?? state.currentAgent ?? "agent";
 
 /**
- * Un agent (re)part : les questions posées avant sont répondues (le graphe a repris) et ses tours
- * inachevés, interrompus par un redémarrage ou une pause, cèdent la place au tour rejoué.
+ * An agent (re)starts: questions asked before are answered (the graph resumed) and its
+ * unfinished turns, cut off by a restart or a pause, give way to the replayed turn.
  */
 const onStarted: Handler<"agent.started"> = (state, event) => {
   const agent = agentOf(state, event);
@@ -39,7 +39,7 @@ const onToken: Handler<"agent.token"> = (state, event) => ({
   ...state,
   feed: upsertTurn(state.feed, agentOf(state, event), event.payload.message_id, (turn) => ({
     ...turn,
-    // Un message déjà fini qui se remet à streamer (nœud rejoué, même `message_id`) repart de zéro.
+    // A finished message that streams again (replayed node, same `message_id`) starts over.
     text: turn.streaming || turn.interrupted ? turn.text + event.payload.text : event.payload.text,
     streaming: true,
   })),
@@ -82,7 +82,7 @@ const onToolResult: Handler<"tool.result"> = (state, event) => ({
   })),
 });
 
-/** Une remarque est un événement que les nœuds liront au tour suivant, pas une réponse (D4). */
+/** A remark is an event the nodes read on the next turn, not an answer (D4). */
 const onUserMessage: Handler<"user.message"> = (state, event) => ({
   ...state,
   feed: [
@@ -96,7 +96,7 @@ const onUserMessage: Handler<"user.message"> = (state, event) => ({
   ],
 });
 
-/** Une question reposée (après une pause, même id) remplace son ancienne carte. */
+/** A re-asked question (after a pause, same id) replaces its old card. */
 const onInterrupt: Handler<"interrupt.requested"> = (state, event) => {
   const id = event.payload.interrupt_id;
   const next = statusFromEvent(state, event.seq, {
@@ -134,7 +134,7 @@ const onFailed: Handler<"run.failed"> = (state, event) => ({
   feed: stopStreaming(state.feed),
 });
 
-/** Un type d'événement dédié = une entrée ici ; les autres tombent dans l'item générique `event`. */
+/** A dedicated event type = one entry here; the others fall into the generic `event` item. */
 export const EVENT_HANDLERS: HandlerMap = {
   "agent.started": onStarted,
   "agent.token": onToken,

@@ -1,6 +1,6 @@
 import { createContext, useSyncExternalStore } from "react";
 
-/** Qui fait tourner les agents des parcours lancés depuis l'interface (en-tête `X-Tremplin-Run`). */
+/** Who runs the agents of runs launched from the interface (header `X-Tremplin-Run`). */
 export const RUN_SOURCES = [
   "settings",
   "claude-code",
@@ -14,7 +14,7 @@ export type RunSource = (typeof RUN_SOURCES)[number];
 export const RUN_HEADER = "X-Tremplin-Run";
 export const RunSourceAvailability = createContext<ReadonlySet<string> | undefined>(undefined);
 
-/** Une valeur explicite « settings » remplace aussi le choix global sur cette requête. */
+/** An explicit "settings" value also overrides the global choice on this request. */
 export function runSourceHeaders(source?: RunSource): Record<string, string> | undefined {
   return source === undefined ? undefined : { [RUN_HEADER]: source };
 }
@@ -26,7 +26,7 @@ export function isRunSource(value: unknown): value is RunSource {
   return typeof value === "string" && (RUN_SOURCES as readonly string[]).includes(value);
 }
 
-/** Le choix retenu par ce navigateur ; « selon mes réglages » sans stockage lisible. */
+/** The choice kept by this browser; « selon mes réglages » when nothing readable is stored. */
 export function getRunSource(): RunSource {
   try {
     const saved = globalThis.localStorage?.getItem(STORAGE_KEY);
@@ -40,7 +40,7 @@ export function setRunSource(value: RunSource): void {
   try {
     globalThis.localStorage?.setItem(STORAGE_KEY, value);
   } catch {
-    // stockage refusé : le choix vaut jusqu'au rechargement seulement
+    // storage refused: the choice lasts until reload only
   }
   listeners.forEach((listener) => listener());
 }

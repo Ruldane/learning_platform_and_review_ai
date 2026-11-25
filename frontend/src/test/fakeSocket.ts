@@ -1,13 +1,13 @@
 import type { SessionEvent } from "@/shared/realtime/types";
 import type { SocketFactory, SocketLike } from "@/shared/realtime/socket";
 
-/** Faux WebSocket piloté par le test : aucun réseau, chaque rappel déclenché à la main. */
+/** Fake WebSocket driven by the test: no network, each callback triggered by hand. */
 export class FakeSocket implements SocketLike {
   readonly url: string;
   onopen: (() => void) | null = null;
   onmessage: ((e: { data: string }) => void) | null = null;
   onclose: ((e: { code: number }) => void) | null = null;
-  /** `close()` appelé par le client. */
+  /** `close()` called by the client. */
   closedByClient = false;
 
   constructor(url: string) {
@@ -28,13 +28,13 @@ export class FakeSocket implements SocketLike {
     return this;
   }
 
-  /** Trame brute (pour les trames invalides). */
+  /** Raw frame (for invalid frames). */
   pushRaw(data: string): this {
     this.onmessage?.({ data });
     return this;
   }
 
-  /** Fermeture côté serveur ou réseau (1000 fin, 1006 coupure ou refus avant accept). */
+  /** Close from the server or network (1000 end, 1006 cut or refusal before accept). */
   drop(code: number): this {
     this.onclose?.({ code });
     return this;
@@ -45,7 +45,7 @@ export interface FakeSocketServer {
   factory: SocketFactory;
   sockets: FakeSocket[];
   last(): FakeSocket;
-  /** Sockets ni fermés par le client ni débranchés (plus de rappel de fermeture). */
+  /** Sockets neither closed by the client nor unplugged (no more close callback). */
   openSockets(): FakeSocket[];
 }
 

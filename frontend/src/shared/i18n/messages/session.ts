@@ -1,4 +1,4 @@
-/** Textes d'une session d'agents : flux, erreurs d'action, statut, coût, fil, contrôles, diff. */
+/** Texts for an agent session: stream, action errors, status, cost, feed, controls, diff. */
 export const session = {
   runSource: {
     label: "Who runs the agents",

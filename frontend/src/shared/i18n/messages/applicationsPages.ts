@@ -1,4 +1,4 @@
-/** Textes des pages des candidatures : suivi, fiche, relances, nouvelle fiche, page d'une offre. */
+/** Texts for application pages: tracking, record, follow-ups, new record, job posting page. */
 export const applicationsPages = {
   nav: {
     board: "Tracking",

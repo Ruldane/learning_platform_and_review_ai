@@ -3,7 +3,7 @@ import { useEffect, useRef, type RefObject } from "react";
 import type { BoardApi } from "./boardApi";
 import { REFIT_DELAY_MS, useRefitOnShow } from "./useRefitOnShow";
 
-/** Cadre toute la scène, en laissant la place aux barres d'outils d'Excalidraw (haut et bas). */
+/** Frames the whole scene, leaving room for Excalidraw's toolbars (top and bottom). */
 const FIT = {
   fitToViewport: true,
   viewportZoomFactor: 0.9,
@@ -14,17 +14,17 @@ const FIT = {
 interface Fitting {
   api: BoardApi | null;
   elements: readonly ExcalidrawElement[];
-  /** La scène entière est affichée et stable : un dernier cadrage sur tout son contenu. */
+  /** The whole scene is shown and stable: one last fit to all its content. */
   settled: boolean;
-  /** Le conteneur du canevas, dont la taille passe par zéro quand l'onglet est masqué. */
+  /** The canvas container, whose size drops to zero when the tab is hidden. */
   frame: RefObject<HTMLElement | null>;
   onReady: (api: BoardApi) => void;
 }
 
 /**
- * Tous les cadrages du canevas : à l'arrivée de l'API, une fois la scène stable, juste après la
- * première mesure du canevas (un état déjà vu n'a pas d'animation pour recadrer ensuite) et quand
- * un onglet masqué redevient visible.
+ * All the canvas fits: when the API arrives, once the scene is stable, right after the
+ * first canvas measurement (an already seen state has no animation to fit afterwards), and when
+ * a hidden tab becomes visible again.
  */
 export function useFitting({ api, elements, settled, frame, onReady }: Fitting): void {
   const fitAll = () => api?.scrollToContent(undefined, FIT);
@@ -44,7 +44,7 @@ export function useFitting({ api, elements, settled, frame, onReady }: Fitting):
     if (api && settled) api.scrollToContent(undefined, FIT);
   }, [api, settled]);
 
-  // Le canevas se mesure juste après sa création : un cadrage fait à cet instant tombe à côté.
+  // The canvas is measured right after it is created: a fit done at that moment lands off.
   useEffect(() => {
     if (!api) return undefined;
     const timer = setTimeout(() => api.scrollToContent(undefined, FIT), REFIT_DELAY_MS);

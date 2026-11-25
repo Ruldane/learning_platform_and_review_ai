@@ -5,7 +5,7 @@ import type { LocalAction, SessionEvent, SessionViewState } from "./types";
 
 export interface SessionStoreState {
   sessions: Record<string, SessionViewState>;
-  /** Événements appliqués, par session : triés par `seq`, sans doublon. */
+  /** Applied events, per session: sorted by `seq`, no duplicates. */
   events: Record<string, SessionEvent[]>;
   ingest(sessionId: string, events: SessionEvent[]): void;
   local(sessionId: string, action: LocalAction): void;
@@ -14,7 +14,7 @@ export interface SessionStoreState {
 
 type Stored = Pick<SessionStoreState, "sessions" | "events">;
 
-/** Applique un lot trié ; garde les seuls événements que le réducteur a acceptés (`seq` nouveau). */
+/** Applies a sorted batch; keeps only the events the reducer accepted (new `seq`). */
 function ingestBatch(store: Stored, sessionId: string, batch: SessionEvent[]): Stored | null {
   const current = store.sessions[sessionId] ?? initialSessionState;
   const accepted: SessionEvent[] = [];
@@ -32,8 +32,8 @@ function ingestBatch(store: Stored, sessionId: string, batch: SessionEvent[]): S
 }
 
 /**
- * Fabrique du store : un état de session par identifiant, mis à jour par le réducteur pur.
- * Une instance par test ; l'application partage `useSessionStore`.
+ * Store factory: one session state per id, updated by the pure reducer.
+ * One instance per test; the app shares `useSessionStore`.
  */
 export function createSessionStore() {
   return create<SessionStoreState>()((set) => {
@@ -63,7 +63,7 @@ export function createSessionStore() {
 
 export const useSessionStore = createSessionStore();
 
-/** Sélecteur stable : l'état vide partagé tant que la session n'a reçu aucun événement. */
+/** Stable selector: the shared empty state while the session has received no event. */
 export const selectSession =
   (sessionId: string) =>
   (store: Pick<SessionStoreState, "sessions">): SessionViewState =>
@@ -71,11 +71,11 @@ export const selectSession =
 
 const NO_EVENTS: SessionEvent[] = [];
 
-/** Sélecteur stable des événements d'une session (tableau vide partagé si aucun). */
+/** Stable selector for a session's events (shared empty array if none). */
 export const selectEvents =
   (sessionId: string) =>
   (store: Pick<SessionStoreState, "events">): SessionEvent[] =>
     store.events[sessionId] ?? NO_EVENTS;
 
-// « Tout supprimer » : aucun événement d'une session de l'espace effacé ne reste en mémoire.
+// "Delete everything": no event of a session from the erased space stays in memory.
 onLocalReset(() => useSessionStore.setState({ sessions: {}, events: {} }));

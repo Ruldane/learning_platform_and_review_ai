@@ -6,7 +6,7 @@ interface ToolChipProps {
   call: ToolCallView;
 }
 
-/** L'état d'un appel s'écrit toujours en texte : l'icône ne porte jamais seule l'information. */
+/** A call's state is always written as text: the icon never carries the information alone. */
 function callState(ok: boolean | undefined) {
   if (ok === undefined) {
     return {
@@ -20,7 +20,7 @@ function callState(ok: boolean | undefined) {
     : { Icon: X, label: t("session.tool.failed"), iconClass: "" };
 }
 
-/** Pastille dépliable d'un appel d'outil : nom, état, puis arguments et résumé. */
+/** Expandable chip for a tool call: name, state, then arguments and summary. */
 export function ToolChip({ call }: ToolChipProps) {
   const { Icon, label, iconClass } = callState(call.ok);
   return (

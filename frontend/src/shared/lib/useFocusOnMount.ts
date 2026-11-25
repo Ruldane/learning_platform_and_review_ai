@@ -1,10 +1,10 @@
 import { useEffect, useRef } from "react";
 
 /**
- * Rend le focus à un élément (un titre à `tabIndex={-1}`) quand il apparaît pour remplacer celui
- * qui l'avait : sans cela, démonter le bouton cliqué envoie le focus sur `body` et la personne au
- * clavier repart du haut de la page. N'agit qu'une fois, quand `enabled` devient vrai, jamais au
- * simple chargement d'une page.
+ * Moves focus to an element (a heading with `tabIndex={-1}`) when it appears to replace
+ * the one that had it: otherwise, unmounting the clicked button sends focus to `body` and
+ * a keyboard user starts again from the top of the page. Acts once, when `enabled` turns true,
+ * never on a simple page load.
  */
 export function useFocusOnMount<T extends HTMLElement>(enabled: boolean) {
   const ref = useRef<T>(null);

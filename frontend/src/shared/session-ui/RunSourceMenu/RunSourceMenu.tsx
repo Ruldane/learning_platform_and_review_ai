@@ -5,15 +5,15 @@ import { RUN_SOURCES, type RunSource } from "@/shared/lib/runSource";
 interface RunSourceMenuProps {
   value: RunSource;
   onChange: (value: RunSource) => void;
-  /** Fournisseurs d'API dont une clé est enregistrée ; les autres sont grisés. */
+  /** API providers with a saved key; the others are greyed out. */
   keyed: ReadonlySet<string>;
-  /** Panneau : libellé court ; page de réglages : avec l'explication. */
+  /** Panel: short label; settings page: with the explanation. */
   detailed?: boolean;
 }
 
 const API_SOURCES: ReadonlySet<RunSource> = new Set(["anthropic", "glm", "openai"]);
 
-/** Le menu « Qui fait tourner les agents » : réglages, client MCP ou API d'un fournisseur. */
+/** The « Qui fait tourner les agents » menu: settings, the MCP client, or a provider's API. */
 export function RunSourceMenu({ value, onChange, keyed, detailed = false }: RunSourceMenuProps) {
   const id = useId();
   return (

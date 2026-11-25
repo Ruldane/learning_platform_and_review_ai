@@ -4,8 +4,8 @@ import { webUrl } from "../webUrl";
 import { SourcesBlock } from "./SourcesBlock";
 
 /**
- * « Praticiens repérés » (SPEC 10.3) : nom (lien vers le profil ou la publication), rôle et site
- * où la personne publie. Pas de note : ce ne sont pas des pages à citer.
+ * « Praticiens repérés » (SPEC 10.3): name (link to the profile or publication), role and site
+ * where the person publishes. No rating: these are not pages to cite.
  */
 export function PeopleList({ people }: { people: SourceView[] }) {
   return (

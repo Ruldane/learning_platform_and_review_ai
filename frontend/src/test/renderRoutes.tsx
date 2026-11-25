@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider, type Location, type RouteObject } from "react-router";
 import { createQueryWrapper } from "./queryWrapper";
 
-/** Monte des routes en mémoire à `initial`, avec TanStack Query ; renvoie le routeur et un `userEvent`. */
+/** Mounts in-memory routes at `initial` with TanStack Query; returns the router and `userEvent`. */
 export function renderRoutes(routes: RouteObject[], initial: string | Partial<Location>) {
   const router = createMemoryRouter(routes, { initialEntries: [initial] });
   render(<RouterProvider router={router} />, { wrapper: createQueryWrapper() });

@@ -15,27 +15,27 @@ export interface BoardCanvasProps {
   title: string;
   elements: readonly ExcalidrawElement[];
   files: BinaryFiles;
-  /** Les éléments apparaissent un par un (état du Scribe jamais vu) ; sinon la scène est entière. */
+  /** Elements appear one by one (a state the Scribe has not shown yet); otherwise all at once. */
   animate: boolean;
   reducedMotion: boolean;
   readOnly: boolean;
   onReady: (api: BoardApi) => void;
   /**
-   * Chaque changement signalé par Excalidraw. `reference` : la scène entière est affichée mais le
-   * canevas est encore en lecture seule ; ce sont les ajustements d'Excalidraw, pas January.
-   * Rien n'est transmis pendant l'animation.
+   * Each change reported by Excalidraw. `reference`: the whole scene is shown but the
+   * canvas is still read-only; these are Excalidraw's adjustments, not January's.
+   * Nothing is sent during the animation.
    */
   onSceneChange: (elements: readonly SceneElementLike[], reference: boolean) => void;
 }
 
-/** Identité de la scène : chaque ajustement d'Excalidraw fait monter la version d'un élément. */
+/** Scene identity: each Excalidraw adjustment bumps the version of an element. */
 function sceneKey(elements: readonly { id: string; version?: number }[]): string {
   return elements.map((el) => `${el.id}@${el.version}`).join("|");
 }
 
 /**
- * Le canevas Excalidraw. Chargé par `React.lazy` : Excalidraw (et ses polices) ne pèse que sur
- * l'écran qui affiche un tableau. Pendant l'animation, le canevas est en lecture seule.
+ * The Excalidraw canvas. Loaded by `React.lazy`: Excalidraw (and its fonts) only weighs on
+ * the screen showing a board. During the animation, the canvas is read-only.
  */
 export default function BoardCanvas(props: BoardCanvasProps) {
   const { title, elements, files, animate, reducedMotion, readOnly, onReady, onSceneChange } =
@@ -69,9 +69,9 @@ export default function BoardCanvas(props: BoardCanvasProps) {
           if (!settled && !done) return;
           onSceneChange(current as readonly SceneElementLike[], !settled);
           if (settled) return;
-          // Un ajustement d'Excalidraw avant le calme relance l'attente. Excalidraw appelle
-          // `onChange` à chaque mise à jour, même sans rien changer : seule une scène modifiée
-          // compte, sinon ce rendu en appellerait un autre, sans fin.
+          // An Excalidraw adjustment before things settle restarts the wait. Excalidraw calls
+          // `onChange` on each update, even with nothing changed: only a modified scene
+          // counts, otherwise this render would trigger another one, endlessly.
           const key = sceneKey(current);
           if (key === lastKey.current) return;
           lastKey.current = key;

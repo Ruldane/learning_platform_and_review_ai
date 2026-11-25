@@ -4,11 +4,11 @@ interface EmptyStateProps {
   title: string;
   description?: string;
   action?: { label: string; onClick: () => void };
-  /** `h1` quand l'état remplace toute la page (ex. fiche introuvable) ; `h2` sinon. */
+  /** `h1` when the state replaces the whole page (e.g. record not found); `h2` otherwise. */
   as?: "h1" | "h2";
 }
 
-/** État « rien à afficher » : titre, explication facultative et action facultative. */
+/** Empty state ("nothing to show"): title, optional explanation and optional action. */
 export function EmptyState({ title, description, action, as: Heading = "h2" }: EmptyStateProps) {
   return (
     <section className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border bg-card px-6 py-10 text-center">

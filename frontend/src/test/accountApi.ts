@@ -4,19 +4,19 @@ import { API } from "./councilApi";
 
 interface AccountApiOptions {
   /**
-   * Réponse de `POST /account/delete` : `ok` (204), `refused` (422 `confirmation_required`, qui ne
-   * renvoie jamais la saisie), `down` (500), `wrong-code` (422 d'un autre code), `unavailable`
-   * (503 `vector_store_unavailable`, avant toute suppression), `expired` (401) ou `network`.
+   * Response of `POST /account/delete`: `ok` (204), `refused` (422 `confirmation_required`, which
+   * never returns the input), `down` (500), `wrong-code` (422 of another code), `unavailable`
+   * (503 `vector_store_unavailable`, before any deletion), `expired` (401) or `network`.
    */
   delete?:
     "ok" | "pending" | "refused" | "down" | "wrong-code" | "unavailable" | "expired" | "network";
-  /** Tient la réponse de la suppression jusqu'à l'ouverture de la porte. */
+  /** Holds the deletion response until the gate opens. */
   gate?: Promise<void>;
-  /** Reçoit « delete » quand la suppression arrive : pour l'ordre des appels. */
+  /** Receives « delete » when the deletion arrives: for the order of calls. */
   order?: string[];
 }
 
-/** Faux serveur de « Mes données » ; garde les corps reçus par la suppression. */
+/** Fake « Mes données » server; keeps the bodies received by the deletion. */
 export function accountApi(options: AccountApiOptions = {}) {
   const deleteBodies: unknown[] = [];
   const handlers = [

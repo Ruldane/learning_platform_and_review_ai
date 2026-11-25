@@ -9,14 +9,14 @@ export interface SideTab {
 interface SideTabListProps {
   tabs: SideTab[];
   active: string;
-  /** Nom de la rangée d'onglets (lu par les lecteurs d'écran). */
+  /** Name of the tab row (read by screen readers). */
   label: string;
-  /** Préfixe des identifiants (`<prefix>-tab-<onglet>`, `<prefix>-panel-<onglet>`). */
+  /** Prefix for the ids (`<prefix>-tab-<tab>`, `<prefix>-panel-<tab>`). */
   prefix: string;
   onChange: (id: string) => void;
 }
 
-/** Onglet voisin selon la touche (flèches avec retour au bout, Début, Fin) ; `null` pour toute autre. */
+/** Neighbor tab for the key (arrows wrapping around, Home, End); `null` for any other key. */
 function targetOf(tabs: SideTab[], key: string, from: number): string | null {
   const last = tabs.length - 1;
   if (key === "ArrowRight") return tabs[from === last ? 0 : from + 1]?.id ?? null;
@@ -26,7 +26,7 @@ function targetOf(tabs: SideTab[], key: string, from: number): string | null {
   return null;
 }
 
-/** La rangée d'onglets : un seul est dans l'ordre de tabulation, les flèches font le reste. */
+/** The tab row: only one tab is in the tab order, the arrows do the rest. */
 export function SideTabList({ tabs, active, label, prefix, onChange }: SideTabListProps) {
   const refs = useRef<Record<string, HTMLButtonElement | null>>({});
 

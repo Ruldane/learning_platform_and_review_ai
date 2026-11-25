@@ -12,7 +12,7 @@ interface NavSectionMenuProps {
   onOpenChange: (open: boolean) => void;
 }
 
-/** Une section à plusieurs pages : un bouton qui ouvre un sous-menu (voir `useSectionMenu`). */
+/** A multi-page section: a button that opens a submenu (see `useSectionMenu`). */
 export function NavSectionMenu({ group, current, open, onOpenChange }: NavSectionMenuProps) {
   const { wrapRef, buttonRef, menuRef, close, onButtonKey, onMenuKey, onWrapKey, onWrapBlur } =
     useSectionMenu(open, onOpenChange);

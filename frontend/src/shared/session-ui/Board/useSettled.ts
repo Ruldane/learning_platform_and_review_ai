@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 
 /**
- * Silence attendu après le dernier signal d'Excalidraw. Excalidraw ajuste la scène juste après
- * l'avoir reçue (flèches liées recalculées, texte mesuré, polices appliquées) et signale ces
- * changements avec un léger retard : on les laisse passer avant d'ouvrir l'édition.
+ * Expected quiet after the last Excalidraw signal. Excalidraw adjusts the scene right after
+ * receiving it (linked arrows recalculated, text measured, fonts applied) and reports these
+ * changes with a slight delay: we let them pass before opening editing.
  */
 export const QUIET_MS = 250;
 
-/** `true` quand les polices de la page sont chargées (ou quand le navigateur ne sait pas le dire). */
+/** `true` when the page's fonts are loaded (or when the browser cannot tell). */
 function useFontsReady(): boolean {
   const [ready, setReady] = useState(() => typeof document.fonts === "undefined");
   useEffect(() => {
@@ -24,12 +24,12 @@ function useFontsReady(): boolean {
 }
 
 /**
- * `true` une fois la scène entière affichée et stabilisée : les polices sont chargées
- * (`document.fonts.ready`) et Excalidraw n'a plus rien signalé pendant `QUIET_MS`. Alors seulement
- * le canevas devient modifiable et ses changements comptent comme ceux de January. Chaque
- * changement avant ce moment (`changeTick` croît à chaque signal) relance l'attente et devient la
- * référence des retouches, jamais une retouche. Même sans animation (état déjà vu, mouvement
- * réduit), le canevas reste en lecture seule le temps de ce calme.
+ * `true` once the whole scene is shown and stable: fonts are loaded
+ * (`document.fonts.ready`) and Excalidraw has reported nothing for `QUIET_MS`. Only then
+ * the canvas becomes editable and its changes count as January's. Each
+ * change before that (`changeTick` grows on each signal) restarts the wait and becomes the
+ * reference for edits, never an edit. Even without animation (seen state, reduced motion),
+ * the canvas stays read-only for the length of this quiet period.
  */
 export function useSettled(done: boolean, changeTick: number): boolean {
   const fontsReady = useFontsReady();

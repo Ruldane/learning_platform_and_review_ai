@@ -12,17 +12,17 @@ import { useNarrowScreen } from "./useNarrowScreen";
 type OpenMenu = NavSection | "menu" | null;
 
 /**
- * Les menus de la barre du haut, construits à partir des manifestes (voir `buildNav`) : une
- * section d'une seule page est un lien direct, les autres ouvrent un sous-menu au clic (un seul à
- * la fois, refermé après navigation), centrés dans la barre. Sous 1024 px, un panneau « Menu »
- * prend le relais.
+ * Top bar menus, built from the manifests (see `buildNav`): a single-page section
+ * is a direct link, the others open a submenu on click (only one at a time, closed after
+ * navigation), centered in the bar. Below 1024 px, a « Menu » panel
+ * takes over.
  */
 export function TopNav({ groups, pins = [] }: { groups: NavGroup[]; pins?: NavItem[] }) {
   const { pathname } = useLocation();
   const narrow = useNarrowScreen();
   const current = currentNav(groups, pathname);
-  // Le menu ouvert est lié à la page où il s'est ouvert : une navigation le referme (même quand
-  // elle ne vient pas d'un clic sur un lien du menu).
+  // The open menu is tied to the page where it was opened: any navigation closes it (even
+  // when it does not come from a menu link click).
   const [opened, setOpened] = useState<{ pathname: string; menu: OpenMenu }>({
     pathname,
     menu: null,

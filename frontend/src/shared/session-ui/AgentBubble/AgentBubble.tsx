@@ -8,23 +8,23 @@ interface AgentBubbleProps {
   agent: string;
   text: string;
   streaming: boolean;
-  /** Phrase d'intention de l'agent (jamais un raisonnement brut). */
+  /** The agent's intention phrase (never raw reasoning). */
   intent?: string;
   tools: ToolCallView[];
-  /** Sources citées par le message (pastilles numérotées sous le texte). */
+  /** Sources cited by the message (numbered badges under the text). */
   citations?: Citation[];
 }
 
-/** « Réfléchit », « Cherche » ou « Écrit » selon ce que l'agent fait en ce moment. */
+/** « Réfléchit », « Cherche » or « Écrit », depending on what the agent is doing now. */
 function activityLabel(text: string, tools: ToolCallView[]): string {
   if (tools.some((call) => call.ok === undefined)) return t("session.activity.searching");
   return text === "" ? t("session.activity.thinking") : t("session.activity.writing");
 }
 
 /**
- * Bulle d'un agent : avatar, nom et rôle, intention en italique, texte, appels d'outils.
- * Le texte est une zone `aria-live="polite"` (`aria-busy` tant qu'il s'écrit) : les lecteurs
- * d'écran annoncent la réponse entière une fois terminée, pas chaque token.
+ * An agent bubble: avatar, name and role, intention in italics, text, tool calls.
+ * The text is an `aria-live="polite"` region (`aria-busy` while it is being written): screen
+ * readers announce the full answer once finished, not each token.
  */
 export function AgentBubble({
   agent,

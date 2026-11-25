@@ -6,13 +6,13 @@ import { SourceList } from "./SourceList";
 
 interface SourcesPanelProps {
   model: SourcesViewModel;
-  /** La recherche n'est pas finie : « L'Éclaireur cherche… », annoncé aux lecteurs d'écran. */
+  /** Search not finished: « L'Éclaireur cherche… », announced to screen readers. */
   pending: boolean;
 }
 
 /**
- * Ce que la recherche web a trouvé : les requêtes lancées, puis les sources retenues, écartées
- * (avec la raison) et illisibles. Présentationnel : la page lui passe un modèle de vue (D34).
+ * What the web search found: the queries run, then the sources kept, discarded
+ * (with the reason) and unreadable. Presentational: the page passes it a view model (D34).
  */
 export function SourcesPanel({ model, pending }: SourcesPanelProps) {
   const { queries, kept, rejected, unreadable, people } = model;

@@ -1,7 +1,7 @@
 /**
- * Faux du paquet `monaco-editor` pour Vitest (alias dans `vitest.config.ts`) : `monacoSetup` en
- * importe l'API, les fonctions et le worker, que jsdom ne sait pas charger. Les tests ne s'en
- * servent jamais ; un test dédié lit le texte de `monacoSetup` pour y vérifier le chargement local.
+ * Fake of the `monaco-editor` package for Vitest (alias in `vitest.config.ts`): `monacoSetup`
+ * imports its API, functions and worker, which jsdom cannot load. Tests never
+ * use them; a dedicated test reads the text of `monacoSetup` to check the local loading.
  */
 export default class FakeWorker {}
 export const editor = {};

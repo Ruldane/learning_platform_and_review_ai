@@ -6,9 +6,9 @@ import { NAV_SECTIONS } from "@/shared/lib/navSections";
 export interface NavItem {
   labelKey: MessageKey;
   path: string;
-  /** Hook du nombre à afficher dans une pastille à côté du libellé. */
+  /** Hook returning the number shown in a badge next to the label. */
   useBadge?: () => number | undefined;
-  /** Le texte lu par les lecteurs d'écran pour la pastille (« 3 relances dues »). */
+  /** Text read by screen readers for the badge (« 3 relances dues »). */
   badgeLabel?: (count: number) => string;
 }
 
@@ -16,15 +16,15 @@ export interface NavGroup {
   section: NavSection;
   labelKey: MessageKey;
   icon: LucideIcon;
-  /** Jeton de couleur de la section (voir `NAV_SECTIONS`). */
+  /** Color token of the section (see `NAV_SECTIONS`). */
   color: string;
   items: NavItem[];
   landing?: NavItem;
 }
 
 /**
- * Construit la navigation latérale : une section n'apparaît que si une feature y déclare une
- * entrée ; sections dans l'ordre de `NAV_SECTIONS`, entrées par `order` croissant.
+ * Builds the side navigation: a section appears only if a feature declares an
+ * entry in it; sections follow `NAV_SECTIONS` order, entries sort by ascending `order`.
  */
 export function buildNav(features: FeatureManifest[]): NavGroup[] {
   const entries = features.flatMap((feature) => feature.nav ?? []);

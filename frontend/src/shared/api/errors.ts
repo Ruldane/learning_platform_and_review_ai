@@ -1,6 +1,6 @@
 import { t } from "@/shared/i18n/t";
 
-/** Erreur renvoyée par le back au format `{"error": {"code", "message", "details"}}`. */
+/** Error returned by the back in the format `{"error": {"code", "message", "details"}}`. */
 export class ApiError extends Error {
   code: string;
   details: unknown;
@@ -25,7 +25,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-/** Lit l'enveloppe d'erreur du back ; `null` si le corps n'a pas ce format. */
+/** Reads the back's error envelope; `null` if the body does not have this format. */
 export function parseEnvelope(body: unknown): Envelope | null {
   if (!isRecord(body) || !isRecord(body.error)) return null;
   const { code, message, details } = body.error;
@@ -41,20 +41,20 @@ export function networkError(): ApiError {
   return new ApiError({ code: "network_error", message: t("errors.network"), status: 0 });
 }
 
-/** Construit l'`ApiError` d'une réponse en échec (corps JSON du back, sinon message générique). */
+/** Builds the `ApiError` of a failed response (JSON body from the back, else a generic message). */
 export async function errorFromResponse(response: Response): Promise<ApiError> {
   let body: unknown = null;
   try {
     body = await response.clone().json();
   } catch {
-    // Corps absent ou qui n'est pas du JSON (ex. page HTML d'un 500) : message générique.
+    // Empty body or non-JSON (e.g. an HTML 500 page): generic message.
   }
   const envelope = parseEnvelope(body);
   if (!envelope) return genericError(response.status);
   return new ApiError({ ...envelope, status: response.status });
 }
 
-/** Renvoie `data` ; lève une `ApiError` si le résultat contient une erreur. */
+/** Returns `data`; throws an `ApiError` if the result contains an error. */
 export function unwrap<T>(result: { data?: T; error?: unknown; response: Response }): T {
   if (result.error !== undefined) {
     const envelope = parseEnvelope(result.error);
@@ -64,7 +64,7 @@ export function unwrap<T>(result: { data?: T; error?: unknown; response: Respons
   return result.data as T;
 }
 
-/** Message français à afficher pour une erreur : celui du back pour une `ApiError`, sinon le général. */
+/** French message to show for an error: the back's text for an `ApiError`, else the generic one. */
 export function errorMessage(error: unknown): string {
   return error instanceof ApiError ? error.message : t("errors.generic");
 }

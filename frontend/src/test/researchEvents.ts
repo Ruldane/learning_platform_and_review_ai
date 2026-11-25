@@ -16,8 +16,8 @@ const SOURCE_DEFAULTS = {
 };
 
 /**
- * Fabrique d'événements de la recherche web pour les tests. Chaque appel de `researchEvents()`
- * repart d'un compteur `seq` à 1 : un test = une session.
+ * Web research event factory for tests. Each call to `researchEvents()`
+ * restarts a `seq` counter at 1: one test = one session.
  */
 export function researchEvents(sessionId = "s1") {
   let seq = 0;

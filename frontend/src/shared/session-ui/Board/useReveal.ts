@@ -7,8 +7,8 @@ interface Revealable {
 }
 
 /**
- * Fait apparaître les éléments un par un (200 ms entre deux, SPEC 3.3). `animate` faux ou mouvement
- * réduit : tout est là tout de suite. Rend les éléments visibles et `done` quand il n'en manque plus.
+ * Reveals the elements one by one (200 ms apart, SPEC 3.3). `animate` false or reduced motion:
+ * everything is there at once. Renders the elements visible, and `done` when none are missing.
  */
 export function useReveal<T extends Revealable>(
   elements: readonly T[],

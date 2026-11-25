@@ -6,7 +6,7 @@ import { API } from "./councilApi";
 
 type Over = Record<string, unknown>;
 
-/** Les empreintes sha256 des fichiers, comme le serveur les donne (`file_hashes`). */
+/** SHA-256 hashes of the files, as the server gives them (`file_hashes`). */
 export const hashesOf = (files: Record<string, string>): Record<string, string> =>
   Object.fromEntries(
     Object.entries(files).map(([name, text]) => [
@@ -47,7 +47,7 @@ export const sessionOut = (over: Over = {}) => {
   return { ...session, file_hashes: hashesOf(session.files) };
 };
 
-/** Une exécution de la liste de la séance : par défaut lancée par Claude (MCP), déjà finie. */
+/** A run in the session's list: by default launched by Claude (MCP), already finished. */
 export const runOut = (over: Over = {}) => ({
   id: "rc1",
   session_id: "s1",
@@ -114,20 +114,20 @@ interface IdeApi {
   sessions?: unknown[];
   session?: Over;
   notes?: unknown[];
-  /** Les exécutions de la séance (`GET /ide/sessions/{id}/runs`) ; modifiable en cours de test. */
+  /** The session's runs (`GET /ide/sessions/{id}/runs`); editable during a test. */
   runs?: unknown[];
   usage?: Over;
   preferences?: Over;
-  /** Les lectures successives de `GET /ide/runs/{id}` ; la dernière se répète. */
+  /** Successive reads of `GET /ide/runs/{id}`; the last one repeats. */
   reads?: unknown[];
-  /** La réponse de `POST /teach` (202). */
+  /** The response of `POST /teach` (202). */
   teach?: Over;
-  /** Réponse de `POST /notes/{id}/accept` : la séance après application, ou 409 périmée. */
+  /** Response of `POST /notes/{id}/accept`: the session after applying, or a stale 409. */
   accept?: "ok" | "stale";
   acceptedFiles?: Record<string, string>;
-  /** Réponse de `POST /runs` : « busy » = 409. */
+  /** Response of `POST /runs`: "busy" = 409. */
   run?: "ok" | "busy";
-  /** Des handlers qui passent avant les autres (une panne précise). */
+  /** Handlers that run before the others (a specific failure). */
   override?: HttpHandler[];
 }
 
@@ -150,7 +150,7 @@ const newCalls = () => ({
   runListReads: 0,
 });
 
-/** Les lectures et les écritures des exercices, des séances, des réglages et de la consommation. */
+/** Reads and writes of exercises, sessions, settings and usage. */
 function dataHandlers(api: IdeApi, calls: Calls): HttpHandler[] {
   return [
     http.get(`${API}/ide/exercises`, () => HttpResponse.json(api.exercises ?? [exerciseOut()])),
@@ -183,7 +183,7 @@ function dataHandlers(api: IdeApi, calls: Calls): HttpHandler[] {
         const stale = errorBody("stale_base", "Claude a modifié des fichiers.", { files: clash });
         return HttpResponse.json(stale, { status: 409 });
       }
-      api.session = { ...api.session, files: body.files }; // le serveur garde ce qu'on lui envoie
+      api.session = { ...api.session, files: body.files }; // the server keeps what is sent to it
       return HttpResponse.json(sessionOut(api.session));
     }),
     http.get(`${API}/ide/preferences`, () => HttpResponse.json(preferencesOut(api.preferences))),
@@ -199,7 +199,7 @@ function dataHandlers(api: IdeApi, calls: Calls): HttpHandler[] {
   ];
 }
 
-/** Les fichiers que l'envoi écraserait alors que le serveur n'a plus la version éditée (409). */
+/** The files the upload would overwrite when the server no longer has the edited version (409). */
 function staleFiles(
   current: Record<string, string>,
   body: { files: Record<string, string>; base_hashes?: Record<string, string> },
@@ -210,7 +210,7 @@ function staleFiles(
     .map(([name]) => name);
 }
 
-/** Les exécutions et la lecture de leur sortie. */
+/** The runs and the reading of their output. */
 function runHandlers(api: IdeApi, calls: Calls): HttpHandler[] {
   const reads = [...(api.reads ?? [progress()])] as Over[];
   return [
@@ -236,7 +236,7 @@ function runHandlers(api: IdeApi, calls: Calls): HttpHandler[] {
   ];
 }
 
-/** Le professeur : son réveil, ses notes, les décisions sur les propositions. */
+/** The professor: its wake-up, its notes, the decisions on proposals. */
 function teacherHandlers(api: IdeApi, calls: Calls): HttpHandler[] {
   return [
     http.post(`${API}/ide/sessions/:id/teach`, async ({ request }) => {
@@ -264,7 +264,7 @@ function teacherHandlers(api: IdeApi, calls: Calls): HttpHandler[] {
   ];
 }
 
-/** Faux serveur de l'IDE (les 17 routes utilisées) ; garde les corps et les appels reçus. */
+/** Fake IDE server (the 17 routes used); keeps the bodies and calls received. */
 export function ideApi(api: IdeApi = {}) {
   const calls = newCalls();
   const handlers = [

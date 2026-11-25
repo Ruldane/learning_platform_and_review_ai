@@ -10,7 +10,7 @@ export const OUTPUT_OPTIONS = [
   { value: "finish", label: "Finish" },
 ];
 
-/** La question de sortie de la revue, rejouée dans le flux `r1` (comme après un rechargement). */
+/** The review's exit question, replayed in stream `r1` (as after a reload). */
 export async function askOutput(sockets: FakeSocketServer) {
   const stream = await openStream(sockets, "r1");
   const e = councilEvents("r1");

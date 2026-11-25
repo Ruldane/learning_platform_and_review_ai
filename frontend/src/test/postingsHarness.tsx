@@ -7,8 +7,8 @@ import { renderRoutes } from "./renderRoutes";
 import { server } from "./server";
 
 /**
- * Monte la page d'une offre (`p1`) avec les routes de `postingsApi` et des faux sockets, plus les
- * pages où ses liens mènent.
+ * Mounts a posting's page (`p1`) with the routes of `postingsApi` and fake sockets, plus the
+ * pages its links lead to.
  */
 export function renderPosting(
   makePage: (createSocket: FakeSocketServer["factory"]) => ReactElement,
@@ -33,7 +33,7 @@ export function renderPosting(
   return { ...view, ...postings, sockets };
 }
 
-/** Attend l'ouverture du flux de l'analyse (`a1`) et le branche. */
+/** Waits for the analysis stream (`a1`) to open and plugs into it. */
 export async function openAnalysisStream(sockets: FakeSocketServer) {
   const streams = () => sockets.sockets.filter((s) => s.url.includes("/sessions/a1/stream"));
   await waitFor(() => expect(streams()).toHaveLength(1));

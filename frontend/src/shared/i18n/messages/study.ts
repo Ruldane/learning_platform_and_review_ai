@@ -1,4 +1,4 @@
-/** Textes de la session d'étude : minuteur, modes, question du Tuteur, rythme, bloc du jour, bilan. */
+/** Texts for the study session: timer, modes, tutor question, pace, today's block, wrap-up. */
 export const study = {
   timer: {
     label: "Study timer",

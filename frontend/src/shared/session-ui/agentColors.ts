@@ -1,13 +1,13 @@
 import { t } from "@/shared/i18n/t";
 
 /**
- * Une couleur fixe par agent (SPEC 15.4), reprise dans les bulles, les annotations du tableau et
- * les journaux. Les slugs sont ceux de `AgentSpec.name` côté back ; ceux des phases suivantes sont
- * réservés ici pour que la couleur d'un agent ne change jamais d'un écran à l'autre.
+ * One fixed color per agent (SPEC 15.4), used in bubbles, board annotations and
+ * logs. The slugs are those of `AgentSpec.name` on the back; those of later phases are
+ * reserved here so an agent's color never changes from one screen to another.
  *
- * Chaque couleur atteint un contraste d'au moins 4,5:1 sur le fond blanc cassé (#FAFAF7), donc
- * aussi en blanc sur la couleur (avatar) ; `agentColors.test.ts` le vérifie. La couleur n'est
- * jamais le seul signal : le nom de l'agent est toujours écrit.
+ * Each color reaches a contrast of at least 4.5:1 on the off-white background (#FAFAF7), so
+ * also white on the color (avatar); `agentColors.test.ts` checks it. The color is not
+ * the only signal: the agent's name is always written.
  */
 export const AGENT_COLORS = {
   moderator: "#566e8f",
@@ -46,7 +46,7 @@ export const AGENT_COLORS = {
 
 export type AgentSlug = keyof typeof AGENT_COLORS;
 
-/** Gris neutre (contraste 6:1) des agents inconnus. */
+/** Neutral grey (6:1 contrast) for unknown agents. */
 export const UNKNOWN_AGENT_COLOR = "#57606a";
 
 export interface AgentIdentity {

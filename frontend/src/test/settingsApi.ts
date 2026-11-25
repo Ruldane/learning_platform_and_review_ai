@@ -1,7 +1,7 @@
 import { http, HttpResponse } from "msw";
 import { API } from "./councilApi";
 
-/** Une porte fermée : `promise` pour `settingsApi({ gate })`, `open()` pour la rouvrir. */
+/** A closed gate: `promise` for `settingsApi({ gate })`, `open()` to reopen it. */
 export function closedGate() {
   let open = () => {};
   const promise = new Promise<void>((resolve) => {
@@ -10,10 +10,10 @@ export function closedGate() {
   return { promise, open };
 }
 
-/** Un agent de `GET /settings/agents`. */
+/** An agent from `GET /settings/agents`. */
 export const agentOut = (name: string, tier: string) => ({ name, tier });
 
-/** La 422 du back pour des champs refusés : leurs chemins seulement, jamais une valeur. */
+/** The back's 422 for refused fields: their paths only, never a value. */
 export const refusedFieldsResponse = (...fields: string[]) =>
   HttpResponse.json(
     {
@@ -27,20 +27,20 @@ export const refusedFieldsResponse = (...fields: string[]) =>
   );
 
 interface SettingsApiOptions {
-  /** Les réglages lus (`SettingsOut`) : le premier état du faux serveur. */
+  /** The settings read (`SettingsOut`): the fake server's first state. */
   settings: Record<string, unknown>;
   models?: object;
   keys?: object[];
   agents?: object[];
-  /** Réponse à un `PUT /settings` : une réponse brute (ex. une 422), ou rien pour l'accepter. */
+  /** Response to a `PUT /settings`: a raw response (e.g. a 422), or nothing to accept it. */
   put?: (body: Record<string, unknown>) => Response | undefined;
-  /** Tient chaque `PUT /settings` jusqu'à l'ouverture de la porte : pour agir pendant l'envoi. */
+  /** Holds each `PUT /settings` until the gate opens: to act during the send. */
   gate?: Promise<void>;
 }
 
 /**
- * Ce que rend le vrai back : le budget hebdomadaire est recalculé (5 jours de semaine + le plus
- * long bloc de week-end).
+ * What the real back returns: the weekly budget is recomputed (5 weekdays + the
+ * longest weekend block).
  */
 function withBudget(settings: Record<string, unknown>) {
   const availability = settings.availability as Record<string, number> | undefined;
@@ -53,8 +53,8 @@ function withBudget(settings: Record<string, unknown>) {
 }
 
 /**
- * Faux serveur des réglages : `GET`/`PUT /settings` en mémoire (une écriture se lit ensuite),
- * modèles, clés et agents. Garde les corps reçus et le nombre de lectures des agents.
+ * Fake settings server: `GET`/`PUT /settings` in memory (a write reads back afterwards),
+ * models, keys and agents. Keeps the bodies received and the number of agent reads.
  */
 export function settingsApi(options: SettingsApiOptions) {
   const state = { settings: options.settings };

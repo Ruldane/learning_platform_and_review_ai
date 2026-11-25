@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { NavItem } from "../../buildNav";
 
-/** Une pastille non nulle : son nombre et le texte lu par les lecteurs d'écran. */
+/** A non-zero badge: its count and the text read by screen readers. */
 export interface BadgePart {
   count: number;
   text: string;
@@ -20,8 +20,8 @@ interface BadgeChainProps {
 }
 
 /**
- * Lit la pastille de `head` (un hook, toujours appelé), puis passe la main à l'entrée suivante :
- * un composant par entrée garde l'ordre des hooks stable.
+ * Reads the badge of `head` (a hook, always called), then hands over to the next entry:
+ * one component per entry keeps the hook order stable.
  */
 export function BadgeChain({ head, rest, parts, children }: BadgeChainProps) {
   const { useBadge } = head;

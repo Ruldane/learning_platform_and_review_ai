@@ -1,4 +1,4 @@
-/** Types de vue du tableau : locaux, sans lien avec `shared/api` (D34). */
+/** View types for the board: local, with no link to `shared/api` (D34). */
 export type BoardKind =
   "domain_map" | "prerequisites" | "timeline" | "comparison" | "lesson" | "system_design";
 
@@ -7,17 +7,17 @@ export interface BoardStateView {
   kind: BoardKind;
   title: string;
   step: number;
-  /** Le `flowchart` Mermaid écrit par le Scribe ; jamais de coordonnées. */
+  /** The Mermaid `flowchart` written by the Scribe; never coordinates. */
   mermaid: string;
-  /** Scène Excalidraw enregistrée (états de January) ; `null` tant que le front doit convertir. */
+  /** Saved Excalidraw scene (January's states); `null` while the front end still has to convert. */
   scene: Record<string, unknown> | null;
   author: "scribe" | "tutor" | "user";
   createdAt: string;
 }
 
 /**
- * Textes du tableau propres à la page qui l'affiche (le Tuteur dessine aussi, pas seulement le
- * Scribe) ; absents, ceux du Conseil.
+ * Board texts specific to the page showing it (the Tutor also draws, not only the
+ * Scribe); when absent, the Council's.
  */
 export interface BoardLabels {
   label: string;
@@ -26,13 +26,13 @@ export interface BoardLabels {
   save?: string;
 }
 
-/** Les modifications de January : la scène complète et la note qui les résume pour les agents. */
+/** January's changes: the full scene and the note summarizing them for the agents. */
 export interface BoardEdit {
   scene: Record<string, unknown>;
   note: string;
 }
 
-/** Ce que `annotationNote` lit d'un élément Excalidraw (sous-ensemble, sans dépendre du paquet). */
+/** What `annotationNote` reads of an Excalidraw element (a subset, to avoid the package). */
 export interface SceneElementLike {
   id: string;
   type: string;

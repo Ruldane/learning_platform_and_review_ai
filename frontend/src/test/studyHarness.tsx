@@ -11,8 +11,8 @@ import { server } from "./server";
 import { studyApi } from "./studyApi";
 
 /**
- * Monte la page de la session d'étude `st1` (`makePage` reçoit la fabrique de faux sockets) avec
- * les lectures REST de `studyApi`. Une route `/study/session` d'arrivée dit où l'on est allé.
+ * Mounts the study session page `st1` (`makePage` receives the fake-socket factory) with
+ * the REST reads of `studyApi`. An arrival route `/study/session` says where we went.
  */
 export function renderStudySession(
   makePage: (createSocket: FakeSocketServer["factory"]) => ReactElement,
@@ -33,14 +33,14 @@ export function renderStudySession(
   return { fake: sockets, state: study.state, router, user: userEvent.setup() };
 }
 
-/** Attend l'ouverture du flux de la session d'agents `s1` et le branche. */
+/** Waits for the agent session `s1`'s stream to open and plugs into it. */
 export async function openStudyStream(fake: FakeSocketServer) {
   const streams = () => fake.sockets.filter((s) => s.url.includes("/sessions/s1/stream"));
   await waitFor(() => expect(streams()).toHaveLength(1));
   return streams()[0]!.open();
 }
 
-/** Enregistre les corps reçus par une route PATCH du back et répond `status` avec `response`. */
+/** Records the bodies received by a back PATCH route and answers `status` with `response`. */
 export function recordPatches(path: string, status = 202, response: Record<string, unknown> = {}) {
   const bodies: unknown[] = [];
   server.use(

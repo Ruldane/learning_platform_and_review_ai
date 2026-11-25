@@ -1,19 +1,19 @@
 import { useCallback, useMemo, useState } from "react";
 
 export interface PollingBudget {
-  /** Lectures déjà faites. */
+  /** Reads already done. */
   used: number;
-  /** Le nombre de lectures permis est atteint : on arrête de relire. */
+  /** The allowed number of reads is reached: stop re-reading. */
   exhausted: boolean;
-  /** À appeler à chaque lecture (dans la fonction de lecture de la requête). */
+  /** Call on each read (in the query's read function). */
   spend: () => void;
-  /** Repart de zéro (« Réessayer »). */
+  /** Starts over from zero (« Réessayer »). */
   restart: () => void;
 }
 
 /**
- * Plafond des relectures d'une page qui attend un travail en tâche de fond (quiz en préparation,
- * bilan en rédaction) : une relance périodique ne tourne jamais sans fin.
+ * Cap on re-reads of a page waiting for background work (quiz being prepared,
+ * summary being written): a periodic retry never runs forever.
  */
 export function usePollingBudget(max: number): PollingBudget {
   const [used, setUsed] = useState(0);

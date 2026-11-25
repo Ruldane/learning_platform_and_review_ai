@@ -4,7 +4,7 @@ import { apiError } from "./councilHarness";
 
 type Over = Record<string, unknown>;
 
-/** Les sept pièces, dans l'ordre fixe du serveur. */
+/** The seven pieces, in the server's fixed order. */
 export const KIT_KINDS = [
   "cv",
   "letter",
@@ -15,7 +15,7 @@ export const KIT_KINDS = [
   "pitch",
 ] as const;
 
-/** Une pièce pas encore rangée (`KitItemOut`, statut `pending`). */
+/** A piece not yet stored (`KitItemOut`, status `pending`). */
 export const pendingItem = (kind: string): Over => ({
   id: null,
   kind,
@@ -30,7 +30,7 @@ export const pendingItem = (kind: string): Over => ({
   updated_at: null,
 });
 
-/** Une pièce rangée, `ready` par défaut. */
+/** A stored piece, `ready` by default. */
 export const kitItem = (kind: string, over: Over = {}): Over => ({
   ...pendingItem(kind),
   id: `k-${kind}`,
@@ -42,21 +42,21 @@ export const kitItem = (kind: string, over: Over = {}): Over => ({
 });
 
 export interface KitApiOptions {
-  /** Les pièces déjà rangées ; les autres sont `pending`. */
+  /** Pieces already stored; the others are `pending`. */
   items?: Over[];
   running?: boolean;
   sessionId?: string | null;
-  /** Remplace la lecture du kit (une panne, par exemple) : `undefined` laisse la réponse normale. */
+  /** Overrides reading the kit (a failure, for example): `undefined` keeps the normal response. */
   read?: () => Response | undefined;
-  /** Remplace le lancement (`POST /applications/{id}/kit`). */
+  /** Overrides starting the kit (`POST /applications/{id}/kit`). */
   start?: () => Response;
-  /** Remplace la modification d'une pièce. */
+  /** Overrides editing a piece. */
   patch?: (kind: string, body: Over) => Response;
 }
 
 let tick = 0;
 
-/** Ce que le serveur fait d'un texte modifié : pièce modifiée, relue (à vérifier → prête si rien ne manque). */
+/** What the server does with edited text: piece edited, re-read (ready if nothing is missing). */
 function applyPatch(item: Over, content: string) {
   tick += 1;
   item.content = content;
@@ -124,8 +124,8 @@ function writeRoutes({ options, state, items }: Context) {
 }
 
 /**
- * Les routes du kit, en mémoire : une pièce qui arrive (`arrive`) ou une modification change ce que
- * `GET /applications/{id}/kit` rend ensuite, comme le vrai serveur. `state` garde les appels reçus.
+ * The kit routes, in memory: a piece arriving (`arrive`) or an edit changes what
+ * `GET /applications/{id}/kit` returns next, as the real server does. `state` keeps the calls.
  */
 export function kitApi(options: KitApiOptions = {}) {
   const items: Over[] = KIT_KINDS.map(
@@ -136,11 +136,11 @@ export function kitApi(options: KitApiOptions = {}) {
     state: ctx.state,
     items,
     handlers: [...readRoutes(ctx), ...writeRoutes(ctx)],
-    /** Le serveur range une pièce (ce que fait la session avant d'émettre `artifact.ready`). */
+    /** The server stores a piece (what the session does before emitting `artifact.ready`). */
     arrive(kind: string, over: Over = {}) {
       items[items.findIndex((item) => item.kind === kind)] = kitItem(kind, over);
     },
-    /** La session est finie. */
+    /** The session is finished. */
     finish() {
       ctx.state.running = false;
     },

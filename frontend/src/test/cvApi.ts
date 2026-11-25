@@ -18,14 +18,14 @@ export * from "./cvFixtures";
 type Reply = (request: Request) => Response | Promise<Response>;
 
 interface CvApi {
-  /** Lectures successives de `GET /profile` ; la dernière se répète. */
+  /** Successive reads of `GET /profile`; the last one repeats. */
   profiles?: Over[];
   profileVersions?: Over[];
   profile?: () => Response;
   putProfile?: Reply;
   importProfile?: Reply;
   templates?: Over[][];
-  /** Remplace la lecture de la liste des modèles (une panne, par exemple). */
+  /** Overrides reading the list of templates (a failure, for example). */
   templateList?: () => Response;
   template?: Over[];
   templateRead?: () => Response;
@@ -38,7 +38,7 @@ interface CvApi {
   patchBulk?: Reply;
   generate?: Reply;
   versions?: Over[];
-  /** Remplace la lecture de la liste des versions (une panne, par exemple). */
+  /** Overrides reading the list of versions (a failure, for example). */
   versionList?: () => Response;
   version?: Over;
   postings?: Over[];
@@ -46,13 +46,13 @@ interface CvApi {
 
 const at = <T>(items: T[], index: number): T => items[Math.min(index, items.length - 1)]!;
 
-/** Un refus du back au format d'erreur. */
+/** A back refusal in the error format. */
 export const refusal = (status: number, code: string, message: string, details: unknown = null) =>
   HttpResponse.json(apiError(code, message, details), { status });
 
 const newState = () => ({
   puts: [] as unknown[],
-  /** Le `content-type` de chaque envoi : jsdom ne relit pas un corps multipart. */
+  /** The `content-type` of each send: jsdom does not re-read a multipart body. */
   imports: [] as string[],
   creates: [] as string[],
   patches: [] as { id: string; body: unknown }[],
@@ -184,8 +184,8 @@ function versionRoutes(api: CvApi) {
 }
 
 /**
- * Les routes du profil, des modèles, des revues et des versions de CV. `state` garde les corps
- * reçus (profil enregistré, envois, décisions, générations) et le nombre de lectures.
+ * The routes for the profile, templates, reviews and CV versions. `state` keeps the bodies
+ * received (saved profile, uploads, decisions, generations) and the number of reads.
  */
 export function cvApi(api: CvApi = {}) {
   const state = newState();

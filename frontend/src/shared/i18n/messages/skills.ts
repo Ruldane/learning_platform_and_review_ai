@@ -1,6 +1,6 @@
 import { memory } from "./memory";
 
-/** Textes de la carte de compétences : graphe, légende, radar, progression, tiroir, comparaison. */
+/** Texts for the skills map: graph, legend, radar, progress, drawer, comparison. */
 export const skills = {
   nav: { map: "Map" },
   page: {

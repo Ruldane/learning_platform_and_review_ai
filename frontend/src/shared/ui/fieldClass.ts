@@ -1,6 +1,6 @@
 /**
- * Classes communes aux champs de saisie natifs (texte, mot de passe, liste déroulante). Un champ
- * `aria-invalid` change de cadre : l'état n'est jamais porté par la seule couleur d'un texte.
+ * Classes shared by native input fields (text, password, dropdown). A field with
+ * `aria-invalid` changes its frame: the state is never carried by color alone.
  */
 export const fieldClass =
   "h-8 w-full min-w-0 rounded-lg border border-border bg-background px-2.5 text-sm outline-none " +

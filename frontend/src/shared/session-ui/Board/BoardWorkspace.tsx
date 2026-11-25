@@ -9,21 +9,21 @@ import { usePrefersReducedMotion } from "./usePrefersReducedMotion";
 
 interface BoardWorkspaceProps {
   state: BoardStateView;
-  /** Le Scribe dessine cet état pour la première fois : ses éléments apparaissent un par un. */
+  /** The Scribe draws this state for the first time: its elements appear one by one. */
   animate: boolean;
   readOnly: boolean;
   sending: boolean;
   onSendEdit: (boardId: string, edit: BoardEdit) => void | Promise<void>;
-  /** Le canevas de cet état s'est affiché : il ne sera plus animé quand on y reviendra. */
+  /** This state's canvas has been shown: it will not be animated again when returning to it. */
   onSeen: (id: string) => void;
-  /** January a des modifications non envoyées sur cet état (ou n'en a plus). */
+  /** January has unsent changes on this state (or no longer has any). */
   onDirtyChange: (id: string, dirty: boolean) => void;
-  /** Texte de l'attente pendant la conversion du schéma. */
+  /** Waiting text during the schema conversion. */
   drawingLabel: string;
   saveLabel?: string | undefined;
 }
 
-/** Un état du tableau : canevas, barre d'actions et repli Mermaid. Remonté à chaque état. */
+/** A board state: canvas, action bar and Mermaid fallback. Remounted on each state. */
 export function BoardWorkspace(props: BoardWorkspaceProps) {
   const { state, readOnly, sending, onSendEdit, onSeen, onDirtyChange } = props;
   const scene = useBoardScene(state);
@@ -40,7 +40,7 @@ export function BoardWorkspace(props: BoardWorkspaceProps) {
   const [animate] = useState(props.animate);
 
   useEffect(() => {
-    // Identifiant seulement : jamais le code Mermaid (SPEC 17.4).
+    // Identifier only: never the Mermaid code (SPEC 17.4).
     if (scene.status === "failed") console.error("board_fallback", { boardId: state.id });
     if (scene.status === "ready") onSeen(state.id);
   }, [scene.status, state.id, onSeen]);

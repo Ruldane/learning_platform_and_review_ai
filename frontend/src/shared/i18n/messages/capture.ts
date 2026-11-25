@@ -1,4 +1,4 @@
-/** Textes de la capture rapide (Ctrl+K) et du journal d'apprentissage. */
+/** Texts for quick capture (Ctrl+K) and the learning journal. */
 export const capture = {
   nav: { journal: "Journal" },
   topbar: {

@@ -1,4 +1,4 @@
-/** Textes de l'écran Accès MCP (phase 10, 10.C2) : jetons, demandes à confirmer, historique, niveaux. */
+/** Texts for the MCP access screen (phase 10, 10.C2): tokens, pending requests, history, levels. */
 export const mcp = {
   nav: { access: "MCP access" },
   page: {
@@ -165,7 +165,7 @@ export const mcp = {
     four: "Level 4, never opened: API keys and secrets, sign-in and allowed addresses, model settings, and the MCP token itself.",
   },
   level: { l0: "Denied", l1: "Read", l2: "Undoable write", l3: "To confirm" },
-  /** Les noms des features du back ; une feature inconnue garde son nom brut. */
+  /** The back's feature names; an unknown feature keeps its raw name. */
   features: {
     blind_assessment: "Blind assessment",
     brain: "Brain",

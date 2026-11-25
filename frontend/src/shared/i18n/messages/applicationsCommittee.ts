@@ -1,4 +1,4 @@
-/** Textes du comité de recrutement simulé : page, commandes, votes, verdict, avant / après. */
+/** Texts for the simulated recruitment committee: page, commands, votes, verdict, before/after. */
 export const applicationsCommittee = {
   committeePage: {
     title: "Simulated hiring committee",

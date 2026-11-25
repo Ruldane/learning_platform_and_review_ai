@@ -1,7 +1,7 @@
 import { apiBaseUrl } from "@/shared/api/client";
 import type { SessionEvent } from "./types";
 
-/** Ce que le flux attend d'un WebSocket : assez petit pour qu'un faux le remplace en test. */
+/** What the stream expects from a WebSocket: small enough that a fake can replace it in tests. */
 export interface SocketLike {
   onopen: (() => void) | null;
   onmessage: ((e: { data: string }) => void) | null;
@@ -11,7 +11,7 @@ export interface SocketLike {
 
 export type SocketFactory = (url: string) => SocketLike;
 
-/** Adapte le `WebSocket` du navigateur (seules les trames texte comptent : le serveur envoie du JSON). */
+/** Adapts the browser's `WebSocket` (only text frames count: the server sends JSON). */
 export const browserSocket: SocketFactory = (url) => {
   const ws = new WebSocket(url);
   const socket: SocketLike = {
@@ -28,35 +28,35 @@ export const browserSocket: SocketFactory = (url) => {
   return socket;
 };
 
-/** `http(s)://hôte` → `ws(s)://hôte/api/v1/sessions/{id}/stream?after_seq=N`. */
+/** `http(s)://host` → `ws(s)://host/api/v1/sessions/{id}/stream?after_seq=N`. */
 export function sessionStreamUrl(sessionId: string, afterSeq: number): string {
   const base = apiBaseUrl.replace(/^http/i, "ws").replace(/\/+$/, "");
   return `${base}/api/v1/sessions/${encodeURIComponent(sessionId)}/stream?after_seq=${afterSeq}`;
 }
 
 export const RECONNECT_DELAYS_MS = [500, 1000, 2000, 4000, 8000] as const;
-/** Attente après la liste ci-dessus. */
+/** Delay once the list above is exhausted. */
 export const RECONNECT_FALLBACK_MS = 10_000;
-/** Fermetures anormales d'affilée (sans aucune donnée reçue entre elles) avant d'abandonner. */
+/** Consecutive abnormal closes (no data received between them) before giving up. */
 export const MAX_RECONNECT_ATTEMPTS = 8;
 
-/** Attente avant la reconnexion numéro `attempt` (1 pour la première). */
+/** Wait before reconnection number `attempt` (1 for the first). */
 export function reconnectDelay(attempt: number): number {
   return RECONNECT_DELAYS_MS[attempt - 1] ?? RECONNECT_FALLBACK_MS;
 }
 
-/** Codes de fermeture reçus du serveur. */
-export const CLOSE_FINISHED = 1000; // session terminée : fin définitive du flux
+/** Close codes received from the server. */
+export const CLOSE_FINISHED = 1000; // session ended: final end of the stream
 /**
- * Refus de politique. Inatteignable aujourd'hui depuis un navigateur : le serveur refuse l'origine,
- * un `after_seq` invalide ou un 401 AVANT `accept`, et le navigateur n'en voit qu'un 1006 anonyme
- * (D47, D49). Gardé pour un refus qui viendrait un jour après `accept`.
+ * Policy refusal. Unreachable from a browser today: the server refuses the origin,
+ * an invalid `after_seq` or a 401 BEFORE `accept`, and the browser only sees an anonymous 1006
+ * (D47, D49). Kept for a refusal that might one day come after `accept`.
  */
 export const CLOSE_POLICY = 1008;
-/** Session inconnue ou d'un autre utilisateur : fermée APRÈS `accept`, code lisible (D47 §3). */
+/** Unknown session, or another user's: closed AFTER `accept`, readable code (D47 §3). */
 export const CLOSE_NOT_FOUND = 4404;
 
-/** Lit une trame ; `null` si ce n'est pas un événement de session (trame ignorée). */
+/** Reads a frame; `null` if it is not a session event (frame ignored). */
 export function parseEventFrame(data: string): SessionEvent | null {
   let value: unknown;
   try {

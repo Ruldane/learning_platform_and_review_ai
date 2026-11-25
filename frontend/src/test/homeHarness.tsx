@@ -6,7 +6,7 @@ import { homeApi, type HomeApiOptions } from "./homeApi";
 import { renderRoutes } from "./renderRoutes";
 import { server } from "./server";
 
-/** Les pages où les liens de l'accueil mènent : des repères, pour vérifier qu'on y arrive. */
+/** The pages the home links lead to: landmarks, to check that we arrive there. */
 const LANDINGS = [
   { path: "/study/session", element: <p>{"Page de la session d'étude"}</p> },
   { path: "/study/reviews", element: <p>Page des révisions</p> },
@@ -16,8 +16,8 @@ const LANDINGS = [
 ];
 
 /**
- * Monte l'accueil à `/` (`makeUi` reçoit la fabrique de faux sockets) avec le brief et le fil en
- * mémoire de `homeApi` ; les pages où ses liens mènent sont des repères.
+ * Mounts home at `/` (`makeUi` receives the fake-socket factory) with the brief and the feed in
+ * memory from `homeApi`; the pages its links lead to are landmarks.
  */
 export function renderHome(
   makeUi: (createSocket: FakeSocketServer["factory"]) => ReactElement,
@@ -30,7 +30,7 @@ export function renderHome(
   return { ...view, ...backend, sockets };
 }
 
-/** Attend l'ouverture du flux de la session `id` et le branche. */
+/** Waits for session `id`'s stream to open and plugs into it. */
 export async function openStream(sockets: FakeSocketServer, id: string) {
   const streams = () => sockets.sockets.filter((s) => s.url.includes(`/sessions/${id}/stream`));
   await waitFor(() => expect(streams()).toHaveLength(1));

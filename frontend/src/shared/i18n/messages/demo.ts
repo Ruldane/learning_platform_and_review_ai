@@ -1,4 +1,4 @@
-/** Textes de la démo du moteur d'agents. */
+/** Texts for the agent engine demo. */
 export const demo = {
   title: "Agent engine demo",
   intro:

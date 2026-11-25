@@ -13,7 +13,7 @@ function snapshot(): boolean {
   return typeof window.matchMedia === "function" && window.matchMedia(QUERY).matches;
 }
 
-/** `true` quand l'utilisatrice a demandé moins de mouvement : le tableau apparaît d'un coup. */
+/** `true` when the user asked for less motion: the board appears at once. */
 export function usePrefersReducedMotion(): boolean {
   return useSyncExternalStore(subscribe, snapshot, () => false);
 }

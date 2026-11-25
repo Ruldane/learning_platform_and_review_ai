@@ -3,7 +3,7 @@ import { applicationsInterview } from "./applicationsInterview";
 import { applicationsKit } from "./applicationsKit";
 import { applicationsPages } from "./applicationsPages";
 
-/** Textes des candidatures : tableau, tableau de suivi, relances, alerte de doublon, fil, indicateurs. */
+/** Texts for applications: table, tracking table, follow-ups, duplicate alert, feed, indicators. */
 export const applications = {
   ...applicationsPages,
   ...applicationsKit,

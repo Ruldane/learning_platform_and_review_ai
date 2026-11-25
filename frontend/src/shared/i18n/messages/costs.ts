@@ -1,11 +1,11 @@
-/** Textes des écrans Coûts et Journal des agents (SPEC 11.5, 15.1). */
+/** Texts for the Costs and Agent Log screens (SPEC 11.5, 15.1). */
 export const costs = {
   nav: { costs: "Costs", log: "Agent log" },
   noSession: "No session",
   noAgent: "No agent",
   estimatedTag: "estimated",
   /**
-   * Le libellé de chaque parcours (`GRAPHS` côté back) ; un parcours inconnu garde son nom brut.
+   * The label of each run (`GRAPHS` on the back); an unknown run keeps its raw name.
    */
   graphs: {
     demo_debate: "Demo debate",

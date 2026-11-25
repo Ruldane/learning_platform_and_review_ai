@@ -16,9 +16,9 @@ const NAV_GROUPS = navigationGroups(DESTINATIONS);
 type PageFlag = "wide" | "bare";
 
 /**
- * Une route peut demander la pleine largeur (`handle: { wide: true }` : le Conseil a deux zones) ou
- * une page nue (`handle: { bare: true }` : ni menus ni panneau, comme le
- * premier lancement, dont un clic de navigation ferait perdre la saisie).
+ * A route can ask for full width (`handle: { wide: true }`: the Council has two areas) or
+ * a bare page (`handle: { bare: true }`: no menus or panel, like the
+ * first-run setup, where a navigation click would lose the typed input).
  */
 function usePageFlag(flag: PageFlag): boolean {
   return useMatches().some(
@@ -27,10 +27,10 @@ function usePageFlag(flag: PageFlag): boolean {
 }
 
 /**
- * Coquille : lien d'évitement, barre du haut (menus centrés), panneau de gauche (nom, « Tu es ici »,
- * voyant de santé, emplacements `topbar` des features ; une ligne compacte sous 1024 px), contenu et
- * surcouches des features (`shell.overlay`), le tout derrière les portes des features
- * (`shell.gate` : connexion, premier lancement).
+ * Shell: skip link, top bar (centered menus), left panel (name, « Tu es ici », health
+ * indicator, feature `topbar` slots; a compact line below 1024 px), content and
+ * feature overlays (`shell.overlay`), all behind the feature gates
+ * (`shell.gate`: sign-in, first run).
  */
 export function AppLayout() {
   const wide = usePageFlag("wide");

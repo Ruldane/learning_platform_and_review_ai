@@ -2,7 +2,7 @@ import ReactMarkdown, { type Components } from "react-markdown";
 
 const HTTP_URL = /^https?:\/\//i;
 
-/** Seules les adresses http(s) passent : jamais `javascript:` ni `data:`. */
+/** Only http(s) addresses pass: never `javascript:` or `data:`. */
 const httpUrlOnly = (url: string) => (HTTP_URL.test(url) ? url : "");
 
 const COMPONENTS: Components = {
@@ -28,9 +28,9 @@ const COMPONENTS: Components = {
 };
 
 /**
- * Les réponses en Markdown sûr : paragraphes, listes, `code` en ligne, blocs de code. Le
- * contenu n'est pas fiable (SPEC 17.2) : le HTML brut est retiré (`skipHtml`), seules les adresses
- * http(s) passent, aucune image n'est chargée.
+ * Replies in safe Markdown: paragraphs, lists, inline `code`, code blocks. Content
+ * is not trusted (SPEC 17.2): raw HTML is stripped (`skipHtml`), only http(s) addresses
+ * pass, and no image is loaded.
  */
 export function ChatMarkdown({
   children,

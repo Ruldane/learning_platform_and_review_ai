@@ -1,11 +1,11 @@
-/** Pause entre deux éléments du tableau que le Scribe remplit (SPEC 3.3 : 150 à 300 ms). */
+/** Pause between two board elements the Scribe fills in (SPEC 3.3: 150 to 300 ms). */
 export const REVEAL_STEP_MS = 200;
 const MIN_STEP_MS = 150;
 const MAX_STEP_MS = 300;
 
 /**
- * Délais cumulés (ms) d'apparition de `count` éléments : le premier tout de suite, puis un pas
- * borné à [150, 300]. Mouvement réduit : tout apparaît d'un coup.
+ * Cumulative delays (ms) for `count` elements to appear: the first at once, then a step
+ * bounded to [150, 300]. Reduced motion: everything appears at once.
  */
 export function revealDelays(
   count: number,
@@ -22,8 +22,8 @@ interface Revealable {
 }
 
 /**
- * Groupes d'éléments qui apparaissent ensemble, dans l'ordre du convertisseur (ordre d'écriture
- * du Mermaid) : une étiquette liée à une forme apparaît avec elle, pas après.
+ * Groups of elements that appear together, in the converter's order (Mermaid write order):
+ * a label attached to a shape appears with it, not after.
  */
 export function revealUnits<T extends Revealable>(elements: readonly T[]): T[][] {
   const unitOf = new Map<string, T[]>();

@@ -1,7 +1,7 @@
 import { http, HttpResponse } from "msw";
 import { API } from "./councilApi";
 
-/** Les deux questions d'un quiz, dans l'ordre du premier essai. */
+/** The two questions of a quiz, in first-attempt order. */
 export const firstOrder = [
   {
     id: "q1",
@@ -14,13 +14,13 @@ export const firstOrder = [
   { id: "q2", rank: 2, type: "short", prompt: "Que fait PUT ?", code: null, choices: [] },
 ];
 
-/** Les mêmes questions au nouvel essai : l'ordre est mélangé (F27). */
+/** The same questions on the retry: the order is shuffled (F27). */
 export const secondOrder = [
   { ...firstOrder[1]!, rank: 1 },
   { ...firstOrder[0]!, rank: 2, choices: ["POST", "GET"] },
 ];
 
-/** Un quiz tel que le back le rend (`QuizOut`). */
+/** A quiz as the back returns it (`QuizOut`). */
 export const quizOut = (over: Record<string, unknown> = {}) => ({
   id: "z1",
   module_id: "m1",
@@ -33,7 +33,7 @@ export const quizOut = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
-/** Une tentative notée (`AttemptOut`) : un QCM juste, une réponse courte fausse. */
+/** A graded attempt (`AttemptOut`): one correct multiple choice, one wrong short answer. */
 export const attemptOut = (over: Record<string, unknown> = {}) => ({
   id: "a1",
   status: "graded",
@@ -54,17 +54,17 @@ export const attemptOut = (over: Record<string, unknown> = {}) => ({
 });
 
 interface QuizApi {
-  /** Les lectures successives de `GET /quizzes/z1` (la dernière est répétée). */
+  /** Successive reads of `GET /quizzes/z1` (the last one repeats). */
   quizzes?: Record<string, unknown>[];
-  /** Les lectures successives de `GET /quizzes/z1/attempts/a1` (la dernière est répétée). */
+  /** Successive reads of `GET /quizzes/z1/attempts/a1` (the last one repeats). */
   attempts?: Record<string, unknown>[];
-  /** Les lectures de la tentative `a2` (un renvoi des réponses) ; la dernière est répétée. */
+  /** Reads of attempt `a2` (a resend of the answers); the last one repeats. */
   retryAttempts?: Record<string, unknown>[];
-  /** Remplace la réponse de `GET /quizzes/z1` (une erreur, une lecture qui change). */
+  /** Overrides the response of `GET /quizzes/z1` (an error, or a read that changes). */
   quizReply?: () => Response;
 }
 
-/** Lectures REST d'une page de quiz : le quiz `z1` et sa tentative `a1`, qui évoluent à chaque lecture. */
+/** REST reads of a quiz page: quiz `z1` and its attempt `a1`, which change on each read. */
 export function quizApi(api: QuizApi = {}) {
   const quizzes = api.quizzes ?? [quizOut()];
   const attempts = api.attempts ?? [attemptOut()];

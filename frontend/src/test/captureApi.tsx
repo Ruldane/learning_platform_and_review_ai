@@ -10,8 +10,8 @@ import { createQueryWrapper } from "./queryWrapper";
 import { server } from "./server";
 
 /**
- * Monte la capture (`makeUi` reçoit la fabrique de faux sockets) dans un routeur en mémoire, avec
- * le statut de la session de capture `s5` et une page d'arrivée pour le journal.
+ * Mounts the capture (`makeUi` receives the fake-socket factory) in an in-memory router, with
+ * the status of capture session `s5` and a landing page for the journal.
  */
 export function renderCapture(makeUi: (createSocket: FakeSocketServer["factory"]) => ReactElement) {
   const sockets = createFakeSocketServer();
@@ -33,14 +33,14 @@ export function renderCapture(makeUi: (createSocket: FakeSocketServer["factory"]
   return { fake: sockets, router, user: userEvent.setup() };
 }
 
-/** Attend l'ouverture du flux de la session de capture `s5` et le branche. */
+/** Waits for capture session `s5`'s stream to open and plugs into it. */
 export async function openCaptureStream(fake: FakeSocketServer) {
   const streams = () => fake.sockets.filter((s) => s.url.includes("/sessions/s5/stream"));
   await waitFor(() => expect(streams()).toHaveLength(1));
   return streams()[0]!.open();
 }
 
-/** Une entrée du journal telle que le back la rend (`JournalEntryOut`). */
+/** A journal entry as the back returns it (`JournalEntryOut`). */
 export const entryOut = (id: string, over: Record<string, unknown> = {}) => ({
   id,
   kind: "capture",
