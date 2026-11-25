@@ -1,4 +1,4 @@
-"""Reprend la purge vectorielle des comptes Google déjà effacés."""
+"""Resumes the vector purge of Google accounts that were already erased."""
 
 from app.features.account.service.vector_purges import retry_vector_purges
 from app.scheduler.base import JobContext

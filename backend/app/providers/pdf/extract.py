@@ -1,8 +1,8 @@
-"""Extraction locale du texte d'un PDF avec `pdfplumber` (aucun service externe).
+"""Local text extraction from a PDF with `pdfplumber` (no external service).
 
-Au chargement, ce module n'importe que `pdfplumber` : le worker en sous-processus (`worker.py`)
-l'importe sans tirer FastAPI, dont `PdfUnreadable` hérite par `AppError`. `base` est donc importé
-à l'usage (D72)."""
+At load time, this module imports only `pdfplumber`: the subprocess worker (`worker.py`) imports
+it without pulling in FastAPI (`PdfUnreadable` inherits from `AppError`, which needs it). `base`
+is therefore imported at use (D72)."""
 
 import asyncio
 import io
@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 class PdfPlumberExtractor:
-    """Travail bloquant dans un thread, sans délai réel ni plafond de mémoire : la composition
-    utilise `SubprocessPdfExtractor`. Les plafonds sont lus à chaque appel dans `base`."""
+    """Blocking work in a thread, with no real deadline nor memory cap: the composition uses
+    `SubprocessPdfExtractor`. The caps are read at each call in `base`."""
 
     async def extract_text(self, data: bytes) -> str:
         from app.providers.pdf import base
@@ -26,9 +26,9 @@ class PdfPlumberExtractor:
 
 
 def extract_pdf_text(data: bytes, max_pages: int, max_chars: int) -> str:
-    """Texte des `max_pages` premières pages, tronqué à `max_chars` ; `PdfUnreadable` sinon."""
+    """Text of the first `max_pages` pages, truncated to `max_chars`; `PdfUnreadable` otherwise."""
     try:
-        # `pages` évite de construire les pages au-delà du plafond.
+        # `pages` avoids building the pages beyond the cap.
         with pdfplumber.open(io.BytesIO(data), pages=list(range(1, max_pages + 1))) as pdf:
             parts: list[str] = []
             size = 0
@@ -40,7 +40,7 @@ def extract_pdf_text(data: bytes, max_pages: int, max_chars: int) -> str:
                 if size >= max_chars:
                     break
     except Exception as exc:
-        # Type seul : le message d'une exception de pdfminer peut citer un extrait du fichier.
+        # Type only: the message of a pdfminer exception can quote an extract of the file.
         logger.info("PDF illisible (%s)", type(exc).__name__)
         error = _unreadable()
     else:

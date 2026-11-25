@@ -1,4 +1,4 @@
-"""Autorisation Agenda séparée et aperçus à confirmer."""
+"""Separate Calendar authorization and previews to confirm."""
 
 from datetime import datetime
 from typing import Any

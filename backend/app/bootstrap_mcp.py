@@ -1,8 +1,7 @@
-"""Composition du serveur MCP (phase 10) : la porte (jetons, limites, journal) et le point d'entrée
-`POST /mcp`, monté ici hors de `/api/v1` et hors du contrat. Les outils et l'envoyeur viennent de
-10.B2 (`install_adapter`) ; sans déclaration, la porte répond mais n'expose aucun outil. Comme
-`app.bootstrap`,
-seul `app.main` l'importe, par `app.bootstrap` (contrat 5)."""
+"""MCP server wiring (phase 10): the gate (tokens, limits, journal) and the entry point
+`POST /mcp`, mounted here outside `/api/v1` and outside the contract. The tools and the sender
+come from 10.B2 (`install_adapter`); without a declaration, the gate answers but exposes no
+tool. As with `app.bootstrap`, only `app.main` imports it, via `app.bootstrap` (contract 5)."""
 
 from collections.abc import Callable, Mapping, Sequence
 
@@ -33,8 +32,8 @@ _MCP_PATH = "/mcp"
 
 
 def _user_allowed(settings: Settings) -> UserCheck:
-    """Le compte du jeton existe-t-il et a-t-il encore le droit d'entrer ? En mode Google,
-    retirer une adresse de `ALLOWED_EMAILS` coupe aussi ses jetons (comme ses sessions)."""
+    """Does the token's account exist and still have the right to enter? In Google mode, removing
+    an address from `ALLOWED_EMAILS` also cuts its tokens (like its sessions)."""
 
     async def check(db: AsyncSession, user_id: str) -> bool:
         user = await UserRepository(db).get(user_id)
@@ -48,8 +47,8 @@ def _user_allowed(settings: Settings) -> UserCheck:
 
 
 def _local_user(app: FastAPI) -> Callable[[], str | None]:
-    """L'utilisatrice du mode local (seule candidate au journal d'un refus sans jeton connu) ;
-    en mode Google, personne : un jeton inconnu n'appartient à aucun compte."""
+    """The local mode user (the only candidate for the journal of a refusal without a known token);
+    in Google mode, nobody: an unknown token belongs to no account."""
 
     def local() -> str | None:
         if app.state.settings.auth_mode != "local":
@@ -67,9 +66,9 @@ def install_gate(
     limits: Limits | None = None,
     features: Sequence[FeatureMcp] = MCP_FEATURES,
 ) -> McpGate:
-    """Pose la porte sur `app.state.mcp_gate` : l'envoyeur donné, enveloppé des limites et du
-    journal. Les features connues viennent des déclarations données, celles de l'application par
-    défaut (`None` tant qu'aucune n'existe)."""
+    """Sets the gate on `app.state.mcp_gate`: the given sender, wrapped in the limits and the
+    journal. The known features come from the declarations given, those of the default
+    application (`None` while none exists)."""
     limiter = RateLimiter(limits)
     journal = CallJournal(app.state.session_factory, _local_user(app))
     guarded = GuardedDispatcher(dispatcher, limiter, journal)
@@ -92,10 +91,10 @@ def install_adapter(
     graphs: Mapping[str, type[BaseModel]] | None = None,
     limits: Limits | None = None,
 ) -> Registry:
-    """Le registre des outils (vérifié contre l'OpenAPI : une déclaration fausse fait échouer le
-    démarrage), l'envoyeur réel et les demandes « À confirmer », puis la porte. Pose
-    `app.state.mcp_registry` et `app.state.mcp_confirmations` (compte -> service) pour le routeur
-    `mcp`. `graphs` : le modèle d'entrée de chaque graphe (`app.mcp` ignore `app.agents`)."""
+    """The tool registry (checked against the OpenAPI: a wrong declaration makes startup fail),
+    the real sender and the « à confirmer » requests, then the gate. Sets
+    `app.state.mcp_registry` and `app.state.mcp_confirmations` (account -> service) for the
+    `mcp` router. `graphs`: the input model of each graph (`app.mcp` ignores `app.agents`)."""
     registry = build_registry(features, app, graphs)
 
     def confirmations(user_id: str) -> ConfirmationService:
@@ -112,8 +111,8 @@ def install_adapter(
 
 
 def compose_mcp(app: FastAPI) -> None:
-    """Monte `POST /mcp` (`GET` et `DELETE` répondent 405), construit les outils déclarés par les
-    features (`MCP_FEATURES`) et pose la porte."""
+    """Mounts `POST /mcp` (`GET` and `DELETE` answer 405), builds the tools declared by the
+    features (`MCP_FEATURES`) and sets the gate."""
     models = {name: spec.input_model for name, spec in GRAPHS.items()}
     settings: Settings = app.state.settings
     limits = Limits.with_daily(

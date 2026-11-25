@@ -1,4 +1,4 @@
-"""Réservations journalières de la passerelle de l'IDE, sans contenu des appels."""
+"""Daily reservations of the IDE gateway, without the content of the calls."""
 
 from sqlalchemy import Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column

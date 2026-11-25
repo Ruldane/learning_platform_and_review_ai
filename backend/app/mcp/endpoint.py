@@ -1,11 +1,11 @@
-"""Le point d'entrée HTTP du MCP : `POST /mcp` (hors `/api/v1`, hors contrat), transport
-« Streamable HTTP » sans état. `GET` et `DELETE` : 405 (pas de flux serveur ni de session) ; tout
-refus (origine, jeton, interrupteur, taille, limite) est une réponse `{error: {code, message,
-details}}` lisible, avec le bon code HTTP ; rien n'est exécuté avant que la porte ait ouvert.
+"""The MCP HTTP entry point: `POST /mcp` (outside `/api/v1`, outside the contract), a stateless
+"Streamable HTTP" transport. `GET` and `DELETE`: 405 (no server stream or session); any refusal
+(origin, token, switch, size, limit) is a readable `{error: {code, message, details}}` response,
+with the right HTTP code; nothing runs before the gate has opened.
 
-Ordre : origine et hôte, jeton (courte session, validée avant tout travail : un appel long ne tient
-jamais de transaction ouverte), corps (1 Mo au plus), JSON, en-têtes du transport, puis le
-JSON-RPC. Une 500 n'est possible que par une panne de l'infrastructure, jamais par un message."""
+Order: origin and host, token (short session, validated before any work: a long call never holds
+an open transaction), body (1 MB at most), JSON, transport headers, then the JSON-RPC. A 500 is
+possible only through an infrastructure failure, never through a message."""
 
 import json
 import logging
@@ -34,7 +34,7 @@ _RPC_HTTP_400 = frozenset({PARSE_ERROR, INVALID_REQUEST})
 
 
 def refusal(exc: AppError) -> JSONResponse:
-    """Le refus au format d'erreur de l'application, avec les en-têtes que le client attend."""
+    """The refusal in the application's error format, with the headers the client expects."""
     headers = dict(_NO_STORE)
     if exc.status_code == 401:
         headers["WWW-Authenticate"] = 'Bearer realm="tremplin-mcp"'
@@ -49,7 +49,7 @@ def _rpc_response(message: dict[str, Any], status: int = 200) -> JSONResponse:
 
 
 def _as_int(text: str) -> int:
-    """Un entier lu d'un en-tête, ou 0 s'il est hors limites de Python (jamais une erreur)."""
+    """An integer read from a header, or 0 if it is out of Python's range (never an error)."""
     try:
         return int(text)
     except ValueError:
@@ -57,7 +57,7 @@ def _as_int(text: str) -> int:
 
 
 async def _read_body(request: Request, limit: int) -> bytes:
-    """Le corps, lu par morceaux et abandonné au dépassement de `limit` octets (413)."""
+    """The body, read in chunks and dropped when `limit` bytes are exceeded (413)."""
     too_large = AppError("body_too_large", "Body too large: 1 MB at most.", 413)
     declared = request.headers.get("content-length", "")
     if declared.isascii() and declared.isdecimal() and _as_int(declared) > limit:
@@ -77,7 +77,7 @@ def _reject_constant(name: str) -> Any:
 
 
 def _parse(body: bytes) -> Any:
-    """Le JSON du corps, ou `None` (illisible, `NaN`, trop imbriqué pour Python)."""
+    """The body's JSON, or `None` (unreadable, `NaN`, too nested for Python)."""
     try:
         return json.loads(body, parse_constant=_reject_constant)
     except (ValueError, RecursionError):
@@ -85,7 +85,7 @@ def _parse(body: bytes) -> Any:
 
 
 def _check_headers(request: Request, payload: dict[str, Any]) -> JSONResponse | None:
-    """`MCP-Protocol-Version` connue, `Mcp-Method` égal à la méthode du corps ; sinon 400."""
+    """Known `MCP-Protocol-Version`, and `Mcp-Method` equal to the body's method; otherwise 400."""
     method = payload.get("method")
     version = request.headers.get("mcp-protocol-version")
     if version is not None and method != "initialize" and version not in SUPPORTED_VERSIONS:
@@ -106,7 +106,7 @@ async def _serve_post(request: Request) -> Response:
     try:
         async with request.app.state.session_factory() as db:
             identity = await authenticate(request, db)
-            await db.commit()  # `last_used_at` ; la session est fermée avant tout travail long
+            await db.commit()  # `last_used_at`; the session is closed before any long work
     except McpRefusal as exc:
         await gate.refusals(exc.user_id, exc.token_id, f"refused:{exc.code}", 0, exc.status_code)
         raise
@@ -123,7 +123,7 @@ async def _serve_post(request: Request) -> Response:
         answer = await handle_rpc(payload, identity, gate.tools, gate.dispatcher)
     except AppError as exc:
         details = exc.details or {}
-        if exc.status_code == 403 and "tool" in details:  # périmètre ou lecture seule
+        if exc.status_code == 403 and "tool" in details:  # scope or read-only
             args = (identity.user_id, identity.token_id, details["tool"], details["level"])
             await gate.refusals(*args, 403)
         raise
@@ -134,7 +134,7 @@ async def _serve_post(request: Request) -> Response:
 
 
 async def mcp_endpoint(request: Request) -> Response:
-    """`POST /mcp`. Toute autre méthode : 405."""
+    """`POST /mcp`. Any other method: 405."""
     if request.method != "POST":
         return JSONResponse(
             {"error": {"code": "http_error", "message": "Method not allowed.", "details": None}},
@@ -145,7 +145,7 @@ async def mcp_endpoint(request: Request) -> Response:
         return await _serve_post(request)
     except AppError as exc:
         return refusal(exc)
-    except Exception as exc:  # panne d'infrastructure : le type seul est journalisé
+    except Exception as exc:  # infrastructure failure: only the type is logged
         logger.error("MCP : erreur interne (%s)", type(exc).__name__)
         body = {"error": {"code": "internal_error", "message": "Erreur interne.", "details": None}}
         return JSONResponse(body, status_code=500, headers=_NO_STORE)

@@ -1,8 +1,8 @@
-"""Le registre des outils MCP (phase 10, P11, P13) : assemblé au démarrage depuis les déclarations
-des features (`FeatureMcp`) et l'OpenAPI de l'application. Liste blanche : une route non déclarée
-n'a pas d'outil. Toute déclaration qui ne colle pas à l'application fait **échouer le démarrage**
-(`McpConfigError`) : route absente, route de niveau 4 (connexion, accès MCP, clés, modèles),
-niveau 1 sur une route qui écrit, effet externe sous le niveau 3, nom en double, graphe inconnu."""
+"""The MCP tool registry (phase 10, P11, P13): assembled at startup from the features' declarations
+(`FeatureMcp`) and the application's OpenAPI. Allowlist: an undeclared route has no tool. Any
+declaration that does not match the application makes **startup fail** (`McpConfigError`):
+missing route, level 4 route (sign-in, MCP access, keys, models), level 1 on a route that writes,
+external effect below level 3, duplicate name, unknown graph."""
 
 import re
 from collections.abc import Mapping, Sequence
@@ -27,8 +27,8 @@ from app.mcp.tools import TREMPLIN_OVERVIEW, ToolSpec
 
 _NAME = re.compile(r"[a-z0-9_]{1,64}")
 GRAPH_PREFIX = "graph_"
-# Les champs des réglages qui ne sortent jamais par le MCP (modèles par niveau, surcharges par
-# agent) ; la feature `settings` déclare les mêmes (`PROTECTED_FIELDS`), un test les compare.
+# The settings fields that never leave through MCP (models per level, overrides per agent);
+# the `settings` feature declares the same ones (`PROTECTED_FIELDS`), and a test compares them.
 SETTINGS_LEVEL_4_FIELDS = frozenset({"tiers", "agent_overrides"})
 _LEVEL_TEXT = {
     1: "Read.",
@@ -41,9 +41,9 @@ _LEVEL_TEXT = {
 
 
 class Registry:
-    """Les outils déclarés ; `list_for` ne montre que la portée du jeton, `get` rend tout outil
-    connu (pour refuser en 403 plutôt que « inconnu »). `graph_untrusted` : champs non fiables du
-    résultat des sessions de chaque graphe (rendus comme données quand Claude suit la session)."""
+    """The declared tools; `list_for` shows only the token's scope, `get` returns any known tool (to
+    refuse with 403 rather than "unknown"). `graph_untrusted`: the untrusted fields of the result
+    of each graph's sessions (rendered as data when Claude follows the session)."""
 
     def __init__(
         self,
@@ -82,7 +82,7 @@ class Registry:
         return sorted(available, key=lambda item: (item[1], item[0].name))
 
     def reader_of(self, template: str) -> ToolSpec | None:
-        """L'outil de lecture (niveau 1) de la route `GET <template>`, s'il est déclaré."""
+        """The read tool (level 1) of the route `GET <template>`, if declared."""
         for tool in self._tools.values():
             if tool.level == 1 and tool.route == ("GET", template):
                 return tool
@@ -111,7 +111,7 @@ def _check_action(feature: str, action: McpAction) -> tuple[str, str]:
     if path == SETTINGS_PATH or path.startswith(SETTINGS_PATH + "/"):
         if method != "GET" and action.body_fields is None:
             raise McpConfigError(f"{action.route}: settings require body_fields")
-        # Toute méthode, lecture ou écriture : l'écriture rend l'objet entier (modèles compris).
+        # Any method, read or write: the write returns the whole object (models included).
         if action.response_fields is None:
             raise McpConfigError(f"{action.route}: settings require response_fields")
         if leaked := action.response_fields & SETTINGS_LEVEL_4_FIELDS:
@@ -203,8 +203,9 @@ def build_registry(
     app: FastAPI,
     graphs: Mapping[str, type[BaseModel]] | None = None,
 ) -> Registry:
-    """Les outils déclarés, vérifiés contre `app.openapi()`. `graphs` : le modèle d'entrée de chaque
-    graphe de l'application (donné par la composition ; `app.mcp` ne connaît pas `app.agents`)."""
+    """The declared tools, checked against `app.openapi()`. `graphs`: the input model of each graph
+    of
+    the application (given by the composition; `app.mcp` does not know `app.agents`)."""
     openapi = app.openapi()
     specs: list[ToolSpec] = []
     play_specs: list[ToolSpec] = []
@@ -227,7 +228,7 @@ def build_registry(
         for graph in declared.graphs:
             if graph.untrusted:
                 graph_untrusted[graph.graph] = graph.untrusted
-            if graph.follow_only:  # pas d'outil de lancement : la route de la feature le lance
+            if graph.follow_only:  # no launch tool: the feature's route launches it
                 if graph.graph not in (graphs or {}):
                     raise McpConfigError(f"graph declared but unknown to the app: {graph.graph}")
             else:

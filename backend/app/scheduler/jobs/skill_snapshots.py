@@ -1,6 +1,7 @@
-"""Tâche « relevés des compétences » (SPEC F15, D106) : toutes les 15 minutes et au démarrage,
-un relevé des niveaux par utilisateur et par semaine locale (le premier passage de la semaine
-l'écrit, `INSERT … ON CONFLICT DO NOTHING`). La courbe de progression (5.10) les lit."""
+"""Task "Skill snapshots" (SPEC F15, D106): every 15 minutes and at startup, one record of levels
+per
+user and per local week (the first pass of the week writes it, `INSERT … ON CONFLICT DO NOTHING`).
+The progress curve (5.10) reads them."""
 
 from datetime import UTC, datetime
 

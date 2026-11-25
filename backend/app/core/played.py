@@ -1,5 +1,5 @@
-"""Source choisie à l'ouverture du parcours (client MCP ou fournisseur d'API forcé), restaurée sur
-les reprises et les sessions filles du même compte."""
+"""Source chosen when the route is opened (MCP client or forced API provider), restored on
+resumes and child sessions of the same account."""
 
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -16,8 +16,8 @@ FORCED_PROVIDERS: tuple[ForcedProvider, ...] = ("anthropic", "glm", "openai")
 
 @dataclass(frozen=True)
 class PlayContext:
-    """`client` : le parcours est joué par ce client MCP ; sinon `provider` : chaque appel passe
-    par ce fournisseur d'API ; les deux nuls : les réglages de la personne."""
+    """`client`: the route is played by this MCP client; otherwise `provider`: each call goes
+    through this API provider; both None: the person's settings."""
 
     user_id: str
     client: PlayClient | None
@@ -27,15 +27,15 @@ class PlayContext:
 
 
 PLAY_CONTEXT: ContextVar[PlayContext | None] = ContextVar("play_context", default=None)
-# Choix du menu de l'interface pour la requête en cours (en-tête `X-Tremplin-Run`, posé par
-# `RunSourceHeader`) : vaut pour le compte de la requête, sous un parcours déjà en cours.
+# Menu choice of the interface for the current request (header `X-Tremplin-Run`, set by
+# `RunSourceHeader`): applies to the request's account, under a route already running.
 RUN_REQUEST: ContextVar[str | None] = ContextVar("run_request", default=None)
 RUN_HEADER = b"x-tremplin-run"
 
 
 def run_source(user_id: str) -> tuple[PlayClient | None, ForcedProvider | None]:
-    """Le client et le fournisseur du parcours en cours pour ce compte, sinon le choix du menu
-    de la requête, sinon `(None, None)` (les réglages)."""
+    """The client and provider of the route in progress for this account, otherwise the menu
+    choice of the request, otherwise `(None, None)` (the settings)."""
     play = PLAY_CONTEXT.get()
     if play is not None:
         return (play.client, play.provider) if play.user_id == user_id else (None, None)
@@ -44,8 +44,8 @@ def run_source(user_id: str) -> tuple[PlayClient | None, ForcedProvider | None]:
 
 
 class RunSourceHeader:
-    """Middleware ASGI : lit `X-Tremplin-Run` (« claude-code », « codex », « anthropic »,
-    « glm », « openai » ; toute autre valeur vaut « selon mes réglages »)."""
+    """ASGI middleware: reads `X-Tremplin-Run` (« claude-code », « codex », « anthropic »,
+    « glm », « openai »; any other value means « selon mes réglages »)."""
 
     def __init__(self, app: Any) -> None:
         self.app = app
@@ -78,8 +78,8 @@ def as_provider(value: str | None) -> ForcedProvider | None:
 def inherit_source(
     user_id: str, client: str | None, provider: str | None, *, has_origin: bool = True
 ) -> Iterator[None]:
-    """Rétablit la source d'origine, y compris « Selon mes réglages », avant le choix HTTP.
-    Le contexte du parcours actif du même compte reste prioritaire."""
+    """Restores the original source, including « Selon mes réglages », before the HTTP choice.
+    The context of the active route of the same account keeps priority."""
     playing = PLAY_CONTEXT.get()
     if not has_origin or (playing is not None and playing.user_id == user_id):
         yield

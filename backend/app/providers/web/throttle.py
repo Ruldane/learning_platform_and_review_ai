@@ -1,15 +1,14 @@
-"""Débit du lecteur web par hôte (SPEC 10.2 : une requête par seconde et par domaine, D74).
+"""Rate limit of the web reader per host (SPEC 10.2: one request per second per domain, D74).
 
-Un seul `DomainThrottle` pour tout le processus (tous utilisateurs), branché par `bootstrap` dans
-le `SafeHttpFetcher`. Chaque appel réserve le prochain départ de l'hôte sous verrou (aucun
-`await` dans la section : deux appels simultanés ne prennent jamais le même créneau), puis
-attend son tour hors verrou. Un départ qui tomberait au-delà du budget de l'appelant
-(`budget_s`) n'est **pas réservé** : l'appel échoue tout de suite en « délai dépassé », sans
-repousser les suivants. Un appel annulé pendant son attente rend son créneau s'il est encore le
-dernier réservé ; sinon un trou reste dans la file, sans retarder personne (revue 3.4, D74).
-La clé est l'hôte exact en minuscules, pas le domaine enregistrable (`a.example.org` et
-`b.example.org` sont distincts). L'API arXiv demande 3 s entre deux appels. Les hôtes ne sont
-jamais journalisés."""
+A single `DomainThrottle` for the whole process (all users), plugged in by `bootstrap` into the
+`SafeHttpFetcher`. Each call reserves the host's next start under a lock (no `await` in the section:
+two simultaneous calls never take the same slot), then waits its turn outside the lock. A start that
+would fall beyond the caller's budget (`budget_s`) is **not reserved**: the call fails at once with
+"deadline exceeded", without pushing back the next ones. A call cancelled while waiting gives its
+slot back if it is still the last one reserved; otherwise a gap stays in the queue, without delaying
+anyone (review 3.4, D74). The key is the exact host in lowercase, not the registrable domain
+(`a.example.org` and `b.example.org` are distinct). The arXiv API asks for 3 s between calls. Hosts
+are never logged."""
 
 import asyncio
 import threading
@@ -38,12 +37,13 @@ class DomainThrottle:
         self._clock = clock
         self._sleep = sleep
         self._lock = threading.Lock()
-        # Hôte → instant du dernier départ réservé.
+        # Host → instant of the last reserved start.
         self._last: dict[str, float] = {}
 
     def _reserve(self, key: str, budget_s: float | None) -> tuple[float, float, float | None]:
-        """`(attente, départ réservé, départ précédent)` ; hors budget → `UrlUnreadable`
-        (délai) sans rien réserver."""
+        """`(wait, reserved start, previous start)`; beyond the budget → `UrlUnreadable` (deadline)
+        without
+        reserving anything."""
         interval = self._overrides.get(key, self._interval_s)
         with self._lock:
             now = self._clock()
@@ -56,7 +56,7 @@ class DomainThrottle:
         return start - now, start, previous
 
     def _release(self, key: str, start: float, previous: float | None) -> None:
-        """Rend le créneau `start` s'il est encore le dernier réservé pour `key`."""
+        """Gives back the slot `start` if it is still the last one reserved for `key`."""
         with self._lock:
             if self._last.get(key) != start:
                 return
@@ -66,15 +66,15 @@ class DomainThrottle:
                 self._last[key] = previous
 
     def _purge(self, now: float) -> None:
-        """Oublie les hôtes dont le dernier départ date de plus de 60 s (sous le verrou)."""
+        """Forgets the hosts whose last start is more than 60 s old (under the lock)."""
         stale = [key for key, last in self._last.items() if now - last > _PURGE_AFTER_S]
         for key in stale:
             del self._last[key]
 
     async def wait(self, host: str, *, budget_s: float | None = None) -> None:
-        """Attend le créneau de `host`. `budget_s` : attente maximale acceptable (temps qui
-        reste à l'appelant) ; au-delà, `UrlUnreadable(TIMEOUT_MESSAGE)` sans attendre ni
-        réserver."""
+        """Waits for the slot of `host`. `budget_s`: maximum acceptable wait (time the caller has
+        left);
+        beyond it, `UrlUnreadable(TIMEOUT_MESSAGE)` without waiting or reserving."""
         key = host.lower()
         delay, start, previous = self._reserve(key, budget_s)
         if delay <= 0:
@@ -86,6 +86,6 @@ class DomainThrottle:
             raise
 
     def tracked_hosts(self) -> int:
-        """Nombre d'hôtes suivis (tests de la purge)."""
+        """Number of hosts tracked (for the purge tests)."""
         with self._lock:
             return len(self._last)

@@ -1,4 +1,4 @@
-"""Sonde de Gotenberg : `GET /health` (200 si Chromium et LibreOffice répondent, 503 sinon)."""
+"""Gotenberg probe: `GET /health` (200 if Chromium and LibreOffice respond, 503 otherwise)."""
 
 import httpx
 

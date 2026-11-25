@@ -1,7 +1,7 @@
-"""Identifiants de modèles par défaut, regroupés ici et nulle part ailleurs (spec 11.2).
+"""Default model identifiers, grouped here and nowhere else (spec 11.2).
 
-Sources et dates de relevé : voir DECISIONS.md (D25). À revérifier à chaque évolution des
-catalogues des fournisseurs.
+Sources and survey dates: see DECISIONS.md (D25). To be rechecked at each change to the
+providers' catalogues.
 """
 
 from typing import Literal
@@ -15,8 +15,8 @@ OPENAI_FAST = "gpt-6-luna"
 OPENAI_STRONG = "gpt-6.1-sol"
 OPENAI_VISION = "gpt-6.1-terra"
 
-# « Tout GLM » : glm-5.3-flash partout, le modèle que l'utilisatrice a crédité et qui voit les
-# images ; glm-5.3 et glm-4.7-flash ne sont pas fiables pour elle (D44).
+# « Tout GLM »: glm-5.3-flash everywhere, the model January has credited and that sees the
+# images; glm-5.3 and glm-4.7-flash are not reliable for January (D44).
 GLM_FAST = "glm-5.3-flash"
 GLM_STRONG = "glm-5.3-flash"
 GLM_VISION = "glm-5.3-flash"
@@ -44,7 +44,7 @@ PRESETS: dict[PresetName, dict[Tier, ModelChoice]] = {
     "all_openai": _tiers("openai", OPENAI_FAST, OPENAI_STRONG, OPENAI_VISION),
 }
 
-# Listes explicites issues de la documentation des fournisseurs (relevé du 2026-11-11).
+# Explicit lists taken from the providers' documentation (survey of 2026-11-11).
 _OPENAI_VISION_MODELS = frozenset({"gpt-6-astra", OPENAI_STRONG, OPENAI_VISION})
 _GLM_VISION_MODELS = frozenset(
     {GLM_VISION, "glm-5.3-flashx", "glm-4.6v", "glm-4.6v-flash", "glm-4.6v-flashx", "glm-4.5v"}
@@ -52,7 +52,7 @@ _GLM_VISION_MODELS = frozenset(
 
 
 def supports_vision(choice: ModelChoice) -> bool:
-    """Le modèle accepte-t-il des images en entrée ? Inconnu = non (on désactive plutôt)."""
+    """Does the model accept image input? Unknown = no (we turn it off instead)."""
     if choice.provider == "anthropic":
         return choice.model.startswith("claude-")
     if choice.provider == "openai":

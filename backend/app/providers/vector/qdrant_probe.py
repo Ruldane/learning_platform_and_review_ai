@@ -1,4 +1,4 @@
-"""Sonde de Qdrant : `GET /readyz` (Qdrant >= 1.5, toujours accessible, même avec une clé d'API)."""
+"""Qdrant probe: `GET /readyz` (Qdrant >= 1.5, always reachable, even with an API key)."""
 
 import httpx
 

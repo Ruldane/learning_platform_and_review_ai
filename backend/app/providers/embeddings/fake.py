@@ -1,5 +1,5 @@
-"""Embedder déterministe, sans réseau : tests et démonstration de bout en bout (comme
-`FakeLlmProvider`). Les mots partagés rapprochent les textes ; ce n'est pas de la sémantique."""
+"""Deterministic embedder, no network: tests and end-to-end demonstration (like `FakeLlmProvider`).
+Shared words bring texts closer together; this is not semantics."""
 
 import hashlib
 import math

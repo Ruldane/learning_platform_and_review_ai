@@ -1,5 +1,5 @@
-"""Services externes tels que les features les reçoivent. Données seulement : la construction
-des implémentations concrètes vit dans `app/bootstrap.py`."""
+"""External services as the features receive them. Data only: building the concrete
+implementations lives in `app/bootstrap.py`."""
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
@@ -22,10 +22,10 @@ from app.providers.web.base import WebFetcher, WebReader, YoutubeTranscripts
 
 @dataclass
 class Providers:
-    """Fournisseurs LLM, fabrique, chiffreur, clés `.env`, fournisseurs de l'écran des clés
-    (LLM et Brave), contrôles de santé, connexion OpenID Connect (`None` en mode local) et
-    progression du modèle d'embeddings (`GET /health/embedding`, P13) et bac à sable d'exécution
-    de code (`CodeSandbox`, posé par `bootstrap_ide` ; `None` avant la composition)."""
+    """LLM providers, factory, encryptor, `.env` keys, providers of the key screen (LLM and Brave),
+    health checks, OpenID Connect connection (`None` in local mode), progress of the embeddings
+    model (`GET /health/embedding`, P13) and the code execution sandbox (`CodeSandbox`, set by
+    `bootstrap_ide`; `None` before composition)."""
 
     llm: Mapping[str, LlmProvider]
     llm_factory: LlmFactory
@@ -40,8 +40,8 @@ class Providers:
 
 @dataclass(frozen=True)
 class MemoryProviders:
-    """Services de la mémoire : vectorisation, index vectoriel, stockage des fichiers importés,
-    extraction PDF, lecture sûre du web et transcriptions YouTube."""
+    """Memory services: vectorization, vector index, storage of imported files, PDF extraction,
+    safe web reading and YouTube transcripts."""
 
     embedder: Embedder
     index: MemoryRepository
@@ -51,15 +51,15 @@ class MemoryProviders:
     youtube: YoutubeTranscripts
 
 
-# Clé Brave de l'utilisateur → client Brave : la clé est lue à chaque recherche (D73).
+# User's Brave key → Brave client: the key is read at each search (D73).
 BraveFactory = Callable[[str], SearchProvider]
 
 
 @dataclass(frozen=True)
 class ResearchProviders:
-    """Services de la recherche web : SearXNG (sans clé), fabrique Brave, le lecteur web de la
-    mémoire (le même objet que `MemoryProviders.web`) et un fetcher sûr (garde SSRF) pour les
-    copies locales des PDF libres des ressources (D91)."""
+    """Web search services: SearXNG (no key), Brave factory, the memory web reader (the same object
+    as `MemoryProviders.web`) and a safe fetcher (SSRF guard) for the local copies of the free
+    PDFs of the resources (D91)."""
 
     searxng: SearchProvider
     brave: BraveFactory
@@ -69,8 +69,8 @@ class ResearchProviders:
 
 @dataclass(frozen=True)
 class PublishingProviders:
-    """Documents produits par l'application : PDF de nos gabarits HTML (leçons, programme, CV)
-    par Gotenberg (D89), mise en page d'un CV importé et polices libres de ses gabarits (D119)."""
+    """Documents produced by the application: PDF of our HTML templates (lessons, program, CV)
+    through Gotenberg (D89), layout of an imported CV and free fonts of its templates (D119)."""
 
     html_pdf: HtmlPdfRenderer
     layout: PdfLayoutExtractor

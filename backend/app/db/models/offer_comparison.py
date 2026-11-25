@@ -1,4 +1,4 @@
-"""Préférences propres au compte et résultats figés des comparaisons."""
+"""Account-specific preferences and frozen comparison results."""
 
 from typing import Any
 

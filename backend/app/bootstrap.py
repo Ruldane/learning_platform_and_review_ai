@@ -1,5 +1,5 @@
-"""Composition de l'application : l'unique module qui assemble les implémentations concrètes
-(fournisseurs LLM, sondes de santé) avec les features. Le lifespan l'appelle au démarrage."""
+"""Application wiring: the only module that combines the concrete implementations
+(LLM providers, health probes) with the features. The lifespan calls it at startup."""
 
 from collections.abc import AsyncIterator, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager, nullcontext
@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.agents.runtime.costs import ModelPrice, load_prices
 from app.bootstrap_agents import StudyRuntimes as StudyRuntimes
-from app.bootstrap_agents import (  # réexportés : `app.main` ne lit que `app.bootstrap`
+from app.bootstrap_agents import (  # re-exported: `app.main` only reads `app.bootstrap`
     agent_ports as agent_ports,
 )
 from app.bootstrap_agents import lessons_runtime as lessons_runtime
@@ -72,11 +72,11 @@ def build_providers(
     key_http: httpx.AsyncClient,
     oidc: OidcProvider | None = None,
 ) -> Providers:
-    """`http` sert aux sondes de santé, `key_http` (`key_test_http`) au test de la clé Brave ;
-    tous deux créés et fermés par le lifespan ; `oidc` : la connexion Google (`bootstrap_auth`).
-    `local_user_id` est lu à chaque contrôle car
-    l'utilisateur local n'existe qu'après la construction."""
-    # GLM : l'adresse Z.ai configurée sert aussi au test de clé et à la liste des modèles.
+    """`http` serves the health probes, `key_http` (`key_test_http`) the Brave key test;
+    both are created and closed by the lifespan; `oidc`: the Google sign-in (`bootstrap_auth`).
+    `local_user_id` is read at each check because
+    the local user only exists after construction."""
+    # GLM: the configured Z.ai address is also used for the key test and the model list.
     llm: dict[str, LlmProvider] = {
         **LLM_PROVIDERS,
         "glm": GlmProvider(base_url=settings.zai_base_url),
@@ -94,7 +94,7 @@ def build_providers(
         {"glm": settings.zai_base_url},
         call_deadline_s=settings.llm_call_deadline_s,
     )
-    # Écran des clés : les LLM puis Brave, qui n'est ni dans la fabrique ni dans les modèles.
+    # Key screen: the LLM keys, then Brave, which is neither in the factory nor in the models.
     key_providers: dict[str, KeyProvider] = {**llm, "brave": BraveKeyProvider(key_http)}
     return Providers(
         llm=llm,
@@ -111,23 +111,23 @@ def build_providers(
 
 
 def compose_phase10(app: FastAPI) -> None:
-    """Phase 10 : l'IDE (bac à sable, professeur) puis le serveur MCP (`bootstrap_ide`,
-    `bootstrap_mcp`). Appelée par `app.main` une fois les features composées."""
+    """Phase 10: the IDE (sandbox, professor) then the MCP server (`bootstrap_ide`,
+    `bootstrap_mcp`). Called by `app.main` once the features are composed."""
     compose_ide(app)
     compose_mcp(app)
 
 
 def model_prices() -> dict[str, ModelPrice]:
-    """Table des prix des modèles (`model_prices.json` des fournisseurs) pour le suivi des coûts :
-    lue ici car `app.agents` n'importe pas `app.providers.llm.registry` (contrat 3)."""
+    """Price table of the models (`model_prices.json` from the providers) for cost tracking:
+    read here because `app.agents` does not import `app.providers.llm.registry` (contract 3)."""
     return load_prices(PRICES_PATH)
 
 
 def _reader_http() -> httpx.AsyncClient:
-    """Client du lecteur web, à part de celui d'Ollama : connexion sur l'adresse vérifiée
-    (`GuardedTransport`, anti rebinding DNS), jamais de redirection automatique (la garde SSRF
-    revérifie chaque saut), aucun proxy ni réglage de l'environnement (l'adresse connectée
-    serait celle du proxy), aucun cookie retenu (client partagé entre utilisateurs)."""
+    """Web reader client, separate from the Ollama one: connects to the verified address
+    (`GuardedTransport`, DNS rebinding protection), never follows redirects automatically (the
+    SSRF guard checks each hop), no proxy and no environment settings (the connected address
+    would be the proxy's), no cookie kept (client shared between users)."""
     return httpx.AsyncClient(
         transport=GuardedTransport(),
         follow_redirects=False,
@@ -138,15 +138,15 @@ def _reader_http() -> httpx.AsyncClient:
 
 
 def _render_http(timeout_s: float = FETCH_TIMEOUT_S) -> httpx.AsyncClient:
-    """Client de Gotenberg, à part : ni proxy ni réglage de l'environnement, ni redirection ;
-    15 s pour une page (D63, `memory_providers`, D74), 45 s pour nos gabarits (D89)."""
+    """Gotenberg client, separate: no proxy or environment settings, no redirects;
+    15 s for a page (D63, `memory_providers`, D74), 45 s for our templates (D89)."""
     return httpx.AsyncClient(follow_redirects=False, trust_env=False, timeout=timeout_s)
 
 
 @asynccontextmanager
 async def publishing_providers(settings: Settings) -> AsyncIterator[PublishingProviders]:
-    """PDF de nos gabarits par Gotenberg (D89), mise en page d'un CV en sous-processus et polices
-    de Google Fonts (D119) ; clients fermés à la sortie."""
+    """PDF of our templates through Gotenberg (D89), CV layout in a subprocess and Google Fonts
+    (D119); clients closed on exit."""
     async with _render_http(HTML_RENDER_TIMEOUT_S) as http, fonts_http() as fonts:
         yield PublishingProviders(
             html_pdf=GotenbergHtmlRenderer(http, settings.gotenberg_url),
@@ -156,7 +156,7 @@ async def publishing_providers(settings: Settings) -> AsyncIterator[PublishingPr
 
 
 def page_renderer(settings: Settings, http: httpx.AsyncClient) -> PageRenderer | None:
-    """Repli Gotenberg du lecteur web, `None` si `WEB_RENDER_FALLBACK=false`."""
+    """Gotenberg fallback of the web reader, `None` if `WEB_RENDER_FALLBACK=false`."""
     if not settings.web_render_fallback:
         return None
     return GotenbergRenderer(http, settings.gotenberg_url)
@@ -165,7 +165,7 @@ def page_renderer(settings: Settings, http: httpx.AsyncClient) -> PageRenderer |
 def _render_client(
     settings: Settings,
 ) -> AbstractAsyncContextManager[httpx.AsyncClient | None]:
-    """Client de Gotenberg seulement si le repli est actif (aucun client ouvert inutilisé)."""
+    """Gotenberg client only if the fallback is active (no unused client opened)."""
     return _render_http() if settings.web_render_fallback else nullcontext(None)
 
 
@@ -175,8 +175,8 @@ def _web_reader(
     render_http: httpx.AsyncClient | None,
     pdf: SubprocessPdfExtractor,
 ) -> WebReader:
-    """Lecteur web étendu (D74) : un fetcher sûr et un débit par hôte pour tout le processus
-    (pages, GitHub, arXiv), repli Gotenberg ; partagé par la mémoire, YouTube et la recherche."""
+    """Extended web reader (D74): one safe fetcher and one rate limit per host for the whole process
+    (pages, GitHub, arXiv), Gotenberg fallback; shared by memory, YouTube and search."""
     fetcher = SafeHttpFetcher(reader_http, throttle=DomainThrottle())
     renderer = page_renderer(settings, render_http) if render_http is not None else None
     pages = TrafilaturaWebReader(fetcher, pdf, renderer=renderer)
@@ -185,15 +185,15 @@ def _web_reader(
 
 @asynccontextmanager
 async def memory_providers(settings: Settings) -> AsyncIterator[MemoryProviders]:
-    """Embeddings Ollama, index Qdrant, stockage local, extraction PDF, lecteur web et YouTube ;
-    les clients sont fermés à la sortie. Aucune requête à la construction : le back démarre même
-    si Ollama ou Qdrant sont arrêtés (la collection est créée à la première utilisation)."""
+    """Ollama embeddings, Qdrant index, local storage, PDF extraction, web reader and YouTube;
+    the clients are closed on exit. No request at construction: the backend starts even
+    if Ollama or Qdrant are stopped (the collection is created on first use)."""
     async with (
         httpx.AsyncClient(timeout=_OLLAMA_TIMEOUT_SECONDS) as http,
         _reader_http() as reader_http,
         _render_client(settings) as render_http,
     ):
-        # Pas de contrôle de version au démarrage : il ferait une requête dès la construction.
+        # No version check at startup: it would make a request at construction.
         qdrant = AsyncQdrantClient(
             url=settings.qdrant_url, timeout=_QDRANT_TIMEOUT_SECONDS, check_compatibility=False
         )
@@ -205,7 +205,7 @@ async def memory_providers(settings: Settings) -> AsyncIterator[MemoryProviders]
                 collection=settings.memory_collection,
                 dimension=settings.embedding_dimension,
             )
-            # Sous-processus borné (délai, mémoire, 2 au plus) : import de documents et lecteur web.
+            # Bounded subprocess (timeout, memory, 2 at most): document import and web reader.
             pdf = SubprocessPdfExtractor()
             web = _web_reader(settings, reader_http, render_http, pdf)
             yield MemoryProviders(
@@ -224,7 +224,7 @@ async def memory_providers(settings: Settings) -> AsyncIterator[MemoryProviders]
 async def open_memory_runtime(
     session_factory: async_sessionmaker[AsyncSession], providers: MemoryProviders
 ) -> AsyncIterator[MemoryRuntime]:
-    """Ce que la mémoire partage entre les requêtes (indexeur, verrous), sur ses fournisseurs."""
+    """What memory shares between requests (indexer, locks), on its providers."""
     async with memory_runtime(session_factory, providers) as runtime:
         yield runtime
 
@@ -235,20 +235,20 @@ async def open_research_runtime(
     research: ResearchProviders,
     providers: Providers,
 ) -> AsyncIterator[ResearchRuntime]:
-    """Ce que la recherche partage (verrous, lecteur de clés : réglages d'abord, puis `.env`)."""
+    """What search shares (locks, key reader: settings first, then `.env`)."""
     keys = DbKeyReader(session_factory, providers.cipher, providers.env_keys)
     yield ResearchRuntime(session_factory, research, keys)
 
 
 def key_test_http() -> httpx.AsyncClient:
-    """Client du test de la clé Brave, ouvert par le lifespan : `_search_http` (revue 3.3, D74)."""
+    """Client for the Brave key test, opened by the lifespan: `_search_http` (review 3.3, D74)."""
     return _search_http()
 
 
 def _search_http() -> httpx.AsyncClient:
-    """Client d'un fournisseur de recherche (un par fournisseur) : hôte fixe et configuré, donc
-    sans la garde SSRF (D63) ; aucun proxy ni réglage de l'environnement (SearXNG est interne,
-    la clé Brave ne passe par aucun intermédiaire), aucune redirection, 10 s."""
+    """Client of a search provider (one per provider): fixed, configured host, so
+    without the SSRF guard (D63); no proxy or environment settings (SearXNG is internal,
+    the Brave key goes through no intermediary), no redirects, 10 s."""
     return httpx.AsyncClient(
         follow_redirects=False, trust_env=False, timeout=httpx.Timeout(SEARCH_TIMEOUT_S)
     )
@@ -258,10 +258,10 @@ def _search_http() -> httpx.AsyncClient:
 async def research_providers(
     settings: Settings, web: WebReader
 ) -> AsyncIterator[ResearchProviders]:
-    """SearXNG et la fabrique Brave (une instance par clé, client partagé), sur le lecteur web de
-    la mémoire, et un fetcher sûr à part pour les copies locales des PDF des ressources (garde
-    SSRF, même client durci que le lecteur web, D91) ; clients fermés à la sortie, aucune
-    requête à la construction."""
+    """SearXNG and the Brave factory (one instance per key, shared client), on the web reader of
+    memory, and a separate safe fetcher for the local copies of resource PDFs (SSRF guard,
+    same hardened client as the web reader, D91); clients closed on exit, no request at
+    construction."""
     async with (
         _search_http() as searxng_http,
         _search_http() as brave_http,

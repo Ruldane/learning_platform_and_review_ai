@@ -1,4 +1,4 @@
-"""Composition sans accès au réseau avant consentement."""
+"""Wiring without network access before consent."""
 
 from contextlib import AsyncExitStack
 from urllib.parse import urlsplit

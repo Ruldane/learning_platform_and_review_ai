@@ -1,10 +1,10 @@
-"""Lecture d'un dépôt GitHub par l'API REST publique (SPEC 10.2) : `GET /repos/{o}/{r}` pour les
-métadonnées, `GET /repos/{o}/{r}/readme` pour le README (JSON, `content` en base64 coupé de
-retours à la ligne, `encoding: "base64"`). Sans jeton : 60 appels par heure et par adresse IP,
-deux par dépôt lu (D74). Les deux appels passent par le `WebFetcher` sûr (garde SSRF, débit).
+"""Reading a GitHub repository through the public REST API (SPEC 10.2): `GET /repos/{o}/{r}` for the
+metadata, `GET /repos/{o}/{r}/readme` for the README (JSON, `content` in base64 cut by line breaks,
+`encoding: "base64"`). Without a token: 60 calls per hour per IP address, two per repository read
+(D74). Both calls go through the safe `WebFetcher` (SSRF guard, rate limit).
 
-Seuls `owner` et `repo`, validés par expression régulière, entrent dans l'URL de l'API : aucune
-autre partie de l'URL reçue n'est transmise."""
+Only `owner` and `repo`, validated by regular expression, go into the API URL: no other part of the
+URL received is passed on."""
 
 import base64
 import binascii
@@ -25,8 +25,8 @@ from app.providers.web.base import (
 
 API_ROOT = "https://api.github.com/repos"
 _JSON = ("application/json",)
-# Sans `X-GitHub-Api-Version` : GitHub applique sa version par défaut, toujours prise en charge
-# (une version datée finirait par être retirée et répondrait 400).
+# Without `X-GitHub-Api-Version`: GitHub applies its default version, always supported
+# (a dated version would eventually be removed and would answer 400).
 _HEADERS = {"Accept": "application/vnd.github+json"}
 
 
@@ -52,9 +52,9 @@ class GithubReader:
         self._fetcher = fetcher
 
     async def read(self, url: str) -> WebDocument:
-        """README et métadonnées ; tout échec de l'API (absent, limite atteinte, réponse
-        inattendue) → `UrlUnreadable(GITHUB_UNREADABLE)`. Une adresse refusée (`UrlForbidden`)
-        et le délai dépassé passent tels quels."""
+        """README and metadata; any API failure (missing, limit reached, unexpected response) →
+        `UrlUnreadable(GITHUB_UNREADABLE)`. A refused address (`UrlForbidden`) and the deadline
+        pass through unchanged."""
         repo = github_repo(url)
         if repo is None:
             raise UrlUnreadable(GITHUB_UNREADABLE)

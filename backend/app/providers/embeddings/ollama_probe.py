@@ -1,5 +1,5 @@
-"""Sonde d'Ollama : `GET /api/tags` liste les modèles présents ; le modèle d'embeddings doit y
-figurer. Le pourcentage de téléchargement n'est pas exposé ici (écran de premier lancement, D28)."""
+"""Ollama probe: `GET /api/tags` lists the models present; the embeddings model must be among them.
+The download percentage is not exposed here (first-launch screen, D28)."""
 
 import httpx
 
@@ -19,7 +19,7 @@ class OllamaProbe:
         if not isinstance(models, list):
             return False
         names = [m.get("name") for m in models if isinstance(m, dict)]
-        # « bge-m3 » correspond à « bge-m3 » et « bge-m3:latest », pas à « bge-m3-large ».
+        # « bge-m3 » matches « bge-m3 » and « bge-m3:latest », not « bge-m3-large ».
         return any(isinstance(n, str) and self._model in (n, n.split(":", 1)[0]) for n in names)
 
     async def check(self) -> HealthStatus:

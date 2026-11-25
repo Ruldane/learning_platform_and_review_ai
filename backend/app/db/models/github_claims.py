@@ -7,7 +7,7 @@ from app.db.base import Base, UserScopedMixin, UTCDateTime
 
 
 class ProjectGithubClaim(UserScopedMixin, Base):
-    """Un défi de profil GitHub en attente ou une attribution de commit consommée."""
+    """A pending GitHub profile challenge or a consumed commit attribution."""
 
     __tablename__ = "project_github_claims"
     __table_args__ = (

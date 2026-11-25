@@ -1,4 +1,4 @@
-"""Sources de veille et articles collectés dans la pile de lecture."""
+"""Watch sources and articles collected in the reading stack."""
 
 from datetime import datetime
 from typing import Literal

@@ -1,4 +1,4 @@
-"""Hypothèses personnelles et instantanés des erreurs qui les étayent."""
+"""Personal hypotheses and snapshots of the errors that support them."""
 
 from typing import Any
 

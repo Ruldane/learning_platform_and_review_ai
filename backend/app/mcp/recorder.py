@@ -1,17 +1,17 @@
-"""L'historique des changements d'un appel de niveau 2 et son annulation (phase 10, P14).
+"""The change history of a level 2 call and its undo (phase 10, P14).
 
-`ChangeRecorder` écoute les événements de flush de SQLAlchemy (`before_flush`, `after_flush`), mais
-**seulement pendant l'appel** qui l'a activé (variable de contexte `ACTIVE`, jamais partagée entre
-requêtes) : pour chaque ligne ajoutée, modifiée ou supprimée, il lit l'état avant et l'état après
-dans la base. Les lignes ne sont écrites dans `mcp_changes` (`persist`) qu'une fois la requête
-réussie, avec l'identifiant de l'appel. `undo` remet les lignes d'un appel dans leur état d'avant,
-dans une transaction, **si chacune est restée dans l'état « après »** ; sinon 409, rien n'est fait.
+`ChangeRecorder` listens to SQLAlchemy's flush events (`before_flush`, `after_flush`), but
+**only during the call** that activated it (context variable `ACTIVE`, never shared between
+requests): for each row added, modified or deleted, it reads the state before and the state
+after in the database. Rows are written to `mcp_changes` (`persist`) only once the request
+succeeds, with the call identifier. `undo` puts a call's rows back to their earlier state, in a
+transaction, **if each one is still in the "after" state**; otherwise 409, nothing is done.
 
-Limites assumées : seule la base est couverte (P14) ; une écriture en masse hors ORM
-(`update(...)` ou `delete(...)` direct) n'est pas vue ; les tables qui portent un secret (colonne
-`info={"export": False}`), `api_keys` et les tables `mcp_*` ne sont jamais copiées dans l'historique
-(D200 n° 9) ; au-delà de `MAX_ROWS` lignes, l'appel n'est pas annulable (rien n'est gardé, plutôt
-qu'une annulation partielle)."""
+Stated limits: only the database is covered (P14); a bulk write outside the ORM (direct
+`update(...)` or `delete(...)`) is not seen; tables that hold a secret (column
+`info={"export": False}`), `api_keys` and the `mcp_*` tables are never copied into the history
+(D200 no. 9); beyond `MAX_ROWS` rows, the call is not undoable (nothing is kept, rather than a
+partial undo)."""
 
 import logging
 from contextvars import ContextVar, Token
@@ -42,7 +42,7 @@ class _Op:
 
 
 class ChangeRecorder:
-    """Voir le module. À utiliser en `async with recorder:` autour de la requête interne."""
+    """See the module. Use as `async with recorder:` around the internal request."""
 
     def __init__(
         self, session_factory: async_sessionmaker[AsyncSession], call_id: str, user_id: str
@@ -68,11 +68,11 @@ class ChangeRecorder:
         exc: BaseException | None,
         tb: TracebackType | None,
     ) -> None:
-        self.active = False  # une tâche de fond qui a hérité du contexte n'enregistre plus rien
+        self.active = False  # a background task that inherited the context records nothing anymore
         if self._token is not None:
             ACTIVE.reset(self._token)
 
-    # --- événements de flush (sync, dans le flush) -------------------------------------------
+    # --- flush events (sync, during the flush) -------------------------------------------
 
     @staticmethod
     def _row(connection: Connection, table: Table, row_id: Any) -> dict[str, Any] | None:
@@ -125,8 +125,9 @@ class ChangeRecorder:
     def _note(
         self, key: tuple[str, str], kind: str, before: dict[str, Any] | None, after: Any
     ) -> None:
-        """Fusionne les passages successifs sur une même ligne : ajoutée puis modifiée = ajoutée,
-        ajoutée puis supprimée = rien, modifiée puis supprimée = supprimée."""
+        """Merges successive passes over the same row: added then modified = added, added then
+        deleted =
+        nothing, modified then deleted = deleted."""
         current = self._ops.get(key)
         if current is None:
             self._ops[key] = _Op(kind, before, after)
@@ -140,11 +141,10 @@ class ChangeRecorder:
         else:
             current.after = after
 
-    # --- écriture et annulation --------------------------------------------------------------
+    # --- write and undo ----------------------------------------------------------------------
 
     async def persist(self) -> int:
-        """Écrit l'historique de l'appel (dans sa propre courte session) ; rend le nombre de
-        lignes gardées."""
+        """Writes the call's history (in its own short session); returns the number of rows kept."""
         if self._recorded is not None:
             return self._recorded
         async with self._factory() as db:
@@ -181,12 +181,12 @@ class ChangeRecorder:
         return len(kept)
 
     async def persist_in(self, db: AsyncSession) -> None:
-        """Garde une réservation et son historique dans la même transaction."""
+        """Keeps a reservation and its history in the same transaction."""
         await db.flush()
         self._recorded = self._insert(db, self._kept())
 
     async def extend_in(self, db: AsyncSession, *, keep_latest: frozenset[str]) -> None:
-        """Fusionne la publication avec l'appel d'origine dans la transaction métier."""
+        """Merges the publication with the original call in the business transaction."""
         await db.flush()
         stmt = select(McpChange).where(
             McpChange.user_id == self.user_id,
@@ -194,11 +194,11 @@ class ChangeRecorder:
             McpChange.undone_at.is_(None),
         )
         existing = {(row.table_name, row.row_id): row for row in await db.scalars(stmt)}
-        if not existing:  # historique expiré
+        if not existing:  # expired history
             return
         kept = self._kept()
         if self.overflow or len(existing.keys() | {key for key, _ in kept}) > MAX_ROWS:
-            return  # l'ancien instantané fera refuser une annulation partielle
+            return  # the old snapshot will make a partial undo be refused
         added = []
         for key, op in kept:
             previous = existing.get(key)
@@ -212,7 +212,7 @@ class ChangeRecorder:
         self._insert(db, added)
 
     async def undo(self, call_id: str) -> UndoResult:
-        """Annule les changements de `call_id` (voir `app/mcp/undo.py`)."""
+        """Undoes the changes of `call_id` (see `app/mcp/undo.py`)."""
         return await undo_call(self._factory, self.user_id, call_id)
 
 
@@ -229,7 +229,7 @@ def _on_after_flush(session: Session, flush_context: Any) -> None:
 
 
 def install_recorder_events() -> None:
-    """Branche les écouteurs de flush (une seule fois ; sans effet hors d'un appel enregistré)."""
+    """Installs the flush listeners (only once; no effect outside a recorded call)."""
     if not event.contains(Session, "before_flush", _on_before_flush):
         event.listen(Session, "before_flush", _on_before_flush)
         event.listen(Session, "after_flush", _on_after_flush)

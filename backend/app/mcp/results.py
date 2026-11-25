@@ -1,6 +1,6 @@
-"""Ce que l'envoyeur fait d'une réponse de route (phase 10, P12, P13) : lire le corps, filtrer les
-champs (`response_fields`), rendre une 422 lisible avec les noms d'arguments de l'outil, extraire
-les identifiants pour le journal, et poster un formulaire sans fichier."""
+"""What the sender does with a route's response (phase 10, P12, P13): reads the body, filters the
+fields (`response_fields`), returns a readable 422 with the tool's argument names, extracts the
+identifiers for the journal, and posts a form without a file."""
 
 import json
 import re
@@ -17,7 +17,7 @@ from app.mcp.tools import ToolResult, ToolSpec
 
 
 def form_fields(body: Any) -> list[tuple[str, tuple[None, str]]]:
-    """Les champs texte d'un formulaire : `multipart/form-data` sans aucun fichier."""
+    """The text fields of a form: `multipart/form-data` with no file at all."""
     fields: list[tuple[str, tuple[None, str]]] = []
     for key, value in (body or {}).items():
         items = value if isinstance(value, list) else [value]
@@ -51,7 +51,7 @@ _FILE_TEXT_BYTES = 30_000
 
 
 def artifact_response(response: httpx.Response, local_url: str | None) -> dict[str, Any]:
-    """Métadonnées et texte disponible sans diffuser le contenu binaire ni une redirection."""
+    """Metadata and text available without streaming binary content or a redirect."""
     media = response.headers.get("content-type", "").split(";")[0]
     disposition = Message()
     disposition["Content-Disposition"] = response.headers.get("content-disposition", "")
@@ -69,7 +69,7 @@ def artifact_response(response: httpx.Response, local_url: str | None) -> dict[s
 
 
 def filter_fields(data: Any, fields: frozenset[str] | None) -> Any:
-    """`response_fields` : seules ces clés de l'objet racine (de chaque objet d'une liste)."""
+    """`response_fields`: only these keys of the root object (of each object in a list)."""
     if fields is None:
         return data
     if isinstance(data, dict):
@@ -80,7 +80,7 @@ def filter_fields(data: Any, fields: frozenset[str] | None) -> Any:
 
 
 def fence_sessions(data: Any, paths: Mapping[str, tuple[str, ...]]) -> Any:
-    """Entoure les résultats des graphes qui lisent des sources non fiables."""
+    """Wraps the results of graphs that read untrusted sources."""
     if isinstance(data, list):
         return [fence_sessions(item, paths) for item in data]
     if isinstance(data, dict) and isinstance(data.get("graph"), str) and data["graph"] in paths:
@@ -89,10 +89,10 @@ def fence_sessions(data: Any, paths: Mapping[str, tuple[str, ...]]) -> Any:
 
 
 def translate_validation(data: Any, tool: ToolSpec) -> Any:
-    """Une 422 de validation de la route, lisible avec les noms d'arguments de l'outil, sans
-    jamais la valeur reçue : `details.errors` (seuls `loc`, `msg` et `type` sont repris) ou
-    `details.fields` (chemins de champs des routes à champs nommés). Toute autre 422 (une règle
-    de la feature) passe telle quelle."""
+    """A route's validation 422, readable with the tool's argument names and never the value
+    received:
+    `details.errors` (only `loc`, `msg` and `type` are taken) or `details.fields` (field paths of
+    the named-field routes). Any other 422 (a rule of the feature) passes through as is."""
     details = (data or {}).get("error", {}).get("details") if isinstance(data, dict) else None
     if not isinstance(details, dict):
         return data
@@ -126,7 +126,7 @@ def translate_validation(data: Any, tool: ToolSpec) -> Any:
 
 
 def field_path(parts: list[str], inverse: Mapping[str, str]) -> str:
-    """Le chemin d'un champ en erreur, son premier segment renommé en argument de l'outil."""
+    """The path of an erroneous field, its first segment renamed to the tool's argument."""
     first = inverse.get(parts[0], parts[0]) if parts else "?"
     return clip(".".join([first, *parts[1:]]), 80)
 
@@ -137,11 +137,10 @@ _CREATED_RESOURCES = ("application", "goal", "posting")
 
 
 def result_ids(data: Any) -> dict[str, str]:
-    """Identifiants Tremplin d'une réponse réussie, UUID4 ou UUID5 pour les conversations.
+    """Tremplin identifiers of a successful response, UUID4 or UUID5 for conversations.
 
-    Les références libres et les clés d'idempotence peuvent venir de la saisie. Les sous-objets
-    des réponses de création nommées portent l'identifiant de la ressource créée.
-    """
+    Free-form references and idempotency keys may come from user input. The sub-objects of named
+    creation responses carry the identifier of the created resource."""
     if not isinstance(data, dict):
         return {}
     ids = {
@@ -161,9 +160,9 @@ def result_ids(data: Any) -> dict[str, str]:
 
 
 def timed_out(data: Any, call_id: str | None) -> ToolResult:
-    """Délai dépassé sur une écriture : la route a pu valider ses écritures avant de répondre.
-    Claude le lit (`notice`) avant de relancer, le journal le garde (`outcome: timeout`) ; rien
-    n'a été enregistré pour l'annulation."""
+    """Timeout on a write: the route may have validated its writes before answering. Claude reads it
+    (`notice`) before retrying; the journal keeps it (`outcome: timeout`); nothing was recorded
+    for undo."""
     notice = (
         "The route may have written before the timeout: check the state (read) before retrying, "
         "and this call cannot be undone from the app."
@@ -179,7 +178,7 @@ def timed_out(data: Any, call_id: str | None) -> ToolResult:
 
 @dataclass(frozen=True)
 class InternalResponse:
-    """La réponse de la route : code HTTP et corps (JSON lu, `None` si vide)."""
+    """The route's response: HTTP code and body (JSON read, `None` if empty)."""
 
     status: int
     data: Any

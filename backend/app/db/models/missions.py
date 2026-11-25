@@ -1,4 +1,4 @@
-"""Instantané d'une mission et preuve du rendu associé."""
+"""Snapshot of a mission and the proof of the associated submission."""
 
 from datetime import datetime
 from typing import Any

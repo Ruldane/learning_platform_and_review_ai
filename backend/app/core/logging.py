@@ -5,15 +5,15 @@ from collections.abc import Callable, Iterable, Mapping
 from typing import Any
 
 REDACTED = "***"
-# `sk-…` seulement en début de mot (« risk-assessment-framework » reste lisible) ; `tmcp_…` : les
-# jetons du serveur MCP, même avant leur première présentation après un redémarrage.
+# `sk-…` only at the start of a word (« risk-assessment-framework » stays readable); `tmcp_…`:
+# the MCP server tokens, even before their first presentation after a restart.
 _KEY_PATTERN = re.compile(r"(?<![A-Za-z0-9_-])sk-[A-Za-z0-9_-]{16,}|tmcp_[A-Za-z0-9_-]{20,}")
-# Journaux de uvicorn : ils ne se propagent pas jusqu'à la racine.
+# uvicorn logs: they do not propagate up to the root.
 _OWN_HANDLER_LOGGERS = ("uvicorn", "uvicorn.error", "uvicorn.access")
-# Bibliothèques dont les journaux citeraient une URL ou un extrait de document (spec 17.2) :
-# httpx écrit « HTTP Request: GET <URL complète> » en INFO à chaque requête et redirection ;
-# pdfminer, trafilatura et htmldate citent des fragments en WARNING ; `httpx2` (SDK de Z.ai)
-# écrit l'URL de l'API en INFO à chaque appel.
+# Libraries whose logs would quote a URL or a document extract (spec 17.2):
+# httpx writes « HTTP Request: GET <full URL> » at INFO on each request and redirect;
+# pdfminer, trafilatura and htmldate quote fragments at WARNING; `httpx2` (the Z.ai SDK)
+# writes the API URL at INFO on each call.
 _QUIET_LOGGERS = {
     "httpx": logging.WARNING,
     "httpx2": logging.WARNING,
@@ -21,40 +21,40 @@ _QUIET_LOGGERS = {
     "pdfminer": logging.ERROR,
     "trafilatura": logging.ERROR,
     "htmldate": logging.ERROR,
-    # « Running job … executed successfully » toutes les 6 h : nos tâches journalisent elles-mêmes.
+    # « Running job … executed successfully » every 6 h: our tasks log themselves.
     "apscheduler": logging.WARNING,
 }
 
 
 class RedactingFilter(logging.Filter):
-    """Remplace les secrets connus et les motifs de clés par `***` (message, arguments, traces)."""
+    """Replaces the known secrets and key patterns with `***` (message, arguments, traces)."""
 
     def __init__(self, get_secrets: Callable[[], Iterable[str]]) -> None:
         super().__init__()
         self._get_secrets = get_secrets
 
     def redact(self, text: str) -> str:
-        # Les plus longs d'abord : un secret contenu dans un autre ne doit pas le masquer à moitié.
+        # The longest first: a secret contained in another must not half-hide it.
         for secret in sorted(set(self._get_secrets()), key=len, reverse=True):
             if secret:
                 text = text.replace(secret, REDACTED)
         return _KEY_PATTERN.sub(REDACTED, text)
 
     def _redact_value(self, value: Any) -> Any:
-        """Masque `value` s'il contient un secret ; sinon le rend tel quel (type conservé)."""
+        """Masks `value` if it contains a secret; otherwise returns it as is (type kept)."""
         if isinstance(value, str):
             return self.redact(value)
         try:
             text = str(value)
-        except Exception:  # objet dont __str__ échoue : le formatage échouera de même
+        except Exception:  # object whose __str__ fails: the formatting fails the same way
             return value
         redacted = self.redact(text)
-        # Un dict, une liste ou un objet contenant un secret devient une chaîne masquée ;
-        # sans secret, l'argument garde son type (ex. `%d` d'uvicorn pour le code HTTP).
+        # A dict, a list or an object containing a secret becomes a masked string;
+        # without a secret, the argument keeps its type (e.g. `%d` of uvicorn for the HTTP code).
         return value if redacted == text else redacted
 
     def filter(self, record: logging.LogRecord) -> bool:
-        # La structure de `args` est conservée : AccessFormatter d'uvicorn en dépend (5-tuple).
+        # The structure of `args` is kept: uvicorn's AccessFormatter depends on it (5-tuple).
         record.msg = self._redact_value(record.msg)
         args = record.args
         if isinstance(args, tuple):
@@ -71,10 +71,10 @@ class RedactingFilter(logging.Filter):
 
 
 class AccessQueryFilter(logging.Filter):
-    """Retire la chaîne de requête du chemin dans le journal d'accès d'uvicorn : un filtre
-    `?tag=…&author=…` est du contenu de l'utilisateur (spec 17.2). Posé sur le logger
-    `uvicorn.access` lui-même, il s'applique quel que soit le handler. `args` garde sa forme
-    (5-tuple attendu par `AccessFormatter`)."""
+    """Removes the query string from the path in uvicorn's access log: a filter
+    `?tag=…&author=…` is user content (spec 17.2). Set on the `uvicorn.access` logger
+    itself, it applies whatever the handler. `args` keeps its shape
+    (5-tuple expected by `AccessFormatter`)."""
 
     def filter(self, record: logging.LogRecord) -> bool:
         args = record.args
@@ -96,8 +96,8 @@ def _install(handler: logging.Handler, get_secrets: Callable[[], Iterable[str]])
 
 
 def configure_logging(level: str, get_secrets: Callable[[], Iterable[str]]) -> None:
-    """Règle le niveau, masque les secrets sur tous les handlers et retire les chaînes de
-    requête du journal d'accès. Idempotent."""
+    """Sets the level, masks the secrets on all handlers and removes the query strings from the
+    access log. Idempotent."""
     _install_access_filter()
     root = logging.getLogger()
     root.setLevel(level.upper())

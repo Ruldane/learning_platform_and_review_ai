@@ -1,1 +1,1 @@
-"""Temps réel : flux des sessions par WebSocket (serveur → client uniquement)."""
+"""Real time: session streams over WebSocket (server → client only)."""

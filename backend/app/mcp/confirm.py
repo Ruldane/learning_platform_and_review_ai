@@ -1,7 +1,7 @@
-"""Les demandes « À confirmer » vues de l'adaptateur (phase 10, P15) : la requête gardée telle
-qu'elle partirait, son résumé neutre, l'aperçu complet que January lit avant de confirmer
-(`preview_fields`) et le port que l'envoyeur utilise pour la ranger. La vie de la demande (état,
-expiration, confirmation, refus) est dans `features/mcp/service/confirmations.py`."""
+"""The « À confirmer » requests as seen by the adapter (phase 10, P15): the guarded request as it
+would be sent, its neutral summary, the full preview January reads before confirming
+(`preview_fields`), and the port the sender uses to file it. The life of the request (state,
+expiry, confirmation, refusal) is in `features/mcp/service/confirmations.py`."""
 
 import asyncio
 import json
@@ -23,23 +23,23 @@ MAX_PENDING_PER_TOKEN = 20
 PRECHECK_TIMEOUT_S = 60.0
 _PREVIEW = 60
 _PREVIEW_FIELDS = 6
-FIELD_PREVIEW_MAX = 500  # caractères montrés par champ
-TOTAL_PREVIEW_MAX = 4_000  # caractères montrés pour toute la requête
+FIELD_PREVIEW_MAX = 500  # characters shown per field
+TOTAL_PREVIEW_MAX = 4_000  # characters shown for the whole request
 
 
 @dataclass(frozen=True)
 class StoredRequest:
-    """Ce qui est gardé d'une demande : l'outil, la requête complète (méthode, chemin, paramètres,
-    corps) et l'identité qui l'a faite (étiquette, features, mode du jeton). Le compte et le jeton
-    sont dans la ligne de la demande, pas ici."""
+    """What is kept of a request: the tool, the full request (method, path, parameters, body) and
+    the identity that made it (label, features, token mode). The account and the token are in
+    the request's row, not here."""
 
     tool: str
     request: ToolRequest
     label: str
     features: tuple[str, ...]
     mode: str
-    route: str | None = None  # le gabarit de la route (`/applications/{application_id}`)
-    target_label: str | None = None  # le libellé lisible de la cible, lu à la création
+    route: str | None = None  # the route template (`/applications/{application_id}`)
+    target_label: str | None = None  # the readable label of the target, read at creation
 
     def to_json(self) -> dict[str, Any]:
         request = self.request
@@ -81,7 +81,7 @@ class StoredRequest:
         )
 
     def identity(self, user_id: str, token_id: str) -> McpIdentity:
-        """L'identité sous laquelle la demande s'exécute : celle enregistrée à la création."""
+        """The identity under which the request runs: the one recorded at creation."""
         mode: Literal["read", "write"] = "write" if self.mode == "write" else "read"
         return McpIdentity(
             user_id=user_id,
@@ -93,7 +93,7 @@ class StoredRequest:
 
 
 class Pending(Protocol):
-    """Ce que l'envoyeur lit d'une demande créée."""
+    """What the sender reads from a created request."""
 
     @property
     def id(self) -> str: ...
@@ -103,12 +103,13 @@ class Pending(Protocol):
 
 
 class ConfirmationPort(Protocol):
-    """Le rangement d'une demande (fourni par la feature `mcp`, pour un compte donné). Lève
-    `AppError` 429 `too_many_pending` à 20 demandes en attente pour le jeton."""
+    """Filing of a request (provided by the `mcp` feature, for a given account). Raises `AppError`
+    429 `too_many_pending` at 20 pending requests for the token."""
 
     async def ensure_room(self, identity: McpIdentity) -> None:
-        """Lève `AppError` 429 `too_many_pending` si le jeton a déjà 20 demandes en attente (à
-        tester avant le contrôle préalable, qui peut coûter un appel au modèle)."""
+        """Raises `AppError` 429 `too_many_pending` if the token already has 20 pending requests (to
+        be
+        checked before the precheck, which may cost a model call)."""
         ...
 
     async def create(
@@ -121,17 +122,17 @@ class ConfirmationPort(Protocol):
 
 
 def _render(value: Any) -> str:
-    """Une valeur en texte : tel quel pour un texte, JSON compact sinon (objets, listes…)."""
+    """A value as text: as is for text, compact JSON otherwise (objects, lists...)."""
     if isinstance(value, str):
         return value
     return json.dumps(value, ensure_ascii=False, separators=(",", ":"), default=str)
 
 
 def preview_fields(request: ToolRequest) -> tuple[list[tuple[str, str]], bool]:
-    """**Tous** les champs de la requête (paramètres puis corps), chacun rendu en texte, les clés
-    masquées avant la coupe (une clé coupée en deux ne reste jamais lisible), 500 caractères par
-    champ et 4 000 en tout. Rend `(champs, tronqué)` ; un champ coupé finit par « … », un champ
-    au-delà du total est nommé avec un aperçu vide."""
+    """**All** the fields of the request (parameters then body), each rendered as text, the keys
+    masked before cutting (a key cut in two is never left readable), 500 characters per field
+    and 4,000 in total. Returns `(fields, truncated)`; a cut field ends with "…", a field beyond
+    the total is named with an empty preview."""
     items: list[tuple[str, Any]] = list(request.params.items())
     if isinstance(request.body, dict):
         items += list(request.body.items())
@@ -154,9 +155,9 @@ def preview_fields(request: ToolRequest) -> tuple[list[tuple[str, str]], bool]:
 
 
 def summarize(tool: ToolSpec, request: ToolRequest) -> str:
-    """Le résumé que January lit : ce que fait l'outil, la route visée et, pour chaque argument
-    (6 au plus), son nom et un court aperçu entre guillemets. Les clés sont masquées, rien n'est
-    interprété : un texte piégé reste un texte."""
+    """The summary January reads: what the tool does, the target route and, for each argument (6 at
+    most), its name and a short preview in quotes. Keys are masked, nothing is interpreted: a
+    trapped text stays a text."""
     what = (tool.summary or tool.description).strip()
     parts: list[str] = []
     fields = dict(request.params)

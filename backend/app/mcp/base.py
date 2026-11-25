@@ -1,17 +1,17 @@
-"""Les déclarations MCP (phase 10, P11) : ce qu'une feature expose à Claude, par liste blanche.
+"""MCP declarations (phase 10, P11): what a feature exposes to Claude, by allowlist.
 
-Aucune route n'est exposée d'elle-même : chaque route de `FEATURE_ROUTERS` est soit **déclarée**
-(`McpAction`, avec son niveau), soit **exclue avec un motif** (`FeatureMcp.excluded`) ; un garde de
-test échoue sinon. Idem pour chaque graphe de `GRAPHS` (`McpGraph`).
+No route is exposed on its own: each route of `FEATURE_ROUTERS` is either **declared**
+(`McpAction`, with its level) or **excluded with a reason** (`FeatureMcp.excluded`); a test
+guard fails otherwise. The same goes for each graph of `GRAPHS` (`McpGraph`).
 
-Niveaux : 1 lecture ; 2 écriture réversible (historique et annulation, base seulement) ;
-3 action qui ne s'annule pas (suppression, envoi, écriture au profil maître) : l'appel crée une
-demande « À confirmer », rien ne se fait avant que January la confirme ; 4 jamais exposé
-(`NEVER_EXPOSED_FEATURES`, et dans `settings` : clés, modèles par niveau, surcharges par agent,
-secrets). Les autres réglages passent par l'action dédiée `settings_update_preferences` (niveau 2),
-qui lit l'objet (`merge_from`), ne change que les champs non sensibles listés (`body_fields`) et
-réécrit le tout : `PUT /settings` brut reste exclu, car il porte aussi les modèles. Une route
-déclarée avec `body_fields` est permise même si sa feature a des champs sensibles (D1)."""
+Levels: 1 read; 2 reversible write (history and undo, database only); 3 action that cannot be
+undone (deletion, sending, write to the master profile): the call creates a « À confirmer »
+request, and nothing happens until January confirms it; 4 never exposed (`NEVER_EXPOSED_FEATURES`,
+and in `settings`: keys, models per level, per-agent overrides, secrets). The other settings go
+through the dedicated action `settings_update_preferences` (level 2), which reads the object
+(`merge_from`), changes only the non-sensitive fields listed (`body_fields`) and rewrites the
+whole; a raw `PUT /settings` stays excluded, as it also carries the models. A route declared
+with `body_fields` is allowed even if its feature has sensitive fields (D1)."""
 
 import re
 from collections.abc import Awaitable, Callable, Mapping
@@ -21,11 +21,11 @@ from typing import Any, Literal
 
 Level = Literal[1, 2, 3]
 
-# Niveau 4 : jamais exposé au MCP (connexion et administration de l'accès MCP).
+# Level 4: never exposed to MCP (sign-in and administration of MCP access).
 NEVER_EXPOSED_FEATURES = frozenset({"auth", "mcp"})
 
-# Des POST qui ne font que lire (recherche) : seuls à pouvoir être de niveau 1 sans être un GET,
-# sinon un jeton en lecture seule ne pourrait pas chercher dans la mémoire.
+# POSTs that only read (search): the only ones that can be level 1 without being a GET,
+# otherwise a read-only token could not search the memory.
 READ_ONLY_POSTS = frozenset({"POST /memory/search"})
 
 
@@ -40,23 +40,24 @@ class McpExclusion(StrEnum):
     INTEGRATION_TOKEN = "Level 4 — consent and pairing of the integration token."
 
 
-# Grammaire des chemins `untrusted` : chemins pointés dans `data` de la réponse JSON (la racine est
-# `data`) ; `[]` = « chaque élément d'une liste » ; une réponse dont la racine est une liste se note
-# `[].champ`. Exemples : `"description"`, `"items[].description"`, `"postings[].company"`,
-# `"[].title"`, `"[].company.name"`. Ni `*`, ni indice, ni chemin vide.
+# Grammar of the `untrusted` paths: paths pointing into `data` of the JSON response (the root
+# is `data`); `[]` = "each element of a list"; a response whose root is a list is written
+# `[].field`. Examples: `"description"`, `"items[].description"`, `"postings[].company"`,
+# `"[].title"`, `"[].company.name"`. Neither `*`, nor an index, nor an empty path.
 _UNTRUSTED_PATH = re.compile(r"(\[\]\.)?[a-z_][a-z0-9_]*(\[\])?(\.[a-z_][a-z0-9_]*(\[\])?)*")
 
 
 def untrusted_paths_valid(paths: tuple[str, ...]) -> bool:
-    """Tous les chemins suivent la grammaire ci-dessus (vrai pour aucun chemin). L'enveloppement
-    des champs (clôture « donnée non fiable ») est le travail du serveur MCP (B2)."""
+    """All paths follow the grammar above (true for no path). Wrapping the fields ("untrusted data"
+    fence) is the job of the MCP server (B2)."""
     return all(_UNTRUSTED_PATH.fullmatch(path) for path in paths)
 
 
 @dataclass(frozen=True)
 class PrecheckInput:
-    """Ce que reçoit un contrôle préalable (niveau 3) : la requête telle qu'elle serait envoyée
-    (méthode, chemin, paramètres, corps) et l'utilisatrice concernée."""
+    """What a precheck (level 3) receives: the request as it would be sent (method, path,
+    parameters,
+    body) and the user concerned."""
 
     user_id: str
     method: str
@@ -67,9 +68,9 @@ class PrecheckInput:
 
 @dataclass(frozen=True)
 class Verdict:
-    """Le résultat d'un contrôle préalable, gardé dans la demande « À confirmer » : `ok` faux =
-    la demande dit pourquoi elle est déconseillée (`reasons`, textes neutres), jamais un blocage
-    silencieux. January décide."""
+    """The result of a precheck, kept in the « À confirmer » request: `ok` false = the request says
+    why
+    it is discouraged (`reasons`, neutral texts), never a silent block. January decides."""
 
     ok: bool
     reasons: tuple[str, ...] = ()
@@ -78,20 +79,19 @@ class Verdict:
 
 @dataclass(frozen=True)
 class McpAction:
-    """Une route exposée : `route` = `"POST /postings"` (méthode et chemin sans `/api/v1`) ;
-    `name` = nom de l'outil ; `side_effects="external"` (vecteurs, fichiers, appel externe) force
-    le niveau 3, l'annulation ne couvrant que la base (P14) ; `untrusted` = chemins des champs de
-    la réponse qui viennent du web (rendus comme données ; grammaire : `untrusted_paths_valid`) ;
-    `precheck` = contrôle préalable d'une action de niveau 3 (ex. validateur d'honnêteté du
-    profil) ; `body_fields` (si non `None`) = liste blanche des champs du corps que le MCP peut
-    envoyer, tout autre champ est refusé ; `merge_from` = route GET dont la réponse sert de base :
-    l'adaptateur la lit, remplace seulement `body_fields` et renvoie le tout (exige `body_fields`).
-    Un effet `external` est de niveau 3 au moins (`ValueError` sinon). `response_fields` (si non
-    `None`) : l'adaptateur ne renvoie que ces clés de l'objet racine de la réponse (de chaque objet
-    si c'est une liste), ex. les préférences sans les modèles ; `encoding="form"` : les champs
-    texte du corps partent en `multipart/form-data` (aucun fichier), pour un formulaire.
-    `launches` : le nom du graphe que la route lance (un parcours de `ROUTE_ONLY`) ; l'appel compte
-    dans le plafond de lancements de graphes par jour (M11)."""
+    """An exposed route: `route` = `"POST /postings"` (method and path without `/api/v1`); `name` =
+    the tool name; `side_effects="external"` (vectors, files, external call) forces level 3, as
+    undo covers only the database (P14); `untrusted` = paths of the response fields that come
+    from the web (rendered as data; grammar: `untrusted_paths_valid`); `precheck` = precheck of a
+    level 3 action (e.g. the profile honesty validator); `body_fields` (if not `None`) = allowlist
+    of the body fields the MCP may send, any other field is refused; `merge_from` = a GET route
+    whose response is the base: the adapter reads it, replaces only `body_fields` and returns the
+    whole (requires `body_fields`). An `external` effect is level 3 at least (`ValueError`
+    otherwise). `response_fields` (if not `None`): the adapter returns only these keys of the
+    response's root object (of each object if it is a list), e.g. the preferences without the
+    models; `encoding="form"`: the text fields of the body go as `multipart/form-data` (no file),
+    for a form. `launches`: the name of the graph the route launches (a flow of `ROUTE_ONLY`);
+    the call counts toward the daily cap on graph launches (M11)."""
 
     route: str
     level: Level
@@ -126,18 +126,19 @@ class McpAction:
 
 @dataclass(frozen=True)
 class McpGraph:
-    """Un graphe de l'application lancé par Claude (niveau 2) : les agents internes travaillent,
-    Claude suit la session jusqu'au résultat."""
+    """An application graph launched by Claude (level 2): the internal agents do the work, and
+    Claude
+    follows the session to the result."""
 
     graph: str
     level: Literal[2] = 2
     summary: str | None = None
     untrusted: tuple[str, ...] = ()
-    # Un parcours qui n'a que sa route de lancement (`ROUTE_ONLY`) : pas d'outil `graph_<nom>` (il
-    # serait refusé en 409), la déclaration ne sert qu'à rendre non fiables les champs du résultat
-    # de la session quand Claude la suit.
+    # A flow that has only its launch route (`ROUTE_ONLY`): no `graph_<name>` tool (it would be
+    # refused with 409); the declaration only serves to mark the result's fields of the session as
+    # untrusted when Claude follows it.
     follow_only: bool = False
-    # Le parcours n'a pas d'outil payant. Son nom graph_<nom> sert à agents_play_start.
+    # The flow has no paid tool. Its `graph_<name>` name is used by `agents_play_start`.
     play_only: bool = False
 
     def __post_init__(self) -> None:
@@ -147,13 +148,13 @@ class McpGraph:
 
 @dataclass(frozen=True)
 class FeatureMcp:
-    """Les actions, les graphes, les routes protégées et les équivalents de transport."""
+    """The actions, graphs, protected routes and transport equivalents."""
 
     feature: str
     actions: tuple[McpAction, ...] = ()
     graphs: tuple[McpGraph, ...] = ()
     excluded: Mapping[str, McpExclusion] = field(default_factory=dict)
-    # Ces routes ne peuvent être appelées que sous le contexte de modèle joué.
+    # These routes can only be called under the played model context.
     play_actions: tuple[McpAction, ...] = ()
-    # Une opération de transport représentée par un outil équivalent.
+    # A transport operation represented by an equivalent tool.
     alternatives: Mapping[str, str] = field(default_factory=dict)

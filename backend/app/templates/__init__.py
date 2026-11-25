@@ -1,6 +1,6 @@
-"""Gabarits HTML des PDF (leçon, programme ; SPEC 3.5, 17.4, D89) : Jinja avec échappement
-automatique partout (`.j2` compris), variable inconnue = erreur. Le seul HTML inséré tel quel est
-le corps d'une leçon, déjà nettoyé par `nh3` (`lessons.service.markdown`)."""
+"""HTML templates of the PDFs (lesson, program; SPEC 3.5, 17.4, D89): Jinja with automatic escaping
+everywhere (`.j2` included), and an unknown variable is an error. The only HTML inserted as is,
+is the body of a lesson, already cleaned by `nh3` (`lessons.service.markdown`)."""
 
 from pathlib import Path
 
@@ -19,5 +19,5 @@ _ENV = Environment(
 
 
 def render_template(name: str, **context: object) -> str:
-    """`name` relatif au dossier des gabarits, par exemple `lesson/lesson.html.j2`."""
+    """`name` relative to the templates folder, for example `lesson/lesson.html.j2`."""
     return _ENV.get_template(name).render(**context)

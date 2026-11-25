@@ -1,13 +1,13 @@
-"""JSON-RPC 2.0 du serveur MCP (phase 10, P10), écrit à la main : transport « Streamable HTTP »,
-sans état (aucune session, `Mcp-Session-Id` jamais émis). Méthodes : `initialize`, `ping`,
-`tools/list`, `tools/call`, `server/discover` ; toute notification (message sans `id`) est acceptée
-sans réponse et **jamais exécutée**, y compris un `tools/call` sans `id`.
+"""MCP server JSON-RPC 2.0 (phase 10, P10), written by hand: "Streamable HTTP" transport, stateless
+(no session, `Mcp-Session-Id` never issued). Methods: `initialize`, `ping`, `tools/list`,
+`tools/call`, `server/discover`; any notification (message without `id`) is accepted without a
+reply and **never executed**, including a `tools/call` without `id`.
 
-Le moteur ne connaît ni les features ni les agents : il consomme un registre d'outils et un envoyeur
-(`ToolRegistry`, `Dispatcher`, fournis par la composition). Les refus d'autorisation (feature hors
-périmètre, jeton en lecture seule, limite atteinte) sortent en `AppError` (403, 429), rendus en HTTP
-par le point d'entrée ; une erreur de protocole est une erreur JSON-RPC lisible ; une erreur de
-l'outil est un résultat `isError` que Claude peut lire."""
+The engine knows neither the features nor the agents: it consumes a tool registry and a sender
+(`ToolRegistry`, `Dispatcher`, provided by the composition). Authorization refusals (feature out
+of scope, read-only token, limit reached) come out as `AppError` (403, 429), rendered in HTTP by
+the entry point; a protocol error is a readable JSON-RPC error; a tool error is an `isError`
+result that Claude can read."""
 
 import json
 import logging
@@ -21,10 +21,10 @@ from app.mcp.tools import Dispatcher, ToolRegistry, ToolResult, ToolSpec
 
 logger = logging.getLogger(__name__)
 
-# Versions du transport servies avec la poignée de main `initialize` (la plus récente d'abord).
-# La révision 2026-07-28 (sans état, sans `initialize`) n'est pas annoncée : un client qui la
-# demande reçoit 400 `-32022` avec cette liste et retombe sur l'une d'elles (repli prévu par la
-# spécification).
+# Transport versions served with the `initialize` handshake (most recent first).
+# Revision 2026-07-28 (stateless, no `initialize`) is not announced: a client that requests
+# it gets 400 `-32022` with this list and falls back to one of them (fallback provided by the
+# specification).
 SUPPORTED_VERSIONS = ("2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05")
 SERVER_NAME = "tremplin"
 SERVER_VERSION = "1.0.0"
@@ -38,13 +38,13 @@ HEADER_MISMATCH = -32020
 UNSUPPORTED_VERSION = -32022
 
 MAX_NAME_LENGTH = 80
-MAX_DEPTH = 24  # imbrication d'un message : au-delà, refusé avant tout traitement
+MAX_DEPTH = 24  # nesting of a message: beyond that, refused before any processing
 MAX_RESULT_CHARS = 200_000
 _ECHO_MAX = 60
 
 
 class RpcError(Exception):
-    """Erreur JSON-RPC à rendre telle quelle à l'appelant."""
+    """JSON-RPC error to return as is to the caller."""
 
     def __init__(self, code: int, message: str, data: Any = None) -> None:
         super().__init__(message)
@@ -65,7 +65,7 @@ def _result(rpc_id: Any, result: dict[str, Any]) -> dict[str, Any]:
 
 
 def _too_deep(payload: Any) -> bool:
-    """Imbrication de plus de `MAX_DEPTH` niveaux (parcours itératif : pas de récursion)."""
+    """Nesting deeper than `MAX_DEPTH` levels (iterative walk: no recursion)."""
     stack: list[tuple[Any, int]] = [(payload, 1)]
     while stack:
         node, depth = stack.pop()
@@ -146,7 +146,7 @@ def _authorize(tool: ToolSpec, identity: McpIdentity) -> None:
 
 
 def _brief_content(data: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, str]]]:
-    """Les images passent dans les blocs MCP, à la place du base64 dans le texte."""
+    """Images go into the MCP blocks, in place of base64 in the text."""
     images: list[dict[str, str]] = []
     messages = []
     for message in data["messages"]:
@@ -257,16 +257,16 @@ async def handle_rpc(
     tools: ToolRegistry,
     dispatcher: Dispatcher,
 ) -> dict[str, Any] | None:
-    """Traite un message JSON-RPC. `None` : rien à répondre (notification, ou réponse du client) ;
-    le point d'entrée rend alors 202. Lève `AppError` 403 (périmètre, lecture seule) ou 429."""
+    """Processes a JSON-RPC message. `None`: nothing to reply (notification, or the client's reply);
+    the entry point then returns 202. Raises `AppError` 403 (scope, read-only) or 429."""
     if not isinstance(payload, dict) or _too_deep(payload):
         return rpc_error(None, INVALID_REQUEST, "Invalid or too deeply nested JSON-RPC message.")
     if "method" not in payload:
         if "result" in payload or "error" in payload:
-            return None  # la réponse d'un client à une requête : acceptée, sans suite
+            return None  # a client's reply to a request: accepted, no follow-up
         return rpc_error(None, INVALID_REQUEST, "JSON-RPC message without a method.")
     if "id" not in payload:
-        return None  # notification : acceptée, jamais exécutée
+        return None  # notification: accepted, never executed
     rpc_id = payload["id"]
     method, params = payload["method"], payload.get("params")
     if not _valid_id(rpc_id) or payload.get("jsonrpc") != "2.0" or not isinstance(method, str):
@@ -281,6 +281,6 @@ async def handle_rpc(
         return rpc_error(rpc_id, exc.code, exc.message, exc.data)
     except AppError:
         raise
-    except Exception as exc:  # jamais une 500 : le type seul est journalisé, jamais le contenu
+    except Exception as exc:  # never a 500: only the type is logged, never the content
         logger.error("MCP: internal error in '%s' (%s)", _clip(method), type(exc).__name__)
         return rpc_error(rpc_id, INTERNAL_ERROR, "MCP server internal error.")

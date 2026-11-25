@@ -1,10 +1,11 @@
-"""Encre sous un bloc de texte, lue sur l'image rendue de la page (D119, revue 6.3, I1 et I2).
+"""Ink under a block of text, read from the rendered image of the page (D119, review 6.3, I1 and
+I2).
 
-Un bloc n'est visible que si l'image montre de l'encre dans son cadre : au moins 2 % des pixels
-s'écartent de la couleur dominante (le fond) de plus de 48 sur un canal. L'image rendue par PDFium
-est la vérité : mode de rendu invisible (`3 Tr`, `7 Tr`), dessin posé sur le texte, opacité nulle,
-rognage, calque masqué ou couleur proche du fond ne laissent aucune encre ; une couche OCR posée
-sur un scan trouve l'encre des lettres numérisées et reste visible. Sans FastAPI ni base."""
+A block is visible only if the image shows ink within its frame: at least 2% of the pixels differ
+from the dominant colour (the background) by more than 48 on a channel. The image rendered by PDFium
+is the truth: an invisible render mode (`3 Tr`, `7 Tr`), a drawing placed over the text, zero
+opacity, clipping, a hidden layer, or a colour close to the background leave no ink; an OCR layer
+placed on a scan finds the ink of the scanned letters and stays visible. No FastAPI, no database."""
 
 import math
 from dataclasses import dataclass
@@ -21,8 +22,8 @@ Pixels = NDArray[np.uint8]
 
 @dataclass(frozen=True)
 class Ink:
-    """`share` : part des pixels encrés du cadre ; `color` : le pixel le plus éloigné du fond
-    (cœur d'une lettre), `None` sans encre."""
+    """`share`: share of inked pixels in the frame; `color`: the pixel furthest from the background
+    (core of a letter), `None` without ink."""
 
     share: float
     color: Rgb | None
@@ -33,12 +34,12 @@ class Ink:
 
 
 def pixels_of(image: object) -> Pixels:
-    """Pixels RVB d'une image PIL (hauteur × largeur × 3)."""
+    """RGB pixels of a PIL image (height × width × 3)."""
     return np.asarray(image, dtype=np.uint8)
 
 
 def measure_ink(pixels: Pixels, box: tuple[float, float, float, float], scale: float) -> Ink:
-    """Encre dans `box` (points, repère de l'image), coupé aux bords de l'image."""
+    """Ink in `box` (points, image coordinates), cut at the edges of the image."""
     x0, top, x1, bottom = box
     height, width = pixels.shape[0], pixels.shape[1]
     left, upper = max(math.floor(x0 * scale), 0), max(math.floor(top * scale), 0)

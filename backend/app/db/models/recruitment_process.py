@@ -1,4 +1,4 @@
-"""Un dossier de répétition, indépendant d’une candidature réelle."""
+"""A rehearsal file, independent of a real application."""
 
 from typing import Any
 

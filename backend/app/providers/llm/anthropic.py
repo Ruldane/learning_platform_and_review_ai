@@ -1,4 +1,4 @@
-"""Fournisseur Anthropic (Claude) : `langchain-anthropic` pour le chat, `httpx` pour la clé."""
+"""Anthropic provider (Claude): `langchain-anthropic` for chat, `httpx` for the key."""
 
 from typing import Any
 
@@ -12,12 +12,12 @@ from app.providers.llm.base import CACHE_PREFIX_KEY, LLM_CALL_TIMEOUT_S, KeyTest
 
 _API_URL = "https://api.anthropic.com"
 _API_VERSION = "2023-06-01"
-_MAX_PAGES = 50  # garde-fou contre un curseur qui ne finit jamais
+_MAX_PAGES = 50  # guard against a cursor that never ends
 
 
 def _cached(message: BaseMessage) -> BaseMessage:
-    """Un `SystemMessage` marqué (`CACHE_PREFIX_KEY`) devient un bloc texte portant
-    `cache_control` : Anthropic met en cache tout le début du prompt jusqu'à ce bloc."""
+    """A marked `SystemMessage` (`CACHE_PREFIX_KEY`) becomes a text block carrying `cache_control`:
+    Anthropic caches the whole start of the prompt up to that block."""
     if (
         isinstance(message, SystemMessage)
         and message.additional_kwargs.get(CACHE_PREFIX_KEY)
@@ -29,7 +29,7 @@ def _cached(message: BaseMessage) -> BaseMessage:
 
 
 class _CachingChatAnthropic(ChatAnthropic):
-    """`ChatAnthropic` qui pose `cache_control` sur le début fixe marqué par l'appelant."""
+    """`ChatAnthropic` that sets `cache_control` on the fixed start marked by the caller."""
 
     def _get_request_payload(
         self, input_: Any, *, stop: list[str] | None = None, **kwargs: Any
@@ -52,7 +52,7 @@ class AnthropicProvider:
             api_key=SecretStr(api_key),
             base_url=base_url,
             timeout=LLM_CALL_TIMEOUT_S,
-            max_retries=0,  # les nouveaux essais appartiennent à `invoke_agent` (D44)
+            max_retries=0,  # new attempts belong to `invoke_agent` (D44)
             streaming=True,
             metadata={
                 "tremplin_provider": self.name,
@@ -75,7 +75,7 @@ class AnthropicProvider:
         return ids
 
     async def test_key(self, api_key: str) -> KeyTestResult:
-        """Liste les modèles : aucun token dépensé."""
+        """Lists the models: no token spent."""
         return await _http.check_key(
             self.label, "GET", f"{_API_URL}/v1/models?limit=1", _headers(api_key)
         )

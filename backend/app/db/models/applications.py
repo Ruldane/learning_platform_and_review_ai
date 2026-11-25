@@ -1,5 +1,5 @@
-"""Tables des candidatures (phase 7, D138) : fiches, fil d'événements, contacts, relances, pièces du
-kit, entretiens d'entraînement et exécutions du comité de recrutement."""
+"""Application tables (phase 7, D138): records, event thread, contacts, follow-ups, kit pieces,
+practice interviews and recruitment committee runs."""
 
 from datetime import date, datetime
 from typing import Any, Literal
@@ -19,8 +19,8 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, UserScopedMixin, UTCDateTime
 
-# Types partagés avec `app.agents`, qui ne peut pas importer une feature (contrat 6).
-# « À postuler » … « Retirée » (SPEC 6.1), dans cet ordre.
+# Types shared with `app.agents`, which cannot import a feature (contract 6).
+# « À postuler » … « Retirée » (SPEC 6.1), in this order.
 ApplicationStatus = Literal[
     "to_apply",
     "applied",
@@ -41,8 +41,8 @@ KitKind = Literal["cv", "letter", "linkedin", "followups", "form_answers", "comp
 KitStatus = Literal["pending", "ready", "to_check", "failed"]
 InterviewMode = Literal["behavioral", "technical", "case", "mixed", "salary"]
 RunStatus = Literal["running", "done", "failed", "stopped"]
-# Un entretien : `stopped` (arrêté avant toute réponse), `debrief_failed` (réponses gardées, débrief
-# non écrit), `failed` (session close sans résultat, posé à la lecture).
+# An interview: `stopped` (stopped before any answer), `debrief_failed` (answers kept, debrief
+# not written), `failed` (session closed without a result, set on read).
 InterviewStatus = Literal["running", "done", "failed", "stopped", "debrief_failed"]
 
 
@@ -51,9 +51,10 @@ def _application_fk() -> Mapped[str]:
 
 
 class Application(UserScopedMixin, Base):
-    """La fiche d'une candidature. `posting_id` n'a pas de clé étrangère (comme
-    `cv_versions.posting_id`) : la fiche garde sa copie figée du texte de l'offre (`posting_text`).
-    `distinct_from` : les fiches confirmées « autre poste », inscrites dans les deux sens."""
+    """The record of an application. `posting_id` has no foreign key (like
+    `cv_versions.posting_id`):
+    the record keeps its frozen copy of the offer text (`posting_text`).
+    `distinct_from`: the records confirmed as « autre poste », recorded both ways."""
 
     __tablename__ = "applications"
     __table_args__ = (
@@ -73,7 +74,7 @@ class Application(UserScopedMixin, Base):
     status: Mapped[str] = mapped_column(String(16), default="to_apply")
     applied_on: Mapped[date | None] = mapped_column(Date, default=None)
     interview_on: Mapped[date | None] = mapped_column(Date, default=None)
-    answered_on: Mapped[date | None] = mapped_column(Date, default=None)  # première réponse
+    answered_on: Mapped[date | None] = mapped_column(Date, default=None)  # first answer
     cv_version_id: Mapped[str | None] = mapped_column(String(36), default=None)
     letter: Mapped[str | None] = mapped_column(Text, default=None)
     notes: Mapped[str | None] = mapped_column(Text, default=None)
@@ -83,7 +84,7 @@ class Application(UserScopedMixin, Base):
 
 
 class ApplicationEvent(UserScopedMixin, Base):
-    """Une ligne du fil chronologique d'une fiche."""
+    """One line of a record's chronological thread."""
 
     __tablename__ = "application_events"
 
@@ -97,7 +98,7 @@ class ApplicationEvent(UserScopedMixin, Base):
 
 
 class Contact(UserScopedMixin, Base):
-    """Un contact d'une fiche (recruteur, responsable du poste)."""
+    """A contact of a record (recruiter, hiring manager)."""
 
     __tablename__ = "contacts"
 
@@ -108,8 +109,8 @@ class Contact(UserScopedMixin, Base):
 
 
 class Reminder(UserScopedMixin, Base):
-    """Une relance : jamais deux du même type pour la même ancre (`anchor_on` : la date de
-    candidature ou d'entretien dont elle découle)."""
+    """A follow-up: never two of the same type for the same anchor (`anchor_on`: the application
+    or interview date it derives from)."""
 
     __tablename__ = "reminders"
     # `uq_reminders_application_id` : (application_id, kind, anchor_on).
@@ -126,13 +127,13 @@ class Reminder(UserScopedMixin, Base):
     due_on: Mapped[date] = mapped_column(Date)
     status: Mapped[str] = mapped_column(String(16), default="pending")
     done_at: Mapped[datetime | None] = mapped_column(UTCDateTime, default=None)
-    # Reportée par January (« Reporter de 3 jours ») : ne suit plus les délais des réglages.
+    # Postponed by January (« Reporter de 3 jours »): no longer follows the settings' deadlines.
     postponed: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
 
 
 class KitItem(UserScopedMixin, Base):
-    """Une pièce du kit de candidature (CV, lettre, message LinkedIn…) ; `meta` : drapeaux,
-    sources, nombre de mots, langue. `edited` : January l'a modifiée à la main."""
+    """A piece of the application kit (CV, letter, LinkedIn message...); `meta`: flags,
+    sources, word count, language. `edited`: January edited it by hand."""
 
     __tablename__ = "kit_items"
     # `uq_kit_items_application_id` : (application_id, kind).
@@ -150,8 +151,8 @@ class KitItem(UserScopedMixin, Base):
 
 
 class Interview(UserScopedMixin, Base):
-    """Un entretien d'entraînement. `application_id` et `posting_id` n'ont pas de clé étrangère :
-    un entretien survit à la fiche (ou se tient sans elle)."""
+    """A practice interview. `application_id` and `posting_id` have no foreign key:
+    an interview outlives the record (or takes place without it)."""
 
     __tablename__ = "interviews"
     __table_args__ = (Index("ix_interviews_application", "user_id", "application_id"),)
@@ -160,8 +161,8 @@ class Interview(UserScopedMixin, Base):
     posting_id: Mapped[str | None] = mapped_column(String(36), default=None)
     role: Mapped[str | None] = mapped_column(String(200), default=None)
     mode: Mapped[str] = mapped_column(String(16))
-    duration_min: Mapped[int] = mapped_column(Integer)  # 15, 30 ou 45
-    language: Mapped[str] = mapped_column(String(2))  # « fr » ou « en »
+    duration_min: Mapped[int] = mapped_column(Integer)  # 15, 30 or 45
+    language: Mapped[str] = mapped_column(String(2))  # « fr » or « en »
     salary: Mapped[dict[str, Any] | None] = mapped_column(default=None)
     surprise_invitation_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("surprise_interview_invitations.id", ondelete="RESTRICT")
@@ -174,8 +175,7 @@ class Interview(UserScopedMixin, Base):
 
 
 class CommitteeRun(UserScopedMixin, Base):
-    """Une exécution du comité de recrutement sur une version de CV ; `previous_id` : la
-    précédente, pour comparer."""
+    """A recruitment committee run on a CV version; `previous_id`: the previous one, to compare."""
 
     __tablename__ = "committee_runs"
     __table_args__ = (Index("ix_committee_runs_cv_version", "user_id", "cv_version_id"),)

@@ -6,13 +6,13 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, UserScopedMixin
 
-# Types partagés avec `app.agents`, qui ne peut pas importer une feature (contrat 6).
+# Types shared with `app.agents`, which cannot import a feature (contract 6).
 SkillLevel = Literal["declared", "in_progress", "validated", "proven"]
 LEVEL_ORDER: tuple[SkillLevel, ...] = ("declared", "in_progress", "validated", "proven")
 
 
 class Skill(UserScopedMixin, Base):
-    """Une compétence du graphe de January ; `norm_name` (`normalize_skill_name`) la dédoublonne."""
+    """A skill of January's graph; `norm_name` (`normalize_skill_name`) de-duplicates it."""
 
     __tablename__ = "skills"
     # `uq_skills_user_id` : (user_id, norm_name).
@@ -25,7 +25,7 @@ class Skill(UserScopedMixin, Base):
 
 
 class SkillEdge(UserScopedMixin, Base):
-    """`before` précède `after` : il faut connaître la première pour aborder la seconde."""
+    """`before` comes before `after`: the first must be known before tackling the second."""
 
     __tablename__ = "skill_edges"
     # `uq_skill_edges_before_id` : (before_id, after_id).
@@ -36,7 +36,7 @@ class SkillEdge(UserScopedMixin, Base):
 
 
 class UserSkill(UserScopedMixin, Base):
-    """Le niveau de January sur une compétence, avec ses preuves."""
+    """January's level on a skill, with its evidence."""
 
     __tablename__ = "user_skills"
     # `uq_user_skills_user_id` : (user_id, skill_id).
@@ -44,17 +44,17 @@ class UserSkill(UserScopedMixin, Base):
 
     skill_id: Mapped[str] = mapped_column(String(36), ForeignKey("skills.id", ondelete="CASCADE"))
     level: Mapped[str] = mapped_column(String(16), default="declared")
-    # Preuves : `core.skills.Evidence` (les chaînes de la phase 4 se lisent par `read_evidence`).
+    # Evidence: `core.skills.Evidence` (the phase 4 chains are read through `read_evidence`).
     evidence: Mapped[list[Any]] = mapped_column(default=list)
-    # Échecs de fiches consécutifs sur cette compétence (`DEMOTE_AFTER` la fait redescendre).
+    # Consecutive failed cards on this skill (`DEMOTE_AFTER` brings it back down).
     fail_streak: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
 
 
 class SkillSnapshot(UserScopedMixin, Base):
-    """Le relevé hebdomadaire des niveaux (courbe de la carte) : `skill_id → niveau`."""
+    """The weekly record of levels (the map's curve): `skill_id → level`."""
 
     __tablename__ = "skill_snapshots"
-    # `uq_skill_snapshots_user_id` : (user_id, week_start), le lundi de la semaine locale.
+    # `uq_skill_snapshots_user_id`: (user_id, week_start), the Monday of the local week.
     __table_args__ = (UniqueConstraint("user_id", "week_start"),)
 
     week_start: Mapped[date] = mapped_column(Date)

@@ -1,7 +1,7 @@
-"""Tâche « rafraîchissement ATS » (P14, D158) : toutes les 6 heures et au démarrage, chaque compte
-dont le dernier rafraîchissement date de 30 jours ou plus reçoit une session `web_research` sur le
-fonctionnement des ATS. Le travail est dans la feature `cv` (`run_ats_refresh`), qui n'importe
-jamais ce paquet (contrat 8) : la tâche ne fait que déballer son contexte et lire l'heure."""
+"""Task "ATS refresh" (P14, D158): every 6 hours and at startup, each account whose last refresh is
+30 days old or more receives a `web_research` session on how ATS work. The work is in the `cv`
+feature (`run_ats_refresh`), which never imports this package (contract 8): the task only unpacks
+its context and reads the time."""
 
 from datetime import UTC, datetime
 

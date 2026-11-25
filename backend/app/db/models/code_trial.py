@@ -1,4 +1,4 @@
-"""Version du projet et verdict conservés par compte."""
+"""Project version and verdict kept per account."""
 
 from typing import Any
 

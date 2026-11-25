@@ -57,9 +57,10 @@ _PROBE_TIMEOUT_SECONDS = 3.0
 
 
 async def _open_external_providers(app: FastAPI, stack: AsyncExitStack) -> MemoryProviders:
-    """Fournisseurs de la mémoire, de la recherche web puis des PDF de nos gabarits (D89) : ceux
-    qu'on a injectés (tests), sinon la composition réelle, fermée par la pile. La recherche
-    reprend le lecteur web de la mémoire. Rend les fournisseurs de la mémoire."""
+    """Memory providers, then web search, then the PDF providers of our templates (D89): the ones
+    that
+    were injected (tests), otherwise the real composition, closed by the stack. Search reuses the
+    memory web reader. Returns the memory providers."""
     memory: MemoryProviders | None = app.state.injected_memory_providers
     if memory is None:
         memory = await stack.enter_async_context(open_memory_providers(app.state.settings))
@@ -79,17 +80,17 @@ async def _open_external_providers(app: FastAPI, stack: AsyncExitStack) -> Memor
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
-    check_google_config(app.state.settings)  # mode Google mal configuré : refus de démarrer (P11)
+    check_google_config(app.state.settings)  # Google mode misconfigured: refuse to start (P11)
     setup_security(app)
-    # Le schéma n'est jamais créé ici : en Docker, l'entrypoint lance `alembic upgrade head`.
-    # La pile ferme le moteur et le client HTTP même si la composition ou le démarrage échoue.
+    # The schema is never created here: in Docker, the entrypoint runs `alembic upgrade head`.
+    # The stack closes the engine and the HTTP client even if the composition or startup fails.
     async with AsyncExitStack() as stack:
         engine = create_engine(app.state.settings.database_url)
         stack.push_async_callback(engine.dispose)
         app.state.engine = engine
         app.state.session_factory = create_session_factory(engine)
         app.state.calendar = await open_calendar(app, stack)
-        # Client partagé par les sondes de santé ; le test de la clé Brave a le sien (D74).
+        # Client shared by the health probes; the Brave key test has its own (D74).
         http = await stack.enter_async_context(httpx.AsyncClient(timeout=_PROBE_TIMEOUT_SECONDS))
         key_http = await stack.enter_async_context(key_test_http())
         oidc = await open_oidc(app.state.settings, stack)
@@ -102,21 +103,21 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
             key_http=key_http,
             oidc=oidc,
         )
-        if app.state.providers.embedding is not None:  # l'arrêt annule le téléchargement de bge-m3
+        if app.state.providers.embedding is not None:  # shutdown cancels the bge-m3 download
             stack.push_async_callback(app.state.providers.embedding.aclose)
-        # Avant la mémoire : son worker relit la base au démarrage ; un schéma absent doit donner
-        # l'indication `alembic upgrade head` plutôt qu'une erreur SQL brute.
+        # Before memory: its worker re-reads the database at startup; a missing schema must give
+        # the `alembic upgrade head` hint rather than a raw SQL error.
         if app.state.settings.auth_mode == "local":
             await ensure_local_user(app)
         app.state.authenticator = build_authenticator(
             app.state.settings, app.state.session_factory, getattr(app.state, "local_user_id", None)
         )
         injected = await _open_external_providers(app, stack)
-        # Mémoire : entrée avant le moteur d'agents (qui s'en servira), donc fermée après lui.
+        # Memory: entered before the agent engine (which will use it), so closed after it.
         app.state.memory = await stack.enter_async_context(
             open_memory_runtime(app.state.session_factory, injected)
         )
-        # Recherche web : après la mémoire (même lecteur web), avant le moteur d'agents.
+        # Web search: after memory (same web reader), before the agent engine.
         app.state.research = await stack.enter_async_context(
             open_research_runtime(
                 app.state.session_factory, app.state.research_providers, app.state.providers
@@ -131,7 +132,7 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 def _compose_features(app: FastAPI) -> StudyRuntimes:
-    """Compose les services avant de lier leur lanceur au moteur d’agents."""
+    """Composes the services before linking their launcher to the agent engine."""
     app.state.launcher = SessionLauncher()
     app.state.learning = LearningRuntime(app.state.session_factory, app.state.launcher)
     app.state.lessons = lessons_runtime(
@@ -176,19 +177,18 @@ def _compose_features(app: FastAPI) -> StudyRuntimes:
         study=study,
         github=github,
     )
-    compose_phase10(app)  # IDE (bac à sable, port du professeur) et serveur MCP (phase 10)
+    compose_phase10(app)  # IDE (sandbox, professor port) and MCP server (phase 10)
     return study
 
 
 async def _open_agents(app: FastAPI, stack: AsyncExitStack) -> None:
-    """Moteur d'agents (bus, runner, checkpointer) sur les ports des features, puis lanceur de
-    sessions hors requête (D82). Entré après la mémoire et la recherche, donc fermé avant elles
-    (la pile dépile à l'envers) ; reprend les sessions interrompues. Enfin, le planificateur des
-    tâches (D91)."""
+    """Agent engine (bus, runner, checkpointer) on the feature ports, then the launcher of sessions
+    outside the request (D82). Entered after memory and search, so closed before them (the stack
+    unwinds in reverse order); resumes interrupted sessions. Finally, the task scheduler (D91)."""
     study = _compose_features(app)
     study.replan.calendar = app.state.calendar
     await start_ide_gateway(app, stack)
-    # Modèles injectés (parcours de bout en bout, tests), sinon la fabrique réelle.
+    # Injected models (end-to-end flows, tests), otherwise the real factory.
     models: ChatModelSource = app.state.injected_chat_models or app.state.providers.llm_factory
     app.state.runtime = await stack.enter_async_context(
         agent_runtime(
@@ -229,8 +229,9 @@ async def _open_agents(app: FastAPI, stack: AsyncExitStack) -> None:
 
 
 async def _open_scheduler(app: FastAPI, stack: AsyncExitStack) -> None:
-    """Tâches planifiées (leçons « J-7 », D91) : après le moteur et le lanceur lié, donc arrêtées
-    avant eux (passage en cours annulé et attendu). `scheduler_enabled = false` (tests) : aucune."""
+    """Scheduled tasks (« J-7 » lessons, D91): after the engine and the linked launcher, so stopped
+    before them (a run in progress is cancelled and awaited). `scheduler_enabled = false`
+    (tests): none."""
     if app.state.settings.scheduler_enabled:
         context = scheduler_context(
             app.state.session_factory,
@@ -252,11 +253,10 @@ def create_app(
     publishing_providers: PublishingProviders | None = None,
     chat_models: ChatModelSource | None = None,
 ) -> FastAPI:
-    """Construit l'application. `settings` prime toujours sur le cache `get_settings()` ;
-    `memory_providers` remplace la composition réelle d'Ollama et de Qdrant,
-    `research_providers` celle de SearXNG et de Brave, `publishing_providers` celle du rendu
-    PDF de Gotenberg, `chat_models` la fabrique des modèles des agents (tests, parcours de bout
-    en bout)."""
+    """Builds the application. `settings` always takes precedence over the `get_settings()` cache;
+    `memory_providers` replaces the real composition of Ollama and Qdrant, `research_providers`
+    that of SearXNG and Brave, `publishing_providers` that of the PDF rendering of Gotenberg,
+    `chat_models` the agents' model factory (tests, end-to-end flows)."""
     settings = settings if settings is not None else get_settings()
     app = FastAPI(
         title="Tremplin",
@@ -270,12 +270,12 @@ def create_app(
     app.state.injected_research_providers = research_providers
     app.state.injected_publishing_providers = publishing_providers
     app.state.injected_chat_models = chat_models
-    # Ordre important : le dernier middleware ajouté est le plus externe. Les erreurs sont
-    # enregistrées d'abord pour que leur 500 traverse CORS (voir `UnexpectedErrorMiddleware`).
+    # Order matters: the last middleware added is the outermost. Errors are
+    # registered first so that their 500 goes through CORS (see `UnexpectedErrorMiddleware`).
     register_error_handlers(app)
-    # Entre la gestion des erreurs et CORS : la 413 traverse CORS (lisible par le navigateur).
+    # Between error handling and CORS: the 413 goes through CORS (readable by the browser).
     add_body_limits(app, API_PREFIX)
-    app.add_middleware(RunSourceHeader)  # choix du menu « qui fait tourner les agents »
+    app.add_middleware(RunSourceHeader)  # choice of the menu « who runs the agents »
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,

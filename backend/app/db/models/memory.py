@@ -7,7 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base, UserScopedMixin, UTCDateTime
 from app.db.models.skills import LEVEL_ORDER, SkillLevel
 
-# Types partagés avec `app.agents`, qui ne peut pas importer une feature (contrat 6).
+# Types shared with `app.agents`, which cannot import a feature (contract 6).
 MemoryKind = Literal["document", "skill", "lesson", "source", "posting", "decision"]
 MEMORY_KINDS: tuple[MemoryKind, ...] = get_args(MemoryKind)
 PREVIOUS_MEMORY_KINDS: dict[MemoryKind, str] = {
@@ -30,14 +30,13 @@ def current_memory_kind(kind: str) -> str:
 
 
 class Document(UserScopedMixin, Base):
-    """Un document importé (fichier, lien, texte collé) et l'état de son ingestion.
+    """An imported document (file, link, pasted text) and the state of its ingestion.
 
-    `name` n'est qu'un nom d'affichage nettoyé : jamais un chemin. Le fichier d'origine vit
-    sous `storage_key`. `source_hash` empêche d'importer deux fois le même contenu.
-    """
+    `name` is only a cleaned display name: never a path. The original file lives under
+    `storage_key`. `source_hash` prevents importing the same content twice."""
 
     __tablename__ = "documents"
-    # `uq_documents_user_id` : nom que la convention de `Base` donne à (user_id, source_hash).
+    # `uq_documents_user_id`: name that the `Base` convention gives to (user_id, source_hash).
     __table_args__ = (
         UniqueConstraint("user_id", "source_hash"),
         Index("ix_documents_user_status", "user_id", "status"),
@@ -55,18 +54,17 @@ class Document(UserScopedMixin, Base):
     )
     learned: Mapped[bool] = mapped_column(default=False)
     error: Mapped[dict[str, Any] | None] = mapped_column(default=None)  # {code, message}
-    # Étiquettes posées par la feature qui range le document (`cv`, `linkedin` : profil maître,
-    # D124), reprises par l'élément `document` à l'ingestion.
+    # Labels set by the feature that files the document (`cv`, `linkedin`: master profile,
+    # D124), taken up by the `document` element at ingestion.
     tags: Mapped[list[Any]] = mapped_column(default=list)
     sync_metadata: Mapped[dict[str, Any] | None] = mapped_column(default=None)
 
 
 class MemoryItem(UserScopedMixin, Base):
-    """Un élément de la mémoire ; le texte fait foi ici, Qdrant n'en est que l'index.
+    """A memory item; the text is authoritative here, Qdrant is only its index.
 
-    `meta` porte le niveau (`level`), les preuves (`evidence`) et la raison (`reason`).
-    `content_hash` empêche d'enregistrer deux fois le même contenu (voir `content_hash`).
-    """
+    `meta` holds the level (`level`), the evidence (`evidence`) and the reason (`reason`).
+    `content_hash` prevents saving the same content twice (see `content_hash`)."""
 
     __tablename__ = "memory_items"
     __table_args__ = (
@@ -86,20 +84,20 @@ class MemoryItem(UserScopedMixin, Base):
     status: Mapped[str] = mapped_column(String(16), default="active")
     meta: Mapped[dict[str, Any]] = mapped_column(default=dict)
     content_hash: Mapped[str] = mapped_column(String(64))
-    # `undo_volatile` : posée par l'indexation, hors de l'appel du MCP ; l'annulation ne la compare
-    # pas et la remet à vide (l'élément se réindexe, `app.mcp.undo`).
+    # `undo_volatile`: set by indexing, outside the MCP call; undo does not compare it
+    # and resets it to empty (the item is reindexed, `app.mcp.undo`).
     indexed_at: Mapped[datetime | None] = mapped_column(
         UTCDateTime, default=None, info={"undo_volatile": True}
     )
 
 
 class MemoryChunk(UserScopedMixin, Base):
-    """Un fragment d'élément ; son `id` est l'identifiant du point dans Qdrant (UUID)."""
+    """A fragment of an item; its `id` is the point identifier in Qdrant (UUID)."""
 
     __tablename__ = "memory_chunks"
-    # `undo_derived` : les fragments se déduisent du texte de l'élément ; retirer l'élément
-    # (annulation d'un ajout du MCP) les retire avec lui, ils ne comptent pas comme des lignes qui
-    # en dépendent.
+    # `undo_derived`: the fragments are derived from the item's text; removing the item
+    # (undo of an MCP addition) removes them with it; they do not count as rows that
+    # depend on it.
     __table_args__ = (UniqueConstraint("item_id", "ordinal"), {"info": {"undo_derived": True}})
 
     item_id: Mapped[str] = mapped_column(
@@ -111,8 +109,8 @@ class MemoryChunk(UserScopedMixin, Base):
 
 
 class MemoryWrite(UserScopedMixin, Base):
-    """Une ligne du journal d'écriture. Survit à l'élément : `item_id` n'a pas de clé étrangère
-    et le titre est copié (`item_title`)."""
+    """A row of the write journal. It outlives the item: `item_id` has no foreign key and the
+    title is copied (`item_title`)."""
 
     __tablename__ = "memory_writes"
     __table_args__ = (

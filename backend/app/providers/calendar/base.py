@@ -1,4 +1,4 @@
-"""Accès à l’Agenda principal, limité aux occupations et aux événements Tremplin."""
+"""Access to the main Calendar, limited to busy times and Tremplin events."""
 
 from dataclasses import dataclass
 from datetime import datetime

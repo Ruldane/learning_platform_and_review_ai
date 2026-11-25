@@ -1,1 +1,1 @@
-"""Synthèse vocale par un port côté serveur."""
+"""Text-to-speech through a server-side port."""

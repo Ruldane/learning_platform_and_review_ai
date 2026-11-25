@@ -8,7 +8,7 @@ from app.db.base import Base, UserScopedMixin, UTCDateTime
 
 
 class BrainFolder(UserScopedMixin, Base):
-    """Racine déclarée par l'utilisatrice, accessible au seul relais de son compte."""
+    """Root declared by the user, accessible only to the relay of their account."""
 
     __tablename__ = "brain_folders"
     __table_args__ = (UniqueConstraint("user_id", "path"),)
@@ -23,7 +23,7 @@ class BrainFolder(UserScopedMixin, Base):
 
 
 class BrainFile(UserScopedMixin, Base):
-    """Un fichier du dossier, avec son document courant dans la mémoire."""
+    """A file of the folder, with its current document in memory."""
 
     __tablename__ = "brain_files"
     __table_args__ = (UniqueConstraint("folder_id", "path"),)
@@ -40,7 +40,7 @@ class BrainFile(UserScopedMixin, Base):
 
 
 class BrainSyncToken(UserScopedMixin, Base):
-    """Une seule identité de synchronisation active par compte, hors export et hors MCP."""
+    """Only one active sync identity per account, excluding export and MCP."""
 
     __tablename__ = "brain_sync_tokens"
     __table_args__ = (UniqueConstraint("user_id"), {"info": {"export": False}})

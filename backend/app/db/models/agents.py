@@ -12,7 +12,7 @@ OPEN_SESSION_STATES = frozenset({"running", "waiting_user", "paused"})
 
 
 class AgentSession(UserScopedMixin, Base):
-    """Une exécution de graphe d'agents (`status` : voir `SessionStatus`)."""
+    """One run of an agent graph (`status`: see `SessionStatus`)."""
 
     __tablename__ = "sessions"
     __table_args__ = (Index("ix_sessions_user_status", "user_id", "status"),)
@@ -34,10 +34,10 @@ class AgentSession(UserScopedMixin, Base):
 
 
 class SessionEventRecord(UserScopedMixin, Base):
-    """Événement persisté d'une session ; `created_at` tient lieu d'horodatage (`ts`).
+    """Persisted event of a session; `created_at` serves as the timestamp (`ts`).
 
-    L'unicité `(session_id, seq)` garantit une séquence sans doublon et sert d'index de relecture.
-    """
+    Uniqueness of `(session_id, seq)` guarantees a sequence with no duplicates and serves
+    as the replay index."""
 
     __tablename__ = "session_events"
     __table_args__ = (UniqueConstraint("session_id", "seq", name="uq_session_events_session_seq"),)
@@ -52,10 +52,9 @@ class SessionEventRecord(UserScopedMixin, Base):
 
 
 class LlmCall(UserScopedMixin, Base):
-    """Un appel LLM journalisé (modèle, tokens, latence, coût estimé).
+    """A logged LLM call (model, tokens, latency, estimated cost).
 
-    `session_id` n'est pas une clé étrangère : l'historique des coûts survit à la session.
-    """
+    `session_id` is not a foreign key: the cost history outlives the session."""
 
     __tablename__ = "llm_calls"
     __table_args__ = (Index("ix_llm_calls_user_created", "user_id", "created_at"),)
@@ -69,5 +68,5 @@ class LlmCall(UserScopedMixin, Base):
     tokens_out: Mapped[int] = mapped_column(Integer, default=0)
     latency_ms: Mapped[int] = mapped_column(Integer, default=0)
     cost_usd: Mapped[float] = mapped_column(default=0.0)
-    # Tokens estimés (appel coupé : échéance, `node_timeout`, annulation, erreur ; D117).
+    # Estimated tokens (call cut: deadline, `node_timeout`, cancellation, error; D117).
     estimated: Mapped[bool] = mapped_column(default=False, server_default="0")

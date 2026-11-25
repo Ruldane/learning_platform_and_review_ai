@@ -1,6 +1,6 @@
-"""Le libellé de la cible d'une demande « À confirmer » (phase 10, P15) : January lit « Société —
-Titre » plutôt qu'un identifiant. Lu par la route GET de la même ressource quand elle est déclarée
-(celle de la route ; sinon celle de sa ressource mère : `POST /applications/{id}/events` lit
+"""The label of the target of a « À confirmer » request (phase 10, P15): January reads « Company —
+Title » rather than an identifier. Read by the GET route of the same resource when it is declared
+(the route's own; otherwise that of its parent resource: `POST /applications/{id}/events` reads
 `GET /applications/{id}`)."""
 
 from typing import Any
@@ -10,14 +10,14 @@ from app.mcp.envelope import fence, scrub_text
 from app.mcp.registry import Registry
 from app.mcp.tools import ToolSpec
 
-_KEYS = ("company", "title", "name", "label", "subject")  # de quoi nommer une cible
+_KEYS = ("company", "title", "name", "label", "subject")  # something to name a target with
 _PARTS = 2
 _PART_MAX = 80
 
 
 def reader_of_target(registry: Registry, tool: ToolSpec, path: str) -> tuple[ToolSpec, str] | None:
-    """L'outil de lecture de la cible de `tool` et le chemin à lire (`path` : celui de la requête),
-    ou `None` : route sans identifiant, ou aucune lecture déclarée."""
+    """The read tool for `tool`'s target and the path to read (`path`: the request's), or `None`: a
+    route without an identifier, or no read declared."""
     if tool.route is None:
         return None
     template, concrete = tool.route[1].split("/"), path.split("/")
@@ -32,9 +32,9 @@ def reader_of_target(registry: Registry, tool: ToolSpec, path: str) -> tuple[Too
 
 
 def label_of(data: Any, reader: ToolSpec) -> str | None:
-    """Le nom d'une ressource lue : ses champs `company`, `title`, `name`… (deux au plus), les clés
-    masquées **puis** la coupe (jamais une clé coupée en deux), avant d'entourer ceux que la lecture
-    déclare non fiables."""
+    """The name of a read resource: its `company`, `title`, `name`... fields (two at most), keys
+    masked
+    **then** cut (never a key cut in two), before wrapping those the read declares untrusted."""
     if not isinstance(data, dict):
         return None
     parts = {

@@ -1,25 +1,27 @@
-"""Du bus au WebSocket : rejeu après `after_seq`, puis direct, jusqu'à la fin de la session ou la
-déconnexion du client. Le flux ne va que du serveur vers le client (SPEC 14.1) : les messages
-reçus sont ignorés, on n'écoute que la déconnexion.
+"""From the bus to the WebSocket: replay after `after_seq`, then live, until the end of the session
+or
+the client's disconnection. The stream goes only from the server to the client (SPEC 14.1):
+received messages are ignored; we only listen for the disconnection.
 
-Trois tâches dans un groupe anyio (annulation structurée : rien ne survit à la connexion, même
-quand le serveur annule le gestionnaire) : `forward` (bus → socket), `listen` (déconnexion),
-`watch` (session annulée). La première qui conclut annule les autres ; annulé pendant son
-attente, le générateur du bus reçoit l'annulation et désinscrit sa file.
+Three tasks in an anyio group (structured cancellation: nothing survives the connection, even when
+the server cancels the handler): `forward` (bus → socket), `listen` (disconnection), `watch`
+(session cancelled). The first to conclude cancels the others; cancelled while waiting, the bus
+generator receives the cancellation and unregisters its queue.
 
-Fin du flux, toujours déterministe (jamais déduite d'un silence : un client lent ne doit pas
-recevoir un 1000 au milieu du rejeu) :
-- `run.completed` / `run.failed` transmis : ce sont toujours les derniers événements d'une
-  session `completed` / `failed` (D46) ; `forward` ferme aussitôt (code 1000).
-- le bus termine l'abonnement (`close` sur un statut terminal, D42) → 1000.
-- abonné arrivé après ce `close` (ou client qui revient avec `after_seq` au-delà de la fin) :
-  le bus rejoue puis attend indéfiniment. Une fois l'abonnement inscrit, `watch` lit UNE fois
-  le `seq` de fin (`read_end_seq`) : celui de `run.completed` / `run.failed` s'il est écrit, le
-  dernier `seq` d'une session `cancelled` (aucun événement final), `None` pour une session
-  ouverte. Statut final et événement final sont écrits ensemble (D61) : une session
-  `completed` / `failed` a toujours son `seq` de fin.
-  Il ferme quand `forward` a transmis jusqu'à ce `seq` et attend le bus — aussitôt si
-  `after_seq` l'atteint déjà.
+End of the stream, always deterministic (never inferred from silence: a slow client must not receive
+a 1000 in the middle of the replay):
+- `run.completed` / `run.failed` sent: these are always the last events of a `completed` / `failed`
+  session (D46); `forward` closes at once (code 1000).
+- the bus ends the subscription (`close` on a terminal status, D42) → 1000.
+- a subscriber arriving after that `close` (or a client coming back with `after_seq` beyond the
+end):
+  the bus replays, then waits indefinitely. Once the subscription is registered, `watch` reads the
+  end `seq` ONCE (`read_end_seq`): that of `run.completed` / `run.failed` if it is written, the last
+  `seq` of a `cancelled` session (no final event), `None` for an open session. The final status and
+  the final event are written together (D61): a `completed` / `failed` session always has its end
+  `seq`.
+  It closes when `forward` has sent up to that `seq` and waits on the bus: at once if `after_seq`
+  already reaches it.
 """
 
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -34,15 +36,15 @@ from app.agents.runtime.events import SessionEvent
 
 FINAL_EVENTS = frozenset({"run.completed", "run.failed"})
 
-# `seq` après lequel la session n'écrira plus rien, `None` si elle peut encore écrire.
+# `seq` after which the session will write nothing more, `None` if it can still write.
 type EndSeqReader = Callable[[], Awaitable[int | None]]
 
 
 @dataclass
 class _Stream:
-    sent_seq: int  # dernier `seq` transmis (au départ : `after_seq`)
-    waiting: bool = False  # `forward` attend le bus (aucun envoi en cours)
-    finished: bool = False  # session finie : le serveur ferme le socket
+    sent_seq: int  # last `seq` sent (at the start: `after_seq`)
+    waiting: bool = False  # `forward` waits for the bus (no send in progress)
+    finished: bool = False  # session over: the server closes the socket
     subscribed: anyio.Event = field(default_factory=anyio.Event)
     changed: anyio.Condition = field(default_factory=anyio.Condition)
 
@@ -60,8 +62,9 @@ async def stream_to_socket(
     *,
     read_end_seq: EndSeqReader,
 ) -> None:
-    """Envoie chaque `SessionEvent` en JSON (`model_dump(mode="json")`) jusqu'à la déconnexion
-    du client, ou jusqu'à la fin de la session (le serveur ferme alors en 1000)."""
+    """Sends each `SessionEvent` as JSON (`model_dump(mode="json")`) until the client disconnects,
+    or
+    until the end of the session (the server then closes with 1000)."""
     stream = _Stream(sent_seq=after_seq)
     subscription = bus.subscribe(user_id=user_id, session_id=session_id, after_seq=after_seq)
     async with aclosing(subscription) as events, anyio.create_task_group() as tg:
@@ -83,24 +86,24 @@ async def stream_to_socket(
         tg.start_soon(listen)
         tg.start_soon(watch)
     if stream.finished and ws.application_state == WebSocketState.CONNECTED:
-        with suppress(WebSocketDisconnect, RuntimeError):  # client parti entre-temps
+        with suppress(WebSocketDisconnect, RuntimeError):  # client left in the meantime
             await ws.close(code=1000)
 
 
 async def _forward(ws: WebSocket, events: AsyncIterator[SessionEvent], stream: _Stream) -> bool:
-    """Transmet les événements ; `True` si la session est finie, `False` si le client est
-    parti pendant un envoi."""
+    """Forwards the events; `True` if the session is over, `False` if the client left during a
+    send."""
     while True:
         stream.waiting = True
         await stream.notify()
         pending = anext(events, None)
-        # Le premier pas de `anext` inscrit la file de l'abonné avant toute attente (D42) :
-        # signalé avant, `watch` ne s'exécute qu'une fois ce pas fait.
+        # The first step of `anext` registers the subscriber's queue before any wait (D42):
+        # signalled before, `watch` runs only once that step is done.
         stream.subscribed.set()
         event = await pending
         stream.waiting = False
         if event is None:
-            return True  # abonnement terminé par le bus : session fermée
+            return True  # subscription ended by the bus: session closed
         try:
             await ws.send_json(event.model_dump(mode="json"))
         except WebSocketDisconnect:
@@ -111,11 +114,12 @@ async def _forward(ws: WebSocket, events: AsyncIterator[SessionEvent], stream: _
 
 
 async def _drained(read_end_seq: EndSeqReader, stream: _Stream) -> None:
-    """Rend la main quand la session est finie et que tout jusqu'à sa fin est transmis ;
-    sinon attend indéfiniment (l'événement final ou le `close` du bus concluront)."""
+    """Returns control when the session is over and everything up to its end has been sent;
+    otherwise
+    waits indefinitely (the final event or the bus's `close` will conclude)."""
     await stream.subscribed.wait()
-    # Lu APRÈS l'inscription : si la session peut encore écrire, ce qu'elle écrira (événement
-    # final, `close` du bus) trouvera cet abonné.
+    # Read AFTER the registration: if the session can still write, what it will write (final event,
+    # bus `close`) will find this subscriber.
     end = await read_end_seq()
     if end is None:
         await anyio.sleep_forever()
@@ -126,7 +130,7 @@ async def _drained(read_end_seq: EndSeqReader, stream: _Stream) -> None:
 
 
 async def _until_disconnect(ws: WebSocket) -> None:
-    """Lit (et ignore) les messages du client jusqu'à sa déconnexion."""
+    """Reads (and ignores) the client's messages until it disconnects."""
     while True:
         message = await ws.receive()
         if message["type"] == "websocket.disconnect":

@@ -1,14 +1,14 @@
-"""La porte d'authentification du MCP (phase 10, P16) : seul un jeton `tmcp_…` ouvre `/mcp`.
+"""The MCP authentication gate (phase 10, P16): only a `tmcp_…` token opens `/mcp`.
 
-- Le jeton se lit **uniquement** dans `Authorization: Bearer` : jamais le cookie de session, jamais
-  la chaîne de requête. À l'inverse, ce jeton n'ouvre jamais `/api/v1` (l'authentificateur de
-  l'application ne lit que le cookie).
-- Seul le SHA-256 du jeton est en base ; le clair n'existe qu'à la création (affiché une fois).
-  Jamais journalisé, jamais mis dans un message d'erreur.
-- `Origin` et `Host` doivent être locaux (`localhost`, `127.0.0.1`) : défense contre le « DNS
-  rebinding » demandée par la spécification du transport.
-- Interrupteur général coupé (par défaut), jeton inconnu, expiré, révoqué ou compte qui n'a plus le
-  droit d'entrer : refus, rien d'exécuté."""
+- The token is read **only** from `Authorization: Bearer`: never the session cookie, never
+  the query string. Conversely, this token never opens `/api/v1` (the application's
+  authenticator reads only the cookie).
+- Only the SHA-256 of the token is stored in the database; the plain value exists only at
+  creation (shown once). Never logged, never put in an error message.
+- `Origin` and `Host` must be local (`localhost`, `127.0.0.1`): protection against "DNS
+  rebinding", required by the transport specification.
+- Master switch off (default), unknown, expired or revoked token, or an account that no longer
+  has the right to enter: refused, nothing executed."""
 
 import hashlib
 import re
@@ -28,18 +28,18 @@ from app.mcp.base import NEVER_EXPOSED_FEATURES
 from app.mcp.tools import McpGate
 
 TOKEN_PREFIX = "tmcp_"
-_TOKEN = re.compile(r"tmcp_[A-Za-z0-9_-]{43}")  # `token_urlsafe(32)` : 43 caractères
+_TOKEN = re.compile(r"tmcp_[A-Za-z0-9_-]{43}")  # `token_urlsafe(32)`: 43 characters
 _BEARER = re.compile(r"Bearer ([^\s]+)", re.IGNORECASE)
 _LOCAL_HOST = re.compile(r"(localhost|127\.0\.0\.1)(:[0-9]{1,5})?", re.IGNORECASE)
 _LOCAL_ORIGIN = re.compile(r"https?://(localhost|127\.0\.0\.1)(:[0-9]{1,5})?", re.IGNORECASE)
 
 
-_LAST_USED_EVERY = timedelta(minutes=1)  # `last_used_at` : une écriture par minute au plus
+_LAST_USED_EVERY = timedelta(minutes=1)  # `last_used_at`: at most one write per minute
 
 
 class McpRefusal(AppError):
-    """Un refus de la porte. `user_id` et `token_id` : à qui est le jeton, quand on le sait
-    (`None` : jeton inconnu ou refus avant de le chercher) ; pour le journal des refus."""
+    """A refusal by the gate. `user_id` and `token_id`: who the token belongs to, when known
+    (`None`: unknown token or refusal before looking it up); for the refusal journal."""
 
     def __init__(
         self,
@@ -61,15 +61,15 @@ def hash_token(token: str) -> str:
 
 
 def new_token() -> tuple[str, str]:
-    """`(clair, empreinte)` d'un jeton neuf : `tmcp_` + 32 octets aléatoires. Le clair est masqué
-    dans les journaux dès sa création."""
+    """`(plain, fingerprint)` of a new token: `tmcp_` + 32 random bytes. The plain value is masked
+    in the logs from the moment it is created."""
     plain = TOKEN_PREFIX + secrets.token_urlsafe(32)
     KnownSecrets.add(plain)
     return plain, hash_token(plain)
 
 
 def check_local_origin(request: Request) -> None:
-    """403 si `Host` n'est pas local, ou si un `Origin` est présent et n'est pas local."""
+    """403 if `Host` is not local, or if an `Origin` is present and not local."""
     hosts = request.headers.getlist("host")
     if len(hosts) != 1 or not _LOCAL_HOST.fullmatch(hosts[0]):
         raise McpRefusal(
@@ -81,10 +81,10 @@ def check_local_origin(request: Request) -> None:
 
 
 async def guard_interface_request(request: Request) -> None:
-    """Garde des routes de gestion du MCP (`/api/v1/mcp/*`, geste de l'interface). Un jeton MCP
-    présenté ici est refusé (403) au lieu d'être ignoré : un client qui rejoue son jeton au mauvais
-    endroit n'obtient rien. En mode local (l'API n'a aucune authentification), l'hôte et l'origine
-    doivent aussi être locaux : un autre site ne peut pas atteindre ces routes (DNS rebinding)."""
+    """Guard of the MCP management routes (`/api/v1/mcp/*`, interface gesture). An MCP token
+    presented here is refused (403) instead of being ignored: a client that replays its token in
+    the wrong place gets nothing. In local mode (the API has no authentication), the host and
+    origin must also be local: another site cannot reach these routes (DNS rebinding)."""
     for value in request.headers.getlist("authorization"):
         match = _BEARER.fullmatch(value)
         if match is not None and match.group(1).startswith(TOKEN_PREFIX):
@@ -98,7 +98,7 @@ async def guard_interface_request(request: Request) -> None:
 
 
 def _bearer(request: Request) -> str:
-    """Le jeton présenté, ou 401. Un seul en-tête `Authorization` est accepté."""
+    """The presented token, or 401. Only one `Authorization` header is accepted."""
     headers = request.headers.getlist("authorization")
     match = _BEARER.fullmatch(headers[0]) if len(headers) == 1 else None
     if match is None or not _TOKEN.fullmatch(match.group(1)):
@@ -111,8 +111,8 @@ def _bearer(request: Request) -> str:
 
 
 async def _find(db: AsyncSession, plain: str) -> McpToken:
-    # Seule recherche sans `user_id` : on ne sait pas encore à qui est le jeton (comme la session
-    # de connexion, retrouvée par son empreinte).
+    # Only lookup without `user_id`: we do not yet know whose token it is (like the sign-in
+    # session, found by its fingerprint).
     digest = hash_token(plain)
     row = (await db.execute(select(McpToken).where(McpToken.hash == digest))).scalar_one_or_none()
     if row is None:
@@ -147,21 +147,19 @@ async def _is_enabled(db: AsyncSession, user_id: str) -> bool:
 
 
 async def authenticate(request: Request, db: AsyncSession) -> McpIdentity:
-    """L'identité du jeton présenté, ou `AppError` : 403 (origine, interrupteur coupé), 401
-    (jeton absent, inconnu, expiré, révoqué, compte retiré). Pose `last_used_at` (la session
-    appelante doit valider)."""
+    """The identity of the presented token, or `AppError`: 403 (origin, switch off), 401 (token
+    missing, unknown, expired, revoked, account removed). Sets `last_used_at` (the calling
+    session must validate)."""
     check_local_origin(request)
     gate: McpGate | None = getattr(request.app.state, "mcp_gate", None)
     if gate is None:
         raise AppError("mcp_unavailable", "The MCP server is not ready.", 503)
     plain = _bearer(request)
     token = await _find(db, plain)
-    KnownSecrets.add(
-        plain
-    )  # un jeton valide est masqué dans les journaux, même après un redémarrage
+    KnownSecrets.add(plain)  # a valid token is masked in the logs, even after a restart
     now = datetime.now(UTC)
     _check_validity(token, now)
-    try:  # plafond grossier avant toute écriture : une boucle de requêtes n'écrit rien
+    try:  # rough cap before any write: a request loop writes nothing
         await gate.limiter.check_request(token.id, now)
     except AppError as exc:
         raise _refuse(token, exc.code, exc.message, exc.status_code, exc.details) from exc

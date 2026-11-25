@@ -1,5 +1,5 @@
-"""Port des embeddings : sous-ensemble asynchrone de `langchain_core.embeddings.Embeddings`, pour
-qu'une implémentation LangChain reste substituable sans que les features en dépendent."""
+"""Embeddings port: an async subset of `langchain_core.embeddings.Embeddings`, so that a LangChain
+implementation stays swappable without the features depending on it."""
 
 from dataclasses import dataclass
 from typing import Protocol
@@ -39,9 +39,10 @@ class EmbeddingProgressData:
 
 
 class EmbeddingProgressSource(Protocol):
-    """Ce que `GET /health/embedding` lit : l'état du modèle, et le téléchargement s'il manque."""
+    """What `GET /health/embedding` reads: the state of the model, and the download if it is
+    missing."""
 
     async def progress(self) -> EmbeddingProgressData: ...
 
     async def aclose(self) -> None:
-        """À l'arrêt du back : arrête le téléchargement en cours, s'il y en a un."""
+        """On backend shutdown: stops the current download, if there is one."""

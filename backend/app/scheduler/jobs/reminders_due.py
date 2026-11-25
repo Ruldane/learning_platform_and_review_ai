@@ -1,7 +1,7 @@
-"""Tâche « relances » (SPEC 6.2, D140) : toutes les heures et au démarrage, adopte les versions de
-CV de chaque compte puis synchronise ses relances attendues. Le travail est dans la feature
-`applications` (`run_reminders`), qui n'importe jamais ce paquet (contrat 8) : la tâche ne fait que
-déballer son contexte et lire l'heure."""
+"""Task "Follow-ups" (SPEC 6.2, D140): every hour and at startup, adopts each account's CV versions,
+then synchronises its expected follow-ups. The work is in the `applications` feature
+(`run_reminders`), which never imports this package (contract 8): the task only unpacks its
+context and reads the time."""
 
 from app.features.applications.service.reminders import run_reminders
 from app.scheduler.base import JobContext

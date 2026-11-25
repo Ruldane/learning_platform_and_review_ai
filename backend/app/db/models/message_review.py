@@ -1,4 +1,4 @@
-"""Consentement du compte et réservation quotidienne d’une fiche pour Nod."""
+"""Account consent and the daily booking of a card for Nod."""
 
 from datetime import date
 from typing import Any

@@ -6,19 +6,19 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, UserScopedMixin, UTCDateTime
 
-# Types partagés avec `app.agents`, qui ne peut pas importer une feature (contrat 6).
+# Types shared with `app.agents`, which cannot import a feature (contract 6).
 TaskType = Literal["read", "watch", "practice", "quiz", "project"]
 TaskStatus = Literal["todo", "done"]
 ProgramStatus = Literal["draft", "validated"]
 Stage = Literal["foundations", "practice", "advanced"]
 PlanKind = Literal["build", "replan"]
-# `empty` et `impossible` (D106) : propositions closes dès leur écriture (rien à changer sans
-# option, rangement impossible), jamais montrées « à valider ».
+# `empty` and `impossible` (D106): proposals closed as soon as they are written (nothing to
+# change, impossible to file), never shown as « à valider ».
 PlanStatus = Literal["accepted", "pending", "refused", "superseded", "empty", "impossible"]
 
 
 class Program(UserScopedMixin, Base):
-    """Un programme d'apprentissage (SPEC 3.4) : brouillon du Stratège, puis validé par January."""
+    """A learning program (SPEC 3.4): draft from the Strategist, then validated by January."""
 
     __tablename__ = "programs"
 
@@ -52,7 +52,7 @@ class Week(UserScopedMixin, Base):
 
 
 class Module(UserScopedMixin, Base):
-    """Un module d'une semaine ; `skipped` : sujet déjà acquis, gardé pour l'historique."""
+    """A module of one week; `skipped`: topic already known, kept for history."""
 
     __tablename__ = "modules"
     # `uq_modules_week_id` : (week_id, rank).
@@ -65,19 +65,19 @@ class Module(UserScopedMixin, Base):
     skills: Mapped[list[Any]] = mapped_column(default=list)
     prerequisites: Mapped[list[Any]] = mapped_column(default=list)
     skipped: Mapped[bool] = mapped_column(default=False)
-    # « validation » : module « Valider mes acquis » (quiz sans leçon) ; sinon nul.
+    # « validation »: « Valider mes acquis » module (quiz without lesson); otherwise null.
     kind: Mapped[str | None] = mapped_column(String(16), default=None)
-    # Pages de la documentation officielle (en tête des adresses de départ de la leçon) et API
-    # anciennes (à ne montrer que dans l'encadré « Lire du code ancien »).
+    # Pages of the official documentation (leading the lesson's starting addresses) and old APIs
+    # (to be shown only in the « Lire du code ancien » box).
     official_urls: Mapped[list[Any]] = mapped_column(default=list, server_default="[]")
     legacy: Mapped[list[Any]] = mapped_column(default=list, server_default="[]")
 
 
 class Task(UserScopedMixin, Base):
-    """Une tâche planifiée un jour précis ; `already_known` : révision d'un acquis (20 min)."""
+    """A task planned for a specific day; `already_known`: review of a known topic (20 min)."""
 
     __tablename__ = "tasks"
-    # `ix_tasks_user_planned` : le calendrier et la vue du jour lisent par utilisateur et date.
+    # `ix_tasks_user_planned`: the calendar and the day view read by user and date.
     __table_args__ = (Index("ix_tasks_user_planned", "user_id", "planned_date"),)
 
     module_id: Mapped[str] = mapped_column(String(36), ForeignKey("modules.id", ondelete="CASCADE"))
@@ -93,10 +93,9 @@ class Task(UserScopedMixin, Base):
 
 
 class PlanVersion(UserScopedMixin, Base):
-    """Une version du plan (instantané et différence avec la précédente).
+    """A version of the plan (snapshot and difference with the previous one).
 
-    `(user_id, session_id, revision)` rend l'écriture du Stratège idempotente au rejeu.
-    """
+    `(user_id, session_id, revision)` makes the Strategist's write idempotent on replay."""
 
     __tablename__ = "plan_versions"
     # `uq_plan_versions_program_id` et `uq_plan_versions_user_id`.
@@ -115,8 +114,8 @@ class PlanVersion(UserScopedMixin, Base):
     session_id: Mapped[str | None] = mapped_column(String(36), default=None)
     revision: Mapped[int | None] = mapped_column(Integer, default=None)
     accepted_at: Mapped[datetime | None] = mapped_column(UTCDateTime, default=None)
-    # Phase 5 (D99). `build` : version du Stratège ou de January ; `replan` : bilan hebdomadaire.
-    # `pending` : proposition qui attend January, jamais lue comme « le plan en cours ».
+    # Phase 5 (D99). `build`: version from the Strategist or January; `replan`: weekly review.
+    # `pending`: proposal awaiting January, never read as "the current plan".
     kind: Mapped[str] = mapped_column(String(8), default="build", server_default="build")
     status: Mapped[str] = mapped_column(String(12), default="pending", server_default="pending")
     base_fingerprint: Mapped[str | None] = mapped_column(String(64), default=None)

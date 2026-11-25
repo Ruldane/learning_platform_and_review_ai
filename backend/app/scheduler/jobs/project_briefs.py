@@ -1,9 +1,9 @@
-"""Tâche « énoncés des mini projets » (P1, D166) : toutes les 15 minutes et au démarrage, chaque
-module non sauté d'un programme validé dont la semaine a commencé reçoit son projet et l'énoncé
-du Praticien. Le travail est dans la feature `projects` (`ensure_project_briefs`), qui n'importe
-jamais ce paquet (contrat 8) : la tâche ne fait que déballer son contexte et lire l'heure. Au
-démarrage, ce même passage corrige les projets dont la session est morte (statut qui suit la
-session)."""
+"""Task "Mini project statements" (P1, D166): every 15 minutes and at startup, each non-skipped
+module
+of a validated program whose week has started receives its project and the Practitioner's
+statement. The work is in the `projects` feature (`ensure_project_briefs`), which never imports this
+package (contract 8): the task only unpacks its context and reads the time. At startup, the same
+pass repairs the projects whose session died (status that follows the session)."""
 
 from datetime import UTC, datetime
 

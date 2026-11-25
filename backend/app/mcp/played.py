@@ -1,4 +1,4 @@
-"""Vérifie l'outil de lancement et conserve les autorisations de sa route."""
+"""Checks the launch tool and keeps the permissions of its route."""
 
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass

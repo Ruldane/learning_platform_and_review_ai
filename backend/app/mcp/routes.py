@@ -1,7 +1,7 @@
-"""Quelle route de l'application répond à `méthode chemin` ? (phase 10, P13) : l'index des routes
-de l'OpenAPI, dans l'ordre où l'application les déclare (celui que suit le routeur : la première
-qui colle gagne). Sert à refuser un identifiant qui, glissé dans un gabarit, tomberait sur une
-route sœur statique (`/applications/stats` pour `/applications/{application_id}`)."""
+"""Which application route answers `method path`? (phase 10, P13): the index of the OpenAPI routes,
+in the order the application declares them (the one the router follows: the first match wins).
+Used to refuse an identifier that, slipped into a template, would land on a static sibling route
+(`/applications/stats` for `/applications/{application_id}`)."""
 
 import re
 from collections.abc import Mapping
@@ -21,7 +21,7 @@ def _pattern(template: str) -> re.Pattern[str]:
 
 
 class RouteIndex:
-    """Les routes de l'OpenAPI, par méthode, dans l'ordre de déclaration."""
+    """The OpenAPI routes, by method, in declaration order."""
 
     def __init__(self, openapi: Mapping[str, Any]) -> None:
         self._by_method: dict[str, list[tuple[re.Pattern[str], str]]] = {}
@@ -34,15 +34,15 @@ class RouteIndex:
                 self._by_method.setdefault(method.upper(), []).append((pattern, template))
 
     def resolve(self, method: str, path: str) -> str | None:
-        """Le gabarit (sans `/api/v1`) de la première route qui répond, sinon `None`."""
+        """The template (without `/api/v1`) of the first route that answers, otherwise `None`."""
         for pattern, template in self._by_method.get(method.upper(), ()):
             if pattern.fullmatch(path):
                 return template
         return None
 
     def ensure_declared(self, tool: ToolSpec, request: ToolRequest) -> None:
-        """La requête construite (et sa lecture de base, `merge_from`) tombe sur la route déclarée
-        par l'outil, jamais sur une route sœur : sinon `ArgumentError`."""
+        """The built request (and its base read, `merge_from`) lands on the route declared
+        by the tool, never on a sibling route; otherwise `ArgumentError`."""
         if tool.route is None or tool.plan is None:
             return
         self._ensure(request.method, request.path, tool.route[1])

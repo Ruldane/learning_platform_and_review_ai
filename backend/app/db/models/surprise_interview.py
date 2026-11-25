@@ -1,4 +1,4 @@
-"""Consentement et invitations d’entretien via la discussion privée de Nod."""
+"""Consent and interview invitations through Nod's private chat."""
 
 from datetime import date
 from typing import Any

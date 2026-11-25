@@ -1,8 +1,9 @@
-"""Composition de l'IDE Python (phase 10) : le bac à sable (`CodeSandbox`), l'exécuteur des
-exécutions et le professeur. 10.A1 y branche le bac (`SpoolSandbox` sur le volume d'échange, ou
-`FakeSandbox` en test, posé avant par le test) ; 10.A3 y compose le port des agents (professeur,
-exercices générés : `AgentIdeStore`, lu par `app.main` dans `app.state.ide_store`). Comme
-`app.bootstrap`, seul `app.main` l'importe, par `app.bootstrap` (contrat 5)."""
+"""Python IDE wiring (phase 10): the sandbox (`CodeSandbox`), the runs executor and the
+professor. 10.A1 plugs the sandbox in here (`SpoolSandbox` on the exchange volume, or
+`FakeSandbox` in tests, set beforehand by the test); 10.A3 composes the agent port here
+(professor, generated exercises: `AgentIdeStore`, read by `app.main` in
+`app.state.ide_store`). As with `app.bootstrap`, only `app.main` imports it, via
+`app.bootstrap` (contract 5)."""
 
 from contextlib import AsyncExitStack
 
@@ -17,8 +18,9 @@ from app.providers.sandbox.spool import SpoolSandbox
 
 
 def compose_ide(app: FastAPI) -> None:
-    """Pose le bac à sable sur `app.state.providers.sandbox` et son contrôle dans la santé
-    (« Bac à sable »), puis le port de l'IDE des agents. Un bac déjà posé (test) est gardé."""
+    """Sets the sandbox on `app.state.providers.sandbox` and its check in the health (« Bac à sable
+    »),
+    then the agents' IDE port. A sandbox already set (in tests) is kept."""
     providers: Providers = app.state.providers
     if providers.sandbox is None:
         providers.sandbox = SpoolSandbox(app.state.settings.sandbox_spool_dir)

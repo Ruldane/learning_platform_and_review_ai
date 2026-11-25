@@ -1,8 +1,8 @@
-"""Port de la mémoire vectorielle : l'interface `MemoryRepository` de la spec (4.1).
+"""Vector memory port: the `MemoryRepository` interface of the spec (4.1).
 
-C'est notre port, implémenté avec `qdrant-client` et non avec le `VectorStore` de LangChain : la
-carte, la réindexation et les statistiques ont besoin des vecteurs bruts et du filtre `user_id`
-sur chaque requête (D62)."""
+It is our own port, implemented with `qdrant-client` and not with LangChain's `VectorStore`: the
+map, reindexing and statistics need the raw vectors and the `user_id` filter on each request
+(D62)."""
 
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -15,7 +15,7 @@ DEFAULT_K = 8
 
 @dataclass(frozen=True)
 class ChunkPayload:
-    """Copie du payload Qdrant (spec 4.2) et rattachement du fragment à son élément."""
+    """Copy of the Qdrant payload (spec 4.2) and attachment of the fragment to its item."""
 
     user_id: str
     kind: str
@@ -52,7 +52,7 @@ class VectorRecord:
 
 
 class VectorStoreUnavailable(AppError):
-    """Qdrant injoignable, trop lent ou réponse inattendue."""
+    """Qdrant unreachable, too slow, or an unexpected response."""
 
     def __init__(self) -> None:
         super().__init__(
@@ -62,7 +62,7 @@ class VectorStoreUnavailable(AppError):
 
 class MemoryRepository(Protocol):
     async def index(self, chunks: Sequence[ChunkToIndex]) -> None:
-        """Vectorise (`aembed_documents`) puis insère ou remplace ; l'id du point est `chunk_id`."""
+        """Vectorizes (`aembed_documents`), then inserts or replaces; the point id is `chunk_id`."""
         ...
 
     async def search(
@@ -80,5 +80,5 @@ class MemoryRepository(Protocol):
     async def vectors(
         self, user_id: str, *, limit: int, item_ids: Sequence[str] | None = None
     ) -> list[VectorRecord]:
-        """Vecteurs bruts de l'utilisateur (`limit` au plus), restreints à `item_ids` si donné."""
+        """The user's raw vectors (at most `limit`), restricted to `item_ids` if given."""
         ...

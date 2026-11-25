@@ -1,3 +1,3 @@
-"""Tâches planifiées du back (D91) : APScheduler dans la boucle du serveur, ouvert par le
-lifespan après le moteur d'agents. Une tâche de plus = un `JobSpec` dans `registry.JOBS`.
-Aucune feature ni le moteur n'importe ce paquet (contrat d'import 8)."""
+"""Back-end scheduled tasks (D91): APScheduler in the server loop, opened by the lifespan after the
+agent engine. One more task = one `JobSpec` in `registry.JOBS`. No feature and no engine imports
+this package (import contract 8)."""

@@ -1,4 +1,4 @@
-"""Tâches planifiées du back : une de plus = une ligne ici."""
+"""Back-end scheduled tasks: one more is one line here."""
 
 from datetime import timedelta
 

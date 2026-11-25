@@ -1,13 +1,13 @@
-"""L'envoyeur du MCP (phase 10, P12, P14, P15) : un appel d'outil devient **la vraie requête** de la
-route, envoyée en interne à l'application (`httpx.ASGITransport`), sous l'identité du jeton. Mêmes
-validations, même isolation par compte, mêmes contrôles que l'interface.
+"""The MCP sender (phase 10, P12, P14, P15): a tool call becomes **the real request** of the route,
+sent internally to the application (`httpx.ASGITransport`), under the token's identity. Same
+validations, same per-account isolation, same checks as the interface.
 
-`MCP_IDENTITY` n'est écrite qu'ici (`internal_request`) : posée avant la requête, remise dans un
-`finally`. Elle ne vient jamais d'un en-tête ni d'un cookie, et la requête interne n'en porte aucun.
+`MCP_IDENTITY` is written only here (`internal_request`): set before the request, restored in a
+`finally`. It never comes from a header or a cookie, and the internal request carries none.
 
-Par niveau : 1 envoi simple ; 2 envoi sous un `ChangeRecorder` (historique et annulation) ; 3
-contrôle préalable éventuel puis demande « À confirmer », rien n'est envoyé avant le clic ; un
-graphe est un `POST /sessions` dont l'`input` est validé par le `input_model` (la route)."""
+By level: 1 simple send; 2 send under a `ChangeRecorder` (history and undo); 3 optional precheck,
+then a « À confirmer » request; nothing is sent before the click. A graph is a `POST /sessions`
+whose `input` is validated by the `input_model` (the route)."""
 
 import asyncio
 import logging
@@ -65,10 +65,9 @@ async def internal_request(
     confirmed: bool = False,
     artifact: bool = False,
 ) -> InternalResponse:
-    """Envoie la requête à l'application, sous `identity` (le propriétaire du jeton, jamais un
-    autre), sans cookie ni en-tête d'authentification. `path` : sans `/api/v1`. Les routes de
-    niveau 4 (connexion, compte, MCP, clés, modèles) ne sont jamais atteintes, quelle que soit la
-    demande."""
+    """Sends the request to the application, under `identity` (the token's owner, never anyone
+    else), with no cookie or authentication header. `path`: without `/api/v1`. Level 4 routes
+    (sign-in, account, MCP, keys, models) are never reached, whatever the request."""
     if (
         not path.startswith("/")
         or never_reachable(path, method)
@@ -99,7 +98,7 @@ async def internal_request(
 
 
 class McpDispatcher:
-    """L'envoyeur réel (la porte l'enveloppe des limites et du journal, `GuardedDispatcher`)."""
+    """The real sender (the gate wraps it with the limits and the journal, `GuardedDispatcher`)."""
 
     def __init__(
         self,
@@ -152,8 +151,9 @@ class McpDispatcher:
         confirmed: bool = False,
         artifact: bool = False,
     ) -> InternalResponse:
-        """La requête ; avec `merge_from`, le corps est la lecture actuelle dont seuls les champs
-        listés changent (lue maintenant, jamais gardée)."""
+        """The request; with `merge_from`, the body is the current read, of which only the listed
+        fields
+        change (read now, never kept)."""
         body = request.body
         if request.merge_path is not None:
             base = await internal_request(self._app, identity, "GET", request.merge_path, {}, None)
@@ -170,8 +170,9 @@ class McpDispatcher:
     async def _recorded(
         self, identity: McpIdentity, tool: ToolSpec, request: ToolRequest
     ) -> ToolResult:
-        """Niveau 2 : la requête sous un `ChangeRecorder` ; l'historique n'est gardé que si elle a
-        réussi, sous l'identifiant de l'appel (celui de la ligne du journal)."""
+        """Level 2: the request under a `ChangeRecorder`; the history is kept only if it succeeded,
+        under
+        the call's identifier (that of the journal row)."""
         call_id = new_id()
         recorder = ChangeRecorder(self._factory, call_id, identity.user_id)
         async with recorder:
@@ -181,7 +182,7 @@ class McpDispatcher:
             try:
                 kept = await recorder.persist()
                 why = None if kept else ("overflow" if recorder.overflow else "empty")
-            except Exception as exc:  # une panne d'historique ne défait pas l'appel déjà fait
+            except Exception as exc:  # a history failure does not undo the call already made
                 logger.error("MCP : historique de l'appel impossible (%s)", type(exc).__name__)
                 why = "failed"
         return self._result(tool, response, call_id, why)
@@ -193,9 +194,9 @@ class McpDispatcher:
         call_id: str | None = None,
         no_history: str | None = None,
     ) -> ToolResult:
-        """`no_history` : un appel de niveau 2 réussi sans historique le dit (`notice`, journal)."""
+        """`no_history`: a successful level 2 call without history says so (`notice`, journal)."""
         data = response.data
-        if response.status == 504 and tool.level >= 2:  # la route a pu écrire (M7)
+        if response.status == 504 and tool.level >= 2:  # the route may have written (M7)
             return timed_out(data, call_id)
         if response.status == 422:
             data = translate_validation(data, tool)
@@ -219,10 +220,11 @@ class McpDispatcher:
     async def _pend(
         self, identity: McpIdentity, tool: ToolSpec, request: ToolRequest
     ) -> ToolResult:
-        """Niveau 3 : rien n'est envoyé. Le contrôle préalable (s'il y en a un) et la requête sont
-        rangés dans une demande « À confirmer »."""
+        """Level 3: nothing is sent. The precheck (if any) and the request are filed in a « À
+        confirmer »
+        request."""
         port = self._confirmations(identity.user_id)
-        await port.ensure_room(identity)  # le plafond d'abord : le contrôle peut coûter un modèle
+        await port.ensure_room(identity)  # the cap first: the check may cost a model call
         verdict = await check_before_confirmation(identity, tool, request)
         stored = StoredRequest(
             tool.name,
@@ -244,30 +246,31 @@ class McpDispatcher:
     async def _target_label(
         self, identity: McpIdentity, tool: ToolSpec, request: ToolRequest
     ) -> str | None:
-        """Le libellé lisible de la cible (« Société — Titre »), lu par la route GET de la même
-        ressource quand elle est déclarée (voir `app/mcp/target.py`) ; `None` sinon. Lu sous
-        l'identité du jeton, montré à January seulement."""
+        """The readable label of the target (« Company — Title »), read by the GET route of the same
+        resource when it is declared (see `app/mcp/target.py`); `None` otherwise. Read under the
+        token's identity, shown to January only."""
         found = reader_of_target(self._registry, tool, request.path)
         if found is None:
             return None
         reader, path = found
         try:
             read = await internal_request(self._app, identity, "GET", path, {}, None)
-        except Exception as exc:  # le libellé n'est qu'un confort : jamais un blocage
+        except Exception as exc:  # the label is only a convenience: never a block
             logger.error("MCP: target label failed (%s)", type(exc).__name__)
             return None
         return label_of(read.data, reader) if read.status == 200 else None
 
     async def recheck(self, identity: McpIdentity, stored: StoredRequest) -> dict[str, Any] | None:
-        """Rejoue le contrôle préalable d'une demande en attente (`None` : l'outil n'en a plus)."""
+        """Replays the precheck of a pending request (`None`: the tool no longer has one)."""
         tool = self._registry.get(stored.tool)
         if tool is None:
             return None
         return await check_before_confirmation(identity, tool, stored.request)
 
     async def run_stored(self, identity: McpIdentity, stored: StoredRequest) -> ToolResult:
-        """Exécute une demande confirmée, sous l'identité enregistrée (jamais d'historique : une
-        action de niveau 3 ne s'annule pas)."""
+        """Runs a confirmed request, under the recorded identity (never history: a level 3 action
+        cannot
+        be undone)."""
         tool = self._registry.get(stored.tool)
         if tool is None or tool.level != 3 or not tool.available_to(identity):
             data = {"error": {"code": "unknown_tool", "message": "Tool removed since."}}

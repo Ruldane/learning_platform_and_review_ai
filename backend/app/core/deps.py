@@ -16,7 +16,7 @@ from app.providers.llm.factory import LlmFactory
 
 
 async def get_db(request: Request) -> AsyncIterator[AsyncSession]:
-    """Session de la requête : commit en fin de requête, rollback sur erreur."""
+    """Request session: commit at the end of the request, rollback on error."""
     async with request.app.state.session_factory() as session:
         try:
             yield session
@@ -26,14 +26,14 @@ async def get_db(request: Request) -> AsyncIterator[AsyncSession]:
             raise
 
 
-# `scope="function"` : le code après `yield` (le commit) s'exécute AVANT l'envoi de la réponse.
-# Avec la portée « request » par défaut, un échec de commit serait signalé après un 200 déjà
-# parti, et le client pourrait lire avant que la donnée ne soit commitée. À utiliser partout.
+# `scope="function"`: the code after `yield` (the commit) runs BEFORE the response is sent.
+# With the default « request » scope, a commit failure would be reported after a 200 has
+# left, and the client could read before the data is committed. Use it everywhere.
 Db = Annotated[AsyncSession, Depends(get_db, scope="function")]
 
 
-# Les dépendances ci-dessous prennent `HTTPConnection` (parent commun de `Request` et
-# `WebSocket`) : FastAPI n'injecte pas `Request` sur une route WebSocket (flux de la phase 1).
+# The dependencies below take `HTTPConnection` (the common parent of `Request` and
+# `WebSocket`): FastAPI does not inject `Request` on a WebSocket route (phase 1 stream).
 
 
 @dataclass(frozen=True)
@@ -43,20 +43,19 @@ class CurrentUser:
 
 
 class Authenticator(Protocol):
-    """Qui est l'utilisateur de la requête ? Composé au démarrage (`app.state.authenticator`) :
-    l'utilisateur unique en mode `local`, le cookie de session en mode `google`."""
+    """Who is the request's user? Built at startup (`app.state.authenticator`):
+    the single user in `local` mode, the session cookie in `google` mode."""
 
     async def authenticate(self, conn: HTTPConnection) -> CurrentUser:
-        """Lève `AppError` 401 `auth_required` si personne n'est connecté."""
+        """Raises `AppError` 401 `auth_required` if nobody is signed in."""
         ...
 
 
 async def get_current_user(conn: HTTPConnection) -> CurrentUser:
-    """Utilisateur de la requête ou du WebSocket. Si l'envoyeur du MCP a posé `MCP_IDENTITY` (un
-    appel d'outil par un jeton, phase 10), c'est le propriétaire du jeton : même mécanisme quel que
-    soit le mode de connexion. Cette variable n'est écrite que par l'envoyeur, jamais lue d'un
-    en-tête ni d'un cookie. Sinon, l'authentificateur de l'application (cookie ou utilisateur
-    unique)."""
+    """User of the request or the WebSocket. If the MCP sender set `MCP_IDENTITY` (a tool call
+    through a token, phase 10), it is the token's owner: the same mechanism whatever the
+    sign-in mode. This variable is only written by the sender, never read from a header
+    or a cookie. Otherwise, the application's authenticator (cookie or single user)."""
     identity = MCP_IDENTITY.get()
     if identity is not None:
         if never_reachable(conn.url.path.removeprefix(API_PREFIX), conn.scope.get("method")):
@@ -67,9 +66,9 @@ async def get_current_user(conn: HTTPConnection) -> CurrentUser:
 
 
 async def get_interface_user(conn: HTTPConnection) -> CurrentUser:
-    """Comme `get_current_user`, mais **réservé à l'interface** : un appel porté par un jeton MCP
-    est refusé (403). Pour les routes de gestion de l'accès MCP (jetons, interrupteur,
-    confirmations) : un jeton ne se gère jamais lui-même."""
+    """Like `get_current_user`, but **reserved for the interface**: a call carried by an MCP token
+    is refused (403). For the routes that manage MCP access (tokens, switch, confirmations):
+    a token never manages itself."""
     if MCP_IDENTITY.get() is not None:
         raise AppError("interface_only", "This action is only available in the app.", 403)
     authenticator: Authenticator = conn.app.state.authenticator
@@ -89,13 +88,13 @@ ConfirmedUserDep = Annotated[CurrentUser, Depends(get_confirmed_user)]
 
 
 def get_providers(conn: HTTPConnection) -> Providers:
-    """Services externes assemblés au démarrage par `app/bootstrap.py`."""
+    """External services assembled at startup by `app/bootstrap.py`."""
     providers: Providers = conn.app.state.providers
     return providers
 
 
 def get_llm_factory(conn: HTTPConnection) -> LlmFactory:
-    """Fabrique des modèles de chat (seul point d'instanciation des LLM)."""
+    """Chat model factory (the only place where LLMs are instantiated)."""
     return get_providers(conn).llm_factory
 
 
@@ -105,7 +104,7 @@ def get_cipher(conn: HTTPConnection) -> Cipher:
 
 
 def get_runtime(conn: HTTPConnection) -> AgentRuntime:
-    """Moteur d'agents (bus, runner) ouvert par le lifespan (`app.agents.runtime.lifespan`)."""
+    """Agent engine (bus, runner) opened by the lifespan (`app.agents.runtime.lifespan`)."""
     runtime: AgentRuntime = conn.app.state.runtime
     return runtime
 
@@ -114,7 +113,7 @@ RuntimeDep = Annotated[AgentRuntime, Depends(get_runtime)]
 
 
 def get_publishing(conn: HTTPConnection) -> PublishingProviders:
-    """Rendu PDF de nos gabarits (leçons, programme ; D89), ouvert ou injecté au démarrage."""
+    """PDF rendering of our templates (lessons, program; D89), opened or injected at startup."""
     publishing: PublishingProviders = conn.app.state.publishing_providers
     return publishing
 

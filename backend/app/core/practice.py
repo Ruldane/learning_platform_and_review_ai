@@ -1,4 +1,4 @@
-"""Repères agrégés et version du contenu d’un exercice."""
+"""Aggregated markers and content version of an exercise."""
 
 import hashlib
 import json

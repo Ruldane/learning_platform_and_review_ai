@@ -1,4 +1,4 @@
-"""Contrôles privés rattachés à l'instantané d'une preuve de compétence."""
+"""Private checks attached to the snapshot of a skill proof."""
 
 from datetime import date, datetime
 from typing import Any, Literal

@@ -1,7 +1,7 @@
-"""Composition des features de la carrière (phase 6, preflight G17) : offres et écart (D122), puis,
-au fil de la phase, profil maître, gabarits et revues de CV. Gardée hors de `app.main` pour qu'il
-reste court : une feature de plus = un champ de `CareerRuntimes` et une ligne dans
-`career_runtimes`. Comme `app.bootstrap`, seul `app.main` l'importe (contrat 5)."""
+"""Career features wiring (phase 6, preflight G17): offers and gap (D122), then, as the phase
+goes on, master profile, templates and CV reviews. Kept out of `app.main` so that it stays
+short: one more feature = one field of `CareerRuntimes` and one line in `career_runtimes`.
+As with `app.bootstrap`, only `app.main` imports it (contract 5)."""
 
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -38,20 +38,20 @@ from app.features.research.service.runtime import ResearchRuntime
 
 @dataclass(frozen=True)
 class CareerRuntimes:
-    """Ce que les routes de la carrière lisent sur `app.state.career`, et les ports qu'elles
-    donnent au moteur d'agents (`agent_ports`)."""
+    """What the career routes read from `app.state.career`, and the ports they give to the agent
+    engine (`agent_ports`)."""
 
     postings: PostingsRuntime
-    gap: GapStore  # port de l'Analyste (D121)
-    cv: CvRuntime  # profil maître (D124), gabarits (D126), revues et versions (D130)
-    profile: ProfileStore  # port de l'Archiviste en mode `profile` (D124)
-    cv_templates: CvTemplateStore  # port du Maquettiste en mode `design` (D125, D126)
-    cv_review: CvReviewStore  # port du parcours `cv_review` (D129, D130)
+    gap: GapStore  # Analyst port (D121)
+    cv: CvRuntime  # master profile (D124), templates (D126), reviews and versions (D130)
+    profile: ProfileStore  # Archivist port in `profile` mode (D124)
+    cv_templates: CvTemplateStore  # Mockup-designer port in `design` mode (D125, D126)
+    cv_review: CvReviewStore  # `cv_review` flow port (D129, D130)
     applications: ApplicationsRuntime  # fiches, fil, doublons, indicateurs (D139)
-    application_store: ApplicationStore  # port de l'Assistant de suivi (D141)
-    kit_store: KitStore  # port du parcours `application_kit` (D142, D143)
-    interview_store: InterviewStore  # port du parcours `interview` (D145, D146)
-    committee_store: CommitteeStore  # port du parcours `hiring_committee` (D147)
+    application_store: ApplicationStore  # Tracking Assistant port (D141)
+    kit_store: KitStore  # `application_kit` flow port (D142, D143)
+    interview_store: InterviewStore  # `interview` flow port (D145, D146)
+    committee_store: CommitteeStore  # `hiring_committee` flow port (D147)
 
 
 def career_runtimes(
@@ -63,16 +63,16 @@ def career_runtimes(
     publishing: PublishingProviders,
     portfolio_origin: Callable[[], str | None] = no_origin,
 ) -> CareerRuntimes:
-    """Offres (lecture du lien par la recherche web, élément `offre` et doublons par la mémoire,
-    analyse lancée par le lanceur, lié au moteur ensuite) et port de l'écart ; profil maître
-    (documents rangés par la mémoire, PDF relus par la mise en page, capture lancée par le
-    lanceur) et port de l'Archiviste ; gabarits (mise en page, rendu de nos gabarits HTML, polices
-    libres, images et polices rangées par le stockage de la mémoire) et port du Maquettiste ; revues
-    (lancées et reprises par le lanceur) et port du parcours `cv_review` ; candidatures (base,
-    lanceur, verrous), port de l'Assistant de suivi (création en une phrase), port du kit de
-    candidature et port de l'entretien blanc."""
+    """Offers (reading the link through web search, `offer` element and duplicates through memory,
+    analysis launched by the launcher, linked to the engine later) and gap port; master profile
+    (documents stored by memory, PDFs reread by the layout, capture launched by the launcher)
+    and Archivist port; templates (layout, rendering of our HTML templates, free fonts, images
+    and fonts stored by the memory storage) and Mockup-designer port; reviews (launched and
+    resumed by the launcher) and port of the `cv_review` flow; applications (base, launcher,
+    locks), Tracking Assistant port (one-sentence creation), application kit port and mock
+    interview port."""
     postings = PostingsRuntime(session_factory, research, memory, launcher)
-    company_locks = KeyLocks()  # une seule fiche entreprise par clé, revues et kit ensemble
+    company_locks = KeyLocks()  # one company record per key, reviews and kit together
     cv = CvRuntime(
         session_factory,
         memory,
@@ -80,7 +80,7 @@ def career_runtimes(
         publishing.layout,
         publishing.html_pdf,
         publishing.fonts,
-        resumer=launcher,  # « Générer le PDF » reprend la question de sortie (D130)
+        resumer=launcher,  # « Générer le PDF » resumes the output question (D130)
         company_locks=company_locks,
         portfolio_origin=portfolio_origin,
     )

@@ -1,4 +1,4 @@
-"""Port Agenda isolé pour les recettes synthétiques."""
+"""Isolated Calendar port for synthetic test runs."""
 
 from urllib.parse import urlencode
 

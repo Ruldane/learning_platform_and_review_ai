@@ -1,4 +1,4 @@
-"""Édition d'un programme demandée par son propriétaire."""
+"""Edition of a program requested by its owner."""
 
 from datetime import datetime
 

@@ -1,4 +1,4 @@
-"""Registre des fournisseurs LLM réels. Le faux fournisseur n'y figure pas (tests seulement)."""
+"""Registry of the real LLM providers. The fake provider is not listed here (tests only)."""
 
 from pathlib import Path
 
@@ -7,7 +7,7 @@ from app.providers.llm.base import LlmProvider
 from app.providers.llm.glm import GlmProvider
 from app.providers.llm.openai import OpenAIProvider
 
-# Prix en USD par million de tokens, éditable à la main (les tarifs évoluent), voir D26.
+# USD price per million tokens, editable by hand (prices change), see D26.
 PRICES_PATH = Path(__file__).with_name("model_prices.json")
 
 LLM_PROVIDERS: dict[str, LlmProvider] = {

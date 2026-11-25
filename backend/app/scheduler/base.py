@@ -1,4 +1,4 @@
-"""Ce qu'une tâche planifiée déclare (`JobSpec`) et ce qu'elle reçoit (`JobContext`)."""
+"""What a scheduled task declares (`JobSpec`) and what it receives (`JobContext`)."""
 
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
@@ -19,8 +19,9 @@ from app.features.replan.service.runtime import ReplanRuntime
 
 
 class DailyJobs(Protocol):
-    """Ce que les tâches du quotidien lisent de `app.bootstrap_daily.DailyRuntimes` (que le
-    planificateur ne peut pas importer, contrat 5) : une tâche de plus = une propriété ici."""
+    """What the daily tasks read from `app.bootstrap_daily.DailyRuntimes` (which the scheduler
+    cannot
+    import, contract 5): one more task = one property here."""
 
     @property
     def radar(self) -> RadarRuntime: ...
@@ -37,10 +38,10 @@ class DailyJobs(Protocol):
 
 @dataclass(frozen=True)
 class JobContext:
-    """Composé par `app.bootstrap.scheduler_context` : la base, le lanceur de sessions (lié au
-    moteur), la production des leçons, la replanification (bilan hebdomadaire, D106) et les
-    candidatures (relances, D140) et le quotidien (relevé du radar, D160 ; brief du matin, D162 ;
-    énoncés des projets, D166)."""
+    """Composed by `app.bootstrap.scheduler_context`: the database, the session launcher (linked to
+    the
+    engine), lesson production, replanning (weekly review, D106), applications (follow-ups, D140)
+    and the daily (radar readings, D160; morning brief, D162; mini projects' statements, D166)."""
 
     session_factory: async_sessionmaker[AsyncSession]
     launcher: SessionLauncher
@@ -53,7 +54,7 @@ class JobContext:
 
 @dataclass(frozen=True)
 class JobSpec:
-    """`every` : intervalle entre deux passages ; `at_startup` : un passage dès le démarrage."""
+    """`every`: interval between two runs; `at_startup`: one run at startup."""
 
     name: str
     every: timedelta

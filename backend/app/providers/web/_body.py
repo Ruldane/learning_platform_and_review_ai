@@ -1,9 +1,9 @@
-"""Lecture en flux d'un corps de réponse sous plafond, décompression comprise.
+"""Streamed reading of a response body under a cap, decompression included.
 
-Le corps est lu brut (`aiter_raw`) et décompressé ici, sortie bornée (`max_length`) : le
-décodeur de `httpx` décompresse sans limite par morceau, donc une bombe gzip, brotli ou zstd
-y gonflerait en mémoire avant tout contrôle. Seuls `gzip` et `deflate` (enveloppe zlib) sont
-acceptés ; `Accept-Encoding` n'annonce qu'eux."""
+The body is read raw (`aiter_raw`) and decompressed here, with bounded output (`max_length`): the
+`httpx` decoder decompresses without limit per chunk, so a gzip, brotli or zstd bomb would inflate
+in memory before any check. Only `gzip` and `deflate` (zlib envelope) are accepted; the
+`Accept-Encoding` header advertises only those."""
 
 import zlib
 
@@ -27,19 +27,20 @@ class _Decoder:
         if encoding in _IDENTITY:
             self._zlib = None
         elif encoding in _COMPRESSED:
-            # `| 32` : en-tête gzip ou zlib détecté automatiquement.
+            # `| 32`: gzip or zlib header detected automatically.
             self._zlib = zlib.decompressobj(zlib.MAX_WBITS | 32)
         else:
             raise UrlUnsupported()
 
     def feed(self, data: bytes, budget: int) -> bytes:
-        """Au plus `budget + 1` octets : un dépassement suffit à refuser le corps."""
+        """At most `budget + 1` bytes: one byte over is enough to refuse the body."""
         if self._zlib is None:
             return data
         return self._zlib.decompress(data, budget + 1)
 
     def finish(self) -> bytes:
-        """Reste décodé ; un flux compressé tronqué ou suivi de données → illisible."""
+        """Remaining decoded data; a truncated compressed stream, or one followed by data, is
+        unreadable."""
         if self._zlib is None:
             return b""
         tail = self._zlib.flush()
@@ -49,7 +50,7 @@ class _Decoder:
 
 
 async def read_capped(response: httpx.Response) -> bytes:
-    """Corps décodé ; `UrlTooLarge` dès que les octets reçus ou décodés dépassent le plafond."""
+    """Decoded body; `UrlTooLarge` as soon as the bytes received or decoded exceed the cap."""
     limit = base.FETCH_MAX_BYTES
     decoder = _Decoder(response.headers.get("content-encoding", "").strip().lower())
     chunks: list[bytes] = []

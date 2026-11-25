@@ -1,17 +1,17 @@
-"""Du contrat OpenAPI d'une route à l'outil MCP (phase 10, P13) et retour : le schéma d'entrée d'un
-outil (chemin, requête et corps fusionnés en un objet plat ; collision de nom : préfixe `body_`), le
-plan qui range chaque argument à sa place (les arguments d'un appel : `app/mcp/arguments.py`).
+"""From a route's OpenAPI contract to an MCP tool, and back: a tool's input schema (path, query and
+body merged into a flat object; name collision: `body_` prefix), and the plan that puts each
+argument in its place (the arguments of a call: `app/mcp/arguments.py`).
 
-Rien n'est deviné : tout vient de l'OpenAPI de l'application. Une déclaration qui ne colle pas à une
-vraie route (route absente, champ inconnu, route de fichier) est une `McpConfigError`, levée au
-démarrage."""
+Nothing is guessed: everything comes from the application's OpenAPI. A declaration that does not
+match a real route (missing route, unknown field, file route) is an `McpConfigError`, raised at
+startup."""
 
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, Literal
 
 API_PREFIX = "/api/v1"
-# Espaces sensibles. Seules les paires méthode et chemin de _SCOPED_ACCESS les ouvrent.
+# Sensitive spaces. Only the method and path pairs of _SCOPED_ACCESS open them.
 NEVER_REACHABLE = (
     "/auth",
     "/account",
@@ -42,14 +42,14 @@ _FORM_MEDIA = ("multipart/form-data", "application/x-www-form-urlencoded")
 
 
 class McpConfigError(ValueError):
-    """Une déclaration qui ne colle pas à l'application : le démarrage échoue."""
+    """A declaration that does not match the application: startup fails."""
 
 
 @dataclass(frozen=True)
 class RoutePlan:
-    """Où va chaque argument d'un outil de route : chemin, requête ou corps. `body_args` : nom de
-    l'argument -> clé du corps ; `body_whole` : l'argument qui est tout le corps (corps non objet) ;
-    `merge_path` : gabarit de la route GET dont la réponse sert de base au corps (`merge_from`)."""
+    """Where each argument of a route tool goes: path, query or body. `body_args`: argument name ->
+    body key; `body_whole`: the argument that is the whole body (non-object body); `merge_path`:
+    template of the GET route whose response is the base of the body (`merge_from`)."""
 
     method: str
     path: str
@@ -72,7 +72,7 @@ def never_reachable(path: str, method: str | None = None) -> bool:
 
 
 def _resolve(node: Mapping[str, Any], components: Mapping[str, Any]) -> Mapping[str, Any]:
-    """Suit un `$ref` (ou un `allOf` d'un seul élément) jusqu'au schéma réel."""
+    """Follows a `$ref` (or an `allOf` with a single element) to the actual schema."""
     for _ in range(8):
         if "$ref" in node:
             node = components[node["$ref"].rsplit("/", 1)[1]]
@@ -84,8 +84,9 @@ def _resolve(node: Mapping[str, Any], components: Mapping[str, Any]) -> Mapping[
 
 
 def _port(node: Any, components: Mapping[str, Any], defs: dict[str, Any]) -> Any:
-    """Copie un schéma OpenAPI en JSON Schema autonome : chaque `$ref` des composants devient un
-    `$defs` local (les références circulaires s'arrêtent à la première visite)."""
+    """Copies an OpenAPI schema into a standalone JSON Schema: each `$ref` of the components becomes
+    a
+    local `$defs` (circular references stop at the first visit)."""
     if isinstance(node, dict):
         out: dict[str, Any] = {}
         for key, value in node.items():
@@ -130,7 +131,7 @@ def split_route(route: str) -> tuple[str, str]:
 
 
 def describe(op: Mapping[str, Any], summary: str | None) -> str:
-    """Le résumé de la route : celui de la déclaration, sinon la première ligne de la docstring."""
+    """The route's summary: the declaration's one, otherwise the first line of the docstring."""
     if summary:
         return summary
     doc = str(op.get("description") or "").strip().splitlines()
@@ -153,8 +154,9 @@ def _body_media(op: Mapping[str, Any], form: bool, route: str) -> Mapping[str, A
 def _parameters(
     op: Mapping[str, Any], components: Mapping[str, Any], defs: dict[str, Any]
 ) -> tuple[dict[str, Any], list[str], set[str], set[str]]:
-    """Les paramètres de chemin et de requête d'une opération (les en-têtes et cookies sont
-    ignorés) : leurs schémas, ceux qui sont obligatoires, et les deux ensembles de noms."""
+    """The path and query parameters of an operation (headers and cookies are ignored): their
+    schemas,
+    which ones are required, and the two sets of names."""
     props: dict[str, Any] = {}
     required: list[str] = []
     path_params: set[str] = set()
@@ -178,7 +180,7 @@ def build_route_tool(
     merge_from: str | None,
     encoding: Literal["json", "form"],
 ) -> tuple[dict[str, Any], RoutePlan, Mapping[str, Any]]:
-    """`(schéma d'entrée, plan, opération OpenAPI)` d'une route déclarée."""
+    """`(input schema, plan, OpenAPI operation)` of a declared route."""
     method, path = split_route(route)
     op = operation(openapi, method, path)
     components: Mapping[str, Any] = openapi.get("components", {}).get("schemas", {})
@@ -225,8 +227,8 @@ def _body_arguments(
     merge_from: str | None,
     route: str,
 ) -> str | None:
-    """Les champs du corps deviennent des arguments plats (liste blanche `allowed` si donnée) ;
-    rend le nom de l'argument « corps entier » pour un corps qui n'est pas un objet à champs."""
+    """Body fields become flat arguments (allowlist `allowed` if given); returns the name of the
+    "whole body" argument for a body that is not an object with fields."""
     schema = _resolve(media["schema"], components)
     fields: Mapping[str, Any] = schema.get("properties", {})
     if not fields:

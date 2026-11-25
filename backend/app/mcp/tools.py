@@ -1,6 +1,6 @@
-"""Les types que la porte partage avec B2 (phase 10) : un outil (`ToolSpec`), le résultat d'un
-appel (`ToolResult`), le registre des outils et l'envoyeur (`ToolRegistry`, `Dispatcher`, fournis
-par la composition), et `McpGate`, ce que la porte lit sur `app.state.mcp_gate`."""
+"""The types the gate shares with B2 (phase 10): a tool (`ToolSpec`), the result of a call
+(`ToolResult`), the tool registry and the sender (`ToolRegistry`, `Dispatcher`, provided by the
+composition), and `McpGate`, what the gate reads from `app.state.mcp_gate`."""
 
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
@@ -18,11 +18,12 @@ TREMPLIN_OVERVIEW = "tremplin_overview"
 
 @dataclass(frozen=True)
 class ToolSpec:
-    """Un outil exposé (produit par le registre de B2) : `feature` pour le périmètre du jeton,
-    `level` (1 lecture, 2 écriture réversible, 3 à confirmer), `untrusted` les champs de la
-    réponse qui viennent du web, `bucket` un compteur de limite à part (`code_run`). Posés par le
-    registre : `route` (méthode et chemin sans `/api/v1`) ou `graph` (lancement d'un parcours),
-    `side_effects`, `precheck` (niveau 3), `plan` (où va chaque argument), `response_fields`."""
+    """An exposed tool (produced by B2's registry): `feature` for the token's scope, `level` (1
+    read,
+    2 reversible write, 3 to confirm), `untrusted` the response fields that come from the web,
+    `bucket` a separate limit counter (`code_run`). Set by the registry: `route` (method and path
+    without `/api/v1`) or `graph` (launch of a flow), `side_effects`, `precheck` (level 3), `plan`
+    (where each argument goes), `response_fields`."""
 
     name: str
     feature: str
@@ -51,12 +52,12 @@ class ToolSpec:
 
 @dataclass(frozen=True)
 class ToolResult:
-    """Ce que rend l'envoyeur : le corps de la réponse de la route (`data`), son code HTTP et les
-    identifiants touchés (pour le journal : jamais de contenu). Un code de 400 ou plus est une
-    erreur de l'outil. `call_id` : l'identifiant de l'appel d'un outil de niveau 2 (celui de ses
-    changements annulables), repris par le journal comme identifiant de la ligne. `notice` : une
-    phrase de plus pour Claude, ajoutée à la note de l'enveloppe (ex. un appel de niveau 2 sans
-    historique : il ne pourra pas être annulé)."""
+    """What the sender returns: the route's response body (`data`), its HTTP code and the
+    identifiers
+    touched (for the journal: never content). A code of 400 or more is a tool error. `call_id`:
+    the identifier of a level 2 tool's call (that of its undoable changes), taken by the journal
+    as the row's identifier. `notice`: one more sentence for Claude, added to the envelope's note
+    (e.g. a level 2 call without history: it cannot be undone)."""
 
     data: Any
     code: int = 200
@@ -70,8 +71,8 @@ class ToolResult:
 
 
 class ToolRegistry(Protocol):
-    """Le registre des outils (B2). `list_for` : ceux que cette identité peut voir ; `get` : un
-    outil par son nom, **hors périmètre compris** (pour refuser en 403 plutôt que « inconnu »)."""
+    """The tool registry (B2). `list_for`: those this identity can see; `get`: a tool by its name,
+    **out-of-scope ones included** (to refuse with 403 rather than "unknown")."""
 
     def list_for(self, identity: McpIdentity) -> list[ToolSpec]: ...
 
@@ -79,8 +80,9 @@ class ToolRegistry(Protocol):
 
 
 class Dispatcher(Protocol):
-    """L'envoyeur (B2) : appelle la vraie route sous l'identité du jeton, ou crée la demande
-    « À confirmer » d'un outil de niveau 3."""
+    """The sender (B2): calls the real route under the token's identity, or creates the « À
+    confirmer »
+    request of a level 3 tool."""
 
     async def call(
         self, identity: McpIdentity, tool: ToolSpec, arguments: dict[str, Any]
@@ -88,16 +90,17 @@ class Dispatcher(Protocol):
 
 
 UserCheck = Callable[[AsyncSession, str], Awaitable[bool]]
-# Journal d'un refus de la porte : (compte du jeton ou `None`, jeton ou `None`, action, niveau,
-# code HTTP). Jamais de contenu.
+# Journal entry for a refusal by the gate: (token's account or `None`, token or `None`, action,
+# level, HTTP code). Never content.
 RefusalSink = Callable[[str | None, str | None, str, int, int], Awaitable[None]]
 
 
 @dataclass(frozen=True)
 class McpGate:
-    """Ce que la porte lit (`app.state.mcp_gate`, posé par la composition) : les outils,
-    l'envoyeur (qui limite et journalise), les limites, et le contrôle « ce compte a-t-il toujours
-    le droit d'entrer » (liste `ALLOWED_EMAILS` en mode Google)."""
+    """What the gate reads (`app.state.mcp_gate`, set by the composition): the tools, the sender
+    (which
+    limits and logs), the limits, and the check "does this account still have the right to enter"
+    (`ALLOWED_EMAILS` list in Google mode)."""
 
     tools: ToolRegistry
     dispatcher: Dispatcher

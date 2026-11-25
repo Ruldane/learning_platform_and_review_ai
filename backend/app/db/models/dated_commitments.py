@@ -1,4 +1,4 @@
-"""Décisions datées et mesure du retour, dans le compte qui les a planifiées."""
+"""Dated decisions and measurement of the outcome, in the account that planned them."""
 
 from datetime import date, datetime
 

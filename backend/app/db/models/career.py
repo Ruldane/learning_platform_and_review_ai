@@ -1,6 +1,6 @@
-"""Tables du CV (phase 6, D118) : profil maître versionné, gabarits, revues ciblées, leurs
-modifications et les versions de CV produites. Le profil et le CV sont des données personnelles :
-seuls leurs identifiants sont journalisés."""
+"""CV tables (phase 6, D118): versioned master profile, templates, targeted reviews, their
+changes and the CV versions produced. The profile and the CV are personal data: only their
+identifiers are logged."""
 
 from datetime import datetime
 from typing import Any, Literal
@@ -10,7 +10,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, UserScopedMixin, UTCDateTime
 
-# Types partagés avec `app.agents`, qui ne peut pas importer une feature (contrat 6).
+# Types shared with `app.agents`, which cannot import a feature (contract 6).
 ProfileStatus = Literal["draft", "validated"]
 ProfileOrigin = Literal["archivist", "january"]
 TemplateStatus = Literal["capturing", "review", "ready", "failed", "archived"]
@@ -20,9 +20,9 @@ VersionStatus = Literal["rendering", "ready", "pages_exceeded", "failed"]
 
 
 class MasterProfile(UserScopedMixin, Base):
-    """Une version du profil maître (`data` : `MasterProfileData`). `dropped` garde le texte des
-    lignes retirées du brouillon (chiffre introuvable, texte invisible) : montré à January seule,
-    jamais journalisé (preflight G5)."""
+    """A version of the master profile (`data`: `MasterProfileData`). `dropped` keeps the text of
+    the lines removed from the draft (figure not found, invisible text): shown to January only,
+    never logged (preflight G5)."""
 
     __tablename__ = "master_profile"
     # `uq_master_profile_user_id` : (user_id, version).
@@ -38,9 +38,9 @@ class MasterProfile(UserScopedMixin, Base):
 
 
 class CvTemplate(UserScopedMixin, Base):
-    """Un gabarit capturé d'un CV d'origine : la description du Maquettiste (`spec`), le HTML et
-    le CSS écrits par le code, les polices (`FontUse`) et la ressemblance mesurée. Un seul
-    gabarit actif par utilisateur (index unique partiel)."""
+    """A template captured from an original CV: the Mockup-designer's description (`spec`), the HTML
+    and CSS written by the code, the fonts (`FontUse`) and the measured resemblance. A single
+    active template per user (partial unique index)."""
 
     __tablename__ = "cv_templates"
     __table_args__ = (
@@ -61,25 +61,25 @@ class CvTemplate(UserScopedMixin, Base):
     passes: Mapped[int] = mapped_column(Integer, default=0)
     page_count: Mapped[int] = mapped_column(Integer)
     page_size: Mapped[dict[str, Any]] = mapped_column()  # {width_pt, height_pt}
-    original_pages: Mapped[list[Any]] = mapped_column(default=list)  # clés de stockage .png
+    original_pages: Mapped[list[Any]] = mapped_column(default=list)  # storage keys for .png
     render_pages: Mapped[list[Any]] = mapped_column(default=list)
     sample_content: Mapped[dict[str, Any] | None] = mapped_column(default=None)  # CvContent
     selectable: Mapped[bool] = mapped_column(Boolean)
     session_id: Mapped[str | None] = mapped_column(String(36), default=None)
     failure_reason: Mapped[str | None] = mapped_column(String(300), default=None)
-    # CV d'origine préparé (D126) : géométrie des pages, blocs résumés, texte visible, polices
-    # (rôles et fichiers rangés) ; relu tel quel, jamais extrait deux fois.
+    # Prepared original CV (D126): page geometry, summary blocks, visible text, fonts
+    # (roles and files stored); re-read as is, never extracted twice.
     prepared: Mapped[dict[str, Any] | None] = mapped_column(default=None)
-    # Une entrée par passe rendue : numéro, score, ressemblance, clés des images du rendu.
+    # One entry per rendered pass: number, score, resemblance, keys of the render's images.
     pass_log: Mapped[list[Any]] = mapped_column(default=list)
 
 
-OPEN_REVIEW_STATUSES = ("running", "proposed")  # une revue en cours : session ouverte
+OPEN_REVIEW_STATUSES = ("running", "proposed")  # a review in progress: session open
 
 
 class CvReview(UserScopedMixin, Base):
-    """La revue d'un CV contre une offre : indicateurs avant et après, rapport, mots clés partis
-    vers l'écart (F8)."""
+    """The review of a CV against an offer: indicators before and after, report, keywords sent to
+    the gap (F8)."""
 
     __tablename__ = "cv_reviews"
 
@@ -98,8 +98,8 @@ class CvReview(UserScopedMixin, Base):
 
 
 class CvModification(UserScopedMixin, Base):
-    """Une modification proposée par un agent (`ref` : « m3 »), adossée à des faits du profil ;
-    `blocks` dit pourquoi elle est « à confirmer »."""
+    """A change proposed by an agent (`ref`: « m3 »), backed by profile facts;
+    `blocks` says why it is « à confirmer »."""
 
     __tablename__ = "cv_modifications"
     # `uq_cv_modifications_review_id` : (review_id, ref).
@@ -124,8 +124,8 @@ class CvModification(UserScopedMixin, Base):
 
 
 class CvVersion(UserScopedMixin, Base):
-    """Un CV produit pour une offre (`number` compte par offre). `decisions` fige l'état des
-    modifications au clic ; `filename` est le nom ASCII `CV_…pdf`, jamais journalisé."""
+    """A CV produced for an offer (`number` counts per offer). `decisions` freezes the state of the
+    changes at click time; `filename` is the ASCII name `CV_…pdf`, never logged."""
 
     __tablename__ = "cv_versions"
     # `uq_cv_versions_posting_id` : (posting_id, number).

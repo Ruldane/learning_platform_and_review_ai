@@ -1,4 +1,4 @@
-"""Épreuve de textes figés et attribution secrète des lettres A et B."""
+"""Test of frozen texts and secret assignment of the letters A and B."""
 
 from datetime import datetime
 from typing import Any, Literal
@@ -15,7 +15,7 @@ class BlindAssessment(Base, UserScopedMixin):
     __tablename__ = "blind_assessments"
 
     rubric: Mapped[dict[str, Any]]
-    # La composition de l'archive de compte ne révèle pas un tirage en cours.
+    # Composing the account archive does not reveal a draw in progress.
     source_a: Mapped[dict[str, Any]] = mapped_column(info={"export": False})
     source_b: Mapped[dict[str, Any]] = mapped_column(info={"export": False})
     stage: Mapped[BlindStage] = mapped_column(String(12), default="draft")

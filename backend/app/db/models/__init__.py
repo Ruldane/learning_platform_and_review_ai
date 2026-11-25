@@ -1,4 +1,4 @@
-# Importer ici chaque module de modèles : Alembic et les tests lisent `Base.metadata`.
+# Import each models module here: Alembic and the tests read `Base.metadata`.
 from app.db.models import (
     accounts,
     agents,

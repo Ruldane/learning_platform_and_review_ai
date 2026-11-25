@@ -1,15 +1,15 @@
-"""Sonde de SearXNG : `GET /healthz` (route confirmée dans `searx/webapp.py`), puis une seule
-fois par instance de sonde `GET /search?q=tremplin&format=json`. SearXNG répond 403 si le format
-JSON n'est pas dans `search.formats` de `settings.yml`."""
+"""SearXNG probe: `GET /healthz` (route confirmed in `searx/webapp.py`), then once per probe
+instance `GET /search?q=tremplin&format=json`. SearXNG answers 403 if the JSON format is not in
+`search.formats` of `settings.yml`."""
 
 import httpx
 
 from app.providers.health import HealthStatus, available, unexpected_status
 
 _JSON_REFUSED = "SearXNG may have JSON output disabled or may have rate-limited the request."
-# La première vraie recherche peut dépasser le délai de 3 s du client partagé : la vérification
-# JSON a le sien. `timeout` est le plafond demandé au service de santé (sonde + recherche) ;
-# la vérification n'a lieu qu'une fois réussie, ensuite seule la sonde `/healthz` s'exécute.
+# The first real search may exceed the shared client's 3 s deadline: the JSON check
+# has its own. `timeout` is the cap requested from the health service (probe + search);
+# the check only happens once it has succeeded, after which only the `/healthz` probe runs.
 _DEEP_TIMEOUT_SECONDS = 10.0
 _CHECK_TIMEOUT_SECONDS = _DEEP_TIMEOUT_SECONDS + 5.0
 

@@ -6,25 +6,24 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, UserScopedMixin, UTCDateTime
 
-# Types partagés avec `app.agents`, qui ne peut pas importer une feature (contrat 6).
+# Types shared with `app.agents`, which cannot import a feature (contract 6).
 PageStatus = Literal["ok", "unreadable"]
 SourceVerdict = Literal["pending", "kept", "rejected"]
-# « Pages et personnes repérées » (SPEC 13.3) ; les personnes viennent en phase 4.
+# « Pages et personnes repérées » (SPEC 13.3); the people part comes in phase 4.
 SourceKind = Literal["page", "person"]
 CacheKind = Literal["page", "search"]
-# Note minimale sur 100 pour qu'une source soit retenue (SPEC 10.3).
+# Minimum score out of 100 for a source to be kept (SPEC 10.3).
 SOURCE_THRESHOLD = 60
 
 
 class WebCacheEntry(UserScopedMixin, Base):
-    """Cache de la recherche web d'un utilisateur : page lue ou liste de résultats (SPEC 13.6).
+    """Cache of a user's web search: a page read or a list of results (SPEC 13.6).
 
-    `key_hash` est l'empreinte de l'URL normalisée ou de la requête : la clé en clair
-    (une URL, une requête) n'est jamais stockée ici.
-    """
+    `key_hash` is the fingerprint of the normalized URL or of the query: the plain key (a URL,
+    a query) is never stored here."""
 
     __tablename__ = "web_cache"
-    # `uq_web_cache_user_id` : nom que la convention de `Base` donne à (user_id, kind, key_hash).
+    # `uq_web_cache_user_id`: name that the `Base` convention gives to (user_id, kind, key_hash).
     __table_args__ = (UniqueConstraint("user_id", "kind", "key_hash"),)
 
     kind: Mapped[str] = mapped_column(String(8))
@@ -35,13 +34,12 @@ class WebCacheEntry(UserScopedMixin, Base):
 
 
 class Source(UserScopedMixin, Base):
-    """Une source repérée par une session de recherche, avec sa note et son verdict (SPEC 13.3).
+    """A source found by a search session, with its score and verdict (SPEC 13.3).
 
-    `session_id` n'est pas une clé étrangère : les sources survivent à leur session.
-    """
+    `session_id` is not a foreign key: the sources outlive their session."""
 
     __tablename__ = "sources"
-    # `uq_sources_user_id` : nom de la convention de `Base` pour (user_id, session_id, url_hash).
+    # `uq_sources_user_id`: name from the `Base` convention for (user_id, session_id, url_hash).
     __table_args__ = (
         UniqueConstraint("user_id", "session_id", "url_hash"),
         Index("ix_sources_user_session", "user_id", "session_id"),
@@ -64,11 +62,10 @@ class Source(UserScopedMixin, Base):
 
 
 class WebQuery(UserScopedMixin, Base):
-    """Une requête lancée par une session, nettoyée de toute donnée personnelle.
+    """A query run by a session, cleaned of any personal data.
 
-    Elle sert au rejeu d'un nœud (la même requête n'est ni recomptée ni refacturée) et à
-    l'affichage des requêtes lancées.
-    """
+    It is used to replay a node (the same query is neither counted nor billed again) and to
+    display the queries run."""
 
     __tablename__ = "web_queries"
     # `uq_web_queries_user_id` : (user_id, session_id, query_hash).
@@ -83,11 +80,10 @@ class WebQuery(UserScopedMixin, Base):
 
 
 class SearchUsage(UserScopedMixin, Base):
-    """Requêtes envoyées à un fournisseur payant ce mois-ci (Brave : 900 par mois civil UTC).
+    """Requests sent to a paid provider this month (Brave: 900 per UTC calendar month).
 
-    `key_fingerprint` est une empreinte courte de la clé, jamais la clé : une même clé `.env`
-    partagée entre utilisateurs a un compteur par utilisateur, que `month_total` additionne.
-    """
+    `key_fingerprint` is a short fingerprint of the key, never the key: the same `.env` key
+    shared between users has a counter per user, which `month_total` adds up."""
 
     __tablename__ = "search_usage"
     # `uq_search_usage_user_id` : (user_id, provider, month, key_fingerprint).
@@ -95,6 +91,6 @@ class SearchUsage(UserScopedMixin, Base):
 
     provider: Mapped[str] = mapped_column(String(16))
     month: Mapped[str] = mapped_column(String(7))
-    # Dérivée d'un secret : jamais exportée (`info`, D185 n° 10 b), même si ce n'est pas la clé.
+    # Derived from a secret: never exported (`info`, D185 no. 10 b), even if it is not the key.
     key_fingerprint: Mapped[str] = mapped_column(String(16), info={"export": False})
     count: Mapped[int] = mapped_column(Integer, default=0)

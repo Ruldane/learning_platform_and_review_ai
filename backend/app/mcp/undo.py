@@ -1,13 +1,12 @@
-"""L'annulation des changements d'un appel de niveau 2 (phase 10, P14) : dans une transaction, **si
-chaque ligne est restée dans l'état « après »**, les ajouts sont supprimés, les modifications
-restaurées et les suppressions ré-insérées ; sinon 409 sans rien écrire. Seules les lignes de
-cette utilisatrice sont vues (404 pour l'appel d'une autre).
+"""Undo of the changes of a level 2 call (phase 10, P14): in a transaction, **if each row is still
+in the "after" state**, the additions are deleted, the changes restored and the deletions
+re-inserted; otherwise 409 with nothing written. Only this user's rows are seen (404 for another
+user's call).
 
-Garde-fous : (1) les lignes de l'appel sont prises d'abord par un `UPDATE … WHERE undone_at IS
-NULL` (deux clics en même temps : un seul passe) ; (2) un ajout qui a des lignes **liées** (clé
-étrangère, cascade comprise) ne venant pas du même appel n'est pas supprimé : la suppression les
-emporterait en silence (`undo_has_dependents`) ; (3) une contrainte de la base est un 409, jamais
-une 500."""
+Safeguards: (1) the call's rows are first claimed by an `UPDATE … WHERE undone_at IS NULL` (two
+clicks at the same time: only one gets through); (2) an addition that has **linked** rows (foreign
+key, cascade included) not coming from the same call is not deleted: the deletion would silently
+take them with it (`undo_has_dependents`); (3) a database constraint is a 409, never a 500."""
 
 from datetime import UTC, datetime
 from typing import Any
@@ -34,9 +33,10 @@ from app.mcp.rowstate import (
 async def undo_call(
     factory: async_sessionmaker[AsyncSession], user_id: str, call_id: str
 ) -> UndoResult:
-    """Annule tous les changements de `call_id` ou rien : 404 si l'appel n'a rien changé chez
-    cette utilisatrice, 409 s'il est déjà annulé, si une ligne a changé depuis, si un ajout a des
-    lignes liées d'un autre appel, ou si la base refuse."""
+    """Undoes all the changes of `call_id`, or nothing: 404 if the call changed nothing for this
+    user,
+    409 if it is already undone, if a row has changed since, if an addition has linked rows from
+    another call, or if the database refuses."""
     async with factory() as db:
         stmt = (
             select(McpChange)
@@ -70,7 +70,7 @@ async def undo_call(
                 409,
             ) from exc
         except AppError:
-            await db.rollback()  # le « pris » de `_claim` ne reste pas
+            await db.rollback()  # the « pris » mark set by `_claim` does not stay
             raise
     return UndoResult(call_id=call_id, undone=len(pending), cancelled_sessions=cancelled)
 
@@ -78,7 +78,7 @@ async def undo_call(
 async def _cancel_pending_sessions(
     db: AsyncSession, user_id: str, changes: list[McpChange]
 ) -> tuple[str, ...]:
-    """Révoque avec l'écriture la session que cet appel avait mise en attente."""
+    """Revokes, with the write, the session that this call had put on hold."""
     cancelled: list[str] = []
     for row in changes:
         for column in _table(row).columns:
@@ -113,8 +113,8 @@ def _already_undone() -> AppError:
 
 
 async def _claim(db: AsyncSession, user_id: str, call_id: str, pending: list[McpChange]) -> None:
-    """Prend les lignes de l'historique (`undone_at`) avant tout : un second clic, qui les trouve
-    prises, reçoit 409 sans rien appliquer."""
+    """Claims the history rows (`undone_at`) first: a second click, finding them claimed, gets 409
+    without applying anything."""
     taken = await db.execute(
         update(McpChange)
         .where(
@@ -130,8 +130,8 @@ async def _claim(db: AsyncSession, user_id: str, call_id: str, pending: list[Mcp
 
 
 async def _check_dependents(db: AsyncSession, row: McpChange, added: set[tuple[str, str]]) -> None:
-    """Un ajout n'est supprimé que si aucune ligne ne s'y rattache (clé étrangère, cascade ou non)
-    en dehors de celles que cet appel a ajoutées lui-même : sinon 409, sans contenu."""
+    """An addition is deleted only if no row is attached to it (foreign key, cascade or not) outside
+    those this call added itself; otherwise 409, without content."""
     table = _table(row)
     for child, column, parent in _referrers(table):
         value = row.row_id if parent.primary_key else (row.after or {}).get(parent.name)
@@ -150,8 +150,8 @@ async def _check_dependents(db: AsyncSession, row: McpChange, added: set[tuple[s
 
 
 def _referrers(table: Table) -> list[tuple[Table, Column[Any], Column[Any]]]:
-    """Les colonnes d'autres tables (ou de la même) qui visent cette table par une clé étrangère :
-    `(table liée, colonne liée, colonne visée)`."""
+    """Columns of other tables (or of the same one) that point at this table through a foreign key:
+    `(linked table, linked column, targeted column)`."""
     found: list[tuple[Table, Column[Any], Column[Any]]] = []
     for other in Base.metadata.tables.values():
         for key in other.foreign_keys:
@@ -175,7 +175,7 @@ async def _current(db: AsyncSession, row: McpChange) -> dict[str, Any] | None:
 
 
 def _without(state: dict[str, Any] | None, ignored: frozenset[str]) -> dict[str, Any] | None:
-    # Une colonne nullable ajoutée après l'appel vaut NULL dans son instantané historique.
+    # A nullable column added after the call is NULL in its historical snapshot.
     return (
         None
         if state is None
@@ -184,7 +184,7 @@ def _without(state: dict[str, Any] | None, ignored: frozenset[str]) -> dict[str,
 
 
 def _pending_attachments(table: Table, row: McpChange) -> frozenset[str]:
-    """Un PDF du texte toujours publié peut arriver pendant la vérification du brouillon."""
+    """A PDF of the text still published can arrive while the draft is being checked."""
     if any(
         c.info.get("undo_pending_session") and (row.after or {}).get(c.name) for c in table.columns
     ):
@@ -193,7 +193,7 @@ def _pending_attachments(table: Table, row: McpChange) -> frozenset[str]:
 
 
 async def _check(db: AsyncSession, row: McpChange) -> None:
-    """La ligne est-elle restée comme l'appel l'a laissée ? Sinon 409, sans son contenu."""
+    """Is the row still as the call left it? Otherwise 409, without its content."""
     expected = None if row.op == "delete" else row.after
     table = _table(row)
     ignored = volatile_columns(table) | _pending_attachments(table, row)

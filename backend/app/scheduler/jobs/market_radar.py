@@ -1,7 +1,8 @@
-"""Tâche « relevé hebdomadaire du radar » (P10, D160) : toutes les 15 minutes et au démarrage, le
-lundi à partir de 06:00 locales, chaque compte reçoit un relevé du marché, une fois par semaine ISO
-locale. Le travail est dans la feature `radar` (`run_weekly_radar`), qui n'importe jamais ce
-paquet (contrat 8) : la tâche ne fait que déballer son contexte et lire l'heure."""
+"""Task "Weekly radar reading" (P10, D160): every 15 minutes and at startup, on Monday from 06:00
+local
+time, each account receives a market reading, once per local ISO week. The work is in the `radar`
+feature (`run_weekly_radar`), which never imports this package (contract 8): the task only unpacks
+its context and reads the time."""
 
 from datetime import UTC, datetime
 

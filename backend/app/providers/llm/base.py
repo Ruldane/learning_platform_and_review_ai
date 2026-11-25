@@ -1,7 +1,7 @@
-"""Interface LLM : types partagés, protocoles des fournisseurs et des lecteurs injectés.
+"""LLM interface: shared types, and the protocols of the providers and of the injected readers.
 
-Aucun import de `app/features/` : la fabrique ne dépend que des protocoles ci-dessous, la
-composition avec la feature réglages se fait dans `app/bootstrap.py`.
+No import from `app/features/`: the factory depends only on the protocols below; the composition
+with the settings feature happens in `app/bootstrap.py`.
 """
 
 from typing import Literal, Protocol
@@ -9,21 +9,21 @@ from typing import Literal, Protocol
 from langchain_core.language_models import BaseChatModel
 from pydantic import BaseModel, Field
 
-# Délai du SDK (httpx) : connexion, et attente de CHAQUE morceau de la réponse, pas de l'appel
-# entier. Une réponse en flux qui continue d'arriver (réflexion de GLM-5.3, morceau après
-# morceau) ne le déclenche jamais (contrôle 5.18) : d'où l'échéance totale ci-dessous.
+# SDK (httpx) timeout: connection, and waiting for EACH chunk of the response, not for the whole
+# call. A streamed response that keeps arriving (GLM-5.3 reasoning, chunk after
+# chunk) never triggers it (check 5.18): hence the total deadline below.
 LLM_CALL_TIMEOUT_S = 45
-# Échéance totale d'un appel (réglable : `LLM_CALL_DEADLINE_S`), posée par la fabrique dans les
-# métadonnées du modèle sous `CALL_DEADLINE_KEY` et appliquée par `call_with_retries` ; au-delà,
-# l'appel est un délai dépassé, retenté. Égale au plus long plafond de nœud (600 s : Rédacteur,
-# Stratège, Examinateur) : elle ne coupe jamais un appel avant son nœud (le minuteur du nœud
-# part avant), elle borne seulement un appel hors de tout plafond plus court. Le Tuteur a sa
-# propre échéance, plus courte (`TUTOR_CALL_TIMEOUT_S`, D115 n° 17).
+# Total deadline of a call (adjustable: `LLM_CALL_DEADLINE_S`), set by the factory in the
+# model's metadata under `CALL_DEADLINE_KEY` and applied by `call_with_retries`; beyond it,
+# the call is a timeout and is retried. Equal to the longest node cap (600 s: Writer,
+# Strategist, Examiner): it never cuts a call before its node (the node's timer starts
+# first); it only bounds a call outside any shorter cap. The Tutor has its own deadline,
+# shorter (`TUTOR_CALL_TIMEOUT_S`, D115 no. 17).
 LLM_CALL_DEADLINE_S = 600.0
 CALL_DEADLINE_KEY = "tremplin_call_deadline_s"
-# Marque (`additional_kwargs` d'un `SystemMessage`) du début de prompt fixe d'une séance : les
-# fournisseurs qui savent le mettre en cache le font (Anthropic, `cache_control`), les autres
-# l'ignorent. Le texte marqué doit rester identique d'un appel à l'autre (octet pour octet).
+# Mark (`additional_kwargs` of a `SystemMessage`) of the fixed start of a session's prompt: the
+# providers that can cache it do so (Anthropic, `cache_control`), the others
+# ignore it. The marked text must stay identical from one call to the next (byte for byte).
 CACHE_PREFIX_KEY = "tremplin_cache_prefix"
 
 Tier = Literal["fast", "standard", "strong", "vision"]
@@ -45,7 +45,7 @@ class KeyTestResult(BaseModel):
 
 
 class LlmProvider(Protocol):
-    """Un fournisseur de modèles de chat (Anthropic, OpenAI, GLM, faux pour les tests)."""
+    """A chat model provider (Anthropic, OpenAI, GLM, or a fake one for the tests)."""
 
     name: str
     label: str
@@ -53,11 +53,11 @@ class LlmProvider(Protocol):
     def build(self, model: str, api_key: str, *, base_url: str | None = None) -> BaseChatModel: ...
 
     async def list_models(self, api_key: str) -> list[str] | None:
-        """Identifiants disponibles, ou `None` si le fournisseur n'a pas d'API de liste."""
+        """Available identifiers, or `None` if the provider has no list API."""
         ...
 
     async def test_key(self, api_key: str) -> KeyTestResult:
-        """Vérifie la clé sans jamais lever (erreurs réseau et d'authentification incluses)."""
+        """Checks the key without ever raising (network and authentication errors included)."""
         ...
 
 
@@ -69,5 +69,5 @@ class ModelChoiceReader(Protocol):
 
 class KeyReader(Protocol):
     async def get_key(self, user_id: str, provider: str) -> str | None:
-        """Clé en clair, ou `None` si absente. Lève `SecretUnreadable` si elle est illisible."""
+        """Plain key, or `None` if absent. Raises `SecretUnreadable` if it is unreadable."""
         ...

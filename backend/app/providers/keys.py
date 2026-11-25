@@ -1,7 +1,7 @@
-"""Ce que l'écran des clés attend d'un fournisseur à clé : un nom, un libellé et un test.
+"""What the key screen expects from a key-based provider: a name, a label and a test.
 
-`LlmProvider` le satisfait déjà ; Brave aussi (`search/brave.py`), sans être un fournisseur LLM :
-la liste des modèles et la fabrique n'en voient rien (D73)."""
+`LlmProvider` already satisfies it; so does Brave (`search/brave.py`), without being an LLM
+provider: the model list and the factory see none of it (D73)."""
 
 from typing import Protocol
 

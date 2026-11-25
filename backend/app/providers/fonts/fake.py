@@ -1,5 +1,5 @@
-"""Faux `FontSource` des tests (D119) : un petit fichier `.ttf` factice par famille du catalogue,
-aucun réseau ; `unavailable` simule une famille introuvable, `calls` garde chaque demande."""
+"""Fake `FontSource` for tests (D119): a small fake `.ttf` file per catalogue family, no network;
+`unavailable` simulates a family not found, `calls` keeps each request."""
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
@@ -9,7 +9,7 @@ from app.providers.fonts.catalog import FREE_FAMILIES
 
 
 def fake_font_data(family: str, weight: int) -> bytes:
-    """Octets reconnaissables : signature TrueType, puis la famille et la graisse."""
+    """Recognizable bytes: TrueType signature, then the family and the weight."""
     return b"\x00\x01\x00\x00" + f"{family}:{weight}".encode()
 
 

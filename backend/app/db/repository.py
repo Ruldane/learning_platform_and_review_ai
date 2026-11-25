@@ -6,16 +6,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.base import UserScopedMixin
 
-# Champs que l'appelant ne peut jamais imposer : ils appartiennent au repository.
+# Fields the caller can never set: they belong to the repository.
 _PROTECTED_ON_UPDATE = {"id", "user_id", "created_at"}
 
 
 class UserScopedRepository[M: UserScopedMixin]:
-    """Accès aux lignes d'un seul utilisateur : `user_id` est imposé à l'insertion
-    et ajouté à chaque `WHERE`. Les sous-classes fixent l'attribut `model`.
+    """Access to the rows of a single user: `user_id` is enforced on insert and added to each
+    `WHERE`. Subclasses set the `model` attribute.
 
-    Les écritures font un `flush` ; le commit appartient à la session de la requête (`get_db`).
-    """
+    Writes do a `flush`; the commit belongs to the request's session (`get_db`)."""
 
     model: type[M]
 

@@ -1,4 +1,4 @@
-"""Exercices autonomes, figés sur un chapitre publié."""
+"""Standalone exercises, frozen on a published chapter."""
 
 from typing import Any, Literal
 

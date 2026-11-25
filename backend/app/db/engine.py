@@ -12,18 +12,18 @@ def _set_sqlite_pragmas(dbapi_connection: Any, _: Any) -> None:
     try:
         cursor.execute("PRAGMA journal_mode=WAL")
         cursor.execute("PRAGMA foreign_keys=ON")
-        # Un écrivain qui trouve la base verrouillée attend jusqu'à 5 s au lieu d'échouer
-        # (« database is locked ») : le bus d'événements et le runner écrivent en même temps.
+        # A writer that finds the database locked waits up to 5 s instead of failing
+        # (« database is locked »): the event bus and the runner write at the same time.
         cursor.execute(f"PRAGMA busy_timeout={BUSY_TIMEOUT_MS}")
     finally:
         cursor.close()
 
 
 def create_engine(url: str) -> AsyncEngine:
-    """Moteur asynchrone ; chaque connexion SQLite passe en WAL, clés étrangères actives et
-    délai d'attente sur verrou (`BUSY_TIMEOUT_MS`) ; paramètres SQL masqués dans les erreurs."""
-    # hide_parameters : une erreur SQL ne cite jamais ses paramètres (contenu, nom de fichier,
-    # lien), même dans la trace du gestionnaire d'erreurs générique (spec 17.2).
+    """Async engine; each SQLite connection switches to WAL, foreign keys are enabled and
+    a lock timeout is set (`BUSY_TIMEOUT_MS`); SQL parameters are hidden in errors."""
+    # hide_parameters: a SQL error never quotes its parameters (content, file name,
+    # link), even in the trace of the generic error handler (spec 17.2).
     engine = _create_async_engine(url, hide_parameters=True)
     if engine.dialect.name == "sqlite":
         event.listen(engine.sync_engine, "connect", _set_sqlite_pragmas)
@@ -31,5 +31,5 @@ def create_engine(url: str) -> AsyncEngine:
 
 
 def create_session_factory(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
-    # expire_on_commit=False : les objets restent lisibles après le commit de fin de requête.
+    # expire_on_commit=False: the objects stay readable after the end-of-request commit.
     return async_sessionmaker(engine, expire_on_commit=False)

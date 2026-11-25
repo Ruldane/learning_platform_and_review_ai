@@ -1,4 +1,4 @@
-"""Fournisseur OpenAI, et base commune des fournisseurs de type OpenAI (GLM de Z.ai)."""
+"""OpenAI provider, and the common base of OpenAI-type providers (Z.ai's GLM)."""
 
 from collections.abc import Mapping
 from typing import Any, ClassVar
@@ -13,24 +13,24 @@ from app.providers.llm.errors import PROVIDER_ERROR_CODES
 
 
 class OpenAICompatibleProvider:
-    """API de type OpenAI : `base_url` configurable, liste des modèles par `GET /models`."""
+    """OpenAI-type API: configurable `base_url`, model list through `GET /models`."""
 
     name: str = "openai"
     label: str = "OpenAI"
     default_base_url: ClassVar[str] = "https://api.openai.com/v1/"
-    # Messages français par code d'erreur du corps de réponse (voir `_http.check_key`) ; la table
-    # commune est `errors.PROVIDER_ERROR_CODES`, aussi lue pour les appels du chat.
+    # French messages by error code of the response body (see `_http.check_key`); the table
+    # shared is `errors.PROVIDER_ERROR_CODES`, also read for chat calls.
     error_code_messages: ClassVar[Mapping[str, str]] = {}
-    # Demander l'usage en flux (`stream_options.include_usage`) : sans lui, l'API d'OpenAI ne
-    # renvoie aucun token en flux (coût à 0, plafond jamais atteint), et `langchain_openai` ne le
-    # demande d'office que sans `base_url`, que l'on passe toujours.
+    # Request the usage in the stream (`stream_options.include_usage`): without it, OpenAI's API
+    # returns no token in the stream (cost at 0, cap never reached), and `langchain_openai` only
+    # requests it by default without `base_url`, which we always pass.
     request_stream_usage: ClassVar[bool] = True
 
     def __init__(self, base_url: str | None = None) -> None:
         self._base_url = base_url or self.default_base_url
 
     def extra_body(self, model: str) -> dict[str, Any] | None:
-        """Paramètres propres au fournisseur ajoutés au corps de chaque requête (aucun ici)."""
+        """Provider-specific parameters added to the body of each request (none here)."""
         return None
 
     def build(self, model: str, api_key: str, *, base_url: str | None = None) -> BaseChatModel:
@@ -39,9 +39,9 @@ class OpenAICompatibleProvider:
             api_key=SecretStr(api_key),
             base_url=base_url or self._base_url,
             timeout=LLM_CALL_TIMEOUT_S,
-            max_retries=0,  # les nouveaux essais appartiennent à `invoke_agent` (D44)
+            max_retries=0,  # new attempts belong to `invoke_agent` (D44)
             streaming=True,
-            stream_usage=self.request_stream_usage or None,  # None : réglage par défaut du SDK
+            stream_usage=self.request_stream_usage or None,  # None: the SDK's default setting
             extra_body=self.extra_body(model),
             metadata={
                 "tremplin_provider": self.name,
@@ -64,7 +64,7 @@ class OpenAICompatibleProvider:
         return ids
 
     async def test_key(self, api_key: str) -> KeyTestResult:
-        """Liste les modèles : aucun token dépensé."""
+        """Lists the models: no token spent."""
         return await _http.check_key(
             self.label,
             "GET",

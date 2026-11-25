@@ -1,4 +1,4 @@
-"""Moteur du serveur MCP (phase 10, P10 à P19) : ce n'est pas une feature. Chaque feature déclare
-ses actions dans `features/<f>/mcp.py` (`MCP: FeatureMcp`) ; le registre `MCP_FEATURES` les
-assemble. Ce paquet n'importe aucune feature ni `app.agents` (contrat d'import 9) : il ne connaît
-que les déclarations (`base`) et appelle la vraie route de l'application."""
+"""MCP server engine (phase 10, P10 to P19): this is not a feature. Each feature declares its
+actions in `features/<f>/mcp.py` (`MCP: FeatureMcp`); the `MCP_FEATURES` registry assembles
+them. This package imports no feature nor `app.agents` (import contract 9): it only knows the
+declarations (`base`) and calls the application's real route."""

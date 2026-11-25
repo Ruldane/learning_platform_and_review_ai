@@ -1,8 +1,7 @@
-"""Tâche « brief du matin » (P12, D162) : toutes les 10 minutes et au démarrage, chaque compte dont
-l'heure du brief est passée reçoit le brief de son jour local (une seule fois, même s'il a déjà
-été créé à l'ouverture de l'accueil). Le travail est dans la feature `brief`
-(`run_daily_briefs`), qui n'importe jamais ce paquet (contrat 8) : la tâche ne fait que déballer
-son contexte et lire l'heure."""
+"""Task "Morning brief" (P12, D162): every 10 minutes and at startup, each account whose brief time
+has passed receives the brief of its local day (only once, even if it was already created when the
+home page was opened). The work is in the `brief` feature (`run_daily_briefs`), which never imports
+this package (contract 8): the task only unpacks its context and reads the time."""
 
 from datetime import UTC, datetime
 

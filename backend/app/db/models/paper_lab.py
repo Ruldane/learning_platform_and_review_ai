@@ -1,4 +1,4 @@
-"""Résultat privé de la lecture et projet Python créé pour l’expérience."""
+"""Private result of the reading and Python project created for the experiment."""
 
 from typing import Literal
 

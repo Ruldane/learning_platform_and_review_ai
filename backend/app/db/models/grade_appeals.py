@@ -1,4 +1,4 @@
-"""Première lecture, remise, seconde lecture et décision conservées séparément."""
+"""First reading, submission, second reading and decision, kept separately."""
 
 from datetime import datetime
 from typing import Any, Literal

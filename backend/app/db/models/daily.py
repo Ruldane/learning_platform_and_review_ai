@@ -1,5 +1,5 @@
-"""Tables du quotidien (phase 8, D157) : mini projets, relevés du radar du marché, briefs du jour
-et registre persistant des passages planifiés."""
+"""Daily tables (phase 8, D157): mini projects, market radar readings, daily briefs and the
+persistent register of scheduled runs."""
 
 from datetime import date, datetime
 from typing import Any, Literal
@@ -9,7 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, UserScopedMixin, UTCDateTime
 
-# Types partagés avec `app.agents`, qui ne peut pas importer une feature (contrat 6).
+# Types shared with `app.agents`, which cannot import a feature (contract 6).
 ProjectStatus = Literal[
     "brief_pending", "brief_failed", "todo", "reviewing", "to_redo", "validated"
 ]
@@ -24,12 +24,12 @@ JobStatus = Literal["running", "done", "failed", "skipped"]
 
 
 class Project(UserScopedMixin, Base):
-    """Le mini projet d'un module (P1). `module_id` et `program_id` n'ont pas de clé étrangère :
-    le projet survit à une replanification. `submissions` : les rendus (au plus 10), `evaluation` :
-    la dernière évaluation, `drafts` : les brouillons par type (`DraftKind`)."""
+    """The mini project of a module (P1). `module_id` and `program_id` have no foreign key: the
+    project survives a replanning. `submissions`: the submissions (at most 10), `evaluation`:
+    the latest evaluation, `drafts`: the drafts by type (`DraftKind`)."""
 
     __tablename__ = "projects"
-    # `uq_projects_user_id` : (user_id, module_id), un projet par module.
+    # `uq_projects_user_id`: (user_id, module_id), one project per module.
     __table_args__ = (UniqueConstraint("user_id", "module_id"),)
 
     module_id: Mapped[str] = mapped_column(String(36))
@@ -47,9 +47,9 @@ class Project(UserScopedMixin, Base):
 
 
 class RadarRun(UserScopedMixin, Base):
-    """Un relevé du radar. `role_norm` et `zone_norm` : le poste et la zone normalisés, clés de
-    comparaison avec le relevé précédent (`previous_id`). `blocked_domains` : domaine → nombre,
-    jamais journalisé. `postings` : une entrée par offre examinée (D157)."""
+    """A radar reading. `role_norm` and `zone_norm`: the normalized role and area, keys for
+    comparison with the previous reading (`previous_id`). `blocked_domains`: domain -> count,
+    never logged. `postings`: one entry per offer reviewed (D157)."""
 
     __tablename__ = "radar_runs"
     __table_args__ = (Index("ix_radar_runs_user_created", "user_id", "created_at"),)
@@ -74,16 +74,16 @@ class RadarRun(UserScopedMixin, Base):
     alerts: Mapped[list[Any]] = mapped_column(default=list)
     previous_id: Mapped[str | None] = mapped_column(String(36), default=None)
     finished_at: Mapped[datetime | None] = mapped_column(UTCDateTime, default=None)
-    # Code d'un relevé en échec (`search_unavailable`, `session_failed`…) : jamais un message.
+    # Code of a failed reading (`search_unavailable`, `session_failed`…): never a message.
     error_code: Mapped[str | None] = mapped_column(String(64), default=None)
 
 
 class Brief(UserScopedMixin, Base):
-    """Le brief d'un jour local : un instantané (`sections`), plus la ressource et le conseil
-    écrits par les agents. `offer_keys` : les liens d'offres montrés (clés normalisées)."""
+    """The brief of a local day: a snapshot (`sections`), plus the resource and the advice written
+    by the agents. `offer_keys`: the offer links shown (normalized keys)."""
 
     __tablename__ = "briefs"
-    # `uq_briefs_user_id` : (user_id, day), un brief par jour local.
+    # `uq_briefs_user_id`: (user_id, day), one brief per local day.
     __table_args__ = (UniqueConstraint("user_id", "day"),)
 
     day: Mapped[date] = mapped_column(Date)
@@ -97,8 +97,8 @@ class Brief(UserScopedMixin, Base):
 
 
 class JobRun(UserScopedMixin, Base):
-    """Un passage d'une tâche planifiée pour une période (P13) : le registre persistant, par
-    `(user_id, name, period)`. APScheduler reste en mémoire."""
+    """A run of a scheduled task for a period (P13): the persistent register, by
+    `(user_id, name, period)`. APScheduler stays in memory."""
 
     __tablename__ = "jobs"
     # `uq_jobs_user_id` : (user_id, name, period).

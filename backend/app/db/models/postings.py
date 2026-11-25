@@ -1,5 +1,5 @@
-"""Offres d'emploi et fiches d'entreprise (phase 6, D118) : la copie figée du texte d'une offre,
-son analyse, ses doublons et l'écart de compétences calculé contre elle."""
+"""Job offers and company records (phase 6, D118): the frozen copy of an offer's text, its
+analysis, its duplicates and the skill gap computed against it."""
 
 from datetime import datetime
 from typing import Any, Literal, TypedDict
@@ -9,31 +9,32 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, UserScopedMixin, UTCDateTime
 
-# Types partagés avec `app.agents`, qui ne peut pas importer une feature (contrat 6).
+# Types shared with `app.agents`, which cannot import a feature (contract 6).
 PostingStatus = Literal["analyzing", "ready", "rejected", "failed"]
 PostingSource = Literal["url", "text"]
 
 
 class GapMatch(TypedDict):
-    """Un besoin de l'offre (`SkillNeed.name`) rattaché à une compétence connue du référentiel
-    de January (son nom), ou à rien (`None`)."""
+    """A need of the offer (`SkillNeed.name`) linked to a skill known in January's catalog (its
+    name), or to nothing (`None`)."""
 
     need: str
     known: str | None
 
 
 class GapResult(TypedDict):
-    """Forme JSON de `job_postings.gap` (preflight G25) : les rattachements de la session
-    `gap_analysis` qui les a produits. Les lignes de l'écart sont recalculées à la lecture."""
+    """JSON shape of `job_postings.gap` (preflight G25): the links from the `gap_analysis` session
+    that produced them. The gap rows are recomputed on read."""
 
     session_id: str
     matches: list[GapMatch]
 
 
 class JobPosting(UserScopedMixin, Base):
-    """Une offre ajoutée par January, par lien ou par texte collé. `text` est la copie figée lue
-    à l'ajout ; un même lien (`url_norm`) ou un même texte collé (`text_hash`) ne fait qu'une
-    offre par utilisateur (index uniques partiels : idempotence de `POST /postings`)."""
+    """An offer added by January, by link or pasted text. `text` is the frozen copy read at
+    addition;
+    the same link (`url_norm`) or the same pasted text (`text_hash`) makes only one offer per
+    user (partial unique indexes: idempotence of `POST /postings`)."""
 
     __tablename__ = "job_postings"
     __table_args__ = (
@@ -73,8 +74,8 @@ class JobPosting(UserScopedMixin, Base):
 
 
 class Company(UserScopedMixin, Base):
-    """La fiche d'une entreprise, partagée par les offres et les revues de CV ; `name_norm`
-    (`company_key`) la dédoublonne."""
+    """The record of a company, shared by offers and CV reviews; `name_norm` (`company_key`)
+    de-duplicates it."""
 
     __tablename__ = "companies"
     # `uq_companies_user_id` : (user_id, name_norm).
@@ -86,7 +87,7 @@ class Company(UserScopedMixin, Base):
     sources: Mapped[list[Any]] = mapped_column(default=list)
     ats: Mapped[str | None] = mapped_column(String(40), default=None)
     refreshed_at: Mapped[datetime | None] = mapped_column(UTCDateTime, default=None)
-    # Dossier d'entretien sur l'entreprise (phase 7) : contenu, sources lues, date de lecture.
+    # Company briefing file (phase 7): content, sources read, reading date.
     dossier: Mapped[dict[str, Any] | None] = mapped_column(default=None)
     dossier_sources: Mapped[list[Any]] = mapped_column(default=list)
     dossier_at: Mapped[datetime | None] = mapped_column(UTCDateTime, default=None)

@@ -1,4 +1,4 @@
-"""Tables de l'étude (phase 5, D99) : quiz, fiches de révision, sessions guidées, journal."""
+"""Study tables (phase 5, D99): quizzes, review cards, guided sessions, journal."""
 
 from datetime import date, datetime
 from typing import Any, Literal
@@ -18,7 +18,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, UserScopedMixin, UTCDateTime
 
-# Types partagés avec `app.agents`, qui ne peut pas importer une feature (contrat 6).
+# Types shared with `app.agents`, which cannot import a feature (contract 6).
 QuizStatus = Literal["generating", "ready", "failed"]
 QuestionType = Literal["mcq", "short", "code", "explain"]
 AttemptStatus = Literal["grading", "graded", "failed"]
@@ -29,10 +29,10 @@ CardSource = Literal["lesson", "quiz", "study", "capture", "interview", "feynman
 
 
 class Quiz(UserScopedMixin, Base):
-    """Le quiz d'un module (un seul) ; l'Examinateur l'écrit, `status` dit où il en est."""
+    """A module's quiz (only one); the Examiner writes it, `status` says where it stands."""
 
     __tablename__ = "quizzes"
-    # `uq_quizzes_module_id` : un quiz par module.
+    # `uq_quizzes_module_id`: one quiz per module.
     __table_args__ = (UniqueConstraint("module_id"),)
 
     module_id: Mapped[str] = mapped_column(String(36), ForeignKey("modules.id", ondelete="CASCADE"))
@@ -44,7 +44,8 @@ class Quiz(UserScopedMixin, Base):
 
 
 class QuizQuestion(UserScopedMixin, Base):
-    """Une question ; `correct_index` ne sert qu'au QCM, `expected` et `rubric` aux ouvertes."""
+    """A question; `correct_index` is only used for multiple choice, `expected` and `rubric` for
+    open ones."""
 
     __tablename__ = "quiz_questions"
     # `uq_quiz_questions_quiz_id` : (quiz_id, rank).
@@ -64,7 +65,7 @@ class QuizQuestion(UserScopedMixin, Base):
 
 
 class QuizAttempt(UserScopedMixin, Base):
-    """Une tentative de January. Au plus une est en cours de notation par quiz (D99, F3)."""
+    """An attempt by January. At most one is being marked per quiz (D99, F3)."""
 
     __tablename__ = "quiz_attempts"
     __table_args__ = (
@@ -92,10 +93,11 @@ class QuizAttempt(UserScopedMixin, Base):
 
 
 class Flashcard(UserScopedMixin, Base):
-    """Une fiche de révision espacée ; `step` indexe `INTERVALS`, `due_date` est un jour local."""
+    """A spaced review card; `step` indexes `INTERVALS`, `due_date` is a local day."""
 
     __tablename__ = "flashcards"
-    # `uq_flashcards_user_id` : (user_id, front_hash) ; `ix_flashcards_user_due` : la file du jour.
+    # `uq_flashcards_user_id`: (user_id, front_hash); `ix_flashcards_user_due`: the queue of the
+    # day.
     __table_args__ = (
         UniqueConstraint("user_id", "front_hash"),
         Index("ix_flashcards_user_due", "user_id", "due_date"),
@@ -114,7 +116,7 @@ class Flashcard(UserScopedMixin, Base):
 
 
 class StudySession(UserScopedMixin, Base):
-    """Séance guidée ou session de training."""
+    """Guided session or training session."""
 
     __tablename__ = "study_sessions"
     __table_args__ = (
@@ -142,7 +144,7 @@ class StudySession(UserScopedMixin, Base):
     status: Mapped[str] = mapped_column(String(16), default="open")
     session_id: Mapped[str | None] = mapped_column(String(36), default=None)
     question: Mapped[str | None] = mapped_column(Text, default=None)
-    task_ids: Mapped[list[Any]] = mapped_column(default=list)  # bloc retenu au départ
+    task_ids: Mapped[list[Any]] = mapped_column(default=list)  # block kept at the start
     worked_minutes: Mapped[int | None] = mapped_column(Integer, default=None)
     minutes: Mapped[int] = mapped_column(Integer, default=0)
     ended_at: Mapped[datetime | None] = mapped_column(UTCDateTime, default=None)
@@ -151,8 +153,8 @@ class StudySession(UserScopedMixin, Base):
 
 
 class JournalEntry(UserScopedMixin, Base):
-    """Une ligne du journal chronologique (captures, sessions, quiz, bilans). Seul
-    `capture.service.journal.add_entry` l'écrit ; `ref_key` la rend idempotente."""
+    """A row of the chronological journal (captures, sessions, quizzes, reviews). Only
+    `capture.service.journal.add_entry` writes it; `ref_key` makes it idempotent."""
 
     __tablename__ = "journal_entries"
     # `uq_journal_entries_user_id` : (user_id, ref_key) ; plusieurs `ref_key` NULL permis.

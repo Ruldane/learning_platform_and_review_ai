@@ -1,4 +1,4 @@
-"""Lecture bornée de l'API publique, via le fetcher sûr déjà utilisé par la recherche."""
+"""Bounded reads of the public API, through the safe fetcher already used by search."""
 
 import json
 import re

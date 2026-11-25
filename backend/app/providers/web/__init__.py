@@ -1,1 +1,1 @@
-"""Lecture sûre du web (garde SSRF, plafonds) et transcriptions YouTube."""
+"""Safe web reading (SSRF guard, caps) and YouTube transcripts."""

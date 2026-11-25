@@ -1,6 +1,6 @@
-"""Aiguillage du lecteur web (D74) : dépôt GitHub → API GitHub, article arXiv → API arXiv, tout le
-reste → lecteur de pages (repli Gotenberg compris). Toute la lecture tient dans
-`FETCH_TIMEOUT_S` (15 s par page, SPEC 10.2), quel que soit le chemin."""
+"""Routing of the web reader (D74): GitHub repository → GitHub API, arXiv article → arXiv API,
+everything else → page reader (Gotenberg fallback included). All reading fits within
+`FETCH_TIMEOUT_S` (15 s per page, SPEC 10.2), whatever the path."""
 
 import asyncio
 from typing import Protocol
@@ -12,15 +12,15 @@ from app.providers.web.github import github_repo
 
 
 class SourceReader(Protocol):
-    """Lecteur d'une source structurée (`GithubReader`, `ArxivReader`) : il rend toujours un
-    texte ou lève."""
+    """Reader of a structured source (`GithubReader`, `ArxivReader`): it always returns text or
+    raises."""
 
     async def read(self, url: str) -> WebDocument: ...
 
 
 class RoutingWebReader:
-    """`WebReader` composé : la mémoire (import d'URL), YouTube (repli) et la recherche web le
-    reçoivent sans changement."""
+    """Composed `WebReader`: memory (URL import), YouTube (fallback) and web search receive it
+    unchanged."""
 
     def __init__(self, default: WebReader, github: SourceReader, arxiv: SourceReader) -> None:
         self._default = default
@@ -28,8 +28,9 @@ class RoutingWebReader:
         self._arxiv = arxiv
 
     async def read(self, url: str, *, require_text: bool = True) -> WebDocument:
-        """L'échéance est publiée dans `READ_DEADLINE` : chaque étape (débit, fetch, rendu, PDF
-        arXiv) se règle sur ce qui reste."""
+        """The deadline is published in `READ_DEADLINE`: each step (rate limit, fetch, render, arXiv
+        PDF)
+        is set by what remains."""
         deadline = base.deadline_within(base.FETCH_TIMEOUT_S)
         token = base.READ_DEADLINE.set(deadline)
         try:

@@ -1,12 +1,11 @@
-"""Worker de mise en page d'un CV, lancé par `SubprocessPdfLayoutExtractor` (D119, sur le modèle
-de D72) :
+"""CV layout worker, launched by `SubprocessPdfLayoutExtractor` (D119, modelled on D72):
 
     python -m app.providers.pdf.layout_worker <max_pages> <max_memory_bytes> <dpi> <max_side_pt>
 
-Pose lui-même `RLIMIT_AS` (POSIX), lit le PDF sur stdin et écrit la mise en page en JSON (ASCII,
-images PNG en base64) sur stdout. Code 0 : mise en page ; 3 : PDF illisible ; 4 : trop de pages ;
-5 : page tournée avec du texte ; tout autre code (mémoire épuisée, plantage d'une bibliothèque
-native) est traité en illisible par le parent. N'importe ni FastAPI ni la base."""
+It sets `RLIMIT_AS` itself (POSIX), reads the PDF from stdin and writes the layout as JSON (ASCII,
+PNG images in base64) to stdout. Exit code 0: layout; 3: unreadable PDF; 4: too many pages;
+5: rotated page with text; any other code (memory exhausted, crash of a native library) is treated
+as unreadable by the parent. It imports neither FastAPI nor the database."""
 
 import json
 import sys

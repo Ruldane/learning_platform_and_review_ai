@@ -1,6 +1,6 @@
-"""Tables du serveur MCP (phase 10, P3, P14 à P19) : jetons, interrupteur général, journal des
-appels, historique des changements (annulation) et demandes « À confirmer ». Aucune clé
-étrangère : le journal et l'historique survivent à la révocation d'un jeton."""
+"""MCP server tables (phase 10, P3, P14 to P19): tokens, master switch, call journal, change
+history (undo) and « À confirmer » requests. No foreign key: the journal and the history
+outlive the revocation of a token."""
 
 from datetime import datetime
 from typing import Any, Literal
@@ -16,13 +16,13 @@ ChangeOp = Literal["insert", "update", "delete"]
 
 
 class McpToken(UserScopedMixin, Base):
-    """Un jeton d'accès au MCP (P16) : `tmcp_` + 32 octets aléatoires, **seul le SHA-256 est
-    gardé** (`hash`, jamais exporté, jamais journalisé) et la valeur n'est montrée qu'une fois.
-    `features` : les features ouvertes ; `mode` : `read` par défaut ; `expires_at` : 1, 7, 30 ou 90
-    jours après la création."""
+    """An MCP access token (P16): `tmcp_` + 32 random bytes; **only the SHA-256 is kept** (`hash`,
+    never exported, never logged), and the value is shown only once.
+    `features`: the open features; `mode`: `read` by default; `expires_at`: 1, 7, 30 or 90
+    days after creation."""
 
     __tablename__ = "mcp_tokens"
-    # `uq_mcp_tokens_hash` : une empreinte désigne un seul jeton.
+    # `uq_mcp_tokens_hash`: one fingerprint identifies a single token.
     __table_args__ = (UniqueConstraint("hash"),)
 
     label: Mapped[str] = mapped_column(String(60))
@@ -35,18 +35,18 @@ class McpToken(UserScopedMixin, Base):
 
 
 class McpPrefs(UserScopedMixin, Base):
-    """L'interrupteur général du MCP, une ligne par compte. Coupé par défaut (P16) : sans ligne,
-    ou `enabled` faux, aucun jeton n'ouvre rien."""
+    """The MCP master switch, one row per account. Off by default (P16): without a row, or with
+    `enabled` false, no token opens anything."""
 
     __tablename__ = "mcp_prefs"
-    # `uq_mcp_prefs_user_id` : une ligne par compte.
+    # `uq_mcp_prefs_user_id`: one row per account.
     __table_args__ = (UniqueConstraint("user_id"),)
 
     enabled: Mapped[bool] = mapped_column(default=False)
 
 
 class McpRelayPairing(UserScopedMixin, Base):
-    """Le code temporaire et le dernier jeton dédié au relais de ce compte."""
+    """The temporary code and the last token dedicated to this account's relay."""
 
     __tablename__ = "mcp_relay_pairings"
     __table_args__ = (UniqueConstraint("user_id"), UniqueConstraint("code_hash"))
@@ -57,10 +57,10 @@ class McpRelayPairing(UserScopedMixin, Base):
 
 
 class McpCall(UserScopedMixin, Base):
-    """Un appel d'outil (P19) : l'outil, son niveau, le code de résultat (HTTP), la durée et les
-    identifiants touchés. **Jamais le contenu** des paramètres ni de la réponse. Un appel refusé
-    est journalisé aussi : `level` 0 = refusé avant la résolution de l'outil, `token_id` vide =
-    jeton non reconnu."""
+    """A tool call (P19): the tool, its level, the result code (HTTP), the duration and the
+    identifiers touched. **Never the content** of the parameters or of the response. A refused
+    call is logged too: `level` 0 = refused before the tool was resolved; `token_id` empty =
+    unrecognized token."""
 
     __tablename__ = "mcp_calls"
     __table_args__ = (Index("ix_mcp_calls_user_created", "user_id", "created_at"),)
@@ -74,9 +74,9 @@ class McpCall(UserScopedMixin, Base):
 
 
 class McpChange(UserScopedMixin, Base):
-    """Une ligne touchée par un appel de niveau 2 (P14) : l'état avant et après (`before`,
-    `after` ; vide pour un ajout ou une suppression). `undo(call_id)` applique l'inverse **si la
-    ligne est restée dans l'état « après »**. `undone_at` : posé une fois annulée."""
+    """A row touched by a level 2 call (P14): the state before and after (`before`, `after`; empty
+    for an addition or a deletion). `undo(call_id)` applies the inverse **if the row is still
+    in the "after" state**. `undone_at`: set once undone."""
 
     __tablename__ = "mcp_changes"
     __table_args__ = (Index("ix_mcp_changes_call", "call_id"),)
@@ -91,9 +91,9 @@ class McpChange(UserScopedMixin, Base):
 
 
 class McpConfirmation(UserScopedMixin, Base):
-    """Une demande « À confirmer » (P15) : la requête complète (méthode, chemin, paramètres,
-    corps), un résumé neutre et le verdict d'un éventuel contrôle préalable. Expire après 24 h ;
-    à la confirmation, la requête s'exécute une seule fois sous l'identité enregistrée."""
+    """A « À confirmer » request (P15): the full request (method, path, parameters, body), a neutral
+    summary and the verdict of any prior check. Expires after 24 h; on confirmation, the request
+    runs only once under the recorded identity."""
 
     __tablename__ = "mcp_confirmations"
     __table_args__ = (Index("ix_mcp_confirmations_user_status", "user_id", "status"),)

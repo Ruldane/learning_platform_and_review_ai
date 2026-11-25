@@ -1,5 +1,5 @@
-"""Composition de la santé (`GET /health`) : les sondes des services et le contrôle des clés des
-LLM. `app.bootstrap` l'appelle quand il assemble les fournisseurs."""
+"""Health wiring (`GET /health`): service probes and the LLM key check. `app.bootstrap` calls it
+when it assembles the providers."""
 
 from collections.abc import Callable, Mapping
 
@@ -28,8 +28,8 @@ def health_checks(
     llm: Mapping[str, LlmProvider],
     local_user_id: Callable[[], str | None],
 ) -> list[HealthCheck]:
-    """Base, services, puis clés des LLM. Mode Google : le contrôle des clés ne dépend d'aucun
-    utilisateur local (`local_user_id` est alors sans objet)."""
+    """Database, services, then LLM keys. Google mode: the key check does not depend on any local
+    user (`local_user_id` is then irrelevant)."""
     llm_keys = LlmKeysCheck(
         session_factory,
         cipher,
@@ -49,6 +49,6 @@ def health_checks(
 
 
 def embedding_progress(settings: Settings, http: httpx.AsyncClient) -> EmbeddingProgressSource:
-    """Progression (et téléchargement, s'il manque) du modèle d'embeddings, pour
+    """Progress (and download, if missing) of the embeddings model, for
     `GET /health/embedding` (P13)."""
     return OllamaPullWatcher(settings.ollama_base_url, settings.embedding_model, http)

@@ -7,7 +7,7 @@ from app.db.base import Base, UserScopedMixin
 
 
 class Conversation(UserScopedMixin, Base):
-    """Un fil de conversation, rattaché à son sujet et à son compte."""
+    """A conversation thread, attached to its subject and its account."""
 
     __tablename__ = "conversations"
     __table_args__ = (

@@ -1,6 +1,6 @@
-"""Composition du quotidien (phase 8, D160) : relevé du radar, brief du jour et projets. Gardée
-hors de `app.main` (300 lignes) : une feature de plus = un champ de `DailyRuntimes` et une ligne
-dans `daily_runtimes`. Comme `app.bootstrap`, seul `app.main` l'importe (contrat 5)."""
+"""Daily wiring (phase 8, D160): radar readings, the day's brief and projects. Kept out of
+`app.main` (300 lines): one more feature = one field of `DailyRuntimes` and one line in
+`daily_runtimes`. As with `app.bootstrap`, only `app.main` imports it (contract 5)."""
 
 from dataclasses import dataclass
 
@@ -28,15 +28,15 @@ from app.providers.speech.realtime import OpenAIRealtimeSpeech
 
 @dataclass(frozen=True)
 class DailyRuntimes:
-    """Ce que les routes du quotidien lisent sur `app.state.daily`, ce que les tâches planifiées
-    reçoivent (`JobContext.daily`) et les ports qu'elles donnent au moteur (`agent_ports`)."""
+    """What the daily routes read from `app.state.daily`, what the scheduled tasks receive
+    (`JobContext.daily`) and the ports they give to the engine (`agent_ports`)."""
 
-    radar: RadarRuntime  # relevés, tâche du lundi, demande du marché (D160)
-    radar_store: RadarStore  # port du parcours `market_radar` (D159)
-    brief: BriefRuntime  # brief du jour, tâche du matin (D162)
-    brief_store: BriefStore  # port du parcours `daily_brief` (D161, D162)
-    projects: ProjectsRuntime  # mini projets, tâche des énoncés, entrée au profil (D166)
-    project_store: ProjectStore  # port des parcours `project_brief` et `project_review` (D165)
+    radar: RadarRuntime  # readings, Monday task, market request (D160)
+    radar_store: RadarStore  # `market_radar` flow port (D159)
+    brief: BriefRuntime  # day's brief, morning task (D162)
+    brief_store: BriefStore  # `daily_brief` flow port (D161, D162)
+    projects: ProjectsRuntime  # mini projects, statement task, profile entry (D166)
+    project_store: ProjectStore  # port of the `project_brief` and `project_review` flows (D165)
     podcast: PodcastRuntime
     podcast_store: PodcastStore
 
@@ -50,10 +50,10 @@ def daily_runtimes(
     study: StudyRuntimes,
     github: GithubContributions,
 ) -> DailyRuntimes:
-    """Radar (base, lanceur lié au moteur ensuite, lecture des pages par la recherche web) et son
-    port ; brief du jour (quiz, étude et candidatures dont il lit les faits) et son port. `career`
-    et `study` : les projets lisent aussi la mémoire, le stockage des fichiers et le profil maître
-    de `career.cv` (captures rangées, reflet des niveaux, entrée de projet)."""
+    """Radar (base, launcher linked to the engine later, reading of pages through web search) and
+    its port; day's brief (quizzes, study and applications whose facts it reads) and its port.
+    `career` and `study`: the projects also read memory, file storage and the master profile
+    of `career.cv` (stored captures, level reflection, project entry)."""
     radar = RadarRuntime(session_factory, launcher, research)
     brief = BriefRuntime(session_factory, launcher, study.quiz, study.study, career.applications)
     cv = career.cv

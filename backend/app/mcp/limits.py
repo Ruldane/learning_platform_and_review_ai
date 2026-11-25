@@ -1,10 +1,10 @@
-"""Limites d'appels du MCP, par jeton (phase 10, P17) : 60 appels et 10 écritures par minute,
-1 000 appels et 100 écritures par jour, 20 demandes de niveau 3 par jour, 2 exécutions de code par
-minute. Au-delà : 429 `rate_limited` avec `retry_after` (secondes) et un message lisible.
+"""MCP call limits, per token (phase 10, P17): 60 calls and 10 writes per minute, 1,000 calls and
+100 writes per day, 20 level 3 requests per day, 2 code runs per minute. Beyond that: 429
+`rate_limited` with `retry_after` (seconds) and a readable message.
 
-Les compteurs sont en mémoire (un seul processus) : un redémarrage les remet à zéro, ce qui ne
-donne aucun droit de plus qu'un jeton valide n'en avait déjà (l'interrupteur et la révocation
-restent immédiats, ils sont en base)."""
+The counters are in memory (a single process): a restart resets them, which grants no more right
+than a valid token already had (the switch and revocation stay immediate, as they are in the
+database)."""
 
 from collections import deque
 from dataclasses import dataclass
@@ -22,8 +22,8 @@ CODE_RUN_BUCKET = "code_run"
 
 @dataclass(frozen=True)
 class Limits:
-    """Valeurs de départ (P17), réglables en les passant à `RateLimiter`. Les limites du jour
-    d'appels et d'écritures valent `None` quand elles sont coupées (D311)."""
+    """Starting values (P17), adjustable by passing them to `RateLimiter`. The daily call and write
+    limits are `None` when they are turned off (D311)."""
 
     calls_per_minute: int = 60
     writes_per_minute: int = 10
@@ -31,21 +31,21 @@ class Limits:
     writes_per_day: int | None = 100
     confirmations_per_day: int = 20
     code_runs_per_minute: int = 2
-    requests_per_minute: int = 600  # toute requête authentifiée (plafond grossier)
+    requests_per_minute: int = 600  # any authenticated request (rough cap)
 
     @classmethod
     def with_daily(cls, *, writes_per_day: int, calls_per_day: int) -> "Limits":
-        """Les limites de départ avec celles du jour réglées (`MCP_WRITES_PER_DAY`,
-        `MCP_CALLS_PER_DAY`) : 0 coupe la limite."""
+        """The starting limits with the daily ones set (`MCP_WRITES_PER_DAY`, `MCP_CALLS_PER_DAY`):
+        0 turns the limit off."""
         return cls(writes_per_day=writes_per_day or None, calls_per_day=calls_per_day or None)
 
 
 @dataclass(frozen=True)
 class _Rule:
-    kind: str  # le compteur
+    kind: str  # the counter
     window: timedelta
     limit: int
-    subject: str  # ce que la limite compte, pour le message
+    subject: str  # what the limit counts, for the message
 
 
 def _wait_text(seconds: int) -> str:
@@ -57,13 +57,13 @@ def _wait_text(seconds: int) -> str:
 
 
 class RateLimiter:
-    """`check` compte un appel et le refuse s'il dépasse l'une des limites qui le concernent ;
-    un appel refusé n'est pas compté."""
+    """`check` counts a call and refuses it if it exceeds one of the limits that apply to it; a
+    refused call is not counted."""
 
     def __init__(self, limits: Limits | None = None) -> None:
         self._limits = limits or Limits()
-        # Un compteur par jeton, par sorte et par fenêtre : chacun ne garde que les instants de sa
-        # propre fenêtre (au plus `limit`, un appel refusé n'est pas compté).
+        # One counter per token, per kind and per window: each keeps only the instants of its
+        # own window (at most `limit`; a refused call is not counted).
         self._events: dict[tuple[str, str, timedelta], deque[datetime]] = {}
 
     def _rules(self, level: Level, bucket: str | None) -> list[_Rule]:
@@ -82,7 +82,7 @@ class RateLimiter:
         return rules
 
     def _events_of(self, token_id: str, rule: _Rule, now: datetime) -> deque[datetime]:
-        """Les instants du compteur de la règle, sans ceux qui sont sortis de sa fenêtre."""
+        """The instants of the rule's counter, without those that have left its window."""
         events = self._events.setdefault((token_id, rule.kind, rule.window), deque())
         while events and events[0] <= now - rule.window:
             events.popleft()
@@ -90,7 +90,7 @@ class RateLimiter:
 
     @staticmethod
     def _wait_seconds(events: deque[datetime], rule: _Rule, now: datetime) -> int | None:
-        """Secondes à attendre si la règle est atteinte, sinon `None` (`events` : déjà élagué)."""
+        """Seconds to wait if the rule is reached, otherwise `None` (`events`: already pruned)."""
         if len(events) < rule.limit:
             return None
         frees_at = events[len(events) - rule.limit] + rule.window
@@ -99,8 +99,9 @@ class RateLimiter:
     async def check(
         self, identity: McpIdentity, level: Level, now: datetime, *, bucket: str | None = None
     ) -> None:
-        """Compte l'appel du jeton ; lève `AppError("rate_limited", …, 429, {"retry_after": s})`
-        si une limite est atteinte. `bucket` : compteur à part d'un outil (`code_run`)."""
+        """Counts the token's call; raises `AppError("rate_limited", …, 429, {"retry_after": s})` if
+        a
+        limit is reached. `bucket`: a counter separate from a tool's (`code_run`)."""
         rules = self._rules(level, bucket)
         worst: tuple[int, _Rule] | None = None
         for rule in rules:
@@ -115,8 +116,9 @@ class RateLimiter:
             self._events_of(identity.token_id, rule, now).append(now)
 
     async def check_request(self, token_id: str, now: datetime) -> None:
-        """Plafond grossier de toute requête authentifiée (`ping`, `tools/list`, JSON invalide…),
-        avant la moindre écriture en base. Même 429 lisible que `check`."""
+        """Rough cap on any authenticated request (`ping`, `tools/list`, invalid JSON...), before
+        any
+        database write. Same readable 429 as `check`."""
         rule = _Rule("requests", MINUTE, self._limits.requests_per_minute, "requests")
         events = self._events_of(token_id, rule, now)
         wait = self._wait_seconds(events, rule, now)

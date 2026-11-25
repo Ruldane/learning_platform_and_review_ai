@@ -1,4 +1,4 @@
-"""La sélection courante de reprise et son rappel local."""
+"""The current resumption selection and its local reminder."""
 
 from datetime import date, datetime
 from typing import Any

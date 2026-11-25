@@ -1,7 +1,7 @@
-"""Erreurs d'appel LLM : lesquelles valent la peine d'être retentées, et leur message lisible.
+"""LLM call errors: which ones are worth retrying, and their readable message.
 
-Un seul endroit traduit les erreurs des fournisseurs (SDK Anthropic et OpenAI, httpx) en messages
-anglais : jamais le message brut du SDK ni le corps de réponse (une clé masquée y figure parfois).
+A single place translates the providers' errors (Anthropic and OpenAI SDKs, httpx) into English
+messages: never the SDK's raw message nor the response body (a masked key sometimes appears there).
 """
 
 from collections.abc import Mapping
@@ -14,9 +14,9 @@ from app.core.errors import AppError
 
 _TRANSIENT_STATUSES = frozenset({408, 409, 429})
 
-# Messages par code d'erreur du corps de réponse (`{"error": {"code": ...}}`), par fournisseur.
+# Messages by error code of the response body (`{"error": {"code": ...}}`), per provider.
 PROVIDER_ERROR_CODES: Mapping[str, Mapping[str, str]] = {
-    "glm": {  # Z.ai, codes renvoyés avec un statut 429
+    "glm": {  # Z.ai, codes returned with a 429 status
         "1113": "Insufficient Z.ai credit for this model.",
         "1305": "Z.ai is overloaded. Try again later.",
     },
@@ -24,10 +24,10 @@ PROVIDER_ERROR_CODES: Mapping[str, Mapping[str, str]] = {
         "insufficient_quota": "OpenAI credit is exhausted. Top up the account or change models.",
     },
 }
-# Crédit épuisé : un nouvel essai échouerait de même, inutile d'attendre.
+# Credit exhausted: a retry would fail the same way, so there is no point waiting.
 _CREDIT_CODES = frozenset({"1113", "insufficient_quota"})
-# Surcharge du service renvoyée en 429 (Z.ai 1305) : retentée comme tout 429, mais rendue en
-# `llm_unavailable` (panne passagère), pas en `llm_rate_limited` (limite ou quota).
+# Service overload returned as 429 (Z.ai 1305): retried like any 429, but reported as
+# `llm_unavailable` (temporary outage), not as `llm_rate_limited` (limit or quota).
 _OVERLOAD_CODES = frozenset({"1305"})
 
 _TIMEOUTS = (
@@ -45,7 +45,8 @@ _CONNECTION = (
 
 
 def is_timeout(exc: BaseException) -> bool:
-    """Délai dépassé (SDK, httpx, échéance) : la requête a pu être traitée, donc facturée."""
+    """Deadline exceeded (SDK, httpx, deadline): the request may have been processed, so it is
+    billed."""
     return isinstance(exc, _TIMEOUTS)
 
 
@@ -62,19 +63,20 @@ def _status(exc: BaseException) -> int | None:
 
 
 def _as_code(code: object) -> str | None:
-    """Un code d'erreur est une chaîne, quel que soit le type donné par le SDK ou le serveur."""
+    """An error code is a string, whatever type the SDK or the server gives."""
     if isinstance(code, bool) or not isinstance(code, str | int):
         return None
     return str(code)
 
 
 def _body_code(exc: BaseException) -> str | None:
-    """Code d'erreur du corps de réponse (`error.code`) en chaîne, jamais son message.
+    """Error code of the response body (`error.code`) as a string, never its message.
 
-    Ne lève jamais : un corps non lu (réponse en flux), illisible ou d'une autre forme donne `None`.
+    Never raises: an unread body (streamed response), an unreadable one, or one of another
+    shape, gives `None`.
     """
     if isinstance(exc, openai.APIStatusError):
-        return _as_code(exc.code)  # le SDK l'extrait de `{"error": {...}}`
+        return _as_code(exc.code)  # the SDK extracts it from `{"error": {...}}`
     if isinstance(exc, httpx.HTTPStatusError):
         try:
             return _as_code(exc.response.json()["error"]["code"])
@@ -84,11 +86,11 @@ def _body_code(exc: BaseException) -> str | None:
 
 
 def is_transient(exc: BaseException) -> bool:
-    """Délai réseau, connexion coupée, 429 (limite), 408/409 ou 5xx : le même appel peut réussir
-    plus tard. Une clé refusée, un crédit épuisé, une requête invalide ou une erreur de
-    programmation ne le peuvent pas, on ne les retente pas."""
+    """Network timeout, dropped connection, 429 (limit), 408/409 or 5xx: the same call may succeed
+    later. A refused key, exhausted credit, an invalid request or a programming error cannot,
+    so they are not retried."""
     if isinstance(exc, anthropic.APIConnectionError | openai.APIConnectionError):
-        return True  # inclut les délais dépassés (APITimeoutError en est une sous-classe)
+        return True  # includes deadlines exceeded (APITimeoutError is a subclass of it)
     status = _status(exc)
     if status is not None:
         return _transient_status(status) and _body_code(exc) not in _CREDIT_CODES
@@ -103,7 +105,7 @@ def _by_status(status: int, label: str, known: str | None, code: str | None) -> 
         message = f"{label} rejected the API key. Check it in Settings > Models and keys."
         return AppError("llm_key_rejected", message, 502, details)
     if status == 429:
-        if code in _OVERLOAD_CODES:  # surcharge passagère, pas une limite : D115 n° 17
+        if code in _OVERLOAD_CODES:  # temporary overload, not a limit: D115 no. 17
             message = known or f"{label} is overloaded. Try again later."
             return AppError("llm_unavailable", message, 502, details)
         if code in _CREDIT_CODES:
@@ -123,13 +125,14 @@ def _by_status(status: int, label: str, known: str | None, code: str | None) -> 
 def describe_provider_error(
     exc: BaseException, *, provider: str | None, label: str
 ) -> AppError | None:
-    """Erreur lisible pour une panne du fournisseur `provider` (nom, ex. « glm ») affiché `label` ;
-    `None` si `exc` n'est pas une erreur de fournisseur (elle suit alors son chemin habituel).
+    """Readable error for an outage of the `provider` provider (name, e.g. « glm ») shown as
+    `label`;
+    `None` if `exc` is not a provider error (it then follows its usual path).
 
-    Le message ne reprend ni le texte de l'exception ni le corps de réponse : seuls le statut HTTP
-    et le code d'erreur servent à choisir un message connu.
+    The message repeats neither the text of the exception nor the response body: only the HTTP
+    status and the error code are used to choose a known message.
     """
-    if isinstance(exc, _TIMEOUTS):  # avant la connexion : les délais du SDK en sont un cas
+    if isinstance(exc, _TIMEOUTS):  # before the connection: SDK timeouts are one case
         message = f"{label} did not respond in time. Try again later."
         return AppError("llm_timeout", message, 504, {"provider": label})
     if isinstance(exc, _CONNECTION):

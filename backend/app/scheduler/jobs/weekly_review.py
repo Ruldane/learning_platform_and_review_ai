@@ -1,8 +1,7 @@
-"""Tâche « bilan hebdomadaire » (SPEC F13, 11.4 ; D106) : toutes les 15 minutes et au démarrage,
-chaque programme validé dont l'heure du bilan est passée chez January reçoit son bilan de la
-semaine (une fois) et une proposition de replanification. Le travail est dans la feature
-`replan` (`run_weekly_reviews`), qui n'importe jamais ce paquet (contrat 8) : la tâche ne fait
-que déballer son contexte et lire l'heure."""
+"""Task "Weekly review" (SPEC F13, 11.4; D106): every 15 minutes and at startup, each validated
+program whose review time has passed for January receives its review of the week (once) and a
+replanning proposal. The work is in the `replan` feature (`run_weekly_reviews`), which never
+imports this package (contract 8): the task only unpacks its context and reads the time."""
 
 from datetime import UTC, datetime
 

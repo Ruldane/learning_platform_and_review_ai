@@ -1,5 +1,5 @@
-"""Fournisseur forcé pour tout un parcours : le choix de la personne est gardé s'il est déjà chez
-ce fournisseur, sinon le modèle de son préréglage pour le niveau."""
+"""Provider forced for a whole route: the person's choice is kept if it is already with this
+provider, otherwise the model of its preset for the level."""
 
 from app.providers.llm.base import ModelChoice, Tier
 from app.providers.llm.model_defaults import PRESETS, PresetName

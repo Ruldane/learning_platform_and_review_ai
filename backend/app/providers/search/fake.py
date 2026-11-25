@@ -1,4 +1,4 @@
-"""Faux fournisseur de recherche : tests et contrôle de fin de phase, sans réseau."""
+"""Fake search provider: tests and end-of-phase checks, no network."""
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
@@ -9,8 +9,8 @@ from app.providers.search.base import MAX_RESULTS, SearchResult, TimeRange
 
 @dataclass
 class FakeSearch:
-    """`results` : requête → résultats (toute autre requête : aucun) ; `error` est levée à
-    chaque appel s'il est posé ; `calls` garde (requête, langue) dans l'ordre."""
+    """`results`: query -> results (any other query: none); `error` is raised on each call if it is
+    set; `calls` keeps (query, language) in order."""
 
     name: str
     results: dict[str, list[SearchResult]] = field(default_factory=dict)

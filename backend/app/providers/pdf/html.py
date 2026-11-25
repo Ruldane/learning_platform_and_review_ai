@@ -1,11 +1,10 @@
-"""Rendu de nos gabarits HTML en PDF par Gotenberg 8 (`POST /forms/chromium/convert/html`, D89) :
-leçons et programme en A4, CV à la taille de sa page d'origine, marges nulles (D119).
-`index.html`, le pied de page et les ressources (nos fichiers figés, les polices libres) partent
-dans le même formulaire ; Chromium les ouvre depuis un dossier de `/tmp` (le seul `file:` que sa
-liste de refus laisse passer, D72).
+"""Rendering of our HTML templates to PDF through Gotenberg 8 (`POST /forms/chromium/convert/html`,
+D89): lessons and program in A4, CVs at the size of their original page, zero margins (D119).
+`index.html`, the footer and the resources (our frozen files, the free fonts) go in the same form;
+Chromium opens them from a folder under `/tmp` (the only `file:` its deny list lets through, D72).
 
-Mêmes règles d'erreur que le rendu d'une URL (`post_for_pdf`) : `RenderFailed`, corps borné à
-`RENDER_MAX_BYTES`, ni le HTML ni la réponse dans un message ou un journal."""
+Same error rules as rendering a URL (`post_for_pdf`): `RenderFailed`, body bounded to
+`RENDER_MAX_BYTES`, neither the HTML nor the response in a message or a log."""
 
 import httpx
 
@@ -13,7 +12,7 @@ from app.providers.pdf.base import HTML_RENDER_TIMEOUT_S, HtmlDocument, PageSetu
 from app.providers.pdf.gotenberg import FormFiles, post_for_pdf
 
 _ROUTE = "/forms/chromium/convert/html"
-# A4 en pouces (unité par défaut de Gotenberg), marges de 0,6 pouce (le pied de page y tient).
+# A4 in inches (Gotenberg's default unit), margins of 0.6 inch (the footer fits in them).
 PAPER_WIDTH = "8.27"
 PAPER_HEIGHT = "11.7"
 MARGIN = "0.6"
@@ -39,8 +38,7 @@ def _page_fields(document: HtmlDocument) -> FormFiles:
 
 
 def html_form(document: HtmlDocument) -> FormFiles:
-    """Champs du formulaire : fichiers sous `files` (nom de fichier = nom servi), puis réglages
-    de la page."""
+    """Form fields: files under `files` (file name = served name), then the page settings."""
     files: FormFiles = [("files", ("index.html", document.index_html.encode(), "text/html"))]
     if document.footer_html is not None:
         files.append(("files", ("footer.html", document.footer_html.encode(), "text/html")))
@@ -51,7 +49,7 @@ def html_form(document: HtmlDocument) -> FormFiles:
 
 
 class GotenbergHtmlRenderer:
-    """`HtmlPdfRenderer` sur un client dédié (`bootstrap.publishing_providers`)."""
+    """`HtmlPdfRenderer`, on a dedicated client (`bootstrap.publishing_providers`)."""
 
     def __init__(self, http: httpx.AsyncClient, base_url: str) -> None:
         self._http = http

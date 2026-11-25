@@ -5,21 +5,20 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, UserScopedMixin
 
-# Types partagés avec `app.agents`, qui ne peut pas importer une feature (contrat 6).
+# Types shared with `app.agents`, which cannot import a feature (contract 6).
 LessonStatus = Literal["pending", "generating", "ready", "failed"]
 ResourceType = Literal["documentation", "course", "video", "article", "repository", "paper"]
 ResourceLevel = Literal["beginner", "intermediate", "advanced"]
 ResourceStatus = Literal["to_read", "read"]
-# Essais de production d'une leçon (le premier et deux relances) : relu par la production et par
-# le schéma de l'API (`LessonSummaryOut.attempts`).
+# Production attempts of a lesson (the first and two retries): re-read by the production and by
+# the API schema (`LessonSummaryOut.attempts`).
 MAX_LESSON_ATTEMPTS = 3
 
 
 class Lesson(UserScopedMixin, Base):
-    """La leçon d'un module (une seule : `module_id` est unique), en Markdown (SPEC 3.5).
+    """The lesson of a module (only one: `module_id` is unique), in Markdown (SPEC 3.5).
 
-    `attempts` borne les relances d'une leçon en échec ; `report` est le rapport du Vérificateur.
-    """
+    `attempts` caps the retries of a failed lesson; `report` is the Verifier's report."""
 
     __tablename__ = "lessons"
 
@@ -44,13 +43,13 @@ class Lesson(UserScopedMixin, Base):
         String(36), default=None, info={"undo_pending_session": True}
     )
     verification_failure_reason: Mapped[str | None] = mapped_column(String(300), default=None)
-    # Remarques du dernier contrôle refusé (notes motivées, affirmations non sourcées) : D308.
+    # Remarks from the last rejected check (justified notes, unsourced claims): D308.
     verification_feedback: Mapped[list[str] | None] = mapped_column(JSON, default=None)
     verification_draft: Mapped[dict[str, Any] | None] = mapped_column(default=None)
 
 
 class Resource(UserScopedMixin, Base):
-    """Une ressource d'un module (SPEC 3.6) ; `note` est la fiche de lecture."""
+    """A resource of a module (SPEC 3.6); `note` is the reading note."""
 
     __tablename__ = "resources"
     # `uq_resources_module_id` : (module_id, url_hash).

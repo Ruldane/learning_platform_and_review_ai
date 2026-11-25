@@ -1,7 +1,7 @@
-"""Composition du moteur d'agents (partie de `app.bootstrap`, qui la réexporte) : réglages lus
-par le moteur, ports adaptés des features (D82), production des leçons et contexte des tâches
-planifiées (D91). Comme `app.bootstrap`, seul `app.main` (par `app.bootstrap`) l'importe
-(contrat 5)."""
+"""Agent engine wiring (part of `app.bootstrap`, which re-exports it): settings read by the
+engine, ports adapted from the features (D82), lesson production and context for scheduled
+tasks (D91). As with `app.bootstrap`, only `app.main` (via `app.bootstrap`) imports it
+(contract 5)."""
 
 from dataclasses import dataclass, replace
 
@@ -64,27 +64,27 @@ from app.scheduler.base import DailyJobs, JobContext
 
 
 def run_settings_source(session_factory: async_sessionmaker[AsyncSession]) -> RunSettingsSource:
-    """Réglages lus par le moteur d'agents, adaptés du service de la feature `settings` : le
-    moteur n'importe aucune feature (contrat 6)."""
+    """Settings read by the agent engine, adapted from the `settings` feature service: the
+    engine imports no feature (contract 6)."""
     return SettingsRunReader(session_factory)
 
 
 def memory_gateway(runtime: MemoryRuntime) -> MemoryGateway:
-    """Mémoire vue par le moteur d'agents (outils `memory_*`, Archiviste), adaptée du service de la
-    feature `memory` : le moteur n'importe aucune feature (contrat 6, D68)."""
+    """Memory as seen by the agent engine (`memory_*` tools, Archivist), adapted from the `memory`
+    feature service: the engine imports no feature (contract 6, D68)."""
     return AgentMemoryGateway(runtime)
 
 
 def web_gateway(runtime: ResearchRuntime) -> WebGateway:
-    """Recherche web vue par le moteur d'agents (outils `web_*`, Éclaireur), adaptée du service de
-    la feature `research` : le moteur n'importe aucune feature (contrat 6, D77)."""
+    """Web search as seen by the agent engine (`web_*` tools, Scout), adapted from the `research`
+    feature service: the engine imports no feature (contract 6, D77)."""
     return AgentWebGateway(runtime)
 
 
 @dataclass(frozen=True)
 class StudyRuntimes:
-    """Les features de l'étude (phase 5), créées ensemble pour garder `app.main` court (F23) :
-    une feature de plus = un champ ici, une ligne dans `study_runtimes` et dans `agent_ports`."""
+    """The study features (phase 5), created together to keep `app.main` short (F23):
+    one more feature = one field here, one line in `study_runtimes` and in `agent_ports`."""
 
     quiz: QuizRuntime
     study: StudyRuntime
@@ -99,9 +99,9 @@ def study_runtimes(
     program: ProgramRuntime,
     memory: MemoryRuntime,
 ) -> StudyRuntimes:
-    """Quiz et révisions (D101), sessions guidées (D103), replanification (D106), capture rapide
-    (D108) : lanceur (lié au moteur ensuite), programme (verrou, tâches cochées ou de suivi,
-    versions), mémoire (reflet des niveaux, capture rangée)."""
+    """Quizzes and reviews (D101), guided sessions (D103), replanning (D106), quick capture
+    (D108): launcher (linked to the engine later), program (lock, ticked or follow-up tasks,
+    versions), memory (level reflection, stored capture)."""
     return StudyRuntimes(
         quiz=QuizRuntime(session_factory, launcher, program, memory),
         study=StudyRuntime(session_factory, launcher, program, memory),
@@ -133,7 +133,7 @@ def agent_ports(
     podcast: PodcastStore = NO_PODCAST,
     boss: BossReviewPort = NO_BOSS,
 ) -> AgentPorts:
-    """Compose les ports des agents à partir des services de leurs features (D82)."""
+    """Composes the agent ports from the services of their features (D82)."""
     ports = AgentPorts(
         memory_gateway(memory),
         web_gateway(research),
@@ -191,8 +191,8 @@ def lessons_runtime(
     files: MemoryProviders,
     publishing: PublishingProviders,
 ) -> LessonsRuntime:
-    """Production des leçons (D91) : lanceur (lié au moteur ensuite), mémoire (leçon rangée),
-    recherche (copies des PDF), stockage des fichiers de la mémoire, rendu PDF de nos gabarits."""
+    """Lesson production (D91): launcher (linked to the engine later), memory (stored lesson),
+    research (PDF copies), memory file storage, PDF rendering of our templates."""
     return LessonsRuntime(session_factory, launcher, memory, research, files.storage, publishing)
 
 
@@ -205,7 +205,6 @@ def scheduler_context(
     daily: DailyJobs,
     book: BookRuntime | None = None,
 ) -> JobContext:
-    """Ce que reçoivent les tâches planifiées (D91) : base, lanceur, production des leçons,
-    replanification (bilan hebdomadaire, D106), candidatures (relances, D140), quotidien (relevé
-    du radar, D160)."""
+    """What scheduled tasks receive (D91): base, launcher, lesson production, replanning (weekly
+    review, D106), applications (follow-ups, D140), daily (radar readings, D160)."""
     return JobContext(session_factory, launcher, lessons, replan, applications, daily, book)

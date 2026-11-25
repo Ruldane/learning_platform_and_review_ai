@@ -1,4 +1,4 @@
-"""Contrat des contrôles de santé : un contrôle par service, sans dépendance aux features."""
+"""Contract of the health checks: one check per service, with no dependency on the features."""
 
 from typing import Protocol
 
@@ -14,7 +14,7 @@ class HealthStatus(BaseModel):
 
 
 class HealthCheck(Protocol):
-    """Un contrôle nommé. `check` peut lever : le service de santé le transforme en échec."""
+    """A named check. `check` may raise: the health service turns it into a failure."""
 
     name: str
 

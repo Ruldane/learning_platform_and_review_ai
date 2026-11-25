@@ -1,11 +1,11 @@
-"""Worker d'extraction PDF, lancé par `SubprocessPdfExtractor` (D72) :
+"""PDF extraction worker, launched by `SubprocessPdfExtractor` (D72):
 
     python -m app.providers.pdf.worker <max_pages> <max_chars> <max_memory_bytes>
 
-Pose lui-même `RLIMIT_AS` (POSIX ; ignoré ailleurs), lit le PDF sur stdin et écrit le texte en
-UTF-8 sur stdout. Code 0 : texte ; 3 : PDF illisible ; tout autre code (mémoire épuisée, plantage
-d'une bibliothèque native) est aussi traité en illisible par le parent. N'importe ni FastAPI ni la
-base : seulement `pdfplumber`, au travers d'`extract`."""
+It sets `RLIMIT_AS` itself (POSIX; ignored elsewhere), reads the PDF from stdin and writes the text
+in UTF-8 to stdout. Exit code 0: text; 3: unreadable PDF; any other code (memory exhausted, crash
+of a native library) is also treated as unreadable by the parent. It imports neither FastAPI nor
+the database: only `pdfplumber`, through `extract`."""
 
 import sys
 
@@ -16,8 +16,9 @@ EXIT_UNREADABLE = 3
 
 
 def limit_memory(max_bytes: int) -> None:
-    """Plafond de l'espace d'adressage du processus (une allocation au-delà lève `MemoryError`).
-    Sans effet hors POSIX : `resource` n'existe pas sous Windows (développement seulement)."""
+    """Process address-space cap (an allocation beyond it raises `MemoryError`). No effect outside
+    POSIX:
+    `resource` does not exist on Windows (development only)."""
     if sys.platform != "win32":
         import resource
 
@@ -34,7 +35,7 @@ def main(argv: list[str]) -> int:
         text = extract_pdf_text(data, max_pages, max_chars)
     except Exception:
         return EXIT_UNREADABLE
-    # `replace` : un caractère isolé hors Unicode valide (surrogate) ne fait pas échouer la page.
+    # `replace`: a lone character outside valid Unicode (surrogate) does not make the page fail.
     sys.stdout.buffer.write(text.encode("utf-8", errors="replace"))
     sys.stdout.buffer.flush()
     return EXIT_OK

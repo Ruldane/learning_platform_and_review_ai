@@ -6,17 +6,16 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, UserScopedMixin
 
-# Types partagés avec `app.agents`, qui ne peut pas importer une feature (contrat 6).
+# Types shared with `app.agents`, which cannot import a feature (contract 6).
 GoalStatus = Literal["council", "chosen", "planned"]
 BoardKind = Literal["domain_map", "prerequisites", "timeline", "comparison", "system_design"]
 
 
 class Goal(UserScopedMixin, Base):
-    """L'objectif de January et l'état de son conseil (SPEC 3.1, 13.3).
+    """January's goal and the state of its council (SPEC 3.1, 13.3).
 
-    `framing` porte le cadrage (questions et réponses) ; `minutes` le compte rendu du Scribe.
-    `council_session_id` n'est pas une clé étrangère : l'objectif survit à sa session.
-    """
+    `framing` holds the framing (questions and answers); `minutes` the Scribe's minutes.
+    `council_session_id` is not a foreign key: the goal outlives its session."""
 
     __tablename__ = "goals"
 
@@ -31,13 +30,12 @@ class Goal(UserScopedMixin, Base):
 
 
 class Board(UserScopedMixin, Base):
-    """Un état du tableau du Conseil : Mermaid du Scribe, ou scène retouchée par January.
+    """A state of the council board: Mermaid from the Scribe, or a scene edited by January.
 
-    `scribe_key` (« session:step ») rend l'écriture du Scribe idempotente si un nœud est rejoué.
-    """
+    `scribe_key` (« session:step ») makes the Scribe's write idempotent if a node is replayed."""
 
     __tablename__ = "boards"
-    # `uq_boards_user_id` : nom que la convention de `Base` donne à (user_id, scribe_key).
+    # `uq_boards_user_id`: name that the `Base` convention gives to (user_id, scribe_key).
     __table_args__ = (UniqueConstraint("user_id", "scribe_key"),)
 
     goal_id: Mapped[str] = mapped_column(String(36), ForeignKey("goals.id", ondelete="CASCADE"))
@@ -53,7 +51,7 @@ class Board(UserScopedMixin, Base):
 
 
 class DesignBoardVersion(UserScopedMixin, Base):
-    """Version immuable du tableau d'un entretien d'architecture."""
+    """Immutable version of the board of an architecture interview."""
 
     __tablename__ = "design_board_versions"
     __table_args__ = (UniqueConstraint("interview_id", "step"),)
@@ -68,10 +66,10 @@ class DesignBoardVersion(UserScopedMixin, Base):
 
 
 class Proposal(UserScopedMixin, Base):
-    """Un parcours proposé par le Conseil ; `batch` numérote les tours de propositions."""
+    """A route proposed by the council; `batch` numbers the rounds of proposals."""
 
     __tablename__ = "proposals"
-    # `uq_proposals_session_id` : (session_id, batch, rank) — un lot n'est écrit qu'une fois.
+    # `uq_proposals_session_id`: (session_id, batch, rank) — a batch is written only once.
     __table_args__ = (
         UniqueConstraint("session_id", "batch", "rank"),
         Index("ix_proposals_user_goal", "user_id", "goal_id"),

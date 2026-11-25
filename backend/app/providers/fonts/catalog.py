@@ -1,6 +1,6 @@
-"""Catalogue des polices libres (OFL ou Apache 2.0, toutes servies par Google Fonts) et table de
-substitution d'une police lue dans un PDF (D119). Le nom lu dans le PDF n'est jamais journalisé
-ni envoyé à un service : seule la famille du catalogue l'est."""
+"""Catalogue of free fonts (OFL or Apache 2.0, all served by Google Fonts) and substitution table
+for a font read from a PDF (D119). The name read from the PDF is never logged nor sent to a
+service: only the catalogue family is."""
 
 import re
 from dataclasses import dataclass
@@ -37,7 +37,7 @@ FREE_FAMILIES: frozenset[str] = frozenset(
 )
 DEFAULT_SANS = "Liberation Sans"
 DEFAULT_SERIF = "Liberation Serif"
-# Familles du catalogue à empattement (repli CSS `serif` ; les autres : `sans-serif`).
+# Serif families of the catalogue (CSS fallback `serif`; the others: `sans-serif`).
 SERIF_FAMILIES: frozenset[str] = frozenset(
     {
         "Merriweather",
@@ -53,8 +53,8 @@ SERIF_FAMILIES: frozenset[str] = frozenset(
     }
 )
 
-# Police propriétaire (début du nom nettoyé, en minuscules sans espace) → famille libre proche ;
-# les métriques sont compatibles pour Arial, Helvetica, Times, Calibri et Cambria.
+# Proprietary font (start of the cleaned name, lowercase, no spaces) → close free family;
+# the metrics are compatible for Arial, Helvetica, Times, Calibri and Cambria.
 SUBSTITUTES: dict[str, str] = {
     "arial": "Liberation Sans",
     "helvetica": "Liberation Sans",
@@ -78,16 +78,16 @@ SUBSTITUTES: dict[str, str] = {
 }
 
 _SUBSET = re.compile(r"^[A-Z]{6}\+")
-# Style après un tiret ou une virgule : « Lato-Bold », « Arial,Bold ».
+# Style after a dash or a comma: « Lato-Bold », « Arial,Bold ».
 _STYLE = re.compile(r"[-,].*$")
-# Suffixes de fonderie : « ArialMT », « TimesNewRomanPSMT ».
+# Foundry suffixes: « ArialMT », « TimesNewRomanPSMT ».
 _VENDOR = re.compile(r"(MT|PS)$")
 
 
 @dataclass(frozen=True)
 class FontChoice:
-    """`original` : nom nettoyé lu dans le PDF (donnée du CV, jamais journalisée) ; `family` :
-    famille du catalogue ; `free` : la police d'origine est elle-même libre."""
+    """`original`: cleaned name read from the PDF (CV data, never logged); `family`: the catalogue
+    family; `free`: the original font is itself free."""
 
     original: str
     family: str
@@ -102,7 +102,7 @@ _FREE_BY_KEY = {_key(family): family for family in FREE_FAMILIES}
 
 
 def clean_name(pdf_font: str) -> str:
-    """Sans préfixe de sous-ensemble, sans style, sans suffixe de fonderie (répété)."""
+    """Without a subset prefix, without style, without a foundry suffix (repeated)."""
     name = _STYLE.sub("", _SUBSET.sub("", pdf_font.strip()))
     previous = None
     while previous != name:
@@ -111,8 +111,8 @@ def clean_name(pdf_font: str) -> str:
 
 
 def choose_font(pdf_font: str) -> FontChoice:
-    """Libre → elle-même ; connue → son substitut ; sinon « Liberation Serif » si le nom évoque
-    une police à empattement (serif, times, roman, sans « sans »), « Liberation Sans » sinon."""
+    """Free → itself; known → its substitute; otherwise « Liberation Serif » if the name suggests a
+    serif font (serif, times, roman, without "sans"), « Liberation Sans » otherwise."""
     original = clean_name(pdf_font)
     key = _key(original)
     if key in _FREE_BY_KEY:

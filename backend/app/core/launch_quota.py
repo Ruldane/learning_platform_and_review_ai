@@ -1,13 +1,13 @@
-"""Le plafond de lancements de parcours par le MCP (phase 10, M11) : un parcours d'agents coûte
-l'API de January, et Claude peut en lancer par des dizaines de routes. Le compte se fait **à la
-source**, là où l'application démarre une session (`SessionRunner.start`), quand l'appel vient du
-MCP : aucune route ne le contourne, déclarée ou non.
+"""The cap on route launches through MCP (phase 10, M11): an agent route costs January's API,
+and Claude can launch them through dozens of routes. The count is made **at the source**,
+where the application starts a session (`SessionRunner.start`), when the call comes from
+MCP: no route bypasses it, declared or not.
 
-Compteur en mémoire, par utilisatrice, sur 24 h glissantes. Un redémarrage le remet à zéro (comme
-les limites par minute du MCP, D204 : il ne donne pas plus de droit qu'un jeton valide n'en a).
-`reserve` compte avant le démarrage, sans `await` entre le contrôle et l'inscription : des appels
-simultanés ne passent jamais tous ; `release` rend la place d'un lancement refusé avant d'avoir
-démarré."""
+In-memory counter, per user, over a sliding 24 h window. A restart resets it (like the
+per-minute MCP limits, D204: it grants no more right than a valid token already has).
+`reserve` counts before the start, with no `await` between the check and the registration:
+simultaneous calls never all pass; `release` gives back the slot of a refused launch before
+it has started."""
 
 from collections import deque
 from datetime import UTC, datetime, timedelta
@@ -24,8 +24,8 @@ class LaunchQuota:
         self._launches: dict[str, deque[datetime]] = {}
 
     def reserve(self, user_id: str, now: datetime | None = None) -> datetime:
-        """Compte un lancement de plus ; rend son instant (pour `release`). Au-delà du plafond :
-        `mcp_graph_quota` (429), sans aucun contenu ; rien n'est compté."""
+        """Counts one more launch; returns its instant (for `release`). Above the cap:
+        `mcp_graph_quota` (429), with no content; nothing is counted."""
         moment = now or datetime.now(UTC)
         launches = self._launches.setdefault(user_id, deque())
         while launches and launches[0] <= moment - _WINDOW:
@@ -42,7 +42,7 @@ class LaunchQuota:
         return moment
 
     def release(self, user_id: str, moment: datetime) -> None:
-        """Rend la place d'un lancement qui n'a pas démarré."""
+        """Gives back the slot of a launch that did not start."""
         launches = self._launches.get(user_id)
         if launches is not None and moment in launches:
             launches.remove(moment)

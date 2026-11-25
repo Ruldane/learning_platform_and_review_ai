@@ -1,6 +1,6 @@
-"""L'état d'une ligne de table, en valeurs JSON (phase 10, P14) : ce que garde l'historique des
-changements, et son inverse pour restaurer. Les tables à secret (colonne `info={"export": False}`),
-`api_keys` et les tables `mcp_*` ne sont jamais recopiées (D200 n° 9)."""
+"""The state of a table row, in JSON values (phase 10, P14): what the change history keeps, and its
+inverse to restore. Tables with a secret (column `info={"export": False}`), `api_keys` and the
+`mcp_*` tables are never copied (D200 no. 9)."""
 
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -14,7 +14,7 @@ _NEVER_RECORDED = frozenset({"api_keys", "auth_sessions"})
 
 @dataclass(frozen=True)
 class UndoResult:
-    """`undone` : le nombre de lignes remises dans leur état d'avant."""
+    """`undone`: the number of rows put back in their earlier state."""
 
     call_id: str
     undone: int
@@ -22,8 +22,8 @@ class UndoResult:
 
 
 def recordable(table: Table) -> bool:
-    """Une table dont l'historique est permis : clé primaire simple, aucun secret (ni colonne ni
-    table marquée `info={"export": False}`), pas `mcp_*`."""
+    """A table whose history is allowed: simple primary key, no secret (neither a column nor a table
+    marked `info={"export": False}`), not `mcp_*`."""
     if table.name in _NEVER_RECORDED or table.name.startswith("mcp_"):
         return False
     if table.info.get("export", True) is False:
@@ -34,22 +34,23 @@ def recordable(table: Table) -> bool:
 
 
 def volatile_columns(table: Table) -> frozenset[str]:
-    """Les colonnes que l'annulation ne compare pas et remet à vide (`info={"undo_volatile":
-    True}`) : posées hors de l'appel par un traitement de fond (l'indexation de la mémoire)."""
+    """The columns that undo does not compare and resets to empty (`info={"undo_volatile": True}`):
+    set outside the call by a background process (the memory indexing)."""
     return frozenset(c.name for c in table.columns if c.info.get("undo_volatile"))
 
 
 def counter_columns(table: Table) -> frozenset[str]:
-    """Les compteurs de version (`info={"undo_counter": True}`) : l'annulation d'une modification
-    les **avance** au lieu de les ramener à leur ancienne valeur, pour qu'une lecture faite avant
-    l'annulation reste périmée (jamais de retour à une valeur déjà vue)."""
+    """The version counters (`info={"undo_counter": True}`): undoing a change **advances** them
+    instead
+    of putting them back to their old value, so that a read made before the undo stays stale
+    (never a return to a value already seen)."""
     return frozenset(c.name for c in table.columns if c.info.get("undo_counter"))
 
 
 def derived(table: Table) -> bool:
-    """Table dont les lignes se déduisent de la ligne qu'elles visent (`info={"undo_derived":
-    True}`) : retirer l'ajout les retire avec lui (clé étrangère en cascade), elles ne le
-    « retiennent » pas."""
+    """A table whose rows derive from the row they target (`info={"undo_derived": True}`): removing
+    the
+    addition removes them with it (cascading foreign key); they do not keep it alive."""
     return bool(table.info.get("undo_derived"))
 
 
@@ -66,13 +67,12 @@ def jsonable(value: Any) -> Any:
 
 
 def snapshot(table: Table, row: Any) -> dict[str, Any]:
-    """Les colonnes d'une ligne, en valeurs JSON (dates en texte ISO)."""
+    """The columns of a row, in JSON values (dates as ISO text)."""
     return {column.name: jsonable(row[column.name]) for column in table.columns}
 
 
 def revive(table: Table, values: dict[str, Any]) -> dict[str, Any]:
-    """L'inverse de `snapshot` pour les dates et les décimaux (les autres valeurs sont telles
-    quelles)."""
+    """The inverse of `snapshot` for dates and decimals (other values are kept as they are)."""
     out: dict[str, Any] = {}
     for name, value in values.items():
         column_type = table.c[name].type

@@ -1,4 +1,4 @@
-"""Transcription de clips WAV via la clé du compte. Aucun journal audio ou texte."""
+"""Transcription of WAV clips with the account's key. No audio or text is logged."""
 
 import asyncio
 

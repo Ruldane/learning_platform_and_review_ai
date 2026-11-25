@@ -1,4 +1,4 @@
-"""Exercices et journal d'astreinte simulés, séparés par compte."""
+"""Simulated on-call exercises and log, separated by account."""
 
 from typing import Any
 

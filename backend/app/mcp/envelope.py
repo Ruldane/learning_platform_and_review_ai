@@ -1,10 +1,10 @@
-"""L'enveloppe d'un résultat d'outil (phase 10, P18) : `{ok, data, notice}`.
+"""The envelope of a tool result (phase 10, P18): `{ok, data, notice}`.
 
-Les champs déclarés `untrusted` (chemins dans la réponse) viennent du web ou d'un tiers : leurs
-textes sont entourés de `<donnee_non_fiable>…</donnee_non_fiable>` et `notice` rappelle à Claude que
-ce sont des données, jamais des consignes. Toute balise de ce nom déjà présente dans le texte est
-retirée d'abord : un texte piégé ne peut pas « fermer » l'enclos. Enfin, tout motif de clé d'API et
-toute clé connue sont masqués dans toutes les chaînes (aucune clé ne sort par le MCP)."""
+The fields declared `untrusted` (paths in the response) come from the web or a third party: their
+texts are wrapped in `<donnee_non_fiable>…</donnee_non_fiable>`, and `notice` reminds Claude that
+these are data, never instructions. Any tag of that name already present in the text is removed
+first: a trapped text cannot "close" the fence. Finally, any API key pattern and any known key is
+masked in all strings (no key leaves through the MCP)."""
 
 import re
 from typing import Any
@@ -23,7 +23,7 @@ _ANY_TAG = re.compile(r"<\s*/?\s*donnee_non_fiable[^>]*>", re.IGNORECASE)
 _KEY_PATTERNS = (
     re.compile(r"(?<![A-Za-z0-9_-])sk-[A-Za-z0-9_-]{16,}"),
     re.compile(r"tmcp_[A-Za-z0-9_-]{20,}"),
-    # Un mot long sans chiffre ni `._~+/` n'est pas un jeton (« bearer representative-of-… »).
+    # A long word without a digit or `._~+/` is not a token ("bearer representative-of-…").
     re.compile(r"Bearer\s+(?=[A-Za-z0-9._~+/-]*[0-9._~+/])[A-Za-z0-9._~+/-]{20,}=*", re.IGNORECASE),
     re.compile(r"AIza[0-9A-Za-z_-]{30,}"),
     re.compile(r"xox[abprs]-[A-Za-z0-9-]{10,}"),
@@ -32,12 +32,12 @@ _KEY_PATTERNS = (
 
 
 def _known_secrets() -> list[str]:
-    """Les clés connues, les plus longues d'abord (triées une fois par réponse)."""
+    """The known keys, longest first (sorted once per response)."""
     return sorted(KnownSecrets.values(), key=len, reverse=True)
 
 
 def scrub_text(text: str, secrets: list[str] | None = None) -> str:
-    """Masque les clés connues et les motifs de clés d'un texte."""
+    """Masks the known keys and the key patterns in a text."""
     for secret in _known_secrets() if secrets is None else secrets:
         text = text.replace(secret, REDACTED)
     for pattern in _KEY_PATTERNS:
@@ -46,7 +46,7 @@ def scrub_text(text: str, secrets: list[str] | None = None) -> str:
 
 
 def _scrub(node: Any, secrets: list[str]) -> Any:
-    """Copie de `node` dont toutes les chaînes sont passées par `scrub_text`."""
+    """Copy of `node` whose strings all go through `scrub_text`."""
     if isinstance(node, str):
         return scrub_text(node, secrets)
     if isinstance(node, dict):
@@ -60,12 +60,12 @@ def _wrap(text: str) -> str:
     if text.startswith(OPEN_TAG) and text.endswith(CLOSE_TAG):
         inner = text[len(OPEN_TAG) : -len(CLOSE_TAG)]
         if not _ANY_TAG.search(inner):
-            return text  # déjà entouré (chemins qui se recouvrent)
+            return text  # already wrapped (overlapping paths)
     return f"{OPEN_TAG}{_ANY_TAG.sub('[tag removed]', text)}{CLOSE_TAG}"
 
 
 def _fence_value(node: Any) -> Any:
-    """Entoure tous les textes de `node` (un texte, une liste ou un objet de textes)."""
+    """Wraps all the texts of `node` (a text, a list or an object of texts)."""
     if isinstance(node, str):
         return _wrap(node)
     if isinstance(node, list):
@@ -100,15 +100,15 @@ def _apply(node: Any, segments: list[str]) -> Any:
 
 
 def fence(data: Any, untrusted: tuple[str, ...]) -> Any:
-    """Copie de `data` dont les champs `untrusted` sont entourés comme données non fiables."""
+    """Copy of `data` whose `untrusted` fields are wrapped as untrusted data."""
     result = data
-    for path in dict.fromkeys(untrusted):  # sans doublon, dans l'ordre
+    for path in dict.fromkeys(untrusted):  # no duplicates, in order
         result = _apply(result, _segments(path))
     return result
 
 
 def envelope(data: Any, untrusted: tuple[str, ...], *, ok: bool = True) -> dict[str, Any]:
-    """`{ok, data, notice}` : les clés masquées, puis les champs non fiables entourés (pas pour une
-    erreur : son message vient de l'application, pas du web)."""
+    """`{ok, data, notice}`: the keys masked, then the untrusted fields wrapped (not for an error:
+    its message comes from the application, not the web)."""
     clean = _scrub(data, _known_secrets())
     return {"ok": ok, "data": clean if not ok else fence(clean, untrusted), "notice": NOTICE}
