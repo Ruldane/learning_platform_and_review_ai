@@ -4,14 +4,14 @@ import { CriteriaChecklist } from "../CriteriaChecklist";
 
 interface EvaluationViewProps {
   evaluation: EvaluationDataView;
-  /** Les critères de l'énoncé : chacun est montré, avec le résultat qui porte son numéro. */
+  /** The brief's criteria: each one is shown, with the result carrying its number. */
   criteria: string[];
 }
 
 /**
- * L'évaluation du Praticien : le verdict (calculé par le code), son commentaire, l'état de la
- * lecture du dépôt, chaque critère de l'énoncé (rattaché à son résultat par l'`index` de celui-ci,
- * jamais par sa place) et la mention que les captures n'ont pas été lues.
+ * The Practitioner's evaluation: the verdict (computed by the code), its comment, the state of
+ * the repository read, each criterion of the brief (linked to its result by that result's
+ * `index`, never by its position) and the note that screenshots were not read.
  */
 export function EvaluationView({ evaluation, criteria }: EvaluationViewProps) {
   const validated = evaluation.verdict === "validated";

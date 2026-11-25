@@ -6,15 +6,15 @@ import type { QuizSummaryView } from "../viewTypes";
 
 interface QuizActionProps {
   item: QuizSummaryView;
-  /** Une préparation est en route pour ce module : son bouton est coupé. */
+  /** A preparation is running for this module: its button is off. */
   pending: boolean;
   onPrepare: (moduleId: string, source?: RunSource) => void;
   onOpen: (quizId: string) => void;
 }
 
 /**
- * Le bouton d'une ligne : préparer, réessayer une préparation ratée, passer ou refaire le quiz.
- * Tant que le nouvel essai n'est pas venu (`retryOn`), pas de bouton : la ligne dit la date.
+ * A row's button: prepare, retry a failed preparation, skip or redo the quiz.
+ * Until the retry is due (`retryOn`) there is no button: the row shows the date.
  */
 export function QuizAction({ item, pending, onPrepare, onOpen }: QuizActionProps) {
   const launch = useLaunchSource();

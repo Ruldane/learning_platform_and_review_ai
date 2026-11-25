@@ -6,7 +6,7 @@ import { RevisionForm } from "./RevisionForm";
 import { StatusBanner } from "./StatusBanner";
 import type { ValidationFlow } from "./useValidationFlow";
 
-/** Le bandeau du brouillon : valider le programme ou demander une révision (point d'arrêt n° 3). */
+/** Draft banner: validate the program or request a revision (breakpoint no. 3). */
 export function ValidationBar({ flow }: { flow: ValidationFlow }) {
   const [revising, setRevising] = useState(false);
   if (flow.phase !== "ready") return <StatusBanner kind={flow.phase} />;

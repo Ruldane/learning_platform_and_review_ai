@@ -12,7 +12,7 @@ interface DraftsSectionProps {
   projectId: string;
   drafts: ProjectDetailView["drafts"];
   /**
-   * Sans aucun brouillon (le texte comme l'entrée du profil), la section propose de les réécrire.
+   * Without any draft (text like the profile entry), the section offers to rewrite them.
    */
   regenerable: boolean;
   regeneration: DraftsRegeneration;
@@ -20,17 +20,17 @@ interface DraftsSectionProps {
 }
 
 /**
- * Les brouillons au nom de January (ligne de CV, post LinkedIn, plan de README) : modifiables,
- * « Enregistrer » (le serveur recontrôle un brouillon à vérifier), « Copier » (rejeté si le
- * presse-papiers échoue, la carte le dit). Rien n'est publié par l'application. Un projet validé
- * qui n'en a pas (leur écriture a échoué) propose « Régénérer les brouillons », puis suit leur
- * écriture ; quand elle aboutit, le titre de la section prend le focus.
+ * January's drafts (CV line, LinkedIn post, README plan): editable,
+ * « Enregistrer » (the server re-checks a draft to verify), « Copier » (rejected if the
+ * clipboard fails, the card says so). The app publishes nothing. A validated project
+ * with none (their write failed) offers « Régénérer les brouillons », then follows their
+ * write; when it succeeds, the section title takes focus.
  */
 export function DraftsSection(props: DraftsSectionProps) {
   const { projectId, drafts, regenerable, regeneration, run } = props;
   const { save, savingKind, error, errorKind } = useSaveDraft(projectId);
-  // Une écriture lancée d'ici a abouti quand les brouillons sont là : le bouton et le suivi qui
-  // avaient le focus sont démontés, le titre de la section le reprend (une seule fois).
+  // A write started here has succeeded once the drafts are there: the button and tracker that
+  // had focus are unmounted, and the section title takes it back (once only).
   const written = regeneration.sessionId !== null && !regenerable;
   const title = useFocusOnMount<HTMLHeadingElement>(written);
   return (

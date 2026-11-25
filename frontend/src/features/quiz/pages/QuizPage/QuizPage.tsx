@@ -12,16 +12,16 @@ import { PREPARE_POLL_MS, useQuiz } from "../../hooks/useQuiz";
 import { QuizBody } from "./QuizBody";
 
 interface QuizPageProps {
-  /** Intervalles de relecture, en ms (réduits par les tests). */
+  /** Re-read intervals, in ms (shortened by the tests). */
   preparePollMs?: number;
   gradePollMs?: number;
   GhostPanel?: ComponentType<QuizGhostProps>;
 }
 
 /**
- * Un quiz (`/study/quiz/:quizId`). En préparation : attente (relue toutes les 3 s, 40 fois). Prêt :
- * le formulaire, puis la note (relue toutes les 2 s, 90 fois) et le résultat. Raté : relancer la
- * préparation. Une relecture ratée en arrière-plan se dit en ligne, sans remplacer la page.
+ * A quiz (`/study/quiz/:quizId`). Being prepared: a wait (re-read every 3 s, 40 times). Ready:
+ * the form, then the grade (re-read every 2 s, 90 times) and the result. Failed: retry the
+ * preparation. A failed background re-read is reported inline, without replacing the page.
  */
 export function QuizPage({
   preparePollMs = PREPARE_POLL_MS,

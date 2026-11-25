@@ -4,9 +4,9 @@ import type { SubmissionRefusalView } from "../viewTypes";
 export type RefusedField = keyof SubmissionRefusalView;
 
 /**
- * Le refus du serveur, champ par champ : un message vaut jusqu'à ce que son champ soit modifié
- * (`clear`) ; un nouveau refus (un autre objet) repart de zéro. `refusal` doit rester le même
- * objet tant que l'erreur ne change pas.
+ * The server's refusal, field by field: a message holds until its field is edited
+ * (`clear`); a new refusal (another object) starts from scratch. `refusal` must stay the same
+ * object while the error does not change.
  */
 export function useRefusal(refusal: SubmissionRefusalView | null) {
   const [cleared, setCleared] = useState<{ source: unknown; fields: RefusedField[] }>({
@@ -20,7 +20,7 @@ export function useRefusal(refusal: SubmissionRefusalView | null) {
     clear: (...fields: RefusedField[]) =>
       setCleared((current) => {
         const added = fields.filter((field) => !current.fields.includes(field));
-        // Rien de neuf : le même état, donc ni nouveau tableau ni nouveau rendu à chaque frappe.
+        // Nothing new: the same state, so no new array or re-render on each keystroke.
         return added.length === 0 ? current : { ...current, fields: [...current.fields, ...added] };
       }),
   };

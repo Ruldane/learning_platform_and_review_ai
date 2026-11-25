@@ -9,13 +9,13 @@ import { useRefusal } from "./useRefusal";
 
 interface SubmissionFormProps {
   onSubmit: (submission: SubmissionView) => void;
-  /** Un rendu part : tout est désactivé jusqu'à la réponse. */
+  /** A submission is going out: everything is disabled until the response. */
   busy: boolean;
-  /** Ce que le serveur a refusé, rangé par champ ; un message s'efface dès que son champ change. */
+  /** What the server refused, by field; a message clears as soon as its field changes. */
   refusal?: SubmissionRefusalView | null;
   /**
-   * Le point de départ des champs (le dernier rendu d'un projet à reprendre) ; les captures ne se
-   * reprennent pas.
+   * The starting point of the fields (the last submission of a project to resume); the screenshots
+   * are not resumed.
    */
   initial?: { repoUrl: string | null; description: string | null };
   github?: GithubClaimForm;
@@ -39,7 +39,7 @@ function useSubmissionDraft({
   const { refused, clear } = useRefusal(refusal);
 
   const errors = submissionErrors(repoUrl, description);
-  // La description trop longue se signale dès la frappe ; le reste après une première tentative.
+  // An over-long description is flagged while typing; the rest after a first attempt.
   const shown = attempted ? errors : { description: errors.description };
 
   const submit = (event: FormEvent) => {
@@ -76,7 +76,7 @@ function useSubmissionDraft({
   };
 }
 
-/** Le rendu avec le lien du dépôt, la description, les captures et l’attribution facultative. */
+/** The submission with the repository link, description, screenshots and optional credit. */
 export function SubmissionForm(props: SubmissionFormProps) {
   const { busy, github } = props;
   const { submit, fields, sha, setSha, claim, waitingForClaim } = useSubmissionDraft(props);

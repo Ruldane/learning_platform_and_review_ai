@@ -7,19 +7,19 @@ import { fetchRun, fetchRunSessionId } from "../api";
 import { radarKeys } from "../queryKeys";
 import { toRunView } from "../toView";
 
-/** Tant qu'un relevé tourne, la page le relit aussi toute seule : un événement perdu ne bloque rien. */
+/** While a sweep runs, the page also re-reads it on its own: a lost event blocks nothing. */
 const POLL_MS = 10_000;
-/** La session d'un relevé qui vient d'être lancé peut mettre un instant à apparaître. */
+/** The session of a sweep just launched may take a moment to appear. */
 const SESSION_POLL_MS = 3_000;
 
 const isMissing = (error: unknown) => error instanceof ApiError && error.status === 404;
 
 /**
- * Un relevé (`GET /radar/runs/{id}`) et, tant qu'il tourne, sa session suivie par `useRun` : le fil
- * ne fait que dire quand relire (chaque changement d'état de la session) ; les résultats viennent
- * toujours de la lecture. `hintSessionId` est la session donnée par le 202 du lancement ; sans
- * elle (page rouverte, 409 `radar_in_progress`), on la retrouve par son sujet. `runId` à `null` :
- * aucun relevé à suivre. `createSocket` ne sert qu'aux tests.
+ * A sweep (`GET /radar/runs/{id}`) and, while it runs, its session followed by `useRun`: the thread
+ * only says when to re-read (each session state change); the results always come from the read.
+ * `hintSessionId` is the session given by the launch's 202; without it (page reopened, 409
+ * `radar_in_progress`), it is found by its subject. `runId` at `null`: nothing to follow.
+ * `createSocket` serves only the tests.
  */
 export function useRadarRun(
   runId: string | null,
@@ -47,8 +47,8 @@ export function useRadarRun(
   const sync = useCallback(() => {
     void client.invalidateQueries({ queryKey: radarKeys.all });
   }, [client]);
-  // Le relevé quitte `running` (par le flux ou par la relecture de repli de 10 s) : le formulaire et
-  // l'historique se relisent, même si le flux est resté muet.
+  // The sweep leaves `running` (via the stream or the 10 s fallback re-read): the form and
+  // history re-read, even if the stream stayed silent.
   const status = query.data?.status;
   const previous = useRef(status);
   useEffect(() => {

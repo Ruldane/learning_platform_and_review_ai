@@ -4,14 +4,14 @@ import { usePollingBudget } from "@/shared/lib/usePollingBudget";
 import { fetchAttempt } from "../api";
 import { quizKeys } from "../queryKeys";
 
-/** Note d'une tentative : relue toutes les 2 s, 90 fois (trois minutes). */
+/** An attempt's grade: re-read every 2 s, 90 times (three minutes). */
 export const GRADE_POLLS = 90;
 export const GRADE_POLL_MS = 2000;
 
 /**
- * Une tentative (`GET /quizzes/{id}/attempts/{attempt}`), relue toutes les `pollMs` tant qu'elle est
- * notée (90 fois au plus). Une fois notée, le quiz est relu : l'ordre des questions du prochain
- * essai n'est plus celui-ci (F27).
+ * An attempt (`GET /quizzes/{id}/attempts/{attempt}`), re-read every `pollMs` while it is
+ * being graded (90 times at most). Once graded, the quiz is re-read: the question order of the next
+ * attempt is no longer this one (F27).
  */
 export function useAttempt(quizId: string, attemptId: string, pollMs = GRADE_POLL_MS) {
   const queryClient = useQueryClient();

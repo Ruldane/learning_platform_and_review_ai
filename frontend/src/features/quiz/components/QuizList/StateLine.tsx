@@ -1,7 +1,7 @@
 import { t } from "@/shared/i18n/t";
 import type { QuizSummaryView } from "../viewTypes";
 
-/** Où en est le module : meilleur score, préparation en cours ou ratée, ou pas encore tenté. */
+/** Where the module stands: best score, preparation running or failed, or not yet tried. */
 export function StateLine({ item }: { item: QuizSummaryView }) {
   if (item.bestScore !== null) {
     return <span>{t("quiz.list.bestScore", { score: item.bestScore })}</span>;

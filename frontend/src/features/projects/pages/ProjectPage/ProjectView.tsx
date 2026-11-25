@@ -18,18 +18,18 @@ interface ProjectViewProps {
   createSocket?: SocketFactory;
 }
 
-/** Les statuts où une session tourne pour le projet : l'énoncé s'écrit, ou le rendu s'évalue. */
+/** Statuses where a session runs for the project: brief being written or submission evaluated. */
 const FOLLOWED = ["brief_pending", "reviewing"];
 
 /**
- * Un projet lu : son titre et son statut écrit, l'énoncé (ou ce qui en tient lieu), ce que son
- * statut demande ensuite (rendre, suivre l'évaluation, ou la suite d'un projet validé), puis
- * l'historique des rendus.
+ * A project as read: its title and written status, the brief (or its stand-in), what its
+ * status asks next (submit, follow the evaluation, or the next step for a validated project), then
+ * the submission history.
  */
 export function ProjectView({ project, createSocket }: ProjectViewProps) {
   const regeneration = useRegenerateDrafts(project.id);
-  // Un énoncé ou une évaluation en cours se suit par la session du projet ; un projet validé suit
-  // la session des brouillons qu'il vient de relancer.
+  // A brief or evaluation in progress is followed through the project's session; a validated
+  // the session of the drafts it has just retried.
   const sessionId = FOLLOWED.includes(project.status)
     ? project.sessionId
     : project.status === "validated"
@@ -38,8 +38,8 @@ export function ProjectView({ project, createSocket }: ProjectViewProps) {
   const run = useProjectRun(project.id, sessionId, createSocket);
   const submitter = useSubmitProject(project.id);
   const [retried, setRetried] = useState(false);
-  // Le focus que « Réessayer l'énoncé » demande ne sert qu'une fois : l'écriture finie (réussie ou
-  // non), il est rendu, et un énoncé relancé ailleurs plus tard ne reprend pas le focus.
+  // The focus that « Réessayer l'énoncé » asks for is used once: when the write ends (success or
+  // not), it is returned, and a brief retried elsewhere later does not take focus.
   const writing = useRef(false);
   useEffect(() => {
     const pending = project.status === "brief_pending";

@@ -4,7 +4,7 @@ import { Button } from "@/shared/ui/button";
 export type CopyState = "idle" | "copied" | "failed";
 
 interface DraftActionsProps {
-  /** Le texte a changé depuis le dernier enregistrement. */
+  /** The text has changed since the last save. */
   canSave: boolean;
   saving: boolean;
   copy: CopyState;
@@ -12,12 +12,12 @@ interface DraftActionsProps {
   onCopy: () => void;
 }
 
-/** « Enregistrer » et « Copier », et la région d'état qui confirme (ou rate) la copie. */
+/** « Enregistrer » and « Copier » buttons, and the status region confirming the copy. */
 export function DraftActions({ canSave, saving, copy, onSave, onCopy }: DraftActionsProps) {
   return (
     <>
       <div className="flex flex-wrap gap-2">
-        {/* `aria-disabled` et non `disabled` : le bouton garde le focus pendant et après l'envoi. */}
+        {/* `aria-disabled` not `disabled`: the button keeps focus during and after sending. */}
         <Button
           aria-disabled={saving || !canSave}
           onClick={() => {

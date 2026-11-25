@@ -4,7 +4,7 @@ import { ApiError, errorMessage } from "@/shared/api/errors";
 import { fetchDueCards, reviewCard } from "../api";
 import { quizKeys } from "../queryKeys";
 
-/** La file du jour (`GET /flashcards/due`). */
+/** Today's queue (`GET /flashcards/due`). */
 export function useDueCards() {
   return useQuery({
     queryKey: quizKeys.due,
@@ -13,16 +13,16 @@ export function useDueCards() {
 }
 
 export interface ReviewOutcome {
-  /** La fiche est passée : avis enregistré, ou déjà revue ailleurs (`card_not_due`, sans erreur). */
+  /** Done: rating recorded, or already reviewed elsewhere (`card_not_due`, no error). */
   advanced: boolean;
-  /** Compétence rétrogradée par cet avis (deux échecs de suite), à dire. */
+  /** A skill demoted by this rating (two failures in a row), to be told. */
   demotedSkill: string | null;
 }
 
 /**
- * L'avis sur une fiche (`POST /flashcards/{id}/review`). Un seul avis à la fois, posé de façon
- * synchrone : un double appui rapide sur 1 ou 2 n'en envoie qu'un. `card_not_due` (déjà revue) est
- * traité comme un succès : on passe à la fiche suivante sans erreur.
+ * A rating for a card (`POST /flashcards/{id}/review`). Only one rating at a time, set
+ * synchronously: a quick double press on 1 or 2 sends one. `card_not_due` (already reviewed) is
+ * treated as a success: we move on to the next card without error.
  */
 export function useReviewCard() {
   const busy = useRef(false);

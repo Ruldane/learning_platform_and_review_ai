@@ -9,17 +9,17 @@ interface SubmissionFieldsProps {
   description: string;
   screenshots: File[];
   busy: boolean;
-  /** Les erreurs de la saisie à montrer (le refus du serveur s'y ajoute par `refused`). */
+  /** The input errors to show (the server's refusal is added to them via `refused`). */
   errors: SubmissionErrors;
   refused: (field: RefusedField) => string | undefined;
-  /** Un champ modifié efface son refus (et celui de « ni lien ni description »). */
+  /** A changed field clears its refusal (and that of « ni lien ni description »). */
   clear: (...fields: RefusedField[]) => void;
   onRepoUrl: (value: string) => void;
   onDescription: (value: string) => void;
   onScreenshots: (files: File[]) => void;
 }
 
-/** Les trois champs du rendu : lien du dépôt, description, captures. */
+/** The three submission fields: repository link, description, screenshots. */
 export function SubmissionFields(props: SubmissionFieldsProps) {
   const { errors, refused, clear, busy } = props;
   const missing = errors.missing ?? refused("missing");

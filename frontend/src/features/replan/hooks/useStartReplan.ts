@@ -5,7 +5,7 @@ import { ApiError, errorMessage } from "@/shared/api/errors";
 import { startReplan } from "../api";
 import type { ReplanRequest } from "../types";
 
-/** L'identifiant de la session déjà ouverte, dans le 409 `replan_open`. */
+/** The identifier of the session already open, in the 409 `replan_open`. */
 function openSessionOf(details: unknown): string | null {
   if (typeof details !== "object" || details === null) return null;
   const id = (details as Record<string, unknown>).session_id;
@@ -13,9 +13,9 @@ function openSessionOf(details: unknown): string | null {
 }
 
 /**
- * Lance la replanification d'un programme. Une replanification déjà ouverte (409 `replan_open`)
- * n'est pas une erreur : on suit sa session. Les autres refus (brouillon, programme inconnu)
- * s'affichent. Un seul départ à la fois (verrou posé de façon synchrone).
+ * Starts a program's replan. A replan already open (409 `replan_open`) is not an error:
+ * its session is followed. Other refusals (draft, unknown program) are shown. One start at a
+ * time (lock set synchronously).
  */
 export function useStartReplan(programId: string, onSession: (sessionId: string) => void) {
   const launch = useLaunchSource();

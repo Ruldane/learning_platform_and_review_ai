@@ -7,18 +7,18 @@ import { LoadingState } from "@/shared/ui/states/LoadingState";
 interface RunPanelProps {
   title: string;
   text: string;
-  /** Une phrase de plus, au-dessus du fil (par exemple « Une évaluation était déjà en cours »). */
+  /** One more sentence, above the thread (for example « Une évaluation était déjà en cours »). */
   note?: string | null;
   run: Run;
-  /** La session du projet ; `null` tant que la lecture ne la donne pas. */
+  /** The project's session; `null` until the read provides it. */
   sessionId: string | null;
-  /** Le formulaire ou le bouton qui avait le focus vient de disparaître : le titre le reprend. */
+  /** The form or button that had focus has just disappeared: the title takes it back. */
   focusOnMount?: boolean;
 }
 
 /**
- * Ce que le Praticien fait pour le projet (écrire l'énoncé, évaluer le rendu), suivi en direct : le
- * fil dit où il en est, le résultat vient toujours de la relecture du projet.
+ * What the Practitioner does for the project (write the brief, evaluate the submission), live:
+ * thread says where it is; the result always comes from re-reading the project.
  */
 export function RunPanel(props: RunPanelProps) {
   const { title, text, note = null, run, sessionId, focusOnMount = false } = props;

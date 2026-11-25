@@ -8,9 +8,9 @@ import { useResearchRun } from "../../hooks/useResearchRun";
 import { ResearchRun } from "./ResearchRun";
 
 /**
- * Réglages > Essai de recherche : une requête, l'Éclaireur cherche et lit des pages, et la page
- * montre en direct les requêtes, les sources retenues, écartées et illisibles (10.3). L'essai est
- * dans l'URL (`?session=<id>`). `createSocket` ne sert qu'aux tests (faux WebSocket).
+ * Settings > Search test: one query, the Scout searches and reads pages, and the page
+ * shows live the queries, the sources kept, discarded and unreadable (10.3). The test is
+ * in the URL (`?session=<id>`). `createSocket` serves only the tests (fake WebSocket).
  */
 export function ResearchBenchPage({ createSocket }: { createSocket?: SocketFactory }) {
   const run = useResearchRun(createSocket);

@@ -3,7 +3,7 @@ import { ExternalLink } from "@/shared/ui/ExternalLink";
 import { formatInstant } from "../../format";
 import type { SubmissionItemView } from "../../toView";
 
-/** Un rendu de l'historique : sa date, son dépôt, sa description et les miniatures de ses captures. */
+/** A submission in the history: its date, repository, description and its screenshot thumbnails. */
 export function SubmissionItem({ submission }: { submission: SubmissionItemView }) {
   const when = formatInstant(submission.at);
   return (

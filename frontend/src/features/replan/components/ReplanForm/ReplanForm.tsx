@@ -5,12 +5,12 @@ import { InlineError } from "@/shared/ui/states/InlineError";
 import { HoursField } from "./HoursField";
 import { MessageField } from "./MessageField";
 
-/** Bornes du contrat : 60 à 10 080 minutes, soit 1 h à 168 h. */
+/** Contract bounds: 60 to 10,080 minutes, i.e. 1 h to 168 h. */
 const MIN_HOURS = 1;
 const MAX_HOURS = 168;
 
 export interface ReplanRequestView {
-  /** Minutes disponibles cette semaine ; `null` : le budget ne change pas. */
+  /** Minutes available this week; `null`: the budget does not change. */
   availableMinutes: number | null;
   message: string | null;
 }
@@ -18,12 +18,12 @@ export interface ReplanRequestView {
 interface ReplanFormProps {
   busy: boolean;
   launchMenu?: ReactNode;
-  /** Message d'un refus du serveur (brouillon, programme inconnu…). */
+  /** Message for a server refusal (draft, unknown program…). */
   error: string | null;
   onSubmit: (request: ReplanRequestView) => void;
 }
 
-/** Les heures saisies (virgule ou point) en minutes ; `NaN` si illisible, `null` si vide. */
+/** The hours typed (comma or point) in minutes; `NaN` if unreadable, `null` if empty. */
 function minutesOf(hours: string): number | null {
   const text = hours.trim().replace(",", ".");
   if (text === "") return null;
@@ -33,7 +33,7 @@ function minutesOf(hours: string): number | null {
     : Number.NaN;
 }
 
-/** Le formulaire de départ : heures disponibles cette semaine et message au Stratège, tous deux facultatifs. */
+/** The starting form: hours available this week and a message to the Strategist, both optional. */
 export function ReplanForm({ busy, error, onSubmit, launchMenu }: ReplanFormProps) {
   const [hours, setHours] = useState("");
   const [message, setMessage] = useState("");

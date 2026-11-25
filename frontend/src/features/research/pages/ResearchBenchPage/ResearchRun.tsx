@@ -16,13 +16,13 @@ import { LoadingState } from "@/shared/ui/states/LoadingState";
 interface ResearchRunProps {
   sessionId: string;
   stream: SessionStream;
-  /** Quitte cet essai pour en lancer un autre. */
+  /** Leaves this test to start another one. */
   onRestart: () => void;
 }
 
 /**
- * Un essai suivi en direct : barre d'état (coût compris), sources, message d'échec, commandes
- * (pause, annulation tant que l'essai n'est pas fini) et nouvel essai.
+ * A test followed live: status bar (cost included), sources, failure message, controls
+ * (pause, cancel while the test is not finished) and new test.
  */
 export function ResearchRun({ sessionId, stream, onRestart }: ResearchRunProps) {
   const { events, view, status, connection } = stream;
@@ -30,7 +30,7 @@ export function ResearchRun({ sessionId, stream, onRestart }: ResearchRunProps) 
   const model = useMemo(() => sourcesFromEvents(events), [events]);
 
   if (connection === "failed") {
-    // Une session introuvable ne se « réessaie » pas : on propose un autre essai.
+    // A session that cannot be found is not "retried": another test is offered.
     const missing = stream.failure === "not_found";
     return (
       <ErrorState

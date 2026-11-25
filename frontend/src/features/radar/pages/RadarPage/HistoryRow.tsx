@@ -4,7 +4,7 @@ import { fullDateTime } from "@/shared/lib/relativeTime";
 import { failureReason } from "../../errors";
 import type { HistoryItemView } from "../../toView";
 
-/** Une ligne de l'historique : date (lien), état écrit, poste et zone, décompte ou raison de l'échec. */
+/** A history row: date (link), written status, role and area, count or reason for failure. */
 export function HistoryRow({ item, current }: { item: HistoryItemView; current: boolean }) {
   const when = fullDateTime(item.createdAt);
   return (

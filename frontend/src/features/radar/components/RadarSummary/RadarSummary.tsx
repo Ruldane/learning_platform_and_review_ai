@@ -12,9 +12,9 @@ function plural(count: number, key: "read" | "blocked" | "analyzed"): string {
 }
 
 /**
- * Ce que le relevé a réellement lu : « 47 offres lues · 6 bloquées · 41 analysées » (les offres
- * sont les pages lisibles moins celles qui n'étaient pas des offres, dites à part), les domaines
- * bloqués à part (dépliables), et le bandeau d'échantillon réduit quand il y a moins de 30 offres.
+ * What the sweep actually read: « 47 offres lues · 6 bloquées · 41 analysées » (offers are the
+ * readable pages minus those that were not offers, stated separately), the blocked domains
+ * separately (collapsible), and the sample banner, shown when there are fewer than 30 offers.
  */
 export function RadarSummary({ run }: RadarSummaryProps) {
   return (

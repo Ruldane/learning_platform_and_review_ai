@@ -1,4 +1,4 @@
-/** Types de vue des composants des quiz et des révisions : indépendants du contrat d'API (D34). */
+/** View types for the quiz and review components: independent of the API contract (D34). */
 
 export type QuestionTypeView = "mcq" | "short" | "code" | "explain";
 
@@ -7,48 +7,48 @@ export interface QuestionView {
   rank: number;
   type: QuestionTypeView;
   prompt: string;
-  /** Code à lire, rendu tel quel (jamais interprété) ; `null` quand la question n'en a pas. */
+  /** Code to read, shown as is (never interpreted); `null` when the question has none. */
   code: string | null;
-  /** Choix d'un QCM ; vide pour les autres types. */
+  /** The choices of an MCQ; empty for the other types. */
   choices: string[];
 }
 
-/** Réponse à une question : `choice` pour un QCM, `text` pour les autres types. */
+/** An answer to a question: `choice` for an MCQ, `text` for the other types. */
 export interface AnswerDraft {
   question_id: string;
   choice: number | null;
   text: string;
 }
 
-/** Le résultat d'une question, joint à son énoncé par la page. */
+/** A question's result, joined to its prompt by the page. */
 export interface QuestionResultView {
   questionId: string;
   rank: number;
   prompt: string;
-  /** 0, 0,5 ou 1 : la grille n'admet rien d'autre. */
+  /** 0, 0.5 or 1: the grid allows nothing else. */
   points: number;
   correctAnswer: string;
   explanation: string;
-  /** Retour sur la réponse de January ; vide pour un QCM. */
+  /** Feedback on January's answer; empty for an MCQ. */
   feedback: string;
 }
 
-/** Ce qui suit un échec : révisions ajoutées, nouvel essai, tâches sans place dans le budget. */
+/** What follows a failure: reviews added, a new attempt, tasks with no room in the budget. */
 export interface FollowupView {
   revisionTasks: string[];
-  /** Jour `AAAA-MM-JJ` du nouvel essai, s'il est à venir ; `null` sinon. */
+  /** Day `YYYY-MM-DD` of the new attempt, if still to come; `null` otherwise. */
   retryOn: string | null;
-  /** Révisions qu'aucune semaine du budget n'a pu accueillir. */
+  /** Reviews that no week of the budget could take. */
   unplaced: number;
 }
 
 export interface AttemptResultView {
-  /** Pourcentage entier, 0 à 100. */
+  /** Whole percentage, 0 to 100. */
   score: number;
-  /** Vrai à 80 % : l'acquis passe à `valide`. La décision reste celle du back. */
+  /** True at 80%: the skill moves to `valide`. The decision stays with the back end. */
   passed: boolean;
   results: QuestionResultView[];
-  /** `null` quand le quiz est réussi. */
+  /** `null` when the quiz is passed. */
   followup: FollowupView | null;
 }
 
@@ -61,15 +61,15 @@ export interface CardView {
 
 export type QuizStatusView = "generating" | "ready" | "failed";
 
-/** Une ligne de la liste : un module, son quiz s'il existe, le meilleur score. */
+/** A list row: a module, its quiz if it exists, the best score. */
 export interface QuizSummaryView {
   moduleId: string;
   moduleTitle: string;
   weekRank: number;
   quizId: string | null;
   status: QuizStatusView | null;
-  /** Meilleur score en pourcentage ; `null` tant qu'aucune tentative n'est notée. */
+  /** Best score as a percentage; `null` until an attempt is graded. */
   bestScore: number | null;
-  /** Jour `AAAA-MM-JJ` du prochain essai après un échec, s'il est à venir (sinon `null`). */
+  /** Day `YYYY-MM-DD` of the next attempt after a failure, if still to come (else `null`). */
   retryOn: string | null;
 }

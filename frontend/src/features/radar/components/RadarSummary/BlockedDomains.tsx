@@ -1,7 +1,7 @@
 import { t } from "@/shared/i18n/t";
 import type { BlockedDomainView } from "../viewTypes";
 
-/** Les sites qui n'ont pas pu être lus, comptés par domaine : un bloc dépliable au clavier. */
+/** Sites that could not be read, counted by domain: a keyboard-collapsible block. */
 export function BlockedDomains({ domains }: { domains: BlockedDomainView[] }) {
   if (domains.length === 0) return null;
   return (

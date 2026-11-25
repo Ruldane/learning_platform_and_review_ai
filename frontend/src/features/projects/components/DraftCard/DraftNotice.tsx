@@ -2,8 +2,8 @@ import { t } from "@/shared/i18n/t";
 import type { DraftView } from "../viewTypes";
 
 /**
- * L'avertissement d'un brouillon à vérifier. Les termes viennent du serveur tels quels (« 10000 »,
- * « Kubernetes »), joints par « , » : le texte n'invente ni ne reformule rien.
+ * Warning on a draft to check. The terms come from the server as is (« 10000 »,
+ * « Kubernetes »), joined by « , »: the text invents or rephrases nothing.
  */
 export function DraftNotice({ draft }: { draft: DraftView }) {
   if (draft.status !== "to_check") return null;

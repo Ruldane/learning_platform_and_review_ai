@@ -11,14 +11,14 @@ import { ReplanBanner } from "./ReplanBanner";
 import { ValidationBar } from "./ValidationBar";
 import { useValidationFlow } from "./useValidationFlow";
 
-/** Aujourd'hui, `AAAA-MM-JJ` (heure locale). */
+/** Today, `YYYY-MM-DD` (local time). */
 function todayIso(): string {
   const now = new Date();
   const month = String(now.getMonth() + 1).padStart(2, "0");
   return `${now.getFullYear()}-${month}-${String(now.getDate()).padStart(2, "0")}`;
 }
 
-/** Un programme chargé : en-tête, validation du brouillon, changements de version et trois vues. */
+/** A loaded program: header, draft validation, version changes and three views. */
 export function ProgramScreen({ program }: { program: ProgramOut }) {
   const edits = useTaskMutations(program.id);
   const flow = useValidationFlow(program);

@@ -6,7 +6,7 @@ import { longDay } from "@/shared/lib/format";
 import { createAttempt, type AnswerBody } from "../api";
 import { dayOf } from "../toView";
 
-/** Message d'un envoi refusé : un essai trop tôt dit la date, les autres le message du back. */
+/** Message for a refused send: too-early attempts give the date, others the back end message. */
 export function submitErrorMessage(error: unknown): string {
   if (error instanceof ApiError && error.code === "retry_too_soon") {
     const day = dayOf((error.details as { retry_on?: string } | null)?.retry_on);
@@ -16,11 +16,11 @@ export function submitErrorMessage(error: unknown): string {
 }
 
 /**
- * Envoi des réponses d'un quiz (`POST /quizzes/{id}/attempts`) : renvoie l'identifiant de la
- * tentative, ou `null` si l'envoi est refusé (le message est dans `error`). Un seul envoi à la
- * fois, posé de façon synchrone : deux clics dans le même instant n'envoient qu'une tentative. Une
- * tentative acceptée garde le verrou jusqu'à `release` (retour au formulaire, renvoi) ; `release`
- * ne fait rien tant qu'un envoi est en route : un double clic sur « Renvoyer » n'en part qu'un.
+ * Sends a quiz's answers (`POST /quizzes/{id}/attempts`): returns the attempt identifier, or
+ * `null` if the send is refused (the message is in `error`). One send at a time, set synchronously:
+ * two clicks at the same instant send only one attempt. An accepted attempt keeps the lock until
+ * `release` (back to the form, resend); `release` does nothing while a send is in flight: a double
+ * click on « Renvoyer » sends only one.
  */
 export function useSubmitAttempt(quizId: string) {
   const sending = useRef(false);

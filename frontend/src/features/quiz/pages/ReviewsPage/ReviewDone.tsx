@@ -2,7 +2,7 @@ import { useNavigate } from "react-router";
 import { t } from "@/shared/i18n/t";
 import { EmptyState } from "@/shared/ui/states/EmptyState";
 
-/** Plus aucune fiche à réviser : l'issue est de passer aux quiz. */
+/** No cards left to review: the next step is to go to the quizzes. */
 export function ReviewDone() {
   const navigate = useNavigate();
   return (

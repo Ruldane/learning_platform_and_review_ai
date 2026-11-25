@@ -1,4 +1,4 @@
-/** Clés TanStack Query de la feature : des identifiants seulement, jamais un titre ni une saisie. */
+/** TanStack Query keys of the feature: identifiers only, never a title or input. */
 export const programKeys = {
   list: ["program", "list"],
   detail: (programId: string) => ["program", "detail", programId] as const,

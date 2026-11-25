@@ -7,7 +7,7 @@ interface VersionItemProps {
   version: VersionView;
 }
 
-/** Une version du plan : numéro, genre, statut en toutes lettres, raison, date et bilan replié. */
+/** A plan version: number, kind, status spelled out, reason, date and collapsible summary. */
 export function VersionItem({ version }: VersionItemProps) {
   const changes = version.diff
     ? t("replan.history.changes", {

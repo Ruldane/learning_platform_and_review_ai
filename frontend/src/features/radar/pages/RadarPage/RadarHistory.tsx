@@ -8,11 +8,11 @@ import { HistoryRow } from "./HistoryRow";
 
 interface RadarHistoryProps {
   history: UseQueryResult<HistoryItemView[]>;
-  /** Le relevé affiché au-dessus, repéré dans la liste. */
+  /** The sweep shown above, marked in the list. */
   currentId: string | null;
 }
 
-/** L'historique des relevés (les 20 derniers, le plus récent d'abord) : chacun s'ouvre en place. */
+/** The sweep history (last 20, most recent first): each one opens in place. */
 export function RadarHistory({ history, currentId }: RadarHistoryProps) {
   let body;
   if (history.isPending) body = <LoadingState label={t("radar.history.loading")} />;

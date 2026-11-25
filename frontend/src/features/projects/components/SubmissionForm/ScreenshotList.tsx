@@ -6,7 +6,7 @@ interface ScreenshotListProps {
   onRemove: (index: number) => void;
 }
 
-/** Une clé par fichier choisi, indépendante de sa place : en retirer un ne remonte pas les autres. */
+/** One key per chosen file, independent of its place: removing one does not shift the others. */
 const keys = new WeakMap<File, number>();
 let nextKey = 0;
 const keyOf = (file: File): number => {
@@ -19,7 +19,7 @@ const keyOf = (file: File): number => {
   return key;
 };
 
-/** Les captures choisies, une ligne chacune avec son aperçu ; rien n'est rendu sans capture. */
+/** The chosen screenshots, one row each with its preview; nothing renders with none. */
 export function ScreenshotList({ files, disabled, onRemove }: ScreenshotListProps) {
   if (files.length === 0) return null;
   return (

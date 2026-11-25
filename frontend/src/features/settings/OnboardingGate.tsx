@@ -9,18 +9,18 @@ import { useApiKeys } from "./hooks/useApiKeys";
 import { useSettings } from "./hooks/useSettings";
 import { LEGACY_WELCOME_PATH, WELCOME_PATH } from "./onboarding";
 
-/** La zone principale de la mise en page (cible du lien d'évitement). */
+/** The main area of the layout (target of the skip link). */
 const CONTENT_ID = "contenu";
 
 /**
- * La porte du premier lancement de la coquille (`shell.gate`) : tant que `onboarding_done` est
- * faux, toute page autre que `/welcome` mène à `/welcome` (un remplacement, pas un empilement).
- * Les réglages sont lus avant la mise en page : en chargement ou en erreur, un état seul. Une
- * relecture ratée alors que les réglages sont déjà là ne ferme jamais l'application.
+ * The first-launch gate of the shell (`shell.gate`): while `onboarding_done` is false, any page
+ * other than `/welcome` leads to `/welcome` (a replacement, not a stack).
+ * Settings are read before the layout: while loading or on error, a single state. A
+ * failed re-read while settings are already there never closes the app.
  *
- * « Réessayer » garde le focus sur le conteneur (le bouton disparaît avec l'erreur) ; si la lecture
- * réussit, le focus passe au contenu de la mise en page (`#contenu`). Quand la lecture mène à
- * `/welcome`, c'est le titre de l'étape qui le prend : la porte ne le lui retire pas.
+ * « Réessayer » keeps focus on the container (the button disappears with the error); if the read
+ * succeeds, focus moves to the layout's content (`#contenu`). When the read leads to
+ * `/welcome`, the step's title takes it: the gate does not take it away.
  */
 export function OnboardingGate({ children }: { children: ReactNode }) {
   const settings = useSettings();

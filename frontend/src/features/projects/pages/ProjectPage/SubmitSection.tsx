@@ -9,15 +9,15 @@ interface SubmitSectionProps {
   projectId: string;
   submitter: ReturnType<typeof useSubmitProject>;
   /**
-   * Le dernier rendu d'un projet à reprendre : le formulaire repart de son lien et de sa
+   * The latest submission of a project to resume: the form starts again from its link and
    * description.
    */
   previous?: SubmissionItemView | null;
 }
 
 /**
- * Le rendu du projet : le formulaire, verrouillé pendant l'envoi, et le refus qui n'est pas d'un
- * champ.
+ * The project submission: the form, locked during sending, and any refusal not tied to a
+ * field.
  */
 export function SubmitSection({ projectId, submitter, previous = null }: SubmitSectionProps) {
   const github = useGithubClaim(projectId);

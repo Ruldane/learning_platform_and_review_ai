@@ -6,7 +6,7 @@ interface SkillRankingProps {
   ranking: SkillTrendView[];
 }
 
-/** Le classement des compétences demandées : rang, nom, part en texte et en barre, évolution écrite. */
+/** The ranking of skills in demand: rank, name, share as text and bar, written trend. */
 export function SkillRanking({ ranking }: SkillRankingProps) {
   if (ranking.length === 0) {
     return <p className="text-muted-foreground">{t("radar.ranking.empty")}</p>;

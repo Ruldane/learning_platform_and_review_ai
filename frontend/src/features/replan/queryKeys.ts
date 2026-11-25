@@ -1,7 +1,7 @@
-/** Clés TanStack Query de la feature : des identifiants seulement, jamais un message ni un bilan. */
+/** TanStack Query keys for the feature: identifiers only, never a message or a summary. */
 export const replanKeys = {
   versions: (programId: string) => ["replan", "versions", programId] as const,
   waiting: (programId: string) => ["replan", "waiting", programId] as const,
-  /** Clé du programme (feature `program`) : relu à la fin d'une replanification, seul couplage. */
+  /** The program key (`program` feature): re-read at the end of a replan; the only coupling. */
   programDetail: (programId: string) => ["program", "detail", programId] as const,
 } as const;

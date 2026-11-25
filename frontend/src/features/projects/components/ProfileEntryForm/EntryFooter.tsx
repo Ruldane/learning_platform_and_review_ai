@@ -4,23 +4,23 @@ import { Button } from "@/shared/ui/button";
 
 interface EntryFooterProps {
   added: boolean;
-  /** La version du profil maître qui a reçu l'entrée, quand on la connaît. */
+  /** The version of the master profile that received the entry, when known. */
   version?: number | null;
   busy: boolean;
-  /** Le clic sur le bouton : le seul geste qui ajoute l'entrée (Entrée dans un champ n'envoie rien). */
+  /** The button click: the only action that adds the entry (Enter in a field sends nothing). */
   onAdd: () => void;
 }
 
 /**
- * Le pied du formulaire : le rappel de consentement, puis le bouton d'ajout, que l'état « Ajouté au
- * profil (version N) » remplace une fois l'entrée dans le profil. La région d'état est toujours là :
- * le changement est annoncé, et elle reprend le focus du bouton qui disparaît.
+ * The form footer: the consent reminder, then the add button, which the « Ajouté au
+ * profil (version N) » state replaces once the entry is in the profile. The status region stays
+ * in place: the change is announced, and it takes focus back from the button that disappears.
  */
 export function EntryFooter({ added, version = null, busy, onAdd }: EntryFooterProps) {
   const status = useRef<HTMLParagraphElement>(null);
   const wasAdded = useRef(added);
   useEffect(() => {
-    // Le bouton cliqué vient d'être remplacé : le focus serait tombé sur `body`.
+    // The clicked button was just replaced: focus would have fallen to `body`.
     if (added && !wasAdded.current && document.activeElement === document.body) {
       status.current?.focus();
     }

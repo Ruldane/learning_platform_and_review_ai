@@ -11,9 +11,9 @@ import { RadarContent } from "./RadarContent";
 const RADAR_PATH = "/career/radar";
 
 /**
- * Le radar du marché (`/career/radar`, `/career/radar/:runId`) : le formulaire prérempli, le
- * relevé montré (le dernier fini, ou celui de l'adresse ; en cours, suivi par sa session), puis
- * l'historique. Un relevé déjà en cours est suivi, jamais relancé. `createSocket` ne sert qu'aux
+ * The market radar (`/career/radar`, `/career/radar/:runId`): the pre-filled form, the
+ * sweep shown (the latest finished, or the one in the address; a running one is followed by its
+ * session), then the history. A running sweep is followed, never relaunched. `createSocket`
  * tests.
  */
 export function RadarPage({ createSocket }: { createSocket?: SocketFactory }) {
@@ -21,9 +21,9 @@ export function RadarPage({ createSocket }: { createSocket?: SocketFactory }) {
   const { latest, history } = useRadar();
   const starter = useStartRadar();
   if (latest.data) {
-    // Sans relevé choisi, l'adresse du radar suit celui qui tourne, sauf si un lancement vient de
-    // désigner ce même relevé : sa navigation porte la session du 202. Un autre relevé (celui du
-    // lundi) est suivi.
+    // With no sweep chosen, the radar address follows the one running, unless a launch has just
+    // named that same sweep: its navigation carries the 202 session. Another sweep (the
+    // Monday one) is followed.
     const justStarted = starter.started?.runId === latest.data.runningId;
     if (runId === null && latest.data.runningId && !justStarted) {
       return <Navigate to={`${RADAR_PATH}/${latest.data.runningId}`} replace />;

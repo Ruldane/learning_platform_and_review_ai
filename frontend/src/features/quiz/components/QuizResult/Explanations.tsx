@@ -1,7 +1,7 @@
 import { t } from "@/shared/i18n/t";
 import type { QuestionResultView } from "../viewTypes";
 
-/** Bonne réponse, explication et retour d'une question : chaque partie vide est omise. */
+/** A question's correct answer, explanation and feedback: each empty part is left out. */
 export function Explanations({ result }: { result: QuestionResultView }) {
   const parts = [
     { label: t("quiz.result.correct"), text: result.correctAnswer },

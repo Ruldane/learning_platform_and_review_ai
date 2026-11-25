@@ -3,12 +3,12 @@ import { Button } from "@/shared/ui/button";
 import { LoadingState } from "@/shared/ui/states/LoadingState";
 
 interface QuizPreparingProps {
-  /** La préparation dure plus que prévu (40 relectures sans résultat). */
+  /** The preparation takes longer than expected (40 re-reads with no result). */
   late: boolean;
   onKeepWaiting: () => void;
 }
 
-/** Le quiz se prépare : un état de chargement ; trop long, on le dit et on propose d'attendre encore. */
+/** The quiz is being prepared: a loading state; if too long, say so and offer to wait longer. */
 export function QuizPreparing({ late, onKeepWaiting }: QuizPreparingProps) {
   if (!late) return <LoadingState label={t("quiz.page.preparing")} />;
   return (

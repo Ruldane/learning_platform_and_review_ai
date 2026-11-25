@@ -6,7 +6,7 @@ interface RadarAlertsProps {
   alerts: RadarAlertView[];
 }
 
-/** Les compétences très demandées et absentes du programme : le message du serveur, tel quel. */
+/** Skills in high demand and absent from the program: the server's message, as is. */
 export function RadarAlerts({ alerts }: RadarAlertsProps) {
   return (
     <section aria-labelledby="radar-alerts" className="flex flex-col gap-2">

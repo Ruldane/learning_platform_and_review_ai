@@ -5,8 +5,8 @@ import { QuestionResult } from "./QuestionResult";
 import { formatPoints } from "./points";
 
 /**
- * Le résultat d'une tentative : le pourcentage, « Acquis validé » quand le quiz passe (80 %), les
- * points, le détail de chaque question puis, après un échec, révisions et nouvel essai.
+ * An attempt's result: the percentage, « Acquis validé » when the quiz passes (80%), the
+ * points, the detail of each question, then after a failure, reviews and a new attempt.
  */
 export function QuizResult({ result }: { result: AttemptResultView }) {
   const earned = result.results.reduce((sum, item) => sum + item.points, 0);

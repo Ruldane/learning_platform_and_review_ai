@@ -3,8 +3,8 @@ import type { SubmissionItemView } from "../../toView";
 import { SubmissionItem } from "./SubmissionItem";
 
 /**
- * L'historique des rendus (le dernier d'abord) : date, lien du dépôt, description et miniatures des
- * captures, montrées telles quelles (le Praticien ne les lit pas).
+ * The submission history (latest first): date, repository link, description and thumbnails of the
+ * screenshots, shown as they are (the Practitioner does not read them).
  */
 export function SubmissionHistory({ submissions }: { submissions: SubmissionItemView[] }) {
   return (

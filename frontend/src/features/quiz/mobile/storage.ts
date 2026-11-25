@@ -88,7 +88,7 @@ export function clearMobile() {
   const next = crypto.getRandomValues(new Uint32Array(4)).join("-");
   localGeneration = next;
   try {
-    // Libère d’abord l’espace nécessaire au marqueur, même si le quota est déjà atteint.
+    // First free the space the marker needs, even if the quota is already reached.
     purgeMobile(next);
     try {
       persistGeneration(next);
@@ -96,10 +96,10 @@ export function clearMobile() {
       purgeMobile(next);
       persistGeneration(next);
     }
-    // Retire aussi une copie réécrite par un autre onglet avant la rotation du marqueur.
+    // Also remove a copy rewritten by another tab before the marker rotates.
     purgeMobile(next);
   } catch {
-    // Si le marqueur reste impossible à écrire, la génération locale reste invalidée.
+    // If the marker stays impossible to write, the local generation stays invalidated.
   } finally {
     changed();
   }

@@ -7,8 +7,8 @@ import { exportIcsUrl, exportPdfUrl } from "../../api";
 import type { ProgramOut } from "../../types";
 
 /**
- * Titre du programme, son état (brouillon ou validé, version, début), le bouton « Replanifier »
- * (programme validé) et les exports PDF et .ics.
+ * Program title, its state (draft or validated, version, start), the « Replanifier » button
+ * (validated program) and the PDF and .ics exports.
  */
 export function ProgramHeader({ program }: { program: ProgramOut }) {
   const link = buttonVariants({ variant: "outline" });

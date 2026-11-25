@@ -16,8 +16,8 @@ interface QuestionFieldProps {
 }
 
 /**
- * Une question du quiz : son type et sa consigne, l'énoncé, le code éventuel (affiché tel quel,
- * jamais interprété) puis les choix d'un QCM ou la zone de réponse des autres types.
+ * A quiz question: its type and instruction, the prompt, the code if any (shown as is,
+ * never interpreted), then the choices of an MCQ or the answer box of the other types.
  */
 export function QuestionField(props: QuestionFieldProps) {
   const { question, choice, text, disabled, onLeave, onChoice, onText } = props;

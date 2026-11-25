@@ -1,7 +1,7 @@
 import { t } from "@/shared/i18n/t";
 import type { SkillTrendView } from "../viewTypes";
 
-/** L'évolution en toutes lettres : jamais la couleur seule (« +8 pts », « −2 pts », « nouvelle »). */
+/** The trend spelled out: never colour alone (« +8 pts », « −2 pts », « nouvelle »). */
 function evolutionText(item: SkillTrendView): string {
   if (item.isNew) return t("radar.ranking.new");
   if (item.deltaShare === null) return t("radar.ranking.first");
@@ -16,7 +16,7 @@ function evolutionTone(item: SkillTrendView): string {
   return "text-muted-foreground";
 }
 
-/** Une ligne du classement : le texte dit tout, la barre ne fait que l'illustrer. */
+/** A ranking row: the text says it all; the bar only illustrates it. */
 export function SkillRankingRow({ item }: { item: SkillTrendView }) {
   const percent = Math.round(item.share * 100);
   return (

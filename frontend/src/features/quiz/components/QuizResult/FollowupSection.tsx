@@ -4,8 +4,8 @@ import { longDay } from "@/shared/lib/format";
 import type { FollowupView } from "../viewTypes";
 
 /**
- * Ce qui suit un quiz raté : les révisions ajoutées au planning, la date du nouvel essai et, s'il
- * y en a, l'avertissement des révisions que le budget n'a pas pu accueillir.
+ * What follows a failed quiz: reviews added to the schedule, the new attempt's date and, if
+ * there are any, the warning for reviews the budget could not fit.
  */
 export function FollowupSection({ followup }: { followup: FollowupView }) {
   const { revisionTasks, retryOn, unplaced } = followup;

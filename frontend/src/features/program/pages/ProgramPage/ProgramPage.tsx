@@ -7,8 +7,8 @@ import { useProgram } from "../../hooks/useProgram";
 import { ProgramScreen } from "./ProgramScreen";
 
 /**
- * Programme (`/learn/programs/:programId`) : semaine en calendrier, liste complète,
- * avancement ; un brouillon se valide ou se révise ici (point d'arrêt n° 3).
+ * Program (`/learn/programs/:programId`): week as calendar, full list,
+ * progress; a draft is validated or revised here (breakpoint no. 3).
  */
 export function ProgramPage() {
   const { programId = "" } = useParams();

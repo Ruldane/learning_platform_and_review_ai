@@ -11,8 +11,8 @@ import { useLaunch } from "./useLaunch";
 import { useLaunchFocus } from "./useLaunchFocus";
 
 /**
- * Le lancement de la page, s'il porte sur le relevé montré ; sinon rien : celui-ci n'a pas été
- * lancé ici.
+ * The page's launch, if it concerns the sweep shown; otherwise nothing: this one was not
+ * launched here.
  */
 function launchOf(started: StartedRun | null, runId: string | null) {
   const mine = started !== null && started.runId === runId ? started : null;
@@ -20,7 +20,7 @@ function launchOf(started: StartedRun | null, runId: string | null) {
 }
 
 interface RadarContentProps {
-  /** Le relevé de l'adresse, ou `null` pour le dernier relevé fini. */
+  /** The sweep in the address, or `null` for the latest finished sweep. */
   runId: string | null;
   latest: LatestView;
   history: UseQueryResult<HistoryItemView[]>;
@@ -28,10 +28,10 @@ interface RadarContentProps {
   createSocket?: SocketFactory;
 }
 
-/** La page une fois `GET /radar/latest` lu : lancement, relevé montré, historique. */
+/** The page once `GET /radar/latest` is read: launch, sweep shown, history. */
 export function RadarContent({ runId, latest, history, starter, createSocket }: RadarContentProps) {
-  // Ce que le lancement de cette page a donné à suivre (la session du 202, ou un relevé repris) :
-  // il vient du magasin de la page, jamais de l'historique du navigateur (rechargement, retour).
+  // What this page's launch gave to follow (the 202 session, or a resumed sweep):
+  // it comes from the page's store, never from browser history (reload, back).
   const launched = launchOf(starter.started, runId);
   const detail = useRadarRun(runId, launched.sessionId, createSocket);
   const view = runId ? detail.query.data : latest.latest;

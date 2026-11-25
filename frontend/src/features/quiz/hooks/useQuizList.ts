@@ -3,10 +3,10 @@ import { fetchPrograms, fetchQuizzes } from "../api";
 import { quizKeys } from "../queryKeys";
 import { toQuizSummaryView } from "../toView";
 
-/** Relecture de la liste tant qu'un quiz se prépare. */
+/** Re-reads the list while a quiz is being prepared. */
 const PREPARING_POLL_MS = 5000;
 
-/** Le programme le plus récent (`GET /programs`) : la liste des quiz est celle de ses modules. */
+/** The most recent program (`GET /programs`): the quiz list is that of its modules. */
 export function useLatestProgram() {
   return useQuery({
     queryKey: quizKeys.programs,
@@ -16,8 +16,8 @@ export function useLatestProgram() {
 }
 
 /**
- * Les quiz du programme (`GET /programs/{id}/quizzes`), un module par ligne. Relue toutes les 5 s
- * tant qu'un quiz se prépare, pour que « en préparation » devienne « Passer le quiz » sans geste.
+ * The program's quizzes (`GET /programs/{id}/quizzes`), one module per row. Re-read every 5 s
+ * while a quiz is being prepared, so « en préparation » turns into « Passer le quiz » unprompted.
  */
 export function useQuizList(programId: string | undefined, pollMs = PREPARING_POLL_MS) {
   return useQuery({

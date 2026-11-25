@@ -7,15 +7,15 @@ import type { AttemptResultView } from "../../components/viewTypes";
 
 interface AttemptResultProps {
   result: AttemptResultView;
-  /** Le quiz est relu : « Refaire le quiz » attend l'ordre du prochain essai. */
+  /** The quiz is re-read: « Refaire le quiz » waits for the next attempt's order. */
   refreshing: boolean;
   onBack: () => void;
 }
 
 /**
- * La note d'un essai, puis « Refaire le quiz » et « Voir tous les quiz ». Après un échec,
- * « Refaire » n'apparaît qu'une fois la date du nouvel essai venue (F9 : le back refuserait).
- * Le résultat arrive à la place du formulaire : le focus y va pour que la note soit lue.
+ * An attempt's grade, then « Refaire le quiz » and « Voir tous les quiz ». After a failure,
+ * « Refaire » only appears once the new attempt's date has come (F9: the back end would refuse).
+ * The result takes the place of the form: focus moves there so the grade gets read.
  */
 export function AttemptResult({ result, refreshing, onBack }: AttemptResultProps) {
   const root = useRef<HTMLDivElement>(null);

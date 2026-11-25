@@ -4,14 +4,14 @@ import { fieldClass } from "@/shared/ui/fieldClass";
 interface TextFieldProps {
   label: string;
   value: string;
-  /** Un relevé tourne : le champ reste lisible et garde le focus (`readOnly`, jamais `disabled`). */
+  /** A sweep is running: the field stays readable and keeps focus (`readOnly`, not `disabled`). */
   disabled: boolean;
-  /** Le message d'erreur du champ ; `undefined` quand il est correct. */
+  /** The field's error message; `undefined` when it is valid. */
   error?: string;
   onChange: (value: string) => void;
 }
 
-/** Un champ texte du lancement d'un relevé : libellé, saisie de 120 caractères au plus et erreur. */
+/** A text field for launching a sweep: label, input of 120 characters at most, and error. */
 export function TextField({ label, value, disabled, error, onChange }: TextFieldProps) {
   const id = useId();
   return (

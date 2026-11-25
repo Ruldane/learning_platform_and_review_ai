@@ -11,13 +11,13 @@ interface ReplanRunProps {
   sessionId: string;
   programId: string;
   onAgain: () => void;
-  /** Ce que January a décidé de la proposition (lu dans l'historique), pour le message de fin. */
+  /** What January decided about the proposal (read from the history), for the end message. */
   decision: "accepted" | "refused" | null;
-  /** Ne sert qu'aux tests (faux WebSocket). */
+  /** Only used by the tests (fake WebSocket). */
   createSocket?: SocketFactory;
 }
 
-/** Une replanification suivie en direct : état, fil du Stratège, commandes, puis sa fin. */
+/** A replan followed live: state, Strategist thread, controls, then its end. */
 export function ReplanRun(props: ReplanRunProps) {
   const { sessionId, programId, onAgain, decision, createSocket } = props;
   const run = useReplanRun(sessionId, programId, createSocket);

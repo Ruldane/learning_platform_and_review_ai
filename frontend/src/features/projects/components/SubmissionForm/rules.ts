@@ -1,14 +1,14 @@
 import { webUrl } from "@/shared/lib/webUrl";
 import { t } from "@/shared/i18n/t";
 
-/** Les limites du serveur (`projects/service/rules.py`) : il reste l'autorité, ces gardes évitent un aller-retour. */
+/** Server limits (`projects/service/rules.py`). The server is the authority; these save a trip. */
 export const REPO_URL_MAX = 2048;
 export const DESCRIPTION_MAX = 4000;
 export const SCREENSHOTS_MAX = 5;
 export const SCREENSHOT_BYTES_MAX = 5 * 1024 * 1024;
 export const SCREENSHOT_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
-/** Les caractères d'un texte comme le serveur les compte : des points de code, pas des unités UTF-16. */
+/** The characters of a text as the server counts them: code points, not UTF-16 units. */
 export const characterCount = (text: string): number => [...text].length;
 
 export interface SubmissionErrors {
@@ -17,12 +17,12 @@ export interface SubmissionErrors {
   description?: string;
 }
 
-/** Le texte d'un lien de dépôt est-il une adresse http(s) de 2 048 caractères au plus ? */
+/** Is a repository link text an http(s) address of 2,048 characters at most? */
 function repoUrlIsValid(repoUrl: string): boolean {
   return repoUrl.length <= REPO_URL_MAX && webUrl(repoUrl) !== null;
 }
 
-/** Les champs à corriger : au moins un lien ou une description, un lien http(s), une description ≤ 4 000. */
+/** Fields to fix: a link or description (at least one), an http(s) link, description ≤ 4,000. */
 export function submissionErrors(repoUrl: string, description: string): SubmissionErrors {
   const errors: SubmissionErrors = {};
   if (repoUrl.trim() === "" && description.trim() === "") {
@@ -37,7 +37,7 @@ export function submissionErrors(repoUrl: string, description: string): Submissi
   return errors;
 }
 
-/** Pourquoi une capture est refusée (format, poids), ou `null` si elle est recevable. */
+/** Why a screenshot is refused (format, weight), or `null` if it is acceptable. */
 export function screenshotProblem(file: File): string | null {
   if (!SCREENSHOT_TYPES.includes(file.type)) {
     return t("projects.submission.errors.format", { name: file.name });
@@ -49,8 +49,8 @@ export function screenshotProblem(file: File): string | null {
 }
 
 /**
- * Les captures gardées après un choix : une capture refusée (format, poids) ou au-delà de la
- * cinquième n'est jamais gardée, et chaque cause est signalée une fois.
+ * The screenshots kept after a choice: a refused screenshot (format, weight) or one beyond the
+ * fifth is never kept, and each cause is reported once.
  */
 export function pickScreenshots(
   current: File[],

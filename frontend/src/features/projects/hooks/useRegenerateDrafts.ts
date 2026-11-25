@@ -5,7 +5,7 @@ import { t } from "@/shared/i18n/t";
 import { errorCode, openReviewSession, readableMessage } from "../errors";
 import { projectKeys } from "../queryKeys";
 
-/** La session qui écrit les brouillons, ou (409 `review_in_progress`) celle qui tournait déjà. */
+/** The session writing the drafts, or (409 `review_in_progress`) the one already running. */
 interface Regenerating {
   sessionId: string;
 }
@@ -14,8 +14,8 @@ async function send(projectId: string): Promise<Regenerating> {
   try {
     return { sessionId: (await regenerateDrafts(projectId)).session_id };
   } catch (error) {
-    // Une écriture déjà en cours se suit ; sans son identifiant (le serveur n'est pas tenu de le
-    // donner), il n'y a rien à suivre : l'erreur dit alors de revenir dans un instant.
+    // A write already running can be followed; without its id (the server is not bound to send it),
+    // there is nothing to follow: the error then says to come back in a moment.
     const open = openReviewSession(error);
     if (typeof open === "string") return { sessionId: open };
     throw error;
@@ -23,7 +23,7 @@ async function send(projectId: string): Promise<Regenerating> {
 }
 
 /**
- * Le texte du refus pour CE bouton (les textes de `errors.ts` parlent de l'évaluation du rendu).
+ * The refusal text for THIS button (the texts in `errors.ts` refer to the submission evaluation).
  */
 function readable(error: unknown): string {
   const code = errorCode(error);
@@ -33,10 +33,10 @@ function readable(error: unknown): string {
 }
 
 /**
- * « Régénérer les brouillons » (`POST /projects/{id}/drafts`, 202) pour un projet validé qui n'en a
- * pas : un clic tient jusqu'à la réponse (un double clic n'envoie rien de plus). 409
- * `drafts_present` ou `project_not_validated` : le projet a changé sous nos yeux, la page se relit.
- * `sessionId` est la session à suivre, tant que la page n'en a pas reçu d'autre.
+ * « Régénérer les brouillons » (`POST /projects/{id}/drafts`, 202): a validated project with none;
+ * one click holds until the response (a double click sends nothing more). 409
+ * `drafts_present` or `project_not_validated`: the project changed; the page re-reads.
+ * `sessionId` is the session to follow, until the page has received another one.
  */
 export function useRegenerateDrafts(projectId: string) {
   const client = useQueryClient();
@@ -64,7 +64,7 @@ export function useRegenerateDrafts(projectId: string) {
     },
     pending: mutation.isPending,
     sessionId: mutation.data?.sessionId ?? null,
-    /** Le projet se relit : un résultat de l'écriture peut être sur le point d'arriver. */
+    /** The project re-reads: a write result may be about to arrive. */
     rereading,
     error: mutation.isError ? readable(mutation.error) : null,
   };

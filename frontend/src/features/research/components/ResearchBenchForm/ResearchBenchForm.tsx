@@ -9,11 +9,11 @@ import { parseBench } from "./parseBench";
 interface ResearchBenchFormProps {
   onSubmit: (input: ResearchBenchInput) => void;
   launchMenu?: ReactNode;
-  /** Un essai est en cours : le formulaire est verrouillé. */
+  /** A test is running: the form is locked. */
   busy: boolean;
 }
 
-/** Formulaire d'essai : une requête (2 à 300 caractères) et jusqu'à 5 adresses http(s) en plus. */
+/** Test form: one query (2 to 300 characters) and up to 5 extra http(s) addresses. */
 export function ResearchBenchForm({ onSubmit, busy, launchMenu }: ResearchBenchFormProps) {
   const [query, setQuery] = useState("");
   const [urls, setUrls] = useState("");

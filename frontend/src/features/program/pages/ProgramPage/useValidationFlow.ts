@@ -4,9 +4,9 @@ import { useValidateProgram } from "../../hooks/useValidateProgram";
 import type { ProgramOut } from "../../types";
 
 export interface ValidationFlow {
-  /** `ready` : en attente de January ; `working` : le Stratège révise ou valide ; `validated`. */
+  /** `ready`: waiting for January; `working`: the Strategist revises or validates; `validated`. */
   phase: "ready" | "working" | "validated";
-  /** La session attend la validation : une révision peut être demandée. */
+  /** The session waits for validation: a revision may be requested. */
   canRevise: boolean;
   sessionFailed: boolean;
   busy: boolean;
@@ -17,8 +17,8 @@ export interface ValidationFlow {
 }
 
 /**
- * Le point d'arrêt n° 3 d'un brouillon : l'état de la session du Stratège (relue tant qu'elle
- * tourne), la validation par la route dédiée et la révision par la reprise de la question.
+ * The draft's breakpoint no. 3: the Strategist session's state (re-read while it
+ * runs), validation through the dedicated route, and revision by resuming the question.
  */
 export function useValidationFlow(program: ProgramOut): ValidationFlow {
   const session = useProgramSession(program.session_id, program.status === "draft", program.id);

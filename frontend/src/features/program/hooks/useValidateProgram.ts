@@ -6,9 +6,9 @@ import { programKeys } from "../queryKeys";
 import { conflictNotice } from "./conflictNotice";
 
 /**
- * « Valider le programme » (`POST /programs/{id}/validate`, D88). Un refus 422 (85 %, quiz,
- * pratique) est une erreur en ligne ; 409 `program_not_waiting` (révision en cours, second clic)
- * est une information. Dans tous les cas l'état du serveur est relu : programme et session.
+ * « Valider le programme » (`POST /programs/{id}/validate`, D88). A 422 refusal (85%, quiz,
+ * practice) is an inline error; 409 `program_not_waiting` (revision in progress, second click)
+ * is an info message. In all cases the server state is reloaded: program and session.
  */
 export function useValidateProgram(programId: string) {
   const client = useQueryClient();

@@ -14,11 +14,11 @@ import type { TakenAttempt } from "./takenAttempt";
 interface AttemptPanelProps {
   quizId: string;
   taken: TakenAttempt;
-  /** Le quiz est relu : « Refaire le quiz » attend l'ordre du prochain essai. */
+  /** The quiz is re-read: « Refaire le quiz » waits for the next attempt's order. */
   refreshing: boolean;
-  /** Message d'un renvoi refusé. */
+  /** Message for a refused resend. */
   error: string | null;
-  /** Un renvoi est en route : « Renvoyer mes réponses » est coupé. */
+  /** A resend is in flight: « Renvoyer mes réponses » is off. */
   sending: boolean;
   gradePollMs: number;
   onResend: () => void;
@@ -27,9 +27,9 @@ interface AttemptPanelProps {
 }
 
 /**
- * Après l'envoi : la note se prépare (relue toutes les 2 s, 90 fois), puis le résultat ; une note
- * échouée propose de renvoyer les réponses ; une note trop longue propose de la relire. Après un
- * échec, « Refaire le quiz » n'apparaît qu'une fois la date du nouvel essai venue (F9).
+ * After sending: the grade is prepared (re-read every 2 s, 90 times), then the result.
+ * A failed grade offers to resend the answers; a grade that takes too long offers a re-read.
+ * After a failure, « Refaire le quiz » only appears once the new attempt's date has come (F9).
  */
 export function AttemptPanel(props: AttemptPanelProps) {
   const { quizId, taken, refreshing, error, sending, gradePollMs, onResend, onBack, GhostPanel } =

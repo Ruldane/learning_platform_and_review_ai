@@ -1,6 +1,6 @@
 import { CheckCircle2, Circle, XCircle } from "lucide-react";
 
-/** La pastille d'un critère : décorative, « Atteint » ou « Non atteint » est toujours écrit à côté. */
+/** A criterion's dot: decorative; « Atteint » or « Non atteint » is always written beside it. */
 export function Mark({ met }: { met: boolean | null }) {
   const cls = "mt-0.5 size-4 shrink-0";
   if (met === null) return <Circle aria-hidden="true" className={`${cls} text-muted-foreground`} />;

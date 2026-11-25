@@ -5,7 +5,7 @@ import type { RadarRunRequestView } from "../../components/viewTypes";
 import type { LaunchErrors } from "../../errors";
 
 interface RadarLaunchProps {
-  /** Poste et zone proposés par le serveur (réglage, sinon dernier objectif). */
+  /** Role and area suggested by the server (setting, else last goal). */
   defaults: { role: string; zone: string };
   running: boolean;
   launchMenu?: ReactNode;
@@ -14,8 +14,8 @@ interface RadarLaunchProps {
 }
 
 /**
- * Le lancement d'un relevé : le formulaire prérempli. Il ne lit ses valeurs qu'une fois : sa `key`
- * suit les valeurs proposées, il repart donc de celles-ci quand elles arrivent ou changent.
+ * A sweep launch: the pre-filled form. It reads its values only once: its `key`
+ * follows the suggested values, so it restarts from them when they arrive or change.
  */
 export function RadarLaunch({ defaults, running, errors, onRun, launchMenu }: RadarLaunchProps) {
   return (

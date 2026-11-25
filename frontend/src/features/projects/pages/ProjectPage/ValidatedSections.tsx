@@ -10,9 +10,9 @@ import { DraftsSection } from "./DraftsSection";
 import { EntrySection } from "./EntrySection";
 
 /**
- * Un projet validé : le constat (et le lien vers la carte des compétences, où les compétences du
- * module sont prouvées), l'évaluation, les brouillons au nom de January, puis l'ajout au profil
- * (sans brouillon, ils se régénèrent).
+ * A validated project: the finding (and the link to the skills map, where the module's skills
+ * are proven), the evaluation, the drafts in January's name, then the profile addition
+ * (without drafts, they are regenerated).
  */
 export function ValidatedSections({
   project,

@@ -4,11 +4,11 @@ import { Mark } from "./Mark";
 
 interface CriteriaChecklistProps {
   criteria: string[];
-  /** Les résultats de l'évaluation (index à partir de 1) ; `null` avant toute évaluation. */
+  /** The evaluation results (index from 1); `null` before any evaluation. */
   results: CriterionResultView[] | null;
 }
 
-/** Les critères d'un projet : chacun « Atteint » ou « Non atteint » écrit, avec le commentaire du Praticien. */
+/** Project criteria, each marked « Atteint » or « Non atteint », with the Practitioner's note. */
 export function CriteriaChecklist({ criteria, results }: CriteriaChecklistProps) {
   return (
     <ol aria-label={t("projects.criteria.label")} className="flex flex-col gap-3">

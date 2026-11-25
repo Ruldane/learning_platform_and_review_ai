@@ -6,7 +6,7 @@ interface ProjectCardProps {
   project: ProjectCardView;
 }
 
-/** Une carte du Portfolio : titre (lien vers la page du projet s'il y en a une), statut écrit, heures. */
+/** A Portfolio card: title (link to the project page if any), written status, hours. */
 export function ProjectCard({ project }: ProjectCardProps) {
   return (
     <article

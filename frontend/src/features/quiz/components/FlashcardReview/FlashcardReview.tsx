@@ -7,14 +7,14 @@ import { useCardShortcuts } from "./useCardShortcuts";
 interface FlashcardReviewProps {
   card: CardView;
   onResult: (result: "ok" | "fail") => void;
-  /** Un avis est en route : boutons et raccourcis sont coupés. */
+  /** A review is in flight: buttons and shortcuts are off. */
   busy: boolean;
 }
 
 /**
- * Une fiche de révision : le recto, « Voir la réponse » (Espace), puis « Raté » (1) ou « Su » (2).
- * Chaque nouvelle fiche repart du recto ; une fois le verso montré, le focus y va pour que la
- * réponse soit lue.
+ * A review card: the front, « Voir la réponse » (Space), then « Raté » (1) or « Su » (2).
+ * Each new card starts on the front; once the back is shown, focus moves there so the
+ * answer gets read.
  */
 export function FlashcardReview({ card, onResult, busy }: FlashcardReviewProps) {
   const [revealedId, setRevealedId] = useState<string | null>(null);

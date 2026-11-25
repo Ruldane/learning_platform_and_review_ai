@@ -9,7 +9,7 @@ function labelOf(attempt: AttemptSummaryOut): string {
   return t(attempt.status === "grading" ? "quiz.page.historyGrading" : "quiz.page.historyFailed");
 }
 
-/** Les essais déjà faits, du plus ancien au plus récent ; rien tant qu'il n'y en a pas. */
+/** The attempts made so far, oldest first; nothing while there are none. */
 export function AttemptHistory({ attempts }: { attempts: AttemptSummaryOut[] }) {
   if (attempts.length === 0) return null;
   const ordered = [...attempts].sort((a, b) => a.created_at.localeCompare(b.created_at));

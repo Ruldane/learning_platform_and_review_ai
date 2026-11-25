@@ -4,21 +4,21 @@ import { Button } from "@/shared/ui/button";
 import type { RadarRunRequestView } from "../viewTypes";
 import { TextField } from "./TextField";
 
-/** Longueur minimale d'un poste ou d'une zone saisis (`RadarRunIn.minLength`). */
+/** Minimum length of a typed role or area (`RadarRunIn.minLength`). */
 const MIN_LENGTH = 2;
 
 interface RadarFormProps {
-  /** Le poste proposé (réglage, sinon dernier objectif) ; modifiable. */
+  /** The suggested role (setting, else last goal); editable. */
   role: string;
-  /** La zone proposée ; modifiable, vide pour laisser le défaut du serveur. */
+  /** The suggested area; editable, empty to keep the server default. */
   zone: string;
   onRun: (request: RadarRunRequestView) => void;
-  /** Un relevé est en cours : le bouton attend sa fin (un seul relevé à la fois). */
+  /** A sweep is running: the button waits for its end (one sweep at a time). */
   running: boolean;
   launchMenu?: ReactNode;
-  /** Le refus du serveur sur le poste (409 `radar_role_required`, 422), montré sur le champ. */
+  /** The server's refusal on the role (409 `radar_role_required`, 422), shown on the field. */
   roleError?: string;
-  /** Le refus du serveur sur la zone (422), montré sur le champ. */
+  /** The server's refusal on the area (422), shown on the field. */
   zoneError?: string;
 }
 
@@ -27,7 +27,7 @@ interface FieldErrors {
   zone?: string;
 }
 
-/** Le poste est obligatoire ; la zone peut rester vide (défaut du serveur), mais pas faire 1 caractère. */
+/** The role is required; the area may stay empty (server default), but not be 1 character. */
 function validate(role: string, zone: string): FieldErrors {
   const errors: FieldErrors = {};
   if (role === "") errors.role = t("radar.form.roleRequired");
@@ -40,8 +40,8 @@ function useRadarFields({ role, zone, onRun, running, roleError, zoneError }: Ra
   const [roleValue, setRoleValue] = useState(role);
   const [zoneValue, setZoneValue] = useState(zone);
   const [attempted, setAttempted] = useState(false);
-  // Un refus du serveur sur un champ s'efface dès que ce champ est modifié ; un nouvel envoi le
-  // remontre s'il revient.
+  // A server refusal on a field clears as soon as that field is edited; a new send the
+  // shows it again if it comes back.
   const [dismissed, setDismissed] = useState<FieldErrors>({});
   const local = attempted ? validate(roleValue.trim(), zoneValue.trim()) : {};
 
@@ -76,7 +76,7 @@ function useRadarFields({ role, zone, onRun, running, roleError, zoneError }: Ra
   };
 }
 
-/** Les valeurs proposées ne sont lues qu'une fois : la page change la clé du formulaire. */
+/** The suggested values are read only once: the page changes the form's key. */
 export function RadarForm(props: RadarFormProps) {
   const { running, launchMenu } = props;
   const fields = useRadarFields(props);

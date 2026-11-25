@@ -3,13 +3,13 @@ import { Button } from "@/shared/ui/button";
 import { InlineError } from "@/shared/ui/states/InlineError";
 import { useRetryBrief } from "../../hooks/useRetryBrief";
 
-/** L'énoncé n'a pas pu être écrit (trois essais) : le dire, et proposer « Réessayer l'énoncé ». */
+/** The brief could not be written (three attempts): say so, and offer « Réessayer l'énoncé ». */
 export function BriefFailed({
   projectId,
   onRetried,
 }: {
   projectId: string;
-  /** L'énoncé est relancé : la section va disparaître, la page reporte le focus sur le suivi. */
+  /** The brief is retried: the section will vanish, so focus moves to the tracker. */
   onRetried: () => void;
 }) {
   const { retry, pending, error, launchMenu } = useRetryBrief(projectId, onRetried);

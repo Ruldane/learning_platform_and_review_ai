@@ -17,7 +17,7 @@ interface ProgramViewsProps {
   today: string;
 }
 
-/** Les trois vues du programme : Semaine (calendrier), Liste (tâches et leçons), Avancement. */
+/** The program's three views: Week (calendar), List (tasks and lessons), Progress. */
 export function ProgramViews({ weeks, progress, lessons, edits, today }: ProgramViewsProps) {
   const [view, setView] = useState<ProgramViewId>("week");
   return (

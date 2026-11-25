@@ -11,7 +11,7 @@ interface BenchFieldsProps {
   onUrlsChange: (urls: string) => void;
 }
 
-/** Les deux champs du formulaire d'essai : la requête et les adresses supplémentaires. */
+/** The two fields of the test form: the query and the extra addresses. */
 export function BenchFields({
   query,
   urls,

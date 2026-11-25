@@ -6,10 +6,10 @@ import type { RadarRunRequestView } from "../components/viewTypes";
 import { launchErrors, openRunId } from "../errors";
 import { radarKeys } from "../queryKeys";
 
-/** Le relevé à suivre : celui qui vient d'être lancé, ou (409) celui qui tournait déjà. */
+/** The sweep to follow: the one just launched, or (409) the one already running. */
 export interface StartedRun {
   runId: string;
-  /** La session du 202 ; `null` pour un relevé déjà en cours (le serveur ne la redonne pas). */
+  /** The 202 session; `null` for a sweep already running (the server does not return it). */
   sessionId: string | null;
   resumed: boolean;
 }
@@ -26,9 +26,9 @@ async function launch(request: RadarRunRequestView, source?: RunSource): Promise
 }
 
 /**
- * « Lancer un relevé » : `start` résout au relevé à suivre. Un 409 `radar_in_progress` n'est pas
- * une panne (on suit le relevé en cours, `resumed`) ; un 409 `radar_role_required` ou un 422 se
- * rangent par champ dans `errors`.
+ * « Lancer un relevé »: `start` resolves to the sweep to follow. A 409 `radar_in_progress` is not
+ * an error (the running sweep is followed, `resumed`); a 409 `radar_role_required` or a 422 are
+ * sorted by field into `errors`.
  */
 export function useStartRadar() {
   const client = useQueryClient();
@@ -36,7 +36,7 @@ export function useStartRadar() {
   const mutation = useMutation({
     mutationFn: ({ request, source }: { request: RadarRunRequestView; source?: RunSource }) =>
       launch(request, source),
-    // Sans `await` : la page navigue vers le relevé avant que le dernier relevé soit relu.
+    // Without `await`: the page navigates to the sweep before the latest sweep is re-read.
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: radarKeys.all });
     },
@@ -49,7 +49,7 @@ export function useStartRadar() {
         (started) => started,
         () => null,
       ),
-    /** Le relevé que le dernier lancement a donné à suivre (la page y navigue tout de suite). */
+    /** The sweep the last launch gave to follow (the page navigates there at once). */
     started: mutation.data ?? null,
     pending: mutation.isPending,
     errors: mutation.isError ? launchErrors(mutation.error) : null,

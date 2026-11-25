@@ -12,13 +12,13 @@ type Presented = Omit<TakenAttempt, "attemptId" | "drafts">;
 
 interface QuizTakingProps {
   quiz: QuizOut;
-  /** Le quiz est en cours de relecture (après une note) : l'ordre des questions peut changer. */
+  /** The quiz is being re-read (after a grade): the question order may change. */
   refreshing: boolean;
   gradePollMs: number;
   GhostPanel?: ComponentType<QuizGhostProps>;
 }
 
-/** Une correction déjà en cours (page rechargée) est reprise : l'ordre affiché n'a pas changé depuis. */
+/** A grading already running (page reloaded) is resumed: the order shown has not changed since. */
 function resumeGrading(quiz: QuizOut): TakenAttempt | null {
   const grading = quiz.attempts.find((attempt) => attempt.status === "grading");
   return grading
@@ -27,10 +27,10 @@ function resumeGrading(quiz: QuizOut): TakenAttempt | null {
 }
 
 /**
- * Un quiz prêt : le formulaire, puis, une fois les réponses envoyées, la note et le résultat. Les
- * questions jointes au résultat sont celles de l'envoi : le quiz relu après la note, lui, montre
- * déjà l'ordre du prochain essai (F27). Après un échec, tant que la date du nouvel essai n'est pas
- * venue, la date remplace le formulaire (le back refuserait l'envoi : 409 `retry_too_soon`).
+ * A ready quiz: the form, then, once the answers are sent, the grade and the result. The
+ * questions attached to the result are those of the send: the quiz re-read after the grade already
+ * shows the next attempt's order (F27). After a failure, until the new attempt's date has come,
+ * the date replaces the form (the back end would refuse the send: 409 `retry_too_soon`).
  */
 export function QuizTaking({ quiz, refreshing, gradePollMs, GhostPanel }: QuizTakingProps) {
   const submitter = useSubmitAttempt(quiz.id);

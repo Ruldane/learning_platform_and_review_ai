@@ -9,15 +9,15 @@ import { RunResult } from "./RunResult";
 
 interface RunSectionProps {
   view: RunView;
-  /** Le suivi de la session du relevé en cours (`null` tant qu'elle n'est pas retrouvée). */
+  /** Follow of the running sweep's session (`null` until it is found). */
   follow: { run: Run; sessionId: string | null };
-  /** Le relevé vient d'être lancé depuis le formulaire : son titre reprend le focus. */
+  /** The sweep was just launched from the form: its title takes focus. */
   focusOnMount?: boolean;
 }
 
 /**
- * Le relevé montré : en cours, le fil de l'Éclaireur et de l'Analyste (le résultat arrive de la
- * lecture, jamais du fil) ; fini, son résultat ; en échec, la raison en clair.
+ * The sweep shown: while running, the Scout and Analyst thread (results come from the
+ * read, never the thread); finished, its result; failed, the reason in plain words.
  */
 export function RunSection({ view, follow, focusOnMount = false }: RunSectionProps) {
   const heading = useFocusOnMount<HTMLHeadingElement>(focusOnMount && view.status === "running");

@@ -6,22 +6,22 @@ import { EntryField } from "./EntryField";
 import { EntryFooter } from "./EntryFooter";
 
 interface ProfileEntryFormProps {
-  /** L'entrée proposée à partir du projet ; modifiable avant l'ajout. */
+  /** The entry proposed from the project; editable before adding. */
   entry: ProfileEntryView;
-  /** L'entrée est déjà dans le profil maître. */
+  /** The entry is already in the master profile. */
   added: boolean;
-  /** La version du profil maître qui a reçu l'entrée (dite une fois ajoutée). */
+  /** The version of the master profile that received the entry (shown once added). */
   version?: number | null;
-  /** Reçoit l'entrée nettoyée : nom et description coupés, lignes de réalisation vides retirées. */
+  /** Receives the cleaned entry: name and description trimmed, empty achievement lines removed. */
   onAdd: (entry: ProfileEntryView) => void;
-  /** L'ajout est en cours. */
+  /** The addition is in progress. */
   busy?: boolean;
 }
 
 /**
- * L'ajout d'un projet au profil maître. Rien n'y entre sans le clic de January : le rappel est
- * écrit, et l'entrée envoyée est nettoyée (le serveur refuse une ligne de réalisation vide).
- * Le formulaire ne lit `entry` qu'une fois : la page lui donne une `key` qui suit l'entrée.
+ * Adds a project to the master profile. Nothing enters without January's click: the reminder is
+ * written, and the entry sent is cleaned (the server refuses an empty achievement line).
+ * The form reads `entry` only once: the page gives it a `key` that follows the entry.
  */
 export function ProfileEntryForm(props: ProfileEntryFormProps) {
   const { entry, added, version = null, onAdd, busy = false } = props;
@@ -31,8 +31,8 @@ export function ProfileEntryForm(props: ProfileEntryFormProps) {
   const [errors, setErrors] = useState<EntryErrors>({});
   const locked = added || busy;
 
-  // Le formulaire ne se soumet jamais : Entrée dans « Nom du projet » n'ajoute rien au profil
-  // maître (une écriture qui ne s'annule pas) ; seul le bouton « Ajouter » appelle `add`.
+  // The form is never submitted: Enter in « Nom du projet » adds nothing to the master profile
+  // (a write that cannot be undone); only the « Ajouter » button calls `add`.
   const add = () => {
     if (locked) return;
     const cleaned = cleanEntry(name, description, lines);

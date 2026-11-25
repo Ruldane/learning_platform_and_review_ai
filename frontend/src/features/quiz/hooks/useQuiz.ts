@@ -3,14 +3,14 @@ import { usePollingBudget } from "@/shared/lib/usePollingBudget";
 import { fetchQuiz } from "../api";
 import { quizKeys } from "../queryKeys";
 
-/** Préparation d'un quiz : relue toutes les 3 s, 40 fois (deux minutes). */
+/** Quiz preparation: re-read every 3 s, 40 times (two minutes). */
 export const PREPARE_POLLS = 40;
 export const PREPARE_POLL_MS = 3000;
 
 /**
- * Un quiz (`GET /quizzes/{id}`). Tant qu'il se prépare, il est relu toutes les `pollMs`, 40 fois au
- * plus ; `budget.exhausted` dit que l'attente est trop longue (`budget.restart` repart). Il est relu
- * aussi après chaque note : l'ordre des questions et des choix change à chaque essai (F27).
+ * A quiz (`GET /quizzes/{id}`). While it is prepared, it is re-read every `pollMs`, 40 times at
+ * most; `budget.exhausted` says the wait is too long (`budget.restart` starts again). It is also
+ * re-read after each grade: the order of questions and choices changes on each attempt (F27).
  */
 export function useQuiz(quizId: string, pollMs = PREPARE_POLL_MS) {
   const budget = usePollingBudget(PREPARE_POLLS);

@@ -7,7 +7,7 @@ interface ModuleLessonsProps {
   lessons: ModuleLessonView[];
 }
 
-/** Les leçons du programme, une par module : leur état et le lien pour les lire. */
+/** The program's lessons, one per module: their state and the link to read them. */
 export function ModuleLessons({ lessons }: ModuleLessonsProps) {
   if (lessons.length === 0) return null;
   return (

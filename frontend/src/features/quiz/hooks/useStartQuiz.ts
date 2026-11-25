@@ -6,8 +6,8 @@ import { errorMessage } from "@/shared/api/errors";
 import { startQuiz } from "../api";
 
 /**
- * « Préparer le quiz » d'un module : lance (ou retrouve) le quiz puis ouvre sa page, qui attend la
- * fin de la préparation. Un seul envoi à la fois ; `pendingModuleId` désigne le bouton à couper.
+ * « Préparer le quiz » for a module: starts (or finds) the quiz, then opens its page, which
+ * waits for it to end. One send at a time; `pendingModuleId` names the button to turn off.
  */
 export function useStartQuiz() {
   const navigate = useNavigate();
@@ -29,7 +29,7 @@ export function useStartQuiz() {
       const started = await mutateAsync({ moduleId, source });
       void queryClient.invalidateQueries({ queryKey: ["quiz", "list"] });
       void navigate(`/study/quiz/${started.quiz_id}`);
-      return; // la page se quitte : le verrou reste posé
+      return; // the page is leaving: the lock stays in place
     } catch (failure) {
       setError(errorMessage(failure));
     }

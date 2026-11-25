@@ -5,25 +5,25 @@ import { t } from "@/shared/i18n/t";
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
 
-/** Le code d'une erreur d'API, ou `null` pour toute autre erreur. */
+/** The code of an API error, or `null` for any other error. */
 export const errorCode = (error: unknown): string | null =>
   error instanceof ApiError ? error.code : null;
 
-/** Le relevé déjà en cours (409 `radar_in_progress`, `details.run_id`), ou `null`. */
+/** The sweep already running (409 `radar_in_progress`, `details.run_id`), or `null`. */
 export function openRunId(error: unknown): string | null {
   if (errorCode(error) !== "radar_in_progress" || !(error instanceof ApiError)) return null;
   const id = isRecord(error.details) ? error.details.run_id : null;
   return typeof id === "string" ? id : null;
 }
 
-/** Les champs que le serveur refuse (`details.fields` d'un 422, sans aucune valeur). */
+/** The fields the server refuses (`details.fields` of a 422, with no value). */
 function refusedFields(error: unknown): string[] {
   if (errorCode(error) !== "validation_error" || !(error instanceof ApiError)) return [];
   const fields = isRecord(error.details) ? error.details.fields : null;
   return Array.isArray(fields) ? fields.filter((f): f is string => typeof f === "string") : [];
 }
 
-/** Un refus du lancement, rangé par champ du formulaire ; `general` pour tout autre refus. */
+/** A launch refusal, sorted by form field; `general` for any other refusal. */
 export interface LaunchErrors {
   role?: string;
   zone?: string;
@@ -49,7 +49,7 @@ type KnownCode = keyof typeof en.radar.failure.codes;
 
 const isKnown = (code: string): code is KnownCode => Object.hasOwn(en.radar.failure.codes, code);
 
-/** Pourquoi un relevé a échoué, en clair : le code connu, sinon une panne inattendue. */
+/** Why a sweep failed, in plain words: the known code, otherwise an unexpected failure. */
 export function failureReason(code: string | null): string {
   return code !== null && isKnown(code)
     ? t(`radar.failure.codes.${code}`)

@@ -1,8 +1,8 @@
-/** Types d'affichage des composants de la feature (voir `settings/components/viewTypes.ts`). */
+/** Display types for the feature's components (see `settings/components/viewTypes.ts`). */
 
-/** Ce que l'utilisateur soumet pour un essai de l'Éclaireur. */
+/** What the user submits for a Scout test. */
 export interface ResearchBenchInput {
   query: string;
-  /** Adresses http(s) à lire en plus de la recherche (5 au plus). */
+  /** http(s) addresses to read in addition to the search (5 at most). */
   urls: string[];
 }

@@ -11,8 +11,8 @@ interface HoursFieldProps {
 }
 
 /**
- * Le champ des heures de la semaine (le back lit un total, heures déjà faites comprises) : sa
- * consigne devient l'erreur quand la saisie est refusée.
+ * The week's hours field (the back end reads a total, including hours already done): its
+ * hint becomes the error when the input is refused.
  */
 export function HoursField({ value, invalid, disabled, onChange }: HoursFieldProps) {
   const id = useId();

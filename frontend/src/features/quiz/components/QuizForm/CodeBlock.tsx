@@ -1,6 +1,6 @@
 import { t } from "@/shared/i18n/t";
 
-/** Le code d'une question, affiché tel quel dans un bloc défilable au clavier (jamais interprété). */
+/** A question's code, shown as is in a keyboard-scrollable block (never interpreted). */
 export function CodeBlock({ rank, code }: { rank: number; code: string }) {
   return (
     <pre

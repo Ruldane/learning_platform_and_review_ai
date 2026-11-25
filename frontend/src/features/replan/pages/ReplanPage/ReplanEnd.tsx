@@ -6,9 +6,9 @@ import { Button, buttonVariants } from "@/shared/ui/button";
 interface ReplanEndProps {
   programId: string;
   status: SessionStatus;
-  /** Le message d'échec de la session, quand elle s'est arrêtée sur une erreur. */
+  /** The session's failure message, when it stopped on an error. */
   failure: string | null;
-  /** Ce que January a décidé de la proposition, quand l'historique le dit. */
+  /** What January decided about the proposal, when the history says so. */
   decision: "accepted" | "refused" | null;
   onAgain: () => void;
 }
@@ -22,8 +22,8 @@ const OUTCOME = {
 } as const;
 
 /**
- * La fin d'une replanification : ce qui s'est passé (plan accepté, gardé, annulé, arrêt), le retour
- * au programme et une nouvelle demande.
+ * The end of a replan: what happened (plan accepted, kept, cancelled, stopped), the return
+ * to the program and a new request.
  */
 export function ReplanEnd({ programId, status, failure, decision, onAgain }: ReplanEndProps) {
   const outcome =

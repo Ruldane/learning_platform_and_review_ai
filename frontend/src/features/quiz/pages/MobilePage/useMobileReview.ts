@@ -50,7 +50,7 @@ export function useMobileAccess() {
     try {
       saveMobile(data.data, generation);
     } catch {
-      // Une copie déjà sauvegardée peut encore servir à la prochaine coupure.
+      // A copy already saved can still serve for the next cut-off.
     }
   }, [data.data, generation, offline, owner, pinned]);
   return {

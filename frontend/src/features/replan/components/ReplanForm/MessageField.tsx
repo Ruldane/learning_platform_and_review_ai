@@ -3,7 +3,7 @@ import { t } from "@/shared/i18n/t";
 import { cn } from "@/shared/lib/utils";
 import { fieldClass } from "@/shared/ui/fieldClass";
 
-/** Le contrat borne le message à 1 000 caractères. */
+/** The contract caps the message at 1,000 characters. */
 export const MAX_MESSAGE = 1000;
 
 interface MessageFieldProps {
@@ -12,7 +12,7 @@ interface MessageFieldProps {
   onChange: (value: string) => void;
 }
 
-/** Le message facultatif pour le Stratège. */
+/** The optional message for the Strategist. */
 export function MessageField({ value, disabled, onChange }: MessageFieldProps) {
   const id = useId();
   return (

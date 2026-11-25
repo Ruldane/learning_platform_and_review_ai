@@ -8,8 +8,8 @@ import { moduleForDate } from "../toView";
 import type { NewTaskInput, ProgramOut } from "../types";
 
 /**
- * L'ajout d'une tâche (`PATCH /programs/{id}`) dans le module de la semaine du jour choisi. Un
- * refus du serveur est dit dans `error` et rejette la promesse : le formulaire garde la saisie.
+ * Adds a task (`PATCH /programs/{id}`) to the module of the week of the chosen day. A
+ * server refusal is set in `error` and rejects the promise, so the form keeps the input.
  */
 export function useTaskAdd(programId: string) {
   const client = useQueryClient();

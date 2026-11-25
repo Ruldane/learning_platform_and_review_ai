@@ -8,11 +8,11 @@ interface ScreenshotPreviewProps {
   onRemove: () => void;
 }
 
-/** L'aperçu d'une capture choisie, avec son bouton « Retirer » ; l'aperçu est lu par `FileReader`. */
+/** Preview of a chosen screenshot, with its « Retirer » button; read by `FileReader`. */
 export function ScreenshotPreview({ file, disabled, onRemove }: ScreenshotPreviewProps) {
   const [src, setSrc] = useState<string | null>(null);
   useEffect(() => {
-    // Un aperçu lu en adresse `data:` : rien à libérer, et sûr sous `StrictMode` (pas d'adresse `blob:` révoquée).
+    // A preview read as a `data:` URL needs no cleanup, and is safe under `StrictMode`.
     const reader = new FileReader();
     reader.onload = () => setSrc(typeof reader.result === "string" ? reader.result : null);
     reader.readAsDataURL(file);

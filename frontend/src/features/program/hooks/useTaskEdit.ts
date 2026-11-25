@@ -10,9 +10,9 @@ interface Edit {
 }
 
 /**
- * Retouche d'une tâche (`PATCH /tasks/{id}` : déplacement ou case « faite »). Le changement est
- * montré aussitôt ; si le serveur refuse (422 : semaine au-delà de 85 %, pratique ou quiz manquant),
- * l'état d'avant est remis, le message du serveur est dit par `onError`, puis le programme est relu.
+ * Edits a task (`PATCH /tasks/{id}`: a move, or the « faite » checkbox). The change is
+ * shown at once; if the server refuses (422: week over 85%, practice or quiz missing),
+ * the previous state is restored, the server message goes to `onError`, then the program reloads.
  */
 export function useTaskEdit(programId: string, onError: (failure: unknown) => void) {
   const client = useQueryClient();

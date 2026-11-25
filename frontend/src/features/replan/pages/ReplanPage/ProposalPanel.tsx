@@ -5,9 +5,9 @@ import type { VersionView } from "../../components/viewTypes";
 import { ProposalBlock } from "./ProposalBlock";
 
 /**
- * La proposition qui attend une réponse : le bilan de la semaine, les changements (ajoutées,
- * retirées, déplacées, et la durée du programme quand l'échéance bouge) et la charge de chaque
- * semaine avant et après, sous son plafond. La réponse se donne dans la carte du fil.
+ * The proposal awaiting an answer: the week's summary, the changes (added,
+ * removed, moved, and the program length when the deadline moves) and the load of each
+ * week before and after, under its cap. The answer is given in the thread's card.
  */
 export function ProposalPanel({ version }: { version: VersionView }) {
   return (

@@ -10,7 +10,7 @@ import { projectPath } from "./paths";
 import type { ProjectOut, ProjectSummary } from "./types";
 import { screenshotUrl } from "./urls";
 
-/** Une carte du Portfolio. */
+/** A Portfolio card. */
 export function toCardView(project: ProjectSummary): ProjectCardView {
   return {
     id: project.id,
@@ -22,7 +22,7 @@ export function toCardView(project: ProjectSummary): ProjectCardView {
   };
 }
 
-/** Les groupes du Portfolio, dans l'ordre où ils s'affichent : ce qui attend January d'abord. */
+/** The Portfolio groups, in display order: what awaits January first. */
 export const GROUP_ORDER: ProjectStatusView[] = [
   "to_redo",
   "todo",
@@ -37,7 +37,7 @@ export interface ProjectGroupView {
   projects: ProjectCardView[];
 }
 
-/** Les projets groupés par statut ; un groupe vide n'existe pas, l'ordre du programme est gardé. */
+/** Projects grouped by status; an empty group does not exist, the program order is kept. */
 export function groupByStatus(projects: ProjectCardView[]): ProjectGroupView[] {
   return GROUP_ORDER.flatMap((status) => {
     const inGroup = projects.filter((project) => project.status === status);
@@ -45,13 +45,13 @@ export function groupByStatus(projects: ProjectCardView[]): ProjectGroupView[] {
   });
 }
 
-/** Une capture d'un rendu, avec l'adresse de son image. */
+/** A screenshot of a submission, with its image address. */
 export interface ShotView {
   number: number;
   src: string;
 }
 
-/** Un rendu de l'historique (le dernier d'abord). */
+/** A submission in the history (latest first). */
 export interface SubmissionItemView {
   at: string;
   repoUrl: string | null;
@@ -59,7 +59,7 @@ export interface SubmissionItemView {
   screenshots: ShotView[];
 }
 
-/** Un projet tel que sa page le lit. */
+/** A project as its page reads it. */
 export interface ProjectDetailView {
   id: string;
   title: string;
@@ -67,15 +67,15 @@ export interface ProjectDetailView {
   brief: BriefDataView | null;
   evaluation: EvaluationDataView | null;
   submissions: SubmissionItemView[];
-  /** Les brouillons de texte (ligne de CV, post LinkedIn, plan de README), dans l'ordre du serveur. */
+  /** The text drafts (CV line, LinkedIn post, README plan), in server order. */
   drafts: (DraftView & { kind: Exclude<DraftView["kind"], "profile_entry"> })[];
-  /** Le brouillon de l'entrée du profil (son avertissement « à vérifier »), s'il existe. */
+  /** The profile-entry draft (its « à vérifier » notice), if it exists. */
   entryDraft: DraftView | null;
-  /** L'entrée proposée pour le profil maître : le brouillon, sinon le nom du projet seul. */
+  /** The proposed entry for the master profile: the draft, otherwise the project name alone. */
   entry: ProfileEntryView;
   validatedAt: string | null;
   profileVersion: number | null;
-  /** La session de l'énoncé ou de l'évaluation en cours, sinon la dernière. */
+  /** The session of the brief or evaluation in progress, otherwise the last one. */
   sessionId: string | null;
 }
 
@@ -99,7 +99,7 @@ function toEvaluation(project: ProjectOut): EvaluationDataView | null {
       met: result.met,
       comment: result.comment,
     })),
-    // `EvaluationOut` n'a pas ce champ : le dernier rendu (le premier de la liste) le dit.
+    // `EvaluationOut` has no such field: the latest submission (the first in the list) says it.
     hasScreenshots: (project.submissions[0]?.screenshots ?? 0) > 0,
   };
 }
@@ -130,7 +130,7 @@ export function toDetailView(project: ProjectOut): ProjectDetailView {
       description: submission.description,
       screenshots: Array.from({ length: submission.screenshots }, (_, index) => ({
         number: index + 1,
-        // Le dernier rendu est « 1 » pour le serveur, celui d'avant « 2 »…
+        // The latest submission is « 1 » for the server, the one before « 2 »…
         src: screenshotUrl(project.id, index + 1, position + 1),
       })),
     })),

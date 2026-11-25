@@ -5,12 +5,12 @@ interface ChoicesProps {
   question: QuestionView;
   choice: number | null;
   disabled: boolean;
-  /** `id` de l'énoncé, qui nomme le groupe. */
+  /** The question's `id`, which names the group. */
   labelledBy: string;
   onChoice: (index: number) => void;
 }
 
-/** Les choix d'un QCM : un groupe de radios, une seule réponse. */
+/** The choices of an MCQ: a radio group, one answer only. */
 export function Choices({ question, choice, disabled, labelledBy, onChoice }: ChoicesProps) {
   const name = useId();
   return (

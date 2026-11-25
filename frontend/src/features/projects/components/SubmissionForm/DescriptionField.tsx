@@ -10,7 +10,7 @@ interface DescriptionFieldProps {
   onChange: (value: string) => void;
 }
 
-/** La description du rendu, avec son compteur « 12 / 4 000 caractères » et son erreur quand elle est trop longue. */
+/** Submission description, with its « 12 / 4 000 caractères » counter and its too-long error. */
 export function DescriptionField({ value, disabled, error, onChange }: DescriptionFieldProps) {
   const id = useId();
   return (

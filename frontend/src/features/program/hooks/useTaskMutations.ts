@@ -11,17 +11,17 @@ export interface TaskEdits {
   move: (taskId: string, date: string) => void;
   toggleDone: (taskId: string, done: boolean) => void;
   remove: (taskId: string) => void;
-  /** Rejette si le serveur refuse : le formulaire garde alors la saisie. */
+  /** Rejects if the server refuses: the form then keeps the input. */
   add: (input: NewTaskInput) => Promise<unknown>;
-  /** Refus ou échec d'un déplacement, d'une case cochée ou d'une suppression. */
+  /** Refusal or failure of a move, a ticked box or a deletion. */
   error: string | null;
-  /** Refus de l'ajout, affiché sous le formulaire. */
+  /** Refusal of the addition, shown under the form. */
   addError: string | null;
 }
 
 /**
- * Les retouches du programme : déplacer, cocher, supprimer et ajouter des tâches, par REST. Chaque
- * refus du serveur est dit tel quel ; le programme est relu après chaque retouche.
+ * Edits to the program: move, tick, delete and add tasks, over REST. Each
+ * server refusal is passed on as is; the program is reloaded after each edit.
  */
 export function useTaskMutations(programId: string): TaskEdits {
   const client = useQueryClient();

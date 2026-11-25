@@ -11,11 +11,11 @@ interface BenchFieldProps {
   label: string;
   hint: string;
   error: string | undefined;
-  /** Rend le champ de saisie : il reçoit son `id` et ses attributs d'accessibilité. */
+  /** Renders the input field: it receives its `id` and its accessibility attributes. */
   children: (props: ControlProps) => ReactNode;
 }
 
-/** Étiquette, champ, aide et message d'erreur d'un champ du formulaire d'essai. */
+/** Label, field, hint and error message of a field on the test form. */
 export function BenchField({ label, hint, error, children }: BenchFieldProps) {
   const id = useId();
   const errorId = useId();

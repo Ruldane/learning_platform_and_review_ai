@@ -7,9 +7,9 @@ import { projectKeys } from "../queryKeys";
 import type { ProjectOut } from "../types";
 
 /**
- * « Réessayer l'énoncé » (`POST /projects/{id}/brief`, 202) : le projet repasse à `brief_pending` et
- * la page relit le projet pour suivre la nouvelle session. 409 `brief_not_failed` : l'énoncé a déjà
- * été relancé, la page se relit pour montrer l'état réel.
+ * « Réessayer l'énoncé » (`POST /projects/{id}/brief`, 202): the project goes back to
+ * `brief_pending` and the page re-reads it to follow the new session. 409 `brief_not_failed`:
+ * been retried; the page re-reads to show the real state.
  */
 export function useRetryBrief(projectId: string, onRetried?: () => void) {
   const client = useQueryClient();

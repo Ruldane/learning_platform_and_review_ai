@@ -3,13 +3,13 @@ import { unwrap } from "@/shared/api/errors";
 import { runSourceHeaders, type RunSource } from "@/shared/lib/runSource";
 import type { DraftKind, GithubCommitSelection, ProfileEntryIn, SubmissionView } from "./types";
 
-/** `GET /projects` : tous les projets, dans l'ordre du programme (semaine, rang). */
+/** `GET /projects`: all projects, in program order (week, rank). */
 export async function fetchProjects(signal?: AbortSignal) {
   return unwrap(await api.GET("/projects", { signal }));
 }
 
 /**
- * `GET /projects/{id}` : l'énoncé, les rendus, la dernière évaluation et les brouillons. 404
+ * `GET /projects/{id}`: the brief, submissions, latest evaluation and drafts. 404
  * `project_not_found`.
  */
 export async function fetchProject(projectId: string, signal?: AbortSignal) {
@@ -22,8 +22,8 @@ export async function fetchProject(projectId: string, signal?: AbortSignal) {
 }
 
 /**
- * Le corps multipart d'un rendu : le lien et la description s'ils existent, une partie
- * `screenshots` par capture.
+ * The multipart body of a submission: the link and description if present, one
+ * `screenshots` part per capture.
  */
 export function submissionForm(submission: SubmissionView): FormData {
   const form = new FormData();
@@ -53,13 +53,13 @@ export async function requestGithubClaim(projectId: string, selection: GithubCom
 }
 
 /**
- * `POST /projects/{id}/submit` (202 `{session_id}`) : multipart, le navigateur pose la frontière.
- * 409 `project_not_ready`, `review_in_progress` (`details.session_id`) ou `project_validated` ;
+ * `POST /projects/{id}/submit` (202 `{session_id}`): multipart; the browser sets the boundary.
+ * 409 `project_not_ready`, `review_in_progress` (`details.session_id`) or `project_validated`;
  * 422 `details.fields` ; 413 ; 503.
  */
 export async function submitProject(projectId: string, submission: SubmissionView) {
   const form = submissionForm(submission);
-  // Le contrat type les fichiers comme des chaînes : le corps réel est le formulaire.
+  // The contract types files as strings: the real body is the form.
   return unwrap(
     await api.POST("/projects/{project_id}/submit", {
       params: { path: { project_id: projectId } },
@@ -70,7 +70,7 @@ export async function submitProject(projectId: string, submission: SubmissionVie
 }
 
 /**
- * `PATCH /projects/{id}/drafts/{kind}` : le texte retouché ; rend le projet avec ses brouillons
+ * `PATCH /projects/{id}/drafts/{kind}`: the edited text; returns the project with its drafts
  * relus.
  */
 export async function saveDraft(projectId: string, kind: DraftKind, content: string) {
@@ -83,8 +83,8 @@ export async function saveDraft(projectId: string, kind: DraftKind, content: str
 }
 
 /**
- * `POST /projects/{id}/profile-entry` : l'entrée entre au profil maître (nouvelle version). 409
- * selon le cas.
+ * `POST /projects/{id}/profile-entry`: the entry goes into the master profile (new version). 409
+ * depending on the case.
  */
 export async function addToProfile(projectId: string, entry: ProfileEntryIn) {
   return unwrap(
@@ -96,7 +96,7 @@ export async function addToProfile(projectId: string, entry: ProfileEntryIn) {
 }
 
 /**
- * `POST /projects/{id}/brief` (202 `{session_id}`) : réécrire un énoncé en échec. 409
+ * `POST /projects/{id}/brief` (202 `{session_id}`): rewrite a failed brief. 409
  * `brief_not_failed`.
  */
 export async function retryBrief(projectId: string, source?: RunSource) {
@@ -109,8 +109,8 @@ export async function retryBrief(projectId: string, source?: RunSource) {
 }
 
 /**
- * `POST /projects/{id}/drafts` (202 `{session_id}`) : réécrire les brouillons d'un projet validé
- * qui n'en a pas. 409 `project_not_validated`, `drafts_present` ou `review_in_progress`
+ * `POST /projects/{id}/drafts` (202 `{session_id}`): rewrite the drafts of a validated project
+ * with none. 409 `project_not_validated`, `drafts_present` or `review_in_progress`
  * (`details.session_id`).
  */
 export async function regenerateDrafts(projectId: string) {

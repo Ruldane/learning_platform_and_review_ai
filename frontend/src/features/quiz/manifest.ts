@@ -7,8 +7,8 @@ import { QuizPage } from "./pages/QuizPage";
 import { ReviewsPage } from "./pages/ReviewsPage";
 
 /**
- * Étudier, 2e et 3e entrées : les révisions (fiches espacées du jour, 15 minutes au plus) et les
- * quiz par module (SPEC 3.8 et 3.9).
+ * Study, 2nd and 3rd entries: the reviews (spaced cards of the day, 15 minutes at most) and
+ * the quizzes per module (SPEC 3.8 and 3.9).
  */
 export function makeQuizManifest(GhostPanel?: ComponentType<QuizGhostProps>): FeatureManifest {
   return {

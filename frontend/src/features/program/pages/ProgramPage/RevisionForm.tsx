@@ -4,12 +4,12 @@ import { Button } from "@/shared/ui/button";
 
 interface RevisionFormProps {
   busy: boolean;
-  /** `true` si la demande est partie (le formulaire se referme). */
+  /** `true` if the request was sent (the form closes). */
   onSend: (note: string) => Promise<boolean>;
   onCancel: () => void;
 }
 
-/** La note d'une demande de révision : ce qu'il faut revoir, obligatoire. */
+/** The note of a revision request: what needs revisiting, required. */
 export function RevisionForm({ busy, onSend, onCancel }: RevisionFormProps) {
   const [note, setNote] = useState("");
   const [missing, setMissing] = useState(false);

@@ -4,7 +4,7 @@ import type { DayBudget, ModuleLessonView, PlanDiffOut, ProgramOut } from "./typ
 import type { ProgramSummaryOut, TaskOut } from "./types";
 
 const DAY_MS = 86_400_000;
-/** Lundi à vendredi : budget en semaine ; samedi : bloc du week-end ; dimanche : repos. */
+/** Monday to Friday: weekday budget; Saturday: weekend block; Sunday: rest. */
 const SATURDAY = 5;
 const SUNDAY = 6;
 
@@ -31,7 +31,7 @@ function toTaskView(task: TaskOut, moduleTitle: string): TaskView {
   };
 }
 
-/** Toutes les tâches du programme, avec le titre du module d'origine (une tâche déplacée le garde). */
+/** All the program's tasks, with the title of their original module (a moved task keeps it). */
 function allTasks(program: ProgramOut): TaskView[] {
   return program.weeks.flatMap((week) =>
     week.modules.flatMap((module) => module.tasks.map((task) => toTaskView(task, module.title))),
@@ -39,9 +39,9 @@ function allTasks(program: ProgramOut): TaskView[] {
 }
 
 /**
- * Les semaines du calendrier : sept jours depuis le lundi, capacité du jour selon le budget. Les
- * tâches se placent par **jour planifié**, pas par module : une tâche déplacée par January reste
- * dans son module (D88) mais apparaît dans la semaine de son nouveau jour.
+ * The calendar weeks: seven days from Monday, day capacity from the budget. Tasks
+ * are placed by **planned day**, not by module: a task moved by January stays in
+ * its module (D88) but appears in the week of its new day.
  */
 export function toWeekViews(program: ProgramOut, budget: DayBudget): WeekView[] {
   const tasks = allTasks(program);
@@ -80,7 +80,7 @@ export function toProgressView(progress: ProgramOut["progress"]): ProgressView {
 
 const SEPARATOR = " / ";
 
-/** « {module} / {tâche} » (clé du back) : le module est ce qui précède le premier séparateur. */
+/** "{module} / {task}" (back-end key): the module is what precedes the first separator. */
 function splitKey(key: string): { moduleTitle: string; title: string } {
   const at = key.indexOf(SEPARATOR);
   if (at === -1) return { moduleTitle: "", title: key };
@@ -100,9 +100,9 @@ function plannedDates(program: ProgramOut): Map<string, string> {
 }
 
 /**
- * La différence de la dernière version. Le back nomme les tâches « module / tâche » sans
- * identifiant : le jour prévu d'une tâche ajoutée se relit dans le programme, celui d'une tâche
- * retirée n'existe plus (`null`).
+ * The diff from the last version. The back end names tasks "module / task" without
+ * an identifier: the planned day of an added task is read from the program; that of a
+ * removed task no longer exists (`null`).
  */
 export function toPlanDiffView(diff: PlanDiffOut, program: ProgramOut): PlanDiffView {
   const dates = plannedDates(program);
@@ -124,8 +124,8 @@ export function toPlanDiffView(diff: PlanDiffOut, program: ProgramOut): PlanDiff
 }
 
 /**
- * Le module qui reçoit une tâche ajoutée à `date` : le premier module non sauté de la semaine qui
- * porte ce jour, sinon le premier du programme. `null` : aucun module ne peut l'accueillir.
+ * The module that receives a task added on `date`: the first non-skipped module of the week
+ * that holds this day, otherwise the program's first. `null`: no module can take it.
  */
 export function moduleForDate(program: ProgramOut, date: string): string | null {
   const week = program.weeks.find(
@@ -137,7 +137,7 @@ export function moduleForDate(program: ProgramOut, date: string): string | null 
   return any?.id ?? null;
 }
 
-/** L'état de la leçon de chaque module planifié (sauté : pas de leçon), dans l'ordre du programme. */
+/** The lesson state of each planned module (skipped: no lesson), in program order. */
 export function toModuleLessons(program: ProgramOut): ModuleLessonView[] {
   return program.weeks.flatMap((week) =>
     week.modules
@@ -154,7 +154,7 @@ export function toModuleLessons(program: ProgramOut): ModuleLessonView[] {
   );
 }
 
-/** Un programme de `GET /programs` pour la liste « Mes programmes » : avancement en minutes. */
+/** A program from `GET /programs` for the « Mes programmes » list: progress in minutes. */
 export function toProgramSummaryView(program: ProgramSummaryOut): ProgramSummaryView {
   const { done_minutes, total_minutes } = program.progress;
   const percent =

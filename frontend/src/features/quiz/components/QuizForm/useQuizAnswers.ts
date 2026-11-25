@@ -12,7 +12,7 @@ function isEmpty(question: QuestionView, given: Given): boolean {
   return question.type === "mcq" ? given.choice === null : given.text.trim() === "";
 }
 
-/** Les réponses saisies, les questions restées vides et le brouillon à envoyer, dans l'ordre. */
+/** The typed answers, the questions left empty, and the draft to send, in order. */
 export function useQuizAnswers(questions: QuestionView[]) {
   const ordered = useMemo(() => [...questions].sort((a, b) => a.rank - b.rank), [questions]);
   const [answers, setAnswers] = useState<Record<string, Given>>({});

@@ -8,11 +8,11 @@ interface QuizListProps {
   items: QuizSummaryView[];
   onPrepare: (moduleId: string, source?: RunSource) => void;
   onOpen: (quizId: string) => void;
-  /** Le module dont le quiz se prépare : son bouton ne se déclenche pas deux fois. */
+  /** The module whose quiz is being prepared: its button does not fire twice. */
   pendingModuleId?: string | null;
 }
 
-/** Les modules du programme, par semaine, avec leur meilleur score et l'action du quiz. */
+/** The program's modules, by week, with their best score and the quiz action. */
 export function QuizList({ items, onPrepare, onOpen, pendingModuleId = null }: QuizListProps) {
   if (items.length === 0) {
     return (

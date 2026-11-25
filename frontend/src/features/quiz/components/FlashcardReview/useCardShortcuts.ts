@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 interface Shortcuts {
-  /** Ignore tout : un envoi est en route. */
+  /** Ignores everything: a send is in flight. */
   busy: boolean;
   flipped: boolean;
   onReveal: () => void;
@@ -18,10 +18,10 @@ function onControl(target: EventTarget | null): boolean {
 }
 
 /**
- * Raccourcis d'une fiche : Espace montre la réponse, puis 1 (« Raté ») et 2 (« Su »). Ils vivent sur
- * la fenêtre pour marcher sans avoir mis le focus sur la fiche, mais cèdent la place à un champ de
- * saisie, à une touche combinée (Ctrl, Cmd, Alt) et, pour Espace seulement, à un bouton, un lien ou
- * un résumé qui a le focus : Espace y est déjà son propre clic.
+ * Card shortcuts: Space shows the answer, then 1 (« Raté ») and 2 (« Su »). They live on
+ * the window so they work without focus on the card, but they yield to a text field, to a
+ * combined key (Ctrl, Cmd, Alt) and, for Space only, to a button, link or summary that has
+ * focus: Space is already its own click there.
  */
 export function useCardShortcuts({ busy, flipped, onReveal, onResult }: Shortcuts) {
   useEffect(() => {

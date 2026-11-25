@@ -15,7 +15,7 @@ interface QuizBodyProps {
   GhostPanel?: ComponentType<QuizGhostProps>;
 }
 
-/** Ce que la page montre selon l'état du quiz : préparation, échec ou formulaire. */
+/** What the page shows for the quiz's state: preparation, failure, or the form. */
 export function QuizBody({ quiz, query, budget, gradePollMs, GhostPanel }: QuizBodyProps) {
   if (quiz.status === "generating") {
     return (

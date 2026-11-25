@@ -7,7 +7,7 @@ import type { ReplanRequest } from "./types";
 const programPath = (programId: string) => ({ params: { path: { program_id: programId } } });
 
 /**
- * `POST /programs/{id}/replan` (202) : lance la replanification, jamais `POST /sessions` (409
+ * `POST /programs/{id}/replan` (202): starts the replan, never `POST /sessions` (409
  * `graph_has_route`). 409 `replan_open` (`details.session_id`), 409 `program_not_validated`.
  */
 export async function startReplan(programId: string, body: ReplanRequest, source?: RunSource) {
@@ -20,7 +20,7 @@ export async function startReplan(programId: string, body: ReplanRequest, source
   );
 }
 
-/** `GET /programs/{id}/versions` : l'historique du plan, la plus récente d'abord. */
+/** `GET /programs/{id}/versions`: the plan's history, most recent first. */
 export async function fetchVersions(programId: string, signal?: AbortSignal) {
   return unwrap(
     await api.GET("/programs/{program_id}/versions", { ...programPath(programId), signal }),
@@ -28,8 +28,8 @@ export async function fetchVersions(programId: string, signal?: AbortSignal) {
 }
 
 /**
- * La replanification de ce programme qui attend une réponse (`GET /sessions?graph=replan&
- * status=waiting_user`, sujet = programme), ou `null`.
+ * The replan of this program waiting for an answer (`GET /sessions?graph=replan&
+ * status=waiting_user`, subject = program), or `null`.
  */
 export async function fetchWaitingReplan(
   programId: string,

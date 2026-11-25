@@ -11,16 +11,16 @@ import { useQuizChrono } from "./useQuizChrono";
 
 interface QuizFormProps {
   questions: QuestionView[];
-  /** Un envoi est en route : plus rien n'est modifiable. */
+  /** A send is in flight: nothing can be edited any more. */
   disabled: boolean;
   onSubmit: (answers: AnswerDraft[], elapsedMs?: number, timings?: ResponseTiming[]) => void;
   renderGhost?: (live: LiveQuizPractice) => ReactNode;
 }
 
 /**
- * Le quiz à passer : un QCM en groupe de radios, le code en bloc de texte, les réponses ouvertes en
- * zone de texte. « Envoyer » avec des questions vides demande confirmation dans la carte (jamais
- * `window.confirm`) ; toutes les réponses partent, dans l'ordre des questions.
+ * The quiz to take: an MCQ as a radio group, code as a text block, open answers as
+ * text boxes. « Envoyer » with empty questions asks for confirmation in the card (never
+ * `window.confirm`); all answers go out, in question order.
  */
 export function QuizForm({ questions, disabled, onSubmit, renderGhost }: QuizFormProps) {
   const { ordered, given, change, empties, drafts } = useQuizAnswers(questions);

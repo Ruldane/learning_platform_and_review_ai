@@ -9,7 +9,7 @@ interface RepoUrlFieldProps {
   onChange: (value: string) => void;
 }
 
-/** Le lien du dépôt : une adresse http(s) de 2 048 caractères au plus, son indication et son erreur. */
+/** Repository link: an http(s) address of 2,048 characters at most, with its hint and error. */
 export function RepoUrlField({ value, disabled, error, onChange }: RepoUrlFieldProps) {
   const id = useId();
   return (

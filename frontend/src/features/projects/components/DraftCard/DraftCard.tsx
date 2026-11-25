@@ -8,17 +8,17 @@ import { useDraftText } from "./useDraftText";
 
 interface DraftCardProps {
   draft: DraftView;
-  /** Enregistre le texte retouché. */
+  /** Saves the edited text. */
   onSave: (content: string) => void;
-  /** Copie le texte affiché ; une promesse rejetée signale l'échec. L'application ne publie rien. */
+  /** Copies the shown text; a rejected promise signals the failure. The app publishes nothing. */
   onCopy: (content: string) => void | Promise<void>;
-  /** L'enregistrement est en cours. */
+  /** The save is in progress. */
   saving?: boolean;
-  /** Le refus ou la panne du dernier enregistrement de CE brouillon, dit sur sa carte. */
+  /** The refusal or failure of the last save of THIS draft, shown on its card. */
   error?: string | null;
 }
 
-/** Un brouillon au nom de January : texte modifiable, « Enregistrer », « Copier » et l'avertissement « À vérifier ». */
+/** A draft: editable text, « Enregistrer » and « Copier » buttons, « À vérifier » warning. */
 export function DraftCard({ draft, onSave, onCopy, saving = false, error = null }: DraftCardProps) {
   const id = useId();
   const { value, setValue, message, tryOk } = useDraftText(draft.content, error);

@@ -15,21 +15,21 @@ import { ReplanRun } from "./ReplanRun";
 import { ReplanStart } from "./ReplanStart";
 
 /**
- * Replanification d'un programme (`/learn/programs/:programId/replan`). Sans
- * replanification en cours : le formulaire (heures disponibles, message). Avec une : la
- * proposition (changements, charge avant et après, plafond), le fil du Stratège et la carte pour
- * accepter ou refuser. Une replanification qui attend déjà une réponse est rejointe d'office, et
- * reste suivie après sa fin (elle n'attend plus, mais son message de fin doit rester à l'écran).
+ * Replanning a program (`/learn/programs/:programId/replan`). Without a replan in progress:
+ * the form (hours available, message). With one: the proposal (changes, load, cap),
+ * the Strategist's thread and the card to accept or refuse. A replan already awaiting an answer is
+ * joined automatically, and stays followed after its end (it no longer waits, but its end message
+ * must stay on screen).
  */
 export function ReplanPage({ createSocket }: { createSocket?: SocketFactory }) {
   const { programId = "" } = useParams();
   const versions = useVersions(programId);
   const waiting = useWaitingReplan(programId);
-  // `undefined` : on suit la session qui attend (si elle existe) ; `null` : nouvelle demande.
+  // `undefined`: follow the waiting session (if one exists); `null`: a new request.
   const [followed, setFollowed] = useState<string | null | undefined>(undefined);
   const sessionId = followed === undefined ? (waiting.data ?? null) : followed;
-  // La session rejointe est figée (ajustement pendant le rendu, sans effet) : la relecture de fin,
-  // où plus rien n'attend, ne la fait pas oublier.
+  // The joined session is frozen (adjusted during render, no effect): the final re-read,
+  // where nothing waits any more, does not make it forgotten.
   if (followed === undefined && waiting.data) setFollowed(waiting.data);
   const views = useMemo(() => versions.data?.map(toVersionView), [versions.data]);
   const proposal = sessionId && views ? pendingVersion(views) : null;

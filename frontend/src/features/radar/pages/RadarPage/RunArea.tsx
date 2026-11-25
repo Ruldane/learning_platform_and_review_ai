@@ -9,15 +9,15 @@ import type { RunView } from "../../toView";
 import { RunSection } from "./RunSection";
 
 interface RunAreaProps {
-  /** Le relevé vient de l'adresse (`/career/radar/:runId`), pas du dernier relevé fini. */
+  /** The sweep comes from the address (`/career/radar/:runId`), not the latest finished sweep. */
   byAddress: boolean;
   view: RunView | null | undefined;
   detail: ReturnType<typeof useRadarRun>;
-  /** Un lancement vient de mener ici : le suivi du relevé reprend le focus du bouton. */
+  /** A launch has just led here: the sweep's tracker takes the button's focus. */
   focusRun?: boolean;
 }
 
-/** Le relevé montré, ou ce qui en tient lieu : chargement, relevé introuvable, erreur, rien encore. */
+/** The sweep shown, or what stands in for it: loading, sweep not found, error, nothing yet. */
 export function RunArea({ byAddress, view, detail, focusRun = false }: RunAreaProps) {
   const navigate = useNavigate();
   const { query } = detail;

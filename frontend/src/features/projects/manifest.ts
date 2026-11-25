@@ -3,9 +3,9 @@ import { PortfolioPage } from "./pages/PortfolioPage";
 import { ProjectPage } from "./pages/ProjectPage";
 
 /**
- * Les mini projets (SPEC 14.2, section « Compétences » de la navigation, après la carte) : le
- * Portfolio (`/skills/portfolio`, les projets groupés par statut) et la page d'un projet
- * (`/skills/portfolio/:projectId`) : énoncé, rendu, évaluation, brouillons et ajout au profil.
+ * The mini projects (SPEC 14.2, the « Compétences » section of the navigation, after the card): the
+ * Portfolio (`/skills/portfolio`, projects grouped by status) and a project page
+ * (`/skills/portfolio/:projectId`): brief, submission, evaluation, drafts and profile addition.
  */
 export const projectsManifest: FeatureManifest = {
   id: "projects",

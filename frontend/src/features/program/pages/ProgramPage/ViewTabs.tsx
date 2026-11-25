@@ -10,7 +10,7 @@ interface ViewTabsProps {
   onChange: (view: ProgramViewId) => void;
 }
 
-/** Onglet voisin selon la touche (flèches avec retour au bout, Début, Fin) ; `null` pour toute autre. */
+/** Neighbouring tab for the key (arrows wrapping around, Home, End); `null` for any other. */
 function targetOf(key: string, from: number): ProgramViewId | null {
   const last = VIEWS.length - 1;
   if (key === "ArrowRight") return VIEWS[from === last ? 0 : from + 1] ?? null;
@@ -23,7 +23,7 @@ function targetOf(key: string, from: number): ProgramViewId | null {
 export const tabId = (view: ProgramViewId) => `program-tab-${view}`;
 export const panelId = (view: ProgramViewId) => `program-panel-${view}`;
 
-/** Les trois vues du programme : semaine, liste, avancement (flèches pour passer de l'une à l'autre). */
+/** The program's three views: week, list, progress (arrows to move between them). */
 export function ViewTabs({ active, onChange }: ViewTabsProps) {
   const refs = useRef<Partial<Record<ProgramViewId, HTMLButtonElement | null>>>({});
 

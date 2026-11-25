@@ -1,7 +1,7 @@
 import { t } from "@/shared/i18n/t";
 import type { ProfileEntryView } from "../viewTypes";
 
-/** Les limites du serveur (`ProfileEntryIn`) : une ligne vide y est une 422, elle est donc écartée ici. */
+/** The server limits (`ProfileEntryIn`): an empty line is a 422 there, so it is dropped here. */
 const NAME_MAX = 120;
 const DESCRIPTION_MAX = 600;
 const ACHIEVEMENTS_MAX = 4;
@@ -13,7 +13,7 @@ export interface EntryErrors {
   achievements?: string;
 }
 
-/** Les réalisations saisies une par ligne : coupées, sans les lignes vides ni faites d'espaces. */
+/** The achievements typed one per line: trimmed, without empty or blank-space lines. */
 export function achievementLines(text: string): string[] {
   return text
     .split(/\r?\n/)
@@ -21,7 +21,7 @@ export function achievementLines(text: string): string[] {
     .filter((line) => line !== "");
 }
 
-/** L'entrée nettoyée (nom et description coupés, lignes vides retirées) et les champs à corriger. */
+/** The cleaned entry (name and description trimmed, empty lines removed) and the fields to fix. */
 export function cleanEntry(
   name: string,
   description: string,

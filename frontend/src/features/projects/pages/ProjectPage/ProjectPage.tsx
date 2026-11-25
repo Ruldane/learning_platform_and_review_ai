@@ -11,9 +11,9 @@ import { BackLink } from "./BackLink";
 import { ProjectView } from "./ProjectView";
 
 /**
- * Un projet (`/skills/portfolio/:projectId`) : l'énoncé, le rendu et son suivi, l'évaluation,
- * puis, une fois validé, les brouillons et l'ajout au profil maître. `createSocket` ne sert
- * qu'aux tests.
+ * A project (`/skills/portfolio/:projectId`): brief, submission and follow-up, evaluation,
+ * then, once validated, the drafts and profile addition. `createSocket` serves only
+ * for the tests.
  */
 export function ProjectPage({ createSocket }: { createSocket?: SocketFactory }) {
   const { projectId = "" } = useParams();

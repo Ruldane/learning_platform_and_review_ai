@@ -6,7 +6,7 @@ interface RadarOffersProps {
   offers: RadarOfferView[];
 }
 
-/** Les offres lues par le relevé, avec leur score écrit ; à partir de 70, le libellé « Bon match ». */
+/** Offers read by the sweep, with their written score; from 70, the « Bon match » label. */
 export function RadarOffers({ offers }: RadarOffersProps) {
   return (
     <section aria-labelledby="radar-offers" className="flex flex-col gap-2">
@@ -18,7 +18,7 @@ export function RadarOffers({ offers }: RadarOffersProps) {
       ) : (
         <ul aria-label={t("radar.offers.label")} className="flex flex-col gap-2">
           {offers.map((offer, index) => (
-            // Deux offres peuvent partager un lien : la position départage.
+            // Two offers may share a link: the position decides.
             <OfferRow key={`${offer.url}#${index}`} offer={offer} />
           ))}
         </ul>

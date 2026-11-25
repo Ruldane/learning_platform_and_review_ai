@@ -7,12 +7,12 @@ import { ScreenshotList } from "./ScreenshotList";
 interface ScreenshotPickerProps {
   files: File[];
   disabled: boolean;
-  /** Le refus du serveur pour les captures (format que ses octets ne confirment pas, trop de captures). */
+  /** The server's refusal of the screenshots (format its bytes do not confirm, too many). */
   error?: string;
   onChange: (files: File[]) => void;
 }
 
-/** Choisir jusqu'à 5 captures (PNG, JPEG, WebP, 5 Mo) : une capture refusée n'est jamais gardée. */
+/** Pick up to 5 screenshots (PNG, JPEG, WebP, 5 MB): a refused screenshot is never kept. */
 export function ScreenshotPicker({ files, disabled, error, onChange }: ScreenshotPickerProps) {
   const id = useId();
   const [problems, setProblems] = useState<string[]>([]);

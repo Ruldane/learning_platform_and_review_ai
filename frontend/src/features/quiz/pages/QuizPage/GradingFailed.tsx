@@ -3,17 +3,17 @@ import { Button } from "@/shared/ui/button";
 import { InlineError } from "@/shared/ui/states/InlineError";
 
 interface GradingFailedProps {
-  /** Les réponses sont gardées : on peut les renvoyer. `false` après un rechargement de la page. */
+  /** The answers are kept: they can be resent. `false` after a page reload. */
   canResend: boolean;
-  /** Message d'un renvoi refusé. */
+  /** Message for a refused resend. */
   error: string | null;
-  /** Un renvoi est en route : le bouton est coupé. */
+  /** A resend is in flight: the button is off. */
   sending: boolean;
   onResend: () => void;
   onBack: () => void;
 }
 
-/** La correction a échoué : renvoyer les mêmes réponses, ou revenir au quiz. */
+/** Grading failed: resend the same answers, or go back to the quiz. */
 export function GradingFailed(props: GradingFailedProps) {
   const { canResend, error, sending, onResend, onBack } = props;
   return (

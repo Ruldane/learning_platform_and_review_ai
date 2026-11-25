@@ -10,9 +10,9 @@ import { useLatestProgram, useQuizList } from "../../hooks/useQuizList";
 import { useStartQuiz } from "../../hooks/useStartQuiz";
 
 /**
- * Quiz (`/study/quiz`) : les modules du programme le plus récent, leur meilleur score et
- * l'action du quiz (préparer, passer, refaire). « Préparer » ouvre la page du quiz, qui attend la
- * fin de la préparation. `pollMs` (relecture tant qu'un quiz se prépare) ne sert qu'aux tests.
+ * Quiz (`/study/quiz`): the modules of the most recent program, their best score and
+ * the quiz action (prepare, take, redo). « Préparer » opens the quiz page, which waits for the
+ * end of the preparation. `pollMs` (re-read while a quiz is being prepared) is for tests only.
  */
 export function QuizIndexPage({ pollMs }: { pollMs?: number }) {
   const navigate = useNavigate();

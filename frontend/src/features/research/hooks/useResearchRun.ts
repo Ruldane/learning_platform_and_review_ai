@@ -9,8 +9,8 @@ import type { ResearchBenchInput } from "../components/viewTypes";
 export const SESSION_PARAM = "session";
 
 /**
- * L'essai courant. Son identifiant vit dans l'URL (`?session=<id>`) : recharger la page rejoint la
- * session (le flux rejoue les événements depuis le début). `createSocket` ne sert qu'aux tests.
+ * The current test. Its identifier lives in the URL (`?session=<id>`): a reload rejoins the
+ * session (the stream replays the events from the start). `createSocket` serves only the tests.
  */
 export function useResearchRun(createSocket?: SocketFactory) {
   const launch = useLaunchSource();

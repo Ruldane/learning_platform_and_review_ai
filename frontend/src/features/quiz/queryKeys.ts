@@ -1,4 +1,4 @@
-/** Clés TanStack Query de la feature : des identifiants seulement, jamais un énoncé ni une réponse. */
+/** TanStack Query keys for the feature: identifiers only, never a prompt or an answer. */
 export const quizKeys = {
   programs: ["quiz", "programs"],
   list: (programId: string) => ["quiz", "list", programId] as const,

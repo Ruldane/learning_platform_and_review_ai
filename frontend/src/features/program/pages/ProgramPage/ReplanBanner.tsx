@@ -5,9 +5,9 @@ import { buttonVariants } from "@/shared/ui/button";
 import { useWaitingReplan } from "../../hooks/useWaitingReplan";
 
 /**
- * Bandeau d'un programme validé dont une replanification attend la réponse de January : il mène à
- * la proposition. Rien ne s'affiche tant que la lecture n'a pas abouti, ni en cas d'échec : le
- * bouton « Replanifier » de l'en-tête reste l'accès normal.
+ * Banner for a validated program whose replan awaits January's answer: it leads to
+ * the proposal. Nothing shows until the read has succeeded, nor on failure: the
+ * « Replanifier » button in the header remains the normal way in.
  */
 export function ReplanBanner({ programId, enabled }: { programId: string; enabled: boolean }) {
   const waiting = useWaitingReplan(programId, enabled);

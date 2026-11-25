@@ -3,7 +3,7 @@ import { fullDateTime } from "@/shared/lib/relativeTime";
 import { failureReason } from "../../errors";
 import type { RunView } from "../../toView";
 
-/** Un relevé en échec : il dit pourquoi en clair (le code du serveur, jamais un message brut). */
+/** A failed sweep: it says why in plain words (the server code, never a raw message). */
 export function FailedRun({ run }: { run: RunView }) {
   return (
     <section

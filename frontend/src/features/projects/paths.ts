@@ -1,9 +1,9 @@
-/** Les adresses de l'application que le Portfolio et la page d'un projet connaissent. */
+/** The app addresses that the Portfolio and a project page know about. */
 export const PORTFOLIO_PATH = "/skills/portfolio";
-/** La carte des compétences (le manifeste de `skills` : `competences`). */
+/** The skills map (the `skills` manifest: `competences`). */
 export const SKILLS_MAP_PATH = "/skills";
-/** Le profil maître (le manifeste de `cv` : `career/profile`). */
+/** The master profile (the `cv` manifest: `career/profile`). */
 export const PROFILE_PATH = "/career/profile";
 
-/** L'adresse de la page d'un projet. */
+/** The address of a project page. */
 export const projectPath = (projectId: string) => `${PORTFOLIO_PATH}/${projectId}`;

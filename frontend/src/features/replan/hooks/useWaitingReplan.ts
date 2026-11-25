@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchWaitingReplan } from "../api";
 import { replanKeys } from "../queryKeys";
 
-/** La replanification de ce programme qui attend une réponse : l'écran la rejoint après un rechargement. */
+/** This program's replan waiting for an answer: the screen joins it after a reload. */
 export function useWaitingReplan(programId: string) {
   return useQuery({
     queryKey: replanKeys.waiting(programId),

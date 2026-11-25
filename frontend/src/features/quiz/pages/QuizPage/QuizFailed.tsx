@@ -8,13 +8,13 @@ import { startQuiz } from "../../api";
 
 interface QuizFailedProps {
   moduleId: string;
-  /** La raison donnée par le back, quand il en donne une. */
+  /** The reason given by the back end, when it gives one. */
   reason: string | null;
-  /** La préparation est relancée : relire le quiz. */
+  /** The preparation is retried: re-read the quiz. */
   onRelaunched: () => void;
 }
 
-/** La préparation du quiz a échoué : « Relancer la préparation » (le back relance le même quiz). */
+/** Quiz preparation failed: « Relancer la préparation » (the back end retries the same quiz). */
 export function QuizFailed({ moduleId, reason, onRelaunched }: QuizFailedProps) {
   const launch = useLaunchSource();
   const relaunch = useMutation({

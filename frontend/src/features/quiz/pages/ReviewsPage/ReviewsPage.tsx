@@ -5,7 +5,7 @@ import { LoadingState } from "@/shared/ui/states/LoadingState";
 import { useDueCards } from "../../hooks/useReviews";
 import { ReviewSession } from "./ReviewSession";
 
-/** Révisions (`/study/reviews`) : la file du jour (30 fiches, 15 minutes), une fiche à la fois. */
+/** Reviews (`/study/reviews`): today's queue (30 cards, 15 minutes), one card at a time. */
 export function ReviewsPage() {
   const due = useDueCards();
   return (

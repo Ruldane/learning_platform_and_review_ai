@@ -12,18 +12,18 @@ import { AttemptHistory } from "./AttemptHistory";
 interface QuizEntryProps {
   attempts: AttemptSummaryOut[];
   questions: QuestionView[];
-  /** Jour du nouvel essai encore à venir : il remplace le formulaire ; `null` sinon. */
+  /** Day of the new attempt still to come: it replaces the form; `null` otherwise. */
   retryOn: string | null;
-  /** Message d'un envoi refusé. */
+  /** Message for a refused send. */
   error: string | null;
   pending: boolean;
-  /** Change à chaque retour au formulaire : il repart vide. */
+  /** Changes on each return to the form: it starts empty. */
   round: number;
   onSubmit: (drafts: AnswerDraft[], elapsedMs?: number, timings?: ResponseTiming[]) => void;
   renderGhost?: (live?: LiveQuizPractice) => ReactNode;
 }
 
-/** Avant l'envoi : les essais précédents, puis le formulaire, ou la date du nouvel essai (F9). */
+/** Before sending: previous attempts, then the form, or the date of the new attempt (F9). */
 export function QuizEntry(props: QuizEntryProps) {
   const { attempts, questions, retryOn, error, pending, round, onSubmit, renderGhost } = props;
   return (

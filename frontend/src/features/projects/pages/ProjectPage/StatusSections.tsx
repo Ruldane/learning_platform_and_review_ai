@@ -16,9 +16,9 @@ interface StatusSectionsProps {
 }
 
 /**
- * Ce que le statut du projet demande ensuite : rendre (`todo`), reprendre à la lumière de
- * l'évaluation (`to_redo`), attendre et suivre l'évaluation (`reviewing`), ou la suite d'un projet
- * validé. Un énoncé en préparation ou en échec n'a rien de plus à montrer ici.
+ * What the project's status asks next: submit (`todo`), resume in light of the
+ * evaluation (`to_redo`), wait and follow the evaluation (`reviewing`), or the next step of a
+ * validated project. A brief in preparation or failed has nothing more to show here.
  */
 export function StatusSections({ project, run, submitter, regeneration }: StatusSectionsProps) {
   const criteria = project.brief?.criteria ?? [];

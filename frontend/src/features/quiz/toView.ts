@@ -14,26 +14,26 @@ import type {
   QuizSummaryOut,
 } from "./types";
 
-/** `AAAA-MM-JJ` d'un jour que le back peut rendre avec une heure ; `null` si ce n'est pas un jour. */
+/** `YYYY-MM-DD` of a day the back end may return with a time; `null` if it is not a day. */
 export function dayOf(value: string | null | undefined): string | null {
   const day = typeof value === "string" ? value.slice(0, 10) : "";
   return /^\d{4}-\d{2}-\d{2}$/.test(day) ? day : null;
 }
 
-/** Seuil de réussite d'un quiz (le back décide ; sert seulement à retrouver la date d'un nouvel essai). */
+/** Pass mark of a quiz (the back end decides; only used to find a new attempt's date). */
 const PASS_PERCENT = 80;
-/** Délai du nouvel essai après un échec (F9) : J+2. */
+/** Wait before the new attempt after a failure (F9): two days. */
 const RETRY_DAYS = 2;
 
-/** Le jour, s'il est encore à venir (après `today`) ; sinon `null` : une date passée ne se dit plus. */
+/** The day, if still to come (after `today`); otherwise `null`: a past date is no longer shown. */
 export function upcoming(day: string | null, today: string = localDay()): string | null {
   return day !== null && day > today ? day : null;
 }
 
 /**
- * Le nouvel essai d'un quiz, déduit de ses tentatives (le contrat de `QuizOut` ne le donne pas) :
- * la dernière tentative notée sous 80 % ouvre un nouvel essai deux jours après son jour local.
- * `null` quand rien n'attend ou que la date est passée ; le 409 `retry_too_soon` reste la garde.
+ * A quiz's new attempt, worked out from its attempts (the `QuizOut` contract does not give it):
+ * the latest graded attempt below 80% opens a new attempt two days after its local day.
+ * `null` when nothing is pending or the date has passed; the 409 `retry_too_soon` stays the guard.
  */
 export function pendingRetryOn(
   attempts: readonly AttemptSummaryOut[],
@@ -47,7 +47,7 @@ export function pendingRetryOn(
   return upcoming(addDays(localDay(new Date(last.created_at)), RETRY_DAYS), today);
 }
 
-/** Un score en pourcentage entier de 0 à 100 (le back en rend déjà un ; on borne par prudence). */
+/** A score as a whole percentage, 0 to 100 (already sent by the back end; clamped to be safe). */
 export function percent(score: number): number {
   return Math.min(100, Math.max(0, Math.round(score)));
 }
@@ -63,7 +63,7 @@ export function toQuestionViews(questions: QuestionOut[]): QuestionView[] {
   }));
 }
 
-/** Une ligne de la liste ; la date du nouvel essai n'est gardée que si elle est à venir. */
+/** A list row; the new attempt's date is kept only if it is still to come. */
 export function toQuizSummaryView(item: QuizSummaryOut, today?: string): QuizSummaryView {
   return {
     moduleId: item.module_id,
@@ -77,9 +77,9 @@ export function toQuizSummaryView(item: QuizSummaryOut, today?: string): QuizSum
 }
 
 /**
- * Le résultat d'une tentative : chaque `ResultOut` est joint à l'énoncé de sa question (le back ne
- * rend que `question_id`), tel qu'il s'affichait à l'envoi (l'ordre change à chaque essai, F27).
- * La date du nouvel essai n'est gardée que si elle est à venir.
+ * An attempt's result: each `ResultOut` is joined to its question's prompt (the back end only
+ * returns `question_id`), as shown at the send (the order changes each attempt, F27).
+ * The new attempt's date is kept only if it is still to come.
  */
 export function toAttemptResultView(
   attempt: AttemptOut,

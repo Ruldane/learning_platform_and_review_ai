@@ -1,4 +1,4 @@
-/** Clés TanStack Query des projets : des identifiants seulement, jamais un lien ni une description. */
+/** TanStack Query keys for projects: identifiers only, never a link or a description. */
 export const projectKeys = {
   all: ["projects"] as const,
   list: ["projects", "list"] as const,

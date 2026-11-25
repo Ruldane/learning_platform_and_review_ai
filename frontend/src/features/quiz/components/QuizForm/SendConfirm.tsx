@@ -2,14 +2,14 @@ import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 
 interface SendConfirmProps {
-  /** Les numéros des questions restées sans réponse. */
+  /** The numbers of the questions left unanswered. */
   ranks: number[];
   disabled: boolean;
   onSend: () => void;
   onBack: () => void;
 }
 
-/** La confirmation dans la carte quand il reste des questions vides (jamais `window.confirm`). */
+/** The confirmation in the card when some questions are empty (never `window.confirm`). */
 export function SendConfirm({ ranks, disabled, onSend, onBack }: SendConfirmProps) {
   return (
     <div className="flex flex-col gap-2 rounded-xl border border-amber-700/40 bg-amber-50 p-3 text-amber-900">

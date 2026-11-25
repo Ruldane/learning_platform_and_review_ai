@@ -4,7 +4,7 @@ interface BriefListProps {
   ordered?: boolean;
 }
 
-/** Une section de l'énoncé qui est une liste ; rien n'est rendu quand elle est vide. */
+/** A brief section that is a list; nothing renders when it is empty. */
 export function BriefList({ title, items, ordered = false }: BriefListProps) {
   if (items.length === 0) return null;
   const List = ordered ? "ol" : "ul";

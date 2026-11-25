@@ -3,8 +3,8 @@ import { ProgramIndexPage } from "./pages/ProgramIndexPage";
 import { ProgramPage } from "./pages/ProgramPage";
 
 /**
- * Apprendre, 3e entrée : le programme (semaine en calendrier, liste, avancement ; SPEC 3.4). La
- * route sans identifiant ouvre le plus récent ; le calendrier occupe toute la largeur de la coquille.
+ * Learn, 3rd entry: the program (week as calendar, list, progress; SPEC 3.4). The
+ * route without an id opens the most recent one; the calendar uses the full shell width.
  */
 export const programManifest: FeatureManifest = {
   id: "program",

@@ -10,7 +10,7 @@ interface Parsed {
   errors: { query?: string; urls?: string };
 }
 
-/** Rend l'adresse http(s) normalisée, ou `null` (autre schéma, adresse illisible). */
+/** Returns the normalised http(s) address, or `null` (other scheme, unreadable address). */
 function httpUrl(raw: string): string | null {
   try {
     const url = new URL(raw);
@@ -20,7 +20,7 @@ function httpUrl(raw: string): string | null {
   }
 }
 
-/** Valide la saisie : requête de 2 à 300 caractères, 5 adresses http(s) au plus (doublons fusionnés). */
+/** Validates input: a 2 to 300 character query, at most 5 http(s) addresses, duplicates merged. */
 export function parseBench(rawQuery: string, rawUrls: string): Parsed {
   const query = rawQuery.trim();
   const errors: Parsed["errors"] = {};

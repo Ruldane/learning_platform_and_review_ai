@@ -5,9 +5,9 @@ import { projectKeys } from "../queryKeys";
 import type { DraftKind } from "../types";
 
 /**
- * Enregistrer un brouillon retouché (`PATCH /projects/{id}/drafts/{kind}`) : le serveur rend le
- * projet avec ses brouillons recontrôlés (un brouillon à vérifier modifié est relu), la page le
- * pose tel quel. `savingKind` : le brouillon en cours d'enregistrement.
+ * Saves an edited draft (`PATCH /projects/{id}/drafts/{kind}`): the server returns the
+ * project with its drafts re-checked (an edited draft to verify is re-read); the page uses it.
+ * `savingKind`: the draft being saved.
  */
 export function useSaveDraft(projectId: string) {
   const client = useQueryClient();
@@ -22,7 +22,7 @@ export function useSaveDraft(projectId: string) {
   return {
     save: (kind: DraftKind, content: string) => mutate({ kind, content }),
     savingKind: mutation.isPending ? mutation.variables.kind : null,
-    /** Le refus ou la panne du dernier enregistrement, et le brouillon qu'il concerne. */
+    /** The refusal or failure of the last save, and the draft it concerns. */
     error: mutation.isError ? readableMessage(mutation.error) : null,
     errorKind: mutation.isError ? mutation.variables.kind : null,
   };

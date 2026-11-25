@@ -6,7 +6,7 @@ import { RadarSummary } from "../../components/RadarSummary";
 import { SkillRanking } from "../../components/SkillRanking";
 import type { RunView } from "../../toView";
 
-/** Le résultat d'un relevé fini : ce qui a été lu, le classement, les alertes et les offres. */
+/** A finished sweep's result: what was read, the ranking, the alerts and the offers. */
 export function RunResult({ run }: { run: RunView }) {
   return (
     <div className="flex flex-col gap-4">

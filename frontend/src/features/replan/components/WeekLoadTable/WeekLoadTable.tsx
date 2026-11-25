@@ -6,7 +6,7 @@ interface WeekLoadTableProps {
   loads: WeekLoadView[];
 }
 
-/** L'état d'une semaine face à son plafond, en toutes lettres (jamais par la couleur seule). */
+/** A week's state against its cap, spelled out (never by colour alone). */
 function stateOf(load: WeekLoadView) {
   if (load.after > load.cap) return t("replan.loads.over");
   return load.after === load.cap ? t("replan.loads.atCap") : t("replan.loads.under");
@@ -15,8 +15,8 @@ function stateOf(load: WeekLoadView) {
 const HEAD = "px-3 py-1.5 font-medium";
 
 /**
- * La charge de chaque semaine avant et après la proposition, face à son plafond (85 % du budget).
- * Les durées sont écrites en heures et minutes ; l'état de la semaine est dit en mots.
+ * Each week's load before and after the proposal, against its cap (85% of the budget).
+ * Durations are written in hours and minutes; the week's state is stated in words.
  */
 export function WeekLoadTable({ loads }: WeekLoadTableProps) {
   if (loads.length === 0) {

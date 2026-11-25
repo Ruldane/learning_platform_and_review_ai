@@ -6,7 +6,7 @@ interface ProjectBriefViewProps {
   brief: BriefDataView;
 }
 
-/** L'énoncé d'un projet : objectif, contexte, contraintes, critères, rendu attendu et durée. */
+/** A project's brief: goal, context, constraints, criteria, expected deliverable and duration. */
 export function ProjectBriefView({ brief }: ProjectBriefViewProps) {
   return (
     <article className="flex flex-col gap-4 rounded-xl border bg-card p-4 text-sm">

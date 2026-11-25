@@ -1,7 +1,7 @@
 import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 
-/** La correction prend plus de temps que prévu (90 relectures) : proposer de relire la note. */
+/** Grading takes longer than expected (90 re-reads): offer to re-read the grade. */
 export function GradingLate({ onKeepWaiting }: { onKeepWaiting: () => void }) {
   return (
     <div

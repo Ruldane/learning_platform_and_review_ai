@@ -9,8 +9,8 @@ import { usePrograms } from "../../hooks/usePrograms";
 import { toProgramSummaryView } from "../../toView";
 
 /**
- * Programmes (`/learn/programs`) : la liste pour choisir dès qu'il y en a plusieurs (ou avec
- * `?list`) ; un seul programme s'ouvre directement ; sans programme, renvoi au Conseil.
+ * Programs (`/learn/programs`): the list to choose from once there are several (or with
+ * `?list`); a single program opens directly; without one, a link back to the Council.
  */
 export function ProgramIndexPage() {
   const programs = usePrograms();

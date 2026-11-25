@@ -8,14 +8,14 @@ import type { RadarLatestOut, RadarRunOut, RadarRunSummary } from "./types";
 
 export type RunStatus = RadarRunOut["status"];
 
-/** Un relevé tel que la page le lit : le décompte, le classement, les alertes et les offres. */
+/** A sweep as the page reads it: the count, the ranking, the alerts and the offers. */
 export interface RunView {
   id: string;
   status: RunStatus;
   trigger: "schedule" | "manual";
   createdAt: string;
   finishedAt: string | null;
-  /** Le code d'un relevé en échec (`failed`), jamais un message. */
+  /** The code of a failed sweep (`failed`), never a message. */
   errorCode: string | null;
   summary: RunSummaryView;
   ranking: SkillTrendView[];
@@ -23,7 +23,7 @@ export interface RunView {
   offers: RadarOfferView[];
 }
 
-/** Une ligne de l'historique. */
+/** A history row. */
 export interface HistoryItemView {
   id: string;
   role: string;
@@ -33,18 +33,18 @@ export interface HistoryItemView {
   createdAt: string;
   errorCode: string | null;
   readCount: number;
-  /** Pages lues qui n'étaient pas des offres : « offres lues » = `readCount - notPostings`. */
+  /** Pages read that were not offers: « offres lues » = `readCount - notPostings`. */
   notPostings: number;
   blockedCount: number;
   analyzed: number;
   lowSample: boolean;
 }
 
-/** Ce que `GET /radar/latest` apprend à la page : les valeurs proposées et les relevés repérés. */
+/** What `GET /radar/latest` tells the page: the suggested values and the sweeps spotted. */
 export interface LatestView {
   defaults: { role: string; zone: string };
   runningId: string | null;
-  /** Le dernier relevé fini (réussi ou en échec), déjà complet : l'accueil du radar le montre. */
+  /** The latest finished sweep (succeeded or failed), already complete: the radar home shows it. */
   latest: RunView | null;
 }
 

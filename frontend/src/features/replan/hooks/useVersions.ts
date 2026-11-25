@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchVersions } from "../api";
 import { replanKeys } from "../queryKeys";
 
-/** L'historique du plan (`GET /programs/{id}/versions`), relu à chaque proposition et à chaque fin. */
+/** The plan's history (`GET /programs/{id}/versions`), re-read on each proposal and at each end. */
 export function useVersions(programId: string) {
   return useQuery({
     queryKey: replanKeys.versions(programId),

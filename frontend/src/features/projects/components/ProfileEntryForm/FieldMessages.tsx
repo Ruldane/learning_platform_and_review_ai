@@ -1,11 +1,11 @@
 interface FieldMessagesProps {
-  /** L'identifiant du champ : `${id}-hint` et `${id}-error` sont ceux de `aria-describedby`. */
+  /** The field's id: `${id}-hint` and `${id}-error` are the `aria-describedby` ones. */
   id: string;
   hint: string | undefined;
   error: string | undefined;
 }
 
-/** L'indication et l'erreur d'un champ ; l'erreur est annoncée (`role="alert"`). */
+/** A field's hint and error; the error is announced (`role="alert"`). */
 export function FieldMessages({ id, hint, error }: FieldMessagesProps) {
   return (
     <>

@@ -1,7 +1,7 @@
 import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 
-/** La pastille de la touche, décorative : `aria-keyshortcuts` la dit déjà aux lecteurs d'écran. */
+/** The key badge, decorative: `aria-keyshortcuts` already tells screen readers. */
 const KEY_CLASS = "ml-1.5 rounded border border-current/30 px-1 font-sans text-xs";
 
 interface CardActionsProps {
@@ -11,7 +11,7 @@ interface CardActionsProps {
   onResult: (result: "ok" | "fail") => void;
 }
 
-/** « Voir la réponse » (Espace) avant le verso, « Raté » (1) et « Su » (2) après. */
+/** « Voir la réponse » (Space) before the back, « Raté » (1) and « Su » (2) after. */
 export function CardActions({ flipped, busy, onReveal, onResult }: CardActionsProps) {
   if (!flipped) {
     return (

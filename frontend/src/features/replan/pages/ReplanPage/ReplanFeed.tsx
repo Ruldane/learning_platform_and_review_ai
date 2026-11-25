@@ -5,10 +5,10 @@ import { InlineError } from "@/shared/ui/states/InlineError";
 import type { ReplanRun } from "../../hooks/useReplanRun";
 
 /**
- * Le fil de la replanification : bulles du Stratège et cartes de question (`replan_option`,
- * `accept_replan`). Une réponse part par la reprise de la session ; le champ de message reste
- * ouvert tant que la session vit. Sur `accept_replan`, le bouton cliqué décide même avec une note
- * (`{ action, note }`) ; « Répondre » seul demande une autre proposition.
+ * The replan thread: Strategist bubbles and question cards (`replan_option`,
+ * `accept_replan`). An answer goes out by resuming the session; the message field stays
+ * open while the session lives. On `accept_replan`, the button clicked decides even with a note
+ * (`{ action, note }`); « Répondre » alone asks for another proposal.
  */
 const withNote = (action: string, answers: Record<string, string>) => ({
   action,

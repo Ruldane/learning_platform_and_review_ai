@@ -4,9 +4,9 @@ import { radarKeys } from "../queryKeys";
 import { toHistoryItem, toLatestView } from "../toView";
 
 /**
- * Ce que la page du radar lit à l'ouverture : `GET /radar/latest` (valeurs proposées, relevé en
- * cours, dernier relevé fini) et `GET /radar/runs` (l'historique). Les deux sont relus à la fin
- * d'un relevé et après un lancement (`radarKeys.all`).
+ * What the radar page reads on opening: `GET /radar/latest` (suggested values, sweep in
+ * progress, latest finished sweep) and `GET /radar/runs` (the history). Both are re-read at the end
+ * of a sweep and after a launch (`radarKeys.all`).
  */
 export function useRadar() {
   const latest = useQuery({

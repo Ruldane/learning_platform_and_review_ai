@@ -21,19 +21,19 @@ export type {
   WeekView,
 } from "./components/viewTypes";
 
-/** Une leçon de module, telle que la liste du programme la montre. */
+/** A module lesson, as the program list shows it. */
 export interface ModuleLessonView {
   moduleId: string;
   moduleTitle: string;
   weekRank: number;
-  /** `null` : la leçon du module n'existe pas encore. */
+  /** `null`: the module's lesson does not exist yet. */
   lessonId: string | null;
   status: LessonStatus | null;
-  /** Toutes les tâches du module sont faites (au moins une) : leçon terminée. */
+  /** All the module's tasks are done (at least one): lesson complete. */
   completed: boolean;
 }
 
-/** Budget de disponibilité d'un programme, en minutes par jour. */
+/** A program's availability budget, in minutes per day. */
 export interface DayBudget {
   weekday: number;
   weekend: number;

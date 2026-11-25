@@ -4,15 +4,15 @@ import { fetchProject } from "../api";
 import { projectKeys } from "../queryKeys";
 import { toDetailView } from "../toView";
 
-/** Tant qu'un énoncé s'écrit ou qu'un rendu s'évalue, la page relit aussi le projet toute seule : un événement perdu ne bloque rien. */
+/** While a brief or evaluation runs, the page re-reads the project too, so a lost event is fine. */
 const POLL_MS = 5_000;
 
 const isMissing = (error: unknown) => error instanceof ApiError && error.status === 404;
 
 /**
- * Un projet (`GET /projects/{id}`). Son statut suit la session du serveur : la page relit le projet
- * à chaque changement d'état de la session (`useProjectRun`) et, en repli, toutes les 5 s tant qu'il
- * est `brief_pending` ou `reviewing`.
+ * A project (`GET /projects/{id}`). Its status follows the server session: the page re-reads
+ * on each session state change (`useProjectRun`) and, as a fallback, every 5 s while it is
+ * `brief_pending` or `reviewing`.
  */
 export function useProject(projectId: string) {
   const query = useQuery({

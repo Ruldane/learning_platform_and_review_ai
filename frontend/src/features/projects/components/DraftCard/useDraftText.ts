@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { t } from "@/shared/i18n/t";
 
-/** Les bornes du texte d'un brouillon côté serveur (`DraftPatchIn.content` : 1 à 3 000 caractères). */
+/** Server-side bounds of a draft's text (`DraftPatchIn.content`: 1 to 3,000 characters). */
 const DRAFT_MAX = 3000;
 
 function problem(value: string): string | null {
@@ -12,9 +12,9 @@ function problem(value: string): string | null {
 }
 
 /**
- * Le texte retouché d'un brouillon : il repart du texte du serveur quand celui-ci change. Un texte
- * vide ou trop long est dit sur la carte dès la première tentative d'enregistrement (`tryOk`), sans
- * rien envoyer ; `error` est le refus ou la panne du serveur pour ce brouillon.
+ * A draft's edited text: it restarts from the server's text when that changes. An empty
+ * or too-long text is reported on the card at the first save attempt (`tryOk`), without
+ * sending anything; `error` is the server's refusal or failure for this draft.
  */
 export function useDraftText(content: string, error: string | null) {
   const [value, setValue] = useState(content);
@@ -29,7 +29,7 @@ export function useDraftText(content: string, error: string | null) {
     value,
     setValue,
     message: (tried ? invalid : null) ?? error,
-    /** À l'enregistrement : vrai si le texte peut partir ; sinon le message s'affiche. */
+    /** On save: true if the text may go out; otherwise the message is shown. */
     tryOk: () => {
       setTried(true);
       return invalid === null;

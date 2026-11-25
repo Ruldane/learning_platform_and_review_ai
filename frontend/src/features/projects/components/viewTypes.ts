@@ -1,7 +1,7 @@
 /**
- * Types de vue des mini projets : une copie réduite de `ProjectSummary`, `ProjectOut`,
- * `ProjectBriefOut`, `EvaluationOut`, `CriterionOut` et `DraftOut` (`contracts/openapi.json`) avec
- * les seuls champs que les composants lisent. Les pages (8.15) convertissent les réponses.
+ * View types for the mini projects: a reduced copy of `ProjectSummary`, `ProjectOut`,
+ * `ProjectBriefOut`, `EvaluationOut`, `CriterionOut` and `DraftOut` (`contracts/openapi.json`) with
+ * only the fields the components read. The pages (8.15) convert the responses.
  */
 
 export const PROJECT_STATUSES = [
@@ -15,21 +15,21 @@ export const PROJECT_STATUSES = [
 
 export type ProjectStatusView = (typeof PROJECT_STATUSES)[number];
 
-/** `ProjectSummary` : une carte du Portfolio. */
+/** `ProjectSummary`: a Portfolio card. */
 export interface ProjectCardView {
   id: string;
   title: string;
   status: ProjectStatusView;
-  /** Heures estimées par l'énoncé ; `null` tant qu'il n'est pas écrit. */
+  /** Estimated hours from the brief; `null` until it is written. */
   hours: number | null;
   skills: string[];
-  /** L'adresse de la page du projet ; sans elle, le titre n'est pas un lien. */
+  /** The project page's address; without it, the title is not a link. */
   href?: string;
 }
 
 export type DeliverableView = "repo" | "description" | "either";
 
-/** `ProjectBriefOut` : l'énoncé écrit par le Praticien. */
+/** `ProjectBriefOut`: the brief written by the Practitioner. */
 export interface BriefDataView {
   title: string;
   objective: string;
@@ -40,7 +40,7 @@ export interface BriefDataView {
   hours: number;
 }
 
-/** `CriterionOut` : le résultat d'un critère. `index` compte à partir de 1. */
+/** `CriterionOut`: a criterion's result. `index` counts from 1. */
 export interface CriterionResultView {
   index: number;
   met: boolean;
@@ -49,18 +49,18 @@ export interface CriterionResultView {
 
 export type RepoStatusView = "read" | "unreadable" | "none";
 
-/** `EvaluationOut` : la dernière évaluation ; le verdict est calculé par le code. */
+/** `EvaluationOut`: the latest evaluation; the verdict is computed by the code. */
 export interface EvaluationDataView {
   verdict: "validated" | "to_redo";
   feedback: string;
   repoStatus: RepoStatusView;
-  /** Les résultats du Praticien : chacun se rattache à un critère de l'énoncé par son `index` (à partir de 1), jamais par sa place. */
+  /** The Practitioner's results: each links to a brief criterion by its `index`, not by place. */
   results: CriterionResultView[];
-  /** Le dernier rendu comportait des captures (jamais lues par le Praticien) : le contrat n'a pas ce champ, la page le tire du rendu. */
+  /** The last submission had screenshots, never read by the Practitioner; the page derives it. */
   hasScreenshots: boolean;
 }
 
-/** Ce que le formulaire de rendu remet : au moins un lien ou une description. */
+/** What the submission form sends: at least one link or a description. */
 export interface SubmissionView {
   repoUrl: string | null;
   description: string | null;
@@ -88,7 +88,7 @@ export interface GithubClaimForm {
 
 export type DraftKindView = "cv_line" | "profile_entry" | "linkedin_post" | "readme_plan";
 
-/** `DraftOut` : un brouillon au nom de January. `flags` : les termes que son profil et son rendu ne disent pas. */
+/** `DraftOut`: a draft in January's name. `flags`: terms its profile and submission do not back. */
 export interface DraftView {
   kind: DraftKindView;
   content: string;
@@ -97,14 +97,14 @@ export interface DraftView {
   edited: boolean;
 }
 
-/** `ProfileEntryIn` : l'entrée de projet proposée pour le profil maître. */
+/** `ProfileEntryIn`: the project entry proposed for the master profile. */
 export interface ProfileEntryView {
   name: string;
   description: string;
   achievements: string[];
 }
 
-/** Les champs du rendu que le serveur refuse (422), chacun avec son message ; jamais une valeur. */
+/** The submission fields the server refuses (422), each with its message; never a value. */
 export interface SubmissionRefusalView {
   missing?: string;
   repoUrl?: string;

@@ -8,9 +8,9 @@ import { replanKeys } from "../queryKeys";
 const OVER = ["completed", "failed", "cancelled", "expired"] as const;
 
 /**
- * Suit une session de replanification : le flux, les actions par REST, et les relectures qui vont
- * avec. L'historique du plan est relu à chaque `artifact.ready` (proposition prête) et à chaque
- * changement de statut ; à la fin de la session, le programme l'est aussi (nouvelle version).
+ * Follows a replan session: the stream, the actions over REST, and the re-reads that go
+ * with them. The plan's history is re-read on each `artifact.ready` (proposal ready) and on each
+ * status change; at the end of the session, the program is re-read too (new version).
  */
 export function useReplanRun(sessionId: string, programId: string, createSocket?: SocketFactory) {
   const client = useQueryClient();

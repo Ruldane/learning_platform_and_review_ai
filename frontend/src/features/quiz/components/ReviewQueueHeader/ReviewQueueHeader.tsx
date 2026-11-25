@@ -4,7 +4,7 @@ interface ReviewQueueHeaderProps {
   /** Fiches encore dues. */
   remaining: number;
   reviewedToday: number;
-  /** Plafond du jour : 30 fiches, soit 15 minutes. */
+  /** Daily cap: 30 cards, i.e. 15 minutes. */
   dailyCards: number;
 }
 
@@ -13,7 +13,7 @@ function remainingText(count: number): string {
   return t(count === 1 ? "quiz.queue.remainingOne" : "quiz.queue.remainingMany", { count });
 }
 
-/** En-tête de la file du jour : fiches restantes, fiches revues sur le plafond, « 15 min max ». */
+/** Header of today's queue: cards left, cards reviewed against the cap, « 15 min max ». */
 export function ReviewQueueHeader({
   remaining,
   reviewedToday,

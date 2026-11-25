@@ -1,7 +1,7 @@
 import { CircleCheck, Loader2 } from "lucide-react";
 import { t } from "@/shared/i18n/t";
 
-/** Le bandeau d'un programme qui n'attend plus rien de January : validé, ou en cours de mise à jour. */
+/** Banner for a program that no longer waits on January: validated, or being updated. */
 export function StatusBanner({ kind }: { kind: "validated" | "working" }) {
   const validated = kind === "validated";
   const Icon = validated ? CircleCheck : Loader2;

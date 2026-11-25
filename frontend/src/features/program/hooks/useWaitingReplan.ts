@@ -3,9 +3,9 @@ import { listSessions } from "@/shared/realtime/sessionApi";
 import { programKeys } from "../queryKeys";
 
 /**
- * La replanification de ce programme qui attend une réponse (`GET /sessions?graph=replan&
- * status=waiting_user`, sujet = programme) : son identifiant, ou `null`. Lue seulement pour un
- * programme validé (un brouillon ne se replanifie pas).
+ * The replan of this program waiting for an answer (`GET /sessions?graph=replan&
+ * status=waiting_user`, subject = program): its identifier, or `null`. Read only for a
+ * validated program (a draft is never replanned).
  */
 export function useWaitingReplan(programId: string, enabled: boolean) {
   return useQuery({

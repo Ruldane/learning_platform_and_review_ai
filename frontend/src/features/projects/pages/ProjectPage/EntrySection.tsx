@@ -7,10 +7,10 @@ import { PROFILE_PATH } from "../../paths";
 import type { ProjectDetailView } from "../../toView";
 
 /**
- * L'ajout du projet au profil maître : l'entrée proposée (modifiable), son avertissement « à
- * vérifier », puis « Ajouter au profil maître » ; une fois ajoutée, « Ajouté au profil (version N) »
- * remplace le bouton (et l'avertissement, devenu sans objet, disparaît). Rien n'entre dans le profil sans ce clic. Le formulaire ne lit son entrée
- * qu'une fois : sa `key` la suit.
+ * Adds the project to the master profile: the proposed entry (editable), its « à vérifier » notice,
+ * then « Ajouter au profil maître »; once added, « Ajouté au profil (version N) » replaces the
+ * button (the notice, now moot, disappears). Nothing enters the profile without this click.
+ * The form reads its entry only once: its `key` follows it.
  */
 export function EntrySection({ project }: { project: ProjectDetailView }) {
   const { add, pending, failure } = useAddToProfile(project.id);

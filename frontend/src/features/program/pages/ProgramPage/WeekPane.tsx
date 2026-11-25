@@ -8,17 +8,17 @@ import { WeekPicker } from "./WeekPicker";
 interface WeekPaneProps {
   weeks: WeekView[];
   edits: TaskEdits;
-  /** Aujourd'hui, `AAAA-MM-JJ` : la semaine en cours s'ouvre la première. */
+  /** Today, `YYYY-MM-DD`: the current week opens first. */
   today: string;
 }
 
-/** Rang de la semaine qui porte `today`, sinon de la première. */
+/** Rank of the week containing `today`, otherwise of the first. */
 function initialRank(weeks: WeekView[], today: string): number {
   const current = weeks.find((week) => week.days.some((day) => day.date === today));
   return (current ?? weeks[0])?.rank ?? 1;
 }
 
-/** Vue « Semaine » : choix de la semaine, entête (charge face à 85 %) et calendrier déplaçable. */
+/** Week view: week picker, header (load against 85%) and drag-and-drop calendar. */
 export function WeekPane({ weeks, edits, today }: WeekPaneProps) {
   const [chosen, setChosen] = useState<number | null>(null);
   const rank = chosen ?? initialRank(weeks, today);

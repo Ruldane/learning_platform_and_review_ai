@@ -6,12 +6,12 @@ import type { WeekView } from "../../types";
 
 interface WeekPickerProps {
   weeks: WeekView[];
-  /** Rang de la semaine affichée. */
+  /** Rank of the displayed week. */
   rank: number;
   onChange: (rank: number) => void;
 }
 
-/** Choix de la semaine affichée : précédente, suivante, ou l'une quelconque par la liste. */
+/** Picks the displayed week: previous, next, or any one from the list. */
 export function WeekPicker({ weeks, rank, onChange }: WeekPickerProps) {
   const index = weeks.findIndex((week) => week.rank === rank);
   const go = (offset: number) => {

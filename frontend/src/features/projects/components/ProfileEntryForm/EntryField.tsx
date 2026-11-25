@@ -8,12 +8,12 @@ interface EntryFieldProps {
   disabled: boolean;
   error: string | undefined;
   hint?: string;
-  /** Plusieurs lignes : un `textarea` de cette hauteur ; sans, un champ d'une ligne. */
+  /** Several lines: a `textarea` of this height; without it, a single-line field. */
   rows?: number;
   onChange: (value: string) => void;
 }
 
-/** Un champ du formulaire d'entrée de profil : libellé, indication facultative et message d'erreur. */
+/** A field of the profile entry form: label, optional hint and error message. */
 export function EntryField({
   label,
   value,

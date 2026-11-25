@@ -18,8 +18,8 @@ const VERDICT_STYLE = {
 } as const;
 
 /**
- * Une question corrigée. Une erreur (même partielle) montre tout de suite la bonne réponse, son
- * explication et le retour ; une réponse juste les garde à un clic, dans un bloc replié.
+ * A graded question. An error (even partial) shows the right answer at once, with its
+ * explanation and feedback; a correct answer keeps them one click away, in a collapsed block.
  */
 export function QuestionResult({ result }: { result: QuestionResultView }) {
   const verdict = verdictOf(result.points);

@@ -4,30 +4,30 @@ export type VersionKind = "build" | "replan";
 export type VersionStatus =
   "accepted" | "pending" | "refused" | "superseded" | "empty" | "impossible";
 
-/** La charge d'une semaine avant et après la proposition, en minutes, sous son plafond. */
+/** A week's load before and after the proposal, in minutes, under its cap. */
 export interface WeekLoadView {
   rank: number;
-  /** Lundi de la semaine, `AAAA-MM-JJ`. */
+  /** Monday of the week, `YYYY-MM-DD`. */
   startDate: string;
   before: number;
   after: number;
   cap: number;
 }
 
-/** Une version du plan, telle que l'historique la montre. */
+/** A plan version, as the history shows it. */
 export interface VersionView {
   version: number;
   kind: VersionKind;
   status: VersionStatus;
   reason: string;
-  /** Instant ISO de la création. */
+  /** ISO instant of the creation. */
   createdAt: string;
-  /** Texte du bilan hebdomadaire qui a déclenché la version, ou `null`. */
+  /** Text of the weekly review that triggered the version, or `null`. */
   review: string | null;
   diff: PlanDiffView | null;
-  /** Durée du programme en semaines avant et après la version ; `null` sans diff. */
+  /** Program length in weeks before and after the version; `null` without a diff. */
   weeks: { before: number; after: number } | null;
   weekLoads: WeekLoadView[];
-  /** La session de replanification qui a produit la version, ou `null`. */
+  /** The replan session that produced the version, or `null`. */
   sessionId: string | null;
 }

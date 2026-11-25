@@ -12,21 +12,21 @@ interface RegenerateDraftsProps {
 }
 
 /**
- * Un projet validé sans aucun brouillon : « Régénérer les brouillons », puis le suivi de leur
- * écriture ; si elle se termine sans brouillon (échec, annulation, fin sans résultat), le bouton
- * revient avec la raison. Le focus ne tombe jamais sur `body` : le titre du suivi le prend quand
- * le bouton disparaît, et le bouton le reprend quand le suivi disparaît (à la réussite, le titre
- * de la section des brouillons le reprend, voir `DraftsSection`).
+ * A validated project with no drafts: « Régénérer les brouillons », then the tracker of their
+ * write; if it ends without drafts (failure, cancel, end with no result), the button
+ * returns with the reason. Focus never falls on `body`: the tracker's title takes it when
+ * the button disappears, and the button takes it back when the tracker disappears (on success,
+ * the drafts section title takes it back, see `DraftsSection`).
  */
 export function RegenerateDrafts({ regeneration, run }: RegenerateDraftsProps) {
   const started = regeneration.sessionId !== null;
   const ended = started && run.over;
   const writing = started && !run.over;
   const button = useFocusOnMount<HTMLButtonElement>(ended);
-  // Tant que le projet se relit, les brouillons peuvent être sur le point d'arriver : rien à dire.
+  // While the project re-reads, drafts may be about to arrive: nothing to say.
   const failed = ended && !regeneration.rereading;
-  // La zone `status` existe dès le début, vide : un texte inséré avec sa zone n'est pas annoncé de
-  // façon fiable. Elle reste la même pendant le suivi, puis quand le bouton revient.
+  // The `status` region exists from the start, empty: text inserted with its region is not reliably
+  // announced. It stays the same during the tracking, and when the button returns.
   return (
     <div className="flex flex-col items-start gap-2">
       <p role="status" className="empty:sr-only">

@@ -6,7 +6,7 @@ interface ReplanStartProps {
   onSession: (sessionId: string) => void;
 }
 
-/** Le départ : le formulaire lance la replanification ; une replanification déjà ouverte est suivie. */
+/** The start: the form launches the replan; a replan already open is followed. */
 export function ReplanStart({ programId, onSession }: ReplanStartProps) {
   const replan = useStartReplan(programId, onSession);
   return (

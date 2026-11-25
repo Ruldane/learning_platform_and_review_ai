@@ -5,10 +5,10 @@ import { useRun } from "@/shared/realtime/useRun";
 import { projectKeys } from "../queryKeys";
 
 /**
- * La session qui écrit l'énoncé ou évalue le rendu, suivie par `useRun` : le fil ne fait que dire
- * quand relire (chaque changement d'état de la session) ; le statut et les résultats viennent
- * toujours de la lecture du projet. `sessionId` à `null` : rien à suivre. `createSocket` ne sert
- * qu'aux tests.
+ * The session writing the brief or evaluating the submission, followed by `useRun`: the thread only
+ * says when to re-read (each session state change); the status and results always come from
+ * reading the project. `sessionId` at `null`: nothing to follow. `createSocket` serves only
+ * for the tests.
  */
 export function useProjectRun(
   projectId: string,

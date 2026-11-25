@@ -2,7 +2,7 @@ import type { FeatureManifest } from "@/shared/lib/feature";
 import { ResearchBenchPage } from "./pages/ResearchBenchPage";
 
 /**
- * Recherche web (F5) : l'essai de l'Éclaireur, rangé sous Réglages avec les réglages de recherche
+ * Web search (F5): the Scout's test, filed under Settings with the search settings
  * (D80).
  */
 export const researchManifest: FeatureManifest = {

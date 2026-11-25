@@ -6,10 +6,10 @@ import { projectKeys } from "../queryKeys";
 import type { ProfileEntryView, ProjectOut } from "../types";
 
 /**
- * « Ajouter au profil maître » (`POST /projects/{id}/profile-entry`) : l'entrée de January, avec son
- * texte éventuellement modifié, devient une nouvelle version validée du profil ; le serveur rend le
- * projet avec sa `profile_version`. Un seul envoi à la fois (un double clic n'ajoute pas deux fois) ;
- * un refus 409 est écrit en clair, avec le lien du profil quand c'est là que se trouve la suite.
+ * « Ajouter au profil maître » (`POST /projects/{id}/profile-entry`): January's entry, with its
+ * text possibly edited, becomes a new validated version of the profile; the server returns the
+ * project with its `profile_version`. One send at a time (a double click does not add twice);
+ * a 409 refusal is written in plain text, with the profile link if that is the next step.
  */
 export function useAddToProfile(projectId: string) {
   const client = useQueryClient();
@@ -21,7 +21,7 @@ export function useAddToProfile(projectId: string) {
       void client.invalidateQueries({ queryKey: projectKeys.list });
     },
     onError: (error) => {
-      // Déjà ajouté ailleurs, ou plus validé : la page relit le projet pour dire l'état réel.
+      // Already added elsewhere, or no longer validated: the page re-reads the real state.
       const code = errorCode(error);
       if (code === "entry_already_added" || code === "project_not_validated") {
         void client.invalidateQueries({ queryKey: projectKeys.one(projectId) });

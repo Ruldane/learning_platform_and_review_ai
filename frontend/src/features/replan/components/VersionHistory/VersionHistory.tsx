@@ -4,13 +4,13 @@ import type { VersionView } from "../viewTypes";
 import { VersionItem } from "./VersionItem";
 
 interface VersionHistoryProps {
-  /** La plus récente d'abord, comme le back les rend. */
+  /** Most recent first, as the back end returns them. */
   versions: VersionView[];
-  /** L'action de l'état vide (règle 15.4 : jamais d'impasse). */
+  /** The empty state's action (rule 15.4: never a dead end). */
   emptyAction?: { label: string; onClick: () => void };
 }
 
-/** L'historique du plan : une ligne par version, avec son statut, sa raison et sa date. */
+/** The plan's history: one row per version, with its status, reason and date. */
 export function VersionHistory({ versions, emptyAction }: VersionHistoryProps) {
   if (versions.length === 0) {
     return (

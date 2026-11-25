@@ -4,7 +4,7 @@ import type { PlanVersionOut, VersionDiffOut, WeekLoadOut } from "./types";
 
 const SEPARATOR = " / ";
 
-/** « {module} / {tâche} » (clé du back) : le module est ce qui précède le premier séparateur. */
+/** `{module} / {task}` (back-end key): the module is what precedes the first separator. */
 function splitKey(key: string): { moduleTitle: string; title: string } {
   const at = key.indexOf(SEPARATOR);
   if (at === -1) return { moduleTitle: "", title: key };
@@ -12,8 +12,8 @@ function splitKey(key: string): { moduleTitle: string; title: string } {
 }
 
 /**
- * Le diff d'une version → celui du composant partagé. Le back nomme les tâches « module / tâche »
- * sans identifiant ni jour : la clé sert d'identifiant, le jour d'une tâche ajoutée n'est pas connu.
+ * A version's diff → that of the shared component. The back end names tasks "module / task"
+ * without an identifier or day: the key serves as identifier; the day of an added task is unknown.
  */
 export function toPlanDiffView(diff: VersionDiffOut): PlanDiffView {
   const task = (key: string): PlanDiffTask => ({ id: key, ...splitKey(key), plannedDate: null });
@@ -57,8 +57,8 @@ export function toVersionView(version: PlanVersionOut): VersionView {
 }
 
 /**
- * Ce qu'a décidé January dans une session de replanification : la version de cette session
- * acceptée ou refusée (la plus récente d'abord), sinon `null`.
+ * What January decided in a replan session: this session's version accepted or refused
+ * (most recent first), otherwise `null`.
  */
 export function decisionOf(
   versions: readonly VersionView[] | undefined,
@@ -72,7 +72,7 @@ export function decisionOf(
   return null;
 }
 
-/** La proposition qui attend une réponse (`pending`), s'il y en a une. */
+/** The proposal awaiting an answer (`pending`), if there is one. */
 export function pendingVersion(versions: VersionView[]): VersionView | null {
   return versions.find((version) => version.status === "pending") ?? null;
 }

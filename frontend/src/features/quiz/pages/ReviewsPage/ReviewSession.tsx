@@ -9,8 +9,8 @@ import type { DueQueue } from "../../types";
 import { ReviewDone } from "./ReviewDone";
 
 /**
- * La file du jour, fiche après fiche. Une fiche passe quand son avis est enregistré (ou qu'elle a
- * déjà été revue : 409 `card_not_due`, sans erreur) ; un échec réseau la laisse en place.
+ * Today's queue, card by card. A card is done once its rating is recorded (or it has
+ * already been reviewed: 409 `card_not_due`, no error); a network failure leaves it in place.
  */
 export function ReviewSession({ queue }: { queue: DueQueue }) {
   const review = useReviewCard();
