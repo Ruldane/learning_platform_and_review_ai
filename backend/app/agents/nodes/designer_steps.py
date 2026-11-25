@@ -1,10 +1,10 @@
-"""Règles pures du Maquettiste (D125) : contenu de démonstration recopié tel quel, question
-`cv_template` et analyse de la réponse de January. Aucun port, aucun modèle.
+"""Pure rules of the Layout designer (D125): demonstration content copied as is, `cv_template`
+question and parsing of January's answer. No port, no model.
 
-Une ligne du contenu « figure » dans le CV si son texte se retrouve dans le texte visible du PDF
-après normalisation de la seule **forme** : Unicode NFKC (ligatures), casse, espaces et retours à
-la ligne (une ligne coupée dans le PDF), tirets et apostrophes typographiques. Aucun mot ne peut
-changer : le modèle recopie, il n'écrit pas."""
+A line of the content "appears" in the CV if its text is found in the visible text of the PDF
+after normalizing the **form** only: Unicode NFKC (ligatures), case, spaces and line breaks
+(a line split in the PDF), typographic dashes and apostrophes. No word may change: the model
+copies, it does not write."""
 
 import re
 import unicodedata
@@ -15,16 +15,16 @@ from pydantic import BaseModel, Field, ValidationError
 from app.agents.prompts.loader import untrusted
 from app.agents.tools.cv_schema import CvContent, CvEntry, CvLine, CvSection
 
-MAX_ADJUSTMENTS = 5  # consignes de January, hors des passes automatiques
+MAX_ADJUSTMENTS = 5  # January's instructions, outside the automatic passes
 MAX_INSTRUCTION_CHARS = 500
-MAX_INVENTED_SHOWN = 20  # lignes citées au modèle quand il les recopie mal
+MAX_INVENTED_SHOWN = 20  # lines quoted to the model when it copies them wrongly
 
 _SPACES = re.compile(r"\s+")
 _DASHES = str.maketrans({"–": "-", "—": "-", "‐": "-", "‑": "-", "’": "'", "‘": "'"})
 
 
 def plain(text: str) -> str:
-    """Forme normalisée d'un texte (voir l'en-tête) : seule la forme change, jamais un mot."""
+    """Normalized form of a text (see the header): only the form changes, never a word."""
     text = unicodedata.normalize("NFKC", text).translate(_DASHES).casefold()
     return _SPACES.sub(" ", text).strip()
 
@@ -35,7 +35,7 @@ def _entry_texts(entry: CvEntry) -> list[str]:
 
 
 def sample_texts(content: CvContent) -> list[str]:
-    """Chaque texte du contenu : nom, accroche, contacts, titres, entrées, lignes."""
+    """Every text of the content: name, tagline, contacts, titles, entries, lines."""
     texts = [content.name, content.headline or "", *content.contact]
     for section in content.sections:
         texts.append(section.title)
@@ -46,7 +46,7 @@ def sample_texts(content: CvContent) -> list[str]:
 
 
 def invented_lines(content: CvContent, original_text: str) -> list[str]:
-    """Les textes du contenu absents du texte visible du CV (sans doublon, dans l'ordre)."""
+    """The texts of the content absent from the visible CV text (no duplicates, in order)."""
     hay = plain(original_text)
     return list(dict.fromkeys(t for t in sample_texts(content) if plain(t) not in hay))
 
@@ -66,7 +66,7 @@ def _entry(entry: CvEntry, invented: set[str]) -> CvEntry | None:
 
 
 def _section(section: CvSection, invented: set[str]) -> CvSection | None:
-    """Une section au titre inventé est retirée avec son contenu (un titre est obligatoire)."""
+    """A section with an invented title is removed with its content (a title is mandatory)."""
     if section.title in invented:
         return None
     entries = [e for e in (_entry(entry, invented) for entry in section.entries) if e]
@@ -77,8 +77,8 @@ def _section(section: CvSection, invented: set[str]) -> CvSection | None:
 
 
 def verbatim(content: CvContent, invented: list[str]) -> CvContent:
-    """Le contenu sans les textes `invented`, sections et entrées vidées retirées ; les
-    `fact_ids` sont effacés (une démonstration ne s'adosse à aucun fait du profil)."""
+    """The content without the `invented` texts, empty sections and entries removed; the
+    `fact_ids` are erased (a demonstration is backed by no fact of the profile)."""
     out = set(invented)
     sections = [s for s in (_section(section, out) for section in content.sections) if s]
     return CvContent(
@@ -90,44 +90,45 @@ def verbatim(content: CvContent, invented: list[str]) -> CvContent:
 
 
 def copy_retry(invented: list[str]) -> str:
-    """La re-demande : ces textes sont des copies presque exactes de lignes du CV, donc non
-    fiables (17.4) ; seule la consigne reste hors de l'encadrement."""
+    """The re-request: these texts are near-exact copies of CV lines, hence untrusted (17.4);
+    only the instruction stays outside the wrapper."""
     shown = "\n".join(f"- {text}" for text in invented[:MAX_INVENTED_SHOWN])
     return (
-        "Ces textes ne figurent pas tels quels dans le CV :\n"
-        f"{untrusted(shown, 'cv:textes à recopier')}\n"
-        "Recopie chaque texte mot pour mot depuis le CV (sans puce ni tiret de début de ligne), "
-        "ou retire-le. Rends le contenu complet."
+        "These texts do not appear as is in the CV:\n"
+        f"{untrusted(shown, 'cv:texts to copy')}\n"
+        "Copy each text word for word from the CV (without a bullet or a dash at the start of the "
+        "line), or remove it. Return the complete content."
     )
 
 
 def spec_retry(problems: list[str]) -> str:
     listed = "\n".join(f"- {problem}" for problem in problems)
     return (
-        f"Ta description a ces défauts :\n{listed}\nCorrige-les et rends la description complète."
+        f"Your description has these defects:\n{listed}\n"
+        "Fix them and return the complete description."
     )
 
 
 # --- Question `cv_template` (preflight G9) -------------------------------------------------------
 
-_VALIDATE = {"value": "validate", "label": "Valider"}
-_ADJUST = {"value": "adjust", "label": "Ajuster"}
-_RESTART = {"value": "restart", "label": "Recommencer la capture"}
+_VALIDATE = {"value": "validate", "label": "Approve"}
+_ADJUST = {"value": "adjust", "label": "Adjust"}
+_RESTART = {"value": "restart", "label": "Restart the capture"}
 _INSTRUCTION = {
     "id": "instruction",
-    "label": "Ce qu'il faut changer",
+    "label": "What to change",
     "max_length": MAX_INSTRUCTION_CHARS,
 }
 
 
 def question(score: int, adjustments: int) -> dict[str, Any]:
-    """La question posée après les passes, quel que soit le score ; au 5e ajustement, seules
-    « Valider » et « Recommencer la capture » restent."""
-    text = f"Le modèle ressemble à ton CV à {score} %. Tu valides ?"
+    """The question asked after the passes, whatever the score; at the 5th adjustment, only
+    "Approve" and "Restart the capture" remain."""
+    text = f"The template matches your CV at {score}%. Do you approve it?"
     if adjustments >= MAX_ADJUSTMENTS:
         return {
             "kind": "cv_template",
-            "question": f"{text} Tu as fait les {MAX_ADJUSTMENTS} ajustements possibles.",
+            "question": f"{text} You have made all {MAX_ADJUSTMENTS} possible adjustments.",
             "options": [_VALIDATE, _RESTART],
             "fields": [],
         }
@@ -154,9 +155,10 @@ def _as_action(value: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def parse_answer(value: Any, adjustments: int) -> DesignAnswer | None:
-    """`"validate"`, `"restart"`, `{"answers": {"instruction": …}}` ou `{"action": …,
-    "instruction": …}`. La consigne est coupée à 500 caractères plutôt que refusée. `None` (la
-    question est reposée) : forme inconnue, ajustement sans consigne, ou au-delà du 5e."""
+    """`"validate"`, `"restart"`, `{"answers": {"instruction": ...}}` or `{"action": ...,
+    "instruction": ...}`. The instruction is cut at 500 characters rather than refused. `None`
+    (the question is asked again): unknown shape, adjustment without instruction, or beyond the
+    5th."""
     if value in ("validate", "restart"):
         return DesignAnswer(action=value)
     if not isinstance(value, dict) or (data := _as_action(value)) is None:

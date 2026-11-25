@@ -85,7 +85,7 @@ async def test_council_from_brief_to_chosen_proposal(
                 skip_during_speech
                 and not sent_command
                 and "Current round: 2\n" in text
-                and "À toi de parler." in text
+                and "Your turn to speak." in text
             ):
                 await run.post_message("", "to_proposals")
                 sent_command = True

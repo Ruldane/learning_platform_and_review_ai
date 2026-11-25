@@ -157,7 +157,7 @@ async def test_people_prompt_frames_page_metadata_as_untrusted(
     await c.wait_choice()
     prompt = c.people_prompt()
     assert prompt.count(END) >= PAGE_COUNT + 1  # chaque page, plus la règle partagée
-    line = prompt.index("Auteur : Ada Lovelace")
+    line = prompt.index("Author: Ada Lovelace")
     assert prompt.rfind(START, 0, line) > prompt.rfind(END, 0, line)  # encadré
 
 

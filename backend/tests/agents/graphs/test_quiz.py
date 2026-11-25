@@ -61,7 +61,7 @@ async def test_quiz_generate_saves_questions_and_cards(make_quiz_runner: MakeQui
     saved = run.store.saved[QUIZ_ID]
     assert len(saved.questions) == 10 and len(saved.flashcards) == 4
     assert len(run.prompts()) == 1 and done.pending_interrupt is None
-    assert between_untrusted_markers(run.prompts()[0], "leçon") == LESSON
+    assert between_untrusted_markers(run.prompts()[0], "lesson") == LESSON
     assert (await run.events("run.completed"))[0]["summary"] == f"Quiz ready for “{TITLE}”."
     ready = (await run.events("artifact.ready"))[0]
     assert ready == {
@@ -116,7 +116,7 @@ async def test_grade_only_open_questions_go_to_model(make_quiz_runner: MakeQuiz)
     [prompt] = run.prompts()
     assert all(f"### {ref}" in prompt for ref in ("q2", "q3", "q4"))
     assert "q1" not in prompt and "q5" not in prompt
-    assert between_untrusted_markers(prompt, "leçon") == LESSON
+    assert between_untrusted_markers(prompt, "lesson") == LESSON
     assert run.store.grades[ATTEMPT_ID] == {
         "q1": (1.0, ""),
         "q5": (0.0, ""),
@@ -144,7 +144,7 @@ async def test_answer_is_framed_as_untrusted(make_quiz_runner: MakeQuiz) -> None
     run.sid = await run.runner.start(run.user_id, "quiz", GRADE)
     await run.wait_status("completed")
     [prompt] = run.prompts()
-    assert TRAP in between_untrusted_markers(prompt, "réponse de January")
+    assert TRAP in between_untrusted_markers(prompt, "January's answer")
     assert TRAP not in outside_untrusted_markers(prompt)
     assert "Énoncé de q4" in between_untrusted_markers(prompt, "question q4")
     # Relecture de 5.3 : le titre du module est encadré, lui aussi (il vient du Stratège).
@@ -192,7 +192,7 @@ async def test_renumbered_grades_are_reasked_once(make_quiz_runner: MakeQuiz) ->
     run = await make_quiz_runner(_grader(renumbered, completed), mode="grade")
     await run.wait_status("completed")
     _, second = run.prompts()
-    assert "Ta notation oublie ces questions : q4." in second
+    assert "Your grading forgets these questions: q4." in second
     found = run.store.grades[ATTEMPT_ID]
     assert found["q4"] == (1.0, "Juste aussi.") and found["q2"] == (1.0, "Juste.")
     assert found["q1"] == (1.0, "")  # le QCM garde le point du code

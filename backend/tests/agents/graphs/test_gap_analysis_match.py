@@ -38,11 +38,11 @@ async def test_need_matches_the_acquired_notion_not_a_new_homonym(
         "Anglais professionnel",
     ]
     [prompt] = run.prompts(MATCH_REQUEST)
-    assert "RAG (obligatoire)" not in prompt.split("January's framework")[1].split("Reply")[0]
+    assert "RAG (required)" not in prompt.split("January's framework")[1].split("Reply")[0]
     assert "- k1: Recherche vectorielle (level: proven)" in prompt
     assert "Génération augmentée par recherche (level: validated)" in prompt
     assert "- k7: Kubernetes (level: no level)" in prompt
-    assert "- n3 : RAG (obligatoire)" in prompt and "- n8 : Docker (souhaitée)" in prompt
+    assert "- n3: RAG (required)" in prompt and "- n8: Docker (preferred)" in prompt
 
 
 async def test_second_posting_sees_needs_added_by_the_first(

@@ -16,10 +16,8 @@ from tests.agents.runtime.runner_helpers import all_events, get_session, wait_un
 
 CHOOSE_PATH = {
     "kind": "choose_path",
-    "question": (
-        "Choisis un parcours dans l'onglet Propositions, mélange-en deux, ou demande un autre tour."
-    ),
-    "options": [{"value": "another_round", "label": "Demander un autre tour"}],
+    "question": ("Choose a path in the Proposals tab, mix two of them, or ask for another round."),
+    "options": [{"value": "another_round", "label": "Ask for another round"}],
 }
 
 
@@ -33,7 +31,7 @@ async def test_two_to_three_proposals_then_choice_interrupt(
     models = CouncilModels()
     four = json.dumps({"proposals": [proposal(f"Parcours {n}") for n in range(4)]})
     three = json.dumps({"proposals": [proposal(f"Parcours {n}") for n in range(3)]})
-    models.when("strategist", "Propose les parcours.", four, three)
+    models.when("strategist", "Propose the paths.", four, three)
     c = await make_council_runner(models=models)
     await c.to_choice()
     ready = await c.events("proposal.ready")
@@ -43,7 +41,7 @@ async def test_two_to_three_proposals_then_choice_interrupt(
     assert list(c.store.batches) == [(c.sid, 1)]
     assert c.store.minutes  # compte rendu gardé sur l'objectif
     propose_prompt = next(
-        call.prompt for call in models.calls if "Propose les parcours." in call.prompt
+        call.prompt for call in models.calls if "Propose the paths." in call.prompt
     )
     assert "Le Conseil s'accorde" in propose_prompt  # le Stratège part du compte rendu
 
@@ -142,7 +140,7 @@ async def test_replayed_propose_reads_the_saved_batch(make_council_runner: MakeC
     models = CouncilModels()
     first_batch = [proposal("Premier A"), proposal("Premier B")]
     first_batch[0]["promise"] = "Promesse propre au premier lot."
-    models.when("strategist", "Propose les parcours.", json.dumps({"proposals": first_batch}))
+    models.when("strategist", "Propose the paths.", json.dumps({"proposals": first_batch}))
     first = await make_council_runner(models=models)
     first.store.block_after_proposals = True
     await first.wait_question("framing")
@@ -153,9 +151,9 @@ async def test_replayed_propose_reads_the_saved_batch(make_council_runner: MakeC
     second = await make_council_runner(sid=first.sid)
     assert await second.runner.recover_on_startup() == [first.sid]
     await second.wait_choice()
-    assert not any("Propose les parcours." in call.prompt for call in second.models.calls)
+    assert not any("Propose the paths." in call.prompt for call in second.models.calls)
     assert [r["title"] for r in await second.events("proposal.ready")] == ["Premier A", "Premier B"]
-    timeline = next(call.prompt for call in second.models.calls if "Nom : Premier A" in call.prompt)
+    timeline = next(call.prompt for call in second.models.calls if "Name: Premier A" in call.prompt)
     assert "Promesse propre au premier lot." in timeline
     assert second.store.proposals_calls == 1 and len(second.store.batches) == 1
 

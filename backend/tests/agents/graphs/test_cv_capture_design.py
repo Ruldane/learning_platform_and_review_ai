@@ -31,12 +31,12 @@ async def test_design_capture_reaches_target_in_two_passes(
     run = await design_runner()
     question = await run.question()
     assert design_store.rendered == [1, 2] and question["kind"] == "cv_template"
-    assert question["question"] == "Le modèle ressemble à ton CV à 88 %. Tu valides ?"
+    assert question["question"] == "The template matches your CV at 88%. Do you approve it?"
     assert values(question) == OPTIONS
     assert question["fields"] == [
         {
             "id": "instruction",
-            "label": "Ce qu'il faut changer",
+            "label": "What to change",
             "required": False,
             "max_length": 500,
         }
@@ -56,7 +56,7 @@ async def test_three_passes_at_most(
     run = await design_runner()
     question = await run.question()
     assert design_store.rendered == [1, 2, 3] and len(run.prompts(FIX_REQUEST)) == 2
-    assert question["question"].startswith("Le modèle ressemble à ton CV à 70 %.")
+    assert question["question"].startswith("The template matches your CV at 70%.")
     assert design_store.finished == {}  # jamais d'échec silencieux : la question est posée
 
 
@@ -69,7 +69,7 @@ async def test_best_pass_is_kept_and_its_score_shown(
     run = await design_runner()
     question = await run.question()
     assert design_store.rendered == [1, 2, 3] and design_store.kept == 2
-    assert question["question"].startswith("Le modèle ressemble à ton CV à 78 %.")
+    assert question["question"].startswith("The template matches your CV at 78%.")
     assert (await run.said())[
         -1
     ] == "Passe 3 : le rendu ressemble à ton CV à 69 %. Je garde la passe 2 (78 %)."
@@ -87,7 +87,7 @@ async def test_tie_keeps_the_later_pass(
     run = await design_runner()
     question = await run.question()
     assert design_store.kept == 2
-    assert question["question"].startswith("Le modèle ressemble à ton CV à 70 %.")
+    assert question["question"].startswith("The template matches your CV at 70%.")
 
 
 async def test_replay_between_passes_renders_once(
@@ -107,7 +107,7 @@ async def test_replay_between_passes_renders_once(
     assert await second.runner.recover_on_startup() == [first.sid]
     question = await second.question()
     assert design_store.render_calls == {1: 1, 2: 1, 3: 1}
-    assert question["question"].startswith("Le modèle ressemble à ton CV à 90 %.")
+    assert question["question"].startswith("The template matches your CV at 90%.")
 
 
 async def test_sample_lines_are_verbatim(
@@ -120,11 +120,11 @@ async def test_sample_lines_are_verbatim(
     run = await design_runner(designer(sample=[reply, reply]))
     await run.question()
     first, second = run.prompts("Transcribe the contents")[:2]
-    assert "ne figurent pas tels quels" in second and invented in second
-    framed = second.split('<<<CONTENU_NON_FIABLE source="cv:textes à recopier">>>')[1]
+    assert "do not appear as is in the CV" in second and invented in second
+    framed = second.split('<<<CONTENU_NON_FIABLE source="cv:texts to copy">>>')[1]
     assert invented in framed.split("<<<FIN_CONTENU_NON_FIABLE>>>")[0]  # encadré (revue BA-M3)
-    assert "Recopie chaque texte mot pour mot" in framed.split("<<<FIN_CONTENU_NON_FIABLE>>>")[1]
-    assert "ne figurent pas tels quels" not in first
+    assert "Copy each text word for word" in framed.split("<<<FIN_CONTENU_NON_FIABLE>>>")[1]
+    assert "do not appear as is in the CV" not in first
     _, content, _ = design_store.passes[1]
     lines = [line.text for line in content.sections[1].entries[0].lines]
     assert invented not in lines and len(lines) == 2
@@ -182,7 +182,7 @@ async def test_fix_without_valid_spec_keeps_current_and_asks(
     run = await design_runner(designer(fix=[bad_font_spec()] * 3))
     question = await run.question()
     assert design_store.rendered == [1] and len(run.prompts(FIX_REQUEST)) == 3
-    assert question["question"].startswith("Le modèle ressemble à ton CV à 60 %.")
+    assert question["question"].startswith("The template matches your CV at 60%.")
     assert "The description could not be adjusted" in (await run.said())[-1]
 
 

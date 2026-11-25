@@ -32,7 +32,7 @@ CONCEPTS = json.dumps(
         ]
     }
 )
-REASON = "Document « Cours NLP » marqué « déjà appris »."
+REASON = 'Document "Cours NLP" marked "already learned".'
 
 
 async def _start(learned: Learned, user_id: str, document_id: str) -> str:

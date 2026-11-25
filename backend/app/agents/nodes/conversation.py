@@ -42,7 +42,7 @@ CLASSROOM_MAX_WORDS = 115
 TOKEN_OVERHEAD = 400
 MIN_OUTPUT_TOKENS = 300
 _REVISION = re.compile(
-    r"^À revoir\s+\[(\d{1,2})]\s*:\s*(.{1,500}?)\s*→\s*(.{1,1000})$",
+    r"^(?:À revoir|To review)\s+\[(\d{1,2})]\s*:\s*(.{1,500}?)\s*→\s*(.{1,1000})$",
     re.MULTILINE,
 )
 
@@ -168,7 +168,7 @@ def _practice_of(answer: str, sources: list[ConversationSource]) -> list[dict[st
 
 
 async def _classroom_reply(deps: GraphDeps, context: ConversationContext) -> ConversationState:
-    """Trois rôles fixes partagent la réserve d'un tour et la même leçon publiée."""
+    """Three fixed roles share a turn's reserve and the same published lesson."""
     reserve = min(TURN_TOKEN_LIMIT, deps.settings.session_token_cap) - context.used_tokens
     reserve_per_role = reserve // len(CLASSMATE_ROLES)
     refs = context.references

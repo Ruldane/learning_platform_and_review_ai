@@ -1,7 +1,7 @@
-"""Ce que partagent les nœuds du parcours `lesson_factory` : la forme d'un nœud et les sources
-retenues, numérotées. Une source est admise dans une leçon si elle est lue et notée 60 ou plus
-(SPEC 10.3) : ce sont les verdicts « kept » de la session, jamais une adresse écrite par un
-modèle."""
+"""What the nodes of the `lesson_factory` flow share: the shape of a node and the selected,
+numbered sources. A source is admitted into a lesson if it is read and scored 60 or more
+(SPEC 10.3): these are the session's "kept" verdicts, never an address written by a
+model."""
 
 from dataclasses import dataclass
 from typing import Any, Protocol
@@ -12,16 +12,16 @@ from app.agents.prompts.loader import untrusted
 from app.agents.state.lesson_factory import LessonFactoryState
 from app.agents.tools.lesson_port import ModuleBrief
 
-MAX_LESSON_SOURCES = 8  # les mieux notées, pour garder un prompt de taille raisonnable
+MAX_LESSON_SOURCES = 8  # the best scored, to keep a prompt of reasonable size
 LANGUAGES = {"fr": "French", "en": "English"}
-# Consigne de l'application, hors de l'encadré non fiable : les noms des API anciennes (sortie du
-# Stratège) restent dans la fiche, la règle qui les concerne n'en fait pas partie.
+# Application instruction, outside the untrusted wrapper: the names of the old APIs (output of the
+# Strategist) stay in the sheet, the rule that concerns them is not part of it.
 LEGACY_RULE = (
     'Present legacy APIs only in a "Reading older code" callout in the Explanation section. '
     "Use a Markdown blockquote (lines starting with `>`). Explain how to recognize these APIs "
     "in existing code. Recommend current APIs and use those in examples."
 )
-SOURCE_CHARS = 6000  # texte lu rendu au Rédacteur et au Vérificateur, par source
+SOURCE_CHARS = 6000  # text read, handed to the Writer and the Verifier, per source
 
 
 class Node(Protocol):
@@ -39,13 +39,13 @@ class LessonSource:
 
 
 def kept_verdicts(state: LessonFactoryState) -> list[dict[str, Any]]:
-    """Sources retenues de la session (note 60 ou plus), les mieux notées d'abord."""
+    """Sources kept by the session (score 60 or more), the best scored first."""
     kept = [v for v in state.get("verdicts", []) if v["verdict"] == "kept"]
-    return sorted(kept, key=lambda v: -(v["score"] or 0))  # tri stable : ordre de lecture
+    return sorted(kept, key=lambda v: -(v["score"] or 0))  # stable sort: reading order
 
 
 def lesson_sources(state: LessonFactoryState) -> list[LessonSource]:
-    """Sources de la leçon : retenues, lues, numérotées de 1 à `MAX_LESSON_SOURCES`."""
+    """Lesson sources: kept, read, numbered from 1 to `MAX_LESSON_SOURCES`."""
     pages = {p["source_id"]: p for p in state.get("pages", []) if p.get("source_id")}
     cited = {
         source_url_key(url): number
@@ -75,7 +75,7 @@ def lesson_sources(state: LessonFactoryState) -> list[LessonSource]:
 
 
 def sources_prompt(sources: list[LessonSource]) -> str:
-    """Chaque source encadrée comme non fiable (titre, adresse et texte viennent du web)."""
+    """Each source wrapped as untrusted (title, address and text come from the web)."""
     blocks = []
     for source in sources:
         body = f"Title: {one_line(source.title)}\nURL: {source.url}\n\n{source.text}"
@@ -84,7 +84,7 @@ def sources_prompt(sources: list[LessonSource]) -> str:
 
 
 def module_prompt(brief: ModuleBrief) -> str:
-    """La fiche du module vient du programme (sortie d'agent) : donnée encadrée, pas consigne."""
+    """The module sheet comes from the program (agent output): wrapped data, not an instruction."""
     lines = [
         f"Title: {brief.title}",
         f"Target skills: {', '.join(brief.skills) or 'unspecified'}",

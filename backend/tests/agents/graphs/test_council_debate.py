@@ -44,10 +44,10 @@ async def test_four_agents_debate_three_rounds(make_council_runner: MakeCouncil)
     positions = await c.agent_messages(step_prefix="positions")
     assert Counter(m.agent for m in positions) == {a: 1 for a in DEBATERS}  # tour 1
     opening = [m.payload["text"] for m in await c.agent_messages() if m.agent == "moderator"]
-    assert opening[0].startswith("Tour 1 : Stratège, Praticien, Éclaireur, Sceptique")
-    assert sum(text.startswith("Tour ") for text in opening) == 4  # 1 + debate_rounds
+    assert opening[0].startswith("Round 1: Strategist, Practitioner, Scout, Skeptic")
+    assert sum(text.startswith("Round ") for text in opening) == 4  # 1 + debate_rounds
     later = c.prompt_of(msgs[-1])
-    assert "Praticien, tour 1" in later and SPEECH["practitioner"] in later  # tours précédents
+    assert "Practitioner, round 1" in later and SPEECH["practitioner"] in later  # tours précédents
 
 
 async def test_turn_cites_catalog_entries(make_council_runner: MakeCouncil) -> None:
@@ -69,9 +69,9 @@ async def test_round_two_reply_must_name_another_agent(make_council_runner: Make
     replies = [m for m in await c.agent_messages(step_prefix="tour-2") if m.agent == "strategist"]
     assert len(replies) == 1  # la bulle est corrigée, pas doublée
     assert replies[0].payload["text"] == SPEECH["strategist"]
-    asked = [call for call in models.calls if "ne respecte pas ces règles" in call.prompt]
+    asked = [call for call in models.calls if "does not follow these debate rules" in call.prompt]
     assert [call.agent for call in asked] == ["strategist"]
-    assert "répondre nommément" in asked[0].prompt or "réponds nommément" in asked[0].prompt
+    assert "answer at least one other Council member by name" in asked[0].prompt
 
 
 async def test_rule_still_broken_after_one_retry_is_accepted(
@@ -84,7 +84,7 @@ async def test_rule_still_broken_after_one_retry_is_accepted(
     await c.to_choice()
     replies = [m for m in await c.agent_messages(step_prefix="tour-2") if m.agent == "practitioner"]
     assert [m.payload["text"] for m in replies] == [bare]
-    assert sum("ne respecte pas ces règles" in call.prompt for call in models.calls) == 1
+    assert sum("does not follow these debate rules" in call.prompt for call in models.calls) == 1
 
 
 async def test_skeptic_raises_an_objection_each_round(make_council_runner: MakeCouncil) -> None:
@@ -106,7 +106,7 @@ async def test_long_skeptic_turn_keeps_its_objection_line(make_council_runner: M
     skeptic = [m for m in await c.agent_messages(step_prefix="tour-2") if m.agent == "skeptic"]
     text = skeptic[0].payload["text"]
     assert text.endswith("\nObjection : trop de notions [1].") and count_words(text) <= 150
-    assert sum("ne respecte pas ces règles" in call.prompt for call in models.calls) == 0
+    assert sum("does not follow these debate rules" in call.prompt for call in models.calls) == 0
 
 
 @pytest.mark.parametrize(
@@ -158,7 +158,7 @@ async def test_to_proposals_command_skips_remaining_rounds(
     await c.to_choice()
     assert len(await c.agent_messages(step_prefix="tour-2")) == 1  # l'orateur en cours finit
     assert await c.agent_messages(step_prefix="tour-3") == []
-    assert not any("Fais le point du tour." in p for p in c.prompts())
+    assert not any("Review the round." in p for p in c.prompts())
     assert len(await c.events("proposal.ready")) == 2
 
 
@@ -173,7 +173,7 @@ async def test_moderator_stops_early_when_positions_are_stable(
     make_council_runner: MakeCouncil,
 ) -> None:
     models = CouncilModels()
-    models.when("moderator", "Fais le point du tour.", STABLE)
+    models.when("moderator", "Review the round.", STABLE)
     c = await make_council_runner(models=models, rounds=3)
     await c.to_choice()
     assert len(await c.agent_messages(step_prefix="tour-2")) == 4
@@ -199,7 +199,7 @@ async def test_scribe_draws_domain_map_after_round_one(make_council_runner: Make
     domain_prompt = next(
         p.prompt for p in c.models.calls if "draw the map of the domain" in p.prompt
     )
-    assert "Stratège, tour 1" in domain_prompt
+    assert "Strategist, round 1" in domain_prompt
 
 
 async def test_scribe_publishes_and_saves_only_the_normalized_mermaid(

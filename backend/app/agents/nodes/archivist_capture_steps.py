@@ -1,6 +1,6 @@
-"""Partie pure du parcours `capture` (D108) : questions posées à January et lecture de ses
-réponses, instantané des liens en JSON, nettoyage du résumé (références inconnues ignorées),
-variables du prompt et textes annoncés. Aucune entrée-sortie ici."""
+"""Pure part of the `capture` flow (D108): questions asked to January and reading of her
+answers, snapshot of the links in JSON, cleaning of the summary (unknown references ignored),
+prompt variables and announced texts. No input/output here."""
 
 from dataclasses import asdict
 from typing import Any
@@ -21,7 +21,7 @@ from app.agents.tools.replan_port import ModuleRef, TaskRef
 from app.core.errors import AppError
 
 AGENT = "archivist"
-MAX_TEXT_CHARS = 20_000  # texte lu par l'Archiviste (page, document, texte collé)
+MAX_TEXT_CHARS = 20_000  # text read by the Archivist (page, document, pasted text)
 CAPTURE_REQUEST = "Summarize and save this capture."
 UNREADABLE_TEXT = "I couldn't read the link. Paste the page text below."
 CANCELLED_TEXT = "Capture cancelled."
@@ -45,18 +45,18 @@ def document_not_indexed() -> AppError:
 
 
 def source_of(state: dict[str, Any]) -> CaptureSource:
-    """La source donnée au départ (`CaptureInput` en garantit une seule)."""
+    """The source given at the start (`CaptureInput` guarantees a single one)."""
     if state.get("url"):
         return "url"
     return "document" if state.get("document_id") else "text"
 
 
-# --- Réponses de January ------------------------------------------------------------------------
+# --- January's answers --------------------------------------------------------------------------
 
 
 def parse_text(value: Any) -> str | None:
-    """Le texte collé (`{"answers": {"text": …}}` ou `{"text": …}`), coupé à 20 000 caractères ;
-    `None` : « Abandonner », un texte vide ou toute autre réponse."""
+    """The pasted text (`{"answers": {"text": ...}}` or `{"text": ...}`), cut at 20,000
+    characters; `None`: "Cancel", an empty text or any other answer."""
     if isinstance(value, dict):
         answers = value.get("answers")
         raw = answers.get("text") if isinstance(answers, dict) else value.get("text")
@@ -66,7 +66,7 @@ def parse_text(value: Any) -> str | None:
 
 
 def parse_yes(value: Any) -> bool:
-    """Oui : `"yes"`, `{"answer": "yes"}` ou `{"option": "yes"}` ; toute autre réponse : non."""
+    """Yes: `"yes"`, `{"answer": "yes"}` or `{"option": "yes"}`; any other answer: no."""
     if isinstance(value, dict):
         value = value.get("answer", value.get("option"))
     return isinstance(value, str) and value == "yes"
@@ -85,7 +85,7 @@ def cards_payload(fronts: list[str]) -> dict[str, Any]:
     return {"kind": CAPTURE_CARDS, "question": f"{head}\n{lines}", "options": YES_NO}
 
 
-# --- Instantanés en JSON (état du graphe) -------------------------------------------------------
+# --- JSON snapshots (graph state) ---------------------------------------------------------------
 
 
 def material_json(material: CaptureMaterial) -> dict[str, Any]:
@@ -123,15 +123,15 @@ def stored_json(stored: CaptureStored) -> dict[str, Any]:
     }
 
 
-# --- Résumé de l'Archiviste ---------------------------------------------------------------------
+# --- Archivist summary --------------------------------------------------------------------------
 
 
 def clean_digest(digest: CaptureDigest, links: ProgramLinks, *, note: bool) -> CaptureDigest:
-    """Lignes vides retirées (le titre à défaut), concepts et modules dédoublonnés, références
-    inconnues ignorées ; `learned` n'est gardé que pour une note de January (jamais pour une
-    page ou un document, qui pourrait le réclamer lui-même). Les fiches perdent leur compétence :
-    un nom tiré d'un contenu non fiable ne doit jamais pouvoir rétrograder un acquis (comme les
-    fiches de session, D103 n° 11 ; revue finale de la phase 5, A-I2)."""
+    """Empty lines removed (the title by default), concepts and modules deduplicated, unknown
+    references ignored; `learned` is kept only for a note from January (never for a page or a
+    document, which could claim it itself). The cards lose their skill: a name taken from
+    untrusted content must never be able to downgrade an acquired skill (like the session cards,
+    D103 no. 11; final review of phase 5, A-I2)."""
     summary = [" ".join(line.split()) for line in digest.summary if line.strip()]
     concepts = list(dict.fromkeys(c.strip() for c in digest.concepts if c.strip()))
     modules = [ref for ref in dict.fromkeys(digest.modules) if links.module(ref) is not None]
@@ -149,7 +149,7 @@ def clean_digest(digest: CaptureDigest, links: ProgramLinks, *, note: bool) -> C
 
 
 def unknown_refs(digest: CaptureDigest, links: ProgramLinks) -> int:
-    """Nombre de références inconnues (journalisé, jamais les références elles-mêmes)."""
+    """Number of unknown references (logged, never the references themselves)."""
     modules = sum(links.module(ref) is None for ref in digest.modules)
     task = digest.covered_task is not None and links.task(digest.covered_task) is None
     return modules + int(task)
@@ -189,8 +189,8 @@ def _kind(material: CaptureMaterial, source: CaptureSource, pasted: bool) -> str
 def capture_vars(
     material: CaptureMaterial, links: ProgramLinks, *, source: CaptureSource, pasted: bool
 ) -> dict[str, Any]:
-    """Variables du mode `capture` de `archivist.md` : tout contenu (page, document, note,
-    programme) est encadré par `untrusted()` (17.4)."""
+    """Variables of the `capture` mode of `archivist.md`: any content (page, document, note,
+    program) is wrapped by `untrusted()` (17.4)."""
     return {
         "mode": "capture",
         "kind": _kind(material, source, pasted),
@@ -202,7 +202,7 @@ def capture_vars(
     }
 
 
-# --- Textes annoncés ----------------------------------------------------------------------------
+# --- Announced texts ----------------------------------------------------------------------------
 
 
 def digest_text(digest: CaptureDigest) -> str:

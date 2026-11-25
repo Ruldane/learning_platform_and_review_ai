@@ -1,18 +1,18 @@
-"""L'Analyste du radar du marché (P6, D159) : il lit les offres par lots de cinq (4 000 caractères
-chacune, encadrées comme non fiables) et en tire compétences, outils, niveau et salaire. Le code
-contrôle ce qu'il rend avant de le ranger : une référence inconnue est ignorée, un outil absent du
-texte est retiré, un salaire dont les chiffres ne sont pas dans le texte est retiré. Un lot que le
-modèle ne sait pas rendre valide (après les nouveaux essais de `structured_call`) marque ses pages
-en échec d'extraction et la boucle continue ; une autre panne du fournisseur (délai, limite) sur un
-lot le marque de même sans perdre les lots déjà rangés, et l'extraction s'arrête après
-`MAX_FAILED_BATCHES` lots en panne (le reste est dit « lu, pas analysé », D173). Une page absente
-de la réponse l'est de même : jamais une page laissée sans issue, jamais une boucle sans fin.
+"""The market radar Analyst (P6, D159): it reads postings in batches of five (4,000 characters
+each, wrapped as untrusted) and extracts skills, tools, level and salary. The code checks what it
+returns before storing it: an unknown reference is ignored, a tool absent from the text is
+removed, a salary whose figures are not in the text is removed. A batch that the model cannot
+make valid (after the retries of `structured_call`) marks its pages as extraction failures and the
+loop continues; another provider failure (timeout, limit) on a batch marks it the same way without
+losing the batches already stored, and the extraction stops after `MAX_FAILED_BATCHES` failed
+batches (the rest is reported as "read, not analyzed", D173). A page missing from the answer is
+treated the same way: never a page left without an outcome, never an endless loop.
 
-La boucle relit `context` du port à chaque passage : une extraction déjà rangée n'est jamais
-refaite après un redémarrage (SPEC 9.4). Au plus `MAX_READABLE` pages sont extraites (10 appels).
+The loop rereads the port's `context` at each pass: an extraction already stored is never redone
+after a restart (SPEC 9.4). At most `MAX_READABLE` pages are extracted (10 calls).
 
-Journaux : identifiants et nombres seulement, jamais un lien, un site, un texte d'offre, un poste
-ni une zone (17.2)."""
+Logs: identifiers and numbers only, never a link, a site, a posting text, a job or an area
+(17.2)."""
 
 import logging
 from typing import Protocol
@@ -41,7 +41,7 @@ from app.core.errors import AppError
 AGENT = "analyst"
 RADAR_REQUEST = "Extract these postings from the market snapshot."
 INVALID_CODE = "structured_output_invalid"
-MAX_FAILED_BATCHES = 2  # lots en panne du fournisseur après lesquels l'extraction s'arrête
+MAX_FAILED_BATCHES = 2  # provider-failed batches after which the extraction stops
 
 logger = logging.getLogger(__name__)
 
@@ -51,22 +51,22 @@ class Node(Protocol):
 
 
 def local_ref(position: int) -> str:
-    """Le repère d'une offre dans le lot : `p1` à `p5`."""
+    """A posting's marker in the batch: `p1` to `p5`."""
     return f"p{position}"
 
 
 def radar_vars(batch: list[PostingPage]) -> dict[str, object]:
-    """Variables du mode `radar` d'`analyst.md` : chaque page est un contenu non fiable (17.4),
-    coupé à `TEXT_MAX` caractères."""
+    """Variables of the `radar` mode of `analyst.md`: each page is untrusted content (17.4),
+    cut at `TEXT_MAX` characters."""
     pages = [
-        untrusted(page.text[:TEXT_MAX], f"offre {local_ref(number)}")
+        untrusted(page.text[:TEXT_MAX], f"posting {local_ref(number)}")
         for number, page in enumerate(batch, start=1)
     ]
     return {"mode": "radar", "count": len(batch), "postings": "\n\n".join(pages)}
 
 
 def _tools_in_text(tools: list[str], text: str) -> list[str]:
-    """Les outils qui figurent dans `text` (mots entiers, sans casse ni accent), une fois chacun."""
+    """The tools that appear in `text` (whole words, case- and accent-insensitive), once each."""
     kept: list[str] = []
     seen: set[str] = set()
     for tool in tools:
@@ -78,9 +78,9 @@ def _tools_in_text(tools: list[str], text: str) -> list[str]:
 
 
 def clean_item(item: RadarItem, page: PostingPage) -> RadarFinding:
-    """L'extraction de `page`, contrôlée par le code et rangée sous le repère de la page. Pas une
-    offre : rien d'autre n'est gardé. Une offre : les outils absents du texte lu et un salaire
-    dont un chiffre n'y figure pas sont retirés (SPEC 1, 18.3)."""
+    """The extraction of `page`, checked by the code and stored under the page's marker. Not a
+    posting: nothing else is kept. A posting: the tools absent from the text read and a salary
+    with a figure that does not appear in it are removed (SPEC 1, 18.3)."""
     if not item.is_job_posting:
         return RadarFinding(ref=page.ref, is_job_posting=False)
     shown = page.text[:TEXT_MAX]
@@ -96,8 +96,8 @@ def clean_item(item: RadarItem, page: PostingPage) -> RadarFinding:
 def clean_batch(
     found: RadarBatch, batch: list[PostingPage]
 ) -> tuple[list[RadarFinding], list[str], int]:
-    """`(offres rangées, repères en échec, réponses ignorées)`. Une référence inconnue du lot ou
-    déjà donnée est ignorée ; une page que la réponse oublie est en échec d'extraction."""
+    """`(stored postings, failed markers, ignored answers)`. A reference unknown to the batch or
+    already given is ignored; a page the answer forgets counts as an extraction failure."""
     by_local = {local_ref(number): page for number, page in enumerate(batch, start=1)}
     kept: dict[str, RadarFinding] = {}
     ignored = 0
@@ -112,16 +112,16 @@ def clean_batch(
 
 
 def pending_pages(read: list[PostingPage], extracted: frozenset[str]) -> list[PostingPage]:
-    """Les pages lisibles à extraire : les `MAX_READABLE` premières lues, sans celles que le port
-    dit déjà extraites (ou en échec)."""
+    """The readable pages to extract: the first `MAX_READABLE` read, without those the port
+    already reports as extracted (or failed)."""
     readable = [page for page in read if page.status == "ok"][:MAX_READABLE]
     return [page for page in readable if page.ref not in extracted]
 
 
 async def _ask(deps: GraphDeps, batch: list[PostingPage]) -> tuple[RadarBatch | None, bool]:
-    """`(le lot demandé à l'Analyste, panne du fournisseur ?)`. `None` si sa réponse reste invalide
-    après les nouveaux essais, ou si le fournisseur est en panne (délai, limite : second
-    élément vrai). Un modèle absent (clé disparue) remonte : le relevé échoue."""
+    """`(the batch requested from the Analyst, provider failure?)`. `None` if its answer stays
+    invalid after the retries, or if the provider is down (timeout, limit: second element true).
+    A missing model (key gone) bubbles up: the run fails."""
     model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
     prompt = render_prompt(AGENT, **radar_vars(batch))
     try:
@@ -143,8 +143,8 @@ async def _ask(deps: GraphDeps, batch: list[PostingPage]) -> tuple[RadarBatch | 
 def make_extract(deps: GraphDeps) -> Node:
     @node_timeout()
     async def extract(state: MarketRadarState) -> MarketRadarState:
-        """Un lot de cinq offres lisibles non extraites : un appel, un rangement. `extract_done`
-        quand ce lot était le dernier (calculé sur ce que le port vient de rendre)."""
+        """A batch of five readable, unextracted postings: one call, one storing. `extract_done`
+        when this batch was the last one (computed on what the port just returned)."""
         run_id = state["run_id"]
         ctx = await deps.ports.radar.context(deps.user_id, run_id)
         pending = pending_pages(ctx.read, ctx.extracted)
@@ -158,7 +158,7 @@ def make_extract(deps: GraphDeps) -> Node:
             items, failed, ignored = clean_batch(found, batch)
         await deps.ports.radar.save_extraction(deps.user_id, deps.session_id, run_id, items, failed)
         logger.info(
-            "Lot extrait : session %s, relevé %s, %d offre(s), %d en échec, %d ignorée(s)",
+            "Batch extracted: session %s, run %s, %d posting(s), %d failed, %d ignored",
             deps.session_id,
             run_id,
             len(items),

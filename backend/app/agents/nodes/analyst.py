@@ -1,20 +1,20 @@
-"""L'Analyste (SPEC 5.3 étape 1, F8, D121) : il analyse une offre d'emploi et rattache ses
-compétences au référentiel de January. Parcours `gap_analysis`.
+"""The Analyst (SPEC 5.3 step 1, F8, D121): it analyzes a job posting and links its skills to
+January's skill inventory. Flow `gap_analysis`.
 
-`load` lit l'offre par le port ; une offre déjà analysée (par une autre session ou une revue de
-CV) n'est jamais réanalysée. `analyze` refuse sans appel un texte trop court (`enough_text`, même
-borne que la route), demande l'analyse (texte de l'offre encadré par `untrusted`), la fait
-vérifier (mots clés tels quels dans l'offre, exigences obligatoires reliées à `skills`) et la
-redemande deux fois au plus, en gardant la meilleure réponse ; les mots clés encore absents sont
-retirés. Un texte qui n'est pas une offre est refusé (`reject`). `match` demande le rattachement
-des besoins au référentiel existant, par identifiants ; le code calcule ensuite les lignes et le
-score, puis ajoute au référentiel les besoins restés sans rattachement (`save_gap`).
+`load` reads the posting through the port; a posting that is already analyzed (by another session
+or a CV review) is never analyzed again. `analyze` refuses a text that is too short without any
+call (`enough_text`, same bound as the route), asks for the analysis (posting text wrapped by
+`untrusted`), has it checked (keywords exactly as written in the posting, mandatory requirements
+linked to `skills`) and asks again twice at most, keeping the best answer; keywords still absent
+are removed. A text that is not a posting is rejected (`reject`). `match` asks for the link
+between the needs and the existing inventory, by identifiers; the code then computes the rows and
+the score, and adds to the inventory the needs left without a link (`save_gap`).
 
-Aucun point d'arrêt. Les écritures du port (`save_analysis`, `reject`, `save_gap`) sont
-idempotentes : un nœud rejoué après un arrêt (SPEC 9.4) n'écrit rien de plus.
+No stop point. The port writes (`save_analysis`, `reject`, `save_gap`) are idempotent: a node
+replayed after a stop (SPEC 9.4) writes nothing more.
 
-Journaux : identifiants et nombres seulement, jamais le texte de l'offre, un nom de compétence,
-un titre ni une entreprise (17.2)."""
+Logs: identifiers and numbers only, never the posting text, a skill name, a title or a company
+(17.2)."""
 
 import logging
 from typing import Protocol
@@ -52,9 +52,9 @@ from app.agents.state.gap_analysis import GapAnalysisState
 from app.agents.tools.gap_port import GapSaved, KnownSkill, SkillMatch, SkillMatches
 from app.agents.tools.posting_schema import PostingAnalysis, enough_text
 
-ANALYZE_TIMEOUT_S = 600  # trois demandes d'une analyse longue (GLM), avec leurs nouveaux essais
+ANALYZE_TIMEOUT_S = 600  # three requests of a long analysis (GLM), with their retries
 MATCH_TIMEOUT_S = 300
-SAVE_TIMEOUT_S = 300  # le port indexe l'élément de mémoire `offre` et cherche les doublons
+SAVE_TIMEOUT_S = 300  # the port indexes the `posting` memory item and looks for duplicates
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +73,7 @@ def make_load(deps: GraphDeps) -> Node:
         view = await deps.ports.gap.posting(deps.user_id, state["posting_id"])
         reused = view.analysis is not None
         logger.info(
-            "Offre lue : session %s, offre %s, analyse déjà rangée %s",
+            "Posting read: session %s, posting %s, analysis already stored %s",
             deps.session_id,
             view.posting_id,
             reused,
@@ -89,8 +89,8 @@ def route_load(state: GapAnalysisState) -> str:
 
 
 async def _ask_analysis(deps: GraphDeps, text: str) -> tuple[PostingAnalysis, list[Problem]]:
-    """Une demande, puis deux re-demandes au plus ; rend la meilleure analyse (`better_answer`)
-    et ses problèmes."""
+    """One request, then two re-requests at most; returns the best analysis (`better_answer`)
+    and its problems."""
     model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
     prompt = render_prompt(AGENT, **analyze_vars(text))
     messages: list[BaseMessage] = [SystemMessage(prompt), HumanMessage(ANALYZE_REQUEST)]
@@ -116,16 +116,16 @@ async def _ask_analysis(deps: GraphDeps, text: str) -> tuple[PostingAnalysis, li
 def make_analyze(deps: GraphDeps) -> Node:
     @node_timeout(ANALYZE_TIMEOUT_S)
     async def analyze(state: GapAnalysisState) -> GapAnalysisState:
-        """L'analyse de l'Analyste, vérifiée ; rejoué, il redemande sans rien écrire."""
+        """The Analyst's analysis, checked; replayed, it asks again without writing anything."""
         view = await deps.ports.gap.posting(deps.user_id, state["posting_id"])
-        if not enough_text(view.text):  # même borne que la route (revue 6.5, m6) : aucun appel
+        if not enough_text(view.text):  # same bound as the route (review 6.5, m6): no call
             logger.info(
-                "Offre trop courte : session %s, offre %s", deps.session_id, view.posting_id
+                "Posting too short: session %s, posting %s", deps.session_id, view.posting_id
             )
             return {"analysis": None, "reused": False, "rejection": TOO_SHORT}
         if len(view.text) > MAX_POSTING_CHARS:
             logger.info(
-                "Offre tronquée pour l'analyse : session %s, offre %s, %d caractères sur %d",
+                "Posting truncated for the analysis: session %s, posting %s, %d of %d characters",
                 deps.session_id,
                 view.posting_id,
                 MAX_POSTING_CHARS,
@@ -135,8 +135,7 @@ def make_analyze(deps: GraphDeps) -> Node:
         analysis, dropped = drop_absent_keywords(found, view.text)
         if problems:
             logger.info(
-                "Analyse gardée avec %d problème(s) : session %s, offre %s, %d mot(s) clé(s) "
-                "retiré(s)",
+                "Analysis kept with %d problem(s): session %s, posting %s, %d keyword(s) removed",
                 len(problems),
                 deps.session_id,
                 view.posting_id,
@@ -157,7 +156,9 @@ def make_reject(deps: GraphDeps) -> Node:
     async def reject(state: GapAnalysisState) -> GapAnalysisState:
         reason = state.get("rejection") or NOT_A_POSTING
         await deps.ports.gap.reject(deps.user_id, state["posting_id"], reason)
-        logger.info("Offre refusée : session %s, offre %s", deps.session_id, state["posting_id"])
+        logger.info(
+            "Posting rejected: session %s, posting %s", deps.session_id, state["posting_id"]
+        )
         _say("refus", reason)
         return {"summary": reason}
 
@@ -167,14 +168,14 @@ def make_reject(deps: GraphDeps) -> Node:
 def make_save_analysis(deps: GraphDeps) -> Node:
     @node_timeout(SAVE_TIMEOUT_S)
     async def save_analysis(state: GapAnalysisState) -> GapAnalysisState:
-        """La première analyse rangée gagne : la suite lit celle qui est en base."""
-        assert state["analysis"] is not None  # garanti par `route_analyze`
+        """The first stored analysis wins: the rest reads the one that is in the database."""
+        assert state["analysis"] is not None  # guaranteed by `route_analyze`
         found = PostingAnalysis.model_validate(state["analysis"])
         saved = await deps.ports.gap.save_analysis(
             deps.user_id, deps.session_id, state["posting_id"], found
         )
         logger.info(
-            "Analyse rangée : session %s, offre %s, première %s, %d doublon(s)",
+            "Analysis stored: session %s, posting %s, first %s, %d duplicate(s)",
             deps.session_id,
             saved.posting_id,
             saved.first,
@@ -191,7 +192,7 @@ def make_save_analysis(deps: GraphDeps) -> Node:
 async def _ask_matches(
     deps: GraphDeps, analysis: PostingAnalysis, known: list[KnownSkill]
 ) -> SkillMatches | None:
-    """Le rattachement demandé au modèle ; sans besoin ou sans référentiel, aucun appel."""
+    """The link requested from the model; with no need or no inventory, no call."""
     if not analysis.skills or not known:
         return None
     model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
@@ -209,14 +210,14 @@ async def _ask_matches(
 def make_match(deps: GraphDeps) -> Node:
     @node_timeout(MATCH_TIMEOUT_S)
     async def match(state: GapAnalysisState) -> GapAnalysisState:
-        assert state["analysis"] is not None  # garanti par `route_load` et `save_analysis`
+        assert state["analysis"] is not None  # guaranteed by `route_load` and `save_analysis`
         analysis = PostingAnalysis.model_validate(state["analysis"])
         known = await deps.ports.gap.known_skills(deps.user_id)
         found = await _ask_matches(deps, analysis, known)
         matches, unknown = clean_matches(analysis, found, known)
         logger.info(
-            "Rattachement : session %s, offre %s, %d besoin(s), %d rattaché(s), %d réponse(s) "
-            "hors besoins ou hors référentiel ignorée(s)",
+            "Matching: session %s, posting %s, %d need(s), %d linked, %d answer(s) "
+            "outside the needs or the inventory ignored",
             deps.session_id,
             state["posting_id"],
             len(matches),
@@ -231,13 +232,13 @@ def make_match(deps: GraphDeps) -> Node:
 def make_save_gap(deps: GraphDeps) -> Node:
     @node_timeout(SAVE_TIMEOUT_S)
     async def save_gap(state: GapAnalysisState) -> GapAnalysisState:
-        """Lignes et score calculés par le code du port (idempotent par session)."""
+        """Rows and score computed by the port code (idempotent per session)."""
         matches = [SkillMatch.model_validate(m) for m in state.get("matches", [])]
         saved = await deps.ports.gap.save_gap(
             deps.user_id, deps.session_id, state["posting_id"], matches
         )
         logger.info(
-            "Écart rangé : session %s, offre %s, score %d, %d ligne(s), %d absente(s)",
+            "Gap stored: session %s, posting %s, score %d, %d row(s), %d missing",
             deps.session_id,
             state["posting_id"],
             saved.score,
@@ -250,7 +251,7 @@ def make_save_gap(deps: GraphDeps) -> Node:
 
 
 def announce(state: GapAnalysisState) -> GapAnalysisState:
-    """Le score, les compétences absentes, le doublon éventuel, puis l'écart prêt."""
+    """The score, the missing skills, the possible duplicate, then the gap ready."""
     text = gap_text(GapSaved(**state["saved"]))
     _say("ecart", text)
     if duplicate := duplicate_text(state.get("duplicates", [])):
@@ -261,7 +262,7 @@ def announce(state: GapAnalysisState) -> GapAnalysisState:
     artifact = {
         "artifact_id": posting_id,
         "kind": "posting_gap",
-        "title": str(analysis.get("title") or "Offre"),
+        "title": str(analysis.get("title") or "Posting"),
         "url": f"/career/postings/{posting_id}",
     }
     emit("artifact.ready", artifact, agent=AGENT)
