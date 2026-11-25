@@ -9911,7 +9911,9 @@ pagination by `before = next_before`, 50 entries per page.
   (`ALLOWED_EMAILS` empty = refusal to start, explicit `*`); review of 9.P (I1: the return from
   Google always ends with a redirect) and of 9.A1 (M2: TLS required for the `token` endpoint).
 
-## D177 bis : suites de la revue de 9.A2 (commit `fix(phase-9): suites de la revue de la connexion (9.A2)`)
+## D177 bis: follow-ups to the 9.A2 review
+
+Commit `fix(phase-9): suites de la revue de la connexion (9.A2)` (sign-in review follow-ups).
 
 - **Date** 2026-11-17
 - **Subject** Phase 9, fixes from the review of 9.A2
@@ -10065,7 +10067,9 @@ pagination by `before = next_before`, 50 entries per page.
 - **Reason** SPEC 17.2 (two accounts never see each other's data); P14; Review Focus no. 1; review
   of 9.A3 (M2, M5, M6, M7, M8: isolation tests written red first, the guard fails before the cases).
 
-## D179 bis : suites de la revue de 9.A4 (commit `fix(phase-9): suites de la revue de l'isolation (9.A4)`)
+## D179 bis: follow-ups to the 9.A4 review
+
+Commit `fix(phase-9): suites de la revue de l'isolation (9.A4)` (isolation review follow-ups).
 
 - **Date** 2026-11-17
 - **Subject** Phase 9, fixes from the review of 9.A4
