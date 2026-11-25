@@ -8452,506 +8452,2266 @@ pagination by `before = next_before`, 50 entries per page.
 
 ## D158
 
-- **Date** : 2026-11-16
-- **Sujet** : Phase 8, tâche 8.2 : registre des passages (`jobs`), planificateur complet, rafraîchissement ATS (back)
-- **Décision** :
-  1. **`claim` atomique (P13)** : `INSERT … ON CONFLICT DO NOTHING RETURNING id` sur `(user_id, name, period)` ; sinon la ligne existante décide : `done` et `skipped` ne se reprennent jamais, `running` seulement s'il est périmé (démarré il y a plus de 30 minutes, `is_stale`), `failed` ou périmé tant que `attempts < 3` par `UPDATE … WHERE id = :id AND attempts = :ancien` (une ligne touchée = `Claim(run_id, attempt)`). Les anciens `attempts` sont lus avant l'UPDATE (la session met l'objet à jour). Un `running` périmé sans essai restant passe en `failed` / `abandoned` (il apparaît au fil au lieu de rester « en cours »). Le commit appartient à l'appelant, qui valide aussitôt ; cinq `claim` simultanés (sessions réelles) n'ont qu'un gagnant, aussi pour une reprise.
-  2. **`finish`, `fail`, lectures** : `finish(status done|skipped, ref_id, next_due_at)` et `fail(code)` ne touchent qu'une ligne `running` du bon utilisateur (un passage fini ne retombe jamais). `code` = type d'erreur ou code d'`AppError` ; tout autre texte (un message peut citer une donnée) est rangé et journalisé comme `error`. `last_done`, `recent_failures(since, limit)` (pour le fil, plus récents d'abord) rendent des `JobRunView`. `user_ids` (table `users`) est la seule lecture sans `user_id` du registre (D18, D91). Journaux : identifiants, essais, codes.
-  3. **Rafraîchissement ATS (P14)** : `ats_refresh` (service `cv`, tâche toutes les 6 heures et au démarrage) : un compte est dû sans passage `done` ou si le dernier a fini il y a 30 jours ou plus ; `claim` sur le **jour local** de January (`local_today(zone, now)`, jamais `now.date()` : 00 h 30 à Paris du lundi n'est pas le dimanche UTC) ; une session `web_research` (requête fixe `ATS_QUERY`, sujet `ats_refresh`) ; `finish(ref_id = session, next_due_at = maintenant + 30 jours)`. Lancement refusé : `fail(code)`, repris au passage suivant du même jour (3 essais) ; une panne pour un compte n'arrête pas les autres. Le passage est `done` au lancement : une session qui échoue ensuite n'est pas relancée avant 30 jours.
-  4. **Le Lecteur ATS lit les mises à jour** : `ReviewContext.ats_updates` (`AtsUpdate`) = les sources « kept » (les mieux notées d'abord, 3 au plus) de la **dernière** session `web_research` de sujet `ats_refresh` terminée (`completed`) depuis moins de 60 jours ; le prompt les rend dans `untrusted(…, "base ATS : mises à jour du web")` avec leur date, en fin de `_shared/ats_base.md` (la base datée n'est jamais réécrite) ; sans mise à jour, le texte du prompt est identique à avant.
-  5. **`web_search(…, time_range=None)`** transmet la fenêtre de temps à la passerelle (qui la connaît déjà) ; aucun parcours ne l'utilise encore.
-  6. **Tâches et périodes** : toute période d'une tâche planifiée vient de `local_today(zone, now)` (`day_period`, `week_period`), jamais du jour UTC ; test avec un fuseau (New York, dimanche 23 h 30 locale = lundi UTC : semaine ISO du dimanche). `JOBS` gagne `ats_refresh`.
-- **Raison** : P13 (registre persistant, rattrapage = règle « dû » relue à chaque passage, reprise conditionnelle) et P14 (la base ATS datée se rafraîchit toute seule, sans jamais être réécrite). SPEC 17.2 (aucune donnée dans les journaux), 17.4 (contenu du web encadré), D91 (tâches planifiées), D98 (temps local), D129 (Lecteur ATS).
+- **Date** 2026-11-16
+- **Subject** Phase 8, task 8.2: run registry (`jobs`), full scheduler, ATS refresh (back end)
+- **Decision**
+  1. **Atomic `claim` (P13)**: `INSERT … ON CONFLICT DO NOTHING RETURNING id` on
+     `(user_id, name, period)`; otherwise the existing row decides: `done` and `skipped` are never
+     taken again, `running` only if it is stale (started more than 30 minutes ago, `is_stale`),
+     `failed` or stale while `attempts < 3` by `UPDATE … WHERE id = :id AND attempts = :old` (one
+     row touched = `Claim(run_id, attempt)`). The old `attempts` are read before the UPDATE (the
+     session refreshes the object). A stale `running` with no attempt left becomes `failed` /
+     `abandoned` (it shows up in the feed instead of staying “in progress”). The commit belongs
+     to the caller, who commits at once; five simultaneous `claim` calls (real sessions) have a
+     single winner, also for a retake.
+  2. **`finish`, `fail`, reads**: `finish(status done|skipped, ref_id, next_due_at)` and
+     `fail(code)` only touch a `running` row of the right user (a finished run never falls back).
+     `code` = error type or `AppError` code; any other text (a message may quote data) is stored and
+     logged as `error`. `last_done` and `recent_failures(since, limit)` (for the feed, most recent
+     first) return `JobRunView` objects. `user_ids` (table `users`) is the only read of the registry
+     without `user_id` (D18, D91). Logs: identifiers, attempts, codes.
+  3. **ATS refresh (P14)**: `ats_refresh` (service `cv`, a task every 6 hours and at startup): an
+     account is due with no `done` run or if the last one finished 30 days ago or more; `claim` on
+     January's **local day** (`local_today(zone, now)`, never `now.date()`: 00:30 on Monday in Paris
+     is not Sunday in UTC); one `web_research` session (fixed query `ATS_QUERY`, subject
+     `ats_refresh`); `finish(ref_id = session, next_due_at = now + 30 days)`. Launch refused:
+     `fail(code)`, retaken at the next pass of the same day (3 attempts); a failure for one account
+     does not stop the others. The run is `done` at launch: a session that fails afterwards is not
+     relaunched before 30 days.
+  4. **The ATS reader reads the updates**: `ReviewContext.ats_updates` (`AtsUpdate`) = the
+     “kept” sources (best rated first, 3 at most) of the **latest** `web_research` session with
+     subject `ats_refresh` completed (`completed`) less than 60 days ago; the prompt renders them in
+     `untrusted(…, "base ATS : mises à jour du web")` (“ATS base: updates from the web”) with
+     their date, at the end of `_shared/ats_base.md` (the dated base is never rewritten); with no
+     update, the prompt text is identical to before.
+  5. **`web_search(…, time_range=None)`** passes the time window to the gateway (which already
+     knows it); no flow uses it yet.
+  6. **Tasks and periods**: every period of a scheduled task comes from `local_today(zone, now)`
+     (`day_period`, `week_period`), never from the UTC day; test with a time zone (New York, Sunday
+     23:30 local = Monday UTC: the ISO week of Sunday). `JOBS` gains `ats_refresh`.
+- **Reason** P13 (persistent registry, catch-up = the “due” rule reread at each pass,
+  conditional retake) and P14 (the dated ATS base refreshes itself, without ever being rewritten).
+  SPEC 17.2 (no data in logs), 17.4 (web content fenced off), D91 (scheduled tasks), D98 (local
+  time), D129 (ATS reader).
 
 ## D159
 
-- **Date** : 2026-11-16
-- **Sujet** : Phase 8, tâche 8.3 : parcours `market_radar` (Éclaireur et Analyste) et port `RadarStore` (back)
-- **Décision** :
-  1. **Port `RadarStore` (P5, P6)** : `context` (lecture seule : pages lues dans l'ordre de lecture, repères extraits ou en échec, lectures faites), `save_candidates`, `read_posting` (idempotent par relevé et lien normalisé, une page qui ne se lit pas rend `unreadable`, jamais une erreur), `save_extraction` (idempotent par repère de page), `finalize`, `fail` ; valeur par défaut `NO_RADAR` (503 `radar_unavailable`), champ `radar` d'`AgentPorts`, paramètre `radar` de `bootstrap_agents.agent_ports`, faux `FakeRadarStore`. Le moteur n'importe aucune feature (contrat 6) : les bornes (`MAX_READS` 60, `MAX_CANDIDATES` 80, `MAX_READABLE` 50), la clé de lien (`link_key`) et la vérification du salaire (`salary_in_text`) sont recopiées côté moteur ; des tests vérifient leur accord avec `radar.service.rules` et `postings.service.rules.posting_url_key` (table de liens, valides et refusés).
-  2. **Requêtes du code, sans modèle (P5)** : `radar_searches` : en français « offre d'emploi {poste} {zone} » et « {poste} {zone} recrutement CDI », pour toute autre langue « {poste} job {zone} », puis « {poste} {zone} site:{site} » pour les quatre sites d'offres ; sans doublon, 6 au plus, chacune avec sa langue ; sans poste : aucune requête. Fenêtre `time_range="month"`. Les liens des requêtes sont pris à tour de rôle (aucune requête ne prend toute la place), dédoublonnés par `link_key`, 80 au plus. Une requête sans réponse (`search_unavailable`, `web_unavailable`, requête vide) n'arrête pas les autres, le plafond de la session garde ce qui est trouvé ; **aucune requête n'a répondu** : `fail("search_unavailable")` puis `run.failed` « La recherche web ne répond pas : relevé impossible pour l'instant. ».
-  3. **Lecture par passages (P5)** : `read` relit `context` à chaque passage, prend les dix prochains liens non lus (au plus `60 − lectures déjà faites`), les lit par le port cinq à la fois, dit « 24 pages lues : 19 offres, 5 bloquées. » (cumul), et s'arrête à 50 offres lisibles, à 60 lectures ou sans lien restant, ou si un passage n'a lu rien de plus (jamais de boucle sans fin). L'état du graphe ne garde que les liens trouvés (le port ne les rend pas) et l'issue de la boucle, calculée sur ce que le port vient de rendre. Un redémarrage ne relit rien : les liens déjà lus ne sont plus demandés.
-  4. **Extraction par lots (P6)** : l'Analyste (mode `radar` d'`analyst.md`) lit cinq offres par appel, chacune dans `untrusted(…, "offre p1")` coupée à 4 000 caractères ; au plus **les 50 premières pages lisibles** sont extraites (un passage de lecture peut dépasser 50 lisibles : 10 appels au plus, jamais 11). Le code contrôle la réponse : référence inconnue ou répétée ignorée, outil absent du texte montré retiré (`contains_term`, une fois chacun), salaire dont un nombre n'est pas dans le texte montré retiré, une page qui n'est pas une offre ne garde rien d'autre ; les offres sont rangées sous le repère de la **page** (`PostingPage.ref`), pas sous `p1` à `p5`. Un lot invalide après les nouveaux essais de `structured_call`, ou une page que la réponse oublie, passe en `failed_refs` : la boucle ne reprend jamais une page sans issue. Le nombre d'offres analysées est tenu à part des offres lues (revue 8.1 : `program_alerts(analyzed)` reçoit les offres analysées).
-  5. **Honnêteté du rapport** : `finish` range le rapport du port et le dit avec les nombres réels : « 47 offres lues, 6 bloquées, 41 analysées. » ; les pages lisibles qui ne sont pas des offres sont comptées à part (« 1 page n'était pas une offre »), jamais dans les offres lues ; moins de 30 offres lisibles : « Seulement 18 offres lisibles : classement indicatif. » ; aucune offre lisible : « Aucune offre lisible : pas de classement cette fois. » ; `artifact.ready` `kind = "radar"`, `url = "/carriere/radar/<relevé>"`.
-  6. **`recursion_limit` (vérifié dans la documentation actuelle de LangGraph)** : le défaut est de 10 007 pas depuis la 1.1.4 (la version installée est la 1.2.20), non 25 ; chaque passage d'une boucle par arête conditionnelle est un pas, sans nœud d'aiguillage : au pire 19 pas (chargement, recherche, 6 lectures, 10 extractions, fin). 8.4 fixe malgré tout `recursion_limit = 6 + 2 × (60 / 10 + 50 / 5) = 38` au lancement, pour qu'une boucle sans fin échoue vite.
-  7. **Écarts au plan** : `scout.md` n'est pas modifié (l'Éclaireur n'appelle aucun modèle ici : la phrase d'intention est celle de `agent.started`, dans le nœud) ; le texte de `radar_text.py` (phrases) est séparé de `scout/radar.py` pour garder les fichiers sous 300 lignes ; les tests de rejeu, de journaux et de branchement sont dans `test_market_radar_replay.py`. `ROUTE_ONLY["market_radar"] = "POST /radar/runs"`. Le contrat n'est pas modifié.
-  8. **Journaux** : identifiants et nombres seulement ; jamais un lien, un site, un texte d'offre, un poste ni une zone (test `test_radar_never_logs_urls_or_text`).
-- **Raison** : P5 et P6 : un relevé presque aveugle (moteur en panne, sites bloqués, pages qui ne sont pas des offres) dit les nombres réels au lieu d'échouer en silence ou de prétendre un échantillon ; un graphe long avance par lots (16.4 n° 6), relit sa progression dans le port (9.4) et ne paie jamais deux fois une lecture ou une extraction. SPEC 1, 17.2, 17.4, 18.3 ; D97 (sorties structurées), D115, D77 (passerelle web).
+- **Date** 2026-11-16
+- **Subject** Phase 8, task 8.3: `market_radar` flow (Scout and Analyst) and `RadarStore` port (back
+  end)
+- **Decision**
+  1. **`RadarStore` port (P5, P6)**: `context` (read-only: pages read in reading order, extracted or
+     failed markers, reads done), `save_candidates`, `read_posting` (idempotent per scan and
+     normalized link; a page that cannot be read returns `unreadable`, never an error),
+     `save_extraction` (idempotent per page marker), `finalize`, `fail`; default value `NO_RADAR`
+     (503 `radar_unavailable`), `radar` field of `AgentPorts`, `radar` parameter of
+     `bootstrap_agents.agent_ports`, fake `FakeRadarStore`. The engine imports no feature (contract
+     6): the bounds (`MAX_READS` 60, `MAX_CANDIDATES` 80, `MAX_READABLE` 50), the link key
+     (`link_key`) and the salary check (`salary_in_text`) are copied on the engine side; tests check
+     that they agree with `radar.service.rules` and `postings.service.rules.posting_url_key` (a
+     table of links, valid and rejected).
+  2. **Queries built by code, no model (P5)**: `radar_searches`: in French “offre d'emploi {role}
+     {zone}” and “{role} {zone} recrutement CDI”, for any other language “{role} job
+     {zone}”, then “{role} {zone} site:{site}” for the four job sites; no duplicates, 6 at
+     most, each with its language; with no role: no query. Window `time_range="month"`. The links
+     from the queries are taken in turn (no query takes all the room), deduplicated by `link_key`,
+     80 at most. A query with no answer (`search_unavailable`, `web_unavailable`, empty query) does
+     not stop the others, and the session cap keeps what was found; **no query answered**:
+     `fail("search_unavailable")` then `run.failed` “La recherche web ne répond pas : relevé
+     impossible pour l'instant.” (“Web search is not responding: scan impossible for now.”).
+  3. **Reading in passes (P5)**: `read` rereads `context` at each pass, takes the next ten unread
+     links (at most `60 − reads already done`), reads them through the port five at a time, says
+     “24 pages lues : 19 offres, 5 bloquées.” (“24 pages read: 19 postings, 5 blocked.”)
+     (cumulative), and stops at 50 readable postings, at 60 reads or with no link left, or if a pass
+     read nothing more (never an endless loop). The graph state only keeps the links found (the port
+     does not return them) and the outcome of the loop, computed from what the port has just
+     returned. A restart rereads nothing: links already read are not requested again.
+  4. **Extraction in batches (P6)**: the Analyst (`radar` mode of `analyst.md`) reads five postings
+     per call, each in `untrusted(…, "offre p1")` cut at 4,000 characters; at most **the first 50
+     readable pages** are extracted (a reading pass can exceed 50 readable ones: 10 calls at most,
+     never 11). The code checks the answer: an unknown or repeated reference is ignored, a tool
+     absent from the text shown is removed (`contains_term`, once each), a salary with a number not
+     in the text shown is removed, and a page that is not a posting keeps nothing else; postings are
+     stored under the marker of the **page** (`PostingPage.ref`), not under `p1` to `p5`. A batch
+     that is invalid after the new attempts of `structured_call`, or a page the answer forgets, goes
+     into `failed_refs`: the loop never retakes a page with no outcome. The number of postings
+     analyzed is kept apart from the postings read (review 8.1: `program_alerts(analyzed)` receives
+     the postings analyzed).
+  5. **Honest report**: `finish` stores the port's report and says it with the real numbers: “47
+     offres lues, 6 bloquées, 41 analysées.” (“47 postings read, 6 blocked, 41 analyzed.”);
+     readable pages that are not postings are counted separately (“1 page n'était pas une
+     offre”, “1 page was not a posting”), never in the postings read; fewer than 30 readable
+     postings: “Seulement 18 offres lisibles : classement indicatif.” (“Only 18 readable
+     postings: indicative ranking.”); no readable posting: “Aucune offre lisible : pas de
+     classement cette fois.” (“No readable posting: no ranking this time.”); `artifact.ready`
+     `kind = "radar"`, `url = "/carriere/radar/<scan>"`.
+  6. **`recursion_limit` (checked in the current LangGraph documentation)**: the default is 10,007
+     steps since 1.1.4 (the installed version is 1.2.20), not 25; each pass of a loop through a
+     conditional edge is a step, with no routing node: at worst 19 steps (loading, search, 6 reads,
+     10 extractions, end). 8.4 still sets `recursion_limit = 6 + 2 × (60 / 10 + 50 / 5) = 38` at
+     launch, so that an endless loop fails fast.
+  7. **Deviations from the plan**: `scout.md` is not changed (the Scout calls no model here: the
+     intent sentence is that of `agent.started`, in the node); the text of `radar_text.py`
+     (sentences) is separated from `scout/radar.py` to keep the files under 300 lines; the replay,
+     log, and wiring tests are in `test_market_radar_replay.py`. `ROUTE_ONLY["market_radar"]
+     = "POST /radar/runs"`. The contract is not changed.
+  8. **Logs**: identifiers and numbers only; never a link, a site, a posting text, a role, or a zone
+     (test `test_radar_never_logs_urls_or_text`).
+- **Reason** P5 and P6: an almost blind scan (engine down, sites blocked, pages that are not
+  postings) states the real numbers instead of failing silently or pretending to be a sample; a long
+  graph moves forward in batches (16.4 no. 6), rereads its progress in the port (9.4), and never
+  pays twice for a read or an extraction. SPEC 1, 17.2, 17.4, 18.3; D97 (structured outputs), D115,
+  D77 (web gateway).
 
 ## D160
 
-- **Date** : 2026-11-16
-- **Sujet** : Phase 8, tâche 8.4 : feature `radar` (port réel, routes, relevé hebdomadaire, demande du marché), composition du quotidien, correctifs repris des revues 8.1 à 8.3 (back, contrat)
-- **Décision** :
-  1. **Routes (P10)** : `POST /radar/runs {role?, zone?}` (202 `{run_id, session_id}` ; 409 `radar_in_progress` avec `details.run_id`, 409 `radar_role_required`, 422 qui nomme les champs sans les recopier), `GET /radar/latest` (poste et zone par défaut, relevé en cours, dernier relevé fini, réussi ou en échec), `GET /radar/runs` (20, récent d'abord), `GET /radar/runs/{id}` (404 `radar_run_not_found`). Réglages `radar_role` (vide) et `radar_zone` (« France »), mémorisés quand la requête les donne ; défaut du poste : réglage, sinon `target_role` du dernier objectif. Le formulaire des réglages (front) renvoie les deux champs (un `PUT` complet ne les efface pas) ; `AlertOut` du radar est nommé `RadarAlertOut` (le nom existe déjà côté candidatures : sinon le contrat renommerait les deux).
-  2. **Lancement (P10, D159 n° 6)** : sous le verrou des relevés de l'utilisatrice ; un relevé `running` dont la session est ouverte refuse (409), un relevé dont la session est close passe d'abord en `failed` ; session `market_radar`, sujet `radar_run`. `GraphSpec.recursion_limit` (nouveau, `None` par défaut) fixe la limite de pas au lancement : `market_radar` déclare 38 ; test d'une boucle qui s'arrête à sa limite. Un lancement refusé laisse le relevé `failed` avec le code de l'erreur.
-  3. **Statut qui suit la session (revue 8.3, D129 n° 5)** : seule `search_unavailable` appelait `RadarStore.fail` ; un délai de nœud ou une panne de l'Analyste laissait le relevé `running`. À chaque lecture (`latest`, liste, détail), au lancement et au passage hebdomadaire, un relevé `running` sans session ouverte passe en `failed` avec un code lisible : `session_failed`, `session_cancelled`, `not_finalized` (session terminée sans fin de relevé), `launch_failed` (aucune session). Colonne `radar_runs.error_code` (migration `0014`), jamais un message.
-  4. **Port réel `AgentRadarStore` (D159 n° 1)** : une entrée par page dans `radar_runs.postings` (repère `p1`, `p2`… dans l'ordre d'écriture, lien, clé de lien, site, état `ok` / `blocked` / `not_posting` / `extract_failed`, texte de 4 000 caractères au plus **le temps du relevé**, retiré à la fin) ; lecture par `research.service.reading.read(runtime, user_id, None, url)` (cache de 7 jours, débit par domaine, garde SSRF, domaines exclus jamais lus et comptés bloqués) ; un lien refusé est une page illisible, jamais une erreur ; **idempotent** par clé de lien (une page lue deux fois est rendue sans relecture ni recompte), **plafonné à 60** (409 `radar_read_limit`), toutes les écritures d'un relevé sous son verrou (les cinq lectures simultanées d'un passage ne se perdent pas) ; extraction idempotente par repère de page (la première gagne) ; le salaire est revérifié contre le texte stocké.
-  5. **`RadarFinding` (revue 8.3)** : `save_extraction` reçoit des offres dont `ref` est le repère de la **page** (`p12`), réécrit par `model_copy` alors que `RadarItem.ref` exige `^p[1-5]$` : toute relecture de validation aurait échoué. Le port reçoit désormais `RadarFinding` (sous-type de `RadarItem`, `ref` libre de 1 à 16 caractères) ; l'Analyste le construit par une vraie validation ; tests : `p12` accepté par `RadarFinding`, refusé par `RadarItem`, et le parcours entier sur le port réel (`test_market_radar_real_store.py` : repères à deux chiffres, lot en échec).
-  6. **Fin d'un relevé (P6 à P9)** : classement par `rank_skills`, évolution contre le dernier relevé `done` de **même poste et même zone normalisés** créé avant lui, `program_alerts` sur les modules non sautés des programmes validés (`skill_weeks`) et les niveaux connus, **étendus aux synonymes du référentiel** (`SkillsService.alias_groups`), `posting_score` par offre, `upsert_catalog(enrich_names(…))` sans niveau (domaine « Autres »), statut `done`, `previous_id`, `finished_at` ; idempotent. **`program_alerts` reçoit le nombre d'offres analysées, jamais celui des offres lues** (revue 8.1) : 15 lues et 8 analysées ne donnent aucune alerte (test, mutation vérifiée). L'échantillon réduit se mesure en **offres** lisibles (pages lisibles moins celles qui n'étaient pas des offres), pas en pages.
-  7. **Écart dit (revue 8.3)** : `RadarRunOut.not_analyzed` = offres lues et non analysées (extraction en échec, ou au-delà des 50 d'un relevé) : « 55 lues, 50 analysées » ; `read_count` reste les pages lisibles, `not_postings` celles qui n'étaient pas des offres.
-  8. **Relevé hebdomadaire (P10, P13)** : tâche `market_radar` (15 minutes, au démarrage) ; par compte, le lundi à partir de 06:00 **locales** ; le passage se gagne sous `week_period(local_today(zone, now))` (jamais `now.date()` ; tests : lundi 06 h 30 à Auckland est dimanche en UTC, dimanche 23 h 30 à New York est lundi en UTC) ; un relevé non échoué créé cette semaine locale (manuel compris) ou aucun poste : `skipped` ; sinon `start_run(trigger="schedule", period=semaine)` puis `finish(done, ref_id = relevé, next_due_at = lundi suivant 06:00 locales)`. **Écart au plan, arbitré par le contrôleur** : un relevé *en échec* ne tient pas la semaine (il est corrigé puis le passage planifié le remplace, jusqu'à 3 essais), sinon une panne du lundi priverait la semaine de relevé. L'écart n'est accepté que pour les relevés terminés `failed` : un relevé en échec ne produit aucun rapport, il reste donc **au plus un relevé planifié réussi par semaine**. Un relevé annulé par January elle-même (`session_cancelled`) n'est jamais relancé (comme `ats_refresh`, qui ne rouvre que sur une session `failed`). Panne de lancement : passage `failed` rangé sous son code, repris au passage suivant (3 essais) ; une panne pour un compte n'arrête pas les autres.
-  9. **Registre `jobs` (revue 8.2)** : `finish` et `fail` prennent l'**essai** (`Claim.attempt`) et ne ferment que cet essai : un ouvrier périmé dont le passage a été repris ne ferme ni ne fait échouer l'essai suivant (test, dont des reprises simultanées d'un `running` périmé). `reopen` remet un passage `done` en `failed` (essai donné seulement) ; `ats_refresh` s'en sert : un dernier passage `done` dont la session s'est terminée `failed` compte comme non fait et est repris au passage suivant, dans la limite des 3 essais. `latest_session` des mises à jour ATS ne retient que les rafraîchissements qui ont gardé au moins une source : un rafraîchissement récent sans source ne cache plus le précédent.
-  10. **Demande du marché (P9, F15)** : `radar.service.demand.latest_demand` (nom normalisé → part du dernier relevé `done`) ; `skill_graph` remplit `demand` (nom ou synonyme, la plus forte ; 0 si le relevé ne la cite pas ; `None` sans relevé fini). Le module n'importe ni `skills` ni rien qui l'importe.
-  11. **Composition** : `app/bootstrap_daily.py` (`DailyRuntimes(radar, radar_store)`, `daily_runtimes(...)`, contrat 5 étendu : seul `app.main` l'importe) ; `JobContext.daily` est un protocole (`DailyJobs`) : le planificateur ne peut pas importer la composition ; `scheduler_context(..., daily)` ; `app/main.py` gagne 10 lignes (282). Fichiers du radar : `repository`, `schemas`, `router`, `service/{runtime, runs, store, entries, finalize, demand, schedule, views, rules}` (`entries` : forme et comptes des pages, en plus du plan, pour garder `store` sous 300 lignes).
-  12. **Journaux** : identifiants, nombres et codes ; jamais le poste, la zone, un lien, un site, un intitulé, une entreprise, un texte ni une compétence (`test_*_never_logged`).
-  13. **Tour de correction n° 1 (revue 8.4)** : un relevé `done` sans aucune offre analysée (« aveugle ») n'est jamais une référence : `latest_done(min_analyzed=1)` pour le `previous` de l'évolution (sinon toutes les compétences paraissent « nouvelles ») et pour la demande du marché (sinon la carte repasse à « pas de relevé ») ; un relevé exploitable plus ancien continue d'alimenter les deux. Test de deux lancements simultanés (un 202, un 409 `radar_in_progress`). Test de rejeu `test_replay_mid_read_never_rereads` rendu déterministe : le faux port pose un signal quand la lecture se fige et la fin de session s'attend avec une garde de 120 s, au lieu d'un délai de 5 s qu'une machine chargée dépassait (assertion inchangée).
-- **Raison** : P9 et P10 ; revues 8.1 (période locale, alertes sur les offres analysées), 8.2 (essai du registre, rafraîchissement ATS, mises à jour sans source) et 8.3 (repère de page, statut qui suit la session, écart lues/analysées) : un relevé presque aveugle dit les nombres réels, ne reste jamais « en cours » sans session, ne revalide pas un repère de lot. SPEC 1, 13.5, 14.2, 17.2, 18.3 ; D91, D98, D129 n° 5, D157 à D159.
+- **Date** 2026-11-16
+- **Subject** Phase 8, task 8.4: `radar` feature (real port, routes, weekly scan, market demand),
+  daily composition, fixes carried over from reviews 8.1 to 8.3 (back end, contract)
+- **Decision**
+  1. **Routes (P10)**: `POST /radar/runs {role?, zone?}` (202 `{run_id, session_id}`; 409
+     `radar_in_progress` with `details.run_id`, 409 `radar_role_required`, 422 naming the fields
+     without copying them), `GET /radar/latest` (default role and zone, scan in progress, last
+     finished scan, succeeded or failed), `GET /radar/runs` (20, most recent first),
+     `GET /radar/runs/{id}` (404 `radar_run_not_found`). Settings `radar_role` (empty) and
+     `radar_zone` (“France”), remembered when the request gives them; default role: the setting,
+     otherwise `target_role` of the last goal. The settings form (front end) sends back both fields
+     (a full `PUT` does not erase them); the radar's `AlertOut` is named `RadarAlertOut` (the name
+     already exists on the applications side: otherwise the contract would rename both).
+  2. **Launch (P10, D159 no. 6)**: under the lock of the user's scans; a `running` scan whose
+     session is open refuses (409), a scan whose session is closed first goes to `failed`;
+     `market_radar` session, subject `radar_run`. `GraphSpec.recursion_limit` (new, `None` by
+     default) sets the step limit at launch: `market_radar` declares 38; test of a loop that stops
+     at its limit. A refused launch leaves the scan `failed` with the error's code.
+  3. **Status that follows the session (review 8.3, D129 no. 5)**: only `search_unavailable` called
+     `RadarStore.fail`; a node timeout or a failure of the Analyst left the scan `running`. At each
+     read (`latest`, list, detail), at launch, and at the weekly pass, a `running` scan with no open
+     session goes to `failed` with a readable code: `session_failed`, `session_cancelled`,
+     `not_finalized` (session ended without a scan end), `launch_failed` (no session). Column
+     `radar_runs.error_code` (migration `0014`), never a message.
+  4. **Real `AgentRadarStore` port (D159 no. 1)**: one entry per page in `radar_runs.postings`
+     (marker `p1`, `p2`… in writing order, link, link key, site, state `ok` / `blocked` /
+     `not_posting` / `extract_failed`, text of 4,000 characters at most **for the duration of the
+     scan**, removed at the end); reading through `research.service.reading.read(runtime,
+     user_id, None, url)` (7-day cache, per-domain rate, SSRF guard, excluded domains never read and
+     counted as blocked); a refused link is an unreadable page, never an error; **idempotent** by
+     link key (a page read twice is returned without rereading or recounting), **capped at 60** (409
+     `radar_read_limit`), all writes of a scan under its lock (the five simultaneous reads of a pass
+     are not lost); extraction idempotent by page marker (the first wins); the salary is rechecked
+     against the stored text.
+  5. **`RadarFinding` (review 8.3)**: `save_extraction` received postings whose `ref` is the marker
+     of the **page** (`p12`), rewritten by `model_copy` while `RadarItem.ref` requires `^p[1-5]$`:
+     any validation reread would have failed. The port now receives `RadarFinding` (subtype of
+     `RadarItem`, free `ref` of 1 to 16 characters); the Analyst builds it through real validation;
+     tests: `p12` accepted by `RadarFinding`, rejected by `RadarItem`, and the whole flow on the
+     real port (`test_market_radar_real_store.py`: two-digit markers, failed batch).
+  6. **End of a scan (P6 to P9)**: ranking by `rank_skills`, trend against the last `done` scan with
+     the **same normalized role and zone** created before it, `program_alerts` on the non-skipped
+     modules of validated programs (`skill_weeks`) and the known levels, **extended to the
+     framework's synonyms** (`SkillsService.alias_groups`), `posting_score` per posting,
+     `upsert_catalog(enrich_names(…))` with no level (domain “Autres”, “Others”), status
+     `done`, `previous_id`, `finished_at`; idempotent. **`program_alerts` receives the number of
+     postings analyzed, never that of postings read** (review 8.1): 15 read and 8 analyzed give no
+     alert (test, mutation checked). The reduced sample is measured in readable **postings**
+     (readable pages minus those that were not postings), not in pages.
+  7. **Deviation stated (review 8.3)**: `RadarRunOut.not_analyzed` = postings read and not analyzed
+     (failed extraction, or beyond the 50 of a scan): “55 read, 50 analyzed”; `read_count` stays
+     the readable pages, `not_postings` those that were not postings.
+  8. **Weekly scan (P10, P13)**: `market_radar` task (15 minutes, at startup); per account, on
+     Monday from 06:00 **local**; the run is won under `week_period(local_today(zone, now))` (never
+     `now.date()`; tests: Monday 06:30 in Auckland is Sunday in UTC, Sunday 23:30 in New York is
+     Monday in UTC); a non-failed scan created this local week (manual included) or no role:
+     `skipped`; otherwise `start_run(trigger="schedule", period=week)` then `finish(done, ref_id =
+     scan, next_due_at = next Monday 06:00 local)`. **Deviation from the plan, arbitrated by the
+     controller**: a *failed* scan does not hold the week (it is fixed, then the scheduled pass
+     replaces it, up to 3 attempts), otherwise a Monday outage would leave the week without a scan.
+     The deviation is accepted only for scans that ended `failed`: a failed scan produces no report,
+     so there is still **at most one successful scheduled scan per week**. A scan cancelled by
+     January herself (`session_cancelled`) is never relaunched (like `ats_refresh`, which only
+     reopens on a `failed` session). Launch failure: run `failed` stored under its code, retaken at
+     the next pass (3 attempts); a failure for one account does not stop the others.
+  9. **`jobs` registry (review 8.2)**: `finish` and `fail` take the **attempt** (`Claim.attempt`)
+     and only close that attempt: a stale worker whose run was retaken neither closes nor fails the
+     next attempt (test, including simultaneous retakes of a stale `running`). `reopen` puts a
+     `done` run back to `failed` (attempt given only); `ats_refresh` uses it: a last `done` run
+     whose session ended `failed` counts as not done and is retaken at the next pass, within the
+     3-attempt limit. `latest_session` of the ATS updates only keeps refreshes that kept at least
+     one source: a recent refresh with no source no longer hides the previous one.
+  10. **Market demand (P9, F15)**: `radar.service.demand.latest_demand` (normalized name → share
+     of the last `done` scan); `skill_graph` fills `demand` (name or synonym, the strongest; 0 if
+     the scan does not cite it; `None` with no finished scan). The module imports neither `skills`
+     nor anything that imports it.
+  11. **Composition**: `app/bootstrap_daily.py` (`DailyRuntimes(radar, radar_store)`,
+     `daily_runtimes(...)`, contract 5 extended: only `app.main` imports it); `JobContext.daily` is
+     a protocol (`DailyJobs`): the scheduler cannot import the composition; `scheduler_context(...,
+     daily)`; `app/main.py` gains 10 lines (282). Radar files: `repository`, `schemas`, `router`,
+     `service/{runtime, runs, store, entries, finalize, demand, schedule, views, rules}` (`entries`:
+     shape and counts of the pages, in addition to the plan, to keep `store` under 300 lines).
+  12. **Logs**: identifiers, numbers, and codes; never the role, the zone, a link, a site, a title,
+     a company, a text, or a skill (`test_*_never_logged`).
+  13. **Correction round no. 1 (review 8.4)**: a `done` scan with no posting analyzed (“blind”)
+     is never a reference: `latest_done(min_analyzed=1)` for the `previous` of the trend (otherwise
+     all skills look “new”) and for market demand (otherwise the map goes back to “no
+     scan”); an older usable scan keeps feeding both. Test of two simultaneous launches (one 202,
+     one 409 `radar_in_progress`). Replay test `test_replay_mid_read_never_rereads` made
+     deterministic: the fake port sets a signal when the read freezes and the end of the session
+     waits with a 120 s guard, instead of a 5 s delay that a loaded machine exceeded (assertion
+     unchanged).
+- **Reason** P9 and P10; reviews 8.1 (local period, alerts on the postings analyzed), 8.2 (registry
+  attempt, ATS refresh, updates without a source), and 8.3 (page marker, status that follows the
+  session, read/analyzed gap): an almost blind scan states the real numbers, never stays “in
+  progress” without a session, and does not revalidate a batch marker. SPEC 1, 13.5, 14.2, 17.2,
+  18.3; D91, D98, D129 no. 5, D157 to D159.
 
 ## D161
 
-- **Date** : 2026-11-16
-- **Sujet** : Phase 8, tâche 8.5 : parcours `daily_brief` (ressource choisie par l'Éclaireur, deux phrases du Modérateur) et port `BriefStore` (back)
-- **Décision** :
-  1. **Port `BriefStore` (P11)** : `context` (lecture seule : faits du jour `AdviceFacts`, sujet, `resource_done`, `advice_done`, `allowed_numbers`), `save_resource` (`None` = rubrique vide), `save_advice` (`None` = conseil `failed`) ; **idempotents, la première écriture gagne** ; valeur par défaut `NO_BRIEF` (503 `brief_unavailable`), champ `brief` d'`AgentPorts`, paramètre `brief` de `bootstrap_agents.agent_ports` (le port réel est écrit en 8.6), faux `FakeBriefStore`. `ROUTE_ONLY["daily_brief"] = "GET /brief/today"`. Le contrat n'est pas modifié.
-  2. **Parcours** : `load` → `resource` → `advice` → `close` (`run.completed` « Brief du jour prêt. »), sans boucle ni interruption (pas de `recursion_limit` particulier). Chaque rubrique relit `context` et se **saute si elle est déjà rangée** : un redémarrage avant le conseil ne rappelle pas l'Éclaireur (le point de contrôle de LangGraph le saute déjà ; le port couvre le cas d'un arrêt entre l'écriture et le point de contrôle). L'état ne garde que l'identifiant du brief et le résumé : ni sujet, ni fait, ni texte.
-  3. **Ressource (Éclaireur, un appel)** : sans sujet, `save_resource(None)` sans recherche ni modèle ; sinon `web_search(sujet, time_range="month")`, les résultats à lien http(s) valide et sans doublon (`link_key`), **8 au plus**, rendus numérotés dans `untrusted(…, "résultats")` (sujet aussi encadré) ; `ResourcePick` (`index` 1 à 8 ou `None`, `why` 200 caractères au plus). **Le code lit la page choisie** (`web_read`) : une page illisible, refusée ou sans texte n'est jamais rangée, les résultats suivants sont lus dans l'ordre de la recherche, **3 lectures au plus, sans nouvel appel au modèle** ; aucune page lue, `index` nul ou rang absent de la liste : `None` (jamais un résultat que le modèle n'a pas désigné). L'adresse rangée est celle du résultat, jamais une adresse écrite par le modèle ; si c'est un résultat de repli, `why` est une phrase du code (la raison du modèle visait un autre résultat). `why` du modèle n'est gardé que si chacun de ses nombres (chiffres ou lettres) figure dans ce que le résultat montre (titre, extrait, date, adresse) : « 10 ans d'expérience » que rien ne dit est remplacé par la phrase du code. Plafond de la session atteint pendant les lectures : la rubrique reste vide.
-  4. **Conseil (Modérateur, un à deux appels)** : le code rend les faits du jour en phrases (« À réviser : 12 fiches. », « Série en cours : 7 jours de suite. », en français ou en anglais selon le brief) dans `untrusted(…, "faits du jour")` ; `CouncilAdvice` : exactement 2 phrases de 10 à 240 caractères. **Honnêteté des nombres** : tout nombre du conseil, en chiffres comme en lettres (`numbers_in_advice` s'appuie sur `cv_lexicon.figures_in`, qui contient `numbers_in` : « trois heures » est un 3), doit être dans `allowed_numbers` (ou dans le titre du bloc que le code montre : un titre « Module 3 » peut être recopié) ; sinon **un seul nouvel essai qui nomme le nombre**, puis `save_advice(None)`. Un pourcentage n'est pas un score nu (« 85 % » ≠ « 85 »).
-  5. **Indépendance des rubriques** : une panne de recherche, de lecture ou de modèle, un format invalide, un plafond atteint ou un dépassement (budget propre de 90 s par rubrique, plus court que les 120 s du nœud) vide la rubrique concernée (`None`) et le parcours continue : le conseil ne dépend pas de la ressource, ni l'inverse ; une erreur d'écriture du port, elle, fait échouer le parcours (rien n'est perdu en silence).
-  6. **Écarts au plan** : `numbers_in_advice` utilise `figures_in` (nombres en lettres compris) et non `numbers_in` seul ; le titre du bloc étend les nombres permis ; les résultats sont dédoublonnés et filtrés avant le choix ; les nombres de `why` sont contrôlés contre le résultat (non demandé par le plan). `Node` (forme d'un nœud) est dans `agents/state/daily_brief.py`, partagé par les deux nœuds et le graphe.
-  7. **Journaux** : identifiants, nombres et codes ; jamais le sujet, un lien, un titre, un fait, une raison ni une phrase du conseil (`test_brief_graph_never_logs_texts`, `test_failed_rubric_logs_only_a_code`).
-- **Raison** : P11 : seuls deux appels rapides passent par un modèle, tout le reste est calculé ; un conseil qui invente un chiffre (« 3 heures ») ne s'affiche jamais, il échoue visiblement ; une ressource n'est rangée que si sa page se lit (SPEC 10.2) ; une rubrique en panne ne prive pas January de l'autre. SPEC 1, 9.4, 17.2, 17.4, 18.3 ; D77, D90 (choix de ressources), D97, D159.
+- **Date** 2026-11-16
+- **Subject** Phase 8, task 8.5: `daily_brief` flow (resource chosen by the Scout, two sentences
+  from the Moderator) and `BriefStore` port (back end)
+- **Decision**
+  1. **`BriefStore` port (P11)**: `context` (read-only: the day's facts `AdviceFacts`, topic,
+     `resource_done`, `advice_done`, `allowed_numbers`), `save_resource` (`None` = empty section),
+     `save_advice` (`None` = `failed` advice); **idempotent, the first write wins**; default value
+     `NO_BRIEF` (503 `brief_unavailable`), `brief` field of `AgentPorts`, `brief` parameter of
+     `bootstrap_agents.agent_ports` (the real port is written in 8.6), fake `FakeBriefStore`.
+     `ROUTE_ONLY["daily_brief"] = "GET /brief/today"`. The contract is not changed.
+  2. **Flow**: `load` → `resource` → `advice` → `close` (`run.completed` “Brief du jour
+     prêt.”, “Daily brief ready.”), with no loop or interruption (no particular
+     `recursion_limit`). Each section rereads `context` and **skips itself if it is already
+     stored**: a restart before the advice does not call the Scout again (LangGraph's checkpoint
+     already skips it; the port covers the case of a stop between the write and the checkpoint). The
+     state only keeps the brief's identifier and the summary: no topic, no fact, no text.
+  3. **Resource (Scout, one call)**: with no topic, `save_resource(None)` with no search or model;
+     otherwise `web_search(topic, time_range="month")`, the results with a valid http(s) link and no
+     duplicate (`link_key`), **8 at most**, rendered numbered in `untrusted(…, "résultats")`
+     (“results”) (topic also fenced); `ResourcePick` (`index` 1 to 8 or `None`, `why` 200
+     characters at most). **The code reads the chosen page** (`web_read`): a page that is
+     unreadable, refused, or without text is never stored, the following results are read in the
+     order of the search, **3 reads at most, with no new call to the model**; no page read, null
+     `index`, or a rank absent from the list: `None` (never a result the model did not designate).
+     The stored address is that of the result, never an address written by the model; if it is a
+     fallback result, `why` is a sentence from the code (the model's reason aimed at another
+     result). The model's `why` is only kept if each of its numbers (digits or words) appears in
+     what the result shows (title, excerpt, date, address): “10 years of experience” that
+     nothing states is replaced by the code's sentence. Session cap reached during the reads: the
+     section stays empty.
+  4. **Advice (Moderator, one to two calls)**: the code renders the day's facts as sentences (“À
+     réviser : 12 fiches.” (“To review: 12 cards.”), “Série en cours : 7 jours de
+     suite.” (“Current streak: 7 days in a row.”), in French or English depending on the
+     brief) in `untrusted(…, "faits du jour")` (“facts of the day”); `CouncilAdvice`: exactly
+     2 sentences of 10 to 240 characters. **Honest numbers**: every number in the advice, in digits
+     as in words (`numbers_in_advice` relies on `cv_lexicon.figures_in`, which contains
+     `numbers_in`: “three hours” is a 3), must be in `allowed_numbers` (or in the title of the
+     block the code shows: a title “Module 3” may be copied); otherwise **a single new attempt
+     naming the number**, then `save_advice(None)`. A percentage is not a bare score (“85 %” ≠
+     “85”).
+  5. **Independent sections**: a search, read, or model failure, an invalid format, a cap reached,
+     or a timeout (a budget of its own of 90 s per section, shorter than the node's 120 s) empties
+     the section concerned (`None`) and the flow continues: the advice does not depend on the
+     resource, nor the reverse; a write error of the port, however, fails the flow (nothing is lost
+     silently).
+  6. **Deviations from the plan**: `numbers_in_advice` uses `figures_in` (numbers in words included)
+     and not `numbers_in` alone; the block's title extends the permitted numbers; results are
+     deduplicated and filtered before the choice; the numbers of `why` are checked against the
+     result (not requested by the plan). `Node` (shape of a node) is in
+     `agents/state/daily_brief.py`, shared by the two nodes and the graph.
+  7. **Logs**: identifiers, numbers, and codes; never the topic, a link, a title, a fact, a reason,
+     or a sentence of the advice (`test_brief_graph_never_logs_texts`,
+     `test_failed_rubric_logs_only_a_code`).
+- **Reason** P11: only two quick calls go through a model, everything else is computed; advice that
+  invents a figure (“3 hours”) is never shown, it fails visibly; a resource is only stored if
+  its page can be read (SPEC 10.2); a section that fails does not deprive January of the other. SPEC
+  1, 9.4, 17.2, 17.4, 18.3; D77, D90 (choice of resources), D97, D159.
 
 ## D162
 
-- **Date** : 2026-11-16
-- **Sujet** : Phase 8, tâche 8.6 : feature `brief` (rubriques du code, `GET /brief/today`, tâche du matin, port réel) (back, contrat)
-- **Décision** :
-  1. **Rubriques calculées par le code (P11)** : `build_sections(rt, db, user_id, today)` rend les cinq rubriques (`BRIEF_KEYS`) en JSON, figées dans `briefs.sections` : bloc (`block_of_day`, leçon, tâches dues, minutes totales), révisions (`due_queue` : la file du jour et le reste), relances (`list_reminders(due=True)` : le nombre dû, 5 au plus listées), offres (`new_offers` sur `radar.service.views.offers_since(db, user_id, since)` ; `since` = création du brief précédent, sans brief avant le dernier relevé fini ; `shown` = `offer_keys` des 7 derniers briefs, `known` = liens normalisés des offres et des fiches saisies), semaine (`week_facts` du programme validé **le plus récent**, série de `summary` ; sans programme validé : `None`). Détails internes jamais rendus : `offers.items[*].key` (lien normalisé, nourrit `offer_keys`) et `week.best_quiz` (faits du conseil). Contrat : `BriefOut` et ses rubriques ; `BriefBlockTask` et `BriefResourceOut` (et non `BlockTaskOut`, `ResourceOut`, qui existent ailleurs : le générateur aurait renommé les types existants).
-  2. **Création (P12)** : `ensure_today(rt, user_id, *, origin, now=None)` sous un verrou par utilisatrice ; jour = `brief_day(now, fuseau)` ; `INSERT … ON CONFLICT (user_id, day) DO NOTHING` ; **seul l'inserteur lance** la session `daily_brief` (sujet `brief`) et pose `session_id` ; perdre la course contre un autre processus rend son brief sans rien lancer (`test_the_inserter_alone_launches_the_session`). `created_at` est l'instant du runtime (horloge figée en test). Lancement refusé (moteur absent, toute erreur) : conseil `unavailable`, rubriques du code intactes, jamais relancé. `GET /brief/today` n'attend jamais un agent.
-  3. **Statut du conseil** : `pending` tant que la session vit ; à la lecture, un conseil `pending` sans session ouverte (échec, annulation, fin sans conseil, session perdue, ou lancement interrompu depuis plus de 5 minutes sans `session_id`) passe en `failed`, écrit sous condition (`WHERE advice_status = 'pending'`) : un conseil rangé entre-temps n'est jamais rétrogradé. **`failed` et `unavailable` sont définitifs pour la journée** : le port ignore toute écriture ultérieure (première écriture gagnante, y compris un conseil `None`), le contrat le dit (`BriefOut`, `advice_status`) pour que le front (8.13) ne propose jamais un « Réessayer » que le port ignorerait ; seul `pending` change encore (relecture).
-  4. **Tâche `daily_brief` (10 min, au démarrage)** : par compte, `brief_due(now, fuseau, brief_time)` → `claim(…, "daily_brief", day_period(jour local))` → `ensure_today(origin="schedule", now=now)` → `finish` `done` si créé, `skipped` sinon (brief ouvert avant l'heure), avec l'id du brief et demain à l'heure du brief (`brief_moment`) ; une panne : `fail`, reprise au passage suivant (3 essais) ; une panne pour un compte n'arrête pas les autres. `DailyJobs.brief`, ligne dans `JOBS`.
-  5. **Port réel `AgentBriefStore` (D161)** : `context` relit le brief (faits tirés des rubriques ; `topic` = « {poste visé} actualités », le poste étant celui des réglages du radar ou du dernier objectif, `None` sans poste ; `language` = langue des leçons ; `resource_done` = rubrique rangée même vide, rangée `{}` ; `advice_done` = conseil plus `pending`) ; écritures conditionnelles (`WHERE resource IS NULL`, `WHERE advice_status = 'pending' AND advice IS NULL`) ; 404 `brief_not_found` pour le brief d'une autre utilisatrice. `BriefStore.save_advice` reçoit `unavailable=False` : le parcours le passe à vrai quand la fabrique de modèles dit qu'il n'y en a pas (`llm_key_missing`, `llm_key_unreadable`, `llm_provider_unknown`) : le conseil se dit `unavailable`, pas `failed`.
-  6. **Nombres du conseil (D161 n° 4, revue 8.5)** : `allowed_numbers` est construit par `advice_numbers` sur les faits (minutes du bloc, fiches, relances, offres, meilleur score, blocs prévus, faits, série), **en chiffres seulement** (`frozenset` de chaînes numériques), jamais d'une autre source.
-  7. **Corrections du parcours (revue 8.5)** : (a) le modèle est demandé **avant** la recherche web : sans clé, aucune recherche n'est dépensée ; test du chemin sans clé au niveau du graphe (`NoKeyModels` : ressource vide, conseil `unavailable`, aucune recherche, parcours terminé) ; (b) `_read_one` capte **toute** exception d'une page (panne brute du lecteur) et passe au résultat suivant (3 lectures au plus) ; (c) l'état du conseil `failed` / `unavailable` est exposé dans l'API (n° 3).
-  8. **Changement d'heure (revue 8.1)** : tests de `brief_due` et de la tâche le 29 mars 2026 (02:30 n'existe pas à Paris : lue UTC+1, soit 01:30 UTC ; demain 02:30 = 00:30 UTC) et le 25 octobre 2026 (02:30 existe deux fois : la première, 00:30 UTC, déclenche ; la seconde ne crée rien de plus) ; le jour local couvre de 22:00 UTC la veille à 22:59 UTC.
-  9. **Composition** : `DailyRuntimes.brief` et `brief_store` (`app.bootstrap_daily`, qui lit `study.quiz`, `study.study` et `career.applications`) ; `app.main` gagne une ligne (`brief=app.state.daily.brief_store`, 283 lignes). `radar.repository.done_since` et `radar.service.views.offers_since` sont les seuls ajouts au radar.
-  10. **Journaux** : identifiants, nombres et codes ; jamais une rubrique, une entreprise, un intitulé, un lien, une ressource, un poste ni une phrase du conseil (`test_brief_data_never_logged`, `test_launch_failure_logs_only_a_code`).
-- **Raison** : P11 et P12 : un seul brief par jour local et une seule session, quels que soient les ouvertures simultanées, le redémarrage ou la tâche de 7 h ; sans modèle, January garde ses rubriques et lit « conseil indisponible » ; un état définitif est dit définitif. SPEC 1, 7 F17, 9.6, 11.4, 13.6, 14.2, 17.2, 18.3 ; D91, D98, D158, D160, D161.
+- **Date** 2026-11-16
+- **Subject** Phase 8, task 8.6: `brief` feature (code-built sections, `GET /brief/today`, morning
+  task, real port) (back end, contract)
+- **Decision**
+  1. **Sections computed by the code (P11)**: `build_sections(rt, db, user_id, today)` renders the
+     five sections (`BRIEF_KEYS`) as JSON, frozen in `briefs.sections`: block (`block_of_day`,
+     lesson, due tasks, total minutes), reviews (`due_queue`: the day's queue and the rest),
+     follow-ups (`list_reminders(due=True)`: the number due, 5 at most listed), postings
+     (`new_offers` over `radar.service.views.offers_since(db, user_id, since)`; `since` = creation
+     of the previous brief, with no brief before the last finished scan; `shown` = `offer_keys` of
+     the last 7 briefs, `known` = normalized links of the postings and of the entered records), week
+     (`week_facts` of the **most recent** validated program, series of `summary`; with no validated
+     program: `None`). Internal details never rendered: `offers.items[*].key` (normalized link,
+     feeds `offer_keys`) and `week.best_quiz` (facts of the advice). Contract: `BriefOut` and its
+     sections; `BriefBlockTask` and `BriefResourceOut` (and not `BlockTaskOut`, `ResourceOut`, which
+     exist elsewhere: the generator would have renamed the existing types).
+  2. **Creation (P12)**: `ensure_today(rt, user_id, *, origin, now=None)` under a lock per user; day
+     = `brief_day(now, zone)`; `INSERT … ON CONFLICT (user_id, day) DO NOTHING`; **only the
+     inserter launches** the `daily_brief` session (subject `brief`) and sets `session_id`; losing
+     the race against another process returns its brief without launching anything
+     (`test_the_inserter_alone_launches_the_session`). `created_at` is the runtime's instant (clock
+     frozen in tests). Launch refused (engine absent, any error): advice `unavailable`, code
+     sections intact, never relaunched. `GET /brief/today` never waits for an agent.
+  3. **Advice status**: `pending` while the session lives; at read time, a `pending` advice with no
+     open session (failure, cancellation, end without advice, lost session, or launch interrupted
+     more than 5 minutes ago with no `session_id`) goes to `failed`, written conditionally
+     (`WHERE advice_status = 'pending'`): advice stored in the meantime is never downgraded.
+     **`failed` and `unavailable` are final for the day**: the port ignores any later write (first
+     write wins, including a `None` advice), the contract says so (`BriefOut`, `advice_status`) so
+     that the front end (8.13) never offers a “Try again” that the port would ignore; only
+     `pending` can still change (reread).
+  4. **`daily_brief` task (10 min, at startup)**: per account, `brief_due(now, zone, brief_time)`
+     → `claim(…, "daily_brief", day_period(local day))` → `ensure_today(origin="schedule",
+     now=now)` → `finish` `done` if created, `skipped` otherwise (brief opened before the time),
+     with the brief's id and tomorrow at the brief time (`brief_moment`); a failure: `fail`, retaken
+     at the next pass (3 attempts); a failure for one account does not stop the others.
+     `DailyJobs.brief`, line in `JOBS`.
+  5. **Real `AgentBriefStore` port (D161)**: `context` rereads the brief (facts taken from the
+     sections; `topic` = “{target role} actualités” (“{target role} news”), the role being
+     the one from the radar settings or the last goal, `None` with no role; `language` = lesson
+     language; `resource_done` = section stored even if empty, stored as `{}`; `advice_done` =
+     advice other than `pending`); conditional writes (`WHERE resource IS NULL`,
+     `WHERE advice_status = 'pending' AND advice IS NULL`); 404 `brief_not_found` for another user's
+     brief. `BriefStore.save_advice` receives `unavailable=False`: the flow sets it to true when the
+     model factory says there is none (`llm_key_missing`, `llm_key_unreadable`,
+     `llm_provider_unknown`): the advice is `unavailable`, not `failed`.
+  6. **Numbers of the advice (D161 no. 4, review 8.5)**: `allowed_numbers` is built by
+     `advice_numbers` over the facts (block minutes, cards, follow-ups, postings, best score,
+     planned blocks, facts, streak), **in digits only** (`frozenset` of numeric strings), never from
+     another source.
+  7. **Flow corrections (review 8.5)**: (a) the model is requested **before** the web search: with
+     no key, no search is spent; test of the no-key path at graph level (`NoKeyModels`: empty
+     resource, advice `unavailable`, no search, flow finished); (b) `_read_one` catches **any**
+     exception from a page (raw reader failure) and moves on to the next result (3 reads at most);
+     (c) the state of the `failed` / `unavailable` advice is exposed in the API (no. 3).
+  8. **Clock change (review 8.1)**: tests of `brief_due` and of the task on 29 March 2026 (02:30
+     does not exist in Paris: read as UTC+1, i.e. 01:30 UTC; tomorrow 02:30 = 00:30 UTC) and on 25
+     October 2026 (02:30 exists twice: the first, 00:30 UTC, triggers; the second creates nothing
+     more); the local day runs from 22:00 UTC the day before to 22:59 UTC.
+  9. **Composition**: `DailyRuntimes.brief` and `brief_store` (`app.bootstrap_daily`, which reads
+     `study.quiz`, `study.study`, and `career.applications`); `app.main` gains one line
+     (`brief=app.state.daily.brief_store`, 283 lines). `radar.repository.done_since` and
+     `radar.service.views.offers_since` are the only additions to the radar.
+  10. **Logs**: identifiers, numbers, and codes; never a section, a company, a title, a link, a
+     resource, a role, or a sentence of the advice (`test_brief_data_never_logged`,
+     `test_launch_failure_logs_only_a_code`).
+- **Reason** P11 and P12: a single brief per local day and a single session, whatever the
+  simultaneous openings, the restart, or the 7 a.m. task; without a model, January keeps her
+  sections and reads “advice unavailable”; a final state is stated as final. SPEC 1, 7 F17, 9.6,
+  11.4, 13.6, 14.2, 17.2, 18.3; D91, D98, D158, D160, D161.
 
 ## D163
 
-- **Date** : 2026-11-16
-- **Sujet** : Phase 8, tâche 8.7 : feature `activity`, fil d'activité `GET /activity` et registre `ACTIVITY_SOURCES` (back, contrat)
-- **Décision** :
-  1. **Aucune table, un registre (P15)** : `activity_page(db, user_id, *, after, before, limit)` fusionne les sources de `ACTIVITY_SOURCES` (`activity/service/sources.py`), une fonction `(db, user_id, after, before, limit) -> list[ActivityItem]` par ligne, chacune lisant le service d'une feature : leçons (`lessons.service.lessons.recent_lessons`), relevés du radar (`radar.service.views.recent_runs`), briefs (`brief.service.views.recent_briefs`), écritures des agents en mémoire (`memory.service.recent.recent_agent_writes`), passages en échec (`ledger.service.ledger.recent_failures`). **La source `project` n'existe pas encore** : le type `ActivityKind` la nomme déjà, sa ligne est ajoutée par 8.10 (la feature `projects` n'existe pas).
-  2. **Curseur `(at, id)` (revue 8.7)** : ordre total `(at, id)` décroissant, doublons d'`id` écartés ; `limit` borné à 1..50 (défaut 30, plafonné dans le service ; le routeur refuse seulement `limit < 1`). `after` / `before` seuls restent des bornes **exclusives** sur l'instant ; avec `after_id` / `before_id`, c'est le couple `(at, id)` qui est strictement au-delà de l'événement donné : des événements au même instant ne se perdent ni à la coupure d'une page (`before` + `before_id` = `at` et `id` du dernier), ni à la frontière d'une relecture (`after` = `latest_at`, `after_id` = `id` du premier élément ; P16). Les `recent_*` des services lus ont des bornes **incluses** (`[after, before]`) ; le fil écarte lui-même ce que le curseur exclut et **redemande plus large** (double, 400 au plus) à une source qui a pu être tronquée par des ex æquo écartés. `latest_at` = l'instant du plus récent de la page (`None` sans événement). Un instant sans fuseau est lu en UTC. Limites assumées : une relecture rend au plus `limit` événements neufs, les plus récents (le front relit sans `after` si la page revient pleine) ; un événement validé après un passage dont `latest_at` est plus récent est manqué (`created_at` posé à l'insertion, transactions brèves) ; pour une leçon, `updated_at` change à toute modification : même `id`, le front garde les `id` déjà vus.
-  3. **Instants et identifiants stables** `{kind}:{ref}:{état}` : leçon `updated_at` (`lesson:{id}:ready|failed`, seulement prête ou en échec), relevé `finished_at` (`radar:{id}:done`, relevés `done` seulement), brief `created_at` (`brief:{id}:ready`), écriture `created_at` (`memory:{id}:{action}`), passage `finished_at` (`job_failed:{id}:{essais}`).
-  4. **Libellés écrits par le code, sans contenu inventé** : « Leçon prête : {titre} » / « Leçon en échec : {titre} » (`/apprendre/lecons/{id}`) ; « Relevé du radar : {n} offres lues, {m} bloquées » (`/carriere/radar/{id}`, nombres du relevé seulement) ; « Brief du jour prêt » (`/`) ; « {Agent} a écrit en mémoire : {titre de l'élément} » (raison en `detail`, `/memoire`) ; « Un passage planifié a échoué ({nom lisible}) : nouvel essai au prochain passage. » **sans code ni texte d'erreur** (ni `detail`). Un agent inconnu s'écrit « Un agent », une tâche inconnue « tâche de fond ». Les noms des agents et des tâches sont des tables du code (miroir de `agents.ts`).
-  5. **Écritures de January exclues** : mémoire = auteur ≠ `user` et action ≠ `delete`, **sans la capture rapide de January** : l'Archiviste l'écrit à sa demande, elle se reconnaît à l'auteur `archivist` et à la raison `CAPTURE_REASON` (élément) ou à son début `CAPTURE_REFLECT_PREFIX` (acquis reflétés, `reflect_reason(titre)` construit la raison du côté capture : les deux ne peuvent pas dériver). Une écriture de l'Archiviste sans raison ou pour une autre raison reste du fil (`WriteRepository.by_agents_between`).
-  6. **Ajouts aux services lus** : un `recent_*` par feature avec sa requête de repository ; `recent_failures` du registre passe de `(since, limit)` à `(after, before, limit)` (borne exclusive, test mis à jour). Sens des imports : `activity` → les services lus (contrat 2), aucune feature n'importe `activity`.
-  7. **Source en panne** : chaque source tourne dans un savepoint (`begin_nested`) ; une exception l'écarte, le reste du fil est rendu ; journal : nom de la fonction source et classe de l'exception, rien d'autre (`test_failing_source_is_skipped`, dont une erreur SQL). Noms d'agents : `demo_proponent` (« L'Avocat ») et `demo_critic` (« Le Critique ») ajoutés ; `test_names.py` compare la table à `agents.ts` et au registre des agents.
-  8. **Journaux** : hors source en panne (n° 7), le fil n'écrit rien et ne journalise rien (`test_activity_never_logged`) ; l'isolation par utilisatrice vient de `user_id` dans chaque requête (`test_activity_isolated_by_user`).
-- **Raison** : P15 : le fil se calcule des tables que les features tiennent déjà, sans table à migrer ni double écriture ; ajouter une source = une fonction et une ligne. Un échec de tâche se dit sans jamais citer l'erreur (17.2) ; les écritures de January ne sont pas de l'activité « de fond ». SPEC 14.2, 17.2 ; D158, D160, D162.
+- **Date** 2026-11-16
+- **Subject** Phase 8, task 8.7: `activity` feature, activity feed `GET /activity` and
+  `ACTIVITY_SOURCES` registry (back end, contract)
+- **Decision**
+  1. **No table, a registry (P15)**: `activity_page(db, user_id, *, after, before, limit)` merges
+     the sources of `ACTIVITY_SOURCES` (`activity/service/sources.py`), one function
+     `(db, user_id, after, before, limit) -> list[ActivityItem]` per line, each reading the service
+     of a feature: lessons (`lessons.service.lessons.recent_lessons`), radar scans
+     (`radar.service.views.recent_runs`), briefs (`brief.service.views.recent_briefs`), agent writes
+     to memory (`memory.service.recent.recent_agent_writes`), failed runs
+     (`ledger.service.ledger.recent_failures`). **The `project` source does not exist yet**: the
+     `ActivityKind` type already names it, and its line is added by 8.10 (the `projects` feature
+     does not exist).
+  2. **Cursor `(at, id)` (review 8.7)**: total order `(at, id)` descending, duplicate `id` values
+     dropped; `limit` bounded to 1..50 (default 30, capped in the service; the router only refuses
+     `limit < 1`). `after` / `before` alone remain **exclusive** bounds on the instant; with
+     `after_id` / `before_id`, it is the pair `(at, id)` that is strictly beyond the given event:
+     events at the same instant are lost neither at the cut of a page (`before` + `before_id` = `at`
+     and `id` of the last one), nor at the boundary of a reread (`after` = `latest_at`, `after_id` =
+     `id` of the first item; P16). The `recent_*` functions of the services read have **inclusive**
+     bounds (`[after, before]`); the feed itself drops what the cursor excludes and **asks again
+     wider** (double, 400 at most) from a source that may have been truncated by discarded ties.
+     `latest_at` = the instant of the most recent item of the page (`None` with no event). An
+     instant without a time zone is read as UTC. Accepted limits: a reread returns at most `limit`
+     new events, the most recent ones (the front end rereads without `after` if the page comes back
+     full); an event committed after a pass whose `latest_at` is more recent is missed (`created_at`
+     set at insertion, short transactions); for a lesson, `updated_at` changes on any modification:
+     same `id`, the front end keeps the `id` values already seen.
+  3. **Stable instants and identifiers** `{kind}:{ref}:{state}`: lesson `updated_at`
+     (`lesson:{id}:ready|failed`, only ready or failed), scan `finished_at` (`radar:{id}:done`,
+     `done` scans only), brief `created_at` (`brief:{id}:ready`), write `created_at`
+     (`memory:{id}:{action}`), run `finished_at` (`job_failed:{id}:{attempts}`).
+  4. **Labels written by the code, no invented content**: “Leçon prête : {titre}” (“Lesson
+     ready: {title}”) / “Leçon en échec : {titre}” (“Lesson failed: {title}”)
+     (`/apprendre/lecons/{id}`); “Relevé du radar : {n} offres lues, {m} bloquées” (“Radar
+     scan: {n} postings read, {m} blocked”) (`/carriere/radar/{id}`, numbers of the scan only);
+     “Brief du jour prêt” (“Daily brief ready”) (`/`); “{Agent} a écrit en mémoire :
+     {titre de l'élément}” (“{Agent} wrote to memory: {item title}”) (reason in `detail`,
+     `/memoire`); “Un passage planifié a échoué ({nom lisible}) : nouvel essai au prochain
+     passage.” (“A scheduled run failed ({readable name}): new attempt at the next pass.”)
+     **with no code or error text** (and no `detail`). An unknown agent is written “Un agent”
+     (“An agent”), an unknown task “tâche de fond” (“background task”). The names of
+     the agents and tasks are tables in the code (a mirror of `agents.ts`).
+  5. **January's writes excluded**: memory = author ≠ `user` and action ≠ `delete`, **without
+     January's quick capture**: the Archivist writes it at her request, recognized by the author
+     `archivist` and the reason `CAPTURE_REASON` (item) or its beginning `CAPTURE_REFLECT_PREFIX`
+     (reflected learnings; `reflect_reason(title)` builds the reason on the capture side: the two
+     cannot drift apart). A write by the Archivist with no reason or for another reason stays in the
+     feed (`WriteRepository.by_agents_between`).
+  6. **Additions to the services read**: one `recent_*` per feature with its repository query;
+     `recent_failures` of the registry goes from `(since, limit)` to `(after, before, limit)`
+     (exclusive bound, test updated). Direction of imports: `activity` → the services read
+     (contract 2), no feature imports `activity`.
+  7. **Failing source**: each source runs in a savepoint (`begin_nested`); an exception drops it and
+     the rest of the feed is returned; log: the name of the source function and the exception class,
+     nothing else (`test_failing_source_is_skipped`, including an SQL error). Agent names:
+     `demo_proponent` (“L'Avocat”, “The Advocate”) and `demo_critic` (“Le Critique”,
+     “The Critic”) added; `test_names.py` compares the table with `agents.ts` and the agent
+     registry.
+  8. **Logs**: apart from a failing source (no. 7), the feed writes nothing and logs nothing
+     (`test_activity_never_logged`); isolation per user comes from `user_id` in every query
+     (`test_activity_isolated_by_user`).
+- **Reason** P15: the feed is computed from the tables the features already keep, with no table to
+  migrate and no double write; adding a source = one function and one line. A task failure is stated
+  without ever quoting the error (17.2); January's own writes are not “background” activity.
+  SPEC 14.2, 17.2; D158, D160, D162.
 
 ## D164
 
-- **Date** : 2026-11-16
-- **Sujet** : Phase 8, tâche 8.8 : essai réel en milieu de phase, script `check_phase8` (radar, brief, brief planifié)
-- **Décision** :
-  1. **Script** : `backend/scripts/check_phase8.py` (+ `phase8_common`, `phase8_plan`, `phase8_radar`, `phase8_brief`, `phase8_rules`), même forme que `check_phase7` : `--api http://backend:8000 --part planifie|radar|brief --logs-file -`, conteneur jetable `learning_career_platform-check8`, une ligne par étape, aucune donnée affichée (nombres, identifiants, durées, codes). `planifie` : refuse de tourner si le brief du jour existe déjà (lu par `GET /activity`, qui ne crée rien), règle l'heure du brief 3 minutes plus tard, attend « Brief du jour prêt » (10 minutes après l'heure réglée au plus), remet l'heure d'origine quoi qu'il arrive, puis vérifie `origin == "schedule"`. `radar` : poste et zone fictifs (« Développeur Python », « Lyon »), second lancement refusé (409 `radar_in_progress`, même relevé), relevé `done` en 15 minutes au plus, plafonds, classement, `low_sample`, chaque salaire rapporté relu dans la page de son offre (page injoignable : comptée, non jugée), réglages du radar remis. `brief` : sept rubriques, conseil `ready` en 3 minutes au plus (`failed` et `unavailable` dits définitifs), deux phrases, nombres présents dans les rubriques, ressource au lien http(s) ou `null`, second `GET` au même `id`. L'étape `journaux` cherche dans les journaux du back le poste et la zone, puis les textes du passage (liens, intitulés, entreprises, ressource, phrases du conseil), en plus des motifs des phases 6 et 7.
-  2. **Résultats chiffrés** (GLM réel, SearXNG, 16/11) : `planifie` ✅ une fois (brief créé par le planificateur 576 s après le réglage, `origin = schedule` ; un second essai le même jour est impossible, un seul brief par jour) ; `brief` ✅ (rubriques, conseil prêt en 0 s, 2 phrases, 2 nombres, 1 appel, 0,0004 $, 784 jetons ; ressource `null` avant le correctif (b), à revoir à l’essai de fin de phase ; même `id` au second `GET`) ; `radar` ✅ trois fois : avant le correctif 51 s, 4 appels, 0,0146 $, 25 232 jetons, 20 lisibles dont 8 sans offre, 9 bloquées, 12 analysées ; après le correctif 64 s puis 39 s, 5 appels, 0,0167 $ et 0,0163 $ (≈ 28 500 jetons), 10 requêtes (2 `site:` en panne), 100 résultats mais **29 liens uniques** encore, 29 lectures, 21 lisibles, 8 bloquées, 12 et 11 offres analysées, 0 à 70 ou plus, 83 et 81 compétences, `low_sample` ; salaires 2 rapportés, 2 vérifiés dans la page. Journaux relus sans donnée à chaque essai. Limite constatée : SearXNG renvoie presque les mêmes dix résultats aux requêtes voisines ; plus de requêtes n’élargit pas l’échantillon. Le relevé le dit honnêtement (`low_sample`) ; l’élargir demande un autre fournisseur (clé Brave) ou la page 2 de SearXNG, laissé pour plus tard.
-  **Correctifs de l'essai réel** : (a) le radar manquait de candidats (6 requêtes dont 2 `site:` en panne : 29 liens, 20 pages lisibles, 12 offres analysées, échantillon réduit) ; les requêtes passent à `MAX_QUERIES = 12`, le plafond de la session (le radar en est le seul chercheur, une requête en panne n'est pas comptée), et le code en construit davantage de générales : en français 8 variantes (« offre d'emploi », « recrutement CDI », « H/F », « emploi », « offre », « poste à pourvoir », « on recrute », « postuler »), pour toute autre langue 4 (« job », « hiring », « careers », « apply »), alternées d'une langue à l'autre pour que le plafond n'en prive aucune, puis les requêtes `site:` en dernier (SearXNG y répond mal), `SITE_RESERVE = 2` d'entre elles toujours gardées. Le français seul fait 8 générales et 4 ciblées ; avec l'anglais, 10 générales et 2 ciblées. Les bornes 80 candidats, 60 lectures, 50 lisibles et les requêtes écrites par le code (aucun modèle) sont inchangées. Option écartée : la page 2 de SearXNG (`pageno`), qui exigerait de la faire passer par le port `WebGateway.search`, la clé du cache, la passerelle et les trois fournisseurs (SearXNG, Brave, factice) pour un gain du même ordre. Attendu : environ 55 à 75 liens uniques dans un passage normal, contre 29 (dix résultats par requête, un tiers de doublons entre requêtes voisines). (b) le brief n'avait jamais de ressource sans poste visé (objectif sans `target_role`, texte libre « Devenir… ») ; le sujet de la ressource (`brief.service.topic.resource_topic`) retombe, dans l'ordre, sur le poste des réglages du radar, le poste du dernier objectif, un court sujet tiré du texte de ce dernier objectif (verbe « Devenir » ou « Become » et article en tête retirés, une seule ligne coupée à la première phrase, 80 caractères au plus, sur un mot), puis le titre du programme validé ; rien de tout cela : `None`, aucune recherche. Le sujet reste une donnée de la requête (construite par le code, nettoyée des données personnelles par la recherche) et cadré `untrusted` dans le prompt ; il n'est jamais journalisé.
-- **Raison** : P-points de l'essai réel de milieu de phase : le radar et le brief se jouent avec le modèle réel et la recherche web avant de poursuivre ; un essai ne doit jamais laisser de donnée personnelle dans la sortie ni dans les journaux. SPEC 14.2, 17.2 ; D160, D162, D163.
+- **Date** 2026-11-16
+- **Subject** Phase 8, task 8.8: real trial in mid-phase, `check_phase8` script (radar, brief,
+  scheduled brief)
+- **Decision**
+  1. **Script**: `backend/scripts/check_phase8.py` (+ `phase8_common`, `phase8_plan`,
+     `phase8_radar`, `phase8_brief`, `phase8_rules`), same shape as `check_phase7`:
+     `--api http://backend:8000 --part planifie|radar|brief --logs-file -` (`planifie` = scheduled),
+     disposable container `learning_career_platform-check8`, one line per step, no data displayed
+     (numbers, identifiers, durations, codes). `planifie`: refuses to run if the day's brief already
+     exists (read through `GET /activity`, which creates nothing), sets the brief time 3 minutes
+     later, waits for “Brief du jour prêt” (“Daily brief ready”) (10 minutes after the set
+     time at most), restores the original time whatever happens, then checks `origin == "schedule"`.
+     `radar`: fictitious role and zone (“Développeur Python”, “Lyon”), second launch
+     refused (409 `radar_in_progress`, same scan), `done` scan in 15 minutes at most, caps, ranking,
+     `low_sample`, each reported salary reread in the page of its posting (unreachable page:
+     counted, not judged), radar settings restored. `brief`: seven sections, `ready` advice in 3
+     minutes at most (`failed` and `unavailable` stated as final), two sentences, numbers present in
+     the sections, resource with an http(s) link or `null`, second `GET` with the same `id`. The
+     `journaux` (logs) step searches the back end's logs for the role and the zone, then for the
+     texts of the run (links, titles, companies, resource, sentences of the advice), in addition to
+     the patterns of phases 6 and 7.
+  2. **Measured results** (real GLM, SearXNG, 16/11): `planifie` ✅ once (brief created by the
+     scheduler 576 s after the setting, `origin = schedule`; a second trial the same day is
+     impossible, one brief per day); `brief` ✅ (sections, advice ready in 0 s, 2 sentences, 2
+     numbers, 1 call, $0.0004, 784 tokens; resource `null` before fix (b), to be rechecked at the
+     end-of-phase trial; same `id` on the second `GET`); `radar` ✅ three times: before the fix 51
+     s, 4 calls, $0.0146, 25,232 tokens, 20 readable of which 8 with no posting, 9 blocked, 12
+     analyzed; after the fix 64 s then 39 s, 5 calls, $0.0167 and $0.0163 (≈ 28,500 tokens), 10
+     queries (2 `site:` down), 100 results but still only **29 unique links**, 29 reads, 21
+     readable, 8 blocked, 12 and 11 postings analyzed, 0 to 70 or more, 83 and 81 skills,
+     `low_sample`; salaries 2 reported, 2 verified in the page. Logs reread with no data on each
+     trial. Observed limit: SearXNG returns nearly the same ten results for neighboring queries;
+     more queries do not widen the sample. The scan says so honestly (`low_sample`); widening it
+     takes another provider (a Brave key) or page 2 of SearXNG, left for later.
+  **Fixes from the real trial**: (a) the radar lacked candidates (6 queries of which 2 `site:` down:
+  29 links, 20 readable pages, 12 postings analyzed, reduced sample); queries go up to
+  `MAX_QUERIES = 12`, the session's cap (the radar is the only searcher; a failed query is not
+  counted), and the code builds more general ones: in French 8 variants (“offre d'emploi”,
+  “recrutement CDI”, “H/F”, “emploi”, “offre”, “poste à pourvoir”, “on
+  recrute”, “postuler”), for any other language 4 (“job”, “hiring”, “careers”,
+  “apply”), alternated from one language to the other so that the cap deprives none, then the
+  `site:` queries last (SearXNG answers them poorly), `SITE_RESERVE = 2` of them always kept. French
+  alone makes 8 general and 4 targeted; with English, 10 general and 2 targeted. The bounds of 80
+  candidates, 60 reads, 50 readable, and the queries written by the code (no model) are unchanged.
+  Option rejected: page 2 of SearXNG (`pageno`), which would require passing it through the
+  `WebGateway.search` port, the cache key, the gateway, and the three providers (SearXNG, Brave,
+  fake) for a gain of the same order. Expected: about 55 to 75 unique links in a normal pass,
+  against 29 (ten results per query, a third of duplicates between neighboring queries). (b) the
+  brief never had a resource without a target role (a goal without `target_role`, free text
+  “Devenir…” (“Become…”)); the resource topic (`brief.service.topic.resource_topic`)
+  falls back, in order, on the role from the radar settings, the role of the last goal, a short
+  topic taken from the text of that last goal (verb “Devenir” or “Become” and leading
+  article removed, a single line cut at the first sentence, 80 characters at most, on a word), then
+  the title of the validated program; none of these: `None`, no search. The topic remains a datum of
+  the query (built by the code, cleaned of personal data by the search) and fenced `untrusted` in
+  the prompt; it is never logged.
+- **Reason** Points of the real mid-phase trial: the radar and the brief are played with the real
+  model and web search before going on; a trial must never leave personal data in the output or in
+  the logs. SPEC 14.2, 17.2; D160, D162, D163.
 
 ## D165
 
-- **Date** : 2026-11-16
-- **Sujet** : Phase 8, tâche 8.9 : Praticien, énoncé et évaluation des projets preuves (graphes `project_brief` et `project_review`, port `ProjectStore`) (back)
-- **Décision** :
-  1. **Deux graphes et un port (P1, P19)** : `project_brief` (`load`, `write`, `save`, `close` : un appel standard du Praticien, 3 à 6 critères vérifiables par un relecteur, 3 à 6 heures) et `project_review` (`load`, `read_repo`, `skip` ou `evaluate`, `drafts`, `save`, `announce`), enregistrés dans `GRAPHS` ; `ROUTE_ONLY["project_brief"] = "planificateur ou POST /projects/{id}/brief"` et `ROUTE_ONLY["project_review"] = "POST /projects/{id}/submit"` (lancés par la feature `projects`, 8.10). Le port est `AgentPorts.projects` (`ProjectStore`, `NO_PROJECTS` : 503 `projects_unavailable`, ligne de plus dans `bootstrap_agents.agent_ports`) ; `BriefInputs`, `ReviewInputs`, `DraftResult`, `ReviewOutcome` et les six méthodes sont celles du plan, que 8.10 implémente. Toute écriture du port est idempotente par session. `DraftKind` et `DraftStatus` existent déjà (`db/models/daily.py`, 8.1) : `project_schema` les réexporte au lieu de les redéfinir, 8.10 peut les importer de l'un ou de l'autre.
-  2. **Énoncé (P1)** : le titre du module, ses compétences, ses prérequis, l'extrait de leçon, le livrable de la semaine et le poste visé sont chacun encadrés par `untrusted` sous son étiquette ; le marqueur de fin glissé dans un texte est retiré. Toute panne de l'étape (sortie invalide après les trois essais de `structured_call`, aucune clé de modèle, dépassement du délai propre de l'étape, 100 s, rangé sous le code `node_timeout`) range l'échec par le port, `brief_failed(code)` (`structured_output_invalid`, `llm_key_missing`…), puis arrête le parcours : `run.failed` dit la cause lisiblement, « Réessayer » relance. Aucune autre information n'est rangée.
-  3. **Lecture du dépôt (P2)** : `repo_text` n'est appelé que si un lien de dépôt est donné ; une page, texte coupé à 8 000 caractères ; une exception ou `None` ou un texte vide : `repo_status = "unreadable"` (la classe de l'exception est la seule chose journalisée) ; sans lien : `none`. **Sans description ni dépôt lisible, aucun appel au modèle** : `to_redo`, un résultat « non évalué » par critère, feedback fixe « Je n'ai pas pu lire ton dépôt : ajoute une description de ce que tu as fait. ». Les captures ne sont pas envoyées au modèle : le prompt donne leur nombre et dit qu'il ne les voit pas.
-  4. **Verdict calculé par le code (P3)** : `verdict(criteria_count, results)` rend `validated` seulement si chaque rang de 1 à N a **un seul** résultat et que tous sont atteints ; un résultat manquant, en double ou d'un rang hors de 1 à N : `to_redo` (N < 1 aussi). `settled_results` range un résultat par critère (le résultat unique du modèle, sinon « Critère non évalué. », rang hors de 1 à N écarté) : c'est ce que le port reçoit (`ReviewOutcome.results`). Les quatre brouillons ne sont écrits qu'à la validation. L'évaluation compte un appel standard (« énoncé et critères numérotés » écrits par le code, description de January et README encadrés par `untrusted`).
-  5. **Référence d'honnêteté des brouillons (P4)** : `text_claims(draft_text(kind, drafts), project_reference(profil validé ou identité vide, project_fact(titre, description, compétences, lien), compétences), allowed=[titre de l'énoncé])` pour chacun des quatre ; la description de 4 000 caractères tient en lignes de 600 (taille d'un fait du profil) pour être lue en entier ; **le README n'est jamais une référence et n'est même pas montré au modèle des brouillons** ; les termes sont ceux de `text_claims` sous sa forme canonique (« 10 000 » s'écrit « 10000 »). Un brouillon avec des termes ou un post LinkedIn hors 80 à 200 mots (compté par le code) : **un seul** nouvel essai qui nomme tous les termes et la longueur, les brouillons déjà propres sont gardés ; ce qui reste : `to_check` avec `flags` (les termes, ou « N mots (80 à 200 attendus) »). Le nouvel essai est un nœud à part (`redo`, son propre délai de 90 s) : **toute** panne (fournisseur, plafond de jetons, délai, format invalide) garde le premier jet `to_check` avec ses termes, l'évaluation validée n'est jamais perdue. Si le **premier** appel des brouillons échoue (format, fournisseur, plafond de jetons ou son propre délai de 100 s), l'évaluation validée est **quand même rangée, sans brouillons**, et la phrase de fin dit « Projet validé : brouillons indisponibles. » (amendé par D173 : le parcours n'échoue plus, l'évaluation est la preuve, les brouillons sont une commodité). L'entrée de projet n'entre au profil maître que par le clic de January (8.10).
-  6. **Fin du parcours** : `save` (`save_review`, idempotent) puis `announce` : `artifact.ready` (`kind = "project"`, `url = "/competences/portfolio/<id>"`, titre de l'énoncé) pour tout verdict, puis `run.completed` dit par le code : « Projet validé : 4 brouillons prêts, 1 à vérifier. » (« , N à vérifier » omis à zéro), « Projet à reprendre : 2 critères sur 5 non atteints. » (singulier à 1), « Projet à reprendre : rien n'a pu être évalué. » quand aucun critère n'a été jugé (sans description ni dépôt lisible), ou, si seul un résultat hors de l'énoncé a empêché la validation, « Projet à reprendre : l'évaluation ne correspond pas à l'énoncé. ». L'état du parcours garde l'identifiant, le titre, le texte du dépôt, l'issue (JSON) : des données du projet dans les points de contrôle, jamais dans un journal.
-  7. **Journaux** : identifiants, nombres et codes ; jamais un énoncé, un critère, une description, un lien, un README, un brouillon ni un terme (`test_project_texts_never_logged`).
-  8. **Corrections de la revue (tour 1)** : (a) le prompt du nouvel essai nomme **tous** les termes de tous les brouillons fautifs, testé sur le seul message de correction (deux brouillons fautifs) ; (b) le nouvel essai, panne ou délai compris, ne perd jamais l'évaluation (nœud `redo`, `RETRY_BUDGET_S`) ; (c) `test_brief_texts_never_logged` et l'échec ; (d) l'énoncé écrit par le modèle (titre, contexte, objectif, contraintes, critères numérotés), les compétences et le titre sont encadrés par `untrusted` dans les prompts d'évaluation et de brouillons ; (e) bornes 79, 80, 200 et 201 mots du post LinkedIn testées sur `check`, README coupé à exactement 8 000 caractères ; (f) l'extrait de leçon est coupé à `LESSON_EXCERPT_MAX` (3 000) et `unmet_count` sert la phrase de fin ; (g) le prompt des brouillons dit que seuls la description de January, les compétences du module et le **titre** de l'énoncé permettent un terme (l'objectif donne le sujet, pas la permission).
-  9. **Tests** : 6 (énoncé) + 4 (journaux, délai, extrait), 13 (évaluation), 14 (brouillons, nouvel essai, bornes), 4 (rejeu, journaux, branchement) et 33 (schémas) ; modèles scriptés (`project_models`), faux port `FakeProjectStore` (`tests/support/projects.py`), aucun réseau ni LLM.
-- **Raison** : P1 à P4 : un énoncé écrit pour chaque module, un rendu jugé par ce que le Praticien peut lire, un verdict que le code seul décide, des brouillons qui ne disent que ce que January a dit (F11, « rien n'entre dans le profil maître sans validation »). SPEC 1, 6, 7 F11, 9.4, 17.2, 17.4, 18.3 ; D97, D115, D142, D157, D161.
+- **Date** 2026-11-16
+- **Subject** Phase 8, task 8.9: Practitioner, statement and evaluation of proof projects
+  (`project_brief` and `project_review` graphs, `ProjectStore` port) (back end)
+- **Decision**
+  1. **Two graphs and a port (P1, P19)**: `project_brief` (`load`, `write`, `save`, `close`: one
+     standard Practitioner call, 3 to 6 criteria a reviewer can verify, 3 to 6 hours) and
+     `project_review` (`load`, `read_repo`, `skip` or `evaluate`, `drafts`, `save`, `announce`),
+     registered in `GRAPHS`; `ROUTE_ONLY["project_brief"] = "planificateur ou POST
+     /projects/{id}/brief"` (scheduler or POST …) and `ROUTE_ONLY["project_review"]
+     = "POST /projects/{id}/submit"` (launched by the `projects` feature, 8.10). The port is
+     `AgentPorts.projects` (`ProjectStore`, `NO_PROJECTS`: 503 `projects_unavailable`, one more line
+     in `bootstrap_agents.agent_ports`); `BriefInputs`, `ReviewInputs`, `DraftResult`,
+     `ReviewOutcome` and the six methods are those of the plan, which 8.10 implements. Every write
+     of the port is idempotent per session. `DraftKind` and `DraftStatus` already exist
+     (`db/models/daily.py`, 8.1): `project_schema` re-exports them instead of redefining them, and
+     8.10 can import them from either.
+  2. **Statement (P1)**: the module title, its skills, its prerequisites, the lesson excerpt, the
+     week's deliverable, and the target role are each fenced by `untrusted` under its own label; the
+     end marker slipped into a text is removed. Any failure of the step (invalid output after the
+     three attempts of `structured_call`, no model key, step's own timeout exceeded, 100 s, stored
+     under the code `node_timeout`) stores the failure through the port, `brief_failed(code)`
+     (`structured_output_invalid`, `llm_key_missing`…), then stops the flow: `run.failed` states
+     the cause readably, “Try again” relaunches. No other information is stored.
+  3. **Reading the repository (P2)**: `repo_text` is only called if a repository link is given; one
+     page, text cut at 8,000 characters; an exception or `None` or an empty text:
+     `repo_status = "unreadable"` (the exception class is the only thing logged); with no link:
+     `none`. **With no description and no readable repository, no call to the model**: `to_redo`, an
+     “not evaluated” result per criterion, fixed feedback “Je n'ai pas pu lire ton dépôt :
+     ajoute une description de ce que tu as fait.” (“I could not read your repository: add a
+     description of what you did.”). Screenshots are not sent to the model: the prompt gives their
+     number and says it does not see them.
+  4. **Verdict computed by the code (P3)**: `verdict(criteria_count, results)` returns `validated`
+     only if each rank from 1 to N has **a single** result and all are met; a missing result, a
+     duplicate, or a rank outside 1 to N: `to_redo` (N < 1 too). `settled_results` stores one result
+     per criterion (the model's single result, otherwise “Critère non évalué.” (“Criterion
+     not evaluated.”), a rank outside 1 to N dropped): this is what the port receives
+     (`ReviewOutcome.results`). The four drafts are only written at validation. The evaluation
+     counts one standard call (“statement and numbered criteria” written by the code, January's
+     description and the README fenced by `untrusted`).
+  5. **Honesty reference for the drafts (P4)**: `text_claims(draft_text(kind,
+     drafts), project_reference(validated profile or empty identity,
+     project_fact(title, description, skills, link), skills), allowed=[statement title])` for each
+     of the four; the 4,000-character description is held in lines of 600 (the size of a profile
+     fact) so that it is read in full; **the README is never a reference and is not even shown to
+     the drafts model**; the terms are those of `text_claims` in their canonical form (“10 000”
+     is written “10000”). A draft with terms, or a LinkedIn post outside 80 to 200 words
+     (counted by the code): **a single** new attempt naming all the terms and the length, drafts
+     already clean are kept; what remains: `to_check` with `flags` (the terms, or “N mots (80 à
+     200 attendus)”, “N words (80 to 200 expected)”). The new attempt is a node of its own
+     (`redo`, its own 90 s timeout): **any** failure (provider, token cap, timeout, invalid format)
+     keeps the first pass as `to_check` with its terms, and the validated evaluation is never lost.
+     If the **first** call of the drafts fails (format, provider, token cap, or its own 100 s
+     timeout), the validated evaluation is **stored anyway, without drafts**, and the closing
+     sentence says “Projet validé : brouillons indisponibles.” (“Project validated: drafts
+     unavailable.”) (amended by D173: the flow no longer fails, the evaluation is the proof, the
+     drafts are a convenience). The project entry only enters the master profile through January's
+     click (8.10).
+  6. **End of the flow**: `save` (`save_review`, idempotent) then `announce`: `artifact.ready`
+     (`kind = "project"`, `url = "/competences/portfolio/<id>"`, title of the statement) for any
+     verdict, then `run.completed` said by the code: “Projet validé : 4 brouillons prêts, 1 à
+     vérifier.” (“Project validated: 4 drafts ready, 1 to check.”) (“, N to check”
+     omitted at zero), “Projet à reprendre : 2 critères sur 5 non atteints.” (“Project to
+     redo: 2 criteria out of 5 not met.”) (singular at 1), “Projet à reprendre : rien n'a pu
+     être évalué.” (“Project to redo: nothing could be evaluated.”) when no criterion was
+     judged (no description and no readable repository), or, if only a result outside the statement
+     prevented validation, “Projet à reprendre : l'évaluation ne correspond pas à
+     l'énoncé.” (“Project to redo: the evaluation does not match the statement.”). The
+     flow's state keeps the identifier, the title, the repository text, the outcome (JSON): project
+     data in the checkpoints, never in a log.
+  7. **Logs**: identifiers, numbers, and codes; never a statement, a criterion, a description, a
+     link, a README, a draft, or a term (`test_project_texts_never_logged`).
+  8. **Review corrections (round 1)**: (a) the prompt of the new attempt names **all** the terms of
+     all the faulty drafts, tested on the correction message alone (two faulty drafts); (b) the new
+     attempt, failure or timeout included, never loses the evaluation (node `redo`,
+     `RETRY_BUDGET_S`); (c) `test_brief_texts_never_logged` and the failure; (d) the statement
+     written by the model (title, context, goal, constraints, numbered criteria), the skills, and
+     the title are fenced by `untrusted` in the evaluation and drafts prompts; (e) bounds of 79, 80,
+     200, and 201 words of the LinkedIn post tested on `check`, README cut at exactly 8,000
+     characters; (f) the lesson excerpt is cut at `LESSON_EXCERPT_MAX` (3,000) and `unmet_count`
+     serves the closing sentence; (g) the drafts prompt says that only January's description, the
+     module's skills, and the statement's **title** allow a term (the goal gives the topic, not the
+     permission).
+  9. **Tests**: 6 (statement) + 4 (logs, timeout, excerpt), 13 (evaluation), 14 (drafts, new
+     attempt, bounds), 4 (replay, logs, wiring), and 33 (schemas); scripted models
+     (`project_models`), fake port `FakeProjectStore` (`tests/support/projects.py`), no network or
+     LLM.
+- **Reason** P1 to P4: a statement written for each module, a submission judged on what the
+  Practitioner can read, a verdict that the code alone decides, drafts that only say what January
+  said (F11, “nothing enters the master profile without validation”). SPEC 1, 6, 7 F11, 9.4,
+  17.2, 17.4, 18.3; D97, D115, D142, D157, D161.
 
 ## D166
 
-- **Date** : 2026-11-16
-- **Sujet** : Phase 8, tâche 8.10 : feature `projects`, projets preuves, Portfolio, brouillons et entrée au profil maître (back, contrat)
-- **Décision** :
-  1. **Un projet par module (P1)** : tâche planifiée `project_briefs` (15 min, au démarrage, `scheduler/jobs/project_briefs.py`) → `ensure_project_briefs(rt, now)`. Pour chaque programme validé (`list_validated_programs`, la seule lecture sans `user_id`, D91), pour chaque module non sauté dont la semaine locale a commencé (`week_started`, jour de January), `INSERT … ON CONFLICT (user_id, module_id) DO NOTHING` ; **seul celui qui insère lance** la session `project_brief` (sujet `project`) : deux passages, ou trois en parallèle, ne font qu'un projet et qu'une session. Le projet n'est pas placé dans le calendrier. Un énoncé sans session close est relancé (3 essais au plus, `brief_attempts`), puis `brief_failed` ; une session **annulée** par January n'est pas relancée (`brief_failed` aussitôt) ; `POST /projects/{id}/brief` (409 `brief_not_failed`, 503 `brief_unavailable` et le projet reste en échec) repart pour trois essais. Le port `brief_failed` ne passe en échec définitif qu'au troisième essai ; avant, la tâche relance.
-  2. **Rendu (P2)** : `POST /projects/{id}/submit` (multipart : `repo_url`, `description`, `screenshots[]`), sous le verrou du projet, statut corrigé d'abord. 409 `project_not_ready` (énoncé absent), `review_in_progress` (`details.session_id`), `project_validated` ; 422 `fields` (`repo_url`, `description`, `screenshots`, **sans écho** ; lien http(s) de 2 048 caractères au plus : `REPO_URL_MAX` ajouté aux règles de 8.1) ; 413 `file_too_large` (capture de plus de 5 Mo, lecture arrêtée au plafond) et corps de plus de 26 Mo refusé avant lecture (`/projects` dans `core/body_limits.py`, 5 × 5 Mo + 1 Mo, POST seulement). **Captures vérifiées par leurs octets de tête** (PNG, JPEG, WebP), jamais par le nom ni le type annoncé ; le suffixe rangé vient du type détecté (`.jpg` et `.webp` ajoutés aux suffixes du stockage), le nom n'est ni gardé ni journalisé ; une image fausse refuse tout le rendu (rien n'est rangé). Rangées par `storage.save(user_id, "projects", …)`, rendu ajouté à `submissions` (dix au plus : les plus anciens et leurs captures sont retirés), `reviewing`, session `project_review`. **Lancement refusé** : rendu et captures retirés (le dernier rendu seulement), statut d'avant remis, 503 `review_unavailable`.
-  3. **Le statut suit la session** (`service/settle.py`, sous le verrou du projet, sessions lues avant la ligne, comme D129 n° 5) : un projet `reviewing` sans session ouverte (parcours échoué, annulé, terminé sans évaluation, redémarrage sans reprise, lancement interrompu depuis plus de 5 minutes) revient à `to_redo` (une évaluation existe) ou `todo`, **sans rien ranger** : le port n'a pas de « rendu en échec » et n'en a pas besoin, January peut rendre de nouveau. La correction se fait à chaque lecture (`GET /projects`, `GET /projects/{id}`), à chaque rendu et à chaque passage de la tâche (donc au démarrage). Limite assumée : le passage du démarrage ne corrige que les comptes qui ont un programme validé ; les autres le sont à leur première lecture.
-  4. **Port réel** (`AgentProjectStore`) : `brief_inputs` / `review_inputs` relus en base (extrait de leçon prête de 3 000 caractères, livrable de la semaine, poste du radar sinon du dernier objectif, dernier rendu, profil maître validé) ; `repo_text` = `research.service.reading.read` hors session (une page, `None` si illisible ou lien refusé) ; `save_brief` écrit l'énoncé une seule fois (le projet prend son titre) ; `save_review` est idempotent par session : une évaluation que personne n'attend (projet plus `reviewing`, autre session) est ignorée, le rejeu ne réécrit rien. **Le verdict est recalculé par le code** sur les résultats reçus (`verdict`) ; validé : `validated_at`, brouillons rangés (`status`, `content`, `entry`, `flags`, `edited = false`), compétences du module montées à `prouve` (preuve `project`, « Projet « {titre} » validé ({jj/mm}) », jamais plus bas : `record_review` ne rétrograde que `valide`), ligne `project` du journal (`ref_key = project:{id}`, jour de January) dans la même transaction, puis, **hors transaction**, reflet dans les acquis de la mémoire (auteur `practitioner`, refait au rejeu pour rattraper un arrêt). À reprendre : aucun brouillon, aucune compétence touchée.
-  5. **Brouillons (rule 4)** : `PATCH /projects/{id}/drafts/{kind}` (`content` ≤ 3 000 caractères, ou `entry` pour `profile_entry`, dont le contenu devient nom, description et réalisations, comme `draft_text`) → `edited = true`. Un brouillon `to_check` modifié est recontrôlé par `text_claims` contre **la même référence** que le Praticien (`project_reference(profil validé, project_fact(titre de l'énoncé, description du dernier rendu, compétences, lien), compétences)`, titre autorisé) et, pour le post LinkedIn, 80 à 200 mots : `flags` mis à jour, `ready` s'ils sont vides. Un brouillon `ready` retouché reste `ready` (ce sont ses mots). 422 `fields` sans écho si le champ n'est pas celui du type ; 404 `draft_not_found`.
-  6. **Entrée au profil (rule 5, P3)** : seulement `POST /projects/{id}/profile-entry` (`ProfileEntryIn`, texte de January) : nouvelle version validée par `cv.service.profile.save_profile_data` (service ajouté pour que `projects` n'importe pas les schémas du CV, contrat 2) avec `Project(name, description, link = lien du dépôt s'il tient en 300 caractères, achievements, sources = ["january"])` ajouté ; `profile_version` posé. 409 `project_not_validated`, `entry_already_added` (un double clic n'ajoute qu'une fois : verrou du projet), `profile_required`, `profile_draft_pending` (réutilise l'erreur du CV), `profile_projects_full` (20 projets). **Jamais à la validation, jamais par le Praticien** (`test_profile_unchanged_until_explicit_entry`).
-  7. **Lectures** : `GET /projects?status=` (Portfolio : programme, semaine à partir de 1, rang dans la semaine comme `GET /programs` (à partir de 0), heures, compétences ; un module disparu : sans place, à la fin), `GET /projects/{id}` (énoncé, rendus du dernier au premier, évaluation avec le texte de chaque critère, brouillons dans l'ordre fixe, `session_id` seulement tant qu'une session est à suivre), `GET /projects/{id}/screenshots/{n}?submission=` (n de 1 à 5, `submission` 1 = le dernier rendu ; type d'origine, `Cache-Control: no-store`, `nosniff`, CSP `sandbox`, sans nom de fichier). Le projet d'une autre utilisatrice : 404.
-  8. **Fil d'activité (rule 6)** : source `project_source` (`ACTIVITY_SOURCES` passe à 6) : « Projet validé : {titre} » (`project:{id}:validated`) et « Projet à reprendre : {titre} » (`project:{id}:to_redo:{nombre de rendus}` : un nouvel échec est un nouvel événement), lien `/competences/portfolio/{id}`, instant de la dernière évaluation, **seulement** tant que le statut est celui de l'évaluation (un projet rendu de nouveau n'y est plus) ; aucun texte du rendu ; curseur `(at, id)` et savepoint de 8.7.
-  9. **Composition** : `DailyRuntimes.projects` / `project_store` (`ProjectsRuntime(session_factory, launcher, storage, memory, cv, research)`, `storage` et `memory` lus sur `career.cv`), `scheduler.base.DailyJobs.projects`, une ligne dans `FEATURE_ROUTERS`, une dans `JOBS`, **une ligne** dans `app/main.py` (283 lignes). Contrat régénéré (`contracts/openapi.json`, `schema.d.ts`).
-  10. **Journaux** : identifiants, nombres et codes ; jamais une description, un lien, un critère, un énoncé, un brouillon, le retour du Praticien, un nom de capture ni un titre (`test_projects_never_logged`, `test_project_source_never_logs_texts`).
-  11. **Tests** : briefs, rendu, port, brouillons, entrée au profil, lectures et journaux (`tests/features/projects`), dont des essais sur le **vrai moteur** (`test_live.py` : vrai lanceur et vrai port, modèles scriptés : énoncé puis évaluation validée, session d'évaluation en échec rendue à January, trois énoncés ratés puis « Réessayer »), la source du fil (`tests/features/activity/test_project_source.py`) et `GET /journal?kind=project`. Aucun réseau ni LLM.
-- **Raison** : P1 à P3 : un mini projet par module, un rendu jugé par ce que le Praticien peut lire, un verdict que le code seul décide, une preuve `prouve` qui ne se baisse pas, des brouillons contrôlés et une entrée au profil qui ne se fait que par le clic de January (F11, « rien n'entre dans le profil maître sans validation »). Le statut suit la session : un échec du moteur ne doit jamais enfermer January dans un projet « en évaluation ». SPEC 1, 7 F11, 9.4, 14.2, 17.2, 18.3 ; D91, D97, D129, D157, D163, D165.
+- **Date** 2026-11-16
+- **Subject** Phase 8, task 8.10: `projects` feature, proof projects, Portfolio, drafts, and entry
+  into the master profile (back end, contract)
+- **Decision**
+  1. **One project per module (P1)**: scheduled task `project_briefs` (15 min, at startup,
+     `scheduler/jobs/project_briefs.py`) → `ensure_project_briefs(rt, now)`. For each validated
+     program (`list_validated_programs`, the only read without `user_id`, D91), for each non-skipped
+     module whose local week has started (`week_started`, January's day), `INSERT … ON CONFLICT
+     (user_id, module_id) DO NOTHING`; **only the one that inserts launches** the `project_brief`
+     session (subject `project`): two passes, or three in parallel, make only one project and one
+     session. The project is not placed in the calendar. A statement with no closed session is
+     relaunched (3 attempts at most, `brief_attempts`), then `brief_failed`; a session **cancelled**
+     by January is not relaunched (`brief_failed` at once); `POST /projects/{id}/brief` (409
+     `brief_not_failed`, 503 `brief_unavailable` and the project stays failed) restarts for three
+     attempts. The `brief_failed` port only goes to final failure at the third attempt; before that,
+     the task relaunches.
+  2. **Submission (P2)**: `POST /projects/{id}/submit` (multipart: `repo_url`, `description`,
+     `screenshots[]`), under the project's lock, status corrected first. 409 `project_not_ready`
+     (statement missing), `review_in_progress` (`details.session_id`), `project_validated`; 422
+     `fields` (`repo_url`, `description`, `screenshots`, **with no echo**; http(s) link of 2,048
+     characters at most: `REPO_URL_MAX` added to the rules of 8.1); 413 `file_too_large` (screenshot
+     over 5 MB, reading stopped at the cap) and a body over 26 MB refused before reading
+     (`/projects` in `core/body_limits.py`, 5 × 5 MB + 1 MB, POST only). **Screenshots verified by
+     their leading bytes** (PNG, JPEG, WebP), never by the name or the announced type; the stored
+     suffix comes from the detected type (`.jpg` and `.webp` added to the storage suffixes), the
+     name is neither kept nor logged; a false image refuses the whole submission (nothing is
+     stored). Stored by `storage.save(user_id, "projects", …)`, submission added to `submissions`
+     (ten at most: the oldest and their screenshots are removed), `reviewing`, `project_review`
+     session. **Launch refused**: submission and screenshots removed (the last submission only),
+     previous status restored, 503 `review_unavailable`.
+  3. **The status follows the session** (`service/settle.py`, under the project's lock, sessions
+     read before the row, as in D129 no. 5): a `reviewing` project with no open session (flow
+     failed, cancelled, ended without evaluation, restart without resumption, launch interrupted
+     more than 5 minutes ago) returns to `to_redo` (an evaluation exists) or `todo`, **storing
+     nothing**: the port has no “failed submission” and does not need one, January can submit
+     again. The correction is made at each read (`GET /projects`, `GET /projects/{id}`), at each
+     submission, and at each pass of the task (so at startup). Accepted limit: the startup pass only
+     corrects the accounts that have a validated program; the others are corrected at their first
+     read.
+  4. **Real port** (`AgentProjectStore`): `brief_inputs` / `review_inputs` reread from the database
+     (3,000-character excerpt of a ready lesson, the week's deliverable, role from the radar
+     otherwise from the last goal, last submission, validated master profile); `repo_text` =
+     `research.service.reading.read` outside a session (one page, `None` if unreadable or link
+     refused); `save_brief` writes the statement once (the project takes its title); `save_review`
+     is idempotent per session: an evaluation nobody is waiting for (project no longer `reviewing`,
+     other session) is ignored, replay rewrites nothing. **The verdict is recomputed by the code**
+     from the results received (`verdict`); validated: `validated_at`, drafts stored (`status`,
+     `content`, `entry`, `flags`, `edited = false`), the module's skills raised to `prouve`
+     (“proven”) (proof `project`, “Projet « {titre} » validé ({jj/mm})” (“Project
+     “{title}” validated ({dd/mm})”), never lower: `record_review` only downgrades `valide`),
+     `project` line of the journal (`ref_key = project:{id}`, January's day) in the same
+     transaction, then, **outside the transaction**, reflection in the memory's learnings (author
+     `practitioner`, redone at replay to catch up after a stop). To redo: no draft, no skill
+     touched.
+  5. **Drafts (rule 4)**: `PATCH /projects/{id}/drafts/{kind}` (`content` ≤ 3,000 characters, or
+     `entry` for `profile_entry`, whose content becomes name, description, and achievements, as in
+     `draft_text`) → `edited = true`. A modified `to_check` draft is rechecked by `text_claims`
+     against **the same reference** as the Practitioner (`project_reference(validated
+     profile, project_fact(statement title, description of the last submission, skills,
+     link), skills)`, title allowed) and, for the LinkedIn post, 80 to 200 words: `flags` updated,
+     `ready` if they are empty. A touched-up `ready` draft stays `ready` (these are her words). 422
+     `fields` with no echo if the field is not that of the type; 404 `draft_not_found`.
+  6. **Entry into the profile (rule 5, P3)**: only `POST /projects/{id}/profile-entry`
+     (`ProfileEntryIn`, January's text): new version validated by
+     `cv.service.profile.save_profile_data` (service added so that `projects` does not import the CV
+     schemas, contract 2) with `Project(name, description, link = repository link
+     if it fits in 300 characters, achievements, sources = ["january"])` added; `profile_version`
+     set. 409 `project_not_validated`, `entry_already_added` (a double click adds only once: project
+     lock), `profile_required`, `profile_draft_pending` (reuses the CV error),
+     `profile_projects_full` (20 projects). **Never at validation, never by the Practitioner**
+     (`test_profile_unchanged_until_explicit_entry`).
+  7. **Reads**: `GET /projects?status=` (Portfolio: program, week from 1, rank in the week like
+     `GET /programs` (from 0), hours, skills; a module that has disappeared: no place, at the end),
+     `GET /projects/{id}` (statement, submissions from last to first, evaluation with the text of
+     each criterion, drafts in fixed order, `session_id` only while a session is to be followed),
+     `GET /projects/{id}/screenshots/{n}?submission=` (n from 1 to 5, `submission` 1 = the last
+     submission; original type, `Cache-Control: no-store`, `nosniff`, CSP `sandbox`, no file name).
+     Another user's project: 404.
+  8. **Activity feed (rule 6)**: source `project_source` (`ACTIVITY_SOURCES` goes to 6): “Projet
+     validé : {titre}” (“Project validated: {title}”) (`project:{id}:validated`) and
+     “Projet à reprendre : {titre}” (“Project to redo: {title}”)
+     (`project:{id}:to_redo:{number of submissions}`: a new failure is a new event), link
+     `/competences/portfolio/{id}`, instant of the last evaluation, **only** while the status is
+     that of the evaluation (a project submitted again is no longer there); no text of the
+     submission; cursor `(at, id)` and savepoint of 8.7.
+  9. **Composition**: `DailyRuntimes.projects` / `project_store` (`ProjectsRuntime(session_factory,
+     launcher, storage, memory, cv, research)`, `storage` and `memory` read from `career.cv`),
+     `scheduler.base.DailyJobs.projects`, one line in `FEATURE_ROUTERS`, one in `JOBS`, **one line**
+     in `app/main.py` (283 lines). Contract regenerated (`contracts/openapi.json`, `schema.d.ts`).
+  10. **Logs**: identifiers, numbers, and codes; never a description, a link, a criterion, a
+     statement, a draft, the Practitioner's output, a screenshot name, or a title
+     (`test_projects_never_logged`, `test_project_source_never_logs_texts`).
+  11. **Tests**: briefs, submission, port, drafts, entry into the profile, reads, and logs
+     (`tests/features/projects`), including trials on the **real engine** (`test_live.py`: real
+     launcher and real port, scripted models: statement then validated evaluation, failed evaluation
+     session handed back to January, three failed statements then “Try again”), the feed source
+     (`tests/features/activity/test_project_source.py`), and `GET /journal?kind=project`. No network
+     or LLM.
+- **Reason** P1 to P3: a mini project per module, a submission judged on what the Practitioner can
+  read, a verdict that the code alone decides, a `prouve` proof that does not go down, checked
+  drafts, and an entry into the profile that only happens through January's click (F11, “nothing
+  enters the master profile without validation”). The status follows the session: an engine
+  failure must never lock January into a project “under evaluation”. SPEC 1, 7 F11, 9.4, 14.2,
+  17.2, 18.3; D91, D97, D129, D157, D163, D165.
 
-- **Complément de la revue 8.10 (correctifs, tour 1)** :
-  1. **Identifiant « Projet à reprendre » stable** : `project:{id}:to_redo:{session de l'évaluation}` (et non le nombre de rendus). Un rendu de plus dont la session meurt remet `to_redo` avec la même évaluation : même identifiant, même instant, le curseur `(at, id)` ne revoit rien. Une nouvelle évaluation donne un nouvel événement. Remplace le nombre de rendus du n° 8.
-  2. **Captures** : la signature JPEG est `FF D8 FF` suivie d'un octet de marqueur (`C0` à `FE`) : un fichier réduit aux trois octets est refusé (422 `screenshots`) ; le type annoncé par le navigateur n'est jamais cru.
-  3. **Entrée au profil, tout ou rien** : `profile_version` est posé **dans la transaction** de la nouvelle version du profil (`save_profile(..., in_transaction=…)`, crochet que `save_profile_data` transmet) : une panne ne laisse ni version sans `profile_version`, ni l'inverse ; un nouveau clic ajoute le projet une seule fois. Le nom, la description et les réalisations de `ProfileEntryIn` sont rognés avant d'être mesurés : un nom blanc est une 422 `fields` (`name`, `entry.name` pour le brouillon), plus une 500.
-  4. **Formulaire du rendu** : un champ texte de plus de 1 Mo (limite de Starlette) est une 422 `fields: ["description"]` (route `FormRoute`), un texte envoyé dans `screenshots` une 422 `fields: ["screenshots.0"]`, jamais une 400 d'analyse ; un corps mal formé reste une 400.
-  5. **Dépendances** : la feature `projects` importe aussi `learning` (poste visé), `sessions`, `ledger` (`safe_code`) et `postings.service.runtime` (`KeyLocks`), en plus de la liste du plan ; les 8 contrats d'import passent.
+- **Review 8.10 supplement (fixes, round 1)**
+  1. **Stable “Project to redo” identifier**: `project:{id}:to_redo:{evaluation session}` (and
+     not the number of submissions). One more submission whose session dies puts `to_redo` back with
+     the same evaluation: same identifier, same instant, the `(at, id)` cursor sees nothing again. A
+     new evaluation gives a new event. Replaces the number of submissions of no. 8.
+  2. **Screenshots**: the JPEG signature is `FF D8 FF` followed by a marker byte (`C0` to `FE`): a
+     file reduced to the three bytes is refused (422 `screenshots`); the type announced by the
+     browser is never believed.
+  3. **Entry into the profile, all or nothing**: `profile_version` is set **inside the transaction**
+     of the new profile version (`save_profile(..., in_transaction=…)`, a hook that
+     `save_profile_data` passes along): a failure leaves neither a version without
+     `profile_version`, nor the reverse; a new click adds the project only once. The name,
+     description, and achievements of `ProfileEntryIn` are trimmed before being measured: a blank
+     name is a 422 `fields` (`name`, `entry.name` for the draft), no longer a 500.
+  4. **Submission form**: a text field over 1 MB (Starlette's limit) is a 422
+     `fields: ["description"]` (route `FormRoute`), a text sent in `screenshots` a 422
+     `fields: ["screenshots.0"]`, never a parsing 400; a malformed body stays a 400.
+  5. **Dependencies**: the `projects` feature also imports `learning` (target role), `sessions`,
+     `ledger` (`safe_code`), and `postings.service.runtime` (`KeyLocks`), in addition to the plan's
+     list; the 8 import contracts pass.
 
 ## D167
 
-- **Date** : 2026-11-16
-- **Sujet** : Phase 8, tâche 8.11 : correctifs d'ouverture du front (`applications`, `cv`, un message de `gap`), sans changement de contrat (front)
-- **Décision** :
-  1. **Titres** : un seul `h1` par page, puis des `h2`, jamais de saut de niveau. Les colonnes du tableau de suivi passent en `h2` ; la carte d'une relance prend un `headingLevel` (2 sur la page des relances, 4 dans le tiroir de la fiche, dont le titre est un `h2` et les sections des `h3`) ; le titre de la question de l'entretien passe en `h2` ; l'état « fiche introuvable » des pages kit, entretien et comité est le `h1` de la page (`EmptyState as="h1"`). Test commun `src/test/headingOutline.ts` (`expectCoherentOutline`).
-  2. **Relance en cours d'action** : `useReminderHandlers` expose `pending` ; Fait (ou « Classer en Sans réponse »), Reporter de 3 jours et Ignorer sont désactivés sur toutes les cartes, la carte porte `aria-busy`. Copier reste actif (il ne change rien côté serveur). Le corps de la carte passe en `useCopyState` (limite de 50 lignes par fonction).
-  3. **`ChangeList`** : le `div` redondant dans chaque `li` est retiré (le `li` porte la mise en colonne), `isCheck` n'est calculé qu'une fois par ligne.
-  4. **Casts remplacés par des gardes de type** : `isStatus` et `isChannel` (`components/guards.ts`) pour le changement de statut, le canal du corps de création et du patch de la fiche (`changesOf` construit un `ApplicationPatch` typé, plus un `Record<string, unknown>` converti), `navState` (garde `isRecord`, statut de l'information jointe), `useStartReview`, `cv/errors`, `useTemplates` (`instanceof ApiError`) et `TemplateQuestion`.
-  5. **Bornes** : `maxLength` 200 (`NAME_MAX_LENGTH`, la borne du serveur) sur l'entreprise et le poste, dans la création à la main et dans la fiche.
-  6. **Clés React** : une liste de textes sans identifiant (objections, changements, points du débrief, attendus, motifs, phrases, lignes du rapport de CV) est clée par son rang (un texte en double ne casse plus l'unicité, un texte modifié ne remonte plus la ligne) ; ce qui a un identifiant garde le sien.
-  7. **ESLint `*Testkit`** : la catégorie `test` de `boundaries/files` ne couvre plus que `src/features/**/*Testkit.{ts,tsx}`, et un bloc `no-restricted-imports` interdit à tout fichier qui n'est ni un test ni une aide de test d'importer une aide `*Testkit` (vérifié par un fichier d'essai, retiré).
-  8. **Tableau de suivi à 1 024 px** : huit colonnes de 11 rem ne tiennent pas, le défilement horizontal est celui du tableau (`overflow-x-auto max-w-full min-w-0 overscroll-x-contain`), la page (`min-w-0`) ne défile jamais. Testé sur le contrat CSS (jsdom n'a pas de mise en page), pas sur des pixels.
-  9. **Pastille des relances** : le nom accessible du lien est un seul texte (« Relances, 1 relance due ») porté par un seul élément lu, le libellé et le nombre visibles sont `aria-hidden` ; aucun espace ne peut s'insérer avant la virgule, quelle que soit la mise en page.
-  10. **`IntakeRun`** : l'effet d'invalidation et d'ouverture ne dépend plus d'un objet refait à chaque événement mais de la fiche annoncée, retenue tant que le rang (`seq`) de l'événement qui l'annonce ne change pas. Un même événement ne relit pas deux fois les candidatures, même quand d'autres événements arrivent.
-  11. **Report 8.0 (M6)** : 409 `posting_has_running_work` (un comité ou un entretien en cours cite l'offre) a son texte à la suppression d'une offre : « Un comité ou un entretien est en cours sur cette offre : réessaie quand il sera fini. » (`gap.errors`, même mécanisme que `review_in_progress` et `analysis_in_progress`), testé.
-  12. **Tests** : un titre par page (suivi, relances, nouvelle fiche, entretien, tiroir, introuvable), boutons de relance en cours, bornes de 200, contrat CSS du tableau, nom de la pastille, invalidation une seule fois, message du 409.
-- **Raison** : les points du bilan de la phase 7 (revue finale) qui touchent le front : accessibilité (titres, nom de la pastille, boutons occupés), robustesse (gardes de type, bornes, clés, effet stable) et hygiène de l'outillage de test. Ne change pas le contrat.
+- **Date** 2026-11-16
+- **Subject** Phase 8, task 8.11: opening fixes for the front end (`applications`, `cv`, one `gap`
+  message), no contract change (front end)
+- **Decision**
+  1. **Headings**: a single `h1` per page, then `h2` headings, never a skipped level. The columns of
+     the tracking board become `h2`; a follow-up card takes a `headingLevel` (2 on the follow-ups
+     page, 4 in the record drawer, whose title is an `h2` and sections `h3`); the title of the
+     interview question becomes `h2`; the “record not found” state of the kit, interview, and
+     committee pages is the page's `h1` (`EmptyState as="h1"`). Shared test
+     `src/test/headingOutline.ts` (`expectCoherentOutline`).
+  2. **Follow-up while an action runs**: `useReminderHandlers` exposes `pending`; Done (or “Mark
+     as No answer”), Postpone 3 days, and Ignore are disabled on all cards, the card carries
+     `aria-busy`. Copy stays active (it changes nothing on the server side). The card's body moves
+     into `useCopyState` (limit of 50 lines per function).
+  3. **`ChangeList`**: the redundant `div` in each `li` is removed (the `li` carries the column
+     layout), `isCheck` is only computed once per line.
+  4. **Casts replaced by type guards**: `isStatus` and `isChannel` (`components/guards.ts`) for the
+     status change, the channel of the creation body and of the record's patch (`changesOf` builds a
+     typed `ApplicationPatch`, no longer a converted `Record<string, unknown>`), `navState` (guard
+     `isRecord`, status of the attached information), `useStartReview`, `cv/errors`, `useTemplates`
+     (`instanceof ApiError`), and `TemplateQuestion`.
+  5. **Bounds**: `maxLength` 200 (`NAME_MAX_LENGTH`, the server's bound) on the company and the
+     role, in manual creation and in the record.
+  6. **React keys**: a list of texts with no identifier (objections, changes, debrief points,
+     expectations, reasons, sentences, lines of the résumé report) is keyed by its rank (a
+     duplicate text no longer breaks uniqueness, a modified text no longer moves the line up); what
+     has an identifier keeps its own.
+  7. **ESLint `*Testkit`**: the `test` category of `boundaries/files` now only covers
+     `src/features/**/*Testkit.{ts,tsx}`, and a `no-restricted-imports` block forbids any file that
+     is neither a test nor a test helper from importing a `*Testkit` helper (checked with a trial
+     file, removed).
+  8. **Tracking board at 1,024 px**: eight columns of 11 rem do not fit, the horizontal scroll is
+     the board's (`overflow-x-auto max-w-full min-w-0 overscroll-x-contain`), the page (`min-w-0`)
+     never scrolls. Tested on the CSS contract (jsdom has no layout), not on pixels.
+  9. **Follow-ups badge**: the link's accessible name is a single text (“Follow-ups, 1 follow-up
+     due”) carried by a single element read aloud, the visible label and number are `aria-hidden`;
+     no space can be inserted before the comma, whatever the layout.
+  10. **`IntakeRun`**: the invalidation and opening effect no longer depends on an object rebuilt at
+     each event but on the announced record, held as long as the rank (`seq`) of the event that
+     announces it does not change. The same event does not reread the applications twice, even when
+     other events arrive.
+  11. **Carry-over 8.0 (M6)**: 409 `posting_has_running_work` (a committee or interview in progress
+     cites the posting) has its text when a posting is deleted: “A committee or interview is in
+     progress for this posting: try again once it's done.” (`gap.errors`, same mechanism as
+     `review_in_progress` and `analysis_in_progress`), tested.
+  12. **Tests**: one heading per page (tracking, follow-ups, new record, interview, drawer, not
+     found), follow-up buttons while an action runs, bounds of 200, CSS contract of the board, badge
+     name, invalidation only once, 409 message.
+- **Reason** The points of the phase 7 report (final review) that concern the front end:
+  accessibility (headings, badge name, busy buttons), robustness (type guards, bounds, keys, stable
+  effect), and hygiene of the test tooling. Does not change the contract.
 
 ## D168
 
-- **Date** : 2026-11-16
-- **Sujet** : Phase 8, tâche 8.12 : composants présentationnels du quotidien (brief, radar, projets) (front)
-- **Décision** :
-  1. **Vingt-trois composants, un dossier chacun** (`.tsx`, `.test.tsx`, `index.ts`) : `home` (`BriefHeader`, `BlockCard`, `ReviewsCard`, `RemindersCard`, `OffersCard`, `WeekCard`, `ResourceCard`, `AdviceCard`, `QuickActions`, `ActivityFeed`, `NoticeToasts`), `radar` (`RadarSummary`, `SkillRanking`, `RadarAlerts`, `RadarOffers`, `RadarForm`), `projects` (`ProjectCard`, `ProjectBriefView`, `CriteriaChecklist`, `SubmissionForm`, `EvaluationView`, `DraftCard`, `ProfileEntryForm`). Ni `schema.d.ts`, ni `shared/api`, ni donnée : les pages 8.13 à 8.15 les branchent. Textes dans `shared/i18n/messages/{home,radar,projects}.ts` (les trois textes de l'accueil du squelette passent de `app.ts` à `home.ts`).
-  2. **Types de vue** dans `components/viewTypes.ts` de chaque feature (réduction de `BriefOut`, `RadarRunOut`, `ProjectSummary`, `ProjectBriefOut`, `EvaluationOut`, `DraftOut`, `ActivityItem`…), comme `applications` et `cv` : la règle `boundaries` interdit à `components/` d'importer le `types.ts` de la feature. `types.ts` de chaque feature les réexporte.
-  3. **Le conseil** : `failed` et `unavailable` disent la même chose (« Le conseil n'a rien pu dire ce matin. »), jamais une clé manquante, et n'offrent aucun « Réessayer » (le serveur ne relance pas le conseil dans la journée) ; `pending` est annoncé (`role="status"`) ; un conseil `ready` sans phrase est traité comme muet.
-  4. **Jamais la couleur seule** : évolution écrite (« +8 pts », « −2 pts », « stable », « nouvelle », « premier relevé »), « Bon match » dès 70, « Atteint » / « Non atteint », verdict et statut écrits, barres décoratives (`aria-hidden`) ou `progressbar` avec `aria-valuetext`. Icônes `aria-hidden`.
-  5. **Fil d'activité** : date relative (« il y a 5 min », `shared/lib/relativeTime.ts`) avec la date complète en `title` et en texte masqué, genre en texte masqué, titre en lien du routeur quand `link` est donné ; `now` injectable. `NoticeToasts` : région `aria-live="polite"` toujours présente, 3 notifications au plus, « Fermer » ; les 8 s de disparition et la relecture de 60 s restent à la page (8.13).
-  6. **Honnêteté du radar** : le décompte écrit ce qui a été lu, bloqué et analysé (« 47 offres lues · 6 bloquées · 41 analysées »), les domaines bloqués sont à part et dépliables, le bandeau `low_sample` dit l'échantillon réduit ; un salaire n'est montré que s'il vient du serveur.
-  7. **Brouillons** : les termes à vérifier sont montrés tels que le serveur les donne, joints par « , » (« À vérifier : absent de ton profil et de ton rendu : 10000, Kubernetes ») ; rien n'est publié par l'application. **`ProfileEntryForm`** : « Rien n'entre dans ton profil sans ton accord. » ; les lignes de réalisation vides ou blanches sont écartées et le nom et la description rognés avant `onAdd` (le serveur répond 422 à une ligne vide), bornes 120 / 600 / 4 lignes / 200 vérifiées en amont.
-  8. **`SubmissionForm`** : lien http(s) de 2 048 caractères au plus, description de 4 000 (compteur, erreur dès le dépassement), au moins un des deux, 5 captures au plus (PNG, JPEG, WebP, 5 Mo, les autres refusées avec leur cause), aperçu lu par `FileReader` (sûr sous `StrictMode`, rien à révoquer) et retrait ; le serveur reste l'autorité.
-  9. **Partagé** : `ExternalLink` (`shared/ui`, nouvel onglet, `rel="noopener noreferrer"`, annoncé ; une adresse qui n'est pas http(s) n'est jamais un lien), `shared/lib/relativeTime.ts`, `webUrl` déplacé en `shared/lib/webUrl.ts` (réexporté par `session-ui` : `shared/ui` ne peut pas importer `session-ui`), clés `time.*` et `app.newTab`.
-  10. **Tests** : rendu, rôles, clavier, textes d'évolution, compteur, limite de 5 captures, région `aria-live`, liens externes, états vides.
-- **Raison** : F17 (accueil : brief, actions rapides, activité), 15.4 (couleur jamais seule, clavier, états vides), 18.3 et F11 (honnêteté : ce qui est lu, ce qui est à vérifier, rien dans le profil sans accord). Le front ne touche ni le contrat ni la logique : il rend ce que le serveur calcule.
+- **Date** 2026-11-16
+- **Subject** Phase 8, task 8.12: presentational components of the daily view (brief, radar,
+  projects) (front end)
+- **Decision**
+  1. **Twenty-three components, one folder each** (`.tsx`, `.test.tsx`, `index.ts`): `home`
+     (`BriefHeader`, `BlockCard`, `ReviewsCard`, `RemindersCard`, `OffersCard`, `WeekCard`,
+     `ResourceCard`, `AdviceCard`, `QuickActions`, `ActivityFeed`, `NoticeToasts`), `radar`
+     (`RadarSummary`, `SkillRanking`, `RadarAlerts`, `RadarOffers`, `RadarForm`), `projects`
+     (`ProjectCard`, `ProjectBriefView`, `CriteriaChecklist`, `SubmissionForm`, `EvaluationView`,
+     `DraftCard`, `ProfileEntryForm`). Neither `schema.d.ts`, nor `shared/api`, nor data: pages 8.13
+     to 8.15 wire them. Texts in `shared/i18n/messages/{home,radar,projects}.ts` (the three texts of
+     the skeleton's home move from `app.ts` to `home.ts`).
+  2. **View types** in `components/viewTypes.ts` of each feature (reduction of `BriefOut`,
+     `RadarRunOut`, `ProjectSummary`, `ProjectBriefOut`, `EvaluationOut`, `DraftOut`,
+     `ActivityItem`…), like `applications` and `cv`: the `boundaries` rule forbids `components/`
+     from importing the feature's `types.ts`. The `types.ts` of each feature re-exports them.
+  3. **The advice**: `failed` and `unavailable` say the same thing (“The council had nothing to
+     say this morning.”), never a missing key, and offer no “Try again” (the server does not
+     relaunch the advice within the day); `pending` is announced (`role="status"`); a `ready` advice
+     with no sentence is treated as mute.
+  4. **Never color alone**: written trend (“+8 pts”, “−2 pts”, “stable”, “new”,
+     “first scan”), “Good match” from 70, “Met” / “Not met”, written verdict and
+     status, decorative bars (`aria-hidden`) or `progressbar` with `aria-valuetext`. Icons
+     `aria-hidden`.
+  5. **Activity feed**: relative date (“5 min ago”, `shared/lib/relativeTime.ts`) with the full
+     date in `title` and in hidden text, kind in hidden text, title as a router link when `link` is
+     given; `now` injectable. `NoticeToasts`: `aria-live="polite"` region always present, 3
+     notifications at most, “Close”; the 8 s disappearance and the 60 s reread stay with the
+     page (8.13).
+  6. **Radar honesty**: the count writes what was read, blocked, and analyzed (“47 read · 6
+     blocked · 41 analyzed”), the blocked domains are apart and expandable, the `low_sample`
+     banner states the reduced sample; a salary is only shown if it comes from the server.
+  7. **Drafts**: the terms to check are shown as the server gives them, joined by “, ” (“To
+     check: not in your profile or your submission: 10000, Kubernetes”); nothing is published by
+     the application. **`ProfileEntryForm`**: “Nothing goes into your profile without your
+     consent.”; empty or blank achievement lines are dropped and the name and description trimmed
+     before `onAdd` (the server answers 422 to an empty line), bounds 120 / 600 / 4 lines / 200
+     checked upstream.
+  8. **`SubmissionForm`**: http(s) link of 2,048 characters at most, description of 4,000 (counter,
+     error as soon as it is exceeded), at least one of the two, 5 screenshots at most (PNG, JPEG,
+     WebP, 5 MB, the others refused with their cause), preview read by `FileReader` (safe under
+     `StrictMode`, nothing to revoke) and removal; the server remains the authority.
+  9. **Shared**: `ExternalLink` (`shared/ui`, new tab, `rel="noopener noreferrer"`, announced; an
+     address that is not http(s) is never a link), `shared/lib/relativeTime.ts`, `webUrl` moved to
+     `shared/lib/webUrl.ts` (re-exported by `session-ui`: `shared/ui` cannot import `session-ui`),
+     keys `time.*` and `app.newTab`.
+  10. **Tests**: rendering, roles, keyboard, trend texts, counter, limit of 5 screenshots,
+     `aria-live` region, external links, empty states.
+- **Reason** F17 (home: brief, quick actions, activity), 15.4 (color never alone, keyboard, empty
+  states), 18.3 and F11 (honesty: what is read, what is to be checked, nothing in the profile
+  without consent). The front end touches neither the contract nor the logic: it renders what the
+  server computes.
 
 ## D169
 
-- **Date** : 2026-11-16
-- **Sujet** : Phase 8, tâche 8.13 : accueil, brief du matin, actions rapides, fil d'activité et notifications de fond (front)
-- **Décision** :
-  1. **Page `/`** (`HomePage`, route large) : `BriefHeader`, `QuickActions`, puis les sept rubriques dans l'ordre de F17 (bloc, révisions, relances, offres, avancement, ressource, conseil), le fil d'activité en seconde colonne. `GET /brief/today` par `api.ts` / `useBrief`, converti en vues par `toView.ts` (les composants ne voient jamais le contrat). Chargement, erreur avec « Réessayer » (seul usage du bouton : relire un brief non lu).
-  2. **Sans programme validé** (`week` vide, rubrique « sans objet » du serveur) : le bloc et l'avancement laissent la place à « Commence par un objectif » vers `/apprendre/objectifs` ; les autres rubriques (révisions, relances, offres, ressource, conseil) restent, elles ne dépendent pas du programme.
-  3. **Conseil** : `pending` → la page suit `session_id` par `useRun` et relit le brief une fois la session finie (`over`), une seule fois ; `failed` et `unavailable` sont définitifs pour la journée (le serveur ne relance pas le conseil) : aucun « Réessayer », aucun mot sur une clé, texte d'`AdviceCard`.
-  4. **Fil d'activité, curseur `(at, id)`** : « Voir plus » envoie `before` **et** `before_id` du dernier événement montré (l'`at` du serveur est repassé tel quel, jamais reformaté par un `Date`) ; la relecture de fond envoie `after` **et** `after_id` (`after_id` n'est jamais envoyé sans `after`, ni `before_id` sans `before`). Un événement qui partage l'instant du dernier vu n'est donc ni perdu ni répété ; l'`id` stable sert aussi à ne jamais montrer deux fois le même (les pages anciennes déjà lues restent quand la première est relue). Pas de `hasMore` du serveur : une page pleine (20) en suppose une autre. Le fil lu est la première page seule (`useQuery`), les pages anciennes viennent d'une mutation (une relecture de tout un `useInfiniteQuery` décalerait ses bornes dès qu'un événement arrive).
-  5. **Notifications de fond (P16)** : `useBackgroundNotices`, dans l'emplacement `overlay` du manifeste `home` (`BackgroundNotices`, toutes les pages). Le « dernier vu » part de l'événement le plus récent présent au montage (une lecture `limit=1`, rien n'est annoncé de l'existant) et reste **en mémoire** ; relecture toutes les 60 s (`refetchInterval`, `refetchIntervalInBackground: false`, `refetchOnWindowFocus` pour rattraper au retour d'onglet, sans nouvelle tentative : une erreur se tait jusqu'au passage suivant), 10 événements au plus par relecture. Genres gardés : `lesson`, `radar`, `brief`, `project`, `job_failed` (la mémoire des agents n'en fait pas). Trois notifications à l'écran, 8 s chacune (le minuteur part quand elle devient visible, `useNoticeQueue`), « Fermer » ; les suivantes attendent. Un nouvel événement relit le fil ; un nouvel événement gardé relit aussi le brief. L'animation seule est coupée par `prefers-reduced-motion` (`NoticeToasts`), la disparition à 8 s est conservée. Ni notification du navigateur ni nouveau canal WebSocket.
-  6. **Actions rapides (P17)** : « Commencer mon bloc » → `/etudier/session`, « Réviser » → `/etudier/revisions`, « Ajouter une offre » → `/carriere/offres`, « Capturer » → `useCaptureRequest.request()` (`shared/lib/captureRequest.ts`, magasin zustand `{count, request}`) ; `CaptureOverlay` ouvre son dialogue quand `count` **change**, jamais au montage (un compteur déjà levé n'est pas une demande). `home` n'importe pas `capture`. Une relance du brief ouvre `/candidatures/:id`.
-  7. **Vérifié par les tests** (MSW, faux socket, état de visibilité simulé, délais courts réglables par propriétés de `BackgroundNotices`, jamais par l'utilisatrice) : sept rubriques dans l'ordre, navigation des quatre actions, capture demandée, état sans programme, pagination avec égalité d'instant à la frontière de page, conseil `pending` puis rempli après `run.completed`, `failed` / `unavailable` sans bouton ni « clé », erreur puis « Réessayer », aucune notification pour l'existant, paramètres `after` et `after_id`, événement de même instant, genres gardés, 3 au plus, disparition à délai et à « Fermer », fil et brief relus, **aucune lecture onglet caché** (le test échoue si `refetchIntervalInBackground` passe à `true`), reprise au retour.
-  8. **Écart** : les textes d'accueil du squelette (`home.title`, `home.intro`, `home.empty.*`) sont retirés de `home.ts` (remplacés par `home.loading`, `home.noProgram.*`, `home.activity.loading`) ; `App.test` lit désormais l'accueil réel avec le brief et le fil en mémoire.
-- **Raison** : F17 (brief à l'ouverture, actions rapides, fil d'activité), P16 (notifications de fond sans canal nouveau), P17 (capture par un magasin partagé, `home` n'importe pas `capture`), curseur `(at, id)` du contrat 8.7 (une borne sur l'instant seul perdrait ou répéterait les événements simultanés), honnêteté du conseil (jamais de relance ni de faux motif quand le serveur dit « définitif pour la journée »). TanStack Query v5 (`refetchInterval`, `refetchIntervalInBackground: false`) : le comportement attendu (aucune lecture onglet caché) est prouvé par un test à l'état de visibilité simulé ; la documentation n'a pas été relue dans context7.
-- **Correctif 1 (revue 8.13)** : (I1) la liste du fil est **une seule liste continue** (`useActivity`) : la première page relue se pose en tête (ses événements nouveaux d'abord, le reste, pages lues par « Voir plus » comprises, inchangé) au lieu d'être recollée à des pages anciennes, ce qui retirait un événement entre les deux ; si aucun événement de la page relue n'était déjà montré (plus de 20 arrivés d'un coup), la liste repart de la première page plutôt que de garder un trou. Testé : e01 à e40 montrés, un événement n1 arrive, n1 puis e01 à e40, sans doublon ni trou. (M2) délais de disparition testés sur minuteries simulées (`useNoticeQueue.test.ts`), plus aucun délai de 250 ou 300 ms en test d'intégration. (M3) un brief encore `pending` pour la même session après la fin du flux est relu une seule fois de plus (3 s), puis plus rien, sans boucle. (M4) `RemindersCard` sans relance listée mais `due > 0` donne le nombre seul, sans liste vide. (M6) le magasin de demande de capture est remis à zéro entre les tests de `CaptureOverlay`.
+- **Date** 2026-11-16
+- **Subject** Phase 8, task 8.13: home, morning brief, quick actions, activity feed, and background
+  notifications (front end)
+- **Decision**
+  1. **Page `/`** (`HomePage`, wide route): `BriefHeader`, `QuickActions`, then the seven sections
+     in the order of F17 (block, reviews, follow-ups, postings, progress, resource, advice), the
+     activity feed in a second column. `GET /brief/today` through `api.ts` / `useBrief`, converted
+     to views by `toView.ts` (the components never see the contract). Loading, error with
+     “Retry” (the button's only use: rereading a brief that was not read).
+  2. **With no validated program** (`week` empty, a “not applicable” section from the server):
+     the block and progress give way to “Start with a goal” leading to `/apprendre/objectifs`;
+     the other sections (reviews, follow-ups, postings, resource, advice) stay, they do not depend
+     on the program.
+  3. **Advice**: `pending` → the page follows `session_id` through `useRun` and rereads the brief
+     once the session is over (`over`), once only; `failed` and `unavailable` are final for the day
+     (the server does not relaunch the advice): no “Retry”, no word about a key, text of
+     `AdviceCard`.
+  4. **Activity feed, `(at, id)` cursor**: “Show more” sends `before` **and** `before_id` of the
+     last event shown (the server's `at` is passed back as is, never reformatted by a `Date`); the
+     background reread sends `after` **and** `after_id` (`after_id` is never sent without `after`,
+     nor `before_id` without `before`). An event that shares the instant of the last one seen is
+     therefore neither lost nor repeated; the stable `id` also serves to never show the same one
+     twice (older pages already read stay when the first one is reread). No `hasMore` from the
+     server: a full page (20) assumes another. The feed read is the first page alone (`useQuery`),
+     older pages come from a mutation (rereading a whole `useInfiniteQuery` would shift its bounds
+     as soon as an event arrives).
+  5. **Background notifications (P16)**: `useBackgroundNotices`, in the `overlay` slot of the `home`
+     manifest (`BackgroundNotices`, all pages). The “last seen” starts from the most recent
+     event present at mounting (a `limit=1` read, nothing existing is announced) and stays **in
+     memory**; reread every 60 s (`refetchInterval`, `refetchIntervalInBackground: false`,
+     `refetchOnWindowFocus` to catch up when returning to the tab, with no retry: an error stays
+     quiet until the next pass), 10 events at most per reread. Kinds kept: `lesson`, `radar`,
+     `brief`, `project`, `job_failed` (the agents' memory writes make none). Three notifications on
+     screen, 8 s each (the timer starts when it becomes visible, `useNoticeQueue`), “Close”; the
+     next ones wait. A new event rereads the feed; a new kept event also rereads the brief. Only the
+     animation is cut by `prefers-reduced-motion` (`NoticeToasts`), the disappearance at 8 s is
+     kept. Neither a browser notification nor a new WebSocket channel.
+  6. **Quick actions (P17)**: “Start my block” → `/etudier/session`, “Review” →
+     `/etudier/revisions`, “Add a posting” → `/carriere/offres`, “Capture” →
+     `useCaptureRequest.request()` (`shared/lib/captureRequest.ts`, zustand store
+     `{count, request}`); `CaptureOverlay` opens its dialog when `count` **changes**, never at
+     mounting (a counter already raised is not a request). `home` does not import `capture`. A
+     follow-up from the brief opens `/candidatures/:id`.
+  7. **Checked by the tests** (MSW, fake socket, simulated visibility state, short delays adjustable
+     through properties of `BackgroundNotices`, never by the user): seven sections in order,
+     navigation of the four actions, capture requested, state with no program, pagination with equal
+     instants at the page boundary, `pending` advice then filled after `run.completed`, `failed` /
+     `unavailable` without a button or “key”, error then “Retry”, no notification for what
+     exists, parameters `after` and `after_id`, event with the same instant, kinds kept, 3 at most,
+     disappearance on delay and on “Close”, feed and brief reread, **no read with a hidden tab**
+     (the test fails if `refetchIntervalInBackground` goes to `true`), resumption on return.
+  8. **Deviation**: the skeleton's home texts (`home.title`, `home.intro`, `home.empty.*`) are
+     removed from `home.ts` (replaced by `home.loading`, `home.noProgram.*`,
+     `home.activity.loading`); `App.test` now reads the real home with the brief and the feed in
+     memory.
+- **Reason** F17 (brief on opening, quick actions, activity feed), P16 (background notifications
+  without a new channel), P17 (capture through a shared store, `home` does not import `capture`),
+  `(at, id)` cursor of the 8.7 contract (a bound on the instant alone would lose or repeat
+  simultaneous events), honesty of the advice (never a relaunch or a false reason when the server
+  says “final for the day”). TanStack Query v5 (`refetchInterval`, `refetchIntervalInBackground:
+  false`): the expected behavior (no read with a hidden tab) is proven by a test with a simulated
+  visibility state; the documentation was not reread in context7.
+- **Fix 1 (review 8.13)**: (I1) the feed list is **a single continuous list** (`useActivity`): the
+  first page reread is placed at the head (its new events first, the rest, pages read through
+  “Show more” included, unchanged) instead of being glued to older pages, which removed an event
+  between the two; if none of the events of the reread page was already shown (more than 20 arrived
+  at once), the list restarts from the first page rather than keeping a hole. Tested: e01 to e40
+  shown, an event n1 arrives, n1 then e01 to e40, with no duplicate or hole. (M2) disappearance
+  delays tested on simulated timers (`useNoticeQueue.test.ts`), no more 250 or 300 ms delay in
+  integration tests. (M3) a brief still `pending` for the same session after the end of the stream
+  is reread one more time (3 s), then nothing more, with no loop. (M4) `RemindersCard` with no
+  follow-up listed but `due > 0` gives the number alone, with no empty list. (M6) the capture
+  request store is reset between the `CaptureOverlay` tests.
 
 ## D170
 
-- **Date** : 2026-11-16
-- **Sujet** : Phase 8, tâche 8.14 : page du radar du marché (front)
-- **Décision** :
-  1. **Routes** `/carriere/radar` (le dernier relevé fini, ou celui qui tourne) et `/carriere/radar/:runId`, même page ; entrée « Radar » de la section Carrière, ordre 5 (`radarManifest` dans `app/registry.ts`). La page lit `GET /radar/latest` (valeurs proposées, relevé en cours, dernier relevé fini, complet) et `GET /radar/runs` (historique, 20) par `api.ts` / `useRadar`, converties par `toView.ts` ; les composants ne voient jamais le contrat.
-  2. **Lancement** : `RadarForm` prérempli par `defaults`, `key` = poste et zone proposés (le formulaire ne lit ses valeurs qu'une fois : il repart des nouvelles quand elles arrivent ou changent). `POST /radar/runs` → 202 `{run_id, session_id}` ; la page navigue vers `/carriere/radar/:runId` avec la session du 202 dans l'état de navigation. 409 `radar_in_progress` n'est pas une panne : on suit le relevé ouvert (`details.run_id`), avec la phrase « Un relevé était déjà en cours : on le suit. ». 409 `radar_role_required` → message sur le champ du poste ; 422 `validation_error` → `details.fields` nomme le champ refusé (jamais une valeur), message sur ce champ. Aucun relevé n'est relancé tant qu'un autre tourne (bouton et champs désactivés).
-  3. **Suivi** : un relevé `running` est suivi par `useRun` + `RunFeed` (les phrases de l'Éclaireur et de l'Analyste) ; chaque changement d'état de la session relit les relevés (`radarKeys.all`), le résultat vient toujours de la lecture, jamais du fil ; relecture de repli toutes les 10 s tant que le relevé tourne. **Écart au contrat** : les lectures ne donnent pas la session d'un relevé en cours (le 409 non plus : seulement `run_id`) ; la page la retrouve par `GET /sessions?graph=market_radar` (`subject_id` = le relevé), toutes les 3 s tant qu'elle n'apparaît pas, et dit « Connexion au relevé en cours… » en attendant. Aucune route de plus.
-  4. **Course évitée** : l'adresse du radar redirige vers le relevé en cours, mais pas quand un lancement vient de désigner le relevé à suivre (`starter.started`) : sinon la redirection, plus rapide que la navigation du lancement, perdrait la session du 202. L'invalidation après lancement n'est pas attendue pour la même raison.
-  5. **Résultat** : `RadarSummary`, `SkillRanking`, `RadarAlerts`, `RadarOffers` ; `not_analyzed` est ajouté à la vue du décompte (« 6 offres lues n'ont pas été analysées. ») : l'écart entre lues et analysées ne se cache jamais (honnêteté, F11). Un relevé `failed` dit pourquoi en clair : `error_code` → raison française (`search_unavailable`, `launch_failed`, `engine_unavailable`, `session_failed`, `session_cancelled`, `not_finalized`, `session_ended`, `run_failed`, `node_timeout`, `structured_output_invalid`, `web_quota_reached`, `internal_error`), tout autre code (nom d'exception) → « une panne inattendue a interrompu le relevé » ; le code brut n'est jamais montré.
-  6. **Historique** : liste de relevés (date en lien, état écrit « En cours / Terminé / En échec », déclenchement, poste et zone, décompte ou raison de l'échec, « échantillon réduit »), le relevé affiché porte `aria-current`.
-  7. **Reports de la revue 8.12** : (M1) `RadarForm` exige 2 caractères au moins pour le poste (après rognage) et pour la zone **quand elle est saisie** (une zone vide reste « la zone par défaut » : le contrat accepte `null`, pas une chaîne d'un caractère), erreur sur le champ, corrigée en direct après le premier essai ; `roleError` / `zoneError` portent les refus du serveur. (M5) `RadarOffers` et `OffersCard` clent chaque ligne par `url` + rang (les vues n'ont pas d'identifiant, deux offres peuvent partager un lien) ; testé sans avertissement de clé en double.
-  8. **Tests** : premier relevé (valeurs proposées, lancement, fil, résultat), relevé en cours retrouvé par son sujet puis résultat, 409 `radar_in_progress` suivi, 409 `radar_role_required` et 422 sur le champ, 1 caractère refusé avant tout envoi, évolution (« +8 pts », « nouvelle », « −2 pts », « premier relevé »), alertes, échantillon réduit et offres non analysées, échec en clair et code inconnu, historique et ouverture d'un relevé, relevé introuvable, deux offres au même lien.
-- **Raison** : F17 et 14.2 (relevé du marché, suivi par les agents, résultat chiffré), P10 (poste et zone par défaut, un seul relevé en cours, poste obligatoire), 18.3 et F11 (ce qui est lu, bloqué, analysé et non analysé est écrit ; un échec dit sa cause), 15.4 (clavier, couleur jamais seule, états vides et erreurs avec « Réessayer »). Le front ne change ni le contrat ni la logique : il rend ce que le serveur calcule.
-- **Correctif, tour 1 (8.14)** : (1) un lancement tient du clic jusqu'à la lecture du relevé à suivre (garde synchrone, `starter.pending`, chargement du relevé de l'adresse) : un double clic n'envoie qu'un `POST`, la session du 202 est suivie, jamais un 409 « déjà en cours ». (2) Quand le relevé quitte `running` (flux ou relecture de repli de 10 s), `latest` et l'historique sont relus : le formulaire se réactive et l'historique se met à jour même si le flux est resté muet. (3) La redirection de `/carriere/radar` n'est suspendue que pour le relevé que le lancement vient de désigner (un relevé planifié est suivi). (4) Un refus du serveur sur un champ s'efface dès que ce champ est modifié. (5) « Un relevé était déjà en cours » ne s'affiche que tant que le relevé tourne (plus après sa fin ni au rechargement). (6) Tests : plusieurs sessions (autre sujet, autre parcours, terminée), `GET /sessions` du faux serveur filtré par `graph`, la session du 202 n'y figure pas (le test prouve qu'elle est suivie sans lecture de la liste).
+- **Date** 2026-11-16
+- **Subject** Phase 8, task 8.14: market radar page (front end)
+- **Decision**
+  1. **Routes** `/carriere/radar` (the last finished scan, or the one running) and
+     `/carriere/radar/:runId`, same page; “Radar” entry of the Career section, order 5
+     (`radarManifest` in `app/registry.ts`). The page reads `GET /radar/latest` (suggested values,
+     scan in progress, last finished scan, complete) and `GET /radar/runs` (history, 20) through
+     `api.ts` / `useRadar`, converted by `toView.ts`; the components never see the contract.
+  2. **Launch**: `RadarForm` prefilled by `defaults`, `key` = suggested role and zone (the form
+     reads its values only once: it restarts from the new ones when they arrive or change).
+     `POST /radar/runs` → 202 `{run_id, session_id}`; the page navigates to
+     `/carriere/radar/:runId` with the 202's session in the navigation state. 409
+     `radar_in_progress` is not a failure: the open scan is followed (`details.run_id`), with the
+     sentence “A scan was already in progress: following it.”. 409 `radar_role_required` →
+     message on the role field; 422 `validation_error` → `details.fields` names the refused field
+     (never a value), message on that field. No scan is relaunched while another runs (button and
+     fields disabled).
+  3. **Follow-up**: a `running` scan is followed by `useRun` + `RunFeed` (the sentences of the Scout
+     and the Analyst); each state change of the session rereads the scans (`radarKeys.all`), the
+     result always comes from the read, never from the feed; fallback reread every 10 s while the
+     scan runs. **Deviation from the contract**: the reads do not give the session of a scan in
+     progress (the 409 neither: only `run_id`); the page finds it through
+     `GET /sessions?graph=market_radar` (`subject_id` = the scan), every 3 s until it appears, and
+     says “Connecting to the scan…” in the meantime. No additional route.
+  4. **Race avoided**: the radar address redirects to the scan in progress, but not when a launch
+     has just designated the scan to follow (`starter.started`): otherwise the redirect, faster than
+     the launch's navigation, would lose the 202's session. The invalidation after launch is not
+     awaited for the same reason.
+  5. **Result**: `RadarSummary`, `SkillRanking`, `RadarAlerts`, `RadarOffers`; `not_analyzed` is
+     added to the count view (“1 posting read wasn’t analyzed.”): the gap between read and
+     analyzed is never hidden (honesty, F11). A `failed` scan says why in plain words: `error_code`
+     → readable reason (`search_unavailable`, `launch_failed`, `engine_unavailable`,
+     `session_failed`, `session_cancelled`, `not_finalized`, `session_ended`, `run_failed`,
+     `node_timeout`, `structured_output_invalid`, `web_quota_reached`, `internal_error`), any other
+     code (exception name) → “an unexpected failure interrupted the scan.”; the raw code is
+     never shown.
+  6. **History**: list of scans (date as a link, written state “Running / Done / Failed”,
+     trigger, role and zone, count or reason for the failure, “small sample”), the scan
+     displayed carries `aria-current`.
+  7. **Carry-overs from review 8.12**: (M1) `RadarForm` requires at least 2 characters for the role
+     (after trimming) and for the zone **when it is entered** (an empty zone stays “the default
+     zone”: the contract accepts `null`, not a one-character string), error on the field,
+     corrected live after the first attempt; `roleError` / `zoneError` carry the server's refusals.
+     (M5) `RadarOffers` and `OffersCard` key each line by `url` + rank (the views have no
+     identifier, two postings can share a link); tested with no duplicate-key warning.
+  8. **Tests**: first scan (suggested values, launch, feed, result), scan in progress found by its
+     subject then result, 409 `radar_in_progress` followed, 409 `radar_role_required` and 422 on the
+     field, 1 character refused before any sending, trend (“+8 pts”, “new”, “−2 pts”,
+     “first scan”), alerts, small sample and postings not analyzed, failure in plain words and
+     unknown code, history and opening a scan, scan not found, two postings with the same link.
+- **Reason** F17 and 14.2 (market scan, followed by the agents, numbered result), P10 (default role
+  and zone, a single scan in progress, role required), 18.3 and F11 (what is read, blocked,
+  analyzed, and not analyzed is written; a failure states its cause), 15.4 (keyboard, color never
+  alone, empty states and errors with “Retry”). The front end changes neither the contract nor
+  the logic: it renders what the server computes.
+- **Fix, round 1 (8.14)**: (1) a launch holds from the click until the reading of the scan to follow
+  (synchronous guard, `starter.pending`, loading of the scan of the address): a double click sends
+  only one `POST`, the 202's session is followed, never a 409 “already in progress”. (2) When
+  the scan leaves `running` (stream or 10 s fallback reread), `latest` and the history are reread:
+  the form reactivates and the history updates even if the stream stayed mute. (3) The redirect of
+  `/carriere/radar` is only suspended for the scan the launch has just designated (a scheduled scan
+  is followed). (4) A server refusal on a field is cleared as soon as that field is modified. (5)
+  “A scan was already in progress” only shows while the scan runs (no longer after its end or at
+  reload). (6) Tests: several sessions (other subject, other flow, finished), the fake server's
+  `GET /sessions` filtered by `graph`, the 202's session is not in it (the test proves it is
+  followed without reading the list).
 
 ## D171
 
-- **Date** : 2026-11-16
-- **Sujet** : Phase 8, tâche 8.15 : Portfolio et page d'un projet (front)
-- **Décision** :
-  1. **Routes** `/competences/portfolio` (le Portfolio) et `/competences/portfolio/:projectId` (un projet) ; entrée « Portfolio » de la section Compétences, ordre 2 (`projectsManifest` dans `app/registry.ts`). `api.ts` / `queryKeys.ts` / `toView.ts` / `hooks/` comme le radar : les composants ne voient jamais le contrat.
-  2. **Portfolio** : `GET /projects`, relu à chaque ouverture ; les projets sont groupés par statut dans l'ordre « À reprendre, À faire, En cours d'évaluation, Énoncé en préparation, Énoncé à relancer, Validés » (un groupe vide n'existe pas, l'ordre du programme est gardé dans un groupe) ; chaque `ProjectCard` mène à la page du projet ; sans projet : « Tes projets arrivent avec les semaines de ton programme. » ; chargement, erreur avec « Réessayer ».
-  3. **Page d'un projet** : l'énoncé (`ProjectBriefView`), puis ce que le statut demande : `brief_pending` suit la session, `brief_failed` propose « Réessayer l'énoncé » (`POST /projects/{id}/brief`), `todo` le formulaire de rendu, `to_redo` l'évaluation précédente puis le formulaire, `reviewing` le fil du Praticien (`useRun` + `RunFeed`), `validated` le constat, le lien vers la carte des compétences (`/competences`, trouvée dans le manifeste `skills`), l'évaluation, les brouillons et l'ajout au profil ; en bas, l'historique des rendus avec miniatures des captures (`GET /projects/{id}/screenshots/{n}?submission=k`, `k` = 1 pour le dernier rendu). **Suivi** : la session est celle de `session_id` du projet (aucune recherche par sujet, contrairement au radar) ; chaque changement d'état de la session relit le projet (`projectKeys.one`), et, tant que le statut est `brief_pending` ou `reviewing`, une relecture de repli toutes les 5 s : le statut et l'évaluation viennent toujours de la lecture, jamais du fil.
-  4. **Rendu** (`POST /projects/{id}/submit`, multipart construit par `submissionForm`, une partie `screenshots` par capture) : un rendu tient du clic jusqu'à la relecture du projet ; **garde à deux étages** contre le double envoi : un drapeau d'envoi en cours **et** le statut lu dans le cache (un second clic, tombant entre la fin de l'envoi et le retrait du formulaire, ne part pas : le projet lu n'est plus `todo` ni `to_redo`). 409 `review_in_progress` (`details.session_id`) n'est pas une panne : on suit l'évaluation ouverte (« Une évaluation était déjà en cours : on la suit. ») ; 409 `project_validated` et `project_not_ready` relisent le projet ; 413 `file_too_large`, 503 et tout autre refus sont écrits sous le formulaire. **422** : `details.fields` est rangé par champ (`repo_url` sur le lien, `description` sur la description, `screenshots` ou `screenshots.N` sur les captures, `repo_url` + `description` ensemble : « Ajoute un lien de dépôt ou une description. ») ; le refus s'efface dès que son champ est modifié, jamais une valeur n'est répétée. Chaque 409 a un texte français écrit dans le front (`projects.errors.*`) : celui du serveur n'est qu'un repli.
-  5. **Brouillons** : trois `DraftCard` (ligne de CV, post LinkedIn, plan de README), « Enregistrer » → `PATCH /projects/{id}/drafts/{kind}` `{content}` (le serveur recontrôle un brouillon à vérifier ; la page pose le projet rendu) ; « Copier » passe par `copyText`, **qui rejette** quand le presse-papiers manque ou refuse, et `DraftCard` dit alors « Copie impossible » au lieu de « Brouillon copié. ». **Écart à la lettre du brief** : le quatrième brouillon (`profile_entry`) n'est pas une `DraftCard` mais le `ProfileEntryForm` (son contenu est une entrée structurée `{name, description, achievements}`, pas un texte libre) ; son avertissement « à vérifier » (`DraftNotice`) est montré au-dessus, et le front ne l'enregistre pas par `PATCH {entry}` : le texte final de January part avec l'ajout au profil.
-  6. **Ajout au profil** (`POST /projects/{id}/profile-entry`) : seulement par le clic, avec l'entrée nettoyée (nom et description rognés, lignes vides retirées) ; `ProfileEntryForm` ne lit son entrée qu'une fois, la page lui donne une `key` qui suit l'entrée du brouillon (sans brouillon : le titre du projet seul). Une fois ajoutée, « Ajouté au profil (version N) » **remplace** le bouton (la version vient de `profile_version`) ; même garde à deux étages que le rendu. 409 lisibles : `project_not_validated`, `entry_already_added`, `profile_required`, `profile_draft_pending`, `profile_projects_full` ; les deux qui se règlent dans le profil ajoutent le lien « Ouvrir ton profil maître » (`/carriere/profil`).
-  7. **Reports de la revue 8.12** : (I1) `EvaluationView` reçoit les critères de l'**énoncé** (`criteria`) et `CriteriaChecklist` rattache chaque résultat par son `index` (à partir de 1) ; un critère sans résultat dit « Pas encore évalué », un résultat hors des critères est ignoré, l'ordre des résultats n'a aucune importance (le texte du critère renvoyé par le serveur n'est plus lu). `EvaluationView.hasScreenshots` n'a pas de champ dans `EvaluationOut` : il est tiré du rendu le plus récent (`submissions[0].screenshots > 0`). (M8) voir 5. (M2) les aperçus de captures ont une clé par fichier (`WeakMap<File, number>`), indépendante de la place : en retirer un ne remonte pas les autres, et deux fichiers identiques restent distincts. (M3) le compteur et la limite de 4 000 caractères comptent des points de code (`[...texte].length`), comme le serveur.
-  8. **Tests** (MSW en mémoire, `src/test/projectsApi.ts` + `projectsFixtures.ts` + `projectsHarness.tsx`, faux socket) : liste groupée, vide, erreur et nouvelle lecture ; énoncé en préparation puis écrit, « Réessayer l'énoncé » et 409 `brief_not_failed` ; rendu multipart (ce que la page passe à l'appel : le corps multipart n'est pas relisible sous jsdom, `submissionForm` est testé à part), suivi, évaluation à résultats désordonnés et incomplets, double clic, miniatures des captures, 422 par champ (`repo_url`, `screenshots.N`, les deux), 409/413/503, `review_in_progress` suivi, `project_validated` ; validé avec brouillons, brouillon à vérifier modifié (avertissement levé ou gardé), copie réussie, absente et refusée, mention des captures non lues, ajout au profil « (version 4) », double clic, les cinq 409, lien vers le profil et vers la carte.
-- **Raison** : F17 et 14.2 (Portfolio, projets preuves, rendu et évaluation suivis par les agents), P1 à P3 (énoncé écrit par le Praticien, verdict calculé par le code, « Rien n'entre dans le profil maître sans validation »), 18.3 et F11 (les captures ne sont pas lues et le disent, les termes « à vérifier » sont montrés tels que le serveur les donne, rien n'est publié par l'application), 15.4 (clavier, couleur jamais seule, états vides et erreurs avec « Réessayer »). Le front ne change ni le contrat ni la logique.
-- **Correctif, tour 1 (8.15)** : (1) La relecture de repli de 5 s de `useProject` est testée à minuterie fictive, flux muet : tant que le projet est `reviewing` ou `brief_pending` la page se relit et montre le résultat, puis plus aucune lecture ne part (statut `todo`, `to_redo`, `validated`). (2) L'avertissement « à vérifier » de l'entrée de profil disparaît une fois l'entrée ajoutée (`profile_version` posé). (3) Un projet validé sans brouillon dit « Aucun brouillon n'a été écrit pour ce projet. » au lieu de n'afficher aucune section. (4) `ProjectView` a pour clé l'identifiant du projet (état remis à zéro quand on passe d'un projet à un autre). (5) La liste des résultats d'évaluation s'appelle « Résultat de chaque critère » (plus deux listes « Critères de réussite »). (6) Les liens et descriptions longs de l'historique passent à la ligne (`overflow-wrap:anywhere`, `min-w-0`). (7) `useRefusal.clear` n'ajoute plus un champ déjà effacé. (8) Texte du 409 `review_in_progress` accordé (« on le suit »). (9) Tests : double clic sur « Réessayer l'énoncé », assertion vide du double envoi remplacée par la note « Une évaluation était déjà en cours » et l'absence d'alerte.
+- **Date** 2026-11-16
+- **Subject** Phase 8, task 8.15: Portfolio and project page (front end)
+- **Decision**
+  1. **Routes** `/competences/portfolio` (the Portfolio) and `/competences/portfolio/:projectId`
+     (one project); “Portfolio” entry of the Skills section, order 2 (`projectsManifest` in
+     `app/registry.ts`). `api.ts` / `queryKeys.ts` / `toView.ts` / `hooks/` like the radar: the
+     components never see the contract.
+  2. **Portfolio**: `GET /projects`, reread at each opening; projects are grouped by status in the
+     order “To rework, To do, Under review, Brief being prepared, Brief to retry, Validated” (an
+     empty group does not exist, the program's order is kept inside a group); each `ProjectCard`
+     leads to the project's page; with no project: “Your projects arrive with the weeks of your
+     program.”; loading, error with “Retry”.
+  3. **Project page**: the statement (`ProjectBriefView`), then what the status asks for:
+     `brief_pending` follows the session, `brief_failed` offers “Retry the brief”
+     (`POST /projects/{id}/brief`), `todo` the submission form, `to_redo` the previous evaluation
+     then the form, `reviewing` the Practitioner's feed (`useRun` + `RunFeed`), `validated` the
+     finding, the link to the skills map (`/competences`, found in the `skills` manifest), the
+     evaluation, the drafts, and the addition to the profile; at the bottom, the history of
+     submissions with thumbnails of the screenshots
+     (`GET /projects/{id}/screenshots/{n}?submission=k`, `k` = 1 for the last submission).
+     **Follow-up**: the session is that of the project's `session_id` (no search by subject, unlike
+     the radar); each state change of the session rereads the project (`projectKeys.one`) and, while
+     the status is `brief_pending` or `reviewing`, a fallback reread every 5 s: the status and the
+     evaluation always come from the read, never from the feed.
+  4. **Submission** (`POST /projects/{id}/submit`, multipart built by `submissionForm`, one
+     `screenshots` part per screenshot): a submission holds from the click until the project is
+     reread; **two-stage guard** against double sending: a sending-in-progress flag **and** the
+     status read in the cache (a second click, falling between the end of the sending and the
+     removal of the form, does not go out: the project read is no longer `todo` or `to_redo`). 409
+     `review_in_progress` (`details.session_id`) is not a failure: the open evaluation is followed
+     (“A review was already in progress: following it.”); 409 `project_validated` and
+     `project_not_ready` reread the project; 413 `file_too_large`, 503, and any other refusal are
+     written under the form. **422**: `details.fields` is filed by field (`repo_url` on the link,
+     `description` on the description, `screenshots` or `screenshots.N` on the screenshots,
+     `repo_url` + `description` together: “Add a repository link or a description.”); the
+     refusal clears as soon as its field is modified, a value is never repeated. Each 409 has a text
+     written in the front end (`projects.errors.*`): the server's is only a fallback.
+  5. **Drafts**: three `DraftCard` (CV line, LinkedIn post, README outline), “Save” →
+     `PATCH /projects/{id}/drafts/{kind}` `{content}` (the server rechecks a draft to be checked;
+     the page sets the project returned); “Copy” goes through `copyText`, **which rejects** when
+     the clipboard is missing or refuses, and `DraftCard` then says “Can’t copy: select the
+     draft text.” instead of “Draft copied.”. **Deviation from the letter of the brief**: the
+     fourth draft (`profile_entry`) is not a `DraftCard` but the `ProfileEntryForm` (its content is
+     a structured entry `{name, description, achievements}`, not free text); its “to check”
+     warning (`DraftNotice`) is shown above, and the front end does not save it through
+     `PATCH {entry}`: January's final text goes with the addition to the profile.
+  6. **Addition to the profile** (`POST /projects/{id}/profile-entry`): only by the click, with the
+     cleaned entry (name and description trimmed, empty lines removed); `ProfileEntryForm` reads its
+     entry only once, the page gives it a `key` that follows the draft's entry (with no draft: the
+     project's title alone). Once added, “Added to profile (version N)” **replaces** the button
+     (the version comes from `profile_version`); same two-stage guard as the submission. Readable
+     409s: `project_not_validated`, `entry_already_added`, `profile_required`,
+     `profile_draft_pending`, `profile_projects_full`; the two that are settled in the profile add
+     the link “Open your master profile” (`/carriere/profil`).
+  7. **Carry-overs from review 8.12**: (I1) `EvaluationView` receives the criteria of the
+     **statement** (`criteria`) and `CriteriaChecklist` attaches each result by its `index` (from
+     1); a criterion with no result says “Not reviewed yet”, a result outside the criteria is
+     ignored, the order of the results does not matter (the criterion text returned by the server is
+     no longer read). `EvaluationView.hasScreenshots` has no field in `EvaluationOut`: it is drawn
+     from the most recent submission (`submissions[0].screenshots > 0`). (M8) see 5. (M2) screenshot
+     previews have a key per file (`WeakMap<File, number>`), independent of position: removing one
+     does not shift the others, and two identical files stay distinct. (M3) the counter and the
+     4,000-character limit count code points (`[...text].length`), like the server.
+  8. **Tests** (in-memory MSW, `src/test/projectsApi.ts` + `projectsFixtures.ts` +
+     `projectsHarness.tsx`, fake socket): grouped list, empty, error, and reread; statement in
+     preparation then written, “Retry the brief” and 409 `brief_not_failed`; multipart
+     submission (what the page passes to the call: the multipart body cannot be reread under jsdom,
+     `submissionForm` is tested separately), follow-up, evaluation with disordered and incomplete
+     results, double click, screenshot thumbnails, 422 per field (`repo_url`, `screenshots.N`,
+     both), 409/413/503, `review_in_progress` followed, `project_validated`; validated with drafts,
+     a to-check draft modified (warning lifted or kept), copy succeeded, absent, and refused,
+     mention of screenshots not read, addition to the profile “(version 4)”, double click, the
+     five 409s, link to the profile and to the map.
+- **Reason** F17 and 14.2 (Portfolio, proof projects, submission and evaluation followed by the
+  agents), P1 to P3 (statement written by the Practitioner, verdict computed by the code, “Nothing
+  enters the master profile without validation”), 18.3 and F11 (screenshots are not read and say
+  so, the “to check” terms are shown as the server gives them, nothing is published by the
+  application), 15.4 (keyboard, color never alone, empty states and errors with “Retry”). The
+  front end changes neither the contract nor the logic.
+- **Fix, round 1 (8.15)**: (1) The 5 s fallback reread of `useProject` is tested with a fake timer,
+  mute stream: while the project is `reviewing` or `brief_pending` the page rereads itself and shows
+  the result, then no read goes out any more (status `todo`, `to_redo`, `validated`). (2) The “to
+  check” warning of the profile entry disappears once the entry is added (`profile_version` set).
+  (3) A validated project with no draft says “No drafts have been written for this project.”
+  instead of showing no section. (4) `ProjectView` has the project's identifier as key (state reset
+  when going from one project to another). (5) The list of evaluation results is called “Result
+  for each criterion” (no longer two lists “Success criteria”). (6) The long links and
+  descriptions of the history wrap (`overflow-wrap:anywhere`, `min-w-0`). (7) `useRefusal.clear` no
+  longer adds a field already cleared. (8) Text of the 409 `review_in_progress` aligned
+  (“following it”). (9) Tests: double click on “Retry the brief”, the empty double-send
+  assertion replaced by the note “A review was already in progress” and the absence of an alert.
 
 ## D172
 
-- **Date** : 2026-11-16
-- **Sujet** : Phase 8, tâche 8.16 : parcours de bout en bout n° 4, « le brief à l'ouverture et un relevé du radar » (P18)
-- **Décision** :
-  1. **Deux tests dans `frontend/e2e/daily.spec.ts`**, sur le serveur de bout en bout (`tests.e2e.server`), dont le planificateur est coupé : le brief que l'on voit est donc forcément celui de l'ouverture (`GET /brief/today`). Premier : l'accueil montre ses sept rubriques (le bloc et l'avancement laissent la place à « Pas encore de programme » sur un serveur neuf : c'est leur état vide ; après le parcours n° 1, ils sont là), « Le conseil se réunit… » puis ses deux phrases, la ressource avec son lien (adresse exacte), son site et sa date, la raison du choix ; `GET /sessions?graph=daily_brief` en compte **une** ; recharger rend le même brief sans seconde session ; « Capturer » ouvre le dialogue de capture (Échap le ferme), « Réviser » mène à `/etudier/revisions` (les boutons sont pris dans le groupe « Actions rapides » : « Réviser » existe aussi dans la rubrique des révisions). Second : le formulaire du radar (poste et zone fictifs), « Lancer un relevé », puis « 8 offres lues · 3 bloquées · 8 analysées », le bandeau « Échantillon réduit », « Domaines bloqués (2) », le classement avec « premier relevé » ; l'accueil, rechargé, montre « Relevé du radar : 8 offres lues, 3 bloquées » dans son fil.
-  2. **Le sujet de la ressource vient des réglages du radar.** Sur un serveur neuf, sans poste, objectif ni programme, le brief n'a aucun sujet et donc aucune ressource (D161) : le parcours pose le poste et la zone par `PUT /settings` (lecture, puis remplacement du seul `radar_role` et `radar_zone`) avant d'ouvrir l'accueil. Aucune vérification ne suppose l'accueil vide : le parcours se joue seul ou après les parcours n° 1 à n° 3 (même serveur, même base), et aucun d'eux n'ouvre l'accueil avant lui.
-  3. **Script** (`backend/tests/e2e/daily_script.py`, réunis par `merge_scripts` **en premier**) : l'Éclaireur choisit le résultat n° 2 de la recherche « {poste} actualités » (le n° 1 n'a pas de page : il serait illisible, le choix ne dépend pas de lui) ; le Modérateur écrit deux phrases **sans aucun nombre** (les faits du jour dépendent des autres parcours : un nombre que le code ne trouverait pas dans les faits ferait refuser le conseil) ; l'Analyste rend l'extraction des offres par lots. Chaque réponse n'est servie qu'à son appel (`dispatch` : le marqueur de la demande, « Choisis la ressource du jour. », « Écris le conseil du jour. », `RADAR_REQUEST`) ; les autres scénarios gardent leurs files (`OutOfOrder`).
-  4. **Le repère d'une page du radar ne dit rien de l'offre** : `p1`… est attribué dans l'ordre où les lectures simultanées (cinq à la fois) se terminent, et chaque lot de cinq renumérote ses pages `p1` à `p5`. L'Analyste scripté reconnaît donc une offre à sa ligne « Référence interne : relevé n° 4, offre N » dans le texte du lot, jamais à sa place. Le test Python rejoue des lots dans le désordre.
-  5. **Web factice** : le sujet du brief rend trois ressources (la première sans page) ; les deux premières requêtes du radar rendent six puis cinq liens (huit offres lisibles, trois pages que le lecteur factice dit illisibles, sur deux domaines `example.invalid` : elles sont comptées « bloquées »). Les dix autres requêtes du relevé ne rendent rien (« sans résultat » dans les journaux) : le relevé compte donc 2 requêtes. Huit offres font moins de 30 : le bandeau d'échantillon réduit est celui du vrai code, pas un test de la règle. Une offre porte un salaire (ses chiffres sont dans sa page, le code le garde) ; les outils cités sont dans les pages.
-  6. **Test Python** (`test_daily_script.py`, 11 tests) : les réponses passent la vraie validation (`ResourcePick`, `CouncilAdvice` sans nombre au sens de `numbers_in_advice`, `RadarBatch` puis `clean_batch` du vrai code : aucune page en échec, aucun outil ni salaire retiré) ; les requêtes du radar sont celles de `radar_searches` et `candidates` en tire onze liens sans doublon ; la raison du choix passe `why_of` ; les marqueurs des demandes sont bien ceux des nœuds (le texte des deux modules est relu) ; chaque réponse va à son appel quand les quatre scénarios sont réunis ; les files couvrent les relectures de `structured_call`.
-  7. **Report de la revue 8.11** : `applications.spec.ts` reconnaît la pastille par son nom exact « Relances, 1 relance due » (`exact: true`) au lieu de `/^Relances\s*, 1 relance due$/` : l'espace avant la virgule a été corrigé en 8.11 (un seul texte `sr-only`).
-  8. **Exécution sur ce poste** (Windows, `pnpm` et le Chromium livré de Playwright bloqués) : `node node_modules/@playwright/test/cli.js test` avec une configuration temporaire (jamais commitée) qui reprend la vraie et pose `channel: "msedge"`, et un back lancé comme `e2e:docker` (conteneur `tremplin-e2e-backend`). Les quatre parcours (cinq tests) passent ensemble en 2 min 30 s : n° 3 16 s, n° 1 1 min 30, n° 2 12 s, n° 4 9 s (brief 5 s, radar 4 s).
-- **Raison** : SPEC 18.2 (parcours de bout en bout), F17 (brief du matin, sept rubriques), 18.3 (le radar dit ce qu'il a réellement lu, les sites bloqués comptés à part, jamais un échantillon qu'il n'a pas), P18 (le serveur de bout en bout coupe le planificateur : il prouve le chemin « à l'ouverture » ; web factice d'offres et de sites bloqués). Le parcours détecte, sans clé ni service externe, une régression du brief (création unique, conseil suivi par sa session, ressource lue) ou du graphe long du radar (recherche, lecture par passages, extraction par lots, finalisation, fil d'activité). D135 (méthode des parcours : serveur de bout en bout, modèles scriptés, `merge_scripts`), D159 à D162 (radar, brief).
+- **Date** 2026-11-16
+- **Subject** Phase 8, task 8.16: end-to-end flow no. 4, “the brief on opening and a radar scan”
+  (P18)
+- **Decision**
+  1. **Two tests in `frontend/e2e/daily.spec.ts`**, on the end-to-end server (`tests.e2e.server`),
+     whose scheduler is off: the brief seen is therefore necessarily the one from the opening
+     (`GET /brief/today`). First: the home shows its seven sections (the block and progress give way
+     to “No program yet” on a new server: it is their empty state; after flow no. 1, they are
+     there), “The council is meeting…” then its two sentences, the resource with its link
+     (exact address), its site and its date, the reason for the choice;
+     `GET /sessions?graph=daily_brief` counts **one**; reloading returns the same brief with no
+     second session; “Capture” opens the capture dialog (Escape closes it), “Review” leads
+     to `/etudier/revisions` (the buttons are taken from the “Quick actions” group: “Review”
+     also exists in the reviews section). Second: the radar form (fictitious role and zone), “Run
+     a scan”, then “8 postings read · 3 blocked · 8 analyzed”, the “Small sample”
+     banner, “Blocked domains (2)”, the ranking with “first scan”; the home, reloaded, shows
+     “Relevé du radar : 8 offres lues, 3 bloquées” (“Radar scan: 8 postings read, 3
+     blocked”) in its feed.
+  2. **The resource topic comes from the radar settings.** On a new server, with no role, goal, or
+     program, the brief has no topic and therefore no resource (D161): the flow sets the role and
+     zone through `PUT /settings` (read, then replacement of `radar_role` and `radar_zone` alone)
+     before opening the home. No check assumes the home is empty: the flow plays alone or after
+     flows no. 1 to no. 3 (same server, same database), and none of them opens the home before it.
+  3. **Script** (`backend/tests/e2e/daily_script.py`, merged by `merge_scripts` **first**): the
+     Scout chooses result no. 2 of the search “{role} actualités” (no. 1 has no page: it would
+     be unreadable, the choice does not depend on it); the Moderator writes two sentences **with no
+     number at all** (the day's facts depend on the other flows: a number the code would not find in
+     the facts would make the advice refused); the Analyst returns the extraction of the postings in
+     batches. Each answer is only served at its call (`dispatch`: the request marker, “Choisis la
+     ressource du jour.” (“Choose the day's resource.”), “Écris le conseil du jour.”
+     (“Write the day's advice.”), `RADAR_REQUEST`); the other scenarios keep their queues
+     (`OutOfOrder`).
+  4. **The marker of a radar page says nothing about the posting**: `p1`… is assigned in the order
+     in which the simultaneous reads (five at a time) finish, and each batch of five renumbers its
+     pages `p1` to `p5`. The scripted Analyst therefore recognizes a posting by its line
+     “Référence interne : relevé n° 4, offre N” (“Internal reference: scan no. 4, posting
+     N”) in the batch's text, never by its place. The Python test replays batches in disorder.
+  5. **Fake web**: the brief's topic returns three resources (the first without a page); the first
+     two radar queries return six then five links (eight readable postings, three pages the fake
+     reader calls unreadable, on two `example.invalid` domains: they are counted “blocked”). The
+     other ten queries of the scan return nothing (“no result” in the logs): the scan therefore
+     counts 2 queries. Eight postings are fewer than 30: the small-sample banner is that of the real
+     code, not a test of the rule. One posting carries a salary (its figures are in its page, the
+     code keeps it); the tools cited are in the pages.
+  6. **Python test** (`test_daily_script.py`, 11 tests): the answers pass the real validation
+     (`ResourcePick`, `CouncilAdvice` with no number in the sense of `numbers_in_advice`,
+     `RadarBatch` then `clean_batch` of the real code: no page failed, no tool or salary removed);
+     the radar's queries are those of `radar_searches` and `candidates` draws eleven links from them
+     with no duplicate; the reason for the choice passes `why_of`; the request markers are indeed
+     those of the nodes (the text of the two modules is reread); each answer goes to its call when
+     the four scenarios are merged; the queues cover the rereads of `structured_call`.
+  7. **Carry-over from review 8.11**: `applications.spec.ts` recognizes the badge by its exact name
+     “Follow-ups, 1 follow-up due” (`exact: true`) instead of `/^Relances\s*, 1 relance due$/`:
+     the space before the comma was fixed in 8.11 (a single `sr-only` text).
+  8. **Execution on this machine** (Windows, `pnpm` and Playwright's shipped Chromium blocked):
+     `node node_modules/@playwright/test/cli.js test` with a temporary configuration (never
+     committed) that reuses the real one and sets `channel: "msedge"`, and a back end launched like
+     `e2e:docker` (container `tremplin-e2e-backend`). The four flows (five tests) pass together in 2
+     min 30 s: no. 3 16 s, no. 1 1 min 30, no. 2 12 s, no. 4 9 s (brief 5 s, radar 4 s).
+- **Reason** SPEC 18.2 (end-to-end flows), F17 (morning brief, seven sections), 18.3 (the radar says
+  what it really read, blocked sites counted apart, never a sample it does not have), P18 (the
+  end-to-end server turns the scheduler off: it proves the “on opening” path; fake web of
+  postings and blocked sites). The flow detects, with no key or external service, a regression of
+  the brief (single creation, advice followed by its session, resource read) or of the radar's long
+  graph (search, reading in passes, extraction in batches, finalization, activity feed). D135
+  (method of the flows: end-to-end server, scripted models, `merge_scripts`), D159 to D162 (radar,
+  brief).
 
 ## D173
 
-- **Date** : 2026-11-16
-- **Sujet** : Phase 8, revue finale : vague de correctifs (radar, brief, fil d'activité, projets, focus du front)
-- **Décision** :
-  1. **« Offres lues » ne compte que des offres (A-I1, C-I2)** : `read_count - not_postings` dans le titre du fil d'activité (`RecentRun.offers_read`), et `not_postings` rejoint `RadarRunSummary` (donc `GET /radar/runs`) pour que l'historique du front dise le même nombre que le relevé ; contrat `openapi.json` et `schema.d.ts` régénérés.
-  2. **Relevé hebdomadaire rattrapé dans la semaine (A-I2)** : dû dès le lundi 06:00 locales de la semaine en cours, n'importe quel jour ; un seul passage par semaine ISO locale (`claim`, `_week_taken`), un relevé en échec est repris dans la semaine (3 essais au plus, inchangé).
-  3. **Le port ne valide que ce que le parcours a validé (B-I1)** : `validated` seulement si le verdict du parcours **et** le verdict recalculé le disent ; un résultat hors énoncé ne fait plus passer un projet « à reprendre » en « validé ».
-  4. **Brouillons facultatifs (B-I2, amende D165 n° 5)** : le premier appel des brouillons a son propre délai (`DRAFTS_BUDGET_S` = 100 s) ; toute panne range l'évaluation validée sans brouillons (« Projet validé : brouillons indisponibles. »), les compétences montent à `prouve`.
-  5. **Lignes écrites par le modèle (B-M1, B-M2)** : critères, contraintes, nom et réalisations de l'entrée de profil sont ramenés à une ligne à l'écriture (`one_line`), une valeur blanche est refusée (nouvel essai) ; `GET /projects/{id}` ne peut plus faire un 500 pour une entrée blanche, un retour à la ligne ne fabrique plus un faux critère numéroté.
-  6. **Un seul verdict (B-M3)** : `projects/service/rules.verdict` supprimé, le verdict est celui du moteur (`project_schema.verdict`).
-  7. **Énoncés trois par trois (B-M4)** : `MAX_NEW_PER_PASS = 3` projets créés (donc sessions `project_brief` lancées) par compte et par passage, semaines les plus anciennes d'abord.
-  8. **Fil d'activité (A-M1, A-M2, A-M7)** : un passage abandonné ou à 3 essais dit « abandonné, aucun nouvel essai » ; `reopen_done` pose `finished_at` (un passage rouvert n'est plus daté dans le passé) ; le PDF d'une leçon, écriture technique, garde `updated_at` (la leçon reste datée de son passage à « prête »).
-  9. **Radar (A-M3, A-M4)** : `load` vérifie le modèle de l'Analyste et échoue tout de suite avec `llm_unavailable` (aucune recherche, aucune page lue) ; une panne du fournisseur (délai, limite) sur un lot de l'Analyste le met en échec d'extraction sans perdre les autres, et l'extraction s'arrête après 2 lots en panne (le reste est dit « lu, pas analysé »).
-  10. **Brief (A-M5, A-M6)** : les faits du conseil disent « tâches faites / prévues » (ce sont des tâches) ; chaque rubrique du code est calculée dans son savepoint : une source en panne rend une rubrique vide, nommée dans `BriefOut.unavailable`, jamais un 500.
-  11. **Tests instables (A-M9)** : l'attente commune des tests de parcours (`runner_helpers.TIMEOUT`) passe de 5 s à 30 s et `wait_true` sert aux deux attentes fixes de 5 s de `test_web_research*.py`.
-  12. **Front** (second commit) : focus jamais perdu après les actions principales, « offres lues » = offres, relecture de secours du conseil, Entrée n'ajoute plus au profil maître, finitions (D173 front).
-  13. **Résiduel de la seconde lecture (N1 à N3)** : une rubrique du brief en panne n'est jamais un zéro vrai. Le front dit « Rubrique indisponible ce matin. » pour toute rubrique nommée dans `BriefOut.unavailable` (bloc, révisions, relances, offres, semaine : une semaine indisponible n'est pas « aucun programme ») ; `facts_of` laisse le fait de cette rubrique à `None` (`AdviceFacts` : champs `int | None`), le Modérateur n'écrit pas sa ligne et `allowed_numbers` ne le compte pas. Un relevé du radar sans aucune offre analysée alors que l'extraction a échoué sur au moins une (panne du fournisseur sur deux lots, ou réponses invalides) finit `failed` / `analysis_failed` (`RadarSummary.error_code`, les nombres réels rangés) : la règle « un relevé en échec est repris dans la semaine » s'applique, le front l'explique en clair. `_isolated` reçoit une fabrique (jamais une coroutine déjà créée, donc jamais « never awaited ») et rend une valeur vide neuve à chaque panne.
-- **Raison** : la revue finale de la phase 8 (trois relecteurs) : l'honnêteté des nombres (18.3), « un seul relevé par semaine mais jamais aucun », la preuve (`prouve`) décidée par le code seul, une évaluation validée jamais perdue pour un texte facultatif, des lectures qui ne font jamais un 500. SPEC 1, 7 F12, 18.3 ; D159 à D166, D172.
+- **Date** 2026-11-16
+- **Subject** Phase 8, final review: wave of fixes (radar, brief, activity feed, projects, front-end
+  focus)
+- **Decision**
+  1. **“Postings read” only counts postings (A-I1, C-I2)**: `read_count - not_postings` in the
+     activity feed's title (`RecentRun.offers_read`), and `not_postings` joins `RadarRunSummary` (so
+     `GET /radar/runs`) so that the front end's history says the same number as the scan; contract
+     `openapi.json` and `schema.d.ts` regenerated.
+  2. **Weekly scan caught up within the week (A-I2)**: due from Monday 06:00 local of the current
+     week, any day; a single pass per local ISO week (`claim`, `_week_taken`), a failed scan is
+     retaken within the week (3 attempts at most, unchanged).
+  3. **The port only validates what the flow validated (B-I1)**: `validated` only if the flow's
+     verdict **and** the recomputed verdict say so; a result outside the statement no longer turns a
+     project “to redo” into “validated”.
+  4. **Optional drafts (B-I2, amends D165 no. 5)**: the first call of the drafts has its own timeout
+     (`DRAFTS_BUDGET_S` = 100 s); any failure stores the validated evaluation without drafts
+     (“Projet validé : brouillons indisponibles.”, “Project validated: drafts
+     unavailable.”), the skills go up to `prouve`.
+  5. **Lines written by the model (B-M1, B-M2)**: criteria, constraints, name, and achievements of
+     the profile entry are brought down to one line at writing (`one_line`), a blank value is
+     refused (new attempt); `GET /projects/{id}` can no longer make a 500 for a blank entry, a line
+     break no longer fabricates a false numbered criterion.
+  6. **A single verdict (B-M3)**: `projects/service/rules.verdict` removed, the verdict is the
+     engine's (`project_schema.verdict`).
+  7. **Statements three at a time (B-M4)**: `MAX_NEW_PER_PASS = 3` projects created (so
+     `project_brief` sessions launched) per account and per pass, oldest weeks first.
+  8. **Activity feed (A-M1, A-M2, A-M7)**: a run abandoned or at 3 attempts says “abandoned, no
+     new attempt”; `reopen_done` sets `finished_at` (a reopened run is no longer dated in the
+     past); a lesson's PDF, a technical write, keeps `updated_at` (the lesson stays dated from its
+     pass to “ready”).
+  9. **Radar (A-M3, A-M4)**: `load` checks the Analyst's model and fails at once with
+     `llm_unavailable` (no search, no page read); a provider failure (timeout, limit) on an Analyst
+     batch makes it an extraction failure without losing the others, and extraction stops after 2
+     failing batches (the rest is said to be “read, not analyzed”).
+  10. **Brief (A-M5, A-M6)**: the advice's facts say “tasks done / planned” (they are tasks);
+     each code section is computed in its savepoint: a failing source returns an empty section,
+     named in `BriefOut.unavailable`, never a 500.
+  11. **Unstable tests (A-M9)**: the shared wait of the flow tests (`runner_helpers.TIMEOUT`) goes
+     from 5 s to 30 s and `wait_true` serves the two fixed 5 s waits of `test_web_research*.py`.
+  12. **Front end** (second commit): focus never lost after the main actions, “postings read” =
+     postings, fallback reread of the advice, Enter no longer adds to the master profile, finishing
+     touches (D173 front end).
+  13. **Residue from the second reading (N1 to N3)**: a failing brief section is never a true zero.
+     The front end says “Section unavailable this morning.” for any section named in
+     `BriefOut.unavailable` (block, reviews, follow-ups, postings, week: an unavailable week is not
+     “no program”); `facts_of` leaves the fact of that section at `None` (`AdviceFacts`:
+     `int | None` fields), the Moderator does not write its line and `allowed_numbers` does not
+     count it. A radar scan with no posting analyzed while extraction failed on at least one
+     (provider failure on two batches, or invalid answers) ends `failed` / `analysis_failed`
+     (`RadarSummary.error_code`, the real numbers stored): the rule “a failed scan is retaken
+     within the week” applies, the front end explains it in plain words. `_isolated` receives a
+     factory (never an already created coroutine, so never “never awaited”) and returns a fresh
+     empty value at each failure.
+- **Reason** The final review of phase 8 (three reviewers): honesty of numbers (18.3), “a single
+  scan per week but never none”, the proof (`prouve`) decided by the code alone, a validated
+  evaluation never lost for an optional text, reads that never make a 500. SPEC 1, 7 F12, 18.3; D159
+  to D166, D172.
 
 ## D174
 
-- **Date** : 2026-11-16
-- **Sujet** : Phase 8, tâche 8.18 : contrôle réel de fin de phase, parties `projets` et `tout` du script `check_phase8`
-- **Décision** :
-  1. **Script** : `backend/scripts/check_phase8.py` gagne `--part projets` et `--part tout` (`phase8_projects` pour les étapes, `phase8_projects_rules` pour les règles pures ; même conteneur jetable `learning_career_platform-check8`, `--api http://backend:8000 --logs-file -`, une ligne par étape, aucune donnée affichée : nombres, identifiants, durées, codes). `tout` joue `radar`, `brief` puis `projets`, leurs journaux relus **une seule fois à la fin** ; `planifie` reste à part (il refuse de tourner si le brief du jour existe).
-  2. **Étapes de `projets`** : `énoncé` (un projet de l'unique compte local : d'abord `todo`, puis `to_redo`, le plus tôt du programme ; un énoncé `brief_pending` est attendu 10 minutes au plus, un `brief_failed` reçoit **un seul** `POST /projects/{id}/brief` ; 3 à 6 critères, 3 à 6 heures ; aucun projet éligible : le script le dit avec les statuts comptés et s'arrête, un projet validé ne se rendant pas deux fois) ; `rendu` (le profil maître validé est lu avant tout appel du modèle : sa version et les noms de ses projets, un profil absent ou un brouillon en attente fait échouer l'étape ; puis `POST /projects/{id}/submit` en multipart, une description fictive construite à partir de l'énoncé lui-même, sans donnée personnelle, et le lien d'un dépôt public connu, `github.com/psf/requests`, aucune capture) ; `évaluation` (session finie en 15 minutes au plus, puis le statut du projet ; un résultat par critère de rang 1 à N, verdict d'accord avec les critères atteints et le statut, **dépôt lu** (`repo_status = read`, sinon l'étape échoue : le lien rendu devait se lire), retour écrit non vide, dernier rendu gardé identique à l'envoi ; appels du modèle et coût) ; `suites` (validé : quatre brouillons un de chaque sorte, `ready` et `to_check` comptés, **ou aucun** « brouillons indisponibles » dit comme issue légitime (D173 n° 4) ; chaque compétence du module à `prouve` sur `/skills/graph` ; profil inchangé et `profile_version` du projet vide **avant** `POST /projects/{id}/profile-entry` (entrée du brouillon, sinon une entrée tirée de l'énoncé), puis version + 1 exactement, projet entré une fois, version notée sur le projet, second clic refusé 409 `entry_already_added` ; à reprendre : critères non atteints nommés (comptés, jamais affichés), aucun brouillon, profil inchangé) ; `journaux` (aucun titre, énoncé, critère, rendu, lien du dépôt, retour, commentaire, brouillon ni phrase du README, relevée par le script sur le README brut du dépôt, en plus des motifs des phases 6 à 8).
-  3. **Relançable** : un projet validé sort de la liste des éligibles ; un projet à reprendre y reste (son évaluation est remplacée au passage suivant).
-  4. **Tests** (aucun réseau) : règles pures (`test_phase8_projects_rules.py`) et étapes contre une fausse API (`phase8_projects_support.py`, `test_check_phase8_projects.py`) : issues validé avec et sans brouillons, à reprendre, énoncé attendu, relancé ou en échec, aucun projet éligible, échecs (énoncé hors bornes, profil absent, dépôt illisible, compétence pas à `prouve`, profil qui bouge), journaux (six fuites ne sont jamais recopiées), `tout`.
-  5. **Résultats chiffrés** (16/11, GLM réel) : `projets` joué sur une **pile jetable** (copie des volumes `app_data` et `qdrant_data`, conteneurs `learning_career_platform-check8-*`, retirés ensuite), à la demande de l'utilisatrice, pour qu'une validation fictive ne mette pas ses compétences à `prouve` ni une entrée dans son vrai profil maître. Au démarrage, le planificateur a créé 3 projets et écrit leurs 3 énoncés avec GLM en ≈ 10 s (5 et 6 critères, 4 h). Deux essais : rendu par description (1 201 et 1 546 signes) et lien `psf/requests`, dépôt lu (`read`, README coupé à 2 893 caractères), évaluation en 10 s, **1 appel, 0,0017 $ et 0,0020 $** (2 698 et 3 080 jetons) ; verdict **`to_redo`, 0 critère atteint** sur 5 et sur 6 (le dépôt ne correspond pas à l'énoncé : le Praticien ne se laisse pas convaincre par la description seule), critères nommés, aucun brouillon, profil inchangé (version 7), projet resté éligible. La voie « validé » (brouillons, `prouve`, entrée au profil) n'a donc pas tourné sur GLM : elle reste couverte par les tests et le test de bout en bout scripté (`test_live.py`). Journaux du back jetable relus à la main après l'essai : aucun lien du dépôt ni texte du projet, pas de WARNING ; deux `ERROR sqlalchemy.pool … Exception terminating connection` (aiosqlite à la fermeture d'une connexion) notés pour plus tard. Limite du script : l'étape `journaux` lit les journaux passés en entrée au lancement, donc ceux d'avant l'essai ; la relecture après coup la complète.
-  6. **Essai de clôture** (16/11 au soir, image finale, même pile jetable recopiée, brief du jour retiré de la copie) : `tout` deux fois ✅, 12 étapes sur 12, 61 s et 48 s. Radar : 39 s et 33 s, 5 appels, 0,0159 $ et 0,0158 $ (≈ 28 000 jetons), 21 pages lisibles dont 8 et 9 sans offre, 8 bloquées, 13 et 12 offres analysées, 76 et 68 compétences, `low_sample`, salaires 2 rapportés, 2 vérifiés dans la page. Brief : rubriques présentes, conseil prêt en 9 s, 2 phrases, 2 nombres, 2 appels, 0,0011 $ ; **ressource trouvée** (correctif (b) de D164 vu en réel) ; même `id` au second `GET`. Projets : `to_redo` deux fois (0 sur 5, 0 sur 6), 8 s et 10 s, 0,0018 $ et 0,0020 $, profil inchangé. `planifie` ✅ : brief créé par le planificateur 190 s après le réglage, `origin = schedule`. Un premier `planifie` avait dépassé le délai parce que seule la ligne `briefs` avait été retirée de la copie : la ligne `jobs` (`daily_brief`, période du jour) disait la tâche faite, et le planificateur l'a respectée à raison. Pour rejouer un brief planifié, retirer les deux. Journaux relus à la main après coup : aucun lien du dépôt ni domaine de la ressource ; 4 WARNING `search_unavailable` (les requêtes `site:` connues de D164) ; les deux mêmes `ERROR sqlalchemy.pool`. Navigateur sur la vraie pile, 1 024 px : accueil, radar, Portfolio, page d'un projet, sans défilement horizontal ni message de console.
-- **Raison** : SPEC 18.1 et 18.3 (essai réel en fin de phase avec le modèle réel : mini projet évalué, preuve des compétences, « rien n'entre dans le profil maître sans validation »), P1 à P3, F11 ; D164 (même forme de script), D165, D166, D173. Un essai ne doit jamais laisser de donnée personnelle dans la sortie ni dans les journaux.
+- **Date** 2026-11-16
+- **Subject** Phase 8, task 8.18: real end-of-phase check, `projets` and `tout` parts of the
+  `check_phase8` script
+- **Decision**
+  1. **Script**: `backend/scripts/check_phase8.py` gains `--part projets` and `--part tout`
+     (`phase8_projects` for the steps, `phase8_projects_rules` for the pure rules; same disposable
+     container `learning_career_platform-check8`, `--api http://backend:8000 --logs-file -`, one
+     line per step, no data displayed: numbers, identifiers, durations, codes). `tout` (“all”)
+     plays `radar`, `brief`, then `projets` (“projects”), their logs reread **only once at the
+     end**; `planifie` (“scheduled”) stays apart (it refuses to run if the day's brief exists).
+  2. **Steps of `projets`**: `énoncé` (statement) (a project of the single local account: first
+     `todo`, then `to_redo`, the earliest in the program; a `brief_pending` statement is awaited 10
+     minutes at most, a `brief_failed` receives **a single** `POST /projects/{id}/brief`; 3 to 6
+     criteria, 3 to 6 hours; no eligible project: the script says so with the statuses counted and
+     stops, a validated project not being submitted twice); `rendu` (submission) (the validated
+     master profile is read before any model call: its version and the names of its projects, a
+     missing profile or a pending draft makes the step fail; then `POST /projects/{id}/submit` in
+     multipart, a fictitious description built from the statement itself, with no personal data, and
+     the link of a known public repository, `github.com/psf/requests`, no screenshot); `évaluation`
+     (evaluation) (session finished in 15 minutes at most, then the project's status; one result per
+     criterion of rank 1 to N, verdict in agreement with the criteria met and the status,
+     **repository read** (`repo_status = read`, otherwise the step fails: the submitted link had to
+     be readable), non-empty written feedback, last submission kept identical to what was sent;
+     model calls and cost); `suites` (next steps) (validated: four drafts one of each kind, `ready`
+     and `to_check` counted, **or none**, “drafts unavailable”, stated as a legitimate outcome
+     (D173 no. 4); each skill of the module at `prouve` on `/skills/graph`; profile unchanged and
+     the project's `profile_version` empty **before** `POST /projects/{id}/profile-entry` (the
+     draft's entry, otherwise an entry drawn from the statement), then version + 1 exactly, project
+     entered once, version noted on the project, second click refused 409 `entry_already_added`; to
+     redo: criteria not met named (counted, never displayed), no draft, profile unchanged);
+     `journaux` (logs) (no title, statement, criterion, submission, repository link, feedback,
+     comment, draft, or sentence of the README, collected by the script from the repository's raw
+     README, in addition to the patterns of phases 6 to 8).
+  3. **Can be rerun**: a validated project leaves the list of eligible ones; a project to redo stays
+     in it (its evaluation is replaced at the next pass).
+  4. **Tests** (no network): pure rules (`test_phase8_projects_rules.py`) and steps against a fake
+     API (`phase8_projects_support.py`, `test_check_phase8_projects.py`): outcomes validated with
+     and without drafts, to redo, statement awaited, relaunched or failed, no eligible project,
+     failures (statement out of bounds, missing profile, unreadable repository, skill not at
+     `prouve`, profile that moves), logs (six leaks are never copied), `tout`.
+  5. **Measured results** (16/11, real GLM): `projets` played on a **disposable stack** (copy of the
+     `app_data` and `qdrant_data` volumes, containers `learning_career_platform-check8-*`, removed
+     afterwards), at the user's request, so that a fictitious validation puts neither her skills at
+     `prouve` nor an entry in her real master profile. At startup, the scheduler created 3 projects
+     and wrote their 3 statements with GLM in ≈ 10 s (5 and 6 criteria, 4 h). Two trials:
+     submission by description (1,201 and 1,546 characters) and link `psf/requests`, repository read
+     (`read`, README cut at 2,893 characters), evaluation in 10 s, **1 call, $0.0017 and $0.0020**
+     (2,698 and 3,080 tokens); verdict **`to_redo`, 0 criteria met** out of 5 and out of 6 (the
+     repository does not match the statement: the Practitioner is not convinced by the description
+     alone), criteria named, no draft, profile unchanged (version 7), project stayed eligible. The
+     “validated” path (drafts, `prouve`, entry into the profile) therefore did not run on GLM:
+     it stays covered by the tests and the scripted end-to-end test (`test_live.py`). Disposable
+     back end's logs reread by hand after the trial: no repository link or project text, no WARNING;
+     two `ERROR sqlalchemy.pool … Exception terminating connection` (aiosqlite when closing a
+     connection) noted for later. Script limit: the `journaux` step reads the logs passed as input
+     at launch, so those from before the trial; the reread afterwards completes it.
+  6. **Closing trial** (16/11 in the evening, final image, same disposable stack copied again, the
+     day's brief removed from the copy): `tout` twice ✅, 12 steps out of 12, 61 s and 48 s. Radar:
+     39 s and 33 s, 5 calls, $0.0159 and $0.0158 (≈ 28,000 tokens), 21 readable pages of which 8
+     and 9 with no posting, 8 blocked, 13 and 12 postings analyzed, 76 and 68 skills, `low_sample`,
+     salaries 2 reported, 2 verified in the page. Brief: sections present, advice ready in 9 s, 2
+     sentences, 2 numbers, 2 calls, $0.0011; **resource found** (fix (b) of D164 seen in real
+     conditions); same `id` on the second `GET`. Projects: `to_redo` twice (0 out of 5, 0 out of 6),
+     8 s and 10 s, $0.0018 and $0.0020, profile unchanged. `planifie` ✅: brief created by the
+     scheduler 190 s after the setting, `origin = schedule`. A first `planifie` had exceeded the
+     timeout because only the `briefs` row had been removed from the copy: the `jobs` row
+     (`daily_brief`, period of the day) said the task was done, and the scheduler rightly respected
+     it. To replay a scheduled brief, remove both. Logs reread by hand afterwards: no repository
+     link or resource domain; 4 WARNING `search_unavailable` (the `site:` queries known from D164);
+     the same two `ERROR sqlalchemy.pool`. Browser on the real stack, 1,024 px: home, radar,
+     Portfolio, a project's page, with no horizontal scroll or console message.
+- **Reason** SPEC 18.1 and 18.3 (real trial at the end of the phase with the real model: mini
+  project evaluated, proof of skills, “nothing enters the master profile without validation”),
+  P1 to P3, F11; D164 (same script shape), D165, D166, D173. A trial must never leave personal data
+  in the output or in the logs.
 
 ## D175
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 9, tâche 9.P : socle commun et contrat des finitions (avant la fourche en trois flux)
-- **Décision** :
-  1. **Contrat d'abord (P1)** : toute la surface d'API de la phase est posée ici, une fois. Onze routes nouvelles, des **bouchons** qui valident leur entrée puis lèvent `AppError("not_implemented", "Pas encore disponible.", 501)` : `GET /auth/google/login`, `GET /auth/google/callback` (302, `response_class=RedirectResponse`), `POST /auth/google/claim`, `POST /auth/logout` (204), `GET /health/embedding`, `GET /costs?days=` (7, 30 ou 90), `GET /costs/calls`, `GET /settings/agents`, `GET /account/export` (`application/zip`), `POST /account/delete` (la confirmation `SUPPRIMER` est déjà contrôlée : 422 `confirmation_required`, `fields: ["confirm"]`, sans recopier la saisie), `POST /projects/{id}/drafts` (202 `SessionStarted`). Docstrings et `responses=` sont **définitifs** : un flux ne change jamais la surface ; s'il ne peut faire autrement il régénère `contracts/openapi.json` et `schema.d.ts` dans son commit et le dit, l'intégration (9.I) résolvant tout conflit sur ces deux fichiers en les régénérant, jamais à la main. `account_router` et `costs_router` rejoignent `FEATURE_ROUTERS` après `projects_router` ; les schémas (`ClaimIn`, `EmbeddingProgress`, `CostTotals`, `CostRow`, `CostsReport`, `AgentCallOut`, `AgentCallPage`, `AgentOut`, `DeleteAccountIn`, `DELETE_CONFIRMATION`) sont ceux de la phase. Le front régénère `schema.d.ts` ; `buildUserSettings`, la fixture des réglages et son test gagnent `onboarding_done` (un champ de plus de `UserSettings`, rien d'autre côté front).
-  2. **Aucune dépendance nouvelle (P2)** : ni `pyproject.toml` (dépendances), ni `uv.lock`, ni `package.json` ; le venv Docker et `node_modules` sont partagés entre les arbres de travail. OpenID Connect à la main avec `httpx` (aucune bibliothèque OAuth), zip par `zipfile`.
-  3. **Migration unique `0015_auth.py` (P3)** : table `auth_sessions` (`token_hash` `String(64)` unique, sha256 hexadécimal du jeton du cookie ; `expires_at` ; index sur `user_id`) et `UPDATE user_settings SET data = json_set(data, '$.onboarding_done', json('true'))` (un compte déjà en service n'a pas de premier lancement à passer, P20) ; `downgrade` retire la table, le drapeau reste sans effet. **Aucun flux n'écrit de migration** ; s'il le faut vraiment, l'intégration ajoute `0016` sur la tête unique (`alembic heads` : une seule tête). Le modèle est `AuthSession(UserScopedMixin, Base)` : la table porte `user_id`, donc l'export et la suppression la parcourent comme les autres (l'export la laisse de côté, P18).
-  4. **Propriétaire unique de chaque fichier partagé (P4)** : chaque flux écrit ses décisions dans `docs/superpowers/decisions/phase-9-<A|B|C>.md` (numéros réservés D176 à D191) ; 9.I les recopie dans l'ordre dans ce fichier et retire les fragments. `config.py` gagne seulement ses champs (`google_auth_url`, `google_token_url`, `google_issuer`, `google_redirect_uri`, `frontend_url`, `session_days` de 1 à 90, défaut 30) ; `features/auth/service.py` devient un paquet (`AuthService` déplacé tel quel dans `__init__.py`, plus `cookies.py` : `SESSION_COOKIE`, `OAUTH_COOKIE`, `CLAIM_COOKIE`, `OAUTH_COOKIE_PATH`, `OAUTH_COOKIE_SECONDS`, `clear_session_cookie` au même `Path=/` que la pose) ; le réglage `onboarding_done` (faux par défaut, jamais remis à faux par le back) et `AgentOut` rejoignent `settings/schemas.py`.
-  5. **Écarts à la spec (P24)** : routes hors 14.2 `POST /auth/google/claim`, `GET /health/embedding`, `GET /account/export`, `POST /account/delete`, `GET /costs/calls`, `GET /settings/agents`, `POST /projects/{id}/drafts` ; réglage `onboarding_done` ; configuration `GOOGLE_AUTH_URL`, `GOOGLE_TOKEN_URL`, `GOOGLE_ISSUER`, `GOOGLE_REDIRECT_URI`, `FRONTEND_URL`, `SESSION_DAYS` ; table `auth_sessions` (13.2 ne la liste pas) ; cinquième parcours de bout en bout.
-  6. **Contrôle** : `tests/test_phase9_contract.py` (chaque route nouvelle est un 501, le contrat les liste, la confirmation, `days`, `limit` et le choix de reprise refusent sans recopier la saisie, les noms des cookies) et `tests/db/test_auth_migration.py` (table, unicité, index, réglages marqués, retour arrière).
-- **Raison** : C code contre de vrais types générés sans attendre A et B ; le hook `openapi-contract` bloque toute dérive de la surface ; un venv et un `node_modules` partagés interdisent une dépendance nouvelle ; une seule migration, une seule tête. SPEC 14.2, 13.2, 17.1 à 17.4 ; P1 à P4 et P24 du plan de la phase 9.
+- **Date** 2026-11-17
+- **Subject** Phase 9, task 9.P: common foundation and finishing contract (before the three-stream
+  fork)
+- **Decision**
+  1. **Contract first (P1)**: the whole API surface of the phase is laid down here, once. Eleven new
+     routes, **stubs** that validate their input then raise `AppError("not_implemented",
+     "Pas encore disponible.", 501)` (“Not available yet.”): `GET /auth/google/login`,
+     `GET /auth/google/callback` (302, `response_class=RedirectResponse`),
+     `POST /auth/google/claim`, `POST /auth/logout` (204), `GET /health/embedding`,
+     `GET /costs?days=` (7, 30, or 90), `GET /costs/calls`, `GET /settings/agents`,
+     `GET /account/export` (`application/zip`), `POST /account/delete` (the confirmation `SUPPRIMER`
+     (“DELETE”) is already checked: 422 `confirmation_required`, `fields: ["confirm"]`, without
+     copying the input), `POST /projects/{id}/drafts` (202 `SessionStarted`). Docstrings and
+     `responses=` are **final**: a stream never changes the surface; if it cannot do otherwise it
+     regenerates `contracts/openapi.json` and `schema.d.ts` in its commit and says so, the
+     integration (9.I) resolving any conflict on these two files by regenerating them, never by
+     hand. `account_router` and `costs_router` join `FEATURE_ROUTERS` after `projects_router`; the
+     schemas (`ClaimIn`, `EmbeddingProgress`, `CostTotals`, `CostRow`, `CostsReport`,
+     `AgentCallOut`, `AgentCallPage`, `AgentOut`, `DeleteAccountIn`, `DELETE_CONFIRMATION`) are
+     those of the phase. The front end regenerates `schema.d.ts`; `buildUserSettings`, the settings
+     fixture, and its test gain `onboarding_done` (one more field of `UserSettings`, nothing else on
+     the front-end side).
+  2. **No new dependency (P2)**: neither `pyproject.toml` (dependencies), nor `uv.lock`, nor
+     `package.json`; the Docker venv and `node_modules` are shared between the working trees. OpenID
+     Connect by hand with `httpx` (no OAuth library), zip through `zipfile`.
+  3. **Single migration `0015_auth.py` (P3)**: table `auth_sessions` (`token_hash` `String(64)`
+     unique, hexadecimal sha256 of the cookie's token; `expires_at`; index on `user_id`) and
+     `UPDATE user_settings SET data = json_set(data, '$.onboarding_done', json('true'))` (an account
+     already in use has no first launch to go through, P20); `downgrade` removes the table, the flag
+     stays without effect. **No stream writes a migration**; if it is really needed, the integration
+     adds `0016` on the single head (`alembic heads`: a single head). The model is
+     `AuthSession(UserScopedMixin, Base)`: the table carries `user_id`, so export and deletion walk
+     through it like the others (the export leaves it aside, P18).
+  4. **Single owner of each shared file (P4)**: each stream writes its decisions in
+     `docs/superpowers/decisions/phase-9-<A|B|C>.md` (numbers D176 to D191 reserved); 9.I copies
+     them in order into this file and removes the fragments. `config.py` only gains its fields
+     (`google_auth_url`, `google_token_url`, `google_issuer`, `google_redirect_uri`, `frontend_url`,
+     `session_days` from 1 to 90, default 30); `features/auth/service.py` becomes a package
+     (`AuthService` moved as is into `__init__.py`, plus `cookies.py`: `SESSION_COOKIE`,
+     `OAUTH_COOKIE`, `CLAIM_COOKIE`, `OAUTH_COOKIE_PATH`, `OAUTH_COOKIE_SECONDS`,
+     `clear_session_cookie` at the same `Path=/` as the setting); the `onboarding_done` setting
+     (false by default, never set back to false by the back end) and `AgentOut` join
+     `settings/schemas.py`.
+  5. **Deviations from the spec (P24)**: routes outside 14.2 `POST /auth/google/claim`,
+     `GET /health/embedding`, `GET /account/export`, `POST /account/delete`, `GET /costs/calls`,
+     `GET /settings/agents`, `POST /projects/{id}/drafts`; setting `onboarding_done`; configuration
+     `GOOGLE_AUTH_URL`, `GOOGLE_TOKEN_URL`, `GOOGLE_ISSUER`, `GOOGLE_REDIRECT_URI`, `FRONTEND_URL`,
+     `SESSION_DAYS`; table `auth_sessions` (13.2 does not list it); fifth end-to-end flow.
+  6. **Check**: `tests/test_phase9_contract.py` (every new route is a 501, the contract lists them,
+     the confirmation, `days`, `limit`, and the choice of resumption refuse without copying the
+     input, the cookie names) and `tests/db/test_auth_migration.py` (table, uniqueness, index,
+     settings marked, rollback).
+- **Reason** C codes against real generated types without waiting for A and B; the
+  `openapi-contract` hook blocks any drift of the surface; a shared venv and `node_modules` forbid a
+  new dependency; a single migration, a single head. SPEC 14.2, 13.2, 17.1 to 17.4; P1 to P4 and P24
+  of the phase 9 plan.
 
 ## D176
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 9, tâche 9.A1 : port OpenID Connect, fournisseur Google et faux fournisseur
-- **Décision** :
-  1. **Port (P5)** : `backend/app/providers/auth/base.py` définit `OidcIdentity` (`sub`, `email`, `email_verified`, `name`, immuable), `OidcError(code)` (codes `access_denied`, `google_unavailable`, `token_invalid` ; le message est le code seul) et le protocole `OidcProvider` (`authorization_url(state, code_challenge, nonce, login_hint)` synchrone, `exchange(code, code_verifier, nonce)` asynchrone). `pkce.py` : `new_verifier()` (`secrets.token_urlsafe(64)`, 86 caractères) et `challenge()` (S256, vérifié sur l'exemple de la RFC 7636, annexe B : l'empreinte attendue est `E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM`, la valeur recopiée dans le brief de la tâche portait une faute de frappe).
-  2. **`GoogleOidc` (`google.py`)**, OpenID Connect à la main avec `httpx` (aucune dépendance nouvelle, P2). Adresse d'autorisation : `response_type=code`, `scope=openid email profile`, `code_challenge_method=S256`, `prompt=select_account`, `nonce`, `state`, `login_hint` seulement s'il est fourni (espaces codés `%20`). Échange : `POST` du point `token` (`grant_type`, `code`, `redirect_uri`, `client_id`, `client_secret`, `code_verifier`), délai de 10 s ; erreur réseau, délai dépassé ou 5xx : `google_unavailable` ; 4xx, corps illisible, `id_token` absent ou mal formé : `token_invalid`.
-  3. **Jeton d'identité sans vérification de signature** (OIDC Core 3.1.3.7 n° 6 : reçu directement du point `token` par TLS, la validation du serveur TLS tient lieu de signature). Contrôlés : `iss` ∈ {émetteur, émetteur sans `https://`} (Google emploie les deux formes), `aud` égal à notre `client_id` (une liste n'est acceptée que d'un seul élément, ce qui suit la règle « aucun public supplémentaire » de 3.1.3.7 n° 3), `exp` numérique et dans le futur, `nonce` égal (comparaison à temps constant), `email` et `sub` présents. `email_verified` est rendu tel quel (booléen seulement : la chaîne « true » n'est pas acceptée, revue M5) : le refus d'un e-mail non vérifié est décidé par le service de connexion (9.A2), pas par le port. `azp`, `iat` et l'algorithme ne sont pas contrôlés (non requis par le n° 6 et sans effet sur la sécurité ici).
-  4. **Faux fournisseur** `backend/scripts/fake_oidc.py` : `create_fake_oidc_app(issuer, client_id, default_email)` (FastAPI, sans documentation) et `python -m scripts.fake_oidc --port 8099 --issuer … --client-id …` (uvicorn sur `127.0.0.1`). `GET /authorize` vérifie `client_id` et `code_challenge_method=S256` (400 sinon), prend l'e-mail de `login_hint` (sinon `camille.exemple@example.org`), `?deny=1` renvoie `error=access_denied&state=`, sinon `code=<aléa>&state=`. `POST /token` : code à usage unique (retiré dès le premier essai, même refusé), `client_id`, `redirect_uri` identique à celui de l'autorisation et `S256(code_verifier)` contrôlés ; `id_token` non signé (`{"alg": "none"}`) avec `iss`, `aud`, `exp` (+1 h), `nonce`, `sub = "fake-" + sha256(e-mail)[:16]` (stable pour un même e-mail), `email`, `email_verified` (faux si l'e-mail commence par `unverified`), `name` (déduit de l'e-mail). Il accepte n'importe quelle adresse de retour : c'est un outil d'essai, jamais en production.
-  5. **Contrat d'import n° 3** : `app.providers.auth.google` rejoint les modules interdits aux features, agents, temps réel et planificateur (aucun contrat de plus ; le port `base` et `pkce`, sans dépendance externe, restent importables).
-  6. **Journaux (17.2)** : `google.py` ne journalise que le type d'exception ou le statut HTTP ; jamais un code, un vérificateur, un jeton, un `state`, un e-mail ou un `sub` (test `test_oidc_secrets_never_logged`). Aucun message d'`OidcError` ne porte autre chose que son code.
-  7. **Documentation vérifiée** (context7 : Google Identity, OpenID Connect Core 1.0) : paramètres d'autorisation `login_hint`, `prompt=select_account`, `nonce`, `state` confirmés ; `email` et `email_verified` présents dans le jeton quand le périmètre `email` est demandé ; `tokeninfo` rend `email_verified` en chaîne, mais ce flux ne l'appelle pas (aucune tolérance). Écart : la page Google consultée ne détaille ni `code_challenge_method` ni les deux formes de `iss` ; les deux s'appuient sur la RFC 7636 et sur la page « Valider un jeton d'identité » de Google (`accounts.google.com` ou `https://accounts.google.com`), connues d'avant et non revérifiées ici.
-  8. **Correctifs de revue (commit `fix(phase-9): revendications OIDC mal typées`)** : une revendication de type inattendu (`iss` liste ou objet, `nonce` ou `aud` avec un substitut isolé, JSON très imbriqué) donne `token_invalid`, jamais une autre exception (I1) ; 408 et 429 du point `token` donnent `google_unavailable` (M1) ; un `nonce` vide est refusé (M3) ; `OidcError` refuse un code hors de `OIDC_ERROR_CODES` (M4). M2 (`GOOGLE_TOKEN_URL` en `https`, sauf boucle locale) est tenu à la validation de configuration du démarrage (D177).
-- **Raison** : SPEC 17.1 et 17.2 ; P2 (aucune dépendance), P5 (port OIDC, adresses et émetteur venus de la configuration pour que le faux fournisseur serve aux essais par le même code) ; contrôle de `iss`, `aud`, `exp` et `nonce` pour qu'un jeton rejoué ou destiné à une autre application ne connecte personne.
+- **Date** 2026-11-17
+- **Subject** Phase 9, task 9.A1: OpenID Connect port, Google provider, and fake provider
+- **Decision**
+  1. **Port (P5)**: `backend/app/providers/auth/base.py` defines `OidcIdentity` (`sub`, `email`,
+     `email_verified`, `name`, immutable), `OidcError(code)` (codes `access_denied`,
+     `google_unavailable`, `token_invalid`; the message is the code alone), and the `OidcProvider`
+     protocol (`authorization_url(state, code_challenge, nonce, login_hint)` synchronous,
+     `exchange(code, code_verifier, nonce)` asynchronous). `pkce.py`: `new_verifier()`
+     (`secrets.token_urlsafe(64)`, 86 characters) and `challenge()` (S256, checked against the
+     example of RFC 7636, appendix B: the expected hash is
+     `E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM`, the value copied into the task's brief carried a
+     typo).
+  2. **`GoogleOidc` (`google.py`)**, OpenID Connect by hand with `httpx` (no new dependency, P2).
+     Authorization address: `response_type=code`, `scope=openid email profile`,
+     `code_challenge_method=S256`, `prompt=select_account`, `nonce`, `state`, `login_hint` only if
+     provided (spaces encoded `%20`). Exchange: `POST` to the `token` endpoint (`grant_type`,
+     `code`, `redirect_uri`, `client_id`, `client_secret`, `code_verifier`), 10 s timeout; network
+     error, timeout exceeded, or 5xx: `google_unavailable`; 4xx, unreadable body, `id_token` absent
+     or malformed: `token_invalid`.
+  3. **Identity token without signature verification** (OIDC Core 3.1.3.7 no. 6: received directly
+     from the `token` endpoint over TLS, validation of the TLS server stands in for the signature).
+     Checked: `iss` ∈ {issuer, issuer without `https://`} (Google uses both forms), `aud` equal to
+     our `client_id` (a list is only accepted with a single element, which follows the rule “no
+     additional audience” of 3.1.3.7 no. 3), `exp` numeric and in the future, `nonce` equal
+     (constant-time comparison), `email` and `sub` present. `email_verified` is returned as is
+     (boolean only: the string “true” is not accepted, review M5): the refusal of an unverified
+     email is decided by the sign-in service (9.A2), not by the port. `azp`, `iat`, and the
+     algorithm are not checked (not required by no. 6 and with no effect on security here).
+  4. **Fake provider** `backend/scripts/fake_oidc.py`: `create_fake_oidc_app(issuer,
+     client_id, default_email)` (FastAPI, without documentation) and `python -m scripts.fake_oidc
+     --port 8099 --issuer … --client-id …` (uvicorn on `127.0.0.1`). `GET /authorize` checks
+     `client_id` and `code_challenge_method=S256` (400 otherwise), takes the email from `login_hint`
+     (otherwise `camille.exemple@example.org`), `?deny=1` returns `error=access_denied&state=`,
+     otherwise `code=<random>&state=`. `POST /token`: single-use code (removed at the first attempt,
+     even if refused), `client_id`, `redirect_uri` identical to that of the authorization, and
+     `S256(code_verifier)` checked; unsigned `id_token` (`{"alg": "none"}`) with `iss`, `aud`, `exp`
+     (+1 h), `nonce`, `sub = "fake-" + sha256(email)[:16]` (stable for the same email), `email`,
+     `email_verified` (false if the email starts with `unverified`), `name` (deduced from the
+     email). It accepts any return address: it is a trial tool, never for production.
+  5. **Import contract no. 3**: `app.providers.auth.google` joins the modules forbidden to features,
+     agents, real time, and the scheduler (no additional contract; the `base` port and `pkce`, with
+     no external dependency, remain importable).
+  6. **Logs (17.2)**: `google.py` only logs the exception type or the HTTP status; never a code, a
+     verifier, a token, a `state`, an email, or a `sub` (test `test_oidc_secrets_never_logged`). No
+     `OidcError` message carries anything but its code.
+  7. **Documentation checked** (context7: Google Identity, OpenID Connect Core 1.0): authorization
+     parameters `login_hint`, `prompt=select_account`, `nonce`, `state` confirmed; `email` and
+     `email_verified` present in the token when the `email` scope is requested; `tokeninfo` returns
+     `email_verified` as a string, but this flow does not call it (no tolerance). Deviation: the
+     Google page consulted details neither `code_challenge_method` nor the two forms of `iss`; both
+     rely on RFC 7636 and on Google's page “Validate an ID token” (`accounts.google.com` or
+     `https://accounts.google.com`), known beforehand and not rechecked here.
+  8. **Review fixes (commit `fix(phase-9): revendications OIDC mal typées`)**: a claim of
+     unexpected type (`iss` list or object, `nonce` or `aud` with a lone surrogate, deeply nested
+     JSON) gives `token_invalid`, never another exception (I1); 408 and 429 of the `token` endpoint
+     give `google_unavailable` (M1); an empty `nonce` is refused (M3); `OidcError` refuses a code
+     outside `OIDC_ERROR_CODES` (M4). M2 (`GOOGLE_TOKEN_URL` in `https`, except local loopback) is
+     held in the startup configuration validation (D177).
+- **Reason** SPEC 17.1 and 17.2; P2 (no dependency), P5 (OIDC port, addresses and issuer coming from
+  the configuration so that the fake provider serves the trials through the same code); check of
+  `iss`, `aud`, `exp`, and `nonce` so that a replayed token, or one meant for another application,
+  connects no one.
 
 ## D177
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 9, tâche 9.A2 : connexion Google, cookie de session, utilisateur courant
-- **Décision** :
-  1. **Authentificateur (P7)** : `app.core.deps` définit le protocole `Authenticator` (`async authenticate(conn) -> CurrentUser`) et `get_current_user` devient asynchrone : il délègue à `app.state.authenticator`, composé au démarrage par `build_authenticator` (`features/auth/service/authenticator.py`). `LocalAuthenticator(user_id)` rend l'utilisateur unique ; `CookieAuthenticator` lit `tremplin_session`, cherche le SHA-256 du jeton dans `auth_sessions` (non expirée, comparaison en Python en UTC), charge l'utilisateur, puis recontrôle `ALLOWED_EMAILS` (liste chargée au démarrage : retirer une adresse du `.env` prend effet au redémarrage du back, qui recontrôle alors toutes les sessions encore valides ; pas de relecture à chaud) : cookie absent, falsifié, expiré, utilisateur supprimé ou adresse retirée de la liste donnent la même 401 `auth_required` (« Connexion requise. »), jamais un autre compte. Une session courte en lecture seule par requête, en plus de celle de la route. `core` n'importe aucune feature ; les tests gardent `act_as`.
-  2. **Départ (P6)** : `start_login` tire `state` et `nonce` (`secrets.token_urlsafe(32)`) et un vérificateur PKCE (`pkce.new_verifier`), demande l'adresse à `OidcProvider.authorization_url` et chiffre `{state, verifier, nonce}` dans `tremplin_oauth` (`Path=/api/v1/auth/google`, 10 minutes, `HttpOnly`, `SameSite=Lax`). `login_hint` n'est transmis que s'il ressemble à une adresse e-mail (`x@y.z`, 320 caractères au plus, sans espace) ; sinon il est ignoré, jamais refusé.
-  3. **Retour** : toujours une 302 vers le front fixé par `FRONTEND_URL` (aucun paramètre d'adresse de retour n'est lu, P10) : `/` (connectée), `/connexion/reprise` (choix de la reprise, posé par 9.A3), `/connexion?erreur=<code>`. Ordre des contrôles, rien n'étant écrit avant la fin : longueurs (`code` et `state` 2048, `error` 256) → `error` présent (`access_denied`) → témoin `tremplin_oauth` lisible et de moins de 10 minutes (`Cipher.decrypt(…, ttl=600)`) et `state` égal (`secrets.compare_digest`) sinon `state_invalid` → `code` présent sinon `token_invalid` → échange (`OidcError` : `access_denied`, `google_unavailable`, `token_invalid`) → `email_unverified` → `email_not_allowed` → utilisateur → session. Le témoin `tremplin_oauth` est effacé (même chemin) dans tous les cas. Une adresse déjà portée par un autre compte (identité Google différente) donne `token_invalid` et ne crée rien : jamais deux comptes fusionnés ni une erreur de base.
-  4. **Contrat (correctif de la revue de 9.P, I1)** : `login_hint`, `code`, `state` et `error` n'ont plus de `max_length` dans la signature des routes (une 422 JSON n'a pas sa place au retour de Google) ; la longueur est contrôlée dans le code : trop long, le callback redirige vers `/connexion?erreur=state_invalid` et `login_hint` est ignoré. `contracts/openapi.json` et `frontend/src/shared/api/schema.d.ts` sont régénérés dans le commit (seuls ces quatre `maxLength` disparaissent).
-  5. **Sessions (P6)** : `open_session` rend `secrets.token_urlsafe(32)` ; seul son SHA-256 hexadécimal est stocké (`token_hash`), durée fixe depuis la connexion (`SESSION_DAYS`, 30 par défaut, pas glissante), cookie `tremplin_session` (`Path=/`, `HttpOnly`, `SameSite=Lax`, `Max-Age` 2 592 000 s, `Secure` quand `GOOGLE_REDIRECT_URI` est en `https`). Elle purge d'abord les sessions expirées **de l'utilisatrice** qui se connecte. `AuthSessionRepository` (`repository_sessions.py`) est une exception à D23 : il filtre par `token_hash`. `close_session` retire la session d'un jeton (le service de déconnexion est celui de 9.A3).
-  6. **`ALLOWED_EMAILS` (remplace P8)** : liste séparée par des virgules, comparée en minuscules sans espaces ; `*` = tous les comptes ; sinon seulement ceux de la liste ; vide ou absente = personne n'entre. Contrôlée à la connexion (avant toute création) et à chaque requête, sur la liste chargée au démarrage (retirer une adresse prend effet au redémarrage). En mode Google, vide fait **refuser le démarrage**.
-  7. **Refus de démarrer (P11)** : `check_google_config` (`service/startup.py`), appelée au tout début du lifespan, lève `RuntimeError` avec un message clair, sans citer une valeur : `GOOGLE_CLIENT_ID` ou `GOOGLE_CLIENT_SECRET` manquant, `ALLOWED_EMAILS` vide, et (revue 9.A1, M2) `GOOGLE_TOKEN_URL` autre qu'en `https` sauf boucle locale (`localhost`, `127.0.0.1`, `::1`) : le jeton d'identité n'est pas vérifié par signature, il tient à TLS. Mode local : `/auth/google/*` répondent 404 `google_auth_disabled`.
-  8. **Composition** : `Providers.oidc` (`None` en mode local) est construit par `app/bootstrap_auth.py` (`build_oidc`, client HTTP du point `token` sans redirection, sans proxy ni réglage d'environnement, sans cookie retenu) ; le contrat d'import n° 5 le range avec les autres modules de composition (aucun contrat de plus). `main.py` ne gagne que des appels d'une ligne.
-  9. **Reprise de l'espace local (9.A3)** : cette tâche crée un utilisateur neuf pour toute identité inconnue ; `CallbackOutcome` porte déjà `kind="claim"` et `claim_cookie`, et le callback sait poser `tremplin_claim` et rediriger vers `/connexion/reprise` (test avec un résultat simulé) : 9.A3 n'ajoute que la proposition dans `finish_login`.
-  10. **Journaux (17.2)** : seuls des identifiants d'utilisateur et des codes d'erreur sont écrits (`connexion Google réussie pour l'utilisateur <id>`, `connexion Google refusée : <code>`) ; `test_auth_never_logged` couvre e-mail, nom, `sub`, code, `state`, `nonce`, vérificateur, jeton, `login_hint` et témoin sur la connexion et ses échecs. Le journal d'accès d'uvicorn n'écrit déjà pas la chaîne de requête (`AccessQueryFilter`).
-  11. **Tests existants retouchés** (indispensables à cause de P11) : `google_settings` (fixture racine, identifiants fictifs et `ALLOWED_EMAILS=*`) remplace `settings.model_copy(update={"auth_mode": "google"})` dans `client_google_mode`, `test_health_route_needs_no_session_in_google_mode` et `test_ws_requires_a_user` ; `test_phase9_contract` ne tient plus `/auth/google/login` et `/callback` pour des bouchons 501.
-  12. **Documentation vérifiée** (context7, Starlette) : `Response.set_cookie(key, value, max_age, path, secure, httponly, samesite)` et `delete_cookie(key, path, secure, httponly, samesite)` (même `path` que la pose) confirmés ; les attributs réels des en-têtes `Set-Cookie` sont aussi contrôlés par les tests.
-- **Raison** : SPEC 17.1, 17.2 et 17.4 ; P6, P7, P10, P11 ; arbitrage « sécurité maximale » sur P8 (`ALLOWED_EMAILS` vide = refus de démarrer, `*` explicite) ; revue de 9.P (I1 : le retour de Google finit toujours par une redirection) et de 9.A1 (M2 : TLS exigé pour le point `token`).
+- **Date** 2026-11-17
+- **Subject** Phase 9, task 9.A2: Google sign-in, session cookie, current user
+- **Decision**
+  1. **Authenticator (P7)**: `app.core.deps` defines the `Authenticator` protocol
+     (`async authenticate(conn) -> CurrentUser`) and `get_current_user` becomes asynchronous: it
+     delegates to `app.state.authenticator`, composed at startup by `build_authenticator`
+     (`features/auth/service/authenticator.py`). `LocalAuthenticator(user_id)` returns the single
+     user; `CookieAuthenticator` reads `tremplin_session`, looks up the token's SHA-256 in
+     `auth_sessions` (not expired, comparison in Python in UTC), loads the user, then rechecks
+     `ALLOWED_EMAILS` (list loaded at startup: removing an address from `.env` takes effect when the
+     back end restarts, which then rechecks all the sessions still valid; no hot reread): a missing,
+     forged, or expired cookie, a deleted user, or an address removed from the list all give the
+     same 401 `auth_required` (“Connexion requise.”, “Sign-in required.”), never another
+     account. One short read-only session per request, in addition to the route's. `core` imports no
+     feature; the tests keep `act_as`.
+  2. **Start (P6)**: `start_login` draws `state` and `nonce` (`secrets.token_urlsafe(32)`) and a
+     PKCE verifier (`pkce.new_verifier`), asks `OidcProvider.authorization_url` for the address, and
+     encrypts `{state, verifier, nonce}` in `tremplin_oauth` (`Path=/api/v1/auth/google`, 10
+     minutes, `HttpOnly`, `SameSite=Lax`). `login_hint` is only passed on if it looks like an email
+     address (`x@y.z`, 320 characters at most, no space); otherwise it is ignored, never refused.
+  3. **Return**: always a 302 to the front end set by `FRONTEND_URL` (no return-address parameter is
+     read, P10): `/` (signed in), `/connexion/reprise` (choice of takeover, set by 9.A3),
+     `/connexion?erreur=<code>`. Order of the checks, nothing being written before the end: lengths
+     (`code` and `state` 2048, `error` 256) → `error` present (`access_denied`) →
+     `tremplin_oauth` cookie readable and less than 10 minutes old (`Cipher.decrypt(…, ttl=600)`)
+     and `state` equal (`secrets.compare_digest`) otherwise `state_invalid` → `code` present
+     otherwise `token_invalid` → exchange (`OidcError`: `access_denied`, `google_unavailable`,
+     `token_invalid`) → `email_unverified` → `email_not_allowed` → user → session. The
+     `tremplin_oauth` cookie is cleared (same path) in all cases. An address already carried by
+     another account (different Google identity) gives `token_invalid` and creates nothing: never
+     two merged accounts nor a database error.
+  4. **Contract (fix from the review of 9.P, I1)**: `login_hint`, `code`, `state`, and `error` no
+     longer have a `max_length` in the routes' signature (a JSON 422 has no place on the return from
+     Google); the length is checked in the code: too long, the callback redirects to
+     `/connexion?erreur=state_invalid` and `login_hint` is ignored. `contracts/openapi.json` and
+     `frontend/src/shared/api/schema.d.ts` are regenerated in the commit (only these four
+     `maxLength` values disappear).
+  5. **Sessions (P6)**: `open_session` returns `secrets.token_urlsafe(32)`; only its hexadecimal
+     SHA-256 is stored (`token_hash`), fixed duration from sign-in (`SESSION_DAYS`, 30 by default,
+     not sliding), cookie `tremplin_session` (`Path=/`, `HttpOnly`, `SameSite=Lax`, `Max-Age`
+     2,592,000 s, `Secure` when `GOOGLE_REDIRECT_URI` is in `https`). It first purges the expired
+     sessions **of the user** who signs in. `AuthSessionRepository` (`repository_sessions.py`) is an
+     exception to D23: it filters by `token_hash`. `close_session` removes the session of a token
+     (the sign-out service is that of 9.A3).
+  6. **`ALLOWED_EMAILS` (replaces P8)**: comma-separated list, compared in lowercase without spaces;
+     `*` = all accounts; otherwise only those in the list; empty or absent = nobody gets in. Checked
+     at sign-in (before any creation) and at each request, on the list loaded at startup (removing
+     an address takes effect at restart). In Google mode, empty makes startup **refuse**.
+  7. **Refusal to start (P11)**: `check_google_config` (`service/startup.py`), called at the very
+     beginning of the lifespan, raises `RuntimeError` with a clear message, quoting no value:
+     `GOOGLE_CLIENT_ID` or `GOOGLE_CLIENT_SECRET` missing, `ALLOWED_EMAILS` empty, and (review 9.A1,
+     M2) `GOOGLE_TOKEN_URL` other than in `https` except local loopback (`localhost`, `127.0.0.1`,
+     `::1`): the identity token is not verified by signature, it relies on TLS. Local mode:
+     `/auth/google/*` answer 404 `google_auth_disabled`.
+  8. **Composition**: `Providers.oidc` (`None` in local mode) is built by `app/bootstrap_auth.py`
+     (`build_oidc`, HTTP client of the `token` endpoint without redirection, without proxy or
+     environment setting, without a retained cookie); import contract no. 5 files it with the other
+     composition modules (no additional contract). `main.py` only gains one-line calls.
+  9. **Takeover of the local space (9.A3)**: this task creates a new user for any unknown identity;
+     `CallbackOutcome` already carries `kind="claim"` and `claim_cookie`, and the callback knows how
+     to set `tremplin_claim` and redirect to `/connexion/reprise` (test with a simulated result):
+     9.A3 only adds the offer in `finish_login`.
+  10. **Logs (17.2)**: only user identifiers and error codes are written (`connexion Google réussie
+     pour l'utilisateur <id>` (“Google sign-in succeeded for user <id>”),
+     `connexion Google refusée : <code>` (“Google sign-in refused: <code>”));
+     `test_auth_never_logged` covers email, name, `sub`, code, `state`, `nonce`, verifier, token,
+     `login_hint`, and cookie on sign-in and its failures. Uvicorn's access log already does not
+     write the query string (`AccessQueryFilter`).
+  11. **Existing tests touched** (essential because of P11): `google_settings` (root fixture,
+     fictitious identifiers and `ALLOWED_EMAILS=*`) replaces
+     `settings.model_copy(update={"auth_mode": "google"})` in `client_google_mode`,
+     `test_health_route_needs_no_session_in_google_mode`, and `test_ws_requires_a_user`;
+     `test_phase9_contract` no longer holds `/auth/google/login` and `/callback` as 501 stubs.
+  12. **Documentation checked** (context7, Starlette): `Response.set_cookie(key,
+     value, max_age, path, secure, httponly, samesite)` and `delete_cookie(key, path,
+     secure, httponly, samesite)` (same `path` as when set) confirmed; the actual attributes of the
+     `Set-Cookie` headers are also checked by the tests.
+- **Reason** SPEC 17.1, 17.2, and 17.4; P6, P7, P10, P11; “maximum security” arbitration on P8
+  (`ALLOWED_EMAILS` empty = refusal to start, explicit `*`); review of 9.P (I1: the return from
+  Google always ends with a redirect) and of 9.A1 (M2: TLS required for the `token` endpoint).
 
 ## D177 bis : suites de la revue de 9.A2 (commit `fix(phase-9): suites de la revue de la connexion (9.A2)`)
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 9, correctifs de la revue de 9.A2
-- **Décision** :
-  1. **I1** : `GoogleOidc._identity` attrape aussi `RecursionError` sur `response.json()` (corps du point `token` imbriqué sans fin) : `token_invalid`, redirection, témoin effacé.
-  2. **M1** : `GOOGLE_CLIENT_SECRET` rejoint `KnownSecrets` (masqué dans les journaux).
-  3. **M2** : le client HTTP du point `token` n'est ouvert qu'en mode Google (`open_oidc` dans `bootstrap_auth.py`) ; `test_lifespan` revient à 2 clients en mode local.
-  4. **M3** : `ALLOWED_EMAILS` est contrôlée à chaque requête sur la liste chargée au démarrage ; la retirer du `.env` prend effet au redémarrage (D177 n° 1 et n° 6 corrigés).
-  5. **M4** : test du callback avec un code déjà utilisé (le point `token` répond 400) : `token_invalid`, rien créé, témoin effacé.
-  6. **M5** : `finish_login` garde l'échange et la création : toute exception inattendue est journalisée par sa classe (jamais son message), la transaction est défaite (`rollback`) et la réponse est la redirection `/connexion?erreur=token_invalid`, jamais une 500.
-  7. **M7** : un compte retrouvé par `sub` dont la nouvelle adresse appartient déjà à un autre compte est refusé à la connexion (`token_invalid`, rien de modifié) ; l'adresse contrôlée est celle qui est stockée : une adresse de plus de 320 caractères est refusée (`token_invalid`), jamais tronquée en silence.
-- **Raison** : revue de 9.A2 ; le callback promet toujours une redirection.
+- **Date** 2026-11-17
+- **Subject** Phase 9, fixes from the review of 9.A2
+- **Decision**
+  1. **I1**: `GoogleOidc._identity` also catches `RecursionError` on `response.json()` (body of the
+     `token` endpoint nested endlessly): `token_invalid`, redirect, cookie cleared.
+  2. **M1**: `GOOGLE_CLIENT_SECRET` joins `KnownSecrets` (masked in the logs).
+  3. **M2**: the HTTP client of the `token` endpoint is only opened in Google mode (`open_oidc` in
+     `bootstrap_auth.py`); `test_lifespan` goes back to 2 clients in local mode.
+  4. **M3**: `ALLOWED_EMAILS` is checked at each request on the list loaded at startup; removing it
+     from `.env` takes effect at restart (D177 no. 1 and no. 6 corrected).
+  5. **M4**: test of the callback with a code already used (the `token` endpoint answers 400):
+     `token_invalid`, nothing created, cookie cleared.
+  6. **M5**: `finish_login` guards the exchange and the creation: any unexpected exception is logged
+     by its class (never its message), the transaction is undone (`rollback`) and the response is
+     the redirect `/connexion?erreur=token_invalid`, never a 500.
+  7. **M7**: an account found by `sub` whose new address already belongs to another account is
+     refused at sign-in (`token_invalid`, nothing modified); the address checked is the one that is
+     stored: an address of more than 320 characters is refused (`token_invalid`), never silently
+     truncated.
+- **Reason** review of 9.A2; the callback always promises a redirect.
 
 ## D178
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 9, tâche 9.A3 : reprise de l'espace local, déconnexion, mode Google partout
-- **Décision** :
-  1. **Quand la reprise est proposée (P9)** : `claim_offered(db)` = aucun `users.google_sub` ET l'utilisateur `local` existe (`get_local` : sans e-mail ni identité ; une fois repris il porte un e-mail et n'est plus rendu). `finish_login` ne la propose qu'à une identité inconnue, **et seulement si `ALLOWED_EMAILS` est une liste explicite qui nomme l'adresse** (arbitrage du contrôleur) : avec `*` (même dans une liste), jamais, sinon la première personne venue prendrait les données locales ; elle se connecte alors à un espace vide et l'espace local n'est plus jamais proposé (pour reprendre les données, nommer l'adresse dans la liste). Rien n'est créé avant le choix : le callback pose `tremplin_claim` (`{sub, email, name}` chiffré, 10 minutes, `Path=/api/v1/auth/google`) et redirige vers `/connexion/reprise`.
-  2. **`POST /auth/google/claim`** : lit le témoin (absent, trafiqué, de plus de 10 minutes, ou adresse plus nommée dans la liste : 409 `claim_expired`), applique le choix, ouvre la session (cookie `tremplin_session` comme au callback), efface `tremplin_claim` et rend `MeOut`. `take_local` : un seul `UPDATE users SET google_sub, email, name WHERE id = <local> AND google_sub IS NULL AND NOT EXISTS (un compte Google)` (`UserRepository.attach_identity`, atomique) : 0 ligne = 409 `local_already_claimed`. Même `id` : aucune donnée déplacée. `fresh` : nouvel utilisateur (dans un point de sauvegarde : un doublon ne défait pas la transaction), l'espace local intact. Un témoin rejoué après un choix réussi (même `sub` déjà connu) : 409 `local_already_claimed`, jamais un second compte ni une erreur de base. Le garde `NOT EXISTS` ferme aussi la course « espace vide » d'un compte contre « reprendre » d'un autre : un compte Google existe, la reprise est refusée.
-  3. **Écart à la signature du brief** : `claim(db, cipher, claim_cookie, choice, *, allowed_emails)` ; le paramètre `now` du brief n'existe pas (la session est ouverte par la route, qui a l'heure ; le contrôle d'âge du témoin est celui de Fernet), et `allowed_emails` s'ajoute pour recontrôler la liste au moment du choix.
-  4. **`POST /auth/logout`** : retire la ligne `auth_sessions` du cookie (par son SHA-256) et efface `tremplin_session` (même `Path=/`, mêmes attributs, `Secure` si l'adresse de retour est en `https`) ; 204 aussi sans session ou avec un cookie falsifié ; mode local : 204 sans rien faire. Ne ferme que sa propre session.
-  5. **Santé (P12)** : en mode Google, `LlmKeysCheck(google_mode=True)` rend `ok=True` avec « Mode Google : les clés de chaque compte se vérifient dans ses réglages. » : aucun utilisateur local, aucune lecture de base, plus d'état dégradé permanent (D28 n° 3). Le détail est toujours ce texte : le contrôle ne regarde plus les clés du `.env`, que les réglages de chaque compte montrent déjà. Le planificateur et la reprise des sessions au démarrage ne lisent jamais `local_user_id` (ils parcourent les données) : un test démarre le mode Google avec le planificateur sans utilisateur local.
-  6. **WebSocket** : `get_current_user` sert le WebSocket (cookie `tremplin_session` à la poignée de main : 401 `auth_required` sans cookie valide, testé aussi après déconnexion) ; l'en-tête `Origin` doit être une origine du front (`CORS_ORIGIN`, la liste de CORS : `check_origin`, déjà en place pour les deux modes), sinon fermeture 1008, même avec un cookie valide (testé). Sans `Origin`, refusé en mode Google (1008, après le contrôle du cookie : 401 d'abord) et accepté en mode local (D179 n° 5) ; la session d'un autre compte reste fermée en 4404. Une connexion longue déjà ouverte n'est pas recontrôlée après coup (limite connue, notée pour la revue).
-  7. **Serveur de bout en bout** : `--auth google` monte le faux fournisseur sous `/fake-oidc` du même serveur et pointe `GOOGLE_AUTH_URL`, `GOOGLE_TOKEN_URL`, l'émetteur et l'adresse de retour dessus (`http://localhost:<port>`), `ALLOWED_EMAILS=*`, retour vers `--origin` ; docstring de tête réécrite (mineur du bilan 8). Test de bout en bout en vrai HTTP : connexion, faux fournisseur, cookie, `me`, déconnexion.
-  8. **Journaux (17.2)** : « reprise de l'espace local proposée », « espace local repris par l'utilisateur <id> », « espace vide créé pour l'utilisateur <id> » ; jamais l'adresse, le nom, le `sub` ni le témoin (`test_claim_never_logged`).
-  9. **Note (suite de la revue 9.A3, M6)** : après « Espace vide » puis « Tout supprimer » (9.B5 supprime aussi la ligne du compte en mode Google), plus aucun `users.google_sub` n'existe : la reprise de l'espace local, resté en base, est de nouveau proposée à la prochaine adresse nommée qui se connecte. Le README le dit (« Reprise de l'espace local »).
-- **Raison** : SPEC 17.1 ; P9, P12 ; Review Focus n° 3 (un seul propriétaire de l'espace local, jamais deux comptes fusionnés, jamais proposée deux fois) ; arbitrage du contrôleur sur `*` ; revue de 9.A2 (invérifiable n° 3 et n° 4).
-
+- **Date** 2026-11-17
+- **Subject** Phase 9, task 9.A3: takeover of the local space, sign-out, Google mode everywhere
+- **Decision**
+  1. **When the takeover is offered (P9)**: `claim_offered(db)` = no `users.google_sub` AND the
+     `local` user exists (`get_local`: with no email or identity; once taken over it carries an
+     email and is no longer returned). `finish_login` only offers it to an unknown identity, **and
+     only if `ALLOWED_EMAILS` is an explicit list that names the address** (controller's
+     arbitration): with `*` (even within a list), never, otherwise the first person to arrive would
+     take the local data; she then signs in to an empty space and the local space is never offered
+     again (to take over the data, name the address in the list). Nothing is created before the
+     choice: the callback sets `tremplin_claim` (`{sub, email, name}` encrypted, 10 minutes,
+     `Path=/api/v1/auth/google`) and redirects to `/connexion/reprise`.
+  2. **`POST /auth/google/claim`**: reads the cookie (absent, tampered with, more than 10 minutes
+     old, or address no longer named in the list: 409 `claim_expired`), applies the choice, opens
+     the session (cookie `tremplin_session` as at the callback), clears `tremplin_claim`, and
+     returns `MeOut`. `take_local`: a single `UPDATE users SET google_sub, email, name WHERE id =
+     <local> AND google_sub IS NULL AND NOT EXISTS (a Google account)`
+     (`UserRepository.attach_identity`, atomic): 0 rows = 409 `local_already_claimed`. Same `id`: no
+     data moved. `fresh`: new user (in a savepoint: a duplicate does not undo the transaction), the
+     local space intact. A cookie replayed after a successful choice (same `sub` already known): 409
+     `local_already_claimed`, never a second account nor a database error. The `NOT EXISTS` guard
+     also closes the race of “empty space” by one account against “take over” by another: a
+     Google account exists, the takeover is refused.
+  3. **Deviation from the brief's signature**: `claim(db, cipher, claim_cookie,
+     choice, *, allowed_emails)`; the brief's `now` parameter does not exist (the session is opened
+     by the route, which has the time; the cookie's age check is Fernet's), and `allowed_emails` is
+     added to recheck the list at the time of the choice.
+  4. **`POST /auth/logout`**: removes the cookie's `auth_sessions` row (by its SHA-256) and clears
+     `tremplin_session` (same `Path=/`, same attributes, `Secure` if the return address is in
+     `https`); 204 also without a session or with a forged cookie; local mode: 204 doing nothing.
+     Only closes its own session.
+  5. **Health (P12)**: in Google mode, `LlmKeysCheck(google_mode=True)` returns `ok=True` with
+     “Mode Google : les clés de chaque compte se vérifient dans ses réglages.” (“Google
+     mode: each account's keys are checked in its settings.”): no local user, no database read, no
+     more permanent degraded state (D28 no. 3). The detail is always this text: the check no longer
+     looks at the `.env` keys, which each account's settings already show. The scheduler and the
+     resumption of sessions at startup never read `local_user_id` (they walk through the data): a
+     test starts Google mode with the scheduler and no local user.
+  6. **WebSocket**: `get_current_user` serves the WebSocket (cookie `tremplin_session` at the
+     handshake: 401 `auth_required` without a valid cookie, also tested after sign-out); the
+     `Origin` header must be an origin of the front end (`CORS_ORIGIN`, the CORS list:
+     `check_origin`, already in place for both modes), otherwise closing 1008, even with a valid
+     cookie (tested). Without `Origin`, refused in Google mode (1008, after the cookie check: 401
+     first) and accepted in local mode (D179 no. 5); another account's session stays closed with
+     4404. A long connection already open is not rechecked afterwards (known limit, noted for the
+     review).
+  7. **End-to-end server**: `--auth google` mounts the fake provider under `/fake-oidc` of the same
+     server and points `GOOGLE_AUTH_URL`, `GOOGLE_TOKEN_URL`, the issuer, and the return address at
+     it (`http://localhost:<port>`), `ALLOWED_EMAILS=*`, return to `--origin`; head docstring
+     rewritten (minor point of report 8). End-to-end test over real HTTP: sign-in, fake provider,
+     cookie, `me`, sign-out.
+  8. **Logs (17.2)**: “reprise de l'espace local proposée” (“takeover of the local space
+     offered”), “espace local repris par l'utilisateur <id>” (“local space taken over by
+     user <id>”), “espace vide créé pour l'utilisateur <id>” (“empty space created for
+     user <id>”); never the address, the name, the `sub`, or the cookie
+     (`test_claim_never_logged`).
+  9. **Note (follow-up of review 9.A3, M6)**: after “Empty space” then “Delete everything”
+     (9.B5 also deletes the account row in Google mode), no `users.google_sub` exists any more: the
+     takeover of the local space, which stayed in the database, is offered again to the next named
+     address that signs in. The README says so (“Takeover of the local space”).
+- **Reason** SPEC 17.1; P9, P12; Review Focus no. 3 (a single owner of the local space, never two
+  merged accounts, never offered twice); controller's arbitration on `*`; review of 9.A2
+  (unverifiable no. 3 and no. 4).
 
 ## D179
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 9, tâche 9.A4 : isolation des comptes, un test par routeur (P14), WebSocket sans `Origin` en mode Google, suites de la revue de 9.A3
-- **Décision** :
-  1. **Registre et test garde (P14)** : `tests/isolation/cases_<flux>.py` définit `CASES: dict[str, str]` (identifiant de routeur → `tests/…/test_x.py::test_name`, sans rien importer) ; `guard_support.load_cases()` les fusionne et échoue si deux modules nomment le même routeur ; `router_id(router)` est le module de l'endpoint de la première route, en traversant `include_router` (`original_router`) : `app.features.cv.router.profile`, `app.features.memory.router.items`. `EXEMPT` : `health` (aucune donnée d'utilisatrice). `test_every_router_has_isolation_case` échoue pour tout routeur de `FEATURE_ROUTERS` sans cas ; `test_every_case_points_to_an_existing_test` vérifie que le fichier, le module et la fonction existent et que le routeur nommé existe encore ; un routeur exempté ne peut pas aussi avoir un cas.
-  2. **Routeurs du flux B** : `costs` et `account` ont leurs cas dans `cases_b.py` (9.B2, 9.B4), absent de l'arbre du flux A. Pour que les tests de A passent sans masquer un oubli, `guard_support.EXPECTED_FROM_B` les nomme (`app.features.costs.router`, `app.features.account.router`) et le garde les tolère **seulement** à ce titre. Sans cette liste, `missing` vaut exactement ces deux routeurs (vérifié). Deux tests referment la porte : `test_expected_from_b_is_emptied_once_b_delivers` échoue dès qu'un routeur de la liste a un cas, ou dès que `cases_b.py` existe alors que la liste n'est pas vide. **À l'intégration (9.I) : fusionner `cases_b.py`, puis vider `EXPECTED_FROM_B`** (`frozenset()`), sans quoi la suite échoue : le garde reste entier.
-  3. **Inventaire** : 20 routeurs avaient déjà un test d'isolation au niveau des routes (référencés, pas réécrits : `sessions`, `memory` (premier sous-routeur `items` ; `explorer` et `documents` ont aussi les leurs), `research`, `learning`, `program`, `lessons`, `quiz`, `study`, `replan`, `skills`, `capture`, `postings`, `applications`, `kit`, `interviews`, `committee`, `radar`, `brief`, `projects`, `settings.keys_router`). Six n'en avaient pas et reçoivent le leur dans `tests/isolation/test_cross_user_<zone>.py` : `auth` (deux comptes réels, cookies), `settings` (valeurs propres de chacune, `onboarding_done` compris), `gap`, `cv` (profil, gabarits, revues, versions), `reminders`, `activity` (le seul test d'`activity` existant passait par le service, pas par la route). Les modes locaux utilisent `act_as` (une donnée par la première, l'autre reçoit 404 ou une liste vide, puis la première retrouve la sienne intacte).
-  4. **Test en vrai mode Google** (`test_google_two_accounts.py`) : Camille et Dominique se connectent par le faux fournisseur (`MockTransport`), chacune avec ses cookies. Objectif, élément de mémoire, capture, offre, style et clé (4 derniers caractères) de Camille sont absents chez Dominique ; 404 sur chaque identifiant de Camille (objectif, élément, offre, son écart) ; le curseur de journal de Camille est refusé (422) ; les écritures de Dominique (style, clé) n'atteignent pas Camille ; aucune clé en clair. Test synchrone voisin : le WebSocket d'une session de Camille ouvert avec le cookie de Dominique est fermé en 4404.
-  5. **WebSocket sans `Origin` (ajout du contrôleur)** : en mode Google, une poignée de main sans en-tête `Origin` est refusée (1008), même avec un cookie valide ; une connexion sans cookie valide reste refusée en 401 `auth_required` avant le contrôle d'origine (`check_origin`, dépendance de route, authentifie d'abord quand l'origine manque). En mode local le comportement est inchangé (accepté sans `Origin`). Un test par mode (`test_websocket_without_origin_is_refused_in_google_mode`, `test_ws_without_origin_is_accepted_in_local_mode`). Remplace la dernière phrase de D178 n° 6 (« Sans `Origin`, accepté comme avant »).
-  6. **Suites de la revue de 9.A3** : (M7) la sécurité et l'utilisateur local (`setup_security`, `ensure_local_user`) passent de `main.py` à `bootstrap_auth.py` (293 → 255 lignes) et la composition de la santé (`health_checks`) de `bootstrap.py` au nouveau `bootstrap_health.py` (291 → 268 lignes), sans changement de comportement ; le contrat d'import n° 5 (`composition-isolee`) nomme `app.bootstrap_health` en plus (aucun contrat de plus). (M5) un témoin de reprise rejoué avec `fresh` (double clic sur « Espace vide », compte déjà créé) rend 409 `claim_expired` (« Le choix a expiré : reconnecte-toi avec Google. ») et non « L'espace local a déjà un propriétaire » ; `take_local` rejoué reste `local_already_claimed`. (M6 a) cas limite à garder en tête, complément de D178 n° 1 : si le premier compte a choisi « espace vide » puis a tout supprimé en mode Google (9.B5 supprime aussi sa ligne), `any_google_user` redevient faux et l'espace local, resté en base, est de nouveau proposé à la prochaine adresse nommée.
-- **Raison** : SPEC 17.2 (deux comptes ne voient jamais les données l'un de l'autre) ; P14 ; Review Focus n° 1 ; revue de 9.A3 (M2, M5, M6, M7, M8 : tests d'isolation écrits en rouge d'abord, le garde échoue avant les cas).
+- **Date** 2026-11-17
+- **Subject** Phase 9, task 9.A4: account isolation, one test per router (P14), WebSocket without
+  `Origin` in Google mode, follow-ups from the review of 9.A3
+- **Decision**
+  1. **Registry and guard test (P14)**: `tests/isolation/cases_<stream>.py` defines
+     `CASES: dict[str, str]` (router identifier → `tests/…/test_x.py::test_name`, importing
+     nothing); `guard_support.load_cases()` merges them and fails if two modules name the same
+     router; `router_id(router)` is the module of the endpoint of the first route, going through
+     `include_router` (`original_router`): `app.features.cv.router.profile`,
+     `app.features.memory.router.items`. `EXEMPT`: `health` (no user data).
+     `test_every_router_has_isolation_case` fails for any router of `FEATURE_ROUTERS` without a
+     case; `test_every_case_points_to_an_existing_test` checks that the file, the module, and the
+     function exist and that the named router still exists; an exempted router cannot also have a
+     case.
+  2. **Stream B routers**: `costs` and `account` have their cases in `cases_b.py` (9.B2, 9.B4),
+     absent from stream A's tree. So that A's tests pass without hiding an omission,
+     `guard_support.EXPECTED_FROM_B` names them (`app.features.costs.router`,
+     `app.features.account.router`) and the guard tolerates them **only** on that basis. Without
+     this list, `missing` is exactly these two routers (checked). Two tests close the door:
+     `test_expected_from_b_is_emptied_once_b_delivers` fails as soon as a router of the list has a
+     case, or as soon as `cases_b.py` exists while the list is not empty. **At integration (9.I):
+     merge `cases_b.py`, then empty `EXPECTED_FROM_B`** (`frozenset()`), otherwise the suite fails:
+     the guard stays whole.
+  3. **Inventory**: 20 routers already had an isolation test at the route level (referenced, not
+     rewritten: `sessions`, `memory` (first sub-router `items`; `explorer` and `documents` have
+     their own too), `research`, `learning`, `program`, `lessons`, `quiz`, `study`, `replan`,
+     `skills`, `capture`, `postings`, `applications`, `kit`, `interviews`, `committee`, `radar`,
+     `brief`, `projects`, `settings.keys_router`). Six had none and each receives its own in
+     `tests/isolation/test_cross_user_<zone>.py`: `auth` (two real accounts, cookies), `settings`
+     (each one's own values, `onboarding_done` included), `gap`, `cv` (profile, templates, reviews,
+     versions), `reminders`, `activity` (the only existing `activity` test went through the service,
+     not the route). Local modes use `act_as` (data created by the first, the other receives 404 or
+     an empty list, then the first finds her own intact).
+  4. **Test in real Google mode** (`test_google_two_accounts.py`): Camille and Dominique sign in
+     through the fake provider (`MockTransport`), each with her cookies. Camille's goal, memory
+     item, capture, posting, style, and key (last 4 characters) are absent for Dominique; 404 on
+     each of Camille's identifiers (goal, item, posting, her gap); Camille's journal cursor is
+     refused (422); Dominique's writes (style, key) do not reach Camille; no plaintext key.
+     Neighboring synchronous test: the WebSocket of one of Camille's sessions opened with
+     Dominique's cookie is closed with 4404.
+  5. **WebSocket without `Origin` (controller's addition)**: in Google mode, a handshake without an
+     `Origin` header is refused (1008), even with a valid cookie; a connection without a valid
+     cookie stays refused with 401 `auth_required` before the origin check (`check_origin`, a route
+     dependency, authenticates first when the origin is missing). In local mode the behavior is
+     unchanged (accepted without `Origin`). One test per mode
+     (`test_websocket_without_origin_is_refused_in_google_mode`,
+     `test_ws_without_origin_is_accepted_in_local_mode`). Replaces the last sentence of D178 no. 6
+     (“Without `Origin`, accepted as before”).
+  6. **Follow-ups from the review of 9.A3**: (M7) security and the local user (`setup_security`,
+     `ensure_local_user`) move from `main.py` to `bootstrap_auth.py` (293 → 255 lines) and the
+     health composition (`health_checks`) from `bootstrap.py` to the new `bootstrap_health.py` (291
+     → 268 lines), with no change of behavior; import contract no. 5 (`composition-isolee`) names
+     `app.bootstrap_health` in addition (no additional contract). (M5) a takeover cookie replayed
+     with `fresh` (double click on “Empty space”, account already created) returns 409
+     `claim_expired` (“Le choix a expiré : reconnecte-toi avec Google.”, “The choice has
+     expired: sign in again with Google.”) and not “The local space already has an owner”;
+     `take_local` replayed stays `local_already_claimed`. (M6 a) edge case to keep in mind,
+     complement to D178 no. 1: if the first account chose “empty space” then deleted everything
+     in Google mode (9.B5 also deletes its row), `any_google_user` becomes false again and the local
+     space, which stayed in the database, is offered again to the next named address.
+- **Reason** SPEC 17.2 (two accounts never see each other's data); P14; Review Focus no. 1; review
+  of 9.A3 (M2, M5, M6, M7, M8: isolation tests written red first, the guard fails before the cases).
 
 ## D179 bis : suites de la revue de 9.A4 (commit `fix(phase-9): suites de la revue de l'isolation (9.A4)`)
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 9, correctifs de la revue de 9.A4
-- **Décision** :
-  1. **I1, garde non contournable** : `resolve_test(nodeid, router)` refuse un cas dont le test n'est ni sous `tests/isolation/` ni sous `tests/features/<zone>/` (`<zone>` = la feature du routeur : `check_path`), qui porte `skip`, `skipif` ou `xfail` (sur la fonction ou sur le module : `check_function`), ou dont le texte ne fait intervenir aucun second utilisateur (expression `SECOND_USER` : `act_as`, `google_client_factory`, `other`, `autre`, `second` ou `dominique`, sans tenir compte de la casse). Contrôle textuel volontairement simple : il écarte un test sans rapport, pas une personne de mauvaise foi, que la revue de code rattrape. Les 26 cas existants le satisfont. Tests négatifs : un test d'une autre zone, un test ignoré, un test sans second utilisateur, une fonction qui n'est pas un test.
-  2. **I2** : `test_a_cookie_never_gives_another_identity` posait le témoin avec `domain="test"` (le vrai domaine d'un hôte sans point est `test.local`) : il n'était jamais envoyé et le 401 venait de l'absence de cookie. Le domaine est retiré ; un contrôle positif envoie le vrai témoin de Camille (200, son adresse), puis un jeton trafiqué donne 401 `auth_required`.
-  3. **I3** : `test_cv_of_another_account_is_invisible` sème une modification, une page de gabarit et une page de version (stockage réel de test) et sonde en plus `GET /cv/templates/{id}/pages/original/1`, `GET /cv/versions/{id}/pages/1`, `PATCH /cv/modifications/{id}` et `POST /cv/reviews` avec l'offre d'une autre (404 sur chacune, aucun octet de page, la modification reste `proposed`) ; la première lit bien ses deux pages (contrôle positif).
-  4. **Mineurs** : (M6) les modules `fake_cases` sont retirés de `sys.modules` après le test ; (M3) `google` et `google_app` ne sont plus recopiés dans `tests/isolation/conftest.py` (réimportés de la connexion), et le test WebSocket 4404 refait dans `test_google_two_accounts.py` est retiré, `test_websocket_of_another_account_session_is_closed_4404` (`tests/realtime/test_ws_auth.py`) le couvre ; (M7) le test des deux comptes passe sous 50 lignes (deux fonctions d'aide) ; (M4 a, b) la docstring de `claim.py` et la description de la réponse 409 de `POST /auth/google/claim` disent qu'un `fresh` rejoué ou perdu dans une course rend `claim_expired` : `contracts/openapi.json` et `schema.d.ts` régénérés (seule cette description change) ; (M5) D178 n° 6 aligné sur D179 n° 5 ; le README dit qu'un client hors navigateur doit envoyer `Origin` en mode Google. M1 et M2 (granularité d'un cas par routeur) restent des limites connues.
-- **Raison** : revue de 9.A4 ; un garde qui se contente d'un nom de test existant ne garde rien.
+- **Date** 2026-11-17
+- **Subject** Phase 9, fixes from the review of 9.A4
+- **Decision**
+  1. **I1, guard that cannot be bypassed**: `resolve_test(nodeid, router)` refuses a case whose test
+     is neither under `tests/isolation/` nor under `tests/features/<zone>/` (`<zone>` = the router's
+     feature: `check_path`), that carries `skip`, `skipif`, or `xfail` (on the function or on the
+     module: `check_function`), or whose text involves no second user (expression `SECOND_USER`:
+     `act_as`, `google_client_factory`, `other`, `autre`, `second`, or `dominique`, ignoring case).
+     A deliberately simple textual check: it rules out an unrelated test, not a person acting in bad
+     faith, whom the code review catches. The 26 existing cases satisfy it. Negative tests: a test
+     from another zone, a skipped test, a test with no second user, a function that is not a test.
+  2. **I2**: `test_a_cookie_never_gives_another_identity` set the cookie with `domain="test"` (the
+     real domain of a host without a dot is `test.local`): it was never sent and the 401 came from
+     the absence of a cookie. The domain is removed; a positive check sends Camille's real cookie
+     (200, her address), then a tampered token gives 401 `auth_required`.
+  3. **I3**: `test_cv_of_another_account_is_invisible` seeds a modification, a template page, and a
+     version page (real test storage) and additionally probes
+     `GET /cv/templates/{id}/pages/original/1`, `GET /cv/versions/{id}/pages/1`,
+     `PATCH /cv/modifications/{id}`, and `POST /cv/reviews` with another account's posting (404 on
+     each, no page byte, the modification stays `proposed`); the first account does read her two
+     pages (positive check).
+  4. **Minor points**: (M6) the `fake_cases` modules are removed from `sys.modules` after the test;
+     (M3) `google` and `google_app` are no longer copied into `tests/isolation/conftest.py`
+     (reimported from the sign-in), and the 4404 WebSocket test redone in
+     `test_google_two_accounts.py` is removed,
+     `test_websocket_of_another_account_session_is_closed_4404` (`tests/realtime/test_ws_auth.py`)
+     covers it; (M7) the two-account test goes under 50 lines (two helper functions); (M4 a, b) the
+     docstring of `claim.py` and the description of the 409 response of `POST /auth/google/claim`
+     say that a `fresh` replayed or lost in a race returns `claim_expired`: `contracts/openapi.json`
+     and `schema.d.ts` regenerated (only this description changes); (M5) D178 no. 6 aligned with
+     D179 no. 5; the README says a non-browser client must send `Origin` in Google mode. M1 and M2
+     (granularity of one case per router) remain known limits.
+- **Reason** review of 9.A4; a guard that settles for the name of an existing test guards nothing.
 
 ## D180
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 9, tâche 9.A5 : progression de `bge-m3`, README, `.env.example`, Compose, serveur de bout en bout
-- **Décision** :
-  1. **Suivi du téléchargement (P13)** : `OllamaPullWatcher(url, model, http)` (`providers/embeddings/ollama_pull.py`), construit par `bootstrap_health.embedding_progress` et posé sur `Providers.embedding` (le port `EmbeddingProgressSource` et `EmbeddingProgressData(model, present, percent, detail)` vivent dans `embeddings/base.py` : une feature n'importe pas une implémentation, contrat n° 3, où `ollama_pull` rejoint `ollama_probe`). `progress()` interroge `GET /api/tags` à chaque appel : présent = `percent` 100 ; Ollama injoignable ou statut autre que 200 = `present` faux, `percent` `None`, « Ollama ne répond pas. » (aucun téléchargement lancé). Sinon il lance **un seul** `POST /api/pull {"name": model, "stream": true}` en tâche de fond (aucun `await` entre le contrôle et `create_task` : des appels simultanés n'en lancent qu'un) et lit le flux JSON ligne par ligne.
-  2. **Pourcentage** : le flux d'Ollama mêle plusieurs fichiers (`digest`, `total`, `completed`) ; le pourcentage est celui du plus gros (le modèle), arrondi, borné à 0..99 tant que le modèle n'est pas présent (100 seulement quand `/api/tags` le confirme) ; `None` tant qu'aucune taille n'est connue. Flux terminé mais modèle pas encore listé : 99, « vérification en cours », jamais un second téléchargement.
-  3. **Écart au brief (reprise après échec)** : « une fois par processus » est entendu « une fois à la fois » : un téléchargement qui échoue (ligne `error`, statut non 200, connexion coupée) est relancé par un appel postérieur d'au moins 30 s ; avant, la route dit « Le téléchargement de bge-m3 a échoué ; nouvel essai bientôt. ». Sans cela, une coupure réseau au premier lancement bloquerait la progression jusqu'au redémarrage du back.
-  4. **Journaux** : l'arrivée du flux n'est jamais journalisée ; un échec ne laisse que la classe de l'exception (`test_failed_pull_is_retried_only_after_a_pause` vérifie que le message d'erreur d'Ollama n'apparaît pas). Délai de lecture du flux : 120 s entre deux lignes.
-  5. **`GET /health/embedding`** : public comme `/health` (aucun cookie, y compris en mode Google, testé). La surface d'API ne change pas (la route était un bouchon 501 de 9.P, schéma `EmbeddingProgress` inchangé).
-  6. **`ALLOWED_EMAILS` (README, `.env.example`, SPEC 17.1)** : liste séparée par des virgules, minuscules sans espaces ; en mode Google vide = le back refuse de démarrer ; `*` = tous les comptes ; sinon seulement la liste ; retirer une adresse prend effet au redémarrage du back (D177 bis, M3). La phrase de SPEC.md §17.1 (« variable optionnelle qui limite ») est la seule modifiée. La reprise de l'espace local n'est proposée qu'à une adresse nommée dans une liste explicite, jamais avec `*` ; **avec plusieurs adresses nommées, la première qui se connecte prend l'espace local** ; après « Espace vide » puis « Tout supprimer » elle est proposée de nouveau (D178 n° 9).
-  7. **Compose** : le back reçoit `AUTH_MODE` (défaut `local`, jamais vide : une valeur vide ferait refuser le démarrage), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `ALLOWED_EMAILS` (vides par défaut), `FRONTEND_URL` et `GOOGLE_REDIRECT_URI` (par défaut `http://localhost:<port>` : `FRONTEND_PORT` et `BACKEND_PORT`). Écart au brief (« défauts vides ») pour ces trois-là : une valeur vide écraserait le défaut du back et casserait la redirection.
-  8. **README et cohérence** : `tests/test_readme.py` vérifie que chaque variable de `.env.example` (commentée ou non) est citée dans le README, qu'aucun nom en `KEY`, `SECRET`, `TOKEN` ou `PASSWORD` n'a de valeur, que Compose passe les six variables et que le README couvre la configuration Google, la reprise, l'export et la suppression.
-  9. **Serveur de bout en bout** (`tests/e2e/server.py`, suite de la revue 9.A3, M4) : `--auth google` refuse un `--host` qui n'est ni `127.0.0.1`, ni `::1`, ni `localhost` (le faux fournisseur connecte n'importe quelle adresse sans mot de passe) : message clair, sortie avant toute création de dossier (`check_host`, `UnsafeHost`, tests).
-  10. **Documentation vérifiée** : le flux `POST /api/pull` d'Ollama (une ligne JSON par événement : `status`, puis `digest`, `total`, `completed` pour un fichier, `error` en cas d'échec) est celui du plan ; il n'a pas été rejoué contre un Ollama réel (aucun appel réseau dans les tests, essai réel à la clôture de phase, 9.S). La page de console Google (libellés « Google Auth Platform ») est décrite de mémoire, à vérifier à l'essai.
-  11. **Suites de la revue de 9.A5 (M2, M3, M4, M5)** : « terminé » n'est posé que sur la ligne `success` d'Ollama ; un flux fermé sans elle est un échec. Un tirage « réussi » dont le modèle n'est toujours pas dans `api/tags` (retiré, ou jamais arrivé) est relancé après 30 s au lieu de rester à 99 % jusqu'au redémarrage. Après un échec, le délai de relance croît (30 s, 60 s, 120 s, 240 s, puis 300 s au plus ; une réussite le remet à 30 s) et la route dit combien de secondes attendre et de vérifier qu'Ollama tourne et que le disque n'est pas plein. `aclose()` annule et attend la tâche à l'arrêt du back (pile du lifespan, port `EmbeddingProgressSource`) : un arrêt normal ne journalise aucun échec. Texte public de la route aligné (« un téléchargement à la fois, relancé après un échec ») et description du 409 du claim complétée (adresse plus nommée) : `contracts/openapi.json` et `schema.d.ts` régénérés, texte seulement.
-- **Raison** : SPEC 15.5, 16.2, 17.1 et 17.3 ; P13 ; arbitrage du contrôleur sur `ALLOWED_EMAILS` ; revue de 9.A3 (M4, M6) ; le premier lancement doit montrer la progression de `bge-m3` sans lire les journaux de Compose.
+- **Date** 2026-11-17
+- **Subject** Phase 9, task 9.A5: `bge-m3` progress, README, `.env.example`, Compose, end-to-end
+  server
+- **Decision**
+  1. **Download tracking (P13)**: `OllamaPullWatcher(url, model, http)`
+     (`providers/embeddings/ollama_pull.py`), built by `bootstrap_health.embedding_progress` and set
+     on `Providers.embedding` (the `EmbeddingProgressSource` port and `EmbeddingProgressData(model,
+     present, percent, detail)` live in `embeddings/base.py`: a feature does not import an
+     implementation, contract no. 3, where `ollama_pull` joins `ollama_probe`). `progress()` queries
+     `GET /api/tags` at each call: present = `percent` 100; Ollama unreachable or status other than
+     200 = `present` false, `percent` `None`, “Ollama ne répond pas.” (“Ollama is not
+     responding.”) (no download launched). Otherwise it launches **a single**
+     `POST /api/pull {"name": model, "stream": true}` in the background (no `await` between the
+     check and `create_task`: simultaneous calls only launch one) and reads the JSON stream line by
+     line.
+  2. **Percentage**: Ollama's stream mixes several files (`digest`, `total`, `completed`); the
+     percentage is that of the largest (the model), rounded, bounded to 0..99 as long as the model
+     is not present (100 only when `/api/tags` confirms it); `None` as long as no size is known.
+     Stream finished but model not yet listed: 99, “verification in progress”, never a second
+     download.
+  3. **Deviation from the brief (resumption after failure)**: “once per process” is understood
+     as “once at a time”: a download that fails (`error` line, status other than 200, connection
+     cut) is relaunched by a call made at least 30 s later; before that, the route says “Le
+     téléchargement de bge-m3 a échoué ; nouvel essai bientôt.” (“The bge-m3 download
+     failed; new attempt soon.”). Without this, a network cut at the first launch would block
+     progress until the back end restarts.
+  4. **Logs**: the arrival of the stream is never logged; a failure leaves only the exception class
+     (`test_failed_pull_is_retried_only_after_a_pause` checks that Ollama's error message does not
+     appear). Stream read timeout: 120 s between two lines.
+  5. **`GET /health/embedding`**: public like `/health` (no cookie, including in Google mode,
+     tested). The API surface does not change (the route was a 501 stub from 9.P, schema
+     `EmbeddingProgress` unchanged).
+  6. **`ALLOWED_EMAILS` (README, `.env.example`, SPEC 17.1)**: comma-separated list, lowercase
+     without spaces; in Google mode empty = the back end refuses to start; `*` = all accounts;
+     otherwise only the list; removing an address takes effect at the back end's restart (D177 bis,
+     M3). The sentence of SPEC.md §17.1 (“optional variable that limits”) is the only one
+     changed. The takeover of the local space is only offered to an address named in an explicit
+     list, never with `*`; **with several named addresses, the first that signs in takes the local
+     space**; after “Empty space” then “Delete everything” it is offered again (D178 no. 9).
+  7. **Compose**: the back end receives `AUTH_MODE` (default `local`, never empty: an empty value
+     would make startup refuse), `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `ALLOWED_EMAILS` (empty
+     by default), `FRONTEND_URL`, and `GOOGLE_REDIRECT_URI` (default `http://localhost:<port>`:
+     `FRONTEND_PORT` and `BACKEND_PORT`). Deviation from the brief (“empty defaults”) for these
+     three: an empty value would overwrite the back end's default and break the redirect.
+  8. **README and consistency**: `tests/test_readme.py` checks that each variable of `.env.example`
+     (commented or not) is cited in the README, that no name ending in `KEY`, `SECRET`, `TOKEN`, or
+     `PASSWORD` has a value, that Compose passes the six variables, and that the README covers the
+     Google configuration, the takeover, the export, and the deletion.
+  9. **End-to-end server** (`tests/e2e/server.py`, follow-up of review 9.A3, M4): `--auth google`
+     refuses a `--host` that is neither `127.0.0.1`, nor `::1`, nor `localhost` (the fake provider
+     signs in any address without a password): clear message, exit before any folder creation
+     (`check_host`, `UnsafeHost`, tests).
+  10. **Documentation checked**: Ollama's `POST /api/pull` stream (one JSON line per event:
+     `status`, then `digest`, `total`, `completed` for a file, `error` on failure) is that of the
+     plan; it was not replayed against a real Ollama (no network call in the tests, real trial at
+     the phase's close, 9.S). The Google console page (labels “Google Auth Platform”) is
+     described from memory, to be checked in the trial.
+  11. **Follow-ups from the review of 9.A5 (M2, M3, M4, M5)**: “finished” is only set on
+     Ollama's `success` line; a stream closed without it is a failure. A “successful” pull whose
+     model is still not in `api/tags` (removed, or never arrived) is relaunched after 30 s instead
+     of staying at 99% until restart. After a failure, the relaunch delay grows (30 s, 60 s, 120 s,
+     240 s, then 300 s at most; a success puts it back at 30 s) and the route says how many seconds
+     to wait and to check that Ollama is running and the disk is not full. `aclose()` cancels and
+     awaits the task when the back end stops (lifespan stack, `EmbeddingProgressSource` port): a
+     normal stop logs no failure. Public text of the route aligned (“one download at a time,
+     relaunched after a failure”) and description of the claim's 409 completed (address no longer
+     named): `contracts/openapi.json` and `schema.d.ts` regenerated, text only.
+- **Reason** SPEC 15.5, 16.2, 17.1, and 17.3; P13; controller's arbitration on `ALLOWED_EMAILS`;
+  review of 9.A3 (M4, M6); the first launch must show `bge-m3`'s progress without reading Compose's
+  logs.
 
 ## D181
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 9, tâche 9.B1 : correctifs d'ouverture du back (journaux après l'essai, brouillons d'un projet validé, ERROR `sqlalchemy.pool`, mineurs parqués de 8.9 et 8.10)
-- **Décision** :
-  1. **Journaux après l'essai** : `check_phase8 --part journaux` (une seule étape, aucune requête à l'API) relit les journaux du back passés par l'entrée standard, avec les mêmes motifs que l'étape `journaux` des autres parties (poste et zone fictifs du relevé) ; les textes propres à un passage (offres, ressource, projet) ne sont connus que du passage qui les a lus. Elle se lance **après** l'essai : `docker compose logs --no-color --since <début> backend | docker run --rm -i … --part journaux --logs-file -`. L'aide (`--part`, `--logs-file`) et la docstring du script le disent ; le décalage des autres parties (journaux lus au lancement, donc d'avant l'essai) est écrit à côté. `build_parser()` sort de `main` pour que l'aide se teste.
-  2. **Brouillons d'un projet validé sans brouillons (`POST /projects/{id}/drafts`, D173 n° 4)** : la route lance `project_review` en mode `drafts` (`ProjectReviewInput.mode: Literal["review", "drafts"] = "review"`, hors contrat OpenAPI : la surface d'API ne bouge pas, P1). Le mode `drafts` fait `load -> seed -> drafts -> (à corriger ? redo : save)` : **aucune lecture du dépôt, aucune évaluation**, un appel standard et un nouvel essai au plus, `text_claims` et longueur du post comme à la validation (D165). `save` appelle le nouveau port `ProjectStore.save_drafts` : sous le verrou du projet, rien si le projet n'est pas validé, s'il a déjà des brouillons ou si la liste est vide (le premier appel a encore échoué : « Projet validé : brouillons indisponibles. »), **première écriture gagnante** (un rejeu ou une autre session ne change rien) ; l'évaluation, les compétences, le journal et le profil maître ne sont jamais touchés. Refus : 404 `project_not_found` (autre compte compris), 409 `project_not_validated` (todo, to_redo, énoncé en attente ou en échec), 409 `drafts_present`, 409 `review_in_progress` (`details.session_id` : un rendu en cours d'évaluation **ou** une session des brouillons encore ouverte, que la ligne `validated` ne dit pas), 503 `drafts_unavailable` (lancement refusé, rien n'est changé ; code ajouté, hors `responses=` de la route pour ne pas toucher au contrat). La session lancée est posée sur le projet comme pour un rendu.
-  3. **`ERROR sqlalchemy.pool … Exception terminating connection` : non reproduit, parqué.** Cause cherchée (superpowers:systematic-debugging, boîte de 30 minutes) : tâche annulée pendant une requête longue, délai (`asyncio.timeout`) pendant une requête, écrivain bloqué par le verrou d'écriture puis annulé, longue série d'écritures annulée, moteur fermé pendant des écritures, connexion jamais rendue puis fermeture de la boucle, démarrage et arrêt complets de l'application (avec et sans planificateur) après quelques requêtes : **aucun** ne journalise une erreur du pool. Seule la connexion jamais rendue (fuite d'une session) journalise, mais un autre message (« The garbage collector is trying to clean up non-checked-in connection … ») : ce n'est pas celui de la pile jetable. L'hypothèse restante est une connexion encore sortie du pool à l'arrêt du processus (une session tenue par une tâche d'arrière-plan ou un flux WebSocket qu'on coupe), que seule la pile réelle montre. Pour la retrouver à la prochaine occasion : relancer la pile jetable avec `echo_pool="debug"` temporaire dans `create_engine`, lire la dernière connexion sortie avant l'erreur. Les scénarios essayés restent comme garde (`tests/db/test_engine.py::test_engine_cancelled_sessions_then_dispose_log_no_pool_error`, trois cas) ; `test_engine_dispose_no_pool_error` du brief n'est pas écrit : il n'y a rien à reproduire. `db/engine.py` n'est pas modifié.
-  4. **Mineurs parqués de 8.9 et 8.10** traités : **a)** test de reprise autour de `redo` (`test_redo_resume_after_restart` : arrêt pendant le nouvel essai des brouillons, au redémarrage ni l'évaluation ni le premier jet ne sont redemandés, le nouvel essai repart du premier jet du point de contrôle, l'issue n'est rangée qu'une fois) ; **b)** garde sur « rien à corriger » à la reprise de `redo` (le rendu a pu changer pendant l'arrêt : plus aucun terme à vérifier) : aucun appel, aucun message vide au modèle, le premier jet est rangé contrôlé de nouveau (`ready`) (`test_redo_with_nothing_left_to_fix_makes_no_call`) ; **c)** un JPEG nu de 4 octets (`FF D8 FF` et un marqueur) est refusé : il faut aussi la longueur du segment sur deux octets, soit 6 octets au moins (`test_bare_jpeg_header_refused`, et le cas dans les 422 de `test_submit_forms`). **Restent parqués** : 8.9 « toute `TimeoutError` du fournisseur prise pour un délai du nœud » ; 8.10 M2, M4, M5, M8 à M10, `FormRoute` qui lit le texte du message Starlette et nomme toujours `description`, crochet `in_transaction` du CV non testé ; 8.11 M3 à M6 ; 8.12 M6 ; 8.13 ; 8.14 M4, M6 ; 8.15 M2, M4 ; N4 et N5 de la revérification (front, 9.C1). **A-M8** de la revue finale : son détail n'est dans aucun rapport conservé (D173 ne liste que A-M1 à A-M7 et A-M9), il reste parqué tel quel.
-  5. **Tests** : `test_journaux_part_alone_reads_stdin` et son pendant en étape, `test_regenerate_drafts_202_then_four_drafts`, `_refused_when_present`, `_refused_not_validated` (quatre statuts), `_refused_while_reviewing`, `_twice_is_review_in_progress`, `_of_another_users_project_is_404`, `_unavailable_engine_is_503`, `test_save_drafts_first_write_wins`, `test_save_drafts_does_nothing_without_drafts_or_off_a_validated_project`, `test_regenerate_drafts_never_logged`, `test_drafts_mode_does_not_reevaluate` (+ nouvel essai, + échec : « brouillons indisponibles »), `test_review_input_mode_defaults_to_review`. `tests/test_phase9_contract.py` : la route n'est plus un bouchon (ensemble `FILLED`), le contrat la liste toujours.
-- **Raison** : le bilan de la phase 8 (« Phase 9 — correctifs d'ouverture ») et D173 n° 4, D174 n° 5 : un projet validé dont les brouillons avaient échoué n'avait aucun recours ; un essai doit pouvoir relire les journaux **de** l'essai ; un mineur parqué qu'on peut fermer sans changer la surface (P1) l'est. SPEC 1, 7 F11, 17.2 ; P1, P24 ; D165, D166, D173, D174.
+- **Date** 2026-11-17
+- **Subject** Phase 9, task 9.B1: opening fixes for the back end (logs after the trial, drafts of a
+  validated project, `sqlalchemy.pool` ERROR, minor points parked from 8.9 and 8.10)
+- **Decision**
+  1. **Logs after the trial**: `check_phase8 --part journaux` (a single step, no request to the API)
+     rereads the back end's logs passed through standard input, with the same patterns as the
+     `journaux` step of the other parts (fictitious role and zone of the scan); the texts specific
+     to a run (postings, resource, project) are only known to the run that read them. It is launched
+     **after** the trial: `docker compose logs --no-color --since <start> backend
+     | docker run --rm -i … --part journaux --logs-file -`. The help (`--part`, `--logs-file`) and
+     the script's docstring say so; the offset of the other parts (logs read at launch, so from
+     before the trial) is written next to it. `build_parser()` comes out of `main` so that the help
+     can be tested.
+  2. **Drafts of a validated project with no drafts (`POST /projects/{id}/drafts`, D173 no. 4)**:
+     the route launches `project_review` in `drafts` mode (`ProjectReviewInput.mode:
+     Literal["review", "drafts"] = "review"`, outside the OpenAPI contract: the API surface does not
+     move, P1). The `drafts` mode does `load -> seed -> drafts -> (to fix? redo : save)`: **no
+     reading of the repository, no evaluation**, one standard call and one new attempt at most,
+     `text_claims` and post length as at validation (D165). `save` calls the new port
+     `ProjectStore.save_drafts`: under the project's lock, nothing if the project is not validated,
+     if it already has drafts, or if the list is empty (the first call failed again: “Projet
+     validé : brouillons indisponibles.”, “Project validated: drafts unavailable.”), **first
+     write wins** (a replay or another session changes nothing); the evaluation, the skills, the
+     journal, and the master profile are never touched. Refusals: 404 `project_not_found` (another
+     account included), 409 `project_not_validated` (todo, to_redo, statement pending or failed),
+     409 `drafts_present`, 409 `review_in_progress` (`details.session_id`: a submission under
+     evaluation **or** a drafts session still open, which the `validated` row does not say), 503
+     `drafts_unavailable` (launch refused, nothing is changed; code added, outside the route's
+     `responses=` so as not to touch the contract). The session launched is set on the project as
+     for a submission.
+  3. **`ERROR sqlalchemy.pool … Exception terminating connection`: not reproduced, parked.** Cause
+     sought (superpowers:systematic-debugging, 30-minute box): task cancelled during a long query,
+     timeout (`asyncio.timeout`) during a query, writer blocked by the write lock then cancelled,
+     long series of writes cancelled, engine closed during writes, connection never returned then
+     loop closing, full application startup and shutdown (with and without the scheduler) after a
+     few requests: **none** logs a pool error. Only the connection never returned (a session leak)
+     logs, but with another message (“The garbage collector is trying to clean up non-checked-in
+     connection …”): it is not the one from the disposable stack. The remaining hypothesis is a
+     connection still out of the pool when the process stops (a session held by a background task or
+     a WebSocket stream that is cut), which only the real stack shows. To find it again next time:
+     relaunch the disposable stack with a temporary `echo_pool="debug"` in `create_engine`, read the
+     last connection taken out before the error. The scenarios tried stay as a guard
+     (`tests/db/test_engine.py::test_engine_cancelled_sessions_then_dispose_log_no_pool_error`,
+     three cases); the brief's `test_engine_dispose_no_pool_error` is not written: there is nothing
+     to reproduce. `db/engine.py` is not modified.
+  4. **Minor points parked from 8.9 and 8.10** handled: **a)** resumption test around `redo`
+     (`test_redo_resume_after_restart`: stop during the drafts' new attempt, at restart neither the
+     evaluation nor the first pass is requested again, the new attempt restarts from the
+     checkpoint's first pass, the outcome is stored only once); **b)** guard on “nothing to fix”
+     when `redo` resumes (the submission may have changed during the stop: no term left to check):
+     no call, no empty message to the model, the first pass is stored checked again (`ready`)
+     (`test_redo_with_nothing_left_to_fix_makes_no_call`); **c)** a bare 4-byte JPEG (`FF D8 FF` and
+     a marker) is refused: the segment length on two bytes is also needed, so 6 bytes at least
+     (`test_bare_jpeg_header_refused`, and the case in the 422s of `test_submit_forms`). **Still
+     parked**: 8.9 “any provider `TimeoutError` taken for a node timeout”; 8.10 M2, M4, M5, M8
+     to M10, `FormRoute` that reads Starlette's message text and always names `description`, the
+     CV's `in_transaction` hook not tested; 8.11 M3 to M6; 8.12 M6; 8.13; 8.14 M4, M6; 8.15 M2, M4;
+     N4 and N5 of the recheck (front end, 9.C1). **A-M8** of the final review: its detail is in no
+     report kept (D173 only lists A-M1 to A-M7 and A-M9), it stays parked as is.
+  5. **Tests**: `test_journaux_part_alone_reads_stdin` and its counterpart as a step,
+     `test_regenerate_drafts_202_then_four_drafts`, `_refused_when_present`,
+     `_refused_not_validated` (four statuses), `_refused_while_reviewing`,
+     `_twice_is_review_in_progress`, `_of_another_users_project_is_404`,
+     `_unavailable_engine_is_503`, `test_save_drafts_first_write_wins`,
+     `test_save_drafts_does_nothing_without_drafts_or_off_a_validated_project`,
+     `test_regenerate_drafts_never_logged`, `test_drafts_mode_does_not_reevaluate` (+ new attempt, +
+     failure: “drafts unavailable”), `test_review_input_mode_defaults_to_review`.
+     `tests/test_phase9_contract.py`: the route is no longer a stub (set `FILLED`), the contract
+     still lists it.
+- **Reason** The phase 8 report (“Phase 9 — opening fixes”) and D173 no. 4, D174 no. 5: a
+  validated project whose drafts had failed had no recourse; a trial must be able to reread the logs
+  **of** the trial; a parked minor point that can be closed without changing the surface (P1) is.
+  SPEC 1, 7 F11, 17.2; P1, P24; D165, D166, D173, D174.
 
 ## D182
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 9, tâche 9.B2 : rapport des coûts (`GET /costs`), lecture de `days`, deux `responses=` ajoutés au contrat
-- **Décision** :
-  1. **Rapport (P15)** : `GET /costs?days=7|30|90` (30 par défaut) agrège **en Python** les lignes de `llm_calls` de l'utilisatrice sur les `days` derniers **jours locaux**, aujourd'hui compris (fuseau de ses réglages, `Europe/Paris` si inconnu). Le dépôt lit les appels depuis minuit local du premier jour (`LlmCallRepository.since`), le service les réduit en `CallFact` et la règle pure `aggregate` compte : `by_day` (chaque jour de la fenêtre, zéros compris, ordre chronologique), `by_feature` (le graphe de la session, `""` hors session), `by_agent` (`""` sans agent), `by_model` (`fournisseur:modèle`). Les trois derniers axes ne listent que les clés rencontrées, du plus coûteux au moins coûteux puis par clé. Un instant sans fuseau est lu en UTC. Les coûts sont ceux de l'appel (prix de `model_prices.json` au moment de l'appel, rien n'est recalculé) ; `cost_usd` est arrondi à 6 décimales **par ligne et pour le total** (le total est arrondi depuis les coûts bruts, pas depuis la somme des lignes arrondies : l'écart est au plus de l'ordre de lignes × 5e-7, soit jusqu'à ≈ 4,5e-5 sur les 90 lignes de jours, sans effet sur un affichage à 4 décimales) ; `estimated_calls` compte les appels aux jetons estimés. Le dépôt porte aussi `page` (curseur `(created_at, id)`, du plus récent au plus ancien, filtres `agent` et `graph`), que 9.B3 sert.
-  2. **`days` (correctif de la revue de 9.P, C1)** : un paramètre de requête arrive en texte et pydantic ne lit pas « 7 » comme l'entier 7 pour un `Literal` d'entiers : 7, 30 et 90 répondaient 422, seul le défaut passait. Un `BeforeValidator` convertit une chaîne de chiffres **ASCII** en entier (`isascii() and isdigit()` : sans la garde ASCII, « ٧ » (chiffre arabo-indien) serait lu 7 par `int()` et accepté ; « ² » fait lever `int()` une `ValueError`, que pydantic rend en 422, jamais en 500 ; « 007 » donne 7) ; tout le reste (`8`, `abc`, `-30`, ` 7`, `7.0`, vide) reste tel quel et sort en 422 `fields ["days"]`, sans écho de la valeur. Le schéma OpenAPI ne bouge pas : `integer`, `enum [7, 30, 90]`, `default 30`.
-  3. **Contrat touché (P1, exception dite)** : deux `responses=` ajoutés, donc `contracts/openapi.json` et `frontend/src/shared/api/schema.d.ts` régénérés dans le même commit : le 422 de `GET /costs` (`details.fields` : `days`), qui remplace la description générique « Validation Error » et son corps `HTTPValidationError`, comme le fait déjà `GET /costs/calls` ; le 503 `drafts_unavailable` de `POST /projects/{id}/drafts` (revue de 9.B1, M4). Aucun chemin, schéma ni code d'état de succès ne change.
-  4. **Isolation** : `tests/isolation/cases_b.py` (`CASES`) désigne le cas du routeur `costs` (`test_other_user_calls_invisible`) et, pour `account`, le test de 9.B4 (`test_export_has_only_own_rows`, pas encore écrit : le garde de 9.A4 le saura après la fusion). `tests/isolation/__init__.py` (vide) est créé dans l'arbre B.
-  5. **Suites de la revue de 9.B1** (commit à part) : **a)** `check_phase8` échoue (`CheckFailed`, « Journaux du back vides ») sur des journaux vides ou blancs, toutes parties (I1) ; en `--part journaux` seul la sortie dit « motifs génériques seulement » (les textes propres à l'essai y sont inconnus) (M1) ; **b)** `review_in_progress` dit « Les brouillons s'écrivent déjà. » quand c'est la session des brouillons d'un projet validé qui tourne, le rendu en cours garde son message (M2) ; **c)** test de deux `POST /projects/{id}/drafts` simultanés : une 202, une 409, une seule session (M3) ; **d)** `ROUTE_ONLY["project_review"]` cite les deux routes (M4) ; **e)** `ProjectStore.save_drafts` rend un booléen (`False` : écriture ignorée) : le nœud `save` journalise « Brouillons non rangés » et la phrase de fin dit que les brouillons existent déjà, au lieu de « rangés » et « prêts » (M5, état `drafts_saved`) ; **f)** `ProjectOut.session_id` et `ProjectSummary.session_id` d'un projet validé donnent la session des brouillons tant qu'elle est ouverte, `None` ensuite (une lecture des sessions ouvertes par appel de `GET /projects` et `GET /projects/{id}` ; schéma inchangé), pour que le front la retrouve après un rechargement (M8). **Laissé de côté** : M7 (`test_engine.py` à base de `sleep`, à revoir avec l'`ERROR` du pool).
-- **Raison** : SPEC 11.5 et P15 (coûts par jour, fonction, agent et modèle, au prix de l'appel), P1 (surface figée sauf correction du contrat, dite et régénérée), revue de 9.P (C1, M3) et de 9.B1 (M4). Une 422 ne renvoie jamais l'entrée (SPEC 17.2).
+- **Date** 2026-11-17
+- **Subject** Phase 9, task 9.B2: cost report (`GET /costs`), reading of `days`, two `responses=`
+  added to the contract
+- **Decision**
+  1. **Report (P15)**: `GET /costs?days=7|30|90` (30 by default) aggregates **in Python** the user's
+     `llm_calls` rows over the last `days` **local days**, today included (time zone of her
+     settings, `Europe/Paris` if unknown). The repository reads the calls from the local midnight of
+     the first day (`LlmCallRepository.since`), the service reduces them to `CallFact`, and the pure
+     rule `aggregate` counts: `by_day` (each day of the window, zeros included, chronological
+     order), `by_feature` (the session's graph, `""` outside a session), `by_agent` (`""` with no
+     agent), `by_model` (`provider:model`). The last three axes only list the keys met, from most to
+     least costly then by key. An instant without a time zone is read as UTC. The costs are those of
+     the call (price from `model_prices.json` at the time of the call, nothing is recomputed);
+     `cost_usd` is rounded to 6 decimals **per row and for the total** (the total is rounded from
+     the raw costs, not from the sum of the rounded rows: the gap is at most of the order of rows ×
+     5e-7, i.e. up to ≈ 4.5e-5 over the 90 day rows, with no effect on a display at 4 decimals);
+     `estimated_calls` counts the calls with estimated tokens. The repository also carries `page`
+     (cursor `(created_at, id)`, most recent to oldest, filters `agent` and `graph`), which 9.B3
+     serves.
+  2. **`days` (fix from the review of 9.P, C1)**: a query parameter arrives as text and pydantic
+     does not read “7” as the integer 7 for a `Literal` of integers: 7, 30, and 90 answered 422,
+     only the default passed. A `BeforeValidator` converts a string of **ASCII** digits into an
+     integer (`isascii() and isdigit()`: without the ASCII guard, “٧” (Arabic-Indic digit)
+     would be read as 7 by `int()` and accepted; “²” makes `int()` raise a `ValueError`, which
+     pydantic turns into a 422, never a 500; “007” gives 7); everything else (`8`, `abc`, `-30`,
+     ` 7`, `7.0`, empty) stays as is and comes out as 422 `fields ["days"]`, with no echo of the
+     value. The OpenAPI schema does not move: `integer`, `enum [7, 30, 90]`, `default 30`.
+  3. **Contract touched (P1, exception stated)**: two `responses=` added, so
+     `contracts/openapi.json` and `frontend/src/shared/api/schema.d.ts` regenerated in the same
+     commit: the 422 of `GET /costs` (`details.fields`: `days`), which replaces the generic
+     description “Validation Error” and its `HTTPValidationError` body, as `GET /costs/calls`
+     already does; the 503 `drafts_unavailable` of `POST /projects/{id}/drafts` (review of 9.B1,
+     M4). No path, schema, or success status code changes.
+  4. **Isolation**: `tests/isolation/cases_b.py` (`CASES`) designates the case of the `costs` router
+     (`test_other_user_calls_invisible`) and, for `account`, the test of 9.B4
+     (`test_export_has_only_own_rows`, not written yet: 9.A4's guard will know it after the merge).
+     `tests/isolation/__init__.py` (empty) is created in tree B.
+  5. **Follow-ups from the review of 9.B1** (separate commit): **a)** `check_phase8` fails
+     (`CheckFailed`, “Journaux du back vides”, “Back end logs empty”) on empty or blank
+     logs, all parts (I1); in `--part journaux` alone the output says “generic patterns only”
+     (the texts specific to the trial are unknown there) (M1); **b)** `review_in_progress` says
+     “Les brouillons s'écrivent déjà.” (“The drafts are already being written.”) when it
+     is the drafts session of a validated project that is running, a submission in progress keeps
+     its message (M2); **c)** test of two simultaneous `POST /projects/{id}/drafts`: one 202, one
+     409, a single session (M3); **d)** `ROUTE_ONLY["project_review"]` cites both routes (M4);
+     **e)** `ProjectStore.save_drafts` returns a boolean (`False`: write ignored): the `save` node
+     logs “Brouillons non rangés” (“Drafts not stored”) and the closing sentence says the
+     drafts already exist, instead of “stored” and “ready” (M5, state `drafts_saved`);
+     **f)** `ProjectOut.session_id` and `ProjectSummary.session_id` of a validated project give the
+     drafts session as long as it is open, `None` afterwards (one read of the open sessions per call
+     of `GET /projects` and `GET /projects/{id}`; schema unchanged), so that the front end finds it
+     again after a reload (M8). **Left aside**: M7 (`test_engine.py` based on `sleep`, to be
+     revisited with the pool's `ERROR`).
+- **Reason** SPEC 11.5 and P15 (costs per day, function, agent, and model, at the price of the
+  call), P1 (surface frozen except for a contract correction, stated and regenerated), review of 9.P
+  (C1, M3) and of 9.B1 (M4). A 422 never returns the input (SPEC 17.2).
 
 ## D183
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 9, tâche 9.B3 : journal des agents (`GET /costs/calls`), catalogue des agents (`GET /settings/agents`), surcharge du modèle par agent, premier lancement jamais rouvert
-- **Décision** :
-  1. **Journal (P16)** : `GET /costs/calls` rend les appels de l'utilisatrice du plus récent au plus ancien (`created_at`, puis `id`, tous deux décroissants : deux appels au même instant ne sont ni sautés ni répétés), `limit` par page (1 à 100, 50 par défaut), filtres `agent` et `graph` (égalité). Le service lit `limit + 1` lignes : la ligne en trop dit qu'il y a une suite, `next_before` n'existe que dans ce cas (une page exactement pleine n'en a pas). Le **curseur** est le base64url sans remplissage de `instant UTC ISO|id` du dernier appel de la page ; `decode_cursor` refuse (422, `details.fields == ["before"]`, ni la valeur ni la cause recopiées) : base64 invalide, texte qui n'est pas de l'UTF-8, date illisible ou **sans fuseau**, séparateur absent, identifiant vide ou de plus de 36 caractères. Le curseur d'un autre compte ne donne rien de plus : la requête reste bornée par `user_id`. Aucun contenu de prompt (la table n'en a pas). Le dépôt (`LlmCallRepository.since` et `page`) ne lit plus que les colonnes utiles, en lignes légères (revue de 9.B2, M3).
-  2. **Catalogue (P17)** : `agent_catalogue()` rend les agents de `AGENTS` hors `demo_*`, **dans l'ordre du registre** (nom et niveau), comme la docstring de la route et l'arbitrage du contrôleur le promettent ; le brief de 9.B3 disait « triés par nom », écarté pour cette raison. Même liste pour tous les comptes.
-  3. **Surcharge (P17)** : `UserSettings.agent_overrides` n'accepte que des agents du registre (validateur `mode="before"`, message fixe « agent inconnu ») ; il passe **avant** la lecture des valeurs, donc un agent inconnu qui porte aussi une valeur invalide ne laisse ni son nom ni le chemin `agent_overrides.<nom>.…` dans la réponse. `settings/router.py` prend `route_class=FieldPathsRoute` : la 422 de `PUT /settings` porte désormais `details.fields` (`["agent_overrides"]`, `["tiers.rapide.model"]`) au lieu de `details.errors` avec les messages de pydantic ; le schéma OpenAPI ne bouge pas (`export_openapi --check` vert, pas de `responses=`). Un test existant qui lisait `details.errors` suit la nouvelle forme et vise un agent du registre. Un agent surchargé garde son modèle quel que soit le niveau demandé (déjà vrai dans `SettingsModelReader`, prouvé par `test_agent_override_used_by_next_session` et `test_tier_switch_visible_in_llm_calls` : le modèle de `llm_calls` suit les réglages, lus par `GET /costs/calls`).
-  4. **Réglage stocké qui nomme un agent disparu** : `_parse_stored` retire **seulement** cette surcharge avant la validation, les autres surcharges et tous les autres réglages restent (avant : un seul agent disparu faisait perdre toutes les surcharges). Le journal ne dit que le nom du champ (`agent_overrides`), jamais l'agent. Un `GET /settings` ainsi lu se renvoie tel quel par `PUT` sans 422.
-  5. **`onboarding_done` ne repasse jamais à faux** (P20) : `SettingsService.replace` enregistre `onboarding_done = stocké or nouveau` et rend ce qu'il a enregistré ; une page qui renvoie l'ancien réglage ou l'oublie ne rouvre pas l'accueil (`test_onboarding_done_never_reset`).
-  6. **Compte d'avant la phase 9 sans ligne `user_settings`** (la migration 0015 ne règle que les lignes qui existent) : **choix** : à la **toute première lecture par `GET /settings`** (ou à son premier `PUT`) d'un compte sans ligne, `SettingsService.get(initialize=True)` crée la ligne avec `{"onboarding_done": <le compte a au moins une clé d'API enregistrée ou un objectif>}` et ne refait jamais ce calcul. Un compte qui a déjà servi n'est pas renvoyé au premier lancement ; un compte neuf commence l'accueil, et **la clé qu'il ajoute à l'étape 3 ne le termine pas** (calculé à chaque lecture, le critère aurait fermé l'accueil au milieu). Seules comptent les lignes de la base : une clé de `.env` seule n'est pas une donnée du compte. L'écriture est un `INSERT … ON CONFLICT DO NOTHING` (SQLite) : des premières lectures simultanées (le front en fait plusieurs d'un coup) ne créent qu'une ligne et aucune n'échoue. **Tous les autres lecteurs** (les autres features, `SettingsModelReader`, `SettingsRunReader`, le planificateur) appellent `get()` sans `initialize` et n'écrivent rien : un premier essai qui écrivait dans `get()` gardait le verrou d'écriture de la base le temps de la transaction du service appelant et faisait échouer, par `database is locked`, l'insertion du brief du jour par une autre session (`test_the_inserter_alone_launches_the_session`) ; `test_plain_reads_never_write` et `test_plain_read_leaves_the_database_writable_by_another_session` le gardent. Écarté : une migration `0016` qui crée les lignes manquantes (P3 : aucun flux n'écrit de migration ; à l'intégration si on la préfère) ; calculer à chaque lecture sans écrire (ferme l'accueil à l'étape 3).
-  7. **Tests** : `tests/features/costs/test_calls.py` (curseur sur 120 appels : 50, 50, 20, filtres, bornes de `limit` 1 et 100 acceptées, 0 et 101 en 422 sans écho, corps de la 422 comparé en entier, curseurs illisibles, même instant, isolation, `test_calls_never_logged`), `test_agents.py`, `test_overrides.py`, `test_onboarding.py` (dont `test_onboarding_done_never_reset`, les comptes avec clé ou objectif sans ligne, la clé ajoutée pendant l'accueil, les lectures simultanées, les lecteurs sans écriture). `FILLED` du test de contrat compte les deux routes.
-  8. **Suites de la revue de 9.B3** (commit à part) : **a) I1** un curseur qui décode mais sort de la plage des dates une fois en UTC (`0001-01-01T00:00:00+05:00|x`) levait `OverflowError` hors du `try` (500) : toute la lecture est dans le `try`, `OverflowError` rend la 422 `fields ["before"]` ; **b) M1** un niveau inconnu dans `tiers` est refusé par un validateur `before` à message fixe : `details.fields == ["tiers"]`, la clé reçue n'est plus dans le chemin (un niveau connu à valeur invalide garde `tiers.<niveau>.<champ>`) ; **c) M2** la lecture des réglages n'écrit plus rien dans le journal (le moteur en lit un par appel de modèle) : l'avertissement « surcharge d'un agent disparu retirée » sort une fois, à l'enregistrement (`replace`), sans nom d'agent ; **d) M3** le `PUT` refuse aussi les agents `demo_*` (même 422 `agent_overrides`, sans écho), comme le catalogue les cache : `is_overridable(nom)` (`schemas.py`) sert au validateur, à la lecture d'un réglage stocké (une surcharge `demo_*` stockée est retirée) et au catalogue ; **e) M4** `agent=""` et `graph=""` sur `GET /costs/calls` retrouvent les appels dont l'agent ou le graphe est NULL (ou vide), clé sous laquelle le rapport des coûts les range ; **f) M6** `onboarding_done` s'écrit de façon monotone dans la requête d'écriture (`json_set(…, '$.onboarding_done', json(CASE WHEN onboarding_done = 1 OR :nouveau THEN 'true' ELSE 'false' END))`) quand les réglages enregistrés le portent : deux `PUT` qui se croisent ne le défont plus, et `replace` répond avec la valeur enregistrée. **Laissé de côté** : M5 (`project_out_live` dans `patch_draft`).
-- **Raison** : P16, P17, P20 côté back ; revue de 9.P (bornes de `limit`, curseur illisible, garantie `onboarding_done`) ; point 5 des axes de revue de la phase (réglages réécrits par une autre page). SPEC 11.2, 11.5, 15.5, 17.2 ; D182.
-
+- **Date** 2026-11-17
+- **Subject** Phase 9, task 9.B3: agent journal (`GET /costs/calls`), agent catalogue
+  (`GET /settings/agents`), per-agent model override, first launch never reopened
+- **Decision**
+  1. **Journal (P16)**: `GET /costs/calls` returns the user's calls from most recent to oldest
+     (`created_at`, then `id`, both descending: two calls at the same instant are neither skipped
+     nor repeated), `limit` per page (1 to 100, 50 by default), filters `agent` and `graph`
+     (equality). The service reads `limit + 1` rows: the extra row says there is a next page,
+     `next_before` only exists in that case (an exactly full page has none). The **cursor** is the
+     unpadded base64url of `UTC ISO instant|id` of the page's last call; `decode_cursor` refuses
+     (422, `details.fields == ["before"]`, neither the value nor the cause copied): invalid base64,
+     text that is not UTF-8, unreadable date or **without time zone**, separator absent, identifier
+     empty or over 36 characters. Another account's cursor gives nothing more: the query stays
+     bounded by `user_id`. No prompt content (the table has none). The repository
+     (`LlmCallRepository.since` and `page`) now only reads the useful columns, in light rows (review
+     of 9.B2, M3).
+  2. **Catalogue (P17)**: `agent_catalogue()` returns the agents of `AGENTS` except `demo_*`, **in
+     registry order** (name and tier), as the route's docstring and the controller's arbitration
+     promise; 9.B3's brief said “sorted by name”, rejected for this reason. Same list for all
+     accounts.
+  3. **Override (P17)**: `UserSettings.agent_overrides` only accepts agents from the registry
+     (`mode="before"` validator, fixed message “agent inconnu” (“unknown agent”)); it comes
+     **before** the values are read, so an unknown agent that also carries an invalid value leaves
+     neither its name nor the path `agent_overrides.<name>.…` in the response.
+     `settings/router.py` takes `route_class=FieldPathsRoute`: the 422 of `PUT /settings` now
+     carries `details.fields` (`["agent_overrides"]`, `["tiers.rapide.model"]`) instead of
+     `details.errors` with pydantic's messages; the OpenAPI schema does not move
+     (`export_openapi --check` green, no `responses=`). An existing test that read `details.errors`
+     follows the new form and targets an agent of the registry. An overridden agent keeps its model
+     whatever the tier requested (already true in `SettingsModelReader`, proven by
+     `test_agent_override_used_by_next_session` and `test_tier_switch_visible_in_llm_calls`: the
+     model in `llm_calls` follows the settings, read through `GET /costs/calls`).
+  4. **Stored setting that names a vanished agent**: `_parse_stored` removes **only** that override
+     before validation, the other overrides and all the other settings stay (before: a single
+     vanished agent made all the overrides lost). The log only says the name of the field
+     (`agent_overrides`), never the agent. A `GET /settings` read this way is sent back as is by
+     `PUT` with no 422.
+  5. **`onboarding_done` never goes back to false** (P20): `SettingsService.replace` stores
+     `onboarding_done = stored or new` and returns what it stored; a page that sends the old setting
+     back or forgets it does not reopen the welcome flow (`test_onboarding_done_never_reset`).
+  6. **Account from before phase 9 without a `user_settings` row** (migration 0015 only sets the
+     rows that exist): **choice**: at the **very first read by `GET /settings`** (or at its first
+     `PUT`) of an account with no row, `SettingsService.get(initialize=True)` creates the row with
+     `{"onboarding_done": <the account has at least one saved API key or a goal>}` and never redoes
+     this computation. An account that has already been used is not sent back to the first launch; a
+     new account starts the welcome flow, and **the key it adds at step 3 does not end it**
+     (computed at each read, the criterion would have closed the welcome flow in the middle). Only
+     database rows count: a `.env` key alone is not a datum of the account. The write is an
+     `INSERT … ON CONFLICT DO NOTHING` (SQLite): simultaneous first reads (the front end makes
+     several at once) create only one row and none fails. **All the other readers** (the other
+     features, `SettingsModelReader`, `SettingsRunReader`, the scheduler) call `get()` without
+     `initialize` and write nothing: a first attempt that wrote in `get()` held the database's write
+     lock for the duration of the calling service's transaction and made another session's insertion
+     of the day's brief fail with `database is locked`
+     (`test_the_inserter_alone_launches_the_session`); `test_plain_reads_never_write` and
+     `test_plain_read_leaves_the_database_writable_by_another_session` guard it. Rejected: a
+     migration `0016` that creates the missing rows (P3: no stream writes a migration; at
+     integration if preferred); computing at each read without writing (closes the welcome flow at
+     step 3).
+  7. **Tests**: `tests/features/costs/test_calls.py` (cursor over 120 calls: 50, 50, 20, filters,
+     `limit` bounds 1 and 100 accepted, 0 and 101 in 422 with no echo, 422 body compared in full,
+     unreadable cursors, same instant, isolation, `test_calls_never_logged`), `test_agents.py`,
+     `test_overrides.py`, `test_onboarding.py` (including `test_onboarding_done_never_reset`,
+     accounts with a key or a goal without a row, the key added during the welcome flow,
+     simultaneous reads, readers without writes). `FILLED` of the contract test counts both routes.
+  8. **Follow-ups from the review of 9.B3** (separate commit): **a) I1** a cursor that decodes but
+     falls out of the date range once in UTC (`0001-01-01T00:00:00+05:00|x`) raised `OverflowError`
+     outside the `try` (500): the whole read is in the `try`, `OverflowError` returns the 422
+     `fields ["before"]`; **b) M1** an unknown tier in `tiers` is refused by a `before` validator
+     with a fixed message: `details.fields == ["tiers"]`, the key received is no longer in the path
+     (a known tier with an invalid value keeps `tiers.<tier>.<field>`); **c) M2** the reading of the
+     settings no longer writes anything in the log (the engine reads one per model call): the
+     warning “override of a vanished agent removed” comes out once, at saving (`replace`), with
+     no agent name; **d) M3** the `PUT` also refuses the `demo_*` agents (same 422
+     `agent_overrides`, no echo), as the catalogue hides them: `is_overridable(name)` (`schemas.py`)
+     serves the validator, the reading of a stored setting (a stored `demo_*` override is removed),
+     and the catalogue; **e) M4** `agent=""` and `graph=""` on `GET /costs/calls` find the calls
+     whose agent or graph is NULL (or empty), the key under which the cost report files them; **f)
+     M6** `onboarding_done` is written monotonically in the write query
+     (`json_set(…, '$.onboarding_done', json(CASE WHEN onboarding_done = 1 OR :new THEN 'true'
+     ELSE 'false' END))`) when the stored settings carry it: two crossing `PUT`s no longer undo it,
+     and `replace` answers with the stored value. **Left aside**: M5 (`project_out_live` in
+     `patch_draft`).
+- **Reason** P16, P17, P20 on the back-end side; review of 9.P (bounds of `limit`, unreadable
+  cursor, `onboarding_done` guarantee); point 5 of the phase's review axes (settings rewritten by
+  another page). SPEC 11.2, 11.5, 15.5, 17.2; D182.
 
 ## D184
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 9, tâche 9.B4 : export de toutes les données (`GET /account/export`), liste des fichiers d'un compte, en-tête `Content-Disposition` déclaré au contrat
-- **Décision** :
-  1. **Contenu (P18)** : un zip `manifest.json` (`format_version: 1`, `exported_at`, `user_id`, `tables` : nombre de lignes par table, `files` : nombre de fichiers), `tables/<table>.json` (un tableau JSON, une ligne de table par élément, dates en ISO 8601, colonnes JSON telles quelles) pour **chaque table de `Base.metadata` qui a une colonne `user_id`** (`user_tables()`, dans l'ordre des dépendances, tables vides comprises : `[]`), et `files/<clé>` pour chaque fichier de `storage/<user_id>/`, la clé étant celle du stockage **préfixe `<user_id>/` compris**, la même que dans `documents.storage_key` (on retrouve le fichier d'une ligne sans table de correspondance). Une table ajoutée demain avec `user_id` est exportée sans toucher à `account` (`test_export_new_table_needs_no_change`, table créée dans le test) ; une table sans `user_id` n'y est jamais. Ni vecteurs ni points de reprise des agents (recalculables). Le manifeste est écrit en dernier : ses nombres sont ceux de ce qui a été écrit.
-  2. **Secrets** (n° 2 remplacé en partie par D185 n° 10 b : `EXCLUDED_TABLES` et `REDACTED_COLUMNS` n'existent plus, la décision se lit dans le modèle, `info={"export": False}`) : `EXCLUDED_TABLES = {"auth_sessions"}` (une empreinte de jeton n'a rien à faire dans une archive) ; `REDACTED_COLUMNS = {"api_keys": {"encrypted_key"}}` : la colonne n'est **pas même lue** (`AccountRepository.rows` prend la liste des colonnes à lire, `exported_columns(table)`), donc elle n'entre jamais en mémoire. `api_keys` garde `provider`, `last4` et l'état du dernier test. Aucun témoin ni cookie n'est en base. Le test ouvre l'archive, décompresse chaque entrée (une recherche sur les octets bruts ne prouverait rien : les entrées sont compressées) et prouve l'absence de `encrypted_key`, des jetons chiffrés des deux comptes, de la clé en clair, des empreintes de session et du nom `auth_sessions` ; il vérifie aussi les octets bruts.
-  3. **Isolation** : chaque lecture filtre sur `user_id` (le dépôt `AccountRepository` est l'exception documentée à `UserScopedRepository` : il n'a pas de modèle fixe, il parcourt les tables), `list_user` ne rend que `<user_id>/…`. Test à deux comptes (`test_export_has_only_own_rows`, le cas du routeur `account` de `cases_b.py`) : lignes de chaque table, fichiers, e-mail de l'autre compte.
-  4. **Forme du flux** : l'archive est écrite dans un `SpooledTemporaryFile` (32 Mo en mémoire, puis disque), table par table et ligne par ligne, la compression et l'écriture hors de la boucle d'événements (`asyncio.to_thread`) ; la réponse est un `StreamingResponse` par morceaux de **64 Kio** avec `Content-Length`, `Content-Disposition: attachment; filename="tremplin-export-AAAAMMJJ.zip"` (jour **de ses réglages**, `Europe/Paris` si inconnu), `Cache-Control: no-store`, `X-Content-Type-Options: nosniff`. Le fichier temporaire est fermé à la fin du flux ou si le client part (`finally` du générateur). Un fichier listé mais effacé entre-temps est laissé de côté (pas compté).
-  5. **Un export à la fois par compte** : `KeyLocks` (`export_lock`) pris autour de la **construction** seulement ; un second appel simultané **attend** (pas de 409 : un code d'erreur de plus changerait la surface, P1) ; le verrou est rendu si la construction échoue. Les verrous vivent sur `app.state.account_locks`, créés à la première demande par la dépendance locale `get_account_runtime` (qui lit `app.state.memory_providers` et `app.state.runtime`, et porte aussi l'index vectoriel et le moteur dont 9.B5 aura besoin) : `main.py` n'est pas touché.
-  6. **Port de stockage** : `FileStorage.list_user(user_id)` rend les clés (forme de `save`, triées) ; `LocalFileStorage` ne compte que les fichiers réguliers dont la clé a la forme générée (les `.tmp-*.part` et les intrus sont ignorés), refuse (`StorageKeyInvalid`) un identifiant mal formé et un dossier d'utilisateur lié hors de la racine, et ignore un fichier lié hors du dossier de l'utilisateur. Le stockage de test est le vrai `LocalFileStorage` : pas de faux à compléter.
-  7. **Journaux** : une ligne de fin, « Export des données : user=<id> tables=N rows=N files=N duration_ms=N » ; jamais le nom du fichier exporté, ni un nom de fichier déposé, ni un contenu, ni une adresse (`test_export_never_logged`). Une erreur de construction garde le message générique du gestionnaire d'erreurs.
-  8. **Contrat touché (P1, exception dite)** : le 200 de `GET /account/export` déclare l'en-tête `Content-Disposition` dans `responses=` (reporté de la revue de 9.P) ; `contracts/openapi.json` et `frontend/src/shared/api/schema.d.ts` sont régénérés dans le même commit. Aucun chemin, schéma ni docstring de route ne change. `FILLED` du test de contrat compte la route.
-  9. **Écart au brief** : `AccountRepository.rows(table, columns=None)` prend en plus la liste des colonnes à lire (le brief n'avait que `rows(table)`), pour ne jamais lire la colonne retirée.
-- **Raison** : P18 et la contrainte d'extensibilité (l'export parcourt les tables à `user_id`) ; SPEC 17.1 (portabilité), 17.2 (aucune clé ni contenu dans les journaux ou l'export) ; revue de 9.P (en-tête de téléchargement déclaré).
+- **Date** 2026-11-17
+- **Subject** Phase 9, task 9.B4: export of all data (`GET /account/export`), list of an account's
+  files, `Content-Disposition` header declared in the contract
+- **Decision**
+  1. **Content (P18)**: a zip with `manifest.json` (`format_version: 1`, `exported_at`, `user_id`,
+     `tables`: number of rows per table, `files`: number of files), `tables/<table>.json` (a JSON
+     array, one table row per element, dates in ISO 8601, JSON columns as they are) for **every
+     table of `Base.metadata` that has a `user_id` column** (`user_tables()`, in dependency order,
+     empty tables included: `[]`), and `files/<key>` for each file of `storage/<user_id>/`, the key
+     being the storage one **prefix `<user_id>/` included**, the same as in `documents.storage_key`
+     (a row's file is found with no correspondence table). A table added tomorrow with `user_id` is
+     exported without touching `account` (`test_export_new_table_needs_no_change`, table created in
+     the test); a table without `user_id` never is. Neither vectors nor the agents' checkpoints
+     (recomputable). The manifest is written last: its numbers are those of what was written.
+  2. **Secrets** (no. 2 partly replaced by D185 no. 10 b: `EXCLUDED_TABLES` and `REDACTED_COLUMNS`
+     no longer exist, the decision is read in the model, `info={"export": False}`):
+     `EXCLUDED_TABLES = {"auth_sessions"}` (a token fingerprint has no business in an archive);
+     `REDACTED_COLUMNS = {"api_keys": {"encrypted_key"}}`: the column is **not even read**
+     (`AccountRepository.rows` takes the list of columns to read, `exported_columns(table)`), so it
+     never enters memory. `api_keys` keeps `provider`, `last4`, and the state of the last test. No
+     cookie is in the database. The test opens the archive, decompresses each entry (a search on the
+     raw bytes would prove nothing: the entries are compressed) and proves the absence of
+     `encrypted_key`, of both accounts' encrypted tokens, of the plaintext key, of session
+     fingerprints, and of the name `auth_sessions`; it also checks the raw bytes.
+  3. **Isolation**: each read filters on `user_id` (the `AccountRepository` repository is the
+     documented exception to `UserScopedRepository`: it has no fixed model, it walks through the
+     tables), `list_user` only returns `<user_id>/…`. Two-account test
+     (`test_export_has_only_own_rows`, the `account` router's case in `cases_b.py`): rows of each
+     table, files, the other account's email.
+  4. **Shape of the stream**: the archive is written to a `SpooledTemporaryFile` (32 MB in memory,
+     then disk), table by table and row by row, with compression and writing outside the event loop
+     (`asyncio.to_thread`); the response is a `StreamingResponse` in chunks of **64 KiB** with
+     `Content-Length`, `Content-Disposition: attachment; filename="tremplin-export-YYYYMMDD.zip"`
+     (day **from her settings**, `Europe/Paris` if unknown), `Cache-Control: no-store`,
+     `X-Content-Type-Options: nosniff`. The temporary file is closed at the end of the stream or if
+     the client leaves (`finally` of the generator). A file listed but deleted in the meantime is
+     left aside (not counted).
+  5. **One export at a time per account**: `KeyLocks` (`export_lock`) taken around the
+     **construction** only; a second simultaneous call **waits** (no 409: one more error code would
+     change the surface, P1); the lock is released if construction fails. The locks live on
+     `app.state.account_locks`, created at the first request by the local dependency
+     `get_account_runtime` (which reads `app.state.memory_providers` and `app.state.runtime`, and
+     also carries the vector index and the engine that 9.B5 will need): `main.py` is not touched.
+  6. **Storage port**: `FileStorage.list_user(user_id)` returns the keys (shape of `save`, sorted);
+     `LocalFileStorage` only counts regular files whose key has the generated shape (the
+     `.tmp-*.part` and intruders are ignored), refuses (`StorageKeyInvalid`) a malformed identifier
+     and a user folder linked outside the root, and ignores a file linked outside the user's folder.
+     The test storage is the real `LocalFileStorage`: no fake to complete.
+  7. **Logs**: one closing line, “Export des données : user=<id> tables=N rows=N files=N
+     duration_ms=N” (“Data export: …”); never the exported file's name, an uploaded file's
+     name, a content, or an address (`test_export_never_logged`). A construction error keeps the
+     error handler's generic message.
+  8. **Contract touched (P1, exception stated)**: the 200 of `GET /account/export` declares the
+     `Content-Disposition` header in `responses=` (carried over from the review of 9.P);
+     `contracts/openapi.json` and `frontend/src/shared/api/schema.d.ts` are regenerated in the same
+     commit. No path, schema, or route docstring changes. `FILLED` of the contract test counts the
+     route.
+  9. **Deviation from the brief**: `AccountRepository.rows(table, columns=None)` also takes the list
+     of columns to read (the brief only had `rows(table)`), so as never to read the removed column.
+- **Reason** P18 and the extensibility constraint (the export walks through the tables with
+  `user_id`); SPEC 17.1 (portability), 17.2 (no key or content in the logs or the export); review of
+  9.P (download header declared).
 
 ## D185
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 9, tâche 9.B5 : « Tout supprimer » (`POST /account/delete`), effacement du dossier d'un compte, des points de reprise de ses sessions, 503 déclarée au contrat
-- **Décision** :
-  1. **Ordre rejouable (P19)** : sous le **même verrou par compte que l'export** (`export_lock`, un export et une suppression du même compte ne se croisent pas) : **a)** les sessions `running`, `waiting_user` et `paused` sont annulées par `SessionRunner.cancel` (la tâche s'arrête, plus rien n'écrit dans la base ni dans les points de reprise ; une session qui vient de finir, 409 `session_not_cancellable`, est laissée) ; **b)** vecteurs (`MemoryRepository.delete_user`) ; **c)** fichiers (`FileStorage.delete_user`) ; **d)** points de reprise de **toutes** les sessions du compte (`AgentRuntime.delete_threads` → `SessionRunner.delete_threads` → `adelete_thread`, qui retire aussi les écritures en attente ; un fil absent n'est pas une erreur) ; **e)** une seule transaction qui vide **chaque table de `Base.metadata` qui a `user_id`** (`all_user_tables()`, `auth_sessions` comprise : contrairement à l'export, rien n'est exclu), enfants d'abord (ordre inverse de `sorted_tables`). La base ne change donc **qu'à la fin** : les identifiants des sessions, lus juste avant (d), existent encore en cas d'échec, et chaque étape étant idempotente, **un nouvel appel reprend et finit** (Qdrant en panne, disque verrouillé, arrêt du processus). Une table ajoutée demain avec `user_id` est vidée sans toucher à `account` (même source que l'export).
-  2. **Qdrant indisponible** : `VectorStoreUnavailable` (`memory_unavailable`) devient **503 `vector_store_unavailable`** (message : rien n'est supprimé en base, réessaie), avant les fichiers, les points de reprise et toute suppression de ligne ; seules les sessions ont été annulées (état voulu de toute façon). Test : première tentative en 503 (lignes, fichiers intacts), seconde en 204, tout vide.
-  3. **Deux modes** : mode `local` : la ligne `users` **reste** (même `id`, l'application continue, vide : `GET /settings` rend les défauts avec `onboarding_done` faux, `/auth/me` répond 200, et la reprise de l'espace local redevient possible, D178) ; mode `google` : la ligne `users` part aussi, avec les `auth_sessions`, et la réponse efface le cookie `tremplin_session` (`clear_session_cookie`, mêmes attributs que la pose). Les clés de `.env` ne sont pas touchées. Un second appel après coup rend 204 (rien à faire).
-  4. **Confirmation contrôlée dans le code** (reporté de la revue de 9.P) : `DeleteAccountIn.confirm` n'a plus de `max_length` ; tout texte autre que `SUPPRIMER` (vide, espaces, minuscules, 500 caractères) donne 422 `confirmation_required`, `details == {"fields": ["confirm"]}`, **sans écho** ; un champ absent ou d'un autre type garde la 422 de validation, qui nomme `confirm` sans recopier la valeur. Avant : un texte de plus de 32 caractères donnait une autre 422.
-  5. **Dossier d'un compte (`FileStorage.delete_user`)** : rend le nombre de fichiers rangés supprimés ; `shutil.rmtree` du seul `<racine>/<user_id>/` (résidus `.tmp-*.part` et intrus compris, jamais le dossier d'un autre compte, `u1` n'efface pas `u10`) ; refuse (`StorageKeyInvalid`) un identifiant mal formé et un dossier qui **n'est pas** `<racine>/<user_id>` une fois résolu (lien vers l'extérieur **ou vers le dossier d'un autre compte** : plus strict que `list_user`, parce qu'effacer le mauvais dossier ne se rattrape pas) ; un lien **dans** le dossier est retiré sans être suivi.
-  6. **Journaux** : une ligne « Tout supprimer : user=<id> sessions_cancelled threads files tables rows duration_ms », rien d'autre ; jamais le texte de confirmation, un e-mail, un nom, un nom de fichier (`test_delete_never_logged`).
-  7. **Contrat touché (P1, exception dite)** : le 503 `vector_store_unavailable` est déclaré dans `responses=` de `POST /account/delete` (comme le 422), et `maxLength: 32` disparaît du schéma `DeleteAccountIn` ; `contracts/openapi.json` et `frontend/src/shared/api/schema.d.ts` sont régénérés dans le même commit. Aucun chemin, verbe, identifiant d'opération ni docstring de route ne change (la fonction de route garde son nom ; le service s'importe sous un autre).
-  8. **Isolation** : `cases_b.py` désigne pour `account` `test_delete_keeps_other_user` (deux comptes : l'export de chacun est sans ligne de l'autre, supprimer Camille laisse intacts les lignes, fichiers, vecteurs et fils du checkpointer de Dominique, et son export est identique avant et après).
-  9. **Aucune session ne survit au compte** (revue de 9.B5, I1 ; remplace le texte d'origine, qui jugeait acceptable une session née pendant la suppression : vrai en mode local, **faux en mode Google**, où la ligne `users` et toutes les autres sont parties et où ce qui reste n'appartient plus à personne) : **a) garde par compte** : `SessionRunner.refusing_starts(user_id)` (par `AgentRuntime`) pose le compte dans un ensemble propre au processus pendant toute la suppression, levé à la sortie réussie ou non ; `start` et `resume` rendent alors 409 `account_deleting` (« Le compte est en cours de suppression »), avant toute écriture, qui que lance la session (une autre session par la chaîne des leçons, le planificateur, un autre onglet) ; les autres comptes ne sont pas touchés ; **b) annulation en boucle** : `_cancel_open_sessions` relit les sessions ouvertes (`SessionRunner.open_sessions`) et recommence jusqu'à n'en plus trouver (5 tours au plus, filet de sécurité), une première fois au début, une seconde **juste avant** de lire les fils ; les fils sont lus après cette seconde passe ; **c)** `delete.py` passe par la poignée `AgentRuntime` (`open_sessions`, `cancel`, `delete_threads`, `refusing_starts`), plus par `runner` ni par `OPEN`. **Limites dites** : la garde est propre au processus (comme les autres `KeyLocks`, un seul travailleur visé) ; un nœud déjà en cours d'écriture au moment de l'annulation est arrêté par `cancel` (tâche annulée et attendue) avant la lecture des fils.
-  10. **Suites de la revue de 9.B4** (commit à part, `fix(phase-9): suites de la revue de l'export (9.B4)`) : **a) I1, lecture par lots** : `AccountRepository.batches(table, colonnes, taille)` lit en flux (`yield_per`, `partitions`) et l'export écrit chaque lot au fil dans l'entrée du zip (`BATCH_ROWS = 500`, un seul lot en mémoire quelle que soit la taille de la table ; le test réduit le lot à 10 et constate 10, 10, 5 sur 25 lignes). `rows()` ne sert plus qu'aux petites listes (les sessions d'un compte). L'archive reste construite entièrement avant la réponse (le `Content-Length` en dépend, comme D184 n° 4) : la mémoire est bornée, le premier octet n'arrive toujours qu'à la fin de la construction. **b) I2, le secret se déclare dans le modèle** : `info={"export": False}` sur `api_keys.encrypted_key` et sur la table `auth_sessions` (`__table_args__`) ; `tables.py` les lit (`user_tables`, `exported_columns`), `EXCLUDED_TABLES` et `REDACTED_COLUMNS` disparaissent ; « Tout supprimer » ne lit pas ce marquage (`all_user_tables`, tout part). **Garde** : `unreviewed_secret_columns(Base.metadata)` rend toute colonne exportée dont le nom contient `key`, `token`, `secret`, `hash`, `password`, `cookie`, `credential`, `cipher`, `encrypted`, `salt`, `nonce`, `private`, `fingerprint`, `bearer`, `passphrase`, `signature` ou, comme mot entier d'un nom en `snake_case`, `otp`, `auth`, `jwt`, `pwd` et qui n'est ni marquée ni dans `REVIEWED_NOT_SECRET` (22 colonnes relues, avec la raison : empreintes de dédoublonnage, clés de rangement, compteurs de jetons) ; le test sur le vrai modèle échoue donc pour une colonne `refresh_token` ou une table `mcp_tokens` ajoutée sans décision (testé sur des métadonnées de test). **c) Types non JSON** : `json_default` (octets et `memoryview` en base64, `Decimal` et `UUID` en texte, `timedelta` en secondes, ensembles en listes) sert à `row_json` et à `json.dumps(default=…)` ; un type inconnu lève toujours (un export qui perd une colonne en silence est pire). **d) Liens** : `LocalFileStorage.list_user` refuse un dossier de compte qui n'est pas `<racine>/<user_id>` une fois résolu (un lien vers le dossier d'un autre compte, à l'intérieur de la racine, n'est plus suivi). **e) Fichier temporaire** : fermé si la réponse ne peut être construite et par une tâche de fin de réponse (le flux le fermait déjà à sa fin ou au départ du client). **Laissé** : lecture des tables à des instants différents (M3, dit ici ; sans transaction de lecture commune, un agent qui écrit pendant l'export peut laisser un enfant sans son parent). **Précisions (revue de 9.B5, M3 et M4)** : `export` doit valoir **exactement** `False` (le booléen) pour écarter une colonne ou une table : `"false"`, `0`, `None` n'écartent rien, et la garde voit alors le nom ; `search_usage.key_fingerprint` (empreinte dérivée d'une clé de recherche, sans valeur pour la portabilité, qui permettrait de vérifier une clé devinée) est marquée `export: False` au lieu d'être relue. **Limite de la garde** : elle repère des **noms** de colonnes ; un secret rangé dans une colonne JSON (`user_settings.data`, par exemple un futur jeton d'agenda dans les réglages) n'a pas de nom à repérer, seule la revue de l'ajout le voit. **Lecture par lots** : `_write_table` ferme le flux des lots (`aclosing`) même si l'écriture échoue : la session de la requête n'attend pas le ramasse-miettes.
-- **Raison** : P19, SPEC 17.1 (droit à l'effacement), axe de revue n° 4 de la phase (suppression interrompue ou concurrente), contrainte d'extensibilité (toutes les tables à `user_id`). D184 pour le verrou et le dépôt.
+- **Date** 2026-11-17
+- **Subject** Phase 9, task 9.B5: “Delete everything” (`POST /account/delete`), erasure of an
+  account's folder and of its sessions' checkpoints, 503 declared in the contract
+- **Decision**
+  1. **Replayable order (P19)**: under the **same per-account lock as the export** (`export_lock`,
+     an export and a deletion of the same account do not cross): **a)** the `running`,
+     `waiting_user`, and `paused` sessions are cancelled by `SessionRunner.cancel` (the task stops,
+     nothing writes in the database or in the checkpoints any more; a session that has just
+     finished, 409 `session_not_cancellable`, is left); **b)** vectors
+     (`MemoryRepository.delete_user`); **c)** files (`FileStorage.delete_user`); **d)** checkpoints
+     of **all** the account's sessions (`AgentRuntime.delete_threads` →
+     `SessionRunner.delete_threads` → `adelete_thread`, which also removes pending writes; an
+     absent thread is not an error); **e)** a single transaction that empties **every table of
+     `Base.metadata` that has `user_id`** (`all_user_tables()`, `auth_sessions` included: unlike the
+     export, nothing is excluded), children first (reverse order of `sorted_tables`). The database
+     therefore changes **only at the end**: the sessions' identifiers, read just before (d), still
+     exist in case of failure, and each step being idempotent, **a new call resumes and finishes**
+     (Qdrant down, disk locked, process stopped). A table added tomorrow with `user_id` is emptied
+     without touching `account` (same source as the export).
+  2. **Qdrant unavailable**: `VectorStoreUnavailable` (`memory_unavailable`) becomes **503
+     `vector_store_unavailable`** (message: nothing is deleted in the database, try again), before
+     the files, the checkpoints, and any row deletion; only the sessions were cancelled (the wanted
+     state anyway). Test: first attempt in 503 (rows, files intact), second in 204, everything
+     empty.
+  3. **Two modes**: `local` mode: the `users` row **stays** (same `id`, the application goes on,
+     empty: `GET /settings` returns the defaults with `onboarding_done` false, `/auth/me` answers
+     200, and the takeover of the local space becomes possible again, D178); `google` mode: the
+     `users` row goes too, with the `auth_sessions`, and the response clears the `tremplin_session`
+     cookie (`clear_session_cookie`, same attributes as when set). The `.env` keys are not touched.
+     A second call afterwards returns 204 (nothing to do).
+  4. **Confirmation checked in the code** (carried over from the review of 9.P):
+     `DeleteAccountIn.confirm` no longer has a `max_length`; any text other than `SUPPRIMER`
+     (“DELETE”) (empty, spaces, lowercase, 500 characters) gives 422 `confirmation_required`,
+     `details == {"fields": ["confirm"]}`, **with no echo**; a field that is absent or of another
+     type keeps the validation 422, which names `confirm` without copying the value. Before: a text
+     of more than 32 characters gave another 422.
+  5. **An account's folder (`FileStorage.delete_user`)**: returns the number of stored files
+     deleted; `shutil.rmtree` of `<root>/<user_id>/` alone (`.tmp-*.part` leftovers and intruders
+     included, never another account's folder, `u1` does not erase `u10`); refuses
+     (`StorageKeyInvalid`) a malformed identifier and a folder that **is not** `<root>/<user_id>`
+     once resolved (link to the outside **or to another account's folder**: stricter than
+     `list_user`, because erasing the wrong folder cannot be recovered); a link **inside** the
+     folder is removed without being followed.
+  6. **Logs**: one line “Tout supprimer : user=<id> sessions_cancelled threads files tables rows
+     duration_ms” (“Delete everything: …”), nothing else; never the confirmation text, an
+     email, a name, or a file name (`test_delete_never_logged`).
+  7. **Contract touched (P1, exception stated)**: the 503 `vector_store_unavailable` is declared in
+     `responses=` of `POST /account/delete` (like the 422), and `maxLength: 32` disappears from the
+     `DeleteAccountIn` schema; `contracts/openapi.json` and `frontend/src/shared/api/schema.d.ts`
+     are regenerated in the same commit. No path, verb, operation identifier, or route docstring
+     changes (the route function keeps its name; the service is imported under another).
+  8. **Isolation**: `cases_b.py` designates for `account` `test_delete_keeps_other_user` (two
+     accounts: each one's export has no row of the other, deleting Camille leaves Dominique's rows,
+     files, vectors, and checkpointer threads intact, and her export is identical before and after).
+  9. **No session outlives the account** (review of 9.B5, I1; replaces the original text, which
+     judged a session born during the deletion acceptable: true in local mode, **false in Google
+     mode**, where the `users` row and all the others are gone and what remains belongs to no one):
+     **a) per-account guard**: `SessionRunner.refusing_starts(user_id)` (through `AgentRuntime`)
+     places the account in a set of the process's own for the whole deletion, lifted on exit,
+     successful or not; `start` and `resume` then return 409 `account_deleting` (“Le compte est en
+     cours de suppression”, “The account is being deleted”), before any write, whoever
+     launches the session (another session through the lesson chain, the scheduler, another tab);
+     the other accounts are not touched; **b) looping cancellation**: `_cancel_open_sessions`
+     rereads the open sessions (`SessionRunner.open_sessions`) and starts again until it finds none
+     (5 rounds at most, safety net), once at the beginning, a second time **just before** reading
+     the threads; the threads are read after this second pass; **c)** `delete.py` goes through the
+     `AgentRuntime` handle (`open_sessions`, `cancel`, `delete_threads`, `refusing_starts`), no
+     longer through `runner` or `OPEN`. **Limits stated**: the guard is the process's own (like the
+     other `KeyLocks`, a single worker targeted); a node already writing at the moment of
+     cancellation is stopped by `cancel` (task cancelled and awaited) before the threads are read.
+  10. **Follow-ups from the review of 9.B4** (separate commit, `fix(phase-9): suites
+     de la revue de l'export (9.B4)`): **a) I1, reading in batches**:
+     `AccountRepository.batches(table, columns, size)` reads as a stream (`yield_per`, `partitions`)
+     and the export writes each batch as it goes into the zip entry (`BATCH_ROWS = 500`, a single
+     batch in memory whatever the table's size; the test reduces the batch to 10 and observes 10,
+     10, 5 over 25 rows). `rows()` now only serves small lists (an account's sessions). The archive
+     is still built entirely before the response (the `Content-Length` depends on it, as in D184 no.
+     4): memory is bounded, the first byte still only arrives at the end of construction. **b) I2,
+     the secret is declared in the model**: `info={"export": False}` on `api_keys.encrypted_key` and
+     on the `auth_sessions` table (`__table_args__`); `tables.py` reads them (`user_tables`,
+     `exported_columns`), `EXCLUDED_TABLES` and `REDACTED_COLUMNS` disappear; “Delete
+     everything” does not read this marking (`all_user_tables`, everything goes). **Guard**:
+     `unreviewed_secret_columns(Base.metadata)` returns any exported column whose name contains
+     `key`, `token`, `secret`, `hash`, `password`, `cookie`, `credential`, `cipher`, `encrypted`,
+     `salt`, `nonce`, `private`, `fingerprint`, `bearer`, `passphrase`, `signature` or, as a whole
+     word of a `snake_case` name, `otp`, `auth`, `jwt`, `pwd` and that is neither marked nor in
+     `REVIEWED_NOT_SECRET` (22 columns reread, with the reason: deduplication fingerprints, storage
+     keys, token counters); the test on the real model therefore fails for a column `refresh_token`
+     or a table `mcp_tokens` added without a decision (tested on test metadata). **c) Non-JSON
+     types**: `json_default` (bytes and `memoryview` in base64, `Decimal` and `UUID` as text,
+     `timedelta` in seconds, sets as lists) serves `row_json` and `json.dumps(default=…)`; an
+     unknown type still raises (an export that silently loses a column is worse). **d) Links**:
+     `LocalFileStorage.list_user` refuses an account folder that is not `<root>/<user_id>` once
+     resolved (a link to another account's folder, inside the root, is no longer followed). **e)
+     Temporary file**: closed if the response cannot be built and by an end-of-response task (the
+     stream already closed it at its end or when the client left). **Left**: reading the tables at
+     different instants (M3, stated here; without a shared read transaction, an agent writing during
+     the export can leave a child without its parent). **Clarifications (review of 9.B5, M3 and
+     M4)**: `export` must be **exactly** `False` (the boolean) to exclude a column or a table:
+     `"false"`, `0`, `None` exclude nothing, and the guard then sees the name;
+     `search_usage.key_fingerprint` (a fingerprint derived from a search key, of no value for
+     portability, which would allow verifying a guessed key) is marked `export: False` instead of
+     being reread. **Limit of the guard**: it spots column **names**; a secret stored in a JSON
+     column (`user_settings.data`, for example a future calendar token in the settings) has no name
+     to spot, only the review of the addition sees it. **Reading in batches**: `_write_table` closes
+     the batch stream (`aclosing`) even if writing fails: the request's session does not wait for
+     the garbage collector.
+- **Reason** P19, SPEC 17.1 (right to erasure), review axis no. 4 of the phase (interrupted or
+  concurrent deletion), extensibility constraint (all the tables with `user_id`). D184 for the lock
+  and the repository.
 
 ## D186
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 9, tâche 9.C1 : correctifs d'ouverture du front (radar, projets, accueil, parcours n° 4)
-- **Décision** :
-  1. **Focus du radar sans `location.state` (N4)** : « Lancer un relevé » navigue vers `/carriere/radar/:runId` **sans état de navigation**. La session du 202 et le drapeau « relevé déjà en cours » viennent de `starter.started` (le magasin de la page, déjà lu par `RadarPage` pour ne pas rediriger), et ne valent que pour le relevé du lancement (`started.runId === runId`). Un rechargement, un retour arrière ou un état d'historique falsifié ne prend donc plus le focus, n'affiche plus la note « on le suit » et ne désigne plus une session : sans lancement de cette page, la session se retrouve par son sujet.
-  2. **Focus de « Réessayer l'énoncé » (N5)** : `retried` est remis à faux dès que l'énoncé a fini de s'écrire, quelle qu'en soit l'issue (le statut quitte `brief_pending`) ; un énoncé relancé plus tard par ailleurs ne reprend plus le focus.
-  3. **Formulaire « à reprendre »** : `SubmissionForm` gagne `initial` ; pour un projet `to_redo`, le lien et la description du dernier rendu (`submissions[0]`) sont pré-remplis, modifiables et envoyés tels quels si la personne ne change rien. Les captures ne se reprennent pas (des fichiers) : une phrase le dit quand le dernier rendu en avait. Un premier rendu (`todo`) reste vide.
-  4. **« Régénérer les brouillons »** : `POST /projects/{id}/drafts` (202 `SessionStarted`), proposé par la section des brouillons d'un projet **validé sans aucun brouillon** (ni texte ni entrée du profil). Un clic tient jusqu'à la réponse ; la page suit ensuite la session (fil, titre « Brouillons en cours d'écriture ») ; à la fin sans brouillon, le bouton revient avec « Les brouillons n'ont pas pu être écrits cette fois ». 409 `review_in_progress` : on suit la session ouverte (`details.session_id`) ; 409 `drafts_present` ou `project_not_validated` : la page se relit. Aucun changement du contrat.
-  5. **Notifications de fond (mineurs 8.13)** : une relecture annonce **3 notifications au plus, la plus récente d'abord** (une rafale après une longue absence ne montre que les trois derniers événements ; les autres restent dans le fil, et aucun n'est annoncé plus tard). Une notification **survolée ou au focus** met son minuteur en pause (`hold` de `useNoticeQueue`) et reprend avec le temps qui lui restait ; composant `NoticeToast`, un dossier.
-  6. **Parcours n° 4** (`daily.spec.ts`) : ne suppose plus que personne n'a ouvert l'accueil avant lui. Le nombre de sessions du brief est lu avant l'ouverture ; sur un brief déjà posé par un autre parcours, le test vérifie les sept rubriques et qu'aucune seconde session n'est lancée, sans exiger le conseil qui se réunit ni la ressource, que seule une première ouverture montre.
-  7. **Écarts au brief** : « ordre de la fenêtre `after` » (mineur 8.13) non traité (le bilan ne le détaille pas et le brief ne le demande pas) ; le parcours n° 4 n'a pas été rejoué (Chromium bloqué sur le poste), il est contrôlé par `tsc` et ESLint.
-  8. **Suites de la revue de 9.C1** : (a) « Régénérer les brouillons » ne perd plus le focus : le titre du suivi le prend à l'apparition du panneau (`focusOnMount`), et le bouton le reprend quand le suivi disparaît ; le composant a son dossier (`RegenerateDrafts/`, avec son test). (b) Le bouton revient avec « Les brouillons n'ont pas pu être écrits » pour **toute** fin de session sans brouillon (échec, annulation, fin sans résultat), mais seulement une fois le projet relu (`rereading`, `useIsFetching`) : un résultat sur le point d'arriver ne s'annonce pas comme un échec. (c) Un 409 `review_in_progress` sans `details.session_id` n'est plus un succès muet : « Leur écriture est déjà en cours, mais on ne retrouve pas son suivi », et `project_not_validated` a son propre texte (« Ce projet n'est plus validé : la page se relit. »), non celui de l'ajout au profil. (d) Radar : le lancement de la page ne donne le focus au titre qu'**une fois** (`useLaunchFocus`, un `WeakSet` de lancements consommés par un effet du parent, sans état de plus) : revenir plus tard sur un relevé encore en cours ne le reprend pas. (e) Tests : le test du radar porte le nom du brief (`radar focus without location state`) ; les deux tests de pause des notifications tournent sur des minuteurs simulés ; `SubmissionForm.initial` a ses tests ; commentaires coupés à 100 colonnes. Laissés de côté (revue) : la pause au survol sur écran tactile, l'ordre de la fenêtre `after`.
-- **Raison** : bilan de la phase 8 (« Phase 9 — correctifs d'ouverture » et « Mineurs parqués ») ; l'historique du navigateur ne doit pas décider du focus ni d'une session suivie ; un brouillon indisponible (D173 n° 4) ne doit pas être définitif ; une notification qu'on lit ne doit pas disparaître sous le curseur (accessibilité, 2.2.1).
+- **Date** 2026-11-17
+- **Subject** Phase 9, task 9.C1: front-end opening fixes (radar, projects, home, journey no. 4)
+- **Decision**
+  1. **Radar focus without `location.state` (N4)**: “Run a scan” navigates to
+     `/carriere/radar/:runId` **without any navigation state**. The session from the 202 and the
+     “scan already running” flag come from `starter.started` (the page's store, already read by
+     `RadarPage` so as not to redirect), and only apply to the scan of the launch
+     (`started.runId === runId`). A reload, a back navigation or a forged history state therefore no
+     longer takes the focus, no longer shows the “A scan was already in progress: following it.”
+     note and no longer designates a session: without a launch from this page, the session is found
+     by its subject.
+  2. **Focus of “Retry the brief” (N5)**: `retried` is reset to false as soon as the brief has
+     finished being written, whatever the outcome (the status leaves `brief_pending`); a brief
+     relaunched later by other means no longer takes the focus.
+  3. **“To redo” form**: `SubmissionForm` gains `initial`; for a `to_redo` project, the link and
+     the description of the last submission (`submissions[0]`) are pre-filled, editable and sent as
+     is if the person changes nothing. Screenshots are not carried over (they are files): a sentence
+     says so when the last submission had some. A first submission (`todo`) stays empty.
+  4. **“Regenerate the drafts”**: `POST /projects/{id}/drafts` (202 `SessionStarted`), offered
+     by the drafts section of a **validated project with no draft at all** (neither text nor profile
+     entry). One click holds until the response; the page then follows the session (thread, title
+     “Drafts being written”); when it ends with no draft, the button comes back with “The
+     drafts couldn’t be written this time.”. 409 `review_in_progress`: we follow the open
+     session (`details.session_id`); 409 `drafts_present` or `project_not_validated`: the page
+     rereads itself. No change to the contract.
+  5. **Background notifications (minor items 8.13)**: a reread announces **at most 3 notifications,
+     the most recent first** (a burst after a long absence only shows the last three events; the
+     others stay in the thread, and none is announced later). A notification that is **hovered or
+     focused** pauses its timer (`hold` of `useNoticeQueue`) and resumes with the time it had left;
+     `NoticeToast` component, one folder.
+  6. **Journey no. 4** (`daily.spec.ts`): no longer assumes that nobody opened the home page before
+     it. The number of brief sessions is read before opening; on a brief already set by another
+     journey, the test checks the seven sections and that no second session is launched, without
+     requiring the council that meets or the resource, which only a first opening shows.
+  7. **Deviations from the brief**: “order of the `after` window” (minor item 8.13) not handled
+     (the report does not detail it and the brief does not ask for it); journey no. 4 was not
+     replayed (Chromium blocked on the workstation), it is checked by `tsc` and ESLint.
+  8. **Follow-ups of the 9.C1 review**: (a) “Regenerate the drafts” no longer loses the focus:
+     the title of the follow-up takes it when the panel appears (`focusOnMount`), and the button
+     takes it back when the follow-up disappears; the component has its own folder
+     (`RegenerateDrafts/`, with its test). (b) The button comes back with “The drafts couldn’t
+     be written this time.” for **any** session end without a draft (failure, cancellation, end
+     with no result), but only once the project has been reread (`rereading`, `useIsFetching`): a
+     result about to arrive is not announced as a failure. (c) A 409 `review_in_progress` without
+     `details.session_id` is no longer a silent success: “They’re already being written, but
+     their activity feed can’t be found: reload the page in a moment.”, and
+     `project_not_validated` has its own text (“This project is no longer validated: reloading the
+     page.”), not that of the add-to-profile action. (d) Radar: the launch from the page gives the
+     focus to the title only **once** (`useLaunchFocus`, a `WeakSet` of launches consumed by an
+     effect of the parent, no extra state): coming back later to a scan that is still running does
+     not take it back. (e) Tests: the radar test carries the name of the brief
+     (`radar focus without location state`); the two notification pause tests run on simulated
+     timers; `SubmissionForm.initial` has its tests; comments wrapped at 100 columns. Left aside
+     (review): pause on hover on a touch screen, the order of the `after` window.
+- **Reason** report of phase 8 (“Phase 9 — opening fixes” and “Parked minor items”); the
+  browser history must not decide the focus or a followed session; an unavailable draft (D173 no. 4)
+  must not be final; a notification being read must not disappear under the cursor (accessibility,
+  2.2.1).
 
 ## D187
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 9, tâche 9.C2 : coquille (portes, routes publiques, cookie) et feature `auth/` (P21, P22)
-- **Décision** :
-  1. **Manifeste (P21)** : `FeatureManifest` gagne `publicRoutes` (routes hors de la mise en page, sans porte, jamais d'entrée de navigation : `buildNav` ne lit que `nav`) et `shell.gate` (composant qui enveloppe la mise en page). `buildRoutes` pose les routes publiques de tous les manifestes **à côté** de la racine `/` ; `ShellGates` (un dossier de `app/layout/`) enveloppe `AppLayout` des portes dans l'ordre de `FEATURES`, la première étant la plus extérieure. `authManifest` est **premier** de `FEATURES` : la connexion s'ouvre avant toute porte suivante (premier lancement, 9.C6). `ShellSlots` ne sert plus que `topbar` et `overlay`.
-  2. **Cookie** : le client API envoie `credentials: "include"` (le cookie `tremplin_session` part vers l'autre port, `localhost:8000`). Aucun autre `fetch` n'existe dans le front.
-  3. **Un 401 en cours de navigation (focus n° 5)** : le middleware du client émet `emitAuthRequired()` (`shared/api/authEvents.ts`, ensemble d'écouteurs, `shared/` n'importe aucune feature) pour un 401 **de code `auth_required`** seulement (un autre 401 reste une erreur de la page). La porte écoute et **passe `me` à `null` sans le relire** (`setQueryData`) : le brief dit « invalide `me` », mais relire `me` répondrait 401, donc émettrait de nouveau, donc relirait : une boucle. `useMe` traduit d'ailleurs un 401 `auth_required` en `null` (« pas de session », sans erreur ni nouvelle tentative) ; toute autre erreur reste une erreur et la porte propose « Réessayer ». `AuthGate` mène alors à `/connexion` par `<Navigate replace />`, **une seule fois** même si plusieurs lectures reçoivent leur 401 en rafale (tests : un seul changement de chemin, un seul appel de `me`, rien de plus après un délai).
-  4. **Pas de boucle avec la porte** : `/connexion` ne renvoie vers `/` que si `me` répond **mode local** (qui ne répond jamais 401), jamais pour un compte Google déjà connecté ni pour `null` ; en Google la page montre la carte même avec une session valide (aucun risque de rebond avec une porte qui n'aurait pas la même vue).
-  5. **Découpage (frontières ESLint)** : `components/` reste présentationnel. `AuthGate` (présentationnel : `status`, `message`, `onRetry`, enfants) est branché par `SessionGate` (racine de la feature, comme `BackgroundNotices` pour `home`) ; de même `AccountMenu` par `AccountMenuSlot`. Un composant `PublicPage` (cadre `<main>` + titre) sert les deux pages publiques.
-  6. **Focus clavier** : (a) les pages publiques donnent le focus à leur titre à l'ouverture (on y arrive par une redirection qui a démonté la page où il se trouvait) ; (b) l'état « chargement/erreur » de la porte est un seul `<main tabIndex=-1>` : « Réessayer » lui rend le focus avant de relire, le bouton pouvant disparaître ; (c) les boutons de la reprise et de la déconnexion passent en `aria-disabled` pendant l'envoi (et ignorent le clic), jamais `disabled`, pour ne pas perdre le focus.
-  7. **Connexion** : `LoginCard` est un lien plein vers `loginUrl()` (`${apiBaseUrl}/api/v1/auth/google/login`, `?login_hint=` encodé si fourni ; le back répond par une redirection, ce n'est pas un `fetch`). Un message français par code de `/connexion?erreur=<code>` : les six du brief, plus `claim_expired` et `local_already_claimed` (les deux 409 de la reprise, qui reviennent par la même adresse) ; tout autre code (ou clé héritée comme `constructor`) donne « La connexion a échoué, réessaie. » ; le code reçu n'est **jamais affiché** (un texte forgé dans l'adresse ne s'écrit pas dans la page). Une adresse hors `ALLOWED_EMAILS` revient en `email_not_allowed` (arbitrage du contrôleur : refus à la connexion).
-  8. **Reprise** : `useClaim` envoie `take_local` ou `fresh`, met `me` en cache avec la réponse (la porte s'ouvre sans relecture) et ouvre `/` par un remplacement ; 409 `claim_expired` ou `local_already_claimed` renvoie à `/connexion?erreur=<code>` ; toute autre erreur reste sur la page, sous les boutons.
-  9. **Déconnexion et menu du compte** : `AccountMenu` (`shell.topbar`) n'apparaît qu'en mode Google ; `useLogout` passe `me` à `null` (la porte mène à `/connexion`) **et** retire du cache tout le reste (rien de ce que ce compte a lu n'est montré à un autre dans la même page). Un échec reste sur la page avec un message.
-  10. **Tests existants adaptés** : tout ce qui monte `AppLayout` ou `Topbar` avec le registre réel sert désormais `GET /auth/me` (`test/authApi.ts`, faux serveur d'authentification à compteurs d'appels) et attend l'ouverture de la porte.
-  11. **Suites de la revue de 9.C2** : (a) « Réessayer » de la porte : à la réussite, le focus passe à `#contenu` (cible du lien d'évitement) au lieu de tomber sur `body` avec le `<main>` démonté ; sur `/connexion`, le titre reprend le focus quand l'erreur disparaît (`PublicPage.settled`). (b) « Régénérer les brouillons » : la zone `role="status"` existe dès le début, vide, et reste le même élément pendant le suivi (le message est annoncé) ; quand les brouillons arrivent, le titre de leur section (`#project-drafts`) prend le focus. (c) Le type des choix de la reprise reste dans le composant (les frontières ESLint interdisent à un composant d'importer le contrat) ; `types.test.ts` vérifie à la compilation qu'il est identique à celui du contrat généré. (d) Un écouteur de `authEvents` qui lève ne coupe pas les suivants (seul le fait est journalisé, `auth_listener_failed`, jamais l'erreur) ; le test des cookies restaure `fetch` dans un `finally`. Laissés de côté : minuteurs `shouldAdvanceTime`, `me = null` en cache.
-- **Raison** : P21 et P22 ; focus n° 5 (« pas de boucle entre `/connexion` et la porte ») ; 17.1 (cookie envoyé, aucune redirection vers une adresse reçue : le front n'ouvre que `/connexion`, `/` et `/connexion?erreur=` fixes) ; accessibilité (focus jamais perdu sur `body` après une action ou une redirection).
+- **Date** 2026-11-17
+- **Subject** Phase 9, task 9.C2: shell (gates, public routes, cookie) and `auth/` feature (P21,
+  P22)
+- **Decision**
+  1. **Manifest (P21)**: `FeatureManifest` gains `publicRoutes` (routes outside the layout, without
+     a gate, never a navigation entry: `buildNav` reads only `nav`) and `shell.gate` (a component
+     that wraps the layout). `buildRoutes` places the public routes of all manifests **next to** the
+     root `/`; `ShellGates` (one folder of `app/layout/`) wraps `AppLayout` in the gates in the
+     order of `FEATURES`, the first being the outermost. `authManifest` is **first** in `FEATURES`:
+     the login opens before any following gate (first launch, 9.C6). `ShellSlots` now only serves
+     `topbar` and `overlay`.
+  2. **Cookie**: the API client sends `credentials: "include"` (the `tremplin_session` cookie goes
+     to the other port, `localhost:8000`). No other `fetch` exists in the front end.
+  3. **A 401 during navigation (focus no. 5)**: the client middleware emits `emitAuthRequired()`
+     (`shared/api/authEvents.ts`, a set of listeners, `shared/` imports no feature) for a 401 **with
+     code `auth_required`** only (any other 401 stays an error of the page). The gate listens and
+     **sets `me` to `null` without rereading it** (`setQueryData`): the brief says “invalidates
+     `me`”, but rereading `me` would answer 401, hence emit again, hence reread: a loop. `useMe`
+     also translates a 401 `auth_required` into `null` (“no session”, with no error or new
+     attempt); any other error stays an error and the gate offers “Retry”. `AuthGate` then leads
+     to `/connexion` through `<Navigate replace />`, **only once** even if several reads receive
+     their 401 in a burst (tests: a single path change, a single `me` call, nothing more after a
+     delay).
+  4. **No loop with the gate**: `/connexion` only sends back to `/` if `me` answers **local mode**
+     (which never answers 401), never for a Google account already signed in nor for `null`; in
+     Google mode the page shows the card even with a valid session (no risk of bouncing with a gate
+     that would not have the same view).
+  5. **Split (ESLint boundaries)**: `components/` stays presentational. `AuthGate` (presentational:
+     `status`, `message`, `onRetry`, children) is wired by `SessionGate` (root of the feature, like
+     `BackgroundNotices` for `home`); likewise `AccountMenu` by `AccountMenuSlot`. A `PublicPage`
+     component (`<main>` frame + title) serves the two public pages.
+  6. **Keyboard focus**: (a) the public pages give the focus to their title on opening (we arrive
+     there through a redirect that unmounted the page where it was); (b) the “loading/error”
+     state of the gate is a single `<main tabIndex=-1>`: “Retry” gives it the focus back before
+     rereading, since the button may disappear; (c) the claim and logout buttons become
+     `aria-disabled` while sending (and ignore the click), never `disabled`, so as not to lose the
+     focus.
+  7. **Login**: `LoginCard` is a plain link to `loginUrl()`
+     (`${apiBaseUrl}/api/v1/auth/google/login`, `?login_hint=` encoded if provided; the back answers
+     with a redirect, it is not a `fetch`). One message per code of `/connexion?erreur=<code>`: the
+     six of the brief, plus `claim_expired` and `local_already_claimed` (the two 409s of the claim,
+     which come back through the same address); any other code (or inherited key such as
+     `constructor`) gives “Sign-in failed, try again.”; the received code is **never displayed**
+     (a text forged in the address is not written into the page). An address outside
+     `ALLOWED_EMAILS` comes back as `email_not_allowed` (arbitration by the controller: refusal at
+     sign-in).
+  8. **Claim**: `useClaim` sends `take_local` or `fresh`, puts `me` in the cache with the response
+     (the gate opens without a reread) and opens `/` by replacement; 409 `claim_expired` or
+     `local_already_claimed` sends back to `/connexion?erreur=<code>`; any other error stays on the
+     page, under the buttons.
+  9. **Logout and account menu**: `AccountMenu` (`shell.topbar`) appears only in Google mode;
+     `useLogout` sets `me` to `null` (the gate leads to `/connexion`) **and** removes everything
+     else from the cache (nothing that this account read is shown to another in the same page). A
+     failure stays on the page with a message.
+  10. **Existing tests adapted**: everything that mounts `AppLayout` or `Topbar` with the real
+     registry now serves `GET /auth/me` (`test/authApi.ts`, a fake authentication server with call
+     counters) and waits for the gate to open.
+  11. **Follow-ups of the 9.C2 review**: (a) The gate's “Retry”: on success, the focus goes to
+     `#contenu` (target of the skip link) instead of falling on `body` with the `<main>` unmounted;
+     on `/connexion`, the title takes the focus back when the error disappears
+     (`PublicPage.settled`). (b) “Regenerate the drafts”: the `role="status"` zone exists from
+     the start, empty, and stays the same element during the follow-up (the message is announced);
+     when the drafts arrive, the title of their section (`#project-drafts`) takes the focus. (c) The
+     type of the claim choices stays in the component (the ESLint boundaries forbid a component from
+     importing the contract); `types.test.ts` checks at compile time that it is identical to the one
+     of the generated contract. (d) A `authEvents` listener that throws does not cut off the
+     following ones (only the fact is logged, `auth_listener_failed`, never the error); the cookie
+     test restores `fetch` in a `finally`. Left aside: `shouldAdvanceTime` timers, `me = null` in
+     the cache.
+- **Reason** P21 and P22; focus no. 5 (“no loop between `/connexion` and the gate”); 17.1
+  (cookie sent, no redirect to a received address: the front end only opens fixed `/connexion`, `/`
+  and `/connexion?erreur=`); accessibility (focus never lost on `body` after an action or a
+  redirect).
 
 ## D188
 
