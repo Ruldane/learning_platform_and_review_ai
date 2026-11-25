@@ -1,7 +1,7 @@
 import { t } from "@/shared/i18n/t";
 import { joinNumbers } from "./joinNumbers";
 
-/** Les réponses que le modèle n'a pas pu noter (numéros des questions, à partir de 1) ; rien s'il n'y en a pas. */
+/** The answers the model could not score (question numbers, from 1); nothing if there are none. */
 export function UnratedNote({ unrated }: { unrated: number[] }) {
   if (unrated.length === 0) return null;
   const numbers = joinNumbers(unrated.map((index) => index + 1));

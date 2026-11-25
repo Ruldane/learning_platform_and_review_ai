@@ -6,15 +6,15 @@ import { createMemoryRouter, Outlet, RouterProvider, useLocation } from "react-r
 import { authManifest } from "./manifest";
 import { SessionGate } from "./SessionGate";
 
-/** Page de la mise en page de test : elle écrit son chemin, pour suivre les redirections. */
+/** Test layout page: it writes its path, to follow redirects. */
 function Where() {
   return <p>{`Chemin : ${useLocation().pathname}`}</p>;
 }
 
 /**
- * Monte la feature `auth` seule : ses routes publiques, et une racine `/` derrière la porte avec
- * `home` en contenu. Le cache de requêtes garde sa durée de vie par défaut et sa fraîcheur de 15 s
- * (comme l’application) : un test de redirection ne doit pas dépendre d'un cache vidé à l'instant.
+ * Mounts the `auth` feature alone: its public routes, and a `/` root behind the gate with
+ * `home` as content. The query cache keeps its default lifetime and its 15 s freshness
+ * (as in the app): a redirect test must not depend on a cache just emptied.
  */
 export function renderAuth(initial: string, home: ReactNode = <Where />) {
   const client = new QueryClient({
@@ -38,7 +38,7 @@ export function renderAuth(initial: string, home: ReactNode = <Where />) {
     ],
     { initialEntries: [initial] },
   );
-  // Une entrée par changement de chemin : « une seule redirection » se compte ici.
+  // One entry per path change: « une seule redirection » is counted here.
   const visited: string[] = [router.state.location.pathname];
   router.subscribe((state) => {
     if (visited[visited.length - 1] !== state.location.pathname) {

@@ -3,11 +3,11 @@ import type { ExchangeView } from "../viewTypes";
 
 interface NoteLineProps {
   exchange: ExchangeView;
-  /** La question est à revoir (note de 2 au plus). */
+  /** The question needs review (score of 2 at most). */
   review: boolean;
 }
 
-/** La note d'une réponse en toutes lettres (« 2 sur 5 » ou « Non notée »), et « À revoir » si besoin. */
+/** An answer's score in words (« 2 sur 5 » or « Non notée »), and « À revoir » if needed. */
 export function NoteLine({ exchange, review }: NoteLineProps) {
   return (
     <p className="flex flex-wrap items-center gap-2 text-sm">

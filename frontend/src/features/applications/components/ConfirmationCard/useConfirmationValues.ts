@@ -2,8 +2,9 @@ import { useState } from "react";
 import type { ConfirmationView } from "../viewTypes";
 
 /**
- * Ce que January a laissé dans chaque champ (départ : ce que l'Assistant a lu), si les obligatoires
- * sont remplis et si un rôle de contact est donné sans nom (le serveur le jetterait sans rien dire).
+ * What January left in each field (start: what the Assistant read), whether the mandatory ones
+ * are filled in and whether a contact role is given without a name (the server would silently drop
+ * it).
  */
 export function useConfirmationValues(confirmation: ConfirmationView) {
   const [values, setValues] = useState<Record<string, string>>(() =>

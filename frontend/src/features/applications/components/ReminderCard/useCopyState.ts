@@ -2,13 +2,13 @@ import { useState } from "react";
 
 export type CopyState = "idle" | "copied" | "failed";
 
-/** L'état de la copie est celui d'une relance : une autre relance repart de zéro. */
+/** The copy state belongs to a reminder: another reminder starts from zero. */
 interface CopyOf {
   reminderId: string;
   state: CopyState;
 }
 
-/** Copier le brouillon d'une relance (l'application n'envoie rien) et garder le résultat de la copie. */
+/** Copies a reminder's draft (the app sends nothing) and keeps the copy result. */
 export function useCopyState(
   reminderId: string,
   draft: string,

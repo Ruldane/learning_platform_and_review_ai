@@ -6,11 +6,12 @@ import type { InterviewView } from "../viewTypes";
 interface InterviewListProps {
   interviews: InterviewView[];
   onOpen: (interviewId: string) => void;
-  /** Le nom lisible d'une offre, par identifiant : nomme un entretien libre sur une offre. */
+  /** The readable name of a posting, by identifier: names a free interview on a posting. */
   postingLabels?: Record<string, string>;
 }
 
-/** La moyenne des notes rendues d'un débrief écrit (une note manquante n'en fait pas un 0), ou `null`. */
+/** The average of the scores given in a written debrief (a missing score does not count as 0), or
+ * `null`. */
 function average(interview: InterviewView): number | null {
   const scores = (interview.debrief?.scores ?? []).flatMap((score) =>
     score.value === null ? [] : [score.value],
@@ -27,7 +28,8 @@ function summary(interview: InterviewView): string {
   });
 }
 
-/** Les entretiens passés, le plus récent d'abord : date, réglages, état en toutes lettres, moyenne ; un bouton ouvre le détail. */
+/** Past interviews, most recent first: date, settings, status in words, average; a button opens the
+ * detail. */
 export function InterviewList({ interviews, onOpen, postingLabels = {} }: InterviewListProps) {
   return (
     <ul aria-label={t("applications.interviewList.label")} className="flex flex-col gap-2">

@@ -7,14 +7,14 @@ import { InterviewResult } from "./InterviewResult";
 
 interface InterviewOutcomeProps {
   interview: InterviewView;
-  /** Le libellé du retour : « Commencer un autre entretien » après un entretien suivi, « Retour aux réglages » pour un passé. */
+  /** Back label: « Commencer un autre entretien » if followed, « Retour aux réglages » if past. */
   closeLabel: string;
   onClose: () => void;
 }
 
 /**
- * Un entretien fini (ou passé) : le titre reçoit le focus à l'arrivée, puis le résultat selon l'état :
- * débrief, réponses sans débrief, arrêt avant toute réponse, ou échec de la session.
+ * A finished (or past) interview: the heading gets focus on arrival, then the result by state:
+ * debrief, answers without a debrief, stop before any answer, or session failure.
  */
 export function InterviewOutcome({ interview, closeLabel, onClose }: InterviewOutcomeProps) {
   const title = useRef<HTMLHeadingElement>(null);

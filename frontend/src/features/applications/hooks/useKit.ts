@@ -4,12 +4,12 @@ import { fetchKit } from "../api";
 import { applicationsKeys } from "../queryKeys";
 import { toKitView } from "../toView";
 
-/** Tant qu'un kit tourne, la page relit aussi toute seule : un `artifact.ready` perdu ne bloque rien. */
+/** While a kit runs, the page also re-reads on its own: a lost `artifact.ready` blocks nothing. */
 const POLL_MS = 10_000;
 
 /**
- * `GET /applications/{id}/kit` : les sept pièces (`pending` pour celles pas encore rangées). Les
- * événements du flux ne font que dire quand relire : l'état vient toujours de cette lecture.
+ * `GET /applications/{id}/kit`: the seven pieces (`pending` for those not yet filed). The
+ * stream events only say when to re-read: the state always comes from that read.
  */
 export function useKit(applicationId: string) {
   return useQuery({

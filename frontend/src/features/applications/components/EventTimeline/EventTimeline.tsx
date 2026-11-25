@@ -19,7 +19,7 @@ function detail(event: EventView): string | null {
   return event.text;
 }
 
-/** Le fil chronologique d'une fiche, du plus ancien au plus récent, chaque ligne datée. */
+/** The chronological thread of a record, from oldest to newest, each line dated. */
 export function EventTimeline({ events }: EventTimelineProps) {
   if (events.length === 0) {
     return <p className="text-sm text-muted-foreground">{t("applications.timeline.empty")}</p>;

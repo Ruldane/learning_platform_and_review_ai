@@ -6,7 +6,8 @@ interface TargetProps {
   postingLabels: Record<string, string>;
 }
 
-/** Sur quoi porte un entretien libre : son intitulé de poste, ou l'offre (si son nom est connu) ; rien pour un entretien de fiche. */
+/** What a free interview is about: its job title, or the posting (if its name is known); nothing
+ * for a record interview. */
 export function Target({ interview, postingLabels }: TargetProps) {
   const posting = interview.postingId ? postingLabels[interview.postingId] : undefined;
   if (interview.role) {

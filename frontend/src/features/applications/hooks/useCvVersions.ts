@@ -3,20 +3,20 @@ import { fetchCvVersions } from "../api";
 import { applicationsKeys } from "../queryKeys";
 import type { CvVersionOut } from "../types";
 
-/** Une version de CV que le comité peut juger : son PDF est rendu. */
+/** A CV version the committee can judge: its PDF is rendered. */
 export interface ReadyVersion {
   id: string;
   number: number;
 }
 
-/** Les versions prêtes, la plus récente d'abord (`version_not_ready` pour toute autre). */
+/** The ready versions, most recent first (`version_not_ready` for any other). */
 export const readyVersions = (versions: CvVersionOut[]): ReadyVersion[] =>
   versions
     .filter((version) => version.status === "ready")
     .map(({ id, number }) => ({ id, number }))
     .sort((a, b) => b.number - a.number);
 
-/** `GET /cv/versions?posting_id=` : les versions prêtes du CV de l'offre. */
+/** `GET /cv/versions?posting_id=`: the ready versions of the posting's CV. */
 export function useCvVersions(postingId: string | null) {
   return useQuery({
     queryKey: applicationsKeys.cvVersions(postingId ?? ""),

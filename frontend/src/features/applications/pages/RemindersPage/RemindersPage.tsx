@@ -12,10 +12,10 @@ import { useReminders } from "../../hooks/useReminders";
 import { BOARD_PATH } from "../../urls";
 
 /**
- * Les relances dues (`/applications/reminders`) : qui contacter, le brouillon à copier, puis Fait,
- * Reporter de 3 jours ou Ignorer (« Classer en Sans réponse » pour la dernière relance). Rien n'est
- * envoyé par l'application. Une relance traitée disparaît de la liste, annoncée dans une zone
- * vocale ; le focus revient alors sur le titre de la page, au-dessus de la liste.
+ * Reminders due (`/applications/reminders`): who to contact, the draft to copy, then Fait,
+ * Reporter by 3 days or Ignorer (« Classer en Sans réponse » for the last reminder). Nothing is
+ * sent by the app. A handled reminder leaves the list, announced in a live region
+ * live region; focus then returns to the page heading, above the list.
  */
 export function RemindersPage() {
   const navigate = useNavigate();

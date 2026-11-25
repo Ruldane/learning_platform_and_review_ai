@@ -7,21 +7,21 @@ import { useCopyState } from "./useCopyState";
 
 interface ReminderCardProps {
   reminder: ReminderView;
-  /** Copie le brouillon : l'application n'envoie rien. Une promesse rejetée signale l'échec. */
+  /** Copies the draft: the app sends nothing. A rejected promise signals the failure. */
   onCopy: (draft: string) => void | Promise<void>;
   onDone: (id: string) => void;
   onPostpone: (id: string) => void;
   onIgnore: (id: string) => void;
-  /** Une action sur une relance est en cours : Fait, Reporter et Ignorer attendent sa fin. */
+  /** An action on a reminder is running: Fait, Reporter and Ignorer wait for it to end. */
   pending?: boolean;
-  /** Niveau du titre : 2 sous le titre d'une page, 4 sous le titre d'une section du tiroir. */
+  /** Heading level: 2 under a page title, 4 under a drawer section title. */
   headingLevel?: 2 | 4;
 }
 
 /**
- * Une relance à traiter : qui contacter, l'échéance, le brouillon et quatre boutons. Pour
- * `close_21` le bouton « Fait » devient « Classer en Sans réponse » (c'est la fiche qui change de
- * statut). La mention rappelle que rien n'est envoyé par l'application.
+ * A reminder to handle: who to contact, the due date, the draft and four buttons. For
+ * `close_21` the « Fait » button becomes « Classer en Sans réponse » (it is the record that changes
+ * status). The note reminds that the app sends nothing.
  */
 export function ReminderCard({
   reminder,

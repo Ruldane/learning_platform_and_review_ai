@@ -3,10 +3,11 @@ import { t } from "@/shared/i18n/t";
 import type { ApplicationPatch, EventIn, StatusView } from "../../types";
 
 /**
- * Une écriture sur la fiche (statut, note ou retouche des champs) et l'annonce de ce qui vient de
- * changer, lue par une zone vocale : « Statut changé : Postulée. », « Note ajoutée. » ou « Fiche
- * enregistrée. ». Rien n'est annoncé si le serveur refuse. L'annonce vit hors du formulaire, qui est
- * remonté quand la fiche est relue.
+ * A write to the record (status, note or field edit) and the announcement of what just
+ * changed, read by a live region: « Statut changé : Postulée. », « Note ajoutée. » or « Fiche
+ * enregistrée. ». Nothing is announced if the server refuses. The announcement sits outside the
+ * form, which
+ * remounts when the record is re-read.
  */
 export function useRecordMessage(
   current: StatusView,

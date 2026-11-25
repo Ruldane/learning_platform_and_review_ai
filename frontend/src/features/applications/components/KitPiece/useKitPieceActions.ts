@@ -9,9 +9,9 @@ function savedMessage(status: KitStatusView): string {
 }
 
 interface Draft {
-  /** Le texte à envoyer au serveur. */
+  /** The text to send to the server. */
   text: string;
-  /** Le serveur a pris la modification. */
+  /** The server accepted the change. */
   markSaved: () => void;
 }
 
@@ -21,9 +21,9 @@ interface Handlers {
 }
 
 /**
- * Ce que January fait d'une pièce : l'enregistrer (le focus revient au texte qu'elle modifiait,
- * le bouton se désactive : `root` est la pièce) et copier un de ses textes. `note` est le dernier
- * résultat, lu dans une zone vocale ; `error` le refus du serveur.
+ * What January does with a piece: save it (focus returns to the text being edited,
+ * the button is disabled: `root` is the piece) and copy one of its texts. `note` is the last
+ * result, read in a live region; `error` is the server's refusal.
  */
 export function useKitPieceActions(
   root: RefObject<HTMLElement | null>,
@@ -71,7 +71,7 @@ export function useKitPieceActions(
     error,
     save,
     copy,
-    /** January modifie le texte `key` : la note disparaît, le focus lui reviendra après l'enregistrement. */
+    /** January edits the text `key`: the note disappears; focus returns to it after saving. */
     edited: (key: string) => {
       lastEdited.current = key;
       setNote("");

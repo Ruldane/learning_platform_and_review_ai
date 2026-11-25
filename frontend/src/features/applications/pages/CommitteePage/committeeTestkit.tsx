@@ -8,10 +8,10 @@ import { CommitteePage } from "./CommitteePage";
 
 const ROUTE = "applications/:applicationId/committee";
 
-/** La session d'un comité lancé depuis la page (celle que `committeeApi` range au lancement). */
+/** The session of a committee started from the page (the one `committeeApi` stores at start). */
 export const SESSION = "cm-s-new";
 
-/** Monte la page du comité de la fiche `a1` (offre `p1`, version `v1`) avec les routes en mémoire. */
+/** Mounts the committee page of record `a1` (posting `p1`, version `v1`) with in-memory routes. */
 export function setup(
   options: CommitteeApiOptions = {},
   application: Record<string, unknown> = {},

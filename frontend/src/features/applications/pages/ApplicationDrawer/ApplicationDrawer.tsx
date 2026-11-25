@@ -10,9 +10,9 @@ import { DrawerBody } from "./DrawerBody";
 import { DrawerUnavailable } from "./DrawerUnavailable";
 
 /**
- * La fiche d'une candidature en tiroir (`/applications/:applicationId`), par-dessus le suivi :
- * boîte de dialogue modale (le focus y reste, Échap la ferme et rend le focus à ce qui l'a ouverte).
- * Une fiche inconnue (404) le dit et ramène au suivi.
+ * An application record in a drawer (`/applications/:applicationId`), over the tracking:
+ * a modal dialog (focus stays in it, Escape closes it and returns focus to what opened it).
+ * An unknown record (404) says so and returns to the tracking.
  */
 export function ApplicationDrawer() {
   const { applicationId = "" } = useParams();

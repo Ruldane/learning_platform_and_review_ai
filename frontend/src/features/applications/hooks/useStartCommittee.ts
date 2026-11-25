@@ -7,7 +7,7 @@ import { applicationsKeys } from "../queryKeys";
 
 interface Started {
   runId: string;
-  /** Un comité était déjà ouvert pour l'offre : on le suit. */
+  /** A committee was already open for the posting: it is followed. */
   resumed: boolean;
 }
 
@@ -22,8 +22,8 @@ async function launch(cvVersionId: string, source?: RunSource): Promise<Started>
 }
 
 /**
- * « Lancer le comité » : `start` résout à l'identifiant de l'exécution à suivre. Un 409
- * `committee_in_progress` n'est pas une panne : on suit l'exécution ouverte (`resumed`).
+ * « Lancer le comité »: `start` resolves to the identifier of the run to follow. A 409
+ * `committee_in_progress` is not a failure: the open run is followed (`resumed`).
  */
 export function useStartCommittee(postingId: string | null) {
   const provider = useLaunchSource();
@@ -44,7 +44,7 @@ export function useStartCommittee(postingId: string | null) {
     pending: mutation.isPending,
     resumed: mutation.data?.resumed ?? false,
     error: mutation.isError ? applicationsErrorMessage(mutation.error) : null,
-    /** Le profil validé manque : January doit le faire avant de lancer le comité. */
+    /** The validated profile is missing: January must do it before starting the committee. */
     profileMissing: mutation.isError && errorCode(mutation.error) === "profile_required",
   };
 }

@@ -8,7 +8,7 @@ interface CommitteeHeaderProps {
   application: { company: string; title: string } | undefined;
 }
 
-/** Le titre, la fiche jugée, le bandeau permanent « Simulation, pas une prédiction » et le retour à la fiche. */
+/** The title, the judged record, the « Simulation, pas une prédiction » banner and the way back. */
 export function CommitteeHeader({ applicationId, application }: CommitteeHeaderProps) {
   return (
     <header className="flex flex-col gap-2">

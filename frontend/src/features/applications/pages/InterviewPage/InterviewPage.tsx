@@ -10,9 +10,9 @@ import { InterviewHub } from "../InterviewHub";
 const isMissing = (error: unknown) => error instanceof ApiError && error.status === 404;
 
 /**
- * L'entretien blanc (`/applications/:applicationId/interview`) : les réglages, puis
- * un échange écrit, une question à la fois, et le débrief ; les entretiens passés de la fiche en dessous.
- * `createSocket` ne sert qu'aux tests.
+ * The mock interview (`/applications/:applicationId/interview`): the settings, then
+ * a written exchange, one question at a time, and the debrief; the record's past interviews below.
+ * `createSocket` is only for tests.
  */
 export function InterviewPage({ createSocket }: { createSocket?: SocketFactory }) {
   const { applicationId = "" } = useParams();

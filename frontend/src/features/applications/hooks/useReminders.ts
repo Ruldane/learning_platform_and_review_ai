@@ -8,7 +8,7 @@ import type { ReminderOut, ReminderView } from "../types";
 
 const toViews = (rows: ReminderOut[]) => rows.map(toReminderView);
 
-/** `GET /reminders?due=true` : les relances à traiter, l'échéance la plus ancienne d'abord. */
+/** `GET /reminders?due=true`: reminders to handle, oldest due date first. */
 export function useReminders() {
   return useQuery({
     queryKey: applicationsKeys.reminders,
@@ -19,15 +19,15 @@ export function useReminders() {
 
 type Choice = ReminderAction | "close";
 
-/** Déjà traitée ailleurs (ou disparue avec la fiche) : le résultat voulu est atteint. */
+/** Already handled elsewhere (or gone with the record): the wanted result is reached. */
 const alreadyClosed = (error: unknown) =>
   error instanceof ApiError &&
   (error.code === "reminder_closed" || error.code === "reminder_not_found");
 
 /**
- * Fait, Reporter de 3 jours, Ignorer, et « Classer en Sans réponse » (`close_21`) : la fiche passe
- * à `no_answer` d'abord, puis la relance est marquée faite (si le changement de statut l'a déjà
- * refermée, c'est tout aussi bien). Les listes, le compte de la navigation et les fiches sont relus.
+ * Fait, Reporter by 3 days, Ignorer, and « Classer en Sans réponse » (`close_21`): the record moves
+ * to `no_answer` first, then the reminder is marked done (if the status change already
+ * closed it, that is just as good). Lists, the navigation count and the records are re-read.
  */
 export function useReminderActions() {
   const client = useQueryClient();
@@ -46,7 +46,7 @@ export function useReminderActions() {
   });
   const { mutateAsync, reset } = mutation;
   return {
-    /** Résout à `true` quand l'action est faite ; `false` sur un refus (lisible dans `error`). */
+    /** Resolves to `true` when the action is done; `false` on a refusal (readable in `error`). */
     act: (reminder: ReminderView, choice: Choice): Promise<boolean> => {
       reset();
       return mutateAsync({ reminder, choice }).then(

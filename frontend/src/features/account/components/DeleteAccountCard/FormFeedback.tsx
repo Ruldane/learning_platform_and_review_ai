@@ -9,16 +9,16 @@ const ALERT_CLASS =
 interface FormFeedbackProps {
   pending: boolean;
   failure: DeleteFailure | null;
-  /** L'identifiant du message d'échec, cité par le champ. */
+  /** The identifier of the failure message, referenced by the field. */
   messageId: string;
-  /** Le message d'échec reçoit le focus à chaque nouvel échec. */
+  /** The failure message receives focus on each new failure. */
   messageRef: Ref<HTMLParagraphElement>;
 }
 
 /**
- * L'attente (annoncée : la zone `status` est toujours dans la page, seul son texte change) et
- * l'échec de la suppression : un paragraphe qui prend le focus, sans `role="alert"` (le lecteur
- * d'écran le lit une fois, au focus, et non deux : par l'alerte puis par le focus).
+ * The wait (announced: the `status` region is always on the page, only its text changes) and
+ * the deletion failure: a paragraph that takes focus, without `role="alert"` (the screen reader
+ * reads it once, on focus, not twice: once by the alert and then by focus).
  */
 export function FormFeedback({ pending, failure, messageId, messageRef }: FormFeedbackProps) {
   return (

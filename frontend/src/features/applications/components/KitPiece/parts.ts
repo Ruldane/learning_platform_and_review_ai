@@ -1,13 +1,13 @@
 import { t } from "@/shared/i18n/t";
 import type { KitKindView } from "../viewTypes";
 
-/** Ce que le code a laissé à la place d'une réponse : sa prétention salariale, ou un fait absent. */
+/** What the code left in place of an answer: the salary expectation, or a missing fact. */
 export type Blank = "salary" | "complete" | null;
 
-/** Un morceau du texte d'une pièce, copiable et modifiable à part. */
+/** A part of a piece's text, copyable and editable on its own. */
 export interface Part {
   key: string;
-  /** Son nom (relance à 7 jours, question du formulaire) ; `null` pour une pièce d'un seul texte. */
+  /** Its name (7-day follow-up, form question); `null` for a piece with a single text. */
   label: string | null;
   text: string;
   blank: Blank;
@@ -21,7 +21,7 @@ const SEPARATOR = /^\s*---\s*$/;
 const QUESTION = /^### +(.*)$/;
 const TWO_PARTS: readonly KitKindView[] = ["linkedin", "followups"];
 
-/** Les pièces faites de deux textes que le serveur sépare par une ligne `---`. */
+/** Pieces made of two texts that the server separates with a `---` line. */
 const isTwoParts = (kind: KitKindView): kind is "linkedin" | "followups" =>
   TWO_PARTS.includes(kind);
 
@@ -67,9 +67,9 @@ function formParts(content: string): Part[] | null {
 }
 
 /**
- * Le texte d'une pièce en morceaux : les deux textes d'un message LinkedIn ou des relances, une
- * réponse par question d'un formulaire (les réponses laissées par le code sont vides, marquées par
- * `blank`), sinon un seul morceau.
+ * A piece's text in parts: the two texts of a LinkedIn message or the follow-ups, one
+ * answer per form question (answers left by the code are empty, marked by
+ * `blank`), otherwise a single part.
  */
 export function splitParts(kind: KitKindView, content: string): Part[] {
   if (isTwoParts(kind)) return twoParts(kind, content);
@@ -77,7 +77,7 @@ export function splitParts(kind: KitKindView, content: string): Part[] {
   return form ?? [{ key: "text", label: null, text: content, blank: null }];
 }
 
-/** Le texte de la pièce que le serveur relira : l'inverse de `splitParts`. */
+/** The piece's text the server will re-read: the inverse of `splitParts`. */
 export function joinParts(kind: KitKindView, parts: Part[]): string {
   if (isTwoParts(kind)) {
     const [first = "", second = ""] = parts.map((part) => part.text.trim());

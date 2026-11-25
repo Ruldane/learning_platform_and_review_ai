@@ -5,7 +5,7 @@ import { ClaimChoice, type Choice } from "../../components/ClaimChoice";
 import { PublicPage } from "../../components/PublicPage";
 import { useClaim } from "../../hooks/useClaim";
 
-/** Ces refus ramènent à la connexion : il n'y a plus de choix à faire (ou plus de témoin). */
+/** These refusals return to sign-in: no choice left to make (or no cookie). */
 const BACK_TO_LOGIN = new Set(["claim_expired", "local_already_claimed"]);
 
 function sendsBackToLogin(error: unknown): error is ApiError {
@@ -13,9 +13,9 @@ function sendsBackToLogin(error: unknown): error is ApiError {
 }
 
 /**
- * `/login/claim` (publique) : le choix de la toute première connexion Google. Réussi, on
- * ouvre l'application ; un témoin expiré (409 `claim_expired`) renvoie à `/login` avec son
- * message ; toute autre erreur reste ici, sous les boutons.
+ * `/login/claim` (public): the very first Google sign-in choice. On success, the
+ * app opens; an expired cookie (409 `claim_expired`) returns to `/login` with its
+ * message; any other error stays here, under the buttons.
  */
 export function ClaimPage() {
   const navigate = useNavigate();

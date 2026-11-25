@@ -7,12 +7,12 @@ import type { ApplicationView } from "../viewTypes";
 
 interface ApplicationCardProps {
   application: ApplicationView;
-  /** Faux dans une colonne de tableau de suivi, où le statut est celui de la colonne. */
+  /** False in a tracking table column, where the status is the column's. */
   showStatus?: boolean;
   onOpen?: (id: string) => void;
 }
 
-/** Le contenu d'une fiche sur une carte : entreprise, poste, date, prochaine action, relances dues. */
+/** The content of a record on a card: company, role, date, next action, reminders due. */
 export function ApplicationCard({ application, showStatus = false, onOpen }: ApplicationCardProps) {
   const { company, title, appliedOn, dueReminders } = application;
   const action = application.nextAction ? describeNextAction(application) : null;

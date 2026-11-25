@@ -6,14 +6,15 @@ import { MANUAL_FIELDS, type ManualDraft, type ManualProblem } from "./manualDra
 
 interface ManualFieldsProps {
   draft: ManualDraft;
-  /** `name` : les champs obligatoires vides le disent ; `contact` : un contact sans nom ; `date` : une date future. */
+  /** `name`: empty mandatory fields say so; `contact`: a contact without a name; `date`: a future
+   * date. */
   problem: ManualProblem | null;
   onChange: (draft: ManualDraft) => void;
 }
 
 const textOf = (draft: ManualDraft, key: string): string => String(draft[key as keyof ManualDraft]);
 
-/** Les champs de la création à la main, puis les contacts. */
+/** The fields for manual creation, then the contacts. */
 export function ManualFields({ draft, problem, onChange }: ManualFieldsProps) {
   return (
     <>

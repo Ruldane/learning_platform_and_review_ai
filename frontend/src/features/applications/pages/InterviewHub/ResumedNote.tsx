@@ -5,14 +5,15 @@ import { FREE_INTERVIEW_PATH, interviewPath } from "../../urls";
 
 interface ResumedNoteProps {
   interview: InterviewView;
-  /** La fiche de la page ; `null` : la page libre. */
+  /** The page's record; `null`: the free page. */
   applicationId: string | null;
 }
 
 /**
- * Un entretien était déjà ouvert et la page le reprend. S'il est d'une autre fiche (ou libre alors
- * que la page est celle d'une fiche), on le dit en clair avec un lien vers sa page : il n'y a
- * qu'un entretien ouvert à la fois.
+ * An interview was already open and the page resumes it. If it belongs to another record (or is
+ * free while
+ * the page is a record's), it is said plainly with a link to its page: there is
+ * only one interview open at a time.
  */
 export function ResumedNote({ interview, applicationId }: ResumedNoteProps) {
   if (interview.applicationId === applicationId) {

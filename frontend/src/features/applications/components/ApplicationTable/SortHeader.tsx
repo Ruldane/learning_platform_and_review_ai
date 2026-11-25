@@ -4,12 +4,13 @@ import type { SortDirection } from "./sort";
 
 interface SortHeaderProps {
   label: string;
-  /** Absent : la colonne n'est pas celle du tri. */
+  /** Absent: this column is not the sort column. */
   direction?: SortDirection;
   onSort: () => void;
 }
 
-/** L'en-tête d'une colonne triable : `aria-sort` sur la cellule, le clic sur le bouton qu'elle contient. */
+/** The header of a sortable column: `aria-sort` on the cell, the click on the button it
+ * contains. */
 export function SortHeader({ label, direction, onSort }: SortHeaderProps) {
   const Icon =
     direction === "ascending" ? ArrowUp : direction === "descending" ? ArrowDown : ChevronsUpDown;

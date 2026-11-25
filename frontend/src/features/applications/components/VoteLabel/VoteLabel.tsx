@@ -3,7 +3,8 @@ import type { VoteValueView } from "../viewTypes";
 
 const MARKS: Record<VoteValueView, string> = { yes: "✓", no: "✗", maybe: "?" };
 
-/** Un vote écrit en toutes lettres (« Oui », « Non », « Peut-être ») ; le signe est décoratif, jamais la couleur seule. */
+/** A vote written in words (« Oui », « Non », « Peut-être »); the sign is decorative, never colour
+ * alone. */
 export function VoteLabel({ vote }: { vote: VoteValueView }) {
   return (
     <span className="inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-sm font-medium">

@@ -17,9 +17,9 @@ interface CommitteeFollowProps {
 }
 
 /**
- * Les commandes et l'exécution suivie : celle que January vient de lancer (ou de reprendre après un
- * 409), sinon la plus récente de l'offre. Quand January lance le comité, le focus passe à la note
- * « le comité délibère » : le bouton qu'elle vient d'activer se grise.
+ * The controls and the followed run: the one January just started (or resumed after a
+ * 409), otherwise the most recent for the posting. When January starts it, focus moves to the note
+ * « le comité délibère »: the button just activated is greyed out.
  */
 export function CommitteeFollow({ postingId, cvVersionId, createSocket }: CommitteeFollowProps) {
   const committees = useCommittees(postingId);

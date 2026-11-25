@@ -1,4 +1,4 @@
-/** Copie dans le presse-papiers ; une erreur (accès refusé, pas de presse-papiers) remonte à qui copie. */
+/** Copies to the clipboard; an error (access denied, no clipboard) is passed back to the caller. */
 export async function copyToClipboard(text: string): Promise<void> {
   if (!navigator.clipboard) throw new Error("clipboard unavailable");
   await navigator.clipboard.writeText(text);

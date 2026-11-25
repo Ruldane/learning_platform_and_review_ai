@@ -1,21 +1,21 @@
 import { t } from "@/shared/i18n/t";
 import type { FeedItem, InterruptPayload } from "@/shared/realtime/types";
 
-/** Le nom de la question que le serveur pose à l'écrit (7.8). */
+/** The name of the question the server asks in writing (7.8). */
 export const ANSWER_KIND = "interview_answer";
 
 const QUESTION_MESSAGE = /^interviewer-q(\d+)(-relance)?$/;
 
 export interface QuestionPosition {
-  /** Le rang de la question principale, à partir de 1. */
+  /** The rank of the main question, from 1. */
   number: number;
   followUp: boolean;
 }
 
 /**
- * Le rang de la question que pose l'interruption `item` : le payload ne le porte pas, on lit donc le
- * dernier message de l'intervieweur (`interviewer-q<n>`, `-relance` pour une relance) avant elle.
- * `null` tant qu'aucun n'est arrivé. Une question reposée (réponse illisible) garde son rang.
+ * The rank of the question the `item` interruption asks: the payload does not carry it, so the
+ * last interviewer message (`interviewer-q<n>`, `-relance` for a follow-up) before it is read.
+ * `null` until none has arrived. A re-asked question (unreadable answer) keeps its rank.
  */
 export function questionPosition(feed: FeedItem[], item: FeedItem): QuestionPosition | null {
   let position: QuestionPosition | null = null;
@@ -28,7 +28,7 @@ export function questionPosition(feed: FeedItem[], item: FeedItem): QuestionPosi
   return position;
 }
 
-/** Ce que la zone vocale dit d'une nouvelle question : son rang et son texte ; rien sans question à répondre. */
+/** What the live region says of a new question: its rank and text; nothing if none. */
 export function announcementOf(
   feed: FeedItem[],
   pending: InterruptPayload | null,
@@ -47,9 +47,9 @@ export function announcementOf(
 }
 
 /**
- * L'entretien n'attend plus rien de January et le débrief va s'écrire : elle a terminé l'entretien,
- * ou répondu à la dernière question principale (une relance pourrait encore venir : elle effacerait
- * cette phrase). Faux tant qu'une question est ouverte.
+ * The interview no longer waits on January; the debrief is being written. January ended it,
+ * or answered the last main question (a follow-up could still come: it would erase
+ * this sentence). False while a question is open.
  */
 export function isFinishing(
   feed: FeedItem[],

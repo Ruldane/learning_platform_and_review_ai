@@ -4,9 +4,9 @@ import { authKeys } from "../queryKeys";
 import type { Me } from "../types";
 
 /**
- * L'utilisateur connecté. Un 401 `auth_required` n'est pas une panne : il vaut `null` (« pas de
- * session »), ce qui évite qu'une relecture échoue en boucle ; toute autre erreur reste une erreur.
- * Pas de nouvelle tentative : la porte propose « Réessayer ».
+ * The signed-in user. A 401 `auth_required` is not a failure: it is
+ * `null` (« pas de session »), which avoids a re-read failing in a loop; other errors stay errors.
+ * No retry: the gate offers « Réessayer ».
  */
 export function useMe() {
   return useQuery<Me | null>({

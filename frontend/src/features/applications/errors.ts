@@ -10,7 +10,7 @@ const isKnown = (code: string): code is KnownCode => Object.hasOwn(en.applicatio
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
 
-/** Le code d'une erreur d'API, ou `null` pour toute autre erreur. */
+/** The code of an API error, or `null` for any other error. */
 export const errorCode = (error: unknown): string | null =>
   error instanceof ApiError ? error.code : null;
 
@@ -22,34 +22,34 @@ export function applicationsErrorMessage(error: unknown): string {
   return errorMessage(error);
 }
 
-/** Une chaîne de `details.<key>` d'un refus, ou `null`. */
+/** A string from `details.<key>` of a refusal, or `null`. */
 function detail(error: unknown, key: string): string | null {
   if (!(error instanceof ApiError) || !isRecord(error.details)) return null;
   const value = error.details[key];
   return typeof value === "string" ? value : null;
 }
 
-/** La fiche qui existe déjà pour une offre (409 `application_exists`). */
+/** The record that already exists for a posting (409 `application_exists`). */
 export const existingApplicationId = (error: unknown): string | null =>
   errorCode(error) === "application_exists" ? detail(error, "application_id") : null;
 
-/** La saisie en une phrase déjà ouverte (409 `intake_in_progress`). */
+/** The one-sentence entry already open (409 `intake_in_progress`). */
 export const openIntakeSessionId = (error: unknown): string | null =>
   errorCode(error) === "intake_in_progress" ? detail(error, "session_id") : null;
 
-/** La session du kit déjà ouverte (409 `kit_in_progress`). */
+/** The kit session already open (409 `kit_in_progress`). */
 export const openKitSessionId = (error: unknown): string | null =>
   errorCode(error) === "kit_in_progress" ? detail(error, "session_id") : null;
 
-/** L'entretien déjà ouvert (409 `interview_in_progress`). */
+/** The interview already open (409 `interview_in_progress`). */
 export const openInterviewId = (error: unknown): string | null =>
   errorCode(error) === "interview_in_progress" ? detail(error, "interview_id") : null;
 
-/** L'exécution du comité déjà ouverte pour l'offre (409 `committee_in_progress`). */
+/** The committee run already open for the posting (409 `committee_in_progress`). */
 export const openCommitteeRunId = (error: unknown): string | null =>
   errorCode(error) === "committee_in_progress" ? detail(error, "run_id") : null;
 
-/** Le refus d'une modification : le texte du serveur (il parle de la modification), sauf pièce absente. */
+/** A refused change: the server's text (it speaks of the change), except for a missing piece. */
 export const kitSaveErrorMessage = (error: unknown): string =>
   errorCode(error) === "kit_item_not_found" || errorCode(error) === "application_not_found"
     ? applicationsErrorMessage(error)
@@ -61,7 +61,8 @@ const isAlert = (value: unknown): value is AlertOut =>
   typeof value.level === "string" &&
   typeof value.message === "string";
 
-/** Les fiches proches d'un 409 `application_duplicate` (`details.alerts`), ou `null` pour tout autre refus. */
+/** The near-matching records of a 409 `application_duplicate` (`details.alerts`), or `null` for any
+ * other refusal. */
 export function duplicateAlerts(error: unknown): AlertOut[] | null {
   if (errorCode(error) !== "application_duplicate") return null;
   if (!(error instanceof ApiError) || !isRecord(error.details)) return null;

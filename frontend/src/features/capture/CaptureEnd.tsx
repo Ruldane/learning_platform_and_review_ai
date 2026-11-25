@@ -12,13 +12,13 @@ const OUTCOME = {
 
 interface CaptureEndProps {
   status: SessionStatus;
-  /** La raison d'un échec, en clair ; `null` sinon. */
+  /** The reason for a failure, in plain text; `null` otherwise. */
   failure: string | null;
   onAgain: () => void;
   onClose: () => void;
 }
 
-/** La fin d'une capture : ce qui s'est passé, le lien vers le journal et « Nouvelle capture ». */
+/** The end of a capture: what happened, the link to the journal and « Nouvelle capture ». */
 export function CaptureEnd({ status, failure, onAgain, onClose }: CaptureEndProps) {
   const outcome = status === "failed" || status === "cancelled" ? status : "completed";
   return (

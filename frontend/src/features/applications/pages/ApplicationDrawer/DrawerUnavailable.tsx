@@ -5,13 +5,13 @@ import { ErrorState } from "@/shared/ui/states/ErrorState";
 import { LoadingState } from "@/shared/ui/states/LoadingState";
 
 interface DrawerUnavailableProps {
-  /** L'erreur de la lecture, ou `null` tant qu'elle charge. */
+  /** The read error, or `null` while it loads. */
   error: unknown;
   onRetry: () => void;
   onBack: () => void;
 }
 
-/** Ce que le tiroir montre tant que la fiche n'est pas là : chargement, fiche inconnue (404) ou panne. */
+/** What the drawer shows until the record is there: loading, unknown record (404) or failure. */
 export function DrawerUnavailable({ error, onRetry, onBack }: DrawerUnavailableProps) {
   if (error instanceof ApiError && error.status === 404) {
     return (

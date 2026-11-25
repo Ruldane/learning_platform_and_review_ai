@@ -8,7 +8,7 @@ import { createQueryWrapper } from "@/test/queryWrapper";
 import { server } from "@/test/server";
 import { DataPage } from "./DataPage";
 
-/** « Mes données » en mode `local` ou `google`, avec la réponse voulue pour la suppression. */
+/** « Mes données » in `local` or `google` mode, with the response wanted for the deletion. */
 export function setup(
   mode: "local" | "google",
   deleteOutcome: Parameters<typeof accountApi>[0] = {},

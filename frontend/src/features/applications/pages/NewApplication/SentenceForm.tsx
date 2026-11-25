@@ -14,11 +14,11 @@ interface SentenceFormProps {
   error: string | null;
   onText: (text: string) => void;
   onSubmit: () => void;
-  /** Ce qui s'affiche sous le champ : la saisie déjà ouverte à reprendre ou à annuler. */
+  /** What shows under the field: the entry already open to resume or cancel. */
   children?: ReactNode;
 }
 
-/** Le champ de la phrase (1 000 caractères au plus) et son bouton « Préparer la fiche ». */
+/** The sentence field (1,000 characters at most) and its « Préparer la fiche » button. */
 export function SentenceForm({
   text,
   pending,

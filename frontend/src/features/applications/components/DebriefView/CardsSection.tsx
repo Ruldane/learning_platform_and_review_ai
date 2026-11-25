@@ -6,7 +6,7 @@ interface CardsSectionProps {
   reviewsHref: string;
 }
 
-/** Les fiches de révision créées par l'entretien, avec le lien vers la page des révisions. */
+/** The review cards created by the interview, with the link to the reviews page. */
 export function CardsSection({ count, reviewsHref }: CardsSectionProps) {
   const message =
     count === 0

@@ -12,12 +12,12 @@ function settle(write: Promise<unknown>, resetOther: () => void): Promise<boolea
   );
 }
 
-/** Les écritures d'une fiche ouverte ; chacune rend la fiche relue, qui remplace celle du cache. */
+/** Writes to an open record; each returns the re-read record, which replaces the cached one. */
 export function useUpdateApplication(applicationId: string) {
   const client = useQueryClient();
   const onSuccess = (detail: ApplicationDetail) => {
     client.setQueryData(applicationsKeys.one(applicationId), detail);
-    // Le tableau, les indicateurs et les relances dues ont pu changer (statut, dates, contacts).
+    // The board, the indicators and the reminders due may have changed (status, dates, contacts).
     void client.invalidateQueries({ queryKey: applicationsKeys.list });
     void client.invalidateQueries({ queryKey: applicationsKeys.stats });
     void client.invalidateQueries({ queryKey: applicationsKeys.reminders });
@@ -32,7 +32,8 @@ export function useUpdateApplication(applicationId: string) {
   });
   const failure = patch.error ?? event.error;
   return {
-    /** Résolvent à `true` quand le serveur a pris l'écriture, `false` sur un refus (lisible dans `error`). */
+    /** Resolve to `true` when the server accepted the write, `false` on a refusal (readable in
+     * `error`). */
     save: (body: ApplicationPatch) => settle(patch.mutateAsync(body), event.reset),
     record: (body: EventIn) => settle(event.mutateAsync(body), patch.reset),
     pending: patch.isPending || event.isPending,

@@ -12,7 +12,7 @@ interface AppliedActionProps {
   onRecord: (event: EventIn) => Promise<boolean>;
 }
 
-/** « J'ai postulé » : le statut Postulée à la date choisie (aujourd'hui par défaut). */
+/** « J'ai postulé »: the Postulée status on the chosen date (today by default). */
 export function AppliedAction({ pending, onRecord }: AppliedActionProps) {
   const [day, setDay] = useState(() => todayString());
   const [refused, setRefused] = useState(false);

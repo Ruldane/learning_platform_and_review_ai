@@ -3,13 +3,13 @@ import { useId } from "react";
 export interface OptionView {
   value: string;
   label: string;
-  /** Une phrase qui précise le choix : lue avec lui. */
+  /** A sentence that clarifies the choice: read with it. */
   hint?: string;
 }
 
 interface OptionGroupProps {
   legend: string;
-  /** Le nom commun des boutons radio (un groupe par nom). */
+  /** The shared name of the radio buttons (one group per name). */
   name: string;
   options: OptionView[];
   value: string;
@@ -17,7 +17,7 @@ interface OptionGroupProps {
   onChange: (value: string) => void;
 }
 
-/** Un choix parmi quelques-uns : des boutons radio natifs dans un groupe nommé (flèches du clavier comprises). */
+/** A choice among a few: native radio buttons in a named group (keyboard arrows included). */
 export function OptionGroup({
   legend,
   name,

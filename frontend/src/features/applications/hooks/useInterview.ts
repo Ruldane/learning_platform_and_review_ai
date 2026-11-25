@@ -4,10 +4,11 @@ import { fetchInterview } from "../api";
 import { applicationsKeys } from "../queryKeys";
 import { toInterviewView } from "../toInterviewView";
 
-/** Tant que l'entretien tourne, la page relit aussi toute seule : une fin de session perdue ne bloque rien. */
+/** While the interview runs, the page also re-reads on its own: a lost session end blocks
+ * nothing. */
 const POLL_MS = 5_000;
 
-/** `GET /interviews/{id}` : l'entretien, ses échanges et son débrief. */
+/** `GET /interviews/{id}`: the interview, its exchanges and its debrief. */
 export function useInterview(interviewId: string) {
   return useQuery({
     queryKey: applicationsKeys.interview(interviewId),

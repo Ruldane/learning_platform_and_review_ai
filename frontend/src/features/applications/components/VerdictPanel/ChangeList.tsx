@@ -7,8 +7,8 @@ const isCheck = (change: ChangeView) =>
   change.text.startsWith("To check") || change.text.startsWith("À vérifier");
 
 /**
- * Les changements proposés, dans l'ordre du comité. Un changement qui demande une compétence absente
- * du profil est marqué « À acquérir » : ce n'est jamais une ligne à ajouter au CV.
+ * The proposed changes, in the committee's order. A change that needs a skill missing
+ * from the profile is marked « À acquérir »: it is never a line to add to the CV.
  */
 export function ChangeList({ changes }: { changes: ChangeView[] }) {
   if (changes.length === 0) {

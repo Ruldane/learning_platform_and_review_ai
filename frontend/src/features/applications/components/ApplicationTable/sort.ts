@@ -22,8 +22,8 @@ function compare(a: string | number, b: string | number): number {
 }
 
 /**
- * Les fiches triées selon `sort` (l'ordre reçu sans tri). Le tri est stable ; une valeur absente
- * (date non posée) passe toujours en fin de liste, dans les deux sens.
+ * Records sorted by `sort` (the received order when unsorted). The sort is stable; a missing value
+ * (date not set) always goes to the end of the list, in both directions.
  */
 export function sortApplications(
   applications: ApplicationView[],
@@ -41,7 +41,8 @@ export function sortApplications(
   });
 }
 
-/** Un premier clic trie en croissant, un second inverse, sur une autre colonne on repart de croissant. */
+/** A first click sorts ascending, a second reverses it; on another column, it starts ascending
+ * again. */
 export function nextSort(current: SortState | null, key: SortKey): SortState {
   if (current?.key === key) {
     return { key, direction: current.direction === "ascending" ? "descending" : "ascending" };

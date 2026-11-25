@@ -14,7 +14,7 @@ interface ChoiceSelectProps {
   onChange: (value: string) => void;
 }
 
-/** Une liste déroulante native reliée à son étiquette (`control`). */
+/** A native dropdown linked to its label (`control`). */
 export function ChoiceSelect({ control, value, choices, disabled, onChange }: ChoiceSelectProps) {
   return (
     <select

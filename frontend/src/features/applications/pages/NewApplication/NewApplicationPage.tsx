@@ -6,14 +6,14 @@ import { ManualSection } from "./ManualSection";
 import { SentenceSection } from "./SentenceSection";
 
 interface NewApplicationPageProps {
-  /** Ne sert qu'aux tests (faux WebSocket). */
+  /** Only for tests (fake WebSocket). */
   createSocket?: SocketFactory;
 }
 
 /**
- * Une nouvelle fiche (`/applications/new`) : en une phrase (l'Assistant de suivi la prépare et
- * demande confirmation) ou à la main. Dans les deux cas, une fiche qui ressemble à une autre
- * déclenche l'alerte de doublon, et la fiche créée s'ouvre.
+ * A new record (`/applications/new`): in one sentence (the tracking Assistant prepares it and
+ * asks for confirmation), or by hand. In both cases, a record that looks like another
+ * triggers the duplicate alert, and the created record opens.
  */
 export function NewApplicationPage({ createSocket }: NewApplicationPageProps) {
   return (

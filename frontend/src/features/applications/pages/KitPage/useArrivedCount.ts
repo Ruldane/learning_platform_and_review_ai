@@ -2,10 +2,10 @@ import { useState } from "react";
 import type { KitPieceView } from "../../types";
 
 /**
- * Les pièces arrivées pendant ce lancement. Au lancement vu de cette page, on note la date de chaque
- * pièce déjà rangée : une relance ne compte pas « 7 sur 7 » avant d'avoir refait quoi que ce soit.
- * Une pièce modifiée par January est gardée telle quelle : elle est déjà là. Une page ouverte
- * pendant un kit en cours n'a pas vu le lancement : elle compte toutes les pièces rangées.
+ * The pieces that arrived during this launch. For a launch seen from this page, the date of each
+ * piece already filed is noted: a re-run does not count « 7 sur 7 » until something is redone.
+ * A piece edited by January is kept as is: it is already there. A page opened
+ * during a running kit did not see the launch: it counts all filed pieces.
  */
 export function useArrivedCount(pieces: KitPieceView[], running: boolean): number {
   const [wasRunning, setWasRunning] = useState(running);

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { StatusView } from "../viewTypes";
 
-/** Ce qui reprend le focus : le bouton « Déplacer » (menu) ou la poignée de glisser (clavier). */
+/** What takes focus back: the « Déplacer » button (menu) or the drag handle (keyboard). */
 export type FocusTarget = "menu" | "handle";
 
 const SELECTOR: Record<FocusTarget, string> = {
@@ -11,9 +11,9 @@ const SELECTOR: Record<FocusTarget, string> = {
 
 interface Move {
   id: string;
-  /** La colonne d'où la carte part. */
+  /** The column the card leaves. */
   from: StatusView;
-  /** La colonne où elle va. */
+  /** The column it goes to. */
   to: StatusView;
   target: FocusTarget;
 }
@@ -29,15 +29,15 @@ function columnOf(root: HTMLElement | null, id: string): string | null {
 }
 
 /**
- * Après un déplacement, la carte change de colonne (nouveau nœud) et le focus serait perdu : on le
- * rend à la poignée ou au bouton « Déplacer » dès que la carte s'affiche dans sa nouvelle colonne.
- * `moved` se déclare avant d'envoyer le déplacement ; `version` change avec les fiches.
+ * After a move, the card changes column (new node) and focus would be lost: it is
+ * returned to the handle or « Déplacer » button as soon as the card shows in its new column.
+ * `moved` is set before the move is sent; `version` changes with the records.
  *
- * Si la carte est relue dans une autre colonne que prévu (déplacement refusé, ou rafraîchissement
- * sans rapport), l'attente s'arrête : un rafraîchissement ultérieur ne vole jamais le focus. Si le
- * serveur refuse après la mise à jour de la page, la carte revient dans sa colonne d'origine (autre
- * nœud) : le focus, tombé sur la page, lui est rendu une fois, sans rien prendre à ce qui l'aurait
- * déjà reçu.
+ * If the card is re-read in another column than expected (move refused, or an unrelated refresh
+ * ), the wait stops: a later refresh never steals focus. If the
+ * server refuses after the page update, the card goes back to its original column (another
+ * node): focus, which fell to the page, is given back once, without taking what it would have
+ * already received.
  */
 export function useFocusAfterMove(version: unknown) {
   const boardRef = useRef<HTMLDivElement>(null);

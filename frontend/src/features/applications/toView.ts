@@ -23,7 +23,7 @@ import type {
   StatusView,
 } from "./types";
 
-/** Une fiche de la liste ou du détail → la fiche que les cartes et le tableau affichent. */
+/** A record from the list or detail → the record the cards and the table display. */
 export function toApplicationView(out: ApplicationOut | ApplicationDetail): ApplicationView {
   return {
     id: out.id,
@@ -54,7 +54,8 @@ export function toEventView(out: EventOut): EventView {
   };
 }
 
-/** Une relance du serveur ; son canal n'est pas repris (January copie, l'application n'envoie rien). */
+/** A reminder from the server; its channel is not carried over (January copies, the app sends
+ * nothing). */
 export function toReminderView(out: ReminderOut): ReminderView {
   return {
     id: out.id,
@@ -69,7 +70,7 @@ export function toReminderView(out: ReminderOut): ReminderView {
   };
 }
 
-/** Les indicateurs : les huit statuts sont toujours là, à zéro quand le serveur n'en dit rien. */
+/** The indicators: the eight statuses are always there, at zero when the server says nothing. */
 export function toStatsView(out: ApplicationStatsOut): StatsView {
   const byStatus = Object.fromEntries(
     STATUS_ORDER.map((status) => [status, out.by_status[status] ?? 0]),
@@ -93,7 +94,8 @@ export function toAlertView(out: AlertOut): DuplicateAlertView {
   };
 }
 
-/** Les contacts à enregistrer : le serveur remplace la liste, sans identifiant ; un vide devient `null`. */
+/** The contacts to save: the server replaces the list, without an identifier; an empty one becomes
+ * `null`. */
 export function toContactsIn(contacts: ContactView[]): ContactIn[] {
   return contacts.map(({ name, role, url }) => ({
     name: name.trim(),
@@ -102,7 +104,8 @@ export function toContactsIn(contacts: ContactView[]): ContactIn[] {
   }));
 }
 
-/** La question `application_confirm` de l'Assistant de suivi → la fiche à confirmer (valeurs lues, issues du serveur). */
+/** The `application_confirm` question from the tracking Assistant → the record to confirm (values
+ * read, server outcomes). */
 export function toConfirmationView(payload: InterruptPayload): ConfirmationView {
   return {
     question: payload.question,
@@ -117,7 +120,7 @@ export function toConfirmationView(payload: InterruptPayload): ConfirmationView 
   };
 }
 
-/** Une pièce du kit du serveur → la pièce que la page montre. */
+/** A kit piece from the server → the piece the page shows. */
 export function toKitPieceView(out: KitItemOut): KitPieceView {
   return {
     kind: out.kind,
@@ -133,7 +136,7 @@ export function toKitPieceView(out: KitItemOut): KitPieceView {
   };
 }
 
-/** Le kit du serveur → la vue de la page. */
+/** The kit from the server → the page view. */
 export function toKitView(out: KitOut): KitView {
   return { sessionId: out.session_id, running: out.running, pieces: out.items.map(toKitPieceView) };
 }

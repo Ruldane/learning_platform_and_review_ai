@@ -3,7 +3,7 @@ import { FreeTextAnswer } from "@/shared/session-ui";
 import { Button } from "@/shared/ui/button";
 import { VoicePlayback } from "@/shared/voice";
 
-/** La limite d'une réponse (`max_length` de la question `interview_answer`). */
+/** The limit of an answer (`max_length` of the `interview_answer` question). */
 const MAX_ANSWER = 4000;
 
 interface AnswerFieldsProps {
@@ -14,7 +14,8 @@ interface AnswerFieldsProps {
   question?: string;
 }
 
-/** Le champ de réponse écrite, la limite de longueur et « Terminer l'entretien » (si le serveur l'offre). */
+/** The written answer field, the length limit and « Terminer l'entretien » (if the server offers
+ * it). */
 export function AnswerFields({
   disabled,
   stopLabel,

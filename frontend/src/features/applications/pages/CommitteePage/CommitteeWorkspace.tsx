@@ -3,14 +3,15 @@ import type { SocketFactory } from "@/shared/realtime/socket";
 import { CommitteeFollow } from "./CommitteeFollow";
 
 interface CommitteeWorkspaceProps {
-  /** L'offre jugée ; `null` : la fiche n'est liée à aucune offre analysée. */
+  /** The posting judged; `null`: the record is not linked to any analysed posting. */
   postingId: string | null;
-  /** La version de CV envoyée avec la fiche (proposée en premier). */
+  /** The CV version sent with the record (offered first). */
   cvVersionId: string | null;
   createSocket?: SocketFactory;
 }
 
-/** Le comité d'une fiche : sans offre liée il n'y a rien à juger ; sinon commandes et exécution suivie. */
+/** A record's committee: without a linked posting there is nothing to judge; otherwise controls and
+ * the followed run. */
 export function CommitteeWorkspace({
   postingId,
   cvVersionId,

@@ -13,9 +13,9 @@ import { CommitteeWorkspace } from "./CommitteeWorkspace";
 const isMissing = (error: unknown) => error instanceof ApiError && error.status === 404;
 
 /**
- * Le comité de recrutement simulé d'une candidature (`/applications/:applicationId/committee`) : le
- * débat à gauche, les votes, le verdict et l'avant / après à droite, sous le bandeau « Simulation,
- * pas une prédiction ». `createSocket` ne sert qu'aux tests.
+ * The simulated hiring committee for an application (`/applications/:applicationId/committee`): the
+ * debate on the left, votes, verdict and before / after on the right, under the « Simulation,
+ * pas une prédiction » banner. `createSocket` is only for tests.
  */
 export function CommitteePage({ createSocket }: { createSocket?: SocketFactory }) {
   const { applicationId = "" } = useParams();

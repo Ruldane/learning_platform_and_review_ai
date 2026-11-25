@@ -11,11 +11,11 @@ const STATUS_ICON = {
 
 interface KitStatusBadgeProps {
   status: KitStatusView;
-  /** Le kit est en cours : une pièce pas encore arrivée est « en préparation ». */
+  /** The kit is running: a piece not yet arrived is « en préparation ». */
   running: boolean;
 }
 
-/** Le statut d'une pièce en toutes lettres (jamais la couleur seule), avec son icône. */
+/** A piece's status in words (never colour alone), with its icon. */
 export function KitStatusBadge({ status, running }: KitStatusBadgeProps) {
   const preparing = status === "pending" && running;
   const Icon = preparing ? Loader2 : STATUS_ICON[status];

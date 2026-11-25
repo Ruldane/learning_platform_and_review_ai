@@ -8,21 +8,22 @@ import { DetailsFields } from "./DetailsFields";
 interface DetailsFormProps {
   detail: ApplicationDetail;
   pending: boolean;
-  /** Envoie ce qui a changé (et annonce « Fiche enregistrée. » hors du formulaire, qui est remonté). */
+  /** Sends what changed (and announces « Fiche enregistrée. » outside the form, which is
+   * remounted). */
   onSave: (patch: ApplicationPatch) => Promise<boolean>;
 }
 
 /**
- * Les champs modifiables de la fiche et ses contacts, enregistrés d'un coup (`PATCH`, seulement ce
- * qui a changé). Un nom d'entreprise ou de poste vide, ou un contact sans nom, n'est pas envoyé : le
- * champ le dit. Quand la fiche est relue (écriture ailleurs dans le tiroir), les retouches non enregistrées sont gardées.
+ * The record's editable fields and its contacts, saved at once (`PATCH`, only what
+ * changed). A blank company or job name, or a contact without a name, is not sent: the
+ * field says so. When the record is re-read (written elsewhere in the drawer), unsaved edits stay.
  */
 export function DetailsForm({ detail, pending, onSave }: DetailsFormProps) {
   const [draft, setDraft] = useState<DetailsDraft>(() => toDraft(detail));
   const [refused, setRefused] = useState(false);
   const [seen, setSeen] = useState(detail);
   if (seen !== detail) {
-    // La fiche a été relue : les retouches non enregistrées restent, le reste se met à jour.
+    // The record was re-read: unsaved edits stay, the rest updates.
     setDraft(rebase(draft, toDraft(seen), toDraft(detail)));
     setSeen(detail);
   }

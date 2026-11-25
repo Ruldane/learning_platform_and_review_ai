@@ -2,7 +2,7 @@ import { useState } from "react";
 import { t } from "@/shared/i18n/t";
 import type { KitPieceView, KitView } from "../types";
 
-/** Une pièce vient d'arriver (ou d'être refaite par un nouveau lancement) : jamais celle de January. */
+/** A piece has just arrived (or been redone by a new run): never January's own. */
 function arrived(before: KitPieceView | undefined, after: KitPieceView, running: boolean) {
   if (after.status === "pending" || after.edited || !before) return false;
   return before.status === "pending" || (running && before.updatedAt !== after.updatedAt);
@@ -25,7 +25,8 @@ function finishedSentence(pieces: KitPieceView[]): string {
   });
 }
 
-/** Ce que la relecture du kit apporte : les pièces arrivées, puis la fin du kit si elle vient d'avoir lieu. */
+/** What the kit re-read brings: the pieces that arrived, then the end of the kit if it has just
+ * happened. */
 export function describeKitChange(before: KitView, after: KitView): string {
   const running = after.running || before.running;
   const sentences = after.pieces
@@ -47,9 +48,9 @@ export function describeKitChange(before: KitView, after: KitView): string {
 }
 
 /**
- * La phrase à annoncer (zone vocale) quand une pièce arrive ou que le kit se termine. La première
- * lecture n'annonce rien : ce qui est déjà là n'est pas une arrivée. `count` change à chaque
- * annonce, même identique.
+ * The sentence to announce (live region) when a piece arrives or the kit ends. The first
+ * read announces nothing: what is already there is not an arrival. `count` changes on each
+ * announcement, even an identical one.
  */
 export function useKitAnnouncement(kit: KitView | undefined): { message: string; count: number } {
   const [last, setLast] = useState<KitView | undefined>(undefined);
@@ -57,7 +58,7 @@ export function useKitAnnouncement(kit: KitView | undefined): { message: string;
   if (kit && kit !== last) {
     setLast(kit);
     const sentence = last ? describeKitChange(last, kit) : "";
-    // Le compteur change à chaque annonce : une phrase identique est relue quand même.
+    // The counter changes on each announcement: an identical sentence is still read.
     if (sentence) setSpoken({ message: sentence, count: spoken.count + 1 });
   }
   return spoken;

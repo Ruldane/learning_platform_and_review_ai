@@ -6,7 +6,7 @@ import type { StatusView } from "../viewTypes";
 interface StatusMoveMenuListProps {
   current: StatusView;
   onSelect: (status: StatusView) => void;
-  /** Ferme le menu ; `refocus` rend le focus au bouton qui l'a ouvert. */
+  /** Closes the menu; `refocus` returns focus to the button that opened it. */
   onClose: (refocus: boolean) => void;
 }
 
@@ -20,7 +20,8 @@ function target(key: string, at: number, count: number): number | null {
   return moves[key] ?? null;
 }
 
-/** Les statuts du menu « Déplacer vers… » : flèches, début, fin, Échap et Tab au clavier. */
+/** The statuses of the « Déplacer vers… » menu: arrows, home, end, Escape and Tab on the
+ * keyboard. */
 export function StatusMoveMenuList({ current, onSelect, onClose }: StatusMoveMenuListProps) {
   function onKeyDown(event: KeyboardEvent<HTMLUListElement>) {
     if (event.key === "Escape") {

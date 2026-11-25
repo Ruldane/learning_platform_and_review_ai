@@ -5,9 +5,9 @@ interface Started {
 }
 
 /**
- * Lancer le comité et porter le focus sur la note « le comité délibère » : le bouton que January
- * vient d'activer se grise, le focus ne doit pas s'y perdre. Le focus n'est posé que pour un
- * lancement de January, jamais pour une exécution déjà en cours à l'arrivée.
+ * Starts the committee and moves focus to the « le comité délibère » note: the button January
+ * just activated greys out, focus must not be lost there. Focus is set only for a
+ * launch by January, never for a run already in progress on arrival.
  */
 export function useLaunchFocus(
   running: boolean,

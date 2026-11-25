@@ -21,7 +21,8 @@ interface VersionPickerProps {
   onLaunch: (versionId: string) => void;
 }
 
-/** La liste des versions prêtes et le bouton qui lance (ou relance) le comité sur celle qui est choisie. */
+/** The list of ready versions and the button that starts (or re-runs) the committee on the chosen
+ * one. */
 export function VersionPicker({
   versions,
   selected,

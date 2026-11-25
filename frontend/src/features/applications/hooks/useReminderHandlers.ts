@@ -5,9 +5,9 @@ import type { ReminderView } from "../types";
 import { useReminderActions } from "./useReminders";
 
 /**
- * Les rappels des `ReminderCard` d'une page : Copier (presse-papiers de l'appareil), Fait (ou
- * « Classer en Sans réponse » pour `close_21`), Reporter, Ignorer. Une action en cours en empêche une
- * autre ; `message` annonce la relance traitée ; `onHandled` rend la main à la page (focus).
+ * The `ReminderCard` actions of a page: Copy (device clipboard), Fait (or
+ * « Classer en Sans réponse » for `close_21`), Reporter, Ignorer. A running action blocks one
+ * other; `message` announces the handled reminder; `onHandled` hands control back to the page.
  */
 export function useReminderHandlers(reminders: ReminderView[], onHandled?: () => void) {
   const actions = useReminderActions();

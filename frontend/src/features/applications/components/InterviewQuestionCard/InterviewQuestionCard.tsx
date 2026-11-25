@@ -4,14 +4,14 @@ import { AnswerFields } from "./AnswerFields";
 import { SentLine, type Sent } from "./SentLine";
 
 interface InterviewQuestionCardProps {
-  /** Le rang de la question principale (à partir de 1), `null` tant qu'on ne le connaît pas. */
+  /** The rank of the main question (from 1), `null` until it is known. */
   number: number | null;
   total: number;
-  /** C'est la relance de la question `number`. */
+  /** This is the follow-up to question `number`. */
   followUp: boolean;
   answered: boolean;
   disabled: boolean;
-  /** L'étiquette de l'option « terminer » du serveur ; `null` : pas d'option. */
+  /** The label of the server's « terminer » option; `null`: no option. */
   stopLabel: string | null;
   onAnswer: (text: string) => void;
   onStop: () => void;
@@ -33,9 +33,9 @@ function heading(number: number | null, total: number, followUp: boolean): strin
 }
 
 /**
- * La question posée par l'intervieweur, avec son champ de réponse écrite (une zone de texte, le
- * focus y arrive) et « Terminer l'entretien ». La question elle-même est la bulle juste au-dessus.
- * Une fois répondue, la carte se replie : « Réponse envoyée » et ce que January a écrit.
+ * The question asked by the interviewer, with its written answer field (a text area, where
+ * focus lands) and « Terminer l'entretien ». The question itself is the bubble just above.
+ * Once answered, the card folds: « Réponse envoyée » and what January wrote.
  */
 export function InterviewQuestionCard(props: InterviewQuestionCardProps) {
   const { number, total, followUp, answered, disabled, stopLabel, onAnswer, onStop } = props;

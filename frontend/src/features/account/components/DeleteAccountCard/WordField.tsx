@@ -4,14 +4,15 @@ import { fieldClass } from "@/shared/ui/fieldClass";
 
 interface WordFieldProps {
   value: string;
-  /** Le refus vise ce champ : `aria-invalid`. */
+  /** A refusal targets this field: `aria-invalid`. */
   invalid: boolean;
-  /** Les textes qui décrivent le champ : les avertissements, puis l'échec s'il y en a un. */
+  /** The texts describing the field: the warnings, then the failure if there is one. */
   describedBy: string;
   onChange: (value: string) => void;
 }
 
-/** Le champ où l'on retape le mot de confirmation : ni complétion, ni correction, ni majuscule. */
+/** The field where the confirmation word is retyped: no autocomplete, no autocorrect, no
+ * capitals. */
 export function WordField({ value, invalid, describedBy, onChange }: WordFieldProps) {
   const inputId = useId();
   return (

@@ -1,4 +1,4 @@
-/** Un indicateur : son libellé et sa valeur. */
+/** An indicator: its label and its value. */
 export function Indicator({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-0.5">

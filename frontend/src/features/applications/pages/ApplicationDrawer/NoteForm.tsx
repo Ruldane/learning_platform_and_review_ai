@@ -15,7 +15,7 @@ interface NoteFormProps {
   onRecord: (event: EventIn) => Promise<boolean>;
 }
 
-/** Une note datée dans le fil de la fiche. */
+/** A dated note in the record's thread. */
 export function NoteForm({ pending, onRecord }: NoteFormProps) {
   const [text, setText] = useState("");
 

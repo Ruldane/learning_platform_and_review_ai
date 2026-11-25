@@ -6,8 +6,8 @@ import { EMPTY_TARGET, toTarget } from "./targetDraft";
 const DEFAULTS: InterviewSettings = { mode: "mixed", durationMin: 30, language: "en" };
 
 /**
- * L'état du formulaire des réglages et son envoi. Sans fiche (`applicationId` nul), la cible
- * (offre ou intitulé) est obligatoire : rien n'est envoyé sans elle, et le formulaire le dit.
+ * The settings form state and its submission. Without a record (`applicationId` null), the target
+ * (posting or title) is required: nothing is sent without it, and the form says so.
  */
 export function useInterviewSetup(
   applicationId: string | null,

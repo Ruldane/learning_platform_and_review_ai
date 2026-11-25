@@ -8,7 +8,7 @@ interface ViewSwitchProps {
   onChange: (view: BoardView) => void;
 }
 
-/** Bascule Tableau de suivi / Tableau : deux boutons, celui qui est affiché est annoncé « enfoncé ». */
+/** Switch Tableau de suivi / Tableau: two buttons; the one shown is announced as « enfoncé ». */
 export function ViewSwitch({ view, onChange }: ViewSwitchProps) {
   return (
     <div role="group" aria-label={t("applications.boardPage.viewLabel")} className="flex gap-1">

@@ -3,7 +3,7 @@ import type { CommitteeRunOut, CommitteeView, PersonaView } from "./types";
 
 const rank = (persona: PersonaView): number => PERSONA_ORDER.indexOf(persona);
 
-/** Une exécution du comité du serveur → la vue de la page (les votes toujours dans l'ordre du comité). */
+/** A committee run from the server → the page view (votes always in committee order). */
 export function toCommitteeView(out: CommitteeRunOut): CommitteeView {
   return {
     id: out.id,

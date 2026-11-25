@@ -5,9 +5,9 @@ import { CaptureRun } from "./CaptureRun";
 import { useStartCapture } from "./hooks/useStartCapture";
 
 /**
- * Le dialogue ouvert : le champ de capture, ou le suivi de la capture lancée. Monté seulement
- * quand le dialogue s'ouvre : tant qu'il est fermé, aucune lecture ni aucun fournisseur de données
- * n'est nécessaire (le raccourci vit dans `CaptureOverlay`).
+ * The open dialog: the capture field, or the tracking of the started capture. Mounted only
+ * when the dialog opens: while it is closed, no read or data provider
+ * is needed (the shortcut lives in `CaptureOverlay`).
  */
 export function CaptureDialogBody({ createSocket }: { createSocket?: SocketFactory }) {
   const { sessionId, follow, restart, closeDialog, draft, setDraft } = useCaptureDialog();

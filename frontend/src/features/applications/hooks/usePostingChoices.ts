@@ -3,13 +3,13 @@ import { fetchPostings } from "../api";
 import { applicationsKeys } from "../queryKeys";
 import type { PostingSummaryOut } from "../types";
 
-/** Une offre à choisir : son identifiant et son intitulé lisible. */
+/** A posting to choose: its identifier and readable title. */
 export interface PostingChoice {
   id: string;
   label: string;
 }
 
-// Une fonction stable : TanStack Query ne refait pas la conversion à chaque rendu.
+// A stable function: TanStack Query does not redo the conversion on each render.
 const toChoices = (rows: PostingSummaryOut[]): PostingChoice[] =>
   rows
     .filter((row) => row.status === "ready")
@@ -18,7 +18,7 @@ const toChoices = (rows: PostingSummaryOut[]): PostingChoice[] =>
       label: [row.company, row.title].filter(Boolean).join(", ") || row.id,
     }));
 
-/** `GET /postings` : les offres analysées, à choisir pour un entretien sans fiche (rien n'est lu sans `enabled`). */
+/** `GET /postings`: analysed postings for a free interview (not read without `enabled`). */
 export function usePostingChoices(enabled = true) {
   return useQuery({
     queryKey: applicationsKeys.postings,

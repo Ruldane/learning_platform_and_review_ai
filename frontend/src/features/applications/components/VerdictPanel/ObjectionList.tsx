@@ -2,7 +2,7 @@ import { t } from "@/shared/i18n/t";
 import { agentIdentity } from "@/shared/session-ui";
 import type { ObjectionView } from "../viewTypes";
 
-/** Les objections classées (la première est la plus importante), avec ceux qui les soulèvent. */
+/** The ranked objections (the first is the most important), with those who raise them. */
 export function ObjectionList({ objections }: { objections: ObjectionView[] }) {
   if (objections.length === 0) {
     return (

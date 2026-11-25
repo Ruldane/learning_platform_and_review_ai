@@ -6,7 +6,7 @@ import { applicationsErrorMessage, errorCode, openKitSessionId } from "../errors
 import { applicationsKeys } from "../queryKeys";
 import type { KitOut } from "../types";
 
-/** Un lancement accepté (202), ou la session que le serveur dit déjà ouverte (409 `kit_in_progress`). */
+/** An accepted start (202), or the open session the server reports (409 `kit_in_progress`). */
 async function launch(
   applicationId: string,
   source?: RunSource,
@@ -21,8 +21,8 @@ async function launch(
 }
 
 /**
- * « Générer le kit » : `sessionId` est la session à suivre ; un 409 `kit_in_progress` n'est pas une
- * panne (on suit la session ouverte, `resumed`). Le kit en cache passe tout de suite à « en cours ».
+ * « Générer le kit »: `sessionId` is the session to follow; a 409 `kit_in_progress` is not a
+ * failure (the open session is followed, `resumed`). The cached kit goes to « en cours » at once.
  */
 export function useStartKit(applicationId: string) {
   const provider = useLaunchSource();
@@ -39,7 +39,7 @@ export function useStartKit(applicationId: string) {
   const { mutateAsync } = mutation;
   return {
     launchMenu: provider.menu,
-    /** Résout à `true` quand une session tourne pour ce kit. */
+    /** Resolves to `true` when a session is running for this kit. */
     start: () =>
       mutateAsync().then(
         () => true,
@@ -49,7 +49,7 @@ export function useStartKit(applicationId: string) {
     resumed: mutation.data?.resumed ?? false,
     pending: mutation.isPending,
     error: mutation.isError ? applicationsErrorMessage(mutation.error) : null,
-    /** Le profil validé manque : January doit le faire avant de relancer. */
+    /** The validated profile is missing: January must do it before relaunching. */
     profileMissing: mutation.isError && errorCode(mutation.error) === "profile_required",
   };
 }

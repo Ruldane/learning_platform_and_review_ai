@@ -14,9 +14,9 @@ interface CommitteeRunProps {
 }
 
 /**
- * Le Conseil du comité (SPEC 15.2) : le débat à gauche (40 %), les votes, le verdict et l'avant /
- * après à droite (60 %). Le fil ne fait que dire quand relire l'exécution (chaque changement d'état
- * de la session) ; les résultats viennent toujours de la lecture.
+ * The committee council (SPEC 15.2): the debate on the left (40 %), votes, verdict and before /
+ * after on the right (60 %). The thread only says when to re-read the run (each state change
+ * of the session); results always come from the read.
  */
 export function CommitteeRun({ view, createSocket }: CommitteeRunProps) {
   const client = useQueryClient();

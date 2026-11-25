@@ -11,11 +11,12 @@ interface VerdictPanelProps {
   votes: VoteView[];
   objections: ObjectionView[];
   changes: ChangeView[];
-  /** Le titre, pour que la page y place le focus quand le verdict arrive. */
+  /** The heading, so the page can place focus on it when the verdict arrives. */
   titleRef?: Ref<HTMLHeadingElement>;
 }
 
-/** Le verdict (majorité de 3 voix sur 4, sinon « peut-être »), les objections classées et les trois changements. */
+/** The verdict (majority of 3 votes out of 4, otherwise « peut-être »), the ranked objections and
+ * the three changes. */
 export function VerdictPanel({ verdict, votes, objections, changes, titleRef }: VerdictPanelProps) {
   return (
     <section className="flex flex-col gap-4">

@@ -1,12 +1,12 @@
 import type { SalaryScenarioView } from "./salaryScenarioView";
 
 /**
- * Types de vue des composants des candidatures : indépendants du contrat d'API (D34). Les pages
- * (7.13) convertissent les réponses du serveur (`ApplicationOut`, `ReminderOut`, `EventOut`,
- * `ApplicationStatsOut`, `AlertOut`) vers ces formes.
+ * View types for the application components: independent of the API contract (D34). The pages
+ * (7.13) convert the server's responses (`ApplicationOut`, `ReminderOut`, `EventOut`,
+ * `ApplicationStatsOut`, `AlertOut`) into these shapes.
  */
 
-/** Les huit statuts, dans l'ordre des colonnes du tableau de suivi (`STATUS_ORDER` côté back). */
+/** The eight statuses, in tracking board column order (`STATUS_ORDER` on the backend). */
 export const STATUS_ORDER = [
   "to_apply",
   "applied",
@@ -20,7 +20,7 @@ export const STATUS_ORDER = [
 
 export type StatusView = (typeof STATUS_ORDER)[number];
 
-/** Les six canaux de candidature, dans l'ordre des listes déroulantes. */
+/** The six application channels, in dropdown order. */
 export const CHANNEL_ORDER = [
   "company_site",
   "job_board",
@@ -32,10 +32,10 @@ export const CHANNEL_ORDER = [
 
 export type ChannelView = (typeof CHANNEL_ORDER)[number];
 
-/** Un jour `AAAA-MM-JJ`. */
+/** A day, `AAAA-MM-JJ`. */
 export type DayString = string;
 
-/** Une fiche de candidature, telle que les cartes et le tableau l'affichent. */
+/** An application record, as the cards and the table display it. */
 export interface ApplicationView {
   id: string;
   company: string;
@@ -46,11 +46,11 @@ export interface ApplicationView {
   interviewOn: DayString | null;
   nextAction: string | null;
   nextActionOn: DayString | null;
-  /** Relances arrivées à échéance et pas encore traitées. */
+  /** Reminders now due and not yet handled. */
   dueReminders: number;
 }
 
-/** Un contact d'une fiche ; `id` est vide pour un contact ajouté à la main, pas encore enregistré. */
+/** A record's contact; `id` is empty for a contact added by hand, not yet saved. */
 export interface ContactView {
   id: string;
   name: string;
@@ -61,7 +61,7 @@ export interface ContactView {
 export type EventKindView =
   "created" | "status" | "note" | "reminder" | "kit" | "interview" | "committee" | "version";
 
-/** Une ligne du fil chronologique ; `at` est un instant ISO. */
+/** A line of the chronological thread; `at` is an ISO instant. */
 export interface EventView {
   id: string;
   kind: EventKindView;
@@ -73,7 +73,7 @@ export interface EventView {
 
 export type ReminderKindView = "linkedin_7" | "email_14" | "close_21" | "thanks" | "news_7";
 
-/** Une relance à traiter : l'application n'envoie rien, January copie le brouillon. */
+/** A reminder to handle: the app sends nothing, January copies the draft. */
 export interface ReminderView {
   id: string;
   applicationId: string;
@@ -82,12 +82,12 @@ export interface ReminderView {
   company: string;
   title: string;
   contact: ContactView | null;
-  /** Recherche LinkedIn proposée quand la fiche n'a aucun contact. */
+  /** LinkedIn search offered when the record has no contact. */
   linkedinSearchUrl: string | null;
   draft: string;
 }
 
-/** Les indicateurs ; `responseRate` est une part entre 0 et 1. */
+/** The indicators; `responseRate` is a share between 0 and 1. */
 export interface StatsView {
   byStatus: Record<StatusView, number>;
   responseRate: number | null;
@@ -97,7 +97,7 @@ export interface StatsView {
 
 export const MAX_CONTACTS = 10;
 
-/** Un champ pré rempli de la confirmation d'une fiche lue dans une phrase. */
+/** A pre-filled field of the confirmation of a record read from a sentence. */
 export interface ConfirmationFieldView {
   id: string;
   label: string;
@@ -106,22 +106,22 @@ export interface ConfirmationFieldView {
   value: string;
 }
 
-/** Une issue proposée par le serveur (`create`, `distinct`, `open`, `cancel`). */
+/** An outcome offered by the server (`create`, `distinct`, `open`, `cancel`). */
 export interface ConfirmationOptionView {
   value: string;
   label: string;
 }
 
-/** La question « Je crée cette fiche ? » de l'Assistant de suivi, avec la fiche telle qu'il l'a lue. */
+/** The « Je crée cette fiche ? » question from the tracking Assistant, with the record it read. */
 export interface ConfirmationView {
   question: string;
   fields: ConfirmationFieldView[];
   options: ConfirmationOptionView[];
-  /** Pourquoi la question est reposée (la réponse précédente n'a pas pu être prise), s'il y a lieu. */
+  /** Why the question is asked again (the previous answer could not be taken), if applicable. */
   reason?: string | null;
 }
 
-/** Les sept pièces du kit, dans l'ordre où le serveur les rend. */
+/** The seven kit pieces, in the order the server returns them. */
 export const KIT_KINDS = [
   "cv",
   "letter",
@@ -133,42 +133,42 @@ export const KIT_KINDS = [
 ] as const;
 export type KitKindView = (typeof KIT_KINDS)[number];
 
-/** `pending` : pas encore rangée ; `to_check` : à relire avant usage ; `failed` : non produite. */
+/** `pending`: not yet filed; `to_check`: to re-read before use; `failed`: not produced. */
 export type KitStatusView = "pending" | "ready" | "to_check" | "failed";
 
-/** Une page lue pour le dossier de l'entreprise ; `rank` est son numéro `[n]` dans le texte. */
+/** A page read for the company file; `rank` is its `[n]` number in the text. */
 export interface KitSourceView {
   rank: number;
   url: string;
   title: string | null;
 }
 
-/** Une pièce du kit telle que la page la montre. */
+/** A kit piece as the page shows it. */
 export interface KitPieceView {
   kind: KitKindView;
   status: KitStatusView;
   content: string;
-  /** Les termes que le profil ne dit pas (pièce « à vérifier »). */
+  /** The terms the profile does not state (« à vérifier » piece). */
   flags: string[];
-  /** Les réponses salariales laissées à January. */
+  /** The salary answers left to January. */
   salaryFields: number;
   words: number | null;
   sources: KitSourceView[];
-  /** January l'a modifiée : un nouveau lancement du kit la garde telle quelle. */
+  /** January edited it: a new kit run keeps it as it is. */
   edited: boolean;
-  /** Le motif lisible d'une pièce en échec. */
+  /** The readable reason for a failed piece. */
   error: string | null;
   updatedAt: string | null;
 }
 
-/** Ce que l'enregistrement d'une modification rend à la pièce : le nouveau statut, ou le refus. */
+/** What saving a change returns to the piece: the new status, or the refusal. */
 export type KitSaveResult = { ok: true; status: KitStatusView } | { ok: false; message: string };
 
-/** Les quatre formules d'entretien. */
+/** The four interview formats. */
 export const INTERVIEW_MODES = ["behavioral", "technical", "case", "mixed", "salary"] as const;
 export type InterviewModeView = (typeof INTERVIEW_MODES)[number];
 
-/** Les trois durées : 4, 7 ou 10 questions principales. */
+/** The three durations: 4, 7 or 10 main questions. */
 export const INTERVIEW_DURATIONS = [15, 30, 45] as const;
 export type InterviewDurationView = (typeof INTERVIEW_DURATIONS)[number];
 
@@ -176,16 +176,16 @@ export const INTERVIEW_LANGUAGES = ["fr", "en"] as const;
 export type InterviewLanguageView = (typeof INTERVIEW_LANGUAGES)[number];
 
 /**
- * `running` : en cours ; `done` : débrief écrit ; `stopped` : arrêté avant toute réponse ;
- * `debrief_failed` : réponses gardées, débrief non écrit ; `failed` : session finie sans résultat.
+ * `running`: in progress; `done`: written debrief; `stopped`: stopped before any answer;
+ * `debrief_failed`: answers kept, debrief not written; `failed`: session ended with no result.
  */
 export type InterviewStatusView = "running" | "done" | "stopped" | "debrief_failed" | "failed";
 
-/** Les quatre notes du débrief, dans l'ordre où elles s'affichent. */
+/** The four debrief scores, in display order. */
 export const SCORE_KEYS = ["clarity", "structure", "technical_depth", "role_fit"] as const;
 export type ScoreKeyView = (typeof SCORE_KEYS)[number];
 
-/** Une question de l'entretien, la réponse de January, la relance éventuelle et la note (1 à 5). */
+/** An interview question, January's answer, the possible follow-up and the score (1 to 5). */
 export interface ExchangeView {
   index: number;
   question: string;
@@ -193,31 +193,31 @@ export interface ExchangeView {
   followUp: string | null;
   followUpAnswer: string | null;
   note: number;
-  /** Le modèle n'a pas pu noter cette réponse : la note n'est pas à lire. */
+  /** The model could not score this answer: the score is not to be read. */
   unrated: boolean;
 }
 
-/** Les points qu'une bonne réponse à la question `index` aurait donnés. */
+/** The points a good answer to question `index` would have earned. */
 export interface ExpectedView {
   index: number;
   points: string[];
 }
 
 export interface DebriefDataView {
-  /** `null` : le modèle n'a pas rendu cette note (ce n'est pas un 0). */
+  /** `null`: the model did not return this score (it is not a 0). */
   scores: { key: ScoreKeyView; value: number | null }[];
   strengths: string[];
   fixes: string[];
   weakestIndex: number;
   improvedAnswer: string;
-  /** Les questions de note 2 au plus, celles dont une fiche de révision est faite. */
+  /** The questions scored 2 at most, those for which a review card was made. */
   missed: number[];
   expected: ExpectedView[];
-  /** Les questions que le modèle n'a pas pu noter. */
+  /** The questions the model could not score. */
   unrated: number[];
 }
 
-/** Un entretien blanc tel que les pages le montrent. */
+/** A mock interview as the pages show it. */
 export interface InterviewView {
   salary?: SalaryScenarioView;
   id: string;
@@ -226,20 +226,20 @@ export interface InterviewView {
   role: string | null;
   mode: InterviewModeView;
   durationMin: InterviewDurationView;
-  /** Le nombre de questions principales (4, 7 ou 10 selon la durée). */
+  /** The number of main questions (4, 7 or 10 depending on the duration). */
   questionCount: number;
   language: InterviewLanguageView;
   sessionId: string;
   status: InterviewStatusView;
   exchanges: ExchangeView[];
   debrief: DebriefDataView | null;
-  /** Les termes que le profil ne dit pas dans la réponse améliorée. */
+  /** The terms the profile does not state in the improved answer. */
   flags: string[];
   cardsCreated: number;
   createdAt: string;
 }
 
-/** Les quatre personas du comité, dans l'ordre où le comité les nomme. */
+/** The four committee personas, in the order the committee names them. */
 export const PERSONA_ORDER = ["ats_reader", "recruiter", "manager", "colleague"] as const;
 
 export type PersonaView = (typeof PERSONA_ORDER)[number];
@@ -248,7 +248,7 @@ export type VoteValueView = "yes" | "no" | "maybe";
 
 export type CommitteeStatusView = "running" | "done" | "failed" | "stopped";
 
-/** Le vote motivé d'une persona, avec son objection principale. */
+/** A persona's reasoned vote, with its main objection. */
 export interface VoteView {
   persona: PersonaView;
   vote: VoteValueView;
@@ -256,13 +256,13 @@ export interface VoteView {
   reason: string;
 }
 
-/** Une objection du comité, classée (la première est la plus importante) ; `personas` : qui la soulève. */
+/** A committee objection, ranked (the first is the most important); `personas`: who raises it. */
 export interface ObjectionView {
   text: string;
   personas: PersonaView[];
 }
 
-/** Un changement proposé ; `needsSkill` : il demande une compétence que le profil ne dit pas. */
+/** A proposed change; `needsSkill`: it requires a skill the profile does not state. */
 export interface ChangeView {
   text: string;
   persona: PersonaView;
@@ -270,21 +270,21 @@ export interface ChangeView {
   terms: string[];
 }
 
-/** Le vote d'une persona à l'exécution précédente et à celle-ci. */
+/** A persona's vote at the previous run and at this one. */
 export interface VoteChangeView {
   persona: PersonaView;
   before: VoteValueView;
   after: VoteValueView;
 }
 
-/** L'avant et l'après : ce que la précédente exécution disait, ce qui a changé depuis. */
+/** Before and after: what the previous run said, what has changed since. */
 export interface CommitteeDiffView {
   votes: VoteChangeView[];
   resolved: string[];
   added: string[];
 }
 
-/** Une exécution du comité telle que la page la montre. */
+/** A committee run as the page shows it. */
 export interface CommitteeView {
   id: string;
   cvVersionId: string;
@@ -295,6 +295,6 @@ export interface CommitteeView {
   votes: VoteView[];
   objections: ObjectionView[];
   changes: ChangeView[];
-  /** `null` : première exécution de l'offre (ou pas terminée). */
+  /** `null`: first run of the posting (or not finished). */
   diff: CommitteeDiffView | null;
 }

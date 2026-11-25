@@ -13,7 +13,7 @@ import type {
 
 let counter = 0;
 
-/** Une fiche de test ; chaque champ se remplace. */
+/** A test record; each field can be replaced. */
 export function makeApplication(overrides: Partial<ApplicationView> = {}): ApplicationView {
   counter += 1;
   return {
@@ -142,7 +142,7 @@ export function makeStats(overrides: Partial<StatsView> = {}): StatsView {
   };
 }
 
-/** Un échange de test : la question `index` (à partir de 0), répondue, notée 4. */
+/** A test exchange: the question `index` (from 0), answered, scored 4. */
 export function makeExchange(index: number, overrides: Partial<ExchangeView> = {}): ExchangeView {
   return {
     index,
@@ -156,7 +156,7 @@ export function makeExchange(index: number, overrides: Partial<ExchangeView> = {
   };
 }
 
-/** Un débrief de test : quatre notes, trois points forts, trois points à corriger. */
+/** A test debrief: four scores, three strengths, three points to fix. */
 export function makeDebrief(overrides: Partial<DebriefDataView> = {}): DebriefDataView {
   return {
     scores: [
@@ -176,7 +176,7 @@ export function makeDebrief(overrides: Partial<DebriefDataView> = {}): DebriefDa
   };
 }
 
-/** Un entretien de test : terminé, trois échanges, débrief écrit. */
+/** A test interview: finished, three exchanges, written debrief. */
 export function makeInterview(overrides: Partial<InterviewView> = {}): InterviewView {
   return {
     id: "i1",
@@ -198,7 +198,7 @@ export function makeInterview(overrides: Partial<InterviewView> = {}): Interview
   };
 }
 
-/** Un vote de test. */
+/** A test vote. */
 export function makeVote(overrides: Partial<VoteView> = {}): VoteView {
   return {
     persona: "ats_reader",
@@ -209,7 +209,7 @@ export function makeVote(overrides: Partial<VoteView> = {}): VoteView {
   };
 }
 
-/** Les quatre votes d'un comité : 3 oui, 1 non. */
+/** The four committee votes: 3 yes, 1 no. */
 export function makeVotes(): VoteView[] {
   return [
     makeVote({ persona: "ats_reader", vote: "yes", objection: "Mot clé Kubernetes absent." }),

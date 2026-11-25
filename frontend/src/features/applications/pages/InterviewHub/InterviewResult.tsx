@@ -4,7 +4,7 @@ import { ExchangeList } from "../../components/ExchangeList";
 import type { InterviewView } from "../../types";
 import { REVISIONS_PATH } from "../../urls";
 
-/** Ce que l'entretien a donné, dit selon son état : le débrief, ou ce qui manque et pourquoi. */
+/** What the interview produced, stated by its state: the debrief, or what is missing and why. */
 export function InterviewResult({ interview }: { interview: InterviewView }) {
   switch (interview.status) {
     case "done":

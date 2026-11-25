@@ -11,10 +11,10 @@ import { ManualFields } from "./ManualFields";
 import { EMPTY_DRAFT, manualProblem, toBody, type ManualDraft } from "./manualDraft";
 
 /**
- * Créer une fiche à la main. Une fiche qui ressemble à une autre (409) affiche l'alerte de doublon :
- * ouvrir la fiche existante, « C'est un autre poste » (la fiche est alors créée, avec la liste des
- * fiches confirmées distinctes) ou annuler. Une fois créée, la fiche s'ouvre, avec les informations
- * « même entreprise » éventuelles.
+ * Create a record by hand. A record that looks like another (409) shows the duplicate alert:
+ * open the existing record, « C'est un autre poste » (the record is then created, with the list of
+ * confirmed distinct records), or cancel. Once created, the record opens, with the
+ * possible « même entreprise » info.
  */
 export function ManualSection() {
   const navigate = useNavigate();

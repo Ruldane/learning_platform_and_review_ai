@@ -7,7 +7,8 @@ interface ResultGateProps {
   children: ReactNode;
 }
 
-/** Le résultat une fois le comité terminé ; avant, ou s'il s'est arrêté, la phrase qui dit où il en est. */
+/** The result once the committee has finished; before that, or if it stopped, the sentence saying
+ * where it is. */
 export function ResultGate({ status, children }: ResultGateProps) {
   if (status === "done") return <>{children}</>;
   return (

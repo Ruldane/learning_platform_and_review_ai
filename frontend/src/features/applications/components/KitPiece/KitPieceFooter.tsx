@@ -4,20 +4,20 @@ import { MAX_CONTENT } from "./parts";
 
 interface KitPieceFooterProps {
   title: string;
-  /** La pièce a un texte à enregistrer (elle n'est pas « pas encore arrivée »). */
+  /** The piece has a text to save (it is not « pas encore arrivée »). */
   editable: boolean;
   dirty: boolean;
-  /** Le texte dépasse ce que le serveur accepte. */
+  /** The text exceeds what the server accepts. */
   tooLong: boolean;
   saving: boolean;
-  /** Le dernier résultat (copié, enregistré…), lu dans une zone vocale. */
+  /** The last result (copied, saved…), read in a live region. */
   note: string;
-  /** Le refus du serveur. */
+  /** The server's refusal. */
   error: string;
   onSave: () => void;
 }
 
-/** Le bouton Enregistrer (explicite), le refus éventuel et la zone vocale du dernier résultat. */
+/** The Save button (explicit), the possible refusal and the live region for the last result. */
 export function KitPieceFooter({
   title,
   editable,

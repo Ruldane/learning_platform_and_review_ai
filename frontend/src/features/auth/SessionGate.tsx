@@ -10,14 +10,14 @@ import { authKeys } from "./queryKeys";
 import type { Me } from "./types";
 
 /**
- * La porte de connexion de la coquille (`shell.gate`) : branche `me` sur `AuthGate`. Un 401
- * `auth_required` reçu par n'importe quel appel passe `me` à « pas de session » sans le relire :
- * relire `me` d'ici le ferait échouer de nouveau, donc émettre de nouveau. `AuthGate` mène alors
- * à `/login`, une seule fois, et la page de connexion ne renvoie jamais vers la porte.
+ * The shell's login gate (`shell.gate`): wires `me` to `AuthGate`. A 401
+ * `auth_required` received from any call sets `me` to « pas de session » without re-reading it:
+ * re-reading `me` from here would fail again, so it is emitted again. `AuthGate` then leads
+ * to `/login` once, and the login page never sends back to the gate.
  *
- * Le cookie de session est partagé par tous les onglets : quand l'onglet redevient visible, `me`
- * est relu sans cache. Si le compte a changé (ou la session s'est close) dans un autre onglet,
- * tout ce que l'ancien compte avait lu est oublié ; l'onglet montre alors le compte actuel.
+ * The session cookie is shared by all tabs: when the tab becomes visible again, `me`
+ * is re-read without cache. If the account changed (or the session closed) in another tab,
+ * everything the old account read is forgotten; the tab then shows the current account.
  */
 export function SessionGate({ children }: { children: ReactNode }) {
   const me = useMe();
@@ -45,7 +45,7 @@ export function SessionGate({ children }: { children: ReactNode }) {
           (fresh) => {
             if (fresh?.id !== shown.id) forgetAccount(queryClient);
           },
-          () => undefined, // une relecture ratée ne change rien : on garde ce qui est affiché
+          () => undefined, // a failed re-read changes nothing: what is shown is kept
         );
     };
     document.addEventListener("visibilitychange", onVisible);

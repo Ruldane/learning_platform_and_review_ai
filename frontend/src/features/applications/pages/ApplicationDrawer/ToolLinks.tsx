@@ -4,7 +4,7 @@ import { buttonVariants } from "@/shared/ui/button";
 import { committeePath, interviewPath, kitPath } from "../../urls";
 import { DrawerSection } from "./DrawerSection";
 
-/** Les liens vers le kit, l'entretien d'entraînement et le comité de cette candidature. */
+/** Links to the kit, the practice interview and the committee of this application. */
 interface Props {
   applicationId: string;
   hasScheduledInterview?: boolean;

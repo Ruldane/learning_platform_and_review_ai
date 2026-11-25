@@ -23,7 +23,7 @@ const COLUMNS: {
   { key: "dueReminders", label: "due" },
 ];
 
-/** Les candidatures en tableau : six colonnes, tri par clic sur l'en-tête (`aria-sort`). */
+/** Applications as a table: six columns, sorted by clicking the header (`aria-sort`). */
 export function ApplicationTable({ applications, onOpen }: ApplicationTableProps) {
   const [sort, setSort] = useState<SortState | null>(null);
   const rows = useMemo(() => sortApplications(applications, sort), [applications, sort]);

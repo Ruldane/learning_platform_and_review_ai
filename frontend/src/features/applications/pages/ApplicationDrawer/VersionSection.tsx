@@ -4,7 +4,7 @@ import { buttonVariants } from "@/shared/ui/button";
 import { CV_VERSIONS_PATH } from "../../urls";
 import { DrawerSection } from "./DrawerSection";
 
-/** La version du CV envoyée avec la fiche, et le lien vers la page des versions. */
+/** The CV version sent with the record, and the link to the versions page. */
 export function VersionSection({ number }: { number: number | null }) {
   return (
     <DrawerSection title={t("applications.drawer.versionTitle")}>

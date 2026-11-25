@@ -6,13 +6,13 @@ import { TargetFields } from "./TargetFields";
 import { useInterviewSetup } from "./useInterviewSetup";
 
 interface InterviewSetupProps {
-  /** La fiche dont c'est l'entretien ; `null` : un entretien sans fiche (offre ou intitulé à choisir). */
+  /** The record of this interview; `null`: no record (choose a posting or title). */
   applicationId: string | null;
-  /** L'entretien est lancé (ou repris : `resumed`) : la page le suit. */
+  /** The interview is started (or resumed: `resumed`): the page follows it. */
   onStarted: (interviewId: string, resumed: boolean) => void;
 }
 
-/** Les réglages d'un entretien (formule, durée, langue ; et la cible sans fiche), puis « Commencer l'entretien ». */
+/** Interview settings (format, length, language, target), then « Commencer l'entretien ». */
 export function InterviewSetup({ applicationId, onStarted }: InterviewSetupProps) {
   const form = useInterviewSetup(applicationId, onStarted);
   const { launcher } = form;

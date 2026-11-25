@@ -13,9 +13,9 @@ const withStatus = (rows: ApplicationOut[] | undefined, { id, status }: Move) =>
   rows?.map((row) => (row.id === id ? { ...row, status } : row));
 
 /**
- * Déplacer une fiche dans une autre colonne (`POST /applications/{id}/events`, un changement de
- * statut daté d'aujourd'hui). Le tableau suit tout de suite ; si le serveur refuse, la fiche
- * revient dans sa colonne et `error` le dit. Tout est relu ensuite (dates, relances, indicateurs).
+ * Moves a record to another column (`POST /applications/{id}/events`, a status change
+ * dated today). The board follows at once; if the server refuses, the record
+ * goes back to its column and `error` says so. Dates, reminders and indicators are re-read.
  */
 export function useMoveApplication() {
   const client = useQueryClient();

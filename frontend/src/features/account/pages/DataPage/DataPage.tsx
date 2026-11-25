@@ -9,10 +9,10 @@ import { useDeleteAccount } from "../../hooks/useDeleteAccount";
 import { accountKeys } from "../../queryKeys";
 
 const CONFIRMATION_REQUIRED = "confirmation_required";
-/** Le premier effacement vectoriel se produit avant la suppression des lignes (P19). */
+/** The first vector erasure happens before the rows are deleted (P19). */
 const VECTOR_UNAVAILABLE = "vector_store_unavailable";
 
-/** Un refus qui vise le champ de confirmation : son code, ou un 422 qui nomme `confirm`. */
+/** A refusal that targets the confirmation field: its code, or a 422 naming `confirm`. */
 function refusesConfirmation(error: ApiError): boolean {
   if (error.code === CONFIRMATION_REQUIRED) return true;
   const details = error.details;
@@ -22,9 +22,10 @@ function refusesConfirmation(error: ApiError): boolean {
 }
 
 /**
- * Le texte d'un échec de suppression. Un refus de la confirmation a son propre texte (jamais la
- * saisie, même renvoyée par le serveur) ; toute autre erreur garde le message du back, puis dit ce
- * qui est sûr sur l'état de la suppression.
+ * The text of a deletion failure. A confirmation refusal has its own text (never the
+ * input, even if the server sends it back); any other error keeps the backend message, then says
+ * what
+ * is certain about the state of the deletion.
  */
 function describeFailure(error: unknown, sent: boolean): DeleteFailure {
   if (error instanceof AccountChangedError) {
@@ -40,16 +41,16 @@ function describeFailure(error: unknown, sent: boolean): DeleteFailure {
   return { message: `${errorMessage(error)} ${hint}`, field: false };
 }
 
-/** Réglages > Mes données (SPEC 17.3) : exporter toutes ses données, ou tout supprimer. */
+/** Réglages > Mes données (SPEC 17.3): export all your data, or delete everything. */
 export function DataPage() {
   const { data: me } = useQuery({
     queryKey: accountKeys.me,
     queryFn: ({ signal }) => fetchMe(signal),
-    enabled: false, // observe l'identité chargée par la porte de connexion
+    enabled: false, // observes the identity loaded by the login gate
   });
   const remove = useDeleteAccount(me);
   const { error, started } = remove;
-  // `started` lit une ref posée avant l'erreur : l'objet d'échec reste neuf à chaque erreur.
+  // `started` reads a ref set before the error: the failure object stays new on each error.
   const failure = useMemo(
     () => (error ? describeFailure(error, started()) : null),
     [error, started],

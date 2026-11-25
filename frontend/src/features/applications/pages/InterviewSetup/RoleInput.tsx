@@ -8,7 +8,7 @@ interface RoleInputProps {
   onChange: (role: string) => void;
 }
 
-/** L'intitulé d'un poste à saisir, pour un entretien sans fiche ni offre. */
+/** A job title to enter, for an interview with neither a record nor a posting. */
 export function RoleInput({ id, value, disabled, onChange }: RoleInputProps) {
   return (
     <label htmlFor={id} className="flex flex-col gap-1 text-sm font-medium">

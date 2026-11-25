@@ -6,11 +6,12 @@ import { PROFILE_PATH } from "../../urls";
 
 interface LaunchNotesProps {
   start: ReturnType<typeof useStartCommittee>;
-  /** Un comité tourne : la note « tu le suis ici » n'a de sens que tant qu'il tourne. */
+  /** A committee is running: the « tu le suis ici » note only makes sense while it runs. */
   running: boolean;
 }
 
-/** Ce que le lancement dit : un comité déjà ouvert que l'on suit (tant qu'il tourne), un refus en toutes lettres, le profil à valider. */
+/** What the launch says: a committee already open that is followed (while it runs), a refusal in
+ * words, the profile to validate. */
 export function LaunchNotes({ start, running }: LaunchNotesProps) {
   return (
     <>

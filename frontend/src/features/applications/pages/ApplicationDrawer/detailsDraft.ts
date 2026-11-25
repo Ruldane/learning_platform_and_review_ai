@@ -6,7 +6,7 @@ import {
   type ContactView,
 } from "../../types";
 
-/** Les champs modifiables d'une fiche, tels que le formulaire les tient (un vide : champ effacé). */
+/** A record's editable fields, as the form holds them (empty: field cleared). */
 export interface DetailsDraft {
   company: string;
   title: string;
@@ -37,7 +37,7 @@ export function toDraft(detail: ApplicationDetail): DetailsDraft {
   };
 }
 
-/** Le formulaire est-il valable ? `name` : entreprise ou poste vide ; `contact` : un contact sans nom. */
+/** Is the form valid? `name`: empty company or job; `contact`: a contact without a name. */
 export function problemOf(draft: DetailsDraft): "name" | "contact" | null {
   if (draft.company.trim() === "" || draft.title.trim() === "") return "name";
   return draft.contacts.some((contact) => contact.name.trim() === "") ? "contact" : null;
@@ -45,7 +45,7 @@ export function problemOf(draft: DetailsDraft): "name" | "contact" | null {
 
 const orNull = (value: string) => (value.trim() === "" ? null : value.trim());
 
-/** Les champs de texte de `ApplicationPatch` (le canal, énuméré, est traité à part). */
+/** The text fields of `ApplicationPatch` (the enumerated channel is handled apart). */
 type TextPatchKey =
   | "company"
   | "title"
@@ -56,7 +56,7 @@ type TextPatchKey =
   | "applied_on"
   | "interview_on";
 
-/** Seulement ce qui a changé depuis la fiche lue : un champ laissé tel quel n'est pas renvoyé. */
+/** Only what changed since the record was read: a field left as is is not sent back. */
 export function changesOf(draft: DetailsDraft, detail: ApplicationDetail): ApplicationPatch {
   const before = toDraft(detail);
   const patch: ApplicationPatch = {};
@@ -99,9 +99,9 @@ const sameContacts = (a: ContactView[], b: ContactView[]) =>
   JSON.stringify(toContactsIn(a)) === JSON.stringify(toContactsIn(b));
 
 /**
- * La fiche a été relue (un statut, une note, une relance, la sauvegarde elle-même) : chaque champ que
- * January n'a pas touché prend sa nouvelle valeur (une date posée par un changement de statut, par
- * exemple), chaque champ qu'elle a retouché garde sa retouche, enregistrée ou non.
+ * The record was re-read (a status, a note, a reminder, the save itself): each field that
+ * January did not touch takes its new value (a date set by a status change, for
+ * example); each field that was edited keeps its edit, saved or not.
  */
 export function rebase(
   draft: DetailsDraft,

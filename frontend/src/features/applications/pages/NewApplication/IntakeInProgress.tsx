@@ -6,11 +6,11 @@ import { InlineError } from "@/shared/ui/states/InlineError";
 interface IntakeInProgressProps {
   sessionId: string;
   onResume: () => void;
-  /** La session ouverte est annulée : on peut en commencer une autre. */
+  /** The open session is cancelled: another one can be started. */
   onCancelled: () => void;
 }
 
-/** Une saisie en une phrase est déjà ouverte (409) : la reprendre, ou l'annuler pour en refaire une. */
+/** A one-sentence entry is already open (409): resume it, or cancel it to start a new one. */
 export function IntakeInProgress({ sessionId, onResume, onCancelled }: IntakeInProgressProps) {
   const actions = useSessionActions(sessionId);
 

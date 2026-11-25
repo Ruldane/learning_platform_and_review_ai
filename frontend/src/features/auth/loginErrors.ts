@@ -4,8 +4,8 @@ import { auth } from "@/shared/i18n/messages/auth";
 const KNOWN: ReadonlySet<string> = new Set(Object.keys(auth.errors));
 
 /**
- * Le message français d'un code de `/login?error=<code>`. Un code absent ne dit rien ; un
- * code inconnu (ou forgé dans l'adresse) donne le message général : le code n'est jamais affiché.
+ * The French message for a `/login?error=<code>` code. A missing code says nothing; an
+ * unknown code (or one forged in the address) gives the general message: the code is never shown.
  */
 export function loginErrorMessage(code: string | null): string | null {
   if (!code) return null;

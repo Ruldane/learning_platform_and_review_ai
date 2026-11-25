@@ -11,7 +11,7 @@ import { InterviewFollow } from "./InterviewFollow";
 import { PastInterviews } from "./PastInterviews";
 
 interface InterviewHubProps {
-  /** La fiche dont on voit les entretiens ; `null` : les entretiens sans fiche. */
+  /** The record whose interviews are shown; `null`: the interviews without a record. */
   applicationId: string | null;
   createSocket?: SocketFactory;
 }
@@ -19,18 +19,19 @@ interface InterviewHubProps {
 interface Followed {
   id: string;
   resumed: boolean;
-  /** Suivi depuis son lancement (et non ouvert depuis la liste des entretiens passés). */
+  /** Followed since its start (and not opened from the past interviews list). */
   live: boolean;
 }
 
 /**
- * Le contenu de la page de l'entretien : l'entretien en cours (suivi, ou repris à l'arrivée), sinon les
- * réglages pour en commencer un et la liste des entretiens passés, dont on ouvre le débrief.
+ * The interview page content: the interview in progress (followed, or resumed on arrival),
+ * otherwise the
+ * settings to start one and the list of past interviews, whose debrief opens.
  */
 export function InterviewHub({ applicationId, createSocket }: InterviewHubProps) {
   const list = useInterviews(applicationId);
   const [followed, setFollowed] = useState<Followed | null>(null);
-  // Les entretiens refermés : un entretien fini ne se reprend pas tant que la liste le dit « en cours ».
+  // The closed interviews: a finished interview is not resumed while the list says « en cours ».
   const [closed, setClosed] = useState<string[]>([]);
   const postings = usePostingChoices(applicationId === null).data;
 
@@ -39,7 +40,8 @@ export function InterviewHub({ applicationId, createSocket }: InterviewHubProps)
     return <ErrorState message={errorMessage(list.error)} onRetry={() => void list.refetch()} />;
   }
   const running = list.data.find((interview) => interview.status === "running");
-  // L'entretien en cours trouvé à l'arrivée est suivi pour de bon : sa fin ne le fait pas disparaître.
+  // The interview in progress found on arrival is followed for good: its end does not make it
+  // disappear.
   if (!followed && running && !closed.includes(running.id)) {
     setFollowed({ id: running.id, resumed: false, live: true });
   }

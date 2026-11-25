@@ -4,8 +4,8 @@ import { postLogout } from "../api";
 import { authKeys } from "../queryKeys";
 
 /**
- * Se déconnecter : `me` passe à « pas de session » (la porte mène alors à `/login`), et rien
- * de ce que le compte précédent a lu ne reste en mémoire (requêtes, brouillons, minuteurs).
+ * Sign out: `me` becomes « pas de session » (the gate then leads to `/login`), and nothing
+ * the previous account read stays in memory (queries, drafts, timers).
  */
 export function useLogout() {
   const queryClient = useQueryClient();

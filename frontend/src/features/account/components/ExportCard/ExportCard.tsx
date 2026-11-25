@@ -4,15 +4,15 @@ import { buttonVariants } from "@/shared/ui/button";
 
 interface ExportCardProps {
   /**
-   * L'adresse de l'archive : un lien plein, le navigateur télécharge le zip (jamais un `fetch` :
-   * l'archive peut être grosse). Ouvert dans un nouvel onglet : une erreur du back (session
-   * expirée) ne remplace jamais l'application.
+   * The archive address: a plain link, the browser downloads the zip (never a `fetch`:
+   * the archive can be large). Opened in a new tab, a backend error (session
+   * expired) never replaces the app.
    */
   href: string;
 }
 
 /**
- * « Exporter toutes mes données » : ce que contient l'archive (jamais les clés d'API) et le lien.
+ * « Exporter toutes mes données » : what the archive contains (never API keys) and the link.
  */
 export function ExportCard({ href }: ExportCardProps) {
   const titleId = useId();

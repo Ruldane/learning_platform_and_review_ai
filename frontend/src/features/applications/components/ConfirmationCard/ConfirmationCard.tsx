@@ -6,20 +6,21 @@ import { useConfirmationValues } from "./useConfirmationValues";
 
 interface ConfirmationCardProps {
   confirmation: ConfirmationView;
-  /** Faux quand la question est déjà répondue ou qu'une réponse part. */
+  /** False when the question is already answered or an answer is being sent. */
   disabled?: boolean;
-  /** Une issue choisie, avec les champs tels que January les laisse (seulement pour créer). */
+  /** A chosen outcome, with the fields as January leaves them (only for creating). */
   onChoose: (choice: string, fields: Record<string, string>) => void;
 }
 
-/** Les issues qui enregistrent une fiche : seules elles envoient les champs relus. */
+/** The outcomes that save a record: only these send the re-read fields. */
 const WRITES = ["create", "distinct"];
 
 /**
- * La fiche que l'Assistant de suivi a lue dans la phrase, à confirmer : un champ par information,
- * déjà rempli et modifiable, puis les issues du serveur (créer, c'est un autre poste, ouvrir la
- * fiche existante, annuler). Créer exige les champs obligatoires ; ouvrir et annuler restent
- * toujours possibles. La date vide se lit « aujourd'hui ».
+ * The record the tracking Assistant read from the sentence, to confirm: one field per piece of
+ * information,
+ * already filled in and editable, then the server's outcomes (create means another posting,
+ * open the existing record, cancel). Creating requires the mandatory fields; opening and
+ * cancelling stay still possible. An empty date reads « aujourd'hui ».
  */
 export function ConfirmationCard({
   confirmation,

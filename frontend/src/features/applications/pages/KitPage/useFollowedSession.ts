@@ -2,9 +2,9 @@ import { useState } from "react";
 import type { KitView } from "../../types";
 
 /**
- * La session du kit que la page suit : celle que January vient de lancer ou de reprendre (409), ou
- * celle que le serveur dit ouverte. On la garde jusqu'à la fin de la page : le flux qui apporte la
- * fin de session arrive après que le serveur a cessé de dire « en cours ».
+ * The kit session the page follows: the one January just started or resumed (409), or
+ * the one the server says is open. It is kept until the page ends: the stream that brings the
+ * end of session arrives after the server stopped saying « en cours ».
  */
 export function useFollowedSession(kit: KitView, started: string | null): string | null {
   const [followed, setFollowed] = useState<string | null>(null);

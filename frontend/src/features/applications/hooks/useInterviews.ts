@@ -7,8 +7,8 @@ import { toInterviewView } from "../toInterviewView";
 import type { InterviewOut } from "../types";
 
 /**
- * `GET /interviews` : les entretiens d'une fiche, ou (`null`) ceux sans fiche, le plus récent
- * d'abord. Une fiche inconnue (404) ne se relit pas.
+ * `GET /interviews`: the interviews of a record, or (`null`) those without a record, most recent
+ * first. An unknown record (404) is not re-read.
  */
 export function useInterviews(applicationId: string | null) {
   const select = useCallback(

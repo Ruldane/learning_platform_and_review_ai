@@ -1,6 +1,6 @@
 import { useId, type ReactNode } from "react";
 
-/** Ce que le champ natif reçoit pour être relié à son étiquette, à son aide et à son erreur. */
+/** What the native field receives to be linked to its label, its help and its error. */
 export interface FieldControlProps {
   id: string;
   "aria-describedby": string | undefined;
@@ -10,12 +10,12 @@ export interface FieldControlProps {
 interface FieldProps {
   label: string;
   hint?: string;
-  /** Une erreur : lue avec le champ (`aria-describedby`) et annoncée. */
+  /** An error: read with the field (`aria-describedby`) and announced. */
   error?: string;
   children: (control: FieldControlProps) => ReactNode;
 }
 
-/** Une étiquette reliée à son champ, avec une aide facultative et une erreur facultative. */
+/** A label linked to its field, with optional help and an optional error. */
 export function Field({ label, hint, error, children }: FieldProps) {
   const id = useId();
   const described = [hint ? `${id}-hint` : null, error ? `${id}-error` : null].filter(Boolean);

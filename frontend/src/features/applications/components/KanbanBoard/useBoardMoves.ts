@@ -4,14 +4,14 @@ import type { ApplicationView, StatusView } from "../viewTypes";
 import { statusName } from "./announcements";
 import { useFocusAfterMove } from "./useFocusAfterMove";
 
-/** D'où vient un déplacement : le menu, un glisser au clavier ou un glisser à la souris ou au doigt. */
+/** Where a move comes from: the menu, a keyboard drag, or a mouse or touch drag. */
 export type MoveSource = "menu" | "keyboard" | "pointer";
 
 /**
- * Les déplacements du tableau : `move` ignore une carte inconnue ou déjà dans la colonne ; un
- * déplacement par le menu est annoncé dans la zone vocale (`announcement`), celui du glisser-déposer
- * l'est par dnd-kit. Le menu et le clavier rendent le focus à la carte (bouton « Déplacer » ou
- * poignée) une fois dans sa nouvelle colonne ; la souris et le doigt le laissent où il est.
+ * Board moves: `move` ignores an unknown card or one already in the column; a
+ * move from the menu is announced in the live region (`announcement`), drag and drop
+ * is announced by dnd-kit. The menu and the keyboard return focus to the card (« Déplacer » or
+ * handle) once it is in its new column; the mouse and touch leave it where it is.
  */
 export function useBoardMoves(
   applications: ApplicationView[],

@@ -5,9 +5,9 @@ import { startIntake } from "../api";
 import { applicationsErrorMessage, openIntakeSessionId } from "../errors";
 
 /**
- * `POST /applications/intake` : la saisie en une phrase. `sessionId` est la session suivie (celle
- * qui vient de démarrer, ou celle que January reprend) ; un 409 `intake_in_progress` n'est pas une
- * panne : `openSessionId` nomme la session déjà ouverte, à reprendre ou à annuler.
+ * `POST /applications/intake`: the one-sentence entry. `sessionId` is the followed session (the one
+ * just started, or the one January resumes); a 409 `intake_in_progress` is not a
+ * failure: `openSessionId` names the session already open, to resume or cancel.
  */
 export function useIntake() {
   const launch = useLaunchSource();
@@ -24,12 +24,12 @@ export function useIntake() {
     start: (text: string) => mutate(text),
     sessionId,
     openSessionId,
-    /** Reprendre la session déjà ouverte. */
+    /** Resume the session already open. */
     resume: (id: string) => {
       reset();
       setSessionId(id);
     },
-    /** La session suivie est finie ou abandonnée : on peut en commencer une autre. */
+    /** The followed session is finished or abandoned: another one can be started. */
     leave: () => {
       reset();
       setSessionId(null);

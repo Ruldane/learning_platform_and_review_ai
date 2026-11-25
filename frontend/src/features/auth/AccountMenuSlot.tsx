@@ -2,7 +2,7 @@ import { AccountMenu } from "./components/AccountMenu";
 import { useLogout } from "./hooks/useLogout";
 import { useMe } from "./hooks/useMe";
 
-/** L'emplacement `topbar` de la feature : le compte connecté, en mode Google seulement. */
+/** The feature's `topbar` slot: the signed-in account, in Google mode only. */
 export function AccountMenuSlot() {
   const me = useMe();
   const logout = useLogout();

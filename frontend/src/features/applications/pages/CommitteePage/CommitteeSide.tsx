@@ -13,9 +13,9 @@ type Tab = (typeof TAB_IDS)[number];
 const isTab = (id: string): id is Tab => TAB_IDS.some((tab) => tab === id);
 
 /**
- * La colonne de droite : Votes, Verdict, Avant / après. Le verdict est l'onglet d'arrivée. Quand le
- * comité se termine sous les yeux de January et que le focus s'est perdu (la note « le comité
- * délibère » vient de disparaître), le titre du verdict le reçoit.
+ * The right column: Votes, Verdict, Before / after. The verdict is the landing tab. When the
+ * committee ends under January's eyes and focus was lost (the « le comité délibère » note
+ * just disappeared), the verdict heading receives it.
  */
 export function CommitteeSide({ view }: { view: CommitteeView }) {
   const [tab, setTab] = useState<Tab>("verdict");

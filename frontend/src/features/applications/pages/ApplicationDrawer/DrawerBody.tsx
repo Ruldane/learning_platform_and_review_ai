@@ -19,16 +19,16 @@ import { VersionSection } from "./VersionSection";
 
 interface DrawerBodyProps {
   detail: ApplicationDetail;
-  /** Les informations « même entreprise » reçues à la création de la fiche. */
+  /** The « même entreprise » info received when the record was created. */
   info: AlertOut[];
 }
 
 const nothing = () => undefined;
 
 /**
- * Le contenu du tiroir : informations modifiables et contacts, « J'ai postulé », changement de
- * statut daté, note, version du CV, relances en attente, historique et liens vers le kit, l'entretien
- * et le comité. Chaque écriture rend la fiche relue ; une zone vocale dit ce qui vient de changer.
+ * The drawer content: editable info and contacts, « J'ai postulé », status change
+ * dated, note, CV version, pending reminders, history and links to the kit, the interview
+ * and the committee. Each write returns the re-read record; a live region says what just changed.
  */
 export function DrawerBody({ detail, info }: DrawerBodyProps) {
   const update = useUpdateApplication(detail.id);
@@ -40,7 +40,7 @@ export function DrawerBody({ detail, info }: DrawerBodyProps) {
         <StatusBadge status={detail.status} />
       </div>
       {info.length > 0 ? (
-        // Une information seule est une note : aucun des trois choix n'est affiché.
+        // Information alone is a note: none of the three choices is shown.
         <DuplicateAlert
           alerts={info.map(toAlertView)}
           onOpen={nothing}

@@ -6,7 +6,7 @@ const countOf = (votes: VoteView[], value: VoteValueView): string => {
   return t(`applications.verdictPanel.count.${value}.${count === 1 ? "one" : "many"}`, { count });
 };
 
-/** « 3 oui ; 1 non ; 0 peut-être » : le décompte des voix, dit en mots. */
+/** « 3 oui ; 1 non ; 0 peut-être »: the vote count, stated in words. */
 export function tallyOf(votes: VoteView[]): string {
   return t("applications.verdictPanel.tally", {
     yes: countOf(votes, "yes"),
@@ -16,8 +16,8 @@ export function tallyOf(votes: VoteView[]): string {
 }
 
 /**
- * La phrase qui explique le verdict, d'après les voix : « peut-être » est un vrai verdict quand
- * trois lecteurs au moins l'ont voté, sinon c'est l'absence de majorité.
+ * The sentence explaining the verdict, from the votes: « peut-être » is a real verdict when
+ * at least three readers voted it, otherwise it is the absence of a majority.
  */
 export function explanationOf(verdict: VoteValueView, votes: VoteView[]): string {
   const maybe = votes.filter((vote) => vote.vote === "maybe").length;

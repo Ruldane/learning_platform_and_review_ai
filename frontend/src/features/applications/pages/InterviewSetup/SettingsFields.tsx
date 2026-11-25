@@ -17,7 +17,7 @@ interface SettingsFieldsProps {
   onChange: (settings: InterviewSettings) => void;
 }
 
-/** Les trois réglages d'un entretien : la formule, la durée (donc le nombre de questions) et la langue. */
+/** The three interview settings: format, length (so the question count) and language. */
 export function SettingsFields({ settings, disabled, onChange }: SettingsFieldsProps) {
   return (
     <>

@@ -3,7 +3,8 @@ import { agentIdentity } from "@/shared/session-ui";
 import { VoteLabel } from "../VoteLabel";
 import type { VoteView } from "../viewTypes";
 
-/** Les quatre votes motivés, chacun avec l'objection principale de sa persona ; le vote est écrit, jamais une couleur seule. */
+/** The four reasoned votes, each with its persona's main objection; the vote is written, never
+ * colour alone. */
 export function VotesPanel({ votes }: { votes: VoteView[] }) {
   return (
     <section className="flex flex-col gap-3">

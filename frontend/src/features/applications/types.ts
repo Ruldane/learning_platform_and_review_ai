@@ -3,7 +3,7 @@ import type { KitPieceView } from "./components/viewTypes";
 
 type Schemas = components["schemas"];
 
-/** Les formes du serveur : seules `toView.ts`, `api.ts` et les hooks les manipulent. */
+/** The server shapes: only `toView.ts`, `api.ts` and the hooks handle them. */
 export type ApplicationOut = Schemas["ApplicationOut"];
 export type ApplicationDetail = Schemas["ApplicationDetail"];
 export type ApplicationIn = Schemas["ApplicationIn"];
@@ -27,7 +27,8 @@ export type ReminderOut = Schemas["ReminderOut"];
 export type CommitteeRunOut = Schemas["CommitteeRunOut"];
 export type CvVersionOut = Schemas["VersionOut"];
 
-/** Le kit lu : la session ouverte (sinon la dernière), si elle tourne, les sept pièces dans l'ordre. */
+/** The kit read: the open session (otherwise the latest), whether it runs, the seven pieces in
+ * order. */
 export interface KitView {
   sessionId: string | null;
   running: boolean;
@@ -35,8 +36,8 @@ export interface KitView {
 }
 
 /**
- * Types de vue des candidatures. Ils vivent à côté des composants (`components/viewTypes.ts`, qui
- * ne peuvent importer que leur propre dossier) ; les pages (7.13) les importent d'ici.
+ * View types for applications. They live next to the components (`components/viewTypes.ts`, which
+ * may only import their own folder); the pages (7.13) import them from here.
  */
 export {
   CHANNEL_ORDER,

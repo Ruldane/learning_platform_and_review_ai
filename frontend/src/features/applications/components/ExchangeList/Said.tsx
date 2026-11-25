@@ -1,6 +1,7 @@
 import { t } from "@/shared/i18n/t";
 
-/** Un texte dit pendant l'entretien (réponse, relance), avec son étiquette ; « (pas de réponse) » s'il est vide. */
+/** A text said during the interview (answer, follow-up), with its label; « (pas de réponse) » if it
+ * is empty. */
 export function Said({ label, text }: { label: string; text: string | null }) {
   return (
     <div className="flex flex-col gap-0.5">

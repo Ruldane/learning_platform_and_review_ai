@@ -7,13 +7,13 @@ import type { ContactView } from "../viewTypes";
 
 interface ContactRowProps {
   contact: ContactView;
-  /** Rang à partir de 1, pour nommer les champs. */
+  /** Rank starting at 1, to name the fields. */
   rank: number;
   onChange: (contact: ContactView) => void;
   onRemove: () => void;
 }
 
-/** Un contact : nom (obligatoire), rôle et adresse du profil (facultatifs). */
+/** A contact: name (required), role and profile address (optional). */
 export function ContactRow({ contact, rank, onChange, onRemove }: ContactRowProps) {
   const errorId = useId();
   const missingName = contact.name.trim() === "";

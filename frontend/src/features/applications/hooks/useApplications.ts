@@ -4,11 +4,11 @@ import { applicationsKeys } from "../queryKeys";
 import { toApplicationView, toStatsView } from "../toView";
 import type { ApplicationOut, ApplicationStatsOut } from "../types";
 
-// Des fonctions stables : TanStack Query ne refait pas la conversion à chaque rendu.
+// Stable functions: TanStack Query does not redo the conversion on each render.
 const toViews = (rows: ApplicationOut[]) => rows.map(toApplicationView);
 const toStats = (stats: ApplicationStatsOut) => toStatsView(stats);
 
-/** `GET /applications` : les fiches du tableau de suivi, déjà converties pour les composants. */
+/** `GET /applications`: the tracking board's records, already converted for the components. */
 export function useApplications() {
   return useQuery({
     queryKey: applicationsKeys.list,
@@ -17,7 +17,7 @@ export function useApplications() {
   });
 }
 
-/** `GET /applications/stats` : les indicateurs de la barre du haut du tableau. */
+/** `GET /applications/stats`: the indicators of the board's top bar. */
 export function useStats() {
   return useQuery({
     queryKey: applicationsKeys.stats,

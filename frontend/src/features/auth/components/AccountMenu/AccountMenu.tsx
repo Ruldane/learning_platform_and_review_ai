@@ -8,7 +8,7 @@ interface AccountMenuProps {
   failed: boolean;
 }
 
-/** Le compte connecté (barre du haut) : son adresse et « Se déconnecter ». */
+/** The signed-in account (top bar): its address and « Se déconnecter ». */
 export function AccountMenu({ email, onLogout, pending, failed }: AccountMenuProps) {
   return (
     <div role="group" aria-label={t("auth.account.label")} className="flex items-center gap-2">

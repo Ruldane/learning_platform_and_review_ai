@@ -7,7 +7,8 @@ interface StatusBadgeProps {
   className?: string;
 }
 
-/** Les statuts « arrivés » (offre) et « perdus » (refus, sans réponse, retirée) se distinguent du fil normal. */
+/** The « arrivés » (offer) and « perdus » (refusal, no answer, withdrawn) statuses stand apart from
+ * the normal thread. */
 const TONE: Record<StatusView, string> = {
   to_apply: "border-border bg-muted text-foreground",
   applied: "border-primary/40 bg-primary/10 text-foreground",
@@ -19,7 +20,7 @@ const TONE: Record<StatusView, string> = {
   withdrawn: "border-border bg-background text-muted-foreground",
 };
 
-/** Le statut d'une candidature, toujours écrit en toutes lettres (la teinte n'est qu'un renfort). */
+/** An application's status, always written in words (the tint is only reinforcement). */
 export function StatusBadge({ status, className }: StatusBadgeProps) {
   return (
     <span

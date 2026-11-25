@@ -5,15 +5,16 @@ import { Said } from "./Said";
 
 interface ExchangeListProps {
   exchanges: ExchangeView[];
-  /** Les questions de note 2 au plus (« à revoir »). */
+  /** The questions scored 2 at most (« à revoir »). */
   missed?: number[];
-  /** Ce qu'une bonne réponse aurait donné, par question. */
+  /** What a good answer would have given, per question. */
   expected?: ExpectedView[];
-  /** Montrer la note de chaque réponse (sans débrief, les notes ne disent rien). */
+  /** Show each answer's score (without a debrief, the scores say nothing). */
   showNotes?: boolean;
 }
 
-/** Les questions de l'entretien, la réponse de January, la relance éventuelle et, avec un débrief, la note de chacune. */
+/** The interview questions, January's answer, the possible follow-up and, with a debrief, each
+ * one's score. */
 export function ExchangeList({
   exchanges,
   missed = [],

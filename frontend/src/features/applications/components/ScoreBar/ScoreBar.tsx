@@ -5,11 +5,11 @@ const MAX_SCORE = 5;
 
 interface ScoreBarProps {
   name: ScoreKeyView;
-  /** La note, de 1 à 5 ; `null` : pas de note rendue. */
+  /** The score, from 1 to 5; `null`: no score given. */
   value: number | null;
 }
 
-/** Une note du débrief : son nom et « 4 sur 5 » en toutes lettres, et une barre qui ne fait que l'illustrer. */
+/** A debrief score: its name and « 4 sur 5 » in words, and a bar that only illustrates it. */
 export function ScoreBar({ name, value }: ScoreBarProps) {
   const share = value === null ? 0 : Math.max(0, Math.min(1, value / MAX_SCORE));
   return (

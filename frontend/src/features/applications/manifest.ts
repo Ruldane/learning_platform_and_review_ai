@@ -12,10 +12,11 @@ import { NewApplicationPage } from "./pages/NewApplication";
 import { RemindersPage } from "./pages/RemindersPage";
 
 /**
- * Les candidatures (SPEC 6, section « Candidatures » de la navigation) : le suivi (tableau de suivi
- * ou tableau) avec la fiche en tiroir par-dessus, les relances (pastille = relances dues), la
- * nouvelle fiche (à la main ou en une phrase), le kit d'une candidature (7.14), l'entretien blanc (7.15,
- * depuis une fiche ou libre). Le comité simulé est sous `/applications/:applicationId/committee`.
+ * Applications (SPEC 6, « Candidatures » section of the navigation): the tracking (board
+ * or table) with the record in a drawer on top, reminders (badge = reminders due), the
+ * new record (by hand or in one sentence), the kit (7.14), the mock interview (7.15,
+ * from a record or free). The simulated committee is under
+ * `/applications/:applicationId/committee`.
  */
 export const applicationsManifest: FeatureManifest = {
   id: "applications",
@@ -23,7 +24,7 @@ export const applicationsManifest: FeatureManifest = {
     {
       path: "applications",
       Component: BoardPage,
-      // Huit colonnes de cartes : la page prend toute la largeur.
+      // Eight card columns: the page takes the full width.
       handle: { wide: true },
       children: [{ path: ":applicationId", Component: ApplicationDrawer }],
     },

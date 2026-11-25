@@ -12,7 +12,7 @@ interface KanbanCardProps {
   onOpen?: (id: string) => void;
 }
 
-/** Une carte du tableau de suivi : poignée de glisser, fiche et menu « Déplacer vers… ». */
+/** A card on the tracking board: drag handle, record and « Déplacer vers… » menu. */
 export function KanbanCard({ application, onMove, onOpen }: KanbanCardProps) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, isDragging } =
     useDraggable({

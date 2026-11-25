@@ -8,12 +8,12 @@ interface PublicPageProps {
 }
 
 /**
- * Le cadre d'une page publique (connexion, reprise), hors de la mise en page : sans barre ni
- * navigation, `<main>` et un titre qui prend le focus à l'ouverture. On y arrive souvent par une
- * redirection (porte, déconnexion) qui a démonté la page où se trouvait le focus : sans cela, la
- * personne au clavier repartirait du haut du document. `settled` vaut faux tant que la page montre
- * un état d'erreur avec son bouton « Réessayer » : le titre reprend le focus quand l'erreur
- * disparaît (le bouton cliqué est alors démonté), jamais avant.
+ * The frame of a public page (login, resume), outside the layout: without bar or
+ * navigation, a `<main>` and a heading that takes focus on opening. It is often reached through a
+ * redirect (gate, sign-out) that unmounted the page holding focus: without it, the
+ * keyboard user would restart from the top of the document. `settled` is false while the page shows
+ * an error state with its « Réessayer » button: the heading takes focus when the error
+ * disappears (the clicked button is then unmounted), never before.
  */
 export function PublicPage({ title, settled = true, children }: PublicPageProps) {
   const heading = useFocusOnMount<HTMLHeadingElement>(settled);

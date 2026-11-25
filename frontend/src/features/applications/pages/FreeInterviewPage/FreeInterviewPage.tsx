@@ -5,9 +5,9 @@ import { BOARD_PATH } from "../../urls";
 import { InterviewHub } from "../InterviewHub";
 
 /**
- * L'entretien blanc libre (`/applications/interview`) : sans fiche, sur une offre analysée ou sur
- * un intitulé de poste. Même échange écrit et même débrief que depuis une fiche.
- * `createSocket` ne sert qu'aux tests.
+ * The free mock interview (`/applications/interview`): without a record, on an analysed posting
+ * or a job title. Same written exchange and debrief as from a record.
+ * `createSocket` is only for tests.
  */
 export function FreeInterviewPage({ createSocket }: { createSocket?: SocketFactory }) {
   return (

@@ -17,10 +17,10 @@ interface InterviewLiveProps {
 }
 
 /**
- * L'entretien en cours : le fil de la session de l'intervieweur, une question à la fois, chacune
- * avec son champ de réponse. Le fil dit seulement quand relire l'entretien (chaque changement
- * d'état, chaque nouvelle question) : le résultat vient toujours de la lecture. Une zone vocale
- * annonce chaque question (son rang et son texte).
+ * The interview in progress: the interviewer's session thread, one question at a time, each
+ * with its answer field. The thread only says when to re-read the interview (each state change
+ * or new question): results always come from the read. A live region
+ * announces each question (its rank and text).
  */
 export function InterviewLive({ interview, createSocket }: InterviewLiveProps) {
   const client = useQueryClient();

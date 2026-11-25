@@ -6,7 +6,7 @@ import { applicationsErrorMessage, errorCode, openInterviewId } from "../errors"
 import { applicationsKeys } from "../queryKeys";
 import type { InterviewDurationView, InterviewLanguageView, InterviewModeView } from "../types";
 
-/** Les réglages d'un entretien. */
+/** The settings of an interview. */
 export interface InterviewSettings {
   mode: InterviewModeView;
   durationMin: InterviewDurationView;
@@ -15,12 +15,12 @@ export interface InterviewSettings {
   radarZone?: string;
 }
 
-/** Sur quoi porte un entretien sans fiche : une offre, ou un intitulé de poste. */
+/** What a record-less interview is about: a posting, or a job title. */
 export type FreeTarget = { postingId: string } | { role: string };
 
 interface Started {
   interviewId: string;
-  /** Un entretien était déjà ouvert : on le reprend. */
+  /** An interview was already open: it is resumed. */
   resumed: boolean;
 }
 
@@ -59,8 +59,8 @@ async function launch(
 }
 
 /**
- * « Commencer l'entretien » : `start` résout à l'identifiant de l'entretien à suivre. Un 409
- * `interview_in_progress` n'est pas une panne : on reprend l'entretien ouvert (`resumed`).
+ * « Commencer l'entretien »: `start` resolves to the identifier of the interview to follow. A 409
+ * `interview_in_progress` is not a failure: the open interview is resumed (`resumed`).
  */
 export function useStartInterview(applicationId: string | null) {
   const provider = useLaunchSource();
@@ -81,7 +81,7 @@ export function useStartInterview(applicationId: string | null) {
       ),
     pending: mutation.isPending,
     error: mutation.isError ? applicationsErrorMessage(mutation.error) : null,
-    /** Le profil validé manque : January doit le faire avant de commencer. */
+    /** The validated profile is missing: January must do it before starting. */
     profileMissing: mutation.isError && errorCode(mutation.error) === "profile_required",
   };
 }

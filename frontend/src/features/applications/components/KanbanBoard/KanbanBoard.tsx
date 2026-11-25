@@ -18,16 +18,16 @@ import { useBoardMoves } from "./useBoardMoves";
 
 interface KanbanBoardProps {
   applications: ApplicationView[];
-  /** Appelé pour un déplacement par glisser-déposer ou par le menu « Déplacer vers… ». */
+  /** Called for a move by drag and drop or by the « Déplacer vers… » menu. */
   onMove: (id: string, status: StatusView) => void;
   onOpen?: (id: string) => void;
 }
 
 /**
- * Le tableau de suivi : une colonne par statut, dans l'ordre des statuts. Une carte se déplace à la
- * souris, au clavier (espace, flèches) ou par le menu « Déplacer vers… » ; le déplacement par le
- * menu est annoncé dans une zone vocale, celui du glisser-déposer par dnd-kit. Huit colonnes ne
- * tiennent pas dans 1 024 px : le défilement horizontal est celui du tableau (jamais celui de la page).
+ * The tracking board: one column per status, in status order. A card moves by
+ * mouse, keyboard (space, arrows) or the « Déplacer vers… » menu; the move by the
+ * menu is announced in a live region, drag and drop by dnd-kit. Eight columns do not
+ * fit in 1 024 px: the horizontal scroll is the table's (never the page's).
  */
 export function KanbanBoard({ applications, onMove, onOpen }: KanbanBoardProps) {
   const sensors = useSensors(

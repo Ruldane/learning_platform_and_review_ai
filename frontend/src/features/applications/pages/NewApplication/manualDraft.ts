@@ -4,7 +4,7 @@ import { toContactsIn } from "../../toView";
 import { isChannel, type ApplicationIn, type ContactView, type StatusView } from "../../types";
 import { NAME_MAX_LENGTH, type FieldSpec } from "../../components/DraftField";
 
-/** Les champs de la création à la main. */
+/** The fields for manual creation. */
 export interface ManualDraft {
   company: string;
   title: string;
@@ -59,8 +59,8 @@ export const MANUAL_FIELDS: FieldSpec[] = [
 export type ManualProblem = "name" | "contact" | "date";
 
 /**
- * Ce qui empêche d'envoyer : `name` (entreprise ou poste vide), `contact` (un contact sans nom) ou
- * `date` (une date de candidature dans le futur, pour une fiche déjà postulée).
+ * What prevents sending: `name` (company or job empty), `contact` (a contact without a name) or
+ * `date` (an application date in the future, for a record already applied to).
  */
 export function manualProblem(draft: ManualDraft): ManualProblem | null {
   if (draft.company.trim() === "" || draft.title.trim() === "") return "name";
@@ -70,15 +70,15 @@ export function manualProblem(draft: ManualDraft): ManualProblem | null {
 
 const orNull = (value: string) => (value.trim() === "" ? null : value.trim());
 
-/** Le canal choisi, ou `null` (« Non précisé »). Le menu n'en propose que de connus. */
+/** The chosen channel, or `null` (« Non précisé »). The menu only offers known ones. */
 const channelOf = (value: string): ApplicationIn["channel"] => {
   const channel = value.trim();
   return isChannel(channel) ? channel : null;
 };
 
 /**
- * Le corps de `POST /applications`. `distinctFrom` : les fiches proches que January a confirmées
- * « autre poste ». Une date de candidature n'a de sens que pour une fiche déjà postulée.
+ * The body of `POST /applications`. `distinctFrom`: the near records January confirmed as
+ * « autre poste ». An application date only makes sense for a record already applied to.
  */
 export function toBody(draft: ManualDraft, distinctFrom: string[] = []): ApplicationIn {
   const body: ApplicationIn = {

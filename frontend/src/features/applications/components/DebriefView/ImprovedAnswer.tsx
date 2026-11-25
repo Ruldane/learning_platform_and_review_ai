@@ -3,13 +3,14 @@ import type { ExchangeView } from "../viewTypes";
 
 interface ImprovedAnswerProps {
   text: string;
-  /** Les termes que le profil ne dit pas : la réponse est alors « à vérifier ». */
+  /** The terms the profile does not state: the answer is then « à vérifier ». */
   flags: string[];
-  /** La question la plus faible, que la réponse reprend. */
+  /** The weakest question, which the answer addresses. */
   question: ExchangeView | undefined;
 }
 
-/** La réponse améliorée de la question la plus faible ; « à vérifier » avec ses termes quand le profil ne les dit pas. */
+/** The improved answer to the weakest question; « à vérifier » with its terms when the profile does
+ * not state them. */
 export function ImprovedAnswer({ text, flags, question }: ImprovedAnswerProps) {
   const toCheck = flags.length > 0;
   return (

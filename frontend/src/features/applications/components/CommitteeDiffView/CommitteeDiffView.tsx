@@ -4,11 +4,11 @@ import { TextList } from "./TextList";
 import { VoteDiffTable } from "./VoteDiffTable";
 
 interface CommitteeDiffViewProps {
-  /** `null` : première exécution de l'offre. */
+  /** `null`: first run of the posting. */
   diff: DiffView | null;
 }
 
-/** L'avant et l'après : les votes persona par persona, les objections levées et les nouvelles. */
+/** Before and after: the votes persona by persona, the objections resolved and the new ones. */
 export function CommitteeDiffView({ diff }: CommitteeDiffViewProps) {
   return (
     <section className="flex flex-col gap-4">

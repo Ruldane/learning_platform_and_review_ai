@@ -8,7 +8,7 @@ interface KitPieceHeaderProps {
   running: boolean;
 }
 
-/** Le nom de la pièce, son statut, « modifiée par toi » et le nombre de mots. */
+/** The piece's name, its status, « modifiée par toi » and the word count. */
 export function KitPieceHeader({ piece, headingId, running }: KitPieceHeaderProps) {
   const { words } = piece;
   return (

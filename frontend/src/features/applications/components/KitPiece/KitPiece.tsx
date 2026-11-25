@@ -11,18 +11,18 @@ import { useKitPieceActions } from "./useKitPieceActions";
 
 interface KitPieceProps {
   piece: KitPieceView;
-  /** Le kit est en cours : une pièce pas encore arrivée est « en préparation ». */
+  /** The kit is running: a piece not yet arrived is « en préparation ». */
   running: boolean;
-  /** Envoie le texte au serveur, qui le relit ; ne lève jamais. */
+  /** Sends the text to the server, which re-reads it; never throws. */
   onSave: (content: string) => Promise<KitSaveResult>;
-  /** Copie un texte : l'application n'envoie rien. Une promesse rejetée signale l'échec. */
+  /** Copies a text: the app sends nothing. A rejected promise signals the failure. */
   onCopy: (text: string) => void | Promise<void>;
 }
 
 /**
- * Une pièce du kit : son nom et son statut (prête, à vérifier avec ses raisons, en échec, pas
- * encore là), son texte modifiable (enregistré seulement par le bouton), un bouton Copier par
- * texte et, pour le dossier, ses sources. Rien n'est envoyé par l'application.
+ * A kit piece: its name and status (ready, to check with its reasons, failed, not
+ * yet there), its editable text (saved only by the button), a Copy button per
+ * text and, for the file, its sources. The app sends nothing.
  */
 export function KitPiece({ piece, running, onSave, onCopy }: KitPieceProps) {
   const headingId = useId();

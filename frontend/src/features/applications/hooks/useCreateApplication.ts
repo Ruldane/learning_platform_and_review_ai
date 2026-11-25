@@ -6,9 +6,10 @@ import { applicationsKeys } from "../queryKeys";
 import type { AlertOut, ApplicationIn, CreatedOut } from "../types";
 
 /**
- * `POST /applications`. Un 409 `application_duplicate` ne s'affiche pas comme une erreur : ses
- * fiches proches (`alerts`) alimentent l'alerte de doublon. `create` rend la fiche créée (avec les
- * informations « même entreprise »), ou `null` si elle ne l'est pas.
+ * `POST /applications`. A 409 `application_duplicate` is not shown as an error: its
+ * near-matching records (`alerts`) feed the duplicate alert. `create` returns the created record
+ * (with the
+ * « même entreprise » information), or `null` if it is not.
  */
 export function useCreateApplication() {
   const client = useQueryClient();
@@ -30,7 +31,7 @@ export function useCreateApplication() {
     }
   }
 
-  // Un doublon n'est pas une panne : son alerte (ou, une fois fermée, rien) le dit.
+  // A duplicate is not a failure: its alert (or, once closed, nothing) says so.
   const failed = mutation.isError && duplicateAlerts(mutation.error) === null;
   return {
     create,

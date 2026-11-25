@@ -4,7 +4,8 @@ import type { CommitteeView } from "../types";
 
 type Seen = Pick<CommitteeView, "id" | "status"> | undefined;
 
-/** Ce que la relecture du comité apporte : il délibère, ou il vient de se terminer ; `null` : rien à dire. */
+/** What the committee re-read brings: it is deliberating, or has just ended; `null`: nothing to
+ * say. */
 export function describeCommitteeChange(before: Seen, after: CommitteeView): string | null {
   const sameRun = before?.id === after.id;
   if (after.status === "running") {
@@ -12,7 +13,7 @@ export function describeCommitteeChange(before: Seen, after: CommitteeView): str
       ? null
       : t("applications.committeeAnnounce.running");
   }
-  // Ce qui est déjà fini à l'arrivée n'est pas une nouvelle : seule une fin vue en direct s'annonce.
+  // What is already finished on arrival is not news: only an end seen live is announced.
   if (!sameRun || before?.status !== "running") return null;
   if (after.status === "done" && after.verdict) {
     return t("applications.committeeAnnounce.done", {
@@ -23,8 +24,10 @@ export function describeCommitteeChange(before: Seen, after: CommitteeView): str
 }
 
 /**
- * La phrase à annoncer (zone vocale) quand le comité se met à délibérer ou rend son verdict. Une
- * exécution déjà finie à l'arrivée n'annonce rien. `count` change à chaque annonce, même identique.
+ * The sentence to announce (live region) when the committee starts deliberating or gives its
+ * verdict. A
+ * run already finished on arrival announces nothing. `count` changes on each announcement, even
+ * identical.
  */
 export function useCommitteeAnnouncement(view: CommitteeView | undefined): {
   message: string;

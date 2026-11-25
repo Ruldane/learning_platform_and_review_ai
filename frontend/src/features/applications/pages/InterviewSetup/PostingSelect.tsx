@@ -10,7 +10,7 @@ interface PostingSelectProps {
   onChange: (postingId: string) => void;
 }
 
-/** La liste des offres analysées, pour un entretien sans fiche. */
+/** The list of analysed postings, for an interview without a record. */
 export function PostingSelect({ id, value, postings, disabled, onChange }: PostingSelectProps) {
   return (
     <label htmlFor={id} className="flex flex-col gap-1 text-sm font-medium">

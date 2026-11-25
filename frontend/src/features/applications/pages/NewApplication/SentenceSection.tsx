@@ -7,8 +7,9 @@ import { IntakeRun } from "./IntakeRun";
 import { SentenceForm } from "./SentenceForm";
 
 /**
- * « En une phrase » : January décrit la candidature, l'Assistant de suivi prépare la fiche et la lui
- * fait confirmer dans le fil de la session. Une saisie déjà ouverte (409) se reprend ou s'annule.
+ * « En une phrase »: January describes the application, the tracking Assistant prepares the record
+ * and
+ * asks for confirmation in the session thread. An entry already open (409) is resumed or cancelled.
  */
 export function SentenceSection({ createSocket }: { createSocket?: SocketFactory }) {
   const intake = useIntake();

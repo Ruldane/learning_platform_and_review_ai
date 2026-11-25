@@ -16,7 +16,7 @@ interface BoardContentProps {
   onMove: (id: string, status: StatusView) => void;
 }
 
-/** Les fiches selon l'état de la lecture : chargement, erreur, rien encore, tableau de suivi ou tableau. */
+/** The records by read state: loading, error, nothing yet, tracking board or table. */
 export function BoardContent({ view, onMove }: BoardContentProps) {
   const navigate = useNavigate();
   const query = useApplications();

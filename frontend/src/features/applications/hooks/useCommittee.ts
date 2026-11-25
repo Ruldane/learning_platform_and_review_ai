@@ -4,10 +4,12 @@ import { fetchCommittee } from "../api";
 import { applicationsKeys } from "../queryKeys";
 import { toCommitteeView } from "../toCommitteeView";
 
-/** Tant que le comité délibère, la page relit aussi toute seule : une fin de session perdue ne bloque rien. */
+/** While the committee deliberates, the page also re-reads on its own: a lost session end blocks
+ * nothing. */
 const POLL_MS = 5_000;
 
-/** `GET /committee/{id}` : l'exécution, ses votes, son verdict et son avant / après ; lue seulement quand elle est suivie. */
+/** `GET /committee/{id}`: the run, its votes, its verdict and its before / after; read only while
+ * it is followed. */
 export function useCommittee(runId: string | null) {
   return useQuery({
     queryKey: applicationsKeys.committee(runId ?? ""),

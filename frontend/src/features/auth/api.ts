@@ -3,22 +3,22 @@ import { ApiError, unwrap } from "@/shared/api/errors";
 import type { ClaimChoice } from "./types";
 
 /**
- * L'adresse du départ vers Google (le back répond par une redirection : lien plein, jamais un
- * appel `fetch`). `hint` préremplit l'adresse e-mail chez Google.
+ * The address to start Google sign-in (the backend answers with a redirect: plain link, never a
+ * `fetch` call). `hint` pre-fills the email address at Google.
  */
 export const loginUrl = (hint?: string): string => {
   const base = `${apiBaseUrl}/api/v1/auth/google/login`;
   return hint ? `${base}?login_hint=${encodeURIComponent(hint)}` : base;
 };
 
-/** `GET /auth/me` : l'utilisateur connecté (401 `auth_required` en mode Google sans session). */
+/** `GET /auth/me`: the signed-in user (401 `auth_required` in Google mode without a session). */
 export async function fetchMe(signal?: AbortSignal) {
   return unwrap(await api.GET("/auth/me", { signal }));
 }
 
 /**
- * L'utilisateur connecté, ou `null` : un 401 `auth_required` n'est pas une panne, il vaut « pas de
- * session » (toute autre erreur reste une erreur).
+ * The signed-in user, or `null`: a 401 `auth_required` is not a failure, it means
+ * « pas de session » (any other error remains an error).
  */
 export async function readMe(signal?: AbortSignal) {
   try {
@@ -29,12 +29,12 @@ export async function readMe(signal?: AbortSignal) {
   }
 }
 
-/** `POST /auth/google/claim` : le choix de la première connexion ; ouvre la session. */
+/** `POST /auth/google/claim`: the first-sign-in choice; opens the session. */
 export async function postClaim(choice: ClaimChoice) {
   return unwrap(await api.POST("/auth/google/claim", { body: { choice } }));
 }
 
-/** `POST /auth/logout` : 204, le cookie est effacé par le back. */
+/** `POST /auth/logout`: 204, the cookie is cleared by the backend. */
 export async function postLogout() {
   unwrap(await api.POST("/auth/logout"));
 }

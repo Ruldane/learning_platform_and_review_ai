@@ -6,12 +6,12 @@ import type { ApplicationView, StatusView } from "../viewTypes";
 const isStatus = (id: string | number): id is StatusView =>
   (STATUS_ORDER as readonly string[]).includes(String(id));
 
-/** Le nom d'un statut en toutes lettres, ou vide pour une zone qui n'est pas une colonne. */
+/** The name of a status in words, or empty for an area that is not a column. */
 export function statusName(id: string | number): string {
   return isStatus(id) ? t(`applications.status.${id}`) : "";
 }
 
-/** Annonces du glisser-déposer pour les lecteurs d'écran, en français. */
+/** Drag-and-drop announcements for screen readers, in French. */
 export function makeAnnouncements(applications: ApplicationView[]): Announcements {
   const find = (id: string | number) => applications.find((item) => item.id === String(id));
   const titleOf = (id: string | number) => find(id)?.title ?? "";

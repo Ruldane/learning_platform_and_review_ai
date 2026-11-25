@@ -10,12 +10,12 @@ import { CommitteeRun } from "./CommitteeRun";
 interface CommitteeRunSectionProps {
   committees: ReturnType<typeof useCommittees>;
   run: ReturnType<typeof useCommittee>;
-  /** L'exécution suivie, `null` quand l'offre n'en a pas encore. */
+  /** The followed run, `null` when the posting has none yet. */
   runId: string | null;
   createSocket?: SocketFactory;
 }
 
-/** L'exécution suivie : chargement, panne, exécution disparue, absence d'exécution, ou le débat et les résultats. */
+/** The followed run: loading, failure, run gone, no run, or the debate and results. */
 export function CommitteeRunSection({
   committees,
   run,

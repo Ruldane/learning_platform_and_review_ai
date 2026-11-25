@@ -7,10 +7,11 @@ import type { ClaimChoice } from "../types";
 const ALREADY_CLAIMED = "local_already_claimed";
 
 /**
- * Envoie le choix de la reprise ; la session est ouverte, `me` est connu sans le relire. Un choix
- * rejoué (double envoi, deuxième onglet) répond `local_already_claimed` à la personne qui vient de
- * reprendre l'espace : si sa session est ouverte, `me` est relu et elle entre ; sinon le refus
- * reste ce qu'il est.
+ * Sends the resume choice; the session is opened, `me` is known without re-reading it. A choice
+ * replayed (double send, second tab) answers `local_already_claimed` to the person who just
+ * resumed the space: if their session is open, `me` is re-read and they enter; otherwise the
+ * refusal
+ * stays as it is.
  */
 export function useClaim() {
   const queryClient = useQueryClient();

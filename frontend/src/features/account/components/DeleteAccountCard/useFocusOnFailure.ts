@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-/** Une référence à poser sur le message d'échec : il reçoit le focus à chaque nouvel échec. */
+/** A ref to attach to the failure message: it receives focus on each new failure. */
 export function useFocusOnFailure(failure: object | null) {
   const ref = useRef<HTMLParagraphElement>(null);
   useEffect(() => {

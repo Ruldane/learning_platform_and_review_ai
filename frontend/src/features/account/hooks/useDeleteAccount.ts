@@ -7,7 +7,7 @@ import { AccountChangedError, fetchMe, postDeleteAccount } from "../api";
 import { accountKeys } from "../queryKeys";
 import { GOOGLE_MODE, type Me } from "../types";
 
-/** Où mène « Tout supprimer » en mode local : le premier lancement (réglages vides). */
+/** Where « Tout supprimer » leads in local mode: the first launch (empty settings). */
 const WELCOME_PATH = "/welcome";
 
 function readCurrentMe(queryClient: QueryClient): Promise<Me | null> {
@@ -46,19 +46,20 @@ async function deleteWithConsent(
 }
 
 /**
- * « Tout supprimer ». Le mode est lu **avant** l'appel (en mode Google la session est close
- * ensuite : relire `me` donnerait 401), et sans cache : si le compte n'est plus celui qui est
- * affiché (autre onglet), rien n'est envoyé, la mémoire est vidée et `me` est celui du compte
- * actuel (`AccountChangedError`). Une fois la suppression faite, rien de ce que l'espace
- * contenait ne reste en mémoire (requêtes, mais aussi ce que les features gardent hors du cache :
- * `resetLocalState`) ; puis :
- * - mode Google : `me` passe à « pas de session », la porte de la coquille mène à `/login`
- *   (comme un 401 `auth_required`) ;
- * - mode local : l'identité reste (même utilisateur), retour au premier lancement, qui sait que
- *   les données viennent d'être supprimées (`state.deleted`).
+ * « Tout supprimer ». The mode is read **before** the call (in Google mode the session is closed
+ * afterwards: re-reading `me` would give 401), and without cache: if the account is no longer the
+ * one that is
+ * displayed (another tab), nothing is sent, memory is cleared and `me` is that of the
+ * current account (`AccountChangedError`). Once deletion is done, nothing the space
+ * held stays in memory (queries, but also what the features keep outside the cache:
+ * `resetLocalState`); then:
+ * - Google mode: `me` becomes « pas de session », the shell gate leads to `/login`
+ *   (like a 401 `auth_required`);
+ * - local mode: the identity stays (same user), back to the first launch, which knows that
+ *   the data was just deleted (`state.deleted`).
  *
- * `submit` garde l'identité affichée avec le mot de confirmation. Le serveur la contrôle aussi,
- * car un autre onglet peut changer le cookie après la lecture de `me`.
+ * `submit` keeps the displayed identity with the confirmation word. The server checks it too,
+ * since another tab can change the cookie after `me` is read.
  */
 export function useDeleteAccount(account: Me | null | undefined) {
   const queryClient = useQueryClient();
@@ -90,7 +91,8 @@ export function useDeleteAccount(account: Me | null | undefined) {
       }
     },
   });
-  // Stable : `DataPage` en fait la dépendance de l'objet d'échec (un neuf prendrait le focus).
+  // Stable: `DataPage` uses it as the dependency of the failure object (a new one would take
+  // focus).
   const started = useCallback(() => sent.current, []);
   return {
     isPending,
@@ -103,7 +105,7 @@ export function useDeleteAccount(account: Me | null | undefined) {
       running.current = true;
       mutate({ confirm, account });
     },
-    /** Efface l'échec affiché ; sans effet pendant l'envoi. */
+    /** Clears the displayed failure; no effect while sending. */
     reset: () => {
       if (!running.current) reset();
     },

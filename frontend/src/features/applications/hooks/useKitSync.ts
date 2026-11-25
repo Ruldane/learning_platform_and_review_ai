@@ -2,7 +2,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { applicationsKeys } from "../queryKeys";
 
-/** Relit le kit : la page ne se fie jamais aux seuls événements du flux (un `artifact.ready` peut se perdre). */
+/** Re-reads the kit: the page never relies only on stream events (an `artifact.ready` can be
+ * lost). */
 export function useKitSync(applicationId: string): () => void {
   const client = useQueryClient();
   return useCallback(

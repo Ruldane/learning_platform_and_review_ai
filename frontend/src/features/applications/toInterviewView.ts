@@ -8,7 +8,7 @@ import type {
   InterviewView,
 } from "./types";
 
-/** Les questions principales d'un entretien : 4 à 15 minutes, 7 à 30, 10 à 45 (7.9). */
+/** The main questions of an interview: 4 for 15 minutes, 7 for 30, 10 for 45 (7.9). */
 const QUESTIONS: Record<InterviewOut["duration_min"], number> = { 15: 4, 30: 7, 45: 10 };
 
 export const questionCount = (durationMin: InterviewOut["duration_min"]): number =>
@@ -39,7 +39,7 @@ function toDebriefView(out: DebriefOut): DebriefDataView {
   };
 }
 
-/** Un entretien du serveur → la vue des pages. */
+/** An interview from the server → the page view. */
 export function toInterviewView(out: InterviewOut): InterviewView {
   const { salary, salary_outcome: outcome } = out;
   return {

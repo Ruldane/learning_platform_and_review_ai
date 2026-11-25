@@ -3,7 +3,8 @@ import { DraftField, type FieldKind, type FieldSpec } from "../DraftField";
 import { todayString } from "../format";
 import type { ConfirmationFieldView, ConfirmationView } from "../viewTypes";
 
-/** La nature d'un champ : statut, canal, date et notes ont leur propre commande, le reste est du texte. */
+/** The kind of a field: status, channel, date and notes have their own control, the rest is
+ * text. */
 const KINDS: Record<string, FieldKind> = {
   status: "status",
   channel: "channel",
@@ -28,12 +29,13 @@ interface ConfirmationFieldsProps {
   confirmation: ConfirmationView;
   values: Record<string, string>;
   disabled: boolean;
-  /** Un rôle de contact est donné sans nom : le champ du nom le dit. */
+  /** A contact role is given without a name: the name field says so. */
   roleWithoutName: boolean;
   onChange: (id: string, value: string) => void;
 }
 
-/** Les champs de la fiche lue : un champ par information, déjà rempli, dans l'ordre du serveur. */
+/** The fields of the record read: one field per piece of information, already filled in, in the
+ * server's order. */
 export function ConfirmationFields({
   confirmation,
   values,

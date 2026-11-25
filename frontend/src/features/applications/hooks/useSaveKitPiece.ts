@@ -8,9 +8,9 @@ const replaced = (kit: KitOut | undefined, item: KitItemOut): KitOut | undefined
   kit && { ...kit, items: kit.items.map((old) => (old.kind === item.kind ? item : old)) };
 
 /**
- * Enregistre le texte de January pour une pièce : le serveur rend la pièce relue (statut, termes),
- * qui remplace celle du kit en cache. Une modification n'attend jamais la fin d'un kit en cours.
- * Ne lève pas : un refus est un `KitSaveResult` à montrer sous la pièce.
+ * Saves January's text for a piece: the server returns the re-read piece (status, terms),
+ * which replaces the cached one. A change never waits for a running kit to finish.
+ * Never throws: a refusal is a `KitSaveResult` to show under the piece.
  */
 export function useSaveKitPiece(applicationId: string) {
   const client = useQueryClient();

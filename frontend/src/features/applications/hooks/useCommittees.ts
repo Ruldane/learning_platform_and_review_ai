@@ -3,7 +3,7 @@ import { fetchCommittees } from "../api";
 import { applicationsKeys } from "../queryKeys";
 import { toCommitteeView } from "../toCommitteeView";
 
-/** `GET /committee?posting_id=` : les exécutions du comité de l'offre, la plus récente d'abord. */
+/** `GET /committee?posting_id=`: the committee runs for the posting, most recent first. */
 export function useCommittees(postingId: string | null) {
   return useQuery({
     queryKey: applicationsKeys.committees(postingId ?? ""),

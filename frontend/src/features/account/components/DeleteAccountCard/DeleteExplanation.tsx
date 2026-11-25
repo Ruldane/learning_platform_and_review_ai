@@ -1,8 +1,8 @@
 import { t } from "@/shared/i18n/t";
 
 /**
- * Ce que « Tout supprimer » efface, ce qu'il laisse, et où il mène ensuite. Un seul bloc nommé
- * (`id`) : le champ de confirmation le cite, et un lecteur d'écran entend l'avertissement en
+ * What « Tout supprimer » erases, what it keeps, and where it leads next. A single block named
+ * (`id`): the confirmation field cites it, and a screen reader announces the warning as
  * arrivant dessus.
  */
 export function DeleteExplanation({ id }: { id: string }) {

@@ -6,7 +6,7 @@ import { useReminderHandlers } from "../../hooks/useReminderHandlers";
 import type { ReminderView } from "../../types";
 import { DrawerSection } from "./DrawerSection";
 
-/** Les relances en attente de cette fiche, avec les mêmes boutons que la page des relances. */
+/** This record's pending reminders, with the same buttons as the reminders page. */
 export function DrawerReminders({ reminders }: { reminders: ReminderView[] }) {
   const done = useRef<HTMLParagraphElement>(null);
   const handlers = useReminderHandlers(reminders, () => done.current?.focus());

@@ -18,14 +18,16 @@ import { asReasked } from "./reasked";
 
 const CONFIRM_KIND = "application_confirm";
 
-/** La fiche annoncée : son identifiant, ses informations et le rang (`seq`) de l'événement qui l'annonce. */
+/** The announced record: its identifier, its info and the rank (`seq`) of the event announcing
+ * it. */
 export interface AnnouncedApplication {
   id: string;
   info: AlertOut[];
   seq: number;
 }
 
-/** La fiche que la session annonce (`artifact.ready` de genre `application`), la plus récente, et ses informations. */
+/** The record the session announces (`artifact.ready` of kind `application`), the latest, and its
+ * info. */
 export function announcedApplication(events: SessionEvent[]): AnnouncedApplication | null {
   for (let i = events.length - 1; i >= 0; i -= 1) {
     const event = events[i];
@@ -40,12 +42,12 @@ export function announcedApplication(events: SessionEvent[]): AnnouncedApplicati
   return null;
 }
 
-/** Sans champ renvoyé, l'option seule ; sinon `{ choice, fields }` (la forme que le serveur relit). */
+/** The option alone if no fields; else `{ choice, fields }`, the shape the server re-reads. */
 const answerOf = (choice: string, fields: Record<string, string>) =>
   Object.keys(fields).length === 0 ? choice : { choice, fields };
 
 interface Answers {
-  /** Ce que January a envoyé à la dernière réponse avec des champs, `null` avant. */
+  /** What January sent with fields in the last answer; `null` before. */
   sent: Record<string, string> | null;
   onSent: (fields: Record<string, string>) => void;
 }
@@ -69,14 +71,14 @@ function confirmation(item: InterruptItem, run: Run, { sent, onSent }: Answers) 
 interface IntakeRunProps {
   sessionId: string;
   createSocket?: SocketFactory;
-  /** La session est finie sans fiche (annulée, échouée) : on repart d'une phrase vierge. */
+  /** The session ended with no record (cancelled, failed): start over with a blank sentence. */
   onLeave: () => void;
 }
 
 /**
- * La saisie en une phrase en cours : le fil de la session de l'Assistant de suivi, la fiche lue à
- * confirmer dans une carte à champs remplis, puis, dès que la session annonce la fiche
- * (`artifact.ready`), son ouverture.
+ * The one-sentence entry in progress: the tracking Assistant's session thread, the record read
+ * to confirm in a card with filled fields, then, as soon as the session announces the record
+ * (`artifact.ready`), it is opened.
  */
 export function IntakeRun({ sessionId, createSocket, onLeave }: IntakeRunProps) {
   const navigate = useNavigate();
@@ -84,15 +86,15 @@ export function IntakeRun({ sessionId, createSocket, onLeave }: IntakeRunProps) 
   const run = useRun(sessionId, () => undefined, createSocket);
   const latest = useMemo(() => announcedApplication(run.stream.events), [run.stream.events]);
   const [sent, setSent] = useState<Record<string, string> | null>(null);
-  // La fiche annoncée ne change que si un autre événement l'annonce (son `seq`) : chaque événement
-  // du fil refait un objet `latest`, pas une nouvelle annonce.
+  // The announced record only changes if another event announces it (its `seq`): each event
+  // of the thread remakes a `latest` object, not a new announcement.
   const [announced, setAnnounced] = useState<AnnouncedApplication | null>(null);
   if (latest && latest.seq !== announced?.seq) setAnnounced(latest);
   const opened = announced?.id ?? null;
 
   useEffect(() => {
     if (!announced) return;
-    // La fiche vient d'être créée (ou ouverte) : le suivi et les indicateurs la relisent.
+    // The record was just created (or opened): tracking and indicators re-read it.
     void client.invalidateQueries({ queryKey: applicationsKeys.all });
     void navigate(applicationPath(announced.id), { state: { info: announced.info } });
   }, [announced, navigate, client]);

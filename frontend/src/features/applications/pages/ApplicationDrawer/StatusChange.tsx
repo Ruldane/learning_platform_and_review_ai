@@ -24,8 +24,8 @@ interface StatusChangeProps {
 }
 
 /**
- * Changer le statut de la fiche à une date (aujourd'hui par défaut) ; pour « Entretien », la date de
- * l'entretien peut être donnée. Le statut actuel n'est pas proposé (« même statut » : sans effet).
+ * Changes the record's status on a date (today by default); for « Entretien », the date of
+ * the interview can be given. The current status is not offered (« même statut »: no effect).
  */
 export function StatusChange({ current, pending, onRecord }: StatusChangeProps) {
   const others = statusChoices().filter((choice) => choice.value !== current);

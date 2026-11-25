@@ -10,22 +10,22 @@ import { LaunchNotes } from "./LaunchNotes";
 import { VersionPicker } from "./VersionPicker";
 
 interface CommitteeControlsProps {
-  /** Les versions prêtes, la plus récente d'abord ; `undefined` tant qu'elles se chargent. */
+  /** The ready versions, most recent first; `undefined` while they load. */
   versions: ReadyVersion[] | undefined;
   versionsLoading: boolean;
-  /** La version envoyée avec la fiche : proposée en premier si elle est prête. */
+  /** The version sent with the record: offered first if it is ready. */
   defaultVersionId: string | null;
-  /** L'exécution suivie. */
+  /** The followed run. */
   view: CommitteeView | undefined;
-  /** Un comité vient d'être lancé (202) et sa première lecture n'est pas encore là : pas de second lancement. */
+  /** A committee was just started (202) and its first read is not there yet: no second start. */
   loadingRun: boolean;
-  /** L'offre a déjà un comité : le bouton dit « Relancer ». */
+  /** The posting already has a committee: the button says « Relancer ». */
   hasRuns: boolean;
   start: ReturnType<typeof useStartCommittee>;
   onLaunch: (versionId: string) => void;
 }
 
-/** La version jugée par le dernier comité, et la phrase qui invite à relancer si une plus récente existe. */
+/** The version the last committee judged, and the prompt to re-run if a newer one exists. */
 function versionNotes(versions: ReadyVersion[], view: CommitteeView | undefined) {
   if (!view) return null;
   const judged = versions.find((version) => version.id === view.cvVersionId);
@@ -46,7 +46,7 @@ function versionNotes(versions: ReadyVersion[], view: CommitteeView | undefined)
   );
 }
 
-/** Choisir la version prête du CV de l'offre, lancer ou relancer le comité ; les refus sont dits en toutes lettres. */
+/** Pick the ready CV version, start or re-run the committee; refusals are stated in words. */
 export function CommitteeControls({
   versions,
   versionsLoading,

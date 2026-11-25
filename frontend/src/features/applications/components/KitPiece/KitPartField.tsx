@@ -7,15 +7,15 @@ import { MAX_CONTENT, type Part } from "./parts";
 
 interface KitPartFieldProps {
   part: Part;
-  /** Le nom de la pièce : celui du texte quand il n'a pas de nom propre. */
+  /** The part's name: the text's name when it has no name of its own. */
   pieceTitle: string;
-  /** Un enregistrement est en cours : le texte se lit, ne se change plus. */
+  /** A save is in progress: the text is read-only now. */
   busy: boolean;
   onChange: (text: string) => void;
   onCopy: () => void;
 }
 
-/** « À remplir par toi » ou « À compléter » tant que la réponse laissée par le code est vide. */
+/** « À remplir par toi » or « À compléter » while the answer left by the code is empty. */
 function blankMarker(part: Part): string | null {
   if (!part.blank || part.text !== "") return null;
   return t(
@@ -27,7 +27,7 @@ function blankMarker(part: Part): string | null {
 
 const rowsOf = (text: string) => Math.min(18, Math.max(4, text.split("\n").length + 1));
 
-/** Un texte de la pièce : modifiable, copiable ; une réponse laissée par le code est marquée. */
+/** A text of the piece: editable, copyable; an answer left by the code is marked. */
 export function KitPartField({ part, pieceTitle, busy, onChange, onCopy }: KitPartFieldProps) {
   const id = useId();
   const name = part.label ?? pieceTitle;

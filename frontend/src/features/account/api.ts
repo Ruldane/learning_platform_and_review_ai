@@ -3,13 +3,13 @@ import { ApiError, unwrap } from "@/shared/api/errors";
 import type { Me } from "./types";
 
 /**
- * L'adresse de l'archive : un lien plein, jamais un appel `fetch` (le navigateur télécharge le
- * zip et prend son nom dans l'en-tête `Content-Disposition` du back : `tremplin-export-
+ * The archive address: a plain link, never a `fetch` call (the browser downloads the
+ * zip and takes its name from the `Content-Disposition` header of the backend: `tremplin-export-
  * AAAAMMJJ.zip`).
  */
 export const exportUrl = `${apiBaseUrl}/api/v1/account/export`;
 
-/** Efface le compte affiché. Un 202 indique que la purge finale des vecteurs est en attente. */
+/** Clears the displayed account. A 202 means the final vector purge is pending. */
 export async function postDeleteAccount(confirm: string, expectedUserId: string) {
   unwrap(
     await api.POST("/account/delete", {
@@ -19,8 +19,8 @@ export async function postDeleteAccount(confirm: string, expectedUserId: string)
 }
 
 /**
- * `GET /auth/me`, lu pour le seul mode (`local` ou `google`). Un 401 `auth_required` vaut « pas de
- * session » (`null`), comme pour la porte de connexion qui partage cette clé de lecture.
+ * `GET /auth/me`, read only for the mode (`local` or `google`). A 401 `auth_required` means
+ * « pas de session » (`null`), as for the login gate that shares this read key.
  */
 export async function fetchMe(signal?: AbortSignal): Promise<Me | null> {
   try {
@@ -31,7 +31,7 @@ export async function fetchMe(signal?: AbortSignal): Promise<Me | null> {
   }
 }
 
-/** Le compte connecté n'est plus celui qui était affiché : aucune suppression n'a démarré. */
+/** The signed-in account is no longer the one displayed: no deletion has started. */
 export class AccountChangedError extends Error {
   constructor() {
     super("account_changed");

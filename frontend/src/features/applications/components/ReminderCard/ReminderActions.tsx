@@ -2,9 +2,9 @@ import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 
 interface ReminderActionsProps {
-  /** `close_21` : « Fait » devient « Classer en Sans réponse ». */
+  /** `close_21`: « Fait » becomes « Classer en Sans réponse ». */
   closing: boolean;
-  /** Une action est en cours : les trois qui changent la relance n'agissent plus (`aria-disabled`). */
+  /** An action is running: the three that change the reminder no longer act (`aria-disabled`). */
   pending: boolean;
   onCopy: () => void;
   onDone: () => void;
@@ -13,14 +13,14 @@ interface ReminderActionsProps {
 }
 
 /**
- * Une action en cours ne désactive pas le bouton (`aria-disabled`) : il garde le focus, et si
- * l'action échoue la personne au clavier est toujours dessus.
+ * A running action does not disable the button (`aria-disabled`): it keeps focus, and if
+ * the action fails, the keyboard user is still on it.
  */
 const guard = (pending: boolean, action: () => void) => () => {
   if (!pending) action();
 };
 
-/** Les quatre boutons d'une relance : Copier, Fait (ou Classer), Reporter de 3 jours, Ignorer. */
+/** The four buttons of a reminder: Copy, Fait (or Classer), Postpone by 3 days, Ignore. */
 export function ReminderActions({
   closing,
   pending,

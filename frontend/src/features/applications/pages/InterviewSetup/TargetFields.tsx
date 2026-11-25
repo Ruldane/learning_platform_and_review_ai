@@ -13,7 +13,7 @@ interface TargetFieldsProps {
   onChange: (draft: TargetDraft) => void;
 }
 
-/** Entretien sans fiche : une offre analysée à choisir, ou un intitulé de poste à saisir. */
+/** Interview without a record: an analysed posting to choose, or a job title to enter. */
 export function TargetFields({ draft, postings, disabled, onChange }: TargetFieldsProps) {
   const id = useId();
   const kind = kindOf(draft, postings.length > 0);

@@ -3,18 +3,18 @@ import type { KitKindView } from "../viewTypes";
 import { joinParts, MAX_CONTENT, splitParts, type Part } from "./parts";
 
 interface Edit {
-  /** Le texte du serveur au moment où January a commencé à modifier. */
+  /** The server's text when January started editing. */
   base: string;
   parts: Part[];
-  /** Le serveur a pris ce texte : on le montre jusqu'à ce que la lecture du kit le rapporte. */
+  /** The server took this text: it is shown until the kit read reports it. */
   saved: boolean;
 }
 
 /**
- * Le brouillon d'une pièce : les morceaux du texte du serveur tant que January n'y a rien changé,
- * ses retouches ensuite. Une relecture du kit ne les écrase jamais ; `changedUnder` dit que le
- * texte du serveur a changé entre-temps. Une fois enregistré, le brouillon reste affiché jusqu'à
- * ce que le texte du serveur change : le champ ne repasse pas par l'ancien texte.
+ * A piece's draft: the parts of the server's text while January has changed nothing,
+ * its edits after that. A kit re-read never overwrites them; `changedUnder` says that the
+ * server's text changed in the meantime. Once saved, the draft stays shown until
+ * the server's text changes: the field does not go back through the old text.
  */
 export function useKitDraft(kind: KitKindView, content: string) {
   const [edit, setEdit] = useState<Edit | null>(null);
@@ -27,7 +27,7 @@ export function useKitDraft(kind: KitKindView, content: string) {
     parts,
     dirty,
     changedUnder: dirty && edit.base !== content,
-    /** Le texte à envoyer au serveur. */
+    /** The text to send to the server. */
     text,
     tooLong: text.length > MAX_CONTENT,
     change: (key: string, value: string) =>
@@ -36,7 +36,7 @@ export function useKitDraft(kind: KitKindView, content: string) {
         parts: parts.map((part) => (part.key === key ? { ...part, text: value } : part)),
         saved: false,
       }),
-    /** Le serveur a pris la modification. */
+    /** The server accepted the change. */
     markSaved: () => setEdit((current) => current && { ...current, saved: true }),
   };
 }

@@ -1,11 +1,11 @@
 /**
- * Clés TanStack Query lues ici. `me` est la clé de l'utilisateur connecté, posée par la porte de
- * connexion (feature `auth`) : une feature n'en importe pas une autre, la clé est donc redite ici
- * (un test de `DataPage` la tient en accord).
+ * TanStack Query keys read here. `me` is the key of the signed-in user, set by the login gate
+ * (feature `auth`): one feature does not import another, so the key is repeated here
+ * (a `DataPage` test keeps it in sync).
  */
 export const accountKeys = {
   me: ["auth", "me"],
 } as const;
 
-/** Les requêtes de la feature `auth` : « Mes données » ne vide jamais l'identité par ce chemin. */
+/** The `auth` feature's queries: « Mes données » never clears the identity through this path. */
 export const AUTH_SCOPE = "auth";

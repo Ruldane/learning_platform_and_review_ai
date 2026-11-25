@@ -4,12 +4,12 @@ import { ChoiceSelect, type ChoiceView } from "./ChoiceSelect";
 import { TextControl } from "./TextControl";
 import { CHANNEL_ORDER, STATUS_ORDER } from "../viewTypes";
 
-/** Longueur maximale de l'entreprise et de l'intitulé du poste (borne du serveur). */
+/** Maximum length of the company and of the job title (server limit). */
 export const NAME_MAX_LENGTH = 200;
 
 export type FieldKind = "text" | "url" | "date" | "textarea" | "channel" | "status";
 
-/** Un champ de formulaire de fiche : sa clé, son texte d'étiquette (déjà en français) et sa nature. */
+/** A record form field: its key, its label text (already in French) and its kind. */
 export interface FieldSpec {
   key: string;
   label: string;
@@ -17,33 +17,33 @@ export interface FieldSpec {
   required?: boolean;
   hint?: string;
   maxLength?: number;
-  /** Borne haute d'un champ date (`AAAA-MM-JJ`). */
+  /** Upper bound of a date field (`AAAA-MM-JJ`). */
   max?: string;
 }
 
 interface DraftFieldProps {
   spec: FieldSpec;
   value: string;
-  /** Le texte d'une erreur sur ce champ (vide : aucun). */
+  /** The error text for this field (empty: none). */
   error?: string;
   disabled?: boolean;
   autoFocus?: boolean;
-  /** Remplace la liste d'un champ `channel` ou `status` (ex. sans le statut actuel). */
+  /** Replaces the list of a `channel` or `status` field (e.g. without the current status). */
   options?: ChoiceView[];
   onChange: (value: string) => void;
 }
 
-/** Les statuts, dans l'ordre du tableau de suivi, en français. */
+/** The statuses, in the tracking table's order, in French. */
 export const statusChoices = (): ChoiceView[] =>
   STATUS_ORDER.map((value) => ({ value, label: t(`applications.status.${value}`) }));
 
-/** Les canaux en français, précédés de « Non précisé ». */
+/** The channels in French, preceded by « Non précisé ». */
 const channelChoices = (): ChoiceView[] => [
   { value: "", label: t("applications.fields.channelNone") },
   ...CHANNEL_ORDER.map((value) => ({ value, label: t(`applications.channel.${value}`) })),
 ];
 
-/** Un champ de formulaire de fiche : texte, lien, date, zone de texte, canal ou statut. */
+/** A record form field: text, link, date, textarea, channel or status. */
 export function DraftField({
   spec,
   value,

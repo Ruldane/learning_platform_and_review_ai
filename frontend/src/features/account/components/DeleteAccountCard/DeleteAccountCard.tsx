@@ -7,14 +7,14 @@ interface DeleteAccountCardProps {
   accountLabel?: string;
   consentScope?: string;
   pending: boolean;
-  /** Un nouvel objet à chaque échec : le focus passe au message même pour un échec répété. */
+  /** A new object on each failure: focus moves to the message, even for a repeated failure. */
   failure: DeleteFailure | null;
   onDelete: (confirm: string) => void;
-  /** La saisie a changé : un échec déjà affiché n'a plus lieu d'être. */
+  /** The input changed: a failure already shown no longer applies. */
   onEdit: () => void;
 }
 
-/** « Tout supprimer » : ce qui part et ce qui reste, puis le mot à retaper pour confirmer. */
+/** « Tout supprimer »: what is removed and what stays, then the word to retype to confirm. */
 export function DeleteAccountCard({
   accountLabel,
   consentScope = "",

@@ -6,13 +6,13 @@ import { ContactRow } from "./ContactRow";
 
 interface ContactListProps {
   contacts: ContactView[];
-  /** Reçoit la liste entière après chaque ajout, retrait ou frappe. */
+  /** Receives the whole list after each addition, removal or keystroke. */
   onChange: (contacts: ContactView[]) => void;
 }
 
 const EMPTY: ContactView = { id: "", name: "", role: null, url: null };
 
-/** L'édition des contacts d'une fiche : dix au plus (borne du serveur). */
+/** Editing a record's contacts: ten at most (server limit). */
 export function ContactList({ contacts, onChange }: ContactListProps) {
   const full = contacts.length >= MAX_CONTACTS;
   return (

@@ -5,7 +5,8 @@ import { FormFeedback } from "./FormFeedback";
 import { WordField } from "./WordField";
 import { useFocusOnFailure } from "./useFocusOnFailure";
 
-/** Ce qu'a répondu le back : le texte à montrer, et si le refus vise le champ de confirmation. */
+/** What the backend answered: the text to show, and whether the refusal targets the confirmation
+ * field. */
 export interface DeleteFailure {
   message: string;
   field: boolean;
@@ -14,20 +15,21 @@ export interface DeleteFailure {
 interface ConfirmFormProps {
   consentScope?: string;
   pending: boolean;
-  /** Un nouvel objet à chaque échec : le focus passe au message même pour un échec répété. */
+  /** A new object on each failure: focus moves to the message, even for a repeated failure. */
   failure: DeleteFailure | null;
-  /** Le bloc d'avertissements, cité par le champ : on l'entend en y arrivant. */
+  /** The warnings block, referenced by the field: it is announced on arrival. */
   explanationId: string;
   onDelete: (confirm: string) => void;
-  /** La saisie a changé : l'échec affiché (et sa marque sur le champ) disparaît. */
+  /** The input changed: the displayed failure (and its mark on the field) disappears. */
   onEdit: () => void;
 }
 
 /**
- * Le mot à retaper et le bouton. Le bouton ne s'active que sur le mot exact (`SUPPRIMER`, sans
- * rognage). Pendant l'appel il reste atteignable (`aria-disabled`, `aria-busy`) pour que le focus
- * ne tombe pas, et l'attente est annoncée ; un échec reçoit le focus, décrit le champ, et
- * disparaît dès que la saisie change.
+ * The word to retype and the button. The button is enabled only for the exact word (`SUPPRIMER`,
+ * without
+ * trimming). During the call it stays reachable (`aria-disabled`, `aria-busy`) so that focus
+ * does not drop, and the wait is announced; a failure receives focus, describes the field, and
+ * disappears as soon as the input changes.
  */
 export function ConfirmForm({
   consentScope,

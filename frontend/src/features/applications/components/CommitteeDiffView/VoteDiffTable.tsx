@@ -5,14 +5,15 @@ import type { VoteChangeView, VoteValueView } from "../viewTypes";
 
 const WEIGHT: Record<VoteValueView, number> = { no: 0, maybe: 1, yes: 2 };
 
-/** « Plus favorable » quand le vote monte (non, peut-être, oui), « Moins favorable » quand il descend. */
+/** « Plus favorable » when the vote goes up (non, peut-être, oui), « Moins favorable » when it goes
+ * down. */
 function evolution(change: VoteChangeView): "same" | "better" | "worse" {
   const delta = WEIGHT[change.after] - WEIGHT[change.before];
   if (delta === 0) return "same";
   return delta > 0 ? "better" : "worse";
 }
 
-/** Le vote de chaque persona avant et après, avec l'évolution dite en mots. */
+/** Each persona's vote before and after, with the change stated in words. */
 export function VoteDiffTable({ votes }: { votes: VoteChangeView[] }) {
   return (
     <table aria-label={t("applications.diffView.votesLabel")} className="w-full text-left text-sm">

@@ -9,14 +9,14 @@ import { UnratedNote } from "./UnratedNote";
 
 interface DebriefViewProps {
   interview: InterviewView;
-  /** La page des révisions (flashcards), où les fiches de l'entretien attendent. */
+  /** The reviews page (flashcards), where the interview's cards wait. */
   reviewsHref: string;
 }
 
 /**
- * Le débrief d'un entretien : les quatre notes sur 5 (en texte et en barre), trois points forts,
- * trois points à corriger, la réponse améliorée (« à vérifier » si elle cite des termes que le
- * profil ne dit pas), les fiches de révision créées et chaque réponse avec sa note.
+ * An interview debrief: the four scores out of 5 (as text and as a bar), three strengths,
+ * three points to fix, the improved answer (« à vérifier » if it cites terms that the
+ * profile does not state), the review cards created and each answer with its score.
  */
 export function DebriefView({ interview, reviewsHref }: DebriefViewProps) {
   const { debrief } = interview;

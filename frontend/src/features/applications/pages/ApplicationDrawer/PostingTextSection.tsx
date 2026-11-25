@@ -20,8 +20,9 @@ interface PostingTextSectionProps {
 }
 
 /**
- * Le texte de l'offre d'une fiche saisie sans elle (à la main ou en une phrase) : sans lui, le kit
- * de candidature ne peut pas se préparer. Une fiche qui a déjà un texte, ou une offre liée, le dit.
+ * The posting text of a record entered without one (by hand or in one sentence): without it, the
+ * kit
+ * cannot be prepared. A record that already has a text, or a linked posting, says so.
  */
 export function PostingTextSection({ detail, pending, onSave }: PostingTextSectionProps) {
   const [text, setText] = useState("");

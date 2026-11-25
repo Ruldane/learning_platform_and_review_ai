@@ -13,20 +13,20 @@ import { InterviewOutcome } from "./InterviewOutcome";
 
 interface InterviewFollowProps {
   interviewId: string;
-  /** Un entretien était déjà ouvert : on le reprend, et on le dit. */
+  /** An interview was already open: it is resumed, and this is said. */
   resumed: boolean;
-  /** L'entretien vient d'être suivi en direct : le retour propose d'en commencer un autre. */
+  /** The interview was just followed live: the return offers to start another. */
   live: boolean;
-  /** La fiche de la page ; `null` : la page libre. */
+  /** The record of the page; `null`: the free page. */
   applicationId: string | null;
   createSocket?: SocketFactory;
   onClose: () => void;
 }
 
 /**
- * Un entretien suivi : tant qu'il tourne, son fil ; dès qu'il est fini, son débrief (ou ce qui manque).
- * La liste des entretiens est relue à chaque changement d'état, pour que la page ne revienne pas
- * sur un entretien déjà fini.
+ * A followed interview: while it runs, its thread; once finished, its debrief (or what is missing).
+ * The interview list is re-read on each state change, so the page does not go back
+ * to an interview already finished.
  */
 export function InterviewFollow({
   interviewId,

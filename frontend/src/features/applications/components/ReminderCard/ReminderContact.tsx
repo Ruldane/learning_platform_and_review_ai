@@ -8,7 +8,7 @@ interface ReminderContactProps {
   linkedinSearchUrl: string | null;
 }
 
-/** Qui contacter : le contact (nom et rôle), ou, à défaut, une recherche LinkedIn dans un nouvel onglet. */
+/** Who to contact: the contact (name and role), or failing that, a LinkedIn search in a new tab. */
 export function ReminderContact({ contact, linkedinSearchUrl }: ReminderContactProps) {
   const search = linkedinSearchUrl ? webUrl(linkedinSearchUrl) : null;
   return (

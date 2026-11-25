@@ -12,7 +12,7 @@ interface StatusMoveMenuProps {
   onSelect: (status: StatusView) => void;
 }
 
-/** Menu « Déplacer vers… » : l'équivalent au clavier du glisser-déposer, un statut par entrée. */
+/** « Déplacer vers… » menu: the keyboard equivalent of drag and drop, one status per entry. */
 export function StatusMoveMenu({ title, company, current, onSelect }: StatusMoveMenuProps) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);

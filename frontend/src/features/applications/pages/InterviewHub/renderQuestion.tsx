@@ -6,9 +6,9 @@ import { ANSWER_KIND, questionPosition } from "./questionPosition";
 const STOP = "stop";
 
 /**
- * La carte d'une question de l'entretien (`interview_answer`) ; `undefined` pour tout autre
- * question (la carte commune du fil s'en charge). Répondre envoie `{ answers: { answer } }`,
- * « Terminer l'entretien » envoie la valeur de l'option (`stop`).
+ * The card for an interview question (`interview_answer`); `undefined` for any other
+ * question (the thread's shared card handles it). Answering sends `{ answers: { answer } }`,
+ * « Terminer l'entretien » sends the option's value (`stop`).
  */
 export function renderQuestion(
   item: InterruptItem,

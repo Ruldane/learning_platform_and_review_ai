@@ -5,12 +5,12 @@ import type { InterviewView } from "../../types";
 
 interface PastInterviewsProps {
   interviews: InterviewView[];
-  /** Les offres connues : elles nomment les entretiens libres sur une offre. */
+  /** The known postings: they name the free interviews on a posting. */
   postings: PostingChoice[];
   onOpen: (interviewId: string) => void;
 }
 
-/** Les entretiens passés (le plus récent d'abord), dont on ouvre le débrief. */
+/** Past interviews (most recent first), whose debrief is opened. */
 export function PastInterviews({ interviews, postings, onOpen }: PastInterviewsProps) {
   const labels = Object.fromEntries(postings.map((posting) => [posting.id, posting.label]));
   return (

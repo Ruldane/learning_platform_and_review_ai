@@ -2,15 +2,15 @@ import { t } from "@/shared/i18n/t";
 import { webUrl } from "@/shared/session-ui";
 import type { KitSourceView } from "../viewTypes";
 
-/** Le nom lisible d'une page : son titre, sinon son adresse sans le protocole. */
+/** The readable name of a page: its title, otherwise its address without the protocol. */
 function nameOf(source: KitSourceView): string {
   if (source.title?.trim()) return source.title.trim();
   return source.url.replace(/^https?:\/\//, "");
 }
 
 /**
- * Les pages que le dossier cite, numérotées comme les `[n]` du texte. Un lien s'ouvre dans un nouvel
- * onglet (`noopener noreferrer`) ; une adresse qui n'est pas http ou https reste du texte.
+ * The pages the file cites, numbered like the `[n]` in the text. A link opens in a new
+ * tab (`noopener noreferrer`); an address that is not http or https stays as text.
  */
 export function KitSources({ sources }: { sources: KitSourceView[] }) {
   if (sources.length === 0) return null;

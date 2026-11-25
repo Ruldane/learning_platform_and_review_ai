@@ -3,22 +3,22 @@ import { Button } from "@/shared/ui/button";
 import { InlineError } from "@/shared/ui/states/InlineError";
 
 /**
- * Les deux choix de l'écran. Un composant ne peut pas importer le contrat généré (frontières
- * ESLint) : `types.test.ts` vérifie à la compilation que ce type est celui du contrat.
+ * The two choices on the screen. A component cannot import the generated contract (ESLint
+ * boundaries): `types.test.ts` checks at compile time that this type is the contract's.
  */
 export type Choice = "take_local" | "fresh";
 
 interface ClaimChoiceProps {
   onChoose: (choice: Choice) => void;
-  /** Un envoi est en cours : les boutons restent au focus mais ne font plus rien. */
+  /** A send is in progress: the buttons keep focus but do nothing. */
   pending: boolean;
   error?: string | null;
 }
 
 /**
- * Le choix de la toute première connexion : reprendre l'espace de cet ordinateur ou en commencer
- * un vide. Pendant l'envoi les boutons passent en `aria-disabled` (et non `disabled`) : le focus
- * de la personne au clavier reste sur le bouton qu'elle a pressé.
+ * The very first sign-in choice: resume this computer's space or start
+ * an empty one. While sending, the buttons switch to `aria-disabled` (not `disabled`): focus
+ * of the keyboard user stays on the button they pressed.
  */
 export function ClaimChoice({ onChoose, pending, error }: ClaimChoiceProps) {
   const choose = (choice: Choice) => () => {

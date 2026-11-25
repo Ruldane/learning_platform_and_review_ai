@@ -3,14 +3,14 @@ import { buttonVariants } from "@/shared/ui/button";
 import { cn } from "@/shared/lib/utils";
 
 interface LoginCardProps {
-  /** L'adresse de départ vers Google (lien plein : le navigateur quitte l'application). */
+  /** The start address for Google (plain link: the browser leaves the app). */
   href: string;
-  /** Pourquoi la connexion précédente a échoué, quand on revient de Google avec une erreur. */
+  /** Why the previous sign-in failed, when returning from Google with an error. */
   errorMessage?: string | null;
 }
 
 /**
- * La carte de connexion : un lien « Se connecter avec Google » et, au besoin, la raison d'un échec.
+ * The login card: a « Se connecter avec Google » link and, if needed, the reason for a failure.
  */
 export function LoginCard({ href, errorMessage }: LoginCardProps) {
   return (
