@@ -1,14 +1,14 @@
-"""Parcours `application_intake` (SPEC 6.1, 6.3, F5, D141) : « j'ai postulé hier chez X pour le
-poste Y » devient une fiche de candidature, confirmée par January avant d'être créée.
+"""Graph `application_intake` (SPEC 6.1, 6.3, F5, D141): "I applied to X yesterday for the
+role Y" becomes an application record, confirmed by January before it is created.
 
 START -> load -> parse -> alerts -> ask
-ask -> (réponse invalide : ask) | (create, distinct : save) | (cancel, open : leave)
+ask -> (invalid answer: ask) | (create, distinct: save) | (cancel, open: leave)
 save -> announce -> END ; leave -> END
 
-`ask` pose la question « Je crée cette fiche ? » par `interrupt()` (seul dans son nœud, SPEC 9.4)
-avec l'alerte de doublon s'il y en a une ; `save` crée la fiche par le port, idempotent par
-session. Lancé seulement par la route de la feature `applications` (`ROUTE_ONLY`), qui vérifie
-qu'aucune autre session d'intake n'est ouverte."""
+`ask` asks "Create this record?" via `interrupt()` (alone in its node, SPEC 9.4)
+with the duplicate alert if there is one; `save` creates the record through the port, idempotent per
+session. Started only by the `applications` feature route (`ROUTE_ONLY`), which checks
+that no other intake session is open."""
 
 from typing import Any
 

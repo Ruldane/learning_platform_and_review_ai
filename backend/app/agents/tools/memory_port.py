@@ -1,8 +1,8 @@
-"""Port de la mémoire pour les agents (D68). `app.agents` n'importe aucune feature (contrat 6) :
-il décrit ici ce dont il a besoin, la composition (`app.bootstrap.memory_gateway`) branche
-l'implémentation de la feature `memory`, comme pour `RunSettingsSource`.
+"""Memory port for the agents (D68). `app.agents` imports no feature (contract 6): it
+describes here what it needs; the composition (`app.bootstrap.memory_gateway`) plugs in
+the `memory` feature implementation, as for `RunSettingsSource`.
 
-Tout texte rendu à un agent (`agent_text`) encadre les contenus importés par `untrusted()` (17.4).
+Every text returned to an agent (`agent_text`) frames imported content with `untrusted()` (17.4).
 """
 
 from collections.abc import Sequence
@@ -12,7 +12,7 @@ from typing import Literal, Protocol
 from app.agents.prompts.loader import untrusted
 from app.core.errors import AppError
 
-# Types qu'un agent peut écrire : jamais un `document` (réservé à l'import).
+# Types an agent may write: never a `document` (reserved for import).
 AgentWritableKind = Literal["skill", "lesson", "source", "posting", "decision"]
 NO_SKILLS = "No skills in memory."
 
@@ -52,7 +52,7 @@ class WriteResult:
     kind: str
     title: str
     status: Literal["active", "pending"]
-    created: bool  # faux : le même contenu était déjà en mémoire (rien d'écrit)
+    created: bool  # false: the same content was already in memory (nothing written)
 
 
 @dataclass(frozen=True)
@@ -82,8 +82,8 @@ class SkillsSummary:
         return "\n".join(lines)
 
     def as_agent_text(self) -> str:
-        """`as_text` encadré comme contenu non fiable (17.4) : un titre d'acquis peut venir d'un
-        document importé (Archiviste). À donner tel quel à un agent (prompt, retour d'outil)."""
+        """`as_text` framed as untrusted content (17.4): a skill title may come from an
+        imported document (Archivist). To pass as is to an agent (prompt, tool return)."""
         return untrusted(self.as_text(), "memory:skills")
 
 
@@ -115,7 +115,7 @@ def memory_unavailable() -> AppError:
 
 
 class _NoMemory:
-    """Valeur par défaut du moteur (tests existants, démarrages sans mémoire)."""
+    """Engine default value (existing tests, starts without memory)."""
 
     async def search(
         self, user_id: str, query: str, *, kinds: Sequence[str] | None, k: int

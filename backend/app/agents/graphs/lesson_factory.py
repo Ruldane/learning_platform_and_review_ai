@@ -1,13 +1,13 @@
-"""Parcours `lesson_factory` (SPEC 3.5, 3.6, D90) : pour un module d'un programme validé,
-l'Éclaireur cherche et note des sources (nœuds de `web_research`, tels quels), choisit 3 à 6
-ressources, le Rédacteur écrit la leçon, le Vérificateur la contrôle (deux révisions au plus) ;
-elle est publiée ou marquée en échec, puis la chaîne passe au module suivant. Une soumission
-directe fournit le premier brouillon et vérifie uniquement son module.
+"""Graph `lesson_factory` (SPEC 3.5, 3.6, D90): for a module of a validated program,
+the Scout searches and notes sources (`web_research` nodes, as they are), picks 3 to 6
+resources, the Writer writes the lesson, the Verifier checks it (two revisions at most);
+it is published or marked as failed, then the chain moves to the next module. A direct
+submission provides the first draft and only verifies its module.
 
 START -> brief -> plan -> search -> read -> judge -> remember -> pick_resources
-pick_resources : aucune source retenue -> fail_lesson ; brouillon soumis -> verify ; sinon -> write
+pick_resources: no source kept -> fail_lesson; draft submitted -> verify; otherwise -> write
 write -> verify -> route_verify
-route_verify : conforme -> publish ; problèmes et révisions < 2 -> write ; sinon -> fail_lesson
+route_verify: compliant -> publish; problems and revisions < 2 -> write; otherwise -> fail_lesson
 publish / fail_lesson -> next -> END (soumission directe -> END)
 """
 

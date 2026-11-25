@@ -1,16 +1,16 @@
-"""Port de la capture rapide (SPEC F18, D108). `app.agents` n'importe aucune feature (contrat 6) :
-il décrit ici ce dont le parcours `capture` a besoin (un document importé, les liens vers le
-programme, le rangement de la capture, la tâche cochée, les fiches) ; la feature `capture`
-l'implémente (`AgentCaptureStore`).
+"""Port of the quick capture (SPEC F18, D108). `app.agents` imports no feature (contract 6):
+it describes here what the `capture` graph needs (an imported document, links to the
+program, the filing of the capture, the ticked task, the cards); the `capture` feature
+implements it (`AgentCaptureStore`).
 
-L'Archiviste relie la capture au programme par références (`m3`, `t12`) : les ids réels
-(`ModuleRef.module_id`, `TaskRef.task_id`) ne sont jamais montrés au modèle (F7). Le parcours
-garde l'instantané des liens dans son état ; `store` reçoit cet instantané et `tick_task` l'id
-résolu sur lui.
+The Archivist links the capture to the program by references (`m3`, `t12`): the real ids
+(`ModuleRef.module_id`, `TaskRef.task_id`) are never shown to the model (F7). The graph
+keeps the snapshot of the links in its state; `store` receives this snapshot and `tick_task` the id
+resolved from it.
 
-Chaque écriture est idempotente : `store` par session (ligne de journal « capture:{session} »),
-`tick_task` (une tâche faite le reste), `add_cards` (dédoublonnées par recto). Un nœud rejoué
-après un arrêt (SPEC 9.4) n'écrit jamais rien de plus.
+Each write is idempotent: `store` per session (journal line "capture:{session}"),
+`tick_task` (a done task stays done), `add_cards` (deduplicated by front). A replayed node
+after a stop (SPEC 9.4) never writes anything more.
 """
 
 from collections.abc import Sequence
@@ -27,8 +27,8 @@ from app.core.errors import AppError
 CaptureSource = Literal["url", "text", "document"]
 SUMMARY_LINES = 5
 CAPTURE_REASON = "January's quick capture."
-# Au-delà, un texte saisi est lu comme un texte collé (article copié), jamais comme une note de
-# January : il ne déclare aucun acquis (D108 n° 4, revue finale de la phase 5).
+# Beyond that, typed text is read as pasted text (copied article), never as a note from
+# January: it declares no skill (D108 no. 4, final review of phase 5).
 NOTE_MAX_CHARS = 1_000
 
 SummaryLine = Annotated[str, Field(max_length=200), ShortenToMax()]
@@ -38,8 +38,8 @@ ModuleRefText = Annotated[str, Field(pattern=MODULE_REF)]
 
 @dataclass(frozen=True)
 class CaptureMaterial:
-    """Ce que l'Archiviste lit : la page, le document ou le texte de January. `url` : l'adresse
-    lue (normalisée), celle d'un document importé par lien, sinon `None`."""
+    """What the Archivist reads: the page, the document or January's text. `url`: the address
+    read (normalized), that of a document imported by link, otherwise `None`."""
 
     title: str
     text: str
@@ -47,26 +47,26 @@ class CaptureMaterial:
 
 
 def is_note(source: CaptureSource, text: str) -> bool:
-    """Une note de January : un texte saisi (source `text`) et court. Seule une note peut
-    déclarer « j'ai appris » ; une page, un document ou un long texte collé, jamais."""
+    """A note from January: a typed text (source `text`) and short. Only a note can
+    declare "I learned X"; a page, a document or a long pasted text, never."""
     return source == "text" and len(text) <= NOTE_MAX_CHARS
 
 
 class CaptureDigest(BaseModel):
-    """La capture résumée par l'Archiviste (sortie structurée)."""
+    """The capture summarized by the Archivist (structured output)."""
 
     title: str = Field(min_length=3, max_length=120)
     summary: list[SummaryLine] = Field(min_length=1, max_length=SUMMARY_LINES)
     concepts: list[ConceptName] = Field(default_factory=list, max_length=10)
     modules: list[ModuleRefText] = Field(default_factory=list, max_length=5)
     covered_task: str | None = Field(default=None, pattern=TASK_REF)
-    learned: bool = False  # « j'ai appris X » : concepts → acquis `declare` (note de January)
+    learned: bool = False  # "I learned X": concepts -> skills `declare` (January's note)
     flashcards: list[CardDraft] = Field(default_factory=list, max_length=5)
 
 
 @dataclass(frozen=True)
 class ProgramLinks:
-    """Modules des programmes validés et tâches à faire à ± 7 jours (jour de January)."""
+    """Modules of validated programs and tasks due within ± 7 days (January's day)."""
 
     modules: list[ModuleRef]
     tasks: list[TaskRef]
@@ -85,14 +85,14 @@ NO_LINKS = ProgramLinks([], [])
 class CaptureStored:
     memory_item_id: str
     journal_entry_id: str
-    covered_task: TaskRef | None  # la tâche que la capture couvre, résolue sur `links`
+    covered_task: TaskRef | None  # the task the capture covers, resolved from `links`
 
 
 class CaptureStore(Protocol):
     async def document(self, user_id: str, document_id: str) -> CaptureMaterial | None:
-        """Le document importé de January ; `None` : pas encore indexé. 404
-        `document_not_found` s'il n'est pas à elle, 409 `document_failed` si son import a
-        échoué (il ne sera jamais indexé)."""
+        """January's imported document; `None`: not indexed yet. 404
+        `document_not_found` if it is not hers, 409 `document_failed` if its import
+        failed (it will never be indexed)."""
         ...
 
     async def links(self, user_id: str) -> ProgramLinks: ...
@@ -107,17 +107,17 @@ class CaptureStore(Protocol):
         *,
         source: CaptureSource,
     ) -> CaptureStored:
-        """Élément de mémoire `document` résumé, acquis `declare` si `learned`, ligne de
-        journal `capture` ; idempotent par session (un rejeu relit ce qui est rangé)."""
+        """Summarized `document` memory item, `declare` skill if `learned`, `capture` journal line;
+        idempotent per session (a replay rereads what is stored)."""
         ...
 
     async def tick_task(self, user_id: str, session_id: str, task_id: str) -> bool:
-        """Coche la tâche (idempotent) ; vrai si elle est cochée, faux si elle n'existe plus
-        (retirée entre-temps, par une replanification acceptée) ou n'est pas à January."""
+        """Ticks the task (idempotent); true if ticked, false if it no longer exists
+        (removed in the meantime, by an accepted replanning) or is not January's."""
         ...
 
     async def add_cards(self, user_id: str, session_id: str, cards: Sequence[CardDraft]) -> int:
-        """Fiches de la capture, dédoublonnées par recto ; rend le nombre créé."""
+        """The capture's cards, deduplicated by front; returns the number created."""
         ...
 
 
@@ -126,7 +126,7 @@ def capture_unavailable() -> AppError:
 
 
 class _NoCapture:
-    """Valeur par défaut du moteur (tests, démarrages sans la feature)."""
+    """Engine default value (tests, starts without the feature)."""
 
     async def document(self, user_id: str, document_id: str) -> CaptureMaterial | None:
         raise capture_unavailable()

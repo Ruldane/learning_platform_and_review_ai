@@ -1,14 +1,14 @@
-"""Parcours `learning_council` (SPEC 3.1, D84, D85) : le Conseil d'apprentissage.
+"""Graph `learning_council` (SPEC 3.1, D84, D85): the Learning Council.
 
-Cadrage par le Modérateur (point d'arrêt n° 1), recherche et praticiens de l'Éclaireur (ses
-nœuds tels quels, nœud pour nœud : rejeu et points de contrôle identiques à `web_research`),
-puis débat, tableau du Scribe, propositions du Stratège et choix de January (point d'arrêt n° 2).
+Framing by the Moderator (break point no. 1), research and practitioners by the Scout (its
+nodes as they are, node for node: replay and checkpoints identical to `web_research`),
+then debate, the Scribe's table, the Strategist's proposals and January's choice (break point 2).
 
 START -> context -> frame -> ask_framing -> apply_framing -> plan -> search -> read -> judge
       -> remember -> spot_people -> round_start -> turn ⟲ -> round_end
-round_start : `to_proposals` lu avant un tour ≥ 2 -> prerequisites
-round_end : tour 1 -> domain_map -> (suite) ; arrêt ou dernier tour -> prerequisites
-            sinon -> round_start
+round_start: `to_proposals` read before a round >= 2 -> prerequisites
+round_end: round 1 -> domain_map -> (continue); stop or last round -> prerequisites
+            otherwise -> round_start
 prerequisites -> minutes -> propose -> proposal_boards -> ask_choice -> route_choice
 route_choice : another_round -> round_start ; choix invalide -> ask_choice ; choisi -> finalize
 finalize -> END

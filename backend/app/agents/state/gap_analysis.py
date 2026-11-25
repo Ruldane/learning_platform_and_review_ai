@@ -1,16 +1,16 @@
-"""État du parcours `gap_analysis` (D121). L'offre, son analyse et l'écart sont en base (port
-`GapStore`) : l'état ne garde que ce qui passe d'un nœud au suivant. Le texte de l'offre n'y
-entre pas : `analyze` le relit par le port."""
+"""State of the `gap_analysis` graph (D121). The offer, its analysis and the gap live in the
+database (port `GapStore`): the state keeps only what passes between nodes. The offer text does
+not enter it: `analyze` rereads it through the port."""
 
 from typing import Any, TypedDict
 
 
 class GapAnalysisState(TypedDict, total=False):
     posting_id: str
-    analysis: dict[str, Any] | None  # `PostingAnalysis` en JSON ; None : pas encore analysée
-    reused: bool  # l'analyse était déjà rangée : l'Analyste ne l'a pas refaite
-    rejection: str  # raison du refus sans appel au modèle (texte trop court)
-    duplicates: list[dict[str, Any]]  # `DuplicateHit` en JSON (offre analysée ici)
-    matches: list[dict[str, Any]]  # `SkillMatch` en JSON, un par besoin de l'offre
-    saved: dict[str, Any]  # `GapSaved` en JSON
+    analysis: dict[str, Any] | None  # `PostingAnalysis` as JSON; None: not analyzed yet
+    reused: bool  # the analysis was already stored: the Analyst did not redo it
+    rejection: str  # reason for refusal without a model call (text too short)
+    duplicates: list[dict[str, Any]]  # `DuplicateHit` as JSON (offer analyzed here)
+    matches: list[dict[str, Any]]  # `SkillMatch` as JSON, one per need of the offer
+    saved: dict[str, Any]  # `GapSaved` as JSON
     summary: str

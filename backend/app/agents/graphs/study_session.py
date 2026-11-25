@@ -1,17 +1,17 @@
-"""Parcours `study_session` (SPEC F14, 9.2, D102) : le Tuteur mène une séance d'étude guidée sur
-la leçon d'un module.
+"""Graph `study_session` (SPEC F14, 9.2, D102): the Tutor runs a guided study session on
+a module's lesson.
 
 START -> context -> open -> (position) ; advance -> (position)
-position : section ou exercice ou question finale -> teach ; finale non écrite -> final_intro
-           -> teach ; tout est réglé -> ask_finish
+position: section or exercise or final question -> teach; unwritten final -> final_intro
+           -> teach; everything settled -> ask_finish
 teach -> ask -> route_answer
-route_answer : réponse -> check -> advance ; « Je bloque » -> hint -> ask (3 fois au plus),
-               puis reveal -> advance ; « Passer » -> skip -> advance ;
-               « Terminer » -> summarize ; réponse illisible -> ask (même question)
-ask_finish -> summarize (toute autre réponse : ask_finish) ; summarize -> wrap_up -> END
+route_answer: answer -> check -> advance; "I'm stuck" -> hint -> ask (3 times at most),
+               then reveal -> advance; "Skip" -> skip -> advance;
+               "End" -> summarize; unreadable answer -> ask (same question)
+ask_finish -> summarize (any other answer: ask_finish); summarize -> wrap_up -> END
 
-Deux points d'arrêt (`ask`, `ask_finish`), chacun seul dans son nœud (SPEC 9.4). Une seule
-écriture, `wrap_up` (port, idempotent)."""
+Two break points (`ask`, `ask_finish`), each alone in its node (SPEC 9.4). A single
+write, `wrap_up` (port, idempotent)."""
 
 from typing import Any
 

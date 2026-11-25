@@ -1,13 +1,13 @@
-"""Question salariale (SPEC 1, 6, critère 18.3) : une prétention salariale n'est jamais écrite par
-un agent, car elle engage January et qu'aucun fait du profil ne la dit. Le code reconnaît la
-question (ce module) et impose une réponse vide : January la remplit elle-même.
+"""Salary question (SPEC 1, 6, criterion 18.3): an agent never writes a salary expectation, because
+it binds January and no profile fact states it. The code recognizes the question (this module) and
+forces an empty answer: January fills it in herself.
 
-La lecture est large exprès : un faux positif laisse une réponse vide (January la remplit), un
-faux négatif écrirait un chiffre inventé."""
+The reading is deliberately broad: a false positive leaves an empty answer (January fills it in), a
+false negative would write an invented figure."""
 
 from app.agents.tools.posting_schema import normalize_term
 
-# Mots et expressions (sans casse ni accent) qui font d'une question une question salariale.
+# Words and expressions (without case or accent) that make a question a salary question.
 SALARY_TERMS: frozenset[str] = frozenset(
     {
         "salaire",
@@ -42,7 +42,7 @@ SALARY_TERMS: frozenset[str] = frozenset(
 
 
 def is_salary_question(question: str) -> bool:
-    """La question parle de salaire, de rémunération, de prétentions, de package, de TJM ou de
-    taux (français ou anglais), sans tenir compte de la casse ni des accents."""
+    """The question talks about salary, pay, expectations, package, day rate or rate
+    (French or English), regardless of case and accents."""
     padded = f" {normalize_term(question)} "
     return any(f" {term} " in padded for term in SALARY_TERMS)

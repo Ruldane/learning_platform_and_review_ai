@@ -1,7 +1,7 @@
-"""Charges typées des événements d'une session (SPEC 9.5) ; l'enveloppe, le catalogue et la
-validation vivent dans `events.py`, qui les réexporte.
+"""Typed payloads of a session's events (SPEC 9.5); the envelope, the catalog and the
+validation live in `events.py`, which re-exports them.
 
-Tout champ ajouté a une valeur par défaut : les événements déjà stockés restent valides.
+Every field added has a default value: events already stored remain valid.
 """
 
 from typing import Any, Literal
@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 
 class AgentStartedPayload(BaseModel):
     step: str
-    intent: str  # phrase d'intention affichée : jamais un raisonnement brut (9.5)
+    intent: str  # display intent phrase: never a raw reasoning (9.5)
 
 
 class AgentTokenPayload(BaseModel):
@@ -52,13 +52,13 @@ class SourceFoundPayload(BaseModel):
     date: str | None
     lang: str | None
     score: int | None
-    # Compléments de la recherche web (D77) : valeurs par défaut, donc compatibles avec les
-    # événements déjà stockés.
-    source_id: str | None = None  # absent : page sans ligne `sources` (domaine exclu)
+    # Web search additions (D77): default values, so compatible with the
+    # events already stored.
+    source_id: str | None = None  # absent: page without a `sources` row (excluded domain)
     status: Literal["ok", "unreadable"] = "ok"
-    verdict: Literal["kept", "rejected"] | None = None  # absent : source non notée
-    reason: str | None = None  # raison du verdict, ou de l'illisibilité
-    # Praticiens repérés par l'Éclaireur (phase 4, D82) : `person`, avec son rôle public.
+    verdict: Literal["kept", "rejected"] | None = None  # absent: source not rated
+    reason: str | None = None  # verdict reason, or unreadability
+    # Practitioners spotted by the Scout (phase 4, D82): `person`, with their public role.
     kind: Literal["page", "person"] = "page"
     role: str | None = None
 
@@ -82,7 +82,7 @@ class MemoryWrittenPayload(BaseModel):
     kind: str
     title: str
     reason: str
-    status: Literal["active", "pending"] = "active"  # `pending` : décision « À confirmer » (D68)
+    status: Literal["active", "pending"] = "active"  # `pending`: "To confirm" decision (D68)
 
 
 class InterruptOption(BaseModel):
@@ -91,8 +91,8 @@ class InterruptOption(BaseModel):
 
 
 def _optional_in_schema(schema: dict[str, Any]) -> None:
-    """Pas de `default` dans le schéma : la clé est omise quand elle est vide, le client la lit
-    donc facultative."""
+    """No `default` in the schema: the key is omitted when empty, the client reads it as
+    optional."""
     schema.pop("default", None)
 
 
@@ -104,9 +104,9 @@ class InterruptField(BaseModel):
     id: str = Field(pattern=r"^[a-z0-9_]{1,32}$")
     label: str
     required: bool = False
-    max_length: int = Field(default=2000, ge=1, le=20000)  # texte d'une page collée (F6)
-    # Valeur pré remplie, que January corrige (fiche en une phrase, D141) ; sans elle la clé n'est
-    # pas écrite : les questions existantes gardent exactement leur forme.
+    max_length: int = Field(default=2000, ge=1, le=20000)  # text of a pasted page (F6)
+    # Pre-filled value that January corrects (one-sentence record, D141); without it the key is
+    # not written: existing questions keep exactly their form.
     value: str | None = Field(
         default=None,
         exclude_if=lambda value: value is None,
@@ -148,8 +148,8 @@ class ArtifactReadyPayload(BaseModel):
     info: list[ArtifactInfo] = Field(default_factory=list)
 
     def model_dump(self, **kwargs: Any) -> dict[str, Any]:
-        """Sans information, la clé `info` n'est pas écrite : la charge des autres artefacts reste
-        celle d'avant (les événements déjà stockés, et ceux des parcours qui n'en ont pas)."""
+        """Without information, the `info` key is not written: other artifacts keep their
+        earlier payload (events already stored, and those of graphs that have none)."""
         data = super().model_dump(**kwargs)
         if not data.get("info"):
             data.pop("info", None)
@@ -172,7 +172,7 @@ class RunFailedPayload(BaseModel):
     message: str
 
 
-# Commandes permanentes du débat (SPEC 3.2) portées par `user.message` (D82).
+# Permanent debate commands (SPEC 3.2) carried by `user.message` (D82).
 UserCommand = Literal["another_round", "to_proposals", "more_concrete", "shorter"]
 
 

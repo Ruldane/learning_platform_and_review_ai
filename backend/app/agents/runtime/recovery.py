@@ -1,4 +1,4 @@
-"""Entrée à restaurer pour une réponse déjà acceptée."""
+"""Input to restore for an answer already accepted."""
 
 from typing import Any
 

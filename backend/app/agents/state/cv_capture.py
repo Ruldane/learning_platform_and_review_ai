@@ -1,7 +1,7 @@
-"""État du parcours `cv_capture` (D124, D125). Le profil, ses sources et le contenu du CV sont des
-données personnelles : l'état les garde le temps de la session (checkpoints), jamais un journal.
-Les images des pages ne sont **jamais** dans l'état (relues par le port à chaque nœud qui les
-montre au Maquettiste) : chaque checkpoint reste léger."""
+"""State of the `cv_capture` graph (D124, D125). The profile, its sources and the CV content are
+personal data: the state keeps them for the session's duration (checkpoints), never a log.
+Page images are **never** in the state (reread through the port by each node that
+shows them to the layout designer): each checkpoint stays light."""
 
 from typing import Any, TypedDict
 
@@ -12,25 +12,25 @@ class CvCaptureState(TypedDict, total=False):
     note: str | None
     template_id: str | None
     # Mode `profile` (Archiviste)
-    sources: list[dict[str, str]]  # `ProfileSource` en JSON : {kind, text}
-    hidden: list[str]  # lignes invisibles des PDF (preflight G6)
-    draft: dict[str, Any]  # `MasterProfileData` en JSON, ids provisoires puis contrôlé
-    dropped: list[str]  # texte des lignes et faits retirés, montré à January seule
-    unsupported: int  # lignes retirées : chiffre introuvable
-    untraced: int  # faits retirés : introuvables dans les documents
-    version: int  # numéro du brouillon rangé
+    sources: list[dict[str, str]]  # `ProfileSource` as JSON: {kind, text}
+    hidden: list[str]  # hidden lines of PDFs (preflight G6)
+    draft: dict[str, Any]  # `MasterProfileData` as JSON, provisional ids then checked
+    dropped: list[str]  # text of the lines and facts removed, shown to January only
+    unsupported: int  # lines removed: figure not found
+    untraced: int  # facts removed: not found in the documents
+    version: int  # number of the stored draft
     summary: str
     # Mode `design` (Maquettiste)
-    selectable: bool  # faux : CV scanné
+    selectable: bool  # false: scanned CV
     page_count: int
-    sample: dict[str, Any]  # `CvContent` en JSON : contenu de démonstration
-    spec: dict[str, Any]  # `TemplateSpec` en JSON : description courante
-    pass_no: int  # dernière passe rendue (1 à 3 automatiques, puis une par ajustement)
-    score: int  # score de la dernière passe
-    kept_pass: int  # passe gardée par le port (`keeps_pass`) : la meilleure, D125
-    kept_score: int  # score de la passe gardée : celui que January valide
-    kept_spec: dict[str, Any]  # description de la passe gardée : « Ajuster » repart d'elle
-    stalled: bool  # la dernière correction n'a pas donné de description valable
-    adjustments: int  # ajustements demandés par January (5 au plus)
-    instruction: str | None  # dernière consigne de January (500 caractères au plus)
-    answer: dict[str, Any] | None  # réponse analysée de la question `cv_template`
+    sample: dict[str, Any]  # `CvContent` as JSON: demonstration content
+    spec: dict[str, Any]  # `TemplateSpec` as JSON: current description
+    pass_no: int  # last pass rendered (1 to 3 automatic, then one per adjustment)
+    score: int  # score of the last pass
+    kept_pass: int  # pass kept by the port (`keeps_pass`): the best, D125
+    kept_score: int  # score of the kept pass: the one January validates
+    kept_spec: dict[str, Any]  # description of the kept pass: "Adjust" restarts from it
+    stalled: bool  # the last correction did not give a valid description
+    adjustments: int  # adjustments requested by January (5 at most)
+    instruction: str | None  # last instruction from January (500 characters at most)
+    answer: dict[str, Any] | None  # parsed answer to the `cv_template` question

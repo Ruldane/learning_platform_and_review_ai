@@ -1,23 +1,23 @@
-"""Port de l'analyse d'une offre et de son écart (SPEC 5.3 étape 1, F8, D121). `app.agents`
-n'importe aucune feature (contrat 6) : il décrit ici ce dont le parcours `gap_analysis` a besoin
-(l'offre, l'analyse rangée, le refus d'un texte qui n'est pas une offre, le référentiel de
-compétences de January, l'écart rangé) ; la feature `postings` l'implémente (`AgentGapStore`,
-tâche 6.6).
+"""Port for the analysis of an offer and its gap (SPEC 5.3 step 1, F8, D121). `app.agents`
+imports no feature (contract 6): it describes here what the `gap_analysis` graph needs
+(the offer, the stored analysis, the refusal of a text that is not an offer, January's skills
+reference, the stored gap); the `postings` feature implements it (`AgentGapStore`,
+task 6.6).
 
-Le texte d'une offre est un contenu non fiable (17.4) : il n'est jamais journalisé, ni ici ni par
-l'implémentation.
+The text of an offer is untrusted content (17.4): it is never logged, neither here nor by
+the implementation.
 
-Chaque écriture est idempotente, pour qu'un nœud rejoué après un arrêt (SPEC 9.4) n'écrive rien de
+Each write is idempotent, so that a node replayed after a stop (SPEC 9.4) writes nothing
 plus :
-- `save_analysis` : une analyse par offre, partagée avec les revues de CV ; la première écrite
-  gagne (`UPDATE … WHERE analysis IS NULL`), les suivantes relisent celle qui est rangée ;
-- `reject` : une offre refusée le reste ;
-- `save_gap` : par session (`job_postings.gap.session_id`).
+- `save_analysis`: one analysis per offer, shared with the CV reviews; the first written
+  wins (`UPDATE … WHERE analysis IS NULL`), the following ones reread the stored one;
+- `reject`: a refused offer stays refused;
+- `save_gap`: per session (`job_postings.gap.session_id`).
 
-Le rattachement se fait sur le référentiel **existant** (revue 6.5, I2) : les compétences de
-l'offre n'y entrent qu'après lui, par `save_gap`, et seulement celles restées sans rattachement.
-Sinon chaque besoin trouverait son propre nom, sans niveau, au lieu de la notion de même sens que
-January a déjà acquise.
+Matching is done against the **existing** reference (review 6.5, I2): the offer's skills
+enter it only afterwards, through `save_gap`, and only those left unmatched.
+Otherwise each need would get its own name, with no level, instead of the same-meaning concept
+that January has already acquired.
 """
 
 from collections.abc import Sequence
@@ -31,8 +31,8 @@ from app.core.errors import AppError
 from app.db.models.postings import GapMatch, GapResult, PostingStatus
 from app.db.models.skills import LEVEL_ORDER, SkillLevel
 
-MAX_KNOWN_SKILLS = 300  # noms du référentiel montrés au modèle
-MAX_MATCHES = 40  # autant que de compétences dans une analyse
+MAX_KNOWN_SKILLS = 300  # names of the reference shown to the model
+MAX_MATCHES = 40  # as many as the skills in an analysis
 SKILL_NAME_MAX = 120  # `skills.name`, `SkillDraft.name` (revue 6.5, I1)
 
 DuplicateLevel = Literal["certain", "probable", "possible"]
@@ -40,7 +40,7 @@ DuplicateLevel = Literal["certain", "probable", "possible"]
 
 @dataclass(frozen=True)
 class PostingView:
-    """L'offre telle que le parcours la lit : `text` est la copie figée lue à l'ajout."""
+    """The offer as the graph reads it: `text` is the frozen copy read when it was added."""
 
     posting_id: str
     text: str
@@ -51,9 +51,9 @@ class PostingView:
 
 @dataclass(frozen=True)
 class DuplicateHit:
-    """Une offre déjà ajoutée qui ressemble à celle-ci. `certain` : même lien ou même texte (à
-    l'ajout, 6.6) ; `probable` : même entreprise, titre proche ; `possible` : même entreprise,
-    texte proche (score du meilleur fragment, sinon `None`). `created_at` : ISO 8601 (UTC)."""
+    """An already added offer that looks like this one. `certain`: same link or same text (at
+    adding, 6.6); `probable`: same company, close title; `possible`: same company,
+    close text (score of the best fragment, otherwise `None`). `created_at`: ISO 8601 (UTC)."""
 
     level: DuplicateLevel
     posting_id: str
@@ -65,29 +65,29 @@ class DuplicateHit:
 
 @dataclass(frozen=True)
 class KnownSkill:
-    """Une compétence du référentiel de January et son niveau (`None` : sans niveau)."""
+    """A skill of January's reference and its level (`None`: no level)."""
 
     name: str
     level: SkillLevel | None
 
 
 def known_rank(skill: KnownSkill) -> int:
-    """Ordre de `known_skills` : `prouve`, `valide`, `en_cours`, `declare`, puis sans niveau."""
+    """Order of `known_skills`: `prouve`, `valide`, `en_cours`, `declare`, then without a level."""
     if skill.level is None:
         return len(LEVEL_ORDER)
     return len(LEVEL_ORDER) - 1 - LEVEL_ORDER.index(skill.level)
 
 
 def ordered_known(skills: Sequence[KnownSkill]) -> list[KnownSkill]:
-    """Les compétences acquises d'abord (ordre stable), `MAX_KNOWN_SKILLS` au plus : le plafond
-    écarte d'abord les noms sans niveau."""
+    """Acquired skills first (stable order), `MAX_KNOWN_SKILLS` at most: the cap
+    drops the level-less names first."""
     return sorted(skills, key=known_rank)[:MAX_KNOWN_SKILLS]
 
 
 @dataclass(frozen=True)
 class AnalysisSaved:
-    """L'analyse rangée (celle d'une session plus rapide si `first` est faux) et les doublons
-    calculés après elle (entreprise et titre connus)."""
+    """The stored analysis (that of a faster session if `first` is false) and the duplicates
+    computed after it (known company and title)."""
 
     posting_id: str
     analysis: PostingAnalysis
@@ -96,31 +96,31 @@ class AnalysisSaved:
 
 
 class SkillMatch(BaseModel):
-    """Un besoin de l'offre (`SkillNeed.name`) rattaché à un nom du référentiel de January, ou à
-    rien (`None`). Un nom hors du référentiel n'est jamais gardé (D121 n° 3)."""
+    """A need of the offer (`SkillNeed.name`) matched to a name of January's reference, or to
+    nothing (`None`). A name outside the reference is never kept (D121 no. 3)."""
 
     need: str = Field(min_length=2, max_length=80)
     known: str | None = Field(default=None, max_length=SKILL_NAME_MAX)
 
 
 class NeedMatch(BaseModel):
-    """Réponse du modèle pour un besoin : son identifiant (`n3`) et celui de la compétence du
-    référentiel (`k7`), ou `None`. Des identifiants, jamais des noms recopiés (revue 6.5, I3)."""
+    """Model's answer for a need: its identifier (`n3`) and that of the reference skill
+    (`k7`), or `None`. Identifiers, never copied names (review 6.5, I3)."""
 
     need: str = Field(min_length=1, max_length=SKILL_NAME_MAX)
     known: str | None = Field(default=None, max_length=SKILL_NAME_MAX)
 
 
 class SkillMatches(BaseModel):
-    """Sortie structurée de l'Analyste en mode `match`."""
+    """Structured output of the Analyst in `match` mode."""
 
     items: list[NeedMatch] = Field(default_factory=list, max_length=MAX_MATCHES)
 
 
 @dataclass(frozen=True)
 class GapSaved:
-    """L'écart rangé : score de match (`match_score`), nombre de lignes, compétences absentes
-    (niveau inconnu, hors périmètre compris) et, parmi elles, les obligatoires."""
+    """The stored gap: match score (`match_score`), number of rows, missing skills
+    (unknown level, out of scope included) and, among them, the mandatory ones."""
 
     score: int
     rows: int
@@ -129,7 +129,7 @@ class GapSaved:
 
 
 def gap_result(session_id: str, matches: Sequence[SkillMatch]) -> GapResult:
-    """Forme JSON de `job_postings.gap` (preflight G25) : les rattachements et leur session."""
+    """JSON shape of `job_postings.gap` (preflight G25): the matches and their session."""
     rows: list[GapMatch] = [{"need": m.need, "known": m.known} for m in matches]
     return {"session_id": session_id, "matches": rows}
 
@@ -140,38 +140,38 @@ def matches_of(gap: GapResult) -> list[SkillMatch]:
 
 class GapStore(Protocol):
     async def posting(self, user_id: str, posting_id: str) -> PostingView:
-        """L'offre de January ; 404 `posting_not_found` si elle n'est pas à elle."""
+        """January's offer; 404 `posting_not_found` if it is not theirs."""
         ...
 
     async def save_analysis(
         self, user_id: str, session_id: str, posting_id: str, analysis: PostingAnalysis
     ) -> AnalysisSaved:
-        """Idempotent et partagé avec `cv_review` : `UPDATE … WHERE analysis IS NULL` ; une offre
-        déjà analysée est relue (`first` faux). Pose le titre, l'entreprise (et sa clé), le statut
-        `ready`, l'élément de mémoire `offre` indexé, et calcule les doublons probables et
-        possibles. Les doublons sont rendus aussi quand `first` est faux (recalculés ou relus) :
-        un rejeu après un arrêt les annonce encore. Les compétences de l'offre n'entrent **pas**
-        au référentiel ici (voir `save_gap`)."""
+        """Idempotent and shared with `cv_review`: `UPDATE … WHERE analysis IS NULL`; an offer
+        already analyzed is reread (`first` false). Sets the title, company (and key), and status
+        `ready`, the indexed `offre` memory item, and computes the probable and possible duplicates.
+        Duplicates are also returned when `first` is false (recomputed or reread):
+        a replay after a stop still announces them. The offer's skills do **not** enter
+        the reference here (see `save_gap`)."""
         ...
 
     async def reject(self, user_id: str, posting_id: str, reason: str) -> None:
-        """Statut `rejected` et sa raison ; idempotent."""
+        """`rejected` status and its reason; idempotent."""
         ...
 
     async def known_skills(self, user_id: str) -> list[KnownSkill]:
-        """Le référentiel **existant** de January, avec les niveaux (`user_skills`), dans l'ordre
-        de `ordered_known` : `prouve`, `valide`, `en_cours`, `declare`, puis sans niveau ;
-        `MAX_KNOWN_SKILLS` au plus, les compétences acquises gardées d'abord."""
+        """January's **existing** reference, with levels (`user_skills`), in the order
+        of `ordered_known`: `prouve`, `valide`, `en_cours`, `declare`, then without a level;
+        `MAX_KNOWN_SKILLS` at most, acquired skills kept first."""
         ...
 
     async def save_gap(
         self, user_id: str, session_id: str, posting_id: str, matches: Sequence[SkillMatch]
     ) -> GapSaved:
-        """Idempotent par session : `gap` = `gap_result(session_id, matches)`. Les lignes sont
-        calculées par le code (niveaux de `user_skills`, semaine du programme validé dont un
-        module vise la compétence, `learnable` faux → `out_of_scope`), le score par
-        `match_score`. Puis les besoins restés sans rattachement (`known` vide) entrent au
-        référentiel (`upsert_catalog`, sans lien, sans niveau), après le rattachement."""
+        """Idempotent per session: `gap` = `gap_result(session_id, matches)`. The rows are
+        computed by the code (levels of `user_skills`, week of the validated program whose
+        module targets the skill, `learnable` false -> `out_of_scope`), the score by
+        `match_score`. Then the needs left unmatched (`known` empty) enter the
+        reference (`upsert_catalog`, no link, no level), after the matching."""
         ...
 
 
@@ -180,7 +180,7 @@ def gap_unavailable() -> AppError:
 
 
 class _NoGap:
-    """Valeur par défaut du moteur (tests, démarrages sans la feature)."""
+    """Engine default value (tests, starts without the feature)."""
 
     async def posting(self, user_id: str, posting_id: str) -> PostingView:
         raise gap_unavailable()

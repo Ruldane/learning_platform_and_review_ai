@@ -1,24 +1,24 @@
-"""Port des projets preuves (P1 à P4, D165). `app.agents` n'importe aucune feature (contrat 6) : il
-décrit ici ce dont les parcours `project_brief` et `project_review` ont besoin ; la feature
-`projects` l'implémente (tâche 8.10).
+"""Port for proof projects (P1 to P4, D165). `app.agents` imports no feature (contract 6): it
+describes here what the `project_brief` and `project_review` graphs need; the
+`projects` feature implements it (task 8.10).
 
-L'énoncé, la description de January, le dépôt, les critères et les brouillons sont des données de
-l'utilisatrice ou du web (17.2, 17.4) : jamais journalisés, ni ici ni par l'implémentation. Toute
-écriture est **idempotente par session** (SPEC 9.4) : un nœud rejoué après un arrêt ne range rien de
-plus (la première écriture de la session gagne).
+The brief, January's description, the repository, the criteria and the drafts are data from
+the user or the web (17.2, 17.4): never logged, neither here nor by the implementation. Every
+write is **idempotent per session** (SPEC 9.4): a node replayed after a stop stores nothing
+more (the session's first write wins).
 
-- `brief_inputs` / `review_inputs` : lecture seule, l'état du projet tel qu'il est en base.
-- `save_brief` : range l'énoncé ; le projet passe à « à faire ».
-- `brief_failed` : l'énoncé a échoué avec ce code (`structured_output_invalid`…), rien d'autre ;
-  « Réessayer » relance le parcours.
-- `repo_text` : le texte d'**une** page du dépôt (README), `None` si elle ne se lit pas. Point
-  d'accroche de la phase 14 (GitHub) ; le parcours ne lit jamais le web autrement.
-- `save_review` : range l'évaluation. Validée, le port monte les compétences du module à `prouve`
-  (preuve `project`), range les brouillons et écrit au journal ; l'entrée de projet n'entre au
-  profil maître que par le clic de January (P3).
-- `save_drafts` : range les brouillons d'un projet **déjà validé** qui n'en a pas (mode `drafts`
-  de `project_review`, D181) ; sans effet si le projet n'est pas validé, s'il a déjà des
-  brouillons ou si la liste est vide."""
+- `brief_inputs` / `review_inputs`: read-only, the project's state as it is in the database.
+- `save_brief`: stores the brief; the project moves to "to do".
+- `brief_failed`: the brief failed with this code (`structured_output_invalid`...), nothing else;
+  "Retry" restarts the graph.
+- `repo_text`: the text of **one** repository page (README), `None` if it cannot be read. Hook point
+  of phase 14 (GitHub); the graph never reads the web otherwise.
+- `save_review`: stores the evaluation. If validated, the port sets the module's skills to `prouve`
+  (proof `project`), stores the drafts and writes to the journal; the project entry enters the
+  master profile only through January's click (P3).
+- `save_drafts`: stores the drafts of an **already validated** project that has none (`drafts` mode
+  of `project_review`, D181); no effect if the project is not validated, if it already has
+  drafts or if the list is empty."""
 
 from dataclasses import dataclass
 from typing import Literal, Protocol
@@ -42,52 +42,52 @@ __all__ = [
     "ReviewOutcome",
 ]
 
-LESSON_EXCERPT_MAX = 3_000  # caractères de l'extrait de leçon montrés au Praticien
+LESSON_EXCERPT_MAX = 3_000  # characters of the lesson excerpt shown to the Practitioner
 
 
 @dataclass(frozen=True)
 class BriefInputs:
-    """Ce que le Praticien lit pour écrire l'énoncé du module."""
+    """What the Practitioner reads to write the module's brief."""
 
     module_title: str
     skills: list[str]
     prerequisites: list[str]
-    lesson_excerpt: str | None  # 3 000 caractères au plus
-    week_deliverable: str | None  # le livrable de la semaine du module
-    role: str | None  # le poste visé
+    lesson_excerpt: str | None  # 3,000 characters at most
+    week_deliverable: str | None  # the module week's deliverable
+    role: str | None  # the targeted role
     language: Literal["fr", "en"]
 
 
 @dataclass(frozen=True)
 class ReviewInputs:
-    """Ce que le Praticien lit pour évaluer le rendu : l'énoncé et ce que January a rendu."""
+    """What the Practitioner reads to assess the submission: the brief and January's work."""
 
     title: str
     brief: ProjectBrief
     repo_url: str | None
     description: str | None
-    screenshots: int  # nombre de captures : jamais envoyées au modèle (P2)
-    skills: list[str]  # les compétences du module
-    profile: MasterProfileData | None  # le profil maître validé
+    screenshots: int  # number of screenshots: never sent to the model (P2)
+    skills: list[str]  # the module's skills
+    profile: MasterProfileData | None  # the validated master profile
     language: Literal["fr", "en"]
 
 
 @dataclass(frozen=True)
 class DraftResult:
     kind: DraftKind
-    content: str  # le texte contrôlé (`draft_text`)
-    entry: ProfileEntryDraft | None  # seulement pour `profile_entry`
-    status: DraftStatus  # `to_check` : des termes que January n'a pas dits, ou une longueur
-    flags: list[str]  # ces termes (ou la longueur), jamais vide si `to_check`
+    content: str  # the checked text (`draft_text`)
+    entry: ProfileEntryDraft | None  # only for `profile_entry`
+    status: DraftStatus  # `to_check`: terms January did not state, or a length out of bounds
+    flags: list[str]  # these terms (or the length), never empty if `to_check`
 
 
 @dataclass(frozen=True)
 class ReviewOutcome:
     verdict: Literal["validated", "to_redo"]
-    results: list[CriterionResult]  # un par critère, dans l'ordre (`settled_results`)
+    results: list[CriterionResult]  # one per criterion, in order (`settled_results`)
     feedback: str
     repo_status: Literal["read", "unreadable", "none"]
-    drafts: list[DraftResult] | None  # quatre brouillons si validé, sinon `None`
+    drafts: list[DraftResult] | None  # four drafts if validated, otherwise `None`
 
 
 class ProjectStore(Protocol):
@@ -119,7 +119,7 @@ def projects_unavailable() -> AppError:
 
 
 class _NoProjects:
-    """Valeur par défaut du moteur (tests, démarrages sans la feature)."""
+    """Engine default value (tests, starts without the feature)."""
 
     async def brief_inputs(self, user_id: str, project_id: str) -> BriefInputs:
         raise projects_unavailable()

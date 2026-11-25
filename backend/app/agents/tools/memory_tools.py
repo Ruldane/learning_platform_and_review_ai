@@ -1,10 +1,10 @@
-"""Outils mémoire des agents (SPEC 4.4, 4.5, D68) : des fonctions appelables depuis un nœud, qui
-annoncent leur appel (`tool.called`), rendent leur issue (`tool.result`) et, pour une écriture,
-publient `memory.written` ; plus `memory_tools_for`, les mêmes outils sous forme de
-`StructuredTool` pour l'appel d'outils par le LLM (phases suivantes).
+"""Memory tools for the agents (SPEC 4.4, 4.5, D68): callable functions from a node, which
+announce their call (`tool.called`), return their outcome (`tool.result`) and, for a write,
+publish `memory.written`; plus `memory_tools_for`, the same tools as
+`StructuredTool` for the LLM's tool calls (later phases).
 
-La mémoire elle-même est derrière le port `MemoryGateway` (`GraphDeps.memory`). Les événements
-portent des titres et des raisons ; les journaux, eux, ne citent jamais de contenu."""
+The memory itself sits behind the `MemoryGateway` port (`GraphDeps.memory`). Events
+carry titles and reasons; the logs, for their part, never quote content."""
 
 from collections.abc import Sequence
 from typing import Any, Literal
@@ -55,7 +55,7 @@ async def memory_search(
     *,
     agent: str,
 ) -> MemorySearchResult:
-    """Recherche sémantique dans la mémoire de l'utilisatrice (8 résultats par défaut)."""
+    """Semantic search in the user's memory (8 results by default)."""
     shown = None if kinds is None else list(kinds)
     call_id = _call(agent, "memory_search", {"query": query, "kinds": shown, "k": k})
     try:
@@ -68,9 +68,9 @@ async def memory_search(
 
 
 async def memory_write(deps: GraphDeps, write: AgentWrite, *, agent: str) -> WriteResult:
-    """Écrit dans la mémoire, journalisé avec l'agent, la session et la raison. Un contenu déjà
-    présent n'écrit rien (`created` faux, pas de `memory.written`) : un nœud rejoué ne double
-    jamais une écriture."""
+    """Writes to memory, logged with the agent, the session and the reason. Content already
+    present writes nothing (`created` false, no `memory.written`): a replayed node never doubles
+    a write."""
     args = {"kind": write.kind, "title": write.title, "tags": list(write.tags)}
     call_id = _call(agent, "memory_write", args)
     try:
@@ -96,7 +96,7 @@ async def memory_write(deps: GraphDeps, write: AgentWrite, *, agent: str) -> Wri
 
 
 async def memory_get_skills(deps: GraphDeps, *, agent: str) -> SkillsSummary:
-    """Acquis connus de l'utilisatrice, par niveau (lus dans la mémoire jusqu'à la phase 4)."""
+    """Skills known to the user, by level (read from memory up to phase 4)."""
     call_id = _call(agent, "memory_get_skills", {})
     try:
         skills = await deps.memory.skills(deps.user_id)
@@ -107,7 +107,7 @@ async def memory_get_skills(deps: GraphDeps, *, agent: str) -> SkillsSummary:
     return skills
 
 
-# --- Outils pour l'appel d'outils par le LLM --------------------------------------------------
+# --- Tools for the LLM's tool calls ---
 
 
 class _SearchArgs(BaseModel):
@@ -140,16 +140,16 @@ class _NoArgs(BaseModel):
 
 
 def memory_tools_for(deps: GraphDeps, *, agent: str) -> list[BaseTool]:
-    """`memory_search`, `memory_write` et `memory_get_skills`, liés à `deps` et à `agent`. Chaque
-    outil rend du texte au modèle (le texte d'un fragment et le titre d'un élément déjà en mémoire
-    y sont encadrés comme non fiables)."""
+    """`memory_search`, `memory_write` and `memory_get_skills`, bound to `deps` and to `agent`. Each
+    tool returns text to the model (a fragment's text and an item's title already in memory
+    are framed there as untrusted)."""
 
     async def search(query: str, kinds: list[str] | None = None, k: int = DEFAULT_K) -> str:
         return (await memory_search(deps, query, kinds, k, agent=agent)).agent_text
 
     async def write(**fields: Any) -> str:
         done = await memory_write(deps, _to_write(_WriteArgs(**fields)), agent=agent)
-        if not done.created:  # titre lu en mémoire (un document importé a pu le fixer)
+        if not done.created:  # title read from memory (an imported document may have set it)
             return f"Already in memory\n{untrusted(done.title, 'title in memory')}"
         pending = " (awaiting January’s confirmation)" if done.status == "pending" else ""
         return f"Saved “{done.title}”{pending}."

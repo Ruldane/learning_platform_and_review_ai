@@ -1,16 +1,16 @@
-"""Port de la revue d'un CV contre une offre (SPEC 5.3, F9, D129). `app.agents` n'importe aucune
-feature (contrat 6) : il décrit ici ce dont le parcours `cv_review` a besoin ; la feature `cv`
-l'implémente (`AgentCvReviewStore`, tâche 6.14).
+"""Port for reviewing a CV against an offer (SPEC 5.3, F9, D129). `app.agents` imports no
+feature (contract 6): it describes here what the `cv_review` graph needs; the `cv` feature
+implements it (`AgentCvReviewStore`, task 6.14).
 
-Le profil maître, le CV et le texte de l'offre sont des données personnelles ou non fiables
-(17.2, 17.4) : jamais journalisés, ni ici ni par l'implémentation.
+The master profile, the CV and the offer text are personal or untrusted data
+(17.2, 17.4): never logged, neither here nor by the implementation.
 
-Chaque écriture est idempotente, pour qu'un nœud rejoué après un arrêt (SPEC 9.4) n'écrive rien de
+Each write is idempotent, so that a node replayed after a stop (SPEC 9.4) writes nothing
 plus :
-- `save_company` : par `(utilisatrice, clé de l'entreprise, session)` ;
-- `save_proposals` : `(revue, référence)` unique ; la revue passe en `proposed` ;
-- `render_version` : une version déjà rendue est relue, jamais rendue deux fois ;
-- `close` : la revue passe en `done`, une seule fois.
+- `save_company`: by `(user, company key, session)`;
+- `save_proposals`: `(review, reference)` unique; the review moves to `proposed`;
+- `render_version`: a version already rendered is reread, never rendered twice;
+- `close`: the review moves to `done`, once only.
 """
 
 from collections.abc import Sequence
@@ -28,19 +28,19 @@ from app.agents.tools.review_schema import CompanyBrief, Proposal
 from app.core.errors import AppError
 from app.db.models.career import VersionStatus
 
-BRIEF_MAX_AGE_DAYS = 30  # une fiche entreprise plus vieille est refaite par l'Éclaireur
-ATS_UPDATES_MAX_AGE_DAYS = 60  # au-delà, le dernier rafraîchissement ATS n'est plus montré
+BRIEF_MAX_AGE_DAYS = 30  # an older company record is redone by the Scout
+ATS_UPDATES_MAX_AGE_DAYS = 60  # beyond that, the last ATS refresh is no longer shown
 ATS_UPDATES_MAX = 3
 
 OutputChoice = Literal["report", "pdf", "finish"]
-# Texte libre lu par January (raccourci, jamais refusé, D97).
+# Free text read by January (shortcut, never refused, D97).
 Note = Annotated[str, Field(max_length=300), ShortenToMax()]
 
 
 @dataclass(frozen=True)
 class AtsUpdate:
-    """Une source « kept » du dernier rafraîchissement du web sur les ATS (P14) : texte venu du
-    web, donc non fiable (17.4) ; `published` : sa date si la page la donne."""
+    """A "kept" source from the last web refresh on the ATS (P14): text coming from the
+    web, hence untrusted (17.4); `published`: its date if the page gives it."""
 
     title: str
     url: str
@@ -50,12 +50,12 @@ class AtsUpdate:
 
 @dataclass(frozen=True)
 class ReviewContext:
-    """Ce que la revue lit : l'offre (analyse rangée ou `None`), le profil validé figé dans la
-    revue, le CV d'origine composé (`base_content`, ordre des sections du gabarit), les
-    indicateurs avant, l'entreprise et sa fiche de moins de `BRIEF_MAX_AGE_DAYS` jours (sinon
-    `None`) avec l'ATS déjà repéré pour elle (`company_ats`, écart au plan : sans lui, une fiche
-    réutilisée perdrait l'ATS lu sur ses pages). `ats_updates` : les sources retenues de la dernière
-    session `ats_refresh` terminée il y a moins de `ATS_UPDATES_MAX_AGE_DAYS` jours, 3 au plus."""
+    """What the review reads: the offer (stored analysis or `None`), the validated profile frozen in
+    the review, the composed original CV (`base_content`, order of the template's sections), the
+    indicators before, the company and its record of less than `BRIEF_MAX_AGE_DAYS` days (otherwise
+    `None`) with the ATS already spotted for it (`company_ats`; a reused record would
+    otherwise lose the ATS read from its pages). `ats_updates`: the sources kept from the last
+    `ats_refresh` session finished less than `ATS_UPDATES_MAX_AGE_DAYS` days ago, 3 at most."""
 
     review_id: str
     posting_id: str
@@ -73,8 +73,8 @@ class ReviewContext:
 
 @dataclass(frozen=True)
 class VersionOutcome:
-    """Une version rendue : `pages_exceeded` quand le CV ciblé garde plus de pages que l'original
-    (`original_page_count`, écart au plan : la phrase dite à January le cite)."""
+    """A rendered version: `pages_exceeded` when the targeted CV keeps more pages than the original
+    (`original_page_count`, deviation from the plan: the sentence said to January cites it)."""
 
     version_id: str
     status: VersionStatus
@@ -100,7 +100,7 @@ class ReviewReport(BaseModel):
 
 class CvReviewStore(Protocol):
     async def context(self, user_id: str, review_id: str) -> ReviewContext:
-        """La revue de January ; 404 `review_not_found` si elle n'est pas à elle. Lecture seule."""
+        """January's review; 404 `review_not_found` if it is not theirs. Read-only."""
         ...
 
     async def save_company(
@@ -112,8 +112,8 @@ class CvReviewStore(Protocol):
         sources: Sequence[str],
         ats: str | None,
     ) -> None:
-        """Fiche de l'entreprise (`companies`, `refreshed_at`), rattachée à la revue ; idempotent
-        par `(utilisatrice, clé de l'entreprise, session)`."""
+        """The company record (`companies`, `refreshed_at`), attached to the review; idempotent
+        per `(user, company key, session)`."""
         ...
 
     async def save_proposals(
@@ -125,18 +125,18 @@ class CvReviewStore(Protocol):
         gap_terms: Sequence[str],
         report: ReviewReport,
     ) -> int:
-        """Les modifications (`proposed` si le verdict est `ok`, `to_confirm` sinon, avec ses
-        `blocks`), les mots clés partis vers l'écart et le rapport ; la revue passe en
-        `proposed`. Idempotent : `(revue, référence)` unique. Rend le nombre de modifications
-        rangées pour la revue."""
+        """The modifications (`proposed` if the verdict is `ok`, `to_confirm` otherwise, with its
+        `blocks`), the keywords that went to the gap and the report; the review moves to
+        `proposed`. Idempotent: `(review, reference)` unique. Returns the number of modifications
+        stored for the review."""
         ...
 
     async def render_version(self, user_id: str, version_id: str) -> VersionOutcome:
-        """Rend la version créée par la route (6.14) ; idempotent : déjà rendue, relue."""
+        """Returns the version created by the route (6.14); idempotent: already rendered, reread."""
         ...
 
     async def close(self, user_id: str, review_id: str) -> None:
-        """La revue passe en `done` ; idempotent."""
+        """The review moves to `done`; idempotent."""
         ...
 
 
@@ -145,7 +145,7 @@ def cv_review_unavailable() -> AppError:
 
 
 class _NoCvReview:
-    """Valeur par défaut du moteur (tests, démarrages sans la feature)."""
+    """Engine default value (tests, starts without the feature)."""
 
     async def context(self, user_id: str, review_id: str) -> ReviewContext:
         raise cv_review_unavailable()

@@ -1,16 +1,16 @@
-"""Port de l'IDE Python (phase 10, 10.A3). `app.agents` n'importe aucune feature (contrat 6) : il
-décrit ici ce dont les parcours `ide_teacher` et `ide_exercise` ont besoin ; la feature `ide`
-l'implémente (`AgentIdeStore`).
+"""Port of the Python IDE (phase 10, 10.A3). `app.agents` imports no feature (contract 6): it
+describes here what the `ide_teacher` and `ide_exercise` graphs need; the `ide` feature
+implements it (`AgentIdeStore`).
 
-Le code de January, la sortie de ses exécutions et l'énoncé d'un exercice sont des données : jamais
-journalisés. Les écritures passent par le même service que celles de Claude (`IdeService`), sous
-l'appelant interne « professor » : mêmes validations, mêmes notes.
+January's code, the output of her runs and the statement of an exercise are data: never
+logged. Writes go through the same service as Claude's (`IdeService`), under the internal
+caller "professor": same validations, same notes.
 
-- `teacher_inputs` : lecture seule (séance, dernière exécution, notes, style).
-- `save_note` : range la note du professeur ; `None` si le code a changé entre-temps (la
-  proposition est périmée, ou la plage n'existe plus) : rien n'est rangé.
-- `verify` : fait passer les tests d'un exercice dans le bac à sable (jamais ici, jamais en
-  processus) ; `save_exercise` range l'exercice vérifié."""
+- `teacher_inputs`: read-only (session, last run, notes, style).
+- `save_note`: stores the teacher's note; `None` if the code changed in the meantime (the
+  proposal is stale, or the range no longer exists): nothing is stored.
+- `verify`: runs an exercise's tests in the sandbox (never here, never in-process);
+  `save_exercise` stores the verified exercise."""
 
 from dataclasses import dataclass, field
 from typing import Literal, Protocol
@@ -23,7 +23,7 @@ Style = Literal["guide", "pair"]
 
 @dataclass(frozen=True)
 class RunView:
-    """La dernière exécution : sortie complète (64 Kio au plus), signature de son erreur."""
+    """The last run: full output (64 KiB at most), signature of its error."""
 
     id: str
     kind: str
@@ -48,18 +48,18 @@ class NoteView:
 @dataclass(frozen=True)
 class TeachInputs:
     title: str
-    statement: str | None  # l'énoncé de l'exercice (`None` : séance libre)
+    statement: str | None  # the exercise statement (`None`: free session)
     files: dict[str, str]
     entry: str
     passed: bool
     style: Style
     run: RunView | None
-    notes: list[NoteView] = field(default_factory=list)  # les plus anciennes d'abord
+    notes: list[NoteView] = field(default_factory=list)  # the oldest first
 
 
 @dataclass(frozen=True)
 class Verification:
-    """La réponse du bac à sable à une vérification : `passed` si les tests passent (code 0)."""
+    """The sandbox's answer to a check: `passed` if the tests pass (code 0)."""
 
     passed: bool
     status: str
@@ -93,7 +93,7 @@ def ide_unavailable() -> AppError:
 
 
 class _NoIde:
-    """Valeur par défaut du moteur (tests, démarrages sans la feature)."""
+    """Engine default value (tests, starts without the feature)."""
 
     async def teacher_inputs(
         self, user_id: str, ide_session_id: str, run_id: str | None

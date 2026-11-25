@@ -1,5 +1,5 @@
-"""Types communs de l'étude (phase 5) : ports de l'agent et features les partagent ici, car le
-moteur n'importe aucune feature (contrat 6)."""
+"""Common study types (phase 5): the agent ports and the features share them here, because the
+engine imports no feature (contract 6)."""
 
 import hashlib
 from typing import Literal
@@ -14,15 +14,15 @@ ReviewState = Literal["late_twice", "late", "ahead", "on_track"]
 
 
 class ReplanReading(BaseModel):
-    """Instantané de la lecture sélectionnée, fourni par sa route."""
+    """Snapshot of the selected reading, provided by its route."""
 
     title: str = Field(min_length=1, max_length=240)
     url: str = Field(min_length=1, max_length=2000)
 
 
 class CardDraft(BaseModel):
-    """Une fiche proposée par un agent. Le verso est lu par January : trop long, il est
-    raccourci (`Prose`) ; le recto sert de clé (`card_hash`), il reste refusé s'il dépasse."""
+    """A card proposed by an agent. The back is read by January: too long, it is
+    shortened (`Prose`); the front serves as key (`card_hash`), it stays refused if it exceeds."""
 
     front: str = Field(min_length=5, max_length=300)
     back: Prose = Field(min_length=1, max_length=600)
@@ -30,6 +30,6 @@ class CardDraft(BaseModel):
 
 
 def card_hash(front: str) -> str:
-    """L'empreinte (sha256) du recto sans la casse ni les espaces en trop : deux fiches au
-    même recto ne font qu'une par utilisateur."""
+    """The fingerprint (sha256) of the front without case or extra spaces: two cards with the
+    same front make only one per user."""
     return hashlib.sha256(" ".join(front.casefold().split()).encode()).hexdigest()

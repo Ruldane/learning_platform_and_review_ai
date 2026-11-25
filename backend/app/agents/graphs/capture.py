@@ -1,16 +1,16 @@
-"""Parcours `capture` (SPEC F18, D108) : un lien, un document importé ou une note de January
-devient un élément de mémoire `document` résumé en cinq lignes, relié à ses modules ; l'Archiviste
-propose ensuite de cocher la tâche que la capture couvre, puis de créer des fiches.
+"""Graph `capture` (SPEC F18, D108): a link, an imported document or a note from January
+becomes a `document` memory item summarized in five lines, linked to its modules; the Archivist
+then proposes ticking off the task the capture covers, then creating cards.
 
 START -> read -> (illisible ? ask_text : digest)
-ask_text -> (texte ? digest : END « Capture abandonnée. »)
-digest -> store -> (tâche couverte ? ask_task : after_task)
+ask_text -> (text ? digest : END "Capture abandoned.")
+digest -> store -> (task covered ? ask_task : after_task)
 ask_task -> (oui ? tick : after_task) ; tick -> after_task
 after_task -> (fiches ? ask_cards : finalize) ; ask_cards -> (oui ? cards : finalize)
 cards -> finalize -> END
 
-Trois points d'arrêt (`ask_text`, `ask_task`, `ask_cards`), chacun seul dans son nœud (SPEC 9.4).
-Les écritures du port (`store`, `tick_task`, `add_cards`) sont idempotentes."""
+Three break points (`ask_text`, `ask_task`, `ask_cards`), each alone in its node (SPEC 9.4).
+Port writes (`store`, `tick_task`, `add_cards`) are idempotent."""
 
 from typing import Any, Self
 
@@ -65,7 +65,7 @@ class CaptureInput(BaseModel):
 
     @model_validator(mode="after")
     def _one_source(self) -> Self:
-        """Un seul des trois, non vide (422 `invalid_input` sinon)."""
+        """One of the three, non-empty (422 `invalid_input` otherwise)."""
         given = [v for v in (self.url, self.text, self.document_id) if v is not None and v.strip()]
         if len(given) != 1:
             raise ValueError("Provide a single link, text entry, or document for the capture.")

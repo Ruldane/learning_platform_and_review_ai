@@ -1,15 +1,15 @@
-"""Port du kit de candidature (SPEC 6.4, F16, D142). `app.agents` n'importe aucune feature
-(contrat 6) : il décrit ici ce dont le parcours `application_kit` a besoin ; la feature
-`applications` l'implémente (`AgentKitStore`, tâche 7.6).
+"""Port of the application kit (SPEC 6.4, F16, D142). `app.agents` imports no feature
+(contract 6): it describes here what the `application_kit` graph needs; the feature
+`applications` implements it (`AgentKitStore`, task 7.6).
 
-Le profil, l'offre, les pièces écrites et le dossier sont des données personnelles ou non fiables
-(17.2, 17.4) : jamais journalisés, ni ici ni par l'implémentation.
+The profile, the offer, the written pieces and the file are personal or untrusted data
+(17.2, 17.4): never logged, neither here nor by the implementation.
 
-- `context` : lecture seule ; 404 `application_not_found` si la fiche n'est pas à January.
-- `save_piece` : **idempotent par `(fiche, pièce, session)`** : un nœud rejoué après un arrêt
-  (SPEC 9.4) relit la ligne de sa session, n'en écrit pas une seconde ; une nouvelle session
-  remplace le contenu de la pièce (sauf si January l'a modifiée : `keep`). Rend l'id de la pièce.
-- `save_dossier` : `companies.dossier`, ses pages lues et sa date, idempotent par session.
+- `context`: read-only; 404 `application_not_found` if the record is not January's.
+- `save_piece`: **idempotent per `(record, piece, session)`**: a node replayed after a stop
+  (SPEC 9.4) rereads the row of its session and writes no second one; a new session
+  replaces the content of the piece (unless January edited it: `keep`). Returns the piece's id.
+- `save_dossier`: `companies.dossier`, its read pages and its date, idempotent per session.
 """
 
 from typing import Any, Protocol
@@ -47,7 +47,7 @@ def kit_unavailable() -> AppError:
 
 
 class _NoKit:
-    """Valeur par défaut du moteur (tests, démarrages sans la feature)."""
+    """Engine default value (tests, starts without the feature)."""
 
     async def context(self, user_id: str, application_id: str) -> KitContext:
         raise kit_unavailable()

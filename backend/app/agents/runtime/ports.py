@@ -1,6 +1,6 @@
-"""Ports des agents regroupés (D82) : tout ce que le moteur emprunte aux features passe par un
-seul objet, composé par `app.bootstrap.agent_ports` (le moteur n'importe aucune feature,
-contrat 6). Un port de plus = un champ ici, avec sa valeur « non branché », et une ligne dans
+"""Grouped agent ports (D82): everything the engine borrows from the features goes through one
+single object, composed by `app.bootstrap.agent_ports` (the engine imports no feature,
+contract 6). One more port = one field here, with its "not wired" value, and one line in
 `bootstrap.agent_ports`."""
 
 from dataclasses import dataclass
@@ -44,27 +44,27 @@ from app.agents.tools.web_port import NO_WEB, WebGateway
 
 @dataclass(frozen=True)
 class AgentPorts:
-    memory: MemoryGateway = NO_MEMORY  # mémoire (D68)
+    memory: MemoryGateway = NO_MEMORY  # memory (D68)
     web: WebGateway = NO_WEB  # recherche web (D77)
     council: CouncilStore = NO_COUNCIL  # Conseil d'apprentissage (D84)
-    program: ProgramStore = NO_PROGRAM  # programme du Stratège (D86)
-    lessons: LessonStore = NO_LESSONS  # leçons du Rédacteur (D90)
-    quiz: QuizStore = NO_QUIZ  # quiz de l'Examinateur (D100)
-    study: StudyStore = NO_STUDY  # sessions d'étude du Tuteur (D102)
-    replan: ReplanStore = NO_REPLAN  # replanification du Stratège (D105)
-    capture: CaptureStore = NO_CAPTURE  # capture rapide de l'Archiviste (D108)
-    gap: GapStore = NO_GAP  # analyse d'une offre et son écart (D121)
-    profile: ProfileStore = NO_PROFILE  # profil maître de l'Archiviste (D124)
-    cv_templates: CvTemplateStore = NO_CV_TEMPLATES  # gabarits du Maquettiste (D125)
-    cv_review: CvReviewStore = NO_CV_REVIEW  # revue du CV contre une offre (D129)
-    applications: ApplicationStore = NO_APPLICATIONS  # fiche créée en une phrase (D141)
-    kit: KitStore = NO_KIT  # kit de candidature (D142)
-    interviews: InterviewStore = NO_INTERVIEWS  # entretien blanc de l'Intervieweur (D145)
-    committee: CommitteeStore = NO_COMMITTEE  # comité de recrutement simulé (D147)
-    radar: RadarStore = NO_RADAR  # radar du marché : relevé, lecture, extraction (D159)
-    brief: BriefStore = NO_BRIEF  # brief du jour : ressource et conseil (D161)
-    projects: ProjectStore = NO_PROJECTS  # énoncé et évaluation des projets preuves (D165)
-    ide: IdeStore = NO_IDE  # professeur et exercices générés de l'IDE (D203)
+    program: ProgramStore = NO_PROGRAM  # Strategist's program (D86)
+    lessons: LessonStore = NO_LESSONS  # Writer's lessons (D90)
+    quiz: QuizStore = NO_QUIZ  # Examiner's quiz (D100)
+    study: StudyStore = NO_STUDY  # Tutor's study sessions (D102)
+    replan: ReplanStore = NO_REPLAN  # Strategist's replanning (D105)
+    capture: CaptureStore = NO_CAPTURE  # Archivist's quick capture (D108)
+    gap: GapStore = NO_GAP  # analysis of an offer and its gap (D121)
+    profile: ProfileStore = NO_PROFILE  # Archivist's master profile (D124)
+    cv_templates: CvTemplateStore = NO_CV_TEMPLATES  # layout designer's templates (D125)
+    cv_review: CvReviewStore = NO_CV_REVIEW  # CV review against an offer (D129)
+    applications: ApplicationStore = NO_APPLICATIONS  # record created in one sentence (D141)
+    kit: KitStore = NO_KIT  # application kit (D142)
+    interviews: InterviewStore = NO_INTERVIEWS  # mock interview by the Interviewer (D145)
+    committee: CommitteeStore = NO_COMMITTEE  # simulated hiring committee (D147)
+    radar: RadarStore = NO_RADAR  # market radar: survey, reading, extraction (D159)
+    brief: BriefStore = NO_BRIEF  # daily brief: resource and advice (D161)
+    projects: ProjectStore = NO_PROJECTS  # project brief and evaluation, proof projects (D165)
+    ide: IdeStore = NO_IDE  # IDE teacher and generated exercises (D203)
     boss: BossReviewPort = NO_BOSS
     code_trial: CodeTrialPort = NO_CODE_TRIAL
     conversations: ConversationStore = NO_CONVERSATION

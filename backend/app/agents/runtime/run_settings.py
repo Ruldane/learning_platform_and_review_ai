@@ -1,8 +1,8 @@
-"""Réglages de l'utilisatrice dont le moteur a besoin pour une exécution.
+"""User settings the engine needs for a run.
 
-Le moteur ne lit pas la feature `settings` (contrat d'import : `app.agents` n'importe jamais
-`app.features`) : la composition (`app.bootstrap`) lui fournit une `RunSettingsSource`, adaptée
-du service des réglages, comme la fabrique de modèles et la table des prix.
+The engine does not read the `settings` feature (import contract: `app.agents` never imports
+`app.features`): the composition (`app.bootstrap`) provides it with a `RunSettingsSource`, adapted
+from the settings service, like the model factory and the price table.
 """
 
 from dataclasses import dataclass
@@ -11,7 +11,7 @@ from typing import Protocol
 
 @dataclass(frozen=True)
 class RunSettings:
-    session_token_cap: int  # plafond de tokens par session (SPEC 9.3, 11.4)
+    session_token_cap: int  # token cap per session (SPEC 9.3, 11.4)
     debate_rounds: int
     lesson_language: str
     search_languages: tuple[str, ...]

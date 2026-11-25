@@ -1,12 +1,12 @@
-"""Parcours `gap_analysis` (SPEC 5.3 étape 1, F8, D121) : l'Analyste analyse une offre ajoutée
-par January, rattache ses compétences au référentiel, puis le code range l'écart et son score.
+"""Graph `gap_analysis` (SPEC 5.3 step 1, F8, D121): the Analyst analyzes an offer added
+by January, links its skills to the reference, then the code ranks the gap and its score.
 
-START -> load -> (analyse rangée ? match : analyze)
+START -> load -> (analysis stored ? match : analyze)
 analyze -> (offre d'emploi ? save_analysis : reject -> END)
 save_analysis -> match -> save_gap -> announce -> END
 
-Lancé seulement par la route de la feature `postings` (`ROUTE_ONLY`), qui vérifie l'offre.
-Aucun point d'arrêt ; les écritures du port sont idempotentes (SPEC 9.4)."""
+Started only by the `postings` feature route (`ROUTE_ONLY`), which checks the offer.
+No break point; port writes are idempotent (SPEC 9.4)."""
 
 from typing import Any
 

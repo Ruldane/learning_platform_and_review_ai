@@ -1,6 +1,6 @@
-"""Parcours `web_research` (D77) : l'Éclaireur cherche sur le web, lit, note chaque source sur 100
-et garde les retenues en mémoire (SPEC 10). Banc d'essai de la recherche web, réutilisé tel quel
-par le Conseil en phase 4. Aucune interruption.
+"""Graph `web_research` (D77): the Scout searches the web, reads, rates each source out of 100
+and keeps the selected ones in memory (SPEC 10). Test bench of web search, reused as is
+by the Council in phase 4. No interruption.
 
 START -> plan -> search -> read -> judge -> remember -> finalize -> END
 """
@@ -25,7 +25,7 @@ from app.agents.state.web_research import WebResearchState
 
 class WebResearchInput(BaseModel):
     query: str = Field(min_length=2, max_length=300)
-    urls: list[HttpUrl] = Field(default_factory=list, max_length=MAX_EXTRA_URLS)  # en plus
+    urls: list[HttpUrl] = Field(default_factory=list, max_length=MAX_EXTRA_URLS)  # on top
 
 
 def build(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:

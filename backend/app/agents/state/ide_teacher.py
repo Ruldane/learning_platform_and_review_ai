@@ -1,5 +1,5 @@
-"""État du parcours `ide_teacher` (10.A3). La séance, les fichiers et les notes sont en base (port
-`IdeStore`) : l'état ne garde que le résumé de `run.completed`."""
+"""State of the `ide_teacher` graph (10.A3). The session, files and notes live in the database (port
+`IdeStore`): the state keeps only the `run.completed` summary."""
 
 from typing import Protocol, TypedDict
 
@@ -17,6 +17,6 @@ class IdeTeacherState(TypedDict, total=False):
 
 
 class Node(Protocol):
-    """Forme d'un nœud (paramètre nommé `state`, comme l'attend `StateGraph.add_node`)."""
+    """Shape of a node (parameter named `state`, as `StateGraph.add_node` expects)."""
 
     async def __call__(self, state: IdeTeacherState) -> IdeTeacherState: ...

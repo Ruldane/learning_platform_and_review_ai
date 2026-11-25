@@ -1,16 +1,16 @@
-"""Parcours `interview` (SPEC F10, 9.4, D145) : un entretien blanc écrit, mené par l'Intervieweur.
+"""Graph `interview` (SPEC F10, 9.4, D145): a written mock interview led by the Interviewer.
 
 START -> load -> plan -> ask
-ask -> (réponse illisible : ask) | (réponse : turn) | (« Terminer l'entretien » : debrief)
-turn -> (relance ou question suivante : ask) | (plus de question : debrief)
+ask -> (unreadable answer: ask) | (answer: turn) | ("End the interview": debrief)
+turn -> (follow-up or next question: ask) | (no more questions: debrief)
 debrief -> save -> END
 
-`ask` pose la question par `interrupt()` (seul dans son nœud, SPEC 9.4) ; le plan, la question en
-cours et les échanges vivent dans l'état (checkpointer) : un redémarrage pendant l'attente repose
-la même question sans rien redemander au modèle. Une relance au plus par question. « Terminer »
-après au moins une réponse : débrief sur les questions répondues ; avant toute réponse : `save`
-range un entretien arrêté, sans débrief. `save` est la seule écriture, idempotente par session.
-Lancé seulement par la route de la feature `applications` (7.9, `ROUTE_ONLY`)."""
+`ask` asks the question with `interrupt()` (alone in its node, SPEC 9.4); the plan, the current
+question and the exchanges live in the state (checkpointer): a restart while waiting asks the
+same question again without asking the model anything. One follow-up at most per question. "End"
+after at least one answer: debrief on the answered questions; before any answer: `save`
+stores a stopped interview, without debrief. `save` is the only write, idempotent per session.
+Started only by the `applications` feature route (7.9, `ROUTE_ONLY`)."""
 
 from typing import Any, Literal
 

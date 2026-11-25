@@ -1,5 +1,5 @@
-"""État du parcours `ide_exercise` (10.A3) : seulement le résumé de `run.completed` (le brouillon,
-l'exercice rangé et ses tests passent par le port `IdeStore`)."""
+"""State of the `ide_exercise` graph (10.A3): only the `run.completed` summary (the draft,
+the stored exercise and its passing tests go through the `IdeStore` port)."""
 
 from typing import Protocol, TypedDict
 

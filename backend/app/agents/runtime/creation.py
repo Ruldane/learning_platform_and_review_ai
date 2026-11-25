@@ -1,4 +1,4 @@
-"""Écriture d'une session et, pour un lancement lié, de sa réservation métier."""
+"""Writing a session and, for a linked launch, its business reservation."""
 
 from collections.abc import Awaitable, Callable
 from typing import Any
@@ -49,8 +49,8 @@ async def persist_session(
         if prepare is None:
             sid = (await SessionRepository(db, user_id).add(**fields)).id
         else:
-            # La session et les événements qu'elle écrit forment l'historique du moteur.
-            # L'annulation MCP de l'appel suit la réservation métier enregistrée par prepare.
+            # The session and the events it writes form the engine's history.
+            # The MCP cancellation of the call follows the reservation recorded by prepare.
             sid = new_id()
             await db.execute(insert(AgentSession).values(id=sid, user_id=user_id, **fields))
             await prepare(db, sid)

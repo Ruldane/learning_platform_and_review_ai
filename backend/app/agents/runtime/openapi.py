@@ -6,11 +6,11 @@ from app.agents.runtime.events import SESSION_EVENT_ADAPTER
 
 
 def register_event_schemas(app: FastAPI) -> None:
-    """Ajoute `SessionEvent` et ses variantes à `components.schemas` de l'OpenAPI.
+    """Adds `SessionEvent` and its variants to the OpenAPI `components.schemas`.
 
-    Le WebSocket n'apparaît pas dans l'OpenAPI : c'est ainsi que le front reçoit les types des
-    événements (D10). Le mode « serialization » rend obligatoires les champs ayant une valeur par
-    défaut, car le serveur les envoie toujours.
+    The WebSocket does not appear in the OpenAPI: this is how the front end receives the types of
+    events (D10). The "serialization" mode makes mandatory the fields that have a default value,
+    since the server always sends them.
     """
     original = app.openapi
 

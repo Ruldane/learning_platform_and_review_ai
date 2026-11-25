@@ -1,15 +1,15 @@
-"""Port du comité de recrutement simulé (SPEC F19, D147). `app.agents` n'importe aucune feature
-(contrat 6) : il décrit ici ce dont le parcours `hiring_committee` a besoin ; la feature
-`applications` l'implémente (`AgentCommitteeStore`, tâche 7.10).
+"""Port of the simulated hiring committee (SPEC F19, D147). `app.agents` imports no feature
+(contract 6): it describes here what the `hiring_committee` graph needs; the `applications`
+feature implements it (`AgentCommitteeStore`, task 7.10).
 
-Le CV, l'offre, le dossier, les paroles des personas et le profil sont des données personnelles ou
-non fiables (17.2, 17.4) : jamais journalisés, ni ici ni par l'implémentation.
+The CV, the offer, the file, the personas' words and the profile are personal or untrusted data
+(17.2, 17.4): never logged, neither here nor by the implementation.
 
-- `context` : lecture seule ; 404 `committee_not_found` si l'exécution n'est pas à January.
-- `save_result` : **idempotent par session** : un nœud rejoué après un arrêt (SPEC 9.4) relit
-  l'issue de sa session, n'écrit ni second vote, ni seconde synthèse, ni second événement. Range
-  les quatre votes, le verdict, les objections classées et les trois changements, passe
-  l'exécution à `done` et, si l'offre a une fiche, ajoute l'événement `committee` à son fil."""
+- `context`: read-only; 404 `committee_not_found` if the run is not January's.
+- `save_result`: **idempotent per session**: a node replayed after a stop (SPEC 9.4) rereads
+  the outcome of its session, writes no second vote, summary or event. Stores
+  the four votes, the verdict, the ranked objections and the three changes, moves the
+  run to `done` and, if the offer has a record, adds the `committee` event to its thread."""
 
 from typing import Protocol
 
@@ -37,7 +37,7 @@ def committee_unavailable() -> AppError:
 
 
 class _NoCommittee:
-    """Valeur par défaut du moteur (tests, démarrages sans la feature)."""
+    """Engine default value (tests, starts without the feature)."""
 
     async def context(self, user_id: str, run_id: str) -> CommitteeContext:
         raise committee_unavailable()

@@ -1,13 +1,13 @@
-"""Port du profil maître (SPEC 5.1, D124). `app.agents` n'importe aucune feature (contrat 6) : il
-décrit ici ce dont l'Archiviste a besoin en mode `profile` (le texte des documents de January,
-la dernière version validée, l'écriture du brouillon) ; la feature `cv` l'implémente
+"""Port of the master profile (SPEC 5.1, D124). `app.agents` imports no feature (contract 6): it
+describes here what the Archivist needs in `profile` mode (January's document text, the last
+validated version, the draft write); the `cv` feature implements it
 (`AgentProfileStore`, 6.8).
 
-Le texte d'un CV, d'un profil LinkedIn et la note de January sont des données personnelles et un
-contenu non fiable (17.2, 17.4) : jamais journalisés, ni ici ni par l'implémentation.
+The text of a CV, of a LinkedIn profile and January's note are personal data and untrusted
+content (17.2, 17.4): never logged, neither here nor by the implementation.
 
-`save_draft` est idempotent par session : un nœud rejoué après un arrêt (SPEC 9.4) rend le numéro
-du brouillon déjà écrit, sans en écrire un second."""
+`save_draft` is idempotent per session: a node replayed after a stop (SPEC 9.4) returns the number
+of the draft already written, without writing a second one."""
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
@@ -17,24 +17,24 @@ from app.agents.tools.cv_schema import MasterProfileData
 from app.core.errors import AppError
 
 SourceKind = Literal["cv", "linkedin", "note"]
-MAX_SOURCE_CHARS = 40_000  # texte d'une source montré à l'Archiviste (coupé au-delà)
+MAX_SOURCE_CHARS = 40_000  # text of a source shown to the Archivist (cut beyond)
 MAX_NOTE_CHARS = 4_000
-MAX_HIDDEN_LINES = 20  # lignes de texte invisible gardées pour les montrer à January
+MAX_HIDDEN_LINES = 20  # lines of invisible text kept to show them to January
 
 
 @dataclass(frozen=True)
 class ProfileSource:
-    """Une source du profil : le texte visible d'un PDF (dans l'ordre du flux) ou la note."""
+    """A profile source: the visible text of a PDF (in stream order) or the note."""
 
     kind: SourceKind
-    text: str  # `MAX_SOURCE_CHARS` au plus
+    text: str  # `MAX_SOURCE_CHARS` at most
 
 
 @dataclass(frozen=True)
 class ProfileSources:
-    """Les sources dans l'ordre CV, LinkedIn, note ; `previous` : dernière version validée.
-    `hidden` : texte des lignes invisibles des PDF (texte blanc, minuscule, hors page), jamais
-    montré à l'Archiviste et signalé à January dans `dropped` (preflight G6)."""
+    """The sources in CV, LinkedIn, note order; `previous`: last validated version.
+    `hidden`: text of the invisible lines of PDFs (white text, tiny, off page), never
+    shown to the Archivist and reported to January in `dropped` (preflight G6)."""
 
     sources: list[ProfileSource]
     previous: MasterProfileData | None
@@ -45,17 +45,17 @@ class ProfileStore(Protocol):
     async def sources(
         self, user_id: str, document_ids: Sequence[str], note: str | None
     ) -> ProfileSources:
-        """Les PDF rangés dans la mémoire, relus par leur fichier et la mise en page (blocs
-        visibles seulement), coupés à `MAX_SOURCE_CHARS` ; la note en dernier. Document absent
-        ou d'une autre : 404 `document_not_found` ; PDF illisible : `PdfUnreadable`."""
+        """The PDFs stored in memory, reread by their file and layout (visible blocks
+        only), cut at `MAX_SOURCE_CHARS`; the note last. Missing document or another's:
+        404 `document_not_found`; unreadable PDF: `PdfUnreadable`."""
         ...
 
     async def save_draft(
         self, user_id: str, session_id: str, draft: MasterProfileData, dropped: Sequence[str]
     ) -> int:
-        """Idempotent par session (brouillon déjà écrit → son numéro). Fusion avec la dernière
-        version validée (un fait au même texte normalisé garde son id), ids neufs jamais repris
-        d'une version passée (`assign_fact_ids` en dernier) ; rend le numéro de version."""
+        """Idempotent per session (draft already written -> its number). Merge with the last
+        validated version (a fact with the same normalized text keeps its id), new ids never reused
+        from a past version (`assign_fact_ids` last); returns the version number."""
         ...
 
 
@@ -66,7 +66,7 @@ def profile_unavailable() -> AppError:
 
 
 class _NoProfile:
-    """Valeur par défaut du moteur (tests, démarrages sans la feature)."""
+    """Engine default value (tests, starts without the feature)."""
 
     async def sources(
         self, user_id: str, document_ids: Sequence[str], note: str | None

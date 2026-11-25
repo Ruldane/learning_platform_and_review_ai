@@ -1,10 +1,10 @@
-"""Message multimodal pour un modèle qui lit les images (niveau `vision`, D125) : un texte suivi
-d'images PNG en base64, sous la forme **commune** des blocs de contenu de LangChain
-(`{"type": "image", "base64": …, "mime_type": "image/png"}`, documentation « Messages » de
-LangChain 1.x, vérifiée par context7) : `ChatOpenAI` (et donc GLM par `base_url`) la convertit en
+"""Multimodal message for a model that reads images (`vision` level, D125): a text followed
+by PNG images in base64, in the **common** form of LangChain's content blocks
+(`{"type": "image", "base64": …, "mime_type": "image/png"}`, the "Messages" documentation of
+LangChain 1.x, checked via context7): `ChatOpenAI` (and so GLM through `base_url`) converts it to
 `image_url` `data:`, `ChatAnthropic` en bloc `image` base64.
 
-Les images d'un CV sont des données personnelles : jamais journalisées."""
+Images of a CV are personal data: never logged."""
 
 import base64
 from collections.abc import Sequence
@@ -12,7 +12,7 @@ from typing import Any
 
 from langchain_core.messages import HumanMessage
 
-MAX_IMAGES = 4  # un CV de 4 pages (`MAX_CV_PAGES`), ou 2 pages d'origine et 2 pages du rendu
+MAX_IMAGES = 4  # a 4-page CV (`MAX_CV_PAGES`), or 2 original pages and 2 rendered pages
 PNG_MIME = "image/png"
 
 
@@ -21,7 +21,7 @@ def image_block(png: bytes) -> dict[str, Any]:
 
 
 def image_message(text: str, images: Sequence[bytes]) -> HumanMessage:
-    """`text`, puis les `MAX_IMAGES` premières images de `images` (au-delà : ignorées ; l'appelant
+    """`text`, then the first `MAX_IMAGES` images of `images` (beyond: ignored; the caller
     choisit l'ordre)."""
     content: list[str | dict[str, Any]] = [{"type": "text", "text": text}]
     content += [image_block(png) for png in images[:MAX_IMAGES]]

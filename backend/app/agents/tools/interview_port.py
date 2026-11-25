@@ -1,19 +1,19 @@
-"""Port de l'entretien blanc (SPEC F10, D145). `app.agents` n'importe aucune feature (contrat 6) :
-il décrit ici ce dont le parcours `interview` a besoin ; la feature `applications` l'implémente
-(`AgentInterviewStore`, tâche 7.9).
+"""Port of the mock interview (SPEC F10, D145). `app.agents` imports no feature (contract 6):
+it describes here what the `interview` graph needs; the `applications` feature implements it
+(`AgentInterviewStore`, task 7.9).
 
-Les réponses de January, l'offre, le profil et le dossier sont des données personnelles ou non
-fiables (17.2, 17.4) : jamais journalisés, ni ici ni par l'implémentation.
+January's answers, the offer, the profile and the file are personal or untrusted data
+(17.2, 17.4): never logged, neither here nor by the implementation.
 
-- `context` : lecture seule ; 404 `interview_not_found` si l'entretien n'est pas à January.
-- `save_result` : **idempotent par session** : un nœud rejoué après un arrêt (SPEC 9.4) relit
-  l'issue de sa session, n'écrit ni second débrief ni seconde fiche. `debrief=None` et
-  `exchanges=[]` : entretien arrêté avant la première réponse (`stopped`, rien d'autre : ni
-  échange, ni fiche, ni événement) ; `debrief=None` avec des échanges : le débrief a échoué,
-  entretien `debrief_failed` (les réponses sont gardées, ni fiche, ni événement de débrief) ;
-  sinon entretien `done` avec ses échanges, son débrief, les termes que le profil ne
-  dit pas dans la réponse améliorée (`flags` : réponse « à vérifier ») et les fiches de révision
-  des questions ratées (source `interview`)."""
+- `context`: read-only; 404 `interview_not_found` if the interview is not January's.
+- `save_result`: **idempotent per session**: a node replayed after a stop (SPEC 9.4) rereads
+  the outcome of its session, writes no second debrief or second card. `debrief=None` and
+  `exchanges=[]`: interview stopped before the first answer (`stopped`, nothing else: no
+  exchange, no card, no event); `debrief=None` with exchanges: the debrief failed,
+  interview `debrief_failed` (the answers are kept, no card, no debrief event); otherwise
+  interview `done` with its exchanges, its debrief, the terms the profile does not state in the
+  improved answer (`flags`: answer "to verify") and the review cards of the missed questions
+  (source `interview`)."""
 
 from typing import Protocol
 
@@ -57,7 +57,7 @@ def interview_unavailable() -> AppError:
 
 
 class _NoInterviews:
-    """Valeur par défaut du moteur (tests, démarrages sans la feature)."""
+    """Engine default value (tests, starts without the feature)."""
 
     async def freeze_design(
         self, user_id: str, session_id: str, interview_id: str, submission: SystemDesignSubmission

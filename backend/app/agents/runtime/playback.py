@@ -1,4 +1,4 @@
-"""Reprise des appels modèle, distincte des réponses de l'utilisatrice."""
+"""Replay of model calls, separate from the user's answers."""
 
 import sys
 from collections.abc import Sequence
@@ -20,9 +20,9 @@ from app.db.models.agents import AgentSession, LlmCall
 
 
 def models_for(row: AgentSession, usual: ChatModelSource) -> ChatModelSource:
-    """La source des modèles de la session, et sa source de parcours rétablie dans le contexte
-    de son exécution (reprise, redémarrage) : client joué, ou fournisseur forcé lu par la
-    fabrique, ou rien (réglages)."""
+    """The session's model source, and its graph source restored in the context of its run
+    (resume, restart): played client, forced provider read by the factory, or nothing
+    (settings)."""
     if row.played_by is not None:
         if as_client(row.played_by) is None:
             raise AppError("unknown_play_client", "Unknown MCP client.", 409)
@@ -31,8 +31,8 @@ def models_for(row: AgentSession, usual: ChatModelSource) -> ChatModelSource:
     provider = as_provider(row.model_provider)
     if row.model_provider is not None and provider is None:
         raise AppError("unknown_model_provider", "Unknown provider for this workflow.", 409)
-    # Toujours posé : le menu d'une requête plus tardive (réponse, reprise) ne change pas la
-    # source d'un parcours déjà lancé.
+    # Always set: the menu of a later request (answer, resume) does not change the
+    # source of a graph already started.
     PLAY_CONTEXT.set(PlayContext(row.user_id, None, provider=provider))
     return usual
 
@@ -57,7 +57,7 @@ def submission_problem(brief: dict[str, Any], response: str) -> str:
     ref = brief.get("schema_ref")
     if not ref:
         return "" if response.strip() else "The reply is empty."
-    # Les schémas qui dépendent de l'état (entretien, candidature) sont recréés par le nœud.
+    # Schemas that depend on the state (interview, application) are recreated by the node.
     if "<locals>" in ref[1]:
         return "" if extract_json_object(response) is not None else "No JSON object found."
     schema = getattr(sys.modules.get(ref[0]), ref[1], None)

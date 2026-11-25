@@ -1,13 +1,13 @@
-"""Port des quiz (D100). `app.agents` n'importe aucune feature (contrat 6) : il décrit ici ce dont
-le parcours `quiz` a besoin (le module et sa leçon, le rangement du quiz, son échec, la tentative à
-noter, le rangement des notes) ; la feature `quiz` l'implémentera (tâche 5.4).
+"""Port for quizzes (D100). `app.agents` imports no feature (contract 6): it describes here what
+the `quiz` graph needs (the module and its lesson, storing the quiz, its failure, the attempt to
+grade, storing the grades); the `quiz` feature will implement it (task 5.4).
 
-Chaque écriture est idempotente (clé : le quiz, la tentative) : un nœud rejoué après un arrêt
-(SPEC 9.4) rend la même chose, jamais une question, une fiche ni une note de plus.
+Each write is idempotent (key: the quiz, the attempt): a node replayed after a stop
+(SPEC 9.4) returns the same thing, never one more question, card or grade.
 
-Texte libre lu par January (réponse attendue, grille, explication, retour) : `Prose`, raccourci
-plutôt que refusé (D97 n° 10). Énoncés, choix de QCM, code, compétences et références restent
-refusés puis redemandés : couper l'un d'eux le rendrait faux.
+Free text read from January (expected answer, grid, explanation, feedback): `Prose`, shortened
+rather than refused (D97 no. 10). Statements, multiple-choice options, code, skills and references
+stay refused and are asked again: cutting one of them would make it false.
 """
 
 from collections.abc import Mapping
@@ -21,15 +21,15 @@ from app.agents.tools.study_schema import CardDraft
 from app.core.errors import AppError
 from app.db.models.study import QuestionType
 
-MIN_TYPES = 3  # au moins 3 types sur 4 : un module sans code n'a pas de lecture de code
-# Bornes du quiz, lues aussi par l'écriture directe (`features/quiz`) : un quiz écrit à la main ne
-# s'ouvre aux tentatives (donc aux acquis) qu'à ces bornes.
+MIN_TYPES = 3  # at least 3 types out of 4: a module without code has no code reading
+# Quiz bounds, also read by direct writing (`features/quiz`): a quiz written by hand only opens
+# to attempts (so to acquired skills) within these bounds.
 MIN_QUESTIONS = 8
 MAX_QUESTIONS = 12
 MIN_PROMPT_CHARS = 10
 MIN_CHOICES = 3
 MAX_CHOICES = 5
-OPEN_SCORES = (0.0, 0.5, 1.0)  # notes d'une réponse ouverte
+OPEN_SCORES = (0.0, 0.5, 1.0)  # scores of an open answer
 
 Choice = Annotated[str, Field(min_length=1, max_length=200)]
 Criterion = Annotated[str, Field(min_length=1, max_length=200), ShortenToMax()]
@@ -59,7 +59,7 @@ class QuizDraft(BaseModel):
 
 
 def _question_problems(number: int, question: QuestionDraft) -> list[str]:
-    """Problèmes d'une question, sans recopier son contenu (rendus au modèle, journalisés)."""
+    """Problems of a question, without copying its content (returned to the model, logged)."""
     where = f"Question {number} ({question.type})"
     if question.type == "mcq":
         distinct = {" ".join(c.casefold().split()) for c in question.choices}
@@ -101,20 +101,20 @@ def quiz_problems(draft: QuizDraft) -> list[str]:
 
 @dataclass(frozen=True)
 class ModuleMaterial:
-    """Le module dont on écrit le quiz, et sa leçon publiée."""
+    """The module whose quiz is written, and its published lesson."""
 
     quiz_id: str
     module_title: str
     skills: list[str]
     lesson_markdown: str
-    language: str  # langue des leçons (`lesson_language` des réglages)
+    language: str  # lesson language (`lesson_language` setting)
 
 
 @dataclass(frozen=True)
 class GradingItem:
-    """Une question ouverte à noter, avec la réponse de January (contenu non fiable)."""
+    """An open question to grade, with January's answer (untrusted content)."""
 
-    ref: str  # « q3 » : rang de la question dans le quiz
+    ref: str  # "q3": rank of the question in the quiz
     type: QuestionType
     prompt: str
     code: str | None
@@ -127,9 +127,9 @@ class GradingItem:
 class AttemptToGrade:
     attempt_id: str
     module_title: str
-    open_items: list[GradingItem]  # questions ouvertes seulement : un QCM n'est jamais envoyé
-    qcm_points: dict[str, float]  # ref → 0 ou 1, notés par le code
-    lesson_markdown: str  # la leçon du module (F12) : noter « explique avec tes mots » sur le sens
+    open_items: list[GradingItem]  # open questions only: a multiple choice is never sent
+    qcm_points: dict[str, float]  # ref -> 0 or 1, graded by the code
+    lesson_markdown: str  # the module's lesson (F12): grade "explain in your own words" on meaning
 
 
 def _on_scale(score: float) -> float:
@@ -138,13 +138,13 @@ def _on_scale(score: float) -> float:
     return score
 
 
-# `Literal[0, 0.5, 1]` au schéma JSON, mais un nombre pour mypy (un `Literal` n'admet pas 0.5).
+# `Literal[0, 0.5, 1]` in the JSON schema, but a number for mypy (a `Literal` does not accept 0.5).
 Score = Annotated[float, AfterValidator(_on_scale), WithJsonSchema({"enum": [0, 0.5, 1]})]
 
 
 class GradeDraft(BaseModel):
     ref: str = Field(pattern=r"^q\d{1,2}$")
-    score: Score  # hors de {0 ; 0,5 ; 1} : refusée, redemandée
+    score: Score  # outside {0; 0.5; 1}: refused, asked again
     feedback: Prose = Field(min_length=1, max_length=600)
 
 
@@ -163,21 +163,21 @@ class GradedSaved:
 
 class QuizStore(Protocol):
     async def material(self, user_id: str, quiz_id: str) -> ModuleMaterial:
-        """Le module du quiz et sa leçon ; `quiz_not_found` (404) s'il n'est pas à lui."""
+        """The quiz's module and its lesson; `quiz_not_found` (404) if it is not theirs."""
         ...
 
     async def save_quiz(self, user_id: str, session_id: str, quiz_id: str, draft: QuizDraft) -> int:
-        """Range questions et fiches et rend le nombre de questions. Idempotent : un quiz déjà
-        `ready` rend son nombre de questions sans rien écrire. Une compétence hors du module est
-        rattachée à la première du module."""
+        """Stores questions and cards; returns the number of questions. Idempotent: a quiz already
+        `ready` returns its number of questions without writing anything. A skill outside the module
+        is attached to the module's first one."""
         ...
 
     async def quiz_failed(self, user_id: str, quiz_id: str, reason: str) -> None:
-        """Marque le quiz en échec avec une raison lisible ; idempotent."""
+        """Marks the quiz as failed with a readable reason; idempotent."""
         ...
 
     async def attempt(self, user_id: str, attempt_id: str) -> AttemptToGrade:
-        """La tentative à noter ; `attempt_not_found` (404) si elle n'est pas à lui."""
+        """The attempt to grade; `attempt_not_found` (404) if it is not theirs."""
         ...
 
     async def save_grades(
@@ -187,9 +187,9 @@ class QuizStore(Protocol):
         attempt_id: str,
         grades: Mapping[str, tuple[float, str]],
     ) -> GradedSaved:
-        """Range les notes de toutes les questions, ref → (note, retour) : QCM par le code
-        (retour vide, l'explication de la question suffit), ouvertes par l'Examinateur.
-        Idempotent par tentative : une tentative déjà notée rend sa note sans rien écrire."""
+        """Stores the grades of all questions, ref -> (grade, feedback): multiple choice by the code
+        (empty feedback, the question's explanation is enough), open ones by the Examiner.
+        Idempotent per attempt: an already graded attempt returns its grade, writing nothing."""
         ...
 
 
@@ -198,7 +198,7 @@ def quiz_unavailable() -> AppError:
 
 
 class _NoQuiz:
-    """Valeur par défaut du moteur (tests existants, démarrages sans la feature `quiz`)."""
+    """Engine default value (existing tests, starts without the `quiz` feature)."""
 
     async def material(self, user_id: str, quiz_id: str) -> ModuleMaterial:
         raise quiz_unavailable()

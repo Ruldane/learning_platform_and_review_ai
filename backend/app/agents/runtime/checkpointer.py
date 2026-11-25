@@ -1,5 +1,5 @@
-"""Checkpointer des graphes : SQLite asynchrone dans `checkpoints.db`, séparé de la base métier
-(SPEC 9.4). Le fil (`thread_id`) d'une session est son identifiant."""
+"""Graph checkpointer: async SQLite in `checkpoints.db`, separated from the business database
+(SPEC 9.4). The thread (`thread_id`) of a session is its identifier."""
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -13,11 +13,11 @@ from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
 @asynccontextmanager
 async def open_checkpointer(path: Path) -> AsyncIterator[BaseCheckpointSaver[Any]]:
-    """Ouvre (et crée au besoin, dossier compris) le fichier ; une seule connexion `aiosqlite`
-    partagée par toutes les sessions du processus, fermée à la sortie."""
+    """Opens (and creates if needed, folder included) the file; a single `aiosqlite` connection
+    shared by all sessions of the process, closed on exit."""
     path.parent.mkdir(parents=True, exist_ok=True)
     async with AsyncSqliteSaver.from_conn_string(str(path)) as saver:
-        await saver.setup()  # tables et WAL tout de suite, pas au premier graphe
+        await saver.setup()  # tables and WAL right away, not at the first graph
         yield saver
 
 

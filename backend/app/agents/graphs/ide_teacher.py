@@ -1,11 +1,11 @@
-"""Parcours `ide_teacher` (10.A3) : le professeur de l'IDE. Un seul nœud, un seul appel de modèle
-par déclenchement.
+"""Graph `ide_teacher` (10.A3): the IDE teacher. One node, one model call
+per trigger.
 
 START -> teach -> END
 
-Aucune interruption, aucune boucle. Lancé seulement par `POST /ide/sessions/{id}/teach`
-(`ROUTE_ONLY`), qui applique la barrière de coût (déclencheurs, plafonds, anti-répétition, un seul
-appel à la fois) avant de lancer la session."""
+No interruption, no loop. Started only by `POST /ide/sessions/{id}/teach`
+(`ROUTE_ONLY`), which applies the cost gate (triggers, caps, anti-repetition, one
+call at a time) before starting the session."""
 
 from typing import Any, Literal
 
@@ -26,8 +26,8 @@ class IdeTeacherInput(BaseModel):
     file_path: str | None = Field(default=None, max_length=200)
     line: int | None = Field(default=None, ge=1)
     run_id: str | None = Field(default=None, max_length=36)
-    error_key: str | None = Field(default=None, max_length=64)  # fixé par la barrière
-    level: int | None = Field(default=None, ge=1, le=3)  # niveau de l'indice, fixé par la barrière
+    error_key: str | None = Field(default=None, max_length=64)  # set by the gate
+    level: int | None = Field(default=None, ge=1, le=3)  # hint level, set by the gate
 
 
 def build(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:

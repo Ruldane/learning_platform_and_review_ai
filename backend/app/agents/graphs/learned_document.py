@@ -1,5 +1,5 @@
-"""Parcours `learned_document` (D68) : un document marqué « déjà appris » devient des acquis
-au niveau `declare` (SPEC 4.3), écrits par l'Archiviste avec leur raison. Aucune interruption.
+"""Graph `learned_document` (D68): a document marked "already learned" becomes skills
+at the `declare` level (SPEC 4.3), written by the Archivist with their reason. No interruption.
 
 START -> load_context -> extract -> write -> finalize -> END
 """

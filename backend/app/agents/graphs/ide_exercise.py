@@ -1,9 +1,9 @@
-"""Parcours `ide_exercise` (10.A3) : le rédacteur d'exercices écrit un exercice sur un sujet, le
-bac à sable en vérifie la solution, l'exercice est rangé.
+"""Graph `ide_exercise` (10.A3): the exercise writer writes an exercise on a topic, the
+sandbox checks its solution, and the exercise is stored.
 
 START -> write -> END
 
-Aucune interruption. Lancé seulement par `POST /ide/exercises/generate` (`ROUTE_ONLY`)."""
+No interruption. Started only by `POST /ide/exercises/generate` (`ROUTE_ONLY`)."""
 
 from typing import Any, Literal
 

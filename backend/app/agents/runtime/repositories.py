@@ -14,10 +14,10 @@ class SessionRepository(UserScopedRepository[AgentSession]):
     async def add_usage(
         self, session_id: str, *, tokens_in: int, tokens_out: int, cost_usd: float
     ) -> tuple[int, int, float] | None:
-        """Ajoute une consommation aux cumuls de la session et renvoie les nouveaux cumuls
-        `(tokens_in, tokens_out, cost_usd)`, `None` si elle n'existe pas pour cet utilisateur.
+        """Adds a consumption to the session's totals and returns the new totals
+        `(tokens_in, tokens_out, cost_usd)`, `None` if it does not exist for this user.
 
-        Un seul `UPDATE` relatif : deux appels concurrents ne s'écrasent pas.
+        A single relative `UPDATE`: two concurrent calls do not overwrite each other.
         """
         stmt = (
             update(AgentSession)
@@ -34,8 +34,8 @@ class SessionRepository(UserScopedRepository[AgentSession]):
         return None if row is None else (row[0], row[1], row[2])
 
     async def open_ids(self, statuses: Collection[str]) -> list[str]:
-        """Les identifiants des sessions de l'utilisateur dont le statut est dans `statuses`, dans
-        l'ordre de leur création."""
+        """IDs of the user's sessions whose status is in `statuses`, in
+        creation order."""
         stmt = (
             select(AgentSession.id)
             .where(AgentSession.user_id == self.user_id, AgentSession.status.in_(list(statuses)))
@@ -46,9 +46,9 @@ class SessionRepository(UserScopedRepository[AgentSession]):
     async def transition(
         self, session_id: str, *, from_: Collection[str], to: str, **values: Any
     ) -> bool:
-        """Passe la session au statut `to` (en écrivant `values`) seulement si son statut est
-        dans `from_` ; `True` si c'est fait. Un seul `UPDATE` conditionnel : de deux transitions
-        concurrentes (double clic, pause pendant la fin du graphe), une seule l'emporte."""
+        """Sets the session to status `to` (writing `values`) only if its status is
+        in `from_`; `True` if done. A single conditional `UPDATE`: of two concurrent
+        transitions (double click, pause during the end of the graph), only one wins."""
         stmt = (
             update(AgentSession)
             .where(
@@ -69,8 +69,8 @@ class EventRepository(UserScopedRepository[SessionEventRecord]):
     async def list_after(
         self, session_id: str, after_seq: int, limit: int | None = None
     ) -> list[SessionEventRecord]:
-        """Événements de la session dont `seq` dépasse `after_seq`, par `seq` croissant
-        (au plus `limit` s'il est donné : le rejeu lit par lots)."""
+        """Session events whose `seq` exceeds `after_seq`, by increasing `seq`
+        (at most `limit` if given: replay reads in batches)."""
         stmt = (
             select(SessionEventRecord)
             .where(
@@ -84,7 +84,7 @@ class EventRepository(UserScopedRepository[SessionEventRecord]):
         return list((await self.session.execute(stmt)).scalars().all())
 
     async def max_seq(self, session_id: str) -> int:
-        """Plus grand `seq` de la session, 0 si elle n'a aucun événement."""
+        """Highest `seq` of the session, 0 if it has no event."""
         stmt = select(func.coalesce(func.max(SessionEventRecord.seq), 0)).where(
             SessionEventRecord.user_id == self.user_id,
             SessionEventRecord.session_id == session_id,
@@ -92,7 +92,7 @@ class EventRepository(UserScopedRepository[SessionEventRecord]):
         return int((await self.session.execute(stmt)).scalar_one())
 
     async def last_seq_of(self, session_id: str, types: Collection[str]) -> int | None:
-        """`seq` du dernier événement de l'un de ces types, `None` s'il n'y en a aucun."""
+        """`seq` of the last event of one of these types, `None` if there is none."""
         stmt = select(func.max(SessionEventRecord.seq)).where(
             SessionEventRecord.user_id == self.user_id,
             SessionEventRecord.session_id == session_id,
@@ -106,8 +106,8 @@ class LlmCallRepository(UserScopedRepository[LlmCall]):
     model = LlmCall
 
     async def usage_of_session(self, session_id: str) -> tuple[str | None, int]:
-        """`(modèle du dernier appel, tokens entrée + sortie)` de la session : ce que le journal
-        d'un appel du professeur dit (jamais un texte). `(None, 0)` sans appel journalisé."""
+        """`(model of the last call, input + output tokens)` of the session: what the journal
+        of a teacher call says (never a text). `(None, 0)` without a logged call."""
         stmt = (
             select(LlmCall.model, LlmCall.tokens_in + LlmCall.tokens_out)
             .where(LlmCall.user_id == self.user_id, LlmCall.session_id == session_id)
@@ -118,11 +118,11 @@ class LlmCallRepository(UserScopedRepository[LlmCall]):
 
 
 async def list_sessions_to_recover(db: AsyncSession) -> list[tuple[str, str]]:
-    """`(user_id, session_id)` des sessions `running`, tous utilisateurs confondus.
+    """`(user_id, session_id)` of the `running` sessions, all users included.
 
-    Seule requête du projet qui ne filtre pas par `user_id` : elle est réservée au démarrage
-    du serveur, quand le runner reprend les sessions interrompues par un arrêt. Ne jamais
-    l'appeler depuis une requête d'un utilisateur.
+    The project's only query that does not filter by `user_id`: it is reserved for server startup,
+    when the runner resumes the sessions interrupted by a stop. Never
+    call it from a user's request.
     """
     stmt = select(AgentSession.user_id, AgentSession.id).where(AgentSession.status == "running")
     return [(user_id, session_id) for user_id, session_id in (await db.execute(stmt)).all()]

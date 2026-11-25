@@ -1,8 +1,8 @@
-"""Parcours de démonstration `demo_debate` : le Défenseur et le Critique débattent d'un sujet ;
-entre deux tours, l'utilisatrice choisit l'angle du suivant (point d'arrêt `interrupt`).
+"""Demo graph `demo_debate`: the Defender and the Critic debate a topic;
+between two turns, the user picks the angle of the next one (break point `interrupt`).
 
 START -> proponent -> critic -> (ask_user -> proponent -> critic)* -> finalize -> END
-Le nombre de tours est le réglage `debate_rounds` de l'utilisatrice.
+The number of turns is the user's `debate_rounds` setting.
 """
 
 from typing import Any
@@ -28,7 +28,7 @@ def _question(next_round: int) -> str:
 
 
 def _ask_user(state: DemoDebateState) -> DemoDebateState:
-    # Rien avant `interrupt()` : le nœud est rejoué depuis son début à la reprise.
+    # Nothing before `interrupt()`: the node is replayed from its start on resume.
     choice = interrupt(
         {
             "kind": "choice",

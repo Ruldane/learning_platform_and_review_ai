@@ -1,6 +1,6 @@
-"""État du parcours `replan` (D105). Le plan est en base (port `ReplanStore`) : l'état garde
-l'instantané du contexte (les références `t12`, `m3` et leurs ids, F7), l'option choisie, le
-dernier brouillon du Stratège (à passer au nœud `preview`), la version proposée et la réponse de
+"""State of the `replan` graph (D105). The plan is in the database (`ReplanStore`); the state keeps
+the context snapshot (the references `t12`, `m3` and their ids, F7), the chosen option, the
+Strategist's last draft (to pass to the `preview` node), the proposed version and January's answer.
 January."""
 
 from typing import Any, TypedDict
@@ -8,19 +8,19 @@ from typing import Any, TypedDict
 
 class ReplanState(TypedDict, total=False):
     program_id: str
-    trigger: str  # `weekly_review`, `message` ou `gap`
+    trigger: str  # `weekly_review`, `message` or `gap`
     review_entry_id: str | None
     available_minutes: int | None
     message: str | None
-    skills: list[str]  # déclencheur `gap` : compétences des offres à ajouter (D123)
-    context: dict[str, Any]  # `ReplanContext` en JSON (dates ISO) : l'instantané des références
-    option: str | None  # option choisie par January ; None : aucune (ou réponse invalide)
-    revision: int  # 0 : première proposition ; +1 à chaque révision ou proposition périmée
-    note: str  # note de révision de January (vide sinon)
-    stale: bool  # la proposition précédente était périmée (lignes changées)
-    draft: dict[str, Any]  # `ReplanDraft` en JSON : le dernier brouillon, droits appliqués
-    preview: dict[str, Any]  # `PreviewSaved` en JSON : la version proposée
-    answer: dict[str, Any] | None  # `AcceptAnswer` en JSON ; None : réponse invalide
-    hint: str  # aide ajoutée à la question d'acceptation reposée (note vide, D106)
-    outcome: str  # `empty`, `impossible`, `finished`, `accepted`, `refused` : la fin du parcours
+    skills: list[str]  # `gap` trigger: skills of the offers to add (D123)
+    context: dict[str, Any]  # `ReplanContext` as JSON (ISO dates): the snapshot of the references
+    option: str | None  # option chosen by January; None: none (or invalid answer)
+    revision: int  # 0: first proposal; +1 at each revision or stale proposal
+    note: str  # January's revision note (empty otherwise)
+    stale: bool  # the previous proposal was stale (lines changed)
+    draft: dict[str, Any]  # `ReplanDraft` as JSON: the last draft, rights applied
+    preview: dict[str, Any]  # `PreviewSaved` as JSON: the proposed version
+    answer: dict[str, Any] | None  # `AcceptAnswer` as JSON; None: invalid answer
+    hint: str  # hint added to the re-asked acceptance question (empty note, D106)
+    outcome: str  # `empty`, `impossible`, `finished`, `accepted`, `refused`: the end of the graph
     summary: str

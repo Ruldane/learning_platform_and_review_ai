@@ -1,7 +1,7 @@
-"""État du parcours `project_brief` (D165). Les entrées du module sont en base, derrière le port
-`ProjectStore` : chaque nœud les relit. L'état ne garde que l'identifiant du projet, l'énoncé écrit
-(le temps d'aller du nœud `write` au nœud `save`, comme les propositions d'une revue de CV : une
-donnée du projet dans les points de contrôle, jamais dans un journal) et le résumé de
+"""State of the `project_brief` graph (D165). The module's inputs are in the database, behind the
+`ProjectStore` port: each node rereads them. The state keeps only the project id, the written brief
+(for the time it takes to go from the `write` node to the `save` node, like the proposals of a CV
+review: project data in checkpoints, never in a log) and the summary of
 `run.completed`."""
 
 from typing import Any, Protocol, TypedDict
@@ -9,11 +9,11 @@ from typing import Any, Protocol, TypedDict
 
 class ProjectBriefState(TypedDict, total=False):
     project_id: str
-    brief: dict[str, Any]  # `ProjectBrief` en JSON
-    summary: str  # résumé de `run.completed`
+    brief: dict[str, Any]  # `ProjectBrief` as JSON
+    summary: str  # `run.completed` summary
 
 
 class Node(Protocol):
-    """Forme d'un nœud (paramètre nommé `state`, comme l'attend `StateGraph.add_node`)."""
+    """Shape of a node (parameter named `state`, as `StateGraph.add_node` expects)."""
 
     async def __call__(self, state: ProjectBriefState) -> ProjectBriefState: ...

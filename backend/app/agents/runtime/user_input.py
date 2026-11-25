@@ -1,6 +1,6 @@
-"""Entrées de l'utilisatrice pendant une session (D4, D82) : chaque `user.message` porte un texte
-et, pour le débat, une commande permanente (SPEC 3.2 : relancer un tour, passer aux
-propositions, plus concret, plus court). Les nœuds les lisent au tour suivant."""
+"""The user's inputs during a session (D4, D82): each `user.message` carries a text
+and, for the debate, a permanent command (SPEC 3.2: rerun a turn, move on to
+proposals, more concrete, shorter). The nodes read them at the next turn."""
 
 from dataclasses import dataclass
 from typing import Any, get_args
@@ -18,8 +18,8 @@ class UserInput:
 
 
 def user_input_of(seq: int, payload: dict[str, Any]) -> UserInput:
-    """Entrée lue d'une charge stockée. Une commande hors catalogue est ignorée (le texte
-    reste) : un nœud ne doit jamais échouer sur une charge écrite par une autre version."""
+    """Input read from a stored payload. A command outside the catalog is ignored (the text
+    stays): a node must never fail on a payload written by another version."""
     raw = payload.get("command")
     command: UserCommand | None = raw if raw in _COMMANDS else None
     return UserInput(seq=seq, text=str(payload.get("text") or ""), command=command)

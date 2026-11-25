@@ -1,14 +1,14 @@
-"""Port du programme (D86). `app.agents` n'importe aucune feature (contrat 6) : il décrit ici ce
-dont le parcours `program_builder` a besoin (le contexte du Stratège, les règles de planification,
-l'enregistrement d'un brouillon, la validation) ; la feature `program` l'implémente (tâche 4.7).
+"""Port of the program (D86). `app.agents` imports no feature (contract 6): it describes here what
+the `program_builder` graph needs (the Strategist's context, the planning rules, the
+draft record, the validation); the `program` feature implements it (task 4.7).
 
-Les règles de SPEC 3.4 (85 % du budget, acquis, pratique et quiz chaque semaine) vivent dans la
-feature (`check_draft`, `schedule`) et sont appelées par le port : un seul jeu de règles pour le
-Stratège et pour les modifications de January. Le plan est en base, pas dans l'état du graphe :
-une révision relit le plan courant, modifications de January comprises (`current_plan`).
+The rules of SPEC 3.4 (85% of the budget, acquired skills, practice and quiz each week) live in the
+feature (`check_draft`, `schedule`) and are called by the port: one set of rules for the
+Strategist and for January's changes. The plan is in the database, not in the graph state:
+a revision rereads the current plan, January's changes included (`current_plan`).
 
-Chaque écriture est idempotente : un nœud rejoué après un arrêt (SPEC 9.4) réécrit la même chose,
-jamais une ligne de plus.
+Each write is idempotent: a node replayed after a stop (SPEC 9.4) rewrites the same thing,
+never one more row.
 """
 
 from collections.abc import Sequence
@@ -23,24 +23,24 @@ from app.core.errors import AppError
 
 @dataclass(frozen=True)
 class BudgetView:
-    """Le budget d'une semaine tel que le Stratège doit le respecter (minutes)."""
+    """A week's budget as the Strategist must respect it (minutes)."""
 
     weekly_minutes: int
-    cap_minutes: int  # 85 % du budget hebdomadaire
-    weekday_minutes: int  # lundi à vendredi, chacun
-    weekend_minutes: int  # le bloc du samedi ; dimanche libre
-    floor_minutes: int  # 60 % du plafond : charge visée au moins, sauf la dernière semaine (D98)
+    cap_minutes: int  # 85% of the weekly budget
+    weekday_minutes: int  # Monday to Friday, each
+    weekend_minutes: int  # the Saturday block; Sunday free
+    floor_minutes: int  # 60% of the cap: target load at least, except the last week (D98)
 
 
 @dataclass(frozen=True)
 class ProgramContext:
     goal: GoalBrief
-    proposals: list[ProposalDraft]  # une (parcours choisi) ou deux (mélange)
+    proposals: list[ProposalDraft]  # one (path chosen) or two (mix)
     budget: BudgetView
     known_skills: KnownSkills
-    language: str  # langue des leçons
-    council_minutes: str | None  # compte rendu du Scribe
-    # Plan courant en texte (modifications de January comprises), pour une révision.
+    language: str  # lesson language
+    council_minutes: str | None  # Scribe's minutes
+    # Current plan as text (January's changes included), for a revision.
     current_plan: str | None
 
 
@@ -50,20 +50,20 @@ class DraftSaved:
     version: int
     weeks: int
     total_minutes: int
-    skipped_modules: list[str]  # modules sautés car déjà acquis
-    moved_tasks: int  # tâches reportées à une semaine suivante par l'ordonnancement
+    skipped_modules: list[str]  # modules skipped because already acquired
+    moved_tasks: int  # tasks postponed to a following week by the scheduling
 
 
 class ProgramStore(Protocol):
     async def context(
         self, user_id: str, goal_id: str, proposal_ids: Sequence[str], program_id: str | None
     ) -> ProgramContext:
-        """Objectif, propositions choisies, budget, acquis, langue, compte rendu ; avec
-        `program_id`, le plan courant en texte. `goal_not_found` / `proposal_not_found` (404)."""
+        """Goal, chosen proposals, budget, acquired skills, language, minutes; with
+        `program_id`, the current plan as text. `goal_not_found` / `proposal_not_found` (404)."""
         ...
 
     async def check_draft(self, user_id: str, goal_id: str, draft: PlanDraft) -> list[str]:
-        """Problèmes du brouillon (phrases françaises), selon le budget de l'utilisateur."""
+        """Problems of the draft (French sentences), per the user's budget."""
         ...
 
     async def save_draft(
@@ -77,13 +77,13 @@ class ProgramStore(Protocol):
         start_date: date | None,
         reason: str,
     ) -> DraftSaved:
-        """Range le brouillon (acquis, 85 %, pratique et quiz) et l'enregistre ; idempotent par
-        `(session, revision)` : revision 0 crée le programme, les suivantes une version.
-        `planning_impossible` (422) si le budget ne permet aucune semaine."""
+        """Stores the draft (acquired skills, 85%, practice and quiz) and records it; idempotent per
+        `(session, revision)`: revision 0 creates the program, the next ones a version.
+        `planning_impossible` (422) if the budget allows no week."""
         ...
 
     async def validate(self, user_id: str, session_id: str, program_id: str) -> None:
-        """Valide le programme (idempotent)."""
+        """Validates the program (idempotent)."""
         ...
 
 
@@ -92,7 +92,7 @@ def program_unavailable() -> AppError:
 
 
 class _NoProgram:
-    """Valeur par défaut du moteur (tests existants, démarrages sans la feature `program`)."""
+    """Engine default value (existing tests, starts without the `program` feature)."""
 
     async def context(
         self, user_id: str, goal_id: str, proposal_ids: Sequence[str], program_id: str | None

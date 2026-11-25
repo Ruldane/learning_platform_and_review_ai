@@ -1,15 +1,15 @@
-"""Le contrôle des faits structurés du validateur (SPEC 5.5, critère 18.3, revue finale BA-C1) :
-l'intitulé d'une expérience, d'un diplôme, d'un projet, le titre, une compétence, une langue et
-son niveau, un lien. Ce ne sont pas des phrases libres : un mot de plus (« Ingénieure » pour
-« Développeuse », « Master » pour « Licence », « C1 » pour « B2 », « expert » pour une
-compétence) est un fait que le profil ne dit pas, et une URL n'est jamais réécrite.
+"""The check of the validator's structured facts (SPEC 5.5, criterion 18.3, final review BA-C1):
+the title of an experience, a degree, a project, the title, a skill, a language and
+its level, a link. These are not free sentences: one extra word ("Ingénieure" for
+"Développeuse", "Master" for "Licence", "C1" for "B2", "expert" for a
+skill) is a fact the profile does not state, and a URL is never rewritten.
 
-Règle : chaque mot significatif de `after` figure dans le fait visé lui-même ou dans les rôles
-et titres du profil (jamais dans un fait voisin cité, qui lèverait « C1 » ou « Master » ; mots
-entiers, sans casse ni accent, pluriel simple près ; le féminin n'est pas le masculin) ; chaque
-lien ou nom de domaine écrit dans `after` est celui du fait visé, à l'identique (schéma ajouté
-quand il manque, hôte sans casse, fin d'URL avec sa casse). Sinon le bloc
-fixe `FOREIGN` (« à confirmer »)."""
+Rule: each significant word of `after` appears in the targeted fact itself or in the roles
+and titles of the profile (never in a neighboring cited fact, which would lift "C1" or "Master";
+words, without case or accent, simple plural aside; the feminine is not the masculine); each
+link or domain name written in `after` is that of the targeted fact, identical (scheme added
+when missing, host in lower case, end of URL with its case). Otherwise the block
+sets `FOREIGN` ("to confirm")."""
 
 import re
 
@@ -19,7 +19,7 @@ from app.agents.tools.review_schema import Proposal
 FOREIGN = "Wording missing from the corresponding fact in your profile"
 
 _STRUCTURED = re.compile(r"^[xfpctlk]\d+$")
-# Un lien ou un nom de domaine (« github.com/nom », « https://… », « www.… », « node.js »).
+# A link or a domain name ("github.com/name", "https://...", "www....", "node.js").
 _LINK = re.compile(r"[^\s\"'<>()]*://[^\s\"'<>()]+|[\w-]+(?:\.[\w-]+)+(?:/[^\s\"'<>()]*)?")
 _LINK_END = ".,;:!?/"
 _STOP_WORDS = frozenset(
@@ -63,19 +63,19 @@ _STOP_WORDS = frozenset(
 
 
 def is_structured(p: Proposal) -> bool:
-    """La cible est un fait structuré (pas une réalisation, un détail, ni le résumé)."""
+    """The target is a structured fact (not an achievement, a detail, nor the summary)."""
     return bool(p.target) and _STRUCTURED.match(p.target or "") is not None
 
 
 def significant_words(text: str) -> set[str]:
-    """Les mots significatifs : hors mots outils, hors nombres seuls (règle des chiffres)."""
+    """Significant words: excluding function words, excluding numbers alone (number rule)."""
     words = normalize_term(text, plural=True).split()
     return {w for w in words if w not in _STOP_WORDS and not w.isdigit()}
 
 
 def _link_form(raw: str) -> str:
-    """Un lien sous une forme comparable (D137 n° 6) : le schéma (`https` s'il manque) et l'hôte
-    sans casse, le reste de l'URL tel qu'écrit (« /Camille » n'est pas « /camille »), sans
+    """A link in a comparable form (D137 no. 6): the scheme (`https` if missing) and the host
+    in lower case, the rest of the URL as written ("/Camille" is not "/camille"), without
     ponctuation ni barre finale."""
     link = raw.rstrip(_LINK_END)
     scheme, found, rest = link.partition("://")
@@ -90,8 +90,8 @@ def _links_of(text: str) -> set[str]:
 
 
 def unbacked(after: str, reference: str, titles: str) -> bool:
-    """`after` dit un mot ou un lien que `reference` (le texte du fait visé seul) et `titles` (les
-    rôles et titres du profil) ne disent pas."""
+    """`after` says a word or a link that `reference` (the targeted fact's text alone) and `titles`
+    (the profile's roles and titles) do not say."""
     known = significant_words(f"{reference} {titles}")
     if significant_words(after) - known:
         return True

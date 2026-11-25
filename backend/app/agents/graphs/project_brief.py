@@ -1,12 +1,12 @@
-"""Parcours `project_brief` (P1, D165) : le Praticien écrit l'énoncé du mini projet d'un module
-(un appel standard, 3 à 6 critères qu'un relecteur peut vérifier).
+"""Graph `project_brief` (P1, D165): the Practitioner writes the brief of a module's
+mini project (one standard call, 3 to 6 criteria a reviewer can check).
 
 START -> load -> write -> save -> close -> END
 
-Aucune interruption, aucune boucle. Une sortie invalide range l'échec par le port
-(`brief_failed("structured_output_invalid")`) et arrête le parcours : `run.failed` dit la cause,
-« Réessayer » relance. L'écriture du port est idempotente par session (SPEC 9.4). Lancé seulement
-par la feature `projects` (8.10, `ROUTE_ONLY`)."""
+No interruption, no loop. Invalid output stores the failure through the port
+(`brief_failed("structured_output_invalid")`) and stops the graph: `run.failed` gives the cause,
+"Retry" restarts it. The port write is idempotent per session (SPEC 9.4). Started only
+by the `projects` feature (8.10, `ROUTE_ONLY`)."""
 
 from typing import Any
 

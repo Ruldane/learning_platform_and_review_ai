@@ -1,8 +1,8 @@
-"""État du parcours `cv_review` (D129). L'offre, le profil, le CV d'origine et la revue sont en
-base (port `CvReviewStore`) : chaque nœud relit le contexte par `context` (lecture seule) et l'état
-ne garde que ce qui passe d'un nœud au suivant. Le texte de l'offre n'y entre pas. Les
-propositions (textes du CV) sont des données personnelles : l'état les garde le temps de la
-session (checkpoints), jamais un journal."""
+"""State of the `cv_review` graph (D129). The offer, profile, original CV and review live in
+the database (port `CvReviewStore`): each node rereads the context through `context` (read-only),
+and the state keeps only what passes between nodes. The offer text does not enter it. Proposals
+(CV texts) are personal data: the state keeps them for the duration of the
+session (checkpoints), never a log."""
 
 from typing import Any, TypedDict
 
@@ -10,23 +10,23 @@ from typing import Any, TypedDict
 class CvReviewState(TypedDict, total=False):
     review_id: str
     posting_id: str
-    analysis: dict[str, Any] | None  # `PostingAnalysis` en JSON ; None : pas encore analysée
-    reused: bool  # écrit par le nœud `analyze` de l'Analyste (6.5)
+    analysis: dict[str, Any] | None  # `PostingAnalysis` as JSON; None: not analyzed yet
+    reused: bool  # written by the Analyst's `analyze` node (6.5)
     rejection: str  # idem : texte trop court
-    duplicates: list[dict[str, Any]]  # écrit par `save_analysis` de l'Analyste (non utilisé)
-    company: str | None  # nom de l'entreprise (offre), `None` : inconnue
-    company_brief: dict[str, Any] | None  # `CompanyBrief` en JSON
-    ats: str | None  # ATS repéré par le domaine d'un lien
-    ats_notes: list[str]  # notes du Lecteur ATS (rapport)
-    strengths: list[str]  # forces vues par le Recruteur (rapport)
-    risks: list[str]  # risques vus par le Recruteur (rapport)
-    proposals: list[dict[str, Any]]  # `Proposal` en JSON, texte courant (amendements compris)
-    # réf. → {stance, reason[, original]} de l'autre agent au tour 1 (original : avant `amend`)
+    duplicates: list[dict[str, Any]]  # written by the Analyst's `save_analysis` (unused)
+    company: str | None  # company name (offer), `None`: unknown
+    company_brief: dict[str, Any] | None  # `CompanyBrief` as JSON
+    ats: str | None  # ATS spotted from a link's domain
+    ats_notes: list[str]  # notes from the ATS reader (report)
+    strengths: list[str]  # strengths seen by the Recruiter (report)
+    risks: list[str]  # risks seen by the Recruiter (report)
+    proposals: list[dict[str, Any]]  # `Proposal` as JSON, current text (amendments included)
+    # ref. -> {stance, reason[, original]} from the other agent in turn 1 (original: before `amend`)
     contested: dict[str, dict[str, str]]
-    removed: list[str]  # réf. retirées au tour 2 : l'auteur a dit `drop`
-    items: list[dict[str, Any]]  # {proposal, status, blocks} après le validateur
-    # mots clés de l'offre que les faits cités ne portent pas : à appuyer par un fait ou à acquérir
+    removed: list[str]  # refs removed in turn 2: the author said `drop`
+    items: list[dict[str, Any]]  # {proposal, status, blocks} after the validator
+    # offer keywords that the cited facts do not carry: to back with a fact or to acquire
     gap_terms: list[str]
-    saved: int  # modifications rangées
-    output: dict[str, Any] | None  # réponse analysée de la question `cv_output`
+    saved: int  # changes stored
+    output: dict[str, Any] | None  # parsed answer to the `cv_output` question
     summary: str

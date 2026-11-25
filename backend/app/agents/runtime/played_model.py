@@ -1,4 +1,4 @@
-"""Le modèle joué transforme la demande exacte du nœud en interruption du graphe."""
+"""The played model turns the node's exact request into an interruption of the graph."""
 
 import hashlib
 import json
@@ -54,7 +54,7 @@ class PlayedChat(BaseChatModel):
                 return ChatResult(generations=[ChatGeneration(message=message)])
             if not self.refresh_changed_brief:
                 break
-            # LangGraph rejoue les anciennes livraisons avant de suspendre au nouveau brief.
+            # LangGraph replays the old deliveries before suspending at the new brief.
         raise AppError("played_step_changed", "The request for this step has changed.", 409)
 
     async def _agenerate(
@@ -64,7 +64,7 @@ class PlayedChat(BaseChatModel):
 
 
 def refresh_updated_brief(model: BaseChatModel) -> BaseChatModel:
-    """Republie le brief d'un appel dont les consignes sont susceptibles d'avoir changé."""
+    """Republishes the brief of a call whose instructions may have changed."""
     if isinstance(model, PlayedChat):
         return model.model_copy(update={"refresh_changed_brief": True})
     return model

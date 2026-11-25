@@ -1,9 +1,9 @@
-"""Règles de statut d'une session : reprise, pause, annulation, messages (SPEC 13.2, D3).
+"""Session status rules: resume, pause, cancel, messages (SPEC 13.2, D3).
 
-Chaque changement de statut est une transition conditionnelle en base
-(`SessionRepository.transition`) : deux demandes concurrentes (double clic sur une réponse,
-pause pendant que le graphe se termine) ne peuvent pas réussir toutes les deux. Le runner décide
-ensuite quoi faire de la tâche ; ce module ne touche qu'à la base.
+Each status change is a conditional transition in the database
+(`SessionRepository.transition`): two concurrent requests (double click on an answer,
+pause while the graph is ending) cannot both succeed. The runner then decides what to do with
+the task; this module only touches the database.
 """
 
 from collections.abc import Collection
@@ -17,7 +17,7 @@ from app.core.errors import AppError
 from app.db.models.agents import OPEN_SESSION_STATES, AgentSession
 
 TERMINAL = frozenset({"completed", "failed", "cancelled", "expired"})
-OPEN = OPEN_SESSION_STATES  # reçoit des messages, annulable
+OPEN = OPEN_SESSION_STATES  # receives messages, cancellable
 PAUSABLE = frozenset({"running", "waiting_user"})
 
 type Factory = async_sessionmaker[AsyncSession]
@@ -32,7 +32,7 @@ def stale_interrupt(status: str) -> AppError:
 
 
 async def get_owned(db: Factory, user_id: str, session_id: str) -> AgentSession:
-    """La session de `user_id` ; 404 si elle n'existe pas ou appartient à un autre."""
+    """The session of `user_id`; 404 if it does not exist or belongs to another user."""
     async with db() as session:
         row = await SessionRepository(session, user_id).get(session_id)
     if row is None:
@@ -60,9 +60,9 @@ async def transition(
 async def claim_resume(
     db: Factory, user_id: str, session_id: str, interrupt_id: str | None, value: Any
 ) -> Command[Any] | None:
-    """Passe la session à `running` (question effacée) et rend l'entrée du graphe : la réponse
-    adressée à l'interruption par son id, ou `None` (reprise d'une pause sur le dernier
-    checkpoint). 409 lisible si la question est périmée ou la session pas en attente."""
+    """Sets the session to `running` (question cleared) and returns the graph input: the answer
+    addressed to the interrupt by its id, or `None` (resume of a pause from the last
+    checkpoint). Readable 409 if the question is stale or the session not waiting."""
     row = await get_owned(db, user_id, session_id)
     if (row.pending_interrupt or {}).get("brief") is not None:
         raise AppError("played_step_required", "This step is waiting for the MCP client.", 409)
@@ -78,14 +78,14 @@ async def claim_resume(
             user_delivery={"interrupt_id": interrupt_id, "value": value},
         ):
             raise stale_interrupt(row.status)
-        # Forme « carte » : la réponse va à cette interruption-là, même s'il y en a d'autres.
+        # "Card" form: the answer goes to this interrupt, even if there are others.
         return Command(resume={interrupt_id: value})
     if row.status == "paused" and interrupt_id is None:
         if not await transition(db, user_id, session_id, from_={"paused"}, to="running"):
             raise _not_resumable(row.status)
         return None
     if interrupt_id is not None:
-        raise stale_interrupt(row.status)  # déjà répondue, ou session plus en attente
+        raise stale_interrupt(row.status)  # already answered, or session no longer waiting
     if row.status == "waiting_user":
         raise _conflict(
             "interrupt_required",
@@ -102,8 +102,8 @@ def _not_resumable(status: str) -> AppError:
 
 
 async def claim_pause(db: Factory, user_id: str, session_id: str) -> bool:
-    """`True` si la session vient de passer en pause, `False` si elle l'était déjà ; 409 si
-    elle est terminée. La question en attente est effacée : la reprise la reposera."""
+    """`True` if the session just paused, `False` if it already was; 409 if
+    it is finished. The pending question is cleared: resuming will ask it again."""
     row = await get_owned(db, user_id, session_id)
     if row.status == "paused":
         return False
@@ -126,7 +126,7 @@ async def claim_pause(db: Factory, user_id: str, session_id: str) -> bool:
 
 
 async def claim_cancel(db: Factory, user_id: str, session_id: str) -> None:
-    await get_owned(db, user_id, session_id)  # 404 avant 409
+    await get_owned(db, user_id, session_id)  # 404 before 409
     if not await transition(
         db,
         user_id,
@@ -141,7 +141,7 @@ async def claim_cancel(db: Factory, user_id: str, session_id: str) -> None:
 
 
 async def check_open(db: Factory, user_id: str, session_id: str) -> None:
-    """Une session terminée ne reçoit plus de message (409)."""
+    """A finished session no longer receives messages (409)."""
     row = await get_owned(db, user_id, session_id)
     if row.status not in OPEN:
         raise _conflict(

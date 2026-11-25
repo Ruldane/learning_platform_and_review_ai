@@ -1,16 +1,16 @@
-"""Parcours `hiring_committee` (SPEC F19, 9.3, D147) : le comité de recrutement simulé. Quatre
-personas lisent le CV d'une version prête face à l'offre, donnent leur première impression,
-débattent deux tours, votent ; le Modérateur classe les objections et propose trois changements.
+"""Graph `hiring_committee` (SPEC F19, 9.3, D147): the simulated hiring committee. Four
+personas read the CV of a ready version against the offer, give their first impression,
+debate for two rounds and vote; the Moderator ranks the objections and proposes three changes.
 
 START -> load -> impressions -> round_1 -> round_2 -> votes -> synthesis -> save -> END
 
-17 appels au plus : 4 impressions, 4 prises de parole au tour 1, 4 au tour 2, 4 votes, 1 synthèse.
-Ce que le code décide : l'ordre de parole (rotation fixe), le verdict (majorité des votes ; égalité
-ou aucune majorité : « peut-être ») et les termes « à acquérir » des changements. Aucun
-`interrupt()` (January regarde le comité débattre). `save` est la seule écriture, idempotente par
-session (SPEC 9.4) ; `durability="sync"` (D46) ne rejoue jamais un nœud terminé, donc jamais un
-vote donné.
-Lancé seulement par la route de la feature `applications` (7.10, `ROUTE_ONLY`)."""
+17 calls at most: 4 impressions, 4 speeches in round 1, 4 in round 2, 4 votes, 1 summary.
+What the code decides: the speaking order (fixed rotation), the verdict (majority of votes; a tie
+or no majority: "maybe") and the "to acquire" terms of the changes. No
+`interrupt()` (January watches the committee debate). `save` is the only write, idempotent per
+session (SPEC 9.4); `durability="sync"` (D46) never replays a finished node, so never a
+given vote.
+Started only by the `applications` feature route (7.10, `ROUTE_ONLY`)."""
 
 from typing import Any
 

@@ -1,11 +1,11 @@
-"""Profil maître (SPEC 5.1) et contenu d'un CV : types partagés par les agents de la phase 6 et
-les features (le moteur n'importe aucune feature, contrat 6).
+"""Master profile (SPEC 5.1) and CV content: types shared by the phase 6 agents and
+the features (the engine imports no feature, contract 6).
 
-Chaque fait du profil porte un identifiant stable attribué par le code, jamais par le modèle
-(`assign_fact_ids`) : préfixe par genre (`x` expérience, `x1a2` réalisation, `f` formation,
-`f1d1` détail, `c` compétence, `p` projet, `p1a1` réalisation de projet, `l` langue, `k` lien,
-`t` titre, `s` résumé) puis un numéro : le plus grand déjà pris + 1, jamais un numéro libéré (les
-modifications d'anciennes revues citent ces identifiants), donc sans borne (« c100 » est permis).
+Each profile fact carries a stable identifier assigned by the code, never by the model
+(`assign_fact_ids`): prefix by kind (`x` experience, `x1a2` achievement, `f` education,
+`f1d1` detail, `c` skill, `p` project, `p1a1` project achievement, `l` language, `k` link,
+`t` title, `s` summary), then a number: the largest already taken + 1, never a freed number
+(old reviews' changes cite these identifiers), hence no bound ("c100" is allowed).
 """
 
 import re
@@ -21,11 +21,11 @@ SectionKey = Literal[
 ModificationAction = Literal["rewrite", "add", "remove", "move"]
 ModificationType = Literal["keyword", "clarity", "impact", "order", "length", "title"]
 
-_MONTH = r"^\d{4}(-(0[1-9]|1[0-2]))?$"  # « AAAA-MM » ou « AAAA »
+_MONTH = r"^\d{4}(-(0[1-9]|1[0-2]))?$"  # "YYYY-MM" or "YYYY"
 
 
 def _sources() -> Any:
-    """Le champ `sources` d'un fait : un `FieldInfo` neuf par classe, jamais partagé."""
+    """The `sources` field of a fact: a new `FieldInfo` per class, never shared."""
     return Field(default_factory=list, max_length=4)
 
 
@@ -122,8 +122,8 @@ class _Sourced(Protocol):
 
 
 def _renumber(items: Sequence[_HasId], prefix: str) -> None:
-    """Garde les ids `<prefix><n>` bien formés et uniques ; numérote les autres à la suite du
-    plus grand numéro déjà pris (un doublon garde sa première occurrence)."""
+    """Keeps the well-formed, unique `<prefix><n>` ids; numbers the others after the
+    largest number already taken (a duplicate keeps its first occurrence)."""
     pattern = re.compile(rf"^{re.escape(prefix)}([1-9]\d*)$")
     taken: set[str] = set()
     top = 0
@@ -141,8 +141,8 @@ def _renumber(items: Sequence[_HasId], prefix: str) -> None:
 
 
 def assign_fact_ids(profile: MasterProfileData) -> MasterProfileData:
-    """Une copie du profil où chaque fait a un identifiant stable (voir l'en-tête du module).
-    Un id d'enfant (réalisation, détail) doit commencer par l'id de son parent."""
+    """A copy of the profile where each fact has a stable identifier (see the module header).
+    A child id (achievement, detail) must start with the id of its parent."""
     out = profile.model_copy(deep=True)
     _renumber([line for line in (out.title,) if line is not None], "t")
     _renumber([line for line in (out.summary,) if line is not None], "s")
@@ -170,8 +170,8 @@ def _lines(lines: Iterable[Line]) -> dict[str, str]:
 
 
 def facts_of(profile: MasterProfileData) -> dict[str, str]:
-    """id → texte lisible du fait (« Rôle — Entreprise », texte d'une réalisation…), dans
-    l'ordre du profil. Les faits sans id (profil non numéroté) sont omis."""
+    """id -> readable text of the fact ("Role - Company", text of an achievement...), in
+    profile order. Facts without an id (unnumbered profile) are omitted."""
     facts: dict[str, str] = {}
     for line in (profile.title, profile.summary):
         if line is not None:
@@ -193,8 +193,8 @@ def facts_of(profile: MasterProfileData) -> dict[str, str]:
 
 
 def in_cv(profile: MasterProfileData) -> set[str]:
-    """Les ids des faits venus du CV d'origine : ceux dont `sources` contient « cv », avec les
-    réalisations et détails de leurs parents (une `Line` n'a pas de sources)."""
+    """The ids of the facts from the original CV: those whose `sources` contains "cv", with the
+    achievements and details of their parents (a `Line` has no sources)."""
     ids: set[str] = set()
     for experience in profile.experiences:
         if "cv" in experience.sources:
@@ -213,7 +213,7 @@ def in_cv(profile: MasterProfileData) -> set[str]:
 
 
 class CvLine(BaseModel):
-    """Une ligne d'un CV, adossée aux faits du profil qu'elle reformule."""
+    """A CV line, backed by the profile facts it rewords."""
 
     text: str = Field(min_length=1, max_length=600)
     fact_ids: list[str] = Field(default_factory=list)
@@ -235,7 +235,7 @@ class CvSection(BaseModel):
 
 
 class CvContent(BaseModel):
-    """Contenu d'un CV (gabarit rempli) : un ordre de sections, des lignes adossées à des faits."""
+    """CV content (filled template): an order of sections, lines backed by facts."""
 
     name: str
     headline: str | None = None

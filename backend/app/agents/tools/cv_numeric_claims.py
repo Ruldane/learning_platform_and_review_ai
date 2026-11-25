@@ -1,4 +1,4 @@
-"""Rattache les chiffres et proportions d'une proposition aux mesures citées par le profil."""
+"""Links the figures and proportions of a proposal to the measures cited by the profile."""
 
 import re
 from collections.abc import Iterable
@@ -166,7 +166,7 @@ def _measure_matches(claim: _Measure, source: _Measure, references: list[_Measur
 
 
 def numeric_claims_supported(after: str, facts: Iterable[str]) -> bool:
-    """Chaque mesure chiffrée doit conserver le montant d'une mesure citée identifiable."""
+    """Each numeric measure must keep the amount of an identifiable cited measure."""
     claims = _measures(after)
     if not claims:
         return True

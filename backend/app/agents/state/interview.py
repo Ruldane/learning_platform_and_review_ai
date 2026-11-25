@@ -1,6 +1,6 @@
-"""État du parcours `interview` (D145). Le contexte vient du port (une seule lecture) ; le plan, la
-question en cours et les échanges vivent dans l'état (checkpointer) jusqu'à `save`, la seule
-écriture : une question en attente se reprend donc sans rien redemander au modèle."""
+"""State of the `interview` graph (D145). The context comes from the port (single read); the plan,
+current question and the exchanges live in the state (checkpointer) until `save`, the only
+write: a pending question is therefore resumed without asking the model anything."""
 
 from typing import Any, TypedDict
 
@@ -10,14 +10,14 @@ class InterviewState(TypedDict, total=False):
     system_design: bool
     design_submission: dict[str, Any] | None
     design_review: dict[str, Any]
-    context: dict[str, Any]  # `InterviewContext` en JSON
-    plan: list[dict[str, Any]]  # `PlannedQuestion` en JSON, écrit une fois
-    position: int  # rang de la question principale en cours (`len(plan)` : toutes posées)
-    current: str  # le texte posé à January : la question, ou sa relance
-    follow_up_open: bool  # `current` est la relance de la question principale en cours
+    context: dict[str, Any]  # `InterviewContext` as JSON
+    plan: list[dict[str, Any]]  # `PlannedQuestion` as JSON, written once
+    position: int  # rank of the current main question (`len(plan)`: all asked)
+    current: str  # the text asked to January: the question, or its follow-up
+    follow_up_open: bool  # `current` is the follow-up of the current main question
     reply: dict[str, Any] | None  # `{"action": "answer" | "stop", "text"}` ; None : illisible
-    exchanges: list[dict[str, Any]]  # `Exchange` en JSON, dans l'ordre du plan
-    debrief: dict[str, Any] | None  # `Debrief` en JSON ; None : arrêté avant toute réponse
-    flags: list[str]  # termes de la réponse améliorée que le profil ne dit pas
-    cards: list[dict[str, Any]]  # `CardDraft` en JSON, une par question ratée
+    exchanges: list[dict[str, Any]]  # `Exchange` as JSON, in plan order
+    debrief: dict[str, Any] | None  # `Debrief` as JSON; None: stopped before any answer
+    flags: list[str]  # terms of the improved answer that the profile does not state
+    cards: list[dict[str, Any]]  # `CardDraft` as JSON, one per missed question
     summary: str

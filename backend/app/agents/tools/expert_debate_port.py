@@ -1,4 +1,4 @@
-"""Types du débat et port de stockage des prises de parole."""
+"""Types of the debate and storage port for the speeches."""
 
 from collections.abc import Sequence
 from dataclasses import dataclass

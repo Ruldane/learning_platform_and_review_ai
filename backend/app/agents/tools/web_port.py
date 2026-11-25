@@ -1,9 +1,9 @@
-"""Port de la recherche web pour les agents (D77). `app.agents` n'importe aucune feature
-(contrat 6) : il décrit ici ce dont il a besoin, la composition (`app.bootstrap.web_gateway`)
-branche l'implémentation de la feature `research`, comme pour la mémoire (`MemoryGateway`, D68).
+"""Port for web search for the agents (D77). `app.agents` imports no feature
+(contract 6): it describes here what it needs; the composition (`app.bootstrap.web_gateway`)
+plugs in the `research` feature implementation, as for memory (`MemoryGateway`, D68).
 
-Tout texte venu du web (titre, extrait, page) est du contenu non fiable : les outils
-(`web_tools`) l'encadrent par `untrusted()` avant de le rendre à un modèle (17.4).
+Any text coming from the web (title, extract, page) is untrusted content: the tools
+(`web_tools`) frame it with `untrusted()` before returning it to a model (17.4).
 """
 
 from collections.abc import Sequence
@@ -12,12 +12,12 @@ from typing import Literal, Protocol
 
 from app.core.errors import AppError
 
-# Codes d'erreur de la feature `research` que le moteur reconnaît (le moteur n'importe pas la
-# feature) ; un test de la passerelle vérifie qu'ils sont ceux de la feature.
+# Error codes of the `research` feature that the engine recognizes (it does not import the
+# feature); a gateway test checks that they are the feature's.
 QUOTA_CODE = "web_quota_reached"
 SEARCH_UNAVAILABLE_CODE = "search_unavailable"
 
-# Barème de la note d'une source (SPEC 10.3) : points maximaux par critère, 100 au total.
+# Scoring grid of a source's rating (SPEC 10.3): maximum points per criterion, 100 in total.
 CRITERIA_MAX: dict[str, int] = {
     "authority": 30,
     "freshness": 20,
@@ -35,12 +35,12 @@ class WebHit:
     snippet: str
     engine: str
     published: str | None
-    preferred: bool  # domaine privilégié dans les réglages
+    preferred: bool  # preferred domain in the settings
 
 
 @dataclass(frozen=True)
 class WebSearchResult:
-    query: str  # la requête NETTOYÉE de toute donnée personnelle, celle qui a été envoyée
+    query: str  # the query CLEANED of any personal data, the one that was sent
     provider: str | None
     hits: list[WebHit]
 
@@ -48,15 +48,15 @@ class WebSearchResult:
 @dataclass(frozen=True)
 class SourceVerdictView:
     source_id: str
-    score: int | None  # `None` : note impossible à établir (sortie du modèle invalide, délai)
+    score: int | None  # `None`: rating impossible to establish (invalid model output, timeout)
     verdict: Literal["kept", "rejected"]
     reason: str
-    summary: str = ""  # résumé de la notation, repris tel quel quand le verdict est rejoué (D82)
+    summary: str = ""  # summary of the rating, reused as is when the verdict is replayed (D82)
 
 
 @dataclass(frozen=True)
 class PageRead:
-    # `None` pour une page qui n'a pas de ligne `sources` : domaine exclu dans les réglages,
+    # `None` for a page without a `sources` row: domain excluded in the settings,
     # jamais lue (D77).
     source_id: str | None
     url: str
@@ -67,16 +67,16 @@ class PageRead:
     date: str | None
     lang: str | None
     reason: str | None
-    # Source déjà notée dans la session (nœud rejoué, seconde recherche) : son verdict, que
-    # `judge` réémet sans rappeler le modèle (D82).
+    # Source already rated in the session (node replayed, second search): its verdict, that
+    # `judge` re-emits without calling the model again (D82).
     verdict: SourceVerdictView | None = None
 
 
 @dataclass(frozen=True)
 class PersonFound:
-    """Un praticien repéré par l'Éclaireur (SPEC 10.3) : informations professionnelles publiques
-    seulement. `url` est une page lue ou un résultat de la session, jamais une adresse écrite par
-    le modèle ; `where` : où il publie (domaines)."""
+    """A practitioner spotted by the Scout (SPEC 10.3): public professional information
+    only. `url` is a read page or a result of the session, never an address written by
+    the model; `where`: where they publish (domains)."""
 
     name: str
     role: str
@@ -116,25 +116,25 @@ class WebGateway(Protocol):
         reason: str,
         summary: str,
     ) -> SourceVerdictView:
-        """Note (somme des critères bornés) et verdict d'une source. `criteria=None` : aucune
-        note n'a pu être établie, la source est écartée sans note, avec `reason`."""
+        """Rating (sum of the bounded criteria) and verdict of a source. `criteria=None`: no
+        rating could be established, the source is discarded without a rating, with `reason`."""
         ...
 
     async def verdicts(
         self, user_id: str, session_id: str, source_ids: Sequence[str]
     ) -> dict[str, SourceVerdictView]:
-        """Verdicts déjà posés sur ces sources de la session (les autres sont absentes) : un
-        `judge` rejoué après un arrêt ne rappelle pas le modèle (D82)."""
+        """Verdicts already set on these session sources (the others are absent): a
+        `judge` replayed after a stop does not call the model again (D82)."""
         ...
 
     async def add_person(self, user_id: str, session_id: str, person: PersonFound) -> str:
-        """Enregistre le praticien dans les sources de la session (`kind` `person`) ; idempotent
-        (même personne, même adresse : même ligne). Rend l'id de la source."""
+        """Records the practitioner in the session's sources (`kind` `person`); idempotent
+        (same person, same address: same row). Returns the source's id."""
         ...
 
     async def people(self, user_id: str, session_id: str) -> list[tuple[str, PersonFound]]:
-        """Praticiens déjà enregistrés pour la session, `(source_id, personne)` dans l'ordre
-        d'enregistrement : `spot_people` rejoué les réémet sans rappeler le modèle (D84)."""
+        """Practitioners already recorded for the session, `(source_id, person)` in recording
+        order: `spot_people` replayed re-emits them without calling the model again (D84)."""
         ...
 
     async def limits(self, user_id: str) -> WebLimits: ...
@@ -145,7 +145,7 @@ def web_unavailable() -> AppError:
 
 
 class _NoWeb:
-    """Valeur par défaut du moteur (tests existants, démarrages sans recherche web)."""
+    """Engine default value (existing tests, starts without web search)."""
 
     async def search(
         self,

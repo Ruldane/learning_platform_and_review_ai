@@ -1,19 +1,19 @@
-"""État du parcours `quiz` (D100). Le quiz et les notes sont en base (port `QuizStore`) : l'état
-ne garde que ce qui passe d'un nœud au suivant (le module, le brouillon de l'Examinateur, la
-tentative, les notes à ranger) et ce qu'il faut annoncer."""
+"""State of the `quiz` graph (D100). The quiz and notes are in the database (port `QuizStore`):
+the state only keeps what passes from one node to the next (the module, the Examiner's draft, the
+attempt, the notes to store) and what must be announced."""
 
 from typing import Any, TypedDict
 
 
 class QuizState(TypedDict, total=False):
-    mode: str  # `generate` : écrire le quiz ; `grade` : noter une tentative
+    mode: str  # `generate`: write the quiz; `grade`: grade an attempt
     quiz_id: str | None
     attempt_id: str | None
-    material: dict[str, Any]  # `ModuleMaterial` en JSON
-    draft: dict[str, Any] | None  # `QuizDraft` en JSON ; None : quiz invalide après 3 essais
-    failure: str  # raison de l'échec du quiz
-    questions: int  # questions rangées
-    attempt: dict[str, Any]  # `AttemptToGrade` en JSON
-    grades: dict[str, list[Any]]  # ref → [note, retour], toutes les questions de la tentative
-    graded: dict[str, Any]  # `GradedSaved` en JSON
+    material: dict[str, Any]  # `ModuleMaterial` as JSON
+    draft: dict[str, Any] | None  # `QuizDraft` as JSON; None: quiz invalid after 3 tries
+    failure: str  # reason the quiz failed
+    questions: int  # questions stored
+    attempt: dict[str, Any]  # `AttemptToGrade` as JSON
+    grades: dict[str, list[Any]]  # ref -> [grade, feedback], all questions of the attempt
+    graded: dict[str, Any]  # `GradedSaved` as JSON
     summary: str

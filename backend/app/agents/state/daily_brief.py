@@ -1,17 +1,17 @@
-"""État du parcours `daily_brief` (D161). Ce qui est rangé (ressource, conseil) est en base,
-derrière le port `BriefStore` : chaque nœud relit `context` et saute sa rubrique si elle est déjà
-rangée (SPEC 9.4). L'état ne garde que l'identifiant du brief et le résumé de `run.completed` :
-ni sujet, ni fait, ni texte (jamais d'une donnée de l'utilisatrice dans un point de contrôle)."""
+"""State of the `daily_brief` graph (D161). What is stored (resource, advice) is in the database,
+behind the `BriefStore` port: each node rereads `context` and skips its section if it is already
+stored (SPEC 9.4). The state keeps only the brief's id and the `run.completed` summary:
+neither subject, nor fact, nor text (never user data in a checkpoint)."""
 
 from typing import Protocol, TypedDict
 
 
 class DailyBriefState(TypedDict, total=False):
     brief_id: str
-    summary: str  # résumé de `run.completed`
+    summary: str  # `run.completed` summary
 
 
 class Node(Protocol):
-    """Forme d'un nœud (paramètre nommé `state`, comme l'attend `StateGraph.add_node`)."""
+    """Shape of a node (parameter named `state`, as `StateGraph.add_node` expects)."""
 
     async def __call__(self, state: DailyBriefState) -> DailyBriefState: ...

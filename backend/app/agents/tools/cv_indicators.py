@@ -1,5 +1,5 @@
-"""Les deux indicateurs d'un CV contre une offre (SPEC 5.3) : couverture des exigences
-obligatoires et contrôles de lisibilité par un ATS. Aucune garantie de passage n'est promise."""
+"""The two indicators of a CV against an offer (SPEC 5.3): coverage of the mandatory requirements
+and ATS readability checks. No guarantee of passing is promised."""
 
 import math
 from collections.abc import Sequence
@@ -16,7 +16,7 @@ AtsCheckId = Literal[
 
 @dataclass(frozen=True)
 class Coverage:
-    """Exigences obligatoires couvertes ; `missing` : le texte de celles qui ne le sont pas."""
+    """Mandatory requirements covered; `missing`: the text of those that are not."""
 
     covered: int
     total: int
@@ -42,9 +42,9 @@ def _recoups(text: str, skills: set[str], form: str) -> bool:
 
 
 def requirement_words(requirement: Requirement, keywords: Sequence[Keyword]) -> list[str]:
-    """Les mots qui couvrent une exigence : ses compétences, puis le terme et les variantes de
-    chaque mot clé qui la recoupe (une de ses formes figure dans l'exigence ou nomme une de ses
-    compétences), pluriel simple ignoré comme dans la couverture."""
+    """The words that cover a requirement: its skills, then the term and the variants of
+    each keyword that overlaps it (one of its forms appears in the requirement or names one of its
+    skills), simple plural ignored as in the coverage."""
     words = list(requirement.skills)
     skills = {normalize_term(skill, plural=True) for skill in requirement.skills}
     for keyword in keywords:
@@ -61,10 +61,10 @@ def coverage(
     *,
     backed_only: bool = True,
 ) -> Coverage:
-    """Une exigence obligatoire est couverte si l'un de ses mots (`requirement_words`) figure
-    dans une ligne adossée à au moins un fait (`fact_ids` non vide) ; pour le CV d'origine,
-    `backed_only=False` : toutes ses lignes comptent. Casse, accents et pluriel simple ignorés.
-    Une exigence sans aucun mot n'est jamais couverte ; aucune exigence obligatoire : 100 %."""
+    """A mandatory requirement is covered if one of its words (`requirement_words`) appears
+    in a line backed by at least one fact (`fact_ids` non-empty); for the original CV,
+    `backed_only=False`: all its lines count. Case, accents and simple plural ignored.
+    A requirement without any word is never covered; no mandatory requirement: 100%."""
     texts = [
         f" {normalize_term(line.text, plural=True)} "
         for line in lines

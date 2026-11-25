@@ -1,7 +1,7 @@
-"""`AgentRuntime` : poignée du moteur d'agents posée sur `app.state.runtime` par le lifespan.
+"""`AgentRuntime`: handle of the agent engine set on `app.state.runtime` by the lifespan.
 
-Module léger (aucun import de LangGraph ni du runner à l'exécution) : `app.core.deps` peut
-l'importer sans charger tout le moteur.
+Lightweight module (no import of LangGraph nor of the runner at execution time): `app.core.deps`
+can import it without loading the whole engine.
 """
 
 from __future__ import annotations
@@ -23,17 +23,17 @@ class AgentRuntime:
     runner: SessionRunner
 
     async def delete_threads(self, session_ids: Iterable[str]) -> None:
-        """Efface les points de reprise de ces sessions (`SessionRunner.delete_threads`)."""
+        """Clears the resume points of these sessions (`SessionRunner.delete_threads`)."""
         await self.runner.delete_threads(session_ids)
 
     async def open_sessions(self, user_id: str) -> list[str]:
-        """Les sessions ouvertes de ce compte (`SessionRunner.open_sessions`)."""
+        """The open sessions of this account (`SessionRunner.open_sessions`)."""
         return await self.runner.open_sessions(user_id)
 
     async def cancel(self, user_id: str, session_id: str) -> AgentSession:
-        """Annule une session du compte (`SessionRunner.cancel`)."""
+        """Cancels a session of the account (`SessionRunner.cancel`)."""
         return await self.runner.cancel(user_id, session_id)
 
     def refusing_starts(self, user_id: str) -> AbstractAsyncContextManager[None]:
-        """Aucune session de ce compte ne démarre le temps du bloc (`SessionRunner`)."""
+        """No session of this account starts for the duration of the block (`SessionRunner`)."""
         return self.runner.refusing_starts(user_id)

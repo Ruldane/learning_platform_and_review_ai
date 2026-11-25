@@ -1,17 +1,17 @@
-"""Parcours `market_radar` (P5, P6, D159) : le relevé du marché de l'emploi. L'Éclaireur cherche
-les offres du mois et les lit par passages de dix liens, l'Analyste en extrait compétences, outils,
-niveau et salaire par lots de cinq ; le classement, l'évolution et les alertes sont calculés par le
+"""Graph `market_radar` (P5, P6, D159): the job market survey. The Scout searches
+the month's offers and reads them in passes of ten links; the Analyst extracts skills, tools,
+level and salary in batches of five; ranking, trends and alerts are computed by the
 code, ailleurs (feature `radar`).
 
 START -> load -> search -> read (boucle) -> extract (boucle) -> finish -> END
 
-Deux boucles par arête conditionnelle (aucun nœud d'aiguillage : chaque passage est un pas du
-graphe). Chacune relit l'état du relevé par le port à chaque passage ; un redémarrage ne relit
-et ne réextrait rien. Au pire : 6 passages de lecture (60 lectures) et 10 d'extraction (50 offres),
-soit 19 pas. `recursion_limit` (pas de LangGraph, documentation actuelle : 10 007 par défaut depuis
-la 1.1.4, et non 25) n'est donc jamais atteint ; le lancement (8.4) le fixe tout de même à
-6 + 2 × (60 / 10 + 50 / 5) = 38 pour qu'une boucle sans fin échoue vite. Aucune interruption.
-Lancé seulement par la route de la feature `radar` (8.4, `ROUTE_ONLY`)."""
+Two loops per conditional edge (no routing node: each pass is one step of the
+graph). Each one rereads the survey state through the port on every pass; a restart does not reread
+or re-extract anything. Worst case: 6 read passes (60 reads) and 10 extraction passes (50 offers),
+i.e. 19 steps. `recursion_limit` (LangGraph step limit; documented default 10,007 since
+1.1.4, not 25) is therefore never reached; the start (8.4) still sets it to
+6 + 2 × (60 / 10 + 50 / 5) = 38 so that an endless loop fails fast. No interruption.
+Started only by the `radar` feature route (8.4, `ROUTE_ONLY`)."""
 
 from typing import Any
 
@@ -31,7 +31,7 @@ from app.agents.state.market_radar import MarketRadarState
 
 __all__ = ["RECURSION_LIMIT", "MarketRadarInput", "build"]
 
-# 6 pas fixes (chargement, recherche, fin, marge) + 2 × (60 lectures / 10 + 50 offres / 5), D159.
+# 6 fixed steps (loading, search, end, margin) + 2 × (60 reads / 10 + 50 offers / 5), D159.
 RECURSION_LIMIT = 6 + 2 * (60 // 10 + 50 // 5)
 
 

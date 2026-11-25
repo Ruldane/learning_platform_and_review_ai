@@ -1,23 +1,23 @@
-"""Validateur des modifications de CV contre le profil maître (SPEC 5.5, critère 18.3) : du code,
-pas un agent. Une proposition ne devient jamais un fait : tout ce que dit son texte `after` doit
-être déjà dit par les faits qu'elle cite ou par les compétences du profil.
+"""Validator of CV changes against the master profile (SPEC 5.5, criterion 18.3): code,
+not an agent. A proposal never becomes a fact: everything its `after` text says must already be
+said by the facts it cites or by the profile's skills.
 
-Règles, dans l'ordre (chacune ajoute une raison, jamais le texte du CV) :
-0. aucun fait du profil ne l'appuie → « à confirmer » ;
-1. un nombre (« 30 % », « 1 000 », « 1,5 », « trente ») absent des faits cités ou rattaché à
-   une mesure que les faits ne permettent pas d'identifier ;
-2. une proportion (« moitié », « tiers », « x2 ») sans chiffre de la même famille dans les faits ;
-3. un outil du lexique, de l'offre (outils, mots clés) ou un nom propre, absent des faits cités et
-   des compétences : terme de l'offre → « écart » (il n'entre jamais dans le CV), autre → « à
-   confirmer » ;
-4. un mot de titre (« lead », « senior »…) ou l'intitulé de l'offre absent des rôles du profil ;
-5. un fait structuré (titre, rôle, diplôme, langue et niveau, compétence, lien) dont un mot ou
-   l'URL n'est pas dans le fait visé lui-même (les rôles du profil ne comptent que pour le titre) :
-   citer un fait voisin ne lève pas cette règle (`cv_validator_facts`).
+Rules, in order (each adds a reason, never the CV text):
+0. no profile fact supports it -> "to confirm";
+1. a number ("30 %", "1 000", "1,5", "trente") absent from the cited facts or attached to
+   a measure that the facts do not let it identify;
+2. a proportion ("moitié", "tiers", "x2") without a figure of the same family in the facts;
+3. a lexicon tool, an offer term (tools, keywords) or a proper noun, absent from the cited facts and
+   the skills: an offer term -> "gap" (it never enters the CV), other -> "to
+   confirm";
+4. a title word ("lead", "senior"...) or the offer's job title absent from the profile's roles;
+5. a structured fact (title, role, degree, language and level, skill, link) of which a word or
+   the URL is not in the targeted fact itself (the profile's roles count only for the title):
+   citing a neighboring fact does not lift this rule (`cv_validator_facts`).
 
-« Écart » l'emporte sur « à confirmer », qui l'emporte sur « ok ». `remove` et `move` n'écrivent
-aucun texte : toujours « ok ». Les termes sont comparés mots entiers, sans casse ni accent, au
-pluriel simple près (`normalize_term`)."""
+"Gap" wins over "to confirm", which wins over "ok". `remove` and `move` write
+no text: always "ok". Terms are compared as whole words, without case or accent, up to a simple
+plural (`normalize_term`)."""
 
 import re
 from dataclasses import dataclass
@@ -52,7 +52,7 @@ GAP = "Posting keyword unsupported by the cited facts or skills. See the skill g
 _TECH = {normalize_term(term, plural=True): term for term in TECH_TERMS}
 _TITLE_WORDS = {normalize_term(word, plural=True) for word in TITLE_WORDS}
 _WORD = re.compile(r"\w[\w+#]*")
-_SENTENCE_END = ".!?\n"  # ni « : » ni « ; » : « Stack : Streamlit » nomme un outil
+_SENTENCE_END = ".!?\n"  # neither ":" nor ";": "Stack: Streamlit" names a tool
 _BULLETS = " \t\n-•*–—«\"'("
 _MIN_NAME = 3
 _AMBIGUOUS = {
@@ -73,13 +73,13 @@ def _padded(text: str) -> str:
 
 
 def cited_facts(p: Proposal, facts: dict[str, str]) -> list[str]:
-    """Le texte des faits que la proposition cite (`target` d'abord), sans doublon."""
+    """The text of the facts the proposal cites (`target` first), without duplicates."""
     ids = dict.fromkeys(fact for fact in (p.target, *p.fact_ids) if fact)
     return [facts[fact] for fact in ids if fact in facts]
 
 
 def _unbacked_ratios(after: str, reference: str) -> bool:
-    """Une proportion de `after` que les faits ne disent ni par le même mot ni par un chiffre."""
+    """A proportion in `after` that the facts state neither by the same word nor by a figure."""
     said = ratio_families(reference)
     figures = figures_in(reference)
     return any(
@@ -89,7 +89,7 @@ def _unbacked_ratios(after: str, reference: str) -> bool:
 
 
 def _posting_terms(analysis: PostingAnalysis) -> dict[str, str]:
-    """Outils et mots clés de l'offre (et variantes) : forme comparée → formulation de l'offre."""
+    """Offer tools and keywords (and variants): compared form -> the offer's wording."""
     terms: dict[str, str] = {}
     for tool in analysis.tools:
         terms.setdefault(normalize_term(tool, plural=True), tool)
@@ -106,8 +106,8 @@ def _starts_sentence(text: str, match: re.Match[str]) -> bool:
 
 
 def product_forms(after: str) -> set[str]:
-    """Les termes ambigus (« vue », « spring », « rest »…) que `after` écrit sous leur forme de
-    produit : un mot capitalisé hors début de phrase (ou un sigle, « REST »), ou suivi d'un
+    """Ambiguous terms ("vue", "spring", "rest"...) that `after` writes in their product form:
+    a capitalized word not at the start of a sentence (or an acronym, "REST"), or followed by
     qualificatif (« vue.js », « spring boot »)."""
     words = list(_WORD.finditer(after))
     found: set[str] = set()
@@ -127,9 +127,9 @@ def product_forms(after: str) -> set[str]:
 def _term_findings(
     after: str, known: str, profile: MasterProfileData, analysis: PostingAnalysis
 ) -> tuple[list[str], list[str]]:
-    """`(termes de l'offre, autres outils)` présents dans `after` et absents des faits cités et
-    des compétences du profil (`known` : le texte des faits). Les termes de l'offre sont rendus
-    tels que l'offre les écrit."""
+    """`(offer terms, other tools)` present in `after` and absent from the cited facts and
+    the profile's skills (`known`: the text of the facts). Offer terms are returned as the offer
+    writes them."""
     haystack = _padded(after)
     skills = _padded(" ".join(skill.name for skill in profile.skills))
     posting = _posting_terms(analysis)
@@ -160,13 +160,13 @@ def _titles(profile: MasterProfileData) -> str:
 
 
 def _known_titles(p: Proposal, profile: MasterProfileData) -> str:
-    """Les rôles et titres du profil ne comptent que pour réécrire le titre (`t…`) : un autre rôle
-    lèverait « Lead » ou « Senior » sur une expérience, une compétence ou une langue."""
+    """The profile's roles and titles count only to rewrite the title (`t…`): another role
+    would raise "Lead" or "Senior" on an experience, a skill or a language."""
     return " ".join(_title_texts(profile)) if (p.target or "").startswith("t") else ""
 
 
 def _title_claimed(after: str, profile: MasterProfileData, analysis: PostingAnalysis) -> bool:
-    """Un mot de titre ou l'intitulé de l'offre dans `after`, absent des rôles du profil."""
+    """A title word or the offer's job title in `after`, absent from the profile's roles."""
     known = _titles(profile)
     haystack = _padded(after)
     if any(f" {w} " in haystack and f" {w} " not in known for w in _TITLE_WORDS):
@@ -176,8 +176,8 @@ def _title_claimed(after: str, profile: MasterProfileData, analysis: PostingAnal
 
 
 def capitalized_names(after: str, known: str, *, skip_first: bool) -> list[tuple[int, str]]:
-    """Les mots capitalisés de `after` (hors début de phrase, hors sigles) que `known` (un texte
-    `_padded`) ne contient pas, un par forme comparée : `(position, mot tel qu'écrit)`."""
+    """Capitalized words of `after` (not at the start of a sentence, not acronyms) that `known` (a
+    `_padded` text) does not contain, one per compared form: `(position, word as written)`."""
     found: dict[str, tuple[int, str]] = {}
     for match in _WORD.finditer(after):
         word = match.group()
@@ -192,8 +192,8 @@ def capitalized_names(after: str, known: str, *, skip_first: bool) -> list[tuple
 
 
 def _names(after: str, profile: MasterProfileData, *, skip_first: bool) -> set[str]:
-    """Les mots capitalisés de `after` (hors début de phrase, hors sigles) qu'aucun texte du
-    profil ne contient : un outil ou une entreprise qu'aucune liste ne connaît."""
+    """Capitalized words of `after` (not at the start of a sentence, not acronyms) that no text
+    of the profile contains: a tool or a company no list knows."""
     known = _padded(" ".join(facts_of(profile).values()))
     places = [experience.location or "" for experience in profile.experiences]
     known += _padded(" ".join([profile.identity.name, profile.identity.location or "", *places]))
@@ -215,7 +215,7 @@ def validate(p: Proposal, profile: MasterProfileData, analysis: PostingAnalysis)
     cited = cited_facts(p, facts)
     after = clean_text(p.after)
     reference = clean_text(" ".join(cited))
-    own = clean_text(facts.get(p.target or "", ""))  # le fait visé seul (I-1)
+    own = clean_text(facts.get(p.target or "", ""))  # the targeted fact alone (I-1)
     blocks: list[str] = [] if cited else [NO_FACT]
     if figures_in(after) - figures_in(reference):
         blocks.append(NUMBER)

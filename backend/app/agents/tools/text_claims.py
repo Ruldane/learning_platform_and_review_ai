@@ -1,26 +1,26 @@
-"""Contrôle des faits d'un texte écrit au nom de January (SPEC 1, 18.3, F16) : pièces du kit de
-candidature, brouillons de relance, pitch, réponses de formulaire, réponse améliorée du débrief.
-Du code, pas un agent : un chiffre, un outil, un titre ou un nom propre que le profil maître validé
-ne dit pas est rendu (`Claim`), et la pièce reste « à vérifier » avec ces termes. Mieux vaut
-trop signaler (un humain lève) que laisser passer un fait inventé.
+"""Checks the facts of a text written in January's name (SPEC 1, 18.3, F16): pieces of the
+application kit, follow-up drafts, pitch, form answers, improved answer of the debrief.
+Code, not an agent: a figure, a tool, a title or a proper noun that the validated master profile
+does not state is returned (`Claim`), and the piece stays "to verify" with these terms. Better to
+over-report (a human decides) than let an invented fact through.
 
-Lectures du validateur des modifications de CV (`cv_validator`, `cv_lexicon`) :
-- **nombres** (chiffres et lettres, « 30 % », « 12 k€ ») et **proportions** (« doublé », « x3 »)
-  absents des textes des faits du profil (titres, lignes, réalisations, résumé, détails de
-  formation, compétences, langues) et des années de leurs dates de début et de fin. Jamais les
-  chiffres d'un téléphone, d'un email ou d'un lien, ni les mois : ce ne sont pas des faits ;
-- **outils** du lexique, sans casse (un terme ambigu comme « vue » seulement sous sa forme de
-  produit), absents du profil ;
-- **titres** (« lead », « senior »…) absents des intitulés du profil, seulement quand le texte se
-  les attribue (« en tant que », « je suis », « comme », « as a »…) ;
+Readings of the CV change validator (`cv_validator`, `cv_lexicon`):
+- **numbers** (digits and letters, "30 %", "12 k€") and **proportions** ("doublé", "x3")
+  absent from the texts of the profile's facts (titles, lines, achievements, summary, education
+  details, skills, languages) and from the years of their start and end dates. Never the
+  digits of a phone, an email or a link, nor the months: they are not facts;
+- **tools** from the lexicon, case-insensitive (an ambiguous term like "vue" only as a product),
+  absent from the profile;
+- **titles** ("lead", "senior"...) absent from the profile's job titles, only when the text
+  attributes them to itself ("en tant que", "je suis", "comme", "as a"...);
 - **noms propres** (`text_claims_names`).
 
-`allowed` ne contient que des expressions entières : l'entreprise, l'intitulé exact de l'offre, le
-nom d'un contact. Une expression est retirée du texte là où elle figure (`text_claims_mask`) :
-partout pour les noms, et pour le reste seulement quand un mot de l'offre ou de l'employeur la
-précède (« votre poste de Développeuse IA », « chez Société Fictive ») : « en tant que Lead Data »
-reste lu. Les outils et les mots clés de l'offre n'y ont pas leur place, ni aucun chiffre : ils
-ne sont jamais un fait de January. Les phrases doivent parler de January."""
+`allowed` only contains whole expressions: the company, the exact title of the offer, the
+name of a contact. An expression is removed from the text where it appears (`text_claims_mask`):
+everywhere for names, and for the rest only when a word of the offer or the employer precedes it
+("votre poste de Développeuse IA", "chez Société Fictive"): "en tant que Lead Data" stays read.
+Tools and keywords of the offer have no place here, nor any figure: they are never a fact of
+January's. The sentences must talk about January."""
 
 import re
 from collections.abc import Iterator, Sequence
@@ -52,15 +52,15 @@ from app.agents.tools.text_claims_names import GREETINGS, name_claims
 
 ClaimKind = Literal["number", "tool", "title", "name"]
 _WORD = re.compile(r"\w[\w+#]*")
-_SKIPPED_KEYS = frozenset({"id", "sources"})  # identifiants et origines : pas du texte de January
-_LINK_FACT = re.compile(r"^k\d+$")  # un lien : son adresse n'est pas une référence de chiffres
+_SKIPPED_KEYS = frozenset({"id", "sources"})  # identifiers and origins: not January's text
+_LINK_FACT = re.compile(r"^k\d+$")  # a link: its address is not a reference for figures
 _CLAUSE_BREAK = re.compile(r"[.,;:!?\n]")
 _TIMES = re.compile(r"(?<!\w)(?:[x×]\s?\d+|\d+\s?[x×])(?!\w)", re.IGNORECASE)
-_SELF_WINDOW = 6  # mots après la formule où un mot de titre est lu
+_SELF_WINDOW = 6  # words after the formula where a title word is read
 
 
 def _tech_by_first_word() -> dict[str, list[tuple[str, tuple[str, ...]]]]:
-    """Les outils du lexique, comparés (`normalize_term`), rangés par leur premier mot."""
+    """The lexicon tools, compared (`normalize_term`), filed by their first word."""
     index: dict[str, list[tuple[str, tuple[str, ...]]]] = {}
     for term in TECH_TERMS:
         form = normalize_term(term, plural=True)
@@ -76,18 +76,18 @@ _RATIO_WORDS = {normalize_term(word): family for word, family in RATIO_WORDS.ite
 
 @dataclass(frozen=True)
 class Claim:
-    """Un terme du texte que le profil ne dit pas, tel que le texte l'écrit (un nombre sous sa
-    forme canonique : « 30% », « 1000 » ; une proportion, le mot écrit : « doublé »)."""
+    """A term of the text that the profile does not state, as the text writes it (a number in its
+    canonical form: "30%", "1000"; a proportion, the word written: "doublé")."""
 
     kind: ClaimKind
     term: str
 
 
-Found = dict[tuple[ClaimKind, str], tuple[int, Claim]]  # (genre, clé) → (position, claim)
+Found = dict[tuple[ClaimKind, str], tuple[int, Claim]]  # (kind, key) → (position, claim)
 
 
 def _strings(value: Any) -> Iterator[str]:
-    """Les textes d'un profil (`model_dump`), sans identifiants ni origines."""
+    """The texts of a profile (`model_dump`), without identifiers or origins."""
     if isinstance(value, str):
         yield value
     elif isinstance(value, dict):
@@ -104,21 +104,21 @@ def _padded(text: str) -> str:
 
 
 def _fact_text(profile: MasterProfileData) -> str:
-    """Les textes des faits (hors liens) et le titre d'en-tête : la référence des chiffres et des
-    proportions. Les mois et les chiffres de contact n'y sont pas."""
+    """The texts of the facts (excluding links) and the header title: the reference for figures and
+    proportions. Months and contact figures are not in it."""
     facts = [text for fact, text in facts_of(profile).items() if not _LINK_FACT.match(fact)]
     return clean_text(" ".join([*facts, profile.identity.headline or ""]))
 
 
 def _years(profile: MasterProfileData) -> set[str]:
-    """Les années des dates de début et de fin des expériences et des formations."""
+    """The years of the start and end dates of the experiences and education."""
     dated: list[Experience | Education] = [*profile.experiences, *profile.education]
     dates = [date for item in dated for date in (item.start, item.end)]
     return {date[:4] for date in dates if date}
 
 
 def _words(text: str) -> list[tuple[str, int, int]]:
-    """Les mots de `text` comparables (`normalize_term`) : `(mot, début, fin)` dans le texte."""
+    """Comparable words of `text` (`normalize_term`): `(word, start, end)` positions in the text."""
     return [
         (part, match.start(), match.end())
         for match in _WORD.finditer(text)
@@ -146,8 +146,8 @@ def _number_claims(text: str, reference: set[str]) -> Found:
 
 
 def _ratio_claims(text: str, facts: str) -> Found:
-    """Les proportions (« doublé », « moitié », « x3 ») que les faits ne disent pas, comme le
-    validateur des modifications : même famille dans les faits, ou un chiffre de cette famille."""
+    """The proportions ("doublé", "moitié", "x3") that the facts do not state, like the
+    validator of CV changes: same family in the facts, or a figure of that family."""
     said, figures = ratio_families(facts), figures_in(facts)
     unbacked = {
         family
@@ -165,7 +165,7 @@ def _ratio_claims(text: str, facts: str) -> Found:
             found.setdefault(
                 ("number", match.group()), (match.start(), Claim("number", match.group()))
             )
-    for family in unbacked - _families(found):  # en toutes lettres (« divisé par deux »)
+    for family in unbacked - _families(found):  # written out in full ("divisé par deux")
         found.setdefault(("number", family), (len(text), Claim("number", family)))
     return found
 
@@ -194,8 +194,8 @@ def _same_clause(text: str, left: re.Match[str], right: re.Match[str]) -> bool:
 
 
 def _title_claims(text: str, known_titles: str) -> Found:
-    """Les mots de titre que le texte se donne : lus dans les mots qui suivent une formule
-    d'attribution (« en tant que », « je suis », « comme », « as a »), dans la même proposition."""
+    """The title words the text gives itself: read in the words following an attribution
+    formula ("en tant que", "je suis", "comme", "as a"), within the same clause."""
     matches = list(_WORD.finditer(text))
     words = [normalize_term(m.group()) for m in matches]
     found: Found = {}
@@ -226,9 +226,9 @@ def _title_texts(profile: MasterProfileData) -> str:
 def text_claims(
     text: str, profile: MasterProfileData, *, allowed: Sequence[str] = ()
 ) -> list[Claim]:
-    """Les chiffres, proportions, outils, titres et noms propres de `text` que le profil ne dit
-    pas, sans doublon, dans l'ordre du texte. `allowed` : des expressions entières (entreprise,
-    intitulé exact de l'offre, nom d'un contact), jamais des outils ni des chiffres de l'offre."""
+    """The figures, proportions, tools, titles and proper nouns of `text` that the profile does
+    not state, without duplicates, in text order. `allowed`: whole expressions (company, exact
+    title of the offer, name of a contact), never tools or figures of the offer."""
     clean = mask_own_contacts(clean_text(text), profile)
     body = mask_dates(mask_phrases(clean, allowed))
     facts = _fact_text(profile)

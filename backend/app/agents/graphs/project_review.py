@@ -1,21 +1,21 @@
-"""Parcours `project_review` (P2 à P4, D165) : le Praticien évalue le rendu d'un mini projet contre
-les critères de l'énoncé ; le code décide du verdict ; validé, il écrit les quatre brouillons de
-January, que le code contrôle (`text_claims`).
+"""Graph `project_review` (P2 to P4, D165): the Practitioner assesses a mini project submission
+against the brief's criteria; the code decides the verdict; if validated, it writes the four drafts
+for January, which the code checks (`text_claims`).
 
-START -> load -> read_repo -> (rien à lire ? skip : evaluate)
-skip -> save ; evaluate -> (validé ? drafts : save) ; drafts -> (à corriger ? redo : save)
+START -> load -> read_repo -> (nothing to read? skip : evaluate)
+skip -> save; evaluate -> (validated ? drafts : save); drafts -> (to fix ? redo : save)
 redo -> save -> announce -> END
 
-Mode `drafts` (D173 n° 4, D181) : un projet **déjà validé** sans ses brouillons (leur écriture
-avait échoué) : `load -> seed -> drafts -> (à corriger ? redo : save)`, sans lecture du dépôt ni
-évaluation ; `save` ne range que les brouillons (`save_drafts`). Mêmes plafonds : un appel
-standard et un nouvel essai au plus.
+Mode `drafts` (D173 no. 4, D181): a project **already validated** without its drafts (their write
+had failed): `load -> seed -> drafts -> (to fix ? redo : save)`, with no repository read nor
+evaluation; `save` only stores the drafts (`save_drafts`). Same caps: one standard call
+and one retry at most.
 
-Sans description ni dépôt lisible, aucun appel au modèle : « à reprendre », jamais « validé » sur
-rien. Aucune interruption, aucune boucle ; chaque nœud relit les entrées par le port et l'écriture
-du port est idempotente par session (SPEC 9.4). Trois appels standard au plus (évaluation,
-brouillons, un nouvel essai des brouillons dans son propre nœud et son propre délai : sa panne
-garde le premier jet « à vérifier »). Lancé seulement par la feature `projects` (8.10,
+Without a description or a readable repository, no model call: "to redo", never "validated" on
+nothing. No interruption, no loop; each node rereads its inputs through the port, and the port write
+is idempotent per session (SPEC 9.4). Three standard calls at most (evaluation,
+drafts, one new try of the drafts in its own node and its own timeout: its failure
+keeps the first draft "to verify"). Started only by the `projects` feature (8.10,
 `ROUTE_ONLY`)."""
 
 from typing import Any, Literal

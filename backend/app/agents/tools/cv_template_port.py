@@ -1,12 +1,12 @@
-"""Port des gabarits de CV (D125) : ce que le Maquettiste (`cv_capture`, mode `design`) emprunte
-à la feature `cv` (`AgentCvTemplateStore`, 6.10), sans l'importer (contrat 6).
+"""Port for CV templates (D125): what the layout designer (`cv_capture`, `design` mode) borrows
+from the `cv` feature (`AgentCvTemplateStore`, 6.10), without importing it (contract 6).
 
-Chaque écriture est **idempotente** (SPEC 9.4) : `prepare` par gabarit, `render_pass` par
-`(gabarit, passe)` (une passe déjà rendue est relue, jamais rendue deux fois), `finish` par
-gabarit. `read_pass` relit une passe rangée sans aucun rendu : le nœud `fix` y prend les images
-du rendu, que l'état du graphe ne garde pas (les checkpoints restent légers).
+Each write is **idempotent** (SPEC 9.4): `prepare` per template, `render_pass` per
+`(template, pass)` (a pass already rendered is reread, never rendered twice), `finish` per
+template. `read_pass` rereads a stored pass without any rendering: the `fix` node takes the images
+of the render from it, which the graph state does not keep (the checkpoints stay light).
 
-Le texte et les images d'un CV, les noms de polices lus dans le PDF sont des données
+The text and images of a CV, the font names read from the PDF are personal or untrusted data
 personnelles : ni journal, ni message d'erreur."""
 
 from dataclasses import dataclass
@@ -23,15 +23,15 @@ TemplateOutcome = Literal["ready", "failed"]
 
 @dataclass(frozen=True)
 class OriginalView:
-    """Le CV d'origine tel que le Maquettiste le voit. `blocks_summary` : une ligne par bloc,
-    « x,y,l,h | police | taille | couleur | gras | texte » ; `fonts` : polices libres choisies pour
-    celles du PDF (`FontChoice`) ; `available_fonts` : familles qu'un `TemplateSpec` peut citer ;
-    `original_text` : texte visible dans l'ordre du flux (contrôle des lignes recopiées)."""
+    """The original CV as the layout designer sees it. `blocks_summary`: one line per block,
+    "x,y,w,h | font | size | color | bold | text"; `fonts`: free fonts chosen for those of the PDF
+    (`FontChoice`); `available_fonts`: families a `TemplateSpec` may cite;
+    `original_text`: visible text in stream order (check of copied lines)."""
 
     template_id: str
     page_count: int
-    page_size: tuple[float, float]  # largeur, hauteur en points
-    selectable: bool  # faux : CV scanné, sans texte
+    page_size: tuple[float, float]  # width, height in points
+    selectable: bool  # false: scanned CV, no text
     pages_png: list[bytes]
     blocks_summary: str
     fonts: list[FontChoice]
@@ -48,22 +48,22 @@ class PassResult:
 
 
 def keeps_pass(adjusted: bool, score: int, kept_score: int | None) -> bool:
-    """La passe rendue devient-elle la passe gardée du gabarit ? Parmi les passes automatiques,
-    la meilleure l'emporte (à égalité, la plus récente) : 69, 78, 69 garde la passe 2. Une passe
-    d'ajustement suit la consigne de January, que le score ne voit pas : elle remplace toujours.
-    Règle commune au port réel, au faux et au graphe : le score montré est celui de la passe
-    gardée."""
+    """Does the rendered pass become the template's kept pass? Among the automatic passes,
+    the best wins (tie: the most recent): 69, 78, 69 keeps pass 2. An adjustment pass
+    follows January's instruction, which the score does not see: it always replaces.
+    Common rule for the real port, the fake and the graph: the score shown is that of the
+    kept pass."""
     return kept_score is None or adjusted or score >= kept_score
 
 
 class CvTemplateStore(Protocol):
     async def prepare(self, user_id: str, template_id: str) -> OriginalView:
-        """Idempotent : mise en page (6.3), images rangées, polices choisies et téléchargées,
-        écarts notés ; relu tel quel ensuite. Gabarit absent ou d'une autre : 404."""
+        """Idempotent: layout (6.3), images stored, fonts chosen and downloaded,
+        deviations noted; reread as is afterwards. Missing template or another's: 404."""
         ...
 
     async def sample_fallback(self, user_id: str) -> CvContent | None:
-        """Contenu de démonstration tiré du profil validé (CV scanné) ; `None` sans profil."""
+        """Demonstration content from the validated profile (scanned CV); `None` without one."""
         ...
 
     async def render_pass(
@@ -75,22 +75,22 @@ class CvTemplateStore(Protocol):
         content: CvContent,
         adjusted: bool = False,
     ) -> PassResult:
-        """Idempotent par `(template_id, pass_no)` : passe déjà rendue → relue sans nouveau
-        rendu ; sinon `cv_document`, `html_to_pdf`, extraction du rendu, `similarity`, rangement
-        (spec, html, css, score, zones, images) de la passe seulement si `keeps_pass` ; la passe
-        reste dans le journal des passes dans tous les cas."""
+        """Idempotent per `(template_id, pass_no)`: pass already rendered -> reread without a new
+        rendering; otherwise `cv_document`, `html_to_pdf`, extraction of the render, `similarity`,
+        storing (spec, html, css, score, zones, images) of the pass only if `keeps_pass`; the pass
+        stays in the pass journal in all cases."""
         ...
 
     async def read_pass(self, user_id: str, template_id: str, pass_no: int) -> PassResult:
-        """Une passe déjà rangée, relue sans aucun rendu ; 404 si elle n'existe pas."""
+        """A pass already stored, reread without any rendering; 404 if it does not exist."""
         ...
 
     async def finish(
         self, user_id: str, template_id: str, status: TemplateOutcome, reason: str | None
     ) -> None:
-        """`ready` : la passe gardée (`keeps_pass`) devient le gabarit, actif si aucun
-        autre ne l'est ; `failed` : `reason` (phrase française, sans donnée du CV) rangée.
-        Idempotent ; un gabarit `failed` ne passe plus à `ready` (409 `template_not_capturing`)."""
+        """`ready`: the kept pass (`keeps_pass`) becomes the template, active if no
+        other is; `failed`: `reason` (a French sentence, no CV data) stored.
+        Idempotent; a `failed` template no longer becomes `ready` (409 `template_not_capturing`)."""
         ...
 
 
@@ -101,7 +101,7 @@ def cv_templates_unavailable() -> AppError:
 
 
 class _NoCvTemplates:
-    """Valeur par défaut du moteur (tests, démarrages sans la feature)."""
+    """Engine default value (tests, starts without the feature)."""
 
     async def prepare(self, user_id: str, template_id: str) -> OriginalView:
         raise cv_templates_unavailable()

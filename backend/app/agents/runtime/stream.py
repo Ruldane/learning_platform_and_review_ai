@@ -1,11 +1,11 @@
-"""Traduction du flux de `astream(stream_mode=["custom", "messages", "updates"])` en événements.
+"""Translates the stream of `astream(stream_mode=["custom", "messages", "updates"])` into events.
 
-Pur, sans I/O : le runner publie ce qui en sort. Formes vérifiées sur langgraph 1.2 (format
-« v1 » par défaut, plusieurs modes → tuples `(mode, donnée)`) :
-- `custom` : ce que le nœud a écrit dans le `StreamWriter` (`emit()` → clé `EVENT_KEY`) ;
-- `messages` : `(fragment, métadonnées)` ; les métadonnées portent `langgraph_node` et celles
-  posées par `with_config(metadata=...)` (dont `agent`, voir `call_with_retries`) ;
-- `updates` : `{nœud: mise à jour}`, ou `{"__interrupt__": (Interrupt(value, id), ...)}`.
+Pure, no I/O: the runner publishes what comes out of it. Shapes checked on langgraph 1.2 (format
+"v1" by default, several modes -> tuples `(mode, data)`):
+- `custom`: what the node wrote to the `StreamWriter` (`emit()` -> key `EVENT_KEY`);
+- `messages`: `(fragment, metadata)`; the metadata carry `langgraph_node` and those
+  set by `with_config(metadata=...)` (including `agent`, see `call_with_retries`);
+- `updates`: `{node: update}`, or `{"__interrupt__": (Interrupt(value, id), ...)}`.
 """
 
 from dataclasses import dataclass
@@ -29,8 +29,8 @@ class PendingEvent:
 
 
 def interrupt_payload(interrupt: Interrupt) -> dict[str, Any]:
-    """Charge `interrupt.requested` : `interrupt_id` = `Interrupt.id`, le reste = sa valeur
-    (`kind`, `question`, `options`). `ValueError` si la valeur ne suit pas le catalogue."""
+    """Loads `interrupt.requested`: `interrupt_id` = `Interrupt.id`, the rest = its value
+    (`kind`, `question`, `options`). `ValueError` if the value does not follow the catalog."""
     value = interrupt.value if isinstance(interrupt.value, dict) else {}
     data = {**value, "interrupt_id": interrupt.id}
     public = validate_payload("interrupt.requested", data).model_dump(mode="json")
@@ -53,8 +53,8 @@ def _custom(chunk: Any) -> list[PendingEvent]:
 
 
 def _message(chunk: Any) -> list[PendingEvent]:
-    """Seuls les fragments en cours d'écriture deviennent des tokens : un message complet (déjà
-    dans l'état) a son `agent.message`, un fragment vide (raisonnement, outil) n'affiche rien."""
+    """Only fragments being written become tokens: a complete message (already
+    in the state) gets its `agent.message`, an empty fragment (reasoning, tool) shows nothing."""
     if not isinstance(chunk, tuple) or len(chunk) != 2:
         return []
     message, metadata = chunk

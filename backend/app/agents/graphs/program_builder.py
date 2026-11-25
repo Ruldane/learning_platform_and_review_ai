@@ -1,10 +1,10 @@
-"""Parcours `program_builder` (SPEC 3.1 étape 7, 3.4, D86) : le Stratège bâtit le programme
-semaine par semaine à partir du parcours choisi au Conseil, puis January le valide (point d'arrêt
-n° 3) ou demande une révision (nouvelle version, plan courant relu en base).
+"""Graph `program_builder` (SPEC 3.1 step 7, 3.4, D86): the Strategist builds the program
+week by week from the path chosen at the Council, then January validates it (break point
+no. 3) or asks for a revision (new version, current plan reread from the database).
 
 START -> context -> draft -> save -> ask_validation -> route_validation
 route_validation : validate -> finalize -> END ; revise -> draft (revision + 1, note) ;
-                   réponse invalide -> ask_validation
+                   invalid answer -> ask_validation
 """
 
 from datetime import date

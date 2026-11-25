@@ -1,5 +1,5 @@
-"""Dépendances injectées dans un graphe : tout ce dont les nœuds ont besoin passe par `GraphDeps`
-(modèles par la fabrique, bus d'événements, réglages, ports des features), jamais par des
+"""Dependencies injected into a graph: everything the nodes need goes through `GraphDeps`
+(models from the factory, event bus, settings, feature ports), never through
 globales."""
 
 from dataclasses import dataclass
@@ -21,7 +21,7 @@ from app.providers.llm.base import Tier
 
 
 class ChatModelSource(Protocol):
-    """`LlmFactory` en production, un faux en test."""
+    """`LlmFactory` in production, a fake one in tests."""
 
     async def get_chat_model(
         self, user_id: str, tier: Tier, agent: str | None = None
@@ -36,7 +36,7 @@ class GraphDeps:
     bus: EventBus
     settings: RunSettings
     session_factory: async_sessionmaker[AsyncSession]
-    ports: AgentPorts = NO_PORTS  # branchés par la composition (`bootstrap.agent_ports`, D82)
+    ports: AgentPorts = NO_PORTS  # wired by the composition (`bootstrap.agent_ports`, D82)
 
     @property
     def memory(self) -> MemoryGateway:
@@ -47,7 +47,7 @@ class GraphDeps:
         return self.ports.web
 
     async def user_inputs_since(self, seq: int) -> list[UserInput]:
-        """Les `user.message` de la session au-delà de `seq` (texte et commande), dans
+        """The session's `user.message` events after `seq` (text and command), in
         l'ordre."""
 
         async def read_messages() -> list[tuple[int, dict[str, object]]]:
@@ -55,11 +55,11 @@ class GraphDeps:
                 rows = await EventRepository(db, self.user_id).list_after(self.session_id, seq)
             return [(row.seq, row.payload) for row in rows if row.type == "user.message"]
 
-        # Au rejeu du nœud, la réponse porte sur les messages présents à l'émission du brief.
-        # Une commande arrivée pendant cette réponse sera lue au prochain nœud.
+        # On node replay, the answer covers the messages present when the brief was emitted.
+        # A command that arrived during this answer will be read at the next node.
         entries = await task(read_messages)() if played_by(self.user_id) else await read_messages()
         return [user_input_of(index, payload) for index, payload in entries]
 
     async def user_messages_since(self, seq: int) -> list[tuple[int, str]]:
-        """`(seq, texte)` des `user.message` de la session au-delà de `seq` (démo)."""
+        """`(seq, text)` of the session's `user.message` events after `seq` (demo)."""
         return [(said.seq, said.text) for said in await self.user_inputs_since(seq)]

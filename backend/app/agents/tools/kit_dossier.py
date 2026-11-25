@@ -1,17 +1,17 @@
-"""Contrôle et rendu du dossier de l'entreprise (SPEC 6.4, F16, D142). Du code : le rôle du
-Vérificateur est tenu ici, « aucune affirmation sans source lue » :
+"""Check and rendering of the company file (SPEC 6.4, F16, D142). Code: the Verifier's role is
+kept here, "no claim without a source read":
 
-- une citation `[n]` dont la page n'a pas été lue est retirée du texte ;
-- un texte (activité, produit, culture, processus d'entretien) qui ne cite plus aucune page lue
-  est vidé : le rendu dit « Non trouvé dans les sources lues. » ;
-- une technologie, un point de vigilance ou une actualité sans citation valide est retiré ;
-- une actualité sans date, future ou de plus de 6 mois est retirée ; de même celle dont toutes
-  les pages citées portent une date connue de plus de 6 mois (la date du modèle ne suffit pas) ;
-- les questions à poser sont des questions, pas des affirmations : leurs citations invalides
-  sont retirées, une question réduite à rien n'est pas rendue ;
-- la taille de l'entreprise n'est pas sourcée : rendue comme une estimation, omise si inconnue.
+- a citation `[n]` whose page was not read is removed from the text;
+- a text (activity, product, culture, interview process) that no longer cites any read page
+  is emptied: the rendering says "Not found in the sources read.";
+- a technology, a watch point or a news item without a valid citation is removed;
+- a news item without a date, future-dated or older than 6 months is removed; likewise one whose all
+  cited pages carry a known date older than 6 months (the model's date is not enough);
+- questions to ask are questions, not claims: their invalid citations
+  are removed; a question reduced to nothing is not rendered;
+- the company size is not sourced: rendered as an estimate, omitted if unknown.
 
-Aucune journalisation ici : le dossier n'est jamais écrit dans un journal (17.2)."""
+No logging here: the file is never written to a log (17.2)."""
 
 import re
 from collections.abc import Sequence
@@ -32,7 +32,7 @@ _NUMBER = re.compile(r"\d+")
 
 
 def _cleaned(text: str, valid: set[int]) -> tuple[str, int]:
-    """`text` sans les citations de pages non lues, et le nombre de citations valides restantes."""
+    """`text` without the citations of unread pages, and the number of valid citations left."""
     kept = 0
 
     def keep(match: re.Match[str]) -> str:
@@ -46,14 +46,14 @@ def _cleaned(text: str, valid: set[int]) -> tuple[str, int]:
 
 
 def _sourced(text: str, valid: set[int]) -> str:
-    """Le texte nettoyé, ou vide s'il ne cite aucune page lue."""
+    """The cleaned text, or empty if it cites no read page."""
     clean, kept = _cleaned(text, valid)
     return clean if kept else ""
 
 
 @dataclass(frozen=True)
 class Checked:
-    """Le dossier vérifié ; `emptied` : les textes vidés, `dropped` : les éléments retirés."""
+    """The checked file; `emptied`: the emptied texts, `dropped`: the removed items."""
 
     dossier: CompanyDossier
     emptied: int
@@ -65,8 +65,8 @@ def _fresh(item: NewsItem, today: date) -> bool:
 
 
 def _from_old_pages(text: str, page_dates: Sequence[date | None], today: date) -> bool:
-    """Toutes les pages citées ont une date connue de plus de 6 mois (une page sans date, ou une
-    page récente parmi elles, laisse le doute à l'actualité)."""
+    """All cited pages have a known date older than 6 months (a page without a date, or a
+    recent page among them, leaves the news item in doubt)."""
     cited = [int(n) for match in _CITATION.findall(text) for n in _NUMBER.findall(match)]
     dates = [page_dates[n - 1] if n <= len(page_dates) else None for n in cited]
     return bool(dates) and all(d is not None and d < today - NEWS_MAX_AGE for d in dates)
@@ -75,8 +75,8 @@ def _from_old_pages(text: str, page_dates: Sequence[date | None], today: date) -
 def check_dossier(
     dossier: CompanyDossier, pages: int, today: date, *, page_dates: Sequence[date | None] = ()
 ) -> Checked:
-    """Le dossier d'un modèle, vérifié contre les `pages` lues (rangs 1 à `pages`), le jour et la
-    date connue de chaque page (`page_dates`, dans l'ordre des rangs)."""
+    """A model's file, checked against the read `pages` (ranks 1 to `pages`), the day and the
+    known date of each page (`page_dates`, in rank order)."""
     valid = set(range(1, pages + 1))
     texts = {
         name: _sourced(getattr(dossier, name), valid)
@@ -108,7 +108,7 @@ def check_dossier(
 
 
 def has_content(dossier: CompanyDossier) -> bool:
-    """Au moins un texte sourcé : sinon le dossier n'est pas produit."""
+    """At least one sourced text: otherwise the file is not produced."""
     texts = (dossier.activity, dossier.product, dossier.culture, dossier.interview_process)
     return any(texts) or bool(dossier.stack or dossier.news or dossier.watch_points)
 
@@ -122,7 +122,7 @@ def _bullets(items: list[str]) -> str:
 
 
 def render_dossier(company: str, dossier: CompanyDossier, sources: list[SourceRef]) -> str:
-    """Le dossier en Markdown, avec la liste des pages lues."""
+    """The file in Markdown, with the list of read pages."""
     news = [
         f"{item.date.isoformat()} · {item.text}" if item.date else item.text
         for item in dossier.news

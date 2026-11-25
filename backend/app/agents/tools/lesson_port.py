@@ -1,9 +1,9 @@
-"""Port des leçons (D90). `app.agents` n'importe aucune feature (contrat 6) : il décrit ici ce dont
-le parcours `lesson_factory` a besoin (la fiche du module, la publication de la leçon et de ses
-ressources, l'échec, le module suivant) ; la feature `lessons` l'implémentera (tâche 4.10).
+"""Port for lessons (D90). `app.agents` imports no feature (contract 6): it describes here what
+the `lesson_factory` graph needs (the module record, the publication of the lesson and its
+resources, the failure, the next module); the `lessons` feature will implement it (task 4.10).
 
-Chaque écriture est idempotente par module : un nœud rejoué après un arrêt (SPEC 9.4) réécrit la
-même chose, jamais une leçon ni une ressource de plus.
+Each write is idempotent per module: a node replayed after a stop (SPEC 9.4) rewrites the
+same thing, never one more lesson or resource.
 """
 
 from collections.abc import Sequence
@@ -23,7 +23,7 @@ _LEGACY_LEVELS = {"debutant": "beginner", "intermediaire": "intermediate", "avan
 
 @dataclass(frozen=True)
 class ModuleBrief:
-    """Le module dont on écrit la leçon, tel que le programme l'a fixé."""
+    """The module whose lesson is written, as the program set it."""
 
     module_id: str
     program_id: str
@@ -32,19 +32,19 @@ class ModuleBrief:
     prerequisites: tuple[str, ...]
     week_rank: int
     week_theme: str
-    goal_text: str  # l'objectif de January, pour situer la leçon
-    language: str  # langue de la leçon (`lesson_language` des réglages)
-    # Pages des praticiens et sources retenues du Conseil liées au module (5 au plus).
+    goal_text: str  # January's goal, to place the lesson
+    language: str  # lesson language (`lesson_language` setting)
+    # Practitioners' pages and the Council's kept sources linked to the module (5 at most).
     seed_urls: tuple[str, ...]
     chapter_context: str = ""
-    # API dépréciées ou devenues secondaires du chapitre : à ne montrer que dans l'encadré
-    # « Lire du code ancien », jamais comme la façon recommandée.
+    # Deprecated or now secondary APIs of the chapter: to show only in the box
+    # "Reading old code", never as the recommended way.
     legacy: tuple[str, ...] = ()
 
 
 class ResourcePick(BaseModel):
-    """Une ressource retenue pour le module (SPEC 3.6) : une source notée 60 ou plus de la
-    session. Auteur, date et langue sont lus par le port sur la source, jamais par le modèle."""
+    """A resource kept for the module (SPEC 3.6): a source rated 60 or more in the
+    session. Author, date and language are read by the port from the source, never by the model."""
 
     source_id: str
     type: ResourceType
@@ -69,9 +69,9 @@ class ResourcePicks(BaseModel):
 
 @dataclass(frozen=True)
 class LessonReport:
-    """Rapport du Vérificateur rangé avec la leçon. À la publication `unsupported` est vide et
-    `problems` ne garde que des remarques sans gravité (par exemple des ressources en nombre
-    insuffisant)."""
+    """Verifier's report stored with the lesson. On publication `unsupported` is empty and
+    `problems` only keeps minor remarks (for example resources in insufficient
+    number)."""
 
     words: int
     unsupported: tuple[str, ...]
@@ -90,17 +90,17 @@ class LessonSubmission:
 @dataclass(frozen=True)
 class PublishedLesson:
     lesson_id: str
-    pdf_ok: bool  # le PDF a pu être produit ; sinon la leçon se lit quand même dans l'application
+    pdf_ok: bool  # the PDF could be produced; otherwise the lesson can still be read in the app
     resources: int
 
 
 class LessonStore(Protocol):
     async def brief(self, user_id: str, module_id: str) -> ModuleBrief:
-        """La fiche du module de l'utilisateur ; `module_not_found` (404) s'il n'est pas à lui."""
+        """The user's module record; `module_not_found` (404) if it is not theirs."""
         ...
 
     async def submission(self, user_id: str, session_id: str, module_id: str) -> LessonSubmission:
-        """Lit le brouillon privé autorisé pour la session de vérification."""
+        """Reads the private draft allowed for the verification session."""
         ...
 
     async def publish(
@@ -114,8 +114,8 @@ class LessonStore(Protocol):
         report: LessonReport,
         verification: bool = False,
     ) -> PublishedLesson:
-        """Range la leçon prête, ses ressources et son PDF ; idempotent par module : rejoué, il
-        rend la même leçon sans écrire de ligne de plus."""
+        """Stores the ready lesson, its resources and its PDF; idempotent per module: replayed, it
+        returns the same lesson without writing one more row."""
         ...
 
     async def fail(
@@ -128,16 +128,16 @@ class LessonStore(Protocol):
         verification: bool = False,
         feedback: Sequence[str] = (),
     ) -> None:
-        """Marque la leçon du module en échec, avec une raison lisible ; idempotent. Pour une
-        soumission (`verification`), `feedback` garde les remarques détaillées du contrôle."""
+        """Marks the module's lesson as failed, with a readable reason; idempotent. For a
+        submission (`verification`), `feedback` keeps the detailed remarks of the check."""
         ...
 
     async def next_module(
         self, user_id: str, program_id: str, *, exclude_session_id: str
     ) -> str | None:
-        """Fait suivre la chaîne : lance la leçon du prochain module dû du programme et rend son
-        id, ou `None` s'il n'en reste pas. `exclude_session_id` : la session en cours, qui ne
-        compte pas comme une chaîne déjà ouverte. Idempotent (une seule chaîne par programme)."""
+        """Chains on: starts the lesson of the next due module of the program and returns its
+        id, or `None` if none is left. `exclude_session_id`: the current session, which does not
+        count as an already open chain. Idempotent (one chain per program)."""
         ...
 
 
@@ -146,7 +146,7 @@ def lessons_unavailable() -> AppError:
 
 
 class _NoLessons:
-    """Valeur par défaut du moteur (tests existants, démarrages sans la feature `lessons`)."""
+    """Engine default value (existing tests, starts without the `lessons` feature)."""
 
     async def brief(self, user_id: str, module_id: str) -> ModuleBrief:
         raise lessons_unavailable()

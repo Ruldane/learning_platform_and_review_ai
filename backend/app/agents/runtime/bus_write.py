@@ -1,14 +1,14 @@
-"""Écriture d'un événement par le bus, verrou de la session tenu par l'appelant (`bus.py`).
+"""Writing an event through the bus; the session lock is held by the caller (`bus.py`).
 
-- Numérotation : `seq` = dernier connu + 1 (cache `SessionState.last_seq`, initialisé par
-  `max_seq`). L'unicité `(session_id, seq)` en base reste le filet de sécurité : un `seq` refusé
-  (écrivain hors du bus) fait relire `max_seq` et rejouer la transaction ENTIÈRE.
-- Garde facultative (`publish_with`, D61) : appelée dans la transaction de l'événement, avant
-  l'insertion. `False` : rollback, rien n'est écrit. `True` : l'événement est inséré dans la
-  même transaction, puis tout est validé d'un seul commit ; si l'insertion ou le commit
-  échoue, ce que la garde a écrit est annulé avec lui (jamais de statut final sans son
-  événement, D52 §2). La garde doit commencer par son écriture (pas de lecture avant) : SQLite
-  applique alors le délai d'attente sur verrou au lieu d'échouer.
+- Numbering: `seq` = last known + 1 (cache `SessionState.last_seq`, initialized by
+  `max_seq`). The `(session_id, seq)` uniqueness in the database remains the safety net: a `seq`
+  refused (writer outside the bus) makes `max_seq` be reread and the WHOLE transaction replayed.
+- Optional guard (`publish_with`, D61): called inside the event's transaction, before
+  the insert. `False`: rollback, nothing is written. `True`: the event is inserted in the
+  same transaction, then everything is committed at once; if the insert or the commit
+  fails, what the guard wrote is rolled back with it (never a final status without its
+  event, D52 §2). The guard must start with its write (no read before): SQLite then
+  applies the lock wait timeout instead of failing.
 """
 
 from collections.abc import Awaitable, Callable
@@ -41,8 +41,8 @@ class EventWriter:
         agent: str | None,
         guard: Guard | None = None,
     ) -> SessionEventRecord | None:
-        """Numérote et écrit ; `None` si la garde refuse (rien d'écrit, cache intact). Toute
-        erreur autre qu'un `seq` refusé invalide le cache : la base tranchera au prochain."""
+        """Numbers and writes; `None` if the guard refuses (nothing written, cache intact). Any
+        error other than a refused `seq` invalidates the cache: the database decides next time."""
         attempt = 0
         while True:
             attempt += 1
@@ -57,15 +57,15 @@ class EventWriter:
                     raise
                 continue
             except BaseException:
-                state.last_seq = None  # issue inconnue (validée ou non)
+                state.last_seq = None  # unknown outcome (committed or not)
                 raise
             if row is not None:
                 state.last_seq = seq
             return row
 
     async def load_last_seq(self, user_id: str, session_id: str) -> int:
-        # Lecture dans sa propre transaction : l'écriture qui suit commence par une écriture
-        # (garde ou INSERT), si bien que SQLite applique le délai d'attente au lieu d'échouer.
+        # Read in its own transaction: the write that follows starts with a write
+        # (guard or INSERT), so SQLite applies the lock wait timeout instead of failing.
         async with self._factory() as db:
             if await SessionRepository(db, user_id).get(session_id) is None:
                 raise AppError("session_not_found", "Session not found.", status_code=404)

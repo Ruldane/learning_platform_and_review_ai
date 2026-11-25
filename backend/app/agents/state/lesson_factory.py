@@ -1,7 +1,7 @@
-"""État du parcours `lesson_factory` (D90). Il hérite de l'état de l'Éclaireur : ses nœuds
-entrent dans le parcours tels quels, nœud pour nœud (mêmes clés, mêmes points de contrôle que
-`web_research`). La leçon elle-même n'est écrite en base qu'à la publication (port
-`LessonStore`) : l'état garde le brouillon, ses contrôles et les ressources choisies."""
+"""State of the `lesson_factory` graph (D90). It inherits the Scout's state: its nodes
+join the graph as they are, node for node (same keys, same checkpoints as
+`web_research`). The lesson itself is written to the database only on publication (port
+`LessonStore`): the state keeps the draft, its checks and the chosen resources."""
 
 from typing import Any
 
@@ -11,21 +11,19 @@ from app.agents.state.web_research import WebResearchState
 class LessonFactoryState(WebResearchState, total=False):
     program_id: str
     module_id: str
-    verification: bool  # soumission directe liée à la session
-    citation_urls: list[str]  # ordre des adresses dans le brouillon soumis
-    brief: dict[str, Any]  # `ModuleBrief` en JSON
-    resources: list[
-        dict[str, Any]
-    ]  # `ResourcePick` en JSON : 3 à 6, moins si le web n'en donne pas
-    resource_notes: list[str]  # remarques sans gravité (ressources insuffisantes)
-    draft: str  # Markdown du Rédacteur
-    revisions: int  # révisions déjà demandées au Rédacteur (0 : première version)
-    words: int  # mots du brouillon, blocs de code exclus
-    problems: list[str]  # contrôles déterministes non satisfaits (phrases françaises)
-    check_categories: list[str]  # catégories publiques, sans extrait du brouillon
-    unsupported: list[str]  # affirmations non sourcées relevées par le Vérificateur
-    scores: dict[str, int]  # notes pédagogiques sur 100, par critère
-    best: dict[str, Any]  # meilleure version contrôlée, son rang et ses contrôles (D305)
-    published: dict[str, Any]  # `PublishedLesson` en JSON
-    failure: str  # raison de l'échec de la leçon
-    next_module: str | None  # module dont la leçon vient d'être lancée par la chaîne
+    verification: bool  # direct submission linked to the session
+    citation_urls: list[str]  # order of the addresses in the submitted draft
+    brief: dict[str, Any]  # `ModuleBrief` as JSON
+    resources: list[dict[str, Any]]  # `ResourcePick` as JSON: 3 to 6, fewer if the web gives none
+    resource_notes: list[str]  # minor remarks (insufficient resources)
+    draft: str  # Writer's Markdown
+    revisions: int  # revisions already requested from the Writer (0: first version)
+    words: int  # draft words, code blocks excluded
+    problems: list[str]  # deterministic checks not met (French sentences)
+    check_categories: list[str]  # public categories, without an extract of the draft
+    unsupported: list[str]  # unsourced claims flagged by the Verifier
+    scores: dict[str, int]  # teaching scores out of 100, per criterion
+    best: dict[str, Any]  # best checked version, its rank and its checks (D305)
+    published: dict[str, Any]  # `PublishedLesson` as JSON
+    failure: str  # reason the lesson failed
+    next_module: str | None  # module whose lesson the chain has just started

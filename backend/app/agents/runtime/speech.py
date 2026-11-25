@@ -1,9 +1,9 @@
-"""Prise de parole citée et bornée, pour le débat du Conseil (SPEC 9.3, D82).
+"""Quoted and bounded speech, for the Council's debate (SPEC 9.3, D82).
 
-Le plafond de mots est imposé par le code après le flux : les tokens arrivent en direct, puis
-`agent.message` porte le texte coupé et ses citations, avec le même `message_id`, donc la bulle
-finale remplace celle des tokens (D57). Les citations sont les marqueurs `[n]` du texte qui
-renvoient à un catalogue numéroté (sources récupérées, éléments de la mémoire).
+The word cap is enforced by the code after the stream: tokens arrive live, then
+`agent.message` carries the cut text and its citations, with the same `message_id`, so the final
+bubble replaces the tokens' one (D57). Citations are the `[n]` markers in the text that
+point to a numbered catalog (retrieved sources, memory items).
 """
 
 import re
@@ -21,18 +21,18 @@ ELLIPSIS = "…"
 _TOKEN = re.compile(r"\S+")
 _MARKER = re.compile(r"\[(\d{1,4}(?:\s*,\s*\d{1,4})*)\]")
 _LETTER_OR_DIGIT = re.compile(r"\w")
-# Marqueur entier ou morceau d'un marqueur coupé par une espace (`[2,` puis `3]`).
+# Whole marker, or piece of a marker split by a space (`[2,` then `3]`).
 _MARKER_PART = re.compile(r"\[[\d,]*\]?|^[\d,]*\]")
-# Fin de phrase : « . », « ! » ou « ? », suivis au plus de fermants ou d'un marqueur `[n]`.
+# End of sentence: ".", "!" or "?", followed at most by closers or a `[n]` marker.
 _SENTENCE_END = re.compile(r"[.!?][\"'»”)\]*_]*(?:\[[\d,\s]+\])?[\"'»”)]*$")
-# Jeton qui prolonge une fin de phrase : fermants seuls ou marqueur `[n]` séparé par une espace
-# (`aide. [1]`, `aide. [1, 2]`), pour ne jamais perdre une citation à la coupe.
+# Token that extends a sentence end: closers alone or a `[n]` marker split by a space
+# (`aide. [1]`, `aide. [1, 2]`), so a citation is never lost at the cut.
 _TRAILING = re.compile(r"^(?:\[[\d,]*\]?|[\d,]*\]|[\"'»”)\]])+$")
 
 
 @dataclass(frozen=True)
 class CitationEntry:
-    """Une entrée du catalogue montré à l'agent : `[index] titre`."""
+    """An entry of the catalog shown to the agent: `[index] title`."""
 
     index: int
     title: str
@@ -45,11 +45,11 @@ class Spoken:
     text: str
     citations: list[Citation]
     words: int
-    revised: bool = False  # une nouvelle demande a été faite (`revise`)
+    revised: bool = False  # a new request was made (`revise`)
 
 
 def _is_word(token: str) -> bool:
-    """Un mot contient une lettre ou un chiffre ; un marqueur `[n]` n'en est pas un."""
+    """A word contains a letter or a digit; a `[n]` marker is not one."""
     return bool(_LETTER_OR_DIGIT.search(_MARKER_PART.sub("", token)))
 
 
@@ -58,8 +58,8 @@ def count_words(text: str) -> int:
 
 
 def _cut_at(text: str, limit: int) -> tuple[int, bool]:
-    """Fin de la partie gardée de `text` (plus de `limit` mots) et s'il faut « … » après : la
-    dernière phrase complète (., !, ?) qui tient, à défaut les `limit` premiers mots."""
+    """End of the kept part of `text` (over `limit` words) and whether "…" follows: the
+    last complete sentence (., !, ?) that fits, otherwise the first `limit` words."""
     words = 0
     word_end = sentence_end = 0
     previous_end = -1
@@ -82,13 +82,13 @@ def _cut(text: str, limit: int) -> str:
 
 
 def _keep_line(text: str, limit: int, keep: re.Pattern[str]) -> str | None:
-    """Coupe qui garde entière la première ligne où `keep` correspond (comptée dans `limit`),
-    ou `None` si aucune ligne ne correspond ou si la coupe ordinaire la garde déjà."""
+    """Cut that keeps whole the first line where `keep` matches (counted in `limit`),
+    or `None` if no line matches or if the ordinary cut already keeps it."""
     match = keep.search(text)
     if match is None or match.end() == match.start():
         return None
-    # La ligne est celle où la correspondance FINIT : un motif qui admet des blancs en tête
-    # (`^\s*` en MULTILINE) peut commencer sur une ligne vide au-dessus (relecture 5.1, I1).
+    # The line is the one where the match ENDS: a pattern that allows leading blanks
+    # (`^\s*` in MULTILINE) can start on an empty line above (review 5.1, I1).
     anchor = match.end() - 1
     start = text.rfind("\n", 0, anchor) + 1
     stop = text.find("\n", anchor)
@@ -107,13 +107,13 @@ def _keep_line(text: str, limit: int, keep: re.Pattern[str]) -> str | None:
 
 
 def cap_words(text: str, limit: int, *, keep: re.Pattern[str] | None = None) -> str:
-    """`limit` mots au plus : texte inchangé s'il tient ; sinon coupé après la dernière phrase
-    complète (., !, ?) qui tient dans `limit` mots, à défaut après les `limit` premiers mots
-    suivis de « … ». La mise en forme (sauts de ligne) de la partie gardée est conservée.
+    """`limit` words at most: text unchanged if it fits; otherwise cut after the last complete
+    sentence (., !, ?) that fits in `limit` words, otherwise after the first `limit` words
+    followed by "…". The formatting (line breaks) of the kept part is preserved.
 
-    Avec `keep`, la première ligne qui correspond est gardée entière (comptée dans `limit`,
-    coupée seulement si elle dépasse seule `limit`) : ce qui la précède est coupé comme
-    ci-dessus dans les mots qui restent, ce qui la suit est retiré (l'objection du Sceptique)."""
+    With `keep`, the first matching line is kept whole (counted in `limit`,
+    cut only if it alone exceeds `limit`): what precedes it is cut as above
+    within the remaining words, what follows it is removed (the Skeptic's objection)."""
     if count_words(text) <= limit:
         return text
     if keep is not None and (kept := _keep_line(text, limit, keep)) is not None:
@@ -122,8 +122,8 @@ def cap_words(text: str, limit: int, *, keep: re.Pattern[str] | None = None) -> 
 
 
 def extract_citations(text: str, catalog: Sequence[CitationEntry]) -> list[Citation]:
-    """Citations des marqueurs `[n]` (et `[n, m]`) connus du catalogue, dans l'ordre
-    d'apparition, sans doublon ; un numéro inconnu est ignoré (jamais une citation inventée)."""
+    """Citations of the `[n]` (and `[n, m]`) markers known to the catalog, in order
+    of appearance, without duplicates; an unknown number is ignored (never an invented citation)."""
     by_index = {entry.index: entry for entry in catalog}
     seen: set[int] = set()
     found: list[Citation] = []
@@ -157,14 +157,14 @@ async def speak(
     keep: re.Pattern[str] | None = None,
     retry: bool = True,
 ) -> Spoken:
-    """`agent.started`, tokens en direct (`call_with_retries`), puis `agent.message` avec le
-    texte coupé à `max_words` et ses citations, sous le `message_id` des tokens (D57).
+    """`agent.started`, live tokens (`call_with_retries`), then `agent.message` with the
+    text cut at `max_words` and its citations, under the tokens' `message_id` (D57).
 
-    `revise(texte coupé)` rend une demande de correction (règles du débat non tenues, D85) ou
-    `None` : une seule nouvelle demande est faite alors, sans tokens en direct, et son texte
-    remplace le premier sous le même `message_id` (la bulle en cours est corrigée).
+    `revise(cut text)` returns a correction request (debate rules not met, D85) or
+    `None`: a single new request is then made, without live tokens, and its text
+    replaces the first under the same `message_id` (the current bubble is corrected).
 
-    `keep` : la première ligne qui correspond survit à la coupe (`cap_words`)."""
+    `keep`: the first matching line survives the cut (`cap_words`)."""
     emit("agent.started", {"step": step, "intent": intent}, agent=agent)
     reply = await call_with_retries(model, messages, agent=agent, retry=retry)
     text = cap_words(message_text(reply).strip(), max_words, keep=keep)

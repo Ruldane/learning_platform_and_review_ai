@@ -1,21 +1,21 @@
-"""L'honnêteté commence au profil (SPEC 5.1, 18.3 ; D124) : contrôles par le code du brouillon de
-l'Archiviste, sans appel au modèle.
+"""Honesty starts with the profile (SPEC 5.1, 18.3; D124): code checks of the Archivist's draft,
+with no model call.
 
-- `unsupported_lines` : une réalisation, un détail, le titre, le résumé ou la description d'un
-  projet dont un nombre n'apparaît dans aucune source est retiré (formats canonisés par
+- `unsupported_lines`: an achievement, a detail, the title, the summary or the description of a
+  project whose number appears in no source is removed (formats canonicalized by
   `cv_lexicon.numbers_in`) ;
-- `untraced_lines` : une réalisation ou un détail sans nombre que les documents ne disent ni mot
-  pour mot ni à 80 % de ses mots (règle de `appears`) est retiré de même (revue finale 6.8 M3) ;
-- `tag_sources` : les `sources` d'un fait sont posées par le code, d'après les documents où son
-  texte principal apparaît ; un fait introuvable dans les documents vient de la note seulement si
-  la note le porte (même règle), sinon il est retiré.
+- `untraced_lines`: an achievement or detail without a number that the documents say neither word
+  for word nor at 80% of its words (rule of `appears`) is removed likewise (final review 6.8 M3);
+- `tag_sources`: a fact's `sources` are set by the code, from the documents where its
+  main text appears; a fact not found in the documents comes from the note only if
+  the note carries it (same rule), otherwise it is removed.
 
-Un texte reformulé (règle des 80 %) doit garder tous ses nombres et tous ses noms (sigles, noms
-propres, outils : `named_terms`) : « 15 ans » face à « cinq ans », ou un « Kubernetes » ajouté,
-ne passent pas.
+A reworded text (80% rule) must keep all its numbers and all its names (acronyms, proper
+nouns, tools: `named_terms`): "15 years" against "five years", or an added "Kubernetes",
+do not pass.
 
-Le titre et le résumé (`SourcedLine`) sont des faits comme les autres : sans eux, un résumé tiré
-de LinkedIn seul entrerait dans le CV ciblé (`in_cv`)."""
+The title and summary (`SourcedLine`) are facts like the others: without them, a summary taken
+from LinkedIn alone would enter the targeted CV (`in_cv`)."""
 
 import re
 import unicodedata
@@ -32,8 +32,8 @@ _CHILD = re.compile(r"^([a-z]\d+)[ad]\d+$")
 _SCHEME = re.compile(r"^\s*(https?://)?(www\.)?", re.IGNORECASE)
 _TOKEN = re.compile(r"[\w+#]+")
 _SENTENCE_BREAK = re.compile(r"[.!?:;\u2022\n]")
-# Un texte long (résumé) reformulé ligne à ligne : 80 % de ses mots de 3 lettres et plus suffisent.
-_SHORT_NAME = 2  # « C », « Go » : cherchés avec leur casse (`_short_name_in`)
+# A long text (summary) reworded line by line: 80% of its words of 3 letters or more are enough.
+_SHORT_NAME = 2  # "C", "Go": searched with their case (`_short_name_in`)
 _LONG_WORDS = 6
 _LONG_SHARE = 0.8
 
@@ -44,7 +44,7 @@ class _Fact(Protocol):
 
 
 def plain(text: str) -> str:
-    """Sans accents, en minuscules, ponctuation réduite à des espaces (« C++ », « C# » restent)."""
+    """Without accents, in lower case, punctuation reduced to spaces ("C++", "C#" stay)."""
     decomposed = unicodedata.normalize("NFKD", text)
     bare = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
     return _NOT_WORD.sub(" ", bare.casefold()).strip()
@@ -52,13 +52,13 @@ def plain(text: str) -> str:
 
 @dataclass(frozen=True)
 class Hay:
-    """Une source prête à chercher : texte `plain`, ses mots, ses nombres canoniques."""
+    """A source ready to search: `plain` text, its words, its canonical numbers."""
 
     kind: FactSource
     text: str
     words: frozenset[str]
     numbers: frozenset[str]
-    raw: str = ""  # le texte tel qu'écrit : un nom d'une ou deux lettres s'y cherche avec sa casse
+    raw: str = ""  # the text as written: a one- or two-letter name is searched with its case
 
     @classmethod
     def of(cls, source: ProfileSource) -> "Hay":
@@ -68,8 +68,8 @@ class Hay:
 
 
 def named_terms(text: str) -> set[str]:
-    """Les mots qui portent un fait sans être des nombres (`plain`) : sigles (« IA »), mots à
-    chiffre (« S3 »), noms propres et outils (majuscule hors début de phrase)."""
+    """The words that carry a fact without being numbers (`plain`): acronyms ("IA"), words with
+    a digit ("S3"), proper nouns and tools (capital letter not at the start of a sentence)."""
     found: set[str] = set()
     start, end = True, 0
     for match in _TOKEN.finditer(text):
@@ -87,16 +87,16 @@ def named_terms(text: str) -> set[str]:
 
 
 def _short_name_in(needle: str, raw: str) -> bool:
-    """Un nom d'une ou deux lettres (« C », « Go », « R ») s'écrit tel quel dans le texte : ni
-    élision (« C'est »), ni unité (« 10 Go »), ni suite d'un autre nom
-    (« C++ », « C# », « R&D », « C-level »)."""
+    """A name of one or two letters ("C", "Go", "R") is written as is in the text: neither
+    elision ("C'est"), nor unit ("10 Go"), nor followed by another name.
+    ("C++", "C#", "R&D", "C-level")."""
     pattern = rf"(?<![\w'’.\-])(?<!\d )(?<!\d\u00a0){re.escape(needle.strip())}(?![\w'’+#&\-])"
     return re.search(pattern, raw) is not None
 
 
 def appears(needle: str, hay: Hay) -> bool:
-    """`needle` figure dans `hay`, en mots entiers et avec tous ses nombres ; un texte d'au moins
-    `_LONG_WORDS` mots y figure si `_LONG_SHARE` de ses mots y sont, et tous ses noms aussi."""
+    """`needle` appears in `hay`, as whole words and with all its numbers; a text of at least
+    `_LONG_WORDS` words appears there if `_LONG_SHARE` of its words do, and all its names too."""
     wanted = plain(needle)
     if not wanted or not numbers_in(needle) <= hay.numbers:
         return False
@@ -111,7 +111,7 @@ def appears(needle: str, hay: Hay) -> bool:
 
 
 def blank_facts(profile: MasterProfileData) -> MasterProfileData:
-    """Une copie sans les ids ni les sources rendus par le modèle : le code les pose."""
+    """A copy without the ids and sources returned by the model: the code sets them."""
     out = profile.model_copy(deep=True)
     heads = [line for line in (out.title, out.summary) if line is not None]
     facts: list[_Fact] = [
@@ -131,7 +131,7 @@ def blank_facts(profile: MasterProfileData) -> MasterProfileData:
 
 
 def _lines(profile: MasterProfileData) -> Iterable[Line]:
-    """Les réalisations et détails, dans l'ordre du profil."""
+    """The achievements and details, in profile order."""
     for experience in profile.experiences:
         yield from experience.achievements
     for education in profile.education:
@@ -141,8 +141,8 @@ def _lines(profile: MasterProfileData) -> Iterable[Line]:
 
 
 def unsupported_lines(profile: MasterProfileData, sources: Sequence[ProfileSource]) -> list[str]:
-    """Ids des lignes dont un nombre n'apparaît dans aucune source : titre, résumé, réalisations
-    et détails, et l'id d'un projet dont la description porte un tel nombre."""
+    """Ids of the lines whose number appears in no source: title, summary, achievements
+    and details, and the id of a project whose description carries such a number."""
     known: set[str] = set()
     for source in sources:
         known |= numbers_in(source.text)
@@ -153,8 +153,8 @@ def unsupported_lines(profile: MasterProfileData, sources: Sequence[ProfileSourc
 
 
 def untraced_lines(profile: MasterProfileData, sources: Sequence[ProfileSource]) -> list[str]:
-    """Ids des réalisations et détails sans nombre qu'aucune source ne porte (`appears`, note
-    comprise) : « Migré la production vers Kubernetes » inventé sous une vraie expérience."""
+    """Ids of the achievements and details without a number that no source carries (`appears`,
+    note included): "Migrated production to Kubernetes" invented under a real experience."""
     hays = [Hay.of(source) for source in sources if source.text.strip()]
     return [
         line.id
@@ -164,7 +164,7 @@ def untraced_lines(profile: MasterProfileData, sources: Sequence[ProfileSource])
 
 
 def without_lines(profile: MasterProfileData, ids: Iterable[str]) -> MasterProfileData:
-    """Une copie sans les lignes `ids` ; l'id d'un projet n'efface que sa description."""
+    """A copy without the `ids` lines; a project's id only removes its description."""
     gone = set(ids)
     out = profile.model_copy(deep=True)
     if out.title is not None and out.title.id in gone:
@@ -183,7 +183,7 @@ def without_lines(profile: MasterProfileData, ids: Iterable[str]) -> MasterProfi
 
 
 def _found_in(texts: Sequence[str], hays: Sequence[Hay]) -> list[FactSource]:
-    """Les sources où chacun des `texts` apparaît."""
+    """The sources where each of the `texts` appears."""
     return [hay.kind for hay in hays if all(appears(text, hay) for text in texts)]
 
 
@@ -203,10 +203,10 @@ def _tagged[T: _Fact](
 
 
 def tag_sources(profile: MasterProfileData, sources: Sequence[ProfileSource]) -> MasterProfileData:
-    """Une copie où les `sources` de chaque fait sont celles des documents où son texte principal
-    apparaît (titre, résumé, rôle et entreprise, diplôme et école, nom et noms de la description
-    d'un projet, lien sans `https://` ni `www.`) ; aucune → `note` si la note le porte (même
-    règle), sinon le fait est retiré (avec ses réalisations)."""
+    """A copy where each fact's `sources` are those of the documents where its main text
+    appears (title, summary, role and company, degree and school, project name and description
+    names, link without `https://` or `www.`); none -> `note` if the note carries it (same
+    rule), otherwise the fact is removed (with its achievements)."""
     hays = [Hay.of(s) for s in sources if s.text.strip()]
     docs = [hay for hay in hays if hay.kind != "note"]
     note = [hay for hay in hays if hay.kind == "note"]
@@ -227,14 +227,14 @@ def _text(line: Line) -> Sequence[str]:
 
 
 def _project(project: Project) -> Sequence[str]:
-    """Le nom, et chaque nom propre, sigle ou outil de la description : un outil inventé dans la
-    description ne se glisse pas sous un vrai projet."""
+    """The name, and each proper noun, acronym or tool of the description: an invented tool in the
+    description does not slip under a real project."""
     return (project.name, *sorted(named_terms(project.description)))
 
 
 def removed_facts(before: MasterProfileData, after: MasterProfileData) -> list[str]:
-    """Texte lisible des faits de `before` absents de `after` (ids posés), sans les réalisations
-    et détails d'un parent retiré avec lui."""
+    """Readable text of the facts of `before` absent from `after` (ids set), minus the
+    achievements and details of a parent removed with it."""
     old, new = facts_of(before), facts_of(after)
     gone = [fact_id for fact_id in old if fact_id not in new]
     parents = set(gone)

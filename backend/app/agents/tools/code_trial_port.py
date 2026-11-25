@@ -1,4 +1,4 @@
-"""Port de lecture du projet figé et de dépôt des deux plaidoiries."""
+"""Port for reading the frozen project and filing the two pleas."""
 
 from typing import Annotated, Literal, Protocol
 

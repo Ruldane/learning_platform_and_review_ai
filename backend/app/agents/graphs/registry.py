@@ -1,5 +1,5 @@
-"""Registre des parcours (graphes d'agents). Un parcours se déclare ici et nulle part ailleurs :
-`POST /sessions` valide l'entrée avec `input_model`, le runner compile `build(deps)`."""
+"""Registry of the graphs (agent flows). A graph is declared here and nowhere else:
+`POST /sessions` validates the input with `input_model`, the runner compiles `build(deps)`."""
 
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -64,12 +64,12 @@ from app.core.errors import AppError
 @dataclass(frozen=True)
 class GraphSpec:
     name: str
-    input_model: type[BaseModel]  # `model_dump()` = état initial
+    input_model: type[BaseModel]  # `model_dump()` = initial state
     build: Callable[
         [GraphDeps], StateGraph[Any, Any, Any, Any]
-    ]  # non compilé : le runner s'en charge
-    # Limite de pas de LangGraph fixée au lancement (`None` : celle de la bibliothèque) : un
-    # parcours à boucles la fixe pour qu'une boucle sans fin échoue vite (D159, D160).
+    ]  # not compiled: the runner takes care of it
+    # LangGraph step limit, set at launch (`None`: the library default). A graph with loops sets
+    # it so that an endless loop fails fast (D159, D160).
     recursion_limit: int | None = None
 
 

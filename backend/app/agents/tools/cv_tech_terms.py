@@ -1,11 +1,11 @@
-"""Noms d'outils, de langages, de plateformes et de méthodes que le validateur des modifications
-de CV (6.12) reconnaît dans un texte (liste écrite dans le code, en minuscules). Elle ne prétend
-pas être complète : un outil inconnu est repris par les mots clés et les outils de l'offre, et par
-la règle des noms propres du validateur.
+"""Names of tools, languages, platforms and methods that the CV change validator
+(6.12) recognizes in a text (list written in the code, in lower case). It does not claim
+to be complete: an unknown tool is taken up by the offer's keywords and tools, and by
+the validator's proper-noun rule.
 
-Sont écartés exprès les mots de la langue courante (« go », « r », « c », « net », « word »,
-« notion », « chef », « express ») : « Golang » remplace « go ». Les termes à signes
-(« c++ », « c# », « node.js », « ci/cd ») sont comparés après `normalize_term`."""
+Common-language words are excluded on purpose ("go", "r", "c", "net", "word",
+"notion", "chef", "express"): "Golang" replaces "go". Terms with signs
+("c++", "c#", "node.js", "ci/cd") are compared after `normalize_term`."""
 
 TECH_TERMS: frozenset[str] = frozenset(
     """
@@ -39,16 +39,16 @@ TECH_TERMS: frozenset[str] = frozenset(
     """.split()  # noqa: SIM905
 )
 
-# Les termes de `TECH_TERMS` qui sont aussi des mots courants du français ou de l'anglais, et
-# seulement eux : ils ne comptent comme outil que sous leur forme de produit, un mot capitalisé hors
-# début de phrase (« Vue », « REST ») ou suivi d'un qualificatif (« vue.js », « spring boot »,
-# « rest api »). Écrits en minuscules, ils sont du langage ordinaire (« vue d'ensemble », « plus
-# vite », « tableaux de bord »). Un terme que l'offre nomme reste un terme de l'offre.
-# Un outil qui n'a, dans un CV, que sa lecture d'outil (« react », « bash », « excel », « spark »,
-# « windows », « slack », « helm », « sap »…) n'entre pas ici : en minuscules, il reste un outil.
-# Chaque mot gardé a un sens courant fréquent : vue, vite, spring, rest, swift, hive, consul,
-# sketch, unity, unreal, oracle, tableau (« tableau de bord »), soap, vault, rust, transformers
-# (le verbe « transformer »), rails.
+# Terms of `TECH_TERMS` that are also common words of French or English, and
+# only those: they count as a tool only in their product form, a capitalized word not at the start
+# of a sentence ("Vue", "REST") or followed by a qualifier ("vue.js", "spring boot",
+# "rest api"). Written in lower case, they are ordinary language ("vue d'ensemble", "plus
+# vite", "tableaux de bord"). A term the offer names stays an offer term.
+# A tool that, in a CV, only has its tool reading ("react", "bash", "excel", "spark",
+# "windows", "slack", "helm", "sap"...) does not enter here: in lower case, it stays a tool.
+# Each kept word has a frequent common meaning: vue, vite, spring, rest, swift, hive, consul,
+# sketch, unity, unreal, oracle, tableau ("tableau de bord"), soap, vault, rust, transformers
+# (the verb "transformer"), rails.
 _JS = ("js",)
 AMBIGUOUS_TERMS: dict[str, frozenset[str]] = {
     "vue": frozenset({*_JS, "2", "3", "router", "native"}),
