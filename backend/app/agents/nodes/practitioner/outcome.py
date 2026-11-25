@@ -8,6 +8,7 @@ from app.agents.tools.project_port import ReviewOutcome
 from app.agents.tools.project_schema import NOT_ASSESSED, unmet_count
 
 _ADAPTER = TypeAdapter(ReviewOutcome)
+# The French text is kept on purpose: it recognizes results stored before the switch to English.
 _NOT_ASSESSED_COMMENTS = frozenset({NOT_ASSESSED, "Critère non évalué."})
 
 

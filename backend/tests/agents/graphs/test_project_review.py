@@ -282,7 +282,7 @@ async def test_drafts_mode_ignored_write_is_not_announced_as_saved(
     [done] = await run.events("run.completed")
     assert done["summary"] == NOT_SAVED
     logged = "\n".join(r.getMessage() for r in caplog.records)
-    assert "Brouillons non rangés" in logged and "Brouillons rangés" not in logged
+    assert "Drafts not stored" in logged and "Drafts stored" not in logged
 
 
 def test_review_input_mode_defaults_to_review() -> None:

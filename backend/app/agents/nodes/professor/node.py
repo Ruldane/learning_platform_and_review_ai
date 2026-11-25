@@ -1,11 +1,11 @@
-"""Le professeur (10.A3) : un seul nœud, un seul appel de modèle par déclenchement, une sortie
-structurée (`TeacherNote`) rangée par le port (`IdeStore.save_note`, donc par le service que Claude
-utilise aussi : seul l'auteur change).
+"""The professor (10.A3): a single node, a single model call per trigger, a structured output
+(`TeacherNote`) filed by the port (`IdeStore.save_note`, hence by the service that Claude also
+uses: only the author changes).
 
-Le niveau de modèle suit le type de note (`plan_of`) : léger pour un indice ou une annotation, fort
-pour une explication ou une proposition. Le contexte est borné par le code (`build_context`). Le
-début du prompt est fixe et marqué pour le cache. Journal : l'identifiant de séance, le modèle et
-les jetons de l'appel, jamais un texte (code, question, réponse : SPEC 17.2)."""
+The model tier follows the note type (`plan_of`): light for a hint or an annotation, strong for
+an explanation or a proposal. The context is bounded by the code (`build_context`). The start of
+the prompt is fixed and marked for the cache. Log: the session id, the model and the tokens of
+the call, never a text (code, question, answer: SPEC 17.2)."""
 
 import logging
 
@@ -47,8 +47,8 @@ async def _log_usage(deps: GraphDeps, ide_session_id: str) -> None:
 def make_teach(deps: GraphDeps) -> Node:
     @node_timeout(150)
     async def teach(state: IdeTeacherState) -> IdeTeacherState:
-        trigger: Trigger = state["trigger"]  # type: ignore[assignment]  # validé par l'entrée
-        if trigger == "run_ok":  # jamais d'appel : au plus un compliment, rangé par la route
+        trigger: Trigger = state["trigger"]  # type: ignore[assignment]  # validated by the input
+        if trigger == "run_ok":  # never a call: at most a compliment, filed by the route
             return {"summary": SUMMARY_NONE}
         ide_session_id = state["ide_session_id"]
         ports = deps.ports.ide

@@ -1,2 +1,2 @@
-"""Le Praticien des projets preuves (P1 à P4, D165) : l'énoncé d'un mini projet (`brief`), son
-évaluation (`evaluate`) et les quatre brouillons d'un projet validé (`drafts`)."""
+"""The Practitioner of the proof projects (P1 to P4, D165): the statement of a mini project
+(`brief`), its evaluation (`evaluate`) and the four drafts of a validated project (`drafts`)."""

@@ -1,8 +1,9 @@
-"""La fin de l'évaluation d'un projet (P3, D165) : `save` range l'issue par le port (idempotent par
-session : un nœud rejoué ne range rien de plus), `announce` annonce le projet (`artifact.ready`,
-`kind = "project"`) et dit le résultat en une phrase de nombres comptés par le code.
+"""The end of a project evaluation (P3, D165): `save` files the outcome through the port
+(idempotent per session: a replayed node files nothing more), `announce` announces the project
+(`artifact.ready`, `kind = "project"`) and states the result in one sentence of figures counted
+by the code.
 
-Journaux : identifiants, nombres et codes, jamais un texte du projet (17.2)."""
+Logs: identifiers, numbers and codes, never a project text (17.2)."""
 
 import logging
 
@@ -24,14 +25,14 @@ def make_save(deps: GraphDeps) -> Node:
     @node_timeout()
     async def save(state: ProjectReviewState) -> ProjectReviewState:
         outcome = from_state(state["outcome"])
-        if state.get("mode") == "drafts":  # un projet déjà validé : seulement ses brouillons
+        if state.get("mode") == "drafts":  # an already validated project: only its drafts
             drafts = outcome.drafts or []
             saved = await deps.ports.projects.save_drafts(
                 deps.user_id, deps.session_id, state["project_id"], drafts
             )
             logger.info(
-                "Brouillons %s : session %s, projet %s, %d brouillon(s) dont %d à vérifier",
-                "rangés" if saved else "non rangés",
+                "Drafts %s: session %s, project %s, %d draft(s) of which %d to verify",
+                "stored" if saved else "not stored",
                 deps.session_id,
                 state["project_id"],
                 len(drafts),
@@ -43,8 +44,8 @@ def make_save(deps: GraphDeps) -> Node:
         )
         drafts = outcome.drafts or []
         logger.info(
-            "Évaluation rangée : session %s, projet %s, verdict %s, %d critère(s) atteint(s), "
-            "%d brouillon(s) dont %d à vérifier",
+            "Evaluation stored: session %s, project %s, verdict %s, %d criteria met, "
+            "%d draft(s) of which %d to verify",
             deps.session_id,
             state["project_id"],
             outcome.verdict,
@@ -71,5 +72,5 @@ def announce(state: ProjectReviewState) -> ProjectReviewState:
     )
     outcome = from_state(state["outcome"])
     if state.get("mode") == "drafts" and outcome.drafts and state.get("drafts_saved") is False:
-        return {"summary": NOT_SAVED}  # le port a ignoré l'écriture : rien de nouveau n'est prêt
+        return {"summary": NOT_SAVED}  # the port ignored the write: nothing new is ready
     return {"summary": summary_text(outcome)}

@@ -97,7 +97,7 @@ async def test_failing_solution_then_good_one_is_stored(
     [exercise] = (await client.get(f"{API}/exercises")).json()
     assert exercise["title"] == "Doubler, corrigé" and len(sandbox.jobs) == 2
     retry = str(models.received[1][-2].content) + str(models.received[1][0].content)
-    assert "sortie des tests" in retry  # la redemande dit pourquoi
+    assert "test output" in retry  # la redemande dit pourquoi
 
 
 async def test_draft_without_tests_is_refused_after_the_retries(

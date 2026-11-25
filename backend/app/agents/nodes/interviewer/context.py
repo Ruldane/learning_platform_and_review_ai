@@ -1,6 +1,6 @@
-"""Ce que l'Intervieweur lit (D145) : l'offre, le dossier de l'entreprise, la version du CV envoyée,
-les écarts connus et le profil, chacun encadré par `untrusted` (17.4) ; les échanges de l'entretien
-(réponses de January comprises) le sont aussi. Un morceau absent est dit absent, jamais inventé."""
+"""What the Interviewer reads (D145): the posting, the company dossier, the CV version sent, the
+known gaps and the profile, each wrapped by `untrusted` (17.4); the interview exchanges
+(January's answers included) are too. A missing piece is said to be missing, never invented."""
 
 from app.agents.nodes.tracker.kit_prompt import profile_text
 from app.agents.prompts.loader import untrusted
@@ -75,8 +75,8 @@ def profile_block(ctx: InterviewContext) -> str:
 def exchange_text(
     exchange: Exchange, *, with_note: bool = True, pending_follow_up: bool = False
 ) -> str:
-    """Un échange tel que le modèle le lit : l'index (à partir de 0), la question, les réponses.
-    `pending_follow_up` : la réponse à la relance est celle qu'on donne à lire, pas encore ici."""
+    """An exchange as the model reads it: the index (from 0), the question, the answers.
+    `pending_follow_up`: the follow-up's answer is the one handed over to read, not here yet."""
     lines = [
         f"[index {exchange.index}] Question ({exchange.criterion}): {exchange.question}",
         f"January's answer: {exchange.answer}",
@@ -123,7 +123,7 @@ MODE_GUIDES = {
 
 
 def head_vars(ctx: InterviewContext) -> dict[str, object]:
-    """Les variables du début du prompt, communes aux trois tâches de l'Intervieweur."""
+    """The variables at the start of the prompt, common to the Interviewer's three tasks."""
     return {
         "role": untrusted(ctx.role, "job title"),
         "mode_label": MODE_LABELS[ctx.mode],

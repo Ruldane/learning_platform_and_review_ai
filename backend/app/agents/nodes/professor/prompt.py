@@ -1,7 +1,7 @@
-"""Les deux messages d'un appel du professeur (10.A3). Le **début fixe** (`prefix_of`) ne dépend que
-de l'exercice et du style : il est identique, octet pour octet, d'un appel à l'autre d'une séance,
-et marqué pour la mise en cache. Tout ce qui change (déclencheur, niveau, code, erreur, échanges)
-est dans le message suivant (`turn_of`)."""
+"""The two messages of a professor call (10.A3). The **fixed start** (`prefix_of`) only depends
+on the exercise and the style: it is identical, byte for byte, from one call to the next of a
+session, and marked for caching. Everything that changes (trigger, level, code, error,
+exchanges) is in the next message (`turn_of`)."""
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
@@ -14,18 +14,18 @@ from app.providers.llm.base import CACHE_PREFIX_KEY
 AGENT = "professor"
 FREE_STATEMENT = "(free session with no exercise statement)"
 TRIGGERS = {
-    "run_error": "son code vient d'échouer",
-    "question": "elle pose une question",
-    "hint": "elle demande un indice",
-    "idle": "elle est arrêtée sur cette ligne depuis un moment",
+    "run_error": "her code just failed",
+    "question": "she is asking a question",
+    "hint": "she is asking for a hint",
+    "idle": "she has been stuck on this line for a while",
 }
 
 
 def prefix_of(inputs: TeachInputs) -> SystemMessage:
-    """Consignes et énoncé : stable pour un même exercice et un même style."""
+    """Instructions and statement: stable for the same exercise and the same style."""
     statement = f"{inputs.title}\n\n{inputs.statement or FREE_STATEMENT}"
     text = render_prompt(
-        AGENT, mode="prefix", style=inputs.style, exercise=untrusted(statement, "énoncé")
+        AGENT, mode="prefix", style=inputs.style, exercise=untrusted(statement, "statement")
     )
     return SystemMessage(text, additional_kwargs={CACHE_PREFIX_KEY: True})
 
@@ -45,21 +45,21 @@ def turn_of(
     level: int,
     question: str | None,
 ) -> HumanMessage:
-    """La demande de cet appel : tâche, déclencheur, question, fichier, erreur, échanges."""
-    where = f"{ctx.path}, lignes {ctx.first_line} à {ctx.last_line} sur {ctx.line_count}"
+    """The request of this call: task, trigger, question, file, error, exchanges."""
+    where = f"{ctx.path}, lines {ctx.first_line} to {ctx.last_line} of {ctx.line_count}"
     exchanges = "\n".join(f"- {line}" for line in ctx.exchanges)
     files = "\n".join(f"- {path}" for path in ctx.project_paths)
-    projection = f"Ligne en cause : {ctx.focus}\n{ctx.window}\n\nFichiers du projet :\n{files}"
+    projection = f"Line at issue: {ctx.focus}\n{ctx.window}\n\nProject files:\n{files}"
     text = render_prompt(
         AGENT,
         mode="turn",
         task=_task(plan),
         level=level,
         trigger=TRIGGERS[trigger],
-        question=untrusted(question, "question de January") if question else "",
+        question=untrusted(question, "January's question") if question else "",
         code=untrusted(projection, f"code ({where})"),
-        error=untrusted(ctx.error_tail, "fin de la sortie") if ctx.error_tail else "",
-        exchanges=untrusted(exchanges, "fil de la conversation, du plus ancien au plus récent")
+        error=untrusted(ctx.error_tail, "end of the output") if ctx.error_tail else "",
+        exchanges=untrusted(exchanges, "conversation thread, oldest to most recent")
         if exchanges
         else "",
     )

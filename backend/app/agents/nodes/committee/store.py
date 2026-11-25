@@ -1,9 +1,10 @@
-"""Lecture et rangement du comité de recrutement (SPEC F19, D147) : `load` lit le contexte par le
-port (lecture seule), `save` range l'issue — les quatre votes, le verdict, les objections et les
-trois changements — par le port, **idempotent par session** (SPEC 9.4) : le seul nœud qui écrit.
-Un nœud rejoué après un arrêt relit l'issue de sa session et ne range rien une seconde fois.
+"""Reading and filing of the hiring committee (SPEC F19, D147): `load` reads the context through
+the port (read-only), `save` files the outcome — the four votes, the verdict, the objections and
+the three changes — through the port, **idempotent per session** (SPEC 9.4): the only node that
+writes. A node replayed after a stop rereads its session's outcome and files nothing a second
+time.
 
-Journaux : identifiants et nombres seulement, jamais le CV, l'offre, une parole ni l'entreprise
+Logs: identifiers and numbers only, never the CV, the posting, a speech or the company
 (17.2)."""
 
 import logging
@@ -24,7 +25,7 @@ def make_load(deps: GraphDeps) -> Node:
     async def load(state: HiringCommitteeState) -> HiringCommitteeState:
         ctx = await deps.ports.committee.context(deps.user_id, state["run_id"])
         logger.info(
-            "Comité lu : session %s, exécution %s, taille %s",
+            "Committee read: session %s, run %s, size %s",
             deps.session_id,
             state["run_id"],
             ctx.size,
@@ -37,14 +38,14 @@ def make_load(deps: GraphDeps) -> Node:
 def make_save(deps: GraphDeps) -> Node:
     @node_timeout()
     async def save(state: HiringCommitteeState) -> HiringCommitteeState:
-        """L'issue du comité, la seule écriture ; rejoué, le port relit celle de la session."""
+        """The committee's outcome, the only write; replayed, the port rereads the session's."""
         votes = [PersonaVote.model_validate(v) for v in state["votes"]]
         synthesis = Synthesis.model_validate(state["synthesis"])
         await deps.ports.committee.save_result(
             deps.user_id, deps.session_id, state["run_id"], votes, synthesis
         )
         logger.info(
-            "Comité rangé : session %s, exécution %s, verdict %s",
+            "Committee filed: session %s, run %s, verdict %s",
             deps.session_id,
             state["run_id"],
             synthesis.verdict,

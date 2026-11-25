@@ -77,7 +77,7 @@ def make_write(deps: GraphDeps) -> Node:
         inputs = await ports.brief_inputs(deps.user_id, project_id)
         messages: list[BaseMessage] = [SystemMessage(prompt_of(inputs)), HumanMessage(ASK)]
         try:
-            async with asyncio.timeout(BUDGET_S):  # plus court que le plafond du nœud : rangé
+            async with asyncio.timeout(BUDGET_S):  # shorter than the node cap: stored
                 tier = get_agent(AGENT).tier
                 model = await deps.models.get_chat_model(deps.user_id, tier, agent=AGENT)
                 brief = await structured_call(
@@ -90,7 +90,7 @@ def make_write(deps: GraphDeps) -> Node:
                 )
         except GraphInterrupt:
             raise
-        except Exception as exc:  # l'échec est rangé (un code), puis le parcours s'arrête
+        except Exception as exc:  # the failure is stored (a code), then the flow stops
             timed_out = isinstance(exc, TimeoutError)
             code = (
                 "node_timeout"

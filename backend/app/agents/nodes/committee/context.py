@@ -1,10 +1,11 @@
-"""Ce que les personas du comité lisent (D147) : le CV et l'offre (toujours encadrés par
-`untrusted`, 17.4), le dossier de l'entreprise à partir du débat, les termes de l'offre vus dans
-le CV (Lecteur ATS) et tout ce que les autres ont dit (sortie d'un agent : encadrée aussi). Un
-morceau absent est dit absent, jamais inventé.
+"""What the committee personas read (D147): the CV and the posting (always wrapped by
+`untrusted`, 17.4), the company dossier from the debate on, the posting terms seen in the CV
+(ATS Reader) and everything the others said (agent output: wrapped too). A missing piece is
+said to be missing, never invented.
 
-À la première impression, une persona ne voit que le CV et l'offre (SPEC F19) : le dossier n'entre
-qu'ensuite ; la taille de l'entreprise, elle, règle le ton dès le début (`_shared/committee.md`)."""
+At the first impression, a persona only sees the CV and the posting (SPEC F19): the dossier only
+comes in afterwards; the company size, however, sets the tone from the start
+(`_shared/committee.md`)."""
 
 from collections.abc import Sequence
 from typing import Any
@@ -27,7 +28,7 @@ def dossier_block(ctx: CommitteeContext) -> str:
 
 
 def ats_terms_block(ctx: CommitteeContext) -> str:
-    """Les termes de l'offre que le CV écrit ou n'écrit pas (ils viennent de l'offre : encadrés)."""
+    """The posting terms the CV does or does not write (they come from the posting: wrapped)."""
     found = ", ".join(ctx.ats_terms.found) or "none"
     missing = ", ".join(ctx.ats_terms.missing) or "none"
     lines = [f"Posting terms found in the CV: {found}", f"Missing from the CV: {missing}"]
@@ -35,7 +36,7 @@ def ats_terms_block(ctx: CommitteeContext) -> str:
 
 
 def transcript_text(spoken: Sequence[dict[str, Any]]) -> str:
-    """Tout ce qui s'est dit, dans l'ordre : chaque parole encadrée (sortie d'un autre agent)."""
+    """Everything that was said, in order: each speech wrapped (output of another agent)."""
     if not spoken:
         return NO_SPEECH
     return "\n\n".join(
@@ -53,7 +54,7 @@ def persona_vars(
     round_number: int = 0,
     addressee: Persona | None = None,
 ) -> dict[str, Any]:
-    """Les variables du prompt d'une persona (mode `committee`) pour l'étape `step`."""
+    """The prompt variables of a persona (`committee` mode) for step `step`."""
     return {
         "mode": "committee",
         "persona": persona,

@@ -62,7 +62,9 @@ async def test_project_texts_never_logged(
     run = await project_runner(models)
     await run.wait_status("completed")
     logged = "\n".join(r.getMessage() for r in caplog.records if r.name.startswith("app"))
-    assert "Rendu lu" in logged and "Évaluation rangée" in logged and "RuntimeError" in logged
+    assert (
+        "Submission read" in logged and "Evaluation stored" in logged and "RuntimeError" in logged
+    )
     secrets = [TITLE, DESCRIPTION, README, REPO_URL, "example.org", "Panne secrète", "Kubernetes"]
     secrets += [*CRITERIA, "10000", "10 000", "Conçu une API", "Présentation", "Un rendu clair"]
     secrets += [EVALUATE_ASK, DRAFTS_ASK, "FastAPI", "Camille"]

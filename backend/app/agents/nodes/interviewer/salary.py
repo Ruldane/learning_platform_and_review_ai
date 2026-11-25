@@ -10,6 +10,7 @@ from app.agents.tools.interview_schema import (
 )
 from app.agents.tools.negotiation import SalarySample
 
+# The French variant (`fr`) is kept on purpose: it serves interviews whose language is French.
 _QUESTIONS = {
     "fr": (
         "Quel élément concret justifie ta demande ?",
@@ -93,7 +94,7 @@ def salary_decision(
 
 
 def without_unsourced_figures(debrief: Debrief, language: str) -> Debrief:
-    """La fiche de simulation affiche les montants en dehors du commentaire libre du modèle."""
+    """The simulation sheet shows the amounts outside the model's free commentary."""
     if language == "en":
         fallback = "Link your request to a concrete responsibility in the role."
         improved = "I would like to discuss base pay in light of the responsibilities of the role."

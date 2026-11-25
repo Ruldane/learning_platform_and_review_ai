@@ -1,11 +1,11 @@
-"""Relancer seulement les brouillons d'un projet déjà validé (mode `drafts` de `project_review`,
-D173 n° 4, D181) : l'évaluation a été rangée « validée » mais l'écriture des brouillons avait
-échoué (« brouillons indisponibles »). `route_load` saute la lecture du dépôt et l'évaluation ;
-`seed` pose dans l'état une issue « validée » sans résultat ni brouillon, que les nœuds `drafts`
-et `redo` complètent comme après une évaluation ; `save` ne range alors que les brouillons
-(`save_drafts`). Aucune évaluation n'est refaite : rien du verdict n'est relu ni réécrit.
+"""Rerun only the drafts of an already validated project (`drafts` mode of `project_review`,
+D173 no. 4, D181): the evaluation was stored "validated" but writing the drafts had failed
+("drafts unavailable"). `route_load` skips reading the repository and the evaluation; `seed`
+puts in the state a "validated" outcome with no result and no draft, which the `drafts` and
+`redo` nodes complete as after an evaluation; `save` then only stores the drafts
+(`save_drafts`). No evaluation is redone: nothing of the verdict is reread or rewritten.
 
-Journaux : identifiants seulement."""
+Logs: identifiers only."""
 
 import logging
 
@@ -27,11 +27,9 @@ def route_load(state: ProjectReviewState) -> str:
 def make_seed(deps: GraphDeps) -> Node:
     @node_timeout()
     async def seed(state: ProjectReviewState) -> ProjectReviewState:
-        """L'issue de départ des brouillons : validée, sans résultat (le verdict reste celui qui
-        est déjà rangé), sans brouillon."""
-        logger.info(
-            "Brouillons seuls : session %s, projet %s", deps.session_id, state["project_id"]
-        )
+        """The starting outcome of the drafts: validated, with no result (the verdict stays the one
+        already stored), with no draft."""
+        logger.info("Drafts only: session %s, project %s", deps.session_id, state["project_id"])
         outcome = ReviewOutcome(
             verdict="validated", results=[], feedback="", repo_status="none", drafts=None
         )

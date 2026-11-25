@@ -1,11 +1,11 @@
-"""L'Intervieweur prépare l'entretien (SPEC F10, D145) : `load` lit le contexte par le port, `plan`
-écrit les questions principales (offre, dossier, CV envoyé, écarts connus) selon le mode, la
-langue et la durée.
+"""The Interviewer prepares the interview (SPEC F10, D145): `load` reads the context through the
+port, `plan` writes the main questions (posting, dossier, CV sent, known gaps) according to the
+mode, the language and the duration.
 
-`plan` est le seul nœud qui pose la première question ; rejoué après un arrêt, il redemande (rien
-n'est écrit). Une fois le plan dans l'état (checkpointer), il n'est plus jamais redemandé : une
-question en attente reste la même au redémarrage. Journaux : identifiants et nombres seulement,
-jamais une question, une réponse, l'entreprise ni le poste (17.2)."""
+`plan` is the only node that asks the first question; replayed after a stop, it asks again
+(nothing is written). Once the plan is in the state (checkpointer), it is never requested
+again: a pending question stays the same on restart. Logs: identifiers and numbers only,
+never a question, an answer, the company or the job (17.2)."""
 
 import logging
 from typing import Any
@@ -36,7 +36,7 @@ from app.agents.tools.interview_schema import (
 )
 
 PLAN_REQUEST = "Prepare the interview questions."
-PLAN_TIMEOUT_S = 300  # trois demandes au plus, chacune avec ses nouveaux essais (GLM)
+PLAN_TIMEOUT_S = 300  # three requests at most, each with its retries (GLM)
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ def make_load(deps: GraphDeps) -> Node:
     async def load(state: InterviewState) -> InterviewState:
         ctx = await deps.ports.interviews.context(deps.user_id, state["interview_id"])
         logger.info(
-            "Entretien lu : session %s, entretien %s, mode %s, %d min",
+            "Interview read: session %s, interview %s, mode %s, %d min",
             deps.session_id,
             state["interview_id"],
             ctx.mode,
@@ -74,7 +74,7 @@ def plan_vars(ctx: InterviewContext, count: int) -> dict[str, Any]:
 def make_plan(deps: GraphDeps) -> Node:
     @node_timeout(PLAN_TIMEOUT_S)
     async def plan(state: InterviewState) -> InterviewState:
-        """Les questions principales (exactement `QUESTIONS_BY_DURATION`), puis la première."""
+        """The main questions (exactly `QUESTIONS_BY_DURATION`), then the first one."""
         ctx = context_of(state)
         count = 3 if ctx.surprise else QUESTIONS_BY_DURATION[ctx.duration_min]
         if ctx.salary is not None:
@@ -96,7 +96,7 @@ def make_plan(deps: GraphDeps) -> Node:
                 intent="Preparing your questions.",
             )
             questions = [question.model_dump() for question in planned.questions]
-        logger.info("Plan écrit : session %s, %d question(s)", deps.session_id, len(questions))
+        logger.info("Plan written: session %s, %d question(s)", deps.session_id, len(questions))
         say_question(1, questions[0]["text"])
         return {
             "plan": questions,

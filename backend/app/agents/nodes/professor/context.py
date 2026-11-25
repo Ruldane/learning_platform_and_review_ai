@@ -1,8 +1,8 @@
-"""Le contexte envoyé au professeur (10.A3), borné par le code : un seul fichier (jamais un
-second), la fenêtre de ±30 lignes autour de la ligne en cause (ou du curseur), les 40 dernières
-lignes de la sortie d'erreur (2 000 caractères au plus) et le fil des 12 derniers messages (4 000
-caractères au plus). Jamais tout le
-projet ni tout l'historique. Constantes nommées, réglables."""
+"""The context sent to the professor (10.A3), bounded by the code: a single file (never a
+second), the window of +/-30 lines around the line at issue (or the cursor), the last 40 lines
+of the error output (2,000 characters at most) and the thread of the last 12 messages (4,000
+characters at most). Never the whole project or the whole history. Named, adjustable
+constants."""
 
 import hashlib
 import re
@@ -10,13 +10,13 @@ from dataclasses import dataclass, field
 
 from app.agents.tools.ide_port import NoteView, RunView, TeachInputs
 
-WINDOW_LINES = 30  # de chaque côté de la ligne en cause
-LINE_CHARS = 200  # une ligne plus longue est coupée (code minifié, donnée collée)
+WINDOW_LINES = 30  # on each side of the line at issue
+LINE_CHARS = 200  # a longer line is cut (minified code, pasted data)
 ERROR_LINES = 40
 ERROR_CHARS = 2_000
-EXCHANGES = 12  # messages du fil : questions de January et réponses, les plus récents
+EXCHANGES = 12  # thread messages: January's questions and answers, the most recent
 EXCHANGE_CHARS = 400
-THREAD_CHARS = 4_000  # le fil entier ; les plus anciens messages tombent d'abord
+THREAD_CHARS = 4_000  # the whole thread; the oldest messages drop first
 PATHS_CHARS = 2_000
 
 _FRAME = re.compile(r'File "(?P<path>[^"]+)", line (?P<line>\d+)')
@@ -25,25 +25,25 @@ _PYTEST = re.compile(r"^(?P<path>[^\s:]+\.py):(?P<line>\d+):")
 
 @dataclass(frozen=True)
 class TeacherContext:
-    path: str  # le seul fichier montré
-    focus: int  # la ligne en cause (au moins 1)
-    first_line: int  # première ligne de la fenêtre
+    path: str  # the only file shown
+    focus: int  # the line at issue (at least 1)
+    first_line: int  # first line of the window
     last_line: int
-    line_count: int  # lignes du fichier entier
-    window: str  # lignes numérotées « 12 | code »
-    base_hash: str  # sha256 du fichier entier (empreinte d'une proposition, P9)
-    error_tail: str  # fin de la sortie de la dernière exécution ; vide s'il n'y en a pas
-    exchanges: list[str]  # le fil, les 12 derniers messages (les plus anciens d'abord)
+    line_count: int  # lines of the whole file
+    window: str  # numbered lines "12 | code"
+    base_hash: str  # sha256 of the whole file (fingerprint of a proposal, P9)
+    error_tail: str  # end of the last run's output; empty if there is none
+    exchanges: list[str]  # the thread, the last 12 messages (the oldest first)
     project_paths: list[str] = field(default_factory=list)
 
 
 def file_hash(text: str) -> str:
-    """Le sha256 hexadécimal du contenu en UTF-8, celui du service de l'IDE (P9)."""
+    """The hexadecimal sha256 of the UTF-8 content, the IDE service's one (P9)."""
     return hashlib.sha256(text.encode()).hexdigest()
 
 
 def lines_of(text: str) -> list[str]:
-    """Les lignes d'un fichier (au moins une : un fichier vide a une ligne à remplir)."""
+    """The lines of a file (at least one: an empty file has one line to fill)."""
     parts = text.split("\n")
     if text.endswith("\n"):
         parts.pop()
@@ -71,7 +71,7 @@ def _catalog(names: set[str]) -> list[str]:
     seen: list[str] = []
     remaining = PATHS_CHARS
     for path in sorted(names):
-        size = len(path) + 3  # préfixe de liste et saut de ligne
+        size = len(path) + 3  # list prefix and line break
         if size > remaining:
             break
         seen.append(path)
@@ -80,8 +80,8 @@ def _catalog(names: set[str]) -> list[str]:
 
 
 def error_place(output: str, names: set[str]) -> tuple[str, int] | None:
-    """Le dernier endroit du code de January dans la sortie : cadre d'une trace Python, sinon
-    ligne d'échec de pytest."""
+    """The last place of January's code in the output: Python traceback frame, otherwise pytest
+    failure line."""
     found: tuple[str, int] | None = None
     for text in output.splitlines():
         match = _FRAME.search(text) or _PYTEST.match(text)
@@ -93,8 +93,8 @@ def error_place(output: str, names: set[str]) -> tuple[str, int] | None:
 def focus_of(
     inputs: TeachInputs, file_path: str | None, cursor_line: int | None, question: str | None = None
 ) -> tuple[str, int]:
-    """Le fichier et la ligne : ceux que January montre, sinon l'endroit de l'erreur, sinon le
-    fichier d'entrée."""
+    """The file and the line: those January shows, otherwise the place of the error, otherwise
+    the input file."""
     names = set(inputs.files)
     named = _mentioned_file(question, names)
     if named is not None and named != file_path:
@@ -118,7 +118,7 @@ def _window(text: str, focus: int) -> tuple[str, int, int, int]:
 
 
 def error_tail(run: RunView | None) -> str:
-    """Les 40 dernières lignes de la sortie, 2 000 caractères au plus (la fin est gardée)."""
+    """The last 40 lines of the output, 2,000 characters at most (the end is kept)."""
     if run is None or not run.output.strip():
         return ""
     tail = "\n".join(run.output.splitlines()[-ERROR_LINES:])
@@ -127,12 +127,12 @@ def error_tail(run: RunView | None) -> str:
 
 def _exchange(note: NoteView) -> str:
     who = "January" if note.author == "user" else note.author
-    return f"{who} ({note.kind}) : {' '.join(note.text.split())[:EXCHANGE_CHARS]}"
+    return f"{who} ({note.kind}): {' '.join(note.text.split())[:EXCHANGE_CHARS]}"
 
 
 def _thread(notes: list[NoteView], current_question: str | None) -> list[str]:
-    """Le fil dans l'ordre : au plus `EXCHANGES` messages et `THREAD_CHARS` caractères (le plus
-    récent est gardé). La question qu'on est en train de poser est donnée à part : pas deux fois."""
+    """The thread in order: at most `EXCHANGES` messages and `THREAD_CHARS` characters (the most
+    recent is kept). The question being asked is given separately: not twice."""
     kept = [note for note in notes if note.kind != "reference"]
     last = kept[-1] if kept else None
     if last and last.kind == "question" and last.text.strip() == (current_question or "").strip():
@@ -150,8 +150,8 @@ def build_context(
     cursor_line: int | None = None,
     question: str | None = None,
 ) -> TeacherContext:
-    """Le contexte d'un appel : une seule fenêtre d'un seul fichier, la fin de la sortie de la
-    dernière exécution, le fil des 12 derniers messages (hors renvois)."""
+    """The context of a call: a single window of a single file, the end of the last run's
+    output, the thread of the last 12 messages (excluding references)."""
     path, focus = focus_of(inputs, file_path, cursor_line, question)
     text = inputs.files[path]
     window, first, last, count = _window(text, focus)

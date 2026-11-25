@@ -1,5 +1,5 @@
-"""Ce que les nœuds de l'Intervieweur ont en commun (D145) : son nom, le type d'un nœud, le contexte
-relu depuis l'état et la question publiée dans le fil."""
+"""What the Interviewer nodes have in common (D145): its name, the type of a node, the context
+reread from the state and the question published in the thread."""
 
 from typing import Protocol
 
@@ -8,8 +8,9 @@ from app.agents.state.interview import InterviewState
 from app.agents.tools.interview_schema import InterviewContext
 
 AGENT = "interviewer"
-# Lenteur, panne passagère, réponse vide ou illisible : un nœud se replie. Le reste échoue, dont
-# `token_cap_reached` (le plafond de tokens arrête la session) et `llm_rate_limited` (D115 n° 17).
+# Slowness, transient failure, empty or unreadable reply: a node falls back. The rest fails,
+# including `token_cap_reached` (the token cap stops the session) and `llm_rate_limited`
+# (D115 no. 17).
 RECOVERABLE_CODES = frozenset(
     {"llm_timeout", "llm_unavailable", "llm_empty_reply", "structured_output_invalid"}
 )
@@ -24,7 +25,7 @@ def context_of(state: InterviewState) -> InterviewContext:
 
 
 def say_question(number: int, text: str, *, follow_up: bool = False) -> None:
-    """La question (ou la relance) dans le fil ; même identifiant si le nœud est rejoué."""
+    """The question (or the follow-up) in the thread; same identifier if the node is replayed."""
     suffix = "-relance" if follow_up else ""
     emit(
         "agent.message",
