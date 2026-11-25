@@ -87,7 +87,7 @@ def _speech(agent: str) -> Reply:
             lines.append("Objection : dix heures par semaine, c'est serré pour tout couvrir.")
         return "\n".join(lines)
 
-    return expect("À toi de parler.", speak)
+    return expect("Your turn to speak.", speak)
 
 
 def _board(title: str, nodes: list[str]) -> Reply:
@@ -114,12 +114,14 @@ def _json(marker: str, value: Any) -> Reply:
 
 
 def _moderator() -> list[Reply]:
-    order = _json("Fixe l'ordre de parole du tour.", {"order": list(DEBATERS), "intent": "Socle."})
+    order = _json(
+        "Set the speaking order for the round.", {"order": list(DEBATERS), "intent": "Socle."}
+    )
     questions = [
         {"question": "Combien d'heures par semaine peux-tu y consacrer ?"},
         {"question": "As-tu déjà écrit du code Python ?"},
     ]
-    review = "Fais le point du tour."
+    review = "Review the round."
     return [
         _json("Prepare the framing questions.", {"questions": questions}),
         order,
@@ -177,7 +179,7 @@ def council_scripts() -> dict[str, list[Reply]]:
         "scout": _scout(),
         "strategist": [
             *[_speech("strategist") for _ in range(ROUNDS)],
-            _json("Propose les parcours.", {"proposals": proposals}),
+            _json("Propose the paths.", {"proposals": proposals}),
             expect("Écris le programme semaine par semaine.", program_plan()),
         ],
         "practitioner": [_speech("practitioner") for _ in range(ROUNDS)],

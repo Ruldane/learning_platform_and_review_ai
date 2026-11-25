@@ -1,15 +1,17 @@
-"""Le Modérateur du brief du jour (P11, D161) : les deux phrases du conseil, au nom du Conseil.
+"""The Moderator of the daily brief (P11, D161): the Council's two sentences of advice, in the
+Council's name.
 
-Le code compte les faits du jour (bloc, révisions, relances, offres, avancement : feature `brief`),
-les rend en phrases (`facts_text`, encadrées par `untrusted`) et **contrôle chaque nombre du
-conseil** : un nombre que les faits ne disent pas (« 3 heures » inventé) fait redemander une fois,
-en le nommant, puis le conseil est rangé `None` (rubrique `failed`) : jamais un chiffre faux. Les
-nombres permis sont `allowed_numbers` du port, plus ceux du titre du bloc que le code montre.
+The code counts the day's facts (block, reviews, follow-ups, postings, progress: feature `brief`),
+renders them as sentences (`facts_text`, wrapped by `untrusted`) and **checks every number of
+the advice**: a number the facts do not state (an invented "3 hours") makes it ask again once,
+naming it, then the advice is stored as `None` (section `failed`): never a wrong figure. The
+allowed numbers are the port's `allowed_numbers`, plus those of the block title that the code
+shows.
 
-Une panne du modèle, un format invalide ou un dépassement de délai vident aussi le conseil sans
-arrêter le parcours (la ressource est une rubrique à part).
+A model failure, an invalid format or a timeout also empty the advice without stopping the flow
+(the resource is a separate section).
 
-Journaux : identifiants, nombres et codes seulement, jamais un fait, un titre ni une phrase
+Logs: identifiers, numbers and codes only, never a fact, a title or a sentence
 (17.2)."""
 
 import asyncio
@@ -30,8 +32,8 @@ from app.agents.tools.brief_schema import CouncilAdvice, numbers_in_advice
 from app.core.errors import AppError
 
 AGENT = "moderator"
-ASKS = 2  # une demande, puis une seule re-demande qui nomme le nombre inventé
-BUDGET_S = 90.0  # plus court que le plafond du nœud : un dépassement vide le conseil, pas le brief
+ASKS = 2  # one request, then a single re-request that names the invented number
+BUDGET_S = 90.0  # shorter than the node cap: a timeout empties the advice, not the brief
 LANGUAGES = {"fr": "French", "en": "English"}
 
 logger = logging.getLogger(__name__)
@@ -42,11 +44,12 @@ def _plural(number: int, one: str, many: str) -> str:
 
 
 def _line(number: int | None, make: Callable[[int], str]) -> list[str]:
-    """La ligne d'un fait, ou rien si sa rubrique était en panne (jamais un zéro inventé)."""
+    """The line of a fact, or nothing if its section was down (never an invented zero)."""
     return [] if number is None else [make(number)]
 
 
 def _facts_fr(facts: AdviceFacts) -> list[str]:
+    # French variant: kept on purpose, for users whose language setting is `fr`.
     if facts.block_minutes is None:
         block: list[str] = []
     elif facts.block_title:
@@ -125,14 +128,14 @@ def _facts_en(facts: AdviceFacts) -> list[str]:
 
 
 def facts_text(ctx: BriefContext) -> str:
-    """Les faits du jour en phrases, écrites par le code (le modèle ne reçoit aucun autre chiffre),
-    encadrées comme données."""
+    """The day's facts as sentences, written by the code (the model receives no other figure),
+    wrapped as data."""
     lines = _facts_fr(ctx.facts) if ctx.language == "fr" else _facts_en(ctx.facts)
-    return untrusted("\n".join(lines), "faits du jour")
+    return untrusted("\n".join(lines), "facts of the day")
 
 
 def invented_numbers(sentences: list[str], ctx: BriefContext) -> list[str]:
-    """Les nombres du conseil que ni `allowed_numbers` ni le titre du bloc ne permettent, triés."""
+    """The advice numbers that neither `allowed_numbers` nor the block title allow, sorted."""
     allowed = set(ctx.allowed_numbers)
     if ctx.facts.block_title:
         allowed |= numbers_in_advice([ctx.facts.block_title])
@@ -141,13 +144,13 @@ def invented_numbers(sentences: list[str], ctx: BriefContext) -> list[str]:
 
 def _correction(numbers: list[str]) -> str:
     return (
-        f"Ton conseil cite {', '.join(numbers)}, qui ne figure pas parmi les faits du jour. "
-        "Réécris-le sans aucun autre nombre que ceux des faits du jour."
+        f"Your advice cites {', '.join(numbers)}, which is not among the facts of the day. "
+        "Rewrite it with no number other than those of the facts of the day."
     )
 
 
 async def advise(deps: GraphDeps, ctx: BriefContext) -> list[str] | None:
-    """Les deux phrases du conseil, ou `None` si le modèle cite deux fois un nombre inventé."""
+    """The advice's two sentences, or `None` if the model cites an invented number twice."""
     prompt = render_prompt(
         AGENT, mode="brief", facts=facts_text(ctx), language=LANGUAGES[ctx.language]
     )
@@ -166,7 +169,7 @@ async def advise(deps: GraphDeps, ctx: BriefContext) -> list[str] | None:
         if not wrong:
             return advice.sentences
         logger.info(
-            "Conseil refusé : session %s, essai %d, %d nombre(s) inventé(s)",
+            "Advice refused: session %s, attempt %d, %d invented number(s)",
             deps.session_id,
             ask + 1,
             len(wrong),
@@ -178,8 +181,8 @@ async def advise(deps: GraphDeps, ctx: BriefContext) -> list[str] | None:
 def make_advice(deps: GraphDeps) -> Node:
     @node_timeout()
     async def advice(state: DailyBriefState) -> DailyBriefState:
-        """La rubrique « conseil » : sautée si elle est déjà rangée (nœud rejoué). Un conseil
-        impossible est rangé `None` (rubrique `failed`) et le parcours se termine quand même."""
+        """The "advice" section: skipped if already stored (node replayed). Impossible advice is
+        stored as `None` (section `failed`) and the flow ends anyway."""
         brief_id = state["brief_id"]
         ctx = await deps.ports.brief.context(deps.user_id, brief_id)
         if ctx.advice_done:
@@ -191,15 +194,15 @@ def make_advice(deps: GraphDeps) -> Node:
                 sentences = await advise(deps, ctx)
         except GraphInterrupt:
             raise
-        except Exception as exc:  # une rubrique en panne n'arrête pas l'autre
+        except Exception as exc:  # a section that is down does not stop the other
             code = exc.code if isinstance(exc, AppError) else type(exc).__name__
-            unavailable = code in MODEL_UNAVAILABLE_CODES  # aucun modèle : « indisponible »
-            logger.info("Conseil du brief impossible : session %s, cause %s", deps.session_id, code)
+            unavailable = code in MODEL_UNAVAILABLE_CODES  # no model: "unavailable"
+            logger.info("Brief advice impossible: session %s, cause %s", deps.session_id, code)
         await deps.ports.brief.save_advice(
             deps.user_id, deps.session_id, brief_id, sentences, unavailable=unavailable
         )
         logger.info(
-            "Conseil du brief rangé : session %s, brief %s, écrit %s",
+            "Brief advice stored: session %s, brief %s, written %s",
             deps.session_id,
             brief_id,
             sentences is not None,

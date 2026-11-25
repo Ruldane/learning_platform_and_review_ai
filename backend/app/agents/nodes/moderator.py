@@ -1,13 +1,13 @@
-"""Le Modérateur du Conseil (SPEC 3.1, 9.1) : lit l'objectif et la mémoire, prépare 5 questions
-de cadrage au plus, s'arrête pour les poser (point d'arrêt n° 1), puis enregistre les réponses
-et prépare la demande de l'Éclaireur. Pendant le débat, il ouvre et ferme chaque tour
+"""The Council Moderator (SPEC 3.1, 9.1): reads the goal and the memory, prepares 5 framing
+questions at most, stops to ask them (stop point no. 1), then records the answers and prepares
+the Scout's request. During the debate, it opens and closes each round
 (`moderator_rounds`, D85).
 
-L'arrêt vit seul dans `ask_framing` : aucun effet de bord avant `interrupt()` (SPEC 9.4).
-L'écriture des réponses a lieu dans le nœud suivant, idempotente (le port écrase).
+The stop lives alone in `ask_framing`: no side effect before `interrupt()` (SPEC 9.4).
+The answers are written in the next node, idempotent (the port overwrites).
 
-Objectif, poste visé et réponses viennent de January : non encadrés dans les prompts (D53 §5),
-jamais journalisés (17.2)."""
+Goal, target role and answers come from January: not wrapped in the prompts (D53 section 5),
+never logged (17.2)."""
 
 from typing import Any
 
@@ -66,7 +66,7 @@ def _goal_state(goal: GoalBrief) -> dict[str, Any]:
 def make_context(deps: GraphDeps) -> Node:
     @node_timeout()
     async def context(state: CouncilState) -> CouncilState:
-        """L'objectif (port du Conseil), puis le contexte mémoire proche de son texte."""
+        """The goal (Council port), then the memory context close to its text."""
         goal = await deps.ports.council.goal(deps.user_id, state["goal_id"])
         memory = await load_memory_context(deps, objective=goal.text, agent=AGENT)
         return {"goal": _goal_state(goal), "context": memory.as_prompt()}
@@ -82,7 +82,7 @@ def make_frame(deps: GraphDeps) -> Node:
             AGENT,
             mode="frame",
             goal=goal["text"],
-            target_role=goal.get("target_role") or "non précisé",
+            target_role=goal.get("target_role") or "not specified",
             deadline=deadline_text(goal),
             weekly_minutes=goal.get("weekly_minutes"),
             context=state.get("context", ""),
@@ -107,8 +107,8 @@ def make_frame(deps: GraphDeps) -> Node:
 
 
 def framing_answers(value: Any, ids: list[str]) -> dict[str, str]:
-    """Réponses lues de la reprise : `{"answers": {id: texte}}` ; ids inconnus et réponses vides
-    ignorés, chaque réponse coupée à 2 000 caractères. `"go"` ou toute autre forme : aucune."""
+    """Answers read from the resume: `{"answers": {id: text}}`; unknown ids and empty answers
+    ignored, each answer cut at 2,000 characters. `"go"` or any other shape: none."""
     raw = value.get("answers") if isinstance(value, dict) else None
     if not isinstance(raw, dict):
         return {}
@@ -121,8 +121,8 @@ def framing_answers(value: Any, ids: list[str]) -> dict[str, str]:
 
 
 def ask_framing(state: CouncilState) -> CouncilState:
-    """Point d'arrêt n° 1 (fin du cadrage), obligatoire même sans question. Rien avant
-    `interrupt()` : le nœud redémarre depuis son début à la reprise."""
+    """Stop point no. 1 (end of the framing), mandatory even without a question. Nothing before
+    `interrupt()`: the node restarts from its beginning on resume."""
     questions = state.get("framing_questions", [])
     value = interrupt(
         {
@@ -138,8 +138,8 @@ def ask_framing(state: CouncilState) -> CouncilState:
 def research_query(
     goal: dict[str, Any], questions: list[dict[str, str]], answers: dict[str, str]
 ) -> str:
-    """Demande de l'Éclaireur : objectif, poste visé, puis réponses dans l'ordre des questions,
-    sur une ligne, 300 caractères au plus."""
+    """The Scout's request: goal, target role, then answers in the order of the questions,
+    on one line, 300 characters at most."""
     parts = [goal["text"], goal.get("target_role") or ""]
     parts += [answers.get(q["id"], "") for q in questions]
     line = " ; ".join(clean for part in parts if (clean := _one_line(part)))
@@ -149,8 +149,8 @@ def research_query(
 def make_apply_framing(deps: GraphDeps) -> Node:
     @node_timeout()
     async def apply_framing(state: CouncilState) -> CouncilState:
-        """Enregistre questions et réponses (le port écrase : rejoué, il réécrit la même chose),
-        puis prépare la recherche."""
+        """Records questions and answers (the port overwrites: replayed, it rewrites the same
+        thing), then prepares the research."""
         questions = state.get("framing_questions", [])
         answers = state.get("framing_answers", {})
         await deps.ports.council.save_framing(

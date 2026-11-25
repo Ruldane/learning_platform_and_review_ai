@@ -116,8 +116,8 @@ async def test_unnamed_reply_is_accepted_and_logged(
     run = await committee_runner(committee(speeches={"manager": quiet}))
     await run.wait_status("completed")
     assert len(run.models.calls) == 17
-    assert caplog.text.count("Règle du débat non tenue (name)") == 1
-    assert quiet not in caplog.text and "persona manager, tour 2" in caplog.text
+    assert caplog.text.count("Debate rule not met (name)") == 1
+    assert quiet not in caplog.text and "persona manager, round 2" in caplog.text
 
 
 @pytest.mark.parametrize(

@@ -29,14 +29,14 @@ async def _vars(**over: object) -> dict[str, object]:
 def test_facts_carry_ids_and_cv_membership() -> None:
     text = facts_text(compose_profile())
     assert "[x1a1] Réduit les coûts de 30 %" in text
-    assert "[x2] Data Analyst — Autre Société (hors du CV)" in text
-    assert "[c3] Kubernetes (hors du CV)" in text and "[c1] Python\n" in text
+    assert "[x2] Data Analyst — Autre Société (not in the CV)" in text
+    assert "[c3] Kubernetes (not in the CV)" in text and "[c1] Python\n" in text
 
 
 def test_cv_text_has_fact_ids_and_no_contact() -> None:
     profile = compose_profile()
     text = cv_text(base_content(profile, ORDER), profile)
-    assert "Accroche : [t1] Ingénieure IA" in text
+    assert "Headline: [t1] Ingénieure IA" in text
     assert "  - [x1a1] Réduit les coûts de 30 %" in text and "## Compétences (skills)" in text
     assert "example.org" not in text and "Lyon" not in text
 
@@ -46,10 +46,10 @@ async def test_every_input_is_untrusted() -> None:
     for key in ("posting", "analysis", "brief", "profile", "cv"):
         assert str(variables[key]).startswith(START), key
     assert variables["ats"] == "Greenhouse"
-    assert '<<<CONTENU_NON_FIABLE source="offre:exigences non couvertes">>>' in str(
+    assert '<<<CONTENU_NON_FIABLE source="posting:uncovered requirements">>>' in str(
         variables["indicators"]
     )
-    assert "Contrôle échoué : 1 intitulé n'est pas usuel." in str(variables["indicators"])
+    assert "Failed check: 1 intitulé n'est pas usuel." in str(variables["indicators"])
 
 
 async def test_prompt_has_dated_ats_base_and_honesty_rules() -> None:
@@ -68,7 +68,7 @@ def test_issues_name_refs_and_ids_only() -> None:
         rewrite("x9a9", "Autre texte secret", ref="a2"),
     ]
     issues = proposal_issues(items, profile, "a")
-    assert issues[0] == "La référence r1 n'est pas à toi : tes références commencent par « a »."
+    assert issues[0] == 'Reference r1 is not yours: your references start with "a".'
     assert any("a2 vise un fait qui n'est pas dans le profil" in issue for issue in issues)
     assert "secret" not in problems_text(issues)
 

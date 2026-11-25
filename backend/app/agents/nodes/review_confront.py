@@ -1,14 +1,15 @@
-"""La confrontation du Lecteur ATS et du Recruteur (SPEC 5.3, D129), deux tours au plus (5.3).
+"""The confrontation of the ATS Reader and the Recruiter (SPEC 5.3, D129), two rounds at most
+(5.3).
 
-Tour 1 : chaque agent prend position (`Confrontation`) sur les propositions de l'autre : `keep`,
-`drop` (contestée), `amend` (texte remplacé, contestée, origine gardée). Tour 2 : les propositions
-contestées reviennent à leur auteur (objection, origine, amendement) ; `keep` rend son texte
-d'origine, `drop` retire, `amend` pose son nouveau texte, le silence laisse l'amendement. Jamais
-de troisième tour ; sinon January tranche. Un texte amendé repasse par le validateur. Une position
-sur une référence inconnue, en double, ou un `amend` sans texte est renvoyée au modèle (deux fois
-au plus), puis ignorée. Sortie invalide ou délai d'un agent (`STANCE_TIMEOUT_S`, chaque agent a le
-sien) : « tout garder » pour cet agent, les propositions déjà obtenues restent et la revue
-continue. Débat publié dans le fil, sans écriture de port."""
+Round 1: each agent takes a position (`Confrontation`) on the other's proposals: `keep`, `drop`
+(contested), `amend` (text replaced, contested, origin kept). Round 2: the contested proposals
+go back to their author (objection, origin, amendment); `keep` returns its original text, `drop`
+removes, `amend` sets its new text, silence leaves the amendment. Never a third round;
+otherwise January decides. An amended text goes through the validator again. A position on an
+unknown or duplicated reference, or an `amend` without text, is sent back to the model (twice at
+most), then ignored. Invalid output or timeout of an agent (`STANCE_TIMEOUT_S`, each agent has
+its own): "keep everything" for that agent, the proposals already obtained stay and the review
+continues. Debate published in the thread, without any port write."""
 
 import asyncio
 import logging
@@ -29,12 +30,12 @@ from app.agents.tools.review_schema import Confrontation, Proposal, Stance
 from app.core.errors import AppError
 
 CONFRONT_REQUEST = {
-    1: "Prends position sur les propositions de l'autre agent.",
-    2: "Réponds aux objections sur tes propositions.",
+    1: "Take a position on the other agent's proposals.",
+    2: "Answer the objections to your proposals.",
 }
 MAX_STANCE_ASKS = 3
-STANCE_TIMEOUT_S = 420  # les positions d'un agent (demandes et nouveaux essais compris)
-CONFRONT_TIMEOUT_S = 2 * STANCE_TIMEOUT_S + 60  # deux agents, puis la marge du nœud
+STANCE_TIMEOUT_S = 420  # an agent's positions (requests and retries included)
+CONFRONT_TIMEOUT_S = 2 * STANCE_TIMEOUT_S + 60  # two agents, then the node's margin
 _TEXT_ACTIONS = ("rewrite", "add")
 logger = logging.getLogger(__name__)
 
@@ -44,29 +45,29 @@ class Node(Protocol):
 
 
 def proposals_text(proposals: list[Proposal], critiques: dict[str, dict[str, str]]) -> str:
-    """Les propositions à juger, encadrées (17.4) ; au tour 2, avec l'objection de l'autre agent."""
+    """The proposals to judge, wrapped (17.4); in round 2, with the other agent's objection."""
     blocks = []
     for p in proposals:
-        cited = ", ".join(p.fact_ids) or "aucun"
+        cited = ", ".join(p.fact_ids) or "none"
         lines = [
-            f"{p.ref} — {p.action}, section {p.section}, cible {p.target or '-'}, type {p.type}, "
-            f"faits cités : {cited}",
-            f"  Texte : {p.after or '(aucun)'}",
-            f"  Raison : {p.reason}",
+            f"{p.ref} — {p.action}, section {p.section}, target {p.target or '-'}, type {p.type}, "
+            f"cited facts: {cited}",
+            f"  Text: {p.after or '(none)'}",
+            f"  Reason: {p.reason}",
         ]
         if (critique := critiques.get(p.ref)) is not None:
             if original := critique.get("original"):
                 lines[1:2] = [
-                    f"  Texte d'origine (le tien) : {original}",
-                    f"  Texte amendé par l'autre agent : {p.after or '(aucun)'}",
+                    f"  Original text (yours): {original}",
+                    f"  Text amended by the other agent: {p.after or '(none)'}",
                 ]
-            lines.append(f"  Objection : {critique['stance']} — {critique['reason']}")
+            lines.append(f"  Objection: {critique['stance']} — {critique['reason']}")
         blocks.append("\n".join(lines))
-    return untrusted("\n".join(blocks), "propositions")
+    return untrusted("\n".join(blocks), "proposals")
 
 
 def stance_problems(found: Confrontation, by_ref: dict[str, Proposal]) -> list[str]:
-    """Défauts renvoyés au modèle ; une référence reçue n'est jamais recopiée (texte libre)."""
+    """Defects sent back to the model; a received reference is never copied (free text)."""
     problems: list[str] = []
     seen: set[str] = set()
     allowed = ", ".join(by_ref)
@@ -74,28 +75,24 @@ def stance_problems(found: Confrontation, by_ref: dict[str, Proposal]) -> list[s
         proposal = by_ref.get(stance.ref)
         if proposal is None:
             problems.append(
-                f"Une position vise une référence absente de la liste : n'emploie que {allowed}."
+                f"A position targets a reference absent from the list: use only {allowed}."
             )
             continue
         if stance.ref in seen:
-            problems.append(
-                f"La référence {stance.ref} a deux positions : une seule par référence."
-            )
+            problems.append(f"Reference {stance.ref} has two positions: only one per reference.")
         seen.add(stance.ref)
         if stance.stance == "amend" and proposal.action not in _TEXT_ACTIONS:
-            problems.append(
-                f"La proposition {stance.ref} n'écrit aucun texte : choisis `keep` ou `drop`."
-            )
+            problems.append(f"Proposal {stance.ref} writes no text: choose `keep` or `drop`.")
         elif stance.stance == "amend" and not (stance.after or "").strip():
             problems.append(
-                f"La position sur {stance.ref} propose une autre formulation sans texte : "
-                "renseigne `after`."
+                f"The position on {stance.ref} proposes another wording without text: "
+                "fill in `after`."
             )
     return problems
 
 
 def clean_stances(found: Confrontation, by_ref: dict[str, Proposal]) -> dict[str, Stance]:
-    """Les positions valables, la première par référence ; les autres sont ignorées (`keep`)."""
+    """The valid positions, the first per reference; the others are ignored (`keep`)."""
     kept: dict[str, Stance] = {}
     for stance in found.stances:
         if stance.ref in kept or stance_problems(Confrontation(stances=[stance]), by_ref):
@@ -107,8 +104,8 @@ def clean_stances(found: Confrontation, by_ref: dict[str, Proposal]) -> dict[str
 def apply_first(
     proposals: list[Proposal], stances: dict[str, Stance]
 ) -> tuple[list[Proposal], dict[str, dict[str, str]]]:
-    """Tour 1 : `amend` remplace le texte (l'origine reste dans `contested`, pour le tour 2) ;
-    `drop` et `amend` rendent la proposition contestée."""
+    """Round 1: `amend` replaces the text (the origin stays in `contested`, for round 2);
+    `drop` and `amend` make the proposal contested."""
     out: list[Proposal] = []
     contested: dict[str, dict[str, str]] = {}
     for p in proposals:
@@ -125,7 +122,7 @@ def apply_first(
 def apply_second(
     proposals: list[Proposal], contested: dict[str, dict[str, str]], stances: dict[str, Stance]
 ) -> tuple[list[Proposal], list[str]]:
-    """Tour 2, l'auteur : `drop` retire, `keep` rend l'origine, `amend` remplace, silence : rien."""
+    """Round 2, the author: `drop` removes, `keep` returns the origin, `amend` replaces."""
     out: list[Proposal] = []
     removed: list[str] = []
     for p in proposals:
@@ -166,8 +163,8 @@ async def ask_stances(
     judged: list[Proposal],
     critiques: dict[str, dict[str, str]],
 ) -> dict[str, Stance]:
-    """Les positions de `agent` sur `judged`, redemandées deux fois au plus ; `{}` (tout garder)
-    si le modèle ne rend pas de sortie valable."""
+    """`agent`'s positions on `judged`, requested again twice at most; `{}` (keep everything)
+    if the model returns no valid output."""
     by_ref = {p.ref: p for p in judged}
     text = proposals_text(judged, critiques)
     try:
@@ -180,14 +177,14 @@ async def ask_stances(
                 found = await _reask(deps, agent, round_no, variables, text, found, problems)
     except TimeoutError:
         logger.info(
-            "Confrontation sans réponse à temps : session %s, agent %s", deps.session_id, agent
+            "Confrontation not answered in time: session %s, agent %s", deps.session_id, agent
         )
         return {}
     except AppError as exc:
         if exc.code != "structured_output_invalid":
             raise
         logger.info(
-            "Confrontation sans sortie valable : session %s, agent %s", deps.session_id, agent
+            "Confrontation without a valid output: session %s, agent %s", deps.session_id, agent
         )
         return {}
     return clean_stances(found, by_ref)
@@ -203,7 +200,7 @@ async def _reask(
     problems: list[str],
 ) -> Confrontation:
     logger.info(
-        "Positions redemandées : session %s, agent %s, %d défaut(s)",
+        "Positions requested again: session %s, agent %s, %d defect(s)",
         deps.session_id,
         agent,
         len(problems),
@@ -257,7 +254,7 @@ def make_confront(deps: GraphDeps, round_no: int) -> Node:
             kept, removed = apply_second(proposals, contested, stances)
             out = {"removed": removed}
         logger.info(
-            "Confrontation : session %s, tour %d, %d proposition(s), %d position(s) non neutre(s)",
+            "Confrontation: session %s, round %d, %d proposal(s), %d non-neutral position(s)",
             deps.session_id,
             round_no,
             len(proposals),

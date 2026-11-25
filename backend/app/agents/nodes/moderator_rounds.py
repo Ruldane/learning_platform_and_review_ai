@@ -1,7 +1,7 @@
-"""Le Modérateur pendant le débat (SPEC 9.3, D85) : il ouvre chaque tour (entrées de January,
-catalogue au tour 1, ordre de parole) et le ferme (arrêt anticipé si les positions ne bougent
-plus). Aucun `interrupt()` ici : un nœud rejoué relit les mêmes entrées et rappelle le modèle,
-sans rien écrire en base."""
+"""The Moderator during the debate (SPEC 9.3, D85): it opens each round (January's inputs,
+catalog at round 1, speaking order) and closes it (early stop if the positions no longer
+move). No `interrupt()` here: a replayed node rereads the same inputs and calls the model
+again, without writing anything to the database."""
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field, field_validator
@@ -40,7 +40,7 @@ class RoundPlan(BaseModel):
     @classmethod
     def _each_debater_once(cls, order: list[Debater]) -> list[Debater]:
         if len(set(order)) != len(order):
-            raise ValueError("chaque débatteur parle une fois par tour, sans doublon")
+            raise ValueError("each debater speaks once per round, with no duplicate")
         return order
 
 
@@ -74,15 +74,15 @@ def _say(text: str, message_id: str) -> None:
 def make_round_start(deps: GraphDeps) -> Node:
     @node_timeout()
     async def round_start(state: CouncilState) -> CouncilState:
-        """Entrées de January lues (messages → notes du tour, commandes), puis l'ordre de parole.
-        `to_proposals` lu avant un tour ≥ 2 : pas de nouveau tour (`turn_index` au bout). Le tour 1
-        a toujours lieu : chaque débatteur donne sa position (3.1, étape 3). Au retour du choix
-        (« autre tour »), `another_round` et `to_proposals` envoyés pendant l'attente sont
-        ignorés ; textes et angle restent lus."""
+        """January's inputs read (messages -> round notes, commands), then the speaking order.
+        `to_proposals` read before a round >= 2: no new round (`turn_index` at the end). Round 1
+        always takes place: each debater gives their position (3.1, step 3). On return from the
+        choice ("another round"), `another_round` and `to_proposals` sent while waiting are
+        ignored; texts and angle stay read."""
         target = state.get("rounds_target") or min(1 + deps.settings.debate_rounds, MAX_ROUNDS)
         read = await read_inputs(deps, state)
         reopened = (state.get("choice") or {}).get("action") == "another_round"
-        if reopened:  # retour du choix : la réponse règle déjà le nombre de tours
+        if reopened:  # return from the choice: the answer already settles the number of rounds
             read = without_round_commands(read)
         update = absorb(state, read, carry=True, target=target)
         if reopened:
@@ -108,13 +108,13 @@ def make_round_start(deps: GraphDeps) -> Node:
             deps,
             RoundPlan,
             prompt,
-            "Fixe l'ordre de parole du tour.",
+            "Set the speaking order for the round.",
             step=f"ordre-{number}",
             intent="setting the speaking order",
         )
         order: list[str] = list(plan.order)
         _say(
-            f"Tour {number} : {', '.join(NAMES[a] for a in order)}\n{plan.intent}",
+            f"Round {number}: {', '.join(NAMES[a] for a in order)}\n{plan.intent}",
             f"{AGENT}-tour-{number}",
         )
         return {**update, "catalog": catalog, "round": number, "order": order, "turn_index": 0}
@@ -125,8 +125,9 @@ def make_round_start(deps: GraphDeps) -> Node:
 def make_round_end(deps: GraphDeps) -> Node:
     @node_timeout()
     async def round_end(state: CouncilState) -> CouncilState:
-        """Entrées arrivées pendant le tour lues pour le suivant ; du tour 2 à l'avant-dernier,
-        le Modérateur juge si les positions ont bougé (stables : fin du débat) et résume."""
+        """Inputs that arrived during the round read for the next; from round 2 to the second to
+        last, the Moderator judges whether the positions moved (stable: end of the debate) and
+        summarizes."""
         number = state.get("round", 1)
         target = state.get("rounds_target", number)
         update = absorb(state, await read_inputs(deps, state), carry=False, target=target)
@@ -143,7 +144,7 @@ def make_round_end(deps: GraphDeps) -> Node:
             deps,
             RoundReview,
             prompt,
-            "Fais le point du tour.",
+            "Review the round.",
             step=f"bilan-{number}",
             intent="summarizing the round",
         )

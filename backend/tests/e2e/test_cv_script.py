@@ -123,11 +123,11 @@ async def test_every_call_of_the_journey_has_a_reply() -> None:
         ("designer", DRAFT_REQUEST),
         ("analyst", ANALYZE_REQUEST),
         ("analyst", MATCH_REQUEST),
-        ("scout", "Rédige la fiche de l'entreprise."),
+        ("scout", "Write the company dossier."),
         ("ats_reader", PROPOSE_REQUEST),
         ("recruiter", PROPOSE_REQUEST),
-        ("ats_reader", "Prends position sur les propositions de l'autre agent."),
-        ("recruiter", "Réponds aux objections sur tes propositions."),
+        ("ats_reader", "Take a position on the other agent's proposals."),
+        ("recruiter", "Answer the objections to your proposals."),
     ]
 
     for agent, request in asked:

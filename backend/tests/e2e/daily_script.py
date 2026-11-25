@@ -205,7 +205,7 @@ def offer_text(number: int) -> str:
 
 
 _PAGE = re.compile(
-    r'<<<CONTENU_NON_FIABLE source="offre (p\d+)">>>\n(.*?)\n<<<FIN_CONTENU_NON_FIABLE>>>',
+    r'<<<CONTENU_NON_FIABLE source="posting (p\d+)">>>\n(.*?)\n<<<FIN_CONTENU_NON_FIABLE>>>',
     re.DOTALL,
 )
 _NUMBER = re.compile(re.escape(REFERENCE) + r" (\d+)\.")

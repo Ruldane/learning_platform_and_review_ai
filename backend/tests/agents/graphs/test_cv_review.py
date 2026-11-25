@@ -42,7 +42,7 @@ async def test_review_proposes_validates_and_waits_for_output(
         "Generate PDF",
         "Finish",
     ]
-    assert "3 modifications proposées, 0 à confirmer." in await run.said()
+    assert "3 changes proposed, 0 to confirm." in await run.said()
     report = review_store.report
     assert report is not None and report.strengths == ["Résultat chiffré."]
     assert report.ats_notes == ["Sections usuelles : bien lues."]
@@ -83,7 +83,7 @@ async def test_confrontation_stops_after_two_rounds(
     assert len(confront_calls(models, 1)) == 2 and len(confront_calls(models, 2)) == 2
     assert len([c for c in models.calls if CROSS_EXAMINATION in c.prompt]) == 4
     [second] = [p for p in confront_calls(models, 2) if "You are the Recruiter" in p]
-    assert "Objection : drop" in second and "r1 —" in second and "a1 —" not in second
+    assert "Objection: drop" in second and "r1 —" in second and "a1 —" not in second
     assert review_store.saved_refs == ["a1", "a2", "r1"]  # désaccord : January tranche
     said = await run.said()
     assert any(s.startswith("Round 1: my stances on the Recruiter's proposals.") for s in said)
@@ -145,8 +145,8 @@ async def test_amend_then_author_keep_restores_original_text(
     run = await review_runner(models)
     await run.question()
     [second] = [p for p in confront_calls(models, 2) if "You are the Recruiter" in p]
-    assert "Texte d'origine (le tien) : Anime l'équipe au quotidien" in second
-    assert "Texte amendé par l'autre agent : Mène l'équipe" in second
+    assert "Original text (yours): Anime l'équipe au quotidien" in second
+    assert "Text amended by the other agent: Mène l'équipe" in second
     assert in_untrusted(second, "Anime l'équipe au quotidien")
     assert in_untrusted(second, "Mène l'équipe")
     assert review_store.saved["r1"][0].after == "Anime l'équipe au quotidien"
@@ -163,7 +163,7 @@ async def test_amended_text_is_revalidated(
     proposal, verdict = review_store.saved["r1"]
     assert proposal.after == AMENDED and review_store.status_of("r1") == "to_confirm"
     assert NUMBER in verdict.blocks
-    assert "3 modifications proposées, 1 à confirmer." in await run.said()
+    assert "3 changes proposed, 1 to confirm." in await run.said()
 
 
 async def test_posting_keyword_absent_goes_to_gap_terms(
@@ -177,9 +177,7 @@ async def test_posting_keyword_absent_goes_to_gap_terms(
     await run.question()
     assert review_store.saved_refs == ["a2", "r1"] and review_store.gap_terms == ["LangGraph"]
     said = await run.said()
-    assert (
-        "2 modifications proposées, 0 à confirmer. 1 mot clé de l'offre part vers l'écart." in said
-    )
+    assert "2 changes proposed, 0 to confirm. 1 posting keyword moves to the gap." in said
 
 
 async def test_review_inputs_are_untrusted(
@@ -258,7 +256,7 @@ async def test_proposals_with_unknown_fact_are_reasked(
     await run.question()
     first, second = calls(run.models, "ats_reader", PROPOSE_REQUEST)
     assert "vise un fait qui n'est pas dans le profil" in second
-    assert "La référence r5 n'est pas à toi" in second
+    assert "Reference r5 is not yours" in second
     assert "vise un fait qui n'est pas dans le profil" not in first
     assert review_store.saved_refs == ["a1", "a2", "r1"]
 

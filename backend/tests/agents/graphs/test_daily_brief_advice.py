@@ -34,7 +34,7 @@ async def test_advice_number_not_in_facts_retries_then_fails(
     assert run.calls("moderator") == 2  # un nouvel essai, pas davantage
     first, second = prompts(run.models, "moderator")
     assert ADVICE_MARKER in first and "ne figure pas" not in first
-    assert "ne figure pas parmi les faits du jour" in second and "cite 3," in second
+    assert "which is not among the facts of the day" in second and "cites 3," in second
     assert brief_store.resource is not None  # la ressource n'en souffre pas
 
 

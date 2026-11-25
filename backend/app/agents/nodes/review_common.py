@@ -1,12 +1,12 @@
-"""Ce que partagent le Lecteur ATS et le Recruteur (parcours `cv_review`, D129) : le contexte rendu
-au modèle (offre, analyse, fiche entreprise, indicateurs, profil et CV, **tous encadrés** par
-`untrusted`, 17.4), la demande de propositions avec ses re-demandes, et le tri des propositions
-valables.
+"""What the ATS Reader and the Recruiter share (flow `cv_review`, D129): the context given to
+the model (posting, analysis, company sheet, indicators, profile and CV, **all wrapped** by
+`untrusted`, 17.4), the request for proposals with its re-requests, and the sorting of the valid
+proposals.
 
-Une proposition cite des identifiants de faits du profil (`x1a2`) : ceux qui manquent au profil,
-une référence en double ou d'un autre agent sont renvoyés au modèle (`proposal_problems`), deux
-fois au plus ; ensuite seules les propositions sans défaut sont gardées. Les phrases renvoyées ne
-citent que des références et des identifiants, jamais un texte du CV."""
+A proposal cites ids of profile facts (`x1a2`): those missing from the profile, a duplicate
+reference or one of another agent are sent back to the model (`proposal_problems`), twice at
+most; after that only the proposals without defects are kept. The sentences sent back only
+cite references and identifiers, never a text of the CV."""
 
 import logging
 from typing import Any
@@ -24,11 +24,11 @@ from app.agents.tools.cv_schema import CvContent, MasterProfileData, facts_of, i
 from app.agents.tools.posting_schema import PostingAnalysis
 from app.agents.tools.review_schema import CompanyBrief, Proposal, ProposalList, proposal_problems
 
-PROPOSE_REQUEST = "Propose tes modifications du CV."
-MAX_PROPOSE_ASKS = 3  # une demande, puis deux re-demandes avec les défauts
-PROPOSE_TIMEOUT_S = 600  # sorties structurées longues (GLM) et leurs re-demandes
-MAX_POSTING_CHARS = 30_000  # comme l'Analyste
-MAX_UPDATE_CHARS = 500  # résumé d'une mise à jour ATS rendu au modèle
+PROPOSE_REQUEST = "Propose your changes to the CV."
+MAX_PROPOSE_ASKS = 3  # one request, then two re-requests with the defects
+PROPOSE_TIMEOUT_S = 600  # long structured outputs (GLM) and their re-requests
+MAX_POSTING_CHARS = 30_000  # like the Analyst
+MAX_UPDATE_CHARS = 500  # summary of an ATS update handed to the model
 PREFIX = {"ats_reader": "a", "recruiter": "r"}
 AGENT_OF = {prefix: agent for agent, prefix in PREFIX.items()}
 LABEL = {"ats_reader": "ATS Reader", "recruiter": "Recruiter"}
@@ -37,26 +37,26 @@ logger = logging.getLogger(__name__)
 
 
 def author_of(ref: str) -> str:
-    """L'agent qui a écrit la proposition `ref` (`a…` : Lecteur ATS, `r…` : Recruteur)."""
+    """The agent that wrote proposal `ref` (`a...`: ATS Reader, `r...`: Recruiter)."""
     return AGENT_OF[ref[:1]]
 
 
 def facts_text(profile: MasterProfileData) -> str:
-    """Les faits du profil, un par ligne : identifiant, texte, et s'il est déjà dans le CV."""
+    """The profile facts, one per line: identifier, text, and whether it is already in the CV."""
     ids = in_cv(profile)
     return "\n".join(
-        f"[{fact_id}] {text}" + ("" if fact_id in ids else " (hors du CV)")
+        f"[{fact_id}] {text}" + ("" if fact_id in ids else " (not in the CV)")
         for fact_id, text in facts_of(profile).items()
     )
 
 
 def cv_text(content: CvContent, profile: MasterProfileData) -> str:
-    """Le CV d'origine, section par section, chaque ligne avec ses faits (sans coordonnées)."""
+    """The original CV, section by section, each line with its facts (without contact details)."""
     out: list[str] = []
     title = profile.title
     if content.headline:
         cited = f"[{title.id}] " if title is not None and title.text == content.headline else ""
-        out.append(f"Accroche : {cited}{content.headline}")
+        out.append(f"Headline: {cited}{content.headline}")
     for section in content.sections:
         out.append(f"## {section.title} ({section.key})")
         for entry in section.entries:
@@ -68,79 +68,77 @@ def cv_text(content: CvContent, profile: MasterProfileData) -> str:
 
 
 def analysis_text(analysis: PostingAnalysis) -> str:
-    lines = [f"Intitulé : {analysis.title}", f"Niveau : {analysis.level}"]
+    lines = [f"Title: {analysis.title}", f"Level: {analysis.level}"]
     lines += [
-        f"Exigence ({'obligatoire' if r.required else 'souhaitée'}) : {r.text}"
+        f"Requirement ({'mandatory' if r.required else 'preferred'}): {r.text}"
         for r in analysis.requirements
     ]
-    lines += [f"Mot clé : {k.term}" for k in analysis.keywords]
-    lines += [f"Outil : {tool}" for tool in analysis.tools]
-    lines += [f"Éliminatoire : {e.text}" for e in analysis.eliminatory]
+    lines += [f"Keyword: {k.term}" for k in analysis.keywords]
+    lines += [f"Tool: {tool}" for tool in analysis.tools]
+    lines += [f"Knockout: {e.text}" for e in analysis.eliminatory]
     return "\n".join(lines)
 
 
 def brief_text(brief: CompanyBrief | None) -> str:
     if brief is None:
-        return "Aucune fiche entreprise."
+        return "No company sheet."
     lines = [brief.summary]
     if brief.values:
-        lines.append(f"Valeurs : {', '.join(brief.values)}")
+        lines.append(f"Values: {', '.join(brief.values)}")
     if brief.stack:
-        lines.append(f"Outils : {', '.join(brief.stack)}")
+        lines.append(f"Tools: {', '.join(brief.stack)}")
     if brief.tone:
-        lines.append(f"Ton : {brief.tone}")
-    return untrusted("\n".join(lines), "fiche entreprise")
+        lines.append(f"Tone: {brief.tone}")
+    return untrusted("\n".join(lines), "company sheet")
 
 
 def indicators_text(before: Indicators) -> str:
-    """Couverture des exigences obligatoires et contrôles ATS échoués (phrases du code) ; les
-    exigences manquantes viennent de l'offre : encadrées."""
+    """Coverage of the mandatory requirements and failed ATS checks (sentences of the code); the
+    missing requirements come from the posting: wrapped."""
     cov = before.coverage
-    lines = [f"Couverture des exigences obligatoires : {cov.covered}/{cov.total} ({cov.percent} %)"]
+    lines = [f"Coverage of the mandatory requirements: {cov.covered}/{cov.total} ({cov.percent}%)"]
     if cov.missing:
-        lines.append(untrusted("\n".join(cov.missing), "offre:exigences non couvertes"))
+        lines.append(untrusted("\n".join(cov.missing), "posting:uncovered requirements"))
     failed = [check.detail for check in before.checks if not check.passed]
-    lines += [f"Contrôle échoué : {detail}" for detail in failed] or ["Aucun contrôle échoué."]
+    lines += [f"Failed check: {detail}" for detail in failed] or ["No failed check."]
     return "\n".join(lines)
 
 
 def ats_updates_text(updates: list[AtsUpdate]) -> str:
-    """Les mises à jour du web sur les ATS (P14) : titre, date, résumé, adresse, le tout encadré
-    (17.4). Vide sans mise à jour : le prompt n'ajoute alors rien."""
+    """The web updates about ATS (P14): title, date, summary, address, all wrapped
+    (17.4). Empty without an update: the prompt then adds nothing."""
     if not updates:
         return ""
     lines = []
     for update in updates:
         title = " ".join(update.title.split())
         summary = " ".join(update.summary.split())[:MAX_UPDATE_CHARS]
-        lines.append(
-            f"- {title} ({update.published or 'date inconnue'}) : {summary}\n  {update.url}"
-        )
-    return untrusted("\n".join(lines), "base ATS : mises à jour du web")
+        lines.append(f"- {title} ({update.published or 'date unknown'}): {summary}\n  {update.url}")
+    return untrusted("\n".join(lines), "ATS base: web updates")
 
 
 def context_vars(
     ctx: ReviewContext, analysis: PostingAnalysis, brief: CompanyBrief | None, ats: str | None
 ) -> dict[str, Any]:
-    """Les variables communes des prompts ; tout ce qui vient de l'offre, du web, du CV ou du
-    profil est encadré (17.4)."""
+    """The common prompt variables; everything that comes from the posting, the web, the CV or
+    the profile is wrapped (17.4)."""
     return {
-        "ats": ats or "inconnu",
-        "posting": untrusted(ctx.posting_text[:MAX_POSTING_CHARS], "offre"),
-        "analysis": untrusted(analysis_text(analysis), "offre:analyse"),
+        "ats": ats or "unknown",
+        "posting": untrusted(ctx.posting_text[:MAX_POSTING_CHARS], "posting"),
+        "analysis": untrusted(analysis_text(analysis), "posting:analysis"),
         "brief": brief_text(brief),
         "indicators": indicators_text(ctx.before),
-        "profile": untrusted(facts_text(ctx.profile), "profil"),
+        "profile": untrusted(facts_text(ctx.profile), "profile"),
         "cv": untrusted(cv_text(ctx.base, ctx.profile), "cv"),
         "ats_updates": ats_updates_text(ctx.ats_updates),
     }
 
 
 def proposal_issues(items: list[Proposal], profile: MasterProfileData, prefix: str) -> list[str]:
-    """Défauts renvoyés au modèle : ceux de `proposal_problems`, plus une référence qui ne
-    commence pas par la lettre de l'agent."""
+    """Defects sent back to the model: those of `proposal_problems`, plus a reference that does
+    not start with the agent's letter."""
     wrong = [
-        f"La référence {p.ref} n'est pas à toi : tes références commencent par « {prefix} »."
+        f'Reference {p.ref} is not yours: your references start with "{prefix}".'
         for p in items
         if not p.ref.startswith(prefix)
     ]
@@ -148,7 +146,7 @@ def proposal_issues(items: list[Proposal], profile: MasterProfileData, prefix: s
 
 
 def keep_valid(items: list[Proposal], profile: MasterProfileData, prefix: str) -> list[Proposal]:
-    """Les propositions sans défaut, la première d'une référence en double."""
+    """The proposals without defects, the first one of a duplicated reference."""
     kept: list[Proposal] = []
     seen: set[str] = set()
     for p in items:
@@ -161,9 +159,9 @@ def keep_valid(items: list[Proposal], profile: MasterProfileData, prefix: str) -
 
 def problems_text(problems: list[str]) -> str:
     return (
-        "Ta réponse a ces défauts :\n"
+        "Your answer has these defects:\n"
         + "\n".join(f"- {problem}" for problem in problems)
-        + "\nCorrige-les et rends de nouveau toutes tes propositions."
+        + "\nFix them and return all your proposals again."
     )
 
 
@@ -174,8 +172,8 @@ async def ask_proposals[T: ProposalList](
     variables: dict[str, Any],
     profile: MasterProfileData,
 ) -> tuple[T, list[Proposal]]:
-    """Une demande, puis deux re-demandes au plus avec les défauts ; rend la dernière réponse et
-    ses propositions valables."""
+    """One request, then two re-requests at most with the defects; returns the last answer and
+    its valid proposals."""
     model = await deps.models.get_chat_model(deps.user_id, get_agent(agent).tier, agent=agent)
     prefix = PREFIX[agent]
     prompt = render_prompt(agent, mode="propose", prefix=prefix, **variables)
@@ -193,7 +191,7 @@ async def ask_proposals[T: ProposalList](
         if not problems or ask == MAX_PROPOSE_ASKS:
             break
         logger.info(
-            "Propositions redemandées : session %s, agent %s, %d défaut(s)",
+            "Proposals requested again: session %s, agent %s, %d defect(s)",
             deps.session_id,
             agent,
             len(problems),
@@ -201,7 +199,7 @@ async def ask_proposals[T: ProposalList](
         messages += [AIMessage(found.model_dump_json()), HumanMessage(problems_text(problems))]
     kept = keep_valid(found.items, profile, prefix)
     logger.info(
-        "Propositions : session %s, agent %s, %d reçue(s), %d gardée(s)",
+        "Proposals: session %s, agent %s, %d received, %d kept",
         deps.session_id,
         agent,
         len(found.items),
@@ -213,10 +211,10 @@ async def ask_proposals[T: ProposalList](
 async def review_inputs(
     deps: GraphDeps, state: CvReviewState
 ) -> tuple[ReviewContext, PostingAnalysis, dict[str, Any]]:
-    """Le contexte relu par le port (lecture seule), l'analyse de l'état et les variables
-    communes des prompts."""
+    """The context reread by the port (read-only), the state's analysis and the common prompt
+    variables."""
     ctx = await deps.ports.cv_review.context(deps.user_id, state["review_id"])
-    assert state.get("analysis") is not None  # garanti par `load` ou `save_analysis`
+    assert state.get("analysis") is not None  # guaranteed by `load` or `save_analysis`
     analysis = PostingAnalysis.model_validate(state["analysis"])
     raw = state.get("company_brief")
     brief = CompanyBrief.model_validate(raw) if raw else None
