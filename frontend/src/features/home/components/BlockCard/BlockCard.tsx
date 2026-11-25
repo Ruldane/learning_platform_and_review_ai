@@ -4,14 +4,14 @@ import { Button } from "@/shared/ui/button";
 import type { BlockView } from "../viewTypes";
 
 interface BlockCardProps {
-  /** Le bloc d'étude du jour ; `null` quand rien n'est prévu. */
+  /** Today's study block; `null` when nothing is planned. */
   block: BlockView | null;
   onStart: () => void;
-  /** La source du bloc était en panne ce matin : pas de « rien de prévu ». */
+  /** The block source was down this morning: no « rien de prévu » shown. */
   unavailable?: boolean;
 }
 
-/** Le bloc du jour : module, leçon, durée totale, tâches, et le bouton qui ouvre la session d'étude. */
+/** Today's block: module, lesson, total duration, tasks, and the study session button. */
 export function BlockCard({ block, onStart, unavailable = false }: BlockCardProps) {
   return (
     <section

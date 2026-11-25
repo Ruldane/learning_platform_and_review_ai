@@ -5,8 +5,8 @@ import { relaunchGap } from "../api";
 import { gapKeys } from "../queryKeys";
 
 /**
- * Relance l'analyse d'une offre (202). Une analyse déjà en cours (409 `gap_in_progress`) n'est pas
- * une erreur : on relit l'offre pour la suivre.
+ * Restarts a posting's analysis (202). An analysis already running (409 `gap_in_progress`) is not
+ * an error: the posting is re-read to follow it.
  */
 export function useRelaunchGap(postingId: string, onRelaunched: () => void) {
   const client = useQueryClient();

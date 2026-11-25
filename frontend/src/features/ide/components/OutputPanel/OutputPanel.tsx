@@ -6,7 +6,7 @@ interface OutputPanelProps {
   view: OutputView;
 }
 
-/** La ligne d'état en toutes lettres : jamais portée par la seule couleur. */
+/** The status line in full words: never carried by color alone. */
 export function statusLine(view: OutputView): string {
   const { status, exitCode, durationMs, kind, origin } = view;
   if (status === "idle") return t("ide.output.idle");
@@ -14,7 +14,7 @@ export function statusLine(view: OutputView): string {
   if (status !== "done") return t(`ide.output.status.${status}`);
   if (kind === "check") {
     if (exitCode !== 0) return t("ide.output.checkFailed");
-    // Seule ta vérification valide l'exercice : celle de Claude est lue, pas comptée.
+    // Only your check validates the exercise: Claude's is read, not counted.
     return t(origin === "mcp" ? "ide.output.checkPassedByClaude" : "ide.output.checkPassed");
   }
   return durationMs === null
@@ -29,16 +29,16 @@ function bodyText(view: OutputView): string {
 }
 
 /**
- * La sortie d'une exécution : en lecture seule (le programme ne lit pas le clavier), avec son état
- * en texte. Quand tu lances une exécution, le focus vient ici : c'est là qu'on lit le résultat. Une
- * exécution lancée par Claude s'affiche de même, marquée « lancée par Claude », sans le focus.
+ * A run's output: read-only (the program does not read the keyboard), with its state
+ * as text. When you start a run, focus moves here: this is where the result is read. A
+ * run started by Claude is shown the same way, marked « lancée par Claude », without focus.
  */
 export function OutputPanel({ view }: OutputPanelProps) {
   const headingId = useId();
   const region = useRef<HTMLElement>(null);
   const { runId, origin } = view;
   useEffect(() => {
-    // Une exécution de Claude n'arrache jamais le focus : tu es peut-être en train de taper.
+    // A run by Claude never takes focus: you may be typing.
     if (runId && origin === "app") region.current?.focus();
   }, [runId, origin]);
   return (

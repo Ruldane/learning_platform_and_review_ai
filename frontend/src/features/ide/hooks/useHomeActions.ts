@@ -7,7 +7,7 @@ import type { ExerciseDraft } from "../components/viewTypes";
 import { useCreateExercise, useGenerateExercise } from "./useExercises";
 import { useCreateSession } from "./useSessions";
 
-/** Les fichiers d'un exercice écrit à la main : le code de départ et, s'il y en a, ses tests. */
+/** The files of a hand-written exercise: the starter code and, if any, its tests. */
 export function exerciseFiles(draft: ExerciseDraft): Record<string, string> {
   const files: Record<string, string> = { "main.py": draft.starter };
   if (draft.tests.trim() !== "") files["test_main.py"] = draft.tests;
@@ -15,8 +15,8 @@ export function exerciseFiles(draft: ExerciseDraft): Record<string, string> {
 }
 
 /**
- * Les gestes de la page d'accueil : ajouter un exercice, en faire générer un, ouvrir une séance
- * (la reprendre si elle existe, sinon la créer) puis aller dans l'éditeur.
+ * The home page actions: add an exercise, have one generated, open a session
+ * (resume it if it exists, otherwise create it), then go to the editor.
  */
 export function useHomeActions() {
   const navigate = useNavigate();
@@ -43,7 +43,7 @@ export function useHomeActions() {
     }
   }
 
-  /** Ouvre la séance `sessionId` ; sans elle, en crée une sur `exerciseId` (`null` : libre). */
+  /** Opens the session `sessionId`; without it, creates one on `exerciseId` (`null`: free). */
   async function open(exerciseId: string | null, sessionId: string | null) {
     setOpenError(null);
     try {

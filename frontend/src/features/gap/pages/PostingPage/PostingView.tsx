@@ -12,13 +12,13 @@ const LIST_PATH = "/career/postings";
 
 interface PostingViewProps {
   postingId: string;
-  /** Intervalle de relecture, en ms (réduit par les tests). */
+  /** Re-read interval, in ms (shortened by tests). */
   pollMs?: number;
-  /** Ne sert qu'aux tests (faux WebSocket). */
+  /** Only used by tests (fake WebSocket). */
   createSocket?: SocketFactory;
 }
 
-/** La page d'une offre, montée sous `key={postingId}` : chaque offre repart d'un état vierge. */
+/** A posting page, mounted under `key={postingId}`: each posting starts from a blank state. */
 export function PostingView({
   postingId,
   pollMs = ANALYSIS_POLL_MS,

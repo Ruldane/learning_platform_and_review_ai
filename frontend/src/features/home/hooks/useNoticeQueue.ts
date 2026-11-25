@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { NoticeView } from "../components/viewTypes";
 
-/** Notifications à l'écran en même temps ; les suivantes attendent que l'une disparaisse. */
+/** Notifications on screen at once; the next ones wait until one goes away. */
 const VISIBLE = 3;
 
-/** Le minuteur d'une notification visible, et le temps qui lui reste quand il est en pause. */
+/** The timer of a visible notification, and the time left when it is paused. */
 interface Countdown {
   timer: ReturnType<typeof setTimeout> | null;
   left: number;
@@ -17,7 +17,7 @@ const arm = (left: number, onEnd: () => void): Countdown => ({
   since: Date.now(),
 });
 
-/** Le minuteur arrêté, avec ce qu'il lui restait. */
+/** The stopped timer, with the time it had left. */
 function pause(countdown: Countdown): Countdown {
   clearTimeout(countdown.timer ?? undefined);
   return {
@@ -28,10 +28,10 @@ function pause(countdown: Countdown): Countdown {
 }
 
 /**
- * La file des notifications : les trois premières sont à l'écran, chacune disparaît seule après
- * `dismissMs` (le minuteur part quand elle devient visible) ou à « Fermer ». `hold(id, true)` met
- * son minuteur en pause (pointeur dessus, focus dedans), `hold(id, false)` le reprend où il en
- * était. Tout reste en mémoire.
+ * The notification queue: the first three are on screen, each one goes away on its own after
+ * `dismissMs` (the timer starts when visible) or on « Fermer ». `hold(id, true)` pauses
+ * its timer (pointer over it, focus inside), `hold(id, false)` resumes it where it was
+ * left. All stays in memory.
  */
 export function useNoticeQueue(dismissMs: number) {
   const [notices, setNotices] = useState<NoticeView[]>([]);

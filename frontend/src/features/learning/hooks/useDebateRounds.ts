@@ -4,7 +4,7 @@ import { learningKeys } from "../queryKeys";
 
 const MINUTE_MS = 60_000;
 
-/** Nombre de tours voulu (réglage `debate_rounds`) ; `undefined` tant qu'il n'est pas lu : trois tours. */
+/** Rounds wanted (`debate_rounds` setting); `undefined` until it is read: three rounds. */
 export function useDebateRounds(): number | undefined {
   const query = useQuery({
     queryKey: learningKeys.rounds,

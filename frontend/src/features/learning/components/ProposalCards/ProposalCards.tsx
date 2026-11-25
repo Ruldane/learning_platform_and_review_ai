@@ -6,14 +6,14 @@ import { useMixSelection } from "./useMixSelection";
 
 interface ProposalCardsProps {
   proposals: ProposalView[];
-  /** January peut choisir, mélanger ou relancer (le débat est fini). */
+  /** January can choose, mix or rerun (the debate is over). */
   canChoose: boolean;
-  /** Le Conseil propose un autre tour (absent au plafond de tours : l'interruption n'en offre plus). */
+  /** The Council offers another round, except at the round cap (no interruption option). */
   canAnotherRound?: boolean;
-  /** Une action est en cours : tout est désactivé, sauf « Voir au tableau ». */
+  /** An action is in progress: everything is disabled except « Voir au tableau ». */
   busy: boolean;
   onChoose: (proposalId: string) => void;
-  /** Reçoit les deux identifiants dans l'ordre des cartes. */
+  /** Receives the two ids in card order. */
   onMix: (firstId: string, secondId: string) => void;
   onAnotherRound: () => void;
   onShowBoard: (boardId: string) => void;
@@ -22,10 +22,10 @@ interface ProposalCardsProps {
 const MIX_SIZE = 2;
 
 /**
- * Les 2 à 3 propositions du Conseil côte à côte (SPEC 3.2), mêmes rubriques alignées. January en
- * choisit une, en mélange deux (cases à cocher, puis « Mélanger ces deux parcours ») ou demande un
- * autre tour. Tant que `canChoose` est faux (ou qu'une action est en cours), rien de tout cela n'est
- * possible ; « Voir au tableau » reste ouvert. Présentationnel : la page reçoit les actions.
+ * The Council's 2 to 3 proposals side by side (SPEC 3.2), same aligned sections. January
+ * picks one, mixes two (checkboxes, then « Mélanger ces deux parcours ») or asks for
+ * another round. While `canChoose` is false (or an action is running), none of this is
+ * possible; « Voir au tableau » stays open. Presentational: the page receives the actions.
  */
 export function ProposalCards({
   proposals,
@@ -40,7 +40,7 @@ export function ProposalCards({
   const ordered = [...proposals].sort((a, b) => a.rank - b.rank);
   const { picked, toggle } = useMixSelection(ordered);
   const actionable = canChoose && !busy;
-  // Un parcours est déjà choisi : plus rien à décider ici.
+  // A path is already chosen: nothing left to decide here.
   const decided = ordered.some((proposal) => proposal.chosen);
 
   if (ordered.length === 0) {

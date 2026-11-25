@@ -9,15 +9,15 @@ import { parseGoal, type GoalDraft, type GoalErrors } from "./parseGoal";
 interface GoalFormProps {
   onSubmit: (input: GoalInput) => void;
   launchMenu?: ReactNode;
-  /** L'objectif part : le formulaire est verrouillé. */
+  /** The goal is being sent: the form is locked. */
   busy: boolean;
 }
 
 const EMPTY: GoalDraft = { text: "", targetRole: "", deadline: "", weeklyHours: "" };
 
 /**
- * Nouvel objectif (SPEC 3.1, étape 1) : ce que January veut apprendre (5 à 500 caractères), le poste
- * visé, une échéance à venir et ses heures par semaine (1 à 40). Valide à l'envoi, champ par champ.
+ * New goal (SPEC 3.1, step 1): what January wants to learn (5 to 500 characters), the role
+ * targeted, an upcoming deadline and hours per week (1 to 40). Validated on submit, field by field.
  */
 export function GoalForm({ onSubmit, busy, launchMenu }: GoalFormProps) {
   const [draft, setDraft] = useState<GoalDraft>(EMPTY);

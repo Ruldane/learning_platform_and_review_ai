@@ -3,7 +3,7 @@ import { fetchGoals } from "../api";
 import { learningKeys } from "../queryKeys";
 import { newestFirst } from "../toView";
 
-/** Les objectifs (`GET /goals`), du plus récent au plus ancien. */
+/** The goals (`GET /goals`), newest first. */
 export function useGoals() {
   return useQuery({
     queryKey: learningKeys.goals,

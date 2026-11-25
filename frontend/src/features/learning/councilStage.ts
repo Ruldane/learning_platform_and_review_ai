@@ -1,32 +1,32 @@
 import type { SessionEvent } from "@/shared/realtime/types";
 import type { CouncilStage } from "./components/viewTypes";
 
-/** Tours de débat par défaut après le tour 1 (réglage `debate_rounds`, SPEC 3.1). */
+/** Default debate rounds after round 1 (`debate_rounds` setting, SPEC 3.1). */
 export const DEFAULT_ROUNDS = 3;
-/** Plafond de tours du back, tour 1 compris (`council_rules.MAX_ROUNDS`). */
+/** Backend round cap, round 1 included (`council_rules.MAX_ROUNDS`). */
 export const MAX_ROUNDS = 8;
 
 export interface CouncilProgress {
   stage: CouncilStage;
-  /** Tour en cours du débat (0 : pas encore commencé). */
+  /** Current debate round (0: not started yet). */
   round: number;
   /**
-   * Tours prévus en tout, tour 1 compris (`1 + debate_rounds`, 8 au plus, D85 §2) ; jamais moins
-   * que le tour en cours (un « autre tour » en ajoute un).
+   * Total planned rounds, round 1 included (`1 + debate_rounds`, 8 at most, D85 §2); never fewer
+   * than the current round (an « autre tour » adds one).
    */
   rounds: number;
 }
 
-/** `moderator-tour-2`, `skeptic-tour-3` : le tour est dans l'identifiant du message. */
+/** `moderator-tour-2`, `skeptic-tour-3`: the round is in the message id. */
 const TOUR = /-tour-(\d+)$/;
-/** Position du tour 1 (`strategist-positions`) et bilan du Modérateur : le débat tourne. */
+/** Round 1 positions (`strategist-positions`) and the Moderator's summary: debate is running. */
 const DEBATE_MESSAGE = /-(?:positions|bilan-\d+)$/;
-/** Le Modérateur annonce le choix : la suite est le programme (`finalize`, D85). */
+/** The Moderator announces the choice: next comes the program (`finalize`, D85). */
 const CHOICE_MESSAGE = "moderator-choix";
 
 const isWebTool = (tool: string) => tool.startsWith("web_");
 
-/** Étape et tour après `event`. La recherche ne compte qu'avant le débat (un débatteur peut lire le web). */
+/** Stage and round after `event`. Research counts only before the debate (debaters use the web). */
 function advance(now: CouncilProgress, event: SessionEvent): CouncilProgress {
   switch (event.type) {
     case "tool.called":
@@ -55,12 +55,12 @@ function advance(now: CouncilProgress, event: SessionEvent): CouncilProgress {
 }
 
 /**
- * Étape du Conseil déduite des événements de sa session (SPEC 3.1), sans état à part : cadrage
- * tant que rien d'autre n'est arrivé ; recherche dès un outil `web_*` ou une source ; débat à
- * chaque message « tour-n » (le tour en vient) ; propositions dès `proposal.ready` ou la question
- * du choix ; programme dès le choix annoncé ou un programme connu. Le dernier événement l'emporte
- * (« autre tour » : retour au débat). `debateRounds` vient des réglages : le back fait le tour 1
- * (positions) puis `debateRounds` tours de débat.
+ * Council stage derived from its session events (SPEC 3.1), with no separate state: framing
+ * until something else arrives; research as soon as a `web_*` tool or a source; debate at
+ * each « tour-n » message (the round comes from it); proposals on `proposal.ready` or the question
+ * of the choice; program as soon as the choice is announced or a known program. The last event wins
+ * (« autre tour »: back to debate). `debateRounds` comes from settings; the backend runs round 1
+ * (positions) then `debateRounds` debate rounds.
  */
 export function councilStage(
   events: SessionEvent[],

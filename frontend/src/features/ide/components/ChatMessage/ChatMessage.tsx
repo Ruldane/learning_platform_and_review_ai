@@ -6,11 +6,11 @@ import type { NoteView } from "../viewTypes";
 
 interface ChatMessageProps {
   note: NoteView;
-  /** Son message : aligné à droite, texte brut (ce qu'elle a tapé). */
+  /** The learner's message: aligned right, plain text (what they typed). */
   mine: boolean;
-  /** « indice 2 », « après une exécution »… : pourquoi cette note est arrivée sans question. */
+  /** « indice 2 », « après une exécution »…: why this note arrived without a question. */
   tag: string | null;
-  /** Une décision sur une proposition est en cours. */
+  /** A decision on a proposal is in progress. */
   busy: boolean;
   onAccept: () => void;
   onReject: () => void;
@@ -18,8 +18,8 @@ interface ChatMessageProps {
 }
 
 /**
- * Un message du fil : le sien à droite, celui du professeur ou de Claude à gauche, avec l'auteur,
- * le renvoi au fichier et aux lignes. Une proposition garde sa carte (Accepter, Refuser).
+ * A chat message: learner on the right, teacher or Claude on the left, with the author,
+ * the link to the file and lines. A proposal keeps its card (Accepter, Refuser).
  */
 export function ChatMessage({
   note,

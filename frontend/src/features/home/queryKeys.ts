@@ -1,8 +1,8 @@
-/** Clés TanStack Query de l'accueil : aucune donnée du brief ni du fil, jamais. */
+/** TanStack Query keys for home: never any brief or feed data. */
 export const homeKeys = {
   brief: ["home", "brief"] as const,
-  /** La première page du fil (la seule relue ; les pages plus anciennes sont lues à la demande). */
+  /** The first page of the feed (the only one re-read; older pages are read on demand). */
   activity: ["home", "activity"] as const,
-  /** La relecture de fond des notifications. */
+  /** The background re-read of notifications. */
   notices: ["home", "notices"] as const,
 } as const;

@@ -9,15 +9,15 @@ import { AUTOSAVE_MS, useDraftSave } from "./useDraftSave";
 export { AUTOSAVE_MS };
 
 /**
- * Les fichiers tels qu'on les édite : ce que le serveur a, plus les retouches pas encore
- * envoyées. Enregistre tout seul après 1,5 s sans frappe ; `save` attend un envoi en cours et rend
- * vrai si tout est enregistré (l'exécution l'appelle avant de partir). `discard` jette les
- * retouches quand le serveur a changé le fichier (proposition acceptée).
+ * The files as they are edited: what the server has, plus the edits not yet
+ * sent. Saves on its own after 1.5 s without typing; `save` waits for a send and returns
+ * true if everything is saved (the run calls it before starting). `discard` drops the
+ * edits when the server changed the file (accepted proposal).
  *
- * La séance est relue en direct : si Claude change un fichier sur le serveur, l'éditeur le charge
- * et le dit (`claude.notices`) ; si tu avais des retouches pas enregistrées sur ce fichier, elles
- * sont gardées, rien n'est envoyé pour lui, et tu choisis (`claude.conflicts`) : jamais de perte
- * silencieuse, dans un sens ou dans l'autre.
+ * The session is re-read live: if Claude changes a file on the server, the editor loads it
+ * and says so (`claude.notices`); if you had unsaved edits on that file, they
+ * are kept, nothing is sent for it, and you choose (`claude.conflicts`): never a silent
+ * loss, in either direction.
  */
 export function useFilesDraft(session: IdeSession) {
   const queryClient = useQueryClient();
@@ -33,7 +33,7 @@ export function useFilesDraft(session: IdeSession) {
   const files = useMemo(() => ({ ...session.files, ...edits }), [session.files, edits]);
   const edit = useCallback(
     (name: string, text: string) => {
-      // Tu écris dans un fichier que Claude vient de changer : tu pars de sa version, sans conflit.
+      // You write to a file Claude just changed: you start from its version, with no conflict.
       if (!(name in edits)) acknowledge([name]);
       setEdits((current) => {
         const rest = omit(current, [name]);

@@ -6,8 +6,8 @@ interface MarkdownLinkProps {
 }
 
 /**
- * Lien d'une leçon : ouvert dans un nouvel onglet, sans référent. Une adresse refusée par
- * `urlTransform` arrive vide : le texte reste, sans lien.
+ * A lesson link: opens in a new tab, without referrer. An address refused by
+ * `urlTransform` arrives empty: the text stays, without a link.
  */
 export function MarkdownLink({ href, children }: MarkdownLinkProps) {
   if (!href) return <span>{children}</span>;

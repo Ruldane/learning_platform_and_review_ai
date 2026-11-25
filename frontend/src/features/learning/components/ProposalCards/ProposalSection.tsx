@@ -2,13 +2,13 @@ import type { ReactNode } from "react";
 
 interface ProposalSectionProps {
   title: string;
-  /** Une liste à puces… */
+  /** A bullet list… */
   items?: string[];
-  /** …ou un texte. */
+  /** …or a text. */
   children?: ReactNode;
 }
 
-/** Une rubrique d'une carte : son titre, puis une liste ou un texte. */
+/** A card section: its title, then a list or a text. */
 export function ProposalSection({ title, items, children }: ProposalSectionProps) {
   return (
     <div className="flex flex-col gap-0.5">
@@ -18,7 +18,7 @@ export function ProposalSection({ title, items, children }: ProposalSectionProps
       {items ? (
         <ul className="list-disc pl-4">
           {items.map((item, index) => (
-            // Deux puces peuvent porter le même texte : la position les distingue.
+            // Two bullets can carry the same text: the position tells them apart.
             <li key={`${index}-${item}`}>{item}</li>
           ))}
         </ul>

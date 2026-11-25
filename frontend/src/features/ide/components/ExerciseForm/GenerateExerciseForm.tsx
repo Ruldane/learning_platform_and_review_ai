@@ -11,7 +11,7 @@ interface GenerateExerciseFormProps {
   onGenerate: (draft: GenerateDraft) => void;
 }
 
-/** Faire écrire un exercice par les agents : un sujet et un niveau. */
+/** Have the agents write an exercise: a topic and a level. */
 export function GenerateExerciseForm({
   pending,
   onGenerate,

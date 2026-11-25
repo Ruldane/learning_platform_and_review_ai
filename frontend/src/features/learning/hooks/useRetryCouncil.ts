@@ -18,11 +18,11 @@ function conflictNotice(failure: ApiError): string | null {
 }
 
 /**
- * Relance d'un Conseil en échec (`POST /goals/{id}/council`). Le 202 rend l'objectif avec sa
- * nouvelle session : la page la suit (elle se remonte sur `council_session_id`), les propositions
- * repartent de zéro et les tableaux de l'ancien Conseil ne s'affichent plus. Les refus 409
- * (`council_not_failed`, `goal_already_chosen`) se disent dans `notice`, puis l'objectif et la
- * session sont relus ; le reste va dans `error`.
+ * Restarts a failed Council (`POST /goals/{id}/council`). The 202 returns the goal with its
+ * new session: the page follows it (it remounts on `council_session_id`), the proposals
+ * start from zero and the boards of the old Council are no longer shown. The 409 refusals
+ * (`council_not_failed`, `goal_already_chosen`) are reported in `notice`, then the goal and the
+ * session are re-read; the rest goes to `error`.
  */
 export function useRetryCouncil(goalId: string, sessionId: string) {
   const client = useQueryClient();
@@ -39,7 +39,7 @@ export function useRetryCouncil(goalId: string, sessionId: string) {
     setError(null);
     try {
       const started = await mutateAsync(source);
-      // Plus rien de l'ancien lot ni de l'ancien tableau, même un instant.
+      // Nothing from the old batch or old board, not even for a moment.
       await client.resetQueries({ queryKey: learningKeys.proposals(goalId) });
       client.setQueryData(learningKeys.goal(goalId), started.goal);
       void client.invalidateQueries({ queryKey: learningKeys.boards(goalId) });

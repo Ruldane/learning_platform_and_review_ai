@@ -1,15 +1,15 @@
 import { t } from "@/shared/i18n/t";
 import type { NoteView } from "./viewTypes";
 
-/** Une ligne du fil : une note rangée, ou la question qui part (affichée avant d'être relue). */
+/** A thread row: a filed note, or the question being sent (shown before it is re-read). */
 export type ChatItem =
   | { type: "note"; id: string; note: NoteView; mine: boolean; tag: string | null }
   | { type: "pending"; id: string; text: string };
 
 /**
- * L'étiquette d'une note que January n'a pas demandée à l'instant : l'indice et son niveau, le
- * commentaire de marge, le renvoi, et « après une exécution » pour une explication du professeur
- * qui ne répond à aucune question (réussite des tests). Une réponse à une question n'en porte pas.
+ * The label of a note January did not just ask for: the hint and its level, the
+ * margin comment, the link, and « après une exécution » for a teacher explanation
+ * that answers no question (tests passing). An answer to a question carries none.
  */
 export function tagOf(note: NoteView, previous: NoteView | undefined): string | null {
   if (note.kind === "hint") {
@@ -23,7 +23,7 @@ export function tagOf(note: NoteView, previous: NoteView | undefined): string | 
   return null;
 }
 
-/** Le fil dans l'ordre des notes ; ses messages (`mine`) d'un côté, ceux des autres de l'autre. */
+/** The thread in note order; its messages (`mine`) on one side, the others' on the other. */
 export function toChatItems(notes: NoteView[], pendingQuestion: string | null): ChatItem[] {
   const items: ChatItem[] = notes.map((note, index) => ({
     type: "note",

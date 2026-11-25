@@ -10,7 +10,7 @@ interface StylePickerProps {
   onPick: (style: PreferencesView["style"]) => void;
 }
 
-/** La façon d'aider du professeur : deux choix exclusifs, chacun décrit. */
+/** The teacher's help style: two exclusive choices, each described. */
 export function StylePicker({ value, pending, onPick }: StylePickerProps) {
   const name = useId();
   return (

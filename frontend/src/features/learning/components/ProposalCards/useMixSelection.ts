@@ -2,9 +2,9 @@ import { useState } from "react";
 import type { ProposalView } from "../viewTypes";
 
 /**
- * Cartes cochées pour le mélange, dans l'ordre des cartes. Une carte cochée qui n'est plus proposée
- * (autre lot de propositions) est oubliée ; la limite de deux est tenue par l'interface (case
- * désactivée), pas ici.
+ * Cards checked for the mix, in card order. A checked card that is no longer proposed
+ * (another batch of proposals) is forgotten; the limit of two is enforced by the UI (checkbox
+ * disabled), not here.
  */
 export function useMixSelection(ordered: ProposalView[]) {
   const [ticked, setTicked] = useState<string[]>([]);

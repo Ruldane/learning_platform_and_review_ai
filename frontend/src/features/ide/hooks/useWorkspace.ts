@@ -22,10 +22,10 @@ function useNoteViews(sessionId: string, files: Files, file: string) {
 }
 
 /**
- * Tout ce que la séance relie : les fichiers, le fichier et la ligne ouverts, l'exécution, le
- * professeur et ses notes. Le professeur ne part que sur un geste : fin d'une exécution en échec
- * (mode automatique ouvert), « Indice », « Pourquoi », une question, ou 30 s d'arrêt si l'option
- * est cochée. Jamais à la frappe.
+ * Everything the session links: the files, the open file and line, the run, the
+ * teacher and its notes. The teacher only fires on an action: end of a failed run
+ * (automatic mode on), « Indice », « Pourquoi », a question, or 30 s idle if the option
+ * is checked. Never on typing.
  */
 export function useWorkspace(session: IdeSession) {
   const draft = useFilesDraft(session);

@@ -9,7 +9,7 @@ interface GoalMetaFieldsProps {
   onChange: (field: keyof GoalDraft, value: string) => void;
 }
 
-/** Poste visé, échéance et heures par semaine : les champs facultatifs d'un objectif. */
+/** Target role, deadline and hours per week: the optional goal fields. */
 export function GoalMetaFields({ draft, errors, disabled, onChange }: GoalMetaFieldsProps) {
   return (
     <div className="grid gap-4 sm:grid-cols-3">

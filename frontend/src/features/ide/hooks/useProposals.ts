@@ -9,10 +9,10 @@ interface Draft {
 }
 
 /**
- * Accepter ou refuser une proposition. Avant d'accepter, le code est enregistré : le serveur
- * compare l'empreinte du fichier à celle de la proposition et la refuse (409) si le code a changé.
- * Accepté, le fichier est celui que le serveur rend ; les retouches locales sont jetées.
- * `onDone` rend le focus à la liste du professeur (la carte disparaît de la file d'attente).
+ * Accept or refuse a proposal. Before accepting, the code is saved: the server
+ * compares the file fingerprint with the proposal's and refuses it (409) if the code changed.
+ * Once accepted, the file is the one the server returns; local edits are dropped.
+ * `onDone` returns focus to the teacher's list (the card leaves the waiting queue).
  */
 export function useProposals(sessionId: string, draft: Draft, onDone: () => void) {
   const accept = useAcceptNote(sessionId);

@@ -3,9 +3,9 @@ import { t } from "@/shared/i18n/t";
 import type { WeekView } from "../viewTypes";
 
 interface WeekCardProps {
-  /** L'avancement de la semaine du programme ; `null` sans programme validé. */
+  /** Progress of the program's week; `null` without a validated program. */
   week: WeekView | null;
-  /** La source de la semaine était en panne ce matin : ni « aucune semaine » ni chiffres. */
+  /** The week source was down this morning: neither « aucune semaine » nor figures. */
   unavailable?: boolean;
 }
 
@@ -20,7 +20,7 @@ function tasksText(done: number, total: number): string {
     : t("home.week.tasks.many", { done, total });
 }
 
-/** L'avancement de la semaine : barre et texte « 3 h 10 sur 5 h prévues », tâches faites et série. */
+/** The week's progress: bar and text « 3 h 10 sur 5 h prévues », tasks done and streak. */
 export function WeekCard({ week, unavailable = false }: WeekCardProps) {
   const planned = week?.plannedMinutes ?? 0;
   const share = week && planned > 0 ? Math.min(1, week.doneMinutes / planned) : 0;

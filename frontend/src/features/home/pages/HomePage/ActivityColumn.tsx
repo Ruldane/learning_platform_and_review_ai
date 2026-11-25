@@ -6,7 +6,7 @@ import { LoadingState } from "@/shared/ui/states/LoadingState";
 import { ActivityFeed } from "../../components/ActivityFeed";
 import { useActivity } from "../../hooks/useActivity";
 
-/** Le fil d'activité en colonne : sa première page, « Voir plus » et ses erreurs. */
+/** The activity feed as a column: its first page, « Voir plus » and its errors. */
 export function ActivityColumn() {
   const activity = useActivity();
   const { query } = activity;

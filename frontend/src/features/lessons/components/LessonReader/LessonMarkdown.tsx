@@ -13,9 +13,9 @@ interface LessonMarkdownProps {
 const REMARK_PLUGINS = [remarkGfm, remarkRawHtmlAsText];
 
 /**
- * Rendu du Markdown d'une leçon (GFM : tables, listes de tâches). Le contenu n'est pas fiable
- * (SPEC 17.2) : un bloc HTML brut s'affiche en texte (`remarkRawHtmlAsText`), le HTML en ligne est
- * retiré, rien n'est jamais interprété (`skipHtml` en dernier recours) ; seules les adresses
+ * Renders a lesson's Markdown (GFM: tables, task lists). The content is not trusted
+ * (SPEC 17.2): a raw HTML block shows as text (`remarkRawHtmlAsText`), inline HTML is
+ * removed, nothing is ever interpreted (`skipHtml` as a last resort); only the addresses
  * http(s) passent (`urlTransform`).
  */
 export function LessonMarkdown({ markdown, headings }: LessonMarkdownProps) {

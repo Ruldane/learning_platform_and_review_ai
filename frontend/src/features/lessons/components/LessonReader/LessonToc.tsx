@@ -6,7 +6,7 @@ interface LessonTocProps {
   headings: TocHeading[];
 }
 
-/** Sommaire des sections de la leçon : une ancre par titre, les sous-sections en retrait. */
+/** Section outline of the lesson: one anchor per heading, subsections indented. */
 export function LessonToc({ headings }: LessonTocProps) {
   if (headings.length === 0) return null;
   return (

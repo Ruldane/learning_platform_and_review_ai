@@ -13,8 +13,8 @@ interface PostingOutcomeProps {
 }
 
 /**
- * Une offre refusée (« ce n'est pas une offre ») ou dont l'analyse s'est arrêtée. Seule la
- * seconde se relance ; la première se supprime ou se remplace par un autre envoi.
+ * A posting refused (« ce n'est pas une offre ») or whose analysis stopped. Only the
+ * second can be restarted; the first is deleted or replaced by another submission.
  */
 export function PostingOutcome({
   status,

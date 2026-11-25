@@ -17,8 +17,8 @@ interface GapSectionProps {
 }
 
 /**
- * La section « Écart avec ton profil » d'une offre analysée : calcul en cours (fil de la session,
- * relecture de 3 s), échec avec « Relancer », ou le tableau.
+ * The « Écart avec ton profil » section of an analyzed posting: calculating (session feed,
+ * 3 s re-read), failure with « Relancer », or the table.
  */
 export function GapSection({ postingId, pollMs, createSocket }: GapSectionProps) {
   const { query, budget } = useGap(postingId, true, pollMs);

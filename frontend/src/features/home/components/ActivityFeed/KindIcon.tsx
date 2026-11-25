@@ -10,7 +10,7 @@ const ICONS = {
   job_failed: AlertTriangle,
 } as const satisfies Record<ActivityKind, typeof Radar>;
 
-/** L'icône d'un genre d'événement : décorative, le genre est écrit en texte masqué à côté. */
+/** The icon for an event kind: decorative, the kind is written in hidden text next to it. */
 export function KindIcon({ kind }: { kind: ActivityKind }) {
   const Icon = ICONS[kind];
   return <Icon aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-muted-foreground" />;

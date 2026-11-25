@@ -13,13 +13,13 @@ function formatDay(iso: string): string {
   return DATE.format(new Date(year ?? 0, (month ?? 1) - 1, day ?? 1));
 }
 
-/** Lien vers le programme : celui de l'objectif s'il existe, sinon le plus récent. */
+/** Link to the program: the goal's own if it exists, otherwise the most recent one. */
 const programPath = (goal: GoalRow) =>
   goal.programId ? `/learn/programs/${goal.programId}` : "/learn/programs";
 
 /**
- * Les objectifs de January : texte, poste visé, échéance, heures par semaine, statut, lien vers le
- * Conseil et, une fois un parcours choisi, vers le programme.
+ * January's goals: text, target role, deadline, hours per week, status, link to the
+ * Council and, once a path is chosen, to the program.
  */
 export function GoalList({ goals }: GoalListProps) {
   return (

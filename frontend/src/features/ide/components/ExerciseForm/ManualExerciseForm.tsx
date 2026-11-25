@@ -6,13 +6,13 @@ import { TextField } from "./TextField";
 
 interface ManualExerciseFormProps {
   pending: boolean;
-  /** Rend vrai quand l'exercice est ajouté : les champs sont alors vidés. */
+  /** True when the exercise is added: the fields are then cleared. */
   onCreate: (draft: ExerciseDraft) => Promise<boolean>;
 }
 
 const EMPTY: ExerciseDraft = { title: "", statement: "", starter: "", tests: "" };
 
-/** Écrire un exercice à la main : titre, énoncé, code de départ et, au choix, des tests pytest. */
+/** Write an exercise by hand: title, statement, starter code and, optionally, pytest tests. */
 export function ManualExerciseForm({ pending, onCreate }: ManualExerciseFormProps) {
   const [draft, setDraft] = useState<ExerciseDraft>(EMPTY);
   const set = (key: keyof ExerciseDraft) => (value: string) =>

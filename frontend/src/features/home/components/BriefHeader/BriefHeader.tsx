@@ -3,13 +3,13 @@ import { clockTime } from "@/shared/lib/relativeTime";
 import { t } from "@/shared/i18n/t";
 
 interface BriefHeaderProps {
-  /** Le jour local du brief, `AAAA-MM-JJ`. */
+  /** The brief's local day, `YYYY-MM-DD`. */
   day: string;
-  /** L'instant ISO où le brief a été préparé. */
+  /** The ISO instant when the brief was prepared. */
   generatedAt: string;
 }
 
-/** Le titre de l'accueil : « Ton brief du jour », le jour en toutes lettres et l'heure de préparation. */
+/** The home title: « Ton brief du jour », the day spelled out and the preparation time. */
 export function BriefHeader({ day, generatedAt }: BriefHeaderProps) {
   return (
     <header className="flex flex-col gap-1">

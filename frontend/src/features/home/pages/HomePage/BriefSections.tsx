@@ -16,7 +16,7 @@ import { ReviewsCard } from "../../components/ReviewsCard";
 import { WeekCard } from "../../components/WeekCard";
 import type { BriefView } from "../../toView";
 
-/** Les routes où l'accueil mène (il n'importe jamais une autre feature : il ne connaît que ses chemins). */
+/** The routes home leads to (it never imports another feature: it only knows their paths). */
 const STUDY_SESSION = "/study/session";
 const REVIEWS = "/study/reviews";
 const POSTINGS = "/career/postings";
@@ -24,15 +24,15 @@ const GOALS = "/learn/goals";
 const applicationPath = (applicationId: string) => `/applications/${applicationId}`;
 
 /**
- * Le brief du jour : l'en-tête, les actions rapides puis les sept rubriques dans l'ordre de F17
- * (bloc, révisions, relances, offres, avancement, ressource, conseil). Sans programme validé
- * (`week` vide), le bloc et l'avancement laissent la place à « Commence par un objectif ».
+ * Today's brief: the header, quick actions, then the seven sections in F17 order
+ * (block, reviews, reminders, offers, progress, resource, advice). Without a validated program
+ * (`week` empty), the block and progress make room for « Commence par un objectif ».
  */
 export function BriefSections({ brief, guide }: { brief: BriefView; guide?: ReactNode }) {
   const navigate = useNavigate();
   const requestCapture = useCaptureRequest((state) => state.request);
   const down = (name: string) => brief.unavailable.includes(name);
-  // Une semaine indisponible n'est pas « aucun programme » : le bloc reste montré.
+  // An unavailable week is not « aucun programme »: the block stays shown.
   const noProgram = brief.week === null && !down("week");
   return (
     <div className="flex flex-col gap-4">

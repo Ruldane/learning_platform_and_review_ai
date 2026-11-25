@@ -5,11 +5,11 @@ import type { OfferItemView } from "../viewTypes";
 
 interface OffersCardProps {
   items: OfferItemView[];
-  /** La source des offres était en panne ce matin : ni liste vide ni « aucune nouvelle offre ». */
+  /** Offers source down this morning: neither an empty list nor « aucune nouvelle offre ». */
   unavailable?: boolean;
 }
 
-/** Les nouvelles offres du radar : titre (lien extérieur), entreprise et score écrit « score 78 sur 100 ». */
+/** New radar offers: title (external link), company and score written « score 78 sur 100 ». */
 export function OffersCard({ items, unavailable = false }: OffersCardProps) {
   return (
     <section
@@ -26,7 +26,7 @@ export function OffersCard({ items, unavailable = false }: OffersCardProps) {
       ) : (
         <ul aria-label={t("home.offers.listLabel")} className="flex flex-col gap-2 text-sm">
           {items.map((offer, index) => (
-            // Deux offres peuvent partager un lien : la position départage.
+            // Two offers can share a link: the position breaks the tie.
             <li key={`${offer.url}#${index}`} className="flex flex-col">
               <ExternalLink href={offer.url}>
                 {offer.title ?? t("home.offers.untitled")}

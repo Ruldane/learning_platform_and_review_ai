@@ -9,9 +9,9 @@ import { ActivityColumn } from "./ActivityColumn";
 import { BriefSections } from "./BriefSections";
 
 /**
- * L'accueil (`/`) : le brief du matin (sept rubriques), les actions rapides et, à côté, le fil
- * d'activité. Le conseil `pending` est suivi par sa session ; « Réessayer » ne sert qu'à relire un
- * brief qui n'a pas pu être lu. `createSocket` et `rereadMs` ne servent qu'aux tests.
+ * Home (`/`): the morning brief (seven sections), quick actions and, beside them, the feed
+ * of activity. The `pending` advice is followed by its session; « Réessayer » only re-reads a
+ * brief that could not be read. `createSocket` and `rereadMs` are for tests only.
  */
 export function HomePage({
   createSocket,

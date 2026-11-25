@@ -8,7 +8,7 @@ interface QuickActionsProps {
   onCapture: () => void;
 }
 
-/** Les quatre actions rapides de l'accueil, dans l'ordre de F17 : bloc, révisions, offre, capture. */
+/** The four home quick actions, in F17 order: block, reviews, offer, capture. */
 export function QuickActions({ onStart, onReview, onAddPosting, onCapture }: QuickActionsProps) {
   return (
     <div role="group" aria-label={t("home.quick.label")} className="flex flex-wrap gap-2">

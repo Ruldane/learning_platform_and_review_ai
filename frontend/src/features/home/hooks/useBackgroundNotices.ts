@@ -7,15 +7,15 @@ import { toActivityView } from "../toView";
 import { useNoticeQueue } from "./useNoticeQueue";
 
 /**
- * Relecture toutes les 60 s, 8 s par notification (en pause au survol et au focus), 10 événements
- * relus au plus à chaque fois, dont 3 au plus annoncés.
+ * Re-read every 60 s, 8 s per notification (paused on hover and focus), 10 events
+ * read at most each time, of which 3 at most are announced.
  */
 export const NOTICE_POLL_MS = 60_000;
 export const NOTICE_DISMISS_MS = 8_000;
 const BATCH = 10;
 const ANNOUNCED = 3;
 
-/** Les genres qui méritent une notification : la mémoire des agents n'en fait pas. */
+/** The kinds that deserve a notification: agent memory is not one of them. */
 const NOTICE_KINDS: readonly ActivityKind[] = ["lesson", "radar", "brief", "project", "job_failed"];
 
 interface Cursor {
@@ -25,20 +25,20 @@ interface Cursor {
 
 export interface NoticeOptions {
   /**
-   * Délai de relecture et de disparition ; les valeurs par défaut sont celles de la spec (tests).
+   * Re-read and dismiss delays; the defaults are those of the spec (tests).
    */
   pollMs?: number;
   dismissMs?: number;
 }
 
 /**
- * Les notifications de fond (P16). Au montage, le « dernier vu » est l'événement le plus récent du
- * fil (rien n'est annoncé de ce qui existait déjà) ; ensuite `GET /activity` est relu avec le
- * couple `after` + `after_id` toutes les `pollMs`, onglet visible seulement. Un nouvel événement
- * d'un genre gardé devient une notification (3 à l'écran, `dismissMs` chacune) et le brief comme le
- * fil sont relus. Après une longue absence, une rafale n'annonce que les 3 plus récents, le plus
- * récent d'abord : les autres sont dans le fil. Tout reste en mémoire : un rechargement repart du
- * plus récent.
+ * Background notifications (P16). On mount, the « last seen » is the newest event of the
+ * feed (nothing already there is announced); then `GET /activity` is re-read with the
+ * `after` + `after_id` pair every `pollMs`, visible tab only. A new event
+ * of a kept kind becomes a notification (3 on screen, `dismissMs` each), and the brief and
+ * feed are re-read. After a long absence, a burst announces only the 3 newest, the most
+ * recent first: the others are in the feed. All stays in memory: a reload restarts from the
+ * newest.
  */
 export function useBackgroundNotices({
   pollMs = NOTICE_POLL_MS,

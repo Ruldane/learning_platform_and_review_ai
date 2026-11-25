@@ -8,20 +8,20 @@ import { toBriefView } from "../toView";
 
 const noop = () => undefined;
 
-/** Délai de la seconde relecture, si le brief dit encore `pending` juste après la fin de la session. */
+/** Delay of the second re-read, if the brief still says `pending` right after the session ends. */
 export const REREAD_MS = 3_000;
 
-/** Relecture de repli tant que le conseil est `pending` : le flux de la session peut avoir lâché. */
+/** Fallback re-read while the advice is `pending`: the session stream may have dropped. */
 export const FALLBACK_MS = 15_000;
-/** Au plus 40 relectures de repli (10 minutes) : jamais de boucle sans fin. */
+/** At most 40 fallback re-reads (10 minutes): never an endless loop. */
 const FALLBACK_MAX = 40;
 
 /**
- * `GET /brief/today`. Tant que le conseil est `pending`, la page suit sa session (`useRun`) et
- * relit le brief une fois la session finie : le conseil arrive (ou, s'il a échoué, la page le dit).
- * Si le serveur dit encore `pending` pour la même session, une seule seconde relecture suit après
- * `rereadMs`, puis plus rien : jamais de boucle. `failed` et `unavailable` sont définitifs pour la journée : rien n'est relu ni relancé pour eux.
- * `createSocket` ne sert qu'aux tests.
+ * `GET /brief/today`. While the advice is `pending`, the page follows its session (`useRun`) and
+ * re-reads the brief once the session ends: the advice arrives (or the page says it failed).
+ * If the server still says `pending` for the same session, one second re-read follows after
+ * `rereadMs`, then nothing: never a loop. `failed` and `unavailable` are final for the day.
+ * `createSocket` is only for tests.
  */
 export function useBrief(
   createSocket?: SocketFactory,
@@ -33,9 +33,9 @@ export function useBrief(
     queryFn: ({ signal }) => fetchBrief(signal),
     select: toBriefView,
     staleTime: 0,
-    // Si le flux abandonne sans jamais dire « fini », l'écran ne reste pas sur « se réunit… » :
-    // le brief se relit seul jusqu'à `ready`, `failed` ou `unavailable` (le serveur règle une
-    // session morte à la lecture).
+    // If the stream drops without saying « fini », the screen does not stay on « se réunit… »:
+    // the brief re-reads itself until `ready`, `failed` or `unavailable` (the server settles an
+    // dead session when read).
     refetchInterval: (state) =>
       state.state.data?.advice_status === "pending" && state.state.dataUpdateCount < FALLBACK_MAX
         ? fallbackMs

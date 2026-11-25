@@ -1,4 +1,4 @@
-/** La question qui part reste atténuée à droite jusqu'à ce que le serveur la rende. */
+/** The question being sent stays dimmed on the right until the server returns it. */
 export function PendingMessage({ text }: { text: string }) {
   return (
     <li className="flex justify-end">

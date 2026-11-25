@@ -11,11 +11,11 @@ interface GoalFieldProps {
   label: string;
   hint: string;
   error: string | undefined;
-  /** Rend le champ de saisie : il reçoit son `id` et ses attributs d'accessibilité. */
+  /** Renders the input field: it receives its `id` and its accessibility attributes. */
   children: (props: ControlProps) => ReactNode;
 }
 
-/** Étiquette, champ, aide et message d'erreur d'un champ du formulaire d'objectif. */
+/** Label, input, help and error message of a goal form field. */
 export function GoalField({ label, hint, error, children }: GoalFieldProps) {
   const id = useId();
   const hintId = useId();

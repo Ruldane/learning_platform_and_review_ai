@@ -3,7 +3,7 @@ import { cvPdfUrl, fetchPostingCvs } from "../api";
 import type { PostingCv } from "../components/PostingCvList";
 import { gapKeys } from "../queryKeys";
 
-/** Les CV prêts générés pour cette offre, avec leur lien de téléchargement. */
+/** The ready CVs generated for this posting, with their download link. */
 export function usePostingCvs(postingId: string): PostingCv[] | undefined {
   const query = useQuery({
     queryKey: gapKeys.cvs(postingId),

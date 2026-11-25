@@ -5,14 +5,14 @@ import { fetchPosting } from "../api";
 import { gapKeys } from "../queryKeys";
 import { ANALYSIS_POLL_MS, ANALYSIS_POLLS } from "./usePostings";
 
-/** Un 404 est une réponse (offre supprimée ou inconnue) : inutile de la redemander. */
+/** A 404 is an answer (posting deleted or unknown): no need to ask again. */
 const retryUnlessMissing = (count: number, error: Error) =>
   !(error instanceof ApiError && error.status === 404) && count < 1;
 
 /**
- * `GET /postings/{id}`. Tant que l'analyse tourne (`analyzing`), l'offre est relue toutes les
- * `pollMs`, 40 fois au plus. Les doublons « probable » et « possible » arrivent avec l'analyse
- * (G35) : cette relecture les apporte.
+ * `GET /postings/{id}`. While the analysis runs (`analyzing`), the posting is re-read every
+ * `pollMs`, at most 40 times. The « probable » and « possible » duplicates come with the analysis
+ * (G35): this re-read brings them in.
  */
 export function usePosting(postingId: string, pollMs = ANALYSIS_POLL_MS) {
   const budget = usePollingBudget(ANALYSIS_POLLS);

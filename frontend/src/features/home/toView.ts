@@ -9,10 +9,10 @@ import type {
 } from "./components/viewTypes";
 import type { ActivityItem, BriefOut } from "./types";
 
-/** Le brief du jour, rubrique par rubrique, sous la forme que lisent les composants. */
+/** Today's brief, section by section, in the shape the components read. */
 export interface BriefView {
   id: string;
-  /** Le jour local `AAAA-MM-JJ`. */
+  /** The local day, `YYYY-MM-DD`. */
   day: string;
   generatedAt: string;
   block: BlockView | null;
@@ -20,13 +20,13 @@ export interface BriefView {
   reminders: { due: number; items: ReminderItemView[] };
   offers: OfferItemView[];
   readingUnread: number;
-  /** `null` : aucun programme validé. */
+  /** `null`: no validated program. */
   week: WeekView | null;
   resource: ResourceView | null;
   advice: { sentences: string[] | null; status: AdviceStatus };
-  /** La session du conseil, suivie tant qu'il est `pending`. */
+  /** The advice session, followed while it is `pending`. */
   sessionId: string | null;
-  /** Les rubriques dont la source était en panne ce matin (`block`, `reviews`, `reminders`, `offers`, `week`) : leur valeur vide n'est pas un vrai zéro. */
+  /** Sections whose source was down this morning: their empty value is not a real zero. */
   unavailable: readonly string[];
 }
 

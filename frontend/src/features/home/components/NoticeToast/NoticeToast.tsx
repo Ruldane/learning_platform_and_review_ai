@@ -6,13 +6,13 @@ import type { NoticeView } from "../viewTypes";
 interface NoticeToastProps {
   notice: NoticeView;
   onDismiss: (id: string) => void;
-  /** Le pointeur est dessus ou le focus dedans (`true`), ou plus rien de tout cela (`false`). */
+  /** The pointer is over it or focus is inside (`true`), or neither (`false`). */
   onHold: (id: string, held: boolean) => void;
 }
 
 /**
- * Une notification de fond : titre, détail et « Fermer ». Tant que le pointeur la survole ou que le
- * focus est dedans, elle se déclare tenue (`onHold`) : sa disparition attend qu'on l'ait lue.
+ * A background notification: title, detail and « Fermer ». While the pointer hovers it or the
+ * focus is inside, it is held (`onHold`): its removal waits until it has been read.
  */
 export function NoticeToast({ notice, onDismiss, onHold }: NoticeToastProps) {
   const [hovered, setHovered] = useState(false);

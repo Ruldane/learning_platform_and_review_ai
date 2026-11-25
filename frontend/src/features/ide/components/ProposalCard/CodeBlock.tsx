@@ -3,7 +3,7 @@ interface CodeBlockProps {
   text: string;
 }
 
-/** Un passage de code sous son titre (« Avant » ou « Après »). */
+/** A code passage under its title (« Avant » or « Après »). */
 export function CodeBlock({ label, text }: CodeBlockProps) {
   return (
     <figure className="flex min-w-0 flex-col gap-1">

@@ -4,16 +4,16 @@ import type { useCouncilSession } from "../../hooks/useCouncilSession";
 import type { ProposalsPane } from "./ProposalsPane";
 
 const ANOTHER_ROUND = "another_round";
-/** Question du choix du parcours (point d'arrêt n° 2). */
+/** Path choice question (breakpoint no. 2). */
 const CHOICE_KIND = "choose_path";
 
 type Session = ReturnType<typeof useCouncilSession>;
 type Data = ReturnType<typeof useCouncilData>;
 
 /**
- * Ce que l'onglet Propositions reçoit. January ne peut choisir, mélanger ou relancer que tant que
- * le Conseil attend sa réponse à la question du choix ; « autre tour » suit les options de cette
- * question (elle n'en offre plus au plafond de tours : le bouton disparaît) et se fait par reprise.
+ * What the Propositions tab receives. January can only choose, mix or rerun while
+ * the Council waits for the answer to the choice question; « autre tour » follows its options
+ * (it no longer offers it at the round cap: the button disappears) and is done by resuming.
  */
 export function useProposalsPane(
   session: Session,

@@ -16,12 +16,12 @@ function conflictNotice(failure: ApiError): string | null {
 }
 
 /**
- * Le choix du parcours (`POST /proposals/{id}/choose`, D87). Les conflits ne sont pas des erreurs
- * bloquantes : `proposal_outdated` (un nouveau lot est arrivé) et `council_not_waiting` (le Conseil
- * n'attend plus ce choix) relisent les propositions et le statut et se disent dans `notice` ;
- * `already_chosen` (double clic) dit que la date de début n'a pas changé. Le même choix après
- * l'échec du Stratège le relance (`already_chosen` faux) : l'objectif relu donne la nouvelle
- * session du programme, suivie aussitôt. Le reste va dans `error`.
+ * Choosing a path (`POST /proposals/{id}/choose`, D87). Conflicts are not blocking errors:
+ * `proposal_outdated` (a new batch arrived) and `council_not_waiting` (the Council
+ * no longer waits for this choice) re-read the proposals and status and are reported in `notice`;
+ * `already_chosen` (double click) says the start date has not changed. The same choice after
+ * the Strategist failed restarts it (`already_chosen` false): the re-read goal gives the new
+ * program session, followed at once. The rest goes to `error`.
  */
 export function useChooseProposal(goalId: string, sessionId: string) {
   const client = useQueryClient();

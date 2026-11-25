@@ -1,18 +1,18 @@
 import { cn } from "@/shared/lib/utils";
 
 interface SwitchRowProps {
-  /** Le nom du réglage, lu par le lecteur d'écran. */
+  /** The setting's name, read by the screen reader. */
   label: string;
-  /** L'état en toutes lettres, à côté de l'interrupteur (jamais porté par la seule couleur). */
+  /** The state in full words, next to the switch (never carried by color alone). */
   stateText: string;
   checked: boolean;
-  /** Une écriture est en cours : le réglage ne bouge plus avant la réponse (le focus reste). */
+  /** A save is in progress: the setting stays put until the response (focus stays). */
   pending: boolean;
   hint?: string;
   onToggle: () => void;
 }
 
-/** Un interrupteur : bouton `role="switch"` avec son état écrit et une aide facultative. */
+/** A switch: a `role="switch"` button with its written state and optional help. */
 export function SwitchRow({ label, stateText, checked, pending, hint, onToggle }: SwitchRowProps) {
   return (
     <div className="flex flex-col gap-1">

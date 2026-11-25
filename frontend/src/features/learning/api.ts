@@ -15,7 +15,7 @@ export async function fetchGoal(goalId: string, signal?: AbortSignal) {
   return unwrap(await api.GET("/goals/{goal_id}", { ...goalPath(goalId), signal }));
 }
 
-/** `POST /goals` : enregistre l'objectif et lance le Conseil (D87). */
+/** `POST /goals`: saves the goal and starts the Council (D87). */
 export async function createGoal(input: GoalInput, source?: RunSource) {
   return unwrap(
     await api.POST("/goals", {
@@ -31,8 +31,8 @@ export async function createGoal(input: GoalInput, source?: RunSource) {
 }
 
 /**
- * `POST /goals/{id}/council` : relance depuis le début un Conseil dont la dernière session a
- * échoué (409 `council_not_failed` sinon, `goal_already_chosen` si un programme est lancé).
+ * `POST /goals/{id}/council`: restarts from the beginning a Council whose last session has
+ * failed (otherwise 409 `council_not_failed`, `goal_already_chosen` if a program is started).
  */
 export async function retryCouncil(goalId: string, source?: RunSource) {
   return unwrap(
@@ -43,20 +43,20 @@ export async function retryCouncil(goalId: string, source?: RunSource) {
   );
 }
 
-/** `GET /goals/{id}/proposals` : le dernier lot (vide après une relance, jusqu'au premier lot). */
+/** `GET /goals/{id}/proposals`: the latest batch (empty after a restart, until the first batch). */
 export async function fetchProposals(goalId: string, signal?: AbortSignal) {
   return unwrap(await api.GET("/goals/{goal_id}/proposals", { ...goalPath(goalId), signal }));
 }
 
 /**
- * `GET /goals/{id}/boards` : tous les états du tableau, dans l'ordre de création, ceux des Conseils
- * précédents compris (à filtrer par `session_id`).
+ * `GET /goals/{id}/boards`: all board states, in creation order, including those of earlier
+ * Councils (to filter by `session_id`).
  */
 export async function fetchBoards(goalId: string, signal?: AbortSignal) {
   return unwrap(await api.GET("/goals/{goal_id}/boards", { ...goalPath(goalId), signal }));
 }
 
-/** `POST /proposals/{id}/choose` : un parcours, ou un mélange avec `mixWith` (D87). */
+/** `POST /proposals/{id}/choose`: a path, or a mix with `mixWith` (D87). */
 export async function chooseProposal(proposalId: string, mixWith: string | null) {
   return unwrap(
     await api.POST("/proposals/{proposal_id}/choose", {
@@ -66,7 +66,7 @@ export async function chooseProposal(proposalId: string, mixWith: string | null)
   );
 }
 
-/** `POST /boards/{id}/edits` : les retouches de January, enregistrées et renvoyées aux agents. */
+/** `POST /boards/{id}/edits`: January's edits, saved and sent back to the agents. */
 export async function postBoardEdit(
   boardId: string,
   edit: { scene: Record<string, unknown>; note: string },
@@ -79,7 +79,7 @@ export async function postBoardEdit(
   );
 }
 
-/** Nombre de tours du débat voulu par January (`GET /settings`, de 1 à 5). */
+/** Number of debate rounds January wants (`GET /settings`, from 1 to 5). */
 export async function fetchDebateRounds(signal?: AbortSignal): Promise<number> {
   return unwrap(await api.GET("/settings", { signal })).debate_rounds;
 }

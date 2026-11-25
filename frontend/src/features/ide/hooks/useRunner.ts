@@ -43,18 +43,18 @@ function toOutput(run: Watched, polled: PolledRun): OutputView {
   };
 }
 
-/** L'exécution lue est finie en échec : son identifiant, sinon `null`. */
+/** The run read has ended in failure: its id, otherwise `null`. */
 function failedRun(polled: PolledRun | null): string | null {
   if (polled === null || polled.status === "running") return null;
   return isFailedRun({ status: polled.status, exit_code: polled.exitCode }) ? polled.runId : null;
 }
 
 /**
- * Lance une exécution ou une vérification : le code est d'abord enregistré (`flush`), puis la
- * sortie est lue jusqu'à la fin. Une seule exécution à la fois ; Ctrl+Entrée pendant une exécution
- * ne fait rien. À la fin, la séance est relue (une vérification réussie la passe en « réussie »).
- * Une exécution lancée par Claude (MCP) apparaît d'elle-même dans la sortie, marquée « lancée par
- * Claude » ; elle n'appelle jamais le professeur (`onFinished` ne part que pour les tiennes).
+ * Starts a run or a check: the code is saved first (`flush`), then the
+ * output is read to the end. One run at a time; Ctrl+Enter during a run
+ * does nothing. At the end, the session is re-read (a passing check sets it to « réussie »).
+ * A run started by Claude (MCP) appears in the output on its own, marked « lancée par
+ * Claude »; it never calls the teacher (`onFinished` only fires for yours).
  */
 export function useRunner(
   sessionId: string,

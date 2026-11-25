@@ -8,7 +8,7 @@ interface QuickActionsProps {
   onWhy: () => void;
 }
 
-/** Les demandes rapides près de la saisie ; occupés, les boutons restent focalisables. */
+/** Quick requests near the input; when busy, the buttons stay focusable. */
 export function QuickActions({ busy, canExplain, onHint, onWhy }: QuickActionsProps) {
   return (
     <div role="group" aria-label={t("ide.chat.quick")} className="flex flex-wrap gap-2">

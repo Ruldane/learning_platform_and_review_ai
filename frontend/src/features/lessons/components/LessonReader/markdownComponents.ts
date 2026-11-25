@@ -19,9 +19,9 @@ function heading(as: HeadingTag, idsByLine: ReadonlyMap<number, string>): Headin
 }
 
 /**
- * Éléments Markdown remplacés : titres à ancres (le `h1` du Markdown passe en `h2`, la page a déjà
- * le sien), liens sûrs, blocs de code et schémas Mermaid. Les images ne sont pas chargées : la page
- * n'ouvre aucune connexion vers un site tiers, seule leur description s'affiche.
+ * Replaced Markdown elements: anchored headings (`h1` becomes `h2`; the page has its own),
+ * safe links, code blocks and Mermaid diagrams. Images are not loaded: the page
+ * opens no connection to a third-party site; only their description is shown.
  */
 export function markdownComponents(idsByLine: ReadonlyMap<number, string>): Components {
   return {
@@ -37,7 +37,7 @@ export function markdownComponents(idsByLine: ReadonlyMap<number, string>): Comp
   };
 }
 
-/** Seules les adresses http(s) passent : `javascript:`, `data:`, adresses relatives et ancres tombent. */
+/** Only http(s) pass: `javascript:`, `data:`, relative links and anchors are dropped. */
 export function httpUrlOnly(url: string): string {
   return /^https?:\/\//i.test(url) ? url : "";
 }

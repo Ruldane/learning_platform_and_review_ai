@@ -9,7 +9,7 @@ interface ActivityRowProps {
   now: Date;
 }
 
-/** Une ligne du fil : icône du genre, titre (lien vers l'écran concerné), détail et date relative. */
+/** One feed row: kind icon, title (link to the screen), detail and relative date. */
 export function ActivityRow({ item, now }: ActivityRowProps) {
   const full = fullDateTime(item.at);
   return (

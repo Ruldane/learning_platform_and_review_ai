@@ -10,7 +10,7 @@ import { IdeSessionPage } from "./pages/IdeSessionPage";
 
 type Options = Parameters<typeof ideApi>[0];
 
-/** Monte la page d'une séance avec le faux serveur de l'IDE, le faux éditeur et de faux sockets. */
+/** Mounts a session page with the IDE fake server, a fake editor and fake sockets. */
 export function renderSession(options: Options = {}, path = "/code/s1") {
   fakeEditor.reset();
   const sockets = createFakeSocketServer();
@@ -26,7 +26,7 @@ export function renderSession(options: Options = {}, path = "/code/s1") {
   return { ...view, ...api, sockets };
 }
 
-/** Monte l'accueil du code ; la séance ouverte est une page repère. */
+/** Mounts the code home; the open session is a landmark page. */
 export function renderHome(options: Options = {}) {
   const sockets = createFakeSocketServer();
   const api = ideApi(options);
@@ -41,13 +41,13 @@ export function renderHome(options: Options = {}) {
   return { ...view, ...api, sockets };
 }
 
-/** Attend que l'éditeur soit monté (le faux est une zone de texte nommée par l'éditeur réel). */
+/** Waits for the editor to mount (the fake is a text area named by the real editor). */
 export const findEditor = () => screen.findByRole("textbox", { name: "Session Python code" });
 
-/** Laisse passer `ms` millisecondes réelles : pour prouver qu'une chose n'arrive plus. */
+/** Lets `ms` real milliseconds pass: to prove something no longer happens. */
 export const settle = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/** Un retour de l'onglet : TanStack relit tout de suite ce qui est affiché (sans attendre 3 s). */
+/** A tab return: TanStack re-reads what is shown at once (without waiting 3 s). */
 export const refresh = () =>
   act(() => {
     focusManager.setFocused(false);

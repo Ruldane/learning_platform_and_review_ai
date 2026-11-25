@@ -15,7 +15,7 @@ interface ExerciseListProps {
   onOpen: (exercise: ExerciseView) => void;
 }
 
-/** La liste des exercices avec leur état ; chargement et panne se disent sans masquer le reste. */
+/** The exercises list with their state; loading and failure are announced, the rest stays. */
 export function ExerciseList({
   exercises,
   loading,

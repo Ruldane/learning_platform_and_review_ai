@@ -14,7 +14,7 @@ export function toGoalRow(goal: GoalOut): GoalRow {
   };
 }
 
-/** Les objectifs du plus récent au plus ancien. */
+/** Goals, newest first. */
 export function newestFirst(goals: GoalOut[]): GoalOut[] {
   return [...goals].sort((a, b) => b.created_at.localeCompare(a.created_at));
 }

@@ -7,9 +7,9 @@ import { learningKeys } from "../queryKeys";
 import type { BoardOut } from "../types";
 
 /**
- * Les retouches de January envoyées aux agents (`POST /boards/{id}/edits`). L'état enregistré
- * rejoint le tableau tout de suite ; l'envoi qui échoue rejette (le tableau le dit et garde le
- * bouton actif) et `error` porte le message français.
+ * January's edits sent to the agents (`POST /boards/{id}/edits`). The saved state
+ * joins the board at once; a failed send rejects it (the board says so and keeps the
+ * button active) and `error` carries the French message.
  */
 export function useBoardEdit(goalId: string) {
   const client = useQueryClient();

@@ -2,12 +2,12 @@ import { api, apiBaseUrl } from "@/shared/api/client";
 import { unwrap } from "@/shared/api/errors";
 import type { LibraryFilterValue, ResourceStatus } from "./types";
 
-/** `GET /programs` : du plus récent au plus ancien (la liste des leçons suit le premier). */
+/** `GET /programs`: newest first (the lesson list follows the first one). */
 export async function fetchPrograms(signal?: AbortSignal) {
   return unwrap(await api.GET("/programs", { signal }));
 }
 
-/** `GET /programs/{id}/lessons` : toutes les leçons du programme, dans son ordre (D91). */
+/** `GET /programs/{id}/lessons`: all the program's lessons, in order (D91). */
 export async function fetchProgramLessons(programId: string, signal?: AbortSignal) {
   return unwrap(
     await api.GET("/programs/{program_id}/lessons", {
@@ -17,14 +17,14 @@ export async function fetchProgramLessons(programId: string, signal?: AbortSigna
   );
 }
 
-/** `GET /lessons/{id}` : la leçon (Markdown, statut, raison d'un échec) et ses ressources. */
+/** `GET /lessons/{id}`: the lesson (Markdown, status, reason for a failure) and its resources. */
 export async function fetchLesson(lessonId: string, signal?: AbortSignal) {
   return unwrap(
     await api.GET("/lessons/{lesson_id}", { params: { path: { lesson_id: lessonId } }, signal }),
   );
 }
 
-/** `GET /resources` : la bibliothèque, filtrée par programme, type, langue et statut. */
+/** `GET /resources`: the library, filtered by program, type, language and status. */
 export async function fetchResources(filters: LibraryFilterValue, signal?: AbortSignal) {
   return unwrap(
     await api.GET("/resources", {
@@ -41,7 +41,7 @@ export async function fetchResources(filters: LibraryFilterValue, signal?: Abort
   );
 }
 
-/** `PATCH /resources/{id}` : « Lue » ou « À lire ». */
+/** `PATCH /resources/{id}`: « Lue » or « À lire ». */
 export async function patchResource(resourceId: string, status: ResourceStatus) {
   return unwrap(
     await api.PATCH("/resources/{resource_id}", {
@@ -51,9 +51,9 @@ export async function patchResource(resourceId: string, status: ResourceStatus) 
   );
 }
 
-/** Adresse du PDF d'une leçon. */
+/** URL of a lesson's PDF. */
 export const lessonPdfUrl = (lessonId: string) => `${apiBaseUrl}/api/v1/lessons/${lessonId}/pdf`;
 
-/** Adresse de la copie locale (PDF) d'une ressource. */
+/** URL of a resource's local copy (PDF). */
 export const resourceFileUrl = (resourceId: string) =>
   `${apiBaseUrl}/api/v1/resources/${resourceId}/file`;

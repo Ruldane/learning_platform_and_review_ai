@@ -4,7 +4,7 @@ import type { BoardStateView } from "@/shared/session-ui";
 
 type BoardUpdate = EventOf<"board.update">;
 
-/** Le même état ? Par `board_id` quand l'événement en porte un, sinon par étape (et type connu). */
+/** The same state? By `board_id` when the event carries one, otherwise by step (and known type). */
 function sameState(state: BoardStateView, payload: BoardUpdate["payload"]): boolean {
   if (payload.board_id !== null) return state.id === payload.board_id;
   return (
@@ -29,7 +29,7 @@ function liveState(event: BoardUpdate): BoardStateView {
   };
 }
 
-/** L'état du Scribe tel que le direct le redessine ; ce qui est enregistré (scène, date) reste. */
+/** The Scribe's state as the live feed redraws it; what is saved (scene, date) stays. */
 function refresh(state: BoardStateView, live: BoardStateView): BoardStateView {
   return {
     ...state,
@@ -41,9 +41,9 @@ function refresh(state: BoardStateView, live: BoardStateView): BoardStateView {
 }
 
 /**
- * Les états du tableau d'un Conseil : ceux de `GET /goals/{id}/boards`, puis chaque `board.update`
- * du direct. Un état n'apparaît qu'une fois, même si un nœud rejoué le republie (`board_id`, à
- * défaut l'étape) : la dernière version du Scribe l'emporte, un état de January n'est jamais remplacé.
+ * A Council's board states: those of `GET /goals/{id}/boards`, then each `board.update`
+ * from the live feed. A state appears once, even if a replayed node republishes it (`board_id`, or
+ * else the step): the Scribe's latest version wins; a January state is never replaced.
  */
 export function boardsFromEvents(
   saved: BoardStateView[],

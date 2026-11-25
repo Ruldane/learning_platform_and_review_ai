@@ -1,13 +1,13 @@
 import type { SessionEvent } from "@/shared/realtime/types";
 
 const PROGRAM_BASE = "/learn/programs";
-/** Une adresse de l'application : un chemin, jamais un autre site (`//hôte`, `https:`, `javascript:`). */
+/** An app address: a path, never another site (`//host`, `https:`, `javascript:`). */
 const INTERNAL = /^\/(?!\/)/;
 
 /**
- * Le lien « Voir le programme » : dès que la session du programme annonce son `artifact.ready` de
- * genre `program` (son adresse si elle est interne, sinon construite avec l'identifiant), ou, après
- * un rechargement, avec le programme que l'objectif connaît déjà. `null` : pas encore prêt.
+ * The « Voir le programme » link: as soon as the program session sends its `artifact.ready` of
+ * kind `program` (its address if internal, otherwise built from the id), or, after
+ * a reload, with the program the goal already knows. `null`: not ready yet.
  */
 export function programLink(events: SessionEvent[], knownProgramId: string | null): string | null {
   for (let i = events.length - 1; i >= 0; i -= 1) {

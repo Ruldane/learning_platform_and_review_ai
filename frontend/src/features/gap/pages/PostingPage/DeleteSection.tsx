@@ -7,12 +7,12 @@ import { useDeletePosting } from "../../hooks/useDeletePosting";
 
 interface DeleteSectionProps {
   postingId: string;
-  /** `PostingOut.has_review` : des revues de CV et des PDF partent avec l'offre. */
+  /** `PostingOut.has_review`: CV reviews and PDFs go with the posting. */
   hasReview: boolean;
   onDeleted: () => void;
 }
 
-/** « Supprimer » avec une confirmation dans la page (jamais `window.confirm`) ; Échap annule. */
+/** « Supprimer » asks for confirmation in the page (never `window.confirm`); Escape cancels. */
 export function DeleteSection({ postingId, hasReview, onDeleted }: DeleteSectionProps) {
   const [asking, setAsking] = useState(false);
   const { remove, pending, error, code, reset } = useDeletePosting(postingId, onDeleted);

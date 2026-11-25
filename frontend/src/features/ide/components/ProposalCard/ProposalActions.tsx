@@ -2,15 +2,15 @@ import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 
 interface ProposalActionsProps {
-  /** Le code a changé depuis : accepter n'est plus possible (et refuser n'a plus d'objet). */
+  /** The code has changed since: accepting is no longer possible (and refusing has no purpose). */
   stale: boolean;
-  /** Une décision est en cours : les boutons ignorent les clics mais gardent le focus. */
+  /** A decision is in progress: the buttons ignore clicks but keep focus. */
   busy: boolean;
   onAccept: () => void;
   onReject: () => void;
 }
 
-/** « Accepter » et « Refuser » : le serveur applique ou classe, le front ne réécrit rien. */
+/** « Accepter » and « Refuser »: the server applies or files it, the front rewrites nothing. */
 export function ProposalActions({ stale, busy, onAccept, onReject }: ProposalActionsProps) {
   return (
     <div className="flex flex-wrap gap-2">

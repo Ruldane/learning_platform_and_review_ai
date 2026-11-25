@@ -22,8 +22,8 @@ interface ReadyBlockProps {
 }
 
 /**
- * Une offre analysée : sa fiche, les offres qui lui ressemblent (relues avec l'analyse, G35),
- * l'écart avec le profil, puis les liens vers la revue du CV et l'annonce.
+ * An analyzed posting: its record, the postings that resemble it (re-read with the analysis, G35),
+ * the gap with the profile, then the links to the CV review and the listing.
  */
 export function ReadyBlock({ posting, pollMs, createSocket }: ReadyBlockProps) {
   const navigate = useNavigate();

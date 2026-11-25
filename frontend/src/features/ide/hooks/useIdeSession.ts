@@ -3,7 +3,7 @@ import { fetchSession } from "../api";
 import { ideKeys } from "../queryKeys";
 import { liveOptions } from "./live";
 
-/** Une séance avec ses fichiers (`GET /ide/sessions/{id}`), relue en direct (Claude peut écrire). */
+/** A session with its files (`GET /ide/sessions/{id}`), re-read live (Claude can write). */
 export function useIdeSession(sessionId: string) {
   return useQuery({
     queryKey: ideKeys.session(sessionId),

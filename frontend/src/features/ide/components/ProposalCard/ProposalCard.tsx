@@ -8,16 +8,16 @@ import { ProposalActions } from "./ProposalActions";
 
 interface ProposalCardProps {
   note: NoteView;
-  /** Une décision est en cours : les boutons attendent la réponse. */
+  /** A decision is in progress: the buttons wait for the response. */
   busy: boolean;
   onAccept: () => void;
   onReject: () => void;
 }
 
 /**
- * Une correction proposée : le passage avant et après, côte à côte. « Accepter » demande au
- * serveur de l'appliquer (le front ne réécrit jamais le fichier lui-même) ; une proposition
- * périmée, le code ayant changé depuis, est grisée et ne peut plus être acceptée.
+ * A proposed fix: the before and after code, side by side. « Accepter » asks the
+ * server to apply it (the front never rewrites the file itself); a proposal
+ * that is stale, since the code has changed, is greyed out and can no longer be accepted.
  */
 export function ProposalCard({ note, busy, onAccept, onReject }: ProposalCardProps) {
   const headingId = useId();

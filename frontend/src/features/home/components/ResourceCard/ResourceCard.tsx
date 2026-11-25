@@ -4,11 +4,11 @@ import { ExternalLink } from "@/shared/ui/ExternalLink";
 import type { ResourceView } from "../viewTypes";
 
 interface ResourceCardProps {
-  /** La ressource choisie ce matin ; `null` quand le brief n'en a pas. */
+  /** The resource picked this morning; `null` when the brief has none. */
   resource: ResourceView | null;
 }
 
-/** La ressource du jour : titre (lien extérieur), domaine, date de parution et raison du choix. */
+/** Today's resource: title (external link), domain, publish date and reason for the pick. */
 export function ResourceCard({ resource }: ResourceCardProps) {
   return (
     <section

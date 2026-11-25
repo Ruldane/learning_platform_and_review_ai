@@ -4,16 +4,16 @@ import { Button } from "@/shared/ui/button";
 import type { ReminderItemView } from "../viewTypes";
 
 interface RemindersCardProps {
-  /** Toutes les relances dues (`items` n'en montre que les premières). */
+  /** All reminders due (`items` only shows the first ones). */
   due: number;
   items: ReminderItemView[];
-  /** Ouvre la fiche de candidature de la relance. */
+  /** Opens the application record of the reminder. */
   onOpen: (applicationId: string) => void;
-  /** La source des relances était en panne ce matin : ni zéro ni liste, une phrase honnête. */
+  /** The reminders source was down this morning: neither zero nor a list, an honest sentence. */
   unavailable?: boolean;
 }
 
-/** Les relances dues : entreprise, poste et échéance, chacune menant à sa fiche. */
+/** Reminders due: company, role and deadline, each leading to its record. */
 export function RemindersCard({ due, items, onOpen, unavailable = false }: RemindersCardProps) {
   const hidden = items.length === 0 ? 0 : due - items.length;
   return (

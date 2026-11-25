@@ -2,10 +2,10 @@ import { useEffect, useRef } from "react";
 import type { RunStarted } from "../types";
 
 /**
- * Montre dans la sortie l'exécution que Claude (MCP) vient de lancer : la plus récente de la liste
- * relue en direct, d'origine `mcp`, qu'on n'a pas déjà vue. À la première lecture, les exécutions
- * déjà finies sont connues (on n'affiche pas un vieux résultat à l'ouverture) ; une exécution encore
- * en cours, elle, est suivie. Ne touche jamais au focus ni au professeur.
+ * Shows in the output the run that Claude (MCP) just started: the newest of the list
+ * re-read live, origin `mcp`, that has not been seen yet. On the first read, runs
+ * already finished are known (an old result is not shown on open); a run still
+ * in progress is followed. Never touches focus or the teacher.
  */
 export function useClaudeRuns(
   runs: RunStarted[] | undefined,

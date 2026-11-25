@@ -12,7 +12,7 @@ export function useExercises() {
   });
 }
 
-/** Ajoute un exercice écrit à la main, puis relit la liste. */
+/** Adds a hand-written exercise, then re-reads the list. */
 export function useCreateExercise() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -21,7 +21,7 @@ export function useCreateExercise() {
   });
 }
 
-/** Fait écrire un exercice par les agents : le résultat porte la session à suivre. */
+/** Has the agents write an exercise: the result carries the session to follow. */
 export function useGenerateExercise() {
   return useMutation({
     mutationFn: ({ body, source }: { body: ExerciseGenerateIn; source?: RunSource }) =>

@@ -16,8 +16,8 @@ interface CouncilTabsProps {
 const isCouncilTab = (id: string): id is CouncilTab => TABS.some((tab) => tab === id);
 
 /**
- * Onglets ARIA du Conseil : Tableau, Sources, Propositions (le comportement est celui de
- * `SideTabs`, partagé avec le comité).
+ * Council ARIA tabs: Tableau, Sources, Propositions (the behavior is that of
+ * `SideTabs`, shared with the committee).
  */
 export function CouncilTabs({ active, onChange, board, sources, proposals }: CouncilTabsProps) {
   return (

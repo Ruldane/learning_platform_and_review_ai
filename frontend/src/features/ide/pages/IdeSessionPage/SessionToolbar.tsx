@@ -17,7 +17,7 @@ function saveState(dirty: boolean, saving: boolean): string {
   return dirty ? t("ide.toolbar.unsaved") : t("ide.toolbar.saved");
 }
 
-/** Exécuter, vérifier, et l'état de l'enregistrement en toutes lettres. */
+/** Run, check, and the save state in full words. */
 export function SessionToolbar(props: SessionToolbarProps) {
   const { running, dirty, saving, saveError, runError, onRun, onCheck } = props;
   return (

@@ -9,7 +9,7 @@ import { ExistingPosting } from "./ExistingPosting";
 import { PostingsListPanel } from "./PostingsListPanel";
 
 interface PostingsPageProps {
-  /** Intervalle de relecture de la liste, en ms (réduit par les tests). */
+  /** List re-read interval, in ms (shortened by tests). */
   pollMs?: number;
   offersChat?: ComponentType;
 }
@@ -17,9 +17,9 @@ interface PostingsPageProps {
 const FIELD = '[role="tabpanel"]:not([hidden]) :is(input, textarea)';
 
 /**
- * Les offres (`/career/postings`) : le formulaire d'ajout en tête, puis la liste. Une offre
- * nouvelle (201) ouvre sa page ; une offre déjà ajoutée (200) est annoncée avec un lien, sans
- * doublon dans la liste.
+ * Postings (`/career/postings`): the add form at the top, then the list. A new posting
+ * (201) opens its page; a posting already added (200) is announced with a link, without
+ * a duplicate in the list.
  */
 export function PostingsPage({
   pollMs = ANALYSIS_POLL_MS,

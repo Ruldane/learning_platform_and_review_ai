@@ -5,9 +5,9 @@ import { t } from "@/shared/i18n/t";
 import { fetchRun } from "../api";
 import type { RunProgress, RunStatus } from "../types";
 
-/** Intervalle de relecture de la sortie (le contrat dit : toutes les 300 ms). */
+/** Output re-read interval (the contract says: every 300 ms). */
 export const POLL_MS = 300;
-/** Échecs de lecture de suite avant d'abandonner la lecture. */
+/** Consecutive read failures before giving up reading. */
 export const MAX_FAILURES = 5;
 
 export interface PolledRun {
@@ -43,9 +43,9 @@ function fromProgress(runId: string, output: string, p: RunProgress): PolledRun 
 }
 
 /**
- * Lit la sortie de `runId` toutes les 300 ms **par décalage** (`after` = `next_offset` reçu), et
- * s'arrête dès que le bac à sable a rendu une fin ; `onFinished` part alors, une seule fois. Une
- * lecture qui échoue cinq fois de suite arrête la lecture avec un message. Sans `runId`, rien ne
+ * Reads the output of `runId` every 300 ms **by offset** (`after` = `next_offset` received), and
+ * stops as soon as the sandbox reports an end; `onFinished` then fires, once. A
+ * read that fails five times in a row stops reading with a message. Without `runId`, nothing
  * tourne.
  */
 export function useRunPolling(
@@ -67,7 +67,7 @@ export function useRunPolling(
     let failures = 0;
     const tick = async (): Promise<void> => {
       if (!focusManager.isFocused()) {
-        timer = setTimeout(() => void tick(), POLL_MS); // onglet caché : on ne relit plus, on guette
+        timer = setTimeout(() => void tick(), POLL_MS); // hidden tab: no re-reads until it returns
         return;
       }
       try {

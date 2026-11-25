@@ -6,14 +6,14 @@ interface TextFieldProps {
   label: string;
   value: string;
   onChange: (value: string) => void;
-  /** Absent : une ligne ; sinon une zone de texte de `rows` lignes. */
+  /** Absent: one line; otherwise a text area of `rows` lines. */
   rows?: number;
   mono?: boolean;
   maxLength?: number;
   hint?: string;
 }
 
-/** Un champ de formulaire avec son libellé (et, au besoin, une aide lue avec le champ). */
+/** A form field with its label (and, if needed, help read with the field). */
 export function TextField({ label, value, onChange, rows, mono, maxLength, hint }: TextFieldProps) {
   const id = useId();
   const hintId = `${id}-hint`;

@@ -3,7 +3,7 @@ import { Button } from "@/shared/ui/button";
 import type { DebateCommand } from "../viewTypes";
 
 interface DebateCommandBarProps {
-  /** Aucune commande possible (session terminée, envoi en cours, en attente d'une réponse). */
+  /** No command possible (session ended, send in progress, waiting for a response). */
   disabled: boolean;
   onCommand: (command: DebateCommand) => void;
 }
@@ -11,8 +11,8 @@ interface DebateCommandBarProps {
 const COMMANDS: DebateCommand[] = ["another_round", "to_proposals", "more_concrete", "shorter"];
 
 /**
- * Commandes permanentes du débat (SPEC 3.2) : relancer un tour, passer aux propositions, demander
- * plus de concret ou plus de concision. La pause et l'arrêt sont dans les contrôles de la session.
+ * Standing debate commands (SPEC 3.2): rerun a round, move to proposals, ask for
+ * more concrete or more concise. Pause and stop are in the session controls.
  */
 export function DebateCommandBar({ disabled, onCommand }: DebateCommandBarProps) {
   return (

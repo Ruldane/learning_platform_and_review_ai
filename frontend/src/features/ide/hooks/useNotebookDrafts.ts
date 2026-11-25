@@ -6,7 +6,7 @@ interface NotebookDraft {
   version: number;
 }
 
-/** Brouillons de la séance, indexés par chemin et ancrés à la version de la première retouche. */
+/** Session drafts, indexed by path and anchored to the version of the first edit. */
 export function useNotebookDrafts() {
   const [drafts, setDrafts] = useState<ReadonlyMap<string, NotebookDraft>>(() => new Map());
   const edit = (path: string, cells: NotebookCell[], version: number) => {

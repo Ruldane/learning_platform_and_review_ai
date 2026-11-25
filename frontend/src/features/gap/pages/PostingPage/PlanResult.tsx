@@ -13,8 +13,8 @@ const replanHref = (programId: string | null) =>
   programId === null ? "/learn/programs" : `/learn/programs/${programId}/replan`;
 
 /**
- * Ce que « Ajouter au planning » a donné : un lien vers la replanification (lancée ou déjà
- * ouverte), ou un refus lisible. Sans programme validé, l'issue est de créer un objectif.
+ * Outcome of « Ajouter au planning »: a link to the replan (started or already
+ * open), or a readable refusal. Without a validated program, the outcome is to create a goal.
  */
 export function PlanResult({ outcome, failure }: PlanResultProps) {
   if (outcome) {

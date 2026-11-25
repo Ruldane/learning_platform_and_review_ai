@@ -8,7 +8,7 @@ import type {
 } from "./components/viewTypes";
 import type { Exercise, Note, RunProgress, SessionSummary, Usage } from "./types";
 
-/** Les lignes `start` à `end` (à partir de 1) d'un texte ; `null` si elles n'existent pas. */
+/** The lines `start` to `end` (from 1) of a text; `null` if they do not exist. */
 export function excerpt(text: string | undefined, start: number, end: number): string | null {
   if (text === undefined) return null;
   const lines = text.split("\n");
@@ -16,7 +16,7 @@ export function excerpt(text: string | undefined, start: number, end: number): s
   return lines.slice(start - 1, end).join("\n");
 }
 
-/** Le nom sous lequel la note s'affiche : Claude (par le MCP) est toujours nommé « Claude ». */
+/** The name the note shows under: Claude (via the MCP) is always named « Claude ». */
 function authorLabel(note: Note): string {
   if (note.origin !== "mcp") return note.author_label ?? t(`ide.authors.${note.author}`);
   const label = note.author_label;
@@ -30,8 +30,8 @@ function beforeText(note: Note, files: Record<string, string>): string | null {
 }
 
 /**
- * Les notes dans l'ordre où elles ont été écrites. Un indice porte le niveau réel donné par le
- * back (`level`) ; à défaut (note ancienne), son rang parmi les indices de la séance.
+ * The notes in the order they were written. A hint carries the actual level given by the
+ * backend (`level`); otherwise (old note), its rank among the session's hints.
  */
 export function toNoteViews(notes: Note[], files: Record<string, string>): NoteView[] {
   const ordered = [...notes].sort((a, b) => a.created_at.localeCompare(b.created_at));
@@ -56,7 +56,7 @@ export function toNoteViews(notes: Note[], files: Record<string, string>): NoteV
   });
 }
 
-/** Les annotations à poser dans la marge du fichier ouvert (une note périmée n'y est plus). */
+/** The annotations to place in the open file's margin (a stale note is no longer there). */
 export function toAnnotations(notes: NoteView[], filePath: string): AnnotationView[] {
   return notes
     .filter((n) => n.kind === "annotation" && n.status !== "stale" && n.filePath === filePath)
@@ -74,7 +74,7 @@ export function toUsageView(usage: Usage): UsageView {
   };
 }
 
-/** Chaque exercice avec son état : réussi si une séance l'est, en cours si une séance existe. */
+/** Each exercise with its state: passed if a session is passed, in progress if a session exists. */
 export function toExerciseViews(exercises: Exercise[], sessions: SessionSummary[]): ExerciseView[] {
   return exercises.map((exercise) => {
     const mine = sessions.filter((session) => session.exercise_id === exercise.id);
@@ -97,7 +97,7 @@ export function toFreeSessions(sessions: SessionSummary[]): FreeSessionView[] {
     .map((session) => ({ id: session.id, title: session.title, passed: session.passed }));
 }
 
-/** Une exécution est un échec si elle n'est pas finie sur le code 0. */
+/** A run is a failure if it did not finish with exit code 0. */
 export function isFailedRun(progress: Pick<RunProgress, "status" | "exit_code">): boolean {
   if (progress.status === "running") return false;
   return progress.status !== "done" || (progress.exit_code ?? 0) !== 0;

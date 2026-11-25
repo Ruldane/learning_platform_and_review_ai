@@ -2,9 +2,9 @@ import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 
 interface MixBarProps {
-  /** Nombre de cartes cochées. */
+  /** Number of checked cards. */
   picked: number;
-  /** Nombre de cartes à cocher pour mélanger. */
+  /** Number of cards to check to mix. */
   size: number;
   canChoose: boolean;
   canAnotherRound: boolean;
@@ -13,7 +13,7 @@ interface MixBarProps {
   onAnotherRound: () => void;
 }
 
-/** Sous les cartes : « Mélanger ces deux parcours » (deux cartes cochées) et « Demander un autre tour ». */
+/** Below the cards: « Mélanger ces deux parcours » (two checked) and « Demander un autre tour ». */
 export function MixBar({
   picked,
   size,

@@ -1,7 +1,7 @@
 import { t } from "@/shared/i18n/t";
 import { cn } from "@/shared/lib/utils";
 
-/** Forme du rapport de `GET /health` (types générés ; non importés, la règle de découpage l'interdit). */
+/** Shape of the `GET /health` report (generated types; not imported, the split rule forbids it). */
 interface HealthReportView {
   status: "ok" | "degraded" | "down";
   checks: Record<string, { ok: boolean; detail: string }>;
@@ -10,7 +10,7 @@ interface HealthReportView {
 interface HealthIndicatorProps {
   report?: HealthReportView;
   isLoading: boolean;
-  /** La requête a échoué : le serveur est injoignable. */
+  /** The request failed: the server is unreachable. */
   isError?: boolean;
 }
 
@@ -31,7 +31,7 @@ function summarize({ report, isLoading, isError }: HealthIndicatorProps) {
   return { tone: "bad", label: t("health.down") } as const;
 }
 
-/** Voyant de santé des services : pastille colorée et texte (la couleur n'est jamais seule). */
+/** Service health light: colored dot and text (color is never alone). */
 export function HealthIndicator(props: HealthIndicatorProps) {
   const { tone, label } = summarize(props);
   const failing =

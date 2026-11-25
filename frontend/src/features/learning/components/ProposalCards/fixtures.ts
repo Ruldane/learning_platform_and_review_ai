@@ -1,6 +1,6 @@
 import type { ProposalView } from "../viewTypes";
 
-/** Trois propositions pour les tests des cartes et de la page. */
+/** Three proposals for the card and page tests. */
 export function makeProposals(): ProposalView[] {
   return [
     {

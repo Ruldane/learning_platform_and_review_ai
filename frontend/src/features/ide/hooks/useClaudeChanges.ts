@@ -2,15 +2,15 @@ import { useCallback, useState } from "react";
 import { pick, type Files } from "./fileMaps";
 
 /**
- * Ce que Claude (par le MCP) a changé dans les fichiers pendant que la page est ouverte. `server`
- * est la séance relue en direct, `edits` tes retouches pas encore enregistrées. Un fichier est
- * « changé par Claude » quand le serveur n'a plus la version que tu avais reconnue (`seen`) ni
- * celle que tu as toi-même enregistrée (`mine`). Alors :
- * - sans retouche de ta part : l'éditeur montre déjà la nouvelle version, on le dit (`notices`) ;
- * - avec des retouches : les tiennes restent à l'écran, rien n'est envoyé pour ce fichier, et le
- *   conflit (`conflicts`, la version de Claude par fichier) attend ton choix.
- * Tout est calculé à l'affichage à partir de ces deux repères : aucun effet, aucun message qui
- * traîne ; taper dans un fichier dont tu n'avais pas de retouche reconnaît la version du serveur.
+ * What Claude (via the MCP) changed in the files while the page is open. `server`
+ * is the session re-read live, `edits` your unsaved edits. A file is
+ * « changé par Claude » when the server no longer has the version you acknowledged (`seen`) nor
+ * the one you saved yourself (`mine`). Then:
+ * - without edits of yours: the editor already shows the new version, and says so (`notices`);
+ * - with edits: yours stay on screen, nothing is sent for that file, and the
+ *   conflict (`conflicts`, Claude's version per file) waits for your choice.
+ * Everything is computed at render from these two marks: no effect, no message that
+ * lingers; typing in a file you had no edits in acknowledges the server's version.
  */
 export function useClaudeChanges(server: Files, edits: Files) {
   const [seen, setSeen] = useState<Files>(server);
@@ -21,12 +21,12 @@ export function useClaudeChanges(server: Files, edits: Files) {
   const conflicting = changed.filter((name) => name in edits && edits[name] !== server[name]);
   const conflicts = pick(server, conflicting);
   const notices = changed.filter((name) => !(name in edits));
-  /** Reconnaît la version du serveur pour ces fichiers (« Compris », « Garder la mienne », frappe). */
+  /** Acknowledges the server's version (« Compris », « Garder la mienne », typing). */
   const acknowledge = useCallback(
     (names: string[]) => setSeen((current) => ({ ...current, ...pick(server, names) })),
     [server],
   );
-  /** Ces textes viennent de toi (enregistrement, proposition acceptée) : jamais ceux de Claude. */
+  /** These texts come from you (save, accepted proposal): never Claude's. */
   const markMine = useCallback(
     (files: Files) => setMine((current) => ({ ...current, ...files })),
     [],

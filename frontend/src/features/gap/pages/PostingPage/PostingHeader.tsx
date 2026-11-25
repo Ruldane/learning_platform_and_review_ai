@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import { t } from "@/shared/i18n/t";
 
-/** Le retour à la liste, le titre de l'offre et son entreprise. */
+/** Back to the list, the posting title and its company. */
 export function PostingHeader({ title, company }: { title: string; company: string | null }) {
   return (
     <header className="flex flex-col gap-1">

@@ -7,7 +7,7 @@ interface IdleOptionProps {
   onToggle: (checked: boolean) => void;
 }
 
-/** L'option « aide après 30 s sans bouger de ligne » (coupée par défaut : chaque appel coûte). */
+/** The « aide après 30 s sans bouger de ligne » option (off by default: each call costs). */
 export function IdleOption({ checked, pending, onToggle }: IdleOptionProps) {
   const id = useId();
   return (

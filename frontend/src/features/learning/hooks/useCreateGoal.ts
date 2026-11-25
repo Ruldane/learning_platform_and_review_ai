@@ -6,12 +6,12 @@ import { createGoal } from "../api";
 import { learningKeys } from "../queryKeys";
 import type { GoalInput } from "../types";
 
-/** Chemin du Conseil d'un objectif. */
+/** Council path of a goal. */
 export const councilPath = (goalId: string) => `/learn/goals/${goalId}/council`;
 
 /**
- * Crée un objectif (`POST /goals`, qui lance le Conseil, D87) puis ouvre son Conseil. L'objectif
- * rendu amorce le cache : la page du Conseil s'ouvre sans attendre une seconde lecture.
+ * Creates a goal (`POST /goals`, which starts the Council, D87) then opens its Council. The goal
+ * returned seeds the cache: the Council page opens without waiting for a second read.
  */
 export function useCreateGoal() {
   const launch = useLaunchSource();

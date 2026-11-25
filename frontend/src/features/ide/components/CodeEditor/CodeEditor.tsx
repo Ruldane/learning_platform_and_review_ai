@@ -6,21 +6,21 @@ import "./codeEditor.css";
 import "./monacoSetup";
 
 interface CodeEditorProps {
-  /** Le fichier ouvert : chaque chemin a son propre modèle (et son annulation). */
+  /** The open file: each path has its own model (and its own undo history). */
   path: string;
   value: string;
   readOnly?: boolean;
   annotations: AnnotationView[];
   onChange: (value: string) => void;
-  /** La ligne du curseur, à chaque déplacement. Ne réveille jamais le professeur. */
+  /** The cursor line, on each move. Never wakes the teacher. */
   onCursorLine: (line: number) => void;
-  /** Ctrl+Entrée. */
+  /** Ctrl+Enter. */
   onRun: () => void;
 }
 
 type Paint = (items: AnnotationView[]) => void;
 
-/** Thème clair ; le lecteur d'écran est pris en charge d'office (`accessibilitySupport`). */
+/** Light theme; the screen reader is supported by default (`accessibilitySupport`). */
 const OPTIONS = {
   accessibilitySupport: "on",
   ariaLabel: t("ide.editor.label"),
@@ -35,9 +35,9 @@ const OPTIONS = {
 } as const;
 
 /**
- * L'éditeur Monaco, **le seul endroit** de l'application qui l'importe. Il rend le texte, la ligne
- * du curseur et Ctrl+Entrée ; il ne connaît ni le professeur ni l'API. Les annotations sont des
- * décorations de la marge (losange plein, texte au survol).
+ * The Monaco editor, **the only place** in the app that imports it. It renders the text, the line
+ * of the cursor and Ctrl+Enter; it knows neither the teacher nor the API. Annotations are
+ * margin decorations (solid diamond, text on hover).
  */
 export function CodeEditor(props: CodeEditorProps) {
   const { path, value, annotations, onChange } = props;

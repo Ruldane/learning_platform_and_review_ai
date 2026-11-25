@@ -1,4 +1,4 @@
-/** Clés TanStack Query de l'IDE : toutes sous `["ide", …]`. */
+/** TanStack Query keys of the IDE: all under `["ide", …]`. */
 export const ideKeys = {
   exercises: ["ide", "exercises"] as const,
   sessions: ["ide", "sessions"] as const,

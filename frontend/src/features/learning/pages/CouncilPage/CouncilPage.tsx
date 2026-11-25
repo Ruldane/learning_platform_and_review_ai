@@ -9,9 +9,9 @@ import { useGoal } from "../../hooks/useGoal";
 import { CouncilLayout } from "./CouncilLayout";
 
 /**
- * Le Conseil d'un objectif (`/learn/goals/:goalId/council`). L'objectif donne la session
- * du Conseil : recharger la page rejoint la même session, le flux rejoue les événements.
- * `createSocket` ne sert qu'aux tests (faux WebSocket).
+ * A goal's Council (`/learn/goals/:goalId/council`). The goal gives the session
+ * of the Council: reloading the page rejoins the same session, the stream replays the events.
+ * `createSocket` is only for tests (fake WebSocket).
  */
 export function CouncilPage({ createSocket }: { createSocket?: SocketFactory }) {
   const { goalId = "" } = useParams();

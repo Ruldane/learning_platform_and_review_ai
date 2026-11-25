@@ -12,7 +12,7 @@ interface GoalFieldsProps {
   onChange: (field: keyof GoalDraft, value: string) => void;
 }
 
-/** Les quatre champs d'un objectif : texte, poste visé, échéance, heures par semaine. */
+/** The four goal fields: text, target role, deadline, hours per week. */
 export function GoalFields({ draft, errors, disabled, onChange }: GoalFieldsProps) {
   return (
     <>

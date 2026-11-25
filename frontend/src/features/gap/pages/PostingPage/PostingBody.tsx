@@ -16,7 +16,7 @@ interface PostingBodyProps {
   createSocket?: SocketFactory;
 }
 
-/** Le corps de la page selon l'état de l'offre : analyse, refus, échec ou offre analysée. */
+/** The page body by posting state: analysis, refusal, failure or analyzed posting. */
 export function PostingBody({ posting, budget, pollMs, onRetry, createSocket }: PostingBodyProps) {
   const relaunch = useRelaunchGap(posting.id, budget.restart);
   switch (posting.status) {

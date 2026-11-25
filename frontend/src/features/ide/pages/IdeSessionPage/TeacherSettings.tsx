@@ -6,11 +6,11 @@ import { useSavePreferences } from "../../hooks/usePreferences";
 import type { Preferences } from "../../types";
 
 interface TeacherSettingsProps {
-  /** Les préférences lues sur le serveur ; `undefined` tant qu'elles ne sont pas arrivées. */
+  /** The preferences read from the server; `undefined` until they arrive. */
   prefs: Preferences | undefined;
 }
 
-/** Les seuls réglages que la personne vient de toucher, dans les mots du contrat. */
+/** Only the settings the learner just touched, in the contract's terms. */
 function changes(before: PreferencesView, next: PreferencesView): Partial<Preferences> {
   const patch: Partial<Preferences> = {};
   if (next.auto !== before.auto) patch.teacher_mode = next.auto ? "auto" : "on_demand";
@@ -21,8 +21,8 @@ function changes(before: PreferencesView, next: PreferencesView): Partial<Prefer
 }
 
 /**
- * Les réglages du professeur et l'interrupteur de Claude : chaque changement n'envoie que le réglage
- * touché ; les autres (plafonds, interrupteur réglé dans un autre onglet) sont ceux du serveur.
+ * The teacher settings and Claude's switch: each change sends only the setting
+ * touched; the others (caps, switch set in another tab) are the server's.
  */
 export function TeacherSettings({ prefs }: TeacherSettingsProps) {
   const save = useSavePreferences();

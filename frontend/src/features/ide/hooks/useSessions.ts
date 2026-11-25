@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createSession, fetchSessions } from "../api";
 import { ideKeys } from "../queryKeys";
 
-/** Mes séances de code (`GET /ide/sessions`), pour l'état des exercices. */
+/** My code sessions (`GET /ide/sessions`), for the exercises' state. */
 export function useSessions() {
   return useQuery({
     queryKey: ideKeys.sessions,
@@ -10,7 +10,7 @@ export function useSessions() {
   });
 }
 
-/** Ouvre une séance sur un exercice (`null` : séance libre) ; rend la séance créée. */
+/** Opens a session on an exercise (`null`: free session); returns the created session. */
 export function useCreateSession() {
   const queryClient = useQueryClient();
   return useMutation({

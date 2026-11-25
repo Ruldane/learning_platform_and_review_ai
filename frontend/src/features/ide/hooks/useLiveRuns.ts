@@ -3,7 +3,7 @@ import { fetchRuns } from "../api";
 import { ideKeys } from "../queryKeys";
 import { liveOptions } from "./live";
 
-/** Les dernières exécutions de la séance, relues en direct (celles lancées par Claude y passent). */
+/** The session's latest runs, re-read live (those started by Claude included). */
 export function useLiveRuns(sessionId: string) {
   return useQuery({
     queryKey: ideKeys.runs(sessionId),

@@ -2,16 +2,16 @@ import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 
 interface ReviewsCardProps {
-  /** Les fiches de la file du jour. */
+  /** The records in today's queue. */
   queue: number;
-  /** Les fiches dues au-delà de la file du jour. */
+  /** Records due beyond today's queue. */
   remaining: number;
   onReview: () => void;
-  /** La source des révisions était en panne ce matin : ni zéro ni bouton. */
+  /** The reviews source was down this morning: neither zero nor a button. */
   unavailable?: boolean;
 }
 
-/** Les révisions du jour : combien de fiches, combien au-delà de la file, et le bouton « Réviser ». */
+/** Today's reviews: how many records, how many beyond the queue, and the « Réviser » button. */
 export function ReviewsCard({ queue, remaining, onReview, unavailable = false }: ReviewsCardProps) {
   return (
     <section

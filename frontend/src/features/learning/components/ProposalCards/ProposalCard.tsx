@@ -6,9 +6,9 @@ import { ProposalSection } from "./ProposalSection";
 const HOURS = new Intl.NumberFormat("en-GB", { maximumFractionDigits: 1 });
 
 /**
- * Une proposition de parcours. Ses six rubriques (en-tête, durée et charge, compétences, projet
- * final, compromis, actions) occupent six lignes d'une grille commune aux cartes (`subgrid`) : elles
- * s'alignent d'une carte à l'autre, quelle que soit la longueur des textes.
+ * A path proposal. Its six sections (header, duration and load, skills, final project,
+ * trade-offs, actions) take six rows of a grid shared by the cards (`subgrid`): they
+ * line up from one card to the next, whatever the text length.
  */
 export function ProposalCard(props: ProposalActionsProps) {
   const { proposal } = props;

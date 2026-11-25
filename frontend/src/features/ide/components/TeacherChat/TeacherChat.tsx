@@ -10,14 +10,14 @@ import { QuickActions } from "./QuickActions";
 
 interface TeacherChatProps {
   items: ChatItem[];
-  /** Le professeur écrit : le fil le dit, « Envoyer » attend. */
+  /** The teacher is typing: the thread says so, « Envoyer » waits. */
   typing: boolean;
   busy: boolean;
-  /** Ce qu'il faut dire sous le fil : pourquoi rien n'est parti, ou l'erreur. */
+  /** What to show under the thread: why nothing was sent, or the error. */
   notice: { tone: "status" | "error"; text: string } | null;
   canExplain: boolean;
   launchMenu?: ReactNode;
-  /** Une décision sur une proposition est en cours. */
+  /** A decision on a proposal is in progress. */
   proposalsBusy: boolean;
   onSend: (question: string) => Promise<boolean>;
   onHint: () => void;
@@ -25,7 +25,7 @@ interface TeacherChatProps {
   onAccept: (noteId: string) => void;
   onReject: (noteId: string) => void;
   onOpenFile?: (path: string) => void;
-  /** Reçoit le focus quand une proposition quitte la liste d'attente (accepter, refuser). */
+  /** Receives focus when a proposal leaves the waiting list (accept, refuse). */
   headingRef?: Ref<HTMLHeadingElement>;
 }
 
@@ -52,9 +52,9 @@ function renderMessage(
 }
 
 /**
- * Le professeur en chat : un panneau de hauteur fixe (collé sous la barre du haut sur grand écran)
- * dont le fil défile à l'intérieur, la saisie en bas. Les notes déclenchées seules (erreur
- * d'exécution, indice, minuterie) s'insèrent dans le fil avec une petite étiquette.
+ * The teacher chat: a fixed-height panel (stuck under the top bar on large screens)
+ * with the thread scrolling inside and the input at the bottom. Automatic notes (run error,
+ * hint, timer) appear in the thread with a small label.
  */
 export function TeacherChat({
   items,

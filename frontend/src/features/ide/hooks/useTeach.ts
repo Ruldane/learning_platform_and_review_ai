@@ -5,8 +5,8 @@ import { ideKeys } from "../queryKeys";
 import type { TeachIn } from "../types";
 
 /**
- * Réveille le professeur : un appel par geste, jamais à la frappe ni à l'enregistrement. La
- * réponse dit si un graphe travaille (`session_id`), s'il y a un renvoi, ou pourquoi rien ne part.
+ * Wakes the teacher: one call per action, never on typing or saving. The
+ * response says if a graph runs (`session_id`), if there is a reference, or why nothing is sent.
  */
 export function useTeach(sessionId: string) {
   const queryClient = useQueryClient();

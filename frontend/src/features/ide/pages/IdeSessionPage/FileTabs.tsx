@@ -6,7 +6,7 @@ interface FileTabsProps {
   names: string[];
   current: string;
   entry: string;
-  /** Les fichiers que Claude a modifiés : signalés en toutes lettres. */
+  /** The files Claude changed: flagged in full words. */
   changed?: string[];
   onOpen: (name: string) => void;
   onClose?: (name: string) => void;
@@ -17,7 +17,7 @@ function tabLabel(name: string, entry: string, changed: string[]): string {
   return changed.includes(name) ? t("ide.claude.changedTab", { name: shown }) : shown;
 }
 
-/** Les fichiers de la séance : un bouton par fichier, celui d'entrée est signalé en texte. */
+/** The session's files: one button per file; the entry file is flagged in text. */
 export function FileTabs({ names, current, entry, changed = [], onOpen, onClose }: FileTabsProps) {
   const container = useRef<HTMLElement>(null);
   if (names.length <= 1 && onClose === undefined) return null;

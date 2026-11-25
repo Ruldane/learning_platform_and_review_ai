@@ -12,8 +12,8 @@ interface GenerateRunProps {
 }
 
 /**
- * L'écriture d'un exercice par les agents, en direct. À chaque changement d'état la liste des
- * exercices est relue : l'exercice y apparaît dès que la session a fini.
+ * Writing an exercise by the agents, live. On each state change the list of
+ * exercises is re-read: the exercise appears there as soon as the session ends.
  */
 export function GenerateRun({ sessionId, createSocket }: GenerateRunProps) {
   const queryClient = useQueryClient();

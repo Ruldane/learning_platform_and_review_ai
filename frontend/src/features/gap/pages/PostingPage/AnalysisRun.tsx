@@ -11,14 +11,14 @@ const OVER = ["completed", "failed", "cancelled", "expired"];
 interface AnalysisRunProps {
   sessionId: string;
   postingId: string;
-  /** Ne sert qu'aux tests (faux WebSocket). */
+  /** Only used by tests (fake WebSocket). */
   createSocket?: SocketFactory;
 }
 
 /**
- * Le fil de l'analyse, en direct : état de la session puis bulles de l'Analyste. À la fin de la
- * session, l'offre et l'écart sont relus (la relecture de 3 s fait le reste). Un flux qui
- * abandonne n'affiche rien : la relecture régulière continue de suivre l'analyse.
+ * The analysis feed, live: session state, then the Analyst's bubbles. At the end of the
+ * session, the posting and gap are re-read (the 3 s re-read does the rest). A stream that
+ * drops shows nothing: the regular re-read keeps following the analysis.
  */
 export function AnalysisRun({ sessionId, postingId, createSocket }: AnalysisRunProps) {
   const client = useQueryClient();

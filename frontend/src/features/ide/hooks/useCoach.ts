@@ -4,20 +4,20 @@ import { isFailedRun } from "../toView";
 import type { RunProgress, TeachIn } from "../types";
 import { useTeach } from "./useTeach";
 
-/** Où en est la personne dans le code : joint à chaque appel pour que le professeur situe l'aide. */
+/** Where the learner is in the code: attached to each call so the teacher can place the help. */
 export interface Where {
   filePath: string;
   line: number | null;
 }
 
-/** Les champs d'un appel que l'appelant choisit ; l'emplacement est ajouté ici. */
+/** The fields of a call the caller picks; the location is added here. */
 export type Ask = Pick<TeachIn, "trigger" | "question" | "run_id">;
 
 /**
- * Les gestes qui réveillent le professeur, et eux seuls. `ask` part sur un geste (Indice,
- * Pourquoi, question, minuterie). `afterRun` part à la fin d'une exécution **en échec** et une
- * seule fois par exécution, et seulement si le mode automatique est ouvert (`automatic`) : plafond
- * atteint, mode « sur demande » ou réglages pas encore lus, aucun appel ne part tout seul.
+ * The actions that wake the teacher, and only those. `ask` is sent on an action (Indice,
+ * Pourquoi, minuterie, question). `afterRun` is sent at the end of a **failed** run, once per
+ * run, and only if automatic mode is on (`automatic`): cap
+ * reached, « sur demande » mode, or settings not read yet, no call is sent on its own.
  */
 export function useCoach(sessionId: string, automatic: boolean, where: Where) {
   const teach = useTeach(sessionId);
@@ -34,7 +34,7 @@ export function useCoach(sessionId: string, automatic: boolean, where: Where) {
     },
     [mutate],
   );
-  /** Une question tapée : `true` si le professeur la prend (sinon la saisie reste à sa place). */
+  /** A typed question: `true` if the teacher takes it (otherwise the input stays in place). */
   const sendQuestion = useCallback(
     async (question: string, runId: string | null, source?: RunSource): Promise<boolean> => {
       const { filePath, line } = latest.current.where;
@@ -49,7 +49,7 @@ export function useCoach(sessionId: string, automatic: boolean, where: Where) {
         });
         return !out.skipped;
       } catch {
-        return false; // l'erreur est lue dans `teach.error`
+        return false; // the error is read from `teach.error`
       }
     },
     [mutateAsync],

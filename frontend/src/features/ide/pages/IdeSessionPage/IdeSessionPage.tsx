@@ -10,15 +10,15 @@ import { useIdeSession } from "../../hooks/useIdeSession";
 import { SessionWorkspace } from "./SessionWorkspace";
 
 interface IdeSessionPageProps {
-  /** Pour les tests : le flux de la session du professeur. */
+  /** For tests: the teacher session's stream. */
   createSocket?: SocketFactory;
   GhostPanel?: ComponentType<IdeGhostProps>;
 }
 
 /**
- * Une séance de code : l'éditeur, la sortie et le professeur côte à côte. La séance est relue toutes
- * les 3 s tant que l'onglet est visible (Claude peut y écrire) ; l'éditeur reste la source de ce qu'on
- * voit et le serveur celle de ce qui est enregistré.
+ * A code session: the editor, the output and the teacher side by side. The session is re-read every
+ * 3 s while the tab is visible (Claude can write to it); the editor stays the source of what we
+ * see, and the server the source of what is saved.
  */
 export function IdeSessionPage({ createSocket, GhostPanel }: IdeSessionPageProps) {
   const { sessionId = "" } = useParams();
@@ -27,7 +27,7 @@ export function IdeSessionPage({ createSocket, GhostPanel }: IdeSessionPageProps
     if (!query.isError) return <LoadingState label={t("ide.session.loading")} />;
     return <ErrorState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />;
   }
-  // Une relecture en direct qui échoue garde la séance affichée (et ses retouches) : pas d'erreur.
+  // A failed live re-read keeps the session shown (and its edits): no error.
   return (
     <SessionWorkspace
       key={query.data.id}

@@ -6,9 +6,9 @@ import { toBoardView } from "../toView";
 import type { BoardOut } from "../types";
 
 /**
- * Les états enregistrés du tableau du Conseil `sessionId` (`GET /goals/{id}/boards`) ; le direct s'y
- * ajoute (`boardsFromEvents`). Le back rend aussi ceux d'un Conseil relancé depuis : ils ne
- * s'affichent pas.
+ * The saved board states of the Council `sessionId` (`GET /goals/{id}/boards`); the live feed
+ * adds to it (`boardsFromEvents`). The backend also returns those of a restarted Council: they
+ * are not shown.
  */
 export function useBoards(goalId: string, sessionId: string) {
   const select = useCallback(

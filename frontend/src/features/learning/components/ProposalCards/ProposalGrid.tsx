@@ -2,18 +2,18 @@ import type { ProposalView } from "../viewTypes";
 import { ProposalCard } from "./ProposalCard";
 
 interface ProposalGridProps {
-  /** Déjà triées par rang. */
+  /** Already sorted by rank. */
   proposals: ProposalView[];
   actionable: boolean;
   picked: string[];
-  /** Nombre de cartes à cocher pour mélanger : au-delà, les autres cases sont désactivées. */
+  /** Number of cards to check to mix: beyond it, the other boxes are disabled. */
   mixSize: number;
   onChoose: (proposalId: string) => void;
   onTick: (proposalId: string) => void;
   onShowBoard: (boardId: string) => void;
 }
 
-/** Les cartes côte à côte (grille commune, rubriques alignées par `subgrid`). */
+/** The cards side by side (shared grid, sections aligned by `subgrid`). */
 export function ProposalGrid({
   proposals,
   actionable,

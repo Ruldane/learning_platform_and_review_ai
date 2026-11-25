@@ -5,12 +5,12 @@ import { LoadingState } from "@/shared/ui/states/LoadingState";
 interface WaitingNoticeProps {
   label: string;
   hint?: string;
-  /** L'attente a épuisé ses 40 relectures. */
+  /** The wait has used up its 40 re-reads. */
   exhausted: boolean;
   onContinue: () => void;
 }
 
-/** « Analyse en cours… » ; après 40 relectures, une phrase honnête et un bouton pour continuer. */
+/** « Analyse en cours… »; after 40 re-reads, an honest sentence and a button to continue. */
 export function WaitingNotice({ label, hint, exhausted, onContinue }: WaitingNoticeProps) {
   if (exhausted) {
     return (

@@ -6,16 +6,16 @@ import { SwitchRow } from "./SwitchRow";
 
 interface ModeSwitchProps {
   preferences: PreferencesView;
-  /** Une écriture est en cours : les réglages ne bougent plus avant la réponse. */
+  /** A save is in progress: the settings stay put until the response. */
   pending: boolean;
   onChange: (next: PreferencesView) => void;
 }
 
 /**
- * Les réglages du professeur : intervenir tout seul après une erreur (sinon, seulement sur
- * demande), en option coupée par défaut proposer de l'aide après 30 s sans bouger de ligne, sa
- * façon d'aider (guide : par indices ; binôme : réfléchit avec toi), et l'interrupteur qui laisse
- * Claude (par le MCP) écrire dans les fichiers : éteint par défaut, réglé ici et nulle part
+ * Teacher settings: step in on its own after an error (otherwise, only on
+ * request), an option off by default to offer help after 30 s without moving, its
+ * help style (guide: by hints; pair: thinks with you), and the switch that lets
+ * Claude (via the MCP) write to the files: off by default, set here and nowhere
  * ailleurs.
  */
 export function ModeSwitch({ preferences, pending, onChange }: ModeSwitchProps) {

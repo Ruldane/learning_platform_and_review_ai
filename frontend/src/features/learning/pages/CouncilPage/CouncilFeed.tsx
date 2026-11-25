@@ -14,19 +14,19 @@ import { CouncilFailure } from "./CouncilFailure";
 type Session = ReturnType<typeof useCouncilSession>;
 
 const FINISHED: readonly SessionStatus[] = ["completed", "failed", "cancelled", "expired"];
-/** Question du choix du parcours : on y répond par les cartes de l'onglet Propositions. */
+/** Path choice question: it is answered with the cards in the Propositions tab. */
 const CHOICE_KIND = "choose_path";
 
 interface CouncilFeedProps {
   session: Session;
-  /** Relance du Conseil, proposée quand sa session a échoué. */
+  /** Council restart, offered when its session failed. */
   retry: ReturnType<typeof useRetryCouncil>;
   onShowProposals: () => void;
 }
 
 /**
- * Colonne de gauche : le débat (bulles, cartes de question), le champ de message actif pendant
- * tout le débat, les commandes permanentes et les contrôles de la session. Tout part par REST.
+ * Left column: the debate (bubbles, question cards), the message field active throughout
+ * the debate, the standing commands and the session controls. Everything goes over REST.
  */
 export function CouncilFeed({ session, retry, onShowProposals }: CouncilFeedProps) {
   const { stream, actions } = session;
@@ -50,7 +50,7 @@ export function CouncilFeed({ session, retry, onShowProposals }: CouncilFeedProp
             <InterruptCard
               interrupt={item.interrupt}
               answered={item.answered}
-              // Active seulement si le serveur attend cette réponse (pas en pause, pas déjà reprise).
+              // Active only if the server waits for this answer (not paused, not already resumed).
               disabled={actions.pending || !isAwaitingAnswer(view, item.interrupt.interrupt_id)}
               onAnswer={(value) => void actions.resume(item.interrupt.interrupt_id, value)}
             />

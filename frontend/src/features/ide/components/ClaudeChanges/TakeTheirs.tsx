@@ -7,7 +7,7 @@ interface TakeTheirsProps {
   onConfirm: () => void;
 }
 
-/** « Prendre celle de Claude » : jette tes retouches, donc demande confirmation d'abord. */
+/** « Prendre celle de Claude »: discards your edits, so it asks for confirmation first. */
 export function TakeTheirs({ file, onConfirm }: TakeTheirsProps) {
   const [confirming, setConfirming] = useState(false);
   if (!confirming) {

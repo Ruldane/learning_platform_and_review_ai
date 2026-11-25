@@ -1,26 +1,26 @@
 import { api } from "@/shared/api/client";
 import { unwrap } from "@/shared/api/errors";
 
-/** `GET /brief/today` : le brief du jour local, créé à l'ouverture s'il manque. */
+/** `GET /brief/today`: the local day's brief, created on open if missing. */
 export async function fetchBrief(signal?: AbortSignal) {
   return unwrap(await api.GET("/brief/today", { signal }));
 }
 
-/** Les bornes d'une lecture du fil : le curseur est le couple `(at, id)`, jamais `at` seul. */
+/** Feed read bounds: the cursor is the pair `(at, id)`, never `at` alone. */
 export interface ActivityQuery {
-  /** Plus récents que le couple `(after, afterId)` (relecture). */
+  /** Newer than the pair `(after, afterId)` (re-read). */
   after?: string;
   afterId?: string;
-  /** Plus anciens que le couple `(before, beforeId)` (page suivante). */
+  /** Older than the pair `(before, beforeId)` (next page). */
   before?: string;
   beforeId?: string;
   limit?: number;
 }
 
 /**
- * `GET /activity` : les événements, le plus récent d'abord. Les bornes sont exclusives sur le
- * couple `(at, id)` : envoyer `after` sans `after_id` perdrait ou répéterait les événements qui
- * partagent un instant.
+ * `GET /activity`: events, newest first. The bounds are exclusive on the
+ * pair `(at, id)`: sending `after` without `after_id` would lose or repeat the events that
+ * share an instant.
  */
 export async function fetchActivity(query: ActivityQuery = {}, signal?: AbortSignal) {
   return unwrap(

@@ -5,16 +5,16 @@ import { TakeTheirs } from "./TakeTheirs";
 
 interface ConflictCardProps {
   file: string;
-  /** La version de Claude (celle du serveur) : jamais appliquée sans ton choix. */
+  /** Claude's version (the server's): never applied without your choice. */
   theirs: string;
   onKeepMine: () => void;
   onTakeTheirs: () => void;
 }
 
 /**
- * Claude a changé un fichier où tu avais des retouches pas enregistrées. Tes retouches restent à
- * l'écran ; tu peux lire la version de Claude, puis garder la tienne ou prendre la sienne. Rien
- * n'est perdu sans ton geste.
+ * Claude changed a file where you had unsaved edits. Your edits stay on
+ * the screen; you can read Claude's version, then keep yours or take theirs. Nothing
+ * is lost without your action.
  */
 export function ConflictCard({ file, theirs, onKeepMine, onTakeTheirs }: ConflictCardProps) {
   const [viewing, setViewing] = useState(false);

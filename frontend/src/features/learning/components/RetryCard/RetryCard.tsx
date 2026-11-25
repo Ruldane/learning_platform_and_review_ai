@@ -4,20 +4,20 @@ import { Button } from "@/shared/ui/button";
 import { InlineError } from "@/shared/ui/states/InlineError";
 
 interface RetryCardProps {
-  /** Ce qui a échoué, en une phrase (absent : l'échec est déjà dit au-dessus). */
+  /** What failed, in one sentence (absent: the failure is already said above). */
   title?: string;
-  /** Ce que fait la relance. */
+  /** What the retry does. */
   help: string;
   actionLabel: string;
   busy: boolean;
   launchMenu?: ReactNode;
-  /** Refus relu (conflit) : une information, pas une erreur. */
+  /** A re-read refusal (conflict): information, not an error. */
   notice: string | null;
   error: string | null;
   onRetry: () => void;
 }
 
-/** Une étape en échec et le bouton qui la relance, avec le refus ou l'erreur de la relance. */
+/** A failed step and the button that retries it, with the refusal or error of the retry. */
 export function RetryCard(props: RetryCardProps) {
   const { title, help, actionLabel, busy, notice, error, onRetry, launchMenu } = props;
   const helpId = useId();

@@ -8,8 +8,8 @@ import { useGoals } from "../../hooks/useGoals";
 import { councilPath } from "../../hooks/useCreateGoal";
 
 /**
- * Conseil (`/learn/council`) : ouvre le Conseil de l'objectif le plus récent ; sans objectif,
- * invite à en saisir un.
+ * Council (`/learn/council`): opens the Council of the most recent goal; without a goal,
+ * it invites you to enter one.
  */
 export function CouncilIndexPage() {
   const goals = useGoals();

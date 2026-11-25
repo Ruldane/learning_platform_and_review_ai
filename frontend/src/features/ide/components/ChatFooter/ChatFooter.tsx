@@ -2,13 +2,13 @@ import { t } from "@/shared/i18n/t";
 import { InlineError } from "@/shared/ui/states/InlineError";
 
 interface ChatFooterProps {
-  /** Le professeur écrit. */
+  /** The teacher is typing. */
   typing: boolean;
-  /** Pourquoi rien n'est parti, ou l'erreur. */
+  /** Why nothing was sent, or the error. */
   notice: { tone: "status" | "error"; text: string } | null;
 }
 
-/** Sous le dernier message : « Le professeur écrit… », la raison d'un refus, l'erreur. */
+/** Under the last message: « Le professeur écrit… », the reason for a refusal, the error. */
 export function ChatFooter({ typing, notice }: ChatFooterProps) {
   return (
     <>

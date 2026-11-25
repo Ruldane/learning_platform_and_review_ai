@@ -1,21 +1,21 @@
 import { useEffect, useRef } from "react";
 
-/** Délai d'arrêt sur une ligne avant d'offrir de l'aide (option, coupée par défaut). */
+/** Idle time on one line before offering help (option, off by default). */
 export const IDLE_MS = 30_000;
 
 interface IdleOptions {
-  /** L'option est cochée dans les préférences. */
+  /** The option is checked in the preferences. */
   enabled: boolean;
-  /** La ligne du curseur ; `null` tant que la personne n'a rien touché. */
+  /** The cursor line; `null` until the learner has touched anything. */
   line: number | null;
-  /** Change à chaque frappe : taper repart de zéro, sans jamais appeler le professeur. */
+  /** Changes on each keystroke: typing restarts from zero, without ever calling the teacher. */
   activity: number;
   onIdle: () => void;
 }
 
 /**
- * Une minuterie de 30 s : si l'option est cochée et que le curseur reste sur la même ligne sans
- * frappe, `onIdle` part **une seule fois** ; bouger ou taper la réarme. Option coupée : aucune
+ * A 30 s timer: if the option is checked and the cursor stays on the same line without
+ * typing, `onIdle` fires **once**; moving or typing rearms it. Option off: no
  * minuterie n'existe.
  */
 export function useIdleTeach({ enabled, line, activity, onIdle }: IdleOptions) {

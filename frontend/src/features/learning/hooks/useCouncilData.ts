@@ -7,7 +7,7 @@ import { useBoards } from "./useBoards";
 import { useChooseProposal } from "./useChooseProposal";
 import { useProposals } from "./useProposals";
 
-/** Identifiant du dernier événement de ce type, `null` s'il n'y en a pas. */
+/** Id of the last event of this type, `null` if there is none. */
 function lastIdOf(events: SessionEvent[], type: SessionEvent["type"]): string | null {
   for (let i = events.length - 1; i >= 0; i -= 1) {
     const event = events[i];
@@ -17,9 +17,9 @@ function lastIdOf(events: SessionEvent[], type: SessionEvent["type"]): string | 
 }
 
 /**
- * Ce que montre la zone de droite du Conseil : sources du direct, propositions (rechargées à
- * chaque `proposal.ready`), états du tableau (enregistrés puis du direct, sans doublon), et les
- * deux actions de January sur eux : choisir un parcours, retoucher le tableau.
+ * What the Council's right area shows: live sources, proposals (reloaded on
+ * each `proposal.ready`), board states (saved, then live, no duplicates), and the
+ * two January actions on them: choose a path, edit the board.
  */
 export function useCouncilData(goalId: string, sessionId: string, events: SessionEvent[]) {
   const sources = useMemo(() => sourcesFromEvents(events), [events]);

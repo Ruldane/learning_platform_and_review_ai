@@ -9,28 +9,28 @@ export type Level = "beginner" | "intermediate" | "advanced";
 export type TeachSkip = "cap_reached" | "on_demand" | "busy";
 export type Origin = "app" | "mcp";
 
-/** Une note du professeur (ou de Claude) prête à l'affichage. */
+/** A teacher (or Claude) note, ready to display. */
 export interface NoteView {
   id: string;
   kind: NoteKind;
   author: NoteAuthor;
   authorLabel: string;
-  /** `mcp` : écrite par Claude (la page le dit en toutes lettres). */
+  /** `mcp`: written by Claude (the page says so in full). */
   origin: Origin;
   status: NoteStatus;
   filePath: string | null;
   lineStart: number | null;
   lineEnd: number | null;
   content: string;
-  /** Le texte que le back appliquerait (proposition) : jamais appliqué par le front. */
+  /** The text the backend would apply (proposal): never applied by the front. */
   replacement: string | null;
-  /** Les lignes visées telles qu'elles sont dans le fichier ; `null` si elles n'y sont plus. */
+  /** The targeted lines as they are in the file; `null` if they are no longer there. */
   before: string | null;
-  /** Niveau de l'indice (donné par le professeur, sinon son rang) ; `null` pour une autre note. */
+  /** Hint level (given by the teacher, otherwise its rank); `null` for other notes. */
   hintLevel: number | null;
 }
 
-/** Une pastille dans la marge de l'éditeur (décoration Monaco). */
+/** A dot in the editor margin (Monaco decoration). */
 export interface AnnotationView {
   id: string;
   line: number;
@@ -45,11 +45,11 @@ export interface UsageView {
   onDemand: boolean;
 }
 
-/** La sortie d'une exécution, telle que la page la montre. */
+/** A run's output, as the page shows it. */
 export interface OutputView {
   runId: string | null;
   kind: RunKind | null;
-  /** `mcp` : lancée par Claude (« lancée par Claude » ; elle ne prend pas le focus). */
+  /** `mcp`: started by Claude (« lancée par Claude »; it does not take focus). */
   origin: Origin;
   status: RunStatus | "idle";
   output: string;
@@ -66,7 +66,7 @@ export interface ExerciseView {
   origin: ExerciseOrigin;
   topic: string | null;
   state: ExerciseState;
-  /** La séance la plus récente de l'exercice, s'il y en a une. */
+  /** The most recent session on the exercise, if any. */
   sessionId: string | null;
 }
 
@@ -91,8 +91,8 @@ export interface GenerateDraft {
 export interface PreferencesView {
   auto: boolean;
   idle: boolean;
-  /** `guide` oriente par des indices ; `pair` réfléchit avec toi et peut proposer la correction. */
+  /** `guide` steers with hints; `pair` thinks with you and may propose the fix. */
   style: "guide" | "pair";
-  /** Claude (MCP) peut écrire dans tes fichiers ; éteint par défaut, réglé ici seulement. */
+  /** Claude (MCP) may write to your files; off by default, set here only. */
   claudeWrites: boolean;
 }

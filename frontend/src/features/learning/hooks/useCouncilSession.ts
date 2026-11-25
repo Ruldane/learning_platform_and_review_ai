@@ -9,11 +9,11 @@ import { useDebateRounds } from "./useDebateRounds";
 import { useGoal } from "./useGoal";
 
 /**
- * La session du Conseil suivie en direct (reprise après rechargement : l'identifiant vient de
- * l'objectif, le flux rejoue les événements) et, une fois le parcours choisi, la session du
- * programme. L'étape se déduit des événements ; tant que le programme n'a pas de session,
- * l'objectif est relu toutes les 2 s. `programFailed` : la session du programme a échoué sans
- * qu'un programme soit enregistré (le même choix la relance).
+ * The Council session followed live (resumed after a reload: the id comes from
+ * the goal, the stream replays the events) and, once the path is chosen, the session of the
+ * program. The stage is derived from the events; while the program has no session,
+ * the goal is re-read every 2 s. `programFailed`: the program session failed without
+ * a program being saved (the same choice restarts it).
  */
 export function useCouncilSession(
   initial: GoalOut,

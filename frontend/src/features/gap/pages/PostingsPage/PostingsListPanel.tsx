@@ -10,15 +10,15 @@ import { toPostingListItems } from "../../toView";
 
 interface PostingsListPanelProps {
   pollMs: number;
-  /** Action de l'état vide : mener au formulaire d'ajout. */
+  /** Empty-state action: leads to the add form. */
   onAdd: () => void;
 }
 
 const hrefOf = (postingId: string) => `/career/postings/${postingId}`;
 
 /**
- * La liste des offres : chargement, erreur avec « Réessayer », état vide avec action, puis les
- * offres. Une relecture ratée garde la liste déjà affichée.
+ * The postings list: loading, error with « Réessayer », empty state with action, then the
+ * postings. A failed re-read keeps the list already shown.
  */
 export function PostingsListPanel({ pollMs, onAdd }: PostingsListPanelProps) {
   const { query } = usePostings(pollMs);

@@ -24,7 +24,7 @@ function isMermaid(code: HastNode | undefined): boolean {
   return code?.tagName === "code" && Array.isArray(classes) && classes.includes("language-mermaid");
 }
 
-/** Bloc de code : un bloc « mermaid » devient un schéma (rendu strict), les autres restent du code. */
+/** Code block: a « mermaid » block becomes a diagram (strict rendering), the others stay code. */
 export function MarkdownCodeBlock({ node, children }: MarkdownCodeBlockProps) {
   const code = (node as HastNode | undefined)?.children?.[0];
   if (code && isMermaid(code)) {

@@ -10,14 +10,14 @@ type Session = ReturnType<typeof useCouncilSession>;
 
 interface CouncilStatusProps {
   session: Session;
-  /** Relance du Stratège, proposée quand la session du programme a échoué. */
+  /** Strategist restart, offered when the program session failed. */
   programRetry: ReturnType<typeof useProgramRetry>;
 }
 
 /**
- * La barre d'état du Conseil, en haut : statut de la session, étape (cadrage, recherche, débat,
- * propositions, programme) avec le tour, coût en direct, puis, à l'étape du programme, le lien
- * « Voir le programme » dès qu'il est prêt, ou sa relance s'il a échoué.
+ * The Council status bar, on top: session status, stage (framing, research, debate,
+ * proposals, program) with the round, live cost, then, at the program stage, the link
+ * « Voir le programme » as soon as it is ready, or its restart if it failed.
  */
 export function CouncilStatus({ session, programRetry }: CouncilStatusProps) {
   const { stream, progress } = session;

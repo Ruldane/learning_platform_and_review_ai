@@ -1,10 +1,10 @@
-/** Intervalle de relecture d'une séance ouverte (notes, fichiers, exécutions de Claude). */
+/** Re-read interval for an open session (notes, files, Claude's runs). */
 export const LIVE_MS = 3000;
 
 /**
- * Relit toutes les 3 s **tant que l'onglet est visible** : TanStack suspend l'intervalle quand la
- * page est cachée ou perd la visibilité (`refetchIntervalInBackground` est faux) et relit au
- * retour. Une relecture qui échoue garde les données déjà là.
+ * Re-reads every 3 s **while the tab is visible**: TanStack pauses the interval when the
+ * page is hidden or loses visibility (`refetchIntervalInBackground` is false) and re-reads on
+ * return. A failed re-read keeps the data already there.
  */
 export const liveOptions = {
   refetchInterval: LIVE_MS,

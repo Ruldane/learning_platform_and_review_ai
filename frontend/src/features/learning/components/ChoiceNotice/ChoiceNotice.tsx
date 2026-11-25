@@ -3,15 +3,15 @@ import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 
 interface ChoiceNoticeProps {
-  /** La question du Conseil (« Choisis un parcours… »). */
+  /** The Council's question (« Choisis un parcours… »). */
   question: string;
   answered: boolean;
   onShowProposals: () => void;
 }
 
 /**
- * La question du choix du parcours (point d'arrêt n° 2) dans le fil : January y répond par les
- * cartes de l'onglet Propositions, pas par un champ ici ; la carte y renvoie.
+ * The path choice question (breakpoint no. 2) in the thread: January answers it with the
+ * cards in the Propositions tab, not with a field here; the card points there.
  */
 export function ChoiceNotice({ question, answered, onShowProposals }: ChoiceNoticeProps) {
   const questionId = useId();

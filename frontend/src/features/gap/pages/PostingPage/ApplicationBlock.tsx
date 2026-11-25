@@ -12,9 +12,9 @@ import { toApplicationAlertView, toExistingApplicationView } from "../../toView"
 const applicationPath = (applicationId: string) => `/applications/${applicationId}`;
 
 /**
- * La candidature de l'offre : celle qui existe déjà, l'alerte de doublon quand des fiches lui
- * ressemblent, et « Créer la candidature ». « C'est un autre poste » crée la fiche malgré les fiches
- * proches ; la fiche créée s'ouvre, avec les informations « même entreprise » éventuelles.
+ * The posting's application: the existing one, and the duplicate alert when records
+ * resemble it, and « Créer la candidature ». « C'est un autre poste » creates the record
+ * despite the similar ones; the new record opens, with any « même entreprise » details.
  */
 export function ApplicationBlock({ postingId }: { postingId: string }) {
   const navigate = useNavigate();

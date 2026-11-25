@@ -7,7 +7,7 @@ import { ProjectFilesPanel } from "./ProjectFilesPanel";
 import { SessionFileEditor } from "./SessionFileEditor";
 import { SessionToolbar } from "./SessionToolbar";
 
-/** À gauche : les fichiers, l'éditeur, les boutons d'exécution et la sortie. */
+/** On the left: the files, the editor, the run buttons and the output. */
 export function EditorColumn({ ws }: { ws: Workspace }) {
   const { draft, runner, file, session } = ws;
   const { claude } = draft;

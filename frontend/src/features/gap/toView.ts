@@ -16,7 +16,7 @@ import type {
   TopMissingOut,
 } from "./types";
 
-/** L'analyse du contrat → la fiche de l'offre (mots clés réduits à leur terme, critères à leur texte). */
+/** Contract analysis → the posting record (keywords cut to their term, criteria to their text). */
 export function toAnalysisView(analysis: PostingAnalysisOut): PostingAnalysisView {
   return {
     title: analysis.title,
@@ -70,7 +70,7 @@ export function toPostingListItems(postings: PostingSummaryOut[]): PostingListIt
   }));
 }
 
-/** Les doublons certains d'une offre déjà connue (réponse 200 de `POST /postings`). */
+/** Certain duplicates of an already known posting (200 response from `POST /postings`). */
 export function certainDuplicate(posting: {
   id: string;
   title: string | null;
@@ -86,7 +86,7 @@ export function certainDuplicate(posting: {
   };
 }
 
-/** Une alerte de candidature du contrat → celle que l'alerte de doublon partagée affiche. */
+/** A contract application alert → the one the shared duplicate alert shows. */
 export function toApplicationAlertView(alert: ApplicationAlertOut): DuplicateAlertView {
   return {
     level: alert.level,

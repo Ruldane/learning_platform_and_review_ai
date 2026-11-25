@@ -3,7 +3,7 @@ import { acceptNote, fetchNotes, rejectNote } from "../api";
 import { ideKeys } from "../queryKeys";
 import { liveOptions } from "./live";
 
-/** Les notes de la séance (`GET /ide/sessions/{id}/notes`), relues en direct. */
+/** The session's notes (`GET /ide/sessions/{id}/notes`), re-read live. */
 export function useNotes(sessionId: string) {
   return useQuery({
     queryKey: ideKeys.notes(sessionId),
@@ -13,9 +13,9 @@ export function useNotes(sessionId: string) {
 }
 
 /**
- * Accepter applique la proposition **côté serveur** : on prend la séance qu'il rend, on ne
- * recalcule jamais le fichier. Les notes sont relues dans tous les cas (un 409 `note_stale` les
- * fait passer en « périmée »).
+ * Accepting applies the proposal **on the server side**: we take the session it returns and do not
+ * recompute the file. Notes are re-read in every case (a 409 `note_stale` makes them
+ * switch to « périmée »).
  */
 export function useAcceptNote(sessionId: string) {
   const queryClient = useQueryClient();
@@ -26,7 +26,7 @@ export function useAcceptNote(sessionId: string) {
   });
 }
 
-/** Refuse une proposition. */
+/** Rejects a proposal. */
 export function useRejectNote(sessionId: string) {
   const queryClient = useQueryClient();
   return useMutation({

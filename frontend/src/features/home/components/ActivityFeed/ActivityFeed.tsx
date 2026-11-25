@@ -7,13 +7,13 @@ interface ActivityFeedProps {
   items: ActivityItemView[];
   hasMore: boolean;
   onMore: () => void;
-  /** La page suivante est en cours de lecture : « Voir plus » le dit et n'envoie rien de plus. */
+  /** The next page is being read: « Voir plus » says so and sends nothing more. */
   loadingMore?: boolean;
-  /** « Maintenant » pour les dates relatives ; l'heure du poste par défaut. */
+  /** « Maintenant » for relative dates; the post time by default. */
   now?: Date;
 }
 
-/** Le fil d'activité : événements datés (« il y a 5 min », date complète au survol) et « Voir plus ». */
+/** The activity feed: dated events (« il y a 5 min », full date on hover) and « Voir plus ». */
 export function ActivityFeed({
   items,
   hasMore,

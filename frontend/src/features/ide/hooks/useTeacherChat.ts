@@ -10,7 +10,7 @@ import type { TeachIn, TeachOut } from "../types";
 import type { NoteView } from "../components/viewTypes";
 import type { Workspace } from "./useWorkspace";
 
-/** Ce que le fil affiche sous le dernier message : une raison, ou une erreur. */
+/** What the thread shows under the last message: a reason, or an error. */
 export interface ChatNotice {
   tone: "status" | "error";
   text: string;
@@ -26,9 +26,9 @@ interface TeachState {
 }
 
 /**
- * La question qui part, affichée dans le fil avant d'être relue : tant que l'appel est en cours, ou
- * réussi sans que la note soit encore revenue. Un refus ou une erreur ne la montre plus (la saisie
- * est restée dans la zone de texte, la raison est dite sous le fil).
+ * The question being sent, shown in the thread before it is re-read: while the call is running, or
+ * succeeded without the note having come back yet. A refusal or error no longer shows it (input
+ * stays in the text box; the reason is said under the thread).
  */
 export function pendingQuestion(teach: TeachState, notes: NoteView[]): string | null {
   const sent = teach.variables;
@@ -50,9 +50,9 @@ function noticeOf(teach: TeachState, failure: string | null): ChatNotice | null 
 }
 
 /**
- * Le chat avec le professeur : le fil (notes et question qui part), s'il écrit, ce qu'il faut dire
- * sous le fil, et les gestes. À chaque changement d'état de sa session d'agents, les notes et la
- * consommation sont relues : sa réponse arrive dans le fil sans rien faire.
+ * The teacher chat: the thread (notes, question being sent), whether it is typing, what to show
+ * under the thread, and the actions. On each state change of its agent session, the notes and the
+ * usage are re-read: its answer arrives in the thread without any action.
  */
 export function useTeacherChat(ws: Workspace, createSocket?: SocketFactory) {
   const { coach, runner, notes } = ws;

@@ -3,7 +3,7 @@ import { t } from "@/shared/i18n/t";
 import type { LessonPassage } from "@/shared/lib/lessonPassage";
 import { Button } from "@/shared/ui/button";
 
-/** Extrait du passage rappelé dans la barre. */
+/** Excerpt of the passage recalled in the bar. */
 const EXCERPT_CHARS = 90;
 
 interface AskProfessorBarProps {
@@ -13,8 +13,8 @@ interface AskProfessorBarProps {
 }
 
 /**
- * Barre collée en bas de la fenêtre quand un passage est sélectionné. Le bouton garde
- * la sélection pendant le clic, puis transmet le passage à la leçon.
+ * Bar stuck to the bottom of the window when a passage is selected. The button keeps
+ * the selection during the click, then passes the passage to the lesson.
  */
 export function AskProfessorBar({ passage, onAsk, barRef }: AskProfessorBarProps) {
   const chars = Array.from(passage.text);

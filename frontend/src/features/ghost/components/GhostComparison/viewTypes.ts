@@ -1,4 +1,4 @@
-/** Seuls des agrégats sont montrés pendant le défi. */
+/** Only aggregates are shown during the challenge. */
 export interface Metrics {
   duration: number | null;
   errors: number | null;

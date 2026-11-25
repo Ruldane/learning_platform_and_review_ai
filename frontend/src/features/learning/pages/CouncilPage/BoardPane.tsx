@@ -6,7 +6,7 @@ import { LoadingState } from "@/shared/ui/states/LoadingState";
 
 interface BoardPaneProps {
   states: BoardStateView[];
-  /** Les états enregistrés se chargent encore (le direct peut déjà en avoir). */
+  /** The saved states are still loading (the live feed may already have some). */
   loading: boolean;
   failed: boolean;
   onRetry: () => void;
@@ -17,7 +17,7 @@ interface BoardPaneProps {
   sendError: string | null;
 }
 
-/** L'onglet Tableau : états enregistrés puis du direct, retouches de January envoyées aux agents. */
+/** The Board tab: saved then live states, January's edits sent to the agents. */
 export function BoardPane(props: BoardPaneProps) {
   const { states, loading, failed, onRetry, sendError, ...board } = props;
   if (failed && states.length === 0) {

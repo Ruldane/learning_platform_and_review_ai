@@ -6,7 +6,7 @@ import { homeKeys } from "../queryKeys";
 import { toActivityView } from "../toView";
 import type { ActivityPage } from "../types";
 
-/** Événements par page (le serveur en plafonne 50). */
+/** Events per page (the server caps it at 50). */
 export const ACTIVITY_PAGE = 20;
 
 const selectItems = (page: ActivityPage) => page.items.map(toActivityView);
@@ -21,17 +21,17 @@ function distinct(items: ActivityItemView[]): ActivityItemView[] {
 }
 
 interface Feed {
-  /** Tous les événements montrés, du plus récent au plus ancien, sans trou. */
+  /** All events shown, newest first, with no gap. */
   items: ActivityItemView[];
-  /** La dernière page plus ancienne lue était pleine ; `null` tant qu'aucune n'a été lue. */
+  /** The last older page read was full; `null` until one has been read. */
   olderFull: boolean | null;
 }
 
 /**
- * Pose la première page relue sur la liste déjà montrée : ses événements nouveaux passent en tête,
- * le reste (pages plus anciennes lues par « Voir plus » comprises) est gardé tel quel. Si aucun
- * événement de la page relue n'était déjà montré, plus de 20 événements sont arrivés depuis : la
- * liste garderait un trou entre la page et ce qui la suit, on repart de la première page.
+ * Puts the re-read first page on the list already shown: its new events go to the top,
+ * the rest (older pages read by « Voir plus » included) is kept as is. If none
+ * event of the re-read page was already shown, more than 20 events have arrived since: the
+ * list would keep a gap between the page and what follows, so it restarts from the first page.
  */
 function mergeHead(feed: Feed, head: ActivityItemView[]): Feed {
   if (feed.items.length === 0) return { items: head, olderFull: null };
@@ -41,10 +41,10 @@ function mergeHead(feed: Feed, head: ActivityItemView[]): Feed {
 }
 
 /**
- * Le fil d'activité : la première page est relue (par les notifications de fond) et ses nouveautés
- * se posent en tête de la liste ; « Voir plus » lit la page plus ancienne avec le couple `before` +
- * `before_id` du dernier événement montré. La liste est unique et continue : une relecture ne retire
- * jamais un événement d'entre deux pages, et un événement n'est jamais montré deux fois.
+ * The activity feed: the first page is re-read (by the background notices) and its new items
+ * go to the top of the list; « Voir plus » reads the older page with the `before` +
+ * `before_id` pair of the last event shown. The list stays continuous: a re-read never removes
+ * an event between two pages, and an event is never shown twice.
  */
 export function useActivity() {
   const first = useQuery({
@@ -70,7 +70,7 @@ export function useActivity() {
       }));
     },
   });
-  // Au premier rendu avec la page, `feed` n'a pas encore pris `head` (l'état est posé pendant ce rendu).
+  // First render with the page: `feed` has not yet taken `head` (state is set during this render).
   const items = feed.items.length === 0 && head ? head : feed.items;
   const hasMore = feed.olderFull ?? (head?.length ?? 0) >= ACTIVITY_PAGE;
   const last = items.at(-1);

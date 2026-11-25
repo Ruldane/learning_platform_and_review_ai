@@ -8,8 +8,8 @@ import type { ProposalOut } from "../types";
 const toViews = (proposals: ProposalOut[]) => proposals.map(toProposalView);
 
 /**
- * Les propositions du dernier lot (`GET /goals/{id}/proposals`), rechargées à chaque nouveau
- * `proposal.ready` (`readyKey` : l'identifiant du dernier événement de ce type).
+ * The proposals of the latest batch (`GET /goals/{id}/proposals`), reloaded on each new
+ * `proposal.ready` (`readyKey`: the id of the last event of this type).
  */
 export function useProposals(goalId: string, readyKey: string | null) {
   const query = useQuery({

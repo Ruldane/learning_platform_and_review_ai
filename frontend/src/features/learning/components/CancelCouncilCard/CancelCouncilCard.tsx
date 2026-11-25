@@ -8,7 +8,7 @@ interface CancelCouncilCardProps {
   onKeep: () => void;
 }
 
-/** Confirmation d'arrêt du Conseil dans la page (jamais `window.confirm`). */
+/** Council stop confirmation in the page (never `window.confirm`). */
 export function CancelCouncilCard({ disabled, onConfirm, onKeep }: CancelCouncilCardProps) {
   const titleId = useId();
   return (

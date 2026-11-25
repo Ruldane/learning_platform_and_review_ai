@@ -4,14 +4,14 @@ import { RetryCard } from "../../components/RetryCard";
 import type { useProgramRetry } from "../../hooks/useProgramRetry";
 
 interface ProgramStateProps {
-  /** Lien vers le programme, dès qu'il est prêt. */
+  /** Link to the program, as soon as it is ready. */
   link: string | null;
-  /** La session du programme a échoué sans programme enregistré. */
+  /** The program session failed without a saved program. */
   failed: boolean;
   retry: ReturnType<typeof useProgramRetry>;
 }
 
-/** À l'étape du programme : le lien quand il est prêt, sa relance s'il a échoué, sinon l'attente. */
+/** At the program stage: the link when ready, its restart if it failed, otherwise the wait. */
 export function ProgramState({ link, failed, retry }: ProgramStateProps) {
   if (link) {
     return (

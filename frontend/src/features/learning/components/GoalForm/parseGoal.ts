@@ -1,7 +1,7 @@
 import { t } from "@/shared/i18n/t";
 import type { GoalInput } from "../viewTypes";
 
-/** Ce que January a tapé, champ par champ. */
+/** What January typed, field by field. */
 export interface GoalDraft {
   text: string;
   targetRole: string;
@@ -17,7 +17,7 @@ export const ROLE_MAX = 120;
 const HOURS_MIN = 1;
 const HOURS_MAX = 40;
 
-/** Aujourd'hui, à l'heure locale, au format `AAAA-MM-JJ` (celui d'un champ date). */
+/** Today, in local time, in `YYYY-MM-DD` format (that of a date field). */
 export function todayIso(now: Date = new Date()): string {
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const day = String(now.getDate()).padStart(2, "0");
@@ -36,7 +36,7 @@ function hoursError(hours: string): string | undefined {
   return valid ? undefined : t("learning.goals.form.errors.weeklyHours");
 }
 
-/** Valide la saisie (texte de 5 à 500, poste ≤ 120, échéance à venir, 1 à 40 h) ; les champs vides facultatifs deviennent `null`. */
+/** Validates input (5-500 chars, role ≤ 120, future deadline, 1-40 h). Empty optionals: `null`. */
 export function parseGoal(
   draft: GoalDraft,
   today: string = todayIso(),

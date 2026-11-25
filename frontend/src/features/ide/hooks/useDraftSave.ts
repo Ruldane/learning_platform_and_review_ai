@@ -3,32 +3,32 @@ import type { IdeSession } from "../types";
 import { omit, type Files } from "./fileMaps";
 import { useSendFiles } from "./useSendFiles";
 
-/** Délai sans frappe avant l'enregistrement automatique (la frappe, elle, n'appelle personne). */
+/** Idle time before automatic save (typing itself calls no one). */
 export const AUTOSAVE_MS = 1500;
 
-/** Enregistre 1,5 s après la dernière retouche (chaque retouche relance le délai). */
+/** Saves 1.5 s after the last edit (each edit restarts the delay). */
 function useAutosave(dirty: boolean, edits: Files, server: Files, save: () => Promise<boolean>) {
   useEffect(() => {
     if (!dirty) return undefined;
     const timer = setTimeout(() => void save(), AUTOSAVE_MS);
     return () => clearTimeout(timer);
-  }, [dirty, edits, server, save]); // la séance relue relance l'essai (après un refus)
+  }, [dirty, edits, server, save]); // the re-read session restarts the attempt (after a refusal)
 }
 
 interface Draft {
   edits: Files;
-  /** Les fichiers en conflit avec Claude : ni envoyés ni écrasés tant que tu n'as pas choisi. */
+  /** Files in conflict with Claude: neither sent nor overwritten until you choose. */
   held: string[];
   server: Files;
-  /** Les empreintes (sha256) des fichiers tels que le serveur les a donnés à la dernière lecture. */
+  /** The fingerprints (sha256) of the files as the server gave them at the last read. */
   hashes: Files;
 }
 
 /**
- * L'enregistrement des retouches : automatique après 1,5 s sans frappe, ou à la demande (`save`
- * attend un envoi en cours et rend vrai si tout est enregistré). Les fichiers en conflit avec Claude
- * ne partent pas : le serveur garde sa version, et `save` rend faux (le code à l'écran n'est pas
- * celui du serveur).
+ * Saving edits: automatic after 1.5 s without typing, or on demand (`save`
+ * waits for a send and returns true if all is saved). Files in conflict with Claude
+ * are not sent: the server keeps its version, and `save` returns false (the code on screen is not
+ * the server's).
  */
 export function useDraftSave(
   session: IdeSession,

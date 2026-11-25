@@ -3,7 +3,7 @@ import { fetchPreferences, putPreferences } from "../api";
 import { ideKeys } from "../queryKeys";
 import type { Preferences } from "../types";
 
-/** Mode du professeur, minuterie et plafonds (`GET /ide/preferences`). */
+/** Teacher mode, timer and caps (`GET /ide/preferences`). */
 export function usePreferences() {
   return useQuery({
     queryKey: ideKeys.preferences,
@@ -12,9 +12,9 @@ export function usePreferences() {
 }
 
 /**
- * Enregistre un réglage : le contrat remplace tout, donc on relit les préférences du serveur juste
- * avant et on n'y change que ce qui a été touché (un second onglet resté sur une ancienne valeur ne
- * rallume rien ailleurs). La page suit la réponse du serveur, pas son idée de la valeur.
+ * Saves one setting: the contract replaces everything, so we re-read the server preferences just
+ * before and only change what was touched (a second tab left on an old value must not
+ * switch anything back on). The page follows the server's answer, not its own idea of the value.
  */
 export function useSavePreferences() {
   const queryClient = useQueryClient();

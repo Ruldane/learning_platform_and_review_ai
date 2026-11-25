@@ -18,7 +18,7 @@ interface SessionWorkspaceProps {
   GhostPanel?: ComponentType<IdeGhostProps>;
 }
 
-/** Une séance ouverte : l'en-tête (titre, énoncé), l'éditeur à gauche, le professeur à droite. */
+/** An open session: header (title, statement), editor on the left, teacher on the right. */
 export function SessionWorkspace({ session, createSocket, GhostPanel }: SessionWorkspaceProps) {
   const ws = useWorkspace(session);
   const run = ws.runner.output;

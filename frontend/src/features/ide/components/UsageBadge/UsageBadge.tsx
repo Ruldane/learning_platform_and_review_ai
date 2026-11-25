@@ -8,9 +8,9 @@ interface UsageBadgeProps {
 const NUMBER = new Intl.NumberFormat("en-GB");
 
 /**
- * Ce que le professeur a consommé : jetons de la séance et du jour face à leurs plafonds. Le mode
- * « Sur demande » (plafond atteint ou choix) s'écrit en toutes lettres : le professeur ne répond
- * plus tout seul, seulement quand on l'appelle.
+ * What the teacher has used: tokens for the session and the day against their caps. The mode
+ * « Sur demande » (cap reached or chosen) is written out in full: the teacher only replies
+ * on its own, only when called.
  */
 export function UsageBadge({ usage }: UsageBadgeProps) {
   return (

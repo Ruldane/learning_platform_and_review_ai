@@ -20,9 +20,9 @@ interface CouncilLayoutProps {
 }
 
 /**
- * Le Conseil d'un objectif (SPEC 15.2) : barre d'état en haut, débat à gauche (40 %), tableau,
- * sources et propositions à droite (60 %). Un flux abandonné ou une session introuvable se disent
- * ici ; la session se retrouve par l'identifiant de l'objectif (reprise après rechargement).
+ * A goal's Council (SPEC 15.2): status bar on top, debate on the left (40 %), board,
+ * sources and proposals on the right (60 %). A dropped stream or a session not found are reported
+ * here; the session is found again through the goal's id (resumed after a reload).
  */
 export function CouncilLayout({ goal, sessionId, createSocket }: CouncilLayoutProps) {
   const navigate = useNavigate();
@@ -34,7 +34,7 @@ export function CouncilLayout({ goal, sessionId, createSocket }: CouncilLayoutPr
   const { stream } = session;
 
   if (stream.connection === "failed") {
-    // Une session introuvable ne se « réessaie » pas : retour aux objectifs.
+    // A session not found is not retried: back to the goals.
     const missing = stream.failure === "not_found";
     return (
       <ErrorState

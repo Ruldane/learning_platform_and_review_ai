@@ -17,7 +17,7 @@ const SIZE: Record<HeadingTag, string> = {
   h6: "mt-4 mb-1 text-base",
 };
 
-/** Titre d'une section : porte l'ancre du sommaire. Le `h1` de la page est le titre de la leçon. */
+/** A section heading: carries the outline anchor. The page's `h1` is the lesson title. */
 export function MarkdownHeading({ as: Tag, id, children }: MarkdownHeadingProps) {
   return (
     <Tag id={id} className={cn("scroll-mt-6 font-semibold", SIZE[Tag])}>

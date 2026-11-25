@@ -4,14 +4,14 @@ import { CouncilPage } from "./pages/CouncilPage";
 import { GoalsPage } from "./pages/GoalsPage";
 
 /**
- * Apprendre : les objectifs, puis le Conseil (cadrage, recherche, débat, propositions) qui mène au
- * programme (SPEC 3.1). Programme, leçons et bibliothèque s'ajoutent sous la même section (4.15).
+ * Learn: the goals, then the Council (framing, research, debate, proposals) that leads to the
+ * program (SPEC 3.1). Program, lessons and library are added under the same section (4.15).
  */
 export const learningManifest: FeatureManifest = {
   id: "learning",
   routes: [
     { path: "learn/goals", Component: GoalsPage },
-    // Deux zones côte à côte (SPEC 15.2) : la page prend toute la largeur de la coquille.
+    // Two areas side by side (SPEC 15.2): the page takes the full width of the shell.
     { path: "learn/goals/:goalId/council", Component: CouncilPage, handle: { wide: true } },
     { path: "learn/council", Component: CouncilIndexPage },
   ],

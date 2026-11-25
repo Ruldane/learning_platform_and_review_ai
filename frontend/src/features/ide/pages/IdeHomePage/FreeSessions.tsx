@@ -10,7 +10,7 @@ interface FreeSessionsProps {
   onResume: (sessionId: string) => void;
 }
 
-/** Les séances sans exercice : en ouvrir une, ou reprendre une des précédentes. */
+/** Sessions without an exercise: open one, or resume a previous one. */
 export function FreeSessions({ sessions, busy, onStart, onResume }: FreeSessionsProps) {
   const headingId = useId();
   return (

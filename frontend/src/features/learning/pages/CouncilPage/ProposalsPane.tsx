@@ -10,12 +10,12 @@ interface ProposalsPaneProps {
   loading: boolean;
   failed: boolean;
   onRetry: () => void;
-  /** La question du choix est posée : on peut choisir, mélanger ou relancer. */
+  /** The choice question is asked: one can choose, mix or rerun. */
   canChoose: boolean;
-  /** L'interruption offre « autre tour » (elle n'en offre plus au plafond de tours). */
+  /** The interruption offers « autre tour » (it no longer offers it at the round cap). */
   canAnotherRound: boolean;
   busy: boolean;
-  /** Conflit relu (propositions périmées, Conseil qui n'attend pas…) : une information, pas une erreur. */
+  /** Re-read conflict (stale proposals, Council not waiting…): information, not an error. */
   notice: string | null;
   error: string | null;
   onChoose: (proposalId: string) => void;
@@ -24,7 +24,7 @@ interface ProposalsPaneProps {
   onShowBoard: (boardId: string) => void;
 }
 
-/** L'onglet Propositions : chargement, erreur avec « Réessayer », information de conflit, cartes. */
+/** The Propositions tab: loading, error with « Réessayer », conflict information, cards. */
 export function ProposalsPane(props: ProposalsPaneProps) {
   const { proposals, loading, failed, onRetry, notice, error, ...cards } = props;
   if (failed && proposals === undefined) {

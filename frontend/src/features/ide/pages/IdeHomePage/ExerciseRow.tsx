@@ -5,14 +5,14 @@ import type { ExerciseView } from "../../components/viewTypes";
 
 interface ExerciseRowProps {
   exercise: ExerciseView;
-  /** Une séance est en train de s'ouvrir : les boutons attendent. */
+  /** A session is opening: the buttons wait. */
   busy: boolean;
   onOpen: (exercise: ExerciseView) => void;
 }
 
 const ACTION = { todo: "start", doing: "resume", passed: "review" } as const;
 
-/** Un exercice : son état en texte, son énoncé à la demande, et le geste pour y travailler. */
+/** An exercise: its state as text, its statement on demand, and the action to work on it. */
 export function ExerciseRow({ exercise, busy, onOpen }: ExerciseRowProps) {
   const headingId = useId();
   const action = t(`ide.home.${ACTION[exercise.state]}`);

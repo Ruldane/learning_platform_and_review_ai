@@ -1,4 +1,4 @@
-/** Clés TanStack Query de la feature : des identifiants seulement, jamais un lien ni un texte d'offre. */
+/** TanStack Query keys of the feature: identifiers only, never a link or posting text. */
 export const gapKeys = {
   postings: ["gap", "postings"],
   posting: (postingId: string) => ["gap", "posting", postingId] as const,

@@ -14,8 +14,8 @@ interface CouncilSideProps {
 }
 
 /**
- * Colonne de droite : le tableau du Scribe, les sources (pages et praticiens à part, jamais
- * mélangés ni comptés ensemble) et les propositions.
+ * Right column: the Scribe's board, the sources (pages and practitioners apart, never
+ * mixed or counted together) and the proposals.
  */
 export function CouncilSide({ session, data, tabs }: CouncilSideProps) {
   const { saved, edit, boards, sources } = data;

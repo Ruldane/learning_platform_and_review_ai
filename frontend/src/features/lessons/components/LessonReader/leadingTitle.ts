@@ -3,8 +3,8 @@ const SECTION = /^ {0,3}#{2,6}[ \t]/;
 const FENCE = /^ {0,3}(```|~~~)/;
 
 /**
- * Le Markdown sans son titre de tête (`# Titre` placé avant toute section) : la page l'affiche
- * déjà en `<h1>`. La ligne est vidée, pas retirée : les numéros de ligne du sommaire restent justes.
+ * The Markdown without its leading title (`# Title` placed before any section): the page shows it
+ * already as `<h1>`. The line is emptied, not removed: the outline's line numbers stay correct.
  */
 export function withoutLeadingTitle(markdown: string): string {
   const lines = markdown.split("\n");

@@ -4,18 +4,18 @@ import type { ProposalView } from "../viewTypes";
 
 export interface ProposalActionsProps {
   proposal: ProposalView;
-  /** Choisir et mélanger sont permis (le débat est fini, rien n'est en cours). */
+  /** Choosing and mixing are allowed (the debate is over, nothing is in progress). */
   actionable: boolean;
-  /** La carte est cochée pour le mélange. */
+  /** The card is checked for the mix. */
   ticked: boolean;
-  /** Deux cartes sont déjà cochées : celle-ci ne peut plus l'être. */
+  /** Two cards are already checked: this one can no longer be checked. */
   tickLocked: boolean;
   onChoose: () => void;
   onTick: () => void;
   onShowBoard: (boardId: string) => void;
 }
 
-/** Pied d'une carte : « Choisir » (ou « Parcours choisi »), « Voir au tableau », case « Mélanger ». */
+/** Card footer: « Choisir » (or « Parcours choisi »), « Voir au tableau », « Mélanger » box. */
 export function ProposalActions({
   proposal,
   actionable,

@@ -12,13 +12,13 @@ import { FreeSessions } from "./FreeSessions";
 import { GenerateRun } from "./GenerateRun";
 
 interface IdeHomePageProps {
-  /** Pour les tests : le flux de la session qui écrit l'exercice. */
+  /** For tests: the stream of the session writing the exercise. */
   createSocket?: SocketFactory;
 }
 
 /**
- * Code : écrire ou faire générer un exercice, travailler sur ceux de la liste (leur état en
- * texte : à faire, en cours, réussi), ou ouvrir une séance libre.
+ * Code: write or generate an exercise, work on those in the list (their state as
+ * text: to do, in progress, passed), or open a free session.
  */
 export function IdeHomePage({ createSocket }: IdeHomePageProps) {
   const exercises = useExercises();

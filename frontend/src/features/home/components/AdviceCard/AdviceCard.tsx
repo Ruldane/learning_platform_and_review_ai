@@ -2,15 +2,15 @@ import { t } from "@/shared/i18n/t";
 import type { AdviceStatus } from "../viewTypes";
 
 interface AdviceCardProps {
-  /** Les deux phrases du conseil, quand il est prêt. */
+  /** The two sentences of the advice, once it is ready. */
   sentences: string[] | null;
   status: AdviceStatus;
 }
 
 /**
- * Le conseil du jour. `pending` : le conseil se réunit encore (seul état qui change). `failed` et
- * `unavailable` : le conseil n'a rien pu dire, pour toute la journée — quelle qu'en soit la cause,
- * et sans bouton « Réessayer » : le serveur ne relance pas le conseil le même jour.
+ * Today's advice. `pending`: still gathering (the only state that changes). `failed` and
+ * `unavailable`: the advice could say nothing for the whole day, whatever the cause,
+ * and with no « Réessayer » button: the server does not rerun the advice that day.
  */
 export function AdviceCard({ sentences, status }: AdviceCardProps) {
   const ready = status === "ready" && sentences !== null && sentences.length > 0;
@@ -22,7 +22,7 @@ export function AdviceCard({ sentences, status }: AdviceCardProps) {
       <h2 id="home-advice" className="text-lg font-medium">
         {t("home.advice.title")}
       </h2>
-      {/* Région vocale polie, toujours là : l'arrivée du conseil (ou son échec) est annoncée. */}
+      {/* Polite live region, always there: the arrival (or failure) of the advice is announced. */}
       <div aria-live="polite" className="flex flex-col gap-2">
         {ready ? (
           sentences.map((sentence, index) => <p key={`${index}-${sentence}`}>{sentence}</p>)

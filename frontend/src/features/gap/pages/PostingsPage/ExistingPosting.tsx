@@ -6,8 +6,8 @@ import { certainDuplicate } from "../../toView";
 import type { PostingCreatedOut } from "../../types";
 
 /**
- * Le même lien ou le même texte est déjà dans la liste (réponse 200) : l'avis « déjà ajoutée »
- * (doublon certain) puis le lien vers l'offre. Une analyse relancée est dite.
+ * The same link or text is already in the list (200 response): the « déjà ajoutée » notice
+ * (certain duplicate), then the link to the posting. A restarted analysis is said so.
  */
 export function ExistingPosting({ result }: { result: PostingCreatedOut }) {
   const { posting } = result;

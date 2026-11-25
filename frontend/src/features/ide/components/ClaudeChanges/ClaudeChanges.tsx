@@ -3,11 +3,11 @@ import { Button } from "@/shared/ui/button";
 import { ConflictCard } from "./ConflictCard";
 
 interface ClaudeChangesProps {
-  /** Le fichier ouvert dans l'éditeur. */
+  /** The file open in the editor. */
   file: string;
-  /** Les fichiers que Claude a changés et que l'éditeur a chargés tels quels. */
+  /** Files Claude changed that the editor loaded as they are. */
   notices: string[];
-  /** Les fichiers où Claude et toi avez changé : nom -> version de Claude. */
+  /** Files both Claude and you changed: name -> Claude's version. */
   conflicts: Record<string, string>;
   onDismiss: (file: string) => void;
   onKeepMine: (file: string) => void;
@@ -15,8 +15,8 @@ interface ClaudeChangesProps {
 }
 
 /**
- * Ce que Claude a fait aux fichiers pendant la séance : un message pour le fichier ouvert qu'il a
- * modifié (l'éditeur montre sa version), et une carte de choix pour chaque fichier en conflit.
+ * What Claude did to the files during the session: a message for the open file it
+ * changed (the editor shows its version), and a choice card for each conflicting file.
  */
 export function ClaudeChanges(props: ClaudeChangesProps) {
   const { file, notices, conflicts, onDismiss, onKeepMine, onTakeTheirs } = props;

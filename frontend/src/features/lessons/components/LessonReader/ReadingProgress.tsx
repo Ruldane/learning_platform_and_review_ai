@@ -4,11 +4,11 @@ import { t } from "@/shared/i18n/t";
 import { readingFraction } from "./readingFraction";
 
 interface ReadingProgressProps {
-  /** L'article dont on suit la lecture. */
+  /** The article being read. */
   targetRef: RefObject<HTMLElement | null>;
 }
 
-/** Fine barre collée en haut de page : avancement de la lecture de la leçon. */
+/** Thin bar stuck to the top of the page: lesson reading progress. */
 export function ReadingProgress({ targetRef }: ReadingProgressProps) {
   const [percent, setPercent] = useState(0);
 
@@ -20,7 +20,7 @@ export function ReadingProgress({ targetRef }: ReadingProgressProps) {
       setPercent(Math.round(readingFraction(rect, window.innerHeight) * 100));
     }
     update();
-    // `capture` : le défilement d'un conteneur interne ne remonte pas jusqu'à la fenêtre.
+    // `capture`: scrolling inside an inner container does not bubble up to the window.
     window.addEventListener("scroll", update, { capture: true, passive: true });
     window.addEventListener("resize", update);
     return () => {

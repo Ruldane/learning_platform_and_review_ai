@@ -4,7 +4,7 @@ import { errorMessage } from "@/shared/api/errors";
 import type { RunSource } from "@/shared/lib/runSource";
 import { validateGap } from "../api";
 
-/** « Je les maîtrise déjà » : prépare le quiz de validation puis ouvre sa page. */
+/** « Je les maîtrise déjà »: prepares the validation quiz, then opens its page. */
 export function useValidateGap(postingId: string, provider?: RunSource) {
   const navigate = useNavigate();
   const mutation = useMutation({

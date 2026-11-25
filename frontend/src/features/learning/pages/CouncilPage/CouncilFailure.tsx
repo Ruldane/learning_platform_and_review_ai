@@ -4,12 +4,12 @@ import { RetryCard } from "../../components/RetryCard";
 import type { useRetryCouncil } from "../../hooks/useRetryCouncil";
 
 interface CouncilFailureProps {
-  /** Message de `run.failed`, s'il est arrivé par le direct. */
+  /** Message of `run.failed`, if it arrived through the live feed. */
   message: string | null;
   retry: ReturnType<typeof useRetryCouncil>;
 }
 
-/** Le Conseil a échoué : la raison, puis « Relancer le Conseil » (il repart du début). */
+/** The Council failed: the reason, then « Relancer le Conseil » (restarts from the beginning). */
 export function CouncilFailure({ message, retry }: CouncilFailureProps) {
   return (
     <>

@@ -12,7 +12,7 @@ interface TeacherColumnProps {
   createSocket?: SocketFactory;
 }
 
-/** À droite : consommation, réglages, puis le professeur en chat (fil, saisie, propositions). */
+/** On the right: usage, settings, then the teacher chat (thread, input, proposals). */
 export function TeacherColumn({ ws, createSocket }: TeacherColumnProps) {
   const { preferences, usage, proposals } = ws;
   const chat = useTeacherChat(ws, createSocket);

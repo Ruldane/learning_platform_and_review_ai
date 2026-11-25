@@ -1,7 +1,7 @@
 /**
- * Types de vue de l'accueil : une copie réduite de ce que renvoient `GET /brief/today`
- * (`BriefOut`) et `GET /activity` (`ActivityPage`), avec les seuls champs que les composants
- * lisent. Les pages (8.13) convertissent les réponses vers ces formes.
+ * View types for home: a trimmed copy of what `GET /brief/today`
+ * (`BriefOut`) and `GET /activity` (`ActivityPage`) return, with only the fields components
+ * read. The pages (8.13) convert the responses into these shapes.
  */
 
 export interface BlockTaskView {
@@ -9,7 +9,7 @@ export interface BlockTaskView {
   minutes: number;
 }
 
-/** `BlockRubric` : la leçon du jour, ses tâches dues et leur total en minutes. */
+/** `BlockRubric`: today's lesson, its tasks due and their total in minutes. */
 export interface BlockView {
   moduleTitle: string;
   lessonTitle: string;
@@ -17,7 +17,7 @@ export interface BlockView {
   tasks: BlockTaskView[];
 }
 
-/** `ReminderItem` : une relance due. */
+/** `ReminderItem`: one reminder due. */
 export interface ReminderItemView {
   id: string;
   applicationId: string;
@@ -27,7 +27,7 @@ export interface ReminderItemView {
   dueOn: string;
 }
 
-/** `OfferItem` : une nouvelle offre du radar (score d'au moins 70). */
+/** `OfferItem`: a new radar offer (score of at least 70). */
 export interface OfferItemView {
   title: string | null;
   company: string | null;
@@ -36,7 +36,7 @@ export interface OfferItemView {
   gapPath?: string;
 }
 
-/** `WeekRubric` : l'avancement de la semaine du programme. */
+/** `WeekRubric`: the progress of the program's week. */
 export interface WeekView {
   doneMinutes: number;
   plannedMinutes: number;
@@ -45,7 +45,7 @@ export interface WeekView {
   tasksTotal: number;
 }
 
-/** `BriefResourceOut` : la ressource du jour. `published` : un jour ou un instant ISO. */
+/** `BriefResourceOut`: today's resource. `published`: a day or an ISO instant. */
 export interface ResourceView {
   title: string;
   domain: string;
@@ -54,12 +54,12 @@ export interface ResourceView {
   url: string;
 }
 
-/** `advice_status` : `failed` et `unavailable` sont définitifs pour la journée (aucun « Réessayer »). */
+/** `advice_status`: `failed` and `unavailable` are final for the day (no « Réessayer »). */
 export type AdviceStatus = "pending" | "ready" | "failed" | "unavailable";
 
 export type ActivityKind = "lesson" | "radar" | "brief" | "memory" | "project" | "job_failed";
 
-/** `ActivityItem` : `link` est une route du front. */
+/** `ActivityItem`: `link` is a front-end route. */
 export interface ActivityItemView {
   id: string;
   kind: ActivityKind;
@@ -70,7 +70,7 @@ export interface ActivityItemView {
   link: string | null;
 }
 
-/** Une notification de fond : un événement du fil d'activité que January n'a pas encore vu. */
+/** A background notification: an activity event that January has not seen yet. */
 export interface NoticeView {
   id: string;
   title: string;

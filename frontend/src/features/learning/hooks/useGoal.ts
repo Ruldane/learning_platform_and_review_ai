@@ -5,8 +5,8 @@ import { learningKeys } from "../queryKeys";
 const POLL_MS = 2000;
 
 /**
- * Un objectif (`GET /goals/{id}`). Une fois le parcours choisi, le programme se lance en tâche de
- * fond : `waitingForProgram` relit l'objectif toutes les 2 s jusqu'à ce que sa session apparaisse.
+ * A goal (`GET /goals/{id}`). Once a path is chosen, the program starts in a background
+ * task: `waitingForProgram` re-reads the goal every 2 s until its session appears.
  */
 export function useGoal(goalId: string, waitingForProgram = false) {
   return useQuery({

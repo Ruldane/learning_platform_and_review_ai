@@ -9,11 +9,11 @@ interface GoalInputFieldProps {
   value: string;
   disabled: boolean;
   onChange: (value: string) => void;
-  /** Réglages propres au champ (type, plage, mode de saisie). */
+  /** Field-specific settings (type, range, input mode). */
   input?: InputHTMLAttributes<HTMLInputElement>;
 }
 
-/** Un champ de saisie d'une ligne du formulaire d'objectif, avec son aide et son erreur. */
+/** A one-line input of the goal form, with its help and error. */
 export function GoalInputField({
   label,
   hint,

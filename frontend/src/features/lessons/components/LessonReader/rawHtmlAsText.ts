@@ -1,4 +1,4 @@
-/** Nœud Markdown (mdast) réduit à ce que ce greffon lit et écrit. */
+/** Markdown node (mdast) reduced to what this plugin reads and writes. */
 interface MdNode {
   type: string;
   value?: string;
@@ -6,7 +6,7 @@ interface MdNode {
   data?: { hProperties?: Record<string, unknown> };
 }
 
-/** Parents d'un bloc : un nœud `html` qui y figure est un bloc HTML, ailleurs du HTML en ligne. */
+/** Block parents: an `html` node found there is a raw HTML block, elsewhere it is inline HTML. */
 const FLOW_PARENTS = new Set(["root", "listItem", "blockquote", "footnoteDefinition"]);
 
 function textBlock(value: string): MdNode {
@@ -30,10 +30,10 @@ function rewrite(node: MdNode): void {
 }
 
 /**
- * Greffon remark : un bloc HTML brut devient un paragraphe de texte (échappé par React, jamais
- * interprété), comme le rendu PDF du back. Un bloc ouvert et jamais fermé (`<pre>` seul) avale la
- * suite de la leçon : le jeter ferait disparaître des sections entières. Le HTML en ligne reste
- * retiré (D89). `skipHtml` garde ce qui resterait.
+ * Remark plugin: a raw HTML block becomes a text paragraph (escaped by React, never
+ * interpreted), as in the backend's PDF. An unclosed block (a lone `<pre>`) swallows
+ * rest of the lesson: dropping it would make whole sections disappear. Inline HTML stays
+ * removed (D89). `skipHtml` keeps what would remain.
  */
 export function remarkRawHtmlAsText() {
   return (tree: unknown) => rewrite(tree as MdNode);

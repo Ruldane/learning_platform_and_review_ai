@@ -14,8 +14,8 @@ const SKILLS_PATH = "/skills";
 const POSTINGS_PATH = "/career/postings";
 
 /**
- * Les écarts (`/career/gaps`) : les 10 compétences qui manquent le plus souvent dans les
- * offres ajoutées, avec un lien vers la carte des compétences. Une compétence mène à la carte.
+ * Gaps (`/career/gaps`): the 10 skills most often missing from the
+ * postings added, with a link to the skills map. A skill leads to the map.
  */
 export function GapOverviewPage() {
   const navigate = useNavigate();

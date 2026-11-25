@@ -7,10 +7,10 @@ import type { RunSource } from "@/shared/lib/runSource";
 import { planGap, programOfSession } from "../api";
 import { gapKeys } from "../queryKeys";
 
-/** Ce que l'ajout au planning a donné : une replanification lancée ou déjà ouverte. */
+/** Outcome of adding to the plan: a replan started or already open. */
 export interface PlanOutcome {
   kind: "started" | "open";
-  /** Le programme concerné (pour le lien vers la replanification) ; `null` si introuvable. */
+  /** The program concerned (for the replan link); `null` if not found. */
   programId: string | null;
 }
 
@@ -40,9 +40,9 @@ function failureOf(error: unknown): PlanFailure {
 }
 
 /**
- * « Ajouter au planning » : lance la replanification pour les compétences cochées. Une
- * replanification déjà ouverte (409 `replan_open`) est rendue comme telle, avec son lien. Une
- * compétence qui n'est plus à ajouter (422) fait relire le tableau.
+ * « Ajouter au planning » starts the replan for the checked skills. An
+ * already open replan (409 `replan_open`) is shown as such, with its link. A
+ * skill no longer to add (422) reloads the table.
  */
 export function usePlanGap(postingId: string, onPlanned: () => void, provider?: RunSource) {
   const client = useQueryClient();
