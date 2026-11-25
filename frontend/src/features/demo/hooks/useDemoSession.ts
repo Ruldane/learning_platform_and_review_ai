@@ -6,7 +6,7 @@ import { useSessionStream } from "@/shared/realtime/useSessionStream";
 
 const FINISHED: readonly SessionStatus[] = ["completed", "failed", "cancelled", "expired"];
 
-/** Données et actions d'une session de démo, plus l'état de la confirmation d'annulation. */
+/** Data and actions of a demo session, plus the state of the cancel confirmation. */
 export function useDemoSession(sessionId: string, createSocket?: SocketFactory) {
   const stream = useSessionStream(sessionId, { createSocket });
   const actions = useSessionActions(sessionId);

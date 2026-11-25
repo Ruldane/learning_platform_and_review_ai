@@ -15,13 +15,13 @@ const LIST_PATH = "/career/cv";
 
 interface TemplatePageProps {
   pollMs?: number;
-  /** Ne sert qu'aux tests (faux WebSocket). */
+  /** Only used by the tests (fake WebSocket). */
   createSocket?: SocketFactory;
 }
 
 /**
- * Un modèle de CV (`/career/cv/templates/:templateId`) : le fil du Maquettiste, la comparaison avec
- * le CV d'origine, les polices remplacées et la question « Valider / Ajuster ».
+ * A CV template (`/career/cv/templates/:templateId`): the Maquettiste's thread, the comparison with
+ * the original CV, the replaced fonts and the « Valider / Ajuster » question.
  */
 export function TemplatePage({ pollMs = POLL_MS, createSocket }: TemplatePageProps) {
   const { templateId = "" } = useParams();

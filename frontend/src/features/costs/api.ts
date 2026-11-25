@@ -2,20 +2,20 @@ import { api } from "@/shared/api/client";
 import { unwrap } from "@/shared/api/errors";
 import type { CostWindow } from "./components/viewTypes";
 
-/** `GET /costs?days=` : 7, 30 ou 90 jours locaux (toute autre durée : 422). */
+/** `GET /costs?days=`: 7, 30 or 90 local days (any other value: 422). */
 export async function fetchCosts(days: CostWindow, signal?: AbortSignal) {
   return unwrap(await api.GET("/costs", { params: { query: { days } }, signal }));
 }
 
 export interface CallsQuery {
-  /** `next_before` de la page précédente. */
+  /** `next_before` of the previous page. */
   before: string | null;
   limit: number;
   agent: string | null;
   graph: string | null;
 }
 
-/** `GET /costs/calls` : du plus récent au plus ancien, `next_before` pour la suite. */
+/** `GET /costs/calls`: newest first, `next_before` for the next page. */
 export async function fetchAgentCalls(
   { before, limit, agent, graph }: CallsQuery,
   signal?: AbortSignal,

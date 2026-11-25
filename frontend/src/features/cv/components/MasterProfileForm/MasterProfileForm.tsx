@@ -10,7 +10,7 @@ import { ProfileSections } from "./ProfileSections";
 
 interface MasterProfileFormProps {
   profile: MasterProfileView;
-  /** Textes des lignes que la vérification a retirées du brouillon. */
+  /** Texts of the lines that the check removed from the draft. */
   dropped: string[];
   saving: boolean;
   error: ProfileSaveErrorView | null;
@@ -18,9 +18,9 @@ interface MasterProfileFormProps {
 }
 
 /**
- * Le profil maître à relire et corriger : neuf sections repliables, ajout et retrait de lignes,
- * sources visibles en badges. « Enregistrer » renvoie le profil complet ; les erreurs du serveur
- * (422) se placent sous leur champ par leur chemin. Un nouveau `profile` remplace le brouillon.
+ * The master profile to review and correct: nine collapsible sections, adding and removing rows,
+ * sources shown as badges. « Enregistrer » returns the full profile; server errors (422) are
+ * placed under their field by path. A new `profile` replaces the draft.
  */
 export function MasterProfileForm({
   profile,
@@ -30,7 +30,7 @@ export function MasterProfileForm({
   onSave,
 }: MasterProfileFormProps) {
   const [draft, setDraft] = useState(profile);
-  // Le brouillon tel qu'il est parti : c'est sur lui que se lisent les indices d'un 422.
+  // The draft as it was sent: the indices of a 422 are read against it.
   const [sent, setSent] = useState(profile);
   const [source, setSource] = useState(profile);
   if (source !== profile) {

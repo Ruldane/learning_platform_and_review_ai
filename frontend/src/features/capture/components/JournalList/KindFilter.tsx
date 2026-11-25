@@ -13,12 +13,12 @@ const KINDS: readonly JournalKindView[] = [
 ];
 
 interface KindFilterProps {
-  /** `null` : tous les types. */
+  /** `null`: all types. */
   value: JournalKindView | null;
   onChange: (kind: JournalKindView | null) => void;
 }
 
-/** Le filtre par type d'entrée : une liste déroulante native (clavier et lecteurs d'écran d'office). */
+/** The filter by entry type: a native dropdown (keyboard and screen readers by default). */
 export function KindFilter({ value, onChange }: KindFilterProps) {
   const id = useId();
   return (

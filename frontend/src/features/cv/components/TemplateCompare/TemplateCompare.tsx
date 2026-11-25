@@ -7,22 +7,22 @@ import { ScoreSummary } from "./ScoreSummary";
 import { SideBySide } from "./SideBySide";
 
 interface TemplateCompareProps {
-  /** Les images des pages du CV d'origine. */
+  /** Images of the pages of the original CV. */
   originalPages: string[];
-  /** Les images des pages du modèle recréé. */
+  /** Images of the pages of the recreated template. */
   renderPages: string[];
-  /** Score de ressemblance de 0 à 100, ou `null` s'il n'est pas calculé. */
+  /** Resemblance score from 0 to 100, or `null` when it is not computed. */
   score: number | null;
   zones: ZoneView[];
-  /** Le nombre d'ajustements faits par le Maquettiste. */
+  /** The number of adjustments made by the Maquettiste. */
   passes: number;
 }
 
 type Mode = "side" | "overlay";
 
 /**
- * Le CV d'origine et le modèle recréé : côte à côte (par défaut) ou superposés avec un curseur, le
- * score de ressemblance et les zones qui diffèrent, dites en phrases.
+ * The original CV and the recreated template: side by side (default) or overlaid with a slider, the
+ * resemblance score and the differing zones, described in sentences.
  */
 export function TemplateCompare({
   originalPages,

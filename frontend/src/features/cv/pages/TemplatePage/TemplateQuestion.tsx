@@ -7,7 +7,7 @@ import { canAnswer, type InterruptItem } from "@/shared/session-ui";
 export const TEMPLATE_QUESTION = "cv_template";
 export const MAX_INSTRUCTION = 500;
 
-/** Une consigne d'ajustement ne dépasse jamais 500 caractères. */
+/** An adjustment instruction is never longer than 500 characters. */
 function capped(value: unknown): unknown {
   if (typeof value !== "object" || value === null || !("answers" in value)) return value;
   const { answers } = value;
@@ -20,9 +20,9 @@ function capped(value: unknown): unknown {
 }
 
 /**
- * La question du Maquettiste : « Valider », « Ajuster » avec une consigne, « Recommencer la capture ».
- * Une consigne saisie ne change pas « Valider » ni « Recommencer » en ajustement ; « Ajuster » sans
- * consigne n'envoie rien et dit quoi faire (le back reposerait la même question).
+ * The Maquettiste's question: « Valider », « Ajuster » + instruction, « Recommencer la capture ».
+ * An entered instruction keeps « Valider » and « Recommencer » as is; « Ajuster » without
+ * an instruction sends nothing and says what to do (the back end would ask the same question).
  */
 export function TemplateQuestion({ item, run }: { item: InterruptItem; run: Run }) {
   const [missing, setMissing] = useState(false);

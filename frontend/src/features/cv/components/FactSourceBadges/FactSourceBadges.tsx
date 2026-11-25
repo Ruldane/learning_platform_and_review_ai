@@ -7,7 +7,10 @@ interface FactSourceBadgesProps {
 
 const ORDER: FactSourceView[] = ["cv", "linkedin", "note", "january"];
 
-/** D'où vient un fait du profil : « CV », « LinkedIn », « Note », « Toi ». Rien sans source. */
+/**
+ * Where a profile fact comes from: « CV », « LinkedIn », « Note », « Toi ».
+ * Nothing is shown without a source.
+ */
 export function FactSourceBadges({ sources }: FactSourceBadgesProps) {
   const shown = ORDER.filter((source) => sources.includes(source));
   if (shown.length === 0) return null;

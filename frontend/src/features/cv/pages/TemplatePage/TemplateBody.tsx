@@ -15,7 +15,7 @@ interface TemplateBodyProps {
   createSocket?: SocketFactory;
 }
 
-/** Ce que le modèle dit de lui-même : l'état en une phrase. */
+/** What the template says about itself: its state in one sentence. */
 const statusKey = (status: TemplateOut["status"]) => {
   if (status === "capturing") return "cv.templatePage.capturing";
   if (status === "review") return "cv.templatePage.review";
@@ -23,7 +23,7 @@ const statusKey = (status: TemplateOut["status"]) => {
   return "cv.templatePage.ready";
 };
 
-/** Les pages du CV d'origine et, dès la première passe, celles du rendu courant. */
+/** The pages of the original CV and, from the first pass, those of the current rendering. */
 function comparePages(template: TemplateOut) {
   const url = (kind: "original" | "render", pass: number) => (n: number) =>
     templatePageUrl(template.id, kind, n, pass);
@@ -35,8 +35,8 @@ function comparePages(template: TemplateOut) {
 }
 
 /**
- * Le modèle : le fil du Maquettiste, la comparaison avec le CV d'origine (mise à jour à chaque
- * passe), les polices remplacées, et, quand il est prêt, de quoi l'utiliser.
+ * The template: the Maquettiste's thread, the comparison with the original CV (updated at each
+ * pass), the replaced fonts and, once it is ready, how to use it.
  */
 export function TemplateBody({ template, onChange, createSocket }: TemplateBodyProps) {
   const pages = comparePages(template);

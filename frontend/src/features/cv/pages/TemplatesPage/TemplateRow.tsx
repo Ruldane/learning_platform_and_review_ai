@@ -19,7 +19,7 @@ interface TemplateRowProps {
   onActivate: (templateId: string) => void;
 }
 
-/** Une ligne de la liste : nom, état, ressemblance, pages ; « Ouvrir », et « Utiliser ce modèle » s'il est prêt. */
+/** Row: name, status, similarity, pages; « Ouvrir » and « Utiliser ce modèle » when ready. */
 export function TemplateRow({ template, busy, onActivate }: TemplateRowProps) {
   const score =
     template.score === null

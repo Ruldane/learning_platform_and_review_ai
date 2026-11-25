@@ -5,8 +5,8 @@ import { PostingPicker } from "../../components/PostingPicker";
 import { usePostingTitles } from "../../hooks/useVersions";
 
 /**
- * Sur la page des modèles : choisir une offre analysée et ouvrir sa revue
- * (`/career/cv/reviews/new/:postingId`), qui mène au CV généré pour elle.
+ * On the templates page: pick an analysed posting and open its review
+ * (`/career/cv/reviews/new/:postingId`), which leads to the CV generated for it.
  */
 export function TemplatePostingPicker() {
   const navigate = useNavigate();

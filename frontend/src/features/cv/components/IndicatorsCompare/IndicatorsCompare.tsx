@@ -4,15 +4,15 @@ import type { IndicatorsView } from "../viewTypes";
 import { ChecksTable } from "./ChecksTable";
 
 interface IndicatorsCompareProps {
-  /** Les indicateurs du CV d'origine. */
+  /** The indicators of the original CV. */
   before: IndicatorsView;
-  /** Ceux du CV généré, ou `null` tant qu'il n'existe pas. */
+  /** Those of the generated CV, or `null` until it exists. */
   after: IndicatorsView | null;
 }
 
 /**
- * Les deux indicateurs du CV avant et après : la couverture des exigences en jauge, ce qui reste à
- * couvrir, et les contrôles de lisibilité en tableau.
+ * The two indicators of the CV before and after: the coverage of requirements as a gauge,
+ * what remains to cover, and the readability checks as a table.
  */
 export function IndicatorsCompare({ before, after }: IndicatorsCompareProps) {
   const missing = (after ?? before).missing;

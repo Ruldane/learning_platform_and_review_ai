@@ -2,7 +2,7 @@ import { useId } from "react";
 import { t } from "@/shared/i18n/t";
 import { fieldClass } from "@/shared/ui/fieldClass";
 
-/** Le nom du modèle (obligatoire, 120 caractères au plus). */
+/** The template name (required, 120 characters at most). */
 export function NameField({
   value,
   disabled,

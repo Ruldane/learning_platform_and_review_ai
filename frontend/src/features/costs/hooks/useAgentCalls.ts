@@ -5,12 +5,12 @@ import type { CallView } from "../components/viewTypes";
 import { costsKeys } from "../queryKeys";
 import { toCallView } from "../toView";
 
-/** Appels par page (le contrat accepte 1 à 100 ; 50 par défaut, P16). */
+/** Calls per page (the contract accepts 1 to 100; 50 by default, P16). */
 export const CALLS_PAGE = 50;
 
 /**
- * Le journal, page après page : la suivante part de `next_before` de la précédente. Les filtres
- * font partie de la clé : en changer repart de la première page, sans curseur.
+ * The journal, page after page: the next one starts from the previous `next_before`. The filters
+ * are part of the key: changing them starts again from the first page, without a cursor.
  */
 export function useAgentCalls(agent: string | null, graph: string | null) {
   const query = useInfiniteQuery({
@@ -20,7 +20,7 @@ export function useAgentCalls(agent: string | null, graph: string | null) {
       fetchAgentCalls({ before: pageParam, limit: CALLS_PAGE, agent, graph }, signal),
     getNextPageParam: (last) => last.next_before ?? undefined,
     staleTime: 0,
-    // Revenir à un filtre déjà vu repart de la première page (D188 n° 6) : aucune page gardée.
+    // Going back to an already seen filter starts from the first page (D188 n° 6): no page kept.
     gcTime: 0,
   });
   const calls = useMemo<CallView[]>(

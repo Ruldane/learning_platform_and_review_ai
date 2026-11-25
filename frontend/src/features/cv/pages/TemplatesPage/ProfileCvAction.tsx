@@ -1,7 +1,7 @@
 import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 
-/** « Utiliser le CV de mon profil » : crée le modèle depuis le CV du dernier import du profil. */
+/** « Utiliser le CV de mon profil »: creates the template from the profile's last CV import. */
 export function ProfileCvAction({ disabled, onUse }: { disabled: boolean; onUse: () => void }) {
   return (
     <div className="flex flex-col gap-1">

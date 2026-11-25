@@ -1,12 +1,12 @@
 import { t } from "@/shared/i18n/t";
 import type { ZoneView } from "../viewTypes";
 
-/** En dessous de cet écart (en points d'encre), une zone n'est pas citée. */
+/** Below this gap (in ink points), a zone is not cited. */
 const MIN_GAP_POINTS = 5;
-/** Au plus quatre phrases : les plus grands écarts. */
+/** At most four sentences: the largest gaps. */
 const MAX_SENTENCES = 4;
 
-/** Les écarts de mise en page en phrases françaises, du plus grand au plus petit. */
+/** Layout gaps as French sentences, from largest to smallest. */
 export function zoneSentences(zones: ZoneView[]): string[] {
   return zones
     .map((zone) => ({ zone, points: Math.round((zone.render - zone.original) * 100) }))

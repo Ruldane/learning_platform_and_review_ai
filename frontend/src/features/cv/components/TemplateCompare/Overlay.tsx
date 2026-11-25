@@ -7,7 +7,7 @@ interface OverlayProps {
   renderPages: string[];
 }
 
-/** L'original et le modèle recréé superposés : un curseur (clavier compris) partage la page. */
+/** Original and recreated template overlaid: a slider (keyboard included) splits the page. */
 export function Overlay({ originalPages, renderPages }: OverlayProps) {
   const id = useId();
   const [position, setPosition] = useState(50);

@@ -7,8 +7,8 @@ import { gapKeys } from "../queryKeys";
 import type { PostingCreatedOut } from "../types";
 
 /**
- * Ajoute une offre (lien ou texte). La réponse dit si l'offre est nouvelle (`created`) ou si c'est
- * une offre déjà ajoutée (même lien ou même texte). La liste est relue après l'envoi.
+ * Adds a posting (link or text). The response says whether the posting is new (`created`) or it is
+ * a posting already added (same link or same text). The list is re-read after submission.
  */
 export function useCreatePosting(onDone: (result: PostingCreatedOut) => void) {
   const client = useQueryClient();

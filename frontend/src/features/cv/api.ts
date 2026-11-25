@@ -7,20 +7,20 @@ const templatePath = (templateId: string) => ({ params: { path: { template_id: t
 const reviewPath = (reviewId: string) => ({ params: { path: { review_id: reviewId } } });
 const versionPath = (versionId: string) => ({ params: { path: { version_id: versionId } } });
 
-/** `GET /profile` : la version validée, le brouillon s'il est plus récent, la capture en cours. */
+/** `GET /profile`: the validated version, the draft if it is newer, the capture in progress. */
 export async function fetchProfile(signal?: AbortSignal) {
   return unwrap(await api.GET("/profile", { signal }));
 }
 
-/** `GET /profile/versions` : toutes les versions, la plus récente d'abord. */
+/** `GET /profile/versions`: all versions, newest first. */
 export async function fetchProfileVersions(signal?: AbortSignal) {
   return unwrap(await api.GET("/profile/versions", { signal }));
 }
 
 /**
- * `PUT /profile` : une nouvelle version validée. `baseVersion` est la dernière version relue
- * (`null` s'il n'y en a aucune) ; 409 `profile_conflict` sinon, 422 `validation_error`
- * (`details.fields`, jamais la valeur).
+ * `PUT /profile`: a new validated version. `baseVersion` is the last version read
+ * (`null` if there is none); 409 `profile_conflict` otherwise, 422 `validation_error`
+ * (`details.fields`, never the value).
  */
 export async function putProfile(data: MasterProfileData, baseVersion: number | null) {
   return unwrap(await api.PUT("/profile", { body: { base_version: baseVersion, data } }));
@@ -33,7 +33,7 @@ export interface ProfileImport {
 }
 
 /**
- * `POST /profile/import` (202) : multipart, le navigateur pose la frontière. 409
+ * `POST /profile/import` (202): multipart, the browser sets the boundary. 409
  * `capture_in_progress`, 413 `file_too_large`, 415 `unsupported_file_type`.
  */
 export async function importProfile({ cv, linkedin, note }: ProfileImport, source?: RunSource) {
@@ -41,7 +41,7 @@ export async function importProfile({ cv, linkedin, note }: ProfileImport, sourc
   form.append("cv", cv);
   if (linkedin) form.append("linkedin", linkedin);
   if (note) form.append("note", note);
-  // Le contrat type un fichier comme une chaîne : le corps réel est le formulaire.
+  // The contract types a file as a string: the real body is the form.
   return unwrap(
     await api.POST("/profile/import", {
       body: { cv: "" },
@@ -51,12 +51,12 @@ export async function importProfile({ cv, linkedin, note }: ProfileImport, sourc
   );
 }
 
-/** `GET /cv/templates` : les modèles non archivés, le plus récent d'abord. */
+/** `GET /cv/templates`: the unarchived templates, newest first. */
 export async function fetchTemplates(signal?: AbortSignal) {
   return unwrap(await api.GET("/cv/templates", { signal }));
 }
 
-/** `GET /cv/templates/{id}` : le modèle, ses polices remplacées et ses écarts de mise en page. */
+/** `GET /cv/templates/{id}`: the template, its replaced fonts and its layout gaps. */
 export async function fetchTemplate(templateId: string, signal?: AbortSignal) {
   return unwrap(
     await api.GET("/cv/templates/{template_id}", { ...templatePath(templateId), signal }),
@@ -65,14 +65,14 @@ export async function fetchTemplate(templateId: string, signal?: AbortSignal) {
 
 export interface TemplateSource {
   name: string;
-  /** Un PDF envoyé, ou l'identifiant d'un document déjà importé : l'un des deux. */
+  /** A PDF sent, or the identifier of a document already imported: one of the two. */
   file?: File;
   documentId?: string;
 }
 
 /**
- * `POST /cv/templates` (202). 409 `vision_unavailable` et `capture_in_progress`, 413, 415, 422
- * `pdf_unreadable` et `validation_error`, 404 `document_not_found`.
+ * `POST /cv/templates` (202). 409 `vision_unavailable` and `capture_in_progress`, 413, 415, 422
+ * `pdf_unreadable` and `validation_error`, 404 `document_not_found`.
  */
 export async function createTemplate(
   { name, file, documentId }: TemplateSource,
@@ -91,24 +91,25 @@ export async function createTemplate(
   );
 }
 
-/** `POST /cv/templates/{id}/activate` (204) : le seul modèle actif ; 409 `template_not_ready`. */
+/** `POST /cv/templates/{id}/activate` (204): the only active template; 409 `template_not_ready`. */
 export async function activateTemplate(templateId: string): Promise<void> {
   unwrap(await api.POST("/cv/templates/{template_id}/activate", templatePath(templateId)));
 }
 
-/** `GET /documents` : les documents importés (pour réutiliser un PDF déjà envoyé). */
+/** `GET /documents`: the imported documents (to reuse a PDF already sent). */
 export async function fetchDocuments(signal?: AbortSignal) {
   return unwrap(await api.GET("/documents", { signal }));
 }
 
-/** `GET /postings` : les offres, pour nommer les versions de CV. */
+/** `GET /postings`: the postings, to name the CV versions. */
 export async function fetchPostingTitles(signal?: AbortSignal) {
   return unwrap(await api.GET("/postings", { signal }));
 }
 
 /**
- * `POST /cv/reviews` (202). 404 `posting_not_found` ; 409 `posting_not_ready`, `profile_required`,
- * `template_required`, `review_in_progress` (`details.review_id`) ; 503 `engine_unavailable`.
+ * `POST /cv/reviews` (202). 404 `posting_not_found`; 409 `posting_not_ready`,
+ * `profile_required`, `template_required`, `review_in_progress` (`details.review_id`);
+ * 503 `engine_unavailable`.
  */
 export async function startReview(postingId: string, source?: RunSource) {
   return unwrap(
@@ -119,7 +120,9 @@ export async function startReview(postingId: string, source?: RunSource) {
   );
 }
 
-/** `GET /cv/reviews/{id}` : la revue, ses modifications, ses versions ; 404 `review_not_found`. */
+/**
+ * `GET /cv/reviews/{id}`: the review, its modifications and versions; 404 `review_not_found`.
+ */
 export async function fetchReview(reviewId: string, signal?: AbortSignal) {
   return unwrap(await api.GET("/cv/reviews/{review_id}", { ...reviewPath(reviewId), signal }));
 }
@@ -131,9 +134,9 @@ export interface Decision {
 }
 
 /**
- * `PATCH /cv/modifications/{id}` : accepte ou refuse ; `after` : texte réécrit, revalidé ; `confirm`
- * pour une modification « à confirmer ». 409 `review_closed`, `confirmation_required`,
- * `fact_not_found`, `profile_conflict` ; 422 `keyword_not_in_profile`.
+ * `PATCH /cv/modifications/{id}`: accepts or refuses; `after`: rewritten text, revalidated;
+ * `confirm` for a modification marked « à confirmer ». 409 `review_closed`,
+ * `confirmation_required`, `fact_not_found`, `profile_conflict`; 422 `keyword_not_in_profile`.
  */
 export async function decideModification(modificationId: string, decision: Decision) {
   return unwrap(
@@ -144,7 +147,10 @@ export async function decideModification(modificationId: string, decision: Decis
   );
 }
 
-/** `PATCH /cv/reviews/{id}/modifications` : décision groupée ; les « à confirmer » reviennent dans `skipped`. */
+/**
+ * `PATCH /cv/reviews/{id}/modifications`: a grouped decision; the « à confirmer » ones
+ * come back in `skipped`.
+ */
 export async function decideBulk(reviewId: string, ids: string[], status: Decision["status"]) {
   return unwrap(
     await api.PATCH("/cv/reviews/{review_id}/modifications", {
@@ -155,8 +161,9 @@ export async function decideBulk(reviewId: string, ids: string[], status: Decisi
 }
 
 /**
- * `POST /cv/reviews/{id}/generate` (202) : crée la version et reprend la question de sortie. 409
- * `review_closed`, `generation_in_progress` (`details.version_id`), `review_not_waiting` ; 503.
+ * `POST /cv/reviews/{id}/generate` (202): creates the version and resumes the output question.
+ * 409 `review_closed`, `generation_in_progress` (`details.version_id`), `review_not_waiting`;
+ * 503.
  */
 export async function generateCv(reviewId: string, allowExtraPages: boolean) {
   return unwrap(
@@ -167,7 +174,7 @@ export async function generateCv(reviewId: string, allowExtraPages: boolean) {
   );
 }
 
-/** `GET /cv/versions` : toutes les versions de CV, la plus récente d'abord. */
+/** `GET /cv/versions`: all CV versions, newest first. */
 export async function fetchVersions(signal?: AbortSignal) {
   return unwrap(await api.GET("/cv/versions", { signal }));
 }

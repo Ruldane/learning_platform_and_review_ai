@@ -2,25 +2,25 @@ import { DebateFeed, InterruptCard } from "@/shared/session-ui";
 import type { FeedItems } from "../viewTypes";
 import { CaptureTextCard } from "./CaptureTextCard";
 
-/** La question d'un lien illisible, qui demande le texte (le contrat l'appelle `capture_text`). */
+/** The question for an unreadable link, asking for its text (contract: `capture_text`). */
 const CAPTURE_TEXT = "capture_text";
 
 interface CaptureFeedProps {
   items: FeedItems;
-  /** La question `interruptId` attend-elle encore une réponse ? */
+  /** Is the `interruptId` question still waiting for an answer? */
   isAwaiting: (interruptId: string) => boolean;
-  /** Une réponse est en route : les cartes sont désactivées. */
+  /** An answer is on its way: the cards are disabled. */
   pending: boolean;
   onAnswer: (interruptId: string, value: unknown) => void;
-  /** Le brouillon du texte collé (`capture_text`), gardé à la fermeture du dialogue. */
+  /** The pasted text draft (`capture_text`), kept when the dialog closes. */
   textDraft: string;
   onTextDraft: (text: string) => void;
 }
 
 /**
- * Le fil d'une capture : les lignes de résumé et les concepts de l'Archiviste, puis ses questions.
- * `capture_text` : une zone de texte (lien illisible) ; `capture_task` et `capture_cards` : oui ou
- * non, par la carte commune.
+ * The thread of a capture: the Archivist's summary lines and concepts, then its questions.
+ * `capture_text`: a text area (unreadable link); `capture_task` and `capture_cards`: yes or
+ * no, through the shared card.
  */
 export function CaptureFeed(props: CaptureFeedProps) {
   const { items, isAwaiting, pending, onAnswer, textDraft, onTextDraft } = props;

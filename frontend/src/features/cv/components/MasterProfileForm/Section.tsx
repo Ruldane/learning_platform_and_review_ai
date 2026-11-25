@@ -3,15 +3,15 @@ import { FieldErrorsContext, hasErrorUnder } from "./fieldErrors";
 
 interface SectionProps {
   title: string;
-  /** Nombre de lignes, pour les sections en liste. */
+  /** Number of rows, for list sections. */
   count?: number;
-  /** Préfixe des chemins d'erreur de la section : elle reste ouverte tant qu'une erreur y est. */
+  /** Prefix of the section's error paths: it stays open while an error is in it. */
   path: string;
   defaultOpen?: boolean;
   children: ReactNode;
 }
 
-/** Une section repliable du formulaire : un bouton d'ouverture, le contenu dessous. */
+/** A collapsible form section: an open button, the content below it. */
 export function Section({ title, count, path, defaultOpen = false, children }: SectionProps) {
   const [open, setOpen] = useState(defaultOpen);
   const id = useId();

@@ -4,7 +4,7 @@ import { canPlan, isAddable, type GapRowView } from "../viewTypes";
 interface GapRowProps {
   row: GapRowView;
   checked: boolean;
-  /** La case est grisée : la limite de sélection est atteinte (ou un ajout est en cours). */
+  /** The box is greyed out: the selection limit is reached (or an add is in progress). */
   locked: boolean;
   onToggle: (skill: string) => void;
 }

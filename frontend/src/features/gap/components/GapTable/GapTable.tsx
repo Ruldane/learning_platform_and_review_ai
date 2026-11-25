@@ -7,14 +7,14 @@ import { GapTableHead } from "./GapTableHead";
 
 interface GapTableProps {
   rows: GapRowView[];
-  /** Les compétences cochées pour l'ajout au planning. */
+  /** The skills checked for adding to the planning. */
   selected: string[];
   onToggle: (skill: string) => void;
   onAddToPlan: () => void;
-  /** « Je les maîtrise déjà » : un quiz de validation pour les compétences cochées. */
+  /** « Je les maîtrise déjà »: a validation quiz for the checked skills. */
   onValidate?: () => void;
   launchOptions?: ReactNode;
-  /** L'ajout au planning est en route. */
+  /** Adding to the planning is in progress. */
   adding: boolean;
 }
 

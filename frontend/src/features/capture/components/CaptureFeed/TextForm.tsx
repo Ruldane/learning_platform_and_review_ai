@@ -13,12 +13,12 @@ interface TextFormProps {
   interrupt: QuestionView;
   disabled: boolean;
   onAnswer: (value: unknown) => void;
-  /** Le texte saisi (gardé hors du dialogue) ; vidé à l'envoi et à « Abandonner ». */
+  /** The typed text (kept outside the dialog); cleared on send and on « Abandonner ». */
   text: string;
   onText: (text: string) => void;
 }
 
-/** La zone de texte (taille et libellé du contrat), « Envoyer le texte » et « Abandonner ». */
+/** Text area (size and label from the contract), « Envoyer le texte » and « Abandonner ». */
 export function TextForm({ interrupt, disabled, onAnswer, text, onText }: TextFormProps) {
   const id = useId();
   const field = interrupt.fields?.find((item) => item.id === FIELD);

@@ -1,4 +1,4 @@
-/** Les trois fenêtres du rapport (jours locaux, aujourd'hui compris). */
+/** The three report windows (local days, today included). */
 export const COST_WINDOWS = [7, 30, 90] as const;
 export type CostWindow = (typeof COST_WINDOWS)[number];
 
@@ -10,11 +10,11 @@ export interface CostTotalsView {
   estimatedCalls: number;
 }
 
-/** Une ligne d'un tableau : `key` brut (jour, graphe, agent, modèle) et son libellé en français. */
+/** A table row: the raw `key` (day, graph, agent, model) and its French label. */
 export interface CostRowView extends CostTotalsView {
   key: string;
   label: string;
-  /** La couleur de l'agent (jamais le seul signal : le nom est écrit). */
+  /** The agent's colour (never the only signal: the name is written too). */
   color?: string;
 }
 
@@ -42,6 +42,6 @@ export interface CallView {
   costUsd: number;
   estimated: boolean;
   sessionId: string | null;
-  /** L'écran du parcours, quand on en connaît un. */
+  /** The graph's screen, when one is known. */
   screenPath: string | null;
 }

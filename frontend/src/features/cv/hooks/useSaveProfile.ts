@@ -6,9 +6,9 @@ import { cvKeys } from "../queryKeys";
 import { fromProfileView } from "../profileView";
 
 /**
- * Valide le profil : `PUT /profile` avec `base_version`, la dernière version relue. Un 409
- * `profile_conflict` ou un 422 revient en `error` (message, et texte par champ) ; le brouillon
- * saisi n'est pas perdu.
+ * Validates the profile: `PUT /profile` with `base_version`, the last reloaded version. A 409
+ * `profile_conflict` or a 422 comes back as `error` (message, and text per field); the draft
+ * entered is not lost.
  */
 export function useSaveProfile(baseVersion: number | null, onSaved: (version: number) => void) {
   const client = useQueryClient();

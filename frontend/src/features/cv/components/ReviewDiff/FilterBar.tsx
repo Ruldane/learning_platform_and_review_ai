@@ -10,7 +10,7 @@ const FILTERS: { value: Filter; label: "all" | "todo" | "confirm" }[] = [
   { value: "confirm", label: "confirm" },
 ];
 
-/** Une modification est « à décider » tant qu'elle est proposée ou à confirmer. */
+/** A change is « à décider » while it is proposed or waiting to be confirmed. */
 export function matches(mod: ModificationView, filter: Filter): boolean {
   if (filter === "confirm") return mod.status === "to_confirm";
   if (filter === "todo") return mod.status === "proposed" || mod.status === "to_confirm";
@@ -23,7 +23,7 @@ interface FilterBarProps {
   onChange: (filter: Filter) => void;
 }
 
-/** Les trois filtres, avec le nombre de modifications de chacun. */
+/** The three filters, with the number of changes for each. */
 export function FilterBar({ mods, filter, onChange }: FilterBarProps) {
   return (
     <div role="group" aria-label={t("cv.review.filters")} className="flex flex-wrap gap-2">

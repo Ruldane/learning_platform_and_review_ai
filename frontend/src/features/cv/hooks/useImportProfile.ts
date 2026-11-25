@@ -4,7 +4,7 @@ import { importProfile, type ProfileImport } from "../api";
 import { cvErrorMessage } from "../errors";
 import { cvKeys } from "../queryKeys";
 
-/** `POST /profile/import` : après l'envoi, le profil est relu (il porte la session de lecture). */
+/** `POST /profile/import`: after sending, the profile is reloaded (it has the reading session). */
 export function useImportProfile() {
   const client = useQueryClient();
   const provider = useLaunchSource();

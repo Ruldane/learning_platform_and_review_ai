@@ -9,17 +9,17 @@ interface RowListProps<T extends { sources: FactSourceView[] }> {
   items: T[];
   onChange: (items: T[]) => void;
   blank: () => T;
-  /** « Expérience 2 » : nom de la ligne, légende de son groupe. */
+  /** « Expérience 2 »: the row name, the legend of its group. */
   rowName: (n: number) => string;
   addLabel: string;
   removeLabel: (n: number) => string;
-  /** Les champs de la ligne `index` ; `patch` en change certains sans toucher aux autres. */
+  /** The fields of row `index`; `patch` changes some of them without touching the others. */
   children: (item: T, index: number, patch: (changes: Partial<T>) => void) => ReactNode;
 }
 
 /**
- * Une liste de lignes du profil (expériences, formations, compétences…) : chaque ligne est un
- * groupe nommé avec ses sources en badges et son bouton « Retirer » ; « Ajouter » en pose une vide.
+ * A list of profile rows (experiences, education, skills…): each row is a named group with
+ * its sources as badges and its « Retirer » button; « Ajouter » adds an empty one.
  */
 export function RowList<T extends { sources: FactSourceView[] }>({
   items,

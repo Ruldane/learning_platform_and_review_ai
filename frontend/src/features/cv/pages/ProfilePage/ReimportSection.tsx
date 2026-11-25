@@ -3,7 +3,7 @@ import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 import { ImportPanel } from "./ImportPanel";
 
-/** « Importer d'autres documents » : rouvre le formulaire d'import sous un profil déjà là. */
+/** « Importer d'autres documents »: reopens the import form under an existing profile. */
 export function ReimportSection() {
   const [open, setOpen] = useState(false);
   return (

@@ -8,15 +8,15 @@ import { ProfileCvAction } from "./ProfileCvAction";
 import { useTemplateForm } from "./useTemplateForm";
 
 /**
- * Créer un modèle : un nom, puis un PDF envoyé ou un PDF déjà importé. Un refus se dit en français ;
- * quand le modèle de vision manque (409), un lien mène aux réglages.
+ * Create a template: a name, then an uploaded or already imported PDF. A refusal is in French;
+ * when the vision model is missing (409), a link leads to the settings.
  */
 export function TemplateCreateForm({
   onCreated,
   profileDocumentId = null,
 }: {
   onCreated: (templateId: string) => void;
-  /** Le CV du dernier import du profil, s'il est encore là : l'action « Utiliser le CV de mon profil ». */
+  /** The profile's last CV import, if any: the « Utiliser le CV de mon profil » action. */
   profileDocumentId?: string | null;
 }) {
   const form = useTemplateForm(onCreated);

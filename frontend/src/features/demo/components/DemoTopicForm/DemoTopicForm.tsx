@@ -6,7 +6,7 @@ import { Button } from "@/shared/ui/button";
 import { fieldClass } from "@/shared/ui/fieldClass";
 import { InlineError } from "@/shared/ui/states/InlineError";
 
-/** Longueur minimale du sujet acceptée par le graphe `demo_debate` (côté serveur : `min_length=3`). */
+/** Minimum topic length accepted by the `demo_debate` graph (server side: `min_length=3`). */
 const MIN_TOPIC_LENGTH = 3;
 
 interface DemoTopicFormProps {
@@ -15,7 +15,7 @@ interface DemoTopicFormProps {
   onSubmit: (topic: string, source?: RunSource) => void;
 }
 
-/** Formulaire de lancement de la démo : un sujet de débat. */
+/** Demo launch form: a debate topic. */
 export function DemoTopicForm({ pending, error, onSubmit }: DemoTopicFormProps) {
   const [topic, setTopic] = useState("");
   const launch = useLaunchSource();

@@ -14,9 +14,9 @@ import { useCosts } from "../../hooks/useCosts";
 const DEFAULT_WINDOW: CostWindow = 30;
 
 /**
- * Réglages > Coûts : jetons et coût des appels aux modèles sur 7, 30 ou 90 jours, avec le total,
- * le coût par jour (barres et tableau équivalent) et les répartitions par feature, agent, modèle.
- * La fenêtre reste affichée pendant la lecture : le focus ne quitte pas le bouton choisi.
+ * Settings > Costs: tokens and cost of model calls over 7, 30 or 90 days, with the total,
+ * the cost per day (bars and the equivalent table) and the breakdowns by feature, agent, model.
+ * The window stays shown during the read: focus stays on the chosen button.
  */
 export function CostsPage() {
   const [days, setDays] = useState<CostWindow>(DEFAULT_WINDOW);

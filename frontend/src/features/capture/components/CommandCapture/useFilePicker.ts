@@ -3,8 +3,8 @@ import { t } from "@/shared/i18n/t";
 import { fileProblem } from "../source";
 
 /**
- * Le choix ou le dépôt d'un fichier : un fichier d'un type non admis ou trop gros est refusé ici
- * (`problem`), sans appel ; sinon `onFile` le reçoit.
+ * Choosing or dropping a file: a file of an unsupported type or too large is refused here
+ * (`problem`), with no call; otherwise `onFile` receives it.
  */
 export function useFilePicker(disabled: boolean, onFile: (file: File) => void) {
   const [problem, setProblem] = useState<string | null>(null);
@@ -18,7 +18,7 @@ export function useFilePicker(disabled: boolean, onFile: (file: File) => void) {
   };
   const onChange = (event: ChangeEvent<HTMLInputElement>) => {
     accept(event.target.files?.[0]);
-    // Vidé : choisir à nouveau le même fichier déclenche bien un nouveau `change`.
+    // Cleared: choosing the same file again does fire a new `change`.
     event.target.value = "";
   };
   const onDrop = (event: DragEvent<HTMLDivElement>) => {

@@ -6,11 +6,11 @@ interface PdfFieldProps {
   label: string;
   hint?: string;
   disabled: boolean;
-  /** Le fichier choisi, ou `null` quand il est refusé ou retiré. */
+  /** The chosen file, or `null` when it is refused or removed. */
   onPick: (file: File | null) => void;
 }
 
-/** Un champ de fichier PDF : un fichier refusé n'est jamais gardé, son message s'affiche dessous. */
+/** A PDF file field: a refused file is never kept, its message shows below it. */
 export function PdfField({ label, hint, disabled, onPick }: PdfFieldProps) {
   const id = useId();
   const [problem, setProblem] = useState<string | null>(null);

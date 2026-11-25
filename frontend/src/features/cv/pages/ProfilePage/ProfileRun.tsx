@@ -13,8 +13,8 @@ interface ProfileRunProps {
 }
 
 /**
- * La lecture des documents en direct. À la fin de la session, le profil est relu : le brouillon
- * apparaît à la place du fil. Une session arrêtée le dit et propose de recommencer l'import.
+ * Live reading of the documents. At the end of the session, the profile is reloaded: the draft
+ * appears in place of the thread. A stopped session says so and offers to restart the import.
  */
 export function ProfileRun({ sessionId, createSocket }: ProfileRunProps) {
   const client = useQueryClient();

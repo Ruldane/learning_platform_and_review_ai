@@ -7,7 +7,7 @@ import type { CostRowView } from "../viewTypes";
 import { DayTable } from "./DayTable";
 
 interface CostByDayChartProps {
-  /** Un jour par ligne (`key` : `AAAA-MM-JJ`), les jours sans appel à zéro. */
+  /** One day per row (`key`: `AAAA-MM-JJ`), days without calls at zero. */
   rows: CostRowView[];
   since: string;
   until: string;
@@ -15,8 +15,8 @@ interface CostByDayChartProps {
 }
 
 /**
- * Le coût de chaque jour en barres. Le dessin est une image nommée pour les lecteurs d'écran, qui
- * lisent à sa place le tableau équivalent (un jour par ligne) ; les barres ne s'animent pas.
+ * The cost of each day as bars. The drawing is an image named for screen readers, which
+ * read the equivalent table instead (one day per row); the bars do not animate.
  */
 export function CostByDayChart({ rows, since, until, totalCostUsd }: CostByDayChartProps) {
   const titleId = useId();

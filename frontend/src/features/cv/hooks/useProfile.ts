@@ -5,8 +5,8 @@ import { cvKeys } from "../queryKeys";
 export const POLL_MS = 3000;
 
 /**
- * `GET /profile`. Tant qu'une lecture de documents est en cours (`session_id`), le profil est relu
- * toutes les `pollMs` : le flux de la session fait le gros du travail, cette relecture le rattrape.
+ * `GET /profile`. While a document reading is running (`session_id`), the profile is reloaded
+ * every `pollMs`: the session stream does most of the work, this reload catches up.
  */
 export function useProfile(pollMs = POLL_MS) {
   return useQuery({
@@ -16,7 +16,7 @@ export function useProfile(pollMs = POLL_MS) {
   });
 }
 
-/** `GET /profile/versions` : l'historique du profil maître. */
+/** `GET /profile/versions`: the history of the master profile. */
 export function useProfileVersions() {
   return useQuery({
     queryKey: cvKeys.profileVersions,

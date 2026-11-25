@@ -4,22 +4,22 @@ import { FilePicker } from "./FilePicker";
 import { LinkNoteForm } from "./LinkNoteForm";
 
 interface CaptureInputProps {
-  /** Le brouillon du champ (gardé à la fermeture du dialogue). */
+  /** The field draft (kept when the dialog closes). */
   draft: string;
   onDraft: (draft: string) => void;
-  /** Un envoi est en cours (lien, note ou fichier) : tout est désactivé. */
+  /** A send is in progress (link, note or file): everything is disabled. */
   busy: boolean;
-  /** Le fichier est en cours d'import (avant le départ de la capture). */
+  /** The file is being imported (before the capture starts). */
   uploading: boolean;
-  /** Message d'un refus du serveur, sous le champ. */
+  /** Message from a server refusal, below the field. */
   error: string | null;
   onSubmit: (source: CaptureSource) => void;
   onFile: (file: File) => void;
 }
 
 /**
- * Le contenu du dialogue avant le départ : le champ unique (lien ou note, Ctrl+Entrée envoie) puis
- * le dépôt ou le choix d'un fichier.
+ * The dialog content before the start: the single field (link or note, Ctrl+Enter sends), then
+ * dropping or choosing a file.
  */
 export function CaptureInput(props: CaptureInputProps) {
   const { draft, onDraft, busy, uploading, error, onSubmit, onFile } = props;

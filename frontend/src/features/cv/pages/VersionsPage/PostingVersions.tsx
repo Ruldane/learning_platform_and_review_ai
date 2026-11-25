@@ -8,7 +8,7 @@ import { OpenedVersion } from "./OpenedVersion";
 
 const link = "text-sm font-medium underline underline-offset-4";
 
-/** Les versions d'une offre : la liste, et l'aperçu de celle qu'on ouvre. */
+/** A posting's versions: the list, and a preview of the one being opened. */
 export function PostingVersions({ group }: { group: PostingGroup }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const title = group.label ?? t("cv.versionsPage.unknownOffer");

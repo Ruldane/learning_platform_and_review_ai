@@ -5,7 +5,7 @@ import { Requirements } from "./Requirements";
 
 interface PostingAnalysisCardProps {
   analysis: PostingAnalysisView;
-  /** Faux quand la page montre déjà le titre de l'offre (un seul titre à l'écran). */
+  /** False when the page already shows the posting title (only one title on screen). */
   showTitle?: boolean;
 }
 
@@ -17,8 +17,8 @@ function levelText(level: string): string {
 }
 
 /**
- * Ce que l'analyse a compris de l'offre : poste, entreprise, niveau, lieu, exigences, mots clés,
- * critères éliminatoires, outils. Tout est du texte brut : rien de l'offre n'est interprété.
+ * What the analysis understood of the posting: role, company, level, place, requirements, keywords,
+ * knock-out criteria, tools. All of it is plain text: nothing in the posting is interpreted.
  */
 export function PostingAnalysisCard({ analysis, showTitle = true }: PostingAnalysisCardProps) {
   const facts = [

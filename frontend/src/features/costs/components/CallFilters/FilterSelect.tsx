@@ -10,7 +10,7 @@ interface FilterSelectProps {
   onChange: (value: string | null) => void;
 }
 
-/** Une liste native avec « Tous » en tête : le clavier et les lecteurs d'écran l'ont d'office. */
+/** A native list with « Tous » at the top: keyboard and screen readers get it by default. */
 export function FilterSelect({ label, value, options, onChange }: FilterSelectProps) {
   const id = useId();
   return (

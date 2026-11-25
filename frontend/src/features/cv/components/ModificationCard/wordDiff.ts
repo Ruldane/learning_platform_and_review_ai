@@ -5,7 +5,9 @@ export interface DiffSegment {
   text: string;
 }
 
-/** Au-delà, la table de comparaison serait trop grosse : le texte est donné en bloc. */
+/**
+ * Beyond this, the comparison table would be too large: the text is given as one block.
+ */
 const MAX_CELLS = 250_000;
 
 const words = (text: string): string[] => text.split(/\s+/).filter(Boolean);
@@ -16,7 +18,9 @@ function push(segments: DiffSegment[], kind: DiffKind, word: string): void {
   else segments.push({ kind, text: word });
 }
 
-/** Longueur de la plus longue sous-suite commune de `a[i:]` et `b[j:]`, table remplie de la fin. */
+/**
+ * Length of the longest common subsequence of `a[i:]` and `b[j:]`, table filled from the end.
+ */
 function lcsLengths(a: string[], b: string[]): (i: number, j: number) => number {
   const width = b.length + 1;
   const table = new Uint32Array((a.length + 1) * width);
@@ -31,8 +35,8 @@ function lcsLengths(a: string[], b: string[]): (i: number, j: number) => number 
 }
 
 /**
- * Compare deux textes mot à mot : les mots communs (`same`), ceux qui disparaissent (`del`) et ceux
- * qui apparaissent (`add`), les mots voisins de même sorte regroupés.
+ * Compares two texts word by word: the common words (`same`), those that disappear (`del`)
+ * and those that appear (`add`), with neighbouring words of the same kind grouped.
  */
 export function wordDiff(before: string, after: string): DiffSegment[] {
   const a = words(before);

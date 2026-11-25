@@ -3,14 +3,14 @@ import { t } from "@/shared/i18n/t";
 
 type GraphKey = keyof typeof costs.graphs;
 
-/** Les parcours connus, dans l'ordre du registre `GRAPHS` du back. */
+/** The known graphs, in the order of the backend `GRAPHS` registry. */
 export const GRAPH_KEYS = Object.keys(costs.graphs) as GraphKey[];
 
 const isGraph = (key: string): key is GraphKey => Object.hasOwn(costs.graphs, key);
 
 /**
- * L'écran où l'on retrouve le travail d'un parcours. Aucune page n'ouvre une session par son
- * identifiant : on mène à l'écran de la feature (adresses de navigation seulement).
+ * The screen where a graph's work can be found. No page opens a session by its
+ * id: it leads to the feature's screen (navigation addresses only).
  */
 export const GRAPH_SCREENS: Partial<Record<GraphKey, string>> = {
   demo_debate: "/demo",
@@ -39,13 +39,13 @@ export const GRAPH_SCREENS: Partial<Record<GraphKey, string>> = {
   grade_appeals: "/skills/appeals",
 };
 
-/** Le libellé d'un parcours ; un parcours inconnu garde son nom brut, « hors session » si vide. */
+/** A graph's label; an unknown graph keeps its raw name, « hors session » if empty. */
 export function graphLabel(key: string | null): string {
   if (key === null || key === "") return t("costs.noSession");
   return isGraph(key) ? t(`costs.graphs.${key}`) : key;
 }
 
-/** L'écran d'un parcours, ou `null` s'il n'en a pas (ou s'il est inconnu). */
+/** A graph's screen, or `null` if it has none (or if it is unknown). */
 export function graphScreen(key: string | null): string | null {
   return key !== null && isGraph(key) ? (GRAPH_SCREENS[key] ?? null) : null;
 }

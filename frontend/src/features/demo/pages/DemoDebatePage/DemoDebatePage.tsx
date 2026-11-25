@@ -12,9 +12,9 @@ const GRAPH = "demo_debate";
 const SESSION_PARAM = "session";
 
 /**
- * Démo du moteur d'agents (`/demo`) : un sujet, deux agents qui débattent, une question de
- * l'équipe. L'identifiant de session vit dans l'URL (`?session=<id>`) : recharger la page
- * rejoint la session. `createSocket` ne sert qu'aux tests (faux WebSocket).
+ * Demo of the agent engine (`/demo`): a topic, two agents debating, a team question
+ * for the team. The session id lives in the URL (`?session=<id>`): reloading the page
+ * rejoins the session. `createSocket` is only for tests (fake WebSocket).
  */
 export function DemoDebatePage({ createSocket }: { createSocket?: SocketFactory }) {
   const [params, setParams] = useSearchParams();

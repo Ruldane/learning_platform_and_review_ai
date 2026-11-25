@@ -5,7 +5,7 @@ interface ReportListProps {
   items: string[];
 }
 
-/** Une liste du rapport ; sans rien dedans, elle le dit au lieu de disparaître. */
+/** A report list; when empty, it says so instead of disappearing. */
 export function ReportList({ title, items }: ReportListProps) {
   return (
     <section className="flex flex-col gap-1">

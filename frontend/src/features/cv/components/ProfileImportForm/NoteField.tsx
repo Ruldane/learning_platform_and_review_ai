@@ -9,7 +9,7 @@ interface NoteFieldProps {
   onChange: (value: string) => void;
 }
 
-/** La note facultative : ce que les documents ne disent pas, 4 000 caractères au plus. */
+/** The optional note: what the documents do not say, 4,000 characters at most. */
 export function NoteField({ value, disabled, onChange }: NoteFieldProps) {
   const id = useId();
   return (

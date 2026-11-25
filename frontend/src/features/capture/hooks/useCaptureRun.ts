@@ -8,8 +8,8 @@ import { captureKeys } from "../queryKeys";
 const OVER = ["completed", "failed", "cancelled", "expired"] as const;
 
 /**
- * Suit la session de l'Archiviste d'une capture : le flux, les actions par REST (la réponse aux
- * questions). À la fin de la session, le journal est relu : la capture y a écrit sa ligne.
+ * Follows the Archivist session of a capture: the stream, and the REST actions (answers to the
+ * questions). At the end of the session, the journal is re-read: the capture wrote its line there.
  */
 export function useCaptureRun(sessionId: string, createSocket?: SocketFactory) {
   const client = useQueryClient();

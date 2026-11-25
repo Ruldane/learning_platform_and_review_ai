@@ -4,11 +4,11 @@ interface OverlayPageProps {
   n: number;
   original: string | undefined;
   render: string | undefined;
-  /** Où le curseur coupe la page, de 0 à 100 : l'original à gauche, le modèle recréé à droite. */
+  /** Slider position, 0 to 100: the original on the left, the recreated template on the right. */
   position: number;
 }
 
-/** Une page de l'original et celle du modèle recréé superposées, coupées au curseur. */
+/** A page of the original and of the recreated template, overlaid and cut at the slider. */
 export function OverlayPage({ n, original, render, position }: OverlayPageProps) {
   const both = original !== undefined && render !== undefined;
   return (

@@ -6,12 +6,12 @@ export const POSTING_TABS: PostingTab[] = ["url", "text"];
 
 interface PostingTabsProps {
   tab: PostingTab;
-  /** L'`id` de base de chaque onglet : `<id>-tab` pour l'onglet, `<id>-panel` pour son panneau. */
+  /** The base `id` of each tab: `<id>-tab` for the tab, `<id>-panel` for its panel. */
   ids: Record<PostingTab, string>;
   onChange: (tab: PostingTab) => void;
 }
 
-/** Les onglets « Lien » et « Texte » : flèches gauche et droite pour passer de l'un à l'autre. */
+/** The « Lien » and « Texte » tabs: left and right arrows move between them. */
 export function PostingTabs({ tab, ids, onChange }: PostingTabsProps) {
   const move = (event: KeyboardEvent, from: PostingTab) => {
     const step = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;

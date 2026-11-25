@@ -5,7 +5,7 @@ import type { VersionOut } from "../../types";
 const pagesLabel = (count: number): string =>
   count === 1 ? t("cv.cvVersions.pages.one") : t("cv.cvVersions.pages.many", { count });
 
-/** Le nombre de pages du CV généré, puis celui de l'original ; sans nombre rendu, seule la comparaison. */
+/** Page count of the generated CV, then of the original; without a count, only the comparison. */
 export function exceededText(version: VersionOut): string {
   const original = pagesLabel(version.original_page_count);
   return version.page_count
@@ -13,7 +13,7 @@ export function exceededText(version: VersionOut): string {
     : t("cv.reviewPage.pagesExceededUnknown", { original });
 }
 
-/** Des modifications acceptées que le gabarit ne sait pas placer : jamais présentées comme appliquées. */
+/** Accepted changes the template cannot place: never shown as applied. */
 export function ignoredText(version: VersionOut): string | null {
   const count = ignoredCount(version);
   if (count === 0) return null;

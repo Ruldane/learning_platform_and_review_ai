@@ -6,13 +6,13 @@ import { cvErrorMessage, errorCode } from "../errors";
 import { cvKeys } from "../queryKeys";
 
 /**
- * Le texte d'un refus de création. `capture_in_progress` garde le message du back (une capture de
- * modèle est en cours) : le texte du profil parle d'une lecture de documents, ce qui est faux ici.
+ * The text of a creation refusal. `capture_in_progress` keeps the back end message (a capture of
+ * template is running): the profile text talks about reading documents, which is wrong here.
  */
 const createMessage = (error: unknown): string =>
   errorCode(error) === "capture_in_progress" ? errorMessage(error) : cvErrorMessage(error);
 
-/** `POST /cv/templates` : renvoie l'identifiant du modèle créé à `onCreated`. */
+/** `POST /cv/templates`: passes the id of the created template to `onCreated`. */
 export function useCreateTemplate(onCreated: (templateId: string) => void) {
   const client = useQueryClient();
   const provider = useLaunchSource();
@@ -32,12 +32,12 @@ export function useCreateTemplate(onCreated: (templateId: string) => void) {
     pending: mutation.isPending,
     error: mutation.isError ? createMessage(mutation.error) : null,
     launchMenu: provider.menu,
-    /** Un 409 `vision_unavailable` renvoie vers les réglages. */
+    /** A 409 `vision_unavailable` points to the settings. */
     visionUnavailable: mutation.isError && errorCode(mutation.error) === "vision_unavailable",
   };
 }
 
-/** `POST /cv/templates/{id}/activate` : le modèle devient le seul actif. */
+/** `POST /cv/templates/{id}/activate`: the template becomes the only active one. */
 export function useActivateTemplate() {
   const client = useQueryClient();
   const mutation = useMutation({

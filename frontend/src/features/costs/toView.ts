@@ -30,7 +30,7 @@ function byAgent(source: CostRow): CostRowView {
 }
 
 /**
- * Le rapport : libellés en français (« Hors session », agents nommés), noms inconnus gardés bruts.
+ * The report: labels in French (« Hors session », named agents), unknown names kept raw.
  */
 export function toCostsView(report: CostsReport): CostsView {
   return {
@@ -45,7 +45,7 @@ export function toCostsView(report: CostsReport): CostsView {
   };
 }
 
-/** Un appel du journal, prêt à afficher. */
+/** A journal call, ready to display. */
 export function toCallView(call: AgentCallOut): CallView {
   const identity = call.agent ? agentIdentity(call.agent) : null;
   return {

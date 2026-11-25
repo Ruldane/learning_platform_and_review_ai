@@ -10,7 +10,7 @@ interface ExperiencesSectionProps {
   onChange: (items: ExperienceView[]) => void;
 }
 
-/** Les expériences : une ligne par poste, avec ses réalisations. */
+/** The experiences: one row per position, with its achievements. */
 export function ExperiencesSection({ items, onChange }: ExperiencesSectionProps) {
   return (
     <Section title={t("cv.profile.section.experiences")} count={items.length} path="experiences">

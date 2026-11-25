@@ -11,7 +11,7 @@ interface SourcePanelProps {
   onChange: (value: string) => void;
 }
 
-/** Le panneau d'un onglet : le champ du lien (une ligne) ou du texte collé (une zone), avec son aide. */
+/** A tab's panel: the link field (one line) or the pasted text (a textarea), with its help. */
 export function SourcePanel({ kind, id, hidden, value, disabled, onChange }: SourcePanelProps) {
   const field = {
     id,

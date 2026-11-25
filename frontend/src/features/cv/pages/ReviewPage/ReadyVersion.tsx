@@ -3,7 +3,7 @@ import type { VersionOut } from "../../types";
 import { pageRange, versionPageUrl, versionPdfUrl } from "../../urls";
 import { ignoredText } from "./versionTexts";
 
-/** Le PDF prêt : aperçu, téléchargement, et ce que la composition n'a pas pu y placer. */
+/** The ready PDF: preview, download, and what the layout could not place in it. */
 export function ReadyVersion({ version, title }: { version: VersionOut; title: string }) {
   const ignored = ignoredText(version);
   return (

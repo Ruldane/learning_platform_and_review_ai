@@ -9,7 +9,7 @@ interface ProfileBodyProps {
   createSocket?: SocketFactory;
 }
 
-/** Le corps de la page selon l'état du profil : lecture en cours, rien encore, brouillon ou profil validé. */
+/** The page body by profile state: reading in progress, nothing yet, draft or validated profile. */
 export function ProfileBody({ state, createSocket }: ProfileBodyProps) {
   if (state.session_id)
     return <ProfileRun sessionId={state.session_id} createSocket={createSocket} />;

@@ -15,7 +15,7 @@ export interface SectionGroup {
   mods: ModificationView[];
 }
 
-/** Les modifications regroupées par section du CV, dans l'ordre d'un CV ; les sections vides disparaissent. */
+/** Changes grouped by CV section, in CV order; empty sections are dropped. */
 export function groupBySection(mods: ModificationView[]): SectionGroup[] {
   return ORDER.map((section) => ({
     section,

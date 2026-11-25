@@ -9,7 +9,7 @@ interface EducationFieldsProps {
   patch: (changes: Partial<EducationView>) => void;
 }
 
-/** Les champs d'une formation : diplôme, école, dates et détails. */
+/** The fields of an education entry: degree, school, dates and details. */
 export function EducationFields({ item, index, patch }: EducationFieldsProps) {
   const base = `education.${index}`;
   const row = t("cv.profile.education.row", { n: index + 1 });

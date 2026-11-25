@@ -2,16 +2,16 @@ import { apiBaseUrl } from "@/shared/api/client";
 
 const cvUrl = (path: string) => `${apiBaseUrl}/api/v1/cv${path}`;
 
-/** Le PDF d'une version (téléchargement : le nom `CV_….pdf` vient de l'en-tête du serveur). */
+/** The PDF of a version (download: the `CV_….pdf` name comes from the server header). */
 export const versionPdfUrl = (versionId: string) => cvUrl(`/versions/${versionId}/pdf`);
 
-/** L'image de la page `n` (depuis 1) d'une version prête. */
+/** The image of page `n` (from 1) of a ready version. */
 export const versionPageUrl = (versionId: string, n: number) =>
   cvUrl(`/versions/${versionId}/pages/${n}`);
 
 /**
- * L'image de la page `n` du CV d'origine ou du rendu de la passe courante d'un modèle. `pass`
- * change à chaque passe : le navigateur ne garde pas l'ancienne image.
+ * The image of page `n` of the original CV or of a template's current pass render. `pass`
+ * changes on each pass, so the browser does not keep the old image.
  */
 export const templatePageUrl = (
   templateId: string,
@@ -20,6 +20,6 @@ export const templatePageUrl = (
   pass: number,
 ) => cvUrl(`/templates/${templateId}/pages/${kind}/${n}?pass=${pass}`);
 
-/** Les adresses des pages `1..count` d'un même document. */
+/** The URLs of pages `1..count` of one document. */
 export const pageRange = (count: number, url: (n: number) => string): string[] =>
   Array.from({ length: Math.max(count, 0) }, (_, index) => url(index + 1));

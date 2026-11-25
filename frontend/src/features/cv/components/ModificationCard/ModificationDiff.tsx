@@ -7,7 +7,7 @@ interface ModificationDiffProps {
   after: string;
 }
 
-/** « Avant » et « Après » d'une modification, comparés mot à mot. */
+/** « Avant » and « Après » of a modification, compared word by word. */
 export function ModificationDiff({ before, after }: ModificationDiffProps) {
   const segments = wordDiff(before, after);
   return (

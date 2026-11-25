@@ -1,7 +1,7 @@
 import { t } from "@/shared/i18n/t";
 import type { FactRefView } from "../viewTypes";
 
-/** Les faits du profil maître sur lesquels s'appuie la modification ; rien si elle n'en cite pas. */
+/** The master-profile facts the change relies on; nothing if it cites none. */
 export function Facts({ facts }: { facts: FactRefView[] }) {
   if (facts.length === 0) return null;
   return (

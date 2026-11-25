@@ -2,14 +2,16 @@ import { useId } from "react";
 import { t } from "@/shared/i18n/t";
 
 interface ConfirmBoxProps {
-  /** Ce qui n'est pas dans le profil : un chiffre, un outil, un titre. */
+  /** What is not in the profile: a figure, a tool, a title. */
   blocks: string[];
   confirmed: boolean;
   onChange: (confirmed: boolean) => void;
   disabled: boolean;
 }
 
-/** L'encadré « À confirmer » : ce qui manque au profil, et la case qui seule permet d'accepter. */
+/**
+ * The « À confirmer » box: what the profile lacks, and the one checkbox that allows accepting.
+ */
 export function ConfirmBox({ blocks, confirmed, onChange, disabled }: ConfirmBoxProps) {
   const id = useId();
   return (

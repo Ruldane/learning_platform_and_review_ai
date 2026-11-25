@@ -9,7 +9,7 @@ interface CostTotalsCardProps {
   totals: CostTotalsView;
 }
 
-/** Le total de la fenêtre : appels (dont estimés), jetons entrants et sortants, coût. */
+/** The window total: calls (including estimated ones), input and output tokens, cost. */
 export function CostTotalsCard({ days, totals }: CostTotalsCardProps) {
   const titleId = useId();
   const estimated = totals.estimatedCalls;

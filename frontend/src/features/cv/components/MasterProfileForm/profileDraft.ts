@@ -9,7 +9,7 @@ import type {
   SkillFactView,
 } from "../viewTypes";
 
-/** Remplace des champs d'une ligne de liste, sans toucher aux autres. */
+/** Replaces fields of a list row, without touching the others. */
 export function replaceAt<T>(items: T[], index: number, patch: Partial<T>): T[] {
   return items.map((item, position) => (position === index ? { ...item, ...patch } : item));
 }
@@ -18,7 +18,7 @@ export function removeAt<T>(items: T[], index: number): T[] {
   return items.filter((_, position) => position !== index);
 }
 
-/** Une ligne ajoutée à la main : sans identifiant (le code l'attribue à l'enregistrement), source « Toi ». */
+/** A row added by hand: no identifier (the code assigns one on save), source « Toi ». */
 export const blank = {
   line: (): LineView => ({ id: "", text: "" }),
   experience: (): ExperienceView => ({
@@ -60,9 +60,9 @@ const orNullLine = (line: LineView | null): LineView | null =>
   line && line.text.trim() !== "" ? line : null;
 
 /**
- * Le profil tel qu'il part à l'enregistrement : une valeur facultative laissée blanche devient
- * `null`, une ligne de texte vide disparaît. Le reste est envoyé tel quel : l'API refuse (422) ce
- * qui est invalide et le formulaire place le message sous le champ.
+ * The profile as it is sent on save: an optional value left blank becomes `null`, and an
+ * empty text row disappears. The rest is sent as is: the API refuses (422) what is invalid,
+ * and the form places the message under the field.
  */
 export function cleanProfile(profile: MasterProfileView): MasterProfileView {
   const { identity } = profile;

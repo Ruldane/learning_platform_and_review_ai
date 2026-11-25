@@ -10,7 +10,7 @@ interface LinksSectionProps {
   onChange: (items: LinkView[]) => void;
 }
 
-/** Les liens : un libellé et une adresse par ligne. */
+/** The links: a label and an address per row. */
 export function LinksSection({ items, onChange }: LinksSectionProps) {
   return (
     <Section title={t("cv.profile.section.links")} count={items.length} path="links">

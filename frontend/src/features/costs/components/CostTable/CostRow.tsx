@@ -4,8 +4,8 @@ import type { CostRowView } from "../viewTypes";
 export const NUMBER_CELL = "px-3 py-2 text-right tabular-nums whitespace-nowrap";
 
 /**
- * Une ligne de répartition : son libellé (avec la pastille de couleur de l'agent) puis cinq
- * nombres.
+ * A breakdown row: its label (with the agent's colour dot), then five
+ * numbers.
  */
 export function CostRow({ row }: { row: CostRowView }) {
   return (

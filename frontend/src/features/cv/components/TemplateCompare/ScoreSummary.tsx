@@ -15,7 +15,7 @@ function passesText(passes: number): string {
     : t("cv.template.passes.many", { count: passes });
 }
 
-/** « Ressemblance : 87 % », le nombre d'ajustements, et les zones qui diffèrent en phrases. */
+/** « Ressemblance : 87 % » label, the adjustment count, and the differing zones as sentences. */
 export function ScoreSummary({ score, zones, passes }: ScoreSummaryProps) {
   const sentences = zoneSentences(zones);
   return (

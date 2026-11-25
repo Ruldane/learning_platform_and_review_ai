@@ -1,14 +1,14 @@
-/** Types de vue des composants du profil maître : indépendants du contrat d'API (D34). */
+/** View types of the master profile components: independent of the API contract (D34). */
 
-/** D'où vient un fait : le CV, LinkedIn, la note de January, ou January elle-même. */
+/** Where a fact comes from: the CV, LinkedIn, January's note, or January herself. */
 export type FactSourceView = "cv" | "linkedin" | "note" | "january";
 
-/** Une ligne de texte du profil (réalisation, détail, titre, résumé), avec son identifiant stable. */
+/** A line of profile text (achievement, detail, title, summary), with its stable id. */
 export interface LineView {
-  /** Vide pour une ligne ajoutée à la main : l'identifiant est attribué à l'enregistrement. */
+  /** Empty for a line added by hand: the id is assigned on save. */
   id: string;
   text: string;
-  /** Seuls le titre et le résumé portent leurs sources ; elles repartent telles quelles à l'enregistrement. */
+  /** Only the title and summary carry sources; they are sent back unchanged on save. */
   sources?: FactSourceView[];
 }
 
@@ -25,7 +25,7 @@ export interface ExperienceView {
   role: string;
   company: string;
   location: string | null;
-  /** « AAAA-MM » ou « AAAA ». */
+  /** « AAAA-MM » or « AAAA ». */
   start: string | null;
   end: string | null;
   achievements: LineView[];
@@ -72,7 +72,7 @@ export interface LinkView {
   sources: FactSourceView[];
 }
 
-/** Le profil maître : la seule source de faits des CV (miroir de `MasterProfileData`). */
+/** The master profile: the only source of CV facts (mirror of `MasterProfileData`). */
 export interface MasterProfileView {
   identity: IdentityView;
   title: LineView | null;
@@ -90,30 +90,30 @@ export type ProfileStatusView = "draft" | "validated";
 export interface ProfileVersionView {
   version: number;
   status: ProfileStatusView;
-  /** `archivist` (lu dans les documents) ou `january` (modifié par elle) ; autre valeur rendue telle quelle. */
+  /** `archivist` (read from documents) or `january` (edited by her); other values pass through. */
   source: string;
-  /** Instant ISO de la création. */
+  /** ISO instant of creation. */
   createdAt: string;
 }
 
-/** Ce que January fournit pour créer le profil : le CV en PDF, LinkedIn et une note en option. */
+/** What January provides to create the profile: the CV as PDF, LinkedIn, and an optional note. */
 export interface ProfileImportView {
   cv: File;
   linkedin?: File;
   note?: string;
 }
 
-/** Une erreur d'enregistrement : le message, et le texte à placer sous chaque champ fautif par son chemin. */
+/** A save error: the message, and the text to show under each faulty field, by its path. */
 export interface ProfileSaveErrorView {
   message: string;
-  /** Chemin d'un champ (`experiences.2.role`) → ce qu'il faut corriger ; jamais la valeur saisie. */
+  /** Field path (`experiences.2.role`) → what to fix; never the entered value. */
   fields: Record<string, string>;
 }
 
 export const MAX_PDF_BYTES = 10 * 1024 * 1024;
 export const MAX_NOTE_CHARS = 4000;
 
-/** Les sections d'un CV ciblé (miroir de `SectionKey`). */
+/** The sections of a targeted CV (mirror of `SectionKey`). */
 export type CvSectionView =
   "summary" | "experience" | "education" | "skills" | "projects" | "languages" | "links";
 
@@ -121,25 +121,25 @@ export type ModificationStatusView = "proposed" | "to_confirm" | "accepted" | "r
 export type ModificationActionView = "rewrite" | "add" | "remove" | "move";
 export type ModificationTypeView = "keyword" | "clarity" | "impact" | "order" | "length" | "title";
 
-/** Ce qu'on peut décider d'une modification : l'accepter ou la refuser. */
+/** What can be decided on a change: accept it or refuse it. */
 export type DecisionView = "accepted" | "refused";
 
-/** Une décision envoyée au back : résout à `false` quand elle est refusée (l'éditeur reste ouvert). */
+/** A decision sent to the back end: resolves to `false` when refused (the editor stays open). */
 export type DecideResult = void | Promise<boolean>;
 
-/** Ce que January joint à sa décision : le texte qu'elle a modifié, et la confirmation d'un fait. */
+/** What January attaches to her decision: the text she edited, and the confirmation of a fact. */
 export interface DecideOptions {
   after?: string;
   confirm?: boolean;
 }
 
-/** Un fait du profil maître sur lequel s'appuie une modification (G2, F4). */
+/** A master profile fact that a change relies on (G2, F4). */
 export interface FactRefView {
   id: string;
   label: string;
 }
 
-/** Une modification proposée par la revue du CV. */
+/** A change proposed by the CV review. */
 export interface ModificationView {
   id: string;
   ref: string;
@@ -150,20 +150,20 @@ export interface ModificationView {
   after: string;
   reason: string;
   status: ModificationStatusView;
-  /** Pourquoi la modification est « à confirmer » : un chiffre, un outil ou un titre absent du profil. */
+  /** Why the change is « à confirmer »: a figure, a tool or a title missing from the profile. */
   blocks: string[];
-  /** Le slug de l'agent qui l'a proposée (`agentIdentity`). */
+  /** The slug of the agent that proposed it (`agentIdentity`). */
   author: string;
   facts: FactRefView[];
-  /** Le numéro de la version générée où cette modification acceptée n'a pas pu être placée. */
+  /** The number of the generated version where this accepted change could not be placed. */
   ignoredIn?: number | null;
 }
 
 export const MAX_EDIT_CHARS = 600;
 
 /**
- * Un écart de mise en page entre l'original et le modèle recréé : la part d'encre (de 0 à 1) de
- * chaque côté, dans une zone de la page.
+ * A layout gap between the original and the recreated template: the ink share (0 to 1) of
+ * each side, in one zone of the page.
  */
 export interface ZoneView {
   zone: "top" | "middle" | "bottom" | "left" | "right";
@@ -177,16 +177,16 @@ export type AtsCheckIdView =
 export interface AtsCheckView {
   id: AtsCheckIdView;
   passed: boolean;
-  /** Une phrase en français, sans donnée du CV. */
+  /** One sentence in French, with no CV data. */
   detail: string;
 }
 
-/** Les deux indicateurs d'un CV : couverture des exigences et lisibilité machine. */
+/** The two indicators of a CV: requirements coverage and machine readability. */
 export interface IndicatorsView {
   coveragePercent: number;
   covered: number;
   total: number;
-  /** Les exigences obligatoires que le CV ne couvre pas. */
+  /** The mandatory requirements that the CV does not cover. */
   missing: string[];
   checks: AtsCheckView[];
 }
@@ -200,14 +200,14 @@ export interface VersionView {
   pageCount: number | null;
   originalPageCount: number;
   filename: string;
-  /** Instant ISO de la création. */
+  /** ISO instant of creation. */
   createdAt: string;
   failureReason: string | null;
 }
 
-/** Le rapport de la revue : ce qui joue pour et contre ce CV face à cette offre. */
+/** The review report: what counts for and against this CV for this posting. */
 export interface ReportView {
-  /** Le logiciel de recrutement reconnu (« Greenhouse »), ou `null`. */
+  /** The recognized applicant tracking software (« Greenhouse »), or `null`. */
   ats: string | null;
   atsNotes: string[];
   companySummary: string | null;

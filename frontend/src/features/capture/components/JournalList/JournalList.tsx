@@ -10,19 +10,19 @@ import { groupByWeek } from "./groupByWeek";
 
 interface JournalListProps {
   entries: JournalEntryView[];
-  /** Filtre courant (`null` : tous les types). */
+  /** Current filter (`null`: all types). */
   kind: JournalKindView | null;
   onKindChange: (kind: JournalKindView | null) => void;
   hasMore: boolean;
   loadingMore: boolean;
   onLoadMore: () => void;
-  /** Action de l'état vide d'un journal sans aucune entrée (ouvrir la capture). */
+  /** Action of the empty state of a journal with no entries (open the capture). */
   onEmptyAction: () => void;
 }
 
 /**
- * Le journal groupé par semaine (la plus récente d'abord, le bilan hebdomadaire en tête), filtré
- * par type, avec « Voir les entrées plus anciennes » tant que le serveur en a d'autres.
+ * The journal grouped by week (most recent first, the weekly review at the top), filtered
+ * by type, with « Voir les entrées plus anciennes » while the server has more.
  */
 export function JournalList(props: JournalListProps) {
   const { entries, kind, onKindChange, hasMore, loadingMore, onLoadMore, onEmptyAction } = props;

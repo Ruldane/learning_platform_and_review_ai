@@ -9,7 +9,7 @@ import { CallTable } from "./CallTable";
 
 interface AgentCallListProps {
   calls: CallView[];
-  /** Des filtres sont posés : l'état vide ne dit pas « aucun appel » tout court. */
+  /** Filters are set: the empty state does not simply say « aucun appel ». */
   filtered: boolean;
   hasMore: boolean;
   loadingMore: boolean;
@@ -17,9 +17,9 @@ interface AgentCallListProps {
 }
 
 /**
- * Le journal en tableau daté, du plus récent au plus ancien, avec « Voir plus » tant que le
- * serveur donne un curseur. Quand le dernier appel arrive après un clic, le focus passe à la
- * phrase de fin (le bouton disparaît) ; le nombre d'appels affichés est annoncé.
+ * The dated journal table, newest first, with « Voir plus » while the
+ * server gives a cursor. When the last call arrives after a click, focus moves to the
+ * end sentence (the button disappears); the number of calls shown is announced.
  */
 export function AgentCallList(props: AgentCallListProps) {
   const { calls, filtered, hasMore, loadingMore, onLoadMore } = props;

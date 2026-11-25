@@ -36,7 +36,7 @@ interface ReviewBodyProps {
   createSocket?: SocketFactory;
 }
 
-/** Le corps de la revue : toutes ses parties, dans l'ordre où on les lit. */
+/** The review body: all its parts, in the order they are read. */
 export function ReviewBody({ review, createSocket }: ReviewBodyProps) {
   const client = useQueryClient();
   const reload = () => void client.invalidateQueries({ queryKey: cvKeys.review(review.id) });
@@ -51,7 +51,7 @@ export function ReviewBody({ review, createSocket }: ReviewBodyProps) {
         <RunFeed
           run={run}
           label={t("cv.reviewPage.feed")}
-          // La question de sortie ouverte vit dans la section « Sortie », sous les décisions.
+          // The open exit question lives in the « Sortie » section, under the decisions.
           renderInterrupt={(item) =>
             item.interrupt.kind === OUTPUT_QUESTION && !item.answered ? null : undefined
           }

@@ -13,19 +13,20 @@ import { useEditing } from "./useEditing";
 
 interface ModificationCardProps {
   mod: ModificationView;
-  /** Résout à `false` quand le back refuse : l'éditeur reste ouvert avec le texte saisi. */
+  /** Resolves to `false` if the back end refuses: the editor stays open with the typed text. */
   onDecide: (status: DecisionView, opts?: DecideOptions) => DecideResult;
-  /** Une décision est en route : tout est verrouillé. */
+  /** A decision is under way: everything is locked. */
   busy: boolean;
-  /** Le refus du back pour cette carte (« mot clé absent du profil »…). */
+  /** The back end's refusal for this card (« mot clé absent du profil »…). */
   error?: string | null;
 }
 
 /**
- * Une modification proposée : avant / après mot à mot, raison, faits sur lesquels elle s'appuie,
- * auteur. Une modification « à confirmer » ne s'accepte qu'après la case « Je confirme que c'est
- * vrai » ; « Modifier » (réécriture ou ajout seulement) ouvre un champ et renvoie le texte corrigé,
- * sans confirmation : le back le revérifie et la case se refait si de nouveaux blocs apparaissent.
+ * A proposed modification: before / after word by word, reason, the facts it relies on,
+ * and author. A modification marked « à confirmer » can only be accepted after the
+ * « Je confirme que c'est vrai » checkbox. « Modifier » (rewrite or addition only) opens a
+ * field and returns the corrected text, without confirmation: the back end re-checks it, and
+ * the checkbox is required again if new blocks appear.
  */
 export function ModificationCard({ mod, onDecide, busy, error = null }: ModificationCardProps) {
   const headingId = useId();

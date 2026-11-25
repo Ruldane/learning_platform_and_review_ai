@@ -6,20 +6,20 @@ import { fetchSession } from "@/shared/realtime/sessionApi";
 
 const postingPath = (postingId: string) => ({ params: { path: { posting_id: postingId } } });
 
-/** `GET /postings` : les offres, la plus récente d'abord. */
+/** `GET /postings`: the postings, newest first. */
 export async function fetchPostings(signal?: AbortSignal) {
   return unwrap(await api.GET("/postings", { signal }));
 }
 
 /**
- * `POST /postings` : 201 offre créée, 200 même lien ou même texte (`created` faux). Erreurs 422
+ * `POST /postings`: 201 posting created, 200 same link or same text (`created` false). Errors 422
  * `posting_source`, `posting_unreadable`, `posting_too_short`, `invalid_url`, `url_forbidden`.
  */
 export async function createPosting(source: { url: string } | { text: string }, provider?: RunSource) {
   return unwrap(await api.POST("/postings", { body: source, headers: runSourceHeaders(provider) }));
 }
 
-/** `GET /postings/{id}` : l'offre, son analyse et ses doublons ; 404 `posting_not_found`. */
+/** `GET /postings/{id}`: the posting, its analysis and its duplicates; 404 `posting_not_found`. */
 export async function fetchPosting(postingId: string, signal?: AbortSignal) {
   return unwrap(await api.GET("/postings/{posting_id}", { ...postingPath(postingId), signal }));
 }
@@ -39,7 +39,7 @@ export async function markDistinct(postingId: string, otherId: string): Promise<
   );
 }
 
-/** `GET /postings/{id}/gap` : le tableau d'écarts et son score. */
+/** `GET /postings/{id}/gap`: the gap table and its score. */
 export async function fetchGap(postingId: string, signal?: AbortSignal) {
   return unwrap(await api.GET("/postings/{posting_id}/gap", { ...postingPath(postingId), signal }));
 }
@@ -53,7 +53,7 @@ export async function relaunchGap(postingId: string, provider?: RunSource) {
 }
 
 /**
- * `POST /postings/{id}/gap/plan` (202) : replanification « gap » pour les compétences choisies.
+ * `POST /postings/{id}/gap/plan` (202): « gap » replanning for the chosen skills.
  * 409 `no_program`, 409 `replan_open` (`details.session_id`), 422 `skills.N`.
  */
 export async function planGap(
@@ -76,8 +76,8 @@ export async function fetchTargetPrograms(signal?: AbortSignal) {
 }
 
 /**
- * `GET /applications/check?posting_id=` : la candidature de cette offre (`own`), les fiches qui lui
- * ressemblent (`alerts`) et les simples informations (`info`). Lecture seule, sans effet.
+ * `GET /applications/check?posting_id=`: this posting's application (`own`), the cards that
+ * resemble it (`alerts`) and plain notes (`info`). Read only, no side effects.
  */
 export async function fetchApplicationCheck(postingId: string, signal?: AbortSignal) {
   return unwrap(
@@ -86,9 +86,9 @@ export async function fetchApplicationCheck(postingId: string, signal?: AbortSig
 }
 
 /**
- * `POST /applications` depuis une offre : la fiche reprend entreprise, poste, lien et texte de
- * l'offre. 409 `application_exists` (`details.application_id`) ou `application_duplicate`
- * (`details.alerts`) ; `distinctFrom` : les fiches que January a confirmées « autre poste ».
+ * `POST /applications` from a posting: the card takes over company, role, link and text of
+ * the posting. 409 `application_exists` (`details.application_id`) or `application_duplicate`
+ * (`details.alerts`); `distinctFrom`: the cards January confirmed as « autre poste ».
  */
 export async function createApplicationFromPosting(postingId: string, distinctFrom: string[]) {
   return unwrap(
@@ -102,20 +102,20 @@ export async function createApplicationFromPosting(postingId: string, distinctFr
   );
 }
 
-/** `GET /gap/top-missing` : les 10 compétences qui manquent le plus souvent. */
+/** `GET /gap/top-missing`: the 10 skills that are most often missing. */
 export async function fetchTopMissing(signal?: AbortSignal) {
   return unwrap(await api.GET("/gap/top-missing", { signal }));
 }
 
-/** Le programme visé par une session de replanification (son sujet), ou `null`. */
+/** The program targeted by a replanning session (its subject), or `null`. */
 export async function programOfSession(sessionId: string): Promise<string | null> {
   const session = await fetchSession(sessionId);
   return session.subject_type === "program" ? session.subject_id : null;
 }
 
 /**
- * `POST /postings/{id}/gap/validate` (202) : « Je les maîtrise déjà », un module « Valider mes
- * acquis » et son quiz. 409 `no_program`, 409 `week_full`, 422 `skills.N`.
+ * `POST /postings/{id}/gap/validate` (202): « Je les maîtrise déjà », a « Valider mes
+ * acquis » and its quiz. 409 `no_program`, 409 `week_full`, 422 `skills.N`.
  */
 export async function validateGap(postingId: string, skills: string[], provider?: RunSource) {
   return unwrap(
@@ -127,13 +127,13 @@ export async function validateGap(postingId: string, skills: string[], provider?
   );
 }
 
-/** `GET /cv/versions?posting_id=` : les CV générés pour cette offre, le plus récent d'abord. */
+/** `GET /cv/versions?posting_id=`: the CVs generated for this posting, newest first. */
 export async function fetchPostingCvs(postingId: string, signal?: AbortSignal) {
   return unwrap(
     await api.GET("/cv/versions", { params: { query: { posting_id: postingId } }, signal }),
   );
 }
 
-/** Le PDF d'un CV généré (le nom `CV_….pdf` vient de l'en-tête du serveur). */
+/** The PDF of a generated CV (the `CV_….pdf` name comes from the server header). */
 export const cvPdfUrl = (versionId: string) =>
   `${apiBaseUrl}/api/v1/cv/versions/${versionId}/pdf`;

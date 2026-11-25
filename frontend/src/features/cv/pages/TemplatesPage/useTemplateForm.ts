@@ -4,7 +4,7 @@ import { MAX_PDF_BYTES } from "../../components/viewTypes";
 import { useCreateTemplate } from "../../hooks/useCreateTemplate";
 import { useDocuments } from "../../hooks/useVersions";
 
-/** Un PDF choisi qui n'en est pas un, ou trop lourd : le texte du refus, sinon `null`. */
+/** A chosen file that is not a PDF, or is too large: the refusal text, otherwise `null`. */
 function fileProblem(file: File): string | null {
   if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
     return t("cv.import.notPdf");
@@ -13,8 +13,8 @@ function fileProblem(file: File): string | null {
 }
 
 /**
- * L'état du formulaire de création d'un modèle : nom, PDF envoyé ou PDF déjà importé. Le PDF
- * envoyé l'emporte ; sans aucun des deux, le formulaire dit ce qui manque.
+ * The state of the template form: name, uploaded PDF or already imported PDF. The PDF
+ * uploaded one wins; with neither, the form says what is missing.
  */
 export function useTemplateForm(onCreated: (templateId: string) => void) {
   const { create, pending, error, visionUnavailable, launchMenu } = useCreateTemplate(onCreated);

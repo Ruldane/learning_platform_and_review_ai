@@ -9,9 +9,9 @@ import { CallFilters } from "../../components/CallFilters";
 import { useAgentCalls } from "../../hooks/useAgentCalls";
 
 /**
- * Réglages > Journal des agents : les appels aux modèles, du plus récent au plus ancien, filtrés
- * par agent et par parcours, page après page. Les filtres sont dans la clé de la lecture : en
- * changer repart de la première page ; ils restent affichés pendant la lecture (focus gardé).
+ * Settings > Agent log: calls to the models, newest first, filtered
+ * by agent and by graph, page after page. The filters are part of the read key: changing
+ * them starts from the first page; they stay shown during the read (focus kept).
  */
 export function AgentLogPage() {
   const [agent, setAgent] = useState<string | null>(null);
@@ -40,7 +40,7 @@ export function AgentLogPage() {
           {query.isError ? (
             <InlineError
               message={errorMessage(query.error)}
-              // Relire ce qui a échoué : la page suivante, ou (relecture ratée) les pages affichées.
+              // Re-read what failed: the next page, or (failed re-read) the pages shown.
               onRetry={() =>
                 void (query.isFetchNextPageError ? query.fetchNextPage() : query.refetch())
               }

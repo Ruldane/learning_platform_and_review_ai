@@ -3,7 +3,7 @@ import { errorMessage } from "@/shared/api/errors";
 import { markDistinct } from "../api";
 import { gapKeys } from "../queryKeys";
 
-/** « Ce sont deux offres distinctes » : l'autre offre disparaît des doublons, l'offre est relue. */
+/** « Ce sont deux offres distinctes »: the other posting leaves duplicates; reload this one. */
 export function useMarkDistinct(postingId: string) {
   const client = useQueryClient();
   const mutation = useMutation({

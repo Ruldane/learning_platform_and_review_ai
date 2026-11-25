@@ -5,8 +5,8 @@ import { gapKeys } from "../queryKeys";
 import { ANALYSIS_POLL_MS, ANALYSIS_POLLS } from "./usePostings";
 
 /**
- * `GET /postings/{id}/gap`, lu une fois l'offre analysée (`enabled`). Tant que l'écart se calcule
- * (`pending`), il est relu toutes les `pollMs`, 40 fois au plus.
+ * `GET /postings/{id}/gap`, read once the posting is analysed (`enabled`). While it computes
+ * (`pending`), it is re-read every `pollMs`, at most 40 times.
  */
 export function useGap(postingId: string, enabled: boolean, pollMs = ANALYSIS_POLL_MS) {
   const budget = usePollingBudget(ANALYSIS_POLLS);

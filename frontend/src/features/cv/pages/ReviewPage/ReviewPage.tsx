@@ -11,14 +11,14 @@ import { ReviewBody } from "./ReviewBody";
 
 interface ReviewPageProps {
   pollMs?: number;
-  /** Ne sert qu'aux tests (faux WebSocket). */
+  /** Only used by the tests (fake WebSocket). */
   createSocket?: SocketFactory;
 }
 
 /**
- * Une revue du CV (`/career/cv/reviews/:reviewId`), lue en une page : le fil des agents, les
- * indicateurs avant et après, les modifications à décider, le rapport, puis la sortie (voir le
- * rapport, générer le PDF, terminer) et l'aperçu de la dernière version.
+ * A CV review (`/career/cv/reviews/:reviewId`), read on one page: the agents' thread, the
+ * indicators before and after, the changes to decide, the report, then the exit (see the
+ * report, generate the PDF, finish) and the preview of the latest version.
  */
 export function ReviewPage({ pollMs = POLL_MS, createSocket }: ReviewPageProps) {
   const { reviewId = "" } = useParams();

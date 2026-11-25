@@ -2,7 +2,7 @@ import type { FeatureManifest } from "@/shared/lib/feature";
 import { AgentLogPage } from "./pages/AgentLogPage";
 import { CostsPage } from "./pages/CostsPage";
 
-/** Les coûts et le journal des agents (SPEC 11.5) : les entrées 6 et 7 de la section Réglages. */
+/** Costs and the agent log (SPEC 11.5): entries 6 and 7 of the Settings section. */
 export const costsManifest: FeatureManifest = {
   id: "costs",
   routes: [

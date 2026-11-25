@@ -3,7 +3,7 @@ import type { JournalEntryView, JournalWeekView } from "../viewTypes";
 
 const DAY_MS = 86_400_000;
 
-/** Le lundi (`AAAA-MM-JJ`) de la semaine qui porte ce jour. */
+/** The Monday (`AAAA-MM-JJ`) of the week that holds this day. */
 export function weekStartOf(day: string): string {
   const date = parseDay(day);
   const sinceMonday = (date.getUTCDay() + 6) % 7;
@@ -11,9 +11,9 @@ export function weekStartOf(day: string): string {
 }
 
 /**
- * Regroupe les entrées par semaine, la plus récente d'abord. Dans une semaine, le bilan
- * hebdomadaire passe en tête ; les autres gardent l'ordre reçu (du plus récent au plus ancien).
- * Une semaine répartie sur deux pages se retrouve en un seul groupe.
+ * Groups entries by week, most recent first. Within a week, the weekly review
+ * goes first; the others keep the received order (newest to oldest).
+ * A week split across two pages ends up in a single group.
  */
 export function groupByWeek(entries: JournalEntryView[]): JournalWeekView[] {
   const weeks = new Map<string, JournalEntryView[]>();

@@ -2,7 +2,7 @@ import { t } from "@/shared/i18n/t";
 
 const COLUMNS = ["skill", "required", "level", "action"] as const;
 
-/** L'en-tête du tableau d'écart : la colonne des cases (lue « Sélection ») puis les quatre colonnes. */
+/** The gap table header: the checkbox column (read « Sélection ») then the four columns. */
 export function GapTableHead() {
   return (
     <thead className="text-left text-xs uppercase tracking-wide text-muted-foreground">

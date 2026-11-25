@@ -14,16 +14,16 @@ function detailsOf(error: unknown): Record<string, unknown> {
 
 interface Created {
   id: string;
-  /** Les informations « même entreprise » à montrer sur la fiche ouverte. */
+  /** The « même entreprise » notes to show on the opened card. */
   info: ApplicationAlertOut[];
 }
 
 /**
- * Crée la candidature d'une offre. `create` rend la fiche à ouvrir : celle qui vient d'être créée
- * (avec ses informations « même entreprise »), ou celle que l'offre a déjà (409 `application_exists`).
- * Des fiches qui ressemblent (409 `application_duplicate`) rendent `null` et remplissent `conflict` :
- * January confirme « autre poste » en rappelant `create` avec leurs identifiants. Toute autre
- * erreur est dans `error`.
+ * Creates a posting's application. `create` returns the card to open: the one just created
+ * (with its « même entreprise » notes), or the posting's own (409 `application_exists`).
+ * Cards that resemble it (409 `application_duplicate`) return `null` and fill `conflict`:
+ * January confirms « autre poste » by calling `create` again with their ids. Any other
+ * error goes to `error`.
  */
 export function useCreateFromPosting(postingId: string) {
   const client = useQueryClient();
@@ -33,8 +33,8 @@ export function useCreateFromPosting(postingId: string) {
     onSuccess: () =>
       Promise.all([
         client.invalidateQueries({ queryKey: gapKeys.applicationCheck(postingId) }),
-        // Le suivi, les indicateurs et le badge des relances voient la nouvelle fiche (le préfixe de
-        // la feature `applications`, que `gap` n'importe pas).
+        // Tracking, indicators and the follow-up badge see the new card (the prefix of
+        // the `applications` feature, which `gap` does not import).
         client.invalidateQueries({ queryKey: ["applications"] }),
       ]),
   });

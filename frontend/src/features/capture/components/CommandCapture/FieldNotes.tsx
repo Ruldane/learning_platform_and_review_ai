@@ -5,15 +5,15 @@ import { MAX_TEXT } from "../source";
 const COUNT = new Intl.NumberFormat("en-GB");
 
 interface FieldNotesProps {
-  /** L'identifiant du champ : les notes portent `{id}-hint` et `{id}-count`. */
+  /** The field id: the notes use `{id}-hint` and `{id}-count`. */
   id: string;
   count: number;
-  /** Un lien de plus de 2 048 caractères : la limite remplace la consigne. */
+  /** A link over 2,048 characters: the limit replaces the hint. */
   tooLong: boolean;
   hint: string;
 }
 
-/** Sous le champ : comment il sera lu (ou la limite d'un lien), puis le compteur « n / 20 000 ». */
+/** Below the field: how it will be read (or a link's limit), then the « n / 20 000 » counter. */
 export function FieldNotes({ id, count, tooLong, hint }: FieldNotesProps) {
   return (
     <>

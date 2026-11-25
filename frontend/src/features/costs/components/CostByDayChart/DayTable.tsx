@@ -4,8 +4,8 @@ import { formatCount, formatUsd } from "../format";
 import type { CostRowView } from "../viewTypes";
 
 /**
- * Le tableau équivalent du graphique, un jour par ligne : masqué à l'œil (`sr-only`), lu par les
- * lecteurs d'écran à la place du dessin.
+ * The table equivalent to the chart, one day per row: hidden visually (`sr-only`), read by the
+ * screen readers in place of the drawing.
  */
 export function DayTable({ rows }: { rows: CostRowView[] }) {
   return (

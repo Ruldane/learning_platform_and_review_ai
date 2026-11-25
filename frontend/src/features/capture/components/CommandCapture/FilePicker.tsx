@@ -12,8 +12,8 @@ interface FilePickerProps {
 }
 
 /**
- * Dépôt ou choix d'un fichier. Le champ natif reste accessible au clavier ; le dépôt n'est qu'un
- * raccourci à la souris.
+ * File drop or file choice. The native input stays keyboard accessible; dropping is only a
+ * mouse shortcut.
  */
 export function FilePicker({ disabled, onFile }: FilePickerProps) {
   const id = useId();

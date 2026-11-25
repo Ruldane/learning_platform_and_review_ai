@@ -84,7 +84,7 @@ const linkView = (item: Data<"links">): LinkView => ({
   sources: item.sources ?? [],
 });
 
-/** Le profil du contrat → la vue du formulaire (listes et valeurs facultatives toujours présentes). */
+/** Contract profile → form view (lists and optional values always present). */
 export function toProfileView(data: MasterProfileData): MasterProfileView {
   return {
     identity: identityView(data),
@@ -99,7 +99,7 @@ export function toProfileView(data: MasterProfileData): MasterProfileView {
   };
 }
 
-/** La vue du formulaire → le profil envoyé à `PUT /profile` (ids gardés, `""` pour une ligne neuve). */
+/** Form view → the profile sent to `PUT /profile` (ids kept, `""` for a new row). */
 export function fromProfileView(view: MasterProfileView): MasterProfileData {
   return {
     identity: view.identity,
@@ -124,7 +124,7 @@ const MAX_LABEL = 100;
 const clip = (text: string): string =>
   text.length > MAX_LABEL ? `${text.slice(0, MAX_LABEL - 1)}…` : text;
 
-/** Ce que January lit pour reconnaître un fait du profil : identifiant du fait → texte court. */
+/** What January reads to recognise a profile fact: fact id → short text. */
 export function factLabels(data: MasterProfileData): Map<string, string> {
   const labels = new Map<string, string>();
   const put = (id: string, text: string) => {

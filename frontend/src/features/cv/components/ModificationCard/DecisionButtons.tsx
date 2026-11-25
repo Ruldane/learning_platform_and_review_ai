@@ -4,16 +4,16 @@ import type { ModificationStatusView } from "../viewTypes";
 
 interface DecisionButtonsProps {
   status: ModificationStatusView;
-  /** Faux tant qu'un fait à confirmer n'est pas confirmé : « Accepter » reste désactivé. */
+  /** False until a fact to confirm is confirmed: « Accepter » stays disabled. */
   confirmed: boolean;
   busy: boolean;
   onAccept: () => void;
   onRefuse: () => void;
-  /** `null` pour un retrait ou un déplacement : il n'y a pas de texte à corriger. */
+  /** `null` for a removal or a move: there is no text to correct. */
   onEdit: (() => void) | null;
 }
 
-/** Accepter, refuser, modifier : le bouton de l'état déjà pris est désactivé. */
+/** Accept, refuse, edit: the button of the state already taken is disabled. */
 export function DecisionButtons({
   status,
   confirmed,

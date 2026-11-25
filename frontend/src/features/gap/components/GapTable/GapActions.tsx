@@ -10,7 +10,7 @@ interface GapActionsProps {
   onValidate?: () => void;
 }
 
-/** Sous le tableau : « Ajouter au planning » et « Je les maîtrise déjà » pour les cases cochées. */
+/** Below the table: « Ajouter au planning » and « Je les maîtrise déjà » on checked rows. */
 export function GapActions({ count, validationCount, adding, onAddToPlan, onValidate }: GapActionsProps) {
   const label = adding
     ? t("gap.table.adding")

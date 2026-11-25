@@ -14,7 +14,7 @@ interface PdfFieldsProps {
   onDocument: (documentId: string) => void;
 }
 
-/** D'où vient le PDF : un fichier à envoyer, ou un PDF déjà importé (liste, si elle existe). */
+/** Where the PDF comes from: a file to send, or a PDF already imported (a list, if there is one). */
 export function PdfFields({
   disabled,
   fileChosen,

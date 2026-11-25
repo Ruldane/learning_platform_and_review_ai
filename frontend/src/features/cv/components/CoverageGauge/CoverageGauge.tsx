@@ -1,18 +1,18 @@
 import { t } from "@/shared/i18n/t";
 
 interface CoverageGaugeProps {
-  /** Couverture des exigences du CV d'origine, de 0 à 100. */
+  /** Coverage of the requirements in the original CV, from 0 to 100. */
   before: number;
-  /** Couverture du CV généré, ou `null` tant qu'il n'existe pas. */
+  /** Coverage of the generated CV, or `null` until it exists. */
   after: number | null;
 }
 
 const clamp = (value: number): number => Math.min(100, Math.max(0, Math.round(value)));
 
 /**
- * « Couverture des exigences : 58 % → 83 % » : la part des exigences obligatoires de l'offre que
- * le CV mentionne, avec un fait du profil derrière. La barre montre la valeur courante, un repère
- * marque le point de départ.
+ * « Couverture des exigences : 58 % → 83 % »: the share of the offer's mandatory requirements
+ * that the CV mentions, backed by a profile fact. The bar shows the current value; a marker
+ * marks the starting point.
  */
 export function CoverageGauge({ before, after }: CoverageGaugeProps) {
   const start = clamp(before);

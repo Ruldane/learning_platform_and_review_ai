@@ -7,7 +7,7 @@ interface ExistingApplicationProps {
   onOpen: (applicationId: string) => void;
 }
 
-/** « Tu as déjà une candidature pour cette offre » et son bouton d'ouverture. */
+/** « Tu as déjà une candidature pour cette offre » and its open button. */
 export function ExistingApplication({ application, onOpen }: ExistingApplicationProps) {
   return (
     <>

@@ -9,9 +9,9 @@ import { SectionGroupView } from "./SectionGroupView";
 interface ReviewDiffProps {
   mods: ModificationView[];
   onDecide: (id: string, status: DecisionView, opts?: DecideOptions) => DecideResult;
-  /** Le refus de la dernière décision, affiché sur la carte de la modification concernée. */
+  /** The refusal of the last decision, shown on the card of the related change. */
   error?: { id: string; message: string } | null;
-  /** « Tout accepter » : les modifications « à confirmer » restent à décider une par une. */
+  /** « Tout accepter »: « à confirmer » changes are still decided one by one. */
   onBulk: (status: DecisionView) => void;
   busy: boolean;
 }
@@ -21,7 +21,7 @@ function noteText(count: number): string {
   return count === 1 ? t("cv.review.note.one") : t("cv.review.note.many", { count });
 }
 
-/** Le message sous « Tout accepter » : ce qui reste à confirmer, puis, après le clic, le résultat. */
+/** The message under « Tout accepter »: what is still to confirm, then the result after a click. */
 function statusText(toConfirm: number, announced: boolean): string {
   const note = noteText(toConfirm);
   if (!announced) return note;
@@ -30,8 +30,8 @@ function statusText(toConfirm: number, announced: boolean): string {
 }
 
 /**
- * Les modifications d'une revue, regroupées par section, avec des filtres (toutes, à décider, à
- * confirmer) et « Tout accepter », qui laisse les modifications « à confirmer » à décider une par une.
+ * The changes of a review, grouped by section, with filters (all, to decide, to
+ * confirm) and « Tout accepter », which leaves « à confirmer » changes to decide one by one.
  */
 export function ReviewDiff({ mods, onDecide, error = null, onBulk, busy }: ReviewDiffProps) {
   const [filter, setFilter] = useState<Filter>("all");

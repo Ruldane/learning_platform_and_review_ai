@@ -9,15 +9,15 @@ import { PdfField } from "./PdfField";
 interface ProfileImportFormProps {
   pending: boolean;
   launchMenu?: ReactNode;
-  /** Message d'échec de l'envoi, déjà en français. */
+  /** Upload failure message, already in French. */
   error: string | null;
   onSubmit: (documents: ProfileImportView) => void;
 }
 
 /**
- * Importer ses documents pour créer le profil maître : un CV en PDF (obligatoire), un profil
- * LinkedIn en PDF et une note (facultatifs). Un fichier qui n'est pas un PDF, ou de plus de 10 Mo,
- * est refusé tout de suite avec son message ; rien ne part tant que le CV manque.
+ * Import your documents to create the master profile: a CV in PDF (required), a LinkedIn
+ * profile in PDF and a note (optional). A file that is not a PDF, or over 10 MB, is refused at
+ * once with its message; nothing is sent while the CV is missing.
  */
 export function ProfileImportForm({
   pending,

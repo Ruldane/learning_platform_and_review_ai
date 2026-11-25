@@ -22,7 +22,7 @@ function sentence(duplicate: DuplicateView): string {
   return t(duplicate.level === "probable" ? "gap.duplicate.probable" : "gap.duplicate.possible");
 }
 
-/** Un doublon : la phrase de son niveau, l'offre concernée, et pour « probable » les deux actions. */
+/** A duplicate: the sentence for its level, its posting, and for « probable » the two actions. */
 export function DuplicateItem({ duplicate, onOpen, onDistinct }: DuplicateItemProps) {
   const nameId = useId();
   return (

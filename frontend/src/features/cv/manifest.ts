@@ -7,9 +7,9 @@ import { TemplatesPage } from "./pages/TemplatesPage";
 import { VersionsPage } from "./pages/VersionsPage";
 
 /**
- * Le profil maître et le CV ciblé (SPEC 15.1, ordre G29 : Profil 1, CV 2, puis Offres 3 et Écarts 4
- * de la feature `gap`). Le profil, les modèles de CV, la revue d'un CV contre une offre et les
- * versions générées. Le lien « Revoir mon CV » de la page d'une offre mène à `revue/nouvelle/:postingId`.
+ * Master profile and targeted CV (SPEC 15.1, G29 order: Profile 1, CV 2, then Postings 3 and Gaps 4
+ * of the `gap` feature). The profile, CV templates, the review of a CV against a posting, and the
+ * generated versions. The « Revoir mon CV » link on a posting leads to `revue/nouvelle/:postingId`.
  */
 export const cvManifest: FeatureManifest = {
   id: "cv",

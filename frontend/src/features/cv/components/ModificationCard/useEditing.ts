@@ -1,14 +1,16 @@
 import { useState } from "react";
 import type { DecideOptions, DecideResult, DecisionView, ModificationView } from "../viewTypes";
 
-/** Le texte est-il celui proposé ? Les espaces en bord ne comptent pas (le champ les retire à l'envoi). */
+/**
+ * Is the text the one proposed? Spaces at the edges do not count (the field strips them on send).
+ */
 export const isUnchanged = (text: string, proposed: string): boolean =>
   text.trim() === proposed.trim();
 
 /**
- * L'éditeur d'une modification : il reste ouvert, texte saisi gardé, tant que le back n'a pas pris
- * la décision. Un texte corrigé repart sans `confirm` (il n'a jamais été montré avec ses blocs, le
- * back le revalide) ; le texte inchangé garde la confirmation de la case.
+ * The editor of a modification: it stays open, with the typed text kept, until the back end
+ * has decided. A corrected text goes without `confirm` (it was never shown with its blocks, so
+ * the back end re-validates it); unchanged text keeps the checkbox confirmation.
  */
 export function useEditing(
   mod: ModificationView,

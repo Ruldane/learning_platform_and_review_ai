@@ -1,20 +1,20 @@
 import type { CaptureSource } from "./viewTypes";
 
-/** Taille maximale d'une note (contrat : `text` de 20 000 caractères) et d'un lien (2 048). */
+/** Maximum size of a note (contract: `text` of 20,000 characters) and of a link (2,048). */
 export const MAX_TEXT = 20_000;
 export const MAX_URL = 2_048;
 
-/** Taille maximale d'un fichier importé (20 Mo), la même que celle du serveur. */
+/** Maximum size of an imported file (20 MB), the same as the server's. */
 export const MAX_FILE_BYTES = 20 * 1024 * 1024;
 
-/** Extensions acceptées à l'import d'un fichier (PDF, DOCX, Markdown, texte). */
+/** Extensions accepted when importing a file (PDF, DOCX, Markdown, text). */
 export const FILE_EXTENSIONS = [".pdf", ".docx", ".md", ".markdown", ".txt"] as const;
 
 const LINK = /^https?:\/\/\S+$/i;
 
 /**
- * La source d'un champ unique : un lien si tout le champ est une adresse `http://` ou `https://`
- * (sans espace), sinon une note. `null` : champ vide.
+ * The source of a single field: a link if the whole field is an `http://` or `https://` address
+ * (no spaces), otherwise a note. `null`: empty field.
  */
 export function detectSource(value: string): CaptureSource | null {
   const trimmed = value.trim();
@@ -22,7 +22,7 @@ export function detectSource(value: string): CaptureSource | null {
   return LINK.test(trimmed) ? { kind: "url", url: trimmed } : { kind: "text", text: trimmed };
 }
 
-/** Raison pour laquelle un fichier est refusé avant tout envoi, ou `null`. */
+/** Why a file is refused before any upload, or `null`. */
 export function fileProblem(file: File): "badType" | "tooBig" | null {
   const name = file.name.toLowerCase();
   if (!FILE_EXTENSIONS.some((extension) => name.endsWith(extension))) return "badType";

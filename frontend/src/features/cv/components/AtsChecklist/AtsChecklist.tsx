@@ -8,9 +8,9 @@ interface AtsChecklistProps {
 }
 
 /**
- * Les contrôles de lisibilité par un logiciel de recrutement : réussi ou à revoir, avec le détail.
- * Le résultat est écrit en toutes lettres (jamais la couleur seule), et la mention rappelle
- * qu'aucun outil ne garantit le passage.
+ * Readability checks by recruitment software: passed or to review, with the detail.
+ * The result is written out in full (never by colour alone), and the note reminds
+ * that no tool guarantees a pass.
  */
 export function AtsChecklist({ checks }: AtsChecklistProps) {
   const titleId = useId();

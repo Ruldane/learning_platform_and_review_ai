@@ -23,7 +23,7 @@ export interface Camera {
 export const INITIAL_CAMERA: Camera = { yaw: 0.36, pitch: -0.21, zoom: 1 };
 const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
 
-/** Répartit les nœuds sur une sphère par groupe, dans un ordre stable. */
+/** Spreads the nodes over a sphere per group, in a stable order. */
 export function placeStars(stars: Star[]): Point[] {
   const ordered = [...stars].sort((a, b) => a.id.localeCompare(b.id));
   return ordered.map((star, index) => {

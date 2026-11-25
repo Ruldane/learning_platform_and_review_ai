@@ -7,7 +7,7 @@ interface JournalEntryProps {
   entry: JournalEntryView;
 }
 
-/** Une ligne du journal : type en toutes lettres, jour, texte et liens vers la session ou la mémoire. */
+/** A journal line: type spelled out, day, text and links to the session or memory. */
 export function JournalEntry({ entry }: JournalEntryProps) {
   const review = entry.kind === "weekly_review";
   return (

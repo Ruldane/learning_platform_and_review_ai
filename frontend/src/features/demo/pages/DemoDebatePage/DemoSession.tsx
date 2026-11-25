@@ -19,11 +19,11 @@ import { useDemoSession } from "../../hooks/useDemoSession";
 interface DemoSessionProps {
   sessionId: string;
   createSocket?: SocketFactory;
-  /** Quitte cette session pour en lancer une autre. */
+  /** Leaves this session to start another one. */
   onRestart: () => void;
 }
 
-/** Flux abandonné ; session introuvable : réessayer ne sert à rien, on en propose une autre. */
+/** Stream dropped; session not found: retrying is pointless, so another one is offered. */
 function streamFailure(stream: SessionStream, onRestart: () => void) {
   const missing = stream.failure === "not_found";
   return (
@@ -35,7 +35,7 @@ function streamFailure(stream: SessionStream, onRestart: () => void) {
   );
 }
 
-/** Une session de démo suivie en direct : barre d'état, fil, message, contrôles. */
+/** A demo session followed live: status bar, thread, message, controls. */
 export function DemoSession({ sessionId, createSocket, onRestart }: DemoSessionProps) {
   const demo = useDemoSession(sessionId, createSocket);
   const { stream, actions, finished } = demo;
@@ -61,7 +61,7 @@ export function DemoSession({ sessionId, createSocket, onRestart }: DemoSessionP
           <InterruptCard
             interrupt={item.interrupt}
             answered={item.answered}
-            // Active seulement si le serveur attend cette réponse (pas en pause, pas déjà reprise).
+            // Active only while the server waits for this reply (not paused, not resumed yet).
             disabled={actions.pending || !isAwaitingAnswer(view, item.interrupt.interrupt_id)}
             onAnswer={(value) => void actions.resume(item.interrupt.interrupt_id, value)}
           />

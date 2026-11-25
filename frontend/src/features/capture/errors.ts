@@ -8,8 +8,8 @@ const isCaptureError = (code: string): code is CaptureErrorCode =>
   Object.hasOwn(en.capture.errors, code);
 
 /**
- * Message français d'un refus de la capture : les codes connus (lien refusé, fichier introuvable,
- * import en échec `document_failed`) ont leur texte, les autres gardent celui du serveur.
+ * French message for a capture refusal: the known codes (link refused, file not found,
+ * import failed `document_failed`) have their text; the others keep the server's message.
  */
 export function captureErrorMessage(error: unknown): string {
   if (error instanceof ApiError && isCaptureError(error.code)) {
@@ -18,7 +18,7 @@ export function captureErrorMessage(error: unknown): string {
   return errorMessage(error);
 }
 
-/** Même table pour l'échec d'une session déjà lancée (`run.failed` : `document_not_indexed`…). */
+/** Same table for a session that already failed (`run.failed`: `document_not_indexed`…). */
 export function failureMessage(code: string, message: string): string {
   return isCaptureError(code) ? t(`capture.errors.${code}`) : message;
 }

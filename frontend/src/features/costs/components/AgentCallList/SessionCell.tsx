@@ -5,7 +5,7 @@ import type { CallView } from "../viewTypes";
 const SESSION_REF = 8;
 
 /**
- * La session d'un appel : sa référence courte (l'identifiant en infobulle) et l'écran du parcours.
+ * The session of a call: its short reference (the id in a tooltip) and the graph's screen.
  */
 export function SessionCell({ call }: { call: CallView }) {
   if (!call.sessionId) {

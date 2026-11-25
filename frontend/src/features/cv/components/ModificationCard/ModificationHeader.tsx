@@ -7,7 +7,9 @@ interface ModificationHeaderProps {
   headingId: string;
 }
 
-/** Le type et l'action, l'état écrit en toutes lettres, et l'agent qui a proposé la modification. */
+/**
+ * The type and action, the state written out in full, and the agent that proposed the change.
+ */
 export function ModificationHeader({ mod, headingId }: ModificationHeaderProps) {
   return (
     <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1">

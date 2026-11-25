@@ -1,11 +1,11 @@
 import { t } from "@/shared/i18n/t";
 
 interface PdfPreviewProps {
-  /** Les images des pages du PDF généré (pas de lecteur PDF embarqué). */
+  /** The images of the pages of the generated PDF (no embedded PDF reader). */
   pages: string[];
   pageCount: number;
   originalPageCount: number;
-  /** Le nom du fichier à télécharger, tel que le serveur le donne. */
+  /** The name of the file to download, as the server gives it. */
   filename: string;
   downloadUrl: string;
 }
@@ -21,8 +21,8 @@ function pagesText(pageCount: number, original: number): string {
 }
 
 /**
- * L'aperçu du CV généré : les images de ses pages, le nombre de pages comparé à celui du CV
- * d'origine (avertissement s'il en a plus) et le lien de téléchargement du PDF.
+ * Preview of the generated CV: images of its pages, the page count compared with the original
+ * CV (a warning if it has more) and the PDF download link.
  */
 export function PdfPreview({
   pages,

@@ -3,7 +3,7 @@ import { formatDay } from "../formatDate";
 import type { ProfileVersionView } from "../viewTypes";
 
 interface ProfileVersionListProps {
-  /** Dans n'importe quel ordre : la liste montre la plus récente en premier. */
+  /** In any order: the list shows the most recent first. */
   versions: ProfileVersionView[];
 }
 
@@ -12,7 +12,9 @@ function sourceText(source: string): string {
   return source;
 }
 
-/** L'historique du profil maître : numéro, état, origine et jour ; la version en vigueur est signalée. */
+/**
+ * The master-profile history: number, state, origin and day; the version in force is flagged.
+ */
 export function ProfileVersionList({ versions }: ProfileVersionListProps) {
   if (versions.length === 0) {
     return <p className="text-sm text-muted-foreground">{t("cv.versions.empty")}</p>;

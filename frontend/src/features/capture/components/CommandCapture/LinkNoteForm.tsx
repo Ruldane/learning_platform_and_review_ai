@@ -9,30 +9,30 @@ import type { CaptureSource } from "../viewTypes";
 import { FieldNotes } from "./FieldNotes";
 
 interface LinkNoteFormProps {
-  /** Le texte saisi (gardé hors du dialogue : une fermeture ne le perd pas). */
+  /** The typed text (kept outside the dialog: closing does not lose it). */
   value: string;
   onValueChange: (value: string) => void;
   busy: boolean;
-  /** Le fichier est en cours d'import : le bouton garde son libellé. */
+  /** The file is being imported: the button keeps its label. */
   uploading: boolean;
   error: string | null;
   onSubmit: (source: CaptureSource) => void;
 }
 
-/** La phrase qui dit comment le champ sera lu : lien, note, ou consigne tant qu'il est vide. */
+/** The sentence saying how the field will be read: link, note, or the hint while it is empty. */
 function hintOf(source: CaptureSource | null): string {
   if (source === null) return t("capture.input.hintEmpty");
   return t(source.kind === "url" ? "capture.input.hintLink" : "capture.input.hintText");
 }
 
-/** Ctrl+Entrée (ou Cmd+Entrée) envoie, sauf pendant une composition (IME). */
+/** Ctrl+Enter (or Cmd+Enter) sends, except during a composition (IME). */
 const isSendShortcut = (event: KeyboardEvent) =>
   event.key === "Enter" && (event.ctrlKey || event.metaKey) && !event.nativeEvent.isComposing;
 
 /**
- * Le champ unique : un lien (adresse `http(s)://` seule) ou une note. Le focus y arrive d'office.
- * La phrase sous le champ dit comment il sera lu ; un compteur montre la limite de 20 000
- * caractères, et un lien de plus de 2 048 caractères est refusé en le disant.
+ * The single field: a link (a lone `http(s)://` address) or a note. Focus lands there by default.
+ * The sentence under the field says how it will be read; a counter shows the 20,000
+ * character limit, and a link over 2,048 characters is refused, with a message saying so.
  */
 export function LinkNoteForm(props: LinkNoteFormProps) {
   const { value, onValueChange, busy, uploading, error, onSubmit } = props;

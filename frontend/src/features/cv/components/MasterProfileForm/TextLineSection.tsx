@@ -9,7 +9,7 @@ interface TextLineSectionProps {
   onChange: (line: LineView | null) => void;
 }
 
-/** Le titre professionnel (une ligne) ou le résumé (un paragraphe) ; un texte vide l'enlève. */
+/** The professional title (one line) or the summary (one paragraph); empty text removes it. */
 export function TextLineSection({ kind, line, onChange }: TextLineSectionProps) {
   return (
     <Section title={t(`cv.profile.section.${kind}`)} path={kind}>

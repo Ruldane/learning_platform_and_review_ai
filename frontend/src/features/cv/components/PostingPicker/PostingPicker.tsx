@@ -9,12 +9,12 @@ export interface PostingChoice {
 }
 
 interface PostingPickerProps {
-  /** Les offres analysées, les plus récentes d'abord. */
+  /** The analysed postings, most recent first. */
   postings: PostingChoice[];
   onPick: (postingId: string) => void;
 }
 
-/** Choisir une offre analysée pour lancer la revue du CV et générer un CV aligné sur elle. */
+/** Pick an analysed posting to run the CV review and generate a CV aligned to it. */
 export function PostingPicker({ postings, onPick }: PostingPickerProps) {
   const id = useId();
   const [chosen, setChosen] = useState(postings[0]?.id ?? "");

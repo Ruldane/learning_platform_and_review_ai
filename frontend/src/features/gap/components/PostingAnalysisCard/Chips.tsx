@@ -3,7 +3,7 @@ interface ChipsProps {
   items: string[];
 }
 
-/** Une liste de mots (mots clés, outils, critères) en pastilles ; rien si elle est vide. */
+/** A list of words (keywords, tools, criteria) as chips; nothing if it is empty. */
 export function Chips({ title, items }: ChipsProps) {
   if (items.length === 0) return null;
   return (

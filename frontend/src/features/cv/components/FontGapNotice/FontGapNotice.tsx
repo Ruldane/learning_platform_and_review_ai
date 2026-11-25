@@ -1,11 +1,13 @@
 import { t } from "@/shared/i18n/t";
 
 interface FontGapNoticeProps {
-  /** Une phrase par police remplacée, sans le nom lu dans le PDF. */
+  /** One sentence per replaced font, without the name read from the PDF. */
   gaps: string[];
 }
 
-/** Les polices du CV d'origine qui ont été remplacées, dites une par une ; rien s'il n'y en a pas. */
+/**
+ * The original CV's fonts that were replaced, listed one by one; nothing if there are none.
+ */
 export function FontGapNotice({ gaps }: FontGapNoticeProps) {
   if (gaps.length === 0) return null;
   return (

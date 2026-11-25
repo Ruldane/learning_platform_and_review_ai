@@ -3,7 +3,7 @@ import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 import { useCaptureDialog } from "./captureDialog";
 
-/** Le bouton de la barre du haut qui ouvre la capture rapide (le raccourci Ctrl+K fait de même). */
+/** The top bar button that opens quick capture (the Ctrl+K shortcut does the same). */
 export function CaptureTopbarButton() {
   const openDialog = useCaptureDialog((state) => state.openDialog);
   return (

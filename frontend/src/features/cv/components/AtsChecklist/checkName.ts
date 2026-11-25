@@ -9,7 +9,7 @@ const KNOWN: AtsCheckIdView[] = [
   "font_sizes",
 ];
 
-/** Le nom d'un contrôle ; un contrôle inconnu garde son identifiant. */
+/** The name of a check; an unknown check keeps its identifier. */
 export function checkName(id: string): string {
   return KNOWN.includes(id as AtsCheckIdView) ? t(`cv.ats.check.${id as AtsCheckIdView}`) : id;
 }

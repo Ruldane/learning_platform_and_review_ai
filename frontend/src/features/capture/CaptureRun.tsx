@@ -12,17 +12,17 @@ import { useCaptureRun } from "./hooks/useCaptureRun";
 
 interface CaptureRunProps {
   sessionId: string;
-  /** Repart d'un champ vide. */
+  /** Starts again from an empty field. */
   onAgain: () => void;
-  /** Ferme le dialogue (avant d'aller au journal). */
+  /** Closes the dialog (before going to the journal). */
   onClose: () => void;
-  /** Ne sert qu'aux tests (faux WebSocket). */
+  /** Only used in tests (fake WebSocket). */
   createSocket?: SocketFactory;
 }
 
 /**
- * Le suivi d'une capture dans le dialogue : résumé en lignes, concepts, questions de l'Archiviste,
- * puis sa fin avec le lien vers le journal. Un échec dit sa raison en clair.
+ * Tracks a capture in the dialog: summary lines, concepts, the Archivist's questions,
+ * then its end with the link to the journal. A failure states its reason in plain text.
  */
 export function CaptureRun({ sessionId, onAgain, onClose, createSocket }: CaptureRunProps) {
   const { stream, actions, over } = useCaptureRun(sessionId, createSocket);

@@ -7,16 +7,16 @@ import { POLL_MS, useProfile } from "../../hooks/useProfile";
 import { ProfileBody } from "./ProfileBody";
 
 interface ProfilePageProps {
-  /** Intervalle de relecture, en ms (réduit par les tests). */
+  /** Reload interval, in ms (reduced by the tests). */
   pollMs?: number;
-  /** Ne sert qu'aux tests (faux WebSocket). */
+  /** Only used by the tests (fake WebSocket). */
   createSocket?: SocketFactory;
 }
 
 /**
- * Le profil maître (`/career/profile`). Sans profil : l'import des documents. Pendant la lecture :
- * le fil de l'Archiviste. Un brouillon se relit puis se valide (`PUT` avec la version relue) ; un
- * profil validé se corrige de la même façon. L'historique des versions est dessous.
+ * The master profile (`/career/profile`). Without a profile: the document import. While reading:
+ * the Archiviste's thread. A draft is reviewed, then validated (`PUT` with the reviewed version); a
+ * validated profile is fixed the same way. The version history is below.
  */
 export function ProfilePage({ pollMs = POLL_MS, createSocket }: ProfilePageProps) {
   const query = useProfile(pollMs);

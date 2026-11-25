@@ -4,7 +4,7 @@ import type { CostWindow } from "../components/viewTypes";
 import { costsKeys } from "../queryKeys";
 import { toCostsView } from "../toView";
 
-/** Le rapport des coûts d'une fenêtre ; changer de fenêtre relit (une clé par fenêtre). */
+/** The cost report of a window; changing the window re-reads it (one key per window). */
 export function useCosts(days: CostWindow) {
   return useQuery({
     queryKey: costsKeys.report(days),

@@ -7,7 +7,7 @@ interface WindowPickerProps {
   onChange: (days: CostWindow) => void;
 }
 
-/** Les fenêtres du rapport : 7, 30 ou 90 jours (la choisie est annoncée par `aria-pressed`). */
+/** The report windows: 7, 30 or 90 days (the chosen one is announced by `aria-pressed`). */
 export function WindowPicker({ value, onChange }: WindowPickerProps) {
   return (
     <div role="group" aria-label={t("costs.report.window.label")} className="flex gap-2">

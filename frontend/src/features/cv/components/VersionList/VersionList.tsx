@@ -4,7 +4,7 @@ import { formatDay } from "../formatDate";
 import type { VersionView } from "../viewTypes";
 
 interface VersionListProps {
-  /** Dans n'importe quel ordre : la liste montre la plus récente en premier. */
+  /** In any order: the list shows the most recent first. */
   versions: VersionView[];
   onOpen: (versionId: string) => void;
 }
@@ -14,11 +14,11 @@ function pagesText(count: number | null): string | null {
   return count === 1 ? t("cv.cvVersions.pages.one") : t("cv.cvVersions.pages.many", { count });
 }
 
-/** On ouvre une version dont le PDF existe ; une génération en cours ou ratée ne s'ouvre pas. */
+/** A version opens only if its PDF exists; a generation in progress or failed does not. */
 const canOpen = (version: VersionView): boolean =>
   version.status === "ready" || version.status === "pages_exceeded";
 
-/** Les versions du CV d'une offre, la plus récente d'abord : état, pages, jour, fichier, « Ouvrir ». */
+/** The CV versions of a posting, most recent first: status, pages, day, file, « Ouvrir ». */
 export function VersionList({ versions, onOpen }: VersionListProps) {
   if (versions.length === 0) {
     return <p className="text-sm text-muted-foreground">{t("cv.cvVersions.empty")}</p>;

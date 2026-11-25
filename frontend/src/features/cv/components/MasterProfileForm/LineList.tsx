@@ -5,9 +5,9 @@ import { Field } from "./Field";
 import { blank, removeAt, replaceAt } from "./profileDraft";
 
 interface LineListProps {
-  /** Chemin de la liste (`experiences.0.achievements`) ; chaque ligne ajoute `.<n>.text`. */
+  /** Path of the list (`experiences.0.achievements`); each row adds `.<n>.text`. */
   path: string;
-  /** Nom de la ligne qui les porte (« Expérience 1 »), pour les noms accessibles. */
+  /** Name of the row that holds them (« Expérience 1 »), for accessible names. */
   context: string;
   lines: LineView[];
   onChange: (lines: LineView[]) => void;
@@ -17,7 +17,7 @@ interface LineListProps {
   removeAriaLabel: (n: number) => string;
 }
 
-/** Les lignes de texte d'une entrée (réalisations, détails) : une zone par ligne, ajout et retrait. */
+/** Text lines of an entry (achievements, details): one area per line, with add and remove. */
 export function LineList({
   path,
   context,

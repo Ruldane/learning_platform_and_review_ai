@@ -7,20 +7,20 @@ import { isUnchanged } from "./useEditing";
 
 interface EditFieldProps {
   initial: string;
-  /** Faux tant qu'un fait à confirmer n'est pas confirmé : le texte inchangé ne s'enregistre pas. */
+  /** False until a fact to confirm is confirmed: unchanged text cannot be saved. */
   confirmed: boolean;
   busy: boolean;
   onSave: (text: string) => void;
   onCancel: () => void;
 }
 
-/** Le champ qui s'ouvre avec « Modifier » : le texte proposé, à corriger puis à accepter. */
+/** The field that opens with « Modifier »: the proposed text, to correct then accept. */
 export function EditField({ initial, confirmed, busy, onSave, onCancel }: EditFieldProps) {
   const id = useId();
   const [text, setText] = useState(initial);
   const empty = text.trim() === "";
-  // Un texte corrigé repart sans confirmation (le back le revérifie) ; seul le texte inchangé
-  // d'une modification « à confirmer » attend la case.
+  // A corrected text goes without confirmation (the back end re-checks it); only the unchanged
+  // text of a modification marked « à confirmer » waits for the checkbox.
   const needsConfirm = !confirmed && isUnchanged(text, initial);
   return (
     <div className="flex flex-col gap-2">

@@ -7,7 +7,7 @@ import { PostingTabs, type PostingTab } from "./PostingTabs";
 import { SourcePanel } from "./SourcePanel";
 
 interface PostingFormProps {
-  /** Un envoi est en route : rien n'est modifiable et « Analyser » est grisé. */
+  /** A submission is in progress: nothing is editable and « Analyser » is greyed out. */
   pending: boolean;
   error: FormErrorView | null;
   launchOptions?: ReactNode;
@@ -15,9 +15,9 @@ interface PostingFormProps {
 }
 
 /**
- * Ajouter une offre : un lien ou le texte collé, en deux onglets. Une offre dont le lien est
- * illisible (`posting_unreadable`) bascule sur l'onglet « Texte » avec le message. Un double clic
- * n'envoie qu'une fois : le formulaire reste verrouillé jusqu'à la réponse de la page.
+ * Add a posting: a link or the pasted text, in two tabs. A posting whose link is
+ * unreadable (`posting_unreadable`) switches to the « Texte » tab, with its message. A double
+ * click submits only once: the form stays locked until the page responds.
  */
 export function PostingForm({ pending, error, launchOptions, onSubmit }: PostingFormProps) {
   const [tab, setTab] = useState<PostingTab>("url");
@@ -26,7 +26,7 @@ export function PostingForm({ pending, error, launchOptions, onSubmit }: Posting
   const sent = useRef(false);
   const ids = { url: useId(), text: useId() };
 
-  // Une réponse (échec, ou fin de l'attente) rouvre le formulaire à l'envoi suivant.
+  // A response (failure, or end of the wait) reopens the form for the next submission.
   useEffect(() => {
     if (!pending) sent.current = false;
   }, [pending, error]);

@@ -7,17 +7,17 @@ interface CaptureTextCardProps {
   interrupt: QuestionView;
   answered: boolean;
   disabled: boolean;
-  /** Reçoit `{ answers: { text } }`, ou la valeur de l'option « Abandonner ». */
+  /** Receives `{ answers: { text } }`, or the value of the « Abandonner » option. */
   onAnswer: (value: unknown) => void;
-  /** Le texte saisi, gardé hors du dialogue ; vidé à l'envoi et à « Abandonner ». */
+  /** The typed text, kept outside the dialog; cleared on send and on « Abandonner ». */
   draft: string;
   onDraft: (text: string) => void;
 }
 
 /**
- * La question « colle le texte » d'un lien illisible (`capture_text`) : une zone de texte de 20 000
- * caractères au plus et « Abandonner ». Abandonner n'envoie jamais le texte saisi : c'est pourquoi
- * la carte commune des questions n'est pas utilisée ici. Répondue, la carte se replie.
+ * The « colle le texte » question for an unreadable link (`capture_text`): a text area of 20,000
+ * characters at most, and « Abandonner ». Abandoning never sends the typed text: that is why
+ * the shared question card is not used here. Once answered, the card collapses.
  */
 export function CaptureTextCard(props: CaptureTextCardProps) {
   const { interrupt, answered, disabled, onAnswer, draft, onDraft } = props;

@@ -5,16 +5,16 @@ import { ReportList } from "./ReportList";
 
 interface ReviewReportViewProps {
   report: ReportView;
-  /** Les mots clés de l'offre que les faits cités ne portent pas : à appuyer par un fait ou à acquérir. */
+  /** Job keywords the cited facts do not cover: to back with a fact or to acquire. */
   gapTerms: string[];
-  /** L'adresse de l'écran de l'écart. */
+  /** The URL of the gap screen. */
   gapHref: string;
 }
 
 /**
- * Le rapport de la revue : forces, risques, critères éliminatoires, logiciel de recrutement détecté,
- * fiche entreprise, et les mots clés de l'offre que les faits cités ne portent pas (jamais ajoutés au CV).
- * Tout est rendu en texte brut.
+ * The review report: strengths, risks, knockout criteria, detected applicant tracking system,
+ * company profile, and job keywords the cited facts do not cover (never added to the CV).
+ * Everything is rendered as plain text.
  */
 export function ReviewReportView({ report, gapTerms, gapHref }: ReviewReportViewProps) {
   return (

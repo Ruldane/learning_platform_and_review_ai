@@ -5,10 +5,10 @@ import { cvErrorMessage } from "../errors";
 import { cvKeys } from "../queryKeys";
 
 /**
- * « Générer le PDF » : `POST /cv/reviews/{id}/generate`. Un double clic n'envoie qu'une requête
- * (le verrou tient jusqu'à la réponse), et la revue est relue avant de rendre la main : la
- * question de sortie n'attend plus, les boutons se désactivent pendant le rendu. Un 409 (génération
- * déjà en cours, revue terminée…) revient en `error`, en français.
+ * « Générer le PDF »: `POST /cv/reviews/{id}/generate`. A double click sends only one request
+ * (the lock holds until the response), and the review is reloaded before control returns: the
+ * exit question no longer waits, the buttons are disabled during rendering. A 409 (generation
+ * already running, review finished…) comes back as `error`, in French.
  */
 export function useGenerate(reviewId: string) {
   const client = useQueryClient();

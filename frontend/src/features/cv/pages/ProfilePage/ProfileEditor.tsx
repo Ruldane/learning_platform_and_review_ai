@@ -17,14 +17,14 @@ interface ProfileEditorProps {
 }
 
 /**
- * Le profil à relire (brouillon) ou à corriger (validé). « Valider mon profil » envoie `PUT` avec la
- * version relue ; un 409 dit que le profil a changé et propose de le recharger (la saisie n'est
- * perdue que si on recharge).
+ * The profile to reread (draft) or to fix (validated). « Valider mon profil » sends `PUT` with the
+ * reviewed version; a 409 says the profile changed and offers to reload it (input is
+ * lost only if we reload).
  */
 export function ProfileEditor({ current, isDraft }: ProfileEditorProps) {
   const client = useQueryClient();
   const [savedVersion, setSavedVersion] = useState<number | null>(null);
-  // Une référence stable : le formulaire se réinitialise quand elle change.
+  // A stable reference: the form resets when it changes.
   const view = useMemo(() => toProfileView(current.data), [current]);
   const { save, saving, error, conflict, clear } = useSaveProfile(current.version, setSavedVersion);
   const reload = () => {

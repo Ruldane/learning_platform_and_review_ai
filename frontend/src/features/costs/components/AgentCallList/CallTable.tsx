@@ -15,7 +15,7 @@ const COLUMNS = [
 ] as const;
 const NUMERIC = new Set<string>(["tokensIn", "tokensOut", "latency", "cost"]);
 
-/** Le tableau des appels, défilant sur les écrans étroits. */
+/** The calls table, scrolling on narrow screens. */
 export function CallTable({ calls }: { calls: CallView[] }) {
   return (
     <div

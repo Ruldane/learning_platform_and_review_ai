@@ -5,13 +5,13 @@ import type { DiffSegment } from "./wordDiff";
 interface DiffSideProps {
   segments: DiffSegment[];
   side: "before" | "after";
-  /** Dit pourquoi ce côté est vide (ligne ajoutée, ligne retirée). */
+  /** Says why this side is empty (added line, removed line). */
   empty: string;
 }
 
 /**
- * Un côté du diff. Le retrait est barré (`<del>`), l'ajout souligné (`<ins>`), et un mot caché
- * pour les lecteurs d'écran les nomme : la couleur n'est jamais le seul signal.
+ * One side of the diff. Removal is struck through (`<del>`), addition underlined (`<ins>`), and
+ * a hidden word for screen readers names them: colour is never the only signal.
  */
 export function DiffSide({ segments, side, empty }: DiffSideProps) {
   const kept = segments.filter(

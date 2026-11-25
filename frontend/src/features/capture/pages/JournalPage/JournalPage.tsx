@@ -10,8 +10,8 @@ import type { JournalKindView } from "../../components/viewTypes";
 import { useJournal } from "../../hooks/useJournal";
 
 /**
- * Le journal d'apprentissage (`/study/journal`) : captures, sessions d'étude, quiz et bilans
- * hebdomadaires, groupés par semaine ; filtre par type et pagination par `before`.
+ * The learning journal (`/study/journal`): captures, study sessions, quizzes and reviews
+ * grouped by week; filter by type and pagination by `before`.
  */
 export function JournalPage() {
   const [kind, setKind] = useState<JournalKindView | null>(null);

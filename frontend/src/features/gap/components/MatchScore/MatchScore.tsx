@@ -1,13 +1,13 @@
 import { t } from "@/shared/i18n/t";
 
 interface MatchScoreProps {
-  /** Score de match de 0 à 100 (arrondi et borné ici). */
+  /** Match score from 0 to 100 (rounded and clamped here). */
   score: number;
 }
 
 /**
- * Le score de match d'une offre : « 62/100 », une jauge et son nom écrit. Une indication pour se
- * situer, jamais une promesse d'embauche (le texte le dit).
+ * A posting's match score: « 62/100 », a gauge and its written name. A hint to get
+ * a sense of fit, never a hiring promise (the text says so).
  */
 export function MatchScore({ score }: MatchScoreProps) {
   const value = Math.min(100, Math.max(0, Math.round(score)));

@@ -6,7 +6,7 @@ import { ProfileVersionList } from "../../components/ProfileVersionList";
 import { useProfileVersions } from "../../hooks/useProfile";
 import { toProfileVersionViews } from "../../toView";
 
-/** L'historique du profil maître : jamais d'écrasement, chaque validation est une version. */
+/** The master profile history: never overwritten, each validation is a version. */
 export function VersionsSection() {
   const query = useProfileVersions();
   return (

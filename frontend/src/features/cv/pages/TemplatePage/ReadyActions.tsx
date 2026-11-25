@@ -5,7 +5,7 @@ import { InlineError } from "@/shared/ui/states/InlineError";
 import { useActivateTemplate } from "../../hooks/useCreateTemplate";
 import type { TemplateOut } from "../../types";
 
-/** Un modèle prêt : « Utiliser ce modèle pour mes CV » s'il n'est pas actif, et la suite (revoir son CV). */
+/** A ready template: « Utiliser ce modèle pour mes CV » if inactive, then review the CV. */
 export function ReadyActions({ template }: { template: TemplateOut }) {
   const { activate, pending, error } = useActivateTemplate();
   return (

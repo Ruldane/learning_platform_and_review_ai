@@ -4,7 +4,7 @@ import { latestVersion, toIndicatorsView } from "../../toView";
 import type { CvReviewOut } from "../../types";
 import { Section } from "./Section";
 
-/** Les indicateurs du CV d'origine, et ceux de la dernière version prête quand elle existe. */
+/** The indicators of the original CV, and those of the latest ready version if one exists. */
 export function IndicatorsSection({ review }: { review: CvReviewOut }) {
   const latest = latestVersion(review);
   return (

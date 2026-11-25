@@ -6,14 +6,14 @@ import { captureKeys } from "../queryKeys";
 import { toEntryView } from "../toView";
 import type { JournalKind } from "../types";
 
-/** Entrées par page (le contrat accepte 1 à 100). */
+/** Entries per page (the contract accepts 1 to 100). */
 export const JOURNAL_PAGE = 50;
 
 /**
- * Le journal, filtré par type, page après page : la suivante part de `next_before` de la
- * précédente, jusqu'à ce que le serveur n'en rende plus. Au changement de type, les entrées
- * affichées restent jusqu'à l'arrivée des nouvelles : la liste et son filtre ne sont pas démontés
- * (le focus clavier reste sur le filtre).
+ * The journal, filtered by type, page after page: the next one starts from the `next_before` of the
+ * previous one, until the server returns no more. When the type changes, the entries
+ * shown stay until the new ones arrive: the list and its filter are not unmounted
+ * (keyboard focus stays on the filter).
  */
 export function useJournal(kind: JournalKind | null) {
   const query = useInfiniteQuery({

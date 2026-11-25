@@ -10,7 +10,7 @@ interface SkillsSectionProps {
   onChange: (items: SkillFactView[]) => void;
 }
 
-/** Les compétences : un nom et une catégorie facultative par ligne. */
+/** Skills: a name and an optional category per row. */
 export function SkillsSection({ items, onChange }: SkillsSectionProps) {
   return (
     <Section title={t("cv.profile.section.skills")} count={items.length} path="skills">

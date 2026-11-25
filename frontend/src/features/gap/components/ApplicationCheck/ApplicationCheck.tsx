@@ -6,23 +6,23 @@ import type { ExistingApplicationView } from "../viewTypes";
 import { ExistingApplication } from "./ExistingApplication";
 
 interface ApplicationCheckProps {
-  /** La candidature qui existe déjà pour cette offre, s'il y en a une. */
+  /** The application that already exists for this posting, if any. */
   own: ExistingApplicationView | null;
-  /** Les fiches proches (doublons, informations) ; l'alerte les ordonne et dit le niveau. */
+  /** The close cards (duplicates, notes); the alert sorts them and states the level. */
   alerts: DuplicateAlertView[];
   creating: boolean;
   error: string | null;
   onOpen: (applicationId: string) => void;
   onCreate: () => void;
-  /** « C'est un autre poste » : la candidature est créée malgré les fiches proches. */
+  /** « C'est un autre poste »: the application is created despite the close cards. */
   onDistinct: () => void;
   onCancel: () => void;
 }
 
 /**
- * La candidature d'une offre : la fiche existante à ouvrir, ou, sinon, l'alerte de doublon quand
- * des fiches lui ressemblent (ses trois choix) et le bouton « Créer la candidature » (caché tant
- * qu'une fiche proche demande un choix : l'alerte le porte). Une simple information ne bloque rien.
+ * A posting's application: the existing card to open, or otherwise the duplicate alert when
+ * cards resemble it (its three choices) and the « Créer la candidature » button (hidden while
+ * a close card needs a choice: the alert carries it). A plain note blocks nothing.
  */
 export function ApplicationCheck({
   own,

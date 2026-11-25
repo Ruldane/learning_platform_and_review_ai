@@ -1,7 +1,7 @@
-/** Types de vue des composants des offres et de l'écart : indépendants du contrat d'API (D34). */
+/** View types for the posting and gap components: independent of the API contract (D34). */
 import type { DuplicateAlertView } from "@/shared/ui/DuplicateAlert";
 
-/** Niveau de maîtrise d'une compétence ; `null` : aucune ligne (absente). */
+/** Mastery level of a skill; `null`: no row (absent). */
 export type SkillLevelView = "declared" | "in_progress" | "validated" | "proven";
 
 export type DuplicateLevel = "certain" | "probable" | "possible";
@@ -11,13 +11,13 @@ export interface DuplicateView {
   postingId: string;
   title: string | null;
   company: string | null;
-  /** Instant ISO de l'ajout de l'offre déjà connue. */
+  /** ISO instant when the already known posting was added. */
   createdAt: string;
 }
 
 export type GapActionView = "in_program" | "to_add" | "out_of_scope";
 
-/** D'où vient la ligne : l'offre elle-même, ou un mot clé que la revue du CV a renvoyé vers l'écart. */
+/** Where the row comes from: the posting itself, or a keyword the CV review sent to the gap. */
 export type GapSourceView = "posting" | "cv_review";
 
 export interface GapRowView {
@@ -25,14 +25,14 @@ export interface GapRowView {
   required: boolean;
   level: SkillLevelView | null;
   action: GapActionView;
-  /** Semaine de la première tâche du module, pour `in_program`. */
+  /** Week of the module's first task, for `in_program`. */
   week: number | null;
   source: GapSourceView;
 }
 
 /**
- * La ligne peut être ajoutée au planning : elle est « À ajouter » et manque vraiment (une
- * compétence déjà validée ou prouvée n'est pas à apprendre).
+ * The row can be added to the planning: it is « À ajouter » and really missing (a
+ * skill already validated or proven does not need learning).
  */
 export function isAddable(row: GapRowView): boolean {
   return row.action === "to_add" && row.level !== "validated" && row.level !== "proven";
@@ -44,9 +44,9 @@ export function canPlan(row: GapRowView): boolean {
 
 export interface MissingSkillView {
   skill: string;
-  /** Nombre d'offres où la compétence manque. */
+  /** Number of postings where the skill is missing. */
   postings: number;
-  /** Parmi elles, nombre d'offres qui l'exigent. */
+  /** Among them, the number of postings that require it. */
   requiredIn: number;
 }
 
@@ -63,32 +63,32 @@ export interface PostingAnalysisView {
   tools: string[];
 }
 
-/** Ce que January fournit pour ajouter une offre : un lien ou le texte collé, jamais les deux. */
+/** What January provides to add a posting: a link or pasted text, never both. */
 export type PostingSourceView = { url: string } | { text: string };
 
-/** Une erreur d'envoi : `code` d'API (`posting_unreadable`…) et message déjà en français. */
+/** A submission error: API `code` (`posting_unreadable`…) and a message already in French. */
 export interface FormErrorView {
   code: string;
   message: string;
 }
 
-/** Nombre maximal de compétences ajoutées au planning en un seul envoi. */
+/** Maximum number of skills added to the planning in a single submission. */
 export const MAX_PLAN_SKILLS = 10;
 
 export type PostingStatusView = "analyzing" | "ready" | "rejected" | "failed";
 
-/** Une ligne de la liste des offres. */
+/** A row of the postings list. */
 export interface PostingListItemView {
   id: string;
-  /** `null` tant que l'analyse n'a pas trouvé le titre. */
+  /** `null` until the analysis has found the title. */
   title: string | null;
   company: string | null;
-  /** Score de match de 0 à 100 ; `null` tant que l'écart n'est pas calculé. */
+  /** Match score from 0 to 100; `null` until the gap is computed. */
   score: number | null;
   status: PostingStatusView;
 }
 
-/** La candidature qui existe déjà pour une offre. */
+/** The application that already exists for a posting. */
 export interface ExistingApplicationView {
   id: string;
   company: string;

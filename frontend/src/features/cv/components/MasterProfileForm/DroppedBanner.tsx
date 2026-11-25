@@ -1,11 +1,11 @@
 import { t } from "@/shared/i18n/t";
 
 interface DroppedBannerProps {
-  /** Les textes des lignes retirées : un chiffre qu'aucun document ne confirme. */
+  /** The texts of the removed lines: a figure that no document confirms. */
   dropped: string[];
 }
 
-/** Bandeau des lignes retirées du profil : leur nombre, et leur liste à la demande. */
+/** Banner for lines removed from the profile: their count, and their list on request. */
 export function DroppedBanner({ dropped }: DroppedBannerProps) {
   if (dropped.length === 0) return null;
   const many = dropped.length > 1;

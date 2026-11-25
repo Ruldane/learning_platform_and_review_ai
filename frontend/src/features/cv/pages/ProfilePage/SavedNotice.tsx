@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import { t } from "@/shared/i18n/t";
 
-/** « Profil validé : version N », avec le lien vers les modèles de CV ; rien avant la validation. */
+/** « Profil validé : version N », with the link to the CV templates; nothing before validation. */
 export function SavedNotice({ version }: { version: number | null }) {
   if (version === null) return null;
   return (

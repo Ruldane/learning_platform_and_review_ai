@@ -9,15 +9,15 @@ import type { CvReviewOut, VersionOut } from "../../types";
 
 interface VersionPanelProps {
   review: CvReviewOut;
-  /** La dernière version de la revue, ou `null` si aucun PDF n'a été demandé. */
+  /** The latest version of the review, or `null` if no PDF was requested. */
   version: VersionOut | null;
   generate: ReturnType<typeof useGenerate>;
 }
 
 /**
- * Le PDF de la dernière version : en rendu, prêt (aperçu et téléchargement), trop long (« Autoriser
- * une page de plus ») ou en échec (« Réessayer »). Une nouvelle génération n'est possible que
- * pendant la question de sortie, jamais pendant un rendu.
+ * The PDF of the latest version: rendering, ready (preview and download), too long (« Autoriser
+ * une page de plus ») or failed (« Réessayer »). A new generation is only possible
+ * during the exit question, never during a rendering.
  */
 export function VersionPanel({ review, version, generate }: VersionPanelProps) {
   if (version === null) return null;

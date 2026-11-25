@@ -9,10 +9,10 @@ import { useStartReview } from "../../hooks/useStartReview";
 import { ReviewRefusal } from "./ReviewRefusal";
 
 /**
- * Lancer la revue du CV pour une offre (`/career/cv/reviews/new/:postingId`). Le back vérifie le
- * profil validé, le modèle actif et l'offre analysée : chaque refus (409) a son texte et son action
- * (« Valide ton profil », « Crée ton modèle »…). Une revue déjà ouverte pour l'offre est reprise.
- * Sinon `POST /cv/reviews`, puis redirection vers la revue.
+ * Starts the CV review for a posting (`/career/cv/reviews/new/:postingId`). The back end checks
+ * validated profile, active template and analyzed posting: each refusal (409) has text and action
+ * (« Valide ton profil », « Crée ton modèle »…). An already open review for the posting is resumed.
+ * Otherwise `POST /cv/reviews`, then redirect to the review.
  */
 export function NewReviewPage() {
   const { postingId = "" } = useParams();
@@ -30,7 +30,7 @@ export function NewReviewPage() {
   const launched = useRef(false);
 
   useEffect(() => {
-    // Un seul lancement par visite, même si React rejoue l'effet.
+    // A single launch per visit, even if React replays the effect.
     if (launched.current) return;
     launched.current = true;
     start();

@@ -1,6 +1,6 @@
 import type { CostWindow } from "./components/viewTypes";
 
-/** Clés TanStack Query de la feature : la fenêtre et les filtres, jamais une donnée du journal. */
+/** TanStack Query keys of the feature: the window and the filters, never a journal entry. */
 export const costsKeys = {
   report: (days: CostWindow) => ["costs", "report", days] as const,
   calls: (agent: string | null, graph: string | null) =>

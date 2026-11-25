@@ -10,7 +10,7 @@ interface ExistingPdfProps {
   onChange: (documentId: string) => void;
 }
 
-/** Choisir un PDF déjà importé plutôt que d'en envoyer un autre ; rien s'il n'y en a pas. */
+/** Pick a PDF already imported instead of sending another; nothing if there is none. */
 export function ExistingPdf({ documents, value, disabled, onChange }: ExistingPdfProps) {
   const id = useId();
   if (documents.length === 0) return null;

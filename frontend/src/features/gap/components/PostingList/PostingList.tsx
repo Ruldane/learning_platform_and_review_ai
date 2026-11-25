@@ -4,7 +4,7 @@ import type { PostingListItemView } from "../viewTypes";
 
 interface PostingListProps {
   postings: PostingListItemView[];
-  /** L'adresse de la page d'une offre. */
+  /** The address of a posting's page. */
   hrefOf: (postingId: string) => string;
 }
 
@@ -21,7 +21,7 @@ function statusText(posting: PostingListItemView): string | null {
   }
 }
 
-/** Les offres ajoutées : titre (lien vers l'offre), entreprise et, selon l'état, score ou statut. */
+/** The added postings: title (link to the posting), company, and score or status. */
 export function PostingList({ postings, hrefOf }: PostingListProps) {
   return (
     <ul aria-label={t("gap.postings.listLabel")} className="flex flex-col gap-2">

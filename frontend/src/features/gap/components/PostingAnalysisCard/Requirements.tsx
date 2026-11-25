@@ -5,7 +5,7 @@ interface RequirementsProps {
   items: PostingAnalysisView["requirements"];
 }
 
-/** Les exigences de l'offre, chacune marquée « Exigée » ou « Souhaitée ». */
+/** The posting's requirements, each marked « Exigée » or « Souhaitée ». */
 export function Requirements({ items }: RequirementsProps) {
   return (
     <section className="flex flex-col gap-1">

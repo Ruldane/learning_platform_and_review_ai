@@ -6,17 +6,17 @@ import { TEMPLATE_QUESTION, TemplateQuestion } from "./TemplateQuestion";
 
 interface TemplateRunProps {
   sessionId: string;
-  /** Appelé à chaque changement d'état ou nouvelle question : la page relit le modèle. */
+  /** Called on each state change or new question: the page reloads the template. */
   onChange: () => void;
-  /** Le modèle est prêt : la question de validation n'a plus lieu d'être. */
+  /** The template is ready: the validation question no longer applies. */
   ready?: boolean;
   createSocket?: SocketFactory;
 }
 
 /**
- * Le fil du Maquettiste ; la question `cv_template` a sa carte, les autres la carte commune. Une fois
- * le modèle prêt ou la session finie, la carte de validation n'est plus rendue (champs et boutons
- * grisés sous « Terminée » n'apprennent rien).
+ * The Maquettiste's thread; the `cv_template` question has its own card, the others share one. Once
+ * the template is ready or the session is over, the validation card is hidden (fields and buttons
+ * greyed out under « Terminée » tell nothing).
  */
 export function TemplateRun({
   sessionId,

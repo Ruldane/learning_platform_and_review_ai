@@ -4,7 +4,7 @@ import { useActivateTemplate } from "../../hooks/useCreateTemplate";
 import type { TemplateSummaryOut } from "../../types";
 import { TemplateRow } from "./TemplateRow";
 
-/** Les modèles de CV, le plus récent d'abord ; « Utiliser ce modèle » les active un à un. */
+/** CV templates, newest first; « Utiliser ce modèle » activates them one at a time. */
 export function TemplateList({ templates }: { templates: TemplateSummaryOut[] }) {
   const { activate, pending, error } = useActivateTemplate();
   return (

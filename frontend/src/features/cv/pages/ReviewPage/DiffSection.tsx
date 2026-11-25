@@ -13,9 +13,9 @@ import { InlineError } from "@/shared/ui/states/InlineError";
 const PENDING_DRAFT = "profile_draft_pending";
 
 /**
- * Les modifications à décider. Une décision unitaire part seule ; « Tout accepter » ne prend que
- * les modifications `proposed` : celles « à confirmer » restent à décider une par une. Les faits
- * cités reprennent le texte du profil validé. Une revue terminée fige tout.
+ * The changes to decide. A single decision is sent alone; « Tout accepter » only takes
+ * the `proposed` changes: those « à confirmer » are still decided one by one. The facts
+ * cited take the text of the validated profile. A finished review freezes everything.
  */
 export function DiffSection({ review, locked }: { review: CvReviewOut; locked: boolean }) {
   const decide = useDecide(review.id);

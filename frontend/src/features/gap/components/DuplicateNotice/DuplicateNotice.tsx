@@ -9,9 +9,9 @@ interface DuplicateNoticeProps {
 }
 
 /**
- * Les offres déjà connues qui ressemblent à celle qu'on vient d'ajouter. « Certain » : le jour de
- * l'ajout ; « probable » : on propose d'ouvrir l'ancienne ou de dire que ce sont deux offres ;
- * « possible » : une simple mention.
+ * Known postings that resemble the one just added. « Certain »: same day as the
+ * addition; « probable »: offer to open the old one or to say they are two postings;
+ * « possible »: a plain mention.
  */
 export function DuplicateNotice({ duplicates, onOpen, onDistinct }: DuplicateNoticeProps) {
   if (duplicates.length === 0) return null;

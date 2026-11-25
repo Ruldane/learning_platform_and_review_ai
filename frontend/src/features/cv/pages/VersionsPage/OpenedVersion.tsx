@@ -12,7 +12,7 @@ interface OpenedVersionProps {
   onClose: () => void;
 }
 
-/** L'aperçu d'une version ouverte : ses pages et son téléchargement, ou pourquoi il n'y en a pas. */
+/** Preview of an open version: its pages and download, or why there are none. */
 export function OpenedVersion({ versionId, onClose }: OpenedVersionProps) {
   const query = useVersion(versionId);
   const version = query.data;

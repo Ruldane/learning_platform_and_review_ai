@@ -6,9 +6,9 @@ import { useCaptureDialog } from "./captureDialog";
 import { useCaptureShortcut } from "./hooks/useCaptureShortcut";
 
 /**
- * L'emplacement `overlay` de la capture : écoute Ctrl+K / Cmd+K sur toute l'application, ouvre le
- * dialogue à la demande d'une autre feature (`useCaptureRequest`, quand son compteur change : pas
- * au montage) et le monte quand il est ouvert. `createSocket` ne sert qu'aux tests (faux WebSocket).
+ * The `overlay` slot of the capture: listens for Ctrl+K / Cmd+K across the whole app and opens the
+ * dialog when another feature asks for it (`useCaptureRequest`, when its counter changes: not
+ * on mount) and mounts it while open. `createSocket` is only used in tests (fake WebSocket).
  */
 export function CaptureOverlay({ createSocket }: { createSocket?: SocketFactory }) {
   const open = useCaptureDialog((state) => state.open);

@@ -4,9 +4,9 @@ import { CaptureTopbarButton } from "./CaptureTopbarButton";
 import { JournalPage } from "./pages/JournalPage";
 
 /**
- * Capture rapide et journal (SPEC F18). La capture est l'action globale de l'application : un
- * bouton dans la barre du haut et le raccourci Ctrl+K / Cmd+K ouvrent son dialogue (`overlay`).
- * Le journal est la 4e entrée de la section Étudier.
+ * Quick capture and journal (SPEC F18). Capture is the app's global action: a
+ * top bar button and the Ctrl+K / Cmd+K shortcut open its dialog (`overlay`).
+ * The journal is the 4th entry of the Study section.
  */
 export const captureManifest: FeatureManifest = {
   id: "capture",

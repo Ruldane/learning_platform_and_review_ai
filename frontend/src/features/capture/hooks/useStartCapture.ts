@@ -8,7 +8,7 @@ import { captureErrorMessage } from "../errors";
 
 export type CaptureInput = CaptureSource | { kind: "file"; file: File };
 
-/** Le départ d'une capture : un lien, une note, ou un fichier importé puis capturé par son document. */
+/** Starting a capture: a link, a note, or a file imported then captured by its document. */
 async function launch(
   input: CaptureInput,
   onUpload: (uploading: boolean) => void,
@@ -26,9 +26,9 @@ async function launch(
 }
 
 /**
- * Lance une capture par `POST /capture` (jamais `POST /sessions`) et rend l'identifiant de session
- * à `onSession`. Un fichier passe d'abord par `POST /documents`. Un refus s'affiche sous le champ,
- * dans un texte clair ; un seul départ à la fois (verrou posé de façon synchrone).
+ * Starts a capture with `POST /capture` (never `POST /sessions`) and returns the session id
+ * to `onSession`. A file goes through `POST /documents` first. A refusal is shown below the field,
+ * in plain text; only one start at a time (a lock set synchronously).
  */
 export function useStartCapture(onSession: (sessionId: string) => void) {
   const provider = useLaunchSource();

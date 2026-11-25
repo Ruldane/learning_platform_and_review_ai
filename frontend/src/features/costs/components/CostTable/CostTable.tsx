@@ -5,14 +5,14 @@ import { CostRow, NUMBER_CELL } from "./CostRow";
 
 interface CostTableProps {
   title: string;
-  /** L'en-tête de la première colonne (« Feature », « Agent », « Modèle »). */
+  /** The header of the first column (« Feature », « Agent », « Modèle »). */
   firstColumn: string;
   rows: CostRowView[];
 }
 
 const COLUMNS = ["calls", "tokensIn", "tokensOut", "cost", "estimated"] as const;
 
-/** Un tableau de répartition : appels, jetons entrants et sortants, coût, appels estimés. */
+/** A breakdown table: calls, input and output tokens, cost, estimated calls. */
 export function CostTable({ title, firstColumn, rows }: CostTableProps) {
   const titleId = useId();
   return (

@@ -4,10 +4,10 @@ import { fetchTemplate, fetchTemplates } from "../api";
 import { cvKeys } from "../queryKeys";
 import { POLL_MS } from "./useProfile";
 
-/** Un modèle dont la capture tourne ou attend un avis est relu régulièrement. */
+/** A template whose capture is running or awaiting review is reloaded regularly. */
 export const isOpen = (status: string): boolean => status === "capturing" || status === "review";
 
-/** `GET /cv/templates` ; relu tant qu'un modèle est en capture ou à valider. */
+/** `GET /cv/templates`; reloaded while a template is being captured or needs validation. */
 export function useTemplates(pollMs = POLL_MS) {
   return useQuery({
     queryKey: cvKeys.templates,
@@ -16,7 +16,7 @@ export function useTemplates(pollMs = POLL_MS) {
   });
 }
 
-/** `GET /cv/templates/{id}` ; relu tant que la capture tourne ou attend un avis. */
+/** `GET /cv/templates/{id}`; reloaded while the capture runs or awaits review. */
 export function useTemplate(templateId: string, pollMs = POLL_MS) {
   return useQuery({
     queryKey: cvKeys.template(templateId),

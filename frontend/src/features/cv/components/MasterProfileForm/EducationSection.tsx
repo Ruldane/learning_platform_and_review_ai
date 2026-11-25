@@ -10,7 +10,7 @@ interface EducationSectionProps {
   onChange: (items: EducationView[]) => void;
 }
 
-/** La formation : une ligne par diplôme. */
+/** The education section: one row per degree. */
 export function EducationSection({ items, onChange }: EducationSectionProps) {
   return (
     <Section title={t("cv.profile.section.education")} count={items.length} path="education">

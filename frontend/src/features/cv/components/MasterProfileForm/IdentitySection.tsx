@@ -11,7 +11,7 @@ interface IdentitySectionProps {
 type OptionalKey = "email" | "phone" | "location" | "headline";
 const OPTIONAL: OptionalKey[] = ["email", "phone", "location", "headline"];
 
-/** Nom, e-mail, téléphone, lieu et accroche. */
+/** Name, e-mail, phone, location and headline. */
 export function IdentitySection({ identity, onChange }: IdentitySectionProps) {
   const set = (changes: Partial<IdentityView>) => onChange({ ...identity, ...changes });
   return (

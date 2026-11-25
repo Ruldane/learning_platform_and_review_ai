@@ -4,14 +4,14 @@ import { EmptyState } from "@/shared/ui/states/EmptyState";
 import { t } from "@/shared/i18n/t";
 
 interface ReviewRefusalProps {
-  /** Le code du refus du back. */
+  /** The refusal code from the back end. */
   code: string;
   postingId: string;
-  /** Un refus sans suite propre : la panne et son « Réessayer ». */
+  /** A refusal with no clean follow-up: the failure and its « Réessayer ». */
   fallback: ReactNode;
 }
 
-/** Un refus du lancement de la revue, avec la bonne action pour s'en sortir ; sinon `fallback`. */
+/** A refusal to launch the review, with the right action to recover; otherwise `fallback`. */
 export function ReviewRefusal({ code, postingId, fallback }: ReviewRefusalProps) {
   const navigate = useNavigate();
   const to = (path: string) => () => void navigate(path);

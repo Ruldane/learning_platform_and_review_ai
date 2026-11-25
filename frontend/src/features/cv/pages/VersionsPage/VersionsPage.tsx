@@ -9,8 +9,8 @@ import { PostingVersions } from "./PostingVersions";
 import { groupByPosting } from "./groupByPosting";
 
 /**
- * Toutes les versions de CV (`/career/cv/versions`), regroupées par offre : la liste, l'aperçu et
- * le téléchargement d'une version, et le lien vers sa revue.
+ * All CV versions (`/career/cv/versions`), grouped by posting: the list, the preview and
+ * the download of a version, and the link to its review.
  */
 export function VersionsPage() {
   const navigate = useNavigate();

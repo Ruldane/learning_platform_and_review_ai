@@ -9,7 +9,7 @@ interface ExperienceFieldsProps {
   patch: (changes: Partial<ExperienceView>) => void;
 }
 
-/** Les champs d'une expérience : poste, entreprise, lieu, dates et réalisations. */
+/** The fields of an experience: title, company, location, dates and achievements. */
 export function ExperienceFields({ item, index, patch }: ExperienceFieldsProps) {
   const base = `experiences.${index}`;
   const row = t("cv.profile.experience.row", { n: index + 1 });

@@ -2,28 +2,28 @@ import { create } from "zustand";
 import { onLocalReset } from "@/shared/lib/localReset";
 
 interface CaptureDialogState {
-  /** Le dialogue de capture est ouvert. */
+  /** The capture dialog is open. */
   open: boolean;
-  /** La session de l'Archiviste en cours (ou finie, tant qu'on ne repart pas d'une nouvelle). */
+  /** The Archivist session in progress (or finished, until a new one starts). */
   sessionId: string | null;
-  /** Le brouillon du champ lien ou note : gardé à la fermeture, vidé à l'envoi. */
+  /** The draft of the link or note field: kept on close, cleared on send. */
   draft: string;
-  /** Le brouillon du texte collé pour un lien illisible (`capture_text`). */
+  /** The draft of the pasted text for an unreadable link (`capture_text`). */
   textDraft: string;
   openDialog: () => void;
   closeDialog: () => void;
-  /** Une capture est lancée : le dialogue la suit, le champ est vidé. */
+  /** A capture is started: the dialog follows it and the field is cleared. */
   follow: (sessionId: string) => void;
-  /** Repart d'un champ vide. */
+  /** Starts again from an empty field. */
   restart: () => void;
   setDraft: (draft: string) => void;
   setTextDraft: (textDraft: string) => void;
 }
 
 /**
- * L'état du dialogue de capture, partagé entre le raccourci, le bouton de la barre du haut et le
- * dialogue lui-même. Fermer (Échap, clic à côté) ne perd rien : ni la capture en cours, ni ce qui
- * était saisi. Un brouillon ne part qu'à l'envoi, à « Abandonner » ou à « Nouvelle capture ».
+ * The state of the capture dialog, shared by the shortcut, the top bar button and the
+ * dialog itself. Closing (Escape, click outside) loses nothing: not the running capture,
+ * nor what was typed. A draft is only dropped on send, « Abandonner » or « Nouvelle capture ».
  */
 export const useCaptureDialog = create<CaptureDialogState>((set) => ({
   open: false,
@@ -38,5 +38,5 @@ export const useCaptureDialog = create<CaptureDialogState>((set) => ({
   setTextDraft: (textDraft) => set({ textDraft }),
 }));
 
-// « Tout supprimer » : ni capture en cours ni brouillon de l'espace effacé ne reste au dialogue.
+// « Tout supprimer »: no running capture or draft from the cleared space stays in the dialog.
 onLocalReset(() => useCaptureDialog.getState().restart());

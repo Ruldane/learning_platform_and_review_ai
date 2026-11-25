@@ -3,10 +3,10 @@ import { fieldClass } from "@/shared/ui/fieldClass";
 import { FieldErrorsContext } from "./fieldErrors";
 
 interface FieldProps {
-  /** Chemin du champ dans le profil (`experiences.0.role`) : c'est lui qui désigne l'erreur 422. */
+  /** Path of the field in the profile (`experiences.0.role`): it is what maps the 422 error. */
   path: string;
   label: string;
-  /** La ligne dont il fait partie (« Expérience 2 ») : ajoutée au nom accessible du champ. */
+  /** The row it belongs to (« Expérience 2 »): added to the field's accessible name. */
   context?: string;
   value: string;
   onChange: (value: string) => void;
@@ -15,7 +15,7 @@ interface FieldProps {
   required?: boolean;
 }
 
-/** Un champ du profil : libellé, saisie, et sous elle l'erreur du serveur qui le désigne. */
+/** A profile field: label, input, and below it the server error that points to it. */
 export function Field(props: FieldProps) {
   const { path, label, context, value, onChange, multiline, maxLength, required } = props;
   const id = useId();

@@ -20,7 +20,7 @@ function line(item: MissingSkillView): string {
   });
 }
 
-/** Les compétences qui manquent le plus souvent : « Python — 5 offres, exigée dans 4 ». */
+/** The skills most often missing: « Python — 5 offres, exigée dans 4 ». */
 export function TopMissingList({ items, onOpenSkill }: TopMissingListProps) {
   if (items.length === 0) {
     return <p className="text-sm text-muted-foreground">{t("gap.top.empty")}</p>;

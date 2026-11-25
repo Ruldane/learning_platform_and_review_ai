@@ -7,14 +7,14 @@ import { Button } from "@/shared/ui/button";
 interface CommandCaptureProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Le champ de saisie, ou le suivi de la capture en cours. */
+  /** The input field, or the tracking of the running capture. */
   children: ReactNode;
 }
 
 /**
- * La capture rapide : un dialogue modal. Le focus reste prisonnier du dialogue, Échap le ferme, et
- * le focus revient à l'élément qui l'avait ouvert. Jamais `window.confirm` : rien ne se perd à la
- * fermeture (une capture en cours se retrouve en rouvrant avec Ctrl+K).
+ * Quick capture: a modal dialog. Focus stays trapped in the dialog, Escape closes it, and
+ * focus returns to the element that opened it. Never `window.confirm`: nothing is lost on
+ * close (a running capture is found again when reopening with Ctrl+K).
  */
 export function CommandCapture({ open, onOpenChange, children }: CommandCaptureProps) {
   return (

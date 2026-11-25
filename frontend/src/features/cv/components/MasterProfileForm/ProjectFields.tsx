@@ -9,7 +9,7 @@ interface ProjectFieldsProps {
   patch: (changes: Partial<ProjectView>) => void;
 }
 
-/** Les champs d'un projet : nom, description, lien et réalisations. */
+/** The fields of a project: name, description, link and achievements. */
 export function ProjectFields({ item, index, patch }: ProjectFieldsProps) {
   const base = `projects.${index}`;
   const row = t("cv.profile.project.row", { n: index + 1 });

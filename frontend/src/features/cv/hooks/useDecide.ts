@@ -11,9 +11,9 @@ const replaceMod = (review: CvReviewOut | undefined, updated: ModificationOut) =
   };
 
 /**
- * Décide d'une modification (`PATCH /cv/modifications/{id}`). La réponse remplace la modification
- * dans la revue : elle peut revenir « à confirmer » (texte revalidé). Une erreur reste lisible dans
- * `error` ; `code` la nomme pour les refus qui ont une suite (`profile_draft_pending`).
+ * Decides a change (`PATCH /cv/modifications/{id}`). The response replaces the change
+ * in the review: it may come back « à confirmer » (text revalidated). An error stays readable in
+ * `error`; `code` names it for refusals that have a follow-up (`profile_draft_pending`).
  */
 export function useDecide(reviewId: string) {
   const client = useQueryClient();
@@ -27,7 +27,7 @@ export function useDecide(reviewId: string) {
   });
   const { mutateAsync, reset } = mutation;
   return {
-    /** Résout à `true` quand le back a pris la décision, `false` sur un refus (lisible dans `error`). */
+    /** Resolves to `true` when the decision is taken, `false` on a refusal (see `error`). */
     decide: async (id: string, decision: Decision): Promise<boolean> => {
       reset();
       try {
@@ -39,15 +39,15 @@ export function useDecide(reviewId: string) {
     },
     pending: mutation.isPending,
     error: mutation.isError ? cvErrorMessage(mutation.error) : null,
-    /** La modification dont la dernière décision a été refusée : l'erreur s'affiche sur sa carte. */
+    /** The change whose last decision was refused: the error shows on its card. */
     errorId: mutation.isError ? (mutation.variables?.id ?? null) : null,
     code: mutation.isError ? errorCode(mutation.error) : null,
   };
 }
 
 /**
- * Décision groupée (`PATCH /cv/reviews/{id}/modifications`) sur les modifications `proposed` : une
- * modification « à confirmer » n'en fait jamais partie. La revue est relue avant de rendre la main.
+ * Grouped decision (`PATCH /cv/reviews/{id}/modifications`) on `proposed` changes: a
+ * « à confirmer » change is never part of it. The review is reloaded before control returns.
  */
 export function useBulkDecide(reviewId: string) {
   const client = useQueryClient();

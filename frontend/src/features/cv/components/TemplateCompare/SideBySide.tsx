@@ -6,7 +6,7 @@ interface SideBySideProps {
   renderPages: string[];
 }
 
-/** Les pages de l'original et du modèle recréé, deux colonnes, page par page. */
+/** The pages of the original and the recreated template, in two columns, page by page. */
 export function SideBySide({ originalPages, renderPages }: SideBySideProps) {
   const count = Math.max(originalPages.length, renderPages.length);
   return (

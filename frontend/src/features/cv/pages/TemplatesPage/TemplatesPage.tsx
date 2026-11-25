@@ -17,8 +17,8 @@ const link = "text-sm font-medium underline underline-offset-4";
 const focusFileField = () => document.getElementById(FILE_FIELD_ID)?.focus();
 
 /**
- * Les modèles de CV (`/career/cv`) : la liste, puis l'envoi d'un PDF (ou d'un PDF déjà importé)
- * pour en créer un. Une création mène à la page du modèle, où le Maquettiste travaille en direct.
+ * CV templates (`/career/cv`): the list, then uploading a PDF (or an already imported one)
+ * to create one. Creating one leads to the template page, where the Maquettiste works live.
  */
 export function TemplatesPage({ pollMs = POLL_MS }: { pollMs?: number }) {
   const navigate = useNavigate();

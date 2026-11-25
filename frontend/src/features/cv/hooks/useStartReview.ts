@@ -3,7 +3,7 @@ import { ApiError } from "@/shared/api/errors";
 import type { RunSource } from "@/shared/lib/runSource";
 import { startReview } from "../api";
 
-/** Ce que la page doit faire d'un refus du lancement : son code, et la revue déjà ouverte s'il y en a une. */
+/** What the page does on a launch refusal: its code, and the review already open, if any. */
 export interface StartRefusal {
   code: string;
   reviewId: string | null;
@@ -19,7 +19,7 @@ export function refusalOf(error: unknown): StartRefusal {
   return { code: error.code, reviewId: typeof reviewId === "string" ? reviewId : null };
 }
 
-/** `POST /cv/reviews` : lance la revue d'une offre ; `onStarted` reçoit l'identifiant de la revue. */
+/** `POST /cv/reviews`: starts the review of a posting; `onStarted` receives the review id. */
 export function useStartReview(
   postingId: string,
   onStarted: (reviewId: string) => void,
@@ -28,7 +28,7 @@ export function useStartReview(
   const mutation = useMutation({
     mutationFn: () => startReview(postingId, source),
     onSuccess: (started) => onStarted(started.review_id),
-    // Une revue déjà ouverte pour cette offre : on la reprend.
+    // A review already open for this posting: resume it.
     onError: (error) => {
       const refusal = refusalOf(error);
       if (refusal.code === "review_in_progress" && refusal.reviewId) onStarted(refusal.reviewId);

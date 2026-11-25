@@ -2,9 +2,9 @@ import type { PostingSummaryOut, VersionOut } from "../../types";
 
 export interface PostingGroup {
   postingId: string;
-  /** « Titre, Entreprise » ; `null` si l'offre n'est plus connue. */
+  /** « Titre, Entreprise »; `null` if the posting is no longer known. */
   label: string | null;
-  /** Du plus récent au plus ancien. */
+  /** Newest first. */
   versions: VersionOut[];
 }
 
@@ -13,7 +13,7 @@ const labelOf = (posting: PostingSummaryOut | undefined): string | null => {
   return [posting.title, posting.company].filter((part) => part).join(", ") || null;
 };
 
-/** Les versions regroupées par offre, l'offre la plus récemment travaillée en premier. */
+/** Versions grouped by posting, the most recently worked posting first. */
 export function groupByPosting(
   versions: VersionOut[],
   postings: PostingSummaryOut[],

@@ -12,7 +12,7 @@ const verdict = (check: AtsCheckView | undefined): string => {
   return check.passed ? t("cv.ats.passed") : t("cv.ats.toReview");
 };
 
-/** Chaque contrôle de lisibilité, avant et après, écrit en toutes lettres. */
+/** Each readability check, before and after, written out in full. */
 export function ChecksTable({ before, after }: ChecksTableProps) {
   const ids = [...new Set([...before.checks, ...(after?.checks ?? [])].map((check) => check.id))];
   return (

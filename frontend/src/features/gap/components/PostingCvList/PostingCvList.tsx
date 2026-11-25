@@ -8,7 +8,7 @@ export interface PostingCv {
   pdfUrl: string;
 }
 
-/** Les CV générés pour l'offre, chacun téléchargeable en PDF ; rien si aucun n'est prêt. */
+/** The CVs generated for the posting, each downloadable as PDF; nothing if none is ready. */
 export function PostingCvList({ cvs }: { cvs: PostingCv[] }) {
   if (cvs.length === 0) return null;
   return (
