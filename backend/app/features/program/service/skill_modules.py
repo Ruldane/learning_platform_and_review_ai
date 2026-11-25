@@ -1,6 +1,6 @@
-"""Les compétences vues depuis les modules (lecture pour la carte de compétences, D107) : le
-module qui enseigne une compétence (prochaine action) et les compétences d'un programme (cible
-de la comparaison). Les noms sont comparés normalisés (`normalize_skill_name`)."""
+"""Skills seen from the modules (read for the skill map, D107): the module that teaches a skill
+(next action) and the skills of a program (target of the comparison). Names are compared
+normalized (`normalize_skill_name`)."""
 
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
@@ -32,8 +32,8 @@ def _norms(module: Module) -> list[str]:
 
 
 async def module_teaching(db: AsyncSession, user_id: str, norm_name: str) -> SkillModule | None:
-    """Le premier module non sauté qui enseigne la compétence (nom normalisé) : programmes
-    validés seulement, le plus récent d'abord, puis dans l'ordre du programme ; `None` sinon."""
+    """The first non-skipped module that teaches the skill (normalized name): validated programs
+    only, most recent first, then in program order; `None` otherwise."""
     async for module in _teaching_modules(db, user_id):
         if norm_name in _norms(module):
             return SkillModule(module.id, module.program_id, module.title)
@@ -50,7 +50,7 @@ async def _teaching_modules(db: AsyncSession, user_id: str) -> AsyncIterator[Mod
 
 
 async def teaching_module_ids(db: AsyncSession, user_id: str) -> dict[str, list[str]]:
-    """Modules enseignant chaque compétence normalisée, dans le même ordre."""
+    """Modules teaching each normalized skill, in the same order."""
     modules: dict[str, list[str]] = {}
     async for module in _teaching_modules(db, user_id):
         for norm in dict.fromkeys(_norms(module)):
@@ -59,23 +59,22 @@ async def teaching_module_ids(db: AsyncSession, user_id: str) -> dict[str, list[
 
 
 async def program_skill_names(db: AsyncSession, user_id: str, program_id: str) -> list[str]:
-    """Les compétences des modules du programme (sautés compris : ils restent attendus par la
-    cible), dans l'ordre du programme, une fois chacune, noms normalisés ; 404 si le programme
-    n'est pas à l'utilisateur."""
+    """The skills of the program's modules (skipped ones included: they remain expected by the
+    target), in program order, once each, normalized names; 404 if the program is not the user's."""
     loaded = await load(db, user_id, program_id)
     return list(dict.fromkeys(norm for module in loaded.modules for norm in _norms(module)))
 
 
 async def skill_weeks(db: AsyncSession, user_id: str) -> dict[str, int]:
-    """`nom normalisé → semaine` des compétences enseignées par un module non sauté d'un
-    programme validé (le plus récent d'abord, puis l'ordre du programme ; le premier module
-    gagne). La semaine est celle de la 1re tâche du module (rang de la semaine du programme qui
-    contient sa date), sinon celle du module (écart d'une offre, D122)."""
+    """`normalized name → week` of the skills taught by a non-skipped module of a validated program
+    (most recent first, then program order; the first module wins). The week is that of the
+    module's first task (rank of the program week that contains its date), otherwise that of the
+    module (offer gap, D122)."""
     return (await skill_coverage(db, user_id)).weeks
 
 
 async def skill_coverage(db: AsyncSession, user_id: str) -> SkillCoverage:
-    """Semaines de couverture générale et des ajouts validés dans « Compétences des offres »."""
+    """Weeks of general coverage and of the additions validated under « Compétences des offres »."""
     coverage = SkillCoverage({}, {})
     for program in await ProgramRepository(db, user_id).list_recent():
         if program.status != "validated":

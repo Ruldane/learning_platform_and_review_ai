@@ -1,6 +1,6 @@
-"""L'historique des changements de Claude (niveau 2) tel que le voit January : un appel par ligne,
-annulable d'un geste (`ChangeRecorder.undo`, dans `app/mcp/recorder.py`). Annuler remet les lignes
-de l'appel dans leur état d'avant, ou refuse (409) si l'une d'elles a changé depuis."""
+"""Claude's change history (level 2) as January sees it: one call per row, undoable in one
+action (`ChangeRecorder.undo`, in `app/mcp/recorder.py`). Undoing puts the rows of the call
+back to their previous state, or is refused (409) if one of them has changed since."""
 
 from datetime import datetime, timedelta
 
@@ -18,9 +18,9 @@ from app.mcp.rowstate import UndoResult
 async def purge_old_changes(
     session_factory: async_sessionmaker[AsyncSession], now: datetime
 ) -> int:
-    """Retire les changements de plus de `RETENTION_DAYS` jours (ils gardent l'avant et l'après de
-    chaque ligne, texte complet ; passé ce délai l'appel ne s'annule plus). Tâche planifiée, tous
-    comptes : une rétention. Rend le nombre de lignes retirées."""
+    """Removes changes older than `RETENTION_DAYS` days (they keep the before and after of each row,
+    full text; past this delay the call can no longer be undone). Scheduled task, all accounts: a
+    retention job. Returns the number of rows removed."""
     cutoff = now - timedelta(days=RETENTION_DAYS)
     async with session_factory() as db:
         result = await db.execute(delete(McpChange).where(McpChange.created_at < cutoff))

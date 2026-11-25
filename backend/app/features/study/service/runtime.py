@@ -1,7 +1,7 @@
-"""L'étude guidée dans la vie de l'application (D103) : ce que les routes et le port du Tuteur
-(`AgentStudyStore`) partagent : base, lanceur de sessions, programme (verrou, tâches cochées),
-mémoire (reflet des niveaux), horloge et verrou par utilisatrice. Créé par le lifespan avant le
-moteur d'agents (`app.state.study`), avec le lanceur encore non lié."""
+"""Guided study in the application's life (D103): what the routes and the Tutor's port
+(`AgentStudyStore`) share: database, session launcher, program (lock, ticked tasks), memory
+(level reflection), clock and lock per user. Created by the lifespan before the agent engine
+(`app.state.study`), with the launcher still unbound."""
 
 import asyncio
 import weakref
@@ -20,7 +20,7 @@ from app.features.program.service.runtime import ProgramRuntime
 from app.features.settings.service import SettingsService
 
 GRAPH = "study_session"
-SUBJECT = "study_session"  # sujet de la session d'agents : la session d'étude (D103)
+SUBJECT = "study_session"  # subject of the agent session: the study session (D103)
 
 
 def utc_now() -> datetime:
@@ -33,16 +33,16 @@ class StudyRuntime:
     launcher: Launcher
     program: ProgramRuntime
     memory: MemoryRuntime
-    now: Callable[[], datetime] = utc_now  # remplacée par les tests (heure figée)
+    now: Callable[[], datetime] = utc_now  # replaced by the tests (time frozen)
     _locks: weakref.WeakValueDictionary[str, asyncio.Lock] = field(
         default_factory=weakref.WeakValueDictionary, repr=False, compare=False
     )
 
     @asynccontextmanager
     async def study_lock(self, user_id: str) -> AsyncIterator[None]:
-        """Départ, fin et abandon d'une session d'une utilisatrice passent l'un après l'autre.
-        Pris AVANT le verrou du programme (jamais l'inverse). Propre à ce processus (un seul
-        worker) ; l'index unique `uq_study_sessions_open` reste le dernier rempart."""
+        """Start, end and abandonment of a user's session go one after the other. Taken BEFORE the
+        program lock (never the reverse). Specific to this process (a single worker); the unique
+        index `uq_study_sessions_open` remains the last safeguard."""
         lock = self._locks.get(user_id)
         if lock is None:
             lock = asyncio.Lock()
@@ -54,5 +54,5 @@ class StudyRuntime:
         return user_zone((await SettingsService(db, user_id).get()).timezone)
 
     async def today(self, db: AsyncSession, user_id: str) -> date:
-        """Le jour de January dans son fuseau (D98)."""
+        """January's day in their time zone (D98)."""
         return local_today(await self.zone(db, user_id), self.now())

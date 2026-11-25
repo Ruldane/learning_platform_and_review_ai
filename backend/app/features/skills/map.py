@@ -1,10 +1,10 @@
-"""Carte de compétences (SPEC F15, D107, D123) : graphe et radar, détail d'une compétence
-(preuves, offres qui la citent, prochaine action).
+"""Skill map (SPEC F15, D107, D123): graph and radar, detail of a skill (evidence, offers that cite
+it, next action).
 
-Hors de `service` : la carte lit les services `program`, `lessons` et `quiz`, et
-`program.service` importe `skills.service` (un import dans l'autre sens ferait un cycle).
-Tout est relu à chaque requête, sans cache : `user_skills` fait foi (D6) et un changement de
-niveau se voit à la lecture suivante (« moins d'une minute »)."""
+Outside `service`: the map reads the `program`, `lessons` and `quiz` services, and
+`program.service` imports `skills.service` (an import the other way would make a cycle).
+Everything is re-read on each request, without cache: `user_skills` is authoritative (D6), and a
+change of level shows on the next read ("less than a minute")."""
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -45,7 +45,7 @@ QUIZ_URL = "/study/quiz"
 REVIEW_URL = "/study/reviews"
 JOURNAL_URL = "/study/journal"
 POSTING_PAGE = "/career/postings/"
-# Page de chaque genre de preuve qui désigne un objet (`ref_id`) ; « capture » mène au journal.
+# page for each kind of proof that designates an object (`ref_id`); "capture" leads to the journal
 _EVIDENCE_PAGES: dict[EvidenceKind, str] = {
     "lesson": "/learn/lessons/",
     "quiz": "/study/quiz/",
@@ -63,8 +63,8 @@ def skill_not_found() -> AppError:
 
 
 def _demand(demand: dict[str, float], skill: Skill) -> float | None:
-    """La part des offres du dernier relevé qui citent la compétence (son nom ou un synonyme, la
-    plus forte), 0 si le relevé ne la cite pas ; `None` sans relevé fini."""
+    """The share of the last scan's offers that cite the skill (its name or a synonym, the
+    strongest), 0 if the scan does not cite it; `None` without a finished scan."""
     if not demand:
         return None
     names = [skill.norm_name, *(normalize_skill_name(str(s)) for s in skill.synonyms)]
@@ -72,7 +72,7 @@ def _demand(demand: dict[str, float], skill: Skill) -> float | None:
 
 
 async def skill_graph(db: AsyncSession, user_id: str) -> SkillGraphOut:
-    """Toutes les compétences de January (triées par nom), leurs prérequis et le radar."""
+    """All of January's skills (sorted by name), their prerequisites and the radar."""
     skills = await SkillRepository(db, user_id).list_all()
     rows = await UserSkillRepository(db, user_id).rows()
     levels = {skill_id: as_level(row.level) for skill_id, row in rows.items()}
@@ -99,8 +99,8 @@ async def skill_graph(db: AsyncSession, user_id: str) -> SkillGraphOut:
 
 
 def evidence_url(item: Evidence) -> str | None:
-    """Le chemin de la preuve dans l'application, `None` si elle n'a pas de page (projet, CV,
-    preuve de la phase 4 sans référence)."""
+    """The path of the proof in the application, `None` if it has no page (project, CV, phase 4
+    proof without a reference)."""
     if item["kind"] == "capture":
         return JOURNAL_URL
     page = _EVIDENCE_PAGES.get(item["kind"])
@@ -111,7 +111,7 @@ def evidence_url(item: Evidence) -> str | None:
 
 
 def _instant(value: str) -> datetime | None:
-    """L'instant ISO d'une preuve ; `None` s'il est vide (phase 4) ou illisible."""
+    """The ISO instant of a proof; `None` if it is empty (phase 4) or unreadable."""
     try:
         moment = datetime.fromisoformat(value)
     except ValueError:
@@ -127,18 +127,18 @@ def _evidence_out(item: Evidence) -> EvidenceOut:
 
 @dataclass(frozen=True)
 class ActionFacts:
-    """Ce que la prochaine action a besoin de savoir, lu selon le niveau seulement."""
+    """What the next action needs to know, read according to the level only."""
 
-    module: str | None = None  # titre du module qui enseigne la compétence
-    lesson_id: str | None = None  # leçon prête de ce module
-    quiz_id: str | None = None  # quiz prêt de ce module
-    cards_due: bool = False  # une fiche de la compétence est due aujourd'hui
+    module: str | None = None  # title of the module that teaches the skill
+    lesson_id: str | None = None  # ready lesson of this module
+    quiz_id: str | None = None  # ready quiz of this module
+    cards_due: bool = False  # a card of the skill is due today
 
 
 def next_action(level: SkillLevel | None, skill: str, facts: ActionFacts) -> NextActionOut | None:
-    """La prochaine action selon le niveau (D107 n° 5) : absente ou déclarée → étudier ; en
-    cours → passer le quiz ; validée → réviser ses fiches dues, sinon le projet preuve (bientôt) ;
-    prouvée → rien. Sans module qui l'enseigne, le libellé nomme la compétence."""
+    """The next action by level (D107 #5): absent or declared → study; in progress → take the quiz;
+    validated → review its due cards, otherwise the proof project (coming soon); proven → nothing.
+    Without a module that teaches it, the label names the skill."""
     subject = facts.module or skill
     if level is None or level == "declared":
         url = f"{STUDY_URL}?lesson={quote(facts.lesson_id, safe='')}" if facts.lesson_id else None
@@ -174,7 +174,7 @@ async def _facts(
 
 
 async def _postings(db: AsyncSession, user_id: str, skill: Skill) -> list[PostingRefOut]:
-    """Les offres prêtes qui citent la compétence ou un synonyme (D123)."""
+    """The ready offers that cite the skill or a synonym (D123)."""
     names = [skill.name, *(str(synonym) for synonym in skill.synonyms)]
     return [
         PostingRefOut(
@@ -189,9 +189,8 @@ async def _postings(db: AsyncSession, user_id: str, skill: Skill) -> list[Postin
 async def skill_detail(
     db: AsyncSession, user_id: str, skill_id: str, now: datetime
 ) -> SkillDetailOut:
-    """Une compétence de January : preuves (la plus récente d'abord), offres qui la citent
-    (10 au plus, les plus récentes d'abord) et prochaine action ; 404 `skill_not_found` si elle
-    n'est pas à elle."""
+    """One of January's skills: proofs (most recent first), offers that cite it (10 at most, most
+    recent first) and next action; 404 `skill_not_found` if it is not January's."""
     skill = await SkillRepository(db, user_id).get(skill_id)
     if skill is None:
         raise skill_not_found()

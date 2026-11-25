@@ -9,7 +9,7 @@ __all__ = ["RankedHit", "host_matches", "normalize_domain", "rank_results"]
 
 
 def host_matches(host: str, domain: str) -> bool:
-    """`host` est `domain` ou l'un de ses sous-domaines (`docs.python.org` ⊂ `python.org`)."""
+    """`host` is `domain` or one of its subdomains (`docs.python.org` ⊂ `python.org`)."""
     host = host.lower().rstrip(".")
     domain = domain.lower().rstrip(".")
     return bool(domain) and (host == domain or host.endswith(f".{domain}"))
@@ -27,7 +27,7 @@ def _clean(domains: Sequence[str]) -> list[str]:
         try:
             cleaned.append(normalize_domain(domain))
         except ValueError:
-            continue  # une saisie invalide ne retire ni ne privilégie rien
+            continue  # an invalid entry neither removes nor favours anything
     return cleaned
 
 
@@ -41,8 +41,8 @@ def _host(url: str) -> str:
 def rank_results(
     results: Sequence[SearchResult], *, preferred: Sequence[str], excluded: Sequence[str]
 ) -> list[RankedHit]:
-    """Retire les domaines exclus (sous-domaines compris, l'exclusion l'emporte sur la préférence),
-    puis met les privilégiés en tête ; l'ordre d'origine est conservé dans chaque groupe."""
+    """Removes excluded domains (subdomains included: exclusion beats preference), then moves the
+    preferred ones to the front; the original order is kept within each group."""
     keep, drop = _clean(preferred), _clean(excluded)
     first: list[RankedHit] = []
     rest: list[RankedHit] = []

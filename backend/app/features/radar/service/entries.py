@@ -1,6 +1,6 @@
-"""Les offres examinées d'un relevé (colonne `postings`, D157) : forme des entrées, lecture d'une
-entrée comme page du port et comptes. Règles pures, sans base ; `text` (4 000 caractères au plus)
-ne vit que le temps du relevé : `finalize` le retire."""
+"""The offers examined in a scan (`postings` column, D157): entry shape, reading an entry as a
+port page, and counts. Pure rules, without database; `text` (4,000 characters at most) lives
+only as long as the scan: `finalize` removes it."""
 
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -14,8 +14,8 @@ Entry = dict[str, Any]
 
 @dataclass(frozen=True)
 class Counts:
-    """Les nombres réels d'un relevé : pages lisibles, bloquées, qui n'étaient pas des offres,
-    offres analysées."""
+    """The real numbers of a scan: readable pages, blocked ones, those that were not offers,
+    analysed offers."""
 
     read: int
     blocked: int
@@ -24,7 +24,7 @@ class Counts:
 
 
 def domain_of(url: str) -> str:
-    """Le site d'un lien (minuscules, sans `www.`), vide si le lien n'en a pas."""
+    """The site of a link (lowercase, without `www.`), empty if the link has none."""
     try:
         host = urlsplit(url.strip()).hostname or ""
     except ValueError:
@@ -37,18 +37,18 @@ def is_analyzed(entry: Entry) -> bool:
 
 
 def is_extracted(entry: Entry) -> bool:
-    """Une offre qui a son issue : analysée, pas une offre, ou extraction en échec."""
+    """An offer that has its outcome: analysed, not an offer, or extraction failed."""
     return entry.get("read") in ("not_posting", "extract_failed") or is_analyzed(entry)
 
 
 def is_closed(entry: Entry) -> bool:
-    """Plus rien à extraire : page bloquée, ou issue déjà rangée."""
+    """Nothing left to extract: blocked page, or outcome already stored."""
     return entry.get("read") == "blocked" or is_extracted(entry)
 
 
 def page_of(entry: Entry) -> PostingPage:
-    """L'entrée vue par le parcours : une page `ok` (lisible, même si ce n'est pas une offre) ou
-    `unreadable` (bloquée)."""
+    """The entry as the path sees it: an `ok` page (readable, even if it is not an offer) or
+    `unreadable` (blocked)."""
     blocked = entry.get("read") == "blocked"
     return PostingPage(
         ref=str(entry["ref"]),
@@ -70,15 +70,15 @@ def count(entries: Sequence[Entry]) -> Counts:
 
 
 def analysis_failed(entries: Sequence[Entry]) -> bool:
-    """Aucune offre analysée alors que l'extraction a échoué sur au moins une : le relevé est en
-    échec (reprise possible), jamais « terminé » avec zéro offre analysée."""
+    """No offer analysed although the extraction failed on at least one: the scan is failed (a retry
+    is possible), never "finished" with zero offers analysed."""
     return not any(is_analyzed(entry) for entry in entries) and any(
         entry.get("read") == "extract_failed" for entry in entries
     )
 
 
 def blocked_domains(entries: Sequence[Entry]) -> dict[str, int]:
-    """`site → nombre de pages bloquées`, dans l'ordre de la première rencontre."""
+    """`site → number of blocked pages`, in the order of first encounter."""
     found: dict[str, int] = {}
     for entry in entries:
         if entry.get("read") == "blocked":

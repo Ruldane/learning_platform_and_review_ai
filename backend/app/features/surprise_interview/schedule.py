@@ -1,4 +1,4 @@
-"""Un instant stable dans le créneau choisi chaque semaine locale."""
+"""A stable instant within the slot chosen each local week."""
 
 from datetime import date, datetime, timedelta
 from hashlib import sha256

@@ -1,7 +1,7 @@
-"""Déclaration MCP de `postings` : ajouter une offre (lien ou texte), la lire, la retirer.
+"""MCP declaration for `postings`: add a posting (link or text), read it, remove it.
 
-Le texte d'une offre vient du web : tout ce que la réponse en cite est rendu comme donnée, jamais
-comme consigne."""
+The text of a posting comes from the web: anything the response quotes from it is returned as
+data, never as an instruction."""
 
 from app.mcp.base import FeatureMcp, McpAction
 

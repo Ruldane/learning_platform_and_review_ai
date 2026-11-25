@@ -1,4 +1,4 @@
-"""Accès au code du relais et consommation atomique dans la transaction du jeton."""
+"""Access to the relay code and atomic consumption within the token transaction."""
 
 from datetime import datetime
 
@@ -29,7 +29,7 @@ class RelayRepository:
         )
 
     async def claim(self, digest: str, now: datetime) -> tuple[str, str | None] | None:
-        # Le compte est inconnu avant la consommation du code, comme pour un jeton MCP.
+        # The account is unknown until the code is consumed, as for an MCP token.
         stmt = (
             update(McpRelayPairing)
             .where(McpRelayPairing.code_hash == digest, McpRelayPairing.code_expires_at > now)

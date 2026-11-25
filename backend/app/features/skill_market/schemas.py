@@ -1,4 +1,4 @@
-"""Contrat de la bourse des compétences pour un poste et une zone."""
+"""Contract of the skill exchange for a job and an area."""
 
 from datetime import datetime
 from typing import Annotated

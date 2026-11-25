@@ -11,12 +11,12 @@ from app.db.repository import UserScopedRepository
 
 
 class SearchUsageRepository(UserScopedRepository[SearchUsage]):
-    """Compteur mensuel d'un utilisateur par fournisseur et par clé."""
+    """A user's monthly counter, per provider and per key."""
 
     model = SearchUsage
 
     async def increment(self, provider: str, month: str, fingerprint: str) -> None:
-        """Ajoute 1 au compteur en une seule instruction : pas de lecture-écriture perdue."""
+        """Adds 1 to the counter in a single statement: no lost read-write."""
         stmt = sqlite_insert(SearchUsage).values(
             user_id=self.user_id,
             provider=provider,
@@ -31,11 +31,10 @@ class SearchUsageRepository(UserScopedRepository[SearchUsage]):
         await self.session.execute(stmt)
 
     async def reserve(self, provider: str, month: str, fingerprint: str, cap: int) -> bool:
-        """Ajoute 1 au compteur de l'utilisateur seulement si le total du mois pour cette clé
-        (tous utilisateurs, comme `month_total`) est sous `cap`. Une seule instruction
-        `INSERT … SELECT … WHERE total < cap ON CONFLICT DO UPDATE` : SQLite l'exécute sous son
-        verrou d'écriture, donc le contrôle et l'ajout sont indivisibles, même entre processus.
-        Rend vrai si une requête a été réservée."""
+        """Adds 1 to the user's counter only if the month's total for this key (all users, like
+        `month_total`) is under `cap`. A single statement, `INSERT … SELECT … WHERE total < cap ON
+        CONFLICT DO UPDATE`: SQLite runs it under its write lock, so the check and the addition are
+        indivisible, even across processes. Returns true if a query was reserved."""
         now: datetime = utcnow()
         values = select(
             literal(new_id()),
@@ -59,9 +58,9 @@ class SearchUsageRepository(UserScopedRepository[SearchUsage]):
         return int(result.rowcount or 0) == 1  # type: ignore[attr-defined]
 
     async def release(self, provider: str, month: str, fingerprint: str) -> bool:
-        """Rend une requête réservée que le fournisseur n'a pas servie : `count - 1` sur la
-        seule ligne de l'utilisateur, en une instruction gardée par `count > 0` (jamais
-        négatif, jamais sur le compte d'un autre). Rend vrai si une requête a été rendue."""
+        """Returns a reserved query that the provider did not serve: `count - 1` on the user's only
+        row, in a statement guarded by `count > 0` (never negative, never on another user's count).
+        Returns true if a query was returned."""
         stmt = (
             update(SearchUsage)
             .where(
@@ -86,10 +85,10 @@ def _total(provider: str, month: str, fingerprint: str) -> Select[Any]:
 
 
 async def month_total(db: AsyncSession, *, provider: str, month: str, fingerprint: str) -> int:
-    """Requêtes du mois pour une même clé, tous utilisateurs confondus (D75).
+    """The month's queries for one key, all users combined (D75).
 
-    Seule lecture de la phase sans filtre `user_id` : une clé `.env` est partagée par tous les
-    utilisateurs en mode Google, et son plafond est celui du compte Brave, pas d'un utilisateur.
-    Ne renvoie qu'un nombre, jamais une ligne ni un identifiant d'utilisateur.
+    The only read of the phase without a `user_id` filter: a `.env` key is shared by all users in
+    Google mode, and its cap is that of the Brave account, not of a user.
+    Returns only a number, never a row or a user identifier.
     """
     return int((await db.execute(_total(provider, month, fingerprint))).scalar_one())

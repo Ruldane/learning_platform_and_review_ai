@@ -1,4 +1,4 @@
-"""Déclaration MCP de `research` : usage de la recherche web et sources d'une session."""
+"""MCP declaration for `research`: web search usage and the sources of a session."""
 
 from app.mcp.base import FeatureMcp, McpAction, McpGraph
 

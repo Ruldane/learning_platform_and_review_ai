@@ -1,9 +1,9 @@
-"""Écriture d'une version du Stratège (port `ProgramStore.save_draft`, D86, D88) : le brouillon
-est rangé par les règles de 4.2 (`schedule` : acquis, 85 %, pratique et quiz), ses lignes
-remplacent celles du programme (semaines, modules, tâches) et une ligne `plan_versions` garde
-l'instantané et la différence avec le plan remplacé (modifications de January comprises).
+"""Writing a Strategist version (port `ProgramStore.save_draft`, D86, D88): the draft is packed by
+the rules of 4.2 (`schedule`: learned items, 85%, practice and quiz), its rows replace those of
+the program (weeks, modules, tasks) and a `plan_versions` row keeps the snapshot and the
+difference with the replaced plan (January's edits included).
 
-Idempotent par `(session, revision)` : une révision déjà écrite est rendue telle quelle."""
+Idempotent by `(session, revision)`: a revision already written is returned as is."""
 
 from datetime import date
 from typing import Any
@@ -42,8 +42,8 @@ async def budget_of(db: AsyncSession, user_id: str, goal_weekly_minutes: int | N
 
 
 async def known_skills(db: AsyncSession, user_id: str) -> dict[str, SkillLevel]:
-    """Le plus haut niveau entre `user_skills` et les acquis de la mémoire (ceux de l'Archiviste
-    n'ont pas de ligne `user_skills`), par nom normalisé."""
+    """The highest level between `user_skills` and the memory's learned items (those of the
+    Archivist have no `user_skills` row), by normalized name."""
     known: dict[str, SkillLevel] = dict(await SkillsService(db, user_id).known_levels())
     for name, level in (await acquis_levels(db, user_id)).items():
         known[name] = higher_level(known[name], level) if name in known else level
@@ -66,8 +66,8 @@ def saved_of(version: PlanVersion) -> DraftSaved:
 async def write_rows(
     db: AsyncSession, user_id: str, program_id: str, plan: ScheduledPlan, draft: PlanDraft
 ) -> dict[str, int]:
-    """Semaines, modules et tâches du plan rangé ; les modules sautés (déjà acquis) sont gardés
-    dans la première semaine, marqués `skipped`, sans tâche."""
+    """Weeks, modules and tasks of the packed plan; skipped modules (already learned) are kept in
+    the first week, marked `skipped`, without a task."""
     weeks, modules = WeekRepository(db, user_id), ModuleRepository(db, user_id)
     tasks = TaskRepository(db, user_id)
     first_week_id = ""
@@ -137,8 +137,8 @@ async def _write_skipped(
 def plan_snapshot(
     plan: ScheduledPlan, draft: PlanDraft, budget: Budget, chapter_indices: dict[str, int]
 ) -> dict[str, Any]:
-    """Instantané de D83, plus le budget par jour, les reports et le référentiel du Stratège
-    (relu à la validation pour le graphe de compétences)."""
+    """Snapshot of D83, plus the budget per day, the carry-overs and the Strategist's reference data
+    (re-read at validation for the skill graph)."""
     return {
         **snapshot(plan),
         "chapters": [
@@ -162,7 +162,7 @@ def plan_snapshot(
 async def _program_row(
     db: AsyncSession, user_id: str, goal_id: str, session_id: str, start: date, title: str
 ) -> tuple[Program, dict[str, Any] | None]:
-    """Le programme de la session (et l'instantané de ses lignes actuelles), sinon un nouveau."""
+    """The program of the session (and the snapshot of its current rows), otherwise a new one."""
     programs = ProgramRepository(db, user_id)
     program = await programs.by_session(session_id)
     if program is None:
@@ -196,8 +196,8 @@ async def save_version(
     reason: str,
     today: date,
 ) -> DraftSaved:
-    """Range le brouillon et l'enregistre (programme, lignes, version) ; le commit appartient à
-    l'appelant. Une révision garde la date de début du programme (January a pu la changer)."""
+    """Packs the draft and saves it (program, rows, version); the commit belongs to the caller. A
+    revision keeps the program's start date (January may have changed it)."""
     versions = PlanVersionRepository(db, user_id)
     existing = await versions.by_revision(session_id, revision)
     if existing is not None:
@@ -213,7 +213,7 @@ async def save_version(
     chapter_indices = await write_rows(db, user_id, program.id, plan, draft)
     after = plan_snapshot(plan, draft, budget, chapter_indices)
     number = await versions.next_version(program.id)
-    await versions.supersede_pending(program.id)  # la nouvelle proposition remplace l'ancienne
+    await versions.supersede_pending(program.id)  # the new proposal replaces the old one
     version = await versions.add(
         program_id=program.id,
         version=number,

@@ -8,7 +8,7 @@ from app.db.repository import UserScopedRepository
 
 
 class TaskRepository(UserScopedRepository[Task]):
-    """Tâches d'un utilisateur ; lectures fraîches, comme `ProgramRepository`."""
+    """A user's tasks; fresh reads, like `ProgramRepository`."""
 
     model = Task
 

@@ -1,4 +1,4 @@
-"""Contrat public des contrôles, avec énoncé distinct de la grille de correction."""
+"""Public contract of the checks, with a statement distinct from the marking grid."""
 
 from datetime import date, datetime
 from typing import Annotated, Literal

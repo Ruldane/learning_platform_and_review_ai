@@ -1,4 +1,4 @@
-"""Historique du temps d'étude terminé, ramené aux jours locaux de l'utilisatrice."""
+"""History of completed study time, brought back to the user's local days."""
 
 from collections import Counter
 from dataclasses import dataclass
@@ -20,7 +20,7 @@ class StudyHistory:
 async def finished_history(
     db: AsyncSession, user_id: str, *, zone: ZoneInfo, since: date, before: date
 ) -> StudyHistory:
-    """Le premier jour observé avant `before` et les minutes sur `[since, before[`."""
+    """The first day observed before `before` and the minutes over `[since, before[`."""
     first = None
     minutes: Counter[date] = Counter()
     for ended_at, worked in await StudyRepository(db, user_id).finished():

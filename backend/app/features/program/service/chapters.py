@@ -1,4 +1,4 @@
-"""Table des matières du dernier plan du Stratège, dans son ordre pédagogique."""
+"""Table of contents of the Strategist's latest plan, in its teaching order."""
 
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession

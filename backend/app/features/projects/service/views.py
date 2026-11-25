@@ -1,8 +1,8 @@
-"""Lecture des projets (14.2, D166) : le projet rendu par l'API (énoncé, rendus du dernier au
-premier, évaluation avec le texte de chaque critère, quatre brouillons dans un ordre fixe) et la
-ligne du Portfolio (programme, semaine, rang). Les statuts sont corrigés avant toute lecture
-(`settle`) : le statut suit la session. Les colonnes JSON sont lues défensivement : une ligne
-abîmée se rend sans cette partie, jamais en erreur."""
+"""Reading projects (14.2, D166): the project as the API returns it (brief, submissions from the
+last to the first, assessment with the text of each criterion, four drafts in a fixed order) and
+the Portfolio row (program, week, rank). Statuses are corrected before any read (`settle`): the
+status follows the session. JSON columns are read defensively: a damaged row is returned
+without that part, never as an error."""
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -32,14 +32,14 @@ from app.features.projects.service.runtime import REVIEW_GRAPH, SUBJECT, Project
 from app.features.projects.service.settle import settle_all
 from app.features.sessions.service import list_open_sessions_by_subject
 
-_LIVE = ("brief_pending", "reviewing")  # statuts qui ont une session à suivre
-OpenSessions = Mapping[str, Sequence[str]]  # sessions `project_review` ouvertes, par projet
+_LIVE = ("brief_pending", "reviewing")  # statuses that have a session to follow
+OpenSessions = Mapping[str, Sequence[str]]  # `project_review` sessions open, per project
 
 
 def _session_id(row: Project, open_sessions: OpenSessions | None) -> str | None:
-    """La session à suivre : celle d'un énoncé ou d'une évaluation en cours ; pour un projet
-    validé, celle de ses brouillons tant qu'elle est ouverte (le statut ne bouge pas : sans elle,
-    un rechargement de la page ne la retrouverait pas)."""
+    """The session to follow: that of a brief or an assessment in progress; for a validated project,
+    that of its drafts while it is open (the status does not move: without it, reloading the page
+    would not find it)."""
     if row.status in _LIVE:
         return row.session_id
     if row.status == "validated" and row.session_id and open_sessions:
@@ -62,7 +62,7 @@ def brief_out(row: Project) -> ProjectBriefOut | None:
 
 
 def submissions_out(row: Project) -> list[SubmissionOut]:
-    """Les rendus, le dernier d'abord."""
+    """The submissions, the last one first."""
     out: list[SubmissionOut] = []
     for item in reversed(row.submissions):
         at = parse_moment(item.get("at"))
@@ -105,7 +105,7 @@ def evaluation_out(row: Project) -> EvaluationOut | None:
 
 
 def drafts_out(row: Project) -> list[DraftOut]:
-    """Les brouillons dans l'ordre fixe des types ; un type absent n'est pas rendu."""
+    """The drafts in the fixed order of types; a missing type is not returned."""
     out: list[DraftOut] = []
     for kind in DRAFT_KINDS:
         item = row.drafts.get(kind)
@@ -150,7 +150,7 @@ def _status(row: Project) -> ProjectStatus:
 async def get_project(
     rt: ProjectsRuntime, db: AsyncSession, user_id: str, project_id: str
 ) -> ProjectOut:
-    """Le projet de l'utilisatrice, son statut corrigé ; 404 `project_not_found` sinon."""
+    """The user's project, its corrected status; 404 `project_not_found` otherwise."""
     await settle_all(rt, user_id)
     row = await ProjectRepository(db, user_id).get_fresh(project_id)
     if row is None:
@@ -159,9 +159,9 @@ async def get_project(
 
 
 async def project_out_live(db: AsyncSession, user_id: str, row: Project) -> ProjectOut:
-    """Le projet tel que `GET /projects/{id}` le rend, `session_id` compris : un projet validé dont
-    la session des brouillons tourne la donne. Pour les routes qui rendent le projet après une
-    retouche."""
+    """The project as `GET /projects/{id}` returns it, `session_id` included: a validated project
+    whose drafts session is running returns it. For the routes that return the project after an
+    edit."""
     open_sessions = await list_open_sessions_by_subject(
         db, user_id, graph=REVIEW_GRAPH, subject_type=SUBJECT
     )
@@ -171,7 +171,7 @@ async def project_out_live(db: AsyncSession, user_id: str, row: Project) -> Proj
 async def _loaded(db: AsyncSession, user_id: str, program_id: str) -> Loaded | None:
     try:
         return await load(db, user_id, program_id)
-    except AppError:  # programme supprimé : le projet se rend sans sa place
+    except AppError:  # program deleted: the project is returned without its place
         return None
 
 
@@ -205,8 +205,8 @@ def _summary(
 async def list_projects(
     rt: ProjectsRuntime, db: AsyncSession, user_id: str, status: str | None
 ) -> list[ProjectSummary]:
-    """Le Portfolio : les projets (ceux de ce statut si donné), dans l'ordre des programmes (le
-    plus ancien d'abord), des semaines puis des modules ; sans place, à la fin."""
+    """The Portfolio: the projects (those of this status if given), in program order (the oldest
+    first), by week then by module; without a place, at the end."""
     await settle_all(rt, user_id)
     rows = await ProjectRepository(db, user_id).all(status)
     programs: dict[str, Loaded | None] = {}
@@ -233,17 +233,17 @@ async def list_projects(
 class RecentProject:
     id: str
     title: str
-    verdict: str  # `validated` ou `to_redo`
-    ref: str  # la session de l'évaluation : change avec chaque nouvelle évaluation, jamais sans
+    verdict: str  # `validated` or `to_redo`
+    ref: str  # the assessment's session: changes with each new assessment, never without
     at: datetime
 
 
 async def recent_projects(
     db: AsyncSession, user_id: str, after: datetime | None, before: datetime | None, limit: int
 ) -> list[RecentProject]:
-    """Les projets dont la dernière évaluation (validée ou à reprendre) date de `[after, before]`
-    (bornes incluses), la plus récente d'abord (fil d'activité, 8.10). Un projet qui se rend de
-    nouveau (`reviewing`) n'y est plus jusqu'à sa nouvelle évaluation. Aucune donnée du rendu."""
+    """The projects whose last assessment (validated or to redo) dates from `[after, before]`
+    (bounds included), most recent first (activity feed, 8.10). A project that is submitted again
+    (`reviewing`) is no longer in it until its new assessment. No submission data."""
     found: list[RecentProject] = []
     for row in await ProjectRepository(db, user_id).all():
         data: dict[str, Any] = row.evaluation or {}

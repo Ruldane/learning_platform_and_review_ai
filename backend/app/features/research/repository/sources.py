@@ -7,7 +7,7 @@ from app.db.repository import UserScopedRepository
 
 
 class SourceRepository(UserScopedRepository[Source]):
-    """Sources repérées par les sessions de recherche d'un utilisateur."""
+    """Sources found by a user's search sessions."""
 
     model = Source
 
@@ -19,7 +19,7 @@ class SourceRepository(UserScopedRepository[Source]):
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def add(self, source: Source) -> Source:  # type: ignore[override]
-        """Enregistre `source` pour cet utilisateur (le `user_id` reçu est ignoré)."""
+        """Records `source` for this user (the `user_id` received is ignored)."""
         source.user_id = self.user_id
         self.session.add(source)
         await self.session.flush()
@@ -37,6 +37,6 @@ class SourceRepository(UserScopedRepository[Source]):
         stmt = (
             select(Source)
             .where(*self._of_session(session_id))
-            .order_by(Source.created_at, literal_column("rowid"))  # rowid : ordre d'insertion
+            .order_by(Source.created_at, literal_column("rowid"))  # rowid: insertion order
         )
         return builtins.list((await self.session.execute(stmt)).scalars().all())

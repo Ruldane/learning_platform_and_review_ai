@@ -1,4 +1,4 @@
-"""Actions privées du parcours Du papier au code."""
+"""Private actions of the "From paper to code" path."""
 
 from app.agents.tools.paper_lab_port import PAPER_GRAPH
 from app.mcp.base import FeatureMcp, McpAction, McpGraph

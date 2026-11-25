@@ -1,6 +1,6 @@
-"""Ce qu'une version de replanification garde en JSON (D106) : charges des semaines touchées
-(`week_loads`), ce qu'il faut écrire à l'acceptation (`snapshot.changes`) et le résumé rendu au
-Stratège (`PreviewSaved`). Fonctions pures, sans base."""
+"""What a replanning version keeps in JSON (D106): the loads of the affected weeks (`week_loads`),
+what must be written on acceptance (`snapshot.changes`) and the summary returned to the
+Strategist (`PreviewSaved`). Pure functions, without a database."""
 
 from datetime import date
 from typing import Any
@@ -43,8 +43,8 @@ def loads_of(version: PlanVersion) -> list[WeekLoad]:
 
 
 def changes_json(result: RepackResult | None, *, finished: bool = False) -> dict[str, Any]:
-    """Ce qu'il faut écrire à l'acceptation ; `finished` : impossible car le programme est
-    terminé (le texte de fin le dit, D106)."""
+    """What must be written on acceptance; `finished`: impossible because the program is over (the
+    end text says so, D106)."""
     if result is None:
         return {"tasks": [], "removed": [], "new_weeks": [], "finished": finished}
     return {
@@ -75,7 +75,7 @@ def saved_of(version: PlanVersion) -> PreviewSaved:
 
 
 def earliest_date(changes: dict[str, Any]) -> date | None:
-    """Le premier jour qu'écrirait l'acceptation (tâches datées, semaines « Suite »)."""
+    """The first day that acceptance would write (dated tasks, "Continued" weeks)."""
     days = [PlannedTask.from_json(t).planned_date for t in changes.get("tasks", [])]
     days += [NewWeek.from_json(w).start_date for w in changes.get("new_weeks", [])]
     return min(days, default=None)

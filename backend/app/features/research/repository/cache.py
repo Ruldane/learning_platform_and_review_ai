@@ -9,7 +9,7 @@ from app.db.repository import UserScopedRepository
 
 
 class WebCacheRepository(UserScopedRepository[WebCacheEntry]):
-    """Cache web d'un utilisateur : jamais l'entrée d'un autre, jamais une entrée expirée."""
+    """A user's web cache: never another user's entry, never an expired entry."""
 
     model = WebCacheEntry
 
@@ -24,7 +24,7 @@ class WebCacheRepository(UserScopedRepository[WebCacheEntry]):
                 WebCacheEntry.key_hash == key_hash,
                 WebCacheEntry.expires_at > now,
             )
-            # Une entrée déjà chargée par cette session est relue : `put` la remplace en SQL.
+            # An entry already loaded by this session is re-read: `put` replaces it in SQL.
             .execution_options(populate_existing=True)
         )
         return (await self.session.execute(stmt)).scalar_one_or_none()
@@ -32,8 +32,8 @@ class WebCacheRepository(UserScopedRepository[WebCacheEntry]):
     async def put(
         self, kind: str, key_hash: str, status: str, payload: dict[str, Any], expires_at: datetime
     ) -> None:
-        """Remplace l'entrée (ou la crée) en une seule instruction : deux écritures
-        simultanées de la même clé ne lèvent pas d'erreur d'unicité."""
+        """Replaces the entry (or creates it) in a single statement: two simultaneous writes of the
+        same key do not raise a uniqueness error."""
         values = {"status": status, "payload": payload, "expires_at": expires_at}
         stmt = sqlite_insert(WebCacheEntry).values(
             user_id=self.user_id, kind=kind, key_hash=key_hash, **values

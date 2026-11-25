@@ -1,6 +1,6 @@
-"""Règles pures du radar du marché (P5 à P9) : classement des compétences demandées, évolution,
-alertes « absente de ton programme », score d'une offre, salaire gardé, enrichissement du
-référentiel. Rien ici n'importe la base ; seul le score de match vient de `gap`."""
+"""Pure rules of the market radar (P5 to P9): ranking of requested skills, change over time,
+"absent from your program" alerts, score of an offer, kept salary, enrichment of the reference
+data. Nothing here imports the database; only the match score comes from `gap`."""
 
 import re
 from collections import Counter
@@ -30,8 +30,8 @@ _ACQUIRED: frozenset[str] = frozenset({"validated", "proven"})
 
 @dataclass(frozen=True)
 class SkillFreq:
-    """Une compétence du classement : demandée par `count` offres analysées, soit `share`
-    (arrondie à 0,01), au rang `rank` (les ex æquo partagent leur rang)."""
+    """A skill in the ranking: requested by `count` analysed offers, i.e. `share` (rounded to 0.01),
+    at rank `rank` (ties share their rank)."""
 
     skill: str
     norm: str
@@ -42,9 +42,9 @@ class SkillFreq:
 
 @dataclass(frozen=True)
 class SkillTrend(SkillFreq):
-    """Une ligne du classement avec son évolution depuis le relevé précédent : `delta_share` en
-    points de pourcentage, `delta_rank` en rangs gagnés (positif) ou perdus ; `new` : absente
-    du relevé précédent. Sans relevé précédent : deltas à `None`, `new` à faux."""
+    """A ranking row with its change since the previous scan: `delta_share` in percentage points,
+    `delta_rank` in ranks gained (positive) or lost; `new`: absent from the previous scan. Without a
+    previous scan: deltas at `None`, `new` false."""
 
     delta_share: float | None
     delta_rank: int | None
@@ -53,7 +53,7 @@ class SkillTrend(SkillFreq):
 
 @dataclass(frozen=True)
 class Alert:
-    """Une compétence très demandée et absente du programme (règle P8)."""
+    """A highly requested skill absent from the program (rule P8)."""
 
     skill: str
     share: float
@@ -61,13 +61,13 @@ class Alert:
 
 
 def _percent(count: int, total: int) -> int:
-    """`count / total` en pour cent entier, arrondi au plus proche (,5 vers le haut), en entiers."""
+    """`count / total` as a whole percentage, rounded to the nearest (0.5 rounds up), as
+    integers."""
     return (200 * count + total) // (2 * total)
 
 
 def _skill_names(posting: Mapping[str, Any]) -> dict[str, str]:
-    """Les compétences d'une offre : nom normalisé → nom tel qu'écrit (la première forme), une
-    fois chacune."""
+    """The skills of an offer: normalized name → name as written (the first form), once each."""
     names: dict[str, str] = {}
     for item in posting.get("skills") or []:
         name = str(item.get("name") or "").strip()
@@ -78,10 +78,10 @@ def _skill_names(posting: Mapping[str, Any]) -> dict[str, str]:
 
 
 def rank_skills(postings: Sequence[Mapping[str, Any]]) -> list[SkillFreq]:
-    """Le classement des compétences des offres lues (`read == "ok"`) et analysées (`skills` est
-    une liste, même vide). Une compétence compte une fois par offre (nom normalisé) ; elle
-    s'affiche sous sa forme la plus fréquente ; `share` = `count` / offres analysées, arrondie à
-    0,01 ; tri par `count` décroissant puis nom normalisé ; rangs 1, 2, 2, 4 (ex æquo)."""
+    """The ranking of the skills of the offers read (`read == "ok"`) and analysed (`skills` is a
+    list, even an empty one). A skill counts once per offer (normalized name); it is shown in its
+    most frequent form; `share` = `count` / analysed offers, rounded to 0.01; sorted by `count`
+    descending, then normalized name; ranks 1, 2, 2, 4 (ties)."""
     analysed = [p for p in postings if p.get("read") == "ok" and isinstance(p.get("skills"), list)]
     counts: Counter[str] = Counter()
     forms: dict[str, Counter[str]] = {}
@@ -103,9 +103,9 @@ def rank_skills(postings: Sequence[Mapping[str, Any]]) -> list[SkillFreq]:
 def evolution(
     current: Sequence[SkillFreq], previous: Sequence[SkillFreq] | None
 ) -> list[SkillTrend]:
-    """Le classement `current` avec son évolution depuis `previous` (même poste, même zone), par
-    nom normalisé : écart de part en points (entier), rang gagné (ancien − nouveau), `new` pour une
-    compétence absente avant. Sans relevé précédent : tout à `None` et `new` faux."""
+    """The ranking `current` with its change since `previous` (same job, same area), by normalized
+    name: share gap in points (integer), rank gained (old − new), `new` for a skill absent before.
+    Without a previous scan: everything at `None` and `new` false."""
     before = None if previous is None else {item.norm: item for item in previous}
     trends: list[SkillTrend] = []
     for item in current:
@@ -138,10 +138,10 @@ def program_alerts(
     in_program: AbstractSet[str],
     levels: Mapping[str, SkillLevel],
 ) -> list[Alert]:
-    """Règle P8 : au moins `ALERT_MIN_POSTINGS` offres analysées ; une compétence demandée par au
-    moins la moitié d'entre elles, absente de tout module non sauté (`in_program` : noms
-    normalisés, synonymes du référentiel compris) et de niveau inférieur à `valide` (`levels` :
-    par nom normalisé) ; `ALERT_MAX` au plus, dans l'ordre du classement."""
+    """Rule P8: at least `ALERT_MIN_POSTINGS` analysed offers; a skill requested by at least half of
+    them, absent from every non-skipped module (`in_program`: normalized names, reference synonyms
+    included) and at a level below `valide` (`levels`: by normalized name); `ALERT_MAX` at most, in
+    ranking order."""
     if analyzed < ALERT_MIN_POSTINGS:
         return []
     alerts = [
@@ -155,9 +155,8 @@ def program_alerts(
 
 
 def posting_score(skills: Sequence[Mapping[str, Any]], levels: Mapping[str, SkillLevel]) -> int:
-    """Le score de match d'une offre du radar (`match_score`, D118) : chaque compétence est une
-    ligne `to_add` au niveau lu par nom normalisé, comptée une fois (requise si une des formes
-    l'est). Aucune compétence : 0."""
+    """The match score of a radar offer (`match_score`, D118): each skill is a `to_add` row at the
+    level read, by normalized name, counted once (required if one of its forms is). No skill: 0."""
     required: dict[str, bool] = {}
     names: dict[str, str] = {}
     for item in skills:
@@ -171,9 +170,8 @@ def posting_score(skills: Sequence[Mapping[str, Any]], levels: Mapping[str, Skil
 
 
 def salary_shown(salary: str | None, text: str) -> str | None:
-    """Le salaire relevé par le modèle, gardé seulement si chacun de ses nombres figure dans le
-    texte de l'offre (nombre entier de chiffres : 45 n'est pas 450). Un salaire sans aucun
-    chiffre, vide ou absent : `None`."""
+    """The salary read by the model, kept only if each of its numbers appears in the offer text
+    (whole number of digits: 45 is not 450). A salary without any digit, empty or absent: `None`."""
     figures = _DIGITS.findall(salary or "")
     if not figures:
         return None
@@ -182,11 +180,11 @@ def salary_shown(salary: str | None, text: str) -> str | None:
 
 
 def enrich_names(ranking: Sequence[SkillFreq]) -> list[str]:
-    """Les compétences à ajouter au référentiel (F15) : demandées par au moins 30 % des offres,
-    `ENRICH_MAX` au plus, dans l'ordre du classement."""
+    """The skills to add to the reference data (F15): requested by at least 30% of the offers,
+    `ENRICH_MAX` at most, in ranking order."""
     return [item.skill for item in ranking if item.share >= ENRICH_SHARE][:ENRICH_MAX]
 
 
 def low_sample(read_ok: int) -> bool:
-    """Vrai si le relevé compte moins de `MIN_RUN` offres lisibles : le rapport le dit."""
+    """True if the scan has fewer than `MIN_RUN` readable offers: the report says so."""
     return read_ok < MIN_RUN

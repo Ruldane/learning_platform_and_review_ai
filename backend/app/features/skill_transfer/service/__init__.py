@@ -1,4 +1,4 @@
-"""Services du contrôle de transfert et de son agent."""
+"""Services of the transfer check and of its agent."""
 
 from datetime import date
 

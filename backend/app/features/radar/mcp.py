@@ -1,5 +1,5 @@
-"""Déclaration MCP de `radar` : le radar du marché. Les offres lues viennent du web : leurs titres
-et entreprises sont rendus comme données."""
+"""MCP declaration for `radar`: the market radar. The offers read come from the web: their titles
+and companies are returned as data."""
 
 from app.mcp.base import FeatureMcp, McpAction, McpGraph
 

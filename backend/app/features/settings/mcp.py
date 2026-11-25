@@ -1,14 +1,14 @@
-"""Déclaration MCP de `settings` : les préférences de January, jamais le niveau 4 (clés d'API,
-modèles par niveau, surcharges par agent). `PUT /settings` brut porte aussi les modèles : il n'est
-exposé que par l'action `settings_update_preferences`, qui lit l'objet (`merge_from`), ne change
-que `PREFERENCE_FIELDS` (`body_fields`) et réécrit le tout."""
+"""MCP declaration for `settings`: January's preferences, never level 4 (API keys, models per
+level, per-agent overrides). The raw `PUT /settings` also carries the models: it is exposed only
+through the `settings_update_preferences` action, which reads the object (`merge_from`), changes
+only `PREFERENCE_FIELDS` (`body_fields`) and rewrites everything."""
 
 from app.mcp.base import FeatureMcp, McpAction, McpExclusion
 
-# Niveau 4 : jamais écrits par le MCP.
+# Level 4: never written by the MCP.
 PROTECTED_FIELDS = frozenset({"tiers", "agent_overrides"})
 
-# Tout le reste : disponibilité, rythme, étude, style, recherche, fuseau…
+# Everything else: availability, pace, study, style, search, time zone…
 PREFERENCE_FIELDS = frozenset(
     {
         "availability",

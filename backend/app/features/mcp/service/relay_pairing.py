@@ -1,4 +1,4 @@
-"""Un code du navigateur devient le jeton des parcours jouables du relais."""
+"""A browser code becomes the token for the relay's playable paths."""
 
 import secrets
 from datetime import timedelta
@@ -22,7 +22,7 @@ _TOKEN_DAYS = 30
 
 
 def required_features(registry: Registry) -> list[str]:
-    # Le relais doit aussi pouvoir suivre les graphes lancés directement par l'interface.
+    # The relay must also be able to follow the graphs launched directly from the interface.
     return sorted({"sessions", *registry.graph_features.values()})
 
 

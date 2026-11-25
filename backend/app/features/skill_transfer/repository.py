@@ -1,4 +1,4 @@
-"""Preuves et contrôles, toujours filtrés sur le compte courant."""
+"""Proofs and checks, always filtered on the current account."""
 
 from datetime import date
 

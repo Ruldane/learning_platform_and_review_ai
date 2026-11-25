@@ -1,30 +1,30 @@
-"""Révisions espacées (SPEC F9, D99) : règles pures, sans base ni modèle.
+"""Spaced reviews (SPEC F9, D99): pure rules, without database or model.
 
-Une fiche réussie passe au palier suivant (1, 3, 7, 16 puis 35 jours) ; une erreur la ramène à
-1 jour. Les jours sont ceux de January (fuseau local, `core.clock`) : l'appelant donne `today`.
-La file du jour tient en 15 minutes, à 30 secondes la fiche."""
+A card passed moves to the next level (1, 3, 7, 16, then 35 days); an error brings it back to
+1 day. The days are January's (local time zone, `core.clock`): the caller gives `today`. The
+day's queue holds 15 minutes, at 30 seconds per card."""
 
 from datetime import date, timedelta
 
-INTERVALS = (1, 3, 7, 16, 35)  # jours avant la prochaine révision, par palier (`step`)
+INTERVALS = (1, 3, 7, 16, 35)  # days before the next review, per level (`step`)
 CARD_SECONDS = 30
 QUEUE_MINUTES = 15
-DAILY_CARDS = QUEUE_MINUTES * 60 // CARD_SECONDS  # 30 fiches par jour au plus
-DEMOTE_AFTER = 2  # échecs de fiches consécutifs qui font redescendre un acquis `valide`
+DAILY_CARDS = QUEUE_MINUTES * 60 // CARD_SECONDS  # 30 cards per day at most
+DEMOTE_AFTER = 2  # consecutive card failures that bring a `valide` skill back down
 
 
 def first_due(today: date) -> date:
-    """L'échéance d'une fiche neuve (palier 0) : demain."""
+    """The due date of a new card (level 0): tomorrow."""
     return today + timedelta(days=INTERVALS[0])
 
 
 def next_review(step: int, ok: bool, today: date) -> tuple[int, date]:
-    """`(nouveau palier, nouvelle échéance)` après un avis. Réussite : un palier de plus, borné
-    au dernier. Échec : retour au palier 0, demain."""
+    """`(new level, new due date)` after a rating. Success: one level more, capped at the last.
+    Failure: back to level 0, tomorrow."""
     new_step = min(step + 1, len(INTERVALS) - 1) if ok else 0
     return new_step, today + timedelta(days=INTERVALS[new_step])
 
 
 def queue_room(reviewed_today: int) -> int:
-    """Combien de fiches tiennent encore dans la file du jour."""
+    """How many cards still fit in the day's queue."""
     return max(0, DAILY_CARDS - reviewed_today)

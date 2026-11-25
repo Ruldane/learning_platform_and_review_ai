@@ -1,6 +1,6 @@
-"""Ce que les demandes « À confirmer » montrent et ce qu'on en garde (phase 10, P15) : la demande
-telle que January la lit (`confirmation_out`, toute la requête), la comparaison de deux verdicts
-du contrôle préalable et la purge des demandes closes."""
+"""What the pending confirmations show and what is kept of them (phase 10, P15): the request as
+January reads it (`confirmation_out`, the whole request), the comparison of two verdicts of
+the preliminary check, and the purge of closed requests."""
 
 from datetime import datetime, timedelta
 from typing import Any
@@ -15,8 +15,8 @@ from app.mcp.confirm import StoredRequest, preview_fields
 
 
 def confirmation_out(row: McpConfirmation) -> McpConfirmationOut:
-    """La demande telle que January la lit : le résumé, et **toute** la requête gardée (méthode,
-    route, cible, champs), les clés masquées."""
+    """The request as January reads it: the summary and **all** of the stored request (method,
+    route, target, fields), with keys masked."""
     stored = StoredRequest.from_json(row.request)
     fields, truncated = preview_fields(stored.request)
     preview = McpRequestPreview(
@@ -41,7 +41,7 @@ def confirmation_out(row: McpConfirmation) -> McpConfirmationOut:
 
 
 def verdict_key(verdict: dict[str, Any] | None) -> tuple[bool, tuple[str, ...]] | None:
-    """Ce qui compte d'un verdict : `ok` et les raisons (le résumé n'est qu'un texte de plus)."""
+    """What matters in a verdict: `ok` and the reasons (the summary is just more text)."""
     if verdict is None:
         return None
     return bool(verdict.get("ok")), tuple(str(item) for item in verdict.get("reasons") or ())
@@ -50,9 +50,9 @@ def verdict_key(verdict: dict[str, Any] | None) -> tuple[bool, tuple[str, ...]] 
 async def purge_closed_confirmations(
     session_factory: async_sessionmaker[AsyncSession], now: datetime
 ) -> int:
-    """Retire les demandes closes (confirmées, refusées, expirées, échouées) de plus de
-    `RETENTION_DAYS` jours : leur requête gardait le texte complet (tâche planifiée, tous comptes :
-    une rétention). Une demande encore en attente reste. Rend le nombre de lignes retirées."""
+    """Removes closed requests (confirmed, refused, expired, failed) older than `RETENTION_DAYS`
+    days: their request kept the full text (scheduled task, all accounts: a retention job). A
+    request still pending stays. Returns the number of rows removed."""
     cutoff = now - timedelta(days=RETENTION_DAYS)
     stmt = delete(McpConfirmation).where(
         McpConfirmation.status != "pending", McpConfirmation.created_at < cutoff

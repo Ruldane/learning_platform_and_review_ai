@@ -1,6 +1,6 @@
-"""Contrat de la session guidée (SPEC F14, 14.2 ; D103) : départ (bloc du jour ou leçon choisie),
-fin ou abandon (`PATCH`, 14.2), état d'une session (écran de fin) et résumé (série, heures de la
-semaine, minuteur, bloc du jour)."""
+"""Contract of the guided session (SPEC F14, 14.2; D103): start (the day's block or a chosen
+lesson), end or abandonment (`PATCH`, 14.2), state of a session (end screen) and summary (streak,
+hours of the week, timer, day's block)."""
 
 from datetime import datetime
 from typing import Literal
@@ -11,8 +11,8 @@ from app.db.models.program import TaskType
 from app.db.models.skills import SkillLevel
 
 StudyModeIn = Literal["socratic", "feynman", "direct"]
-# `interrupted` : session encore ouverte en base dont la session d'agents est terminée (échec,
-# annulation) ; lue ainsi sans écriture (D91). « Terminer » y enregistre quand même le temps.
+# `interrupted`: session still open in the database whose agent session has ended (failure,
+# cancellation); read this way without any write (D91). « Terminer » still records the time.
 StudyStatusOut = Literal["open", "finished", "cancelled", "interrupted"]
 
 
@@ -30,7 +30,7 @@ class StudyStarted(BaseModel):
 
 class StudyUpdate(BaseModel):
     action: Literal["finish", "cancel"]
-    # Minuteur du front (travail seul) ; absent : 0. Borné par la durée réelle (D103).
+    # Front timer (work only); absent: 0. Capped by the real duration (D103).
     worked_minutes: int | None = Field(default=None, ge=0, le=600)
 
 

@@ -34,8 +34,8 @@ def _sha256(text: str) -> str:
 
 
 def url_key(url: str) -> str:
-    """Empreinte de l'URL normalisée (D66) : schéma et hôte en minuscules, sans fragment.
-    Lève l'erreur de `normalize_url` pour un lien qui n'est pas http(s)."""
+    """Fingerprint of the normalized URL (D66): scheme and host in lowercase, without fragment.
+    Raises the error of `normalize_url` for a link that is not http(s)."""
     return _sha256(normalize_url(url))
 
 
@@ -50,15 +50,15 @@ def search_key(
     time_range: str | None,
     categories: Sequence[str],
 ) -> str:
-    """Empreinte d'une recherche : casse et espaces de la requête, ordre des catégories ignorés."""
+    """Fingerprint of a search: case and spaces of the query, category order ignored."""
     words = " ".join(query.split()).casefold()
     parts = [provider, words, lang, time_range, sorted(categories)]
     return _sha256(json.dumps(parts, ensure_ascii=False, separators=(",", ":")))
 
 
 class WebCache:
-    """Cache web d'un utilisateur : page lue 7 jours, page illisible et liste de résultats 24 h
-    (SPEC 10.1, 10.2). Ne journalise rien ; les clés stockées sont des empreintes."""
+    """A user's web cache: a page read is kept 7 days, an unreadable page and a result list 24 h
+    (SPEC 10.1, 10.2). Logs nothing; the stored keys are fingerprints."""
 
     def __init__(
         self, db: AsyncSession, user_id: str, *, now: Callable[[], datetime] = utcnow
@@ -78,7 +78,7 @@ class WebCache:
         try:
             return CachedPage(**payload)
         except TypeError:
-            return None  # entrée d'une ancienne forme : comme si elle n'existait pas
+            return None  # entry in an old form: as if it did not exist
 
     async def put_page(self, url: str, page: CachedPage, *, client: bool = False) -> None:
         ttl = PAGE_TTL if page.status == "ok" else UNREADABLE_TTL
@@ -96,6 +96,6 @@ class WebCache:
             return None
 
     async def put_search(self, key: str, results: Sequence[SearchResult]) -> None:
-        """Garde la liste 24 h. L'appelant ne stocke pas une liste vide due à une panne."""
+        """Keeps the list for 24 h. The caller does not store an empty list caused by a failure."""
         payload = {"results": [asdict(result) for result in results]}
         await self._repo.put("search", key, "ok", payload, self._now() + SEARCH_TTL)

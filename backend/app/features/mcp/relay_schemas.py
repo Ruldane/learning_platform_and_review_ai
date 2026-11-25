@@ -1,4 +1,4 @@
-"""Contrats d'appairage du relais, indépendants des jetons de l'interface."""
+"""Relay pairing contracts, independent of the interface tokens."""
 
 from typing import Literal
 

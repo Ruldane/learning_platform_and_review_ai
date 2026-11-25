@@ -138,7 +138,7 @@ async def start_training(
 
 
 async def start_direct_training(rt: StudyRuntime, user_id: str, link: TrainingLink) -> None:
-    """Ouvre ou reprend un training et rattache son appelant dans la même transaction."""
+    """Opens or resumes a training, and attaches its caller within the same transaction."""
     await start_training(rt, user_id, TrainingStart(mode="direct"), link=link)
 
 

@@ -1,7 +1,7 @@
-"""Les offres dans la vie de l'application (D122) : ce que les routes `postings` et `gap` et le port
-de l'Analyste (`AgentGapStore`) partagent : base, recherche web (lecture du lien), mémoire
-(élément `offre`, doublons « possibles »), lanceur de sessions (lié au moteur ensuite) et verrous.
-Créé par le lifespan avant le moteur d'agents (`app.state.career.postings`)."""
+"""Postings in the application's life (D122): what the `postings` and `gap` routes and the
+Analyst's port (`AgentGapStore`) share: database, web search (reading the link), memory (`offre`
+item, "possible" duplicates), session launcher (bound to the engine later) and locks. Created by
+the lifespan before the agent engine (`app.state.career.postings`)."""
 
 import asyncio
 import weakref
@@ -24,8 +24,8 @@ def utc_now() -> datetime:
 
 
 class KeyLocks:
-    """Verrous par clé, faibles (un verrou que plus personne ne tient disparaît). Propres à ce
-    processus (un seul worker, comme les autres verrous de l'application)."""
+    """Per-key locks, weak (a lock nobody holds anymore disappears). Specific to this process (a
+    single worker, like the application's other locks)."""
 
     def __init__(self) -> None:
         self._locks: weakref.WeakValueDictionary[tuple[str, str], asyncio.Lock] = (
@@ -41,8 +41,8 @@ class KeyLocks:
 
 
 def company_lock(locks: KeyLocks, user_id: str, key: str) -> asyncio.Lock:
-    """Le verrou de la fiche entreprise `key` (`company_key`) : la revue de CV et le dossier du kit
-    la créent toutes deux ; `locks` est le même `KeyLocks` des deux côtés (`bootstrap_career`)."""
+    """The lock on the company record `key` (`company_key`): the CV review and the kit file both
+    create it; `locks` is the same `KeyLocks` on both sides (`bootstrap_career`)."""
     return locks.get(user_id, f"company:{key}")
 
 
@@ -53,8 +53,8 @@ class PostingsRuntime:
     memory: MemoryRuntime
     launcher: Launcher
     now: Callable[[], datetime] = utc_now
-    # Ajout d'une offre : un verrou par lien normalisé ou par empreinte de texte (deux envois
-    # du même lien attendent l'un l'autre ; l'index unique reste le dernier rempart).
+    # Adding a posting: one lock per normalized link or text fingerprint (two submissions
+    # of the same link wait for each other; the unique index remains the last safeguard).
     source_locks: KeyLocks = field(default_factory=KeyLocks, repr=False, compare=False)
-    # Lancement de l'analyse : un verrou par offre (ajout et relance n'en lancent qu'une).
+    # Starting the analysis: one lock per posting (adding and re-running start only one).
     launch_locks: KeyLocks = field(default_factory=KeyLocks, repr=False, compare=False)

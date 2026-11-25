@@ -1,4 +1,4 @@
-"""Déclaration MCP de `quiz` : quiz, tentatives et révision des fiches."""
+"""MCP declaration for `quiz`: quizzes, attempts and card review."""
 
 from app.mcp.base import FeatureMcp, McpAction, McpGraph
 

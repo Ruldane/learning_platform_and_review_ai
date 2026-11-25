@@ -1,4 +1,4 @@
-"""Déclaration MCP de `program` : lire et retoucher le programme, le valider."""
+"""MCP declaration for `program`: read and edit the program, validate it."""
 
 from app.mcp.base import FeatureMcp, McpAction, McpGraph
 

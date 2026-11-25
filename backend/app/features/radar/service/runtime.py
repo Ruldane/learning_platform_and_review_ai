@@ -1,7 +1,7 @@
-"""Le radar dans la vie de l'application (D160) : ce que les routes, la tâche du lundi et le port
-du parcours `market_radar` (`AgentRadarStore`) partagent : base, lanceur de sessions (lié au
-moteur ensuite), recherche web (lecture des pages), horloge et verrous. Créé par
-`app.bootstrap_daily` avant le moteur d'agents (`app.state.daily.radar`)."""
+"""The radar in the application's life (D160): what the routes, the Monday task and the port of
+the `market_radar` path (`AgentRadarStore`) share: database, session launcher (bound to the
+engine later), web search (reading pages), clock and locks. Created by `app.bootstrap_daily`
+before the agent engine (`app.state.daily.radar`)."""
 
 import asyncio
 from collections.abc import Callable
@@ -32,11 +32,11 @@ class RadarRuntime:
     locks: KeyLocks = field(default_factory=KeyLocks, repr=False, compare=False)
 
     def runs_lock(self, user_id: str) -> asyncio.Lock:
-        """Le verrou des relevés d'une utilisatrice : lancement, vérification « déjà en cours ? »
-        et correction d'un relevé dont la session est morte forment une seule section."""
+        """The lock on a user's scans: the launch, the check "already running?" and the correction
+        of a scan whose session died form a single section."""
         return self.locks.get(user_id, _RUNS)
 
     def run_lock(self, user_id: str, run_id: str) -> asyncio.Lock:
-        """Le verrou d'un relevé : toutes les écritures de son état (lectures simultanées,
-        extractions, fin) relisent et réécrivent ses colonnes JSON l'une après l'autre."""
+        """The lock on a scan: all writes to its state (simultaneous reads, extractions, end)
+        re-read and rewrite its JSON columns one after the other."""
         return self.locks.get(user_id, f"{_RUNS}:{run_id}")

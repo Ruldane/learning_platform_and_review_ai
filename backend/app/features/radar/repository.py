@@ -1,6 +1,6 @@
-"""Relevés du radar d'un utilisateur (13.5). Les lectures qui précèdent une écriture rafraîchissent
-la ligne (`populate_existing`) : sous le verrou d'un relevé, une requête voit l'état commité par la
-précédente. Le commit appartient à l'appelant."""
+"""Radar scans of a user (13.5). Reads that precede a write refresh the row (`populate_existing`):
+under a scan's lock, a query sees the state committed by the previous one. The commit belongs
+to the caller."""
 
 import builtins
 from datetime import datetime
@@ -23,7 +23,7 @@ class RadarRunRepository(UserScopedRepository[RadarRun]):
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def running(self) -> builtins.list[RadarRun]:
-        """Les relevés `running`, relus."""
+        """The `running` scans, re-read."""
         stmt = (
             select(RadarRun)
             .where(RadarRun.user_id == self.user_id, RadarRun.status == "running")
@@ -43,7 +43,7 @@ class RadarRunRepository(UserScopedRepository[RadarRun]):
         return builtins.list((await self.session.execute(stmt)).scalars())
 
     async def latest_finished(self) -> RadarRun | None:
-        """Le relevé fini (`done` ou `failed`) le plus récent."""
+        """The most recent finished scan (`done` or `failed`)."""
         stmt = (
             select(RadarRun)
             .where(RadarRun.user_id == self.user_id, RadarRun.status != "running")
@@ -62,9 +62,9 @@ class RadarRunRepository(UserScopedRepository[RadarRun]):
         exclude_id: str | None = None,
         min_analyzed: int = 0,
     ) -> RadarRun | None:
-        """Le dernier relevé `done`, de ce poste et de cette zone (normalisés) si donnés, créé
-        avant `before` si donné, avec au moins `min_analyzed` offres analysées : un relevé
-        « aveugle » (aucune offre analysée) n'est jamais une référence."""
+        """The last `done` scan, for this job and this area (normalized) if given, created before
+        `before` if given, with at least `min_analyzed` offers analysed: a "blind" scan (no offer
+        analysed) is never a reference."""
         stmt = select(RadarRun).where(RadarRun.user_id == self.user_id, RadarRun.status == "done")
         if role_norm is not None:
             stmt = stmt.where(RadarRun.role_norm == role_norm)
@@ -82,8 +82,8 @@ class RadarRunRepository(UserScopedRepository[RadarRun]):
         ).scalar_one_or_none()
 
     async def created_since(self, since: datetime) -> bool:
-        """Un relevé non échoué (en cours ou fini) a-t-il été créé depuis `since` ? Un relevé en
-        échec ne tient pas la semaine : le passage planifié peut le remplacer."""
+        """Has a scan that did not fail (running or finished) been created since `since`? A failed
+        scan does not hold the week: the scheduled run may replace it."""
         stmt = (
             select(RadarRun.id)
             .where(
@@ -96,7 +96,7 @@ class RadarRunRepository(UserScopedRepository[RadarRun]):
         return (await self.session.execute(stmt)).first() is not None
 
     async def done_since(self, since: datetime) -> builtins.list[RadarRun]:
-        """Les relevés `done` finis après `since`, le plus récent d'abord."""
+        """The `done` scans finished after `since`, most recent first."""
         stmt = (
             select(RadarRun)
             .where(
@@ -112,8 +112,8 @@ class RadarRunRepository(UserScopedRepository[RadarRun]):
     async def done_between(
         self, after: datetime | None, before: datetime | None, limit: int | None
     ) -> builtins.list[RadarRun]:
-        """Les relevés `done` finis dans `[after, before]` (bornes incluses), le plus récent
-        d'abord (fil d'activité)."""
+        """The `done` scans finished within `[after, before]` (bounds included), most recent first
+        (activity feed)."""
         stmt = select(RadarRun).where(
             RadarRun.user_id == self.user_id,
             RadarRun.status == "done",

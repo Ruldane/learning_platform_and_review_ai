@@ -9,8 +9,8 @@ from app.db.repository import UserScopedRepository
 
 
 class ProgramRepository(UserScopedRepository[Program]):
-    """Programmes d'un utilisateur. Lectures fraîches (`populate_existing`) : sous le verrou d'un
-    programme, une requête voit ce que la précédente a commité."""
+    """A user's programs. Fresh reads (`populate_existing`): under a program's lock, a query sees
+    what the previous one committed."""
 
     model = Program
 
@@ -23,7 +23,7 @@ class ProgramRepository(UserScopedRepository[Program]):
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def by_session(self, session_id: str) -> Program | None:
-        """Le programme écrit par cette session du Stratège (le plus ancien s'il y en avait)."""
+        """The program written by this Strategist session (the oldest if there were several)."""
         stmt = (
             select(Program)
             .where(Program.user_id == self.user_id, Program.session_id == session_id)
@@ -63,7 +63,7 @@ class WeekRepository(UserScopedRepository[Week]):
         return {row[0]: int(row[1]) for row in (await self.session.execute(stmt)).all()}
 
     async def delete_for_program(self, program_id: str) -> None:
-        """Semaines du programme, et en cascade leurs modules et tâches (clés étrangères)."""
+        """Weeks of the program, and in cascade their modules and tasks (foreign keys)."""
         stmt = delete(Week).where(Week.user_id == self.user_id, Week.program_id == program_id)
         await self.session.execute(stmt)
 
@@ -82,12 +82,12 @@ class ModuleRepository(UserScopedRepository[Module]):
 
 
 class ModuleExtrasRepository(UserScopedRepository[Lesson]):
-    """Leçon et nombre de ressources de chaque module d'un programme (lecture seule)."""
+    """Lesson and number of resources of each module of a program (read-only)."""
 
     model = Lesson
 
     async def lessons(self, program_id: str) -> dict[str, tuple[str, str, str | None]]:
-        """`module → (leçon, statut, session)`."""
+        """`module → (lesson, status, session)`."""
         stmt = select(Lesson.module_id, Lesson.id, Lesson.status, Lesson.session_id).where(
             Lesson.user_id == self.user_id, Lesson.program_id == program_id
         )
@@ -104,11 +104,11 @@ class ModuleExtrasRepository(UserScopedRepository[Lesson]):
 
 
 async def validated_programs(session: AsyncSession) -> builtins.list[tuple[str, str]]:
-    """`(utilisateur, programme)` de TOUS les programmes validés, identifiants seulement.
+    """`(user, program)` of ALL validated programs, identifiers only.
 
-    SEULE lecture sans `user_id` de la phase 4 (D91, comme D18 et D75) : réservée à la tâche
-    planifiée des leçons (`app.scheduler`), qui relance ensuite chaque programme sous son
-    utilisateur (toutes les lectures suivantes filtrent par `user_id`)."""
+    The ONLY read without `user_id` in phase 4 (D91, like D18 and D75): reserved for the scheduled
+    lessons task (`app.scheduler`), which then re-runs each program under its user (all following
+    reads filter by `user_id`)."""
     stmt = (
         select(Program.user_id, Program.id)
         .where(Program.status == "validated")

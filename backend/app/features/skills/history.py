@@ -1,7 +1,7 @@
-"""Courbe de progression de la carte (SPEC F15, D106, D107) : les relevés hebdomadaires écrits
-par la tâche `skill_snapshots` (`write_weekly_snapshots`), plus le point de la semaine en cours
-calculé en direct depuis `user_skills` (D6). Semaines du lundi au dimanche, dans le fuseau de
-January (D98). Lecture seule, hors de `service` comme `map` (cycle avec `program`)."""
+"""Progress curve of the map (SPEC F15, D106, D107): the weekly snapshots written by the
+`skill_snapshots` task (`write_weekly_snapshots`), plus the current week's point computed live
+from `user_skills` (D6). Weeks run Monday to Sunday, in January's time zone (D98). Read-only,
+outside `service` like `map` (cycle with `program`)."""
 
 from collections.abc import Iterable
 from datetime import date, datetime, timedelta
@@ -34,10 +34,10 @@ def _point(week: date, levels: Iterable[object]) -> HistoryPointOut:
 
 
 async def skill_history(db: AsyncSession, user_id: str, weeks: int, now: datetime) -> HistoryOut:
-    """Un point par semaine parmi les `weeks` dernières (semaine en cours comprise), du plus
-    ancien au plus récent ; une semaine sans relevé n'a pas de point. Le relevé de la semaine W
-    est écrit au premier passage de W : c'est l'état de FIN de W − 1, tracé sous W − 1 (relecture
-    5.10 m7, revue finale de la phase 5). Le point de la semaine en cours est calculé en direct."""
+    """One point per week among the last `weeks` (current week included), from oldest to newest; a
+    week with no snapshot has no point. The snapshot of week W is written at the first pass of W:
+    it is the END state of W − 1, recorded under W − 1 (re-reading 5.10 m7, final review of phase
+    5). The current week's point is computed live."""
     zone = user_zone((await SettingsService(db, user_id).get()).timezone)
     current = week_start(local_today(zone, now))
     first = current - timedelta(weeks=weeks - 1)

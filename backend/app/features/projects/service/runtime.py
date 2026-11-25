@@ -1,8 +1,8 @@
-"""Les projets dans la vie de l'application (D166) : ce que les routes, la tâche des énoncés et le
-port des parcours `project_brief` et `project_review` (`AgentProjectStore`) partagent : base,
-lanceur de sessions (lié au moteur ensuite), stockage des captures, mémoire (reflet des niveaux),
-profil maître (entrée de projet), recherche web (lecture du dépôt), horloge et verrous. Créé par
-`app.bootstrap_daily` avant le moteur d'agents (`app.state.daily.projects`)."""
+"""Projects in the application's life (D166): what the routes, the brief task and the port of the
+`project_brief` and `project_review` paths (`AgentProjectStore`) share: database, session
+launcher (bound to the engine later), screenshot storage, memory (level reflection), master
+profile (project entry), web search (reading the repository), clock and locks. Created by
+`app.bootstrap_daily` before the agent engine (`app.state.daily.projects`)."""
 
 import asyncio
 from collections.abc import Callable
@@ -23,7 +23,7 @@ BRIEF_GRAPH = "project_brief"
 REVIEW_GRAPH = "project_review"
 SUBJECT = "project"
 STORAGE_CATEGORY = "projects"
-BRIEF_ATTEMPTS = 3  # essais automatiques de l'énoncé (P1), puis « Réessayer »
+BRIEF_ATTEMPTS = 3  # automatic tests of the statement (P1), then « Réessayer » (retry)
 
 
 def utc_now() -> datetime:
@@ -43,11 +43,11 @@ class ProjectsRuntime:
     locks: KeyLocks = field(default_factory=KeyLocks, repr=False, compare=False)
 
     def project_lock(self, user_id: str, project_id: str) -> asyncio.Lock:
-        """Le verrou d'un projet : le rendu (captures, statut, lancement), l'écriture de l'énoncé
-        ou de l'évaluation, la correction d'un statut dont la session est morte, un brouillon
-        retouché et l'entrée au profil forment chacun une seule section."""
+        """A project's lock: the submission (screenshots, status, launch), writing the brief or the
+        assessment, correcting a status whose session died, an edited draft and the profile entry
+        each form a single section."""
         return self.locks.get(user_id, f"project:{project_id}")
 
     def ensure_lock(self, user_id: str) -> asyncio.Lock:
-        """Création des projets d'une utilisatrice : un passage de la tâche à la fois."""
+        """Creation of a user's projects: one pass of the task at a time."""
         return self.locks.get(user_id, "projects-ensure")

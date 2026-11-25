@@ -1,4 +1,4 @@
-"""Contrôles du brouillon à rendre au Stratège avant l'ordonnancement."""
+"""Checks on the draft to hand to the Strategist before scheduling."""
 
 from app.agents.tools.plan_schema import PlanDraft
 from app.features.program.service.budget import Budget
@@ -12,7 +12,7 @@ from app.features.program.service.verbs import has_action_verb
 
 
 def check_draft(draft: PlanDraft, budget: Budget) -> list[str]:
-    """Une semaine sous 60 % du plafond doit être étoffée, sauf la dernière (D98)."""
+    """A week under 60% of the cap must be filled in, except the last one (D98)."""
     impossible: list[str] = []
     problems: list[str] = []
     cap, longest = budget.cap_minutes, budget.longest_day_minutes

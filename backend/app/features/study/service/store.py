@@ -1,10 +1,10 @@
-"""Port des sessions d'étude (`StudyStore`, D102) sur la feature `study` : implémentation branchée
-par `bootstrap.agent_ports` (D103). Chaque appel ouvre sa propre session de base, courte, et
-vérifie que la session d'étude est à l'utilisatrice (404 sinon).
+"""Port of the study sessions (`StudyStore`, D102) on the `study` feature: implementation wired by
+`bootstrap.agent_ports` (D103). Each call opens its own short database session and checks that
+the study session is the user's (404 otherwise).
 
-`context` découpe la leçon prête (`lesson_parts`) ; un exercice sans corrigé est omis (m4 de la
-relecture de 5.5 : jamais de « Voir la solution » vide). `finish` est l'écriture idempotente de
-`finish.py` (F4 : verrou du programme avant la transaction)."""
+`context` splits the ready lesson (`lesson_parts`); an exercise without a solution is omitted
+(m4 of the 5.5 review: never an empty "Show the solution"). `finish` is the idempotent write of
+`finish.py` (F4: program lock before the transaction)."""
 
 from typing import cast
 

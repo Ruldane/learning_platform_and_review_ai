@@ -1,6 +1,6 @@
-"""Offres de January (D118, D122) : lecture par lien normalisé, par empreinte de texte, par
-entreprise ou par élément de mémoire ; l'analyse posée une seule fois
-(`UPDATE … WHERE analysis IS NULL`). Chaque requête filtre par `user_id`."""
+"""January's postings (D118, D122): reading by normalized link, by text fingerprint, by company or
+by memory item; the analysis is set only once (`UPDATE … WHERE analysis IS NULL`). Each query
+filters by `user_id`."""
 
 import builtins
 from collections.abc import Collection
@@ -18,7 +18,7 @@ class PostingRepository(UserScopedRepository[JobPosting]):
     model = JobPosting
 
     async def get_fresh(self, posting_id: str) -> JobPosting | None:
-        """L'offre relue en base (jamais l'objet gardé par la session)."""
+        """The posting re-read from the database (never the object held by the session)."""
         stmt = (
             select(JobPosting)
             .where(JobPosting.id == posting_id, JobPosting.user_id == self.user_id)
@@ -33,7 +33,7 @@ class PostingRepository(UserScopedRepository[JobPosting]):
         return (await self.session.execute(stmt.execution_options(populate_existing=True))).scalar()
 
     async def by_text_hash(self, text_hash: str) -> JobPosting | None:
-        """La plus ancienne offre de ce texte (texte collé d'abord, puis lien)."""
+        """The oldest posting with this text (pasted text first, then link)."""
         stmt = (
             select(JobPosting)
             .where(JobPosting.user_id == self.user_id, JobPosting.text_hash == text_hash)
@@ -44,7 +44,7 @@ class PostingRepository(UserScopedRepository[JobPosting]):
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def list_recent(self) -> builtins.list[JobPosting]:
-        """Les offres de January, les plus récentes d'abord."""
+        """January's postings, most recent first."""
         stmt = (
             select(JobPosting)
             .where(JobPosting.user_id == self.user_id)
@@ -53,7 +53,7 @@ class PostingRepository(UserScopedRepository[JobPosting]):
         return builtins.list((await self.session.execute(stmt)).scalars().all())
 
     async def same_company(self, company_norm: str, exclude_id: str) -> builtins.list[JobPosting]:
-        """Les autres offres de cette entreprise (clé `company_key`), les plus anciennes d'abord."""
+        """The other postings of this company (`company_key`), oldest first."""
         stmt = (
             select(JobPosting)
             .where(
@@ -83,8 +83,8 @@ class PostingRepository(UserScopedRepository[JobPosting]):
         return builtins.list((await self.session.execute(stmt)).scalars().all())
 
     async def claim_analysis(self, posting_id: str, **fields: Any) -> bool:
-        """Pose l'analyse et ses champs si l'offre n'en a pas encore ; vrai si c'est celle-ci
-        (la première écrite gagne, D121)."""
+        """Sets the analysis and its fields if the posting has none yet; true if it is this one (the
+        first one written wins, D121)."""
         stmt = (
             update(JobPosting)
             .where(
@@ -99,7 +99,7 @@ class PostingRepository(UserScopedRepository[JobPosting]):
         return bool(getattr(result, "rowcount", 0))
 
     async def item_shared(self, item_id: str, exclude_id: str) -> bool:
-        """Une autre offre renvoie-t-elle au même élément de mémoire (même texte) ?"""
+        """Does another posting point to the same memory item (same text)?"""
         stmt = select(func.count()).where(
             JobPosting.user_id == self.user_id,
             JobPosting.memory_item_id == item_id,
@@ -108,7 +108,7 @@ class PostingRepository(UserScopedRepository[JobPosting]):
         return bool((await self.session.execute(stmt)).scalar_one())
 
     async def running_reviews(self, posting_id: str) -> int:
-        """Les revues de CV de l'offre encore ouvertes (lancées ou proposées)."""
+        """The posting's CV reviews still open (started or proposed)."""
         stmt = select(func.count()).where(
             CvReview.user_id == self.user_id,
             CvReview.posting_id == posting_id,
@@ -117,7 +117,7 @@ class PostingRepository(UserScopedRepository[JobPosting]):
         return int((await self.session.execute(stmt)).scalar_one())
 
     async def version_files(self, posting_id: str) -> builtins.list[str]:
-        """Les clés rangées des versions de CV de l'offre : PDF et images des pages."""
+        """The stored keys of the posting's CV versions: PDF and page images."""
         stmt = select(CvVersion.storage_key, CvVersion.page_images).where(
             CvVersion.user_id == self.user_id, CvVersion.posting_id == posting_id
         )
@@ -127,7 +127,7 @@ class PostingRepository(UserScopedRepository[JobPosting]):
         return keys
 
     async def reviewed(self, posting_ids: Collection[str]) -> set[str]:
-        """Les offres qui ont au moins une revue de CV."""
+        """The postings that have at least one CV review."""
         if not posting_ids:
             return set()
         stmt = select(CvReview.posting_id).where(
@@ -136,8 +136,8 @@ class PostingRepository(UserScopedRepository[JobPosting]):
         return {row[0] for row in (await self.session.execute(stmt)).all()}
 
     async def running_work(self, posting_id: str) -> str | None:
-        """`committee` ou `interview` si un comité ou un entretien en cours cite l'offre (modèles
-        seuls : aucune importation de feature), sinon `None`."""
+        """`committee` or `interview` if a committee or interview in progress cites the posting
+        (models only: no feature import), otherwise `None`."""
         for kind, model in (("committee", CommitteeRun), ("interview", Interview)):
             stmt = (
                 select(model.id)
@@ -153,8 +153,8 @@ class PostingRepository(UserScopedRepository[JobPosting]):
         return None
 
     async def application_id(self, posting_id: str) -> str | None:
-        """La fiche de candidature qui cite l'offre, si elle existe (modèle seul : aucune
-        importation de feature)."""
+        """The application record that cites the posting, if it exists (model only: no feature
+        import)."""
         stmt = (
             select(Application.id)
             .where(Application.user_id == self.user_id, Application.posting_id == posting_id)

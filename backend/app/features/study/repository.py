@@ -1,7 +1,7 @@
-"""Sessions guidées (D99, D103) et ce que l'étude lit des leçons et du programme : leçon, module,
-tâches dues du bloc. Lectures fraîches (`populate_existing`) ; les transitions disputées sont
-gardées en SQL (`UPDATE … WHERE status = 'open'`) : deux fins, ou une fin et un abandon, n'en
-écrivent qu'une."""
+"""Guided sessions (D99, D103) and what study reads of lessons and of the program: lesson, module,
+the block's due tasks. Fresh reads (`populate_existing`); contested transitions are guarded in
+SQL (`UPDATE … WHERE status = 'open'`): two endings, or an ending and an abandonment, write only
+one."""
 
 import builtins
 from collections.abc import Collection
@@ -16,7 +16,7 @@ from app.db.models.program import Module, Program, Task
 from app.db.models.study import StudySession
 from app.db.repository import UserScopedRepository
 
-BLOCK_TYPES = ("read", "watch", "practice")  # hors quiz et projet (D103)
+BLOCK_TYPES = ("read", "watch", "practice")  # outside quiz and project (D103)
 
 
 class StudyRepository(UserScopedRepository[StudySession]):
@@ -31,7 +31,7 @@ class StudyRepository(UserScopedRepository[StudySession]):
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def open_one(self) -> StudySession | None:
-        """La session `open` de l'utilisateur (une au plus, index unique partiel)."""
+        """The user's `open` session (at most one, partial unique index)."""
         stmt = (
             select(StudySession)
             .where(
@@ -57,7 +57,7 @@ class StudyRepository(UserScopedRepository[StudySession]):
         )
 
     async def close_open(self, study_id: str, **values: Any) -> bool:
-        """Transition depuis `open` (fin ou abandon) ; vrai si c'est cet appel qui l'a faite."""
+        """Transition from `open` (end or abandonment); true if this call made it."""
         stmt = (
             update(StudySession)
             .where(
@@ -73,7 +73,7 @@ class StudyRepository(UserScopedRepository[StudySession]):
     async def claim_training(
         self, study_id: str, *, include_closed: bool = False
     ) -> StudySession | None:
-        """Réserve la séance avant une modification du contexte ou une transition d'état."""
+        """Reserves the sitting before a change of context or a state transition."""
         stmt = update(StudySession).where(
             StudySession.user_id == self.user_id,
             StudySession.id == study_id,
@@ -86,7 +86,7 @@ class StudyRepository(UserScopedRepository[StudySession]):
         )
 
     async def finished(self) -> builtins.list[tuple[datetime, int]]:
-        """`(fin, minutes)` de chaque session terminée (série, heures de la semaine)."""
+        """`(end, minutes)` of each finished session (streak, hours of the week)."""
         stmt = select(StudySession.ended_at, StudySession.minutes).where(
             StudySession.user_id == self.user_id,
             StudySession.status == "finished",
@@ -97,7 +97,7 @@ class StudyRepository(UserScopedRepository[StudySession]):
 
 
 class StudyReadRepository:
-    """Leçons, modules et tâches de l'utilisateur, lus pour l'étude (jamais écrits ici)."""
+    """The user's lessons, modules and tasks, read for study (never written here)."""
 
     def __init__(self, session: AsyncSession, user_id: str) -> None:
         self.session = session
@@ -116,7 +116,7 @@ class StudyReadRepository:
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def titles(self, lesson_id: str | None, module_id: str | None) -> tuple[str, str]:
-        """`(titre de la leçon, titre du module)` ; vides s'ils ont disparu."""
+        """`(lesson title, module title)`; empty if they have disappeared."""
         lesson = await self.lesson(lesson_id)
         module = await self.module(module_id)
         return (lesson.title if lesson else "", module.title if module else "")
@@ -124,9 +124,9 @@ class StudyReadRepository:
     async def due_tasks(
         self, today: date, module_id: str | None = None
     ) -> builtins.list[tuple[Task, Lesson]]:
-        """Tâches `todo` de lecture ou de pratique datées au plus `today`, d'un module non sauté
-        d'un programme validé dont la leçon est prête (`module_id` : ce module seul), avec leur
-        leçon ; les plus anciennes d'abord, puis par rang de module et de tâche."""
+        """Reading or practice `todo` tasks dated at most `today`, from a non-skipped module of a
+        validated program whose lesson is ready (`module_id`: that module only), with their lesson;
+        oldest first, then by module and task rank."""
         stmt = (
             select(Task, Lesson)
             .join(Module, Module.id == Task.module_id)

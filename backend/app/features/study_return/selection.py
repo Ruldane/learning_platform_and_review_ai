@@ -1,4 +1,4 @@
-"""Les fiches sont celles de la file réelle, les acquis ceux du référentiel."""
+"""The cards are those of the real queue, the learned skills those of the reference data."""
 
 from sqlalchemy.ext.asyncio import AsyncSession
 

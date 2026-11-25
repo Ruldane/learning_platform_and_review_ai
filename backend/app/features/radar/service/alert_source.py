@@ -1,4 +1,4 @@
-"""Métadonnées d’une offre notée, relues dans le relevé du compte."""
+"""Metadata of a rated offer, re-read from the account's scan."""
 
 from dataclasses import dataclass
 

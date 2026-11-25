@@ -1,4 +1,4 @@
-"""Instantané d'un plan et différence entre deux versions (`plan_versions`, SPEC 3.4)."""
+"""Snapshot of a plan and difference between two versions (`plan_versions`, SPEC 3.4)."""
 
 from collections.abc import Mapping
 from dataclasses import dataclass, field
@@ -11,8 +11,8 @@ from app.features.program.service.planning import ScheduledPlan
 
 @dataclass(frozen=True)
 class TaskRow:
-    """Une tâche ; `task_id`, `status` et `done_criterion` ne vont pas dans l'instantané : ils
-    servent à la replanification (empreinte, tâches figées, D106)."""
+    """A task; `task_id`, `status` and `done_criterion` do not go into the snapshot: they serve
+    replanning (fingerprint, frozen tasks, D106)."""
 
     title: str
     type: TaskType
@@ -44,7 +44,7 @@ class WeekRow:
 
 @dataclass(frozen=True)
 class ProgramRows:
-    """Le programme tel que les lignes de la base le décrivent (semaines, modules, tâches)."""
+    """The program as the database rows describe it (weeks, modules, tasks)."""
 
     weeks: list[WeekRow]
 
@@ -53,12 +53,12 @@ class ProgramRows:
 class PlanDiff:
     added: list[str]
     removed: list[str]
-    moved: list[tuple[str, str, str]]  # (tâche, date avant, date après)
+    moved: list[tuple[str, str, str]]  # (task, date before, date after)
     weeks_before: int
     weeks_after: int
 
     def to_json(self) -> dict[str, Any]:
-        """Forme stockée dans `plan_versions.diff`."""
+        """Form stored in `plan_versions.diff`."""
         return {
             "added": self.added,
             "removed": self.removed,
@@ -128,12 +128,12 @@ def _from_rows(rows: ProgramRows) -> dict[str, Any]:
 
 
 def snapshot(plan: ScheduledPlan | ProgramRows) -> dict[str, Any]:
-    """Forme JSON de `plan_versions.snapshot` (dates en ISO), la même pour les deux sources."""
+    """JSON form of `plan_versions.snapshot` (dates in ISO), the same for both sources."""
     return _from_plan(plan) if isinstance(plan, ScheduledPlan) else _from_rows(plan)
 
 
 def _task_dates(snap: Mapping[str, Any]) -> dict[str, str]:
-    """« {module} / {tâche} » -> date prévue ; un doublon reçoit son numéro d'ordre."""
+    """Maps "{module} / {task}" to the planned date; a duplicate gets its order number."""
     dates: dict[str, str] = {}
     for week in snap.get("weeks", []):
         for module in week["modules"]:
@@ -148,7 +148,7 @@ def _task_dates(snap: Mapping[str, Any]) -> dict[str, str]:
 
 
 def diff_plans(before: Mapping[str, Any] | None, after: Mapping[str, Any]) -> PlanDiff:
-    """Tâches ajoutées, retirées et déplacées ; `before` absent : tout est ajouté."""
+    """Tasks added, removed and moved; `before` absent: everything is added."""
     old = _task_dates(before) if before is not None else {}
     new = _task_dates(after)
     return PlanDiff(

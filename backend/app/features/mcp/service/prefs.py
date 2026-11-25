@@ -1,5 +1,5 @@
-"""L'interrupteur général du MCP (phase 10, P16) : coupé par défaut, un geste le coupe ou le
-rallume pour tous les jetons à la fois (la porte le relit à chaque appel)."""
+"""The MCP master switch (phase 10, P16): off by default; one action turns it off or on for all
+tokens at once (the gate reads it again on each call)."""
 
 from sqlalchemy.ext.asyncio import AsyncSession
 

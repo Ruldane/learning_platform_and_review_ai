@@ -1,1 +1,1 @@
-"""Radar du marché : relevés d'offres, classement des compétences demandées (phase 8, F15, F17)."""
+"""Market radar: offer scans, ranking of the requested skills (phase 8, F15, F17)."""

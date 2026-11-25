@@ -1,12 +1,13 @@
-"""Statut d'une offre et de son écart tels qu'ils sont montrés (D122, même motif que D91 et D101).
+"""Status of a posting and of its gap, as they are shown (D122, same reason as D91 and D101).
 
-Une session `gap_analysis` qui s'arrête hors du port (sortie illisible, délai, annulation, arrêt
-du serveur) laisse son offre `analyzing`, ou `ready` sans écart. Chaque lecture la montre déjà en
-échec, avec `gap_session_id`, sans écrire ; la base n'est corrigée qu'à la relance (nouvel envoi
-du même lien ou du même texte, `POST /postings/{id}/gap`), sous le verrou de l'offre.
+A `gap_analysis` session that stops outside the port (unreadable output, timeout, cancellation,
+server shutdown) leaves its posting `analyzing`, or `ready` without a gap. Each read already
+shows it as failed, with `gap_session_id`, without writing; the database is only corrected on
+a retry (new submission of the same link or text, `POST /postings/{id}/gap`), under the
+posting's lock.
 
-Ordre des lectures (D97 n° 9) : sessions ouvertes, PUIS lignes ; si une ligne paraît
-interrompue, les sessions sont relues (celle lancée entre les deux lectures compte ouverte)."""
+Order of reads (D97 no. 9): open sessions, THEN rows; if a row looks interrupted, the sessions
+are read again (a session started between the two reads counts as open)."""
 
 from collections.abc import Awaitable, Callable, Iterable
 from typing import Literal
@@ -33,25 +34,25 @@ async def open_sessions_by_posting(db: AsyncSession, user_id: str) -> dict[str, 
 
 
 def running(posting: JobPosting, open_ids: Iterable[str]) -> bool:
-    """La session rangée de l'offre tourne encore."""
+    """The session stored on the posting is still running."""
     return posting.gap_session_id is not None and posting.gap_session_id in set(open_ids)
 
 
 def interrupted(posting: JobPosting, open_ids: Iterable[str]) -> bool:
-    """Offre en analyse dont la session n'est plus ouverte (ou jamais rangée)."""
+    """Posting under analysis whose session is no longer open (or was never stored)."""
     return posting.status == "analyzing" and not running(posting, open_ids)
 
 
 def shown_status(posting: JobPosting, open_ids: Iterable[str]) -> tuple[str, str | None]:
-    """`(statut, raison)` de l'offre à montrer."""
+    """`(status, reason)` of the posting to show."""
     if interrupted(posting, open_ids):
         return "failed", INTERRUPTED
     return posting.status, posting.failure_reason
 
 
 def gap_status(posting: JobPosting, open_ids: Iterable[str]) -> GapStatus:
-    """`ready` : l'écart de la session rangée est écrit (ou un plus ancien, si plus rien ne
-    tourne) ; `pending` : la session tourne ; sinon `failed` (offre refusée comprise)."""
+    """`ready`: the gap of the stored session is written (or an older one, if nothing is running
+    anymore); `pending`: the session is running; otherwise `failed` (refused posting included)."""
     gap = posting.gap
     if posting.status == "rejected":
         return "failed"
@@ -63,8 +64,8 @@ def gap_status(posting: JobPosting, open_ids: Iterable[str]) -> GapStatus:
 
 
 def needs_launch(posting: JobPosting, open_ids: Iterable[str]) -> bool:
-    """Une offre déjà ajoutée est relancée plutôt que rendue telle quelle si elle est refusée, en
-    échec, interrompue, ou analysée sans écart alors que plus rien ne tourne."""
+    """A posting already added is re-run rather than returned as is if it is refused, failed,
+    interrupted, or analysed without a gap while nothing is running anymore."""
     if posting.status in ("rejected", "failed"):
         return True
     return not running(posting, open_ids) and posting.gap is None
@@ -76,7 +77,7 @@ async def read_with_sessions[R](
     read: Callable[[], Awaitable[R]],
     postings: Callable[[R], Iterable[JobPosting]],
 ) -> tuple[R, dict[str, list[str]]]:
-    """`(lignes lues par read, sessions ouvertes par offre)` dans l'ordre sûr."""
+    """`(rows read by read, open sessions per posting)`, in the safe order."""
     open_ids = await open_sessions_by_posting(db, user_id)
     rows = await read()
     if any(needs_launch(p, open_ids.get(p.id, [])) for p in postings(rows)):

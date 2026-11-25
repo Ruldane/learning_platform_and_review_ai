@@ -1,1 +1,1 @@
-"""Contrôles de transfert de compétences."""
+"""Skill transfer checks."""

@@ -1,6 +1,6 @@
-"""Règles pures des mini projets (P1 à P3) : forme du rendu, début de la semaine d'un module (le
-verdict est celui du moteur : `app.agents.tools.project_schema.verdict`). Rien ici n'importe la
-base ni une autre feature."""
+"""Pure mini-project rules (P1 to P3): form of the submission, start of a module's week (the
+verdict is that of the engine: `app.agents.tools.project_schema.verdict`). Nothing here imports
+the database or another feature."""
 
 from datetime import date
 from urllib.parse import urlsplit
@@ -13,7 +13,7 @@ IMAGE_TYPES = {"image/png": ".png", "image/jpeg": ".jpg", "image/webp": ".webp"}
 
 
 def _is_http_link(url: str) -> bool:
-    """Un lien http(s) avec un nom d'hôte, sans espace, de 2 048 caractères au plus."""
+    """An http(s) link with a host name, without spaces, of 2,048 characters at most."""
     if len(url) > REPO_URL_MAX or any(ch.isspace() for ch in url):
         return False
     try:
@@ -27,10 +27,11 @@ def _is_http_link(url: str) -> bool:
 def submission_problems(
     repo_url: str | None, description: str | None, screenshots: int
 ) -> list[str]:
-    """Les champs d'un rendu à corriger (jamais leur valeur : un 422 ne les répète pas). Ni lien ni
-    description (vides ou blancs) : `repo_url` et `description` ; un lien qui n'est pas http(s) ou
-    de plus de 2 048 caractères : `repo_url` ; une description de plus de 4 000 caractères :
-    `description` ; plus de 5 captures : `screenshots`. Liste vide : le rendu est recevable."""
+    """The fields of a submission to correct (never their value: a 422 does not repeat them).
+    Neither link nor description (empty or blank): `repo_url` and `description`; a link that is not
+    http(s) or is over 2,048 characters: `repo_url`; a description over 4,000 characters:
+    `description`; more than 5 screenshots: `screenshots`. Empty list: the submission is
+    acceptable."""
     link = (repo_url or "").strip()
     text = (description or "").strip()
     problems: list[str] = []
@@ -47,5 +48,5 @@ def submission_problems(
 
 
 def week_started(week_start: date, today: date) -> bool:
-    """Vrai si la semaine qui commence le lundi `week_start` a commencé au jour local `today`."""
+    """True if the week starting on Monday `week_start` started on the local day `today`."""
     return today >= week_start

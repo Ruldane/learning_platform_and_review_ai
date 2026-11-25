@@ -1,4 +1,4 @@
-"""Réutilise les énoncés publics du quiz d'origine et fige chaque résultat."""
+"""Reuses the public statements of the original quiz and freezes each result."""
 
 from difflib import SequenceMatcher
 

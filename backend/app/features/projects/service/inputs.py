@@ -1,8 +1,8 @@
-"""Ce que le Praticien lit d'un projet (P1, P2, P4, D166) : l'énoncé d'un module (`BriefInputs`) et
-le rendu à évaluer (`ReviewInputs`). Lecture seule, relue à chaque appel : le port n'a pas d'état.
-Un module disparu après une replanification rend les compétences vides pour l'évaluation (le
-projet reste évaluable) mais empêche d'écrire l'énoncé (404). Jamais journalisé : titres, leçon,
-poste et rendu sont des données de l'utilisatrice (17.2)."""
+"""What the Practitioner reads of a project (P1, P2, P4, D166): a module's brief (`BriefInputs`)
+and the submission to assess (`ReviewInputs`). Read-only, re-read on each call: the port has no
+state. A module that disappeared after a replanning gives empty skills for the assessment (the
+project stays assessable) but prevents writing the brief (404). Never logged: titles, lesson,
+role and submission are the user's data (17.2)."""
 
 from typing import Any, Literal
 
@@ -33,7 +33,7 @@ async def owned(db: AsyncSession, user_id: str, project_id: str) -> Project:
 async def module_of(
     db: AsyncSession, user_id: str, row: Project
 ) -> tuple[Module, Week | None] | None:
-    """Le module du projet et sa semaine, `None` si le module n'existe plus."""
+    """The project's module and its week, `None` if the module no longer exists."""
     try:
         loaded = await load(db, user_id, row.program_id)
     except AppError:
@@ -54,7 +54,7 @@ def _language(code: str) -> Literal["fr", "en"]:
 
 
 async def _target_role(db: AsyncSession, user_id: str, configured: str) -> str | None:
-    """Le poste visé : celui du radar dans les réglages, sinon celui du dernier objectif."""
+    """The target role: that of the radar in the settings, otherwise that of the last goal."""
     if configured.strip():
         return configured.strip()
     goals = await list_goals(db, user_id)
@@ -82,7 +82,7 @@ async def brief_inputs(rt: ProjectsRuntime, user_id: str, project_id: str) -> Br
 
 
 def latest_submission(row: Project) -> dict[str, Any]:
-    """Le dernier rendu ; vide si le projet n'en a pas."""
+    """The last submission; empty if the project has none."""
     return dict(row.submissions[-1]) if row.submissions else {}
 
 

@@ -1,5 +1,5 @@
-"""Réglages de recherche d'un utilisateur, lus par le service des réglages (contrat 2 : la
-recherche ne dépend que du service de la feature `settings`, jamais de ses schémas)."""
+"""The user's search settings, read by the settings service (contract 2: search depends only on
+the `settings` feature's service, never on its schemas)."""
 
 from dataclasses import dataclass
 

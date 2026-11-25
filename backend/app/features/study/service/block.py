@@ -1,7 +1,7 @@
-"""Bloc du jour (SPEC F14, D103 n° 1) : les tâches de lecture et de pratique dues d'un module dont
-la leçon est prête. Tâches `todo` datées au plus aujourd'hui (jour local de January), retards
-d'abord, hors quiz et projet, d'un module non sauté d'un programme validé ; le premier module
-dans l'ordre (date, rang) donne le bloc, qui réunit toutes ses tâches dues. Lecture seule."""
+"""Today's block (SPEC F14, D103 #1): the reading and practice tasks due of a module whose lesson is
+ready. `todo` tasks dated at most today (January's local day), overdue ones first, excluding quiz
+and project, of a non-skipped module of a validated program; the first module in order (date,
+rank) gives the block, which gathers all its due tasks. Read-only."""
 
 from dataclasses import dataclass
 from datetime import date
@@ -74,6 +74,6 @@ async def block_of_day(db: AsyncSession, user_id: str, today: date) -> Block | N
 
 
 async def module_block(db: AsyncSession, user_id: str, module_id: str, today: date) -> list[str]:
-    """Tâches dues de ce module seul (leçon choisie par January) ; vide s'il n'y en a pas."""
+    """Due tasks of this module only (lesson chosen by January); empty if there are none."""
     found = await _block(db, user_id, today, module_id)
     return found.task_ids if found is not None else []

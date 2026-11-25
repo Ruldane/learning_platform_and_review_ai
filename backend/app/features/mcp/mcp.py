@@ -1,4 +1,4 @@
-"""Déclaration MCP de `mcp` : niveau 4, rien n'est exposé (le MCP ne se gère pas lui-même)."""
+"""MCP declaration for `mcp`: level 4, nothing is exposed (MCP does not manage itself)."""
 
 from app.mcp.base import FeatureMcp, McpExclusion
 

@@ -65,8 +65,8 @@ class InvitationRepository(UserScopedRepository[SurpriseInvitation]):
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def save_receipts(self, invitation_id: str, answers: dict[str, Any]) -> None:
-        # L'annulation MCP ne peut pas remettre l'interruption. Le reçu de transport et son
-        # acquittement sont des transitions techniques, en dehors de l'historique d'annulation.
+        # The MCP undo cannot restore the interruption. The transport receipt and its
+        # acknowledgement are technical transitions, outside the undo history.
         table = self.model
         await self.session.execute(
             update(table)

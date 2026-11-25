@@ -1,5 +1,5 @@
-"""Lecture, écriture et indexation des éléments de la mémoire.
-Le commit appartient à la requête, sauf pour indexer et supprimer un document (D66)."""
+"""Reading, writing and indexing of memory items.
+The commit belongs to the request, except to index and delete a document (D66)."""
 
 from dataclasses import dataclass
 from typing import Any, cast
@@ -54,7 +54,7 @@ def duplicate() -> AppError:
 
 
 def _content(title: str, text: str) -> tuple[str, str]:
-    """Titre et texte nettoyés ; ni l'un ni l'autre ne peut être vide."""
+    """Title and text cleaned; neither can be empty."""
     title, text = title.strip()[:TITLE_MAX], clean_text(text)
     if not title or not text:
         raise AppError("memory_content_required", "Enter both a title and some text.", 422)
@@ -87,26 +87,27 @@ def to_out(item: MemoryItem) -> MemoryItemOut:
 
 class MemoryService:
     def __init__(self, db: AsyncSession, user_id: str, runtime: MemoryRuntime) -> None:
-        self.db, self.user_id, self.runtime = db, user_id, runtime  # lus par `merge.py`
+        self.db, self.user_id, self.runtime = db, user_id, runtime  # read by `merge.py`
         self._items = MemoryItemRepository(db, user_id)
         self._chunks = ChunkRepository(db, user_id)
         self._writes = WriteRepository(db, user_id)
 
     async def get(self, item_id: str) -> MemoryItem:
-        """Élément de l'utilisateur ou 404. Toute modification passe par ici : les fragments
-        (`replace_for_item`) et l'index ne revérifient pas le propriétaire."""
+        """User's item or 404. Every modification goes through here: the fragments
+        (`replace_for_item`) and the index do not re-check the owner."""
         item = await self._items.get(item_id)
         if item is None:
             raise not_found()
         return item
 
-    # --- écriture ---------------------------------------------------------------------------
+    # --- write ---------------------------------------------------------------------------------
 
     async def write(self, draft: WriteDraft, *, index: bool = True) -> WriteOutcome:
-        """Écrit un élément selon les règles (`resolve_write`). Même contenu déjà là : rend
-        l'existant sans second élément ni second journal (nœud d'agent rejoué, double clic).
-        Deux écritures simultanées : la perdante relit le gagnant. Actif : indexé aussitôt, sauf
-        `index=False` (le worker indexe après avoir validé sa transaction)."""
+        """Writes an item according to the rules (`resolve_write`). Same content already there:
+        returns the existing item without a second item or a second journal entry (agent node
+        replayed, double click). Two simultaneous writes: the loser re-reads the winner. Active:
+        indexed immediately, unless `index=False` (the worker indexes after validating its
+        transaction)."""
         status, meta = resolve_write(draft)
         title, text = _content(draft.title, draft.text)
         document_id = draft.source_id if draft.sync_metadata is not None else None
@@ -145,7 +146,7 @@ class MemoryService:
         return WriteOutcome(item, True)
 
     async def _insert(self, fields: dict[str, Any], digest: str) -> tuple[MemoryItem, bool]:
-        """Insertion sous SAVEPOINT : l'unicité du hash tranche une course ; la perdante relit."""
+        """Insert under SAVEPOINT: the uniqueness of the hash decides a race; the loser re-reads."""
         await self._items.begin_write()
         try:
             async with self.db.begin_nested():
@@ -157,8 +158,8 @@ class MemoryService:
             return winner, False
 
     async def create_by_user(self, body: MemoryItemCreate) -> MemoryItemOut:
-        """Élément écrit à la main (January) : actif aussitôt, journalisé avec l'auteur `user`.
-        Un contenu déjà présent rend l'élément existant."""
+        """Item written by hand (January): active immediately, logged with author `user`. Content
+        already present returns the existing item."""
         outcome = await self.write(
             WriteDraft(
                 kind=body.kind,
@@ -191,8 +192,8 @@ class MemoryService:
         )
 
     async def _neighbors(self, item: MemoryItem, first_chunk_id: str | None) -> list[NeighborOut]:
-        """Éléments voisins du premier fragment (un par élément, le plus proche). Index en
-        panne ou élément non indexé : aucun voisin, jamais une erreur. Titres relus en base."""
+        """Neighbouring items of the first fragment (one per item, the closest). Index down or item
+        not indexed: no neighbours, never an error. Titles re-read from the database."""
         if first_chunk_id is None or item.indexed_at is None:
             return []
         try:
@@ -221,10 +222,9 @@ class MemoryService:
     # --- modification -----------------------------------------------------------------------
 
     async def update(self, item_id: str, patch: MemoryItemPatch) -> MemoryItemOut:
-        """Titre, texte, étiquettes, niveau (acquis seulement) et confirmation. Le contenu
-        modifié reçoit un nouveau hash (409 s'il existe déjà), est réindexé et journalisé
-        `update` ; confirmer une décision en attente la rend active, l'indexe et journalise
-        `confirm`."""
+        """Title, text, labels, level (acquired only) and confirmation. Modified content gets a new
+        hash (409 if it already exists), is re-indexed and logged `update`; confirming a pending
+        decision makes it active, indexes it and logs `confirm`."""
         item = await self.get(item_id)
         if patch.level is not None and item.kind != "skill":
             raise AppError("memory_level_forbidden", "Only skills have a level.", 422)
@@ -245,8 +245,8 @@ class MemoryService:
         return to_out(item)
 
     async def _edit(self, item: MemoryItem, patch: MemoryItemPatch) -> bool:
-        """Applique titre, texte et étiquettes ; vrai si l'un a changé. Un contenu qui entre en
-        collision avec un autre élément (même hash) est refusé."""
+        """Applies title, text and labels; true if one changed. Content that collides with another
+        item (same hash) is refused."""
         title, text = _content(
             item.title if patch.title is None else patch.title,
             item.text if patch.text is None else patch.text,
@@ -278,10 +278,10 @@ class MemoryService:
         )
 
     async def delete(self, item_id: str) -> None:
-        """Supprime l'élément, ses fragments (cascade) et ses vecteurs. Une décision en attente
-        refusée est journalisée `reject`, le reste `delete`. Un document perd aussi ses lignes
-        `documents`, et leurs fichiers après le commit (jamais une ligne sans son fichier).
-        **Valide la transaction** avant de retirer les vecteurs, hors transaction (D66)."""
+        """Deletes the item, its fragments (cascade) and its vectors. A pending decision that is
+        refused is logged `reject`, the rest `delete`. A document also loses its `documents` rows,
+        and their files after the commit (never a row without its file). **Validates the
+        transaction** before removing the vectors, outside the transaction (D66)."""
         item = await self.get(item_id)
         keys: list[str] = []
         if item.kind == "document":
@@ -292,7 +292,7 @@ class MemoryService:
             item=item, action=action, author=USER_AUTHOR, session_id=None, reason=None
         )
         await self._items.delete(item.id)
-        await self.db.commit()  # avant Qdrant : verrou d'écriture rendu (orphelins : réindexation)
+        await self.db.commit()  # before Qdrant: write lock released (orphans: re-indexing)
         await self.runtime.indexer.unindex(self.user_id, [item.id])
         for key in keys:
             await self.runtime.providers.storage.delete(self.user_id, key)

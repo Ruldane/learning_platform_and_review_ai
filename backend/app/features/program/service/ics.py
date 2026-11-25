@@ -1,6 +1,6 @@
-"""Export du programme en `.ics` (SPEC 3.4, D88) : un événement sur la journée par tâche (les
-tâches ont un jour, pas d'heure), identifiant stable `{task_id}@tremplin` pour qu'un nouvel
-import mette à jour les événements au lieu de les doubler."""
+"""Export of the program as `.ics` (SPEC 3.4, D88): one all-day event per task (tasks have a day,
+not a time), stable identifier `{task_id}@tremplin` so that a new import updates the events
+instead of duplicating them."""
 
 from datetime import UTC, datetime, timedelta
 
@@ -34,11 +34,11 @@ def _event(task: TaskOut, module: ModuleOut, stamp: datetime) -> Event:
     event = Event()
     event.add("uid", f"{task.id}@tremplin")
     event.add("dtstamp", stamp)
-    event.add("dtstart", task.planned_date)  # date seule : DTSTART;VALUE=DATE
+    event.add("dtstart", task.planned_date)  # date only: DTSTART;VALUE=DATE
     event.add("dtend", task.planned_date + timedelta(days=1))
     event.add("summary", task.title)
     event.add("description", _description(task, module))
-    event.add("transp", "TRANSPARENT")  # la journée n'est pas bloquée dans l'agenda
+    event.add("transp", "TRANSPARENT")  # the day is not blocked in the calendar
     return event
 
 

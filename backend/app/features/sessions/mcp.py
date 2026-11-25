@@ -1,5 +1,5 @@
-"""Déclaration MCP de `sessions` : suivre une session d'agents et lui répondre. Lancer un parcours
-se fait par l'outil de son graphe (`McpGraph`), jamais par `POST /sessions` brut."""
+"""MCP declaration for `sessions`: follow an agent session and answer it. Launching a path is done
+through the tool of its graph (`McpGraph`), never through the raw `POST /sessions`."""
 
 from app.mcp.base import FeatureMcp, McpAction, McpGraph
 

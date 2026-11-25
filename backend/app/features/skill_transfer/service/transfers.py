@@ -1,4 +1,4 @@
-"""Programmer, relire et lancer un contrôle au jour local demandé."""
+"""Schedule, re-read and launch a check on the requested local day."""
 
 import json
 from datetime import date, datetime

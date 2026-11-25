@@ -13,7 +13,7 @@ async def _wait_for_disconnect(receive: Receive) -> None:
 
 
 async def until_disconnect[T](receive: Receive, operation: Coroutine[Any, Any, T]) -> T:
-    """Une opération distante n’a plus de destinataire une fois le navigateur parti."""
+    """A remote operation has no recipient once the browser has gone."""
     work = asyncio.create_task(operation)
     closed = asyncio.create_task(_wait_for_disconnect(receive))
     try:

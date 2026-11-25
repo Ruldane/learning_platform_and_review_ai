@@ -1,7 +1,7 @@
-"""Le programme dans la vie de l'application : ce que les requêtes HTTP et le port du Stratège
-partagent (base, mémoire pour le reflet des niveaux, production des leçons lancée par la
-validation, verrous par programme). Ouvert par le lifespan (`app.state.program`), avant le
-moteur d'agents (D88, D91)."""
+"""The program in the application's life: what the HTTP requests and the Strategist's port share
+(database, memory for the level reflection, lesson production launched by validation,
+per-program locks). Opened by the lifespan (`app.state.program`), before the agent engine
+(D88, D91)."""
 
 import asyncio
 import weakref
@@ -19,13 +19,13 @@ from app.features.memory.service.runtime import MemoryRuntime
 class ProgramRuntime:
     session_factory: async_sessionmaker[AsyncSession]
     memory: MemoryRuntime
-    # Production des leçons (D91) : la validation lance les semaines 1 et 2 ; `None` hors de
-    # l'application (tests du programme seul).
+    # Producing lessons (D91): validation starts weeks 1 and 2; `None` outside
+    # the application (tests of the program alone).
     lessons: ProductionContext | None = None
-    # Validations demandées par la route et reprises dans la session du Stratège : un second
-    # clic pendant que `finalize` tourne rend le même état (202) au lieu d'un 409.
+    # Validations requested by the route and resumed in the Strategist's session: a second
+    # click while `finalize` runs returns the same state (202) instead of a 409.
     validating: set[str] = field(default_factory=set, repr=False, compare=False)
-    # Faible : un verrou que plus personne ne tient disparaît (une entrée par programme sinon).
+    # Weak: a lock nobody holds anymore disappears (one entry per program otherwise).
     _locks: weakref.WeakValueDictionary[tuple[str, str], asyncio.Lock] = field(
         default_factory=weakref.WeakValueDictionary, repr=False, compare=False
     )
@@ -40,10 +40,10 @@ class ProgramRuntime:
 
     @asynccontextmanager
     async def program_lock(self, user_id: str, program_id: str) -> AsyncIterator[None]:
-        """Section critique d'un programme : toute modification de January (déplacement, ajout,
-        suppression, date de début), la validation et l'écriture d'une version par le Stratège.
-        Les règles (85 %, pratique, quiz) sont vérifiées sous ce verrou, sur l'état relu : deux
-        déplacements simultanés ne dépassent jamais le plafond ensemble. Propre à ce processus
-        (un seul worker, comme les verrous de l'apprentissage et de la recherche)."""
+        """Critical section of a program: any change by January (move, addition, deletion, start
+        date), the validation and the writing of a version by the Strategist. The rules (85%,
+        practice, quiz) are checked under this lock, on the re-read state: two simultaneous moves
+        never exceed the cap together. Specific to this process (a single worker, like the learning
+        and search locks)."""
         async with self._lock(user_id, program_id):
             yield

@@ -1,4 +1,4 @@
-"""Compétences demandées dans le dernier relevé exploitable d'un poste et d'une zone."""
+"""Skills requested in the last usable scan of a job and an area."""
 
 from dataclasses import dataclass
 from datetime import datetime
@@ -39,7 +39,7 @@ def _needs(raw: list[object]) -> tuple[OfferSkill, ...]:
 async def latest_role_offers(
     db: AsyncSession, user_id: str, role: str, zone: str, *, exclude_id: str | None = None
 ) -> RoleOfferSample | None:
-    """Lecture seule du radar. Les liens, textes et scores anciens des offres restent au radar."""
+    """Read-only radar. The old links, texts and scores of the offers remain on the radar."""
     role_norm, zone_norm = normalize_skill_name(role)[:120], normalize_skill_name(zone)[:120]
     if not role_norm or not zone_norm:
         return None

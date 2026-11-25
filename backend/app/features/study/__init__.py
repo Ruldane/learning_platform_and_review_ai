@@ -1,1 +1,1 @@
-"""Étude guidée (SPEC F14) : sessions du Tuteur, série et heures de la semaine."""
+"""Guided study (SPEC F14): sessions with the Tutor, streak and hours of the week."""

@@ -1,7 +1,7 @@
-"""Déclaration MCP de `projects` : le Portfolio des mini projets preuves.
+"""MCP declaration for `projects`: the Portfolio of proof mini-projects.
 
-Le rendu d'un projet exige une confirmation dans Tremplin. L'entrée au profil maître exige
-également un contrôle préalable des chiffres."""
+Rendering a project requires a confirmation in Tremplin. Entry into the master profile also
+requires a preliminary check of the figures."""
 
 from pydantic import ValidationError
 
@@ -11,8 +11,8 @@ from app.mcp.base import FeatureMcp, McpAction, McpGraph, PrecheckInput, Verdict
 
 
 async def profile_entry_precheck(request: PrecheckInput) -> Verdict:
-    """Un chiffre des réalisations que ni le nom ni la description ne disent est signalé (sans le
-    recopier) : January le vérifie avant que le projet n'entre au profil maître."""
+    """A figure in the achievements that neither the name nor the description states is flagged
+    (without copying it): January checks it before the project enters the master profile."""
     try:
         body = ProfileEntryIn.model_validate(request.body)
     except ValidationError:

@@ -1,6 +1,6 @@
-"""Accès aux tables du MCP (phase 10) : jetons, interrupteur général, journal des appels. Tout est
-filtré par `user_id`. La recherche d'un jeton par son empreinte (sans `user_id`, on ne sait pas
-encore à qui il est) vit dans `app.mcp.auth`, seule."""
+"""Access to the MCP tables (phase 10): tokens, master switch, call journal. Everything is
+filtered by `user_id`. Looking up a token by its fingerprint (without `user_id`, we do not
+know yet whose it is) lives only in `app.mcp.auth`."""
 
 from datetime import datetime
 from typing import Any
@@ -24,8 +24,8 @@ class TokenRepository(UserScopedRepository[McpToken]):
         return list((await self.session.execute(stmt)).scalars())
 
     async def revoke(self, token_id: str, now: datetime) -> McpToken | None:
-        """Pose `revoked_at` (jamais d'effacement : le journal garde son `token_id`) ; un jeton
-        déjà révoqué garde sa date."""
+        """Sets `revoked_at` (never deleted: the journal keeps its `token_id`); an already revoked
+        token keeps its date."""
         row = await self.get(token_id)
         if row is not None and row.revoked_at is None:
             row.revoked_at = now
@@ -34,7 +34,7 @@ class TokenRepository(UserScopedRepository[McpToken]):
 
 
 class PrefsRepository:
-    """L'interrupteur général, une ligne par compte (absente = coupé)."""
+    """The master switch, one row per account (absent = off)."""
 
     def __init__(self, session: AsyncSession, user_id: str) -> None:
         self.session = session
@@ -68,7 +68,7 @@ class CallRepository(UserScopedRepository[McpCall]):
         ids: dict[str, Any],
         call_id: str | None = None,
     ) -> McpCall:
-        """`call_id` : l'identifiant imposé à la ligne (celui des changements de l'appel)."""
+        """`call_id`: the identifier set on the row (the one of the call's changes)."""
         extra: dict[str, Any] = {} if call_id is None else {"id": call_id}
         return await self.add(
             **extra,
@@ -91,8 +91,8 @@ class CallRepository(UserScopedRepository[McpCall]):
 
 
 class ConfirmationRepository(UserScopedRepository[McpConfirmation]):
-    """Les demandes « À confirmer » ; chaque changement d'état est un `UPDATE` conditionnel (état
-    attendu dans le `WHERE`) : deux clics en même temps ne passent jamais tous les deux."""
+    """Pending confirmations. Each state change is a conditional `UPDATE` (expected state in the
+    `WHERE`): two simultaneous clicks never both go through."""
 
     model = McpConfirmation
 
@@ -124,8 +124,8 @@ class ConfirmationRepository(UserScopedRepository[McpConfirmation]):
         live_only: bool = False,
         result_code: int | None = None,
     ) -> bool:
-        """Passe la demande de `source` à `target` si elle y est encore ; `live_only` : seulement
-        si elle n'a pas expiré. Vrai si cette demande-ci a fait le passage."""
+        """Moves the request from `source` to `target` if it is still there; `live_only`: only if it
+        has not expired. True if this request made the move."""
         conditions = [
             McpConfirmation.id == confirmation_id,
             McpConfirmation.user_id == self.user_id,
@@ -142,7 +142,7 @@ class ConfirmationRepository(UserScopedRepository[McpConfirmation]):
         return int(getattr(result, "rowcount", 0) or 0) == 1
 
     async def set_precheck(self, confirmation_id: str, precheck: dict[str, Any] | None) -> None:
-        """Remplace le verdict d'une demande encore en attente (contrôle rejoué au clic)."""
+        """Replaces the verdict of a request still pending (check replayed on click)."""
         await self.session.execute(
             update(McpConfirmation)
             .where(
@@ -155,8 +155,8 @@ class ConfirmationRepository(UserScopedRepository[McpConfirmation]):
 
 
 async def expire_pending(session: AsyncSession, now: datetime) -> int:
-    """Toute demande en attente dont l'heure est passée devient « expirée » (tâche planifiée, tous
-    comptes : un entretien, pas une lecture de données)."""
+    """Any pending request whose time has passed becomes "expired" (scheduled task, all accounts: a
+    maintenance job, not a data read)."""
     stmt = (
         update(McpConfirmation)
         .where(McpConfirmation.status == "pending", McpConfirmation.expires_at <= now)
@@ -166,12 +166,12 @@ async def expire_pending(session: AsyncSession, now: datetime) -> int:
 
 
 class ChangeRepository(UserScopedRepository[McpChange]):
-    """Les changements gardés par appel (historique des écritures de niveau 2)."""
+    """The changes kept per call (history of level 2 writes)."""
 
     model = McpChange
 
     async def calls(self, limit: int) -> list[tuple[str, int, datetime, datetime | None]]:
-        """Un tuple par appel : `(call_id, lignes, date, annulé le)`, le plus récent d'abord."""
+        """One tuple per call: `(call_id, rows, date, undone_at)`, most recent first."""
         stmt = (
             select(
                 McpChange.call_id,
@@ -186,7 +186,7 @@ class ChangeRepository(UserScopedRepository[McpChange]):
             .limit(limit)
         )
         rows = (await self.session.execute(stmt)).all()
-        # `annulé le` seulement si toutes les lignes le sont.
+        # `annulé le` only if all the rows are.
         return [(r[0], r[1], r[2], r[3] if r[4] == r[1] else None) for r in rows]
 
     async def tables(self, call_ids: list[str]) -> dict[str, list[str]]:
@@ -201,7 +201,7 @@ class ChangeRepository(UserScopedRepository[McpChange]):
         return {key: sorted(value) for key, value in found.items()}
 
     async def actions(self, call_ids: list[str]) -> dict[str, str]:
-        """L'outil de chaque appel (la ligne du journal porte l'identifiant de l'appel)."""
+        """The tool of each call (the journal row carries the call's identifier)."""
         stmt = select(McpCall.id, McpCall.action).where(
             McpCall.user_id == self.user_id, McpCall.id.in_(call_ids)
         )

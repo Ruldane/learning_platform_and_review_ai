@@ -1,6 +1,5 @@
-"""La recherche web dans la vie de l'application : ce que les requêtes HTTP et les agents
-partagent (fournisseurs, lecteur de clés, verrous). Ouvert par le lifespan
-(`app.state.research`)."""
+"""Web search in the application's life: what the HTTP requests and the agents share (providers,
+key reader, locks). Opened by the lifespan (`app.state.research`)."""
 
 import asyncio
 import weakref
@@ -16,8 +15,8 @@ from app.features.research.repository import WebCacheRepository
 from app.features.research.service.pacing import BRAVE_INTERVAL_S, KeyPacer
 from app.providers.llm.base import KeyReader
 
-# Purge des entrées expirées du cache web d'un utilisateur : au plus une fois par heure, à
-# l'occasion d'une écriture dans son cache (D76).
+# Purge of expired entries from a user's web cache: at most once an hour, on
+# the occasion of a write to their cache (D76).
 PURGE_EVERY = timedelta(hours=1)
 
 
@@ -27,20 +26,20 @@ class ResearchRuntime:
     providers: ResearchProviders
     keys: KeyReader
     now: Callable[[], datetime] = utcnow
-    # Un seul verrou pour le processus : le compteur mensuel d'une clé Brave est partagé.
+    # One lock for the process: the monthly counter of a Brave key is shared.
     brave_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
-    # Cadence de Brave par clé (1 requête par seconde en offre gratuite), pour tout le processus.
+    # Brave pacing per key (1 request per second on the free tier), for the whole process.
     brave_pacer: KeyPacer = field(default_factory=lambda: KeyPacer(BRAVE_INTERVAL_S))
-    # Faible : un verrou que plus personne ne tient disparaît (une entrée par session sinon).
+    # Weak: a lock nobody holds anymore disappears (one entry per session otherwise).
     _session_locks: weakref.WeakValueDictionary[tuple[str, str], asyncio.Lock] = field(
         default_factory=weakref.WeakValueDictionary, repr=False, compare=False
     )
     _last_purge: dict[str, datetime] = field(default_factory=dict, repr=False, compare=False)
 
     def session_lock(self, user_id: str, session_id: str) -> asyncio.Lock:
-        """Verrou d'une session de recherche : le contrôle « déjà fait ? plafond atteint ? »,
-        l'appel au fournisseur et l'écriture forment une seule section, pour que deux appels
-        simultanés (nœud rejoué) ne comptent qu'une fois. Propre à ce processus (un seul worker)."""
+        """Lock of a search session: the check "already done? limit reached?", the provider call and
+        the write form a single section, so that two simultaneous calls (replayed node) count only
+        once. Specific to this process (a single worker)."""
         key = (user_id, session_id)
         lock = self._session_locks.get(key)
         if lock is None:
@@ -49,7 +48,7 @@ class ResearchRuntime:
         return lock
 
     def purge_due(self, user_id: str, now: datetime) -> bool:
-        """Vrai (et noté) si le cache de l'utilisateur n'a pas été purgé depuis `PURGE_EVERY`."""
+        """True (and noted) if the user's cache has not been purged since `PURGE_EVERY`."""
         last = self._last_purge.get(user_id)
         if last is not None and now - last < PURGE_EVERY:
             return False
@@ -57,8 +56,8 @@ class ResearchRuntime:
         return True
 
     async def purge_if_due(self, db: AsyncSession, user_id: str) -> None:
-        """Supprime les entrées expirées du cache de l'utilisateur, au plus une fois par
-        `PURGE_EVERY`, dans la transaction d'écriture de l'appelant (D76)."""
+        """Deletes the expired entries of the user's cache, at most once per `PURGE_EVERY`, within
+        the caller's write transaction (D76)."""
         now = self.now()
         if self.purge_due(user_id, now):
             await WebCacheRepository(db, user_id).purge_expired(now)

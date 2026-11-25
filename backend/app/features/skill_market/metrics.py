@@ -1,4 +1,4 @@
-"""Mesures de demandes et de couverture d’exigences dans un relevé."""
+"""Demand and requirement-coverage measures in a scan."""
 
 from collections.abc import Set
 

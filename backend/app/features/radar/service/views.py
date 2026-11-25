@@ -1,6 +1,6 @@
-"""Lectures du radar (14.2, D160) : le dernier relevé, la liste et le détail. Chaque lecture corrige
-d'abord un relevé `running` dont la session n'est plus ouverte (`settled`) : le statut suit la
-session. Un relevé en échec porte son code (`error_code`), jamais un message."""
+"""Radar reads (14.2, D160): the last scan, the list and the detail. Each read first corrects a
+`running` scan whose session is no longer open (`settled`): the status follows the session. A
+failed scan carries its code (`error_code`), never a message."""
 
 from dataclasses import dataclass
 from datetime import datetime
@@ -52,7 +52,7 @@ def summary_out(row: RadarRun) -> RadarRunSummary:
 
 
 def _offers(row: RadarRun) -> list[OfferOut]:
-    """Les offres analysées, meilleur score d'abord (puis intitulé)."""
+    """The analysed offers, best score first (then title)."""
     offers = [
         OfferOut(
             url=str(entry["url"]),
@@ -70,7 +70,7 @@ def _offers(row: RadarRun) -> list[OfferOut]:
 
 
 def _not_analyzed(row: RadarRun) -> int:
-    """Offres lues et pas analysées : extraction en échec, ou au-delà des 50 d'un relevé."""
+    """Offers read but not analysed: extraction failed, or beyond the 50 of a scan."""
     return max(0, row.read_count - row.not_postings - row.analyzed)
 
 
@@ -125,9 +125,9 @@ async def get_run(rt: RadarRuntime, db: AsyncSession, user_id: str, run_id: str)
 async def offers_since(
     db: AsyncSession, user_id: str, since: datetime | None, *, until: datetime | None = None
 ) -> list[dict[str, Any]]:
-    """Les offres analysées et notées des relevés finis, du relevé le plus récent au plus ancien.
-    Deux bornes définissent une période inclusive. Sans borne de fin, on garde le dernier
-    relevé fini ou ceux terminés strictement après `since` pour la pile de lecture."""
+    """The analysed and rated offers of finished scans, from the most recent scan to the oldest. Two
+    bounds define an inclusive period. Without an end bound, we keep the last finished scan, or
+    those finished strictly after `since` for the reading stack."""
     repo = RadarRunRepository(db, user_id)
     if until is not None:
         runs = await repo.done_between(since, until, limit=None)
@@ -162,15 +162,15 @@ class RecentRun:
 
     @property
     def offers_read(self) -> int:
-        """Les offres lues : les pages lisibles moins celles qui n'étaient pas des offres."""
+        """The offers read: readable pages minus those that were not offers."""
         return max(0, self.read_count - self.not_postings)
 
 
 async def recent_runs(
     db: AsyncSession, user_id: str, after: datetime | None, before: datetime | None, limit: int
 ) -> list[RecentRun]:
-    """Les relevés finis (`done`) dans `[after, before]`, le plus récent d'abord (fil d'activité,
-    8.7). Les nombres réels, jamais un intitulé d'offre ni un poste."""
+    """Finished (`done`) scans within `[after, before]`, most recent first (activity feed, 8.7).
+    Real numbers, never an offer title or a role."""
     rows = await RadarRunRepository(db, user_id).done_between(after, before, limit)
     return [
         RecentRun(

@@ -1,8 +1,7 @@
-"""Comparaison de la carte avec une cible (SPEC F15, D107 n° 2, D123) : « poste cible » = les
-compétences du programme de l'objectif ; « offre précise » = les compétences apprenables de
-l'offre ; attendues au niveau `valide`. Lecture seule, hors de `service` comme `map` (cycle avec
-`program`) ; l'objectif est lu par `learning.service`, le programme par `program.service`,
-l'offre par `gap.service` (contrat 2)."""
+"""Comparison of the map with a target (SPEC F15, D107 #2, D123): "target job" = the skills of the
+goal's program; "specific offer" = the learnable skills of the offer; expected at level
+`valide`. Read-only, outside `service` like `map` (cycle with `program`); the goal is read by
+`learning.service`, the program by `program.service`, the offer by `gap.service` (contract 2)."""
 
 from math import floor
 
@@ -27,15 +26,15 @@ def no_compare_target() -> AppError:
 
 
 def gap(mine: SkillLevel | None, target: SkillLevel) -> int:
-    """Rang de la cible moins le mien (`LEVEL_ORDER`, absente = −1) ; 0 ou moins : atteint."""
+    """Rank of the target minus mine (`LEVEL_ORDER`, absent = −1); 0 or less: reached."""
     rank = LEVEL_ORDER.index(mine) if mine is not None else -1
     return LEVEL_ORDER.index(target) - rank
 
 
 async def _target(db: AsyncSession, user_id: str, goal_id: str | None) -> tuple[str, str]:
-    """`(libellé, programme)` de l'objectif comparé : celui demandé (404 `goal_not_found` s'il
-    n'est pas à January), sinon le plus récent qui a un programme ; 404 `no_compare_target` sans
-    programme. Le libellé est le poste visé, à défaut le texte de l'objectif."""
+    """`(label, program)` of the compared goal: the one requested (404 `goal_not_found` if it is not
+    January's), otherwise the most recent one that has a program; 404 `no_compare_target` without a
+    program. The label is the target role, otherwise the goal's text."""
     goals = [await get_goal(db, user_id, goal_id)] if goal_id is not None else None
     for goal in goals if goals is not None else await list_goals(db, user_id):
         if goal.program_id is not None:
@@ -45,9 +44,9 @@ async def _target(db: AsyncSession, user_id: str, goal_id: str | None) -> tuple[
 
 
 async def _compare(db: AsyncSession, user_id: str, label: str, names: list[str]) -> CompareOut:
-    """Une ligne par compétence de `names` (noms normalisés, dans leur ordre) présente au
-    référentiel, cible `valide` ; `coverage` = part des lignes atteintes, en %, 0,5 arrondi
-    au-dessus (0 sans ligne)."""
+    """One row per skill of `names` (normalized names, in their order) present in the reference
+    data, target `valide`; `coverage` = share of reached rows, in %, rounded up from 0.5 (0 without
+    rows)."""
     found = await SkillRepository(db, user_id).by_norm(names)
     skills = [found[name] for name in names if name in found]
     levels = await UserSkillRepository(db, user_id).for_skills([skill.id for skill in skills])
@@ -70,16 +69,15 @@ async def _compare(db: AsyncSession, user_id: str, label: str, names: list[str])
 
 
 async def compare_with_goal(db: AsyncSession, user_id: str, goal_id: str | None) -> CompareOut:
-    """Les compétences du programme de l'objectif, dans son ordre (voir `_compare`)."""
+    """The skills of the goal's program, in its order (see `_compare`)."""
     label, program_id = await _target(db, user_id, goal_id)
     return await _compare(db, user_id, label, await program_skill_names(db, user_id, program_id))
 
 
 async def compare_with_posting(db: AsyncSession, user_id: str, posting_id: str) -> CompareOut:
-    """« Moi face à cette offre » (D123) : ses compétences apprenables (nom rattaché au
-    référentiel, sinon celui du besoin), dans l'ordre de l'analyse, attendues `valide` ;
-    libellé « Titre — Entreprise ». 404 `posting_not_found`, ou `no_compare_target` tant que
-    l'offre n'est pas analysée."""
+    """Me facing this offer (D123): its learnable skills (name linked to the reference data,
+    otherwise that of the need), in the analysis order, expected `valide`; label "Title — Company".
+    404 `posting_not_found`, or `no_compare_target` while the offer is not analysed."""
     found = await posting_skills(db, user_id, posting_id)
     if found is None:
         message = "Analyse this posting before comparing skills."
@@ -101,7 +99,7 @@ async def compare_with(
     goal_id: str | None,
     posting_id: str | None,
 ) -> CompareOut:
-    """La comparaison demandée ; `posting` sans `posting_id` : 422 `posting_id_required`."""
+    """The requested comparison; `posting` without `posting_id`: 422 `posting_id_required`."""
     if target == "goal":
         return await compare_with_goal(db, user_id, goal_id)
     if posting_id is None:

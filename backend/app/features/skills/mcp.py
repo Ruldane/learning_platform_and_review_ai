@@ -1,4 +1,4 @@
-"""Déclaration MCP de la carte de compétences et de la création au référentiel."""
+"""MCP declaration for the skill map and for creating reference-data entries."""
 
 from app.mcp.base import FeatureMcp, McpAction
 

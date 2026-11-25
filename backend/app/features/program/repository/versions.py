@@ -7,19 +7,19 @@ from app.db.repository import UserScopedRepository
 
 
 def _applied() -> ColumnElement[bool]:
-    """Versions qui décrivent des lignes écrites : celles du Stratège et de January (`build`,
-    écrites dès leur rangement) et les replanifications acceptées. Une proposition `replan`
-    en attente, refusée, remplacée ou close n'a jamais touché le plan (F2, D106)."""
+    """Versions that describe written rows: those of the Strategist and of January (`build`, written
+    as soon as they are stored) and the accepted replans. A `replan` proposal that is pending,
+    refused, replaced or closed never touched the plan (F2, D106)."""
     return or_(PlanVersion.kind == "build", PlanVersion.status == "accepted")
 
 
 class PlanVersionRepository(UserScopedRepository[PlanVersion]):
-    """Versions d'un programme : instantané, différence, raison, date d'acceptation."""
+    """Versions of a program: snapshot, diff, reason, acceptance date."""
 
     model = PlanVersion
 
     async def by_revision(self, session_id: str, revision: int) -> PlanVersion | None:
-        """La version écrite par cette révision du Stratège (idempotence au rejeu)."""
+        """The version written by this revision of the Strategist (idempotent on replay)."""
         stmt = (
             select(PlanVersion)
             .where(
@@ -32,7 +32,7 @@ class PlanVersionRepository(UserScopedRepository[PlanVersion]):
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def latest(self, program_id: str) -> PlanVersion | None:
-        """La dernière version appliquée au plan (jamais une proposition non acceptée)."""
+        """The latest version applied to the plan (never an unaccepted proposal)."""
         stmt = (
             select(PlanVersion)
             .where(
@@ -47,7 +47,7 @@ class PlanVersionRepository(UserScopedRepository[PlanVersion]):
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def latest_with_catalog(self, program_id: str) -> PlanVersion | None:
-        """La dernière version du Stratège (son instantané porte le référentiel)."""
+        """The latest Strategist version (its snapshot holds the reference data)."""
         stmt = (
             select(PlanVersion)
             .where(
@@ -62,8 +62,8 @@ class PlanVersionRepository(UserScopedRepository[PlanVersion]):
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def supersede_pending(self, program_id: str, keep: str | None = None) -> None:
-        """Passe à `superseded` les propositions en attente du programme, sauf `keep` : une
-        version `pending` qu'une plus récente remplace ne doit plus pouvoir être acceptée."""
+        """Moves the pending proposals of the program to `superseded`, except `keep`: a `pending`
+        version that a newer one replaces must no longer be acceptable."""
         stmt = select(PlanVersion).where(
             PlanVersion.user_id == self.user_id,
             PlanVersion.program_id == program_id,
@@ -94,7 +94,7 @@ class PlanVersionRepository(UserScopedRepository[PlanVersion]):
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def history(self, program_id: str) -> builtins.list[PlanVersion]:
-        """Toutes les versions du programme, la plus récente d'abord."""
+        """All versions of the program, most recent first."""
         stmt = (
             select(PlanVersion)
             .where(PlanVersion.user_id == self.user_id, PlanVersion.program_id == program_id)

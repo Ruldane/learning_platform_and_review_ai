@@ -1,4 +1,4 @@
-"""Sortes de module, sans dépendance : importable par les leçons sans cycle (D309)."""
+"""Kinds of module, no dependency: importable by the lessons without a cycle (D309)."""
 
 from app.db.models.program import Module
 
@@ -6,5 +6,5 @@ VALIDATION_KIND = "validation"
 
 
 def has_lesson(module: Module) -> bool:
-    """Un module sauté ou de validation (D220) n'a pas de leçon."""
+    """A skipped or validation module (D220) has no lesson."""
     return not module.skipped and module.kind != VALIDATION_KIND

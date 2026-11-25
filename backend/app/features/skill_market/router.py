@@ -1,4 +1,4 @@
-"""Cotation et simulation de la demande dans le marché observé du compte."""
+"""Rating and simulation of demand in the account's observed market."""
 
 from typing import Annotated
 

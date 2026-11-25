@@ -1,1 +1,1 @@
-"""Mode vocal sur les brouillons et les messages affichés."""
+"""Voice mode on the displayed drafts and messages."""

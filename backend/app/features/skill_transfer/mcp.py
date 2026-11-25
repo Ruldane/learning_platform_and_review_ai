@@ -1,4 +1,4 @@
-"""Un client MCP autorisé peut relire et programmer un contrôle."""
+"""An authorized MCP client can re-read and schedule a check."""
 
 from app.mcp.base import FeatureMcp, McpAction, McpGraph
 

@@ -1,19 +1,19 @@
-"""Cadence de Brave (revue de la phase 3, I1) : l'offre gratuite accepte une requête par
-seconde ; au-delà, Brave répond 429. Un départ au plus tous les `BRAVE_INTERVAL_S` par clé
-(empreinte), pour tout le processus, attendu après la réservation et avant l'appel.
+"""Brave pacing (phase 3 review, I1): the free tier accepts one query per second; beyond that,
+Brave answers 429. At most one start every `BRAVE_INTERVAL_S` per key (fingerprint), for the
+whole process, awaited after the reservation and before the call.
 
-Même principe que `DomainThrottle` du lecteur web (que la feature n'importe pas, contrat 3) :
-le prochain départ est réservé sous verrou (aucun `await` dans la section), puis attendu hors
-verrou ; un départ au-delà du budget de l'appelant n'est pas réservé ; une attente annulée rend
-son créneau s'il est encore le dernier réservé. Les clés ne sont jamais journalisées."""
+Same principle as `DomainThrottle` of the web reader (which this feature does not import,
+contract 3): the next start is reserved under lock (no `await` in the section), then awaited
+outside the lock; a start beyond the caller's budget is not reserved; a cancelled wait gives
+back its slot if it is still the last reserved one. Keys are never logged."""
 
 import asyncio
 import threading
 import time
 from collections.abc import Awaitable, Callable
 
-BRAVE_INTERVAL_S = 1.1  # une requête par seconde, plus une marge
-# Attente maximale par défaut avant un appel à Brave (le délai d'une recherche).
+BRAVE_INTERVAL_S = 1.1  # one query per second, plus a margin
+# Default maximum wait before a call to Brave (the delay of a search).
 BRAVE_MAX_WAIT_S = 10.0
 _PURGE_AFTER_S = 60.0
 
@@ -30,10 +30,10 @@ class KeyPacer:
         self._clock = clock
         self._sleep = sleep
         self._lock = threading.Lock()
-        self._last: dict[str, float] = {}  # clé → dernier départ réservé
+        self._last: dict[str, float] = {}  # key → last reserved start
 
     def _reserve(self, key: str, budget_s: float) -> tuple[float, float, float | None] | None:
-        """`(attente, départ réservé, départ précédent)`, ou `None` hors budget (rien réservé)."""
+        """`(wait, reserved start, previous start)`, or `None` beyond budget (nothing reserved)."""
         with self._lock:
             now = self._clock()
             for stale in [k for k, last in self._last.items() if now - last > _PURGE_AFTER_S]:
@@ -55,8 +55,8 @@ class KeyPacer:
                 self._last[key] = previous
 
     async def wait(self, key: str, *, budget_s: float) -> bool:
-        """Attend le créneau de `key`. Faux, sans attendre ni réserver, si ce créneau tombe
-        au-delà de `budget_s` (temps que l'appelant accepte d'attendre)."""
+        """Waits for the slot of `key`. False, without waiting or reserving, if this slot falls
+        beyond `budget_s` (the time the caller agrees to wait)."""
         slot = self._reserve(key, budget_s)
         if slot is None:
             return False

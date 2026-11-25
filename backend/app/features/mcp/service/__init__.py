@@ -1,5 +1,5 @@
-"""Services de l'accès MCP : interrupteur, jetons, journal des appels. B2 y ajoute les outils, les
-demandes « À confirmer » et les changements."""
+"""Services for MCP access: master switch, tokens, call journal. B2 adds the tools, the pending
+confirmations and the changes."""
 
 from app.features.mcp.service.calls import CallJournal, CallsService, GuardedDispatcher
 from app.features.mcp.service.prefs import PrefsService

@@ -13,7 +13,7 @@ from app.db.repository import UserScopedRepository
 
 @dataclass(frozen=True)
 class ItemFilter:
-    """Critères de la liste : `since` et `until` bornent `created_at` (inclusifs)."""
+    """List criteria: `since` and `until` bound `created_at` (inclusive)."""
 
     kind: MemoryKind | None = None
     tag: str | None = None
@@ -37,18 +37,18 @@ class MemoryItemRepository(UserScopedRepository[MemoryItem]):
         )
 
     async def begin_write(self) -> None:
-        """Ouvre la transaction d'écriture avant un SAVEPOINT. pysqlite n'ouvre une transaction
-        qu'à la première instruction d'écriture : sans elle, `begin_nested` en ouvrirait une et
-        sa libération la validerait, hors de portée d'un `rollback` de la requête. La ligne visée
-        n'existe pas ; si une transaction est déjà ouverte, c'est sans effet."""
+        """Opens the write transaction before a SAVEPOINT. pysqlite only opens a transaction at the
+        first write statement: without it, `begin_nested` would open one and its release would
+        commit it, out of reach of a `rollback` of the request. The target row does not exist; if a
+        transaction is already open, this has no effect."""
         stmt = (
             update(MemoryItem).where(MemoryItem.id == "").values(updated_at=MemoryItem.updated_at)
         )
         await self.session.execute(stmt)
 
     async def set_indexed_at(self, item: MemoryItem, at: datetime | None) -> None:
-        """Date d'indexation de `item` (`None` : à réindexer) ; `updated_at` n'est pas touché,
-        indexer n'est pas modifier l'élément."""
+        """Indexing date of `item` (`None`: to re-index); `updated_at` is not touched, since
+        indexing an item is not modifying it."""
         stmt = (
             update(MemoryItem)
             .where(MemoryItem.id == item.id, MemoryItem.user_id == self.user_id)
@@ -58,10 +58,10 @@ class MemoryItemRepository(UserScopedRepository[MemoryItem]):
         set_committed_value(item, "indexed_at", at)
 
     async def mark_indexed(self, item: MemoryItem, at: datetime, chunk_id: str | None) -> bool:
-        """Pose `indexed_at` seulement si l'élément existe encore et si `chunk_id` (un fragment
-        qui vient d'être poussé dans l'index) est toujours à lui en base : sinon ses fragments ont
-        été renouvelés entre-temps (écriture concurrente) et l'index n'est plus à jour. Vrai si
-        c'est fait. `None` : élément sans fragment, aucune condition."""
+        """Sets `indexed_at` only if the item still exists and if `chunk_id` (a fragment just pushed
+        to the index) still belongs to it in the database: otherwise its fragments were renewed in
+        the meantime (concurrent write) and the index is no longer up to date. True if it was done.
+        `None`: item without a fragment, no condition."""
         conditions = [MemoryItem.id == item.id, MemoryItem.user_id == self.user_id]
         if chunk_id is not None:
             conditions.append(
@@ -90,8 +90,7 @@ class MemoryItemRepository(UserScopedRepository[MemoryItem]):
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def find_document_of(self, source_id: str) -> MemoryItem | None:
-        """Élément `document` tiré du document `source_id` (le plus ancien s'il y en avait
-        plusieurs)."""
+        """Item `document` from the document `source_id` (the oldest if there are several)."""
         stmt = (
             select(MemoryItem)
             .where(
@@ -107,8 +106,8 @@ class MemoryItemRepository(UserScopedRepository[MemoryItem]):
     async def filtered(
         self, f: ItemFilter, *, limit: int, offset: int
     ) -> tuple[builtins.list[MemoryItem], int]:
-        """Éléments qui répondent à `f`, les plus récents d'abord, et leur nombre total
-        (sans `limit` ni `offset`)."""
+        """Items that match `f`, most recent first, and their total count (without `limit` or
+        `offset`)."""
         stmt = self._scoped(f.status)
         conditions: builtins.list[ColumnElement[bool]] = []
         if f.kind is not None:
@@ -150,7 +149,7 @@ class MemoryItemRepository(UserScopedRepository[MemoryItem]):
         return int((await self.session.execute(stmt)).scalar_one())
 
     async def count_unindexed(self) -> int:
-        """Éléments actifs pas encore indexés dans Qdrant."""
+        """Active items not yet indexed in Qdrant."""
         stmt = select(func.count()).select_from(
             self._scoped().where(MemoryItem.indexed_at.is_(None)).subquery()
         )
@@ -163,7 +162,7 @@ class MemoryItemRepository(UserScopedRepository[MemoryItem]):
         return builtins.list((await self.session.execute(stmt)).scalars().all())
 
     async def of_kind(self, kind: MemoryKind) -> builtins.list[MemoryItem]:
-        """Éléments actifs d'un type, du plus ancien au plus récent (sans limite)."""
+        """Active items of a type, from oldest to newest (no limit)."""
         stmt = (
             self._scoped()
             .where(MemoryItem.kind == kind)
@@ -172,7 +171,7 @@ class MemoryItemRepository(UserScopedRepository[MemoryItem]):
         return builtins.list((await self.session.execute(stmt)).scalars().all())
 
     async def everything(self) -> builtins.list[MemoryItem]:
-        """Tous les éléments, actifs et en attente, les plus récents d'abord (export)."""
+        """All items, active and pending, most recent first (export)."""
         stmt = (
             select(MemoryItem)
             .where(MemoryItem.user_id == self.user_id)
@@ -181,7 +180,7 @@ class MemoryItemRepository(UserScopedRepository[MemoryItem]):
         return builtins.list((await self.session.execute(stmt)).scalars().all())
 
     async def unindexed_batch(self, limit: int) -> builtins.list[MemoryItem]:
-        """Éléments actifs à indexer, du plus ancien au plus récent."""
+        """Active items to index, from oldest to newest."""
         stmt = (
             self._scoped()
             .where(MemoryItem.indexed_at.is_(None))
@@ -191,7 +190,7 @@ class MemoryItemRepository(UserScopedRepository[MemoryItem]):
         return builtins.list((await self.session.execute(stmt)).scalars().all())
 
     async def clear_indexed(self) -> None:
-        """Marque tous les éléments actifs comme à réindexer (`updated_at` n'est pas touché)."""
+        """Marks all active items as to be re-indexed (`updated_at` is not touched)."""
         stmt = (
             update(MemoryItem)
             .where(MemoryItem.user_id == self.user_id, MemoryItem.status == "active")
@@ -202,11 +201,11 @@ class MemoryItemRepository(UserScopedRepository[MemoryItem]):
 
 
 async def users_with_unindexed(session: AsyncSession, limit: int) -> builtins.list[str]:
-    """Les comptes qui ont des éléments actifs à indexer (`limit` au plus), identifiants seulement.
+    """Accounts that have active items to index (at most `limit`), identifiers only.
 
-    SEULE lecture sans `user_id` de la mémoire (comme `validated_programs`) : réservée à la tâche
-    d'entretien qui rattrape l'indexation (`index_pending_all`) ; chaque lecture suivante filtre
-    par utilisatrice."""
+    The ONLY read without `user_id` on memory (like `validated_programs`): reserved for the
+    maintenance task that catches up on indexing (`index_pending_all`); every following read
+    filters by user."""
     stmt = (
         select(MemoryItem.user_id)
         .where(MemoryItem.status == "active", MemoryItem.indexed_at.is_(None))

@@ -1,7 +1,7 @@
-"""Déclaration MCP de `memory` : éléments, recherche, documents collés, carte et export.
+"""MCP declaration for `memory`: items, search, pasted documents, map and export.
 
-Écrire un élément l'indexe dans Qdrant (vecteurs) : l'annulation ne couvre que la base, donc ces
-écritures sont déclarées `external` et de niveau 3."""
+Writing an item indexes it in Qdrant (vectors): the undo only covers the database, so these
+writes are declared `external` and level 3."""
 
 from app.mcp.base import FeatureMcp, McpAction, McpGraph
 

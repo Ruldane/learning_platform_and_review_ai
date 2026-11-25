@@ -136,7 +136,7 @@ class AgentQuizStore:
             items.append(
                 GradingItem(
                     ref=f"q{q.rank}",
-                    type=q.type,  # type: ignore[arg-type]  # colonne texte, valeurs de QuestionType
+                    type=q.type,  # type: ignore[arg-type]  # text column, values of QuestionType
                     prompt=q.prompt,
                     code=q.code,
                     expected=q.expected,

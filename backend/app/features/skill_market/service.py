@@ -1,4 +1,4 @@
-"""Lire les deux relevés comparables et simuler une heure sans modifier le planning."""
+"""Reads the two comparable scans and simulates a time without changing the schedule."""
 
 from sqlalchemy.ext.asyncio import AsyncSession
 

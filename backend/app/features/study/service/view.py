@@ -1,12 +1,11 @@
-"""Lectures de l'étude guidée (D103 n° 4, 5) : l'état d'une session (écran de fin) et le résumé
-(série, heures de la semaine, minuteur, session ouverte, bloc du jour). Jours et semaines locaux
-(fuseau de January, D98).
+"""Reads of guided study (D103 #4, 5): the state of a session (end screen) and the summary (streak,
+hours of the week, timer, open session, day's block). Local days and weeks (January's time zone,
+D98).
 
-Une session `open` dont la session d'agents est terminée (échec, annulation) ou introuvable est
-montrée `interrupted`, sans écriture (D91, F11) ; la base n'est corrigée que sous le verrou de
-l'utilisatrice (nouveau départ, « Terminer »). Ordre des lectures (D97 n° 9) : la session
-d'agents, PUIS la ligne relue : une session finie entre les deux lectures n'est jamais montrée
-interrompue."""
+An `open` session whose agent session has ended (failure, cancellation) or cannot be found is
+shown `interrupted`, without writing (D91, F11); the database is corrected only under the user's
+lock (new start, "Finish"). Order of reads (D97 #9): the agent session, THEN the row re-read: a
+session finished between the two reads is never shown as interrupted."""
 
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -28,7 +27,7 @@ TERMINAL = frozenset({"completed", "failed", "cancelled", "expired"})
 
 
 async def agent_status(db: AsyncSession, user_id: str, session_id: str | None) -> str | None:
-    """Statut de la session d'agents (`None` : pas encore rangée, ou introuvable)."""
+    """Status of the agent session (`None`: not yet stored, or not found)."""
     if session_id is None:
         return None
     facts = await session_facts(db, user_id, session_id)
@@ -36,7 +35,7 @@ async def agent_status(db: AsyncSession, user_id: str, session_id: str | None) -
 
 
 def is_dead(row: StudySession, status: str | None) -> bool:
-    """Session encore `open` dont la session d'agents ne tourne plus."""
+    """Session still `open` whose agent session is no longer running."""
     return (
         row.status == "open" and status is not None and (status in TERMINAL or status == "missing")
     )
@@ -45,7 +44,7 @@ def is_dead(row: StudySession, status: str | None) -> bool:
 async def read_row(
     db: AsyncSession, user_id: str, study_id: str
 ) -> tuple[StudySession, str | None]:
-    """`(ligne, statut de sa session d'agents)` dans l'ordre sûr ; 404 pour celle d'une autre."""
+    """`(row, status of its agent session)` in the safe order; 404 for another user's."""
     repo = StudyRepository(db, user_id)
     first = await repo.get_fresh(study_id)
     if first is None or first.kind != "guided":
@@ -90,9 +89,9 @@ def _local(moment: datetime, zone: ZoneInfo) -> datetime:
 
 
 async def _open_live(db: AsyncSession, user_id: str) -> str | None:
-    """La session ouverte encore vivante ; une session morte (lue `interrupted`, D91) n'est pas
-    proposée à la reprise : l'accueil offre un nouveau départ, qui la range ou l'annule (revue
-    finale de la phase 5, revue front I1)."""
+    """The open session still alive. A dead session (read as `interrupted`, D91) is not offered for
+    resumption: the home screen offers a new start, which stores or cancels it (final review of
+    phase 5, front-end review I1)."""
     current = await StudyRepository(db, user_id).open_one()
     if current is None or current.kind != "guided":
         return None

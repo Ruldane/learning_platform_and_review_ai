@@ -1,18 +1,17 @@
-"""Éléments de mémoire écrits en direct par une feature qui n'a pas d'agent derrière elle (phase
-10, 10.W) : la leçon ou l'offre que Claude (par le MCP) ou January écrit elle-même. Même écriture
-que celle des agents (règles, dédoublonnage, journal), sans passerelle d'agent ni session.
+"""Memory items written directly by a feature that has no agent behind it (phase 10, 10.W): the
+lesson or offer that Claude (through MCP) or January writes itself. Same write as the agents'
+(rules, deduplication, journal), without agent gateway or session.
 
-**L'appel n'indexe pas.** L'élément est écrit (ou mis à jour) dans la transaction de la feature,
-avec `indexed_at` vide, et l'indexation (fragments, embeddings, Qdrant) suit hors de l'appel :
-`schedule_indexing` la lance après la réponse, l'annulation du MCP la relance, et la tâche
-d'entretien la rattrape après un redémarrage (`index_pending_all`). Raison : l'historique du MCP ne
-retire que ce qu'il a vu ; une indexation dans l'appel pose `indexed_at` et remplace les fragments
-par des requêtes en masse, que l'annulation ne saurait défaire. Une retouche ne touche donc pas aux
-fragments : elle remet `indexed_at` à vide, et l'annulation fait de même (`app.mcp.undo`).
+**The call does not index.** The item is written (or updated) in the feature's transaction,
+with `indexed_at` empty, and indexing (fragments, embeddings, Qdrant) follows outside the call:
+`schedule_indexing` starts it after the response, the MCP undo restarts it, and the maintenance
+task catches up after a restart (`index_pending_all`). Reason: the MCP history only removes
+what it has seen; indexing within the call would set `indexed_at` and replace fragments through
+bulk queries, which the undo could not reverse. A rewrite therefore does not touch the
+fragments: it resets `indexed_at` to empty, and the undo does the same (`app.mcp.undo`).
 
-Un vecteur d'un élément retiré par l'annulation reste dans Qdrant jusqu'à la prochaine
-réindexation ; la recherche écarte tout vecteur sans fragment ni élément en base. Aucun appel au
-modèle : seulement les embeddings."""
+A vector of an item removed by the undo stays in Qdrant until the next re-indexing; search
+discards any vector with no fragment or item in the database. No model call: embeddings only."""
 
 import asyncio
 import contextvars
@@ -45,14 +44,14 @@ __all__ = [
 ]
 
 MCP_AUTHOR = "claude"
-BATCH = 16  # éléments indexés par passage et par utilisatrice
-USERS = 20  # utilisatrices vues par passage de la tâche d'entretien
+BATCH = 16  # items indexed per pass, per user
+USERS = 20  # users seen per pass of the maintenance task
 _TASKS: set["asyncio.Task[None]"] = set()
-_paused = False  # crochet des tests : `schedule_indexing` ne lance rien (état « avant indexation »)
+_paused = False  # test hook: `schedule_indexing` starts nothing (state "before indexing")
 
 
 def author_of(is_mcp: bool) -> str:
-    """`claude` quand l'appel vient du MCP, `user` sinon (l'interface)."""
+    """`claude` when the call comes from MCP, `user` otherwise (the interface)."""
     return MCP_AUTHOR if is_mcp else USER_AUTHOR
 
 
@@ -67,15 +66,15 @@ async def _retouch(
     author: str,
     reason: str,
 ) -> MemoryItem | None:
-    """L'élément qui portait `old` (titre, texte), mis à jour avec `new` et à réindexer ; `None`
-    s'il n'y en a pas. Ses fragments ne sont pas touchés (voir le module)."""
+    """The item that held `old` (title, text), updated with `new` and to be re-indexed; `None` if
+    there is none. Its fragments are not touched (see the module)."""
     previous = await MemoryItemRepository(db, user_id).find_by_hash(
         content_hash(kind, *_content(*old))
     )
     if previous is None:
         return None
     patch = MemoryItemPatch.model_construct(title=new[0], text=new[1], tags=list(tags))
-    if await service._edit(previous, patch):  # noqa: SLF001 - même paquet : la règle de la retouche
+    if await service._edit(previous, patch):  # noqa: SLF001 - same package: the rewrite rule
         previous.indexed_at = None
         await WriteRepository(db, user_id).log(
             item=previous, action="update", author=author, session_id=None, reason=reason
@@ -97,10 +96,10 @@ async def write_direct(
     replaces: tuple[str, str] | None = None,
     session_id: str | None = None,
 ) -> str:
-    """Écrit l'élément, ou met à jour celui qui portait `replaces` (titre, texte), dans la
-    transaction de l'appelant (aucun commit : tout ou rien avec la ligne de la feature). Rend son
-    identifiant. Une erreur de la mémoire remonte (`AppError` : code, jamais le contenu) et défait
-    l'écriture entière. L'appelant lance `schedule_indexing` après son commit."""
+    """Writes the item, or updates the one that held `replaces` (title, text), within the caller's
+    transaction (no commit: all or nothing with the feature's row). Returns its identifier. A
+    memory error propagates (`AppError`: code, never the content) and undoes the whole write. The
+    caller starts `schedule_indexing` after its commit."""
     service = MemoryService(db, user_id, runtime)
     item = None
     if replaces is not None:
@@ -122,9 +121,9 @@ async def write_direct(
 
 
 async def index_pending(runtime: MemoryRuntime, user_id: str, limit: int = BATCH) -> int:
-    """Indexe les éléments actifs de l'utilisatrice restés à `indexed_at` vide (`limit` au plus) ;
-    rend le nombre indexé. S'arrête au premier échec (Ollama ou Qdrant arrêté, réindexation en
-    cours) : la passe suivante reprend. Un élément à la fois, chacun dans sa session."""
+    """Indexes the user's active items still at empty `indexed_at` (at most `limit`); returns the
+    number indexed. Stops at the first failure (Ollama or Qdrant stopped, re-indexing in progress):
+    the next pass resumes. One item at a time, each in its own session."""
     async with runtime.session_factory() as db:
         ids = [item.id for item in await MemoryItemRepository(db, user_id).unindexed_batch(limit)]
     done = 0
@@ -140,8 +139,8 @@ async def index_pending(runtime: MemoryRuntime, user_id: str, limit: int = BATCH
 
 
 async def index_pending_all(runtime: MemoryRuntime) -> int:
-    """Un passage de la tâche d'entretien : `index_pending` pour chaque compte qui a des éléments
-    à indexer (`USERS` au plus). Une panne est journalisée (son type) et passe au compte suivant."""
+    """One pass of the maintenance task: `index_pending` for each account that has items to index
+    (at most `USERS`). A failure is logged (its type) and moves on to the next account."""
     async with runtime.session_factory() as db:
         users = await users_with_unindexed(db, USERS)
     total = 0
@@ -156,13 +155,13 @@ async def index_pending_all(runtime: MemoryRuntime) -> int:
 async def _safely(runtime: MemoryRuntime, user_id: str) -> None:
     try:
         await index_pending(runtime, user_id)
-    except Exception as exc:  # la tâche d'entretien reprendra
+    except Exception as exc:  # the maintenance task will resume
         logger.warning("Indexation en attente non faite (%s)", type(exc).__name__)
 
 
 def schedule_indexing(runtime: MemoryRuntime, user_id: str) -> None:
-    """Lance `index_pending` en tâche de fond, après la réponse. Elle part d'un contexte vide : ni
-    l'historique du MCP ni l'identité de l'appel ne la voient (elle n'écrit que de l'indexation)."""
+    """Starts `index_pending` as a background task, after the response. It starts from an empty
+    context: neither the MCP history nor the call's identity sees it (it only writes indexing)."""
     if _paused:
         return
     task = asyncio.get_running_loop().create_task(
@@ -173,6 +172,6 @@ def schedule_indexing(runtime: MemoryRuntime, user_id: str) -> None:
 
 
 async def drain_indexing() -> None:
-    """Attend les indexations lancées (tests, arrêt propre)."""
+    """Waits for the started indexing runs (tests, clean shutdown)."""
     while _TASKS:
         await asyncio.gather(*list(_TASKS), return_exceptions=True)

@@ -1,19 +1,19 @@
-"""Budget de temps d'une semaine (SPEC 3.4) : cinq jours, un bloc le samedi, dimanche libre."""
+"""Time budget of a week (SPEC 3.4): five days, a block on Saturday, Sunday free."""
 
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import date
 from typing import Protocol
 
-# Part du budget que la charge planifiée ne dépasse jamais (SPEC 3.4, 13).
+# Share of the budget that the planned load never exceeds (SPEC 3.4, 13).
 CAP_PERCENT = 85
 SATURDAY = 5
 
 
 class AvailabilityLike(Protocol):
-    """Ce que le budget lit des disponibilités (`features.settings.schemas.Availability`).
+    """What the budget reads from availabilities (`features.settings.schemas.Availability`).
 
-    Une feature n'importe d'une autre que son service (contrat 2) : le type est décrit ici.
+    A feature imports from another only its service (contract 2): the type is described here.
     """
 
     @property
@@ -38,12 +38,12 @@ class Budget:
 
     @property
     def weekly_minutes(self) -> int:
-        """Cinq jours de semaine plus le samedi."""
+        """Five weekdays plus Saturday."""
         return 5 * self.weekday_minutes + self.weekend_minutes
 
     @property
     def cap_minutes(self) -> int:
-        """85 % du budget hebdomadaire, arrondi par défaut (entiers : pas d'erreur flottante)."""
+        """85% of the weekly budget, rounded down (integers: no floating-point error)."""
         return self.weekly_minutes * CAP_PERCENT // 100
 
     def _usual_capacity(self, day: date) -> int:
@@ -53,13 +53,13 @@ class Budget:
         return self.weekend_minutes if weekday == SATURDAY else 0
 
     def day_capacity(self, day: date) -> int:
-        """Budget du jour, borné aux disponibilités connues."""
+        """Budget of the day, capped by the known availabilities."""
         planned = self._usual_capacity(day)
         return min(planned, self.daily_caps.get(day, planned))
 
 
 def budget_for(availability: AvailabilityLike, goal_weekly_minutes: int | None) -> Budget:
-    """Budget des disponibilités, mis à l'échelle du temps voulu par l'objectif s'il est chiffré."""
+    """Availability budget, scaled to the time the goal asks for, if it has a figure."""
     weekday = availability.weekday_minutes
     weekend = availability.weekend_block_max_minutes
     full = availability.weekly_budget_minutes

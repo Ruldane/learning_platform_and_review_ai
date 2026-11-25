@@ -5,7 +5,7 @@ from app.db.repository import UserScopedRepository
 
 
 class WebQueryRepository(UserScopedRepository[WebQuery]):
-    """Requêtes (nettoyées) lancées par les sessions d'un utilisateur."""
+    """Queries (cleaned) launched by a user's sessions."""
 
     model = WebQuery
 
@@ -20,7 +20,7 @@ class WebQueryRepository(UserScopedRepository[WebQuery]):
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def add(self, query: WebQuery) -> WebQuery:  # type: ignore[override]
-        """Enregistre `query` pour cet utilisateur (le `user_id` reçu est ignoré)."""
+        """Records `query` for this user (the `user_id` received is ignored)."""
         query.user_id = self.user_id
         self.session.add(query)
         await self.session.flush()

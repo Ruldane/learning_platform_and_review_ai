@@ -1,4 +1,4 @@
-"""Déclaration MCP de `replan` : replanifier un programme et lire son historique."""
+"""MCP declaration for `replan`: replan a program and read its history."""
 
 from app.mcp.base import FeatureMcp, McpAction, McpGraph
 

@@ -1,8 +1,7 @@
-"""Rangement stable d'une replanification (D106, revue finale de la phase 5, P-I1) : ce qui ne
-doit pas bouger ne bouge pas. Une semaine qui ne reçoit ni retard ni ajout garde les dates de ses
-tâches (choisies par January comprises) tant qu'elles tiennent sous son plafond et qu'aucune
-n'est passée ; « avancer » ne ramène jamais un « Refaire le quiz » avant son jour (F9 : J+2).
-Fonctions pures."""
+"""Stable packing of a replanning (D106, final review of phase 5, P-I1): what must not move does
+not move. A week that receives neither delay nor addition keeps the dates of its tasks (chosen
+by January included) as long as they fit under its cap and none is past; "advance" never brings
+a "Retake the quiz" back before its day (F9: day +2). Pure functions."""
 
 from collections.abc import Sequence
 from datetime import date, timedelta
@@ -15,10 +14,10 @@ DAYS = 7
 
 
 def keeps_dates(tasks: Sequence[PlannedTask], week: WeekBudget, start: date) -> bool:
-    """Vrai si la semaine peut garder les dates de ses tâches à faire telles quelles : aucune
-    tâche neuve, toutes datées dans ses jours encore ouverts, sous son plafond (minutes faites
-    déjà retirées). Sur les jours couverts par Agenda, les tâches à faire doivent aussi tenir
-    dans le créneau contigu observé. Ailleurs, le choix manuel d’un jour chargé reste valide."""
+    """True if the week can keep the dates of its tasks to do as they are: no new task, all dated
+    within its days still open, under its cap (minutes already done removed). On days covered by the
+    calendar, the tasks to do must also fit in the observed contiguous slot. Elsewhere, the manual
+    choice of a busy day stays valid."""
     first, end = max(start, week.from_day), start + timedelta(days=DAYS)
     agenda: dict[date, int] = {}
     for task in tasks:
@@ -33,8 +32,8 @@ def keeps_dates(tasks: Sequence[PlannedTask], week: WeekBudget, start: date) -> 
 
 
 def _reserved(items: list[PlannedTask]) -> set[int]:
-    """Rangs du dernier quiz, de la première pratique et des « Refaire le quiz » d'une semaine
-    (jamais avancés)."""
+    """Ranks of the last quiz, of the first practice and of a week's "Retake the quiz" tasks (never
+    advanced)."""
     quizzes = [i for i, t in enumerate(items) if t.type == "quiz"]
     practices = [i for i, t in enumerate(items) if t.type == "practice"]
     retries = [i for i, t in enumerate(items) if is_retry(t.title, t.type)]
@@ -42,11 +41,11 @@ def _reserved(items: list[PlannedTask]) -> set[int]:
 
 
 def advance(tasks: list[PlannedTask], slots: Slots, *, skip_current: bool) -> list[PlannedTask]:
-    """« Avancer » (D98, `plan_advances` à 100 % du plafond) depuis la semaine en cours (la
-    suivante si January a donné ses heures de la semaine) : seule la date des tâches change."""
+    """Advancing (D98, `plan_advances` at 100% of the cap) from the current week (the next one
+    if January has given their hours for the week): only the date of the tasks changes."""
     first = slots.current + (1 if skip_current else 0)
     weeks: list[WeekSlots] = []
-    owners: list[list[int | None]] = []  # rang dans `tasks` de chaque tâche datée (faites : None)
+    owners: list[list[int | None]] = []  # rank in `tasks` of each dated task (done: None)
     for index in range(first, len(slots.starts)):
         mine = sorted(
             (n for n, t in enumerate(tasks) if slots.within(index, t.planned_date)),

@@ -1,6 +1,6 @@
-"""Règles pures des offres (D118) : clé d'un lien d'offre, clé d'entreprise, ressemblance de deux
-titres, texte suffisant, ATS reconnu par son domaine (`detect_ats`, réexporté de
-`app.agents.tools.ats_hosts`, partagé avec le parcours `cv_review`)."""
+"""Pure posting rules (D118): key of a posting link, company key, resemblance of two titles,
+sufficient text, ATS recognised by its domain (`detect_ats`, re-exported from
+`app.agents.tools.ats_hosts`, shared with the `cv_review` path)."""
 
 import re
 from difflib import SequenceMatcher
@@ -14,8 +14,8 @@ from app.agents.tools.posting_schema import enough_text as enough_text
 from app.core.skills import normalize_skill_name
 from app.features.memory.service.upload import normalize_url
 
-# Paramètres de suivi retirés d'un lien : une entrée finie par « _ » est un préfixe. « ref » et
-# « src » n'en sont pas (écart voulu au plan, D118) : des sites carrières y mettent l'offre.
+# Tracking parameters removed from a link: an entry ending in "_" is a prefix. "ref" and
+# "src" are not (a deliberate deviation from the plan, D118): career sites put the posting there.
 TRACKING_PARAMS = ("utm_", "gclid", "fbclid", "mc_cid", "mc_eid", "trk")
 _DEFAULT_PORTS = {"http": 80, "https": 443}
 LEGAL_SUFFIXES = (
@@ -34,8 +34,8 @@ LEGAL_SUFFIXES = (
     "corp",
 )
 
-PROBABLE_TITLE = 0.85  # même entreprise et titres à 0,85 au moins : doublon probable
-POSSIBLE_COSINE = 0.90  # meilleur fragment de mémoire à 0,90 au moins : doublon possible
+PROBABLE_TITLE = 0.85  # same company and titles at 0.85 or more: probable duplicate
+POSSIBLE_COSINE = 0.90  # best memory fragment at 0.90 or more: possible duplicate
 
 _NON_ALNUM = re.compile(r"[^0-9a-z+#]+")
 
@@ -49,18 +49,18 @@ def _is_tracking(key: str) -> bool:
 
 
 def route_fragment(url: str) -> str:
-    """Le fragment d'un site à routage par ancre (`#/offre/1`, `#!/offre/1`) : il désigne
-    l'offre et reste dans la clé. Tout autre fragment (`#postuler`) est retiré."""
+    """The fragment of a site with anchor routing (`#/offre/1`, `#!/offre/1`): it identifies the
+    posting and stays in the key. Any other fragment (`#postuler`) is removed."""
     fragment = urlsplit(url.strip()).fragment
     return fragment if fragment.startswith(("/", "!")) else ""
 
 
 def posting_url_key(url: str) -> str:
-    """La clé d'un lien d'offre : `normalize_url` (lève `invalid_url` ou `url_forbidden`), puis
-    « www. » et port par défaut retirés, paramètres de suivi retirés, requête triée, « / »
-    final retiré, fragment retiré sauf une route (`route_fragment`). Une clé passée de
-    nouveau donne la même clé. Deux offres distinctes ne partagent jamais une clé : un vrai
-    doublon manqué ici est rattrapé au niveau « probable » ou « possible »."""
+    """The key of a posting link: `normalize_url` (raises `invalid_url` or `url_forbidden`), then
+    "www." and the default port removed, tracking parameters removed, query sorted, final "/"
+    removed, fragment removed except a route (`route_fragment`). A key passed again gives the same
+    key. Two distinct postings never share a key: a real duplicate missed here is caught at the
+    "probable" or "possible" level."""
     parts = urlsplit(normalize_url(url))
     netloc = parts.netloc
     if parts.port is not None and _DEFAULT_PORTS.get(parts.scheme) == parts.port:
@@ -77,14 +77,13 @@ def posting_url_key(url: str) -> str:
 
 
 def _words(text: str) -> list[str]:
-    """Mots d'un nom : `normalize_skill_name`, points retirés (« S.A.S. »), puis ponctuation."""
+    """Words of a name: `normalize_skill_name`, dots removed ("S.A.S."), then punctuation."""
     return _NON_ALNUM.sub(" ", normalize_skill_name(text).replace(".", "")).split()
 
 
 def company_key(name: str) -> str:
-    """La clé d'une entreprise : sans accents ni casse ni ponctuation, formes juridiques finales
-    retirées (« Société Fictive SAS » → « societe fictive »). Un nom fait de formes juridiques
-    seulement les garde."""
+    """The key of a company: without accents, case or punctuation, final legal forms removed
+    ("Société Fictive SAS" → "societe fictive"). A name made only of legal forms keeps them."""
     words = _words(name)
     end = len(words)
     while end > 1 and words[end - 1] in LEGAL_SUFFIXES:
@@ -93,8 +92,8 @@ def company_key(name: str) -> str:
 
 
 def title_similarity(a: str, b: str) -> float:
-    """Ressemblance (0..1) de deux titres normalisés, mots triés (« AI Product Engineer » et
-    « Product Engineer AI » : 1). Un titre vide ne ressemble à rien."""
+    """Resemblance (0..1) of two normalized titles, words sorted ("AI Product Engineer" and
+    "Product Engineer AI": 1). An empty title resembles nothing."""
     left, right = " ".join(sorted(_words(a))), " ".join(sorted(_words(b)))
     if not left or not right:
         return 0.0

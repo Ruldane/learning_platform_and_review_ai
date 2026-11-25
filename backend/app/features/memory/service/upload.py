@@ -1,6 +1,6 @@
-"""Contrôle des fichiers et liens importés (17.2) : l'extension ET le contenu doivent concorder ;
-un DOCX est un zip vérifié contre les bombes avant que python-docx ne l'ouvre. Aucun message
-ne cite le nom du fichier, le lien ni le contenu reçus."""
+"""Checks on imported files and links (17.2): the extension AND the content must match; a DOCX is
+a zip checked against zip bombs before python-docx opens it. No message quotes the file name,
+the link or the received content."""
 
 import io
 import zipfile
@@ -13,16 +13,16 @@ from app.providers.web.base import UrlForbidden, youtube_video_id
 
 MAX_UPLOAD_BYTES = 20 * 1024 * 1024
 MAX_PASTE_CHARS = 500_000
-# Garde zip des DOCX (D66) : taille décompressée totale, nombre d'entrées, taux de compression
-# par entrée (au-delà de `DOCX_RATIO_FLOOR` décompressés : un petit XML répétitif dépasse vite
-# 100:1 sans danger, et la somme reste bornée par `DOCX_MAX_UNCOMPRESSED`).
+# Zip guard for DOCX (D66): total uncompressed size, number of entries, compression ratio
+# per entry (beyond `DOCX_RATIO_FLOOR` uncompressed, a small repetitive XML quickly goes past
+# 100:1 harmlessly, and the sum stays bounded by `DOCX_MAX_UNCOMPRESSED`).
 DOCX_MAX_UNCOMPRESSED = 100 * 1024 * 1024
 DOCX_MAX_ENTRIES = 1000
 DOCX_MAX_RATIO = 100
 DOCX_RATIO_FLOOR = 1024 * 1024
-# Parties XML (`.xml`, `.rels`) que python-docx analyse avec lxml : leur somme est bornée à part,
-# l'arbre en mémoire pesant plusieurs fois la taille du texte (les images restent sous le plafond
-# total).
+# XML parts (`.xml`, `.rels`) that python-docx parses with lxml: their sum is bounded separately,
+# the in-memory tree weighing several times the size of the text (images stay under the
+# total cap).
 DOCX_MAX_XML = 25 * 1024 * 1024
 DOCX_MAIN_PART = "word/document.xml"
 
@@ -61,14 +61,14 @@ def file_too_large() -> AppError:
 
 
 def _suffix(filename: str | None) -> str:
-    """Extension du nom nettoyé (dernier segment, jamais un chemin), en minuscules."""
+    """Extension of the cleaned name (last segment, never a path), in lowercase."""
     name = display_name(filename)
     dot = name.rfind(".")
     return name[dot:].lower() if dot > 0 else ""
 
 
 def is_utf8_text(data: bytes) -> bool:
-    """UTF-8 valide (BOM toléré) et sans octet nul."""
+    """Valid UTF-8 (BOM tolerated) and without null bytes."""
     if b"\x00" in data:
         return False
     try:
@@ -79,11 +79,11 @@ def is_utf8_text(data: bytes) -> bool:
 
 
 def check_docx_zip(data: bytes) -> None:
-    """Zip lisible, `word/document.xml` présent (sinon 415), entrées non chiffrées, au plus
-    `DOCX_MAX_ENTRIES` entrées, `DOCX_MAX_UNCOMPRESSED` octets décompressés dont `DOCX_MAX_XML`
-    de XML, taux par entrée
-    borné (sinon `docx_invalid`). Les tailles lues sont celles du répertoire central : `zipfile`
-    ne rend jamais plus que la taille déclarée d'une entrée (et vérifie son CRC)."""
+    """Readable zip, `word/document.xml` present (otherwise 415), unencrypted entries, at most
+    `DOCX_MAX_ENTRIES` entries, `DOCX_MAX_UNCOMPRESSED` bytes decompressed of which `DOCX_MAX_XML`
+    of XML, ratio per entry bounded (otherwise `docx_invalid`). The sizes read are those of the
+    central directory: `zipfile` never returns more than an entry's declared size (and checks its
+    CRC)."""
     try:
         with zipfile.ZipFile(io.BytesIO(data)) as archive:
             infos = archive.infolist()
@@ -127,8 +127,8 @@ def invalid_url() -> AppError:
 
 
 def normalize_url(url: str) -> str:
-    """Schéma et hôte en minuscules, fragment retiré ; `http`/`https` avec un hôte seulement,
-    sans identifiants. La garde SSRF complète reste celle du lecteur web, à la lecture."""
+    """Scheme and host in lowercase, fragment removed; `http`/`https` with a host only, without
+    credentials. The full SSRF guard remains that of the web reader, at read time."""
     try:
         parts = urlsplit(url.strip())
         host = parts.hostname

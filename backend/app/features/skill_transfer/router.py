@@ -1,4 +1,4 @@
-"""Contrôles privés, réponses réservées au compte dans l’application."""
+"""Private checks; answers reserved for the account in the application."""
 
 from datetime import UTC, datetime
 from typing import Annotated

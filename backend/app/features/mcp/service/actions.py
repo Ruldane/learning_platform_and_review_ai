@@ -1,5 +1,5 @@
-"""Les tables que l'interface montre : les features qui déclarent des outils MCP (outils par
-niveau) et la liste des outils exposés avec leur niveau. Lues du registre assemblé au démarrage."""
+"""The tables the interface shows: the features that declare MCP tools (tools per level) and the
+list of exposed tools with their level. Read from the registry assembled at startup."""
 
 from app.features.mcp.schemas import McpActionOut, McpFeatureOut
 from app.mcp.registry import Registry

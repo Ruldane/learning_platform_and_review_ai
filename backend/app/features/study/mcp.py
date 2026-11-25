@@ -1,4 +1,4 @@
-"""Déclaration MCP de `study` : la session guidée avec le Tuteur."""
+"""MCP declaration for `study`: the guided session with the Tutor."""
 
 from app.mcp.base import FeatureMcp, McpAction, McpGraph
 
