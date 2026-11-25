@@ -122,6 +122,6 @@ async def test_logs_carry_ids_only(
     quiz_id = await ready_quiz(seeded)
     await grade(seeded, await started_attempt(client, quiz_id, right=False), FAIL_35)
     text = "\n".join(r.getMessage() for r in caplog.records)
-    assert quiz_id in text and "Tentative rangée" in text
+    assert quiz_id in text and "Attempt stored" in text
     for secret in ("Ma réponse", "softmax", "Elle normalise", "Module Bases", "Réviser"):
         assert secret not in text

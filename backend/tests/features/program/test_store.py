@@ -136,7 +136,7 @@ async def test_context_with_program_reads_current_plan(
     program_id, _ = await _save(store, rows.goal_id, sample_plan())
     ctx = await store.context(ME, rows.goal_id, [rows.proposal_id], program_id)
     assert ctx.current_plan is not None
-    assert "Semaine 1 (du 16/11) : Bases" in ctx.current_plan
+    assert "Week 1 (from 16/11): Bases" in ctx.current_plan
     assert "17/11 : Lire le chapitre 1 (read, 120 min)" in ctx.current_plan
 
 
@@ -147,7 +147,7 @@ async def test_goal_weekly_minutes_scale_the_budget(
     ctx = await store.context(ME, rows.goal_id, [rows.proposal_id], None)
     assert (ctx.budget.weekday_minutes, ctx.budget.weekend_minutes) == (60, 120)
     problems = await store.check_draft(ME, rows.goal_id, sample_plan())
-    assert any("at most" in problem for problem in problems)
+    assert any("The limit is" in problem for problem in problems)
 
 
 async def test_everything_known_is_nothing_to_plan(

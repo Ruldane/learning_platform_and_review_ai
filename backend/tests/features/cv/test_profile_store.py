@@ -98,7 +98,7 @@ async def test_rotated_page_invites_to_export_again(cv_runtime: CvRuntime) -> No
     with pytest.raises(PdfUnreadable) as refused:
         await AgentProfileStore(cv_runtime).sources(ME, [doc], None)
     assert refused.value.message == ROTATED_PAGE_MESSAGE
-    assert "sans rotation" in ROTATED_PAGE_MESSAGE
+    assert "without rotation" in ROTATED_PAGE_MESSAGE
 
 
 async def test_save_draft_is_idempotent_and_merges_ids(

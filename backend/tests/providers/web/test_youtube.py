@@ -162,7 +162,7 @@ async def test_not_a_youtube_link_is_refused_without_any_call(
     reader = FakeWebReader()
     with pytest.raises(UrlUnreadable) as caught:
         await TranscriptApiYoutube(reader).transcript("https://example.com/watch?v=dQw4w9WgXcQ")
-    assert caught.value.message == "Lien YouTube non reconnu."
+    assert caught.value.message == "YouTube link not recognised."
     assert seen == [] and reader.calls == []
 
 

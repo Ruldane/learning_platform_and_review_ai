@@ -47,7 +47,7 @@ async def test_read_rejects_key_outside_root(tmp_path: Path, key: str) -> None:
     with pytest.raises(StorageKeyInvalid) as caught:
         await storage.read("u1", key)
     assert caught.value.code == "storage_key_invalid" and caught.value.status_code == 400
-    assert caught.value.message == "Chemin de fichier refusé."
+    assert caught.value.message == "File path refused."
     with pytest.raises(StorageKeyInvalid):
         await storage.delete("u1", key)
 

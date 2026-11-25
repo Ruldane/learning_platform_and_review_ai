@@ -44,8 +44,8 @@ async def test_design_capture_reaches_target_in_two_passes(
     [fix] = run.prompts(FIX_REQUEST)
     assert "Pass 1: similarity of 72 %." in fix and "Gaps measured by the code" in fix
     assert await run.said() == [
-        "Passe 1 : le rendu ressemble à ton CV à 72 %.",
-        "Passe 2 : le rendu ressemble à ton CV à 88 %.",
+        "Pass 1: the render looks 72% like your CV.",
+        "Pass 2: the render looks 88% like your CV.",
     ]
 
 
@@ -72,7 +72,7 @@ async def test_best_pass_is_kept_and_its_score_shown(
     assert question["question"].startswith("The template matches your CV at 78%.")
     assert (await run.said())[
         -1
-    ] == "Passe 3 : le rendu ressemble à ton CV à 69 %. Je garde la passe 2 (78 %)."
+    ] == "Pass 3: the render looks 69% like your CV. I'm keeping pass 2 (78%)."
     await run.answer("validate")
     await run.wait_status("completed")
     assert design_store.finished_pass == {"t1": 2}
@@ -121,9 +121,9 @@ async def test_sample_lines_are_verbatim(
     await run.question()
     first, second = run.prompts("Transcribe the contents")[:2]
     assert "do not appear as is in the CV" in second and invented in second
-    framed = second.split('<<<CONTENU_NON_FIABLE source="cv:texts to copy">>>')[1]
-    assert invented in framed.split("<<<FIN_CONTENU_NON_FIABLE>>>")[0]  # encadré (revue BA-M3)
-    assert "Copy each text word for word" in framed.split("<<<FIN_CONTENU_NON_FIABLE>>>")[1]
+    framed = second.split('<<<UNTRUSTED_CONTENT source="cv:texts to copy">>>')[1]
+    assert invented in framed.split("<<<END_UNTRUSTED_CONTENT>>>")[0]  # encadré (revue BA-M3)
+    assert "Copy each text word for word" in framed.split("<<<END_UNTRUSTED_CONTENT>>>")[1]
     assert "do not appear as is in the CV" not in first
     _, content, _ = design_store.passes[1]
     lines = [line.text for line in content.sections[1].entries[0].lines]
@@ -160,7 +160,7 @@ async def test_spec_with_unknown_font_is_reasked(
     run = await design_runner(designer(draft=[bad_font_spec()]))
     await run.question()
     first, second = run.prompts(DRAFT_REQUEST)[:2]
-    assert "n'est pas disponible" in second and "n'est pas disponible" not in first
+    assert "is not available" in second and "is not available" not in first
     assert design_store.spec_of(1).fonts.body == "Lato"
 
 

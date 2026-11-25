@@ -34,7 +34,7 @@ async def test_saved_key_is_never_returned(client: httpx.AsyncClient) -> None:
     assert SECRET not in r.text and SECRET not in listed.text
     entry = next(e for e in listed.json() if e["provider"] == "fake")
     assert entry["last4"] == "1234" and entry["source"] == "ui" and entry["readable"] is True
-    assert entry["label"] == "Faux fournisseur"
+    assert entry["label"] == "Fake provider"
 
 
 async def test_key_is_encrypted_at_rest(
@@ -77,7 +77,7 @@ async def test_replacing_a_key_resets_its_test_result(client: httpx.AsyncClient)
 async def test_test_without_key_is_a_result_not_an_error(client: httpx.AsyncClient) -> None:
     r = await client.post(f"{KEYS}/fake/test")
     assert r.status_code == 200
-    assert r.json() == {"ok": False, "message": "Aucune clé enregistrée pour Faux fournisseur."}
+    assert r.json() == {"ok": False, "message": "No key saved for Fake provider."}
 
 
 async def test_ui_key_wins_over_env(service_with_env: Svc) -> None:
@@ -158,7 +158,7 @@ async def test_saved_key_is_registered_for_log_masking(client: httpx.AsyncClient
 async def test_unknown_provider_is_404(client: httpx.AsyncClient) -> None:
     r = await client.post(f"{KEYS}/nope/test")
     assert r.status_code == 404 and r.json()["error"]["code"] == "unknown_provider"
-    assert r.json()["error"]["message"] == "Fournisseur inconnu : nope."
+    assert r.json()["error"]["message"] == "Unknown provider: nope."
     assert (await client.delete(f"{KEYS}/nope")).status_code == 404
     posted = await client.post(KEYS, json={"provider": "nope", "key": SECRET})
     assert posted.status_code == 404 and SECRET not in posted.text
@@ -175,7 +175,7 @@ async def test_short_key_is_422_and_not_echoed(client: httpx.AsyncClient) -> Non
     assert r.status_code == 422
     assert r.json()["error"] == {
         "code": "invalid_key",
-        "message": "La clé est trop courte.",
+        "message": "The key is too short.",
         "details": None,
     }
     assert "abc1234" not in r.text
@@ -253,7 +253,7 @@ async def test_models_endpoint_lists_presets(client: httpx.AsyncClient) -> None:
     assert set(body["presets"]) == {"all_haiku", "haiku_sonnet_strong", "all_glm", "all_openai"}
     assert body["presets"]["all_glm"]["strong"]["provider"] == "glm"
     assert body["providers"] == [
-        {"name": "fake", "label": "Faux fournisseur", "has_key": False, "models": None}
+        {"name": "fake", "label": "Fake provider", "has_key": False, "models": None}
     ]
 
 

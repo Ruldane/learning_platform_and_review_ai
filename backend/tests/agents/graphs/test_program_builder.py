@@ -140,7 +140,7 @@ async def test_known_skill_reduced_to_review(make_builder_runner: MakeBuilder) -
     assert "do not re-plan what is already acquired" in c.prompt_of_call(1)
     tasks = [t for w in c.store.drafts[0].plan.weeks for t in w.tasks]
     review = [t for t in tasks if t.already_known]
-    assert [(t.title, t.minutes) for t in review] == [("Réviser : Manipuler pandas", 20)]
+    assert [(t.title, t.minutes) for t in review] == [("Review: Manipuler pandas", 20)]
     assert not any("pandas" in t.title for t in tasks if not t.already_known)
     assert c.store.drafts[0].plan.skipped_modules == ["Tracer des graphiques"]
     said = await c.events("agent.message")

@@ -31,8 +31,8 @@ from tests.agents.runtime.runner_helpers import TIMEOUT, all_events, get_session
 from tests.support.cv_review import REVIEW_ID, FakeCvReviewStore
 from tests.support.gap import FakeGapStore, analysis_reply
 
-START = "<<<CONTENU_NON_FIABLE"
-END = "<<<FIN_CONTENU_NON_FIABLE>>>"
+START = "<<<UNTRUSTED_CONTENT"
+END = "<<<END_UNTRUSTED_CONTENT>>>"
 CROSS_EXAMINATION = "Cross-examination, round"
 BRIEF: dict[str, Any] = {
     "summary": "Éditeur d'assistants pour le support.",

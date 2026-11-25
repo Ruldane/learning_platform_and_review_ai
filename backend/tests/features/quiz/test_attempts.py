@@ -51,11 +51,11 @@ async def test_passing_attempt_raises_skills_to_valide(
     )
     [proof] = read_evidence(levels["pandas"][1])
     assert (proof["kind"], proof["ref_id"]) == ("quiz", quiz_id)  # F21
-    assert proof["label"] == "Quiz « Module Bases » : 85 % (17/11)"
+    assert proof["label"] == 'Quiz "Module Bases": 85% (17/11)'
     async with seeded.rt.session_factory() as db:
         memory = await acquis_levels(db, seeded.user_id)
     assert memory["pandas"] == "validated" and memory["series"] == "validated"
-    assert await _journal(seeded) == ["Quiz « Module Bases » : 85 % — acquis validés."]
+    assert await _journal(seeded) == ['Quiz "Module Bases": 85% — skills validated.']
     quiz_task = next(t for t in await _tasks(seeded) if t.title == "Faire le quiz 1")
     assert quiz_task.status == "done"  # un seul module en semaine 1
 
@@ -69,19 +69,19 @@ async def test_failing_attempt_adds_followup_within_budget(
     assert (saved.score, saved.passed, saved.followup_tasks) == (35, False, 4)
     out = (await client.get(f"/api/v1/quizzes/{quiz_id}/attempts/{attempt_id}")).json()
     followup = out["followup"]
-    assert followup["revision_tasks"] == [f"Réviser : {skill}" for skill in SKILLS]
+    assert followup["revision_tasks"] == [f"Review: {skill}" for skill in SKILLS]
     assert followup["retry_on"] == "2026-11-19" and followup["unplaced"] == 0
     added = {t.title: t.planned_date for t in await _tasks(seeded) if t.title.startswith("R")}
     assert added == {
-        "Réviser : pandas": date(2026, 11, 18),  # dès demain, semaine 1 (665 → 685)
-        "Réviser : Séries": date(2026, 11, 18),  # 705
-        "Réviser : Index": date(2026, 11, 23),  # 725 > 714 : semaine 2
-        "Refaire le quiz : Module Bases": date(2026, 11, 23),  # au plus tôt J+2, même raison
+        "Review: pandas": date(2026, 11, 18),  # dès demain, semaine 1 (665 → 685)
+        "Review: Séries": date(2026, 11, 18),  # 705
+        "Review: Index": date(2026, 11, 23),  # 725 > 714 : semaine 2
+        "Retake the quiz: Module Bases": date(2026, 11, 23),  # au plus tôt J+2, même raison
     }
     program = await view(client, seeded.program_id)
     assert all(w["load_minutes"] <= CAP for w in program["weeks"])
     assert await _journal(seeded) == [
-        "Quiz « Module Bases » : 35 % — 3 révisions et un nouvel essai le 19/11."
+        'Quiz "Module Bases": 35% — 3 reviews and a new attempt on 19/11.'
     ]
     assert {level for level, _ in (await _levels(seeded)).values()} <= {"in_progress", "declared"}
 
@@ -139,5 +139,5 @@ async def test_graded_attempt_ticks_retry_task(client: httpx.AsyncClient, seeded
     await grade(seeded, await started_attempt(client, quiz_id, right=False), FAIL_35)
     seeded.at(datetime(2026, 11, 23, 9, 0, tzinfo=UTC))
     await grade(seeded, await started_attempt(client, quiz_id), PASS_85)
-    retry = next(t for t in await _tasks(seeded) if t.title.startswith("Refaire le quiz"))
+    retry = next(t for t in await _tasks(seeded) if t.title.startswith("Retake the quiz"))
     assert retry.status == "done"

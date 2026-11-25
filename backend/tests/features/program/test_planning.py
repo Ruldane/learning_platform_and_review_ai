@@ -63,7 +63,7 @@ def test_valide_module_is_skipped_declare_is_reduced_to_review() -> None:
     assert skipped == ["Bases de Python"]
     review = draft.weeks[0].modules[0].tasks
     assert [(t.title, t.minutes, t.type) for t in review] == [
-        ("Réviser : Manipuler des données avec pandas", 20, "read")
+        ("Review: Manipuler des données avec pandas", 20, "read")
     ]
     assert is_review(review[0]) and len(draft.weeks[0].modules) == 1
 
@@ -109,7 +109,7 @@ def test_week_gets_practice_and_ends_with_quiz() -> None:
     last = added.modules[-1].tasks[-2:]
     assert [(t.title, t.type, t.minutes) for t in last] == [
         ("Pratiquer : Bases", "practice", 45),
-        ("Faire le quiz de la semaine 3", "quiz", 20),
+        ("Take the week 3 quiz", "quiz", 20),
     ]
 
 
@@ -145,10 +145,10 @@ def test_overflow_moves_tasks_to_next_week_and_appends_a_week(budget: Budget) ->
     result = schedule(plan([full_week("Gros", [120] * 8)]), budget, {}, MONDAY)
     assert result.moved_tasks > 0 and len(result.weeks) == 2
     second = result.weeks[1]
-    assert second.theme == "Suite : Gros" and second.objective.endswith("(suite)")
+    assert second.theme == "Continued: Gros" and second.objective.endswith("(continued)")
     assert {"practice", "quiz"} <= {t.type for t in second.tasks}
     assert second.start_date == date(2026, 11, 23)
-    assert second.modules[0].title == "Module Gros (suite)"
+    assert second.modules[0].title == "Module Gros (continued)"
     assert sum(1 for w in result.weeks for t in w.tasks if t.title.startswith("Lire")) == 8
 
 
@@ -183,7 +183,7 @@ def test_module_indexes_point_into_the_week_modules(budget: Budget) -> None:
     w = schedule(plan([week("Binôme", [one, two])]), budget, {}, MONDAY).weeks[0]
     by_module = {t.title: w.modules[t.module_index].title for t in w.tasks}
     assert by_module["Lire un"] == "Uno" and by_module["Lire deux"] == "Dos"
-    assert by_module["Faire le quiz de la semaine 1"] == "Dos"
+    assert by_module["Take the week 1 quiz"] == "Dos"
 
 
 def test_known_skills_are_skipped_reviewed_and_flagged(budget: Budget) -> None:
@@ -191,7 +191,7 @@ def test_known_skills_are_skipped_reviewed_and_flagged(budget: Budget) -> None:
     assert result.skipped_modules == ["Bases de Python"]
     known = [t for t in result.weeks[0].tasks if t.already_known]
     assert [(t.title, t.minutes) for t in known] == [
-        ("Réviser : Manipuler des données avec pandas", 20)
+        ("Review: Manipuler des données avec pandas", 20)
     ]
 
 

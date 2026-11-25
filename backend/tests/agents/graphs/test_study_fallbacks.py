@@ -43,7 +43,7 @@ QUESTIONS = 2 + 1 + 3  # deux sections, l'exercice, trois questions finales
 
 @pytest.fixture(autouse=True)
 def short_deadline(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(fallback, "TUTOR_CALL_TIMEOUT_S", 0.05)
+    monkeypatch.setattr(fallback, "TUTOR_CALL_TIMEOUT_S", 0.5)
 
 
 def _blocking(marker: str) -> CouncilModels:
@@ -159,7 +159,7 @@ async def test_unanswered_hint_still_counts_then_the_solution_shows(
     said = await _said(run)
     assert "I couldn’t prepare hint 1 of 3." in " ".join(said)
     assert any(msg.startswith("I couldn’t prepare hint 3 of 3. You can show") for msg in said)
-    assert "Solution\n\nLa softmax transforme des scores en poids qui somment à 1." in said
+    assert "Solution\n\nDes poids positifs qui somment à 1." in said
     assert run.models.blocked == 3
 
 

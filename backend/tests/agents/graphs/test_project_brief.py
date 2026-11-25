@@ -22,8 +22,8 @@ from tests.agents.graphs.project_support import (
 )
 from tests.support.projects import PROJECT_ID, FakeProjectStore, brief_inputs
 
-START = '<<<CONTENU_NON_FIABLE source="{label}">>>'
-END = "<<<FIN_CONTENU_NON_FIABLE>>>"
+START = '<<<UNTRUSTED_CONTENT source="{label}">>>'
+END = "<<<END_UNTRUSTED_CONTENT>>>"
 
 
 async def test_brief_has_criteria_and_hours(

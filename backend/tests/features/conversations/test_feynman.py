@@ -63,7 +63,7 @@ async def test_lesson_explanation_caps_the_proof_and_applies_the_report_once(
     assert started.status_code == 202, started.text
     assert (await client.post(path, json=request)).json() == started.json()
     session_id = started.json()["session_id"]
-    assert "tes mots" in await respond(client, session_id, "Je groupe les lignes.")
+    assert "your own words" in await respond(client, session_id, "Je groupe les lignes.")
     assert await respond(client, session_id, "La clé détermine chaque groupe.") == QUESTION
     await wait_status(client, session_id, "completed")
     report = (await client.get(path)).json()

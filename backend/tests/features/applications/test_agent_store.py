@@ -203,7 +203,7 @@ async def test_intake_data_never_logged(
         await store.save_intake(me, OTHER_SESSION, secret, [])  # doublon : 409
     for value in ("Ultra Secr", "ultra secr"):
         assert value not in caplog.text
-    assert "Fiche créée" in caplog.text
+    assert "Record created" in caplog.text
 
 
 async def test_intake_info_failure_still_creates(

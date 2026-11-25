@@ -49,7 +49,7 @@ async def test_put_profile_creates_validated_version_and_raises_skills(
         name: "declared" for name in CV_FACTS["tools"].split(", ")
     }
     [proof] = levels["Python"][1]
-    assert (proof["kind"], proof["label"]) == ("cv", "Profil maître") and proof["ref_id"]
+    assert (proof["kind"], proof["label"]) == ("cv", "Master profile") and proof["ref_id"]
     async with app.state.session_factory() as db:  # reflet dans les acquis de la mémoire (D6)
         acquis = (await db.execute(select(MemoryItem).where(MemoryItem.kind == "skill"))).scalars()
         reflected = {item.title: item.meta["level"] for item in acquis}

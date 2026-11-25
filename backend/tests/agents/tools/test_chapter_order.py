@@ -54,5 +54,5 @@ def test_prerequisite_first_appearing_in_current_chapter_is_refused() -> None:
     second["introduces"] = first["introduces"]
     first["introduces"] = []
 
-    with pytest.raises(ValidationError, match="chapitre 2.*chapitre précédent"):
+    with pytest.raises(ValidationError, match="Chapter 2.*earlier chapter"):
         PlanDraft.model_validate(draft)

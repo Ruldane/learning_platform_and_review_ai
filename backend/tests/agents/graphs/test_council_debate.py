@@ -58,7 +58,7 @@ async def test_turn_cites_catalog_entries(make_council_runner: MakeCouncil) -> N
     assert first.payload["citations"][0]["index"] == 1
     assert first.payload["citations"][0]["url"] == kept[0]["url"]
     prompt = c.prompt_of(first)
-    assert "[1]\n<<<CONTENU_NON_FIABLE" in prompt  # titre et résumé encadrés, numéro hors cadre
+    assert "[1]\n<<<UNTRUSTED_CONTENT" in prompt  # titre et résumé encadrés, numéro hors cadre
 
 
 async def test_round_two_reply_must_name_another_agent(make_council_runner: MakeCouncil) -> None:
@@ -245,7 +245,7 @@ async def test_scout_debates_with_the_practitioners_it_spotted(
     scout = next(m for m in await c.agent_messages(step_prefix="positions") if m.agent == "scout")
     prompt = c.prompt_of(scout)
     line = prompt.index("- Ada Lovelace — Ingénieure IA")
-    assert prompt.rfind("<<<CONTENU_NON_FIABLE", 0, line) > prompt.rfind("<<<FIN_", 0, line)
+    assert prompt.rfind("<<<UNTRUSTED_CONTENT", 0, line) > prompt.rfind("<<<END_", 0, line)
     others = [m for m in await c.agent_messages(step_prefix="positions") if m.agent != "scout"]
     assert all("Ada Lovelace" not in c.prompt_of(m) for m in others)
 

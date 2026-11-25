@@ -118,7 +118,7 @@ async def test_learned_note_writes_declare_acquis(capture: Capture) -> None:
     [item] = [i for i in await _rows(factory, MemoryItem) if i.kind == "document"]
     assert "Source" not in item.text
     [entry] = await _rows(factory, JournalEntry)
-    assert entry.text == "Note : « Les DataFrames pandas »"
+    assert entry.text == "Note “Les DataFrames pandas”"
 
 
 async def test_tick_task_under_program_lock_and_cards_once(capture: Capture) -> None:
@@ -188,7 +188,7 @@ async def test_failed_reflection_logs_error_type(
     digest = _digest(learned=True, covered_task=None)
     await capture.store.store(ME, "s-7", digest, note, links, source="text")
     assert (await _levels(capture.rt.session_factory))["docker"][0] == "declared"
-    [warning] = [r for r in caplog.records if "non reflétés" in r.getMessage()]
+    [warning] = [r for r in caplog.records if "not reflected" in r.getMessage()]
     assert warning.getMessage().endswith("session s-7 (RuntimeError)")
     assert "indisponible" not in warning.getMessage()
 

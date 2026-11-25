@@ -205,7 +205,7 @@ async def test_temporary_refusals_are_google_unavailable(status: int) -> None:
 def test_oidc_error_accepts_only_known_codes() -> None:
     for code in ("access_denied", "google_unavailable", "token_invalid"):
         assert OidcError(code).code == code
-    with pytest.raises(ValueError, match="inconnu"):
+    with pytest.raises(ValueError, match="unknown"):
         OidcError("access_dnied")
 
 

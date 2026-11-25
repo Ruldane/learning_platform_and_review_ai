@@ -28,7 +28,7 @@ async def test_garbage_raises_pdf_unreadable(extractor: PdfTextExtractor, data: 
     with pytest.raises(PdfUnreadable) as caught:
         await extractor.extract_text(data)
     assert caught.value.code == "pdf_unreadable" and caught.value.status_code == 422
-    assert caught.value.message == "PDF illisible (protégé par mot de passe ou endommagé)."
+    assert caught.value.message == "The PDF is unreadable (password-protected or damaged)."
     assert caught.value.__cause__ is None and caught.value.__suppress_context__
 
 
@@ -52,4 +52,6 @@ def test_extract_pdf_text_is_public_and_synchronous() -> None:
 
 
 def test_pdf_unreadable_takes_an_optional_message() -> None:
-    assert PdfUnreadable("PDF trop long à lire : délai dépassé.").message.startswith("PDF trop")
+    assert PdfUnreadable("The PDF took too long to read: timeout exceeded.").message.startswith(
+        "The PDF took"
+    )

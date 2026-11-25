@@ -15,7 +15,7 @@ from app.agents.tools.cv_compose import base_content
 from app.agents.tools.review_schema import AtsReading, CompanyBrief
 from tests.support.cv_review import ORDER, FakeCvReviewStore, compose_profile, rewrite
 
-START = "<<<CONTENU_NON_FIABLE"
+START = "<<<UNTRUSTED_CONTENT"
 
 
 async def _vars(**over: object) -> dict[str, object]:
@@ -46,7 +46,7 @@ async def test_every_input_is_untrusted() -> None:
     for key in ("posting", "analysis", "brief", "profile", "cv"):
         assert str(variables[key]).startswith(START), key
     assert variables["ats"] == "Greenhouse"
-    assert '<<<CONTENU_NON_FIABLE source="posting:uncovered requirements">>>' in str(
+    assert '<<<UNTRUSTED_CONTENT source="posting:uncovered requirements">>>' in str(
         variables["indicators"]
     )
     assert "Failed check: 1 intitulé n'est pas usuel." in str(variables["indicators"])
@@ -69,7 +69,7 @@ def test_issues_name_refs_and_ids_only() -> None:
     ]
     issues = proposal_issues(items, profile, "a")
     assert issues[0] == 'Reference r1 is not yours: your references start with "a".'
-    assert any("a2 vise un fait qui n'est pas dans le profil" in issue for issue in issues)
+    assert any("a2 targets a fact that is not in the profile" in issue for issue in issues)
     assert "secret" not in problems_text(issues)
 
 

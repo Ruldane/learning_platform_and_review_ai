@@ -29,8 +29,8 @@ from tests.agents.graphs.web_support import (
 from tests.agents.runtime.runner_helpers import all_events, wait_status, wait_true, wait_until
 from tests.features.research.conftest import set_settings
 
-MARKER = "<<<CONTENU_NON_FIABLE"
-END = "<<<FIN_CONTENU_NON_FIABLE>>>"
+MARKER = "<<<UNTRUSTED_CONTENT"
+END = "<<<END_UNTRUSTED_CONTENT>>>"
 
 
 async def _start(web: Web, user_id: str, query: str = "attention multi-têtes", **extra: Any) -> str:
@@ -246,7 +246,7 @@ async def test_web_research_fails_readably_when_search_is_down(
     sid = await _start(web, user_id)
     row = await wait_status(web.factory, user_id, sid, "failed")
     assert row.error is not None and row.error["code"] == "search_unavailable"
-    assert "moteur" in row.error["message"]
+    assert "search engine" in row.error["message"]
     assert await _sources(web, user_id, sid) == []
 
 

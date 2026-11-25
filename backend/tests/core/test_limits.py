@@ -13,7 +13,7 @@ MAX = 10
 ENVELOPE = {
     "error": {
         "code": "file_too_large",
-        "message": "Fichier trop volumineux : 20 Mo au maximum.",
+        "message": "File too large: 20 MB maximum.",
         "details": None,
     }
 }

@@ -47,8 +47,8 @@ from tests.agents.graphs.web_support import (
 from tests.agents.runtime.runner_helpers import fake_llm_with_provider
 from tests.features.research.conftest import set_settings
 
-MARKER = "<<<CONTENU_NON_FIABLE"
-END = "<<<FIN_CONTENU_NON_FIABLE>>>"
+MARKER = "<<<UNTRUSTED_CONTENT"
+END = "<<<END_UNTRUSTED_CONTENT>>>"
 
 
 def test_score_total_adds_five_bounded_criteria() -> None:

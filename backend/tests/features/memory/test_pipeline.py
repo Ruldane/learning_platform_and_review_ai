@@ -50,7 +50,9 @@ async def test_ingest_pdf_indexes_and_search_finds_it(
         item = await MemoryItemRepository(db, USER).get(done.item_id)
     assert res.hits[0].item_id == done.item_id and res.hits[0].kind == "document"
     assert item is not None and item.source_id == doc.id and item.title == "cours"
-    assert item.created_by == "user" and item.meta["reason"] == "Import du document « cours.pdf »."
+    assert (
+        item.created_by == "user" and item.meta["reason"] == "Import of the document 'cours.pdf'."
+    )
     assert item.indexed_at is not None
 
 

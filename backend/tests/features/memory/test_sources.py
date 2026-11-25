@@ -117,7 +117,7 @@ async def test_paste_title_is_the_document_name(memory_providers: MemoryProvider
 
 
 def test_default_paste_title_is_dated() -> None:
-    assert default_paste_title() == f"Texte collé du {date.today():%d/%m/%Y}"
+    assert default_paste_title() == f"Pasted text from {date.today():%d/%m/%Y}"
 
 
 async def test_url_title_from_page_else_host(memory_providers: MemoryProviders) -> None:

@@ -94,7 +94,7 @@ async def test_council_records_each_verdict_for_its_own_page(
             run = await make_council_runner(sid=run.sid, models=PlayedModels())
             assert await _brief(run) == prompt
         assert url in prompt and "Score this source." in prompt
-        assert '<<<CONTENU_NON_FIABLE source="page ' in prompt
+        assert '<<<UNTRUSTED_CONTENT source="page ' in prompt
         reply = {**json.loads(SCORE_82), "reason": f"Verdict de la page {index}."}
         await run.resume(json.dumps(reply))
     await wait_idle(run.runner, run.sid)

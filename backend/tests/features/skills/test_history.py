@@ -15,7 +15,7 @@ def _points(out: Any) -> list[tuple[date, tuple[int, int, int, int], int]]:
     return [
         (
             p.week_start,
-            (p.counts.declare, p.counts.en_cours, p.counts.valide, p.counts.prouve),
+            (p.counts.declared, p.counts.in_progress, p.counts.validated, p.counts.proven),
             p.score,
         )
         for p in out.points

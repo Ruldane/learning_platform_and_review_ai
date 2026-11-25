@@ -149,5 +149,5 @@ async def test_gateway_search_returns_views_and_wrapped_agent_text(
     assert [(h.kind, h.title, h.created_by) for h in found.hits] == [
         ("skill", "Attention", "archivist")
     ]
-    assert "<<<CONTENU_NON_FIABLE" in found.agent_text
+    assert "<<<UNTRUSTED_CONTENT" in found.agent_text
     assert (await gateway.search("u2", "Attention", kinds=None, k=8)).hits == []

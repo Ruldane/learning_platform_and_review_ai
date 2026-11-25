@@ -22,7 +22,7 @@ def test_domain_scores() -> None:
         (None, "in_progress"),
         ("  ", "in_progress"),
     ]
-    assert domain_scores(rows) == [("Autres", 50), ("Code", 100), ("Données", 33)]
+    assert domain_scores(rows) == [("Code", 100), ("Données", 33), ("Other", 50)]
 
 
 def test_domain_scores_rounds_half_up_and_handles_empty() -> None:
@@ -40,3 +40,9 @@ def test_level_counts_has_every_level() -> None:
         "proven": 0,
     }
     assert level_counts([]) == {"declared": 0, "in_progress": 0, "validated": 0, "proven": 0}
+
+
+def test_french_other_domain_is_merged_with_other() -> None:
+    """Skills stored with the French label before the switch to English join "Other"."""
+    rows = [("Autres", "validated"), (None, "declared")]
+    assert domain_scores(rows) == [("Other", 50)]

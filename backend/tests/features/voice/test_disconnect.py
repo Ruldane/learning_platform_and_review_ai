@@ -34,7 +34,7 @@ async def test_disconnect_cancels_the_provider_and_releases_the_account() -> Non
         await port.started.wait()
         return {"type": "http.disconnect"}
 
-    with pytest.raises(AppError, match="Opération audio annulée"):
+    with pytest.raises(AppError, match="Audio operation cancelled"):
         await until_disconnect(disconnect, service.transcribe("compte-fictif", sample_wav()))
     assert port.cancelled.is_set()
     retried = await service.transcribe("compte-fictif", sample_wav())

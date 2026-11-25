@@ -114,10 +114,10 @@ def test_css_values_are_typed(changes: dict[str, str]) -> None:
 def test_css_refuses_font_outside_catalog_and_unbounded_numbers() -> None:
     bad_font = spec()
     bad_font.fonts.body = "Evil'; } * { background: url(x)"
-    with pytest.raises(ValueError, match="catalogue"):
+    with pytest.raises(ValueError, match="catalog"):
         cv_css(bad_font, [])
     bad_number = spec().model_copy(update={"gap_mm": float("nan")})
-    with pytest.raises(ValueError, match="bornes"):
+    with pytest.raises(ValueError, match="bounds"):
         cv_css(bad_number, [])
     css = cv_css(spec(), [])
     assert "url(" not in css and "--accent: #21549a;" in css
@@ -148,7 +148,7 @@ def test_font_faces_point_to_attached_assets() -> None:
     assert "--body-font: 'Lato', 'Liberation Sans', sans-serif;" in css
     assert {"base.css", "cv.css"} <= set(doc.assets)
     assert '<link rel="stylesheet" href="cv.css">' in doc.index_html
-    with pytest.raises(ValueError, match="catalogue"):
+    with pytest.raises(ValueError, match="catalog"):
         cv_css(spec(), [FontFile("Comic Sans", 400, "normal", b"x", ".ttf")])
 
 

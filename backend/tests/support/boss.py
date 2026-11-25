@@ -1,4 +1,4 @@
-"""Programme et réponses générés pour les parcours du Boss."""
+"""Generated program and answers for the Boss flows."""
 
 import json
 
@@ -16,13 +16,13 @@ OUTPUT = json.dumps(
         ]
     }
 )
-CORRECTION = """def planifier(demandes):
-    return [d["id"] for d in sorted(demandes, key=lambda d: not d["urgente"])]
+CORRECTION = """def schedule(requests):
+    return [r["id"] for r in sorted(requests, key=lambda r: not r["urgent"])]
 """
 RUBRIC = json.dumps(
     {
-        "readability": {"score": 4, "feedback": "Tri stable et expression lisible."},
-        "maintenance": {"score": 4, "feedback": "Isoler la priorité dans une fonction ciblée."},
+        "readability": {"score": 4, "feedback": "Stable sort and readable expression."},
+        "maintenance": {"score": 4, "feedback": "Isolate the priority in a focused function."},
     }
 )
 
@@ -38,7 +38,7 @@ async def completed_program(app: FastAPI, user_id: str | None = None) -> str:
         sample_plan(),
         revision=0,
         start_date=MONDAY,
-        reason="Programme fictif du Boss",
+        reason="Fake Boss program",
     )
     async with factory() as db:
         rows = await load(db, user_id, draft.program_id)

@@ -99,9 +99,9 @@ async def test_structured_call_logs_each_failed_attempt_without_any_value(
     await structured_call(model, Title, [HumanMessage("x")], **{**ARGS, "agent": "moderator"})
     warnings = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
     assert len(warnings) == 2
-    assert all("moderator" in w and "étape s" in w for w in warnings)
-    assert "essai 1/3" in warnings[0] and "No JSON object" in warnings[0]
-    assert "essai 2/3" in warnings[1] and "title: Input should be a valid string" in warnings[1]
+    assert all("moderator" in w and "step s" in w for w in warnings)
+    assert "attempt 1/3" in warnings[0] and "No JSON object" in warnings[0]
+    assert "attempt 2/3" in warnings[1] and "title: Input should be a valid string" in warnings[1]
     assert "secret" not in caplog.text and "31415" not in caplog.text
 
 

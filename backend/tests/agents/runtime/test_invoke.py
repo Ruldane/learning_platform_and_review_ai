@@ -218,7 +218,7 @@ async def test_call_deadline_cuts_a_hanging_call_then_retries(
         await invoke_agent(model, [HumanMessage("x")], agent="tutor", step="s", intent="i")
     assert e.value.code == "llm_timeout"
     assert model.calls == 1 + len(RETRY_DELAYS_S) and sleeps == list(RETRY_DELAYS_S)
-    assert caplog.text.count("Appel LLM retenté : agent tutor") == len(RETRY_DELAYS_S)
+    assert caplog.text.count("LLM call retried: agent tutor") == len(RETRY_DELAYS_S)
     assert "TimeoutError" in caplog.text
 
 

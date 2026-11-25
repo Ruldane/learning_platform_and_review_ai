@@ -23,7 +23,7 @@ from app.providers.pdf.layout import SubprocessPdfLayoutExtractor, parse_layout,
 from app.providers.pdf.subprocess import BACKEND_ROOT
 from scripts.sample_cv import SampleCv, make_cv_pdf
 
-_UNREADABLE = "PDF illisible (protégé par mot de passe ou endommagé)."
+_UNREADABLE = "The PDF is unreadable (password-protected or damaged)."
 _EMPTY_PAGE = {"width": 1, "height": 1, "blocks": [], "png": "", "stream": ""}
 
 

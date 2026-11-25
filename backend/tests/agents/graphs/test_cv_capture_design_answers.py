@@ -58,7 +58,7 @@ async def test_adjust_runs_fix_with_instruction(
     assert design_store.kept == 2  # l'ajustement remplace la passe gardée, même moins bien noté
     assert question["question"].startswith("The template matches your CV at 80%.")
     [fix] = run.prompts(FIX_REQUEST)
-    assert '<<<CONTENU_NON_FIABLE source="January\'s instruction">>>' in fix
+    assert '<<<UNTRUSTED_CONTENT source="January\'s instruction">>>' in fix
     assert INSTRUCTION in fix and "Écarts mesurés" not in fix  # 90 % : pas d'écarts décrits
     assert design_store.spec_of(2) == cv_spec()
 

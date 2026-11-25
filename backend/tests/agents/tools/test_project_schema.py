@@ -148,7 +148,7 @@ def test_project_fact_keeps_the_whole_description() -> None:
     assert fact.sources == ["january"]
     assert len(fact.description) <= 600 and all(len(a.text) <= 600 for a in fact.achievements)
     text = " ".join([fact.description, *(a.text for a in fact.achievements)])
-    assert "mot549" in text and last in text and "Compétences : FastAPI" in text
+    assert "mot549" in text and last in text and "Skills: FastAPI" in text
     assert text.count("FastAPI") == 1
 
 

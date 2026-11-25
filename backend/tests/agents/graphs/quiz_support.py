@@ -32,7 +32,7 @@ BODIES = {
     "grade": {"mode": "grade", "attempt_id": ATTEMPT_ID},
 }
 _BLOCK = re.compile(
-    r'<<<CONTENU_NON_FIABLE source="([^"]*)">>>\n(.*?)\n<<<FIN_CONTENU_NON_FIABLE>>>', re.DOTALL
+    r'<<<UNTRUSTED_CONTENT source="([^"]*)">>>\n(.*?)\n<<<END_UNTRUSTED_CONTENT>>>', re.DOTALL
 )
 
 

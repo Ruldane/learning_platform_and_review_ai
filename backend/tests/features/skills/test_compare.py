@@ -41,7 +41,7 @@ async def test_compare_goal_targets_valide_with_coverage(db_session_factory: Fac
     assert [(r.skill_id, r.name, r.domain, r.mine, r.target, r.gap) for r in default.rows] == [
         (pandas, "Pandas", "Données", "validated", "validated", 0),
         (numpy, "NumPy", "Données", "in_progress", "validated", 1),
-        (sql, "SQL", "Autres", None, "validated", 3),
+        (sql, "SQL", "Other", None, "validated", 3),
         (git, "Git", "Outils", "proven", "validated", -1),
     ]
 

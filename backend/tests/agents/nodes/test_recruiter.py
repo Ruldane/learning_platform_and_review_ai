@@ -38,7 +38,7 @@ async def test_recruiter_prompts() -> None:
         "recruiter", mode="confront", round=2, proposals=proposals_text([R1], {}), **variables
     )
     assert "Cross-examination, round 2 of 2." in second and "These proposals are yours" in second
-    assert '<<<CONTENU_NON_FIABLE source="proposals">>>' in second
+    assert '<<<UNTRUSTED_CONTENT source="proposals">>>' in second
     # `keep` restaure le texte d'origine ; le silence laisse l'amendement (D129).
     flat = " ".join(second.split())
     assert "restores your original text" in flat

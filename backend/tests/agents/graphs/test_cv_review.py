@@ -255,9 +255,9 @@ async def test_proposals_with_unknown_fact_are_reasked(
     run = await review_runner(reviewers(ats=[bad]))
     await run.question()
     first, second = calls(run.models, "ats_reader", PROPOSE_REQUEST)
-    assert "vise un fait qui n'est pas dans le profil" in second
+    assert "targets a fact that is not in the profile" in second
     assert "Reference r5 is not yours" in second
-    assert "vise un fait qui n'est pas dans le profil" not in first
+    assert "targets a fact that is not in the profile" not in first
     assert review_store.saved_refs == ["a1", "a2", "r1"]
 
 

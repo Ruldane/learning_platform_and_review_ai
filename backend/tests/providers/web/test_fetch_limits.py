@@ -17,8 +17,8 @@ from tests.providers.web.fetch_support import (
     ok,
 )
 
-TIMEOUT = "Délai dépassé (15 s) en lisant la page."
-UNREACHABLE = "Page injoignable."
+TIMEOUT = "Timed out (15 s) while reading the page."
+UNREACHABLE = "Page unreachable."
 
 
 async def test_rejects_body_over_cap(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -34,7 +34,7 @@ async def test_rejects_body_over_cap(monkeypatch: pytest.MonkeyPatch) -> None:
     with pytest.raises(UrlTooLarge) as caught:
         await fetcher.fetch("https://example.com/")
     assert caught.value.code == "url_too_large" and caught.value.status_code == 413
-    assert caught.value.message == "Page trop volumineuse : 20 Mo au maximum."
+    assert caught.value.message == "Page too large: 20 MB maximum."
     assert len(consumed) <= 2  # arrêté en flux, sans tout télécharger
 
 

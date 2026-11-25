@@ -175,7 +175,7 @@ def test_pull_forward_fills_a_light_week_up_to_the_floor(budget: Budget) -> None
     ]
     assert first.load_minutes == 455 and second.load_minutes == 185
     assert _titles_of(second) == ["Pratiquer 2", "Lire 2.4", "Quiz 2"]
-    assert [m.title for m in first.modules] == ["Module A", "Module B (suite)"]
+    assert [m.title for m in first.modules] == ["Module A", "Module B (continued)"]
     assert [t.title for t in first.modules[1].tasks] == ["Lire 2.1", "Lire 2.2", "Lire 2.3"]
     for w in (first, second):
         _assert_rules(w, budget)
@@ -209,7 +209,11 @@ def test_emptied_module_leaves_its_week(budget: Budget) -> None:
         ("Quiz 2", "quiz", 20, 5, 1),
     ]
     first, second = pull_forward([_light(), _week(2, specs, ("X", "Y"))], budget, floor_share=0.6)
-    assert [m.title for m in first.modules] == ["Module A", "Module X (suite)", "Module Y (suite)"]
+    assert [m.title for m in first.modules] == [
+        "Module A",
+        "Module X (continued)",
+        "Module Y (continued)",
+    ]
     assert [m.title for m in second.modules] == ["Module Y"]
     assert all(t.module_index == 0 for t in second.tasks)
     for w in (first, second):

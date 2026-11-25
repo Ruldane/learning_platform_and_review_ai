@@ -29,7 +29,7 @@ async def _program(rt: ProgramRuntime) -> tuple[str, list[str]]:
 
 
 def _revision(earliest: date, minutes: int = 20) -> FollowupTask:
-    return FollowupTask("Réviser : pandas", "read", minutes, "Relu.", earliest)
+    return FollowupTask("Review: pandas", "read", minutes, "Relu.", earliest)
 
 
 async def test_followup_fills_week_then_spills_within_cap(program_rt: ProgramRuntime) -> None:
@@ -44,7 +44,7 @@ async def test_followup_fills_week_then_spills_within_cap(program_rt: ProgramRun
     async with program_rt.session_factory() as db:
         loaded = await load(db, ME, program_id)
     assert all(loaded.week_load(week) <= CAP for week in loaded.weeks)
-    added = [t for t in loaded.tasks if t.title == "Réviser : pandas"]
+    added = [t for t in loaded.tasks if t.title == "Review: pandas"]
     assert {t.module_id for t in added} == {modules[0]} and len(added) == 3
 
 
@@ -64,7 +64,7 @@ async def test_followup_skips_sunday_and_counts_unplaced(program_rt: ProgramRunt
 
 async def test_tick_tasks_and_retry_are_idempotent(program_rt: ProgramRuntime) -> None:
     program_id, modules = await _program(program_rt)
-    retry = FollowupTask("Refaire le quiz : Module Bases", "quiz", 20, "Refait.", MONDAY)
+    retry = FollowupTask("Retake the quiz: Module Bases", "quiz", 20, "Refait.", MONDAY)
     async with program_rt.program_lock(ME, program_id), program_rt.session_factory() as db:
         await add_followup(db, program_rt, ME, modules[0], [retry])
         loaded = await load(db, ME, program_id)

@@ -44,7 +44,7 @@ def test_normalize_domain_accepts(value: str, expected: str) -> None:
     ],
 )
 def test_normalize_domain_rejects(value: str) -> None:
-    with pytest.raises(ValueError, match="domaine"):
+    with pytest.raises(ValueError, match="domain"):
         normalize_domain(value)
 
 

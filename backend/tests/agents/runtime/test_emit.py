@@ -13,7 +13,7 @@ class State(TypedDict):
 
 
 def test_emit_outside_a_graph_raises() -> None:
-    with pytest.raises(RuntimeError, match="hors d'un nœud"):
+    with pytest.raises(RuntimeError, match="outside a node"):
         emit("agent.started", {"step": "s", "intent": "i"})
 
 

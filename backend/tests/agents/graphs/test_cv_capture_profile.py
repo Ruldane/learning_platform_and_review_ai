@@ -23,12 +23,12 @@ from tests.support.profile import (
     profile_reply,
 )
 
-END = "<<<FIN_CONTENU_NON_FIABLE>>>"
+END = "<<<END_UNTRUSTED_CONTENT>>>"
 READY = "Your master profile is ready to review with 2 roles and 5 skills."
 
 
 def framed(label: str) -> str:
-    return f'<<<CONTENU_NON_FIABLE source="{label}">>>'
+    return f'<<<UNTRUSTED_CONTENT source="{label}">>>'
 
 
 def between(prompt: str, label: str) -> str:

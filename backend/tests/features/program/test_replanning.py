@@ -110,13 +110,13 @@ def test_repack_overflow_appends_suite_week() -> None:
     result = run(plan(third_week(reads=5, minutes=120)))
     assert result.deadline_moved
     new = result.new_weeks[0]
-    assert (new.rank, new.start_date, new.theme) == (4, date(2026, 11, 30), "Suite : Thème 3")
+    assert (new.rank, new.start_date, new.theme) == (4, date(2026, 11, 30), "Continued: Thème 3")
     suite = [x for x in result.tasks if x.suite_rank == 4]
     assert sorted(x.type for x in suite) == ["practice", "quiz"]
     assert [w.rank for w in result.loads] == [2, 3, 4]
     assert all(w.after <= w.cap for w in result.loads)
     after = after_rows(plan(third_week(5, 120)), result.tasks, result.removed, result.new_weeks)
-    assert [w.theme for w in after.weeks][-1] == "Suite : Thème 3"
+    assert [w.theme for w in after.weeks][-1] == "Continued: Thème 3"
 
 
 def test_repack_keeps_done_and_past_tasks() -> None:

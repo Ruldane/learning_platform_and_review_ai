@@ -99,4 +99,4 @@ async def test_scheduler_and_startup_do_not_depend_on_a_local_user(
         assert not hasattr(app.state, "local_user_id")
         await asyncio.sleep(0.5)  # les tâches du démarrage passent
     messages = " ".join(record.getMessage() for record in caplog.records)
-    assert "Planificateur démarré" in messages and "en échec" not in messages
+    assert "Scheduler started" in messages and "en échec" not in messages

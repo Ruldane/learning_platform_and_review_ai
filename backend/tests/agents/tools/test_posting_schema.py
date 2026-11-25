@@ -38,8 +38,8 @@ def test_legacy_checkpoint_levels_read_as_english_codes(old: str, new: str) -> N
 def test_keyword_must_appear_verbatim() -> None:
     problems = keyword_problems(analysis(keywords=[kw("Kubernetes")]), "… Python …")
     assert problems == [
-        "Le mot clé « Kubernetes » ne figure pas tel quel dans l'offre : "
-        "recopie-le exactement comme il est écrit, ou retire-le."
+        "The keyword “Kubernetes” does not appear as is in the posting: "
+        "copy it exactly as it is written, or remove it."
     ]
 
 

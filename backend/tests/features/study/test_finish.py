@@ -223,7 +223,7 @@ async def test_logs_carry_ids_only(
     outcome = replace(full_outcome(), summary="Bilan très personnel")
     await AgentStudyStore(seeded.rt).finish(seeded.user_id, "s-tutor", study_id, outcome)
     text = "\n".join(r.getMessage() for r in caplog.records)
-    assert study_id in text and "Session guidée rangée" in text
+    assert study_id in text and "Guided session stored" in text
     for secret in ("softmax", "Bilan très personnel", "Module Bases", "Lire le chapitre", "pandas"):
         assert secret not in text
 

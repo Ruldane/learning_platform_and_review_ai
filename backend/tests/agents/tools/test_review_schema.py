@@ -149,8 +149,8 @@ def test_unknown_fact_and_double_ref() -> None:
     ]
     problems = proposal_problems(items, P)
     assert len(problems) == 3
-    assert any("a1" in p and "deux fois" in p for p in problems)
-    assert any("pas dans le profil" in p for p in problems)
+    assert any("a1" in p and "twice" in p for p in problems)
+    assert any("not in the profile" in p for p in problems)
     assert any("c999" in p for p in problems)
 
 
@@ -164,8 +164,8 @@ def test_add_of_a_fact_already_in_the_cv_and_remove_of_an_absent_one() -> None:
         P,
     )
     assert len(problems) == 3
-    assert "déjà dans le CV" in problems[0]
-    assert all("absent du CV" in p for p in problems[1:])
+    assert "already in the CV" in problems[0]
+    assert all("absent from the CV" in p for p in problems[1:])
 
 
 def test_target_required_text_required_and_section_must_match() -> None:

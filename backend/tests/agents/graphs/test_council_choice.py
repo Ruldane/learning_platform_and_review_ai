@@ -177,7 +177,7 @@ async def test_token_cap_fails_council_readably(make_council_runner: MakeCouncil
     row = await c.wait_status("failed")
     assert row.error is not None and row.error["code"] == "token_cap_reached"
     failed = await c.events("run.failed")
-    assert failed[-1]["code"] == "token_cap_reached" and "Plafond" in failed[-1]["message"]
+    assert failed[-1]["code"] == "token_cap_reached" and "Token cap" in failed[-1]["message"]
     assert await c.events("proposal.ready") == []
 
 

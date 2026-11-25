@@ -127,7 +127,7 @@ def test_build_authenticator_picks_the_mode(
     assert isinstance(build_authenticator(settings, db_session_factory, "u"), LocalAuthenticator)
     cookie = build_authenticator(google_settings, db_session_factory, None)
     assert isinstance(cookie, CookieAuthenticator)
-    with pytest.raises(RuntimeError, match="utilisateur local"):
+    with pytest.raises(RuntimeError, match="local user"):
         build_authenticator(settings, db_session_factory, None)
 
 
@@ -137,9 +137,9 @@ def test_build_authenticator_picks_the_mode(
         ({"google_client_id": None}, "GOOGLE_CLIENT_ID"),
         ({"google_client_id": ""}, "GOOGLE_CLIENT_ID"),
         ({"google_client_secret": None}, "GOOGLE_CLIENT_SECRET"),
-        ({"allowed_emails": None}, "ALLOWED_EMAILS est vide"),
-        ({"allowed_emails": ""}, "ALLOWED_EMAILS est vide"),
-        ({"allowed_emails": " , "}, "ALLOWED_EMAILS est vide"),
+        ({"allowed_emails": None}, "ALLOWED_EMAILS is empty"),
+        ({"allowed_emails": ""}, "ALLOWED_EMAILS is empty"),
+        ({"allowed_emails": " , "}, "ALLOWED_EMAILS is empty"),
         ({"google_token_url": "http://oauth2.example.invalid/token"}, "GOOGLE_TOKEN_URL"),
         ({"google_token_url": "ftp://localhost/token"}, "GOOGLE_TOKEN_URL"),
     ],

@@ -36,7 +36,7 @@ def _two_weeks_first_known() -> PlanDraft:
     "title",
     [
         "Réviser Python appliqué",
-        "Réviser : Python appliqué",
+        "Review: Python appliqué",
         "réviser: Python appliqué",
         "REVISER Python appliqué",
         "Révision de Python appliqué",
@@ -48,13 +48,13 @@ def _two_weeks_first_known() -> PlanDraft:
 def test_review_title_is_not_doubled(title: str) -> None:
     draft, _ = apply_known(_draft_with_module(title, ["python"]), {"python": "declared"})
     review = draft.weeks[0].modules[0].tasks[0]
-    assert review.title == "Réviser : Python appliqué" and is_review(review)
+    assert review.title == "Review: Python appliqué" and is_review(review)
 
 
 @pytest.mark.parametrize("title", ["Révisions générales", "Revoiture", "Réviser"])
 def test_review_title_keeps_other_titles(title: str) -> None:
     draft, _ = apply_known(_draft_with_module(title, ["python"]), {"python": "declared"})
-    assert draft.weeks[0].modules[0].tasks[0].title == f"Réviser : {title}"
+    assert draft.weeks[0].modules[0].tasks[0].title == f"Review: {title}"
 
 
 def test_check_draft_reports_underloaded_week(budget: Budget) -> None:
@@ -80,16 +80,14 @@ def test_schedule_pulls_tasks_forward_into_light_week() -> None:
     assert first.load_minutes >= 428 and all(w.load_minutes <= 714 for w in plan_.weeks)
     assert second.tasks[-1].type == "quiz"  # quiz et pratique de la semaine 2 restés
     assert "practice" in {t.type for t in second.tasks}
-    assert (
-        first.tasks[-1].type == "quiz" and first.tasks[-1].title == "Faire le quiz de la semaine 1"
-    )
+    assert first.tasks[-1].type == "quiz" and first.tasks[-1].title == "Take the week 1 quiz"
     moved = [t for t in first.tasks if t.title.startswith("Lire le chapitre")]
     assert [t.title for t in moved] == [
         "Lire le chapitre 1",
         "Lire le chapitre 2",
         "Lire le chapitre 3",
     ]
-    assert {first.modules[t.module_index].title for t in moved} == {"Module Projet (suite)"}
+    assert {first.modules[t.module_index].title for t in moved} == {"Module Projet (continued)"}
     assert all(first.start_date <= t.planned_date <= first.tasks[-1].planned_date for t in moved)
     assert second.modules[0].title == "Module Projet"
     assert first.load_minutes == sum(t.minutes for t in first.tasks)

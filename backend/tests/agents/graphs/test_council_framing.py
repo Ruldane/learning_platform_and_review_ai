@@ -24,8 +24,8 @@ from tests.agents.graphs.council_support import (
 from tests.agents.runtime.runner_helpers import wait_until
 from tests.support.council import GOAL_TEXT
 
-START = "<<<CONTENU_NON_FIABLE"
-END = "<<<FIN_CONTENU_NON_FIABLE>>>"
+START = "<<<UNTRUSTED_CONTENT"
+END = "<<<END_UNTRUSTED_CONTENT>>>"
 ANSWER = "Je vise un poste en startup"
 PEOPLE_MARKER = "Find practitioners."
 

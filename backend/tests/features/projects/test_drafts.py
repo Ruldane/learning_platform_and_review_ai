@@ -78,7 +78,7 @@ async def test_the_linkedin_post_is_rechecked_for_terms_and_length(
 ) -> None:
     short = await patch(client, pid, "linkedin_post", content="Un post bien trop court.")
     post = draft(short.json(), "linkedin_post")
-    assert post["status"] == "to_check" and post["flags"] == ["5 mots (80 à 200 attendus)"]
+    assert post["status"] == "to_check" and post["flags"] == ["5 words (80 to 200 expected)"]
     both = await patch(
         client, pid, "linkedin_post", content=CLEAN_POST + " Déployé sur Kubernetes."
     )

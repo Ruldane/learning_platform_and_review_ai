@@ -118,10 +118,10 @@ async def test_save_gap_once_per_session_and_adds_unmatched_needs(
             if s.name not in LEVELS
         }
     assert added == {
-        "LangGraph": "Autres",
-        "Évaluation de RAG": "Autres",
-        "Intégration continue": "Autres",
-        "Anglais professionnel": "Autres",
+        "LangGraph": "Other",
+        "Évaluation de RAG": "Other",
+        "Intégration continue": "Other",
+        "Anglais professionnel": "Other",
     }
     # Rejeu : rien de plus ; les compétences ajoutées restent sans niveau.
     assert await store.save_gap(ME, "s1", posting_id, []) == saved

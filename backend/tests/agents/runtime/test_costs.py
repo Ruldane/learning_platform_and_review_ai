@@ -134,7 +134,7 @@ async def test_cost_tracker_blocks_when_cap_reached(
     with pytest.raises(TokenBudgetExceeded) as e:
         await call(model, tracker)
     assert e.value.code == "token_cap_reached"
-    assert e.value.message == "Plafond de 300000 tokens atteint pour cette session."
+    assert e.value.message == "Token cap of 300000 reached for this session."
     # Le modèle n'a jamais été appelé : aucun appel journalisé.
     async with db_factory() as db:
         assert await LlmCallRepository(db, user_id).list() == []

@@ -128,7 +128,7 @@ async def test_offers_answers_use_owned_records_and_retry_the_same_turn(
     assert "2026-11-02" in prompt and "2026-11-06" in prompt
     assert "Avery Chen" in prompt and "dbt" in prompt and "applied" in prompt
     assert "PRIVATE_OTHER_ACCOUNT_RECORD" not in prompt
-    assert "CONTENU_NON_FIABLE" in prompt and POSTING_TEXT in prompt
+    assert "UNTRUSTED_CONTENT" in prompt and POSTING_TEXT in prompt
 
     await add_newer_offers(app)
     follow_up = {"request_id": str(uuid4()), "question": "Who can I contact about that offer?"}

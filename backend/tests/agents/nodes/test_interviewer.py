@@ -127,7 +127,7 @@ def test_plan_is_exactly_n_distinct_questions() -> None:
     assert len(plan_schema(4).model_validate_json(plan_json(4)).questions) == 4
     with pytest.raises(ValidationError):
         plan_schema(4).model_validate_json(plan_json(5))
-    with pytest.raises(ValidationError, match="identiques"):
+    with pytest.raises(ValidationError, match="identical"):
         plan_schema(2).model_validate_json(_plan("La même ?", "la  même ?"))
 
 
@@ -161,7 +161,7 @@ def test_debrief_needs_four_scores_three_strengths_three_fixes(over: dict[str, A
 def test_debrief_must_cover_the_missed_questions() -> None:
     schema = debrief_schema([1, 2])
     schema.model_validate_json(debrief_json(expected=expected(1, 2)))
-    with pytest.raises(ValidationError, match="questions ratées"):
+    with pytest.raises(ValidationError, match="missed questions"):
         schema.model_validate_json(debrief_json(expected=expected(1)))
     debrief_schema([]).model_validate_json(debrief_json())
 
@@ -170,7 +170,7 @@ def test_prompt_blocks_say_what_is_missing() -> None:
     free = default_context(posting_text=None, analysis=None, dossier=None)
     assert posting_block(free) == NO_POSTING and dossier_block(free) == NO_DOSSIER
     summary = posting_block(default_context(posting_text=None))
-    assert TITLE in summary and "<<<CONTENU_NON_FIABLE" in summary
+    assert TITLE in summary and "<<<UNTRUSTED_CONTENT" in summary
 
 
 def test_exchange_text_shows_follow_up_and_unanswered_follow_up() -> None:

@@ -49,11 +49,11 @@ async def test_graph_lists_nodes_edges_and_domains(db_session_factory: Factory) 
     assert [(n.id, n.name, n.domain, n.level, n.demand, n.evidence_count) for n in graph.nodes] == [
         (numpy, "NumPy", "Données", None, None, 0),
         (pandas, "Pandas", "Données", "validated", None, 2),
-        (sql, "SQL", "Autres", "declared", None, 0),
+        (sql, "SQL", "Other", "declared", None, 0),
     ]
     assert [(e.before_id, e.after_id) for e in graph.edges] == [(numpy, pandas)]
-    # Données : (75 + 0) / 2 = 37,5 → 38 ; Autres : 25.
-    assert [(d.domain, d.score) for d in graph.domains] == [("Autres", 25), ("Données", 38)]
+    # Données: (75 + 0) / 2 = 37.5 → 38; Other: 25.
+    assert [(d.domain, d.score) for d in graph.domains] == [("Données", 38), ("Other", 25)]
 
 
 async def test_detail_shows_structured_and_legacy_evidence(db_session_factory: Factory) -> None:
