@@ -2,22 +2,22 @@ import { useId } from "react";
 import { fieldClass } from "@/shared/ui/fieldClass";
 
 interface ModelFieldProps {
-  /** Étiquette lue par les lecteurs d'écran (le champ n'a pas de texte visible). */
+  /** Label read by screen readers (the field has no visible text). */
   label: string;
-  /** Modèles proposés, ou `null` pour une saisie libre. */
+  /** Models offered, or `null` for free-text entry. */
   models: string[] | null;
-  /** Modèle en vigueur (saisie libre : vide quand on attend un nouveau modèle). */
+  /** Model in effect (free text: empty while a new model is expected). */
   value: string;
   disabled?: boolean;
-  /** Identifiant d'une aide qui décrit le champ (ex. « Saisis le modèle, puis Entrée »). */
+  /** Id of a help text describing the field (e.g. « Saisis le modèle, puis Entrée »). */
   describedBy?: string;
   /**
-   * Liste : à chaque choix. Saisie libre : à la perte du focus ou à Entrée, une fois par saisie.
+   * List: on each choice. Free text: on blur or Enter, once per entry.
    */
   onCommit: (model: string) => void;
 }
 
-/** Modèle d'un niveau : liste déroulante, ou champ texte quand le fournisseur n'a pas de liste. */
+/** A level's model: a dropdown, or a text field when the provider has no list. */
 export function ModelField({
   label,
   models,
@@ -50,7 +50,7 @@ export function ModelField({
         </select>
       ) : (
         <input
-          // La clé remet le champ à jour quand la valeur enregistrée change.
+          // The key resets the field when the saved value changes.
           key={value}
           id={id}
           type="text"
@@ -61,7 +61,7 @@ export function ModelField({
           spellCheck={false}
           onBlur={(event) => onCommit(event.currentTarget.value)}
           onKeyDown={(event) => {
-            // Entrée valide comme la perte du focus (un seul chemin : onBlur).
+            // Enter commits, like losing focus (one path only: onBlur).
             if (event.key === "Enter") event.currentTarget.blur();
           }}
         />

@@ -10,11 +10,11 @@ function clock(totalSeconds: number): string {
 interface TimerFaceProps {
   phase: TimerPhase;
   secondsLeft: number;
-  /** Avancement de la phase, de 0 à 100. */
+  /** Phase progress, from 0 to 100. */
   progress: number;
 }
 
-/** Phase en cours, temps restant (jamais annoncé seconde par seconde) et barre d'avancement. */
+/** Current phase, time remaining (never announced second by second) and progress bar. */
 export function TimerFace({ phase, secondsLeft, progress }: TimerFaceProps) {
   return (
     <>

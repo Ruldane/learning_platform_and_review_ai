@@ -5,23 +5,23 @@ import { errorHint } from "../errorHint";
 
 interface NumberFieldProps {
   label: string;
-  /** Du texte : la saisie peut être vide ou incomplète sans que le champ la réécrive. */
+  /** Text: the entry may be empty or incomplete without the field rewriting it. */
   value: string;
   min?: number;
   max?: number;
-  /** Les bornes dites sous le champ ; par défaut « Entre {min} et {max}. ». */
+  /** The bounds stated under the field; by default « Entre {min} et {max}. ». */
   hint?: string;
   /** Hors bornes (rouge, `aria-invalid`). */
   invalid: boolean;
   /**
-   * L'aide propre du champ est-elle en erreur ? Par défaut : quand le champ l'est. Faux quand le
-   * champ est marqué pour une autre raison (l'ordre de deux bornes) et que sa valeur, elle, est
-   * dans les bornes : l'aide n'a pas à dire « Erreur ».
+   * Is the field's own help in error? By default: when the field is. False when the
+   * field is marked for another reason (the order of two bounds) and its value is
+   * within the bounds: the help must not say "Erreur".
    */
   hintError?: boolean;
-  /** Refusé par le serveur : la valeur n'est jamais citée, seulement le champ. */
+  /** Refused by the server: the value is never quoted, only the field. */
   refused?: boolean;
-  /** Identifiant d'un message de plus qui décrit ce champ (ex. l'ordre des deux bornes). */
+  /** Id of one more message describing this field (e.g. the order of the two bounds). */
   describedBy?: string;
   onChange: (value: string) => void;
 }
@@ -30,7 +30,7 @@ function rangeHint(min?: number, max?: number): string {
   return min !== undefined && max !== undefined ? t("settings.fields.range", { min, max }) : "";
 }
 
-/** Un nombre entier avec ses bornes dites sous le champ (rouges quand elles sont dépassées). */
+/** A whole number with its bounds stated under the field (red when exceeded). */
 export function NumberField({
   label,
   value,

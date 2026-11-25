@@ -4,30 +4,30 @@ import { InlineError } from "@/shared/ui/states/InlineError";
 import { StepButtons } from "./StepButtons";
 
 interface OnboardingStepsProps {
-  /** L'étape affichée, à partir de 1. */
+  /** The step shown, starting at 1. */
   step: number;
   total: number;
   title: string;
-  /** Le libellé du bouton qui avance : « Suivant », « Plus tard », « Passer » ou « Terminer ». */
+  /** Advance label: « Suivant », « Plus tard », « Passer » or « Terminer ». */
   nextLabel: string;
-  /** La raison qui empêche d'avancer, dite et reliée au bouton ; absente : on peut avancer. */
+  /** The reason that blocks moving on, stated and tied to the button; absent: can move on. */
   nextBlockedReason?: string;
-  /** Un enregistrement est en cours : plus aucune action n'est prise. */
+  /** A save is in progress: no further action is taken. */
   busy: boolean;
-  /** L'échec du dernier enregistrement, en français. */
+  /** The error from the last save, in French. */
   error: string | null;
   onPrevious: () => void;
   onNext: () => void;
-  /** « Passer l'accueil » : terminer sans rien changer à la disponibilité. */
+  /** « Passer l'accueil »: finish without changing availability. */
   onSkipAll: () => void;
   children: ReactNode;
 }
 
 /**
- * Le cadre d'une étape du premier lancement : « Étape 2 sur 5 », le titre, le contenu, puis les
- * boutons (`StepButtons`). Le titre prend le focus à chaque étape : le bouton cliqué change de
- * rôle ou disparaît, et sans cela la personne au clavier repartirait du haut de la page. Le
- * compteur est relié au titre (`aria-describedby`) : le lecteur d'écran le dit avec lui.
+ * The frame of a first-run step: « Étape 2 sur 5 », the title, the content, then the
+ * buttons (`StepButtons`). The title takes focus at each step: the clicked button changes
+ * role or disappears, and without this the keyboard user would restart from the top. The
+ * counter is tied to the title (`aria-describedby`): the screen reader reads it with it.
  */
 export function OnboardingSteps({
   step,

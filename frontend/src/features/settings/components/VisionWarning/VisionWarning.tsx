@@ -1,7 +1,7 @@
 import { TriangleAlert } from "lucide-react";
 import { t } from "@/shared/i18n/t";
 
-/** Avertit que la capture du design du CV est désactivée (niveau vision sans modèle à vision). */
+/** Warns that CV design capture is disabled (vision level without a vision model). */
 export function VisionWarning({ visible }: { visible: boolean }) {
   if (!visible) return null;
   return (

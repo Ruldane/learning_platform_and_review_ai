@@ -3,12 +3,12 @@ import { Button } from "@/shared/ui/button";
 import { LoadingState } from "@/shared/ui/states/LoadingState";
 
 interface SummaryWaitProps {
-  /** Le bilan met trop de temps (20 relectures sans résultat). */
+  /** The summary takes too long (20 rereads without a result). */
   late: boolean;
   onRetry: () => void;
 }
 
-/** Attente du bilan : le Tuteur le rédige ; trop long, on le dit et on propose de relire. */
+/** Waiting for the summary: the Tutor writes it; if too long, we say so and offer to reread. */
 export function SummaryWait({ late, onRetry }: SummaryWaitProps) {
   if (!late) return <LoadingState label={t("study.session.writingSummary")} />;
   return (

@@ -15,8 +15,8 @@ const PANELS: Record<SkillViewId, () => ReactNode> = {
 };
 
 /**
- * La carte des compétences (`/skills`) : graphe, radar, progression et comparaison. Seul
- * l'onglet ouvert lit ses données ; le graphe est relu toutes les 30 s.
+ * The skill map (`/skills`): graph, radar, progress and comparison. Only
+ * the open tab reads its data; the graph is reread every 30 s.
  */
 export function SkillsPage() {
   const [view, setView] = useState<SkillViewId>("graph");

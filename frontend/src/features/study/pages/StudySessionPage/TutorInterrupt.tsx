@@ -11,7 +11,7 @@ type InterruptItem = Extract<FeedItem, { kind: "interrupt" }>;
 const TUTOR_QUESTION = "tutor_question";
 const FINISH_SESSION = "finish_session";
 
-/** La valeur de l'option `value` donnée par le back ; sa valeur de repli est celle du contrat. */
+/** The value of the `value` option given by the back end; its fallback value is the contract's. */
 const optionValue = (options: { value: string }[], value: string) =>
   options.find((option) => option.value === value)?.value ?? value;
 
@@ -21,10 +21,10 @@ interface TutorInterruptProps {
 }
 
 /**
- * Une question du Tuteur dans le fil. Une question de section, d'exercice ou finale : la carte du
- * Tuteur (« Je bloque », « Passer » viennent du back, la réponse part par sa valeur). La question
- * de fin : « Terminer la session », qui passe par `PATCH finish` (le temps est enregistré), jamais
- * par la reprise générique. Les autres genres gardent la carte commune.
+ * A Tutor question in the thread. A section, exercise or final question: the Tutor's card
+ * (« Je bloque », « Passer » come from the back end; the answer goes by its value). The closing
+ * question: « Terminer la session », which goes through `PATCH finish` (the time is saved), never
+ * through the generic resume. Other kinds keep the common card.
  */
 export function TutorInterrupt({ item, run }: TutorInterruptProps) {
   const { interrupt, answered } = item;

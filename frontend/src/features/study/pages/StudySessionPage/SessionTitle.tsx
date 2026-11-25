@@ -1,7 +1,7 @@
 import { t } from "@/shared/i18n/t";
 import type { StudySessionOut } from "../../types";
 
-/** La leçon étudiée, son module et le mode du tuteur. */
+/** The lesson studied, its module and the tutor's mode. */
 export function SessionTitle({ session }: { session: StudySessionOut }) {
   return (
     <div>

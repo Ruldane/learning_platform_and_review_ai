@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { testApiKey } from "../api";
 import { settingsKeys } from "../queryKeys";
 
-/** Teste la clé en vigueur et renvoie le `KeyTestResult` ; le back mémorise le dernier test. */
+/** Tests the key in effect, returns the `KeyTestResult`; the back end remembers the last test. */
 export function useTestApiKey() {
   const queryClient = useQueryClient();
   return useMutation({

@@ -8,8 +8,8 @@ import { toCompareView } from "../../toView";
 import { QueryPanel } from "./QueryPanel";
 
 /**
- * La comparaison avec le poste cible de l'objectif. Sans objectif qui ait un programme (404
- * `no_compare_target`), un état vide propose d'en créer un.
+ * The comparison with the goal's target role. Without a goal that has a program (404
+ * `no_compare_target`), an empty state offers to create one.
  */
 export function GoalCompare() {
   const query = useSkillCompare(true);

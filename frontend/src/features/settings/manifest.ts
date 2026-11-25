@@ -10,8 +10,8 @@ import { StylePage } from "./pages/StylePage";
 import { WelcomePage } from "./pages/WelcomePage";
 
 /**
- * Les réglages (SPEC 11, 15.1) et le premier lancement (15.5) : `gate` ferme la mise en page
- * tant que `onboarding_done` est faux et mène à `/welcome`.
+ * Settings (SPEC 11, 15.1) and the first run (15.5): `gate` closes the layout
+ * while `onboarding_done` is false and leads to `/welcome`.
  */
 export const settingsManifest: FeatureManifest = {
   id: "settings",
@@ -21,7 +21,7 @@ export const settingsManifest: FeatureManifest = {
     { path: "settings/availability", Component: AvailabilityPage },
     { path: "settings/study", Component: StudySettingsPage },
     { path: "settings/style", Component: StylePage },
-    // Le premier lancement : une route, jamais une entrée de navigation (la porte y mène), et sans navigation latérale (`bare`).
+    // The first run: a route, never a nav entry (the gate leads there), no side nav (`bare`).
     { path: "welcome", Component: WelcomePage, handle: { bare: true } },
   ],
   legacyRoutes: { [LEGACY_WELCOME_PATH]: WELCOME_PATH },

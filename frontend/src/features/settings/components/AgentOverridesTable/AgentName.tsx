@@ -1,7 +1,7 @@
 import { t } from "@/shared/i18n/t";
 import { agentIdentity } from "@/shared/session-ui";
 
-/** Le nom de l'agent et son rôle ; un agent que le serveur ne connaît plus est signalé. */
+/** The agent's name and role; an agent the server no longer knows is flagged. */
 export function AgentName({ name, known }: { name: string; known: boolean }) {
   const identity = agentIdentity(name);
   return (

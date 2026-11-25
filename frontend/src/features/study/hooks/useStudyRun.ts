@@ -9,7 +9,7 @@ import { useFinishStudy } from "./useFinishStudy";
 
 interface StudyRunOptions {
   session: StudySessionOut;
-  /** « Terminer » a été accepté : le Tuteur conclut. */
+  /** « Terminer » was accepted: the Tutor concludes. */
   finishing: boolean;
   onFinishing: () => void;
   createSocket?: SocketFactory;
@@ -18,10 +18,10 @@ interface StudyRunOptions {
 const OVER = ["completed", "failed", "cancelled", "expired"] as const;
 
 /**
- * Une session d'étude en cours : le flux du Tuteur (seulement quand la session d'agents vit), les
- * actions de session par REST, le temps travaillé (lu à l'envoi, jamais recopié à chaque seconde)
- * et « Terminer ». « Terminer » n'est possible que lorsque le Tuteur attend une réponse
- * (`waiting_user`, sinon 409) ou que sa session s'est arrêtée (`interrupted` : le temps est rangé).
+ * A study session under way: the Tutor's stream (only while the agent session is live), the
+ * session actions over REST, the worked time (read on send, never copied on every second)
+ * and « Terminer ». « Terminer » is possible only when the Tutor waits for an answer
+ * (`waiting_user`, else 409) or its session has stopped (`interrupted`: the time is saved).
  */
 export function useStudyRun({ session, finishing, onFinishing, createSocket }: StudyRunOptions) {
   const queryClient = useQueryClient();
@@ -31,7 +31,7 @@ export function useStudyRun({ session, finishing, onFinishing, createSocket }: S
   const finisher = useFinishStudy(session.id);
   const worked = useRef(0);
 
-  // La session d'agents s'est terminée : l'état de la session d'étude a changé (bilan, arrêt).
+  // The agent session has ended: the study session's state has changed (summary, stop).
   const over = live && (OVER as readonly string[]).includes(stream.status);
   useEffect(() => {
     if (over) void queryClient.invalidateQueries({ queryKey: studyKeys.session(session.id) });

@@ -12,20 +12,20 @@ interface TierModelSelectProps {
   disabled?: boolean;
 }
 
-/** Fournisseur choisi vers un fournisseur à saisie libre, en attente du nom du modèle. */
+/** Provider chosen for free-text entry, waiting for the model name. */
 interface PendingProvider {
   provider: string;
-  /** Valeur à laquelle ce choix se rapporte : il tombe si elle change (préréglage, rechargement). */
+  /** Value this choice refers to: it drops if that value changes (preset, reload). */
   base: ModelChoice;
 }
 
-/** Liste des modèles proposés, ou `null` pour une saisie libre (aucune liste, ou liste vide). */
+/** List of offered models, or `null` for free-text entry (no list, or an empty list). */
 function listedModels(providers: ProviderOption[], name: string) {
   const models = providers.find((option) => option.name === name)?.models;
   return models?.length ? models : null;
 }
 
-/** Fournisseur puis modèle d'un niveau : liste déroulante, ou saisie libre sans liste. */
+/** Provider then model of a level: a dropdown, or free-text entry without a list. */
 export function TierModelSelect({
   tier,
   value,
@@ -45,7 +45,7 @@ export function TierModelSelect({
   function pickProvider(name: string) {
     const first = listedModels(providers, name)?.[0];
     if (first === undefined) {
-      // Saisie libre : rien n'est enregistré tant que le modèle n'est pas saisi.
+      // Free text: nothing is saved until the model is entered.
       setPending({ provider: name, base: value });
       return;
     }

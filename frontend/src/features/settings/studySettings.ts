@@ -14,11 +14,11 @@ export const WEEKDAYS = [
 
 export type Weekday = (typeof WEEKDAYS)[number];
 
-/** Bornes du contrat : travail de 10 à 120 minutes, pause de 0 à 60. */
+/** Contract bounds: work from 10 to 120 minutes, break from 0 to 60. */
 export const WORK_RANGE = { min: 10, max: 120 } as const;
 export const BREAK_RANGE = { min: 0, max: 60 } as const;
 
-/** Les réglages d'étude tels que les édite la page : les nombres restent du texte pendant la saisie. */
+/** The study settings as the page edits them: the numbers stay text while typing. */
 export interface StudyDraft {
   work: string;
   pause: string;
@@ -38,7 +38,7 @@ export interface StudyDraftErrors {
 
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
-/** Les réglages du serveur vers le brouillon (valeurs par défaut du back si absentes). */
+/** Server settings to the draft (back-end defaults when missing). */
 export function toStudyDraft(settings: SettingsOut): StudyDraft {
   return {
     work: String(settings.study_work_minutes),
@@ -54,7 +54,7 @@ const wholeBetween = (text: string, range: { min: number; max: number }): boolea
   return text.trim() !== "" && Number.isInteger(value) && value >= range.min && value <= range.max;
 };
 
-/** Quels champs sont hors des bornes du contrat ; rien n'est envoyé tant qu'un champ l'est. */
+/** Which fields are outside the contract bounds; nothing is sent while one is. */
 export function studyDraftErrors(draft: StudyDraft): StudyDraftErrors {
   return {
     work: !wholeBetween(draft.work, WORK_RANGE),
@@ -71,8 +71,8 @@ export const sameStudyDraft = (a: StudyDraft, b: StudyDraft): boolean =>
   JSON.stringify(a) === JSON.stringify(b);
 
 /**
- * Corps du `PUT /settings` après une modification de l'étude : tous les autres réglages (niveaux,
- * recherche, disponibilités…) sont repris tels quels de `current`, jamais écrasés.
+ * Body of `PUT /settings` after a study change: all the other settings (levels,
+ * search, availability…) are copied as-is from `current`, never overwritten.
  */
 export function withStudySettings(current: SettingsOut, draft: StudyDraft): UserSettings {
   return {
@@ -84,12 +84,12 @@ export function withStudySettings(current: SettingsOut, draft: StudyDraft): User
   };
 }
 
-/** Fuseaux proposés dans la liste (repli minimal si le navigateur ne sait pas les lister). */
+/** Time zones offered in the list (minimal fallback if the browser cannot list them). */
 const FALLBACK_ZONES = ["Europe/Paris", "Europe/London", "America/New_York", "Asia/Tokyo", "UTC"];
 
 /**
- * Les fuseaux IANA que connaît le navigateur (`Intl.supportedValuesOf`), avec le fuseau actuel
- * même s'il n'y figure pas (UTC, ancien nom) : le choix enregistré n'est jamais perdu.
+ * The IANA time zones the browser knows (`Intl.supportedValuesOf`), plus the current zone
+ * even if it is not among them (UTC, old name): the saved choice is never lost.
  */
 export function timezoneChoices(current: string): string[] {
   const supported = (Intl as { supportedValuesOf?: (key: string) => string[] }).supportedValuesOf;

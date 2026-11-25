@@ -2,7 +2,7 @@ import type { SearchSettingsView, SettingsOut } from "../types";
 import { withSearchSettings } from "../userSettings";
 import { useUpdateSettings } from "./useUpdateSettings";
 
-/** Enregistre les réglages de recherche : `PUT /settings` complet, le reste des réglages inchangé. */
+/** Saves the search settings: a full `PUT /settings`, the other settings unchanged. */
 export function useSaveSearchSettings(settings: SettingsOut) {
   const update = useUpdateSettings();
   return {

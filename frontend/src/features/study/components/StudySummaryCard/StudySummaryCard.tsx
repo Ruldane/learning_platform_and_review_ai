@@ -13,7 +13,7 @@ function cardsText(count: number): string {
   return t(count === 1 ? "study.summary.cardsOne" : "study.summary.cardsMany", { count });
 }
 
-/** Bilan d'une session terminée : résumé, temps travaillé, tâches cochées, fiches créées, acquis. */
+/** Summary of a finished session: recap, worked time, ticked tasks, cards created, gains. */
 export function StudySummaryCard({ summary }: StudySummaryCardProps) {
   const titleId = useId();
   return (

@@ -1,11 +1,11 @@
-/** Clés TanStack Query de la feature (jamais de donnée sensible dedans). */
+/** TanStack Query keys of the feature (never sensitive data in them). */
 export const settingsKeys = {
   settings: ["settings"],
   apiKeys: ["api-keys"],
   models: ["models"],
   agents: ["agents"],
   searchUsage: ["search-usage"],
-  /** Lus à l'accueil seulement (étape 1 du premier lancement), à leur propre rythme. */
+  /** Read on the home page only (first-run step 1), at their own pace. */
   onboardingHealth: ["onboarding", "health"],
   onboardingEmbedding: ["onboarding", "embedding"],
 } as const;

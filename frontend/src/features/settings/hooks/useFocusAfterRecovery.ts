@@ -1,9 +1,9 @@
 import { useEffect, useRef } from "react";
 
 /**
- * Rend le focus à l'élément de `ref` quand une lecture qui avait échoué réussit : le bouton
- * « Réessayer » cliqué est démonté avec l'erreur, et sans cela le focus tomberait sur `body`.
- * N'agit jamais au simple chargement, ni quand rien n'avait échoué.
+ * Gives focus back to the element of `ref` when a read that had failed succeeds: the button
+ * « Réessayer » clicked is unmounted with the error; without this, focus falls to `body`.
+ * Never acts on a plain load, nor when nothing had failed.
  */
 export function useFocusAfterRecovery<T extends HTMLElement>(failed: boolean) {
   const ref = useRef<T>(null);

@@ -1,10 +1,10 @@
 import { StudyStatsTopbar } from "./components/StudyStatsTopbar";
 import { useStudySummary } from "./hooks/useStudySummary";
 
-/** Relecture de la série et des heures : toutes les 60 s. */
+/** Re-reading of the streak and hours: every 60 s. */
 const REFRESH_MS = 60_000;
 
-/** Emplacement `topbar` de la feature : lit le résumé de l'étude et le passe à `StudyStatsTopbar`. */
+/** The `topbar` slot: reads the study summary and passes it to `StudyStatsTopbar`. */
 export function StudyTopbarSlot() {
   const summary = useStudySummary(REFRESH_MS);
   const stats = summary.data

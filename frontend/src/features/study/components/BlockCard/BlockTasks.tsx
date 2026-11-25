@@ -2,7 +2,7 @@ import { t } from "@/shared/i18n/t";
 import { formatMinutes } from "@/shared/lib/format";
 import type { BlockView } from "../viewTypes";
 
-/** Les tâches du bloc (type, titre, durée) et leur total. */
+/** The block's tasks (type, title, duration) and their total. */
 export function BlockTasks({ tasks }: { tasks: BlockView["tasks"] }) {
   const total = tasks.reduce((sum, task) => sum + task.minutes, 0);
   return (

@@ -7,13 +7,13 @@ import { matchPreset } from "./matchPreset";
 
 interface PresetPickerProps {
   presets: PresetMap;
-  /** Choix actuels des quatre niveaux : sert à repérer le préréglage en vigueur. */
+  /** Current choices of the four levels: used to spot the preset in effect. */
   current: TierChoices;
   onApply: (name: PresetName) => void;
   disabled?: boolean;
 }
 
-/** Préréglages en un clic ; « Personnalisé » est l'état affiché hors préréglage. */
+/** One-click presets; « Personnalisé » is the state shown outside any preset. */
 export function PresetPicker({ presets, current, onApply, disabled = false }: PresetPickerProps) {
   const active = matchPreset(current, presets);
   return (

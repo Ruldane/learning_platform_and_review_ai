@@ -16,13 +16,13 @@ const TICKS = [0, 25, 50, 75, 100];
 
 interface SkillRadarProps {
   domains: DomainScoreView[];
-  /** L'action de l'état vide (règle 15.4 : jamais d'impasse). */
+  /** The action of the empty state (rule 15.4: never a dead end). */
   emptyAction?: { label: string; onClick: () => void };
 }
 
 /**
- * Radar des scores par domaine, de 0 à 100. Les mêmes scores sont écrits en liste sous le dessin :
- * le dessin seul ne se lit pas au lecteur d'écran.
+ * Radar of scores per domain, from 0 to 100. The same scores are listed under the drawing:
+ * the drawing alone cannot be read by a screen reader.
  */
 export function SkillRadar({ domains, emptyAction }: SkillRadarProps) {
   const reduced = useReducedMotion();
@@ -42,7 +42,7 @@ export function SkillRadar({ domains, emptyAction }: SkillRadarProps) {
           <RadarChart data={domains} outerRadius="75%">
             <PolarGrid />
             <PolarAngleAxis dataKey="domain" tick={{ fill: "var(--foreground)", fontSize: 13 }} />
-            {/* Graduations entre le premier et le deuxième rayon : elles ne recouvrent aucun nom. */}
+            {/* Ticks between the first and second ring: they overlap no name. */}
             <PolarRadiusAxis
               domain={[0, 100]}
               ticks={TICKS}

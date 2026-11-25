@@ -4,8 +4,8 @@ import { errorMessage } from "@/shared/api/errors";
 export type TrackAction = <T>(action: () => Promise<T>) => Promise<T>;
 
 /**
- * Garde le dernier message d'erreur (français) des actions de l'écran. Lancer une nouvelle
- * action l'efface ; l'erreur est relancée pour que l'appelant sache que l'action a échoué.
+ * Keeps the last error message (French) of the screen's actions. Starting a new
+ * action clears it; the error is rethrown so the caller knows the action failed.
  */
 export function useActionError() {
   const [error, setError] = useState<string | null>(null);

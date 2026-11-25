@@ -3,7 +3,7 @@ import { t } from "@/shared/i18n/t";
 import { EmptyState } from "@/shared/ui/states/EmptyState";
 import { ErrorState } from "@/shared/ui/states/ErrorState";
 
-/** La session n'a pas pu être lue : introuvable (état vide), ou une erreur à réessayer. */
+/** The session could not be read: not found (empty state), or an error to retry. */
 export function LoadFailed(props: { error: unknown; onRetry: () => void; onHome: () => void }) {
   if (props.error instanceof ApiError && props.error.status === 404) {
     return (

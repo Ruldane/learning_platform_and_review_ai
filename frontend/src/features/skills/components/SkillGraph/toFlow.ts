@@ -5,7 +5,7 @@ import { levelKey } from "../levels";
 import type { SkillEdgeView, SkillNodeView } from "../viewTypes";
 import type { SkillFlowNode } from "./SkillNode";
 
-/** Les nœuds déjà placés, prêts pour React Flow : focalisables au clavier, fixes à la souris. */
+/** The nodes already placed, ready for React Flow: keyboard-focusable, fixed for the mouse. */
 export function toFlowNodes(
   nodes: SkillNodeView[],
   placed: Map<string, PositionedNode>,
@@ -39,7 +39,7 @@ export function toFlowNodes(
   return result;
 }
 
-/** Les liens de prérequis dont les deux bouts sont sur le graphe : du prérequis vers ce qui en dépend. */
+/** Prerequisite links whose two ends are on the graph: from prerequisite to dependent. */
 export function toFlowEdges(edges: SkillEdgeView[], placed: Map<string, PositionedNode>): Edge[] {
   return edges
     .filter((edge) => placed.has(edge.beforeId) && placed.has(edge.afterId))
@@ -54,7 +54,7 @@ export function toFlowEdges(edges: SkillEdgeView[], placed: Map<string, Position
     }));
 }
 
-/** Les textes d'accessibilité de React Flow, en français. */
+/** React Flow's accessibility texts, in French. */
 export function ariaLabels(): Partial<AriaLabelConfig> {
   return {
     "node.a11yDescription.default": t("skills.graph.a11y.node"),

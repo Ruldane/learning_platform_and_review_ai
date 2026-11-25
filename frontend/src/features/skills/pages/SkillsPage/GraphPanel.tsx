@@ -7,10 +7,10 @@ import { toGraphView } from "../../toView";
 import { QueryPanel } from "./QueryPanel";
 import { SkillDetailSlot } from "./SkillDetailSlot";
 
-/** Les objectifs : c'est un objectif (et son programme) qui remplit la carte. */
+/** The goals: a goal (and its program) fills the map. */
 const GOALS_PATH = "/learn/goals";
 
-/** Rend le focus au nœud de la compétence refermée (le clavier retrouve sa place dans le graphe). */
+/** Gives focus back to the closed skill's node: the keyboard keeps its place. */
 function focusNode(root: HTMLElement | null, skillId: string) {
   const nodes = root?.querySelectorAll<HTMLElement>(".react-flow__node") ?? [];
   Array.from(nodes)
@@ -18,7 +18,7 @@ function focusNode(root: HTMLElement | null, skillId: string) {
     ?.focus();
 }
 
-/** L'onglet Graphe : la carte relue toutes les 30 s ; un nœud ouvre le tiroir de la compétence. */
+/** The Graph tab: the map reread every 30 s; a node opens the skill's drawer. */
 export function GraphPanel() {
   const query = useSkillGraph();
   const root = useRef<HTMLDivElement>(null);

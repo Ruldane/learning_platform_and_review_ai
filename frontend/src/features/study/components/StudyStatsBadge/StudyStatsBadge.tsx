@@ -13,8 +13,8 @@ function streakText(days: number): string {
 }
 
 /**
- * Série de jours et heures de la semaine, en texte et en icônes de la bibliothèque (jamais un
- * émoji : il se rend différemment d'un système à l'autre et se lit mal au lecteur d'écran).
+ * Day streak and hours of the week, as text and library icons (never an
+ * emoji: it renders differently from one system to another and reads badly to screen readers).
  */
 export function StudyStatsBadge({ streakDays, weekMinutes }: StudyStatsBadgeProps) {
   return (

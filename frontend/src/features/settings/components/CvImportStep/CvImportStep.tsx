@@ -6,27 +6,27 @@ import { PdfPicker } from "./PdfPicker";
 import { SendRow } from "./SendRow";
 
 interface CvImportStepProps {
-  /** Les deux PDF retenus, gardés par la page. */
+  /** The two PDFs picked, kept by the page. */
   documents: CvDocuments;
-  /** Une clé d'API existe : sans elle, rien ne peut être lu. */
+  /** An API key exists: without one, nothing can be read. */
   hasKey: boolean;
   pending: boolean;
   launchMenu?: ReactNode;
-  /** Le refus du serveur (déjà en français) ; les fichiers choisis restent pour réessayer. */
+  /** The server's refusal (already in French); the chosen files stay so the user can retry. */
   error: string | null;
-  /** Les documents sont partis : le serveur les lit en arrière-plan. */
+  /** The documents have been sent: the server reads them in the background. */
   imported: boolean;
   onImport: (documents: { cv: File; linkedin?: File }) => void;
-  /** Revenir à l'étape de la clé (sans clé, l'import n'est pas ouvert). */
+  /** Go back to the key step (without a key, the import is not open). */
   onGoToKey: () => void;
 }
 
 /**
- * L'import du CV (PDF) et du profil LinkedIn (PDF, facultatif) du premier lancement. Rien ne part
- * tant que le CV manque ou qu'aucune clé n'existe (la lecture n'aurait aucun modèle à appeler) :
- * la raison est dite et reliée au bouton. Un fichier qui n'est pas un PDF, ou de plus de 10 Mo,
- * est refusé tout de suite ; un LinkedIn refusé est dit, le CV partirait seul. L'étape se passe
- * sans rien envoyer (c'est le bouton de la page qui avance).
+ * Importing the CV (PDF) and the LinkedIn profile (PDF, optional) on first run. Nothing is sent
+ * while the CV is missing or no key exists (reading would have no model to call):
+ * the reason is stated and tied to the button. A file that is not a PDF, or larger than 10 MB,
+ * is refused right away; a refused LinkedIn file is stated, the CV would go on its own. The step
+ * sends nothing (the page's button moves on).
  */
 export function CvImportStep(props: CvImportStepProps) {
   const { documents, hasKey, pending, error, imported, onImport, onGoToKey } = props;

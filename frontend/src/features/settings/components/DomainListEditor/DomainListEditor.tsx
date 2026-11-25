@@ -5,7 +5,7 @@ import { DomainInput } from "./DomainInput";
 import { normalizeDomain } from "./normalizeDomain";
 
 interface DomainListEditorProps {
-  /** Intitulé du groupe (« Domaines privilégiés », « Domaines exclus »). */
+  /** Group title (« Domaines privilégiés », « Domaines exclus »). */
   label: string;
   value: string[];
   onChange: (domains: string[]) => void;
@@ -13,8 +13,8 @@ interface DomainListEditorProps {
 }
 
 /**
- * Liste de domaines : ajout par champ et bouton (Entrée aussi), retrait par bouton. La saisie est
- * normalisée comme au back ; un domaine invalide, en double ou en trop donne un message en ligne.
+ * Domain list: add through a field and button (Enter too), remove through a button. Input is
+ * normalized as on the back end; an invalid, duplicate or excessive domain gives an inline message.
  */
 export function DomainListEditor({ label, value, onChange, max = 50 }: DomainListEditorProps) {
   const [draft, setDraft] = useState("");

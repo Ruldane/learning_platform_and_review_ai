@@ -3,7 +3,7 @@ import type { ApiKeyEntry } from "../viewTypes";
 
 interface ApiKeySummaryProps {
   entry: ApiKeyEntry;
-  /** Identifiant du titre : la carte parente s'en sert pour se nommer. */
+  /** Title id: the parent card uses it to name itself. */
   headingId: string;
 }
 
@@ -12,7 +12,7 @@ function lastTestLabel(ok: boolean | null) {
   return ok ? t("settings.keys.lastTestOk") : t("settings.keys.lastTestFailed");
 }
 
-/** État d'une clé : fournisseur, 4 derniers caractères, origine, avertissements. Jamais la clé. */
+/** Key state: provider, last 4 characters, origin, warnings. Never the key. */
 export function ApiKeySummary({ entry, headingId }: ApiKeySummaryProps) {
   const origin =
     entry.source === "env" ? t("settings.keys.sourceEnv") : t("settings.keys.sourceUi");

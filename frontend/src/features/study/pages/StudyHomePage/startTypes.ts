@@ -1,11 +1,11 @@
 import type { StudyModeView } from "../../components/viewTypes";
 import type { useStartStudy } from "../../hooks/useStartStudy";
 
-/** Ce que les deux départs (bloc du jour, leçon choisie) se partagent : le mode et le lanceur. */
+/** What the two starts (day's block, chosen lesson) share: the mode and the launcher. */
 export interface StartProps {
   mode: StudyModeView;
   onMode: (mode: StudyModeView) => void;
   starter: ReturnType<typeof useStartStudy>;
-  /** Session déjà ouverte, à reprendre. */
+  /** Session already open, to resume. */
   openSessionId: string | null;
 }

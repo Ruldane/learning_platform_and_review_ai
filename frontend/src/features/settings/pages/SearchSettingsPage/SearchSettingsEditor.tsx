@@ -19,9 +19,9 @@ const sameSettings = (a: SearchSettingsView, b: SearchSettingsView) =>
   JSON.stringify(a) === JSON.stringify(b);
 
 /**
- * Le formulaire des réglages de recherche. Le brouillon n'existe que pendant l'édition (`null` :
- * on montre les réglages du serveur). L'enregistrement se fait par bouton, jamais à la frappe :
- * les plafonds transmettent des valeurs intermédiaires (D79). En cas d'échec le brouillon reste.
+ * The search settings form. The draft exists only while editing (`null`:
+ * the server's settings are shown). Saving is by button, never on each keystroke:
+ * the caps pass intermediate values (D79). On failure the draft stays.
  */
 export function SearchSettingsEditor({ settings, usage }: SearchSettingsEditorProps) {
   const stored = toSearchSettingsView(settings);
@@ -37,11 +37,11 @@ export function SearchSettingsEditor({ settings, usage }: SearchSettingsEditorPr
   };
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    // Entrée dans un plafond invalide : rien ne part (le brouillon garde la dernière valeur valide).
+    // Entry into an invalid cap: nothing is sent (the draft keeps the last valid value).
     if (!dirty || capsInvalid || saver.pending || draft === null) return;
     saver.save(draft).then(
       () => setDraft(null),
-      () => undefined, // l'erreur est affichée depuis la mutation ; la saisie est gardée
+      () => undefined, // the error is shown from the mutation; the input is kept
     );
   };
 

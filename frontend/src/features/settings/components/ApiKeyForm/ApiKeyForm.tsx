@@ -4,18 +4,18 @@ import { Button } from "@/shared/ui/button";
 import { fieldClass } from "@/shared/ui/fieldClass";
 
 interface ApiKeyFormProps {
-  /** Nom du fournisseur, pour l'étiquette du champ. */
+  /** Provider name, for the field label. */
   providerLabel: string;
   pending: boolean;
-  /** Peut renvoyer une promesse : si elle échoue, la saisie est conservée pour réessayer. */
+  /** May return a promise: if it fails, the input is kept so the user can retry. */
   onSave: (key: string) => void | Promise<void>;
 }
 
 /**
- * Saisie d'une clé : champ masqué, jamais prérempli, vidé une fois la clé enregistrée.
- * Le champ est non contrôlé : un champ contrôlé recopie sa valeur dans l'attribut HTML `value`,
- * donc la clé serait lisible dans le DOM (copie du HTML, extensions, sélecteurs CSS). Seul un
- * booléen (« y a-t-il du texte ? ») passe par l'état ; la clé n'est lue qu'à l'envoi.
+ * Key input: masked field, never pre-filled, cleared once the key is saved.
+ * The field is uncontrolled: a controlled field copies its value into the HTML `value` attribute,
+ * so the key would be readable in the DOM (HTML copy, extensions, CSS selectors). Only a
+ * boolean ("is there any text?") goes through state; the key is read only when sending.
  */
 export function ApiKeyForm({ providerLabel, pending, onSave }: ApiKeyFormProps) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -32,7 +32,7 @@ export function ApiKeyForm({ providerLabel, pending, onSave }: ApiKeyFormProps) 
       input.value = "";
       setHasText(false);
     } catch {
-      // L'écran affiche l'erreur ; on garde la saisie pour que l'utilisateur puisse réessayer.
+      // The screen shows the error; the input is kept so the user can retry.
     }
   }
 
@@ -44,7 +44,7 @@ export function ApiKeyForm({ providerLabel, pending, onSave }: ApiKeyFormProps) 
       <input
         id={inputId}
         type="password"
-        // « new-password » décourage les gestionnaires de mots de passe mieux que « off ».
+        // "new-password" discourages password managers better than "off".
         autoComplete="new-password"
         autoCapitalize="off"
         spellCheck={false}

@@ -4,8 +4,8 @@ import { useApiKeys } from "./useApiKeys";
 import { useModels } from "./useModels";
 
 /**
- * Les clés et les modèles lus pour le premier lancement, et ce qu'il en résulte (`planKeys`). Rien
- * n'est calculé tant que l'une des deux lectures manque : `entries` et `plan` restent indéfinis.
+ * The keys and models read for the first run, and what results from them (`planKeys`). Nothing
+ * is computed while either read is missing: `entries` and `plan` stay undefined.
  */
 export function useKeyPlan(settings: SettingsOut) {
   const keys = useApiKeys();

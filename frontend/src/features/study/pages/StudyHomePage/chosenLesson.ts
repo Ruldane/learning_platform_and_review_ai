@@ -3,11 +3,11 @@ import { clampQuestion } from "../../toView";
 
 export interface ChosenLesson {
   lessonId: string;
-  /** Le passage de la leçon sur lequel January demande au tuteur (déjà coupé à 2 000 caractères). */
+  /** The lesson's passage that January asks the tutor about (already cut at 2,000 characters). */
   question: string | null;
 }
 
-/** Ce que porte l'état de navigation (« Demander au tuteur ») : tout autre contenu est ignoré. */
+/** What the navigation state carries (« Demander au tuteur »): any other content is ignored. */
 function readState(state: unknown): { lessonId: string | null; question: string | null } {
   const record =
     typeof state === "object" && state !== null ? (state as Record<string, unknown>) : {};
@@ -18,8 +18,8 @@ function readState(state: unknown): { lessonId: string | null; question: string 
 }
 
 /**
- * La leçon choisie hors du bloc du jour : l'état de navigation `{ lessonId, question }` (bouton
- * « Demander au tuteur » d'une leçon) ou `?lesson={id}` (sans question). `null` : le bloc du jour.
+ * The lesson chosen outside the day's block: the navigation state `{ lessonId, question }` (the
+ * « Demander au tuteur » button) or `?lesson={id}` (no question). `null`: the day's block.
  */
 export function useChosenLesson(): ChosenLesson | null {
   const location = useLocation();

@@ -13,8 +13,8 @@ interface ChosenLessonCardProps {
 }
 
 /**
- * La leçon choisie à la place du bloc du jour : son titre, le passage sur lequel le tuteur est
- * interrogé s'il y en a un, et le bouton de départ. Les tâches du bloc ne sont pas cochées.
+ * The lesson chosen in place of the day's block: its title, the passage the tutor is
+ * asked about if there is one, and the start button. The block's tasks are not ticked.
  */
 export function ChosenLessonCard({ chosen, disabled, onStart }: ChosenLessonCardProps) {
   const lesson = useLessonTitle(chosen.lessonId);

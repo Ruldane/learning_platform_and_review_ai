@@ -7,8 +7,8 @@ import { GoalCompare } from "./GoalCompare";
 import { PostingCompare } from "./PostingCompare";
 
 /**
- * L'onglet Comparaison : avec le poste cible de l'objectif, ou avec une offre analysée (choisie
- * dans la liste). Seule la cible ouverte lit ses données.
+ * The Comparison tab: with the goal's target role, or with an analyzed offer (chosen
+ * from the list). Only the open target reads its data.
  */
 export function ComparePanel() {
   const [target, setTarget] = useState<CompareTargetView>("goal");

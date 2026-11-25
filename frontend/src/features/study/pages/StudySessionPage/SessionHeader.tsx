@@ -16,10 +16,10 @@ interface SessionHeaderProps {
 }
 
 /**
- * En-tête de la session : la leçon, le mode, le minuteur et « Terminer ». « Terminer » n'est actif
- * que lorsque le Tuteur attend une réponse ; sinon une phrase dit pourquoi. Une session du Tuteur
- * arrêtée (`interrupted`) se dit ici, avec « Terminer » (le temps est rangé) et un nouveau départ ;
- * le minuteur s'arrête tant que la session est arrêtée.
+ * The session header: the lesson, the mode, the timer and « Terminer ». « Terminer » is active
+ * only when the Tutor waits for an answer; otherwise a sentence says why. A Tutor session
+ * stopped (`interrupted`) is said here, with « Terminer » (the time is saved) and a new start;
+ * the timer stops while the session is stopped.
  */
 export function SessionHeader(props: SessionHeaderProps) {
   const { session, run, finishing, workMinutes, breakMinutes } = props;

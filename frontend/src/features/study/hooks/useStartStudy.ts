@@ -9,10 +9,10 @@ import { openSessionIn } from "../toView";
 import type { StudyStart } from "../types";
 
 /**
- * Départ d'une session : ouvre la session puis va sur sa page. Une session déjà ouverte (409
- * `study_already_open`, ou 200 pour la même leçon) n'est pas une erreur : on y va. 404
- * `no_block_today` : `noBlock`, pour proposer de choisir une leçon (et `onNoBlock`, s'il est
- * donné). Un seul départ à la fois.
+ * Start of a session: opens the session, then goes to its page. A session already open (409
+ * `study_already_open`, or 200 for the same lesson) is not an error: we go there. 404
+ * `no_block_today`: `noBlock`, to offer choosing a lesson (and `onNoBlock`, if it is
+ * given). Only one start at a time.
  */
 export function useStartStudy(onNoBlock?: () => void) {
   const launch = useLaunchSource();
@@ -33,7 +33,7 @@ export function useStartStudy(onNoBlock?: () => void) {
     try {
       const started = await mutateAsync(body);
       void navigate(studySessionPath(started.study_session_id));
-      return; // la page se quitte : le verrou reste posé, un second clic ne rouvre rien
+      return; // the page is left: the lock stays set, a second click opens nothing
     } catch (failure) {
       const details = failure instanceof ApiError ? failure.details : null;
       const open =

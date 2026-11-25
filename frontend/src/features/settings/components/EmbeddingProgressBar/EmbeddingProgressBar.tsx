@@ -1,18 +1,18 @@
 import { t } from "@/shared/i18n/t";
 
-/** Forme de `GET /health/embedding` (types générés ; non importés : la règle de découpage). */
+/** Shape of `GET /health/embedding` (generated types; not imported: the splitting rule). */
 interface EmbeddingProgressView {
   model: string;
   present: boolean;
-  /** De 0 à 100 ; vide tant que la taille n'est pas connue. */
+  /** From 0 to 100; empty while the size is unknown. */
   percent: number | null;
-  /** Un texte français sans donnée personnelle. */
+  /** A French text, with no personal data. */
   detail: string;
 }
 
 interface EmbeddingProgressBarProps {
   progress?: EmbeddingProgressView;
-  /** La dernière lecture a échoué (le prochain tour réessaie tout seul). */
+  /** The last read failed (the next round retries on its own). */
   isError: boolean;
 }
 
@@ -23,10 +23,10 @@ function summary({ model, present, percent }: EmbeddingProgressView): string {
 }
 
 /**
- * La progression du modèle d'embeddings : la phrase (« bge-m3 : 42 % ») dit l'état, la barre le
- * montre. Une taille encore inconnue donne une barre sans valeur et le détail du serveur. La zone
- * `status` est toujours dans la page : elle ne dit que ce qui vaut une annonce (« prêt », ou la
- * lecture impossible), pas chaque pourcentage relu toutes les 3 s.
+ * Progress of the embeddings model: the sentence (« bge-m3 : 42 % ») states the status, the bar
+ * shows it. An unknown size gives a bar with no value and the server's detail. The zone
+ * `status` is always on the page: it only says what is worth announcing (« prêt », or the
+ * read impossible), not every percentage reread every 3 s.
  */
 export function EmbeddingProgressBar({ progress, isError }: EmbeddingProgressBarProps) {
   const ready = progress?.present === true;

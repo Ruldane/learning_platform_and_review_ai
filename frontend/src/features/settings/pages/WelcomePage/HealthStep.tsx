@@ -4,7 +4,7 @@ import { ServiceChecklist } from "../../components/ServiceChecklist";
 import { useEmbeddingProgress } from "../../hooks/useEmbeddingProgress";
 import { useServiceHealth } from "../../hooks/useServiceHealth";
 
-/** Étape 1 : l'état de chaque service (relu toutes les 5 s) et la progression de `bge-m3`. */
+/** Step 1: the state of each service (reread every 5 s) and the progress of `bge-m3`. */
 export function HealthStep() {
   const health = useServiceHealth();
   const embedding = useEmbeddingProgress();

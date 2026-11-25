@@ -6,18 +6,18 @@ interface SaveBarProps {
   pending: boolean;
   saved: boolean;
   dirty: boolean;
-  /** Rien à enregistrer, saisie invalide ou envoi en cours. */
+  /** Nothing to save, invalid input, or a send in progress. */
   blocked: boolean;
-  /** Un champ est hors bornes : la raison du blocage à dire, plutôt que « rien à enregistrer ». */
+  /** A field is out of bounds: state the reason for the block, rather than "nothing to save". */
   invalid?: boolean;
   labels: { save: string; saving: string; saved: string; unsaved: string };
 }
 
 /**
- * Le bouton « Enregistrer » d'un formulaire et la phrase d'état (enregistré, non enregistré)
- * annoncée. Bloqué par `aria-disabled` (jamais `disabled`) : le focus reste sur le bouton une fois
- * l'enregistrement fini ; le formulaire ignore l'envoi bloqué. La raison du blocage est un texte
- * relié au bouton (`aria-describedby`), lu avec lui, jamais seulement une couleur.
+ * The form's « Enregistrer » button and the status phrase (saved, not saved)
+ * announced. Blocked by `aria-disabled` (never `disabled`): focus stays on the button once
+ * the save is done; the form ignores the blocked submit. The reason for the block is a text
+ * tied to the button (`aria-describedby`), read with it, never by colour alone.
  */
 export function SaveBar({ pending, saved, dirty, blocked, invalid = false, labels }: SaveBarProps) {
   const reasonId = useId();

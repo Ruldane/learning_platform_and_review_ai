@@ -1,4 +1,4 @@
-/** Types de vue des composants de la session d'étude : indépendants du contrat d'API (D34). */
+/** View types of the study session's components: independent of the API contract (D34). */
 
 export type StudyModeView = "socratic" | "feynman" | "direct";
 
@@ -7,7 +7,7 @@ export type TimerPhase = "work" | "break";
 export interface TimerState {
   phase: TimerPhase;
   secondsLeft: number;
-  /** Temps de travail cumulé, en secondes : la pause ne compte jamais. */
+  /** Cumulative work time, in seconds: the break never counts. */
   workedSeconds: number;
   running: boolean;
 }
@@ -21,7 +21,7 @@ export interface BlockTaskView {
   minutes: number;
 }
 
-/** Le bloc du jour : les tâches d'un module dont la leçon est prête. */
+/** The day's block: the tasks of a module whose lesson is ready. */
 export interface BlockView {
   lessonTitle: string;
   moduleTitle: string;
@@ -35,20 +35,20 @@ export interface SkillGainView {
   level: SkillLevelView;
 }
 
-/** Bilan d'une session terminée. */
+/** Summary of a finished session. */
 export interface StudySummaryView {
   moduleTitle: string;
   lessonTitle: string;
-  /** Temps travaillé enregistré, en minutes. */
+  /** Recorded worked time, in minutes. */
   minutes: number;
   summary: string;
-  /** Titres des tâches cochées. */
+  /** Titles of the ticked tasks. */
   tasksDone: string[];
   flashcardsCreated: number;
   skills: SkillGainView[];
 }
 
-/** Une option d'une interruption du Tuteur (`stuck`, `skip`) : le libellé vient du back. */
+/** An option of a Tutor interruption (`stuck`, `skip`): the label comes from the back end. */
 export interface TutorOptionView {
   value: string;
   label: string;

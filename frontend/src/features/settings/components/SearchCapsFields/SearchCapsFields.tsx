@@ -6,11 +6,11 @@ interface SearchCapsFieldsProps {
   maxQueries: number;
   maxPages: number;
   onChange: (caps: { maxQueries: number; maxPages: number }) => void;
-  /** Vrai tant qu'un des deux champs contient une saisie invalide (l'envoi doit être refusé). */
+  /** True while either field holds an invalid entry (sending must be refused). */
   onInvalidChange?: (invalid: boolean) => void;
 }
 
-/** Plafonds par session : requêtes (1 à 50) et pages lues (1 à 100). */
+/** Per-session caps: queries (1 to 50) and pages read (1 to 100). */
 export function SearchCapsFields({
   maxQueries,
   maxPages,

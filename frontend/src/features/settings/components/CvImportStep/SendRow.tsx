@@ -5,15 +5,15 @@ import { Button } from "@/shared/ui/button";
 interface SendRowProps {
   pending: boolean;
   launchMenu?: ReactNode;
-  /** Rien ne part : l'action est ignorée (`aria-disabled`, le focus reste sur le bouton). */
+  /** Nothing is sent: the action is ignored (`aria-disabled`, focus stays on the button). */
   blocked: boolean;
   hasKey: boolean;
-  /** Ce qui empêche ou nuance l'envoi, dit et relié au bouton ; vide : rien à dire. */
+  /** What prevents or qualifies sending, stated and tied to the button; empty: nothing to say. */
   reasons: string[];
   onGoToKey: () => void;
 }
 
-/** « Importer mes documents », la voie vers la clé quand il n'y en a pas, et les raisons dites. */
+/** « Importer mes documents », the path to a key when there is none, and the reasons stated. */
 export function SendRow({
   pending,
   blocked,

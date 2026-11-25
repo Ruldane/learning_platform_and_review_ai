@@ -12,15 +12,15 @@ import { DayStart } from "./DayStart";
 import { useChosenLesson } from "./chosenLesson";
 
 /**
- * Session guidée (`/study/session`) : le bloc du jour, ou la leçon choisie (`?lesson=` et
- * « Demander au tuteur » depuis une leçon), le mode du tuteur, et la reprise d'une session ouverte.
+ * Guided session (`/study/session`): the day's block, or the chosen lesson (`?lesson=` and
+ * « Demander au tuteur » from a lesson), the tutor's mode, and resuming an open session.
  */
 export function StudyHomePage() {
   const summary = useStudySummary();
   const chosen = useChosenLesson();
   const starter = useStartStudy();
   const [picked, setPicked] = useState<StudyModeView | null>(null);
-  // Une question sur un passage se pose en mode direct, tant que le mode n'a pas été choisi.
+  // A question about a passage is asked in direct mode, until a mode has been chosen.
   const mode = picked ?? (chosen?.question ? "direct" : "socratic");
   const common = { mode, onMode: setPicked, starter };
 

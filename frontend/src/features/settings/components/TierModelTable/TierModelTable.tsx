@@ -10,7 +10,7 @@ interface TierModelTableProps {
   disabled?: boolean;
 }
 
-/** Les quatre niveaux, leur usage (spec 11.2) et le modèle choisi pour chacun. */
+/** The four levels, their use (spec 11.2) and the model chosen for each. */
 export function TierModelTable({
   tiers,
   providers,

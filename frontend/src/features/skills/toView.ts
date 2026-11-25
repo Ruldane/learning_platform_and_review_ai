@@ -15,7 +15,7 @@ import type {
   SkillGraphOut,
 } from "./types";
 
-/** Le graphe du contrat → les types de vue de la carte (camelCase). */
+/** The graph from the contract → the map's view types (camelCase). */
 export function toGraphView(graph: SkillGraphOut): {
   nodes: SkillNodeView[];
   edges: SkillEdgeView[];
@@ -35,7 +35,7 @@ export function toGraphView(graph: SkillGraphOut): {
   };
 }
 
-/** Le détail d'une compétence ; une preuve sans date (phase 4) garde `at: null`. */
+/** The detail of a skill; an evidence without a date (phase 4) keeps `at: null`. */
 export function toDetailView(detail: SkillDetailOut): SkillDetailView {
   return {
     id: detail.id,
@@ -82,7 +82,7 @@ export function toCompareView(compare: CompareOut): {
   };
 }
 
-/** Les offres analysées (prêtes et titrées) sont les seules cibles possibles d'une comparaison. */
+/** The analyzed offers (ready and titled) are the only possible comparison targets. */
 export function toPostingChoices(postings: PostingSummaryOut[]): PostingChoiceView[] {
   return postings.flatMap((posting) =>
     posting.status === "ready" && posting.title !== null

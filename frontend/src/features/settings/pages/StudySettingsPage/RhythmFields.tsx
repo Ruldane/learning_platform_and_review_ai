@@ -13,7 +13,7 @@ interface RhythmFieldsProps {
   onChange: (next: StudyDraft) => void;
 }
 
-/** Durées du minuteur : travail (10 à 120 minutes) et pause (0 à 60). */
+/** Timer durations: work (10 to 120 minutes) and break (0 to 60). */
 export function RhythmFields({ draft, errors, onChange }: RhythmFieldsProps) {
   return (
     <div className="flex flex-wrap gap-6">

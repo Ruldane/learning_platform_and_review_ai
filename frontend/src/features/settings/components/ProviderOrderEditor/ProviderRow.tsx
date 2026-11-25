@@ -5,9 +5,9 @@ import type { SearchProviderName } from "../viewTypes";
 
 interface ProviderRowProps {
   provider: SearchProviderName;
-  /** Rang affiché, à partir de 1. */
+  /** Displayed rank, starting at 1. */
   rank: number;
-  /** Brave sans clé : ligne grisée, consigne affichée. */
+  /** Brave without a key: greyed row, instruction shown. */
   greyed: boolean;
   canMoveUp: boolean;
   canMoveDown: boolean;
@@ -15,7 +15,7 @@ interface ProviderRowProps {
   onMoveDown: () => void;
 }
 
-/** Une ligne de l'ordre des fournisseurs, avec ses deux boutons monter / descendre. */
+/** One row of the provider order, with its move up / move down buttons. */
 export function ProviderRow({
   provider,
   rank,

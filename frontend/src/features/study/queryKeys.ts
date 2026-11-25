@@ -1,4 +1,4 @@
-/** Clés TanStack Query de la feature : des identifiants seulement, jamais un titre ni une réponse. */
+/** TanStack Query keys of the feature: identifiers only, never a title or an answer. */
 export const studyKeys = {
   summary: ["study", "summary"],
   session: (studyId: string) => ["study", "session", studyId] as const,

@@ -7,11 +7,11 @@ import { buildUserSettings } from "../userSettings";
 import { useUpdateSettings } from "./useUpdateSettings";
 
 /**
- * Termine le premier lancement : un `PUT /settings` complet (`onboarding_done: true`, avec la
- * disponibilité donnée, ou celle qui était lue), puis l'accueil. Un seul envoi à la fois, même si
- * deux activations arrivent dans le même instant (« Terminer » et « Passer l'accueil » : une ref,
- * pas l'état de rendu). Un échec reste affiché (`error`, et `failure` pour lire les champs
- * refusés) et la page reste.
+ * Finishes the first run: one full `PUT /settings` (`onboarding_done: true`, with the
+ * availability given, or the one read), then the home page. Only one send at a time, even if
+ * two activations arrive at the same moment (« Terminer » and « Passer l'accueil »: a ref,
+ * not the render state). A failure stays shown (`error`, and `failure` to read the fields
+ * refused) and the page stays.
  */
 export function useFinishOnboarding() {
   const update = useUpdateSettings();
@@ -24,7 +24,7 @@ export function useFinishOnboarding() {
       await send();
       return true;
     } catch {
-      return false; // l'erreur est affichée depuis la mutation
+      return false; // the error is shown from the mutation
     } finally {
       running.current = false;
     }
@@ -40,8 +40,8 @@ export function useFinishOnboarding() {
       if (saved) void navigate("/", { replace: true });
     },
     /**
-     * Règle les niveaux de modèles sur le fournisseur de la clé donnée (le reste des réglages est
-     * repris tel quel) ; `false` si l'envoi a échoué (l'erreur est affichée, l'étape reste).
+     * Sets the model levels to the given key's provider (the rest of the settings is
+     * kept as-is); `false` if the send failed (the error is shown, the step stays).
      */
     saveTiers: (settings: SettingsOut, tiers: TierChoices) =>
       guarded(() => update.mutateAsync(buildUserSettings(settings, tiers))),

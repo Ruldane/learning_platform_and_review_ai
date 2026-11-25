@@ -6,7 +6,7 @@ interface DomainChipsProps {
   onRemove: (domain: string) => void;
 }
 
-/** Les domaines de la liste, un bouton de retrait chacun ; « Aucun domaine. » si elle est vide. */
+/** The domains in the list, one removal button each; « Aucun domaine. » if it is empty. */
 export function DomainChips({ domains, onRemove }: DomainChipsProps) {
   if (domains.length === 0) {
     return <p className="text-sm text-muted-foreground">{t("settings.search.domains.empty")}</p>;

@@ -9,12 +9,12 @@ import { useSkillDetail } from "../../hooks/useSkillDetail";
 import { toDetailView } from "../../toView";
 
 interface SkillDetailSlotProps {
-  /** `null` : rien d'ouvert. */
+  /** `null`: nothing open. */
   skillId: string | null;
   onClose: () => void;
 }
 
-/** Le tiroir d'une compétence : chargement, erreur avec « Réessayer » et « Fermer », puis le détail. */
+/** The skill's drawer: loading, an error with « Réessayer » and « Fermer », then detail. */
 export function SkillDetailSlot({ skillId, onClose }: SkillDetailSlotProps) {
   const query = useSkillDetail(skillId);
   const view = useMemo(() => (query.data ? toDetailView(query.data) : null), [query.data]);

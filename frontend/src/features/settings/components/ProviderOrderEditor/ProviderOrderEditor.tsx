@@ -4,7 +4,7 @@ import { ProviderRow } from "./ProviderRow";
 
 interface ProviderOrderEditorProps {
   value: SearchProviderName[];
-  /** Une clé Brave existe : sans elle, Brave est grisé et l'ordre n'est pas modifiable. */
+  /** A Brave key exists: without one, Brave is greyed out and the order cannot be changed. */
   braveAvailable: boolean;
   onChange: (order: SearchProviderName[]) => void;
 }
@@ -19,7 +19,7 @@ function swap(order: SearchProviderName[], from: number, to: number): SearchProv
   return next;
 }
 
-/** Ordre de repli des fournisseurs de recherche : monter / descendre (pas de glisser-déposer). */
+/** Fallback order of search providers: move up / down (no drag and drop). */
 export function ProviderOrderEditor({ value, braveAvailable, onChange }: ProviderOrderEditorProps) {
   return (
     <div className="flex flex-col gap-2">

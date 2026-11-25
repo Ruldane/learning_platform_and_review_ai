@@ -2,7 +2,7 @@ import { t } from "@/shared/i18n/t";
 import { LEVEL_COLORS, levelKey } from "../levels";
 import type { LevelView } from "../viewTypes";
 
-/** Un niveau écrit en toutes lettres, avec sa couleur en repère. */
+/** A level written out in full, with its colour as a marker. */
 export function LevelCell({ level }: { level: LevelView }) {
   const key = levelKey(level);
   return (

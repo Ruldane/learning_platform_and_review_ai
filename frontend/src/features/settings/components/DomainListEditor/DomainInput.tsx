@@ -12,8 +12,8 @@ interface DomainInputProps {
 }
 
 /**
- * Champ d'ajout et son bouton. Entrée ajoute sans envoyer un formulaire parent : le champ ne
- * s'enveloppe pas dans son propre `<form>`, qui serait imbriqué dans celui des réglages.
+ * Add field and its button. Enter adds without submitting a parent form: the field must not
+ * wrap in its own `<form>`, which would be nested inside the settings form.
  */
 export function DomainInput({ draft, error, onDraftChange, onAdd }: DomainInputProps) {
   const errorId = useId();

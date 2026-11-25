@@ -3,7 +3,7 @@ import { putSettings } from "../api";
 import { settingsKeys } from "../queryKeys";
 import type { UserSettings } from "../types";
 
-/** Remplace les réglages (`PUT /settings`, corps complet), puis recharge `["settings"]`. */
+/** Replaces the settings (`PUT /settings`, full body), then reloads `["settings"]`. */
 export function useUpdateSettings() {
   const queryClient = useQueryClient();
   return useMutation({

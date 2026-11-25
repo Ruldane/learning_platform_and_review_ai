@@ -3,16 +3,16 @@ import type { ApiKeyEntry, KeyTestView } from "../viewTypes";
 
 interface ApiKeyListProps {
   entries: ApiKeyEntry[];
-  /** Résultats de test, par nom de fournisseur. */
+  /** Test results, by provider name. */
   testResults: Record<string, KeyTestView>;
-  /** Fournisseurs dont une opération est en cours. */
+  /** Providers with an operation in progress. */
   pendingProviders: readonly string[];
   onSave: (provider: string, key: string) => void | Promise<void>;
   onDelete: (provider: string) => void;
   onTest: (provider: string) => void;
 }
 
-/** Une carte de clé par fournisseur. */
+/** One key card per provider. */
 export function ApiKeyList({
   entries,
   testResults,

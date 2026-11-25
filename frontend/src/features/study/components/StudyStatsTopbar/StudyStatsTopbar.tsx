@@ -2,14 +2,14 @@ import { t } from "@/shared/i18n/t";
 import { StudyStatsBadge } from "../StudyStatsBadge";
 
 interface StudyStatsTopbarProps {
-  /** Les chiffres ; `null` tant qu'ils ne sont pas lus ou quand la lecture a échoué. */
+  /** The figures; `null` until they are read or when the read failed. */
   stats: { streakDays: number; weekMinutes: number } | null;
   failed: boolean;
 }
 
 /**
- * La série de jours et les heures de la semaine, dans la barre du haut. Silencieuse pendant le
- * chargement ; une lecture manquée se dit en une ligne discrète (la barre relit toute seule).
+ * The day streak and the week's hours, in the top bar. Silent while
+ * loading; a missed read is said in one discreet line (the bar rereads on its own).
  */
 export function StudyStatsTopbar({ stats, failed }: StudyStatsTopbarProps) {
   if (stats) return <StudyStatsBadge {...stats} />;

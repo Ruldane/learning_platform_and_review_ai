@@ -1,13 +1,13 @@
 import type { LevelView } from "./viewTypes";
 
-/** Les cinq états d'une compétence sur la carte, du moins au plus maîtrisé (« absent » : aucun niveau). */
+/** The five states of a skill on the map, from least to most mastered (« absent »: no level). */
 export const LEVEL_KEYS = ["absent", "declared", "in_progress", "validated", "proven"] as const;
 export type LevelKey = (typeof LEVEL_KEYS)[number];
 
 /**
- * Couleur de chaque niveau. Chacune garde un texte blanc au contraste AA (≥ 4,5:1) et ressort
- * sur le fond de page (≥ 4,5:1) : voir `levels.test.ts`. La couleur n'est jamais seule : le niveau
- * est écrit dans chaque nœud et dans la légende.
+ * Colour of each level. Each keeps white text at AA contrast (≥ 4.5:1) and stands out
+ * on the page background (≥ 4.5:1): see `levels.test.ts`. The colour is never alone: the level
+ * is written in each node and in the legend.
  */
 export const LEVEL_COLORS: Record<LevelKey, string> = {
   absent: "#57606a",

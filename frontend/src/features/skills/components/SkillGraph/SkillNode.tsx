@@ -8,8 +8,8 @@ export type SkillFlowNode = Node<{ name: string; level: LevelView }, "skill">;
 const HANDLE_CLASS = "!size-1 !min-h-0 !min-w-0 !border-0 !bg-transparent";
 
 /**
- * Une compétence sur le graphe : fond de la couleur du niveau, nom et niveau écrits. La taille vient
- * du nœud (demande du marché). Les points d'attache ne servent qu'à tracer les liens.
+ * A skill on the graph: background in the level's colour, name and level written out. Size comes
+ * from the node (market demand). The attachment points only serve to draw the links.
  */
 export function SkillNode({ data, selected }: NodeProps<SkillFlowNode>) {
   const key = levelKey(data.level);

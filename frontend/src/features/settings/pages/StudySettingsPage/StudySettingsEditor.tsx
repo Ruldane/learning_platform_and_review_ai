@@ -18,9 +18,9 @@ import { RhythmFields } from "./RhythmFields";
 import { Section } from "../../components/Section";
 
 /**
- * Le formulaire de l'étude. Le brouillon n'existe que pendant l'édition (`null` : on montre les
- * réglages du serveur). L'enregistrement se fait par bouton, jamais à la frappe ; un champ hors des
- * bornes du contrat bloque l'envoi. En cas d'échec le brouillon reste.
+ * The study form. The draft exists only while editing (`null`: the server's
+ * settings are shown). Saving is by button, never on each keystroke; a field out of the
+ * contract bounds blocks sending. On failure the draft stays.
  */
 export function StudySettingsEditor({ settings }: { settings: SettingsOut }) {
   const stored = toStudyDraft(settings);
@@ -40,7 +40,7 @@ export function StudySettingsEditor({ settings }: { settings: SettingsOut }) {
     if (blocked || draft === null) return;
     saver.save(draft).then(
       () => setDraft(null),
-      () => undefined, // l'erreur est affichée depuis la mutation ; la saisie est gardée
+      () => undefined, // the error is shown from the mutation; the input is kept
     );
   };
 

@@ -1,14 +1,14 @@
 import type { TimerState } from "../viewTypes";
 
-/** Un minuteur neuf : la phase de travail, en marche. */
+/** A new timer: the work phase, running. */
 export function initialTimer(workSeconds: number): TimerState {
   return { phase: "work", secondsLeft: workSeconds, workedSeconds: 0, running: true };
 }
 
 /**
- * Fait avancer le minuteur de `elapsed` secondes (la phase change dès que son temps est écoulé et
- * le reste passe à la suivante). Seul le travail s'ajoute à `workedSeconds` : la pause ne compte
- * jamais. Une durée nulle ou négative ne change rien.
+ * Advances the timer by `elapsed` seconds (the phase changes as soon as its time has run out and
+ * the rest moves to the next). Only work adds to `workedSeconds`: the break never
+ * counts. A zero or negative duration changes nothing.
  */
 export function advance(
   state: TimerState,

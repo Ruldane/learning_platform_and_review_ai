@@ -3,8 +3,8 @@ import { fetchStudySummary } from "../api";
 import { studyKeys } from "../queryKeys";
 
 /**
- * Le résumé de l'étude (`GET /study-sessions/summary`) : série, minutes de la semaine, minuteur,
- * session ouverte et bloc du jour. `everyMs` : relecture périodique (la barre du haut, 60 s).
+ * The study summary (`GET /study-sessions/summary`): streak, minutes of the week, timer,
+ * open session and day's block. `everyMs`: periodic reread (the top bar, 60 s).
  */
 export function useStudySummary(everyMs?: number) {
   return useQuery({

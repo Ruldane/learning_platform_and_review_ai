@@ -4,9 +4,9 @@ import { StudyHomePage } from "./pages/StudyHomePage";
 import { StudySessionPage } from "./pages/StudySessionPage";
 
 /**
- * Étudier, 1re entrée : la session guidée (bloc du jour, Tuteur, minuteur, bilan ; SPEC 3.7). La
- * session occupe toute la largeur de la coquille (débat à gauche, tableau à droite). La série et
- * les heures de la semaine s'affichent dans la barre du haut.
+ * Study, 1st entry: the guided session (day's block, Tutor, timer, summary; SPEC 3.7). The
+ * session fills the shell's full width (debate left, table right). The streak and
+ * the week's hours are shown in the top bar.
  */
 export const studyManifest: FeatureManifest = {
   id: "study",

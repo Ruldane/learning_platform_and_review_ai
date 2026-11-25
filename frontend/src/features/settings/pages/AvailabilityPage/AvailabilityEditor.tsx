@@ -16,7 +16,7 @@ const SAVE_LABELS = {
   unsaved: t("settings.availability.unsaved"),
 };
 
-/** Le formulaire de la disponibilité et du rythme (l'état est dans `useAvailabilityForm`). */
+/** The availability and pace form (the state lives in `useAvailabilityForm`). */
 export function AvailabilityEditor({ settings }: { settings: SettingsOut }) {
   const form = useAvailabilityForm(settings);
   const { value, errors, refused, saver, edit } = form;

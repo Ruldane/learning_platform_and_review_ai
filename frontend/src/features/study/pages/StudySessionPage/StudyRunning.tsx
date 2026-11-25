@@ -10,7 +10,7 @@ import { SessionFeed } from "./SessionFeed";
 import { SessionHeader } from "./SessionHeader";
 import { SummaryWait } from "./SummaryWait";
 
-/** Durées du minuteur tant que les réglages ne sont pas lus. */
+/** Timer durations until the settings are read. */
 const DEFAULT_WORK = 50;
 const DEFAULT_BREAK = 10;
 
@@ -18,16 +18,16 @@ interface StudyRunningProps {
   session: StudySessionOut;
   finishing: boolean;
   onFinishing: () => void;
-  /** L'attente du bilan est trop longue : proposer de le relire. */
+  /** The wait for the summary is too long: offer to reread it. */
   summaryLate: boolean;
   onRetrySummary: () => void;
   createSocket?: SocketFactory;
 }
 
 /**
- * Une session d'étude qui n'est pas terminée : en-tête (minuteur, « Terminer »), échange avec le
- * Tuteur à gauche (40 %) et tableau à droite (60 %). L'en-tête reste monté quoi qu'il arrive au
- * flux : le minuteur ne repart pas de zéro. Une fois « Terminer » accepté, le bilan s'écrit.
+ * A study session not yet finished: header (timer, « Terminer »), exchange with the
+ * Tutor on the left (40 %) and table on the right (60 %). The header stays mounted,
+ * so the timer does not restart. Once « Terminer » is accepted, the summary is written.
  */
 export function StudyRunning(props: StudyRunningProps) {
   const { session, finishing, onFinishing, summaryLate, onRetrySummary, createSocket } = props;

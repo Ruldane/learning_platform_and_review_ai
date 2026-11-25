@@ -9,11 +9,11 @@ import { useStudyTimer } from "./useStudyTimer";
 interface StudyTimerProps {
   workMinutes: number;
   breakMinutes: number;
-  /** Temps de travail cumulé, en secondes entières, à chaque seconde gagnée (jamais la pause). */
+  /** Cumulative work time, in whole seconds, on each second gained (never the break). */
   onWorkedChange: (seconds: number) => void;
-  /** Clé `sessionStorage` du minuteur : il survit à un rechargement ou à un détour. */
+  /** `sessionStorage` key of the timer: it survives a reload or a detour. */
   storageKey?: string;
-  /** Horloge arrêtée d'office (session du Tuteur arrêtée) : rien ne s'ajoute, pas de reprise. */
+  /** Clock stopped outright (the Tutor's session stopped): nothing is added, no resume. */
   halted?: boolean;
 }
 
@@ -25,9 +25,9 @@ function announcementFor(phase: TimerPhase, switches: number, breakMinutes: numb
 }
 
 /**
- * Minuteur de la session : travail puis pause, en boucle (50 / 10 par défaut), « Mettre en pause »
- * et « Reprendre ». Seul le travail compte. Le changement de phase est annoncé (zone `polite`),
- * jamais le décompte ; la barre n'est animée que si la personne n'a pas demandé moins de mouvement.
+ * Session timer: work then break, in a loop (50 / 10 by default), « Mettre en pause »
+ * and « Reprendre ». Only work counts. The phase change is announced (`polite` zone),
+ * never the countdown; the bar is animated only if the person has not asked for less motion.
  */
 export function StudyTimer(props: StudyTimerProps) {
   const { workMinutes, breakMinutes, onWorkedChange, storageKey, halted = false } = props;

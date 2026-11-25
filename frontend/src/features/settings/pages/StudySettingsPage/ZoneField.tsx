@@ -8,7 +8,7 @@ interface ZoneFieldProps {
   onChange: (zone: string) => void;
 }
 
-/** Le fuseau horaire : la liste des fuseaux IANA que connaît le navigateur. */
+/** The time zone: the list of IANA zones the browser knows. */
 export function ZoneField({ value, onChange }: ZoneFieldProps) {
   const hintId = useId();
   const zones = useMemo(() => timezoneChoices(value), [value]);

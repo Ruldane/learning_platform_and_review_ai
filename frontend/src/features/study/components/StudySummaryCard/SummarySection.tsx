@@ -2,13 +2,13 @@ import { useId, type ReactNode } from "react";
 
 interface SummarySectionProps {
   title: string;
-  /** Une ligne par élément ; `key` doit être unique dans la liste. */
+  /** One line per item; `key` must be unique in the list. */
   items: { key: string; content: ReactNode }[];
-  /** Phrase affichée quand la liste est vide. */
+  /** Sentence shown when the list is empty. */
   empty: string;
 }
 
-/** Un titre `h3` et sa liste (nommée par ce titre) ou, à défaut, une phrase « rien à signaler ». */
+/** An `h3` title and its list (named by it), or else a « rien à signaler » sentence. */
 export function SummarySection({ title, items, empty }: SummarySectionProps) {
   const id = useId();
   return (

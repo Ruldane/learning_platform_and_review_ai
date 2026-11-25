@@ -19,7 +19,7 @@ const TITLES = [
   "onboarding.steps.titles.availability",
 ] as const;
 
-/** Le bouton qui avance : « Plus tard » sans clé, « Passer » sans import, « Terminer » au bout. */
+/** Advance: « Plus tard » (no key), « Passer » (no import), « Terminer » at the end. */
 function nextLabel(step: number, hasKey: boolean, imported: boolean): string {
   if (step === STEP_COUNT) return t("onboarding.steps.finish");
   if (step === 3 && !hasKey) return t("onboarding.steps.later");
@@ -37,9 +37,9 @@ interface AdvanceArgs {
 }
 
 /**
- * Ce que fait le bouton qui avance : terminer à la dernière étape ; à l'étape 3, régler d'abord
- * les modèles sur le fournisseur de la clé s'il le faut (on ne quitte l'étape qu'une fois l'envoi
- * réussi) ; sinon passer à l'étape suivante.
+ * What the advance button does: finish on the last step; on step 3, first set
+ * the models to the key's provider if needed (the step is left only once the send
+ * succeeded); otherwise go to the next step.
  */
 function advance({ step, plan, settings, availability, finisher, goTo }: AdvanceArgs): void {
   if (step === STEP_COUNT) return void finisher.finish(settings, availability.values);
@@ -51,10 +51,10 @@ function advance({ step, plan, settings, availability, finisher, goTo }: Advance
 }
 
 /**
- * Les cinq étapes du premier lancement ; l'étape, les durées saisies et les PDF choisis vivent
- * ici, donc survivent au changement d'étape. Une clé compte quand elle est celle du fournisseur des
- * modèles (`planKeys`) ; si c'est celle d'un autre fournisseur de modèles, ses niveaux sont réglés sur
- * lui en quittant l'étape 3, avant l'import du CV qui lit avec ces modèles.
+ * The five first-run steps; the step, the typed durations and the chosen PDFs live
+ * here, so they survive a step change. A key counts when it is the provider of the
+ * models (`planKeys`); if it is another model provider's, its levels are set to
+ * it when leaving step 3, before the CV import that reads with these models.
  */
 export function WelcomeSteps({ settings }: { settings: SettingsOut }) {
   const [step, setStep] = useState(1);
@@ -65,7 +65,7 @@ export function WelcomeSteps({ settings }: { settings: SettingsOut }) {
   const finisher = useFinishOnboarding();
   const availability = useOnboardingAvailability(settings, finisher.failure);
   const last = step === STEP_COUNT;
-  // Un échec d'enregistrement ne suit pas à l'étape suivante : il parlait de celle d'avant.
+  // A save failure does not carry over to the next step: it was about the previous one.
   const goTo = (target: number) => {
     finisher.reset();
     setStep(target);

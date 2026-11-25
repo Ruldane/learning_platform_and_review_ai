@@ -14,7 +14,7 @@ import { KeyStep } from "./KeyStep";
 export interface StepBodyProps {
   step: number;
   settings: SettingsOut;
-  /** Une clé d'API existe (`.env` ou saisie) : l'import du CV en a besoin. */
+  /** An API key exists (`.env` or entered): the CV import needs it. */
   hasKey: boolean;
   documents: CvDocuments;
   onGoToKey: () => void;
@@ -34,7 +34,7 @@ export interface StepBodyProps {
   };
 }
 
-/** Le contenu de l'étape `step` ; chaque étape est un composant, la page ne fait que choisir. */
+/** The content of step `step`; each step is a component, the page only chooses. */
 export function StepBody(props: StepBodyProps) {
   const { step, settings, hasKey, documents, onGoToKey, importer, availability } = props;
   switch (step) {

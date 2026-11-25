@@ -1,6 +1,6 @@
 import type { SkillEdgeView, SkillNodeView } from "./viewTypes";
 
-/** Demande supposée d'une compétence tant que le marché n'a pas été analysé (phase 8). */
+/** Assumed demand for a skill until the market has been analyzed (phase 8). */
 export const DEFAULT_DEMAND = 0.5;
 const BASE_WIDTH = 132;
 const BASE_HEIGHT = 44;
@@ -20,7 +20,7 @@ export interface Positioned {
   nodes: PositionedNode[];
 }
 
-/** Taille d'un nœud : (1 + demande) fois la taille de base, la demande étant bornée à [0 ; 1]. */
+/** Node size: (1 + demand) times the base size, demand being bounded to [0; 1]. */
 export function nodeSize(demand: number | null): NodeSize {
   const value = demand === null || Number.isNaN(demand) ? DEFAULT_DEMAND : demand;
   const scale = 1 + Math.min(Math.max(value, 0), 1);
@@ -35,9 +35,9 @@ const LAYOUT_OPTIONS = {
 };
 
 /**
- * Place les compétences de gauche à droite, du prérequis vers ce qui en dépend (elkjs `layered`).
- * Les liens vers une compétence inconnue et les boucles sur soi-même sont ignorés. elkjs (lourd)
- * n'est chargé qu'ici, à la première mise en page : il reste hors du paquet principal.
+ * Places the skills from left to right, from prerequisite to what depends on it (elkjs `layered`).
+ * Links to an unknown skill and self-loops are ignored. elkjs (heavy)
+ * is loaded only here, on the first layout: it stays out of the main bundle.
  */
 export async function layoutGraph(
   nodes: SkillNodeView[],

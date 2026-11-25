@@ -7,14 +7,14 @@ import { pdfProblem } from "./pdfProblem";
 interface PdfPickerProps {
   label: string;
   disabled: boolean;
-  /** Ce qui est retenu (gardé par la page) : un fichier, ou la raison de son refus. */
+  /** What is kept by the page: a file, or the reason it was refused. */
   choice: PdfChoice;
   onChange: (choice: PdfChoice) => void;
 }
 
 /**
- * Un champ de fichier PDF : un fichier refusé n'est jamais gardé, son message s'affiche dessous.
- * Le fichier retenu est écrit sous le champ, qui se vide quand l'étape est quittée puis revue.
+ * A PDF file field: a refused file is never kept, its message shows below it.
+ * The chosen file is written under the field, which empties when the step is left and revisited.
  */
 export function PdfPicker({ label, disabled, choice, onChange }: PdfPickerProps) {
   const id = useId();

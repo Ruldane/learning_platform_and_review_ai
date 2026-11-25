@@ -8,7 +8,7 @@ import { LEVELS, chartParts } from "./chartParts";
 
 interface ProgressChartProps {
   points: HistoryPointView[];
-  /** L'action de l'état vide (règle 15.4 : jamais d'impasse). */
+  /** The action of the empty state (rule 15.4: never a dead end). */
   emptyAction?: { label: string; onClick: () => void };
 }
 
@@ -23,9 +23,9 @@ function countsText(counts: LevelCounts): string {
 }
 
 /**
- * Courbes de la progression, un relevé par semaine : une courbe par niveau (nombre de compétences,
- * à gauche) et le score de 0 à 100 (en pointillés, à droite). Le dernier relevé est écrit sous le
- * dessin pour les lecteurs d'écran ; le tracé ne s'anime pas quand le mouvement est réduit.
+ * Progress curves, one reading per week: one curve per level (number of skills,
+ * on the left) and the score from 0 to 100 (dotted, on the right). Last reading written below
+ * the drawing for screen readers; the line does not animate when motion is reduced.
  */
 export function ProgressChart({ points, emptyAction }: ProgressChartProps) {
   const reduced = useReducedMotion();

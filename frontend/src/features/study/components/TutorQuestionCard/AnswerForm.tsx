@@ -5,7 +5,7 @@ import { Button } from "@/shared/ui/button";
 import { fieldClass } from "@/shared/ui/fieldClass";
 import { mergeVoiceDraft, VoiceDraftControls } from "@/shared/voice";
 
-/** Même plafond que le champ `answer` de l'interruption côté back. */
+/** Same cap as the `answer` field of the interruption on the back end. */
 const MAX_ANSWER_LENGTH = 4000;
 
 interface AnswerFormProps {
@@ -21,7 +21,7 @@ function submitShortcut(event: KeyboardEvent, submit: (event: FormEvent) => void
   if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) submit(event);
 }
 
-/** Champ de réponse (Ctrl ou Cmd + Entrée envoie) et boutons « Répondre », « Je bloque », « Passer ». */
+/** Answer field (Ctrl or Cmd + Enter sends); buttons « Répondre », « Je bloque », « Passer ». */
 export function AnswerForm({
   disabled,
   stuckLabel,

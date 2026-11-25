@@ -3,13 +3,13 @@ import { ApiError } from "@/shared/api/errors";
 import { fetchSkillCompare } from "../api";
 import { skillKeys } from "../queryKeys";
 
-/** Un 404 est une réponse (pas d'objectif avec programme, écart pas rangé) : inutile de la redemander. */
+/** A 404 is an answer (no goal with a program, gap not filed): no need to ask again. */
 const retryUnlessMissing = (count: number, error: Error) =>
   !(error instanceof ApiError && error.status === 404) && count < 1;
 
 /**
- * La comparaison, lue seulement quand l'onglet Comparaison est ouvert : avec le poste cible de
- * l'objectif (`postingId` nul) ou avec une offre analysée.
+ * The comparison, read only when the Comparison tab is open: with the goal's target
+ * role (`postingId` null) or with an analyzed offer.
  */
 export function useSkillCompare(enabled: boolean, postingId: string | null = null) {
   return useQuery({

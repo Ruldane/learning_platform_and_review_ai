@@ -17,7 +17,7 @@ export interface AgentOverridesPanelProps {
   providers: ProviderModels[];
 }
 
-/** Les agents et le modèle choisi pour chacun ; lus seulement quand le mode avancé est ouvert. */
+/** The agents and the model chosen for each; read only when advanced mode is open. */
 export function AgentOverridesPanel({ settings, providers }: AgentOverridesPanelProps) {
   const agents = useAgents();
   const actions = useAgentOverrideActions(settings);
@@ -30,7 +30,7 @@ export function AgentOverridesPanel({ settings, providers }: AgentOverridesPanel
 
   const overrides = actions.overrides();
   const known = new Set(agents.data.map((agent) => agent.name));
-  // Une surcharge d'un agent que le serveur ne connaît plus reste visible, pour qu'on puisse la
+  // An override for an agent the server no longer knows stays visible, so it can be
   // retirer.
   const rows: AgentRow[] = [
     ...agents.data,

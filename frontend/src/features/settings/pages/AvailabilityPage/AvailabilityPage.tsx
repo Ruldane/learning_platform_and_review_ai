@@ -5,7 +5,7 @@ import { LoadingState } from "@/shared/ui/states/LoadingState";
 import { useSettings } from "../../hooks/useSettings";
 import { AvailabilityEditor } from "./AvailabilityEditor";
 
-/** Réglages > Disponibilité et rythme : temps disponible, brief, relances, débats et langue. */
+/** Settings > Availability and pace: available time, brief, reminders, debates and language. */
 export function AvailabilityPage() {
   const settings = useSettings();
   if (settings.isError) {

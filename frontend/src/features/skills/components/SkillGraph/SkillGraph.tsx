@@ -8,15 +8,15 @@ export interface SkillGraphProps {
   edges: SkillEdgeView[];
   selectedId: string | null;
   onSelect: (id: string) => void;
-  /** L'action de l'état vide (règle 15.4 : jamais d'impasse). */
+  /** The action of the empty state (rule 15.4: never a dead end). */
   emptyAction?: { label: string; onClick: () => void };
 }
 
 /**
- * Carte des compétences : un nœud par compétence (couleur = niveau, taille = demande du marché), un
- * lien par prérequis, de gauche à droite. Lecture seule : les nœuds ne se déplacent pas, mais se
- * parcourent avec Tab et s'ouvrent avec Entrée ou Espace. La vue se déplace et se zoome avec les
- * commandes ; la molette garde son rôle de défilement de la page.
+ * Skill map: one node per skill (colour = level, size = market demand), one
+ * link per prerequisite, left to right. Read-only: nodes do not move, but are
+ * walked with Tab and opened with Enter or Space. The view pans and zooms with the
+ * controls; the wheel keeps its page-scrolling role.
  */
 export function SkillGraph(props: SkillGraphProps) {
   if (props.nodes.length === 0) {

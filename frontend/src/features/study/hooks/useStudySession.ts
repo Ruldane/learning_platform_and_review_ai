@@ -5,15 +5,15 @@ import { fetchStudySession } from "../api";
 import { studyKeys } from "../queryKeys";
 import { usePollingBudget } from "@/shared/lib/usePollingBudget";
 
-/** Relectures permises du bilan : 20 fois, toutes les 3 s (une minute). */
+/** Summary re-reads allowed: 20 times, every 3 s (one minute). */
 export const SUMMARY_POLLS = 20;
 export const SUMMARY_POLL_MS = 3000;
 
 /**
- * Une session d'étude (`GET /study-sessions/{id}`). Une fois « Terminer » envoyé (`finishing`), le
- * Tuteur conclut en tâche de fond : elle est relue toutes les `pollMs` jusqu'à `finished`, 20 fois
- * au plus ; `budget.exhausted` dit que l'attente est trop longue. Une session `finished` ou
- * `cancelled` relit le résumé (heures de la semaine, session ouverte) et oublie son minuteur.
+ * A study session (`GET /study-sessions/{id}`). Once « Terminer » is sent (`finishing`), the
+ * Tutor concludes in the background: it is reread every `pollMs` until `finished`, 20 times
+ * at most; `budget.exhausted` says the wait is too long. A `finished` or
+ * `cancelled` session rereads the summary (hours of the week, open session) and forgets its timer.
  */
 export function useStudySession(studyId: string, finishing: boolean, pollMs = SUMMARY_POLL_MS) {
   const budget = usePollingBudget(SUMMARY_POLLS);

@@ -8,17 +8,17 @@ import type { ApiKeyEntry, KeyTestView } from "../viewTypes";
 
 interface ApiKeyCardProps {
   entry: ApiKeyEntry;
-  /** Résultat du dernier test lancé depuis cet écran. */
+  /** Result of the last test run from this screen. */
   testResult?: KeyTestView;
-  /** Une opération sur ce fournisseur est en cours : tous les boutons sont désactivés. */
+  /** An operation on this provider is in progress: all buttons are disabled. */
   pending: boolean;
-  /** Peut renvoyer une promesse : si elle échoue, la saisie est conservée pour réessayer. */
+  /** May return a promise: if it fails, the input is kept so the user can retry. */
   onSave: (key: string) => void | Promise<void>;
   onDelete: () => void;
   onTest: () => void;
 }
 
-/** Clé API d'un fournisseur : état, saisie masquée, test (résultat annoncé) et suppression. */
+/** API key of a provider: status, masked input, test (result announced) and deletion. */
 export function ApiKeyCard({
   entry,
   testResult,
@@ -39,7 +39,7 @@ export function ApiKeyCard({
         <Button variant="outline" disabled={pending || !entry.source} onClick={onTest}>
           {t("settings.keys.test")}
         </Button>
-        {/* Seule une clé saisie ici se supprime ; celle du fichier .env se retire du fichier. */}
+        {/* Only a key typed here is deleted; a key from .env is removed from the file. */}
         {entry.source === "ui" ? (
           <Button variant="destructive" disabled={pending} onClick={onDelete}>
             {t("settings.keys.delete")}

@@ -11,11 +11,11 @@ interface SearchSettingsSectionsProps {
   value: SearchSettingsView;
   usage: BraveUsageView;
   onChange: (next: SearchSettingsView) => void;
-  /** Vrai tant qu'un plafond contient une saisie invalide. */
+  /** True while a cap holds an invalid entry. */
   onCapsInvalidChange: (invalid: boolean) => void;
 }
 
-/** Les trois blocs de l'écran : requêtes (langues, plafonds), moteurs (ordre, Brave), domaines. */
+/** The three blocks of the screen: queries (languages, caps), engines (order, Brave), domains. */
 export function SearchSettingsSections({
   value,
   usage,

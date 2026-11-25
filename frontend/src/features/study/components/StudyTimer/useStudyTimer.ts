@@ -5,24 +5,24 @@ import { readTimer, writeTimer } from "./timerStorage";
 
 const TICK_MS = 1000;
 /**
- * Ce qu'un tour d'horloge peut ajouter, en secondes. Un onglet en arrière-plan est ralenti (un
- * tour par minute au plus) : une minute passe donc encore ; un ordinateur resté en veille, lui, ne
- * compte pas des heures de travail.
+ * What a clock tick can add, in seconds. A background tab is slowed (one
+ * tick per minute at most): a minute still passes; a computer left asleep, however, does not
+ * count hours of work.
  */
 const MAX_STEP_SECONDS = 60;
 
 interface Model {
   timer: TimerState;
-  /** Nombre de changements de phase : sert à annoncer le dernier. */
+  /** Number of phase changes: used to announce the last one. */
   switches: number;
 }
 
 /**
- * Le minuteur de la session : travail puis pause, en boucle, en marche dès l'affichage. L'écart
- * est lu sur l'horloge (pas compté en tours) et plafonné ; la pause arrête tout. `onWorkedChange`
- * reçoit le temps de travail, en secondes entières, à chaque seconde gagnée. Avec `storageKey`,
- * l'état est gardé dans `sessionStorage` et repris au montage. `halted` arrête l'horloge sans
- * toucher au choix de la personne (session du Tuteur arrêtée).
+ * The session timer: work then break, in a loop, running from display. The gap
+ * is read from the clock (not counted in ticks) and capped; a break stops everything.
+ * `onWorkedChange` gets the work time, in whole seconds, on each second gained. With
+ * `storageKey`, the state is kept in `sessionStorage` and resumed on mount. `halted`
+ * stops the clock without touching the person's choice (the Tutor's session stopped).
  */
 export function useStudyTimer(
   workSeconds: number,

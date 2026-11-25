@@ -3,7 +3,7 @@ import { t } from "@/shared/i18n/t";
 import { shortDay } from "@/shared/lib/format";
 import { LEVEL_COLORS, type LevelKey } from "../levels";
 
-/** Les quatre niveaux d'une compétence présente, du premier au plus haut ; « absent » n'a pas de courbe. */
+/** The four levels of a present skill, lowest to highest; « absent » has no curve. */
 export const LEVELS: readonly Exclude<LevelKey, "absent">[] = [
   "declared",
   "in_progress",
@@ -13,13 +13,13 @@ export const LEVELS: readonly Exclude<LevelKey, "absent">[] = [
 const COUNTS_AXIS = "counts";
 const SCORE_AXIS = "score";
 
-/** Titre d'axe centré sur l'axe (sans `textAnchor`, il part du milieu et sort du cadre). */
+/** Axis title centred on the axis (without `textAnchor` it would run off the frame). */
 const axisLabel = (value: string) => ({ value, style: { textAnchor: "middle" as const } });
 
 /**
- * Les éléments du graphique : grille, deux axes (nombre de compétences à gauche, score de 0 à 100 à
- * droite), infobulle, légende, une courbe par niveau et la courbe du score en pointillés. Une
- * fonction et non un composant : Recharts lit ses éléments tels que le graphique les reçoit.
+ * The chart elements: grid, two axes (number of skills on the left, score from 0 to 100 on the
+ * right), tooltip, legend, one curve per level and the score curve dotted. A
+ * function, not a component: Recharts reads its elements as the chart receives them.
  */
 export function chartParts(animate: boolean) {
   return (

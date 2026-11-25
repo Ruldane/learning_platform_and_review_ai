@@ -11,7 +11,7 @@ interface KeysSectionProps {
   onTest: (provider: string) => void;
 }
 
-/** Section « Clés API » : titre, explication et une carte par fournisseur. */
+/** « Clés API » section: title, explanation and one card per provider. */
 export function KeysSection({ entries, ...actions }: KeysSectionProps) {
   return (
     <section className="flex flex-col gap-3">

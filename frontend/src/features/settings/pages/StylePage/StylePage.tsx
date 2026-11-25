@@ -5,7 +5,7 @@ import { LoadingState } from "@/shared/ui/states/LoadingState";
 import { useSettings } from "../../hooks/useSettings";
 import { StyleEditor } from "./StyleEditor";
 
-/** Réglages > Style : le guide de style personnel que lisent les agents qui rédigent. */
+/** Settings > Style: the personal style guide that the writing agents read. */
 export function StylePage() {
   const settings = useSettings();
   if (settings.isError) {

@@ -7,7 +7,7 @@ import { useSkillCompare } from "../../hooks/useSkillCompare";
 import { toCompareView } from "../../toView";
 import { QueryPanel } from "./QueryPanel";
 
-/** La comparaison avec l'offre choisie ; une offre dont l'écart n'est pas rangé se dit en clair. */
+/** The comparison with the chosen offer; an offer whose gap is not filed is said plainly. */
 export function ChosenPostingCompare({ postingId }: { postingId: string }) {
   const query = useSkillCompare(true, postingId);
   const navigate = useNavigate();

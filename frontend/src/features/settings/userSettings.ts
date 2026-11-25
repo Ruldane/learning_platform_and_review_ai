@@ -10,15 +10,15 @@ import type {
 } from "./types";
 
 /**
- * Chaque champ de `T` est écrit (même ceux que le contrat laisse facultatifs), valeur ou
+ * Every field of `T` is written (even those the contract leaves optional), value or
  * `undefined`.
  */
 type EveryField<T> = { [K in keyof Required<T>]: T[K] };
 
 /**
- * Corps du `PUT /settings` : remplacement complet. On choisit un à un les champs de `UserSettings`
- * (jamais de `...settings`) : `vision_enabled` et `weekly_budget_minutes` sont calculés par le
- * back et ne font pas partie du contrat d'écriture.
+ * Body of `PUT /settings`: full replacement. The fields of `UserSettings` are picked one by one
+ * (never `...settings`): `vision_enabled` and `weekly_budget_minutes` are computed by the
+ * back end and are not part of the write contract.
  */
 export function buildUserSettings(current: SettingsOut, tiers: TierChoices): UserSettings {
   const { availability } = current;
@@ -49,12 +49,12 @@ export function buildUserSettings(current: SettingsOut, tiers: TierChoices): Use
     tiers,
     timezone: current.timezone,
     weekly_review: current.weekly_review,
-    // Un champ ajouté au contrat et oublié ici ne compile plus (focus n° 5).
+    // A field added to the contract and forgotten here no longer compiles (focus n° 5).
   } satisfies EveryField<UserSettings>;
 }
 
 /**
- * Les réglages de recherche tels que les éditent les composants (valeurs par défaut du back si
+ * Search settings as the components edit them (back-end defaults when missing).
  * absents).
  */
 export function toSearchSettingsView(settings: SettingsOut): SearchSettingsView {
@@ -69,8 +69,8 @@ export function toSearchSettingsView(settings: SettingsOut): SearchSettingsView 
 }
 
 /**
- * Corps du `PUT /settings` après une modification de la recherche : tous les autres réglages
- * (niveaux, disponibilités, revue…) sont repris tels quels de `current`, jamais écrasés.
+ * Body of `PUT /settings` after a search change: all the other settings
+ * (levels, availability, review…) are copied as-is from `current`, never overwritten.
  */
 export function withSearchSettings(current: SettingsOut, search: SearchSettingsView): UserSettings {
   return {
@@ -84,23 +84,23 @@ export function withSearchSettings(current: SettingsOut, search: SearchSettingsV
   };
 }
 
-/** `GET /research/usage` vers la jauge Brave (`month` : « AAAA-MM », en UTC, comme le contrat). */
+/** `GET /research/usage` to the Brave gauge (`month`: « AAAA-MM », in UTC, as the contract). */
 export function toBraveUsageView({ brave }: { brave: BraveUsageOut }): BraveUsageView {
   return { hasKey: brave.has_key, used: brave.used, cap: brave.cap, month: brave.month };
 }
 
 /**
- * Corps du `PUT /settings` après une modification du guide de style : tous les autres réglages
- * sont repris tels quels de `current`.
+ * Body of `PUT /settings` after a style guide change: all the other settings
+ * are copied as-is from `current`.
  */
 export function withStyleGuide(current: SettingsOut, styleGuide: string): UserSettings {
   return { ...buildUserSettings(current, readTiers(current.tiers)), style_guide: styleGuide };
 }
 
 /**
- * Corps du `PUT /settings` après plusieurs choix de modèle d'agents d'un coup (`changes` : l'agent
- * vers son modèle, ou `null` pour le rendre à son niveau) : les autres surcharges et tous les
- * autres réglages sont repris.
+ * Body of `PUT /settings` after several agent model choices at once (`changes`: the agent
+ * to its model, or `null` to return it to its level): the other overrides and all the
+ * other settings are kept.
  */
 export function withAgentOverrides(
   current: SettingsOut,
@@ -115,7 +115,7 @@ export function withAgentOverrides(
 }
 
 /**
- * Corps du `PUT /settings` après le choix d'un modèle pour un agent (`choice`), ou son retour au
+ * Body of `PUT /settings` after choosing a model for an agent (`choice`), or its return to its
  * niveau (`null`).
  */
 export function withAgentOverride(

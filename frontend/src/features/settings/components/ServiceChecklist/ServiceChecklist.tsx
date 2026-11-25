@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { MessageKey } from "@/shared/i18n/t";
 import { t } from "@/shared/i18n/t";
 
-/** Forme du rapport de `GET /health` (types générés ; non importés : la règle de découpage). */
+/** Shape of the `GET /health` report (generated types; not imported: the splitting rule). */
 interface HealthReportView {
   status: "ok" | "degraded" | "down";
   checks: Record<string, { ok: boolean; detail: string }>;
@@ -11,7 +11,7 @@ interface HealthReportView {
 interface ServiceChecklistProps {
   report?: HealthReportView;
   isLoading: boolean;
-  /** La dernière lecture a échoué (le prochain tour réessaie tout seul). */
+  /** The last read failed (the next round retries on its own). */
   isError: boolean;
 }
 
@@ -24,13 +24,13 @@ const isKnown = (service: string): service is KnownService =>
 const label = (service: string): string =>
   isKnown(service) ? t(`onboarding.health.services.${service}` as MessageKey) : service;
 
-/** La clé d'un modèle n'est demandée qu'à l'étape 3 : son absence n'est pas une panne ici. */
+/** A model's key is asked only at step 3: its absence is not an outage here. */
 function stateText(service: string, ok: boolean): string {
   if (ok) return t("onboarding.health.ok");
   return service === "llm" ? t("onboarding.health.keyLater") : t("onboarding.health.down");
 }
 
-/** Les services qui répondent de nouveau depuis la lecture d'avant, dits d'un seul texte. */
+/** Services that respond again since the previous read, stated in a single text. */
 function useRecovered(report?: HealthReportView): string {
   const previous = useRef<Record<string, boolean>>({});
   const [text, setText] = useState("");
@@ -50,10 +50,10 @@ function useRecovered(report?: HealthReportView): string {
 }
 
 /**
- * Un état écrit par service (jamais la couleur seule). Les services inconnus du front gardent
- * leur nom brut ; le détail du back (français, sans secret) suit pour un service en panne. Une
- * seule zone `status`, toujours dans la page : son texte ne change qu'aux moments utiles (lecture
- * impossible, vérification en cours, service revenu), pas à chaque relecture.
+ * A state written per service (never colour alone). Services unknown to the front keep
+ * their raw name; the back end's detail (in French, without secrets) follows for a service down. A
+ * single `status` zone, always on the page: its text changes only at useful moments (read
+ * impossible, check in progress, service back), not at every reread.
  */
 export function ServiceChecklist({ report, isLoading, isError }: ServiceChecklistProps) {
   const checks = Object.entries(report?.checks ?? {});

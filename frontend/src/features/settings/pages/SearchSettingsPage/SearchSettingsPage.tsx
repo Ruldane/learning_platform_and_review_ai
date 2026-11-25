@@ -6,7 +6,7 @@ import { useSearchUsage } from "../../hooks/useSearchUsage";
 import { useSettings } from "../../hooks/useSettings";
 import { SearchSettingsEditor } from "./SearchSettingsEditor";
 
-/** Réglages > Recherche web : langues, moteurs, domaines et plafonds de l'Éclaireur (10.1 à 10.4). */
+/** Settings > Web search: languages, engines, domains and the Éclaireur's caps (10.1 to 10.4). */
 export function SearchSettingsPage() {
   const settings = useSettings();
   const usage = useSearchUsage();

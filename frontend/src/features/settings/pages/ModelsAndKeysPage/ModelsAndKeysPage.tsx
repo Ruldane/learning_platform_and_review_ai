@@ -17,7 +17,7 @@ import { readPresets, readTiers } from "../../tierChoices";
 import { AdvancedMode } from "./AdvancedMode";
 import { MissingProviderWarning } from "./MissingProviderWarning";
 
-/** Réglages > Modèles et clés : clés API par fournisseur, préréglages et modèle par niveau. */
+/** Settings > Models and keys: API keys per provider, presets and model per level. */
 export function ModelsAndKeysPage() {
   const settings = useSettings();
   const keys = useApiKeys();

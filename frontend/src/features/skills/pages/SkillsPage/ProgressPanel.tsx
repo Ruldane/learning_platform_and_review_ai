@@ -5,7 +5,7 @@ import { useSkillHistory } from "../../hooks/useSkillHistory";
 import { toHistoryView } from "../../toView";
 import { QueryPanel } from "./QueryPanel";
 
-/** L'onglet Progression : un relevé par semaine sur douze semaines. */
+/** The Progress tab: one reading per week over twelve weeks. */
 export function ProgressPanel() {
   const query = useSkillHistory(true);
   const navigate = useNavigate();

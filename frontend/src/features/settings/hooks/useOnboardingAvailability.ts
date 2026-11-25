@@ -11,9 +11,9 @@ import { isRefused, refusedFields } from "../refusedFields";
 import type { SettingsOut } from "../types";
 
 /**
- * Les trois durées de la dernière étape : du texte pendant la saisie, d'abord celles que les
- * réglages portent (ou les défauts du back). `invalid` bloque « Terminer » ; `refused` marque les
- * champs qu'une 422 de l'enregistrement a nommés (jamais leur valeur).
+ * The three durations of the last step: text while typing, first those that the
+ * settings hold (or the back-end defaults). `invalid` blocks « Terminer »; `refused` marks the
+ * fields that a 422 from the save named (never their value).
  */
 export function useOnboardingAvailability(settings: SettingsOut, failure: unknown) {
   const stored = toAvailabilityDraft(settings);

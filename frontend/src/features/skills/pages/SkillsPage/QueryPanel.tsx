@@ -7,14 +7,14 @@ import { LoadingState } from "@/shared/ui/states/LoadingState";
 
 interface QueryPanelProps<T> {
   query: UseQueryResult<T>;
-  /** Le texte annoncé pendant le chargement. */
+  /** The text announced while loading. */
   loading?: string;
   children: (data: T) => ReactNode;
 }
 
 /**
- * Chargement, erreur avec « Réessayer », puis le contenu. Une relecture qui échoue garde les
- * données déjà affichées (la carte se relit toutes les 30 s : une coupure ne la vide pas).
+ * Loading, an error with « Réessayer », then the content. A failed reread keeps the
+ * data already shown (the map rereads every 30 s: an outage does not empty it).
  */
 export function QueryPanel<T>({ query, loading, children }: QueryPanelProps<T>) {
   if (query.data !== undefined) return <>{children(query.data)}</>;

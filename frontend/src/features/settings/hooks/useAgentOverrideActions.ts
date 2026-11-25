@@ -3,16 +3,16 @@ import type { ModelChoice, SettingsOut } from "../types";
 import { withAgentOverrides } from "../userSettings";
 import { useUpdateSettings } from "./useUpdateSettings";
 
-/** Les choix demandés et pas encore écrits : `null` retire la surcharge de l'agent. */
+/** Requested choices not yet written: `null` removes the agent's override. */
 type Wanted = Record<string, ModelChoice | null>;
 
 /**
- * Choisir le modèle d'un agent, ou le rendre à son niveau (`null`) : un `PUT /settings` complet,
- * un seul à la fois. Un choix fait pendant un envoi (une flèche de plus dans une liste, un autre
- * agent) n'est jamais jeté : il attend, le dernier choix de chaque agent est rejoué à la fin de
- * l'envoi, à partir des réglages que le serveur vient de renvoyer. Les listes montrent le choix
- * demandé sans retour arrière (`overrides`) ; si un envoi échoue, elles retombent sur ce que le
- * serveur a enregistré et les choix en attente sont abandonnés.
+ * Choose an agent's model, or return it to its level (`null`): one full `PUT /settings`,
+ * one at a time. A choice made during a send (one more arrow in a list, another agent) is never
+ * dropped: it waits, and each agent's last choice is replayed at the end of the send, from the
+ * settings the server has just returned. The lists show the requested choice without
+ * going back (`overrides`); if a send fails, they fall back to what the server saved and the
+ * pending choices are abandoned.
  */
 export function useAgentOverrideActions(settings: SettingsOut) {
   const update = useUpdateSettings();
@@ -33,7 +33,7 @@ export function useAgentOverrideActions(settings: SettingsOut) {
       }
       setSaved(true);
     } catch {
-      queue.current = {}; // l'erreur est affichée depuis la mutation
+      queue.current = {}; // the error is shown from the mutation
     } finally {
       running.current = false;
       setWanted({});
@@ -43,9 +43,9 @@ export function useAgentOverrideActions(settings: SettingsOut) {
   return {
     pending: update.isPending,
     error: update.error,
-    /** Un enregistrement vient de finir (les choix demandés sont écrits). */
+    /** A save has just finished (the requested choices are written). */
     saved,
-    /** Les surcharges telles que le serveur les a, avec les choix demandés qu'il n'a pas encore. */
+    /** Overrides as the server has them, plus the requested choices it does not have yet. */
     overrides: (): Record<string, ModelChoice | undefined> => {
       const shown: Record<string, ModelChoice | undefined> = { ...settings.agent_overrides };
       for (const [agent, choice] of Object.entries(wanted)) {

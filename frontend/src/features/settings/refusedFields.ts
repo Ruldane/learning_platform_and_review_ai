@@ -1,8 +1,8 @@
 import { ApiError } from "@/shared/api/errors";
 
 /**
- * Les champs qu'une 422 du back nomme (`details.fields`, des chemins comme
- * « availability.weekday_minutes » ou « agent_overrides »), sans jamais une valeur. Vide pour toute
+ * The fields that a 422 from the back end names (`details.fields`, paths such as
+ * « availability.weekday_minutes » or « agent_overrides »), never a value. Empty for any
  * autre erreur.
  */
 export function refusedFields(error: unknown): string[] {
@@ -15,6 +15,6 @@ export function refusedFields(error: unknown): string[] {
     : [];
 }
 
-/** Le chemin `field` est-il refusé (lui-même ou un de ses sous-champs) ? */
+/** Is the path `field` refused (itself or one of its sub-fields)? */
 export const isRefused = (refused: readonly string[], field: string): boolean =>
   refused.some((path) => path === field || path.startsWith(`${field}.`));

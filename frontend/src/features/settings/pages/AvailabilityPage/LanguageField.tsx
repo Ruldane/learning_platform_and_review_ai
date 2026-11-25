@@ -6,7 +6,7 @@ const isListed = (code: string): code is SearchLanguage =>
   (SEARCH_LANGUAGES as readonly string[]).includes(code);
 
 /**
- * La langue des leçons ; la langue enregistrée reste proposée même si la liste ne la connaît pas.
+ * The lesson language; the saved language stays offered even if the list does not know it.
  */
 export function LanguageField({
   value,

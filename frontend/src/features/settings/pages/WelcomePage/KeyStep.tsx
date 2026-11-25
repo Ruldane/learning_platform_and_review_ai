@@ -12,7 +12,7 @@ import { useKeyActions } from "../../hooks/useKeyActions";
 import { KeyChoice } from "./KeyChoice";
 import { KeyPlanNotice } from "./KeyPlanNotice";
 
-/** D'où vient la clé déjà là (le fichier `.env` d'abord), ou le fait qu'il n'y en a pas. */
+/** Where the key already there comes from (`.env` first), or that there is none. */
 function keyStatus(entries: ApiKeyEntry[]): string {
   const labels = (source: "env" | "ui") =>
     entries
@@ -29,10 +29,10 @@ function keyStatus(entries: ApiKeyEntry[]): string {
 }
 
 /**
- * Étape 3 : une clé d'API, saisie (`ApiKeyForm`) puis testée, ou déjà fournie par `.env` (dit en
- * toutes lettres). Seuls les fournisseurs de modèles sont proposés (pas Brave) et une clé suffit :
- * celle du fournisseur des modèles, ou d'un autre dont les modèles prennent alors la place. Si la
- * lecture des clés ou des modèles échoue, « Réessayer » rend le focus au choix du fournisseur.
+ * Step 3: an API key, entered (`ApiKeyForm`) then tested, or already provided by `.env` (said
+ * plainly). Only model providers are offered (not Brave) and one key is enough:
+ * the one for the models' provider, or another whose models then take its place. If the
+ * key or model read fails, « Réessayer » gives focus back to the provider choice.
  */
 export function KeyStep({ settings }: { settings: SettingsOut }) {
   const { keys, models, plan, entries } = useKeyPlan(settings);

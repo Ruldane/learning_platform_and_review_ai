@@ -6,7 +6,7 @@ import { useUpdateSettings } from "./useUpdateSettings";
 
 const ignore = () => undefined;
 
-/** Actions sur les niveaux : appliquer un préréglage ou changer le modèle d'un seul niveau. */
+/** Level actions: apply a preset, or change the model of a single level. */
 export function useTierActions(settings: SettingsOut | undefined, track: TrackAction) {
   const update = useUpdateSettings();
 

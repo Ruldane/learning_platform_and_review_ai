@@ -6,7 +6,7 @@ import type { BlockOut } from "../../types";
 import { NoBlockState } from "./NoBlockState";
 import type { StartProps } from "./startTypes";
 
-/** Le bloc du jour : mode du tuteur et « Commencer mon bloc », ou la reprise de la session ouverte. */
+/** The day's block: tutor mode and « Commencer mon bloc », or resuming the open session. */
 export function DayStart({
   block,
   mode,

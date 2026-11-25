@@ -11,20 +11,20 @@ import { AgentLine } from "./AgentLine";
 interface AgentOverridesTableProps {
   agents: AgentRow[];
   overrides: AgentOverrides;
-  /** Le modèle de chaque niveau : ce que suit un agent sans surcharge. */
+  /** Each level's model: what an agent without an override follows. */
   tiers: TierChoices;
   providers: ProviderOption[];
   disabled?: boolean;
-  /** Un enregistrement est en cours (annoncé, sans retirer le focus aux listes). */
+  /** A save is in progress (announced, without taking focus from the lists). */
   busy?: boolean;
-  /** `null` : l'agent retourne à son niveau. */
+  /** `null`: the agent goes back to its level. */
   onChange: (agent: string, choice: ModelChoice | null) => void;
 }
 
 const COLUMNS = ["agent", "tier", "model"] as const;
 
 /**
- * Un agent par ligne : son niveau, le modèle de ce niveau, et le choix d'un autre modèle pour lui
+ * One agent per row: its level, that level's model, and the choice of another model for it
  * seul.
  */
 export function AgentOverridesTable({

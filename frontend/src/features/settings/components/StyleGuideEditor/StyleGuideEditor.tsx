@@ -5,12 +5,12 @@ import { errorHint } from "../errorHint";
 
 interface StyleGuideEditorProps {
   value: string;
-  /** Refusé par le serveur : le texte n'est jamais cité, seulement le champ. */
+  /** Refused by the server: the text is never quoted, only the field. */
   refused?: boolean;
   onChange: (value: string) => void;
 }
 
-/** Le guide de style personnel : un texte libre et le nombre de caractères écrits. */
+/** The personal style guide: free text and the character count. */
 export function StyleGuideEditor({ value, refused = false, onChange }: StyleGuideEditorProps) {
   const id = useId();
   const hintId = useId();

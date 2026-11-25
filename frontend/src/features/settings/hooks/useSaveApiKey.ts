@@ -3,20 +3,20 @@ import { postApiKey } from "../api";
 import { settingsKeys } from "../queryKeys";
 
 /**
- * Enregistre la clé d'un fournisseur. La clé n'existe que dans les variables de la mutation :
- * ni clé de requête, ni cache, ni URL. `has_key` change, donc les modèles sont rechargés.
+ * Saves a provider's key. The key exists only in the mutation's variables:
+ * not in a query key, cache, or URL. `has_key` changes, so the models are reloaded.
  */
 export function useSaveApiKey() {
   const queryClient = useQueryClient();
   return useMutation({
-    // Pas de conservation : la mutation (et la clé de ses variables) quitte le cache dès `reset()`.
+    // No retention: the mutation (and its variables' key) leaves the cache on `reset()`.
     gcTime: 0,
     mutationFn: ({ provider, key }: { provider: string; key: string }) => postApiKey(provider, key),
     onSuccess: () =>
       Promise.all([
         queryClient.invalidateQueries({ queryKey: settingsKeys.apiKeys }),
         queryClient.invalidateQueries({ queryKey: settingsKeys.models }),
-        // La clé Brave change `has_key` du compteur de la recherche web.
+        // The Brave key changes `has_key` of the web search counter.
         queryClient.invalidateQueries({ queryKey: settingsKeys.searchUsage }),
       ]),
   });

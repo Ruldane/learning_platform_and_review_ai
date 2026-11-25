@@ -2,7 +2,7 @@ import { t } from "@/shared/i18n/t";
 import { levelKey } from "../levels";
 import type { SkillDetailView } from "../viewTypes";
 
-/** Niveau, domaine et autres noms de la compétence. */
+/** The skill's level, domain and other names. */
 export function SkillSummary({ detail }: { detail: SkillDetailView }) {
   return (
     <div className="flex flex-col gap-1 text-sm">

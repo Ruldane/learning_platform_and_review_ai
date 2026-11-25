@@ -3,8 +3,8 @@ import { t } from "@/shared/i18n/t";
 const ROWS = ["prompts", "searches", "rest"] as const;
 
 /**
- * « Ce qui sort de ta machine » (SPEC 17.3) : le tableau des données et de leur destination, puis
- * ce que Tremplin retire ou limite. Elle vient avant la clé d'API : la clé envoie les prompts au
+ * « Ce qui sort de ta machine » (SPEC 17.3): the table of data and where it goes, then
+ * what Tremplin removes or limits. It comes before the API key: the key sends the prompts to the
  * fournisseur.
  */
 export function PrivacyNotice() {

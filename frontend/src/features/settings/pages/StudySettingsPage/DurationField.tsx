@@ -10,7 +10,7 @@ interface DurationFieldProps {
   onChange: (value: string) => void;
 }
 
-/** Une durée en minutes entières, avec ses bornes dites sous le champ (rouges quand elles sont dépassées). */
+/** A duration in whole minutes, with its bounds stated under the field (red when exceeded). */
 export function DurationField({ label, value, range, invalid, onChange }: DurationFieldProps) {
   const hintId = useId();
   return (

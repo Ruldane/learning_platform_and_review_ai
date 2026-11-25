@@ -7,8 +7,8 @@ import type { ChosenLesson } from "./chosenLesson";
 import type { StartProps } from "./startTypes";
 
 /**
- * La leçon choisie (`?lesson=` ou « Demander au tuteur ») : mode, leçon, départ. Si une session est
- * déjà ouverte, elle reste à reprendre : le back n'en ouvre pas une seconde.
+ * The chosen lesson (`?lesson=` or « Demander au tuteur »): mode, lesson, start. If a session is
+ * already open, it stays to resume: the back end does not open a second one.
  */
 export function ChosenStart({
   chosen,

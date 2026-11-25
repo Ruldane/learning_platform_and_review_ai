@@ -12,17 +12,17 @@ import { StudyEnd } from "./StudyEnd";
 import { StudyRunning } from "./StudyRunning";
 
 interface StudySessionPageProps {
-  /** Ne sert qu'aux tests (faux WebSocket). */
+  /** Only for tests (fake WebSocket). */
   createSocket?: SocketFactory;
-  /** Intervalle de relecture du bilan, en ms (réduit par les tests). */
+  /** Summary reread interval, in ms (shortened by the tests). */
   pollMs?: number;
 }
 
 /**
- * Une session d'étude (`/study/session/:studyId`). Ouverte : le Tuteur, le minuteur et le
- * tableau. Terminée : le bilan (relu jusqu'à `finished` après « Terminer »). Abandonnée ou
- * introuvable : un état vide qui ramène au départ. Une relecture ratée en arrière-plan se dit en
- * ligne, sans remplacer la page (le minuteur reste monté).
+ * A study session (`/study/session/:studyId`). Open: the Tutor, the timer and the
+ * table. Finished: the summary (reread until `finished` after « Terminer »). Abandoned or
+ * not found: an empty state that leads back to the start. A failed background reread is said in a
+ * line, without replacing the page (the timer stays mounted).
  */
 export function StudySessionPage({
   createSocket,

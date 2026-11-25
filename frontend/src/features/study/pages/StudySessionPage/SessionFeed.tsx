@@ -8,12 +8,12 @@ import { TutorInterrupt } from "./TutorInterrupt";
 
 interface SessionFeedProps {
   run: StudyRun;
-  /** La session d'agents vit encore : le champ de message est ouvert. */
+  /** The agent session is still live: the message field is open. */
   live: boolean;
   finishing: boolean;
 }
 
-/** Colonne de gauche : l'échange avec le Tuteur (bulles, questions) et le champ de message. */
+/** Left column: the exchange with the Tutor (bubbles, questions) and the message field. */
 export function SessionFeed({ run, live, finishing }: SessionFeedProps) {
   const { stream, actions } = run;
   const answering = stream.view.pendingInterrupt?.kind === "tutor_question";

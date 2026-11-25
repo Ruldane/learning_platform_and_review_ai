@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchPostingChoices } from "../api";
 import { skillKeys } from "../queryKeys";
 
-/** Les offres à proposer comme cible de la comparaison, lues quand on choisit « Une offre ». */
+/** The offers to offer as the comparison target, read when « Une offre » is chosen. */
 export function usePostingChoices(enabled: boolean) {
   return useQuery({
     queryKey: skillKeys.postings,

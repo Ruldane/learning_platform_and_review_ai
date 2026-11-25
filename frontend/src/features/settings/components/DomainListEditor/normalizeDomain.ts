@@ -2,10 +2,10 @@ const LABEL = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/;
 const TLD = /^([a-z]{2,63}|xn--[a-z0-9-]{1,59})$/;
 
 /**
- * Ramène une saisie à un nom de domaine : minuscules, sans schéma, identifiants, chemin, requête,
- * fragment, port, point final ni « www. ». Rend `null` si ce n'est pas un domaine (au moins deux
- * étiquettes, extension alphabétique : adresses IP et « localhost » refusées). Même règle que
- * `normalize_domain` du back (`research/service/domains.py`).
+ * Reduces input to a domain name: lowercase, no scheme, credentials, path, query,
+ * fragment, port, trailing dot or "www.". Returns `null` if it is not a domain (at least two
+ * labels, alphabetic extension: IP addresses and "localhost" are refused). Same rule as
+ * `normalize_domain` on the back end (`research/service/domains.py`).
  */
 export function normalizeDomain(raw: string): string | null {
   let host = raw.trim().toLowerCase();

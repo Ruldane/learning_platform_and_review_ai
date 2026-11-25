@@ -18,7 +18,7 @@ interface SessionFieldsProps {
   onChange: (next: AvailabilityDraft) => void;
 }
 
-/** Heure du brief, délais de relance, tours de débat, plafond par session, langue des leçons. */
+/** Brief time, reminder delays, debate turns, per-session cap, lesson language. */
 export function SessionFields({ draft, errors, refused, onChange }: SessionFieldsProps) {
   return (
     <>

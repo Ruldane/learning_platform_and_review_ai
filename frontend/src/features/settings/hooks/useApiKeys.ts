@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchApiKeys } from "../api";
 import { settingsKeys } from "../queryKeys";
 
-/** Une entrée par fournisseur : origine de la clé et 4 derniers caractères, jamais la clé. */
+/** One entry per provider: origin of the key and last 4 characters, never the key. */
 export function useApiKeys(enabled = true) {
   return useQuery({
     queryKey: settingsKeys.apiKeys,

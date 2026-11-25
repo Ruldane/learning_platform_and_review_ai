@@ -7,7 +7,7 @@ import type {
   SettingsOut,
 } from "./types";
 
-/** Données de test de la feature (réponses typiques du back) ; jamais importées par le code de l'application. */
+/** Feature test data (typical back-end responses); never imported by application code. */
 function allTiers(provider: string, model: string) {
   const choice: ModelChoice = { provider, model };
   return { fast: choice, standard: choice, strong: choice, vision: choice };
@@ -100,7 +100,7 @@ export const searchUsageFixture: SearchUsageOut = {
   brave: { has_key: true, used: 120, cap: 900, month: "2026-11" },
 };
 
-/** Quelques agents de `GET /settings/agents`, dans l'ordre du registre (sans `demo_*`). */
+/** A few agents from `GET /settings/agents`, in registry order (without `demo_*`). */
 export const agentsFixture: AgentOut[] = [
   { name: "scout", tier: "fast" },
   { name: "strategist", tier: "strong" },

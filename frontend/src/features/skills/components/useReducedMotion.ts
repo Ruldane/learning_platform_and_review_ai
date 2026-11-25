@@ -13,7 +13,7 @@ function snapshot(): boolean {
   return typeof window.matchMedia === "function" && window.matchMedia(QUERY).matches;
 }
 
-/** `true` quand l'utilisatrice a demandé moins de mouvement : les courbes se tracent d'un coup. */
+/** `true` when the user has asked for less motion: the curves draw at once. */
 export function useReducedMotion(): boolean {
   return useSyncExternalStore(subscribe, snapshot, () => false);
 }

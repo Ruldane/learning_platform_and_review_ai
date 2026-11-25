@@ -4,9 +4,9 @@ import { useLaunchSource } from "@/shared/session-ui";
 import { importProfile, type ProfileImport } from "../api";
 
 /**
- * `POST /profile/import` depuis le premier lancement : la lecture se fait en arrière-plan côté
- * serveur, l'étape n'attend rien d'autre que l'accusé de réception. Un échec garde son message
- * (409 : une lecture est déjà en cours, 413 et 415 : le fichier) ; envoyer de nouveau l'efface.
+ * `POST /profile/import` from the first run: the reading happens in the background on the
+ * server, the step waits for nothing but the acknowledgement. A failure keeps its message
+ * (409: a reading is already in progress; 413 and 415: the file); sending again clears it.
  */
 export function useImportProfile() {
   const provider = useLaunchSource();

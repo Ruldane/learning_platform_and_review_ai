@@ -1,7 +1,7 @@
 /**
- * Types d'affichage des composants de la feature. Les composants n'ont pas le droit d'importer
- * `types.ts` ni `shared/api` (règle de découpage) : ils décrivent donc ici, structurellement, ce
- * qu'ils reçoivent. `types.ts` vérifie à la compilation que les types générés les satisfont.
+ * Display types for the feature's components. Components may not import
+ * `types.ts` nor `shared/api` (splitting rule): they therefore describe here, structurally, what
+ * they receive. `types.ts` checks at compile time that the generated types satisfy them.
  */
 
 export const TIERS = ["fast", "standard", "strong", "vision"] as const;
@@ -15,12 +15,12 @@ export interface ModelChoice {
   model: string;
 }
 
-/** Le modèle choisi pour chacun des quatre niveaux. */
+/** The model chosen for each of the four levels. */
 export type TierChoices = Record<Tier, ModelChoice>;
 
 export type PresetMap = Record<PresetName, TierChoices>;
 
-/** Un fournisseur proposé dans les listes déroulantes (`models` nul : saisie libre). */
+/** A provider offered in the dropdowns (`models` null: free-text entry). */
 export interface ProviderOption {
   name: string;
   label: string;
@@ -28,7 +28,7 @@ export interface ProviderOption {
   models: string[] | null;
 }
 
-/** Une clé telle qu'affichée : jamais en clair, seulement les 4 derniers caractères. */
+/** A key as displayed: never in clear, only the last 4 characters. */
 export interface ApiKeyEntry {
   provider: string;
   label: string;
@@ -43,13 +43,13 @@ export interface KeyTestView {
   message: string;
 }
 
-/** Les langues de recherche proposées, dans l'ordre d'affichage (codes ISO 639-1). */
+/** Search languages offered, in display order (ISO 639-1 codes). */
 export const SEARCH_LANGUAGES = ["fr", "en", "es", "de", "it", "pt"] as const;
 export type SearchLanguage = (typeof SEARCH_LANGUAGES)[number];
 
 export type SearchProviderName = "searxng" | "brave";
 
-/** Réglages de la recherche web tels que les éditent les composants. */
+/** Web search settings as the components edit them. */
 export interface SearchSettingsView {
   languages: string[];
   preferred: string[];
@@ -59,7 +59,7 @@ export interface SearchSettingsView {
   maxPages: number;
 }
 
-/** Consommation Brave du mois civil (`month` : « AAAA-MM », en UTC). */
+/** Brave usage for the calendar month (`month`: "AAAA-MM", in UTC). */
 export interface BraveUsageView {
   hasKey: boolean;
   used: number;
@@ -68,7 +68,7 @@ export interface BraveUsageView {
 }
 
 /**
- * Les durées de la disponibilité telles que les édite `AvailabilityFields` (du texte pendant la
+ * The availability durations as `AvailabilityFields` edits them (text while being typed).
  * saisie).
  */
 export interface AvailabilityValues {
@@ -80,7 +80,7 @@ export interface AvailabilityValues {
 export type AvailabilityKey = keyof AvailabilityValues;
 
 /**
- * Quelles durées sont hors bornes ; `weekendOrder` : le minimum du week-end dépasse son maximum.
+ * Which durations are out of bounds; `weekendOrder`: the weekend minimum exceeds its maximum.
  */
 export interface AvailabilityFlags {
   weekday: boolean;
@@ -90,24 +90,24 @@ export interface AvailabilityFlags {
 }
 
 /**
- * Un agent de `GET /settings/agents` ; `tier` nul : une surcharge reste pour un agent que le
- * serveur ne connaît plus.
+ * An agent from `GET /settings/agents`; `tier` null: an override remains for an agent the
+ * server no longer knows.
  */
 export interface AgentRow {
   name: string;
   tier: Tier | null;
 }
 
-/** Les surcharges de modèle par agent (nom de l'agent vers son modèle). */
+/** Model overrides per agent (agent name to its model). */
 export type AgentOverrides = Record<string, ModelChoice | undefined>;
 
-/** Ce qu'un champ de fichier PDF a retenu : le fichier, ou la raison de son refus. */
+/** What a PDF file field kept: the file, or the reason it was refused. */
 export interface PdfChoice {
   file: File | null;
   problem: string | null;
 }
 
-/** Les deux PDF de l'étape CV, gardés par la page (voir `useCvDocuments`). */
+/** The two PDFs of the CV step, kept by the page (see `useCvDocuments`). */
 export interface CvDocuments {
   cv: PdfChoice;
   linkedin: PdfChoice;

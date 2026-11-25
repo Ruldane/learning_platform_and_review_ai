@@ -2,7 +2,7 @@ import { t } from "@/shared/i18n/t";
 import type { PostingRefView } from "../viewTypes";
 import { SmartLink } from "./SmartLink";
 
-/** Les offres qui exigent la compétence ; vide tant que l'analyse d'écart n'existe pas (phase 6). */
+/** The offers that require the skill; empty until the gap analysis exists (phase 6). */
 export function PostingList({ postings }: { postings: PostingRefView[] }) {
   if (postings.length === 0) {
     return <p className="text-sm text-muted-foreground">{t("skills.drawer.postingsEmpty")}</p>;

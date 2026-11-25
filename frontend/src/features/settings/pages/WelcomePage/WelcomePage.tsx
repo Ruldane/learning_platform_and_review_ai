@@ -8,13 +8,13 @@ import { useSettings } from "../../hooks/useSettings";
 import { WelcomeSteps } from "./WelcomeSteps";
 
 /**
- * `/welcome` : le premier lancement en cinq étapes (SPEC 15.5, 17.3), hors de la navigation. La
- * porte a déjà lu les réglages, donc la page s'ouvre sans attendre ; si la lecture manque, elle le
- * dit avec « Réessayer » (le titre de l'étape prend le focus quand les réglages arrivent). Après
- * « Tout supprimer » en mode local, `state.deleted` fait dire que les données sont parties : la
- * zone `status` est dans la page dès le premier rendu, vide, et le message y entre ensuite (une
- * zone insérée déjà remplie n'est pas annoncée de façon fiable) : son texte est posé par un
- * effet, sur le nœud, hors du rendu.
+ * `/welcome`: the first run in five steps (SPEC 15.5, 17.3), outside navigation. The
+ * gate has already read the settings, so the page opens without waiting; if the read is missing,
+ * it says so with « Réessayer » (the step title takes focus when the settings arrive). After
+ * « Tout supprimer » in local mode, `state.deleted` makes it say the data has gone: the
+ * `status` zone is on the page from the first render, empty, and the message enters it later (a
+ * zone inserted already filled is not reliably announced): its text is set by an
+ * effect, on the node, outside the render.
  */
 export function WelcomePage() {
   const settings = useSettings();

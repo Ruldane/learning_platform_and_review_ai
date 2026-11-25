@@ -3,7 +3,7 @@ import { fetchAgents } from "../api";
 import { settingsKeys } from "../queryKeys";
 
 /**
- * Les agents dont on peut surcharger le modèle (`GET /settings/agents`) ; lus seulement si
+ * Agents whose model can be overridden (`GET /settings/agents`); read only if
  * `enabled`.
  */
 export function useAgents(enabled = true) {

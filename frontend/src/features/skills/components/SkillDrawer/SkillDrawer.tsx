@@ -9,15 +9,15 @@ import { Section } from "./Section";
 import { SkillSummary } from "./SkillSummary";
 
 interface SkillDrawerProps {
-  /** `null` : tiroir fermé. */
+  /** `null`: drawer closed. */
   detail: SkillDetailView | null;
   onClose: () => void;
 }
 
 /**
- * Détail d'une compétence, à droite de la carte : preuves (avec leurs liens), offres qui l'exigent
- * et prochaine action. Un `role="dialog"` volontairement non modal : la carte derrière reste
- * utilisable. Le focus arrive sur le titre à chaque compétence ouverte, Échap ferme le tiroir.
+ * Detail of a skill, to the right of the card: evidence (with its links), offers that require it
+ * and the next action. A deliberately non-modal `role="dialog"`: the card behind stays
+ * usable. Focus moves to the title for each skill opened; Escape closes the drawer.
  */
 export function SkillDrawer({ detail, onClose }: SkillDrawerProps) {
   const titleId = useId();

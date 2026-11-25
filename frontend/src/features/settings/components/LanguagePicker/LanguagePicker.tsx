@@ -4,15 +4,15 @@ import { SEARCH_LANGUAGES } from "../viewTypes";
 import type { SearchLanguage } from "../viewTypes";
 
 interface LanguagePickerProps {
-  /** Codes de langue cochés (au moins un). */
+  /** Checked language codes (at least one). */
   value: string[];
   onChange: (languages: string[]) => void;
 }
 
 /**
- * Les six langues de recherche, en cases à cocher. La dernière langue cochée est désactivée : une
- * recherche sans langue n'a pas de sens. L'ordre rendu est celui de la liste ; un code inconnu
- * déjà enregistré est conservé en fin de liste plutôt que perdu en silence.
+ * The six search languages, as checkboxes. The last checked language is disabled: a
+ * search with no language makes no sense. The rendered order is the list's order; an unknown code
+ * already saved is kept at the end of the list rather than silently lost.
  */
 export function LanguagePicker({ value, onChange }: LanguagePickerProps) {
   const legendId = useId();

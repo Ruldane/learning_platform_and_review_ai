@@ -9,7 +9,7 @@ function gapText(gap: number): string {
   return t(gap === 1 ? "skills.compare.gapSome" : "skills.compare.gapMany", { gap });
 }
 
-/** Le tableau : une ligne par compétence cible, le plus grand écart en premier. */
+/** The table: one row per target skill, the largest gap first. */
 export function CompareGrid({ rows }: { rows: CompareRowView[] }) {
   const sorted = [...rows].sort((a, b) => b.gap - a.gap);
   return (

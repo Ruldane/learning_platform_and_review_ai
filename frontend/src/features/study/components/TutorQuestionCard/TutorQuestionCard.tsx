@@ -10,13 +10,13 @@ const cardClass =
 interface TutorQuestionCardProps {
   question: string;
   /**
-   * Les options de l'interruption (`stuck`, `skip`). Le libellé de « stuck » porte le compte des
-   * indices (« Je bloque (1/3) », puis « Voir la solution ») : la carte l'affiche tel quel et ne
-   * compte rien, le back reste la seule source.
+   * The interruption's options (`stuck`, `skip`). The « stuck » label carries the count of
+   * hints (« Je bloque (1/3) », then « Voir la solution »): the card shows it as-is and
+   * counts nothing; the back end remains the only source.
    */
   options: TutorOptionView[];
   answered: boolean;
-  /** Une réponse est en route : plus rien n'est modifiable. */
+  /** An answer is under way: nothing can be changed any more. */
   disabled: boolean;
   onAnswer: (text: string) => void;
   onStuck: () => void;
@@ -24,9 +24,9 @@ interface TutorQuestionCardProps {
 }
 
 /**
- * Question du Tuteur (section, exercice ou question finale) : un champ de réponse, « Je bloque »
- * (indice, puis solution) et « Passer ». Une fois répondue, la carte se replie : la question, la
- * réponse saisie dans cet onglet en lecture seule et « Réponse envoyée ».
+ * Tutor's question (section, exercise or final question): an answer field, « Je bloque »
+ * (hint, then solution) and « Passer ». Once answered, the card folds: the question, the
+ * answer typed in this tab, read-only, and « Réponse envoyée ».
  */
 export function TutorQuestionCard({
   question,

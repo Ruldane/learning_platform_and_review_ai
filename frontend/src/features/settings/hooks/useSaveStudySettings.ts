@@ -2,7 +2,7 @@ import type { SettingsOut } from "../types";
 import { withStudySettings, type StudyDraft } from "../studySettings";
 import { useUpdateSettings } from "./useUpdateSettings";
 
-/** Enregistre les réglages d'étude : `PUT /settings` complet, le reste des réglages inchangé. */
+/** Saves the study settings: a full `PUT /settings`, the other settings unchanged. */
 export function useSaveStudySettings(settings: SettingsOut) {
   const update = useUpdateSettings();
   return {

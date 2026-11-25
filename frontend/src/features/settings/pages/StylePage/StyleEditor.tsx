@@ -11,8 +11,8 @@ import type { SettingsOut } from "../../types";
 import { withStyleGuide } from "../../userSettings";
 
 /**
- * Le formulaire du style : le brouillon n'existe que pendant l'édition (`null` : le texte du
- * serveur). Enregistrement par bouton ; en cas d'échec, le texte reste.
+ * The style form: the draft exists only while editing (`null`: the text of the
+ * server). Saving by button; on failure, the text stays.
  */
 export function StyleEditor({ settings }: { settings: SettingsOut }) {
   const [draft, setDraft] = useState<string | null>(null);
@@ -28,11 +28,11 @@ export function StyleEditor({ settings }: { settings: SettingsOut }) {
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (blocked || draft === null) return;
-    // Une frappe faite pendant l'envoi reste : le brouillon n'est rendu au serveur que s'il n'a pas
-    // changé.
+    // A keystroke made during the send stays: the draft is sent to the server only if it has not
+    // changed.
     saver.save(withStyleGuide(settings, draft)).then(
       () => setDraft((current) => (current === draft ? null : current)),
-      () => undefined, // l'erreur est affichée depuis la mutation ; le texte est gardé
+      () => undefined, // the error is shown from the mutation; the text is kept
     );
   };
 

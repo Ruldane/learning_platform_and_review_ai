@@ -1,7 +1,7 @@
 import { t } from "@/shared/i18n/t";
 import { LEVEL_COLORS, LEVEL_KEYS } from "../levels";
 
-/** Légende du graphe : chaque couleur de niveau avec son nom écrit, et ce que la taille signifie. */
+/** Legend of the graph: each level colour with its written name, and what the size means. */
 export function SkillLegend() {
   return (
     <div className="flex flex-col gap-1 text-sm">

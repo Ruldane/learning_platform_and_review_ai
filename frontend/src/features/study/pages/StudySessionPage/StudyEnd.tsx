@@ -5,7 +5,7 @@ import { StudySummaryCard } from "../../components/StudySummaryCard";
 import { toSummaryView } from "../../toView";
 import type { StudySessionOut } from "../../types";
 
-/** La fin d'une session : le bilan, puis où aller ensuite (réviser les fiches, revenir au départ). */
+/** The end of a session: the summary, then where to go next (review cards, back to start). */
 export function StudyEnd({ session }: { session: StudySessionOut }) {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">

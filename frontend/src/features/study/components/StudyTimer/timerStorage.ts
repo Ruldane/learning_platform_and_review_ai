@@ -2,10 +2,10 @@ import { onLocalReset } from "@/shared/lib/localReset";
 import type { TimerState } from "../viewTypes";
 
 /**
- * Le minuteur d'une session, gardé dans `sessionStorage` : un rechargement de la page ou un détour
- * par une autre page ne fait plus perdre le temps de travail. Aucune seconde n'est ajoutée pour
- * l'absence (le back borne de toute façon par la durée réelle). Le stockage peut être refusé
- * (navigation privée, quota) : chaque accès est sous `try/catch`, avec repli sur un minuteur neuf.
+ * A session's timer, kept in `sessionStorage`: a page reload or a detour
+ * to another page no longer loses the work time. No second is added for the
+ * absence (the back end caps it by the real duration anyway). Storage may be refused
+ * (private browsing, quota): each access is under `try/catch`, falling back to a new timer.
  */
 const TIMER_PREFIX = "study-timer:";
 export const timerKey = (studyId: string) => `${TIMER_PREFIX}${studyId}`;
@@ -42,20 +42,20 @@ export function writeTimer(key: string | undefined, timer: TimerState): void {
   try {
     window.sessionStorage.setItem(key, JSON.stringify(timer));
   } catch {
-    // stockage refusé : le minuteur continue en mémoire
+    // storage refused: the timer keeps running in memory
   }
 }
 
-/** Oublie le minuteur d'une session terminée ou abandonnée. */
+/** Forgets the timer of a finished or abandoned session. */
 export function clearTimer(studyId: string): void {
   try {
     window.sessionStorage.removeItem(timerKey(studyId));
   } catch {
-    // rien à faire
+    // nothing to do
   }
 }
 
-/** « Tout supprimer » : aucun minuteur d'une session de l'espace effacé ne reste au navigateur. */
+/** « Tout supprimer »: no timer of a session in the erased space stays in the browser. */
 function clearAllTimers(): void {
   try {
     const keys = Array.from({ length: window.sessionStorage.length }, (_, index) =>
@@ -65,7 +65,7 @@ function clearAllTimers(): void {
       if (key?.startsWith(TIMER_PREFIX)) window.sessionStorage.removeItem(key);
     }
   } catch {
-    // stockage refusé : rien n'a été gardé
+    // storage refused: nothing was kept
   }
 }
 

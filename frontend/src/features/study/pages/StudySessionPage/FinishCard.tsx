@@ -9,7 +9,7 @@ interface FinishCardProps {
   onFinish: () => void;
 }
 
-/** La question de fin du Tuteur : « Terminer la session » (par `PATCH finish`, le temps est enregistré). */
+/** The Tutor's closing question: « Terminer la session » (via `PATCH finish`, time saved). */
 export function FinishCard({ question, answered, canFinish, onFinish }: FinishCardProps) {
   const titleId = useId();
   return (

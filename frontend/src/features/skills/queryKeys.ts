@@ -1,4 +1,4 @@
-/** Clés TanStack Query de la feature : des identifiants et des nombres, jamais un nom de compétence. */
+/** TanStack Query keys of the feature: identifiers and numbers, never a skill name. */
 export const skillKeys = {
   graph: ["skills", "graph"],
   detail: (skillId: string) => ["skills", "detail", skillId] as const,

@@ -8,7 +8,7 @@ interface CapFieldProps {
   min: number;
   max: number;
   onValid: (value: number) => void;
-  /** Signale au parent que la saisie en cours est invalide (il doit alors refuser l'envoi). */
+  /** Tells the parent that the current entry is invalid (it must then refuse sending). */
   onInvalidChange?: (invalid: boolean) => void;
 }
 
@@ -18,9 +18,9 @@ function isValid(text: string, min: number, max: number): boolean {
 }
 
 /**
- * Champ entier borné. La saisie en cours (`draft`) n'existe que pendant l'édition : valide, elle
- * est transmise ; invalide ou vide, elle reste affichée avec un message et rien n'est transmis.
- * En quittant le champ, on revient à la dernière valeur valide.
+ * Bounded whole-number field. The current entry (`draft`) exists only while editing: when valid,
+ * it is passed on; when invalid or empty, it stays shown with a message and nothing is passed on.
+ * On leaving the field, it goes back to the last valid value.
  */
 export function CapField({ label, value, min, max, onValid, onInvalidChange }: CapFieldProps) {
   const [draft, setDraft] = useState<string | null>(null);

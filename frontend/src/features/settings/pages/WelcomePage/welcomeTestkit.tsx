@@ -8,10 +8,10 @@ import { apiKeysFixture, modelsFixture, settingsFixture } from "../../fixtures";
 import { OnboardingGate } from "../../OnboardingGate";
 import { WelcomePage } from "./WelcomePage";
 
-/** Un compte neuf : le premier lancement n'est pas fait. */
+/** A new account: the first run is not done. */
 export const fresh = { ...settingsFixture, onboarding_done: false };
 export const noKey = apiKeysFixture.map((key) => ({ ...key, source: null, last4: null }));
-/** Brave est dans la liste des clés du back, mais ce n'est pas un fournisseur de modèles. */
+/** Brave is in the back end's key list, but it is not a model provider. */
 const braveEnv = {
   provider: "brave",
   label: "Brave Search",
@@ -36,7 +36,7 @@ export const TITLES = [
 ];
 export const WEEKDAY = "Minutes per day, Monday to Friday";
 
-/** La page derrière la porte du premier lancement, avec un accueil et une page de réglages. */
+/** The page behind the first-run gate, with a home page and a settings page. */
 export function setup(over: Partial<Parameters<typeof onboardingApi>[0]> = {}, state?: unknown) {
   const api = onboardingApi({ settings: fresh, keys: noKey, models: modelsFixture, ...over });
   server.use(...api.handlers);
@@ -76,7 +76,7 @@ export const skipAll = () => screen.getByRole("button", { name: "Skip the welcom
 export const field = (label: string) => screen.getByLabelText(label);
 export const finish = () => screen.getByRole("button", { name: "Finish" });
 
-/** Avance jusqu'à l'étape `step` (à partir de 1) par le bouton qui avance. */
+/** Advances to step `step` (from 1) with the advance button. */
 export async function goTo(user: User, step: number) {
   await title(TITLES[0]!);
   for (let current = 1; current < step; current += 1) {

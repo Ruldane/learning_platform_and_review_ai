@@ -13,16 +13,16 @@ const LABELS = [
 type Delays = [string, string, string];
 
 interface DelaysFieldProps {
-  /** Les trois délais, en jours, tels que saisis. */
+  /** The three delays, in days, as typed. */
   value: Delays;
-  /** Hors bornes ou pas strictement croissants. */
+  /** Out of bounds or not strictly increasing. */
   invalid: boolean;
-  /** Refusé par le serveur : la valeur n'est jamais citée. */
+  /** Refused by the server: the value is never quoted. */
   refused?: boolean;
   onChange: (index: 0 | 1 | 2, value: string) => void;
 }
 
-/** Les délais des trois relances : trois nombres de jours strictement croissants. */
+/** The delays of the three reminders: three strictly increasing day counts. */
 export function DelaysField({ value, invalid, refused = false, onChange }: DelaysFieldProps) {
   const legendId = useId();
   const hintId = useId();

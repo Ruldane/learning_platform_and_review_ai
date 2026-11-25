@@ -1,7 +1,7 @@
 import type { BlockView, StudySummaryView, TutorOptionView } from "./components/viewTypes";
 import type { BlockOut, InterruptOption, StudySessionOut } from "./types";
 
-/** Le bloc du jour tel que l'affiche `BlockCard`. */
+/** The day's block as `BlockCard` displays it. */
 export function toBlockView(block: BlockOut): BlockView {
   return {
     lessonTitle: block.lesson_title,
@@ -10,7 +10,7 @@ export function toBlockView(block: BlockOut): BlockView {
   };
 }
 
-/** Le bilan d'une session terminée (`StudySummaryCard`) ; un résumé absent devient un texte vide. */
+/** Summary of a finished session (`StudySummaryCard`); a missing one becomes an empty text. */
 export function toSummaryView(session: StudySessionOut): StudySummaryView {
   return {
     moduleTitle: session.module_title,
@@ -23,15 +23,15 @@ export function toSummaryView(session: StudySessionOut): StudySummaryView {
   };
 }
 
-/** Les options d'une question du Tuteur : valeurs et libellés viennent du back (F15). */
+/** The options of a Tutor question: values and labels come from the back end (F15). */
 export function toTutorOptions(options: InterruptOption[] | undefined): TutorOptionView[] {
   return (options ?? []).map(({ value, label }) => ({ value, label }));
 }
 
-/** Longueur maximale de `StudyStart.question` (contrat). */
+/** Maximum length of `StudyStart.question` (contract). */
 export const MAX_QUESTION_CHARS = 2000;
 
-/** Coupe un passage à 2 000 caractères (par points de code : jamais au milieu d'un caractère). */
+/** Cuts a passage at 2,000 characters (by code points: never in the middle of a character). */
 export function clampQuestion(passage: string): string {
   const chars = Array.from(passage.trim());
   return chars.length > MAX_QUESTION_CHARS
@@ -39,7 +39,7 @@ export function clampQuestion(passage: string): string {
     : chars.join("");
 }
 
-/** Identifiant de la session ouverte lu dans les détails d'un 409 `study_already_open`. */
+/** Identifier of the open session, read from the details of a 409 `study_already_open`. */
 export function openSessionIn(details: unknown): string | null {
   const id = (details as { study_session_id?: unknown } | null)?.study_session_id;
   return typeof id === "string" && id !== "" ? id : null;

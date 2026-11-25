@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { deleteApiKey } from "../api";
 import { settingsKeys } from "../queryKeys";
 
-/** Supprime la clé saisie dans l'interface d'un fournisseur (`has_key` peut changer). */
+/** Deletes the key entered in the interface for a provider (`has_key` may change). */
 export function useDeleteApiKey() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -11,7 +11,7 @@ export function useDeleteApiKey() {
       Promise.all([
         queryClient.invalidateQueries({ queryKey: settingsKeys.apiKeys }),
         queryClient.invalidateQueries({ queryKey: settingsKeys.models }),
-        // La clé Brave change `has_key` du compteur de la recherche web.
+        // The Brave key changes `has_key` of the web search counter.
         queryClient.invalidateQueries({ queryKey: settingsKeys.searchUsage }),
       ]),
   });

@@ -16,8 +16,8 @@ interface PostingCompareProps {
 }
 
 /**
- * La comparaison avec une offre : chargement de la liste, erreur avec « Réessayer », état vide
- * avec action quand aucune offre n'est analysée, invitation à choisir, puis le tableau.
+ * The comparison with an offer: loading the list, an error with « Réessayer », an empty state
+ * with an action when no offer is analyzed, a prompt to choose, then the table.
  */
 export function PostingCompare({ postings, choices, postingId }: PostingCompareProps) {
   const navigate = useNavigate();

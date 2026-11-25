@@ -8,7 +8,7 @@ export const SKILL_VIEWS: readonly SkillViewId[] = ["graph", "radar", "progress"
 export const skillTabId = (view: SkillViewId) => `skills-tab-${view}`;
 export const skillPanelId = (view: SkillViewId) => `skills-panel-${view}`;
 
-/** Onglet voisin selon la touche (flèches avec retour au bout, Début, Fin) ; `null` pour toute autre. */
+/** Neighbouring tab for the key (arrows wrap at the end, Home, End); `null` for any other. */
 function targetOf(key: string, from: number): SkillViewId | null {
   const last = SKILL_VIEWS.length - 1;
   if (key === "ArrowRight") return SKILL_VIEWS[from === last ? 0 : from + 1] ?? null;
@@ -23,7 +23,7 @@ interface SkillViewTabsProps {
   onChange: (view: SkillViewId) => void;
 }
 
-/** Les quatre vues de la carte : graphe, radar, progression, comparaison (flèches pour passer de l'une à l'autre). */
+/** The four views of the map: graph, radar, progress, comparison (arrows to move between them). */
 export function SkillViewTabs({ value, onChange }: SkillViewTabsProps) {
   const refs = useRef<Partial<Record<SkillViewId, HTMLButtonElement | null>>>({});
 

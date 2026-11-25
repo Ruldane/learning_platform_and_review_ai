@@ -8,7 +8,7 @@ interface BraveUsageMeterProps {
 
 const MONTH = /^(\d{4})-(0[1-9]|1[0-2])$/;
 
-/** « 2026-11 » devient « novembre 2026 » (UTC, comme le mois civil du compteur) ; sinon tel quel. */
+/** "2026-11" becomes "novembre 2026" (UTC, like the meter's month); otherwise unchanged. */
 function monthLabel(month: string): string {
   const match = MONTH.exec(month);
   if (!match) return month;
@@ -20,7 +20,7 @@ function monthLabel(month: string): string {
   }).format(date);
 }
 
-/** Consommation Brave du mois : texte, jauge, et avertissement une fois le plafond atteint. */
+/** Brave usage for the month: text, gauge, and a warning once the cap is reached. */
 export function BraveUsageMeter({ usage }: BraveUsageMeterProps) {
   if (!usage.hasKey) {
     return <p className="text-sm text-muted-foreground">{t("settings.search.usage.inactive")}</p>;

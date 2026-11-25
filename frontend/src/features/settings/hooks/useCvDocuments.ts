@@ -4,8 +4,8 @@ import type { CvDocuments, PdfChoice } from "../components/viewTypes";
 const NOTHING: PdfChoice = { file: null, problem: null };
 
 /**
- * Les deux PDF de l'étape CV, gardés par la page : changer d'étape ne les perd pas (le champ de
- * fichier, lui, se démonte, mais le fichier retenu reste dit à l'écran et prêt à partir).
+ * The two PDFs of the CV step, kept by the page: changing step does not lose them (the file
+ * field itself unmounts, but the chosen file stays stated on screen and ready to send).
  */
 export function useCvDocuments(): CvDocuments {
   const [cv, setCv] = useState<PdfChoice>(NOTHING);

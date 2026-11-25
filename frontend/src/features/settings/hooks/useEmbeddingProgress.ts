@@ -5,8 +5,8 @@ import { settingsKeys } from "../queryKeys";
 export const EMBEDDING_PROGRESS_MS = 3_000;
 
 /**
- * La progression du modèle d'embeddings, relue toutes les 3 s tant qu'il n'est pas présent ; une
- * fois présent, plus aucune lecture. Une lecture ratée ne casse rien : la suivante réessaie.
+ * The embeddings model's progress, reread every 3 s while it is not present; once
+ * present, no more reads. A failed read breaks nothing: the next one retries.
  */
 export function useEmbeddingProgress() {
   return useQuery({

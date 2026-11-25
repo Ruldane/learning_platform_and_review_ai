@@ -1,6 +1,6 @@
-/** Types de vue des composants de la carte de compétences : indépendants du contrat d'API (D34). */
+/** View types of the skill-map components: independent of the API contract (D34). */
 
-/** Niveau de maîtrise d'une compétence ; `null` : aucune ligne `user_skills` (absente). */
+/** Mastery level of a skill; `null`: no `user_skills` row (absent). */
 export type LevelView = "declared" | "in_progress" | "validated" | "proven" | null;
 
 export interface SkillNodeView {
@@ -9,48 +9,48 @@ export interface SkillNodeView {
   domain: string;
   level: LevelView;
   /**
-   * Demande du marché, de 0 à 1 ; `null` tant que l'analyse du marché n'a pas eu lieu (phase 8) :
-   * le nœud garde alors une taille moyenne.
+   * Market demand, from 0 to 1; `null` until the market analysis has run (phase 8):
+   * the node then keeps an average size.
    */
   demand: number | null;
   evidenceCount: number;
 }
 
-/** Un lien de prérequis : `beforeId` s'apprend avant `afterId`. */
+/** A prerequisite link: `beforeId` is learned before `afterId`. */
 export interface SkillEdgeView {
   beforeId: string;
   afterId: string;
 }
 
-/** Score d'un domaine, de 0 à 100. */
+/** Score of a domain, from 0 to 100. */
 export interface DomainScoreView {
   domain: string;
   score: number;
 }
 
-/** Nombre de compétences à chaque niveau (clés du niveau, sans « absent »). */
+/** Number of skills at each level (level keys, without « absent »). */
 export type LevelCounts = Record<Exclude<LevelView, null>, number>;
 
-/** Un relevé hebdomadaire. */
+/** A weekly reading. */
 export interface HistoryPointView {
-  /** Lundi de la semaine, `AAAA-MM-JJ`. */
+  /** Monday of the week, `AAAA-MM-JJ`. */
   weekStart: string;
   counts: LevelCounts;
-  /** 0 à 100. */
+  /** 0 to 100. */
   score: number;
 }
 
 export interface EvidenceView {
-  /** Nature de la preuve : `lesson`, `quiz`, `study`, `program`, `capture`… */
+  /** Kind of evidence: `lesson`, `quiz`, `study`, `program`, `capture`… */
   kind: string;
   label: string;
-  /** Date ISO de la preuve ; `null` pour une preuve ancienne (phase 4), affichée sans date. */
+  /** ISO date of the evidence; `null` for old evidence (phase 4), shown without a date. */
   at: string | null;
-  /** Chemin dans l'application ; `null` quand la preuve n'a pas de page. */
+  /** Path in the application; `null` when the evidence has no page. */
   url: string | null;
 }
 
-/** Offre qui exige la compétence (phase 6) ; la liste est vide d'ici là. */
+/** Offer that requires the skill (phase 6); the list is empty until then. */
 export interface PostingRefView {
   id: string;
   title: string;
@@ -60,7 +60,7 @@ export interface PostingRefView {
 export interface NextActionView {
   kind: "study" | "quiz" | "review" | "project";
   label: string;
-  /** `null` quand l'action n'est pas encore disponible (projet preuve, phase 8). */
+  /** `null` when the action is not yet available (proof project, phase 8). */
   url: string | null;
 }
 
@@ -81,18 +81,18 @@ export interface CompareRowView {
   domain: string;
   /** Mon niveau ; `null` : absente. */
   mine: LevelView;
-  /** Niveau attendu par la cible. */
+  /** Level expected by the target. */
   target: Exclude<LevelView, null>;
-  /** Écart de rang entre la cible et moi (absente = −1) ; 0 ou moins : atteint. */
+  /** Rank gap between the target and me (absent = −1); 0 or less: reached. */
   gap: number;
 }
 
 export type SkillViewId = "graph" | "radar" | "progress" | "compare";
 
-/** Ce à quoi on se compare : le poste cible de l'objectif, ou une offre ajoutée. */
+/** What is compared against: the goal's target role, or an added offer. */
 export type CompareTargetView = "goal" | "posting";
 
-/** Une offre analysée, proposée comme cible de la comparaison. */
+/** An analyzed offer, offered as the comparison target. */
 export interface PostingChoiceView {
   id: string;
   title: string;

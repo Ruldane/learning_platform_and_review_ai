@@ -14,7 +14,7 @@ interface AgentLineProps {
 }
 
 /**
- * Une ligne du tableau : l'agent, son niveau (et le modèle de ce niveau), le choix de son modèle.
+ * One row of the table: the agent, its level (and that level's model), the choice of its model.
  */
 export function AgentLine({
   agent,

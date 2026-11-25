@@ -14,7 +14,7 @@ interface BriefFieldsProps {
   onChange: (next: AvailabilityDraft) => void;
 }
 
-/** Heure du brief du matin et délais des trois relances. */
+/** Morning brief time and the delays of the three reminders. */
 export function BriefFields(props: BriefFieldsProps) {
   const { draft, timeInvalid, timeRefused, delaysInvalid, delaysRefused, onChange } = props;
   const hintId = useId();

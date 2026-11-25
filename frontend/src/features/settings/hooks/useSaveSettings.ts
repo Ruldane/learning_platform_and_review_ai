@@ -2,8 +2,8 @@ import type { UserSettings } from "../types";
 import { useUpdateSettings } from "./useUpdateSettings";
 
 /**
- * Enregistre un corps de `PUT /settings` déjà construit à partir des réglages lus : l'état de
- * l'envoi pour l'écran qui le montre (en cours, erreur, réussi), et `save` qui rejette si le back
+ * Saves a `PUT /settings` body already built from the settings read: the send state for
+ * the screen that shows it (sending, error, done), and `save`, which rejects if the back end
  * refuse.
  */
 export function useSaveSettings() {
@@ -12,7 +12,7 @@ export function useSaveSettings() {
     pending: update.isPending,
     error: update.error,
     saved: update.isSuccess,
-    // Pendant l'envoi, une frappe ne doit pas faire croire qu'il est fini (et permettre un second
+    // During the send, a keystroke must not make it look finished (and allow a second
     // envoi).
     reset: () => {
       if (!update.isPending) update.reset();

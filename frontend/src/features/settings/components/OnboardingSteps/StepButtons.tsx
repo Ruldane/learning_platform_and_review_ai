@@ -3,7 +3,7 @@ import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 
 interface StepButtonsProps {
-  /** Pas de « Précédent » sur la première étape. */
+  /** No « Précédent » button on the first step. */
   first: boolean;
   nextLabel: string;
   nextBlockedReason?: string;
@@ -14,9 +14,9 @@ interface StepButtonsProps {
 }
 
 /**
- * Précédent, avancer, « Passer l'accueil ». Bloqués par `aria-disabled`, jamais `disabled` : le
- * focus reste sur le bouton cliqué et l'action est ignorée ; la raison d'un blocage est un texte
- * relié au bouton.
+ * Previous, next, « Passer l'accueil ». Blocked by `aria-disabled`, never `disabled`: the
+ * focus stays on the clicked button and the action is ignored; the reason for a block is a text
+ * tied to the button.
  */
 export function StepButtons({
   first,

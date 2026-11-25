@@ -15,15 +15,15 @@ interface TiersSectionProps {
   tiers: TierChoices;
   presets: PresetMap;
   providers: ProviderOption[];
-  /** Faux si le niveau vision pointe vers un modèle sans vision. */
+  /** False if the vision level points to a model without vision. */
   visionEnabled: boolean;
-  /** Un enregistrement est en cours : les choix sont désactivés. */
+  /** A save is in progress: the choices are disabled. */
   disabled: boolean;
   onApplyPreset: (name: PresetName) => void;
   onChangeTier: (tier: Tier, choice: ModelChoice) => void;
 }
 
-/** Section « Modèle par niveau » : préréglages, avertissement vision et tableau des niveaux. */
+/** « Modèle par niveau » section: presets, vision warning and the levels table. */
 export function TiersSection({
   tiers,
   presets,

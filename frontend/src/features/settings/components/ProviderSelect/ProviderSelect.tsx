@@ -4,12 +4,12 @@ import { fieldClass } from "@/shared/ui/fieldClass";
 import type { ProviderOption } from "../viewTypes";
 
 interface ProviderSelectProps {
-  /** Étiquette lue par les lecteurs d'écran (le champ n'a pas de texte visible). */
+  /** Label read by screen readers (the field has no visible text). */
   label: string;
   value: string;
   options: ProviderOption[];
   disabled?: boolean;
-  /** Texte d'un premier choix « aucun » (valeur vide) : pour une option facultative. */
+  /** Text of a first « aucun » choice (empty value): for an optional option. */
   emptyLabel?: string;
   onPick: (provider: string) => void;
 }
@@ -18,7 +18,7 @@ function optionLabel(option: ProviderOption) {
   return option.has_key ? option.label : t("settings.tiers.noKeyOption", { label: option.label });
 }
 
-/** Liste des fournisseurs ; ceux sans clé sont marqués « aucune clé » mais restent choisissables. */
+/** List of providers; those without a key are marked « aucune clé » but stay selectable. */
 export function ProviderSelect({
   label,
   value,

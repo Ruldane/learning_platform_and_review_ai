@@ -5,35 +5,35 @@ import { ProviderSelect } from "../ProviderSelect";
 import type { ModelChoice, ProviderOption } from "../viewTypes";
 
 interface AgentModelChoiceProps {
-  /** Nom de l'agent, pour les étiquettes lues par les lecteurs d'écran. */
+  /** Agent name, for the labels read by screen readers. */
   agentName: string;
-  /** Texte du choix « aucun » : « Niveau par défaut (Standard) ». */
+  /** Text of the « aucun » choice: « Niveau par défaut (Standard) ». */
   defaultLabel: string;
-  /** Le modèle choisi pour cet agent, ou rien : il suit son niveau. */
+  /** The model chosen for this agent, or nothing: it follows its level. */
   value: ModelChoice | undefined;
   providers: ProviderOption[];
   disabled?: boolean;
-  /** `null` : on revient au niveau par défaut. */
+  /** `null`: back to the default level. */
   onChange: (choice: ModelChoice | null) => void;
 }
 
-/** Fournisseur choisi vers un fournisseur à saisie libre, en attente du nom du modèle. */
+/** Provider chosen for free-text entry, waiting for the model name. */
 interface PendingProvider {
   provider: string;
-  /** Valeur à laquelle ce choix se rapporte : il tombe si elle change (rechargement, retrait). */
+  /** Value this choice refers to: it drops if that value changes (reload, removal). */
   base: ModelChoice | undefined;
 }
 
 const sameChoice = (a: ModelChoice | undefined, b: ModelChoice | undefined) =>
   a?.provider === b?.provider && a?.model === b?.model;
 
-/** Liste des modèles proposés, ou `null` pour une saisie libre (aucune liste, ou liste vide). */
+/** Models offered, or `null` for free-text entry (no list, or an empty list). */
 function listedModels(providers: ProviderOption[], name: string) {
   const models = providers.find((option) => option.name === name)?.models;
   return models?.length ? models : null;
 }
 
-/** Les deux gestes de la ligne : choisir un fournisseur (ou « aucun »), valider un modèle. */
+/** The two gestures of the row: pick a provider (or « aucun »), confirm a model. */
 function useChoiceActions(args: {
   providers: ProviderOption[];
   value: ModelChoice | undefined;
@@ -50,7 +50,7 @@ function useChoiceActions(args: {
     }
     const first = listedModels(providers, name)?.[0];
     if (first === undefined) {
-      setPending({ provider: name, base: value }); // saisie libre : le modèle suit
+      setPending({ provider: name, base: value }); // free-text entry: the model follows
       return;
     }
     onChange({ provider: name, model: first });
@@ -66,8 +66,8 @@ function useChoiceActions(args: {
 }
 
 /**
- * Le modèle d'un agent : « niveau par défaut », ou un fournisseur puis un modèle (liste, ou saisie
- * libre sans liste). Rien n'est envoyé tant qu'un fournisseur à saisie libre n'a pas son modèle.
+ * The model of an agent: « niveau par défaut », or a provider then a model (list, or free
+ * text without a list). Nothing is sent while a free-text provider has no model yet.
  */
 export function AgentModelChoice({
   agentName,

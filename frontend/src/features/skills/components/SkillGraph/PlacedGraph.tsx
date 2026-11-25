@@ -13,7 +13,7 @@ import { useGraphLayout } from "./useGraphLayout";
 const NODE_TYPES: NodeTypes = { skill: SkillNode };
 const FIT_VIEW = { padding: 0.15, duration: 0 };
 
-/** Entrée ou Espace sur un nœud focalisé : sélectionne la compétence (React Flow n'appelle pas `onNodeClick`). */
+/** Enter or Space on a focused node selects the skill (React Flow does not call `onNodeClick`). */
 function selectWithKeyboard(event: KeyboardEvent<HTMLDivElement>, onSelect: (id: string) => void) {
   if (event.key !== "Enter" && event.key !== " ") return;
   const node = (event.target as HTMLElement).closest<HTMLElement>(".react-flow__node");
@@ -23,7 +23,7 @@ function selectWithKeyboard(event: KeyboardEvent<HTMLDivElement>, onSelect: (id:
   onSelect(id);
 }
 
-/** Le graphe non vide : mise en page (elkjs), puis React Flow. */
+/** The non-empty graph: layout (elkjs), then React Flow. */
 export function PlacedGraph({ nodes, edges, selectedId, onSelect }: SkillGraphProps) {
   const { placed, failed } = useGraphLayout(nodes, edges);
   const flowNodes = useMemo(

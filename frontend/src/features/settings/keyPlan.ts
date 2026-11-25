@@ -1,17 +1,17 @@
 import { readPresets, readTiers } from "./tierChoices";
 import type { ApiKeyEntry, ModelsOut, SettingsOut, TierChoices } from "./types";
 
-/** Ce que les clés lues permettent au premier lancement. */
+/** What the keys read allow for the first run. */
 export interface KeyPlan {
-  /** Les seuls fournisseurs de modèles (`GET /settings/models`) : Brave n'en est pas un. */
+  /** The only model providers (`GET /settings/models`): Brave is not one. */
   entries: ApiKeyEntry[];
-  /** Les modèles ont une clé (telle quelle, ou une fois `tiers` écrits) : l'import du CV peut partir. */
+  /** The models have a key (as is, or once `tiers` is written): the CV import can go ahead. */
   ready: boolean;
-  /** Les niveaux à écrire en quittant l'étape de la clé ; `null` : rien à changer. */
+  /** The levels to write when leaving the key step; `null`: nothing to change. */
   tiers: TierChoices | null;
-  /** Le fournisseur sur lequel passent les modèles, quand `tiers` est écrit. */
+  /** The provider the models move to, when `tiers` is written. */
   moveTo: string | null;
-  /** Une clé existe mais aucun préréglage n'est celui de son fournisseur : à régler dans Modèles. */
+  /** A key exists but no preset matches its provider: to set in Models. */
   unmatched: string | null;
 }
 
@@ -19,11 +19,11 @@ const providersOf = (tiers: TierChoices) =>
   new Set(Object.values(tiers).map((tier) => tier.provider));
 
 /**
- * Une clé n'est utile que si elle est celle du fournisseur des niveaux de modèles : l'API de
- * lecture des clés liste aussi Brave, et les agents échouent (`llm_key_missing`) sans la clé de
- * leur fournisseur, sans repli sur un autre. Si les modèles n'ont pas de clé mais qu'un autre
- * fournisseur de modèles en a une, le préréglage de ce fournisseur (tous les niveaux chez lui) est
- * proposé ; faute de préréglage, on le dit et l'import n'est pas ouvert.
+ * A key is only useful if it belongs to the model levels' provider: the key-read API
+ * also lists Brave, and agents fail (`llm_key_missing`) without the key of
+ * their provider, with no fallback to another. If the models have no key but another
+ * model provider has one, its preset (all levels on it) is offered;
+ * without a preset, we say so and the import is not opened.
  */
 export function planKeys(
   allKeys: ApiKeyEntry[],

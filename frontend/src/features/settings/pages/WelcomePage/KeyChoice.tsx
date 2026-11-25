@@ -8,11 +8,11 @@ import type { useKeyActions } from "../../hooks/useKeyActions";
 interface KeyChoiceProps {
   entries: ApiKeyEntry[];
   actions: ReturnType<typeof useKeyActions>;
-  /** Le choix du fournisseur : il reçoit le focus quand une lecture ratée réussit. */
+  /** The provider choice: it gets focus when a failed read succeeds. */
   selectRef: Ref<HTMLSelectElement>;
 }
 
-/** Le fournisseur (celui qui a une clé d'abord) et sa carte : saisie, « Tester », suppression. */
+/** The provider (the one with a key first) and its card: input, « Tester », deletion. */
 export function KeyChoice({ entries, actions, selectRef }: KeyChoiceProps) {
   const [chosen, setChosen] = useState<string | null>(null);
   const selectId = useId();

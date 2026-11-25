@@ -6,9 +6,9 @@ import { useStartStudy } from "../../hooks/useStartStudy";
 import type { StudySessionOut } from "../../types";
 
 /**
- * « Commencer un nouveau bloc » depuis une session arrêtée : le départ part d'ici (le back range
- * ou annule la session arrêtée), jamais par l'accueil, qui ramènerait à cette session. Sans bloc
- * prévu aujourd'hui, l'accueil propose de choisir une leçon.
+ * « Commencer un nouveau bloc » from a stopped session: the start is made from here (the back end
+ * saves or cancels the stopped session), not from home, which leads back here. No block
+ * planned for today: the home page offers to choose a lesson.
  */
 export function NewBlockStart({ mode }: { mode: StudySessionOut["mode"] }) {
   const navigate = useNavigate();

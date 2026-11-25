@@ -7,19 +7,19 @@ import { useTestApiKey } from "./useTestApiKey";
 
 const ignore = () => undefined;
 
-/** Retire une occurrence de `provider` (deux enregistrements du même fournisseur peuvent se suivre). */
+/** Removes one occurrence of `provider` (two saves of the same provider can follow each other). */
 function without(list: string[], provider: string) {
   const index = list.indexOf(provider);
   return index < 0 ? list : [...list.slice(0, index), ...list.slice(index + 1)];
 }
 
-/** Actions sur les clés (enregistrer, supprimer, tester) et résultats de test par fournisseur. */
+/** Key actions (save, delete, test) and test results per provider. */
 export function useKeyActions(track: TrackAction) {
   const save = useSaveApiKey();
   const remove = useDeleteApiKey();
   const test = useTestApiKey();
   const [testResults, setTestResults] = useState<Record<string, KeyTestResult>>({});
-  // Enregistrements en cours, suivis ici : l'observateur de `save` ne voit que le dernier.
+  // Saves in progress, tracked here: the `save` observer only sees the latest one.
   const [saving, setSaving] = useState<string[]>([]);
   const lastSave = useRef(0);
 
@@ -37,7 +37,7 @@ export function useKeyActions(track: TrackAction) {
   return {
     testResults,
     pendingProviders,
-    /** Rejette si l'enregistrement échoue : la carte garde alors la saisie. */
+    /** Rejects if the save fails: the card then keeps the input. */
     onSave: async (provider: string, key: string) => {
       const call = ++lastSave.current;
       setSaving((current) => [...current, provider]);
@@ -46,9 +46,9 @@ export function useKeyActions(track: TrackAction) {
         forget(provider);
       } finally {
         setSaving((current) => without(current, provider));
-        // La clé ne reste pas dans les variables de la mutation (succès comme échec : l'erreur est
-        // déjà copiée par `track`). Seulement si aucun enregistrement plus récent n'a pris le relais,
-        // sinon on détacherait l'observateur d'une requête encore en vol.
+        // The key does not stay in the mutation's variables (on success as on failure: the error is
+        // already copied by `track`). Only if no more recent save has taken over,
+        // otherwise we would detach the observer from a request still in flight.
         if (lastSave.current === call) save.reset();
       }
     },

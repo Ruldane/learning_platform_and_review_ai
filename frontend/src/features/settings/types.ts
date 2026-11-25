@@ -35,11 +35,11 @@ export type UserSettings = Schemas["UserSettings"];
 
 type Assert<T extends true> = T;
 
-/** Vérifié à la compilation : les types générés satisfont les types d'affichage des composants. */
+/** Checked at compile time: the generated types satisfy the components' display types. */
 export type ViewTypesMatchContract = [
   Assert<ApiKeyOut extends ApiKeyEntry ? true : false>,
   Assert<ProviderModels extends ProviderOption ? true : false>,
-  // Les réglages de recherche gardent les mêmes noms de fournisseurs que le contrat.
+  // The search settings keep the same provider names as the contract.
   Assert<
     NonNullable<UserSettings["search_provider_order"]> extends SearchProviderName[] ? true : false
   >,

@@ -9,9 +9,9 @@ import type { AvailabilityFlags, AvailabilityKey, AvailabilityValues } from "../
 interface AvailabilityFieldsProps {
   values: AvailabilityValues;
   flags: AvailabilityFlags;
-  /** Champs que le serveur a refusés au dernier enregistrement. */
+  /** Fields the server rejected on the last save. */
   refused?: Partial<Record<AvailabilityKey, boolean>>;
-  /** Budget hebdomadaire calculé, en minutes ; `null` tant qu'une durée est invalide. */
+  /** Calculated weekly budget, in minutes; `null` while a duration is invalid. */
   budget: number | null;
   onChange: (key: AvailabilityKey, value: string) => void;
 }
@@ -22,7 +22,7 @@ const FIELDS = [
   { key: "weekendMax", label: "settings.availability.weekendMax" },
 ] as const;
 
-/** La valeur saisie sort-elle des bornes (vide ou non entière comprises) ? */
+/** Is the entered value outside the bounds (empty or non-whole included)? */
 function outOfBounds(text: string): boolean {
   const value = Number(text);
   return (
@@ -34,8 +34,8 @@ function outOfBounds(text: string): boolean {
 }
 
 /**
- * Minutes en semaine, bloc du week-end (minimum et maximum) et le budget hebdomadaire qui en
- * découle.
+ * Weekday minutes, weekend block (minimum and maximum) and the weekly budget derived
+ * from them.
  */
 export function AvailabilityFields({
   values,
@@ -55,8 +55,8 @@ export function AvailabilityFields({
             value={values[key]}
             {...MINUTES_RANGE}
             invalid={flags[key]}
-            // Un champ marqué seulement pour l'ordre des bornes a une valeur dans les bornes : son
-            // aide ne dit pas « Erreur » (le message de l'ordre, lui, le dit).
+            // A field marked only for the order of the bounds has a value within them: its
+            // help text must not say « Erreur » (the order message says that).
             hintError={refused[key] || (flags[key] && outOfBounds(values[key]))}
             refused={refused[key]}
             describedBy={flags.weekendOrder && key !== "weekday" ? orderId : undefined}

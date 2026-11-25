@@ -4,7 +4,7 @@ import type { SettingsOut, UserSettings } from "./types";
 import { buildUserSettings } from "./userSettings";
 
 /**
- * Les réglages de disponibilité et de rythme tels que les édite la page : des textes pendant la
+ * Availability and pace settings, as the page edits them: text while the user types;
  * saisie.
  */
 export interface AvailabilityDraft {
@@ -19,12 +19,12 @@ export interface AvailabilityDraft {
   lessonLanguage: string;
 }
 
-/** Les champs que `PUT /settings` peut refuser, pour y attacher l'erreur sans citer la valeur. */
+/** Fields `PUT /settings` may reject, so the error attaches without quoting the value. */
 export type AvailabilityField = keyof AvailabilityDraft;
 
 export type AvailabilityErrors = Record<AvailabilityField | "weekendOrder", boolean>;
 
-/** Bornes du contrat. */
+/** Contract bounds. */
 export { DELAY_RANGE, MINUTES_RANGE };
 export const ROUNDS_RANGE = { min: 1, max: 5 } as const;
 export const TOKEN_CAP_MIN = 10_000;
@@ -41,7 +41,7 @@ const within = (text: string, range: { min: number; max: number }): boolean => {
   return value !== null && value >= range.min && value <= range.max;
 };
 
-/** Les réglages du serveur vers le brouillon (valeurs par défaut du back si absentes). */
+/** Server settings for the draft (back-end defaults when missing). */
 export function toAvailabilityDraft(settings: SettingsOut): AvailabilityDraft {
   const { availability: a } = settings;
   const delays = settings.reminder_delays_days ?? [7, 14, 21];
@@ -57,7 +57,7 @@ export function toAvailabilityDraft(settings: SettingsOut): AvailabilityDraft {
   };
 }
 
-/** Trois nombres de jours entiers, de 1 à 90, strictement croissants. */
+/** Three whole-day numbers, from 1 to 90, strictly increasing. */
 export function delaysInvalid(delays: readonly string[]): boolean {
   const days = delays.map(whole);
   if (days.length !== 3 || days.some((day) => day === null)) return true;
@@ -67,7 +67,7 @@ export function delaysInvalid(delays: readonly string[]): boolean {
   );
 }
 
-/** Quels champs sont hors des bornes du contrat ; rien n'est envoyé tant qu'un champ l'est. */
+/** Which fields are outside the contract bounds; nothing is sent while one is. */
 export function availabilityErrors(draft: AvailabilityDraft): AvailabilityErrors {
   const min = whole(draft.weekendMin);
   const max = whole(draft.weekendMax);
@@ -92,8 +92,8 @@ export const sameAvailabilityDraft = (a: AvailabilityDraft, b: AvailabilityDraft
   JSON.stringify(a) === JSON.stringify(b);
 
 /**
- * Budget hebdomadaire (minutes) : cinq jours de semaine plus le bloc de week-end le plus long ;
- * `null` si une durée est invalide.
+ * Weekly budget (minutes): five weekdays plus the longest weekend block;
+ * `null` if a duration is invalid.
  */
 export function weeklyBudget(draft: AvailabilityDraft): number | null {
   const weekday = within(draft.weekday, MINUTES_RANGE) ? whole(draft.weekday) : null;
@@ -102,8 +102,8 @@ export function weeklyBudget(draft: AvailabilityDraft): number | null {
 }
 
 /**
- * Corps du `PUT /settings` après une modification de la disponibilité : tous les autres réglages
- * (niveaux, recherche, surcharges, premier lancement…) sont repris tels quels de `current`.
+ * Body of `PUT /settings` after an availability change: all other settings
+ * (levels, search, overrides, first run…) are copied as-is from `current`.
  */
 export function withAvailabilitySettings(
   current: SettingsOut,
@@ -124,7 +124,7 @@ export function withAvailabilitySettings(
   };
 }
 
-/** Le brouillon `AvailabilityDraft` vers les noms de champs du contrat refusés par le serveur. */
+/** Maps the `AvailabilityDraft` to the contract field names the server rejected. */
 export const CONTRACT_FIELDS: Record<AvailabilityField, string> = {
   weekday: "availability.weekday_minutes",
   weekendMin: "availability.weekend_block_min_minutes",

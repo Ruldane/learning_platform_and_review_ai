@@ -6,7 +6,7 @@ import type { CompareTargetView, PostingChoiceView } from "../viewTypes";
 interface CompareTargetPickerProps {
   target: CompareTargetView;
   onTarget: (target: CompareTargetView) => void;
-  /** Les offres analysées ; vide tant qu'elles ne sont pas lues. */
+  /** The analyzed offers; empty until they are read. */
   postings: PostingChoiceView[];
   postingId: string | null;
   onPosting: (postingId: string | null) => void;
@@ -19,8 +19,8 @@ function entryText(posting: PostingChoiceView): string {
 }
 
 /**
- * Choisir à quoi se comparer : le poste cible de l'objectif ou « Une offre » (alors une liste
- * déroulante des offres analysées). Tout se fait au clavier : flèches entre les deux choix.
+ * Choose what to compare against: the goal's target role, or « Une offre » (then a dropdown
+ * of the analyzed offers). Everything works from the keyboard: arrows between the two choices.
  */
 export function CompareTargetPicker(props: CompareTargetPickerProps) {
   const { target, onTarget, postings, postingId, onPosting } = props;

@@ -5,19 +5,19 @@ import type { BlockView } from "../viewTypes";
 import { BlockTasks } from "./BlockTasks";
 
 interface BlockCardProps {
-  /** Le bloc du jour ; `null` quand aucune tâche d'étude n'est à faire. */
+  /** The day's block; `null` when no study task is to do. */
   block: BlockView | null;
-  /** Une session déjà ouverte : on la reprend au lieu d'en commencer une autre. */
+  /** A session already open: resume it instead of starting another. */
   openSessionId: string | null;
   onStart: () => void;
   onResume: () => void;
-  /** Un départ ou une reprise est en route : le bouton ne se déclenche pas deux fois. */
+  /** A start or a resume is under way: the button cannot fire twice. */
   disabled?: boolean;
 }
 
 /**
- * Le bloc du jour : la leçon, son module et les tâches que la session coche. « Commencer mon
- * bloc », ou « Reprendre ma session » quand une session est ouverte (jamais les deux).
+ * The day's block: the lesson, its module and the tasks the session ticks. « Commencer mon
+ * bloc », or « Reprendre ma session » when a session is open (never both).
  */
 export function BlockCard({
   block,

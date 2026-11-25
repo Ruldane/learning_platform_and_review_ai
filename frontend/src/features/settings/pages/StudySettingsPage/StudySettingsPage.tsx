@@ -5,7 +5,7 @@ import { LoadingState } from "@/shared/ui/states/LoadingState";
 import { useSettings } from "../../hooks/useSettings";
 import { StudySettingsEditor } from "./StudySettingsEditor";
 
-/** Réglages > Étude et bilan : durées du minuteur, jour et heure du bilan, fuseau horaire. */
+/** Settings > Study and review: timer durations, review day and time, time zone. */
 export function StudySettingsPage() {
   const settings = useSettings();
   if (settings.isError) {

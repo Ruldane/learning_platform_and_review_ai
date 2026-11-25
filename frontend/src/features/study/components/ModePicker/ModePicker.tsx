@@ -9,7 +9,7 @@ interface ModePickerProps {
   onChange: (mode: StudyModeView) => void;
 }
 
-/** Choix du mode d'étude : trois boutons radio, chacun avec sa description. */
+/** Choice of study mode: three radio buttons, each with its description. */
 export function ModePicker({ value, onChange }: ModePickerProps) {
   const id = useId();
   return (

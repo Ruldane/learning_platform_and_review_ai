@@ -5,8 +5,8 @@ import { settingsKeys } from "../queryKeys";
 export const SERVICE_HEALTH_MS = 5_000;
 
 /**
- * L'état des services pour l'étape 1 du premier lancement, relu toutes les 5 s tant que l'étape
- * est affichée. Une lecture ratée ne casse rien : la suivante réessaie.
+ * The services' state for step 1 of the first run, reread every 5 s while the step
+ * is shown. A failed read breaks nothing: the next one retries.
  */
 export function useServiceHealth() {
   return useQuery({
