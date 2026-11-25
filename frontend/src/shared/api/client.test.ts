@@ -38,12 +38,12 @@ describe("client API", () => {
     expect((error as ApiError).details).toEqual([{ loc: ["body"] }]);
   });
 
-  it("transforme une réponse 500 sans JSON en ApiError générique", async () => {
+  it("turns a non-JSON 500 response into a generic ApiError", async () => {
     server.use(http.get(ME_URL, () => new HttpResponse("<html>boom</html>", { status: 500 })));
     await expect(api.GET("/auth/me").then(unwrap)).rejects.toMatchObject({
       code: "http_error",
       status: 500,
-      message: "Une erreur est survenue. Réessaie dans un instant.",
+      message: "Something went wrong. Try again in a moment.",
     });
   });
 

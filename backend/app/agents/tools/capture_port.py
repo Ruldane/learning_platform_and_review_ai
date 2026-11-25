@@ -26,6 +26,7 @@ from app.core.errors import AppError
 
 CaptureSource = Literal["url", "text", "document"]
 SUMMARY_LINES = 5
+CAPTURE_REASON = "January's quick capture."
 # Au-delà, un texte saisi est lu comme un texte collé (article copié), jamais comme une note de
 # January : il ne déclare aucun acquis (D108 n° 4, revue finale de la phase 5).
 NOTE_MAX_CHARS = 1_000
@@ -121,7 +122,7 @@ class CaptureStore(Protocol):
 
 
 def capture_unavailable() -> AppError:
-    return AppError("capture_unavailable", "La capture n'est pas branchée sur ce moteur.", 503)
+    return AppError("capture_unavailable", "Capture is unavailable in this runtime.", 503)
 
 
 class _NoCapture:

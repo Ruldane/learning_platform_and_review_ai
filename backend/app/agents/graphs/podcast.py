@@ -1,4 +1,4 @@
-"""Le script est publié avant de demander ses voix."""
+"""Publish the episode script before requesting its audio."""
 
 import json
 from typing import Any, Self, TypedDict
@@ -25,7 +25,7 @@ class PodcastDraft(PodcastScript):
     def check_length(self) -> Self:
         words = sum(len(line.text.split()) for line in self.lines)
         if not 1_550 <= words <= 1_850:
-            raise ValueError("Le dialogue doit contenir entre 1 550 et 1 850 mots.")
+            raise ValueError("The dialogue must contain between 1,550 and 1,850 words.")
         return self
 
 
@@ -37,16 +37,16 @@ class PodcastState(TypedDict, total=False):
 def _messages(context: PodcastContext) -> list[BaseMessage]:
     source = json.dumps(
         {
-            "chapitre": context.lesson_title,
-            "texte": context.lesson_text,
-            "révisions": context.reviews,
+            "chapter": context.lesson_title,
+            "text": context.lesson_text,
+            "review_material": context.reviews,
             "notes": context.notes,
         },
         ensure_ascii=False,
     )
     return [
         SystemMessage(render_prompt(AGENT)),
-        HumanMessage(untrusted(source, "sources de l’épisode")),
+        HumanMessage(untrusted(source, "episode sources")),
     ]
 
 
@@ -62,7 +62,7 @@ async def _draft(deps: GraphDeps, episode_id: str) -> None:
         _messages(context),
         agent=AGENT,
         step="dialogue",
-        intent="je prépare le dialogue et trois questions",
+        intent="writing the dialogue and three questions",
         retries=1,
     )
     await store.save_script(deps.user_id, episode_id, script)
@@ -75,7 +75,7 @@ def build(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
 
     async def voice(state: PodcastState) -> PodcastState:
         await deps.ports.podcast.render_audio(deps.user_id, state["episode_id"])
-        return {"summary": "Le podcast du matin est prêt."}
+        return {"summary": "The morning podcast is ready."}
 
     graph = StateGraph(PodcastState)
     graph.add_node("write", write)

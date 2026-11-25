@@ -8,40 +8,40 @@ import { ask, SESSION, setup, startInterview } from "./interviewTestkit";
 
 const past = (over: Record<string, unknown> = {}) => interviewOut({ id: "iv1", ...over });
 
-describe("InterviewPage, débrief", () => {
+describe("InterviewPage debrief", () => {
   beforeEach(() => useSessionStore.getState().reset(SESSION));
 
   it("replaces the feed with the debrief when the interview ends, and puts the focus on its title", async () => {
     const view = setup();
     const { stream, e } = await startInterview(view);
     stream.push(...ask(e, 1, "q1", "Première question ?"));
-    await screen.findByRole("region", { name: "Question 1 sur 7" });
+    await screen.findByRole("region", { name: "Question 1 of 7" });
     view.interviews.finish("iv-new");
     stream.push(e.completed());
-    const title = await screen.findByRole("heading", { level: 2, name: "Débrief de l'entretien" });
+    const title = await screen.findByRole("heading", { level: 2, name: "Interview debrief" });
     await waitFor(() => expect(title).toHaveFocus());
-    const scores = within(screen.getByRole("list", { name: "Tes notes" }));
+    const scores = within(screen.getByRole("list", { name: "Your scores" }));
     expect(scores.getAllByRole("listitem")).toHaveLength(4);
     expect(screen.queryByRole("textbox")).toBeNull();
-    expect(screen.getByRole("button", { name: "Commencer un autre entretien" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Start another interview" })).toBeVisible();
   });
 
-  it("links the revision cards to the Révisions page", async () => {
+  it("links the review cards to the Reviews page", async () => {
     const view = setup({ interviews: [past({ cards_created: 2 })] });
-    await view.user.click(await screen.findByRole("button", { name: /Mixte, 15 minutes/ }));
+    await view.user.click(await screen.findByRole("button", { name: /Mixed, 15 minutes/ }));
     expect(
-      await screen.findByText("2 fiches de révision ont été créées, à revoir demain."),
+      await screen.findByText("2 review cards were created, to review tomorrow."),
     ).toBeVisible();
-    expect(screen.getByRole("link", { name: "Ouvrir mes révisions" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Open my reviews" })).toHaveAttribute(
       "href",
-      "/etudier/revisions",
+      "/study/reviews",
     );
   });
 
-  it("flags the improved answer « à vérifier » with its terms", async () => {
+  it("flags terms to check in the improved answer", async () => {
     const view = setup({ interviews: [past({ flags: ["Kubernetes"] })] });
-    await view.user.click(await screen.findByRole("button", { name: /Mixte, 15 minutes/ }));
-    expect(await screen.findByText("À vérifier")).toBeVisible();
+    await view.user.click(await screen.findByRole("button", { name: /Mixed, 15 minutes/ }));
+    expect(await screen.findByText("To check")).toBeVisible();
     expect(screen.getByRole("note")).toHaveTextContent("Kubernetes");
   });
 
@@ -58,15 +58,15 @@ describe("InterviewPage, débrief", () => {
         past({ id: "other", application_id: "a2" }),
       ],
     });
-    const list = await screen.findByRole("list", { name: "Entretiens passés" });
+    const list = await screen.findByRole("list", { name: "Past interviews" });
     expect(within(list).getAllByRole("listitem")).toHaveLength(2);
-    expect(within(list).getAllByRole("listitem")[0]).toHaveTextContent("Technique, 30 minutes");
+    expect(within(list).getAllByRole("listitem")[0]).toHaveTextContent("Technical, 30 minutes");
     await view.user.click(within(list).getAllByRole("button")[0]!);
-    expect(await screen.findByRole("heading", { name: "Débrief de l'entretien" })).toBeVisible();
-    expect(screen.queryByRole("group", { name: "Formule" })).toBeNull();
-    await view.user.click(screen.getByRole("button", { name: "Retour aux réglages" }));
-    expect(await screen.findByRole("group", { name: "Formule" })).toBeVisible();
-    expect(screen.getByRole("list", { name: "Entretiens passés" })).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "Interview debrief" })).toBeVisible();
+    expect(screen.queryByRole("group", { name: "Format" })).toBeNull();
+    await view.user.click(screen.getByRole("button", { name: "Back to settings" }));
+    expect(await screen.findByRole("group", { name: "Format" })).toBeVisible();
+    expect(screen.getByRole("list", { name: "Past interviews" })).toBeVisible();
   });
 
   it("follows the interview already running when the page opens, without the settings", async () => {
@@ -77,8 +77,8 @@ describe("InterviewPage, débrief", () => {
     });
     const stream = await openStream(view.sockets, "iv-s5");
     stream.push(...ask(councilEvents("iv-s5"), 2, "q2", "Deuxième ?"));
-    expect(await screen.findByRole("region", { name: "Question 2 sur 4" })).toBeVisible();
-    expect(screen.queryByRole("button", { name: "Commencer l'entretien" })).toBeNull();
+    expect(await screen.findByRole("region", { name: "Question 2 of 4" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Start the interview" })).toBeNull();
   });
 
   it("says an interview stopped before any answer has nothing else", async () => {
@@ -86,11 +86,11 @@ describe("InterviewPage, débrief", () => {
       interviews: [past({ status: "stopped", exchanges: [], debrief: null, cards_created: 0 })],
     });
     await view.user.click(
-      await screen.findByRole("button", { name: /Arrêté avant la première réponse/ }),
+      await screen.findByRole("button", { name: /Stopped before the first answer/ }),
     );
-    expect(await screen.findByText(/Tu as terminé l'entretien avant de répondre/)).toBeVisible();
-    expect(screen.queryByRole("list", { name: "Tes notes" })).toBeNull();
-    expect(screen.queryByRole("link", { name: "Ouvrir mes révisions" })).toBeNull();
+    expect(await screen.findByText(/You ended the interview before answering/)).toBeVisible();
+    expect(screen.queryByRole("list", { name: "Your scores" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Open my reviews" })).toBeNull();
   });
 
   it("shows the answers and says the debrief could not be written when it failed", async () => {
@@ -104,20 +104,20 @@ describe("InterviewPage, débrief", () => {
         }),
       ],
     });
-    await view.user.click(await screen.findByRole("button", { name: /Débrief non écrit/ }));
-    expect(await screen.findByText(/Le débrief n'a pas pu être écrit/)).toBeVisible();
+    await view.user.click(await screen.findByRole("button", { name: /Debrief not written/ }));
+    expect(await screen.findByText(/The debrief couldn't be written/)).toBeVisible();
     expect(screen.getByText("Ma réponse gardée.")).toBeVisible();
-    expect(screen.queryByText(/Note :/)).toBeNull();
-    expect(screen.queryByRole("list", { name: "Tes notes" })).toBeNull();
-    expect(screen.queryByRole("link", { name: "Ouvrir mes révisions" })).toBeNull();
+    expect(screen.queryByText(/Score:/)).toBeNull();
+    expect(screen.queryByRole("list", { name: "Your scores" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Open my reviews" })).toBeNull();
   });
 
   it("says a session that ended without result did not rate anything", async () => {
     const view = setup({
       interviews: [past({ status: "failed", exchanges: [], debrief: null, cards_created: 0 })],
     });
-    await view.user.click(await screen.findByRole("button", { name: /Sans résultat/ }));
-    expect(await screen.findByText(/L'entretien s'est arrêté sans résultat/)).toBeVisible();
+    await view.user.click(await screen.findByRole("button", { name: /No result/ }));
+    expect(await screen.findByText(/The interview stopped without a result/)).toBeVisible();
   });
 
   it("says which answers could not be rated", async () => {
@@ -129,11 +129,11 @@ describe("InterviewPage, débrief", () => {
         }),
       ],
     });
-    await view.user.click(await screen.findByRole("button", { name: /Mixte, 15 minutes/ }));
+    await view.user.click(await screen.findByRole("button", { name: /Mixed, 15 minutes/ }));
     expect(
-      await screen.findByText(/La réponse à la question 1 n'a pas pu être notée/),
+      await screen.findByText(/The answer to question 1 couldn't be scored/),
     ).toBeVisible();
-    expect(screen.getByText("Non notée")).toBeVisible();
+    expect(screen.getByText("Not scored")).toBeVisible();
   });
 
   it("keeps the debrief of an interview taken up on arrival when it ends, instead of going back to the settings", async () => {
@@ -146,22 +146,22 @@ describe("InterviewPage, débrief", () => {
     const stream = await openStream(view.sockets, "iv-s5");
     const e = councilEvents("iv-s5");
     stream.push(...ask(e, 1, "q1", "Première ?"));
-    await screen.findByRole("region", { name: "Question 1 sur 4" });
+    await screen.findByRole("region", { name: "Question 1 of 4" });
     view.interviews.finish("iv5");
     stream.push(e.completed());
-    const title = await screen.findByRole("heading", { name: "Débrief de l'entretien" });
-    // La liste est relue : l'entretien n'y est plus « en cours », le débrief reste.
+    const title = await screen.findByRole("heading", { name: "Interview debrief" });
+    // The refreshed list marks the interview as finished and leaves the debrief open.
     await waitFor(() => expect(view.interviews.state.lists.length).toBeGreaterThan(1));
     expect(title).toBeVisible();
-    expect(screen.queryByRole("button", { name: "Commencer l'entretien" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Commencer un autre entretien" })).toBeVisible();
-    await view.user.click(screen.getByRole("button", { name: "Commencer un autre entretien" }));
-    expect(await screen.findByRole("button", { name: "Commencer l'entretien" })).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Start the interview" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Start another interview" })).toBeVisible();
+    await view.user.click(screen.getByRole("button", { name: "Start another interview" }));
+    expect(await screen.findByRole("button", { name: "Start the interview" })).toBeVisible();
   });
 
   it("does not read the offers from the page of an application", async () => {
     const view = setup();
-    await screen.findByRole("button", { name: "Commencer l'entretien" });
+    await screen.findByRole("button", { name: "Start the interview" });
     expect(view.interviews.state.postingReads).toBe(0);
   });
 });

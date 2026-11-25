@@ -21,7 +21,7 @@ from scripts import sample_cv
 from scripts.pdf_writer import assemble_pdf
 from scripts.sample_cv import CV_FACTS, SampleCv, make_cv_pdf, make_protected_pdf
 
-_UNREADABLE = "PDF illisible (protégé par mot de passe ou endommagé)."
+_UNREADABLE = "The PDF is unreadable (password-protected or damaged)."
 
 
 @pytest.fixture(params=["subprocess", "local"])
@@ -176,7 +176,7 @@ async def test_five_pages_refused(extractor: PdfLayoutExtractor) -> None:
     assert (
         caught.value.message
         == CV_TOO_LONG_MESSAGE
-        == ("Un CV de plus de 4 pages n'est pas pris en charge.")
+        == ("A CV of more than 4 pages is not supported.")
     )
     assert caught.value.status_code == 422 and caught.value.__cause__ is None
 

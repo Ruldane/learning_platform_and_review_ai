@@ -5,6 +5,7 @@ import json
 from fastapi import FastAPI
 from sqlalchemy import select
 
+from app.core.lesson_structure import LEGACY_SECTIONS, SECTIONS
 from app.db.base import utcnow
 from app.db.models.lessons import Lesson
 from app.db.models.reading_stack import ReadingItem
@@ -28,16 +29,19 @@ CORRECTION = json.dumps(
         "replacements": [{"block": 1, "code": AFTER}],
     }
 )
-MARKER = "Préparation d’une correction de version"
+MARKER = "Preparing a version fix"
 
 
-async def seed_update(app: FastAPI) -> Seeded:
+async def seed_update(app: FastAPI, *, legacy: bool = False) -> Seeded:
     seeded = await seed(app)
     owner: str = app.state.local_user_id
     markdown = lesson_markdown(title=TITLE, urls=(RELEASE, URLS[1])).replace(
-        "## Exemple travaillé\n",
-        f"## Exemple travaillé\n\n```python\n{BEFORE}\n```\n\n```python\n{UNCHANGED}\n```\n",
+        "## Worked example\n",
+        f"## Worked example\n\n```python\n{BEFORE}\n```\n\n```python\n{UNCHANGED}\n```\n",
     )
+    if legacy:
+        for current, previous in zip(SECTIONS, LEGACY_SECTIONS, strict=True):
+            markdown = markdown.replace(f"\n## {current}\n", f"\n## {previous}\n", 1)
     async with app.state.session_factory() as db:
         lesson = await db.scalar(select(Lesson).where(Lesson.id == seeded.lesson_id))
         assert lesson is not None

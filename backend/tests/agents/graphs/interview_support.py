@@ -29,8 +29,8 @@ from tests.agents.runtime.runner_helpers import TIMEOUT, all_events, get_session
 from tests.support.interviews import INTERVIEW_ID, FakeInterviewStore
 
 KIND = "interview_answer"
-CRITERIA = ["clarte", "structure", "profondeur", "adequation"]
-SOURCES = ["offre", "dossier", "cv", "ecart", "general"]
+CRITERIA = ["clarity", "structure", "technical_depth", "role_fit"]
+SOURCES = ["posting", "company_dossier", "cv", "gap", "general"]
 
 
 def question_text(rank: int) -> str:
@@ -55,7 +55,7 @@ def turn_json(note: int = 4, follow_up: str | None = None) -> str:
 
 def debrief_json(**over: Any) -> str:
     data: dict[str, Any] = {
-        "scores": {"clarte": 4, "structure": 3, "profondeur_technique": 2, "adequation": 4},
+        "scores": {"clarity": 4, "structure": 3, "technical_depth": 2, "role_fit": 4},
         "strengths": ["Réponses claires", "Bon ancrage dans le poste", "Exemples concrets"],
         "fixes": ["Structurer avec situation et résultat", "Plus de précision", "Conclure"],
         "weakest_index": 0,

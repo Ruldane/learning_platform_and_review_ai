@@ -40,7 +40,7 @@ async def test_brief_inputs_read_the_module_and_the_week(
     inputs = await store.brief_inputs(env.user_id, pid)
     assert inputs.module_title == "Module Bases" and inputs.skills == SKILLS
     assert inputs.prerequisites == [] and inputs.week_deliverable == "Un dépôt"
-    assert inputs.lesson_excerpt == lesson_markdown(400)[:3000] and inputs.language == "fr"
+    assert inputs.lesson_excerpt == lesson_markdown(400)[:3000] and inputs.language == "en"
     assert inputs.role is None
 
 
@@ -98,7 +98,7 @@ async def test_review_inputs_carry_the_last_submission_and_the_profile(
     inputs = await store.review_inputs(env.user_id, pid)
     assert (inputs.repo_url, inputs.description, inputs.screenshots) == (REPO_URL, DESCRIPTION, 2)
     assert inputs.title == TITLE and inputs.brief == sample_brief() and inputs.skills == SKILLS
-    assert inputs.profile is not None and inputs.language == "fr"
+    assert inputs.profile is not None and inputs.language == "en"
 
 
 async def test_repo_text_reads_one_page_and_unreadable_is_none(
@@ -119,7 +119,7 @@ async def test_validation_raises_module_skills_to_prouve(
     pid = await _validate(env, store)
     levels = await env.levels(*SKILLS)
     assert set(levels) == set(SKILLS)
-    assert all(level == "prouve" and "project" in kinds for level, kinds in levels.values())
+    assert all(level == "proven" and "project" in kinds for level, kinds in levels.values())
     row = await env.row(pid)
     assert row.status == "validated" and row.validated_at == NOW
     assert row.evaluation is not None and row.evaluation["verdict"] == "validated"
@@ -132,11 +132,11 @@ async def test_validation_reflects_levels_in_memory_and_writes_the_journal(
     env: Env, store: AgentProjectStore, client: httpx.AsyncClient
 ) -> None:
     pid = await _validate(env, store)
-    acquis = (await client.get("/api/v1/memory/items", params={"kind": "acquis"})).json()
+    acquis = (await client.get("/api/v1/memory/items", params={"kind": "skill"})).json()
     assert {item["title"] for item in acquis["items"]} >= set(SKILLS)
     journal = (await client.get("/api/v1/journal", params={"kind": "project"})).json()
     [entry] = journal["entries"]
-    assert entry["kind"] == "project" and entry["text"] == f"Projet validé : {TITLE}"
+    assert entry["kind"] == "project" and entry["text"] == f"Project validated: {TITLE}"
     assert entry["occurred_on"] == "2026-11-24"
     assert entry["links"]["session_id"] == "s-review"
     assert pid
@@ -149,7 +149,7 @@ async def test_failed_cards_do_not_demote_prouve(env: Env, store: AgentProjectSt
         for _ in range(3):  # bien au-delà des deux échecs de suite
             assert await skills.record_review("pandas", False) is None
         await db.commit()
-    assert (await env.levels("pandas"))["pandas"][0] == "prouve"
+    assert (await env.levels("pandas"))["pandas"][0] == "proven"
 
 
 async def test_save_review_replay_writes_once(
@@ -177,7 +177,7 @@ async def test_save_review_replay_writes_once(
         stmt = stmt.where(Skill.user_id == env.user_id, Skill.name == "pandas")
         evidence = (await db.execute(stmt)).scalar_one()
     assert len(evidence) == 1 and evidence[0]["ref_id"] == pid
-    assert evidence[0]["label"] == f"Projet « {TITLE} » validé (24/11)"
+    assert evidence[0]["label"] == f"Project '{TITLE}' validated (24/11)"
 
 
 async def test_to_redo_outcome_keeps_no_drafts_and_raises_nothing(

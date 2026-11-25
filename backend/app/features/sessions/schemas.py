@@ -29,9 +29,9 @@ class StartSessionResponse(BaseModel):
 
 
 class SessionView(BaseModel):
-    """État d'une session pour le front ; `last_seq` : dernier événement écrit (le WebSocket
-    reprend avec `after_seq`) ; `subject_type`/`subject_id` : l'objet suivi (un document pour
-    l'Archiviste), pour reprendre son suivi après un rechargement (D71)."""
+    """State of a session for the front; `last_seq`: last event written (the WebSocket
+    resumes with `after_seq`); `subject_type`/`subject_id`: the tracked subject (a document for
+    the Archivist), to resume tracking it after a reload (D71)."""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -52,16 +52,16 @@ class SessionView(BaseModel):
 
 
 class ResumeRequest(BaseModel):
-    """Réponse à la question en attente (`interrupt_id` de `pending_interrupt`), ou reprise
-    d'une pause (`interrupt_id` nul)."""
+    """Answer to the pending question (`interrupt_id` of `pending_interrupt`), or resuming
+    from a pause (null `interrupt_id`)."""
 
     interrupt_id: str | None = None
     value: Any = None
 
 
 class MessageRequest(BaseModel):
-    """Message de l'utilisatrice, ou commande du débat (D82) : le texte est alors facultatif.
-    Texte vide (ou blanc) sans commande : 422 `invalid_input` (`SessionsService.message`)."""
+    """Message from the user, or a debate command (D82): the text is then optional.
+    Empty (or blank) text without a command: 422 `invalid_input` (`SessionsService.message`)."""
 
     text: str = Field(default="", max_length=4000)
     command: UserCommand | None = None

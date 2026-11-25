@@ -25,32 +25,32 @@ function setup(options: { get?: () => Response; put?: (body: unknown) => Respons
     }),
   );
   const view = renderRoutes(
-    [{ path: "/reglages/etude", element: <StudySettingsPage /> }],
-    "/reglages/etude",
+    [{ path: "/settings/study", element: <StudySettingsPage /> }],
+    "/settings/study",
   );
   return { puts, ...view };
 }
 
-const work = () => screen.getByLabelText("Durée de travail (minutes)");
-const pause = () => screen.getByLabelText("Durée de pause (minutes)");
+const work = () => screen.getByLabelText("Work duration (minutes)");
+const pause = () => screen.getByLabelText("Break duration (minutes)");
 
 describe("StudySettingsPage", () => {
   it("saves study rhythm and timezone with a full PUT", async () => {
     const { puts, user } = setup();
-    await screen.findByRole("heading", { name: "Étude et bilan" });
+    await screen.findByRole("heading", { name: "Study and review" });
     expect(work()).toHaveValue(50);
     expect(pause()).toHaveValue(10);
     await user.clear(work());
     await user.type(work(), "45");
     await user.clear(pause());
     await user.type(pause(), "5");
-    await user.selectOptions(screen.getByLabelText("Jour du bilan"), "monday");
-    fireEvent.change(screen.getByLabelText("Heure du bilan"), { target: { value: "19:30" } });
-    await user.selectOptions(screen.getByLabelText("Fuseau horaire"), "America/New_York");
+    await user.selectOptions(screen.getByLabelText("Review day"), "monday");
+    fireEvent.change(screen.getByLabelText("Review time"), { target: { value: "19:30" } });
+    await user.selectOptions(screen.getByLabelText("Time zone"), "America/New_York");
     expect(puts).toEqual([]); // rien n'est enregistré avant le bouton
-    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
 
-    expect(await screen.findByText("Réglages enregistrés.")).toBeInTheDocument();
+    expect(await screen.findByText("Settings saved.")).toBeInTheDocument();
     expect(puts).toHaveLength(1);
     expect(puts[0]).toMatchObject({
       study_work_minutes: 45,
@@ -71,27 +71,27 @@ describe("StudySettingsPage", () => {
     server.use(
       http.get(`${API}/settings`, () => HttpResponse.json({ ...stored, timezone: "Etc/Zoulou" })),
     );
-    renderRoutes([{ path: "/reglages/etude", element: <StudySettingsPage /> }], "/reglages/etude");
-    const zone = await screen.findByLabelText("Fuseau horaire");
+    renderRoutes([{ path: "/settings/study", element: <StudySettingsPage /> }], "/settings/study");
+    const zone = await screen.findByLabelText("Time zone");
     expect(zone).toHaveValue("Etc/Zoulou");
     expect(screen.getByRole("option", { name: "Europe/Paris" })).toBeInTheDocument();
   });
 
   it("blocks the save while a duration is outside the limits of the contract", async () => {
     const { puts, user } = setup();
-    await screen.findByRole("heading", { name: "Étude et bilan" });
+    await screen.findByRole("heading", { name: "Study and review" });
     await user.clear(work());
     await user.type(work(), "5");
     expect(work()).toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByRole("button", { name: "Enregistrer" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
     await user.clear(work());
     await user.type(work(), "121");
-    expect(screen.getByRole("button", { name: "Enregistrer" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
     await user.clear(work());
     await user.type(work(), "60");
     await user.clear(pause());
     await user.type(pause(), "0");
-    expect(screen.getByRole("button", { name: "Enregistrer" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Save" })).toBeEnabled();
     expect(puts).toEqual([]);
   });
 
@@ -103,10 +103,10 @@ describe("StudySettingsPage", () => {
           { status: 422 },
         ),
     });
-    await screen.findByRole("heading", { name: "Étude et bilan" });
+    await screen.findByRole("heading", { name: "Study and review" });
     await user.clear(work());
     await user.type(work(), "45");
-    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Réglages refusés.");
     expect(work()).toHaveValue(45);
   });
@@ -124,9 +124,9 @@ describe("StudySettingsPage", () => {
           : HttpResponse.json(stored);
       },
     });
-    expect(screen.getByRole("status")).toHaveTextContent("Chargement des réglages d'étude…");
+    expect(screen.getByRole("status")).toHaveTextContent("Loading study settings…");
     expect(await screen.findByRole("alert")).toHaveTextContent("Panne du serveur.");
-    await user.click(screen.getByRole("button", { name: "Réessayer" }));
-    expect(await screen.findByRole("heading", { name: "Étude et bilan" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+    expect(await screen.findByRole("heading", { name: "Study and review" })).toBeInTheDocument();
   });
 });

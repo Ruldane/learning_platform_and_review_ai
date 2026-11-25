@@ -7,11 +7,11 @@ describe("researchManifest", () => {
     expect(researchManifest.nav?.[0]).toEqual({
       section: "settings",
       labelKey: "research.nav.bench",
-      path: "/reglages/recherche/essai",
+      path: "/settings/search/probe",
       order: 2.5,
     });
     expect(researchManifest.routes.map((route) => route.path)).toEqual([
-      "reglages/recherche/essai",
+      "settings/search/probe",
     ]);
   });
 });

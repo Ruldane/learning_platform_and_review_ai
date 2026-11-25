@@ -7,7 +7,7 @@ import { server } from "@/test/server";
 import { BossPage } from "./BossPage";
 
 const program = "programme-test";
-const route = `/apprendre/programme/${program}/boss`;
+const route = `/learn/programs/${program}/boss`;
 const path = `${API}/boss/programs/${program}`;
 
 it("reprend le besoin modifié et permet d’ouvrir le projet remis", async () => {
@@ -37,14 +37,14 @@ it("reprend le besoin modifié et permet d’ouvrir le projet remis", async () =
     ),
   );
 
-  renderRoutes([{ path: "/apprendre/programme/:programId/boss", element: <BossPage /> }], route);
+  renderRoutes([{ path: "/learn/programs/:programId/boss", element: <BossPage /> }], route);
   expect(
-    await screen.findByRole("heading", { name: "Changement demandé par le client" }),
+    await screen.findByRole("heading", { name: "Change requested by the client" }),
   ).toBeVisible();
   expect(screen.getByText("Les urgences passent en premier.")).toBeVisible();
-  expect(screen.getByRole("link", { name: "Ouvrir le projet Python" })).toHaveAttribute(
+  expect(screen.getByRole("link", { name: "Open the Python project" })).toHaveAttribute(
     "href",
     "/code/projet-test",
   );
-  expect(screen.getByRole("button", { name: "Remettre les fichiers sauvegardés" })).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Submit the saved files" })).toBeEnabled();
 });

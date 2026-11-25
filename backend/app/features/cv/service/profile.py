@@ -1,10 +1,10 @@
-"""Le profil maître de January (SPEC 5.1, D124) : état (version validée, brouillon plus récent,
-capture en cours), versions, et validation par January.
+"""January's master profile (SPEC 5.1, D124): state (validated version, more recent draft,
+capture in progress), versions, and validation by January.
 
-Valider crée une version `validated` (source `january`) : jamais d'écrasement, les ids des faits
-gardés (`keep_known`), les compétences du profil montées à `declare` au moins avec une preuve
-`cv` (jamais de baisse), puis reflétées dans les acquis de la mémoire hors du verrou (D6).
-Journaux : identifiants et nombres seulement (17.2)."""
+Validating creates a `validated` version (source `january`): never an overwrite, the ids of the
+kept facts (`keep_known`), the profile's skills raised to `declared` at least with a `cv`
+proof (never lowered), then reflected in the memory's learned items outside the lock (D6).
+Logs: ids and numbers only (17.2)."""
 
 import logging
 from collections.abc import Awaitable, Callable
@@ -32,14 +32,14 @@ from app.features.skills.service import SkillLevel, SkillsService
 
 logger = logging.getLogger(__name__)
 
-EVIDENCE_LABEL = "Profil maître"
-REFLECT_REASON = "Profil maître validé : January déclare ces compétences."
+EVIDENCE_LABEL = "Master profile"
+REFLECT_REASON = "Master profile validated: January declares these skills."
 
 
 def profile_conflict() -> AppError:
     return AppError(
         "profile_conflict",
-        "Le profil a changé depuis ta lecture : recharge-le avant de valider.",
+        "Your profile has changed. Reload it before saving.",
         409,
     )
 
@@ -58,15 +58,15 @@ def to_profile_out(row: MasterProfile) -> ProfileOut:
 
 
 async def capture_session(db: AsyncSession, user_id: str) -> str | None:
-    """La capture du profil encore ouverte, `None` sinon."""
+    """The profile capture still open, `None` otherwise."""
     return await find_active_session(
         db, user_id, graph=CAPTURE_GRAPH, subject_type=PROFILE_SUBJECT, subject_id=user_id
     )
 
 
 async def source_document_id(db: AsyncSession, user_id: str) -> str | None:
-    """Le CV du dernier import du profil (`document_ids` des brouillons de l'Archiviste, CV
-    d'abord) : le document étiqueté `cv` qui existe encore, sinon `None`."""
+    """The CV of the last profile import (`document_ids` of the Archivist's drafts, CV first):
+    the document labelled `cv` that still exists, otherwise `None`."""
     for row in await ProfileRepository(db, user_id).all_versions():
         for document_id in map(str, row.document_ids):
             if "cv" in (await document_tags(db, user_id, document_id) or ()):
@@ -104,7 +104,7 @@ async def profile_versions(db: AsyncSession, user_id: str) -> list[ProfileVersio
 async def _write(
     rt: CvRuntime, db: AsyncSession, user_id: str, body: ProfilePutIn
 ) -> tuple[MasterProfile, list[tuple[str, SkillLevel]]]:
-    """La nouvelle version et le niveau actuel de ses compétences (à refléter en mémoire)."""
+    """The new version and the current level of its skills (to reflect in memory)."""
     repo = ProfileRepository(db, user_id)
     rows = await repo.all_versions()
     top = rows[0].version if rows else None
@@ -122,10 +122,9 @@ async def _write(
     names = [skill.name for skill in data.skills]
     proof = evidence("cv", row.id, EVIDENCE_LABEL, rt.now())
     skills = SkillsService(db, user_id)
-    changed = await skills.raise_levels(names, "declare", proof)
+    changed = await skills.raise_levels(names, "declared", proof)
     logger.info(
-        "Profil validé : utilisateur %s, profil %s, version %d, %d compétence(s), %d niveau(x) "
-        "monté(s)",
+        "Profile validated: user %s, profile %s, version %d, %d skill(s), %d level(s) raised",
         user_id,
         row.id,
         row.version,
@@ -136,16 +135,16 @@ async def _write(
 
 
 async def _reflect(rt: CvRuntime, user_id: str, levels: list[tuple[str, SkillLevel]]) -> None:
-    """Reflète les niveaux dans les acquis (D6), HORS du verrou : la vectorisation d'un acquis
-    créé appelle le fournisseur d'embeddings. Idempotent ; une panne est journalisée (type seul)
-    et rattrapée par la validation suivante."""
+    """Reflects the levels in the learned items (D6), OUTSIDE the lock: vectorizing a created
+    item calls the embeddings provider. Idempotent; a failure is logged (type only) and caught
+    up by the next validation."""
     try:
         await reflect_skill_levels(
             rt.memory, user_id, levels, author="user", session_id=None, reason=REFLECT_REASON
         )
     except Exception as exc:
         logger.warning(
-            "Acquis non reflétés après validation du profil : utilisateur %s (%s)",
+            "Learned items not reflected after profile validation: user %s (%s)",
             user_id,
             type(exc).__name__,
         )
@@ -158,9 +157,9 @@ async def save_profile(
     *,
     in_transaction: Callable[[AsyncSession, int], Awaitable[None]] | None = None,
 ) -> ProfileOut:
-    """Nouvelle version validée ; 409 `profile_conflict` si `base_version` n'est pas la dernière
-    (ou si une autre version a été écrite pendant ce temps). `in_transaction(db, version)` : une
-    écriture d'une autre feature dans la **même transaction** que la version (tout ou rien)."""
+    """New validated version; 409 `profile_conflict` if `base_version` is not the latest (or if
+    another version was written meanwhile). `in_transaction(db, version)`: a write by another
+    feature in the **same transaction** as the version (all or nothing)."""
     async with rt.version_lock(user_id), rt.session_factory() as db:
         row, levels = await _write(rt, db, user_id, body)
         if in_transaction is not None:
@@ -183,9 +182,9 @@ async def save_profile_data(
     *,
     in_transaction: Callable[[AsyncSession, int], Awaitable[None]] | None = None,
 ) -> int:
-    """Nouvelle version validée de `data` ; rend son numéro. Pour les autres features (l'entrée
-    d'un projet validé, D166), qui n'importent jamais les schémas du CV (contrat 2). Mêmes 409
-    que `save_profile`."""
+    """New validated version of `data`; returns its number. For the other features (the entry
+    of a validated project, D166), which never import the CV schemas (contract 2). Same 409s as
+    `save_profile`."""
     body = ProfilePutIn(data=data, base_version=base_version)
     saved = await save_profile(rt, user_id, body, in_transaction=in_transaction)
     return saved.version

@@ -12,13 +12,13 @@ from app.features.linkedin_drafts.service.context import target_terms, verified_
 async def owned(db: AsyncSession, user_id: str, draft_id: str) -> LinkedInDraft:
     row = await LinkedInRepository(db, user_id).get(draft_id)
     if row is None:
-        raise AppError("linkedin_draft_missing", "Proposition LinkedIn introuvable.", 404)
+        raise AppError("linkedin_draft_missing", "LinkedIn proposal not found.", 404)
     return row
 
 
 def stale_profile() -> AppError:
     return AppError(
-        "linkedin_profile_changed", "Le profil a changé. Prépare une nouvelle proposition.", 409
+        "linkedin_profile_changed", "The profile has changed. Prepare a new proposal.", 409
     )
 
 
@@ -27,7 +27,7 @@ async def _assigned(
 ) -> LinkedInDraft:
     row = await owned(db, user_id, draft_id)
     if row.session_id != session_id:
-        raise AppError("linkedin_draft_missing", "Proposition LinkedIn introuvable.", 404)
+        raise AppError("linkedin_draft_missing", "LinkedIn proposal not found.", 404)
     return row
 
 

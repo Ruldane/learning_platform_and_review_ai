@@ -3,7 +3,7 @@ import { expect, type APIRequestContext } from "@playwright/test";
 /**
  * Amorçage du premier lancement (phase 9, P20) : sur une base neuve, le back fige `onboarding_done`
  * à faux au premier `GET /settings` (aucune clé ni objectif), et la porte de la coquille
- * (`OnboardingGate`) renvoie alors toute page vers `/bienvenue`. Les parcours n° 1 à n° 4 ne
+ * (`OnboardingGate`) renvoie alors toute page vers `/welcome`. Les parcours n° 1 à n° 4 ne
  * visent pas l'accueil : ils le terminent par l'API avant leur premier `page.goto`, exactement
  * comme le fait « Terminer » (un `PUT /settings` complet, `onboarding_done: true`). Le code de
  * l'application n'est jamais contourné ; le premier lancement lui-même est joué par le parcours

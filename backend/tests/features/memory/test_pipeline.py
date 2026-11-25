@@ -50,7 +50,9 @@ async def test_ingest_pdf_indexes_and_search_finds_it(
         item = await MemoryItemRepository(db, USER).get(done.item_id)
     assert res.hits[0].item_id == done.item_id and res.hits[0].kind == "document"
     assert item is not None and item.source_id == doc.id and item.title == "cours"
-    assert item.created_by == "user" and item.meta["reason"] == "Import du document « cours.pdf »."
+    assert (
+        item.created_by == "user" and item.meta["reason"] == "Import of the document 'cours.pdf'."
+    )
     assert item.indexed_at is not None
 
 
@@ -84,7 +86,7 @@ async def test_empty_text_marks_error_no_text(
     done = await reload(db_session_factory, USER, doc.id)
     assert done.status == "error" and done.error == {
         "code": "no_text",
-        "message": "Aucun texte trouvé dans ce document (PDF scanné ?).",
+        "message": "No text found in this document (scanned PDF?).",
     }
 
 
@@ -114,7 +116,7 @@ async def test_duplicate_content_marks_error_with_existing_title(
     assert done.status == "error" and done.item_id is None
     assert done.error == {
         "code": "duplicate_content",
-        "message": "Ce contenu est déjà en mémoire.",
+        "message": "This content is already in memory.",
         "item_id": item_id,
     }
     assert "premier" not in str(done.error)  # ni le titre ni le nom de l'existant
@@ -144,7 +146,7 @@ async def test_ingestion_marks_error_when_embeddings_down(
     assert done.status == "error" and done.item_id is not None
     assert done.error is not None
     assert done.error["code"] in ("embeddings_unavailable", "memory_unavailable")
-    assert "indisponible" in done.error["message"]
+    assert "unavailable" in done.error["message"]
     async with db_session_factory() as db:
         item = await MemoryItemRepository(db, USER).get(done.item_id)
         chunks = await ChunkRepository(db, USER).for_item(done.item_id)
@@ -174,7 +176,7 @@ async def test_unexpected_exception_message_is_generic(
     done = await reload(db_session_factory, USER, doc.id)
     assert done.error == {
         "code": "ingestion_failed",
-        "message": "L'import a échoué de façon inattendue.",
+        "message": "The import failed unexpectedly.",
     }
     assert "secret" not in caplog.text and doc.id in caplog.text and "RuntimeError" in caplog.text
 

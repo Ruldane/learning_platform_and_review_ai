@@ -65,7 +65,7 @@ async def test_save_analysis_is_idempotent(
     async with db_session_factory() as db:
         items = list((await db.execute(select(MemoryItem))).scalars())
     assert [(i.id, i.kind, i.title, i.created_by) for i in items] == [
-        (row.memory_item_id, "offre", "AI Product Engineer — Société Fictive SAS", "analyst")
+        (row.memory_item_id, "posting", "AI Product Engineer — Société Fictive SAS", "analyst")
     ]
     assert items[0].indexed_at is not None and items[0].text.startswith("AI Product Engineer")
 
@@ -92,11 +92,11 @@ async def test_known_skills_are_ordered_with_levels(
     store: AgentGapStore, db_session_factory: Factory
 ) -> None:
     await set_levels(
-        db_session_factory, {"Kubernetes": None, "Docker": "declare", "Python": "valide"}
+        db_session_factory, {"Kubernetes": None, "Docker": "declared", "Python": "validated"}
     )
     assert await store.known_skills(ME) == [
-        KnownSkill("Python", "valide"),
-        KnownSkill("Docker", "declare"),
+        KnownSkill("Python", "validated"),
+        KnownSkill("Docker", "declared"),
         KnownSkill("Kubernetes", None),
     ]
 
@@ -118,10 +118,10 @@ async def test_save_gap_once_per_session_and_adds_unmatched_needs(
             if s.name not in LEVELS
         }
     assert added == {
-        "LangGraph": "Autres",
-        "Évaluation de RAG": "Autres",
-        "Intégration continue": "Autres",
-        "Anglais professionnel": "Autres",
+        "LangGraph": "Other",
+        "Évaluation de RAG": "Other",
+        "Intégration continue": "Other",
+        "Anglais professionnel": "Other",
     }
     # Rejeu : rien de plus ; les compétences ajoutées restent sans niveau.
     assert await store.save_gap(ME, "s1", posting_id, []) == saved

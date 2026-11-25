@@ -37,14 +37,14 @@ async def put(
     link = await telegram_connection(db, user_id)
     if preferences.enabled:
         if link is None:
-            raise AppError(
-                "surprise_telegram_required", "Associe d’abord ta discussion Telegram.", 409
-            )
+            raise AppError("surprise_telegram_required", "Link your Telegram chat first.", 409)
         if not preferences.role:
-            raise AppError("surprise_role_required", "Indique le poste à préparer.", 422)
+            raise AppError("surprise_role_required", "Enter the role you want to prepare for.", 422)
         tokens = await TokenService(db, user_id).dedicated_writers(FEATURE)
         if all(token.id != preferences.token_id for token in tokens):
-            raise AppError("surprise_token_unavailable", "Choisis un jeton Nod dédié actif.", 404)
+            raise AppError(
+                "surprise_token_unavailable", "Choose an active, dedicated Nod token.", 404
+            )
     else:
         preferences = preferences.model_copy(update={"token_id": None})
     await SettingsRepository(db, user_id).save(

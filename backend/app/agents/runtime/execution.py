@@ -1,22 +1,21 @@
-"""Exécution d'une session : compile le parcours, parcourt `astream`, publie les événements, puis
-écrit l'issue (question en attente, fin, échec).
+"""Execution of a session: compiles the graph, walks `astream`, publishes the events, then
+writes the outcome (pending question, end, failure).
 
-- `durability="sync"` : le checkpoint d'une étape est écrit avant l'étape suivante ; un arrêt
-  brutal ne fait jamais rejouer un nœud terminé (Review Focus 1).
-- Chaque issue est une transition conditionnelle depuis `running`, écrite dans la MÊME
-  transaction que son événement (`EventBus.publish_with`, D61) : statut et événement existent
-  ensemble ou pas du tout. Si la session a été mise en pause ou annulée entre-temps, rien
-  n'est écrit ni publié.
-- Écriture de l'issue en échec (D61 §4) : nouveaux essais (la garde les rend sûrs), puis repli
-  sur un `failed` atomique (`outcome_not_written`), pour ne jamais laisser une session
-  `running` sans tâche dans le processus. Si même le repli échoue (base vraiment
-  indisponible), la session reste `running` et sera reprise au prochain démarrage.
-- L'issue s'écrit en entier même si la tâche est annulée à ce moment (`_settle`).
-- Les appels LLM coupés sans fin (annulés : `node_timeout`, pause, arrêt) sont comptés en tokens
-  estimés à la fin de chaque parcours de `astream`, quelle qu'en soit l'issue (`flush_cut`, D117).
-- `bus.close` seulement si la session est en base dans un statut terminal (et `cancelled`, par
-  le runner) ; jamais sur `waiting_user` ni `paused` (D42), ni sur une issue non écrite (la
-  session reste ouverte : un 1000 serait pris pour une fin définitive, D50).
+- `durability="sync"`: a step's checkpoint is written before the next step; an abrupt stop
+  never replays a finished node (Review Focus 1).
+- Each outcome is a conditional transition from `running`, written in the SAME transaction as
+  its event (`EventBus.publish_with`, D61): status and event exist together or not at all. If
+  the session was paused or cancelled in the meantime, nothing is written or published.
+- Writing the failure outcome (D61 §4): retries (the guard makes them safe), then a fallback
+  to an atomic `failed` (`outcome_not_written`), so as never to leave a `running` session
+  without a task in the process. If even the fallback fails (database truly unavailable), the
+  session stays `running` and is resumed at the next startup.
+- The outcome is written in full even if the task is cancelled at that moment (`_settle`).
+- LLM calls cut without an end (cancelled: `node_timeout`, pause, shutdown) are counted in
+  estimated tokens at the end of each walk of `astream`, whatever its outcome (`flush_cut`, D117).
+- `bus.close` only if the session is in the database in a terminal status (and `cancelled`, by
+  the runner); never on `waiting_user` or `paused` (D42), nor on an outcome not written (the
+  session stays open: a 1000 would be taken for a final end, D50).
 """
 
 import asyncio
@@ -48,12 +47,12 @@ from app.core.errors import AppError
 logger = logging.getLogger(__name__)
 
 STREAM_MODES: list[StreamMode] = ["custom", "messages", "updates"]
-INTERNAL_ERROR = "Une erreur inattendue a interrompu la session."
+INTERNAL_ERROR = "An unexpected error interrupted the session."
 NOT_WRITTEN = {
     "code": "outcome_not_written",
-    "message": "La fin de la session n'a pas pu être enregistrée : elle est marquée en échec.",
+    "message": "The session outcome could not be saved. The session was marked as failed.",
 }
-# Attente avant chaque nouvel essai d'écriture de l'issue (deux nouveaux essais).
+# Wait before each new attempt to write the outcome (two retries).
 OUTCOME_RETRY_DELAYS_S = (0.05, 0.25)
 
 
@@ -70,23 +69,24 @@ class RunContext:
 
 
 def unknown_graph(name: str) -> AppError:
-    return AppError("unknown_graph", f"Parcours inconnu : {name}", 404, {"graph": name})
+    return AppError("unknown_graph", f"Unknown workflow: {name}", 404, {"graph": name})
 
 
 async def run_session(
     ctx: RunContext, user_id: str, session_id: str, command: Command[Any] | None
 ) -> None:
-    """Corps de la tâche d'une session. `command` : réponse à une question, ou `None` (départ,
-    reprise d'une pause ou après redémarrage : dernier checkpoint, à défaut l'entrée).
+    """Body of a session's task. `command`: answer to a question, or `None` (start, resume
+    from a pause or after a restart: last checkpoint, failing that the input).
 
-    `CancelledError` est relancée sans rien écrire : le statut appartient à l'appelant (pause,
-    annulation) ou reste `running` (arrêt du serveur, la session sera reprise au démarrage).
+    `CancelledError` is re-raised without writing anything: the status belongs to the caller
+    (pause, cancellation) or stays `running` (server shutdown, the session will be resumed at
+    startup).
     """
     run = _Run(ctx, user_id, session_id)
     try:
         prepared = await run.prepare(command)
         if prepared is None:
-            return  # plus `running` (pause, annulation passées avant) : rien à faire ni écrire
+            return  # no longer `running` (pause, cancellation came first): nothing to do or write
         graph, config, graph_input = prepared
         pending = await run.stream(graph, graph_input, config)
         if pending is not None:
@@ -97,9 +97,9 @@ async def run_session(
         raise
     except AppError as exc:
         outcome = run.fail(exc.code, exc.message)
-    except Exception as exc:  # message brut jamais journalisé ni publié (clés, données)
+    except Exception as exc:  # raw message never logged or published (keys, data)
         logger.error(
-            "Session %s (utilisateur %s) : échec inattendu (%s)",
+            "Session %s (user %s): unexpected failure (%s)",
             session_id,
             user_id,
             type(exc).__name__,
@@ -109,15 +109,15 @@ async def run_session(
 
 
 async def _settle(outcome: Awaitable[None]) -> None:
-    """Écrit l'issue jusqu'au bout même si la tâche est annulée pendant, puis laisse
-    l'annulation suivre son cours : un statut écrit sans son événement n'arrive jamais."""
+    """Writes the outcome all the way even if the task is cancelled meanwhile, then lets the
+    cancellation follow its course: a status written without its event never happens."""
     task = asyncio.ensure_future(outcome)
     try:
         await asyncio.shield(task)
     except asyncio.CancelledError:
         await asyncio.wait({task})
         if not task.cancelled() and (error := task.exception()) is not None:
-            logger.error("Issue d'une session non écrite (%s)", type(error).__name__)
+            logger.error("Session outcome not written (%s)", type(error).__name__)
         raise
 
 
@@ -137,13 +137,13 @@ class _Run:
     async def prepare(
         self, command: Command[Any] | None
     ) -> tuple[Pregel[Any, Any, Any, Any], RunnableConfig, Any] | None:
-        """Graphe compilé, configuration et entrée ; `None` si la session n'est plus
-        `running` (une pause ou une annulation est passée avant le démarrage de la tâche)."""
+        """Compiled graph, configuration and input; `None` if the session is no longer
+        `running` (a pause or a cancellation came before the task started)."""
         ctx = self.ctx
         async with ctx.session_factory() as db:
             row = await SessionRepository(db, self.user_id).get(self.session_id)
         if row is None:
-            raise AppError("session_not_found", "Session introuvable.", 404)
+            raise AppError("session_not_found", "Session not found.", 404)
         if row.status != "running":
             return None
         settings = await ctx.run_settings.get_run_settings(self.user_id)
@@ -176,14 +176,14 @@ class _Run:
         if command is None:
             graph_input = await saved_command(graph, config, row)
             if await ctx.checkpointer.aget_tuple(config) is None:
-                graph_input = row.input  # aucun checkpoint : (re)départ depuis l'entrée
+                graph_input = row.input  # no checkpoint: (re)start from the input
         return graph, config, graph_input
 
     async def stream(
         self, graph: Pregel[Any, Any, Any, Any], graph_input: Any, config: RunnableConfig
     ) -> dict[str, Any] | None:
-        """Publie le flux ; rend la première question posée (une à la fois : les autres
-        interruptions en attente reviendront à la reprise, avec le même id)."""
+        """Publishes the stream; returns the first question asked (one at a time: the other
+        pending interruptions will come back on resume, with the same id)."""
         pending: dict[str, Any] | None = None
         try:
             async for mode, chunk in graph.astream(
@@ -199,7 +199,7 @@ class _Run:
         return pending
 
     async def _flush_cut(self) -> None:
-        """Compte les appels coupés, jusqu'au bout même si la tâche est annulée pendant."""
+        """Counts the cut calls, all the way even if the task is cancelled meanwhile."""
         if self.tracker is not None:
             await asyncio.shield(self.tracker.flush_cut())
 
@@ -228,8 +228,8 @@ class _Run:
     async def _outcome(
         self, to: str, event_type: Any, payload: dict[str, Any], **values: Any
     ) -> bool:
-        """Statut `to` (depuis `running`) et événement `event_type` validés ensemble (D61) ; `False`
-        si la session n'est plus `running` (pause, annulation) : rien d'écrit ni de publié."""
+        """Status `to` (from `running`) and event `event_type` committed together (D61); `False`
+        if the session is no longer `running` (pause, cancellation): nothing is written or sent."""
         event = await self.ctx.bus.publish_with(
             user_id=self.user_id,
             session_id=self.session_id,
@@ -240,7 +240,7 @@ class _Run:
         return event is not None
 
     async def wait_user(self, pending: dict[str, Any]) -> None:
-        # Question et statut ensemble : qui reçoit la question peut y répondre aussitôt.
+        # Question and status together: whoever receives the question can answer it right away.
         await self._issue(
             "waiting_user",
             "interrupt.requested",
@@ -258,21 +258,21 @@ class _Run:
     async def _issue(
         self, to: str, event_type: Any, payload: dict[str, Any], **values: Any
     ) -> None:
-        """Écrit l'issue (nouveaux essais), à défaut un `failed` `outcome_not_written` ; lève si
-        rien ne s'écrit (la session reste `running`). Puis `bus.close` si la session est en
-        base dans un statut terminal : les abonnés reçoivent l'événement final et s'arrêtent."""
+        """Writes the outcome (retries), failing that a `failed` `outcome_not_written`; raises if
+        nothing gets written (the session stays `running`). Then `bus.close` if the session is in
+        the database in a terminal status: the subscribers receive the final event and stop."""
         try:
             written = await self._persist(to, event_type, payload, **values)
         except Exception as exc:
             logger.error(
-                "Session %s : issue « %s » non écrite (%s), repli en échec",
+                "Session %s: outcome '%s' not written (%s), falling back to failure",
                 self.session_id,
                 to,
                 type(exc).__name__,
             )
             to = "failed"
             written = await self._persist(to, "run.failed", NOT_WRITTEN, error=NOT_WRITTEN)
-        # Refusée : pause, annulation, ou un essai précédent a validé malgré son erreur.
+        # Refused: pause, cancellation, or an earlier attempt committed despite its error.
         final = to in TERMINAL if written else await self._status() in TERMINAL
         if final:
             await self.ctx.bus.close(user_id=self.user_id, session_id=self.session_id)
@@ -280,14 +280,14 @@ class _Run:
     async def _persist(
         self, to: str, event_type: Any, payload: dict[str, Any], **values: Any
     ) -> bool:
-        """`_outcome` avec nouveaux essais sur erreur (base occupée au-delà du délai d'attente).
-        Sûr : si un essai a validé malgré son erreur, la garde refuse le suivant."""
+        """`_outcome` with retries on error (database busy beyond the wait delay).
+        Safe: if an attempt committed despite its error, the guard refuses the next one."""
         for delay in OUTCOME_RETRY_DELAYS_S:
             try:
                 return await self._outcome(to, event_type, payload, **values)
             except Exception as exc:
                 logger.warning(
-                    "Session %s : écriture de l'issue en échec (%s), nouvel essai",
+                    "Session %s: outcome write failed (%s), retrying",
                     self.session_id,
                     type(exc).__name__,
                 )

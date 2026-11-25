@@ -1,4 +1,4 @@
-"""Comparaison sur les intitulés et compétences déclarés, sans inférer de nouveaux acquis."""
+"""Comparison on declared titles and skills, without inferring new achievements."""
 
 from collections import defaultdict
 from dataclasses import dataclass

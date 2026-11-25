@@ -1,5 +1,5 @@
-"""Registre des sources d'ingestion. Ajouter une source : un module dans ce paquet et une ligne
-ici (la clé est son `DocumentSourceKind`)."""
+"""Registry of ingestion sources. Adding a source: one module in this package and one line
+here (the key is its `DocumentSourceKind`)."""
 
 from typing import cast
 
@@ -26,9 +26,9 @@ INGESTION_SOURCES: dict[DocumentSourceKind, SourceExtractor] = {
 
 
 def get_source(kind: str) -> SourceExtractor:
-    """Source du type ; un type inconnu (ligne en base corrompue) est une erreur interne, dont le
-    message ne recopie pas la valeur."""
+    """Source for the kind; an unknown kind (corrupted database row) is an internal error whose
+    message does not echo the value."""
     source = INGESTION_SOURCES.get(cast(DocumentSourceKind, kind))
     if source is None:
-        raise AppError("unknown_source_kind", "Type de source de document inconnu.", 500)
+        raise AppError("unknown_source_kind", "Unknown document source kind.", 500)
     return source

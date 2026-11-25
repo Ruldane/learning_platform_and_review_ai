@@ -1,15 +1,15 @@
-"""Point d'entrée WebSocket du flux d'une session : origine, propriété, puis rejeu et direct.
+"""WebSocket entry point of a session's stream: origin, ownership, then replay and live.
 
-- **Origine** : CORS ne s'applique pas aux WebSockets ; un navigateur envoie toujours `Origin`,
-  qui doit être l'une des origines autorisées (`Settings.cors_origins`), sinon la poignée de
-  main est refusée (fermeture 1008 avant `accept` : le navigateur, lui, ne voit qu'un 1006,
-  comme pour un `after_seq` invalide ou un 401). Sans en-tête `Origin` (client hors
-  navigateur, tests) : accepté en mode local, **refusé en mode Google** (1008, après la 401 d'une
-  connexion sans cookie valide) : le cookie de session y est la clé d'un compte.
-- **Propriété** : session inconnue ou d'un autre utilisateur → accepté puis fermé en `4404`
-  (un refus avant `accept` n'arriverait au navigateur que comme un 1006 anonyme).
-- **Base** : jamais de session ouverte pour la durée de la connexion (D38) ; chaque lecture
-  (propriété, statut, dernier `seq`) ouvre une session courte par `session_factory`.
+- **Origin**: CORS does not apply to WebSockets; a browser always sends `Origin`,
+  which must be one of the allowed origins (`Settings.cors_origins`), otherwise the
+  handshake is refused (close 1008 before `accept`: the browser itself only sees a 1006,
+  as for an invalid `after_seq` or a 401). Without an `Origin` header (non-browser client,
+  tests): accepted in local mode, **refused in Google mode** (1008, after the 401 of a
+  connection without a valid cookie): the session cookie there is the key to an account.
+- **Ownership**: unknown session or one belonging to another user -> accepted then closed with
+  `4404` (a refusal before `accept` would only reach the browser as an anonymous 1006).
+- **Database**: never a session kept open for the length of the connection (D38); each read
+  (ownership, status, last `seq`) opens a short session through `session_factory`.
 """
 
 from fastapi import WebSocketException, status
@@ -27,16 +27,16 @@ CLOSE_NOT_FOUND = 4404
 
 
 async def check_origin(conn: HTTPConnection) -> None:
-    """Dépendance de la route WebSocket : refuse une origine hors de `cors_origins`, et en mode
-    Google une poignée de main sans `Origin` (la 401 d'une connexion sans cookie passe d'abord)."""
+    """Dependency of the WebSocket route: refuses an origin outside `cors_origins`, and in
+    Google mode a handshake without `Origin` (the 401 of a cookie-less connection comes first)."""
     origin = conn.headers.get("origin")
     if origin is None:
         if conn.app.state.settings.auth_mode == "google":
-            await conn.app.state.authenticator.authenticate(conn)  # 401 `auth_required` d'abord
-            raise WebSocketException(status.WS_1008_POLICY_VIOLATION, "Origine requise.")
+            await conn.app.state.authenticator.authenticate(conn)  # 401 `auth_required` first
+            raise WebSocketException(status.WS_1008_POLICY_VIOLATION, "Origin required.")
         return
     if origin.rstrip("/") not in conn.app.state.settings.cors_origins:
-        raise WebSocketException(status.WS_1008_POLICY_VIOLATION, "Origine non autorisée.")
+        raise WebSocketException(status.WS_1008_POLICY_VIOLATION, "Origin not allowed.")
 
 
 async def serve_session_stream(
@@ -47,7 +47,7 @@ async def serve_session_stream(
     try:
         await control.get_owned(factory, user_id, session_id)
     except AppError:
-        await ws.close(code=CLOSE_NOT_FOUND, reason="Session introuvable.")
+        await ws.close(code=CLOSE_NOT_FOUND, reason="Session not found.")
         return
 
     await replay.stream_to_socket(
@@ -63,22 +63,22 @@ async def serve_session_stream(
 def end_seq_reader(
     factory: async_sessionmaker[AsyncSession], user_id: str, session_id: str
 ) -> replay.EndSeqReader:
-    """`seq` de fin de la session (voir `replay`) : statut lu d'abord, puis le `seq` dans une
-    autre session courte, pour qu'il soit au moins aussi récent que le statut."""
+    """End `seq` of the session (see `replay`): status read first, then the `seq` in another
+    short session, so that it is at least as recent as the status."""
 
     async def read() -> int | None:
         try:
             status = (await control.get_owned(factory, user_id, session_id)).status
         except AppError:
-            return 0  # session disparue : plus rien à attendre
+            return 0  # session gone: nothing left to wait for
         if status not in control.TERMINAL:
             return None
         async with factory() as db:
             events = EventRepository(db, user_id)
-            if status in ("cancelled", "expired"):  # aucun événement final : tout ce qui est écrit
+            if status in ("cancelled", "expired"):  # no final event: everything that is written
                 return await events.max_seq(session_id)
-            # `completed` / `failed` : l'événement final, écrit dans la même transaction que
-            # le statut (D61). `None` (ligne d'avant D61 sans son événement) : flux ouvert.
+            # `completed` / `failed`: the final event, written in the same transaction as
+            # the status (D61). `None` (row from before D61 without its event): open stream.
             return await events.last_seq_of(session_id, replay.FINAL_EVENTS)
 
     return read

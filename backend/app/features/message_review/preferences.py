@@ -41,7 +41,7 @@ async def set_preferences(
         if all(token.id != preferences.token_id for token in await _tokens(db, user_id)):
             raise AppError(
                 "nod_token_unavailable",
-                "Choisis un jeton Nod actif et limité à la révision par messagerie.",
+                "Choose an active Nod token limited to review by messaging.",
                 404,
             )
     else:

@@ -1,1 +1,1 @@
-"""Routines déclenchées par le planificateur local."""
+"""Routines triggered by the local scheduler."""

@@ -15,13 +15,13 @@ describe("ResourceCard", () => {
   it("shows the title as an external link, the domain, the date and the reason", () => {
     render(<ResourceCard resource={RESOURCE} />);
     const link = screen.getByRole("link", {
-      name: "Optimiser une jointure (s'ouvre dans un nouvel onglet)",
+      name: "Optimiser une jointure (opens in a new tab)",
     });
     expect(link).toHaveAttribute("href", "https://example.org/jointures");
     expect(link).toHaveAttribute("rel", "noopener noreferrer");
-    expect(screen.getByText("example.org, 10 novembre 2026")).toBeInTheDocument();
+    expect(screen.getByText("example.org, 10 November 2026")).toBeInTheDocument();
     expect(
-      screen.getByText("Pourquoi : Elle prolonge la leçon d'aujourd'hui."),
+      screen.getByText("Why: Elle prolonge la leçon d'aujourd'hui."),
     ).toBeInTheDocument();
   });
 
@@ -32,7 +32,7 @@ describe("ResourceCard", () => {
 
   it("says there is no resource this morning", () => {
     render(<ResourceCard resource={null} />);
-    expect(screen.getByText("Pas de ressource ce matin.")).toBeInTheDocument();
+    expect(screen.getByText("No resource this morning.")).toBeInTheDocument();
     expect(screen.queryByRole("link")).toBeNull();
   });
 });

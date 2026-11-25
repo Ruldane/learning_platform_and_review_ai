@@ -16,7 +16,7 @@ from app.providers.pdf.base import (
 from app.providers.pdf.subprocess import BACKEND_ROOT, SubprocessPdfExtractor, worker_command
 from scripts.sample_pdf import make_pdf
 
-_DEFAULT_MESSAGE = "PDF illisible (protégé par mot de passe ou endommagé)."
+_DEFAULT_MESSAGE = "The PDF is unreadable (password-protected or damaged)."
 
 
 class _Spawned:

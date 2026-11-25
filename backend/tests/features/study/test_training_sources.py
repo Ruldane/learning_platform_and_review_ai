@@ -41,7 +41,7 @@ async def test_training_uses_its_owners_lessons(
         assert not refused, brief
         messages = " ".join(m["content"] for m in brief["data"]["messages"])
         cited_topic = "Vecteurs" if selected else topic
-        assert f'[1] <<<CONTENU_NON_FIABLE source="référence">>>\n{cited_topic} publi' in messages
+        assert f'[1] <<<UNTRUSTED_CONTENT source="reference">>>\n{cited_topic} publi' in messages
         if selected:
             assert "Matrices publiques du deuxième programme" not in messages
         assert "confidentiels du compte tiers" not in messages

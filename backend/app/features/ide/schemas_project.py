@@ -1,4 +1,4 @@
-"""Commandes ciblées du projet et vue des onglets."""
+"""Targeted project commands and tab view."""
 
 from typing import Annotated
 

@@ -1,4 +1,4 @@
-"""Demandes et pointeurs de publication du livre d'un compte."""
+"""Book requests and publication pointers of an account."""
 
 from sqlalchemy import ColumnElement, select, update
 from sqlalchemy.dialects.sqlite import insert

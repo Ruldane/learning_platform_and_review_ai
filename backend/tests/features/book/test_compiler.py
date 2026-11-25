@@ -28,7 +28,11 @@ def source() -> BookSource:
             BookChapter(
                 rank=4,
                 title="Itérations avancées",
-                markdown="## Explication\n\nRéutilise la boucle.\n\nEntrée&nbsp;sortie.\n",
+                markdown=(
+                    "## Explanation\n\nRéutilise la boucle.\n\nEntrée&nbsp;sortie.\n\n"
+                    "## Exercise\n\nRepeat the loop twice.\n\n"
+                    "## Solution\n\nCall the loop function twice.\n"
+                ),
                 terms=("BOUCLE", "Générateur"),
             ),
             BookChapter(
@@ -76,7 +80,9 @@ async def test_pdf_uses_published_chapter_order_and_shared_sections(source: Book
     assert "Astuce &lt;locale&gt;" in html and "Ma note liée." in html
     assert "for i in range(3):" in html.split('id="exercises"', 1)[1]
     assert "Comparer la sortie." in html.split('id="exercises"', 1)[1]
+    assert "Call the loop function twice." in html.split('id="exercises"', 1)[1]
     assert "for i in range(3):" not in html.split('id="exercises"', 1)[0]
+    assert "Repeat the loop twice." not in html.split('id="exercises"', 1)[0]
     assert "Répète un bloc." in html and "Produit des valeurs à la demande." in html
     assert "<script" not in html and "<img" not in html and "https://example.test" not in html
     assert document.footer_html is not None and "pageNumber" in document.footer_html

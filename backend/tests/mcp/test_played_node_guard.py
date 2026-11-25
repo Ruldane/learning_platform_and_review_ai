@@ -1,4 +1,4 @@
-"""Toute nouvelle utilisation du modèle dans un nœud demande un essai en mode joué."""
+"""New model calls in agent nodes require a test with a played session."""
 
 import ast
 from collections import Counter
@@ -6,23 +6,26 @@ from pathlib import Path
 
 NODES = Path(__file__).resolve().parents[2] / "app" / "agents" / "nodes"
 
-# Les appels partagent le fournisseur de session, y compris les helpers de plusieurs nœuds.
-# Ce garde signale les nouveaux appels. Les tests de parcours vérifient les rendus et les écritures.
+# Calls share the session's model provider, including helpers used by multiple nodes.
+# The played tests cover conversation modes in test_played_explanations and test_training_modes.
 AUDITED = {
     "analyst": ("_ask_analysis", "_ask_matches"),
     "analyst_radar": ("_ask",),
     "archivist": ("extract",),
     "archivist_capture": ("digest",),
     "archivist_profile": ("extract",),
-    "committee.common": ("persona_call",),
+    "committee.common": ("role_call",),
     "committee.synthesis": ("synthesis",),
+    "conversation": ("_classroom_reply", "reply"),
     "debate_turn": ("turn",),
     "demo_turn": ("play_turn",),
     "designer": ("_copy", "ask_spec"),
     "examiner": ("_ask_quiz", "_ask_grades"),
     "exercise_writer.node": ("write",),
+    "feynman": ("assess",),
     "interviewer.debrief": ("_written",),
     "interviewer.plan": ("plan",),
+    "interviewer.system_design": ("review",),
     "interviewer.turn": ("_decide",),
     "moderator": ("frame",),
     "moderator_brief": ("advise",),

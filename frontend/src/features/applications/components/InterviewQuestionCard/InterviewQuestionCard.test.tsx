@@ -13,7 +13,7 @@ function props(over: Partial<Props> = {}): Props {
     followUp: false,
     answered: false,
     disabled: false,
-    stopLabel: "Terminer l'entretien",
+    stopLabel: "End the interview",
     onAnswer: vi.fn(),
     onStop: vi.fn(),
     ...over,
@@ -31,16 +31,16 @@ function setup(over: Partial<Props> = {}) {
 describe("InterviewQuestionCard", () => {
   it("names the question, puts the focus on the answer field and keeps the limit in sight", () => {
     setup();
-    expect(screen.getByRole("region", { name: "Question 2 sur 7" })).toBeVisible();
-    const field = screen.getByRole("textbox", { name: "Ta réponse écrite" });
+    expect(screen.getByRole("region", { name: "Question 2 of 7" })).toBeVisible();
+    const field = screen.getByRole("textbox", { name: "Your written answer" });
     expect(field).toHaveFocus();
     expect(field).toHaveAttribute("maxlength", "4000");
-    expect(screen.getByText(/4 000 caractères au plus/)).toBeVisible();
+    expect(screen.getByText(/4,000 characters max/)).toBeVisible();
   });
 
   it("names a follow-up as such", () => {
     setup({ followUp: true });
-    expect(screen.getByRole("region", { name: "Relance sur la question 2 sur 7" })).toBeVisible();
+    expect(screen.getByRole("region", { name: "Follow-up on question 2 of 7" })).toBeVisible();
   });
 
   it("has a title even when the question number is not known yet", () => {
@@ -51,7 +51,7 @@ describe("InterviewQuestionCard", () => {
   it("sends the written answer", async () => {
     const { user, given } = setup();
     await user.type(screen.getByRole("textbox"), "Voici ma réponse");
-    await user.click(screen.getByRole("button", { name: "Répondre" }));
+    await user.click(screen.getByRole("button", { name: "Answer" }));
     expect(given.onAnswer).toHaveBeenCalledWith("Voici ma réponse");
   });
 
@@ -63,30 +63,30 @@ describe("InterviewQuestionCard", () => {
 
   it("hides the stop button when the server offers no such option", () => {
     setup({ stopLabel: null });
-    expect(screen.queryByRole("button", { name: /Terminer/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /End the interview/ })).toBeNull();
   });
 
   it("locks the field and the buttons while an answer is on its way", () => {
     setup({ disabled: true });
     expect(screen.getByRole("textbox")).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Terminer l'entretien" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "End the interview" })).toBeDisabled();
   });
 
   it("folds once answered: « Réponse envoyée » and the answer, no field left", async () => {
     const { user, rerender } = setup();
     await user.type(screen.getByRole("textbox"), "Ma réponse");
-    await user.click(screen.getByRole("button", { name: "Répondre" }));
+    await user.click(screen.getByRole("button", { name: "Answer" }));
     rerender({ answered: true, disabled: true });
     expect(screen.queryByRole("textbox")).toBeNull();
-    expect(screen.getByText("Réponse envoyée")).toBeVisible();
+    expect(screen.getByText("Answer sent")).toBeVisible();
     expect(screen.getByText("Ma réponse")).toBeVisible();
   });
 
   it("folds with « Tu as terminé l'entretien » after the stop button", async () => {
     const { user, rerender } = setup();
-    await user.click(screen.getByRole("button", { name: "Terminer l'entretien" }));
+    await user.click(screen.getByRole("button", { name: "End the interview" }));
     rerender({ answered: true, disabled: true });
-    expect(screen.getByText("Tu as terminé l'entretien.")).toBeVisible();
-    expect(screen.queryByRole("button", { name: "Terminer l'entretien" })).toBeNull();
+    expect(screen.getByText("You ended the interview.")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "End the interview" })).toBeNull();
   });
 });

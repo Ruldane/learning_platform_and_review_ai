@@ -1,10 +1,10 @@
-"""Gabarits de CV côté API (SPEC 5.2, 14.2 ; D126) : liste, détail, images des pages, gabarit
-actif, archivage ; la création est dans `templates_create`.
+"""CV templates on the API side (SPEC 5.2, 14.2; D126): list, detail, page images, active
+template, archiving; creation is in `templates_create`.
 
-Le statut suit l'issue de la session : un gabarit `capturing` dont la session n'est plus ouverte
-(panne du modèle, plafond, délai, annulation, arrêt) passe en `failed` à la lecture suivante,
-sous le verrou des gabarits (une session terminée ne reprend jamais : la correction est sûre).
-Journaux : identifiants et nombres, jamais le nom du gabarit, un fichier ni une police."""
+The status follows the outcome of the session: a `capturing` template whose session is no
+longer open (model failure, cap, timeout, cancellation, stop) becomes `failed` on the next read,
+under the templates lock (a finished session never resumes: the fix is safe). Logs: ids and
+numbers, never the template name, a file or a font."""
 
 import logging
 
@@ -27,13 +27,13 @@ from app.features.sessions.service import list_open_sessions_by_subject
 
 logger = logging.getLogger(__name__)
 
-INTERRUPTED = "La capture du modèle s'est arrêtée avant la fin : relance-la."
+INTERRUPTED = "Template capture stopped early. Restart it to continue."
 
 
 def capture_in_progress(session_id: str) -> AppError:
     return AppError(
         "capture_in_progress",
-        "Une capture de modèle de CV est déjà en cours.",
+        "A CV template is already being recreated.",
         409,
         {"session_id": session_id},
     )
@@ -41,18 +41,18 @@ def capture_in_progress(session_id: str) -> AppError:
 
 def template_not_ready() -> AppError:
     return AppError(
-        "template_not_ready", "Ce modèle n'est pas prêt : termine d'abord sa capture.", 409
+        "template_not_ready", "Finish recreating this CV template before using it.", 409
     )
 
 
 def template_in_use() -> AppError:
     return AppError(
-        "template_in_use", "Une revue en cours emploie ce modèle : termine-la d'abord.", 409
+        "template_in_use", "Finish the review using this template before deleting it.", 409
     )
 
 
 def page_not_found() -> AppError:
-    return AppError("template_page_not_found", "Page du modèle introuvable.", 404)
+    return AppError("template_page_not_found", "Template page not found.", 404)
 
 
 async def _open_captures(db: AsyncSession, user_id: str) -> dict[str, list[str]]:
@@ -62,8 +62,8 @@ async def _open_captures(db: AsyncSession, user_id: str) -> dict[str, list[str]]
 
 
 async def settle(db: AsyncSession, user_id: str) -> dict[str, list[str]]:
-    """Gabarits en capture sans session ouverte → `failed` ; rend les sessions ouvertes.
-    Sessions lues AVANT les gabarits (D97 n° 9). L'appelant tient `template_lock`."""
+    """Templates being captured without an open session → `failed`; returns the open sessions.
+    Sessions read BEFORE the templates (D97 no. 9). The caller holds `template_lock`."""
     open_ids = await _open_captures(db, user_id)
     stale = [
         row
@@ -72,7 +72,7 @@ async def settle(db: AsyncSession, user_id: str) -> dict[str, list[str]]:
     ]
     for row in stale:
         row.status, row.failure_reason = "failed", INTERRUPTED
-        logger.info("Gabarit sans session : utilisateur %s, gabarit %s", user_id, row.id)
+        logger.info("Template without session: user %s, template %s", user_id, row.id)
     if stale:
         await db.commit()
     return open_ids
@@ -130,8 +130,8 @@ async def get_template(rt: CvRuntime, user_id: str, template_id: str) -> Templat
 
 
 async def page_png(rt: CvRuntime, user_id: str, template_id: str, kind: str, number: int) -> bytes:
-    """Image d'une page (`number` depuis 1) de l'original ou du rendu de la passe courante ;
-    404 pour une autre sorte (`PageKind`) ou un autre numéro."""
+    """Image of a page (`number` from 1) of the original or of the current pass's rendering;
+    404 for another kind (`PageKind`) or another number."""
     if kind not in ("original", "render"):
         raise page_not_found()
     async with rt.session_factory() as db:
@@ -151,14 +151,14 @@ async def activate_template(rt: CvRuntime, user_id: str, template_id: str) -> No
         current = await TemplateRepository(db, user_id).active()
         if current is not None and current.id != row.id:
             current.active = False
-            await db.flush()  # un seul actif : l'index unique partiel est vérifié ligne à ligne
+            await db.flush()  # a single active one: the partial unique index is checked row by row
         row.active = True
         await db.commit()
     logger.info("Gabarit actif : utilisateur %s, gabarit %s", user_id, template_id)
 
 
 async def archive_template(rt: CvRuntime, user_id: str, template_id: str) -> None:
-    """Statut `archived` (images, polices et document gardés) ; idempotent."""
+    """Status `archived` (images, fonts and document kept); idempotent."""
     async with rt.template_lock(user_id), rt.session_factory() as db:
         open_ids = await settle(db, user_id)
         row = await TemplateRepository(db, user_id).get(template_id)
@@ -172,4 +172,4 @@ async def archive_template(rt: CvRuntime, user_id: str, template_id: str) -> Non
             raise template_in_use()
         row.status, row.active = "archived", False
         await db.commit()
-    logger.info("Gabarit archivé : utilisateur %s, gabarit %s", user_id, template_id)
+    logger.info("Template archived: user %s, template %s", user_id, template_id)

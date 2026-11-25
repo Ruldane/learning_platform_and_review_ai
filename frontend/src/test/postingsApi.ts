@@ -88,9 +88,9 @@ export const gapOut = (over: Record<string, unknown> = {}) => ({
   session_id: null,
   rows: [
     gapRow("Python", { required: true }),
-    gapRow("Docker", { level: "declare" }),
+    gapRow("Docker", { level: "declared" }),
     gapRow("SQL", { required: true, action: "in_program", week: 3 }),
-    gapRow("Go", { level: "valide" }),
+    gapRow("Go", { level: "validated" }),
   ],
   ...over,
 });

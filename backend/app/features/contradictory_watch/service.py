@@ -37,7 +37,7 @@ async def history(db: AsyncSession, owner: str) -> list[WatchExperimentOut]:
 async def read(db: AsyncSession, owner: str, experiment_id: str) -> WatchExperimentOut:
     row = await WatchRepository(db, owner).get(experiment_id)
     if row is None:
-        raise AppError("watch_not_found", "Expérience introuvable.", 404)
+        raise AppError("watch_not_found", "Experiment not found.", 404)
     return _view(row)
 
 
@@ -48,7 +48,7 @@ async def observe(
     await repo.begin_write()
     row = await repo.get(experiment_id)
     if row is None:
-        raise AppError("watch_not_found", "Expérience introuvable.", 404)
+        raise AppError("watch_not_found", "Experiment not found.", 404)
     value = observation.model_dump(mode="json")
     if not row.completed:
         row.observation = value
@@ -56,4 +56,4 @@ async def observe(
         return _view(row)
     if row.observation == value:
         return _view(row)
-    raise AppError("watch_already_observed", "Cette expérience a déjà un résultat.", 409)
+    raise AppError("watch_already_observed", "This experiment already has a result.", 409)

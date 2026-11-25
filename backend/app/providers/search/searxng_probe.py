@@ -6,10 +6,7 @@ import httpx
 
 from app.providers.health import HealthStatus, available, unexpected_status
 
-_JSON_REFUSED = (
-    "Le format JSON est peut-être désactivé dans SearXNG, "
-    "ou la requête a été bloquée par son limiteur."
-)
+_JSON_REFUSED = "SearXNG may have JSON output disabled or may have rate-limited the request."
 # La première vraie recherche peut dépasser le délai de 3 s du client partagé : la vérification
 # JSON a le sien. `timeout` est le plafond demandé au service de santé (sonde + recherche) ;
 # la vérification n'a lieu qu'une fois réussie, ensuite seule la sonde `/healthz` s'exécute.

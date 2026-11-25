@@ -26,7 +26,7 @@ describe("IdeSessionPage, a save never overwrites what Claude wrote", () => {
     options.session = sessionFiles({ "main.py": "a = 2\n" }); // Claude écrit, la page ne l'a pas relu
     const card = await screen.findByRole(
       "alert",
-      { name: "Claude a modifié main.py pendant que tu écrivais" },
+      { name: "Claude changed main.py while you were typing" },
       slow,
     );
     expect(calls.puts.length).toBeGreaterThanOrEqual(1);
@@ -34,11 +34,11 @@ describe("IdeSessionPage, a save never overwrites what Claude wrote", () => {
     expect(editor).toHaveValue("a = 1\nb"); // ta frappe est restée
     const refused = calls.puts.length;
     // « Garder la mienne » renvoie avec les empreintes à jour : cette fois le serveur accepte.
-    await user.click(within(card).getByRole("button", { name: "Garder la mienne" }));
+    await user.click(within(card).getByRole("button", { name: "Keep mine" }));
     await waitFor(() => expect(calls.puts.length).toBe(refused + 1), slow);
     expect(calls.puts[refused]).toMatchObject({ base_hashes: hashesOf({ "main.py": "a = 2\n" }) });
     await waitFor(() => expect(filesOf(options)).toEqual({ "main.py": "a = 1\nb" }));
-    expect(screen.queryByRole("alert", { name: /pendant que tu écrivais/ })).toBeNull();
+    expect(screen.queryByRole("alert", { name: /while you were typing/ })).toBeNull();
   });
 
   it("a file you did not touch keeps Claude's version when you save another one", async () => {
@@ -50,9 +50,9 @@ describe("IdeSessionPage, a save never overwrites what Claude wrote", () => {
     await waitFor(() => expect(calls.puts.length).toBeGreaterThanOrEqual(2), slow);
     // le premier envoi était refusé ; le second repart de la version relue, et la garde
     expect(filesOf(options)).toEqual({ "main.py": "a = 1\nx", "util.py": "b = 2\n" });
-    const tabs = screen.getByRole("navigation", { name: "Fichiers de la séance" });
+    const tabs = screen.getByRole("navigation", { name: "Session files" });
     expect(
-      within(tabs).getByRole("button", { name: "util.py (modifié par Claude)" }),
+      within(tabs).getByRole("button", { name: "util.py (changed by Claude)" }),
     ).toBeInTheDocument();
   });
 
@@ -62,7 +62,7 @@ describe("IdeSessionPage, a save never overwrites what Claude wrote", () => {
     await user.type(await findEditor(), "b");
     options.session = sessionFiles({ "main.py": "a = 2\n" });
     await waitFor(() => expect(calls.puts.length).toBeGreaterThanOrEqual(1), slow);
-    await screen.findByRole("alert", { name: /pendant que tu écrivais/ }, slow);
-    expect(screen.queryByText(/L'enregistrement a échoué/)).toBeNull();
+    await screen.findByRole("alert", { name: /while you were typing/ }, slow);
+    expect(screen.queryByText(/Saving failed/)).toBeNull();
   });
 });

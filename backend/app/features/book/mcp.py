@@ -6,20 +6,21 @@ MCP = FeatureMcp(
     feature="book",
     actions=(
         McpAction(
-            f"GET {_BOOK}", 1, "book_get_book", "État de l’édition PDF et EPUB du programme."
+            f"GET {_BOOK}", 1, "book_get_book", "State of the program's PDF and EPUB edition."
         ),
         McpAction(
             f"POST {_BOOK}",
             3,
             "book_request_book",
-            "Prépare une édition du programme en arrière-plan. Produit deux fichiers, à confirmer.",
+            "Prepares an edition of the program in the background. Produces two files; asks "
+            "for confirmation.",
             side_effects="external",
         ),
         McpAction(
             "GET /programs/{program_id}/book/{format}",
             1,
             "book_get_edition_file",
-            "Lit les métadonnées du livre et donne son lien local.",
+            "Reads the book's metadata and gives its local link.",
             artifact=True,
         ),
     ),

@@ -21,13 +21,13 @@ DAYS = {date(2026, 11, 19)}
 
 
 def question(rank: int, type_: str = "short", **over: Any) -> dict[str, Any]:
-    choices = ["a", "b", "c"] if type_ == "qcm" else []
+    choices = ["a", "b", "c"] if type_ == "mcq" else []
     found = {"id": f"q{rank}", "rank": rank, "type": type_, "choices": choices, "code": None}
     return found | over
 
 
 def quiz(count: int = 10) -> dict[str, Any]:
-    types = ("qcm", "short", "code", "explain")
+    types = ("mcq", "short", "code", "explain")
     return {
         "questions": [
             question(n + 1, types[n % 4], **({"code": "x = 1"} if n % 4 == 2 else {}))
@@ -42,7 +42,7 @@ def quiz(count: int = 10) -> dict[str, Any]:
         (quiz(7), "7 question"),
         (quiz(13), "13 question"),
         ({"questions": [question(n) for n in range(1, 11)]}, "1 type"),
-        ({"questions": [question(1, "qcm", choices=["a", "b"])] + quiz(9)["questions"]}, "2 choix"),
+        ({"questions": [question(1, "mcq", choices=["a", "b"])] + quiz(9)["questions"]}, "2 choix"),
         ({"questions": [question(1, "short", choices=["a"])] + quiz(9)["questions"]}, "hors QCM"),
         ({"questions": [question(1, "code")] + quiz(9)["questions"]}, "sans code"),
     ],
@@ -142,11 +142,11 @@ def test_a_good_summary_passes_with_or_without_a_block() -> None:
 
 
 def test_option_is_read_by_value_and_label_is_checked() -> None:
-    stuck = {"options": [{"value": "stuck", "label": "Je bloque (1/3)"}]}
+    stuck = {"options": [{"value": "stuck", "label": "I’m stuck (1/3)"}]}
 
-    assert option_value(stuck, "stuck", "Je bloque (1/3)") == "stuck"
+    assert option_value(stuck, "stuck", "I’m stuck (1/3)") == "stuck"
     with pytest.raises(CheckFailed, match="mauvais libellé"):
-        option_value(stuck, "stuck", "Voir la solution")
+        option_value(stuck, "stuck", "Show the solution")
     with pytest.raises(CheckFailed, match="absente"):
         option_value(stuck, "skip")
 

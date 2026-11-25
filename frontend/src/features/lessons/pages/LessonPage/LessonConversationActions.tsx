@@ -18,19 +18,19 @@ export function LessonConversationActions({ lessonId, professorButton, onAskProf
         </Button>
       ) : null}
       <Link
-        to={`/apprendre/lecons/${encodeURIComponent(lessonId)}/classe`}
+        to={`/learn/lessons/${encodeURIComponent(lessonId)}/classroom`}
         className={buttonVariants({ variant: "outline" })}
       >
         {t("conversations.classroom.open")}
       </Link>
       <Link
-        to={"/apprendre/lecons/" + encodeURIComponent(lessonId) + "/erreurs"}
+        to={`/learn/lessons/${encodeURIComponent(lessonId)}/errors`}
         className={buttonVariants({ variant: "outline" })}
       >
         {t("lessonHunt.title")}
       </Link>
       <Link
-        to={`/apprendre/lecons/${encodeURIComponent(lessonId)}/explique-moi`}
+        to={`/learn/lessons/${encodeURIComponent(lessonId)}/explain`}
         className={buttonVariants({ variant: "outline" })}
       >
         {t("feynman.title")}

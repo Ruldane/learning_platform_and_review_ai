@@ -47,7 +47,7 @@ class ConsentRepository(UserScopedRepository[TelegramReviewSettings]):
             table.chat_id == chat_id,
         )
         if lock:
-            # SQLite garde le verrou d’écriture pendant la réservation ou la note de la fiche.
+            # SQLite keeps the write lock during the reservation or the card's rating.
             stmt = (
                 update(table)
                 .where(*conditions)

@@ -284,7 +284,7 @@ def test_every_action_has_a_summary_and_level_3_says_it_needs_confirmation() -> 
     for _, action in ACTIONS:
         assert action.summary and len(action.summary) >= 20, action.route
         if action.level == 3:
-            assert "confirmer" in action.summary, action.route
+            assert re.search(r"\bconfirm(?:ation)?\b", action.summary, re.I), action.route
 
 
 def test_levels_table_is_printed_sorted_by_feature(capsys: pytest.CaptureFixture[str]) -> None:

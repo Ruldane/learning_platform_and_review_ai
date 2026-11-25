@@ -34,7 +34,7 @@ test("les rubriques, les anciennes adresses et les raccourcis du Labo", async ({
   await expect(main.getByRole("heading", { name: "Étudier" })).toBeVisible();
   await expect(main.getByRole("link", { name: "Ouvrir Programmes" })).toHaveAttribute(
     "href",
-    "/apprendre/programme",
+    "/learn/programs",
   );
   await capture(page, "etudier");
 
@@ -44,7 +44,7 @@ test("les rubriques, les anciennes adresses et les raccourcis du Labo", async ({
   await expect(podcast.getByText("Pour écouter le podcast, ajoute une clé OpenAI.")).toBeVisible();
   await expect(
     podcast.getByRole("link", { name: "Vérifier les modèles et les clés" }),
-  ).toHaveAttribute("href", "/reglages/modeles");
+  ).toHaveAttribute("href", "/settings/models");
   const pin = main.getByRole("button", { name: "Épingler Astreinte" });
   await expect(pin).toBeEnabled();
   await capture(page, "labo");
@@ -55,7 +55,7 @@ test("les rubriques, les anciennes adresses et les raccourcis du Labo", async ({
   await main.getByRole("button", { name: "Désépingler Astreinte" }).click();
   await expect(nav.getByRole("link", { name: "Astreinte" })).toHaveCount(0);
 
-  await page.goto("/memoire/cerveau");
+  await page.goto("/memory/brain");
   await expect(main.getByRole("heading", { name: "Cerveau", exact: true })).toBeVisible();
   const connection = main.getByRole("complementary", { name: "État du relais" });
   await expect(connection.getByRole("status")).not.toHaveText("Vérification du relais…");

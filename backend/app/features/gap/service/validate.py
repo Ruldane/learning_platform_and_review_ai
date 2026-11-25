@@ -1,7 +1,6 @@
-"""« Je les maîtrise déjà » depuis l'écart d'une offre (D220) : les compétences choisies (lignes
-`to_add`) reçoivent un module « Valider mes acquis » dans le programme validé le plus récent, puis
-l'Examinateur écrit son quiz ; réussi, il les passe à « validé ». Journaux : identifiants et
-nombres seulement."""
+""" "I already master them" from a posting's gap (D220): the chosen skills (`to_add` lines)
+receive a "Validate my skills" module in the most recent validated program, then the Examiner
+writes its quiz; once passed, it moves them to "validated". Logs: ids and numbers only."""
 
 import logging
 from collections.abc import Sequence
@@ -37,7 +36,7 @@ async def validate_gap(
     module_id = await add_validation_module(program, user_id, program_id, names, date.today())
     started = await start_quiz(quiz, user_id, module_id)
     logger.info(
-        "Validation des acquis : offre %s, module %s, %d compétence(s), quiz %s",
+        "Skills validation: posting %s, module %s, %d skill(s), quiz %s",
         posting_id,
         module_id,
         len(names),

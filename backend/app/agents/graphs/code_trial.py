@@ -1,4 +1,4 @@
-"""Deux plaidoiries d’architecture sur la même copie, puis publication atomique."""
+"""Compare two architecture arguments on a frozen copy and publish both together."""
 
 import json
 from typing import Any, TypedDict
@@ -40,7 +40,7 @@ def _citations(result: CodeArgument, passages: list[CodePassage]) -> list[CodePa
     if not selected:
         raise AppError(
             "code_trial_citation_missing",
-            "Une plaidoirie doit citer un passage de cette version.",
+            "Each argument must quote a passage from this version.",
             502,
         )
     return selected
@@ -54,9 +54,9 @@ async def _argue(deps: GraphDeps, state: TrialState, role: str) -> CodeArgument:
     other = (
         CodeArgument.model_validate(state["prosecution"]).argument if "prosecution" in state else ""
     )
-    request = untrusted(json.dumps(catalog, ensure_ascii=False), "extraits du projet figé")
+    request = untrusted(json.dumps(catalog, ensure_ascii=False), "frozen project excerpts")
     if other:
-        request += "\n\n" + untrusted(other, "plaidoirie du Procureur")
+        request += "\n\n" + untrusted(other, "prosecutor's argument")
     model = await deps.models.get_chat_model(deps.user_id, get_agent(role).tier, agent=role)
     reply = await structured_call(
         with_output_limit(model, 1250),
@@ -64,7 +64,7 @@ async def _argue(deps: GraphDeps, state: TrialState, role: str) -> CodeArgument:
         [SystemMessage(render_prompt(role)), HumanMessage(request)],
         agent=role,
         step="plaidoirie",
-        intent="j’examine la conception du projet figé",
+        intent="reviewing the design of the frozen project",
         retries=1,
     )
     _citations(reply, available)
@@ -102,7 +102,7 @@ def build(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
                 ),
             ],
         )
-        return {"summary": "Les deux plaidoiries sont disponibles."}
+        return {"summary": "Both arguments are available."}
 
     graph = StateGraph(TrialState)
     graph.add_node("prosecute", prosecute)

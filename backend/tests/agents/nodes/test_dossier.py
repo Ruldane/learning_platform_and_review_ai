@@ -70,15 +70,15 @@ def test_render_lists_sources_by_rank() -> None:
         SourceRef(url="https://b.example"),
     ]
     text = render_dossier("Société Fictive", make(), sources)
-    assert text.startswith("# Dossier : Société Fictive")
+    assert text.startswith("# Company dossier for Société Fictive")
     assert "[1] Page A — https://a.example" in text
     assert "[2] https://b.example — https://b.example" in text
-    assert "Taille estimée : PME (estimation non sourcée)" in text
-    assert "## Taille" not in text
+    assert "Estimated size (unsourced) · small or medium-sized business" in text
+    assert "## Estimated size" not in text
 
 
 def test_size_is_omitted_when_unknown() -> None:
-    assert "Taille" not in render_dossier("X", make(size="inconnu"), [])
+    assert "Estimated size" not in render_dossier("X", make(size="unknown"), [])
 
 
 def test_empty_question_is_not_rendered() -> None:

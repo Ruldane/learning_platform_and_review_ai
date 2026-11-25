@@ -43,6 +43,7 @@ async def test_run_detail_has_the_real_counts_ranking_alerts_and_offers(
     assert next(t for t in body["ranking"] if t["skill"] == "Rust")["new"] is True
     assert [a["skill"] for a in body["alerts"]] == ["Python"]
     assert len(body["offers"]) == 11
+    assert {offer["level"] for offer in body["offers"]} == {"mid_level"}
     assert {"url", "title", "company", "level", "remote", "salary", "score"} <= set(
         body["offers"][0]
     )

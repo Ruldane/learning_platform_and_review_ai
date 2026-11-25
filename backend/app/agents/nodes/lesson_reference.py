@@ -1,10 +1,10 @@
-"""Comparaison des adresses citées dans une leçon et des pages lues."""
+"""Compares the URLs cited in a lesson with the pages read."""
 
 from urllib.parse import urlsplit, urlunsplit
 
 
 def source_url_key(url: str) -> str | None:
-    """Clé tolérante d'une adresse : hôte en minuscules, sans `/` final ni fragment."""
+    """Lenient key for a URL: lowercase host, no trailing `/` and no fragment."""
     try:
         parts = urlsplit(url.strip())
     except ValueError:

@@ -15,7 +15,7 @@ const statuses = {
 export function MissionDetail({ mission }: { mission: Mission }) {
   const heading = useRef<HTMLHeadingElement>(null);
   const { update, finish, working } = useMissionActions(mission, () => heading.current?.focus());
-  const deadline = new Intl.DateTimeFormat("fr-FR", {
+  const deadline = new Intl.DateTimeFormat("en-GB", {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(mission.deadline_at));

@@ -16,7 +16,7 @@ export function Suggestions({ programId }: { programId: string }) {
   });
   const create = useMutation({
     mutationFn: createDossier,
-    onSuccess: (row) => void navigate(`/competences/contributions/${encodeURIComponent(row.id)}`),
+    onSuccess: (row) => void navigate(`/skills/contributions/${encodeURIComponent(row.id)}`),
   });
   if (query.isPending) return <LoadingState />;
   if (!query.data) {

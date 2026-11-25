@@ -1,6 +1,6 @@
-"""Routes du CV (14.2), montées sous `/api/v1` : le profil maître (`/profile`), les gabarits
-(`/cv/templates`), les revues et leurs modifications (`/cv/reviews`, `/cv/modifications`) et les
-versions produites (`/cv/versions`) (preflight G16 : un paquet de routeurs, comme `memory`)."""
+"""CV routes (14.2), mounted under `/api/v1`: the master profile (`/profile`), the templates
+(`/cv/templates`), the reviews and their modifications (`/cv/reviews`, `/cv/modifications`) and
+the produced versions (`/cv/versions`) (preflight G16: a package of routers, like `memory`)."""
 
 from fastapi import APIRouter
 

@@ -71,10 +71,9 @@ async def test_manual_create_duplicate_is_409_with_existing(client: httpx.AsyncC
     await create(client, **SOCIETE, status="applied", applied_on="2026-11-03")
     r = await create(client, company="société fictive", title="Développeuse IA (H/F)")
     assert r.status_code == 409 and r.json()["error"]["code"] == "application_duplicate"
-    assert r.json()["error"]["message"] == "Cette offre ressemble à une candidature existante."
+    assert r.json()["error"]["message"] == "This posting is similar to an existing application."
     alert = r.json()["error"]["details"]["alerts"][0]
-    assert alert["level"] == "probable" and "le 3 novembre" in alert["message"]
-    assert "Postulée" in alert["message"]
+    assert alert["level"] == "probable" and "on 3 November (Applied)" in alert["message"]
     assert (alert["company"], alert["title"]) == ("Société Fictive", "Développeuse IA")
     assert "H/F" not in r.text  # l'entrée n'est jamais renvoyée
     assert len((await client.get(API)).json()) == 1
@@ -113,7 +112,7 @@ async def test_same_company_info_is_201_with_info(client: httpx.AsyncClient) -> 
     assert r.status_code == 201, r.text
     [info] = r.json()["info"]
     assert (info["level"], info["application_id"]) == ("info", first)
-    assert info["message"].startswith("Pour info")
+    assert info["message"].startswith("For reference, you added an application")
 
 
 async def test_applied_creation_sets_the_date(client: httpx.AsyncClient) -> None:

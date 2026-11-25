@@ -1,6 +1,5 @@
-"""Service de « Mes données » : l'export de toutes les données (`export`), « Tout supprimer »
-(`delete`), les tables qu'ils parcourent (`tables`) et ce que la feature reçoit du démarrage
-(`runtime`)."""
+"""The "My data" service: export of all the data (`export`), "Delete everything" (`delete`),
+the tables they walk (`tables`) and what the feature receives from startup (`runtime`)."""
 
 from app.features.account.service.delete import delete_account
 from app.features.account.service.export import (

@@ -1,1 +1,1 @@
-"""Quiz par module et révisions espacées (SPEC F9)."""
+"""Per-module quizzes and spaced reviews (SPEC F9)."""

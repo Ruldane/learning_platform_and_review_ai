@@ -11,7 +11,7 @@ const RESOURCE: ResourceView = {
   type: "documentation",
   lang: "en",
   durationMinutes: 45,
-  level: "debutant",
+  level: "beginner",
   author: "Python Software Foundation",
   date: "2025-10-01",
   reason: "La référence, à jour.",
@@ -31,10 +31,11 @@ describe("ResourceList", () => {
     setup();
     const item = screen.getByRole("listitem");
     expect(item).toHaveTextContent(
-      "Documentation officielle · anglais · 45 min · Débutant · par Python Software Foundation · 2025-10-01",
+      "Official documentation · English · 45 min · Beginner · " +
+        "by Python Software Foundation · 2025-10-01",
     );
-    expect(within(item).getByText("Pourquoi : La référence, à jour.")).toBeInTheDocument();
-    expect(within(item).getByText("À lire")).toBeInTheDocument();
+    expect(within(item).getByText("Why: La référence, à jour.")).toBeInTheDocument();
+    expect(within(item).getByText("To read")).toBeInTheDocument();
   });
 
   it("opens the resource in a new tab, safely", () => {
@@ -57,12 +58,12 @@ describe("ResourceList", () => {
       { ...RESOURCE, localCopyUrl: "http://api/resources/r1/file", note: "ignorée" },
       { ...RESOURCE, id: "r2", title: "Article", note: "Lire la section 2." },
     ]);
-    expect(screen.getByRole("link", { name: /Copie locale \(PDF\)/ })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /Local copy \(PDF\)/ })).toHaveAttribute(
       "href",
       "http://api/resources/r1/file",
     );
     expect(screen.queryByText(/ignorée/)).toBeNull();
-    expect(screen.getByText("Fiche de lecture : Lire la section 2.")).toBeInTheDocument();
+    expect(screen.getByText("Reading note: Lire la section 2.")).toBeInTheDocument();
   });
 
   it("toggles read status both ways", async () => {
@@ -72,12 +73,12 @@ describe("ResourceList", () => {
     ]);
     await user.click(
       screen.getByRole("button", {
-        name: "Marquer « Documentation officielle de Python » comme lue",
+        name: "Mark “Documentation officielle de Python” as read",
       }),
     );
     expect(onToggleStatus).toHaveBeenCalledWith("r1", "read");
-    expect(screen.getByText("Lue")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Remettre « Déjà lue » à lire" }));
+    expect(screen.getByText("Read")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Mark “Déjà lue” as to read" }));
     expect(onToggleStatus).toHaveBeenCalledWith("r2", "to_read");
   });
 });

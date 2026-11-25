@@ -14,19 +14,19 @@ describe("ProfileVersionList", () => {
     render(<ProfileVersionList versions={versions} />);
     const items = screen.getAllByRole("listitem").map((item) => item.textContent);
     expect(items).toEqual([
-      "Version 3BrouillonLue dans tes documentsCréée le 12/11/2026",
-      "Version 2ValidéeEn vigueurModifiée par toiCréée le 05/11/2026",
-      "Version 1ValidéeLue dans tes documentsCréée le 03/11/2026",
+      "Version 3DraftRead from your documentsCreated on 12/11/2026",
+      "Version 2ValidatedCurrentEdited by youCreated on 05/11/2026",
+      "Version 1ValidatedRead from your documentsCreated on 03/11/2026",
     ]);
   });
 
   it("flags only the latest validated version", () => {
     render(<ProfileVersionList versions={versions} />);
-    expect(screen.getAllByText("En vigueur")).toHaveLength(1);
+    expect(screen.getAllByText("Current")).toHaveLength(1);
   });
 
   it("says when there is no version", () => {
     render(<ProfileVersionList versions={[]} />);
-    expect(screen.getByText("Aucune version pour l'instant.")).toBeInTheDocument();
+    expect(screen.getByText("No versions yet.")).toBeInTheDocument();
   });
 });

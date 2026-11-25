@@ -7,13 +7,13 @@ MCP = FeatureMcp(
             "GET /quizzes/{quiz_id}/ghost",
             1,
             "ghost_read_quiz",
-            "Lit les repères des tentatives personnelles d’un quiz, sans leurs réponses.",
+            "Reads the markers of your own past attempts at a quiz, without their answers.",
         ),
         McpAction(
             "GET /ide/sessions/{session_id}/ghost",
             1,
             "ghost_read_ide",
-            "Lit les repères des vérifications personnelles d’un exercice IDE, sans leur sortie.",
+            "Reads the markers of your own past checks on an IDE exercise, without output.",
         ),
     ),
 )

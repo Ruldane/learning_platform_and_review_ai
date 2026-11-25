@@ -4,18 +4,18 @@ import { STATUS_ORDER } from "../viewTypes";
 import { StatusBadge } from "./StatusBadge";
 
 const LABELS = [
-  "À postuler",
-  "Postulée",
-  "Relancée",
-  "Entretien",
-  "Offre",
-  "Refus",
-  "Sans réponse",
-  "Retirée",
+  "To apply",
+  "Applied",
+  "Followed up",
+  "Interview",
+  "Offer",
+  "Rejected",
+  "No answer",
+  "Withdrawn",
 ];
 
 describe("StatusBadge", () => {
-  it("writes the status out in French, whatever the status", () => {
+  it("writes the status out in English, whatever the status", () => {
     STATUS_ORDER.forEach((status, index) => {
       const { unmount } = render(<StatusBadge status={status} />);
       expect(screen.getByText(LABELS[index] as string)).toBeInTheDocument();
@@ -25,6 +25,6 @@ describe("StatusBadge", () => {
 
   it("carries the status as a data attribute for styling and tests", () => {
     render(<StatusBadge status="offer" />);
-    expect(screen.getByText("Offre")).toHaveAttribute("data-status", "offer");
+    expect(screen.getByText("Offer")).toHaveAttribute("data-status", "offer");
   });
 });

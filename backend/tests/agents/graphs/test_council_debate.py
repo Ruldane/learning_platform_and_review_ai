@@ -17,7 +17,7 @@ LONG_TAIL = " " + " ".join(f"mot{n}" for n in range(200))
 
 
 def round_marker(number: int) -> str:
-    return f"Tour en cours : {number}\n"
+    return f"Current round: {number}\n"
 
 
 def once_in_round(c: Council, number: int, action: Callable[[], Awaitable[None]]) -> None:
@@ -44,10 +44,10 @@ async def test_four_agents_debate_three_rounds(make_council_runner: MakeCouncil)
     positions = await c.agent_messages(step_prefix="positions")
     assert Counter(m.agent for m in positions) == {a: 1 for a in DEBATERS}  # tour 1
     opening = [m.payload["text"] for m in await c.agent_messages() if m.agent == "moderator"]
-    assert opening[0].startswith("Tour 1 : Stratège, Praticien, Éclaireur, Sceptique")
-    assert sum(text.startswith("Tour ") for text in opening) == 4  # 1 + debate_rounds
+    assert opening[0].startswith("Round 1: Strategist, Practitioner, Scout, Skeptic")
+    assert sum(text.startswith("Round ") for text in opening) == 4  # 1 + debate_rounds
     later = c.prompt_of(msgs[-1])
-    assert "Praticien, tour 1" in later and SPEECH["practitioner"] in later  # tours précédents
+    assert "Practitioner, round 1" in later and SPEECH["practitioner"] in later  # tours précédents
 
 
 async def test_turn_cites_catalog_entries(make_council_runner: MakeCouncil) -> None:
@@ -58,7 +58,7 @@ async def test_turn_cites_catalog_entries(make_council_runner: MakeCouncil) -> N
     assert first.payload["citations"][0]["index"] == 1
     assert first.payload["citations"][0]["url"] == kept[0]["url"]
     prompt = c.prompt_of(first)
-    assert "[1]\n<<<CONTENU_NON_FIABLE" in prompt  # titre et résumé encadrés, numéro hors cadre
+    assert "[1]\n<<<UNTRUSTED_CONTENT" in prompt  # titre et résumé encadrés, numéro hors cadre
 
 
 async def test_round_two_reply_must_name_another_agent(make_council_runner: MakeCouncil) -> None:
@@ -69,9 +69,9 @@ async def test_round_two_reply_must_name_another_agent(make_council_runner: Make
     replies = [m for m in await c.agent_messages(step_prefix="tour-2") if m.agent == "strategist"]
     assert len(replies) == 1  # la bulle est corrigée, pas doublée
     assert replies[0].payload["text"] == SPEECH["strategist"]
-    asked = [call for call in models.calls if "ne respecte pas ces règles" in call.prompt]
+    asked = [call for call in models.calls if "does not follow these debate rules" in call.prompt]
     assert [call.agent for call in asked] == ["strategist"]
-    assert "répondre nommément" in asked[0].prompt or "réponds nommément" in asked[0].prompt
+    assert "answer at least one other Council member by name" in asked[0].prompt
 
 
 async def test_rule_still_broken_after_one_retry_is_accepted(
@@ -84,7 +84,7 @@ async def test_rule_still_broken_after_one_retry_is_accepted(
     await c.to_choice()
     replies = [m for m in await c.agent_messages(step_prefix="tour-2") if m.agent == "practitioner"]
     assert [m.payload["text"] for m in replies] == [bare]
-    assert sum("ne respecte pas ces règles" in call.prompt for call in models.calls) == 1
+    assert sum("does not follow these debate rules" in call.prompt for call in models.calls) == 1
 
 
 async def test_skeptic_raises_an_objection_each_round(make_council_runner: MakeCouncil) -> None:
@@ -106,7 +106,7 @@ async def test_long_skeptic_turn_keeps_its_objection_line(make_council_runner: M
     skeptic = [m for m in await c.agent_messages(step_prefix="tour-2") if m.agent == "skeptic"]
     text = skeptic[0].payload["text"]
     assert text.endswith("\nObjection : trop de notions [1].") and count_words(text) <= 150
-    assert sum("ne respecte pas ces règles" in call.prompt for call in models.calls) == 0
+    assert sum("does not follow these debate rules" in call.prompt for call in models.calls) == 0
 
 
 @pytest.mark.parametrize(
@@ -125,13 +125,13 @@ async def test_message_during_round_one_is_answered_by_name_in_round_two(
     models = CouncilModels()
     first_of_round_two = "Je réponds au Praticien : un socle d'abord [1]."
     for agent in DEBATERS:
-        models.when(agent, round_marker(2) + "Réponds", first_of_round_two)
+        models.when(agent, round_marker(2) + "Reply by name", first_of_round_two)
     c = await make_council_runner(models=models)
     once_in_round(c, 1, lambda: c.post_message("Je préfère les projets pratiques"))
     await c.to_choice()
     first = (await c.agent_messages(step_prefix="tour-2"))[0]
     assert "January" in first.payload["text"] and "projets pratiques" in c.prompt_of(first)
-    assert "Tu parles en premier" in c.prompt_of(first)
+    assert "You speak first" in c.prompt_of(first)
     positions = await c.agent_messages(step_prefix="positions")
     assert all("projets pratiques" not in c.prompt_of(m) for m in positions)
 
@@ -145,9 +145,9 @@ async def test_shorter_command_caps_turns_at_80_words(make_council_runner: MakeC
     await c.to_choice()
     shorter = await c.agent_messages(step_prefix="tour-2")
     assert len(shorter) == 4 and all(count_words(m.payload["text"]) <= 80 for m in shorter)
-    assert all("80 mots au maximum" in c.prompt_of(m) for m in shorter)
+    assert all("80 words at most" in c.prompt_of(m) for m in shorter)
     after = await c.agent_messages(step_prefix="tour-3")  # l'angle vaut pour un tour
-    assert all("150 mots au maximum" in c.prompt_of(m) for m in after)
+    assert all("150 words at most" in c.prompt_of(m) for m in after)
 
 
 async def test_to_proposals_command_skips_remaining_rounds(
@@ -158,7 +158,7 @@ async def test_to_proposals_command_skips_remaining_rounds(
     await c.to_choice()
     assert len(await c.agent_messages(step_prefix="tour-2")) == 1  # l'orateur en cours finit
     assert await c.agent_messages(step_prefix="tour-3") == []
-    assert not any("Fais le point du tour." in p for p in c.prompts())
+    assert not any("Review the round." in p for p in c.prompts())
     assert len(await c.events("proposal.ready")) == 2
 
 
@@ -173,7 +173,7 @@ async def test_moderator_stops_early_when_positions_are_stable(
     make_council_runner: MakeCouncil,
 ) -> None:
     models = CouncilModels()
-    models.when("moderator", "Fais le point du tour.", STABLE)
+    models.when("moderator", "Review the round.", STABLE)
     c = await make_council_runner(models=models, rounds=3)
     await c.to_choice()
     assert len(await c.agent_messages(step_prefix="tour-2")) == 4
@@ -196,8 +196,10 @@ async def test_scribe_draws_domain_map_after_round_one(make_council_runner: Make
     ]
     assert [x["step"] for x in b] == [1, 2, 3, 4, 5]
     assert len(c.store.boards) == 5 and len(c.store.attached) == 2  # une frise par proposition
-    domain_prompt = next(p.prompt for p in c.models.calls if "carte du domaine" in p.prompt)
-    assert "Stratège, tour 1" in domain_prompt
+    domain_prompt = next(
+        p.prompt for p in c.models.calls if "draw the map of the domain" in p.prompt
+    )
+    assert "Strategist, round 1" in domain_prompt
 
 
 async def test_scribe_publishes_and_saves_only_the_normalized_mermaid(
@@ -206,7 +208,7 @@ async def test_scribe_publishes_and_saves_only_the_normalized_mermaid(
     models = CouncilModels()
     raw = 'flowchart LR\nA["x < y"] -->|suite| B(List<String>)'
     board = json.dumps({"title": "Carte", "mermaid": raw})
-    models.when("scribe", "dessiner la carte du domaine", board)
+    models.when("scribe", "draw the map of the domain", board)
     c = await make_council_runner(models=models)
     await c.to_choice()
     domain = next(x for x in await c.events("board.update") if x["kind"] == "domain_map")
@@ -220,12 +222,12 @@ async def test_invalid_board_twice_is_skipped_without_failing(
 ) -> None:
     models = CouncilModels()
     bad = '{"title": "Carte", "mermaid": "flowchart TD\\nA-->B\\nclick A \\"https://x\\""}'
-    models.when("scribe", "dessiner la carte du domaine", bad, bad)
+    models.when("scribe", "draw the map of the domain", bad, bad)
     c = await make_council_runner(models=models)
     await c.to_choice()
     kinds = [x["kind"] for x in await c.events("board.update")]
     assert "domain_map" not in kinds and kinds[0] == "prerequisites"
-    assert sum("Schéma refusé" in call.prompt for call in models.calls) == 1
+    assert sum("Diagram rejected" in call.prompt for call in models.calls) == 1
 
 
 def test_names_other_debater() -> None:
@@ -243,7 +245,7 @@ async def test_scout_debates_with_the_practitioners_it_spotted(
     scout = next(m for m in await c.agent_messages(step_prefix="positions") if m.agent == "scout")
     prompt = c.prompt_of(scout)
     line = prompt.index("- Ada Lovelace — Ingénieure IA")
-    assert prompt.rfind("<<<CONTENU_NON_FIABLE", 0, line) > prompt.rfind("<<<FIN_", 0, line)
+    assert prompt.rfind("<<<UNTRUSTED_CONTENT", 0, line) > prompt.rfind("<<<END_", 0, line)
     others = [m for m in await c.agent_messages(step_prefix="positions") if m.agent != "scout"]
     assert all("Ada Lovelace" not in c.prompt_of(m) for m in others)
 
@@ -254,9 +256,9 @@ async def test_board_invalid_once_cleaned_is_asked_again(make_council_runner: Ma
     models = CouncilModels()
     short = json.dumps({"title": "  ab ", "mermaid": 'flowchart TD\nA["Bases"] --> B["Projet"]'})
     fenced = json.dumps({"title": "Carte", "mermaid": "```\nA-->B\n```"})
-    models.when("scribe", "dessiner la carte du domaine", short, fenced)
+    models.when("scribe", "draw the map of the domain", short, fenced)
     c = await make_council_runner(models=models)
     await c.to_choice()
     kinds = [x["kind"] for x in await c.events("board.update")]
     assert "domain_map" not in kinds and kinds[0] == "prerequisites"
-    assert sum("Schéma refusé" in call.prompt for call in models.calls) == 1
+    assert sum("Diagram rejected" in call.prompt for call in models.calls) == 1

@@ -8,7 +8,14 @@ interface LibraryFiltersProps {
   onChange: (value: LibraryFilterValue) => void;
 }
 
-const TYPES: ResourceType[] = ["documentation", "cours", "video", "article", "depot", "papier"];
+const TYPES: ResourceType[] = [
+  "documentation",
+  "course",
+  "video",
+  "article",
+  "repository",
+  "paper",
+];
 const LANGS = ["fr", "en", "es", "de"] as const;
 const STATUSES: ResourceStatus[] = ["to_read", "read"];
 

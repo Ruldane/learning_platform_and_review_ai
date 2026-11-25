@@ -1,14 +1,15 @@
-"""Rendre un projet (P2, D166) : `POST /projects/{id}/submit`, sous le verrou du projet.
+"""Submitting a project (P2, D166): `POST /projects/{id}/submit`, under the project's lock.
 
-Le statut est d'abord corrigé (une session morte rend la main). Refus : énoncé absent (409
-`project_not_ready`), évaluation en cours (409 `review_in_progress`, `details.session_id`), projet
-déjà validé (409 `project_validated`). Puis le rendu : un lien http(s) et/ou une description
-(`submission_problems`), cinq captures au plus de 5 Mo, vérifiées par leurs octets de tête ; une
-422 nomme les champs (`repo_url`, `description`, `screenshots`), jamais leur valeur. Les captures
-sont rangées, le rendu est ajouté aux `submissions` (dix au plus, les plus anciens et leurs
-captures sont retirés), le projet passe en `reviewing` et la session `project_review` est lancée.
-Un lancement refusé retire le rendu et ses captures, remet le statut d'avant et répond 503 lisible.
-Journaux : identifiants et nombres, jamais le lien, la description ni un nom de fichier."""
+The status is corrected first (a dead session gives control back). Refusals: statement absent
+(409 `project_not_ready`), evaluation running (409 `review_in_progress`, `details.session_id`),
+project already validated (409 `project_validated`). Then the submission: an http(s) link
+and/or a description (`submission_problems`), five screenshots at most of 5 MB, checked by
+their leading bytes; a 422 names the fields (`repo_url`, `description`, `screenshots`), never
+their value. The screenshots are stored, the submission is added to `submissions` (ten at most,
+the oldest and their screenshots are removed), the project becomes `reviewing` and the
+`project_review` session is launched. A refused launch removes the submission and its
+screenshots, restores the previous status and answers a readable 503.
+Logs: ids and numbers, never the link, the description or a file name."""
 
 import logging
 from typing import Any
@@ -59,7 +60,7 @@ MAX_SUBMISSIONS = 10
 
 
 def _check_open(row: Project | None) -> Project:
-    """Le projet s'il peut recevoir un rendu ; sinon l'erreur lisible."""
+    """The project if it can receive a submission; otherwise the readable error."""
     if row is None:
         raise project_not_found()
     if row.status == "validated":
@@ -72,8 +73,8 @@ def _check_open(row: Project | None) -> Project:
 
 
 async def _images(files: list[UploadFile], problems: list[str]) -> list[tuple[bytes, str]]:
-    """Les captures `(octets, type)` ; une image qui n'est ni PNG, ni JPEG, ni WebP ajoute
-    `screenshots` aux problèmes. Aucune lecture au-delà de cinq fichiers."""
+    """The `(bytes, type)` screenshots; an image that is neither PNG, JPEG nor WebP adds
+    `screenshots` to the problems. No reading beyond five files."""
     if len(files) > SCREENSHOTS_MAX:
         return []
     found: list[tuple[bytes, str]] = []
@@ -91,9 +92,9 @@ async def _images(files: list[UploadFile], problems: list[str]) -> list[tuple[by
 async def _append(
     rt: ProjectsRuntime, user_id: str, project_id: str, entry: dict[str, Any]
 ) -> tuple[str, list[dict[str, Any]]]:
-    """Ajoute le rendu et passe le projet en `reviewing` ; rend le statut d'avant et les rendus les
-    plus anciens, écartés au-delà de dix (leurs captures ne sont retirées qu'une fois le lancement
-    réussi)."""
+    """Adds the submission and sets the project to `reviewing`; returns the previous status and
+    the oldest submissions, discarded beyond ten (their screenshots are only removed once the
+    launch has succeeded)."""
     async with rt.session_factory() as db:
         row = await ProjectRepository(db, user_id).get_fresh(project_id)
         if row is None:
@@ -120,13 +121,13 @@ async def _rollback(
     previous: str,
     dropped: list[dict[str, Any]],
 ) -> None:
-    """Retire le rendu et ses captures, rend les rendus écartés, remet le statut d'avant
-    (lancement refusé)."""
+    """Removes the submission and its screenshots, returns the discarded submissions, restores
+    the previous status (launch refused)."""
     async with rt.session_factory() as db:
         row = await ProjectRepository(db, user_id).get_fresh(project_id)
         if row is not None:
             rows = list(row.submissions)
-            if rows and rows[-1] == entry:  # le rendu qu'on vient d'ajouter, le dernier
+            if rows and rows[-1] == entry:  # the submission just added, the last one
                 rows.pop()
             row.submissions = [*dropped, *rows]
             row.status, row.session_id = previous, None
@@ -142,8 +143,8 @@ async def _launch(
     previous: str,
     dropped: list[dict[str, Any]],
 ) -> str:
-    """Lance `project_review` et pose la session sur le projet ; un lancement refusé retire le
-    rendu (`_rollback`) et répond 503."""
+    """Launches `project_review` and sets the session on the project; a refused launch removes
+    the submission (`_rollback`) and answers 503."""
     try:
         session_id = await rt.launcher.start(
             user_id,
@@ -155,7 +156,7 @@ async def _launch(
     except Exception as exc:
         await _rollback(rt, user_id, project_id, entry, previous, dropped)
         logger.warning(
-            "Évaluation non lancée : projet %s, cause %s", project_id, type(exc).__name__
+            "Evaluation not started: project %s, cause %s", project_id, type(exc).__name__
         )
         raise review_unavailable() from None
     async with rt.session_factory() as db:
@@ -194,7 +195,7 @@ async def _launch_verified(
         if isinstance(exc, AppError) and exc.status_code < 500:
             raise
         logger.warning(
-            "Évaluation GitHub non lancée : projet %s, cause %s", project_id, type(exc).__name__
+            "GitHub evaluation not started: project %s, cause %s", project_id, type(exc).__name__
         )
         raise review_unavailable() from None
     return sid, dropped
@@ -264,7 +265,7 @@ async def submit_project(
     old_keys = [str(key) for item in dropped for key in item.get("screenshots", [])]
     await delete_all(rt, user_id, old_keys)
     logger.info(
-        "Rendu reçu : projet %s, session %s, %d capture(s)",
+        "Submission received: project %s, session %s, %d screenshot(s)",
         project_id,
         session_id,
         len(entry["screenshots"]),

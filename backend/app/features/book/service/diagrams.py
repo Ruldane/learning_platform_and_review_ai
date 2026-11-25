@@ -1,4 +1,4 @@
-"""Rend les schémas normalisés avec les ressources locales des leçons."""
+"""Render normalised diagrams with the lessons' local resources."""
 
 from collections.abc import Iterator, Sequence
 from itertools import batched, chain
@@ -39,7 +39,7 @@ def _blocks(book: PreparedBook) -> Iterator[Element]:
 def _description(code: str) -> str:
     chart, _ = parse_flowchart(code)
     if chart is None:
-        return "Schéma du chapitre"
+        return "Chapter diagram"
     paths = [statement for statement in chart.statements if isinstance(statement, Chain)]
     labels = {s.key: s.label or s.key for s in chart.statements if isinstance(s, Subgraph)}
     labels.update(
@@ -51,13 +51,13 @@ def _description(code: str) -> str:
     )
     descriptions = []
     for path in paths:
-        groups = [" et ".join(labels.get(node.key, node.key) for node in g) for g in path.groups]
+        groups = [" and ".join(labels.get(node.key, node.key) for node in g) for g in path.groups]
         parts = [groups[0]]
         for edge, group in zip(path.edges, groups[1:], strict=True):
             arrow = "↔" if edge.arrow.startswith("<") else "→" if edge.arrow.endswith(">") else "—"
             parts.extend([edge.label or "", arrow, group])
         descriptions.append(" ".join(part for part in parts if part))
-    return ". ".join(descriptions) or "Schéma du chapitre"
+    return ". ".join(descriptions) or "Chapter diagram"
 
 
 def _document(codes: Sequence[str]) -> HtmlDocument:

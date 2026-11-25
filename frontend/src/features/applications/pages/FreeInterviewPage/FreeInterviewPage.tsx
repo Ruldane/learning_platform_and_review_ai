@@ -5,7 +5,7 @@ import { BOARD_PATH } from "../../urls";
 import { InterviewHub } from "../InterviewHub";
 
 /**
- * L'entretien blanc libre (`/candidatures/entretien`) : sans fiche, sur une offre analysée ou sur
+ * L'entretien blanc libre (`/applications/interview`) : sans fiche, sur une offre analysée ou sur
  * un intitulé de poste. Même échange écrit et même débrief que depuis une fiche.
  * `createSocket` ne sert qu'aux tests.
  */
@@ -24,7 +24,7 @@ export function FreeInterviewPage({ createSocket }: { createSocket?: SocketFacto
           {t("applications.interviewPage.freeBack")}
         </Link>
         <Link
-          to="/candidatures/system-design"
+          to="/applications/system-design"
           className="w-fit text-sm font-medium text-primary underline underline-offset-4"
         >
           {t("systemDesign.title")}

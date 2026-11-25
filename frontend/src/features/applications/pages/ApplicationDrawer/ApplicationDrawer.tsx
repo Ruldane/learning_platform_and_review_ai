@@ -10,7 +10,7 @@ import { DrawerBody } from "./DrawerBody";
 import { DrawerUnavailable } from "./DrawerUnavailable";
 
 /**
- * La fiche d'une candidature en tiroir (`/candidatures/:applicationId`), par-dessus le suivi :
+ * La fiche d'une candidature en tiroir (`/applications/:applicationId`), par-dessus le suivi :
  * boîte de dialogue modale (le focus y reste, Échap la ferme et rend le focus à ce qui l'a ouverte).
  * Une fiche inconnue (404) le dit et ramène au suivi.
  */

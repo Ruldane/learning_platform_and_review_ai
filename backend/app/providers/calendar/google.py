@@ -1,4 +1,4 @@
-"""OAuth d’Agenda et opérations ciblées sur le calendrier principal."""
+"""Calendar OAuth and targeted operations on the primary calendar."""
 
 from datetime import datetime
 from typing import Any
@@ -42,7 +42,7 @@ def _json(response: httpx.Response) -> dict[str, Any]:
 def _date(value: str) -> datetime:
     result = datetime.fromisoformat(value)
     if result.utcoffset() is None:
-        raise ValueError("Date sans fuseau")
+        raise ValueError("Date without a time zone")
     return result
 
 
@@ -161,10 +161,10 @@ class GoogleCalendar:
         try:
             calendars = _json(response)["calendars"]
             if not isinstance(calendars, dict) or len(calendars) != 1:
-                raise ValueError("Agenda principal indisponible")
+                raise ValueError("Primary calendar unavailable")
             calendar = next(iter(calendars.values()))
             if calendar.get("errors"):
-                raise ValueError("Disponibilité indisponible")
+                raise ValueError("Free/busy data unavailable")
             return [Interval(_date(item["start"]), _date(item["end"])) for item in calendar["busy"]]
         except (KeyError, TypeError, ValueError, AttributeError):
             raise unavailable() from None

@@ -1,4 +1,4 @@
-"""Soumission d'un brouillon privé à la Fabrique et ajout immédiat de ressources (D221)."""
+"""Submission of a private draft to the Factory and immediate addition of resources (D221)."""
 
 from collections.abc import Sequence
 from typing import Any
@@ -9,7 +9,7 @@ from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.nodes.lesson_reference import source_url_key
-from app.agents.nodes.verifier.checks import change_heading, check_submission
+from app.agents.nodes.verifier.checks import change_heading, check_submission, has_legacy_headings
 from app.agents.runtime.creation import PrepareSession
 from app.agents.tools.lesson_port import MAX_SEED_URLS
 from app.core.errors import AppError
@@ -34,43 +34,46 @@ from app.mcp.recorder import ACTIVE
 
 def lesson_exists() -> AppError:
     return AppError(
-        "lesson_exists", "Ce module a déjà sa leçon : retouche-la (PATCH /lessons/{id}).", 409
+        "lesson_exists", "This module already has its lesson: edit it (PATCH /lessons/{id}).", 409
     )
 
 
 def lesson_generating() -> AppError:
-    return AppError(
-        "lesson_generating", "La leçon de ce module est déjà en cours de vérification.", 409
-    )
+    return AppError("lesson_generating", "This module's lesson is already being verified.", 409)
 
 
 def lesson_not_ready() -> AppError:
-    return AppError("lesson_not_ready", "Cette leçon n'est pas encore prête.", 409)
+    return AppError("lesson_not_ready", "This lesson is not ready yet.", 409)
 
 
 def module_skipped() -> AppError:
-    return AppError("module_skipped", "Ce module est sauté : il n'a pas de leçon.", 409)
+    return AppError("module_skipped", "This module is skipped: it has no lesson.", 409)
 
 
 def module_without_lesson() -> AppError:
     return AppError(
         "module_without_lesson",
-        "Ce module valide des acquis par un quiz : il n'a pas de leçon.",
+        "This module validates prior knowledge with a quiz: it has no lesson.",
         409,
     )
 
 
 def _draft(
-    title: str, markdown: str, readings: Sequence[ResourceWriteIn], *, is_mcp: bool
+    title: str,
+    markdown: str,
+    readings: Sequence[ResourceWriteIn],
+    *,
+    is_mcp: bool,
+    allow_legacy: bool = False,
 ) -> dict[str, Any]:
-    reasons, links = check_submission(markdown, title=title)
+    reasons, links = check_submission(markdown, title=title, allow_legacy=allow_legacy)
     urls = _source_links(links, reasons)
     if any(category(char) in {"Cc", "Cf"} for char in title):
-        reasons.append("Le titre doit tenir sur une seule ligne, sans caractère de contrôle.")
+        reasons.append("The title must fit on a single line, with no control character.")
     if reasons:
         raise AppError(
             "lesson_invalid",
-            "Le brouillon ne respecte pas la structure des leçons.",
+            "The draft does not follow the lesson structure.",
             422,
             {"reasons": reasons[:30]},
         )
@@ -99,14 +102,14 @@ def _source_links(links: list[str], reasons: list[str]) -> list[str]:
         urls.setdefault(key, link)
     else:
         return list(urls.values())
-    reasons.append("Les sources doivent avoir une adresse HTTP ou HTTPS sans identifiants.")
+    reasons.append("Sources must have an HTTP or HTTPS address without credentials.")
     return []
 
 
 async def _active(
     db: AsyncSession, user_id: str, lesson: Lesson | None, draft: dict[str, Any]
 ) -> bool:
-    """Une même soumission en cours rend la session existante. Toute autre attend son issue."""
+    """The same pending submission returns the existing session; any other waits for its outcome."""
     if lesson is None:
         return False
     open_ids = await open_lesson_sessions(db, user_id, lesson.program_id)
@@ -247,7 +250,13 @@ async def patch_lesson(
                 return await get_lesson(db, user_id, lesson_id), False
             if patch.markdown is None:
                 markdown = change_heading(markdown, title)
-            draft = _draft(title, markdown, patch.resources, is_mcp=is_mcp)
+            draft = _draft(
+                title,
+                markdown,
+                patch.resources,
+                is_mcp=is_mcp,
+                allow_legacy=has_legacy_headings(lesson.markdown),
+            )
             if await _active(db, user_id, lesson, draft):
                 return await get_lesson(db, user_id, lesson_id), True
         module_id = lesson.module_id
@@ -262,12 +271,10 @@ async def patch_lesson(
 async def submit_revision(
     rt: LessonsRuntime, user_id: str, lesson_id: str, markdown: str, guard: RevisionGuard
 ) -> bool:
-    """Soumet la retouche approuvée d'une version précise à la vérification existante."""
+    """Submits the approved edit of a specific version to the existing verification."""
     try:
         patch = LessonPatch(markdown=markdown)
     except ValidationError:
-        raise AppError(
-            "lesson_update_invalid", "Le brouillon de correction est invalide.", 422
-        ) from None
+        raise AppError("lesson_update_invalid", "The correction draft is invalid.", 422) from None
     _, submitted = await patch_lesson(rt, user_id, lesson_id, patch, is_mcp=False, guard=guard)
     return submitted

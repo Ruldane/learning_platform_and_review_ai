@@ -38,7 +38,7 @@ export function ReadingApplication({ id, company }: { id: string; company: strin
         {save.data ? (
           <Link
             className="self-start text-sm underline"
-            to={`/candidatures/${save.data.application_id}`}
+            to={`/applications/${save.data.application_id}`}
           >
             {t("reading.actions.openApplication")}
           </Link>

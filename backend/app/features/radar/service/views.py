@@ -58,7 +58,7 @@ def _offers(row: RadarRun) -> list[OfferOut]:
             url=str(entry["url"]),
             title=entry.get("title"),
             company=entry.get("company"),
-            level=str(entry.get("level") or "inconnu"),
+            level=entry.get("level") or "unknown",
             remote=entry.get("remote"),
             salary=entry.get("salary"),
             score=int(entry.get("score") or 0),

@@ -37,7 +37,7 @@ describe("CouncilPage", () => {
 
   it("shows its heading and the goal at once, then opens the stream of the council session", async () => {
     const { fake } = setup();
-    expect(screen.getByRole("heading", { name: "Conseil" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Council" })).toBeInTheDocument();
     expect(await screen.findByText("Devenir ingénieure data")).toBeInTheDocument();
     await waitFor(() => expect(socketOf(fake, "c1")).toHaveLength(1));
     expect(socketOf(fake, "c1")[0]!.url).toContain("/sessions/c1/stream?after_seq=0");
@@ -50,7 +50,7 @@ describe("CouncilPage", () => {
     (await openCouncil(fake)).push(
       e.interrupt("framing", "i1", {
         question: "Réponds aux questions de cadrage.",
-        options: [{ label: "Lancer la recherche", value: "go" }],
+        options: [{ label: "Start research", value: "go" }],
         fields: framingFields,
       }),
     );
@@ -58,7 +58,7 @@ describe("CouncilPage", () => {
       await screen.findByLabelText("Quel type d'entreprise vises-tu ?"),
       "Une startup",
     );
-    await user.click(screen.getByRole("button", { name: "Lancer la recherche" }));
+    await user.click(screen.getByRole("button", { name: "Start research" }));
     await waitFor(() =>
       expect(bodies).toEqual([{ interrupt_id: "i1", value: { answers: { q1: "Une startup" } } }]),
     );
@@ -70,11 +70,11 @@ describe("CouncilPage", () => {
     const e = councilEvents();
     (await openCouncil(fake)).push(
       e.interrupt("framing", "i1", {
-        options: [{ label: "Lancer la recherche", value: "go" }],
+        options: [{ label: "Start research", value: "go" }],
         fields: framingFields,
       }),
     );
-    await user.click(await screen.findByRole("button", { name: "Lancer la recherche" }));
+    await user.click(await screen.findByRole("button", { name: "Start research" }));
     await waitFor(() => expect(bodies).toEqual([{ interrupt_id: "i1", value: "go" }]));
   });
 
@@ -93,11 +93,11 @@ describe("CouncilPage", () => {
       e.boardUpdate("b1", 1),
     );
     expect(await screen.findAllByRole("article")).toHaveLength(4);
-    expect(screen.getByRole("tab", { name: "Tableau" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Board" })).toBeInTheDocument();
     // Tour 1 (positions) puis les 3 tours de débat du réglage par défaut.
-    expect(screen.getByText("Tour 1 / 4")).toBeInTheDocument();
+    expect(screen.getByText("Round 1 / 4")).toBeInTheDocument();
     await user.click(screen.getByRole("tab", { name: "Sources" }));
-    const kept = await screen.findByRole("region", { name: "Retenues" });
+    const kept = await screen.findByRole("region", { name: "Kept" });
     expect(within(kept).getAllByRole("listitem")).toHaveLength(8);
   });
 
@@ -106,23 +106,23 @@ describe("CouncilPage", () => {
     const { fake, user } = setup();
     const e = councilEvents();
     (await openCouncil(fake)).push(e.message("moderator-tour-1", "Tour 1"));
-    const field = await screen.findByLabelText("Ton message");
+    const field = await screen.findByLabelText("Your message");
     expect(field).toBeEnabled();
     await user.type(field, "Peux-tu parler de Docker ?");
-    await user.click(screen.getByRole("button", { name: "Envoyer" }));
+    await user.click(screen.getByRole("button", { name: "Send" }));
     await waitFor(() => expect(messages).toEqual([{ text: "Peux-tu parler de Docker ?" }]));
-    await user.click(screen.getByRole("button", { name: "Plus court" }));
+    await user.click(screen.getByRole("button", { name: "Shorter" }));
     await waitFor(() => expect(messages.at(-1)).toEqual({ text: "", command: "shorter" }));
-    await user.click(screen.getByRole("button", { name: "Passer aux propositions" }));
+    await user.click(screen.getByRole("button", { name: "Move on to proposals" }));
     await waitFor(() => expect(messages.at(-1)).toEqual({ text: "", command: "to_proposals" }));
   });
 
   it("closes the composer once the council is over", async () => {
     const { fake } = setup({ status: "completed" });
     const e = councilEvents();
-    (await openCouncil(fake)).push(e.message("moderator-choix", "Parcours choisi"), e.completed());
-    await waitFor(() => expect(screen.getByLabelText("Ton message")).toBeDisabled());
-    expect(screen.getByRole("button", { name: "Plus court" })).toBeDisabled();
+    (await openCouncil(fake)).push(e.message("moderator-choix", "Path chosen"), e.completed());
+    await waitFor(() => expect(screen.getByLabelText("Your message")).toBeDisabled());
+    expect(screen.getByRole("button", { name: "Shorter" })).toBeDisabled();
   });
 
   it("asks before cancelling, without a browser dialog", async () => {
@@ -131,9 +131,9 @@ describe("CouncilPage", () => {
     const { fake, user } = setup();
     const e = councilEvents();
     (await openCouncil(fake)).push(e.message("moderator-tour-1", "Tour 1"));
-    await user.click(await screen.findByRole("button", { name: "Annuler" }));
+    await user.click(await screen.findByRole("button", { name: "Cancel" }));
     expect(cancelled).toHaveLength(0);
-    await user.click(screen.getByRole("button", { name: "Oui, arrêter" }));
+    await user.click(screen.getByRole("button", { name: "Yes, stop" }));
     await waitFor(() => expect(cancelled).toHaveLength(1));
     expect(dialog).not.toHaveBeenCalled();
   });
@@ -158,7 +158,7 @@ describe("CouncilPage", () => {
     expect(await screen.findAllByRole("article")).toHaveLength(1);
     expect(screen.getAllByRole("button", { name: /Carte du domaine/ })).toHaveLength(1);
     await user.click(screen.getByRole("tab", { name: "Sources" }));
-    const kept = await screen.findByRole("region", { name: "Retenues" });
+    const kept = await screen.findByRole("region", { name: "Kept" });
     expect(within(kept).getAllByRole("listitem")).toHaveLength(1);
   });
 
@@ -185,10 +185,10 @@ describe("CouncilPage", () => {
       }),
     );
     await user.click(await screen.findByRole("tab", { name: "Sources" }));
-    const kept = await screen.findByRole("region", { name: "Retenues" });
+    const kept = await screen.findByRole("region", { name: "Kept" });
     expect(within(kept).getAllByRole("listitem")).toHaveLength(1);
     expect(within(kept).queryByText("Ada")).toBeNull();
-    const people = screen.getByRole("region", { name: "Praticiens repérés" });
+    const people = screen.getByRole("region", { name: "Practitioners found" });
     expect(within(people).getAllByRole("listitem")).toHaveLength(2);
   });
 
@@ -199,7 +199,7 @@ describe("CouncilPage", () => {
         { status: 404 },
       );
     setup({ goalReply: missing });
-    expect(await screen.findByText("Objectif introuvable")).toBeInTheDocument();
+    expect(await screen.findByText("Goal not found")).toBeInTheDocument();
   });
 
   it("offers « Réessayer » when the goal cannot be read", async () => {
@@ -210,7 +210,7 @@ describe("CouncilPage", () => {
         return calls === 1 ? HttpResponse.json({}, { status: 500 }) : HttpResponse.json(goalOut());
       },
     });
-    await user.click(await screen.findByRole("button", { name: "Réessayer" }));
+    await user.click(await screen.findByRole("button", { name: "Retry" }));
     expect(await screen.findByText("Devenir ingénieure data")).toBeInTheDocument();
   });
 
@@ -218,7 +218,7 @@ describe("CouncilPage", () => {
     const { fake } = setup();
     await waitFor(() => expect(socketOf(fake, "c1")).toHaveLength(1));
     socketOf(fake, "c1")[0]!.open().drop(4404);
-    expect(await screen.findByRole("alert")).toHaveTextContent("Cette session est introuvable.");
-    expect(screen.getByRole("button", { name: "Retour aux objectifs" })).toBeInTheDocument();
+    expect(await screen.findByRole("alert")).toHaveTextContent("This session can’t be found.");
+    expect(screen.getByRole("button", { name: "Back to goals" })).toBeInTheDocument();
   });
 });

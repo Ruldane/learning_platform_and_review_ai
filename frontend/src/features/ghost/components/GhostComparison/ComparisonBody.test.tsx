@@ -17,9 +17,9 @@ describe("Comparaison d’une vérification IDE", () => {
         ongoing
       />,
     );
-    expect(screen.getByRole("heading", { name: "Ton essai en cours" })).toBeVisible();
-    expect(screen.getByRole("status")).toHaveTextContent("Vérification en cours");
+    expect(screen.getByRole("heading", { name: "Your current attempt" })).toBeVisible();
+    expect(screen.getByRole("status")).toHaveTextContent("Checking");
     expect(screen.queryByRole("timer")).toBeNull();
-    expect(screen.getAllByText("Durée de vérification")).toHaveLength(1);
+    expect(screen.getAllByText("Check duration")).toHaveLength(1);
   });
 });

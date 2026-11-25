@@ -13,7 +13,7 @@ function monthLabel(month: string): string {
   const match = MONTH.exec(month);
   if (!match) return month;
   const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, 1));
-  return new Intl.DateTimeFormat("fr-FR", {
+  return new Intl.DateTimeFormat("en-GB", {
     month: "long",
     year: "numeric",
     timeZone: "UTC",

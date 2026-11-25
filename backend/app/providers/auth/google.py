@@ -1,12 +1,12 @@
-"""Connexion Google par OpenID Connect, code d'autorisation avec PKCE, écrite à la main avec httpx.
+"""Google sign-in through OpenID Connect, authorization code with PKCE, hand-written with httpx.
 
-Le jeton d'identité vient directement du point `token` par TLS : OIDC Core 3.1.3.7 n° 6 permet de
-se passer de la vérification de signature. On contrôle `iss`, `aud`, `exp` et `nonce`, et on rend
-`email_verified` tel quel. Les adresses et l'émetteur viennent de la configuration, pour que le
-faux fournisseur (`scripts/fake_oidc.py`) serve par le même code.
+The identity token comes straight from the `token` endpoint over TLS: OIDC Core 3.1.3.7 no. 6
+allows skipping the signature check. We check `iss`, `aud`, `exp` and `nonce`, and return
+`email_verified` as is. The addresses and the issuer come from the configuration, so that the
+fake provider (`scripts/fake_oidc.py`) is served by the same code.
 
-Rien de ce qui passe ici (code, vérificateur, jeton, revendications) n'est journalisé ni cité
-dans une erreur : seul le code de `OidcError` sort."""
+Nothing that goes through here (code, verifier, token, claims) is logged or quoted
+in an error: only the `OidcError` code comes out."""
 
 import base64
 import hmac
@@ -22,20 +22,20 @@ from app.providers.auth.base import OidcError, OidcIdentity
 logger = logging.getLogger(__name__)
 
 TOKEN_TIMEOUT_S = 10.0
-# Délai dépassé (408) et limitation de débit (429) : un incident temporaire, pas un code invalide.
+# Timeout (408) and rate limiting (429): a temporary incident, not an invalid code.
 TEMPORARY_REFUSALS = (408, 429)
 SCOPE = "openid email profile"
 
 
 def _claims(id_token: object) -> dict[str, object]:
-    """La charge d'un JWT (sa deuxième partie), sans vérifier la signature (voir l'en-tête)."""
+    """The payload of a JWT (its second part), without checking the signature (see the header)."""
     parts = id_token.split(".") if isinstance(id_token, str) else []
     if len(parts) != 3:
         raise OidcError("token_invalid")
     try:
         raw = base64.urlsafe_b64decode(parts[1] + "=" * (-len(parts[1]) % 4))
         claims = json.loads(raw)
-    except (ValueError, RecursionError) as exc:  # base64, UTF-8 ou JSON invalide (ou trop imbriqué)
+    except (ValueError, RecursionError) as exc:  # invalid base64, UTF-8 or JSON (or too nested)
         raise OidcError("token_invalid") from exc
     if not isinstance(claims, dict):
         raise OidcError("token_invalid")
@@ -43,21 +43,21 @@ def _claims(id_token: object) -> dict[str, object]:
 
 
 def _same(left: object, right: str) -> bool:
-    # `surrogatepass` : un substitut isolé (accepté par `json.loads`) ne doit pas lever d'erreur.
+    # `surrogatepass`: a lone surrogate (accepted by `json.loads`) must not raise an error.
     return isinstance(left, str) and hmac.compare_digest(
         left.encode("utf-8", "surrogatepass"), right.encode("utf-8", "surrogatepass")
     )
 
 
 def _audience_ok(aud: object, client_id: str) -> bool:
-    """Notre `client_id` seul : une liste n'est acceptée que d'un seul élément."""
+    """Our `client_id` alone: a list is only accepted with a single element."""
     if isinstance(aud, list):
         return len(aud) == 1 and _same(aud[0], client_id)
     return _same(aud, client_id)
 
 
 def _verified(value: object) -> bool:
-    """Google rend un booléen dans le jeton d'identité : la chaîne « true » n'est pas acceptée."""
+    """Google returns a boolean in the identity token: the string "true" is not accepted."""
     return value is True
 
 
@@ -115,20 +115,20 @@ class GoogleOidc:
         try:
             response = await self._http.post(self._token_url, data=body, timeout=TOKEN_TIMEOUT_S)
         except httpx.HTTPError as exc:
-            logger.warning("OIDC : point token injoignable (%s)", type(exc).__name__)
+            logger.warning("OIDC: token endpoint unreachable (%s)", type(exc).__name__)
             raise OidcError("google_unavailable") from exc
         if response.status_code >= 500 or response.status_code in TEMPORARY_REFUSALS:
-            logger.warning("OIDC : point token en erreur (HTTP %d)", response.status_code)
+            logger.warning("OIDC: token endpoint error (HTTP %d)", response.status_code)
             raise OidcError("google_unavailable")
         if response.status_code >= 400:
-            logger.warning("OIDC : code refusé (HTTP %d)", response.status_code)
+            logger.warning("OIDC: code refused (HTTP %d)", response.status_code)
             raise OidcError("token_invalid")
         return self._identity(response, nonce)
 
     def _identity(self, response: httpx.Response, nonce: str) -> OidcIdentity:
         try:
             payload = response.json()
-        except (ValueError, RecursionError) as exc:  # corps illisible ou imbriqué sans fin
+        except (ValueError, RecursionError) as exc:  # unreadable or endlessly nested body
             raise OidcError("token_invalid") from exc
         claims = _claims(payload.get("id_token") if isinstance(payload, dict) else None)
         exp = claims.get("exp")
@@ -146,7 +146,7 @@ class GoogleOidc:
             and _filled(claims.get("sub"))
         )
         if not valid:
-            logger.warning("OIDC : jeton d'identité refusé")
+            logger.warning("OIDC: identity token refused")
             raise OidcError("token_invalid")
         name = claims.get("name")
         return OidcIdentity(

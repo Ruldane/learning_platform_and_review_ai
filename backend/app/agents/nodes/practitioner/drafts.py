@@ -1,22 +1,22 @@
-"""Le Praticien écrit les quatre brouillons d'un projet validé (P3, P4, D165) : une ligne de CV,
-l'entrée de projet du profil, un post LinkedIn et le plan du README. Un appel standard, au nom
-de January : le code contrôle chaque texte, jamais le modèle.
+"""The Practitioner writes the four drafts of a validated project (P3, P4, D165): a CV line, the
+profile's project entry, a LinkedIn post and the README outline. A standard call, in January's
+name: the code checks each text, never the model.
 
-- `text_claims(draft_text(kind), project_reference(...), allowed=[titre de l'énoncé])` : les
-  chiffres, outils, titres et noms propres que ni le profil validé, ni ce que January dit de son
-  projet, ni les compétences du module ne disent. Le README du dépôt n'est **jamais** une référence
-  (texte web) et n'est pas montré au modèle ;
-- le post LinkedIn compte 80 à 200 mots, comptés par le code.
+- `text_claims(draft_text(kind), project_reference(...), allowed=[statement title])`: the
+  figures, tools, titles and proper names that neither the validated profile, nor what January
+  says about her project, nor the module's skills state. The repository README is **never** a
+  reference (web text) and is not shown to the model;
+- the LinkedIn post is 80 to 200 words, counted by the code.
 
-Un brouillon fautif repart au modèle **une seule fois**, avec tous les termes nommés (et la
-longueur) ; les brouillons déjà propres sont gardés. Ce qui reste après l'essai est rangé « à
-vérifier » avec ses termes (`flags`). Le nouvel essai est un nœud à part (`redo`, son propre
-délai) : toute panne, quelle qu'elle soit, garde le premier jet « à vérifier ». L'évaluation
-validée n'est pas perdue. Le premier appel a lui aussi son propre délai (`DRAFTS_BUDGET_S`) : s'il
-échoue (fournisseur, format, plafond de jetons, délai), l'évaluation validée est rangée **sans
-brouillons** (« brouillons indisponibles »), jamais perdue (D173, D165 n° 5).
+A faulty draft goes back to the model **only once**, with all the terms named (and the length);
+drafts that are already clean are kept. What remains after the retry is stored "to verify" with
+its terms (`flags`). The retry is a separate node (`redo`, its own timeout): any failure, of
+whatever kind, keeps the first draft "to verify". The validated evaluation is not lost. The
+first call also has its own timeout (`DRAFTS_BUDGET_S`): if it fails (provider, format, token
+cap, timeout), the validated evaluation is stored **without drafts** ("drafts unavailable"),
+never lost (D173, D165 no. 5).
 
-Journaux : identifiants et nombres, jamais un brouillon ni un terme (17.2)."""
+Logs: identifiers and numbers, never a draft or a term (17.2)."""
 
 import asyncio
 import logging
@@ -61,41 +61,40 @@ __all__ = [
 ]
 
 AGENT = "practitioner"
-ASK = "Écris les brouillons du projet."
-NONE = "(aucun)"
-RETRY_BUDGET_S = 90.0  # son propre délai, plus court que `node_timeout` (120 s)
-DRAFTS_BUDGET_S = 100.0  # le premier appel : son propre délai, sous `node_timeout`
-LANGUAGES = {"fr": "français", "en": "anglais"}
+ASK = "Write the project drafts."
+NONE = "(none)"
+RETRY_BUDGET_S = 90.0  # its own timeout, shorter than `node_timeout` (120 s)
+DRAFTS_BUDGET_S = 100.0  # the first call: its own timeout, under `node_timeout`
+LANGUAGES = {"fr": "French", "en": "English"}
 RETRY = (
-    "Ces éléments ne figurent ni dans la description de January, ni dans les compétences du "
-    "module, ni dans le titre de l'énoncé : {terms}. Réécris sans eux les brouillons concernés "
-    "({kinds}), avec ce que January a dit seulement (l'objectif de l'énoncé n'autorise "
-    "aucun terme)."
+    "Remove these unsupported terms: {terms}. Rewrite the affected drafts ({kinds}) using "
+    "January's description, the module skills, and the brief title. Treat the brief objective "
+    "as context only."
 )
-LENGTH_RETRY = "Le post LinkedIn fait {words} mots : il doit en faire de {low} à {high}."
+LENGTH_RETRY = "The LinkedIn post has {words} words. Use {low} to {high} words."
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
 class Problems:
-    terms: list[str]  # ce que la référence ne dit pas
-    words: int | None  # les mots du post LinkedIn quand ils sont hors bornes
+    terms: list[str]  # what the reference does not state
+    words: int | None  # the LinkedIn post's words when out of bounds
 
     def __bool__(self) -> bool:
         return bool(self.terms or self.words is not None)
 
     def flags(self) -> list[str]:
-        """Les termes, puis la longueur du post quand elle est hors bornes."""
+        """The terms, then the post's length when it is out of bounds."""
         low, high = LINKEDIN_WORDS
-        length = [] if self.words is None else [f"{self.words} mots ({low} à {high} attendus)"]
+        length = [] if self.words is None else [f"{self.words} words ({low} to {high} expected)"]
         return [*self.terms, *length]
 
 
 def check(
     drafts: ProjectDrafts, reference: MasterProfileData, title: str
 ) -> dict[DraftKind, Problems]:
-    """Les problèmes de chaque brouillon, dans l'ordre des types (vides : `bool(...)` faux)."""
+    """The problems of each draft, in the order of the types (empty: `bool(...)` false)."""
     found: dict[DraftKind, Problems] = {}
     low, high = LINKEDIN_WORDS
     for kind in DRAFT_KINDS:
@@ -107,7 +106,7 @@ def check(
 
 
 def retry_message(found: dict[DraftKind, Problems]) -> str:
-    """Le nouvel essai : tous les termes nommés, la longueur du post si elle est hors bornes."""
+    """The retry: all the terms named, the post's length if it is out of bounds."""
     flagged = {kind: problems for kind, problems in found.items() if problems}
     terms = list(dict.fromkeys(term for problems in flagged.values() for term in problems.terms))
     parts = []
@@ -135,15 +134,14 @@ def results_of(drafts: ProjectDrafts, found: dict[DraftKind, Problems]) -> list[
 
 
 def prompt_of(inputs: ReviewInputs) -> str:
-    """Seuls la description, les compétences du module et le titre permettent un terme ; le titre,
-    l'objectif (écrits par un modèle) et les compétences sont encadrés comme données."""
+    """Wrap evidence and context as untrusted data for the drafting prompt."""
     return render_prompt(
         AGENT,
         mode="project_drafts",
-        title=untrusted(" ".join(inputs.brief.title.split()), "titre de l'énoncé"),
-        objective=untrusted(" ".join(inputs.brief.objective.split()), "objectif de l'énoncé"),
-        skills=untrusted(", ".join(inputs.skills) or NONE, "compétences du module"),
-        description=untrusted(inputs.description or NONE, "description de January"),
+        title=untrusted(" ".join(inputs.brief.title.split()), "brief title"),
+        objective=untrusted(" ".join(inputs.brief.objective.split()), "brief objective"),
+        skills=untrusted(", ".join(inputs.skills) or NONE, "module skills"),
+        description=untrusted(inputs.description or NONE, "January's description"),
         language=LANGUAGES[inputs.language],
     )
 
@@ -165,8 +163,8 @@ def _stored(
 
 
 def make_drafts(deps: GraphDeps) -> Node:
-    """Le premier jet, contrôlé et rangé dans l'état (`to_check` avec ses termes) ; le nouvel
-    essai est un nœud à part (`redo`), avec son propre délai (D165)."""
+    """The first draft, checked and stored in the state (`to_check` with its terms); the retry
+    is a separate node (`redo`), with its own timeout (D165)."""
 
     @node_timeout()
     async def drafts(state: ProjectReviewState) -> ProjectReviewState:
@@ -181,13 +179,13 @@ def make_drafts(deps: GraphDeps) -> Node:
                     messages,
                     agent=AGENT,
                     step="brouillons",
-                    intent="j'écris les brouillons du projet",
+                    intent="writing the project drafts",
                 )
         except GraphInterrupt:
             raise
-        except Exception as exc:  # les brouillons sont facultatifs : l'évaluation validée reste
+        except Exception as exc:  # the drafts are optional: the validated evaluation stays
             logger.info(
-                "Brouillons impossibles : session %s, projet %s, cause %s",
+                "Drafts impossible: session %s, project %s, cause %s",
                 deps.session_id,
                 project_id,
                 _code(exc),
@@ -196,7 +194,7 @@ def make_drafts(deps: GraphDeps) -> Node:
             return {"outcome": to_state(replace(outcome, drafts=[])), "retry_needed": False}
         found = check(first, _reference(inputs), inputs.brief.title)
         logger.info(
-            "Brouillons écrits : session %s, projet %s, %d à vérifier avant le nouvel essai",
+            "Drafts written: session %s, project %s, %d to verify before the retry",
             deps.session_id,
             project_id,
             sum(bool(problems) for problems in found.values()),
@@ -223,14 +221,14 @@ def _code(exc: Exception) -> str:
 def make_redo(deps: GraphDeps) -> Node:
     @node_timeout()
     async def redo(state: ProjectReviewState) -> ProjectReviewState:
-        """Garde le premier jet et l'évaluation validée si la correction échoue."""
+        """Keeps the first draft and the validated evaluation if the correction fails."""
         project_id = state["project_id"]
         inputs = await deps.ports.projects.review_inputs(deps.user_id, project_id)
         reference, title = _reference(inputs), inputs.brief.title
         first = ProjectDrafts.model_validate(state["first_drafts"])
         found = check(first, reference, title)
-        if not any(found.values()):  # reprise : plus rien à corriger, aucun message vide au modèle
-            logger.info("Rien à corriger : session %s, projet %s", deps.session_id, project_id)
+        if not any(found.values()):  # resume: nothing left to fix, no empty message to the model
+            logger.info("Nothing to fix: session %s, project %s", deps.session_id, project_id)
             return {"outcome": _stored(state, first, found)}
         conversation: list[BaseMessage] = [
             SystemMessage(prompt_of(inputs)),
@@ -246,13 +244,13 @@ def make_redo(deps: GraphDeps) -> Node:
                     conversation,
                     agent=AGENT,
                     step="brouillons-2",
-                    intent="je corrige les brouillons du projet",
+                    intent="revising the project drafts",
                 )
         except GraphInterrupt:
             raise
-        except Exception as exc:  # le premier jet reste rangé, `to_check`
+        except Exception as exc:  # the first draft stays stored, `to_check`
             logger.info(
-                "Nouvel essai des brouillons impossible : session %s, projet %s, cause %s",
+                "Drafts retry impossible: session %s, project %s, cause %s",
                 deps.session_id,
                 project_id,
                 _code(exc),
@@ -262,7 +260,7 @@ def make_redo(deps: GraphDeps) -> Node:
         final = first.model_copy(update=fixed)
         again = check(final, reference, title)
         logger.info(
-            "Brouillons corrigés : session %s, projet %s, %d à vérifier",
+            "Drafts corrected: session %s, project %s, %d to verify",
             deps.session_id,
             project_id,
             sum(bool(problems) for problems in again.values()),

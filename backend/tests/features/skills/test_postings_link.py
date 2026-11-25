@@ -33,9 +33,9 @@ async def test_skill_detail_lists_postings(
     client: httpx.AsyncClient, app: FastAPI, launcher_spy: RecordingLauncher
 ) -> None:
     factory, me = app.state.session_factory, app.state.local_user_id
-    rag = await add_skill(factory, me, "Génération augmentée par recherche", level="valide")
+    rag = await add_skill(factory, me, "Génération augmentée par recherche", level="validated")
     agents = await add_skill(factory, me, "Graphes d'agents", synonyms=["LangGraph"])
-    kubernetes = await add_skill(factory, me, "Kubernetes", level="declare")
+    kubernetes = await add_skill(factory, me, "Kubernetes", level="declared")
     older = await analyzed_posting(client, app)
     newer = await analyzed_posting(
         client, app, f"{POSTING_TEXT}\nPoste basé à Lyon.", title="Lead IA"
@@ -43,8 +43,8 @@ async def test_skill_detail_lists_postings(
     pending = await client.post(f"{API}/postings", json={"text": f"{POSTING_TEXT}\nAutre."})
     assert pending.status_code == 201  # en analyse : jamais listée
     expected = [
-        {"id": newer, "title": "Lead IA", "url": f"/carriere/offres/{newer}"},
-        {"id": older, "title": "AI Product Engineer", "url": f"/carriere/offres/{older}"},
+        {"id": newer, "title": "Lead IA", "url": f"/career/postings/{newer}"},
+        {"id": older, "title": "AI Product Engineer", "url": f"/career/postings/{older}"},
     ]
     assert await _postings(client, await _skill_id(app, "LangGraph")) == expected  # besoin
     assert await _postings(client, rag) == expected  # rattachement de « RAG »

@@ -1,15 +1,15 @@
-"""L'Éclaireur du brief du jour (P11, D161) : la ressource du matin. Le code cherche le sujet du
-jour sur le web (fenêtre « month »), l'Éclaireur choisit un résultat parmi les huit premiers
-(`ResourcePick`, un appel), puis **le code lit la page choisie** : une page illisible n'est jamais
-rangée, les résultats suivants sont lus dans l'ordre (trois lectures au plus, sans nouvel appel au
-modèle). Aucune page lisible, aucun sujet, aucun résultat, une recherche ou un modèle en panne :
-la rubrique reste vide (`None`), jamais inventée, et le parcours continue vers le conseil.
+"""The Scout of the daily brief (P11, D161): the morning resource. The code searches the day's
+topic on the web (window "month"), the Scout picks a result among the first eight
+(`ResourcePick`, one call), then **the code reads the chosen page**: an unreadable page is never
+filed, the following results are read in order (three reads at most, without a new model call).
+No readable page, no topic, no result, a search or a model that is down: the section stays empty
+(`None`), never invented, and the flow continues to the advice.
 
-L'adresse rangée est celle d'un résultat de la recherche (jamais une adresse écrite par le modèle),
-et seule la phrase `why` vient du modèle. Les résultats viennent du web : encadrés par `untrusted`
+The filed address is that of a search result (never an address written by the model), and only
+the `why` sentence comes from the model. The results come from the web: wrapped by `untrusted`
 (17.4).
 
-Journaux : identifiants, nombres et codes seulement, jamais un sujet, un lien, un titre ni un texte
+Logs: identifiers, numbers and codes only, never a topic, a link, a title or a text
 (17.2)."""
 
 import asyncio
@@ -37,14 +37,14 @@ from app.agents.tools.web_tools import web_read, web_search
 from app.core.errors import AppError
 
 AGENT = "scout"
-TIME_RANGE = "month"  # fenêtre de la recherche : ce qui est récent
-BUDGET_S = 90.0  # plus court que le plafond du nœud : un dépassement vide la rubrique, pas le brief
+TIME_RANGE = "month"  # search window: what is recent
+BUDGET_S = 90.0  # shorter than the node cap: a timeout empties the section, not the brief
 SNIPPET_MAX = 300
 TITLE_MAX = 200
 DATE_MAX = 40
-LANGUAGES = {"fr": "français", "en": "anglais"}
-# `why` d'un résultat que le modèle n'a pas choisi (le sien était illisible) : dit par le code, pour
-# ne pas prêter au modèle une raison qu'il a donnée à un autre résultat.
+LANGUAGES = {"fr": "French", "en": "English"}
+# `why` of a result the model did not choose (its own was unreadable): said by the code, so as
+# not to attribute to the model a reason it gave to another result.
 FALLBACK_WHY = {
     "fr": "Un autre résultat de la recherche du mois sur ce sujet.",
     "en": "Another result of this month's search on this topic.",
@@ -54,8 +54,8 @@ logger = logging.getLogger(__name__)
 
 
 def usable_hits(hits: list[WebHit]) -> list[WebHit]:
-    """Les résultats montrés : lien http(s) valide, sans doublon (`link_key`), `RESULTS` au plus,
-    dans l'ordre de la recherche."""
+    """The results shown: valid http(s) link, no duplicates (`link_key`), `RESULTS` at most,
+    in the search order."""
     seen: set[str] = set()
     kept: list[WebHit] = []
     for hit in hits:
@@ -71,13 +71,13 @@ def domain_of(url: str) -> str:
 
 
 def results_text(hits: list[WebHit]) -> str:
-    """Les résultats numérotés, encadrés comme contenu non fiable."""
+    """Number the search results and wrap them as untrusted data."""
     lines = []
     for number, hit in enumerate(hits, 1):
-        date = hit.published or "date inconnue"
+        date = hit.published or "date unknown"
         head = f"{number}. {one_line(hit.title)} ({domain_of(hit.url)}, {date})"
         lines.append(f"{head}\n{one_line(hit.snippet)[:SNIPPET_MAX]}")
-    return untrusted("\n\n".join(lines), "résultats")
+    return untrusted("\n\n".join(lines), "search results")
 
 
 async def _choose(
@@ -86,7 +86,7 @@ async def _choose(
     prompt = render_prompt(
         AGENT,
         mode="brief_resource",
-        topic=untrusted(one_line(topic), "sujet du jour"),
+        topic=untrusted(one_line(topic), "topic of the day"),
         count=len(hits),
         results=results_text(hits),
         language=LANGUAGES[ctx.language],
@@ -94,23 +94,23 @@ async def _choose(
     return await structured_call(
         model,
         ResourcePick,
-        [SystemMessage(prompt), HumanMessage("Choisis la ressource du jour.")],
+        [SystemMessage(prompt), HumanMessage("Choose today's resource.")],
         agent=AGENT,
         step="ressource",
-        intent="je choisis la ressource du jour",
+        intent="choosing today's resource",
     )
 
 
 def read_order(count: int, picked: int) -> list[int]:
-    """Les rangs (à partir de 0) lus dans l'ordre : le choix du modèle d'abord, puis les autres
-    résultats dans l'ordre de la recherche ; `READS` au plus."""
+    """The ranks (from 0) read in order: the model's choice first, then the other results in
+    the search order; `READS` at most."""
     return ([picked] + [rank for rank in range(count) if rank != picked])[:READS]
 
 
 def why_of(pick: ResourcePick, hit: WebHit, language: Literal["fr", "en"]) -> str:
-    """La raison du modèle, si chacun de ses nombres figure dans ce que le résultat montre (titre,
-    extrait, date, adresse) : un modèle ne prête pas à une page « 10 ans d'expérience » ou « 5
-    heures » que rien ne dit. Sinon, la phrase du code."""
+    """The model's reason, if each of its numbers appears in what the result shows (title,
+    excerpt, date, address): a model does not attribute to a page "10 years of experience" or "5
+    hours" that nothing states. Otherwise, the code's sentence."""
     why = one_line(pick.why)
     shown = figures_in(" ".join([hit.title, hit.snippet, hit.published or "", hit.url]))
     return why if figures_in(why) <= shown else FALLBACK_WHY[language]
@@ -128,13 +128,13 @@ def _view(hit: WebHit, why: str, page_date: str | None) -> ResourceView:
 
 
 async def _read_one(deps: GraphDeps, hit: WebHit) -> tuple[bool, str | None, bool]:
-    """`(lue, date de la page, plafond atteint)`. Une page refusée ou en erreur, même brute (une
-    panne du lecteur), n'est pas lue : le repli passe au résultat suivant."""
+    """`(read, page date, cap reached)`. A refused page or one in error, even raw (a reader
+    failure), is not read: the fallback moves to the next result."""
     try:
         page = await web_read(deps, hit.url, agent=AGENT)
     except Exception as exc:
         code = exc.code if isinstance(exc, AppError) else type(exc).__name__
-        logger.info("Page du brief non lue : session %s, cause %s", deps.session_id, code)
+        logger.info("Brief page not read: session %s, cause %s", deps.session_id, code)
         return False, None, code == QUOTA_CODE
     return page.status == "ok" and bool(page.text.strip()), page.date, False
 
@@ -142,9 +142,9 @@ async def _read_one(deps: GraphDeps, hit: WebHit) -> tuple[bool, str | None, boo
 async def read_resource(
     deps: GraphDeps, hits: list[WebHit], pick: ResourcePick, language: Literal["fr", "en"]
 ) -> ResourceView | None:
-    """La première page lisible, le choix du modèle d'abord ; `None` si aucune des `READS`
-    premières ne se lit, ou si le modèle n'a rien choisi (`index` nul, ou un rang absent de la
-    liste : jamais un résultat qu'il n'a pas désigné au hasard)."""
+    """The first readable page, the model's choice first; `None` if none of the first `READS`
+    can be read, or if the model chose nothing (null `index`, or a rank absent from the list:
+    never a result it did not designate, picked at random)."""
     if pick.index is None or pick.index > len(hits):
         return None
     picked = pick.index - 1
@@ -159,11 +159,11 @@ async def read_resource(
 
 
 async def find_resource(deps: GraphDeps, ctx: BriefContext) -> ResourceView | None:
-    """La ressource du jour, ou `None` : sans sujet, sans résultat, sans choix ou sans page lue."""
+    """The day's resource, or `None`: without a topic, a result, a choice or a page read."""
     topic = (ctx.topic or "").strip()
     if not topic:
         return None
-    # Le modèle d'abord : sans clé, la recherche web (un quota, un débit) n'est pas dépensée.
+    # The model first: without a key, the web search (a quota, a rate) is not spent.
     model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
     found = await web_search(deps, topic, time_range=TIME_RANGE, agent=AGENT)
     hits = usable_hits(found.hits)
@@ -176,9 +176,9 @@ async def find_resource(deps: GraphDeps, ctx: BriefContext) -> ResourceView | No
 def make_resource(deps: GraphDeps) -> Node:
     @node_timeout()
     async def resource(state: DailyBriefState) -> DailyBriefState:
-        """La rubrique « ressource » : sautée si elle est déjà rangée (nœud rejoué). Quoi qu'il
-        arrive à la recherche, à la lecture ou au modèle, la rubrique se vide et le parcours
-        continue : le conseil ne dépend pas d'elle."""
+        """The "resource" section: skipped if already filed (node replayed). Whatever happens to
+        the search, the reading or the model, the section is emptied and the flow continues:
+        the advice does not depend on it."""
         brief_id = state["brief_id"]
         ctx = await deps.ports.brief.context(deps.user_id, brief_id)
         if ctx.resource_done:
@@ -189,12 +189,12 @@ def make_resource(deps: GraphDeps) -> Node:
                 view = await find_resource(deps, ctx)
         except GraphInterrupt:
             raise
-        except Exception as exc:  # une rubrique en panne n'arrête pas l'autre
+        except Exception as exc:  # a section that is down does not stop the other
             code = exc.code if isinstance(exc, AppError) else type(exc).__name__
-            logger.info("Ressource du brief vide : session %s, cause %s", deps.session_id, code)
+            logger.info("Brief resource empty: session %s, cause %s", deps.session_id, code)
         await deps.ports.brief.save_resource(deps.user_id, deps.session_id, brief_id, view)
         logger.info(
-            "Ressource du brief rangée : session %s, brief %s, trouvée %s",
+            "Brief resource stored: session %s, brief %s, found %s",
             deps.session_id,
             brief_id,
             view is not None,

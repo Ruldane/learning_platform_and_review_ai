@@ -141,7 +141,7 @@ async def test_body_over_the_limit_is_413_before_reading(
     r = await client.post(
         f"{API}/{pid}/submit", content=body, headers={"content-type": "multipart/form-data"}
     )
-    assert r.status_code == 413 and "Rendu trop volumineux" in r.json()["error"]["message"]
+    assert r.status_code == 413 and "Submission too large" in r.json()["error"]["message"]
 
 
 async def test_stored_suffix_comes_from_the_detected_type_not_the_filename(

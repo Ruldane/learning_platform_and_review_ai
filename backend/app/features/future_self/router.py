@@ -1,4 +1,4 @@
-"""Lecture de la projection. Tout changement reste dans le parcours de replanification."""
+"""Reading of the projection. Any change stays in the replanning flow."""
 
 from typing import Annotated
 
@@ -16,5 +16,5 @@ router = APIRouter(prefix="/future-self", tags=["future_self"], route_class=Fiel
 async def get_projection(
     current: CurrentUserDep, db: Db, params: Annotated[FutureSelfQuery, Query()]
 ) -> FutureSelfOut:
-    """Compare les rythmes pour un programme validé et le relevé du poste et de la zone choisis."""
+    """Compares paces for a validated program and the survey of the chosen role and area."""
     return await forecast(db, current.id, params)

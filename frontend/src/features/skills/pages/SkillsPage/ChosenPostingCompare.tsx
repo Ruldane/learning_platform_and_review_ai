@@ -32,7 +32,7 @@ export function ChosenPostingCompare({ postingId }: { postingId: string }) {
             targetLabel={view.targetLabel}
             emptyAction={{
               label: t("skills.compare.noPostingsAction"),
-              onClick: () => void navigate("/carriere/offres"),
+              onClick: () => void navigate("/career/postings"),
             }}
           />
         );

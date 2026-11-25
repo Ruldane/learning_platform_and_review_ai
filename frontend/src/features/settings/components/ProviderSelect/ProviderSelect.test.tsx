@@ -15,7 +15,7 @@ describe("ProviderSelect", () => {
       <ProviderSelect label="Fournisseur" value="anthropic" options={options} onPick={vi.fn()} />,
     );
     expect(screen.getByRole("combobox", { name: "Fournisseur" })).toHaveValue("anthropic");
-    expect(screen.getByRole("option", { name: "OpenAI (aucune clé)" })).toBeEnabled();
+    expect(screen.getByRole("option", { name: "OpenAI (no key)" })).toBeEnabled();
   });
 
   it("remonte le fournisseur choisi", async () => {

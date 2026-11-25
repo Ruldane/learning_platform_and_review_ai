@@ -79,7 +79,7 @@ async def test_graph_runs_on_the_real_store_with_page_refs_past_p5(
     assert [t["skill"] for t in row.ranking][:2] == ["Python", "RAG"]
     assert row.blocked_domains == {"bloque.example.org": 3}
     [done] = await run.events("run.completed")
-    assert done["summary"].startswith("12 offres lues, 3 bloquées, 12 analysées.")
+    assert done["summary"].startswith("12 postings read, 3 pages blocked, 12 postings analyzed.")
 
 
 async def test_failed_extraction_pages_are_counted_not_hidden(

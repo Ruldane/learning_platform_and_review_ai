@@ -1,11 +1,11 @@
-"""Port des leçons (`LessonStore`, D90) sur la feature `lessons` : implémentation branchée par
-`bootstrap.agent_ports` (D91). Chaque appel ouvre sa propre session de base, courte, et la
-commite (D66) ; chaque appel vérifie que le module est à l'utilisateur (404 sinon).
+"""Lessons port (`LessonStore`, D90) on the `lessons` feature: implementation wired by
+`bootstrap.agent_ports` (D91). Each call opens its own short database session and commits it
+(D66); each call checks that the module belongs to the user (404 otherwise).
 
-Écritures idempotentes par module (SPEC 9.4) : `publish` rejoué rend la même leçon sans ligne de
-plus et rattrape ses suites manquées (copies, PDF, mémoire) ; `fail` ne touche jamais une leçon
-prête ; `next_module` passe par `ensure_lessons` (une seule chaîne par programme). Journaux :
-identifiants seulement (SPEC 17.2)."""
+Idempotent writes per module (SPEC 9.4): a replayed `publish` returns the same lesson with no
+extra row and catches up on its missed follow-ups (copies, PDF, memory); `fail` never touches a
+ready lesson; `next_module` goes through `ensure_lessons` (a single chain per program). Logs:
+identifiers only (SPEC 17.2)."""
 
 import logging
 import re
@@ -56,9 +56,9 @@ def _words(text: str) -> set[str]:
 
 
 def seed_urls(module: Module, sources: Sequence[Source]) -> tuple[str, ...]:
-    """Pages officielles du module en tête, puis pages retenues et praticiens du Conseil, ceux
-    qui parlent du module d'abord (mots du titre et des compétences dans leur titre ou leur
-    résumé), puis par note ; sans doublon, 5 au plus."""
+    """The module's official pages first, then the Council's kept pages and practitioners, those
+    about the module first (words of the title and skills in their title or summary), then by
+    score; no duplicates, 5 at most."""
     wanted = _words(" ".join([module.title, *map(str, module.skills)]))
     usable = [s for s in sources if s.kind == "person" or s.verdict == "kept"]
 
@@ -81,7 +81,7 @@ def _module(loaded: Loaded, module_id: str) -> Module:
 
 
 async def _lesson(db: AsyncSession, user_id: str, loaded: Loaded, module: Module) -> Lesson:
-    """La leçon du module (créée si la production ne l'a pas encore fait)."""
+    """The module's lesson (created if production has not done so yet)."""
     repo = LessonRepository(db, user_id)
     lesson = await repo.by_module(module.id)
     if lesson is None:
@@ -180,7 +180,7 @@ class AgentLessonStore:
                 await fail_submission(db, user_id, session_id, module_id, exc.message)
                 await (
                     db.commit()
-                )  # le refus libère la réservation dans la transaction de publication
+                )  # the rejection releases the reservation in the publication transaction
                 raise
         else:
             await _save_generated(db, lesson, session_id, markdown, picks, report)
@@ -239,7 +239,7 @@ class AgentLessonStore:
         async with self._rt.session_factory() as db:
             count = len(await ResourceRepository(db, user_id).for_module(module_id))
         logger.info(
-            "Leçon rangée : session %s, module %s, leçon %s, %d ressource(s)",
+            "Lesson stored: session %s, module %s, lesson %s, %d resource(s)",
             session_id,
             module_id,
             done.lesson_id,
@@ -272,12 +272,12 @@ class AgentLessonStore:
                 lesson.status, lesson.failure_reason = "failed", reason.strip()[:MAX_FAILURE]
                 lesson.session_id = session_id
             await db.commit()
-        logger.info("Leçon en échec : session %s, module %s", session_id, module_id)
+        logger.info("Lesson failed: session %s, module %s", session_id, module_id)
 
     async def next_module(
         self, user_id: str, program_id: str, *, exclude_session_id: str
     ) -> str | None:
-        """La session lancée pour le module suivant (son id), `None` s'il n'y en a pas."""
+        """The session started for the next module (its id), `None` if there is none."""
         return await ensure_lessons(
             self._rt, user_id, program_id, exclude_session_id=exclude_session_id
         )

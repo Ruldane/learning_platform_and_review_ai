@@ -29,4 +29,4 @@ async def test_unexpected_tags_json_is_down_not_a_500(body: bytes) -> None:
     http = httpx.AsyncClient(transport=httpx.MockTransport(handler))
     async with http:
         data = await OllamaPullWatcher(BASE, MODEL, http).progress()
-    assert not data.present and data.detail == "Ollama ne répond pas."
+    assert not data.present and data.detail == "Ollama is not responding."

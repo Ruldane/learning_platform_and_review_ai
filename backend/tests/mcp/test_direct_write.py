@@ -52,7 +52,7 @@ BRIEF = {
     "deliverable": "repo",
 }
 QUESTION = {
-    "type": "qcm",
+    "type": "mcq",
     "prompt": "Que renvoie len([1, 2, 3]) ?",
     "choices": ["2", "3", "4"],
     "correct_index": 1,
@@ -87,7 +87,7 @@ async def test_every_direct_write_tool_is_level_2_without_graph(
         tool = registry.get(name)
         assert tool is not None, name
         assert (tool.level, tool.graph, tool.side_effects) == (2, None, "db"), name
-        expected = "Fabrique" if name.startswith("lessons_") else "Écriture directe, aucun agent"
+        expected = "Lesson Factory" if name.startswith("lessons_") else "Direct write, no agent"
         assert expected in tool.description, name
 
 
@@ -142,7 +142,7 @@ async def test_lesson_submission_is_journaled_and_undone_before_publication(
     assert undone.status_code == 200, undone.text
     assert (await client.get(f"{API}/lessons/{lesson_id}")).status_code == 404
     assert (await wait_session(client, sid))["status"] == "cancelled"
-    assert await count(app, MemoryItem, kind="lecon") == 0
+    assert await count(app, MemoryItem, kind="lesson") == 0
 
 
 async def write_chain(claude: Mcp, token: str, drafted: Seed) -> list[dict[str, Any]]:
@@ -254,12 +254,12 @@ async def test_posting_write_is_undone_with_its_memory_item_and_duplicates(
     assert levels == [
         "<donnee_non_fiable>probable</donnee_non_fiable>"
     ]  # texte venu du web : enclos
-    assert await count(app, JobPosting) == 2 and await count(app, MemoryItem, kind="offre") == 2
+    assert await count(app, JobPosting) == 2 and await count(app, MemoryItem, kind="posting") == 2
 
     undone = await undo_last(claude)  # la seconde offre : le doublon réciproque disparaît aussi
 
     assert undone.status_code == 200, undone.text
-    assert await count(app, JobPosting) == 1 and await count(app, MemoryItem, kind="offre") == 1
+    assert await count(app, JobPosting) == 1 and await count(app, MemoryItem, kind="posting") == 1
     kept = (await client.get(f"{API}/postings/{first_id}")).json()
     assert kept["duplicates"] == []
     await assert_no_agent(app)
@@ -268,6 +268,6 @@ async def test_posting_write_is_undone_with_its_memory_item_and_duplicates(
 async def test_write_tool_descriptions_tell_the_real_rules(app: FastAPI) -> None:
     registry = app.state.mcp_registry
     quiz = registry.get("quiz_write_quiz").description
-    assert all(w in quiz for w in ("en préparation", "8 questions", "3 types")), quiz
+    assert all(rule in quiz for rule in ("in preparation", "8 questions", "3 different types"))
     posting = registry.get("postings_write_posting").description
-    assert "300 caractères" in posting and "50 mots" in posting
+    assert "300 characters" in posting and "50 words" in posting

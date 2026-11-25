@@ -5,7 +5,7 @@ test.skip(process.env.E2E_CONTRADICTORY_WATCH !== "1", "Requiert la base locale 
 
 test("fige deux sources puis consigne une mesure inconclusive", async ({ page, request }) => {
   await finishFirstLaunch(request);
-  await page.goto("/etudier/veille-contradictoire");
+  await page.goto("/study/contradictory-watch");
   await page.getByLabel("Nom de l’expérience").fill("Latence de rendu");
   const first = page.getByRole("group", { name: "Première source" });
   await first.getByLabel("Lien de la source").fill("https://example.org/documentation");

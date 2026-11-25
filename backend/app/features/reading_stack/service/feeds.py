@@ -1,4 +1,4 @@
-"""Lire un flux RSS ou Atom fourni par le lecteur web."""
+"""Read an RSS or Atom feed provided by the web reader."""
 
 import re
 from dataclasses import dataclass

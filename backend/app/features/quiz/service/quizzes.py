@@ -1,10 +1,10 @@
-"""Quiz d'un module (SPEC F9, D101) : préparé à la demande (`POST /modules/{id}/quiz`, hors
-14.2), liste par programme, détail sans aucune réponse attendue.
+"""A module's quiz (SPEC F9, D101): prepared on demand (`POST /modules/{id}/quiz`, outside
+14.2), list per program, detail without any expected answer.
 
-Lancement idempotent sous le verrou du module : quiz prêt → rendu tel quel (200) ; en
-préparation → même session ; en échec (ou interrompu, lu d'après sa session) → relancé.
-La ligne est commitée avant `launcher.start` : jamais le verrou d'écriture SQLite tenu pendant
-le lancement (D66, D72). Journaux : identifiants seulement."""
+Idempotent launch under the module lock: ready quiz → returned as is (200); being prepared →
+same session; failed (or interrupted, read from its session) → relaunched. The row is committed
+before `launcher.start`: SQLite's write lock is never held during the launch (D66, D72).
+Logs: ids only."""
 
 import logging
 from collections.abc import Sequence
@@ -29,9 +29,9 @@ from app.features.quiz.service.runtime import GRAPH, SUBJECT, QuizRuntime
 from app.features.quiz.service.scoring import passed
 from app.features.quiz.service.shuffle import choice_order, question_order
 from app.features.quiz.service.status import (
-    DRAFT_REASON,
     attempt_shown,
     interrupted,
+    is_draft_reason,
     open_sessions,
     open_sessions_by_quiz,
     quiz_shown,
@@ -40,25 +40,24 @@ from app.features.quiz.service.status import (
 
 logger = logging.getLogger(__name__)
 
-LAUNCH_FAILED = "Le quiz n'a pas pu être lancé : réessaie dans un instant."
+LAUNCH_FAILED = "The quiz could not be started: try again in a moment."
 
 
 def quiz_not_found() -> AppError:
-    return AppError("quiz_not_found", "Quiz introuvable.", 404)
+    return AppError("quiz_not_found", "Quiz not found.", 404)
 
 
 def quiz_draft() -> AppError:
     return AppError(
         "quiz_draft",
-        "Le quiz de ce module est écrit à la main et pas encore complet : ajoute ses questions "
-        "plutôt que de le faire écrire par l'agent.",
+        "This module has a manually written quiz in progress. Add the missing questions.",
         409,
     )
 
 
 def lesson_not_ready() -> AppError:
     return AppError(
-        "lesson_not_ready", "La leçon de ce module n'est pas encore prête : le quiz attendra.", 409
+        "lesson_not_ready", "The module lesson must be ready before you can create its quiz.", 409
     )
 
 
@@ -70,7 +69,7 @@ async def owned_quiz(db: AsyncSession, user_id: str, quiz_id: str) -> Quiz:
 
 
 async def _prepare(db: AsyncSession, user_id: str, module_id: str) -> QuizStarted | Quiz:
-    """Sous le verrou : l'état à rendre tel quel, ou le quiz (créé ou remis à zéro) à lancer."""
+    """Under the lock: the state to return as is, or the quiz (created or reset) to launch."""
     repo = QuizRepository(db, user_id)
     found = await repo.by_module(module_id)
     if found is not None:
@@ -81,7 +80,7 @@ async def _prepare(db: AsyncSession, user_id: str, module_id: str) -> QuizStarte
             return QuizStarted(quiz_id=found.id, session_id=found.session_id, status="ready")
         if found.status == "generating" and found.session_id in open_ids:
             return QuizStarted(quiz_id=found.id, session_id=found.session_id, status="generating")
-        if found.status == "generating" and found.failure_reason == DRAFT_REASON:
+        if found.status == "generating" and is_draft_reason(found.failure_reason):
             raise quiz_draft()
     if await ready_markdown(db, user_id, module_id) is None and not await is_validation_module(
         db, user_id, module_id
@@ -106,8 +105,8 @@ async def _set_session(rt: QuizRuntime, user_id: str, quiz_id: str, sid: str | N
 
 
 async def start_quiz(rt: QuizRuntime, user_id: str, module_id: str) -> QuizStarted:
-    """Prépare le quiz du module (voir le module). Module d'un autre : 404 `module_not_found` ;
-    leçon pas prête : 409 `lesson_not_ready`."""
+    """Prepares the module's quiz (see the module). Another user's module: 404
+    `module_not_found`; lesson not ready: 409 `lesson_not_ready`."""
     async with rt.session_factory() as db:
         await program_of_module(db, user_id, module_id)
     async with rt.quiz_lock(user_id, module_id):
@@ -126,13 +125,13 @@ async def start_quiz(rt: QuizRuntime, user_id: str, module_id: str) -> QuizStart
             await _set_session(rt, user_id, quiz_id, None)
             raise
         await _set_session(rt, user_id, quiz_id, sid)
-    logger.info("Quiz lancé : utilisateur %s, quiz %s, session %s", user_id, quiz_id, sid)
+    logger.info("Quiz started: user %s, quiz %s, session %s", user_id, quiz_id, sid)
     return QuizStarted(quiz_id=quiz_id, session_id=sid, status="generating")
 
 
 async def ready_quiz_of_module(db: AsyncSession, user_id: str, module_id: str) -> str | None:
-    """Le quiz prêt du module, `None` sinon (prochaine action de la carte, D107). Lecture pour
-    les autres features (contrat 2)."""
+    """The module's ready quiz, `None` otherwise (next action of the map, D107). Read for the
+    other features (contract 2)."""
     quiz = await QuizRepository(db, user_id).by_module(module_id)
     return quiz.id if quiz is not None and quiz.status == "ready" else None
 
@@ -143,8 +142,8 @@ def _best(attempts: Sequence[QuizAttempt]) -> int | None:
 
 
 def retry_on_of(attempts: Sequence[QuizAttempt]) -> date | None:
-    """Date du nouvel essai : celle de la dernière tentative notée, si elle est sous 80 % et
-    qu'aucune n'a réussi ; sinon `None`."""
+    """Date of the new attempt: that of the last graded attempt, if it is under 80% and none
+    has passed; otherwise `None`."""
     graded = [a for a in attempts if a.status == "graded" and a.score is not None]
     if not graded or any(passed(a.score or 0) for a in graded):
         return None
@@ -152,7 +151,7 @@ def retry_on_of(attempts: Sequence[QuizAttempt]) -> date | None:
 
 
 async def list_quizzes(db: AsyncSession, user_id: str, program_id: str) -> list[QuizSummaryOut]:
-    """Un résumé par module non sauté du programme, dans l'ordre du programme."""
+    """One summary per non-skipped module of the program, in the program's order."""
     loaded = await load(db, user_id, program_id)
     ranks = {week.id: week.rank for week in loaded.weeks}
     open_by_quiz = await open_sessions_by_quiz(db, user_id)  # D97 n° 9 : sessions, PUIS lignes
@@ -160,7 +159,7 @@ async def list_quizzes(db: AsyncSession, user_id: str, program_id: str) -> list[
     attempts = await AttemptRepository(db, user_id).for_quizzes([q.id for q in quizzes.values()])
     if any(
         interrupted(q.status, q.session_id, open_by_quiz.get(q.id, [])) for q in quizzes.values()
-    ):  # lancé entre les deux lectures : relues, la session compte ouverte
+    ):  # launched between the two reads: re-read, the session counts as open
         later = await open_sessions_by_quiz(db, user_id)
         for quiz_id, ids in later.items():
             known = open_by_quiz.setdefault(quiz_id, [])
@@ -192,14 +191,14 @@ async def list_quizzes(db: AsyncSession, user_id: str, program_id: str) -> list[
 
 
 def graded_count(attempts: Sequence[QuizAttempt]) -> int:
-    """Le numéro de l'essai suivant (F27) : le nombre de tentatives déjà notées."""
+    """The number of the next attempt (F27): the number of attempts already graded."""
     return sum(1 for a in attempts if a.status == "graded")
 
 
 def questions_out(
     quiz_id: str, round_: int, questions: Sequence[QuizQuestion]
 ) -> list[QuestionOut]:
-    """Questions dans l'ordre de l'essai, choix mélangés ; jamais la réponse ni la grille."""
+    """Questions in the attempt's order, choices shuffled; never the answer or the grid."""
     by_id = {q.id: q for q in questions}
     order = question_order(quiz_id, round_, [q.id for q in questions])
     out: list[QuestionOut] = []
@@ -231,7 +230,7 @@ async def get_quiz(db: AsyncSession, user_id: str, quiz_id: str) -> QuizOut:
         lambda r: [(r[0].status, r[0].session_id)] + [(a.status, a.session_id) for a in r[1]],
     )
     status, reason = quiz_shown(quiz.status, quiz.session_id, quiz.failure_reason, open_ids)
-    shown_questions = status == "ready" or reason == DRAFT_REASON  # un brouillon se relit
+    shown_questions = status == "ready" or is_draft_reason(reason)
     questions = await QuestionRepository(db, user_id).for_quiz(quiz_id) if shown_questions else []
     summaries = [
         AttemptSummaryOut.model_validate(

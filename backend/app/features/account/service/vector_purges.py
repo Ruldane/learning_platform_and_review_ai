@@ -1,4 +1,4 @@
-"""Purge durable de l'index d'un compte Google, même une fois sa session fermée."""
+"""Durable purge of a Google account's index, even once its session is closed."""
 
 import logging
 
@@ -15,15 +15,13 @@ logger = logging.getLogger(__name__)
 async def finish_vector_purge(
     factory: async_sessionmaker[AsyncSession], indexer: MemoryIndexer, user_id: str
 ) -> bool:
-    """Acquitte le travail après la purge. En cas d'arrêt ou de panne, il reste rejouable."""
+    """Acknowledges the work after the purge. On shutdown or failure, it stays replayable."""
     try:
         await indexer.purge_retired_user(user_id)
         async with factory.begin() as db:
             await complete_vector_purge(db, user_id)
     except (VectorStoreUnavailable, SQLAlchemyError) as exc:
-        logger.warning(
-            "Purge vectorielle en attente : user=%s type=%s", user_id, type(exc).__name__
-        )
+        logger.warning("Vector purge pending: user=%s type=%s", user_id, type(exc).__name__)
         return False
     return True
 

@@ -4,17 +4,22 @@ export const offerComparisonManifest: FeatureManifest = {
   id: "offer_comparison",
   routes: [
     {
-      path: "carriere/comparer-les-offres",
+      path: "career/offer-comparison",
       lazy: async () => ({ Component: (await import("./pages/ComparisonPage")).ComparisonPage }),
     },
     {
-      path: "carriere/comparer-les-offres/:scenarioId",
+      path: "career/offer-comparison/:scenarioId",
       lazy: async () => ({
         Component: (await import("./pages/ComparisonDetailPage")).ComparisonDetailPage,
       }),
     },
   ],
   nav: [
-    { section: "career", labelKey: "offerComparison.title", path: "/carriere/comparer-les-offres", order: 12 },
+    {
+      section: "career",
+      labelKey: "offerComparison.title",
+      path: "/career/offer-comparison",
+      order: 12,
+    },
   ],
 };

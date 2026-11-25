@@ -1,4 +1,4 @@
-"""Données de lecture filtrées par propriétaire et plis de collecte idempotents."""
+"""Reading data filtered by owner, and idempotent collection folds."""
 
 from dataclasses import asdict
 from datetime import datetime

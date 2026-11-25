@@ -33,9 +33,9 @@ class FakeGateway:
     ) -> MemorySearchResult:
         self.searches.append((query, None if kinds is None else tuple(kinds), k))
         hits = [
-            MemoryHitView(f"i{n}", f"c{n}", "acquis", "Attention", "t", 0.8, "user") for n in "123"
+            MemoryHitView(f"i{n}", f"c{n}", "skill", "Attention", "t", 0.8, "user") for n in "123"
         ]
-        return MemorySearchResult(hits, "Mémoire — 3 fragment(s)")
+        return MemorySearchResult(hits, "Memory — 3 chunks")
 
     async def write(
         self, user_id: str, session_id: str, author: str, write: AgentWrite
@@ -46,8 +46,8 @@ class FakeGateway:
         return WriteResult("item-1", write.kind, title, status, self.created)
 
     async def skills(self, user_id: str) -> SkillsSummary:
-        skill = SkillEntry("a1", self.skill_title, "declare", [])
-        return SkillsSummary(1, {"declare": 1}, [skill])
+        skill = SkillEntry("a1", self.skill_title, "declared", [])
+        return SkillsSummary(1, {"declared": 1}, [skill])
 
     async def document_text(
         self, user_id: str, document_id: str, *, max_chunks: int

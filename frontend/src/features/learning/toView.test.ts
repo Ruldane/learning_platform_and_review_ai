@@ -48,6 +48,6 @@ describe("toView", () => {
     expect(named).toMatchObject({ id: "b1", kind: "domain_map", step: 1, author: "scribe" });
     expect(named.createdAt).toBe("2026-11-12T10:00:00Z");
     const untitled = toBoardView(boardOut("b2", { title: "", kind: "timeline" }) as BoardOut);
-    expect(untitled.title).toBe("Frise du parcours");
+    expect(untitled.title).toBe("Path timeline");
   });
 });

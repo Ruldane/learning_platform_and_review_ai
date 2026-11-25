@@ -8,4 +8,4 @@ from app.core.errors import AppError
 
 
 def not_implemented() -> NoReturn:
-    raise AppError("not_implemented", "Pas encore disponible.", 501)
+    raise AppError("not_implemented", "Not available yet.", 501)

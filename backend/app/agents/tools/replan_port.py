@@ -1,27 +1,27 @@
-"""Port de la replanification (SPEC F13, D105). `app.agents` n'importe aucune feature (contrat 6) :
-il décrit ici ce dont le parcours `replan` a besoin (le bilan, le plan à faire par références, le
-rangement d'une proposition, son acceptation ou son refus) ; la feature `replan` l'implémente
-(tâche 5.9).
+"""Replan port (SPEC F13, D105). `app.agents` imports no feature (contract 6): it describes here
+what the `replan` graph needs (the review, the plan still to do by references, the storing of a
+proposal, its acceptance or refusal); the `replan` feature implements it (task 5.9).
 
-Le Stratège ne réécrit pas le plan : il **retire** des tâches et en **ajoute** par référence
-(`t12`, `m3`) ; le code range tout le reste (85 %, pratique, quiz, débordement en semaines
-« Suite »). Les identifiants réels (`task_id`, `module_id`) ne sont jamais montrés au modèle
-(F7) : le parcours garde l'instantané du contexte dans son état et passe au port la table
-« référence → id » de cet instantané (`refs`).
+The Strategist does not rewrite the plan: it **removes** tasks and **adds** some by reference
+(`t12`, `m3`); the code stores everything else (85%, practice, quiz, overflow into "Continued"
+weeks). The real identifiers (`task_id`, `module_id`) are never shown to the model (F7): the
+graph keeps the context snapshot in its state and hands the port the "reference -> id" table of
+that snapshot (`refs`).
 
-Chaque écriture est idempotente : `preview` par `(session, revision)`, `apply` et `refuse` par
-version ; un nœud rejoué après un arrêt (SPEC 9.4) relit la même chose, jamais une ligne de plus.
+Every write is idempotent: `preview` by `(session, revision)`, `apply` and `refuse` by
+version; a node replayed after a stop (SPEC 9.4) reads the same thing back, never one more row.
 """
 
 import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date
-from typing import Annotated, Protocol
+from typing import Annotated, Any, Protocol, Self
 
 from pydantic import BaseModel, Field
 
 from app.agents.runtime.prose import Prose
+from app.agents.tools.plan_schema import CheckpointTaskType, read_checkpoint_task_type
 from app.agents.tools.program_port import BudgetView
 from app.agents.tools.study_schema import ReplanOption, ReplanTrigger, ReviewState
 from app.core.errors import AppError
@@ -31,43 +31,55 @@ from app.db.models.program import TaskType
 WEEK_CAP_PERCENT = 85
 TASK_REF = r"^t\d{1,4}$"
 MODULE_REF = r"^m\d{1,3}$"
-# Déclencheur `gap` (« Ajouter au planning », D123) : le module cible des ajouts, créé en fin de
-# programme à la 1re application puis réutilisé, toujours montré au modèle sous `m0`.
+# `gap` trigger ("Add to the schedule", D123): the module that receives the additions, created at
+# the end of the program on the 1st use then reused, always shown to the model as `m0`.
 GAP_MODULE_REF = "m0"
-GAP_MODULE_TITLE = "Compétences des offres"
+GAP_MODULE_TITLE = "Skills from job postings"
+# "Compétences des offres" is the title written before the switch to English: still recognised.
+GAP_MODULE_TITLES = frozenset({GAP_MODULE_TITLE, "Compétences des offres"})
 
 
 def week_cap(available_minutes: int) -> int:
-    """Plafond de la semaine en cours quand January n'a que `available_minutes` : 85 %, arrondi
-    vers le bas, en entiers (en flottants, `0.85 * 300` vaut 254,99… ; ici 255)."""
+    """Cap of the current week when January only has `available_minutes`: 85%, rounded
+    down, in integers (in floats, `0.85 * 300` is 254.99...; here 255)."""
     return available_minutes * WEEK_CAP_PERCENT // 100
 
 
 @dataclass(frozen=True)
 class ModuleRef:
-    ref: str  # « m3 » : la seule référence montrée au modèle
+    ref: str  # "m3": the only reference shown to the model
     title: str
     skills: list[str]
-    module_id: str  # jamais rendu au modèle (F7)
+    module_id: str  # never rendered to the model (F7)
 
 
 @dataclass(frozen=True)
 class TaskRef:
-    """Une tâche à faire (de la semaine en cours et des suivantes, retards compris)."""
+    """A task still to do (from the current week and the following ones, late ones included)."""
 
-    ref: str  # « t12 »
+    ref: str  # "t12"
     title: str
     type: TaskType
     minutes: int
     planned_date: date
     module_ref: str
-    late: bool  # datée avant aujourd'hui et pas faite
-    task_id: str  # jamais rendu au modèle (F7)
+    late: bool  # dated before today and not done
+    task_id: str  # never rendered to the model (F7)
+
+    @classmethod
+    def from_checkpoint(cls, data: dict[str, Any]) -> Self:
+        return cls(
+            **{
+                **data,
+                "type": read_checkpoint_task_type(data["type"]),
+                "planned_date": date.fromisoformat(data["planned_date"]),
+            }
+        )
 
 
 @dataclass(frozen=True)
 class ReviewView:
-    """Le bilan hebdomadaire qui a déclenché la replanification (texte écrit par le code)."""
+    """The weekly review that triggered the replan (text written by the code)."""
 
     entry_id: str
     week_start: date
@@ -84,38 +96,38 @@ class ReplanContext:
     deadline: date | None
     budget: BudgetView
     review: ReviewView | None
-    options: tuple[ReplanOption, ...]  # vide : rien à décider
+    options: tuple[ReplanOption, ...]  # empty: nothing to decide
     modules: list[ModuleRef]
-    tasks: list[TaskRef]  # à faire, de la semaine en cours et des suivantes, retards compris
-    week_cap_override: int | None  # `week_cap(minutes disponibles cette semaine)`, si données
-    message: str | None  # texte de January (« je n'ai que 5 heures… ») : une note du Stratège
-    skills: tuple[str, ...] = ()  # compétences des offres à ajouter (déclencheur `gap` seul)
+    tasks: list[TaskRef]  # to do, from the current week and the following ones, late included
+    week_cap_override: int | None  # `week_cap(minutes available this week)`, if given
+    message: str | None  # January's text ("I only have 5 hours..."): a note for the Strategist
+    skills: tuple[str, ...] = ()  # posting skills to add (`gap` trigger only)
 
     def refs(self) -> dict[str, str]:
-        """Référence (`t12`, `m3`) → id réel, sur cet instantané."""
+        """Reference (`t12`, `m3`) -> real id, on this snapshot."""
         found = {m.ref: m.module_id for m in self.modules}
         found.update({t.ref: t.task_id for t in self.tasks})
         return found
 
 
-# --- Sortie structurée du Stratège --------------------------------------------------------------
-# Une classe par droit (D105 (2)) : le modèle ne reçoit que le schéma de ce qu'il a le droit de
-# faire. Résumé et critère de fin sont du texte lu (`Prose`) ; références et titres restent
-# refusés s'ils sont mal formés (re-demandés par `structured_call`).
+# --- Structured output of the Strategist ---------------------------------------------------------
+# One class per right (D105 (2)): the model only receives the schema of what it may do.
+# Summary and done criterion are read text (`Prose`); references and titles stay refused if
+# malformed (asked again by `structured_call`).
 
 
 class ReplanTaskDraft(BaseModel):
     module: str = Field(pattern=MODULE_REF)
     title: str = Field(min_length=3, max_length=120)
-    type: TaskType
+    type: CheckpointTaskType
     minutes: int = Field(ge=15, le=120)
     done_criterion: Prose = Field(min_length=3, max_length=200)
 
 
 def skills_named(task: ReplanTaskDraft, skills: Sequence[str]) -> list[str]:
-    """Les compétences de `skills` que la tâche nomme en mots entiers, dans son titre ou son
-    critère de fin (casse, accents et espaces ignorés) : « Pratiquer LangGraph » nomme
-    « LangGraph » ; « Lire sur le C » ne nomme pas « C++ »."""
+    """The skills of `skills` that the task names as whole words, in its title or its done
+    criterion (case, accents and spaces ignored): "Practise LangGraph" names
+    "LangGraph"; "Read about C" does not name "C++"."""
     text = normalize_skill_name(f"{task.title} {task.done_criterion}")
     found: list[str] = []
     for skill in skills:
@@ -126,50 +138,50 @@ def skills_named(task: ReplanTaskDraft, skills: Sequence[str]) -> list[str]:
 
 
 class ReplanSummary(BaseModel):
-    """Sans option, avec « repousser » ou « avancer » : un résumé seul, le rangement suffit."""
+    """Without option, with "postpone" or "bring forward": a summary alone, fitting is enough."""
 
     summary: Prose = Field(min_length=1, max_length=600)
 
 
 class ReplanDrops(ReplanSummary):
-    """« Réduire le périmètre » : des retraits seulement."""
+    """ "Reduce the scope": removals only."""
 
     drop: list[Annotated[str, Field(pattern=TASK_REF)]] = Field(default_factory=list, max_length=50)
 
 
 class ReplanAdds(ReplanSummary):
-    """« Approfondir » : des ajouts seulement."""
+    """ "Go deeper": additions only."""
 
     add: list[ReplanTaskDraft] = Field(default_factory=list, max_length=20)
 
 
 class ReplanDraft(ReplanDrops, ReplanAdds):
-    """Ce que le port reçoit : résumé, retraits et ajouts (vides hors des droits de l'option)."""
+    """What the port receives: summary, removals and additions (empty beyond the option rights)."""
 
 
-# --- Ce que le port rend ------------------------------------------------------------------------
+# --- What the port returns ----------------------------------------------------------------------
 
 
 @dataclass(frozen=True)
 class WeekLoad:
     rank: int
     start_date: date
-    before: int  # minutes prévues avant la proposition
-    after: int  # minutes prévues après
-    cap: int  # plafond de la semaine (85 %, ou `week_cap_override` pour la semaine en cours)
+    before: int  # minutes planned before the proposal
+    after: int  # minutes planned after
+    cap: int  # cap of the week (85%, or `week_cap_override` for the current week)
 
 
 @dataclass(frozen=True)
 class PreviewSaved:
-    """La proposition rangée et enregistrée. `empty` : rien ne change. `kept` : retraits
-    ignorés (le dernier quiz ou la dernière pratique d'une semaine, D105). `impossible` : le
-    plafond ne tient pas une pratique et le quiz (F10) ; avec `finished`, parce que le
-    programme est terminé (plus aucune semaine à replanifier).
+    """The proposal, fitted and saved. `empty`: nothing changes. `kept`: removals ignored (the
+    last quiz or the last practice of a week, D105). `impossible`: the cap cannot hold a
+    practice and the quiz (F10); with `finished`, because the program is finished (no week left
+    to replan).
 
-    Cycle de vie de la version écrite (D106) : `impossible` → statut clos `impossible` ;
-    `empty` sans option → statut clos `empty` ; ces deux-là ne sont jamais `pending` ni
-    proposées à January. Sinon `pending` (attend la réponse de January dans la session), et les
-    `pending` précédents du programme passent `superseded` (D99)."""
+    Life cycle of the written version (D106): `impossible` -> closed status `impossible`;
+    `empty` without option -> closed status `empty`; those two are never `pending` nor
+    offered to January. Otherwise `pending` (waits for January's answer in the session), and the
+    program's previous `pending` ones become `superseded` (D99)."""
 
     version: int
     empty: bool
@@ -187,7 +199,7 @@ class PreviewSaved:
 @dataclass(frozen=True)
 class Applied:
     version: int
-    stale: bool  # les lignes ont changé depuis la proposition : rien n'est écrit
+    stale: bool  # the rows changed since the proposal: nothing is written
 
 
 class ReplanStore(Protocol):
@@ -202,9 +214,9 @@ class ReplanStore(Protocol):
         message: str | None,
         skills: Sequence[str] = (),
     ) -> ReplanContext:
-        """Programme, bilan et options, budget, modules et tâches à faire par référence.
-        Déclencheur `gap` : aucune option, `skills` rendues, module cible en `m0`.
-        `program_not_found` (404) si le programme n'est pas à l'utilisateur."""
+        """Program, review and options, budget, modules and tasks to do by reference.
+        `gap` trigger: no option, `skills` rendered, target module as `m0`.
+        `program_not_found` (404) if the program does not belong to the user."""
         ...
 
     async def preview(
@@ -220,33 +232,31 @@ class ReplanStore(Protocol):
         reason: str,
         week_cap_override: int | None,
     ) -> PreviewSaved:
-        """Résout les références par `refs` (inconnues : ignorées), applique les droits de
-        l'option (déclencheur `gap` de la session : ajouts seuls, dans `m0`, chacun nommant une
-        compétence de la session ; le reste ignoré), range et enregistre la version (statut :
-        voir `PreviewSaved`) ; idempotent par `(session, revision)`. Jamais
-        `planning_impossible` : `PreviewSaved.impossible`."""
+        """Resolves the references through `refs` (unknown ones: ignored), applies the option's
+        rights (the session's `gap` trigger: additions only, in `m0`, each naming a skill of the
+        session; the rest ignored), fits and saves the version (status: see `PreviewSaved`);
+        idempotent by `(session, revision)`. Never `planning_impossible`:
+        `PreviewSaved.impossible`."""
         ...
 
     async def apply(self, user_id: str, session_id: str, program_id: str, version: int) -> Applied:
-        """Applique la version (idempotent : déjà acceptée → `stale=False` sans écrire). Lignes
-        changées depuis la proposition, ou version qui n'attend plus (`superseded` par une autre
-        session, refusée, close) → `stale=True`, rien n'est écrit, jamais d'erreur. Le port
-        prend lui-même le verrou du programme, avant sa transaction (F4)."""
+        """Applies the version (idempotent: already accepted -> `stale=False` without writing).
+        Rows changed since the proposal, or a version that no longer waits (`superseded` by
+        another session, refused, closed) -> `stale=True`, nothing is written, never an error.
+        The port takes the program lock itself, before its transaction (F4)."""
         ...
 
     async def refuse(self, user_id: str, session_id: str, program_id: str, version: int) -> None:
-        """La version est refusée, le plan actuel reste (idempotent)."""
+        """The version is refused, the current plan stays (idempotent)."""
         ...
 
 
 def replan_unavailable() -> AppError:
-    return AppError(
-        "replan_unavailable", "La replanification n'est pas branchée sur ce moteur.", 503
-    )
+    return AppError("replan_unavailable", "Replanning is unavailable in this runtime.", 503)
 
 
 class _NoReplan:
-    """Valeur par défaut du moteur (tests existants, démarrages sans la feature `replan`)."""
+    """Default value of the engine (existing tests, startups without the `replan` feature)."""
 
     async def context(
         self,

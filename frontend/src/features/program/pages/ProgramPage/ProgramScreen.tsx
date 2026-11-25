@@ -39,7 +39,7 @@ export function ProgramScreen({ program }: { program: ProgramOut }) {
       {program.status === "validated" && (
         <Link
           className="self-start underline underline-offset-2"
-          to={`/apprendre/programme/${encodeURIComponent(program.id)}/boss`}
+          to={`/learn/programs/${encodeURIComponent(program.id)}/boss`}
         >
           {t("boss.open")}
         </Link>

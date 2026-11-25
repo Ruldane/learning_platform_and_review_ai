@@ -15,23 +15,23 @@ from app.features.conversations.repository import ConversationRepository, TurnRe
 from app.features.conversations.schemas import ChatScope, ConversationSummary
 from app.mcp.recorder import ACTIVE
 
-CHAT_SCOPES = frozenset({"brain", "training"})
+CHAT_SCOPES = frozenset({"brain", "training", "offers"})
 
 
 def conversation_not_found() -> AppError:
-    return AppError("conversation_not_found", "Conversation introuvable.", 404)
+    return AppError("conversation_not_found", "Conversation not found.", 404)
 
 
 def conversation_busy() -> AppError:
     return AppError(
-        "conversation_busy", "Une réponse est déjà en cours dans cette conversation.", 409
+        "conversation_busy", "A reply is already in progress in this conversation.", 409
     )
 
 
 def _summary(row: Conversation) -> ConversationSummary:
     return ConversationSummary(
         id=UUID(row.id),
-        title=row.title or "Nouvelle conversation",
+        title=row.title or ("New chat" if row.scope == "offers" else "New conversation"),
         updated_at=row.updated_at,
     )
 

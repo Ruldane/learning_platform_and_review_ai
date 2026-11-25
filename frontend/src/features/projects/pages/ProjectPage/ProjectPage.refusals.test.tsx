@@ -14,11 +14,11 @@ const setup = (api: Parameters<typeof renderProjects>[1] = {}) =>
       project: <ProjectPage createSocket={createSocket} />,
     }),
     api,
-    "/competences/portfolio/p1",
+    "/skills/portfolio/p1",
   );
 
 const TODO = projectOut("p1");
-const submitButton = () => screen.findByRole("button", { name: "Rendre le projet" });
+const submitButton = () => screen.findByRole("button", { name: "Submit the project" });
 const png = (name: string) => new File([new Uint8Array(20)], name, { type: "image/png" });
 
 describe("ProjectPage : refus du serveur", () => {
@@ -33,9 +33,9 @@ describe("ProjectPage : refus du serveur", () => {
     });
     await user.type(await screen.findByLabelText("Description"), "Une requête SQL.");
     await user.click(await submitButton());
-    const repo = await screen.findByLabelText("Lien du dépôt");
+    const repo = await screen.findByLabelText("Repository link");
     await waitFor(() => expect(repo).toBeInvalid());
-    expect(repo).toHaveAccessibleDescription(/adresse http ou https/);
+    expect(repo).toHaveAccessibleDescription(/http or https address/);
     expect(screen.getByLabelText("Description")).toBeValid();
     await user.type(repo, "https://example.org/camille");
     expect(repo).toBeValid();
@@ -47,10 +47,10 @@ describe("ProjectPage : refus du serveur", () => {
       ...refuse(422, "validation_error", "Requête invalide.", { fields: ["screenshots.1"] }),
     });
     await user.type(await screen.findByLabelText("Description"), "Une requête SQL.");
-    await user.upload(screen.getByLabelText("Captures d'écran"), png("a.png"));
+    await user.upload(screen.getByLabelText("Screenshots"), png("a.png"));
     await user.click(await submitButton());
-    expect(await screen.findByRole("alert")).toHaveTextContent("Une capture n'est pas acceptée");
-    expect(screen.getByLabelText("Captures d'écran")).toBeInvalid();
+    expect(await screen.findByRole("alert")).toHaveTextContent("A screenshot wasn’t accepted");
+    expect(screen.getByLabelText("Screenshots")).toBeInvalid();
     expect(screen.getByLabelText("Description")).toBeValid();
   });
 
@@ -64,7 +64,7 @@ describe("ProjectPage : refus du serveur", () => {
     await user.type(await screen.findByLabelText("Description"), "Une requête SQL.");
     await user.click(await submitButton());
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Ajoute un lien de dépôt ou une description.",
+      "Add a repository link or a description.",
     );
   });
 
@@ -72,9 +72,9 @@ describe("ProjectPage : refus du serveur", () => {
     [
       409,
       "project_not_ready",
-      "L'énoncé de ce projet n'est pas encore écrit : attends-le avant de rendre ton travail.",
+      "This project’s brief isn’t written yet: wait for it before submitting your work.",
     ],
-    [413, "file_too_large", "Une capture est trop volumineuse : 5 Mo au plus chacune."],
+    [413, "file_too_large", "A screenshot is too large: 5 MB at most each."],
     [503, "review_unavailable", "L'évaluation n'a pas pu démarrer : réessaie dans un instant."],
   ])("writes the refusal %i %s in clear", async (status, code, message) => {
     const { user } = setup({ projects: [TODO], ...refuse(status, code, message) });
@@ -94,8 +94,8 @@ describe("ProjectPage : refus du serveur", () => {
     await user.type(await screen.findByLabelText("Description"), "Une requête SQL.");
     settle("p1", { status: "reviewing", session_id: "sess-open", submissions: [submissionOut()] });
     await user.click(await submitButton());
-    expect(await screen.findByRole("heading", { name: "Évaluation en cours" })).toBeVisible();
-    expect(screen.getByText("Une évaluation était déjà en cours : on la suit.")).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "Review in progress" })).toBeVisible();
+    expect(screen.getByText("A review was already in progress: following it.")).toBeVisible();
     await openStream(sockets, "sess-open");
     expect(screen.queryByRole("alert")).toBeNull();
   });
@@ -108,7 +108,7 @@ describe("ProjectPage : refus du serveur", () => {
     await user.type(await screen.findByLabelText("Description"), "Une requête SQL.");
     settle("p1", { status: "validated", validated_at: "2026-11-16T12:00:00Z" });
     await user.click(await submitButton());
-    expect(await screen.findByRole("heading", { name: "Projet validé" })).toBeVisible();
-    expect(screen.queryByRole("form", { name: "Rendre ton projet" })).toBeNull();
+    expect(await screen.findByRole("heading", { name: "Project validated" })).toBeVisible();
+    expect(screen.queryByRole("form", { name: "Submit your project" })).toBeNull();
   });
 });

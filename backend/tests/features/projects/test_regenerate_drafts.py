@@ -80,7 +80,7 @@ async def test_regenerate_drafts_refused_while_reviewing(
     r = await post(client, pid)
     assert (r.status_code, code_of(r)) == (409, "review_in_progress")
     assert r.json()["error"]["details"] == {"session_id": session_id}
-    assert "évaluation" in r.json()["error"]["message"]  # le rendu en cours garde son message
+    assert "reviewed" in r.json()["error"]["message"]  # the running submission keeps its message
     assert len(env.launcher.started) == 1  # seul le rendu a lancé un parcours
 
 
@@ -92,7 +92,7 @@ async def test_regenerate_drafts_twice_is_review_in_progress(
     again = await post(client, pid)
     assert (again.status_code, code_of(again)) == (409, "review_in_progress")
     assert again.json()["error"]["details"] == {"session_id": session_id}
-    assert again.json()["error"]["message"] == "Les brouillons s'écrivent déjà."
+    assert again.json()["error"]["message"] == "The drafts are already being written."
     assert len(env.launcher.started) == 1
     await env.launcher.end(env.user_id, session_id, "failed")  # la session est close : on relance
     assert (await post(client, pid)).status_code == 202

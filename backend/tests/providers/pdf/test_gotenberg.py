@@ -98,7 +98,7 @@ async def test_renderer_errors_never_cite_url(
         await _renderer(handler).url_to_pdf(_URL, timeout_s=0.5)
     error = caught.value
     assert (error.code, error.status_code) == ("render_failed", 502)
-    assert error.message == "Rendu de la page impossible."
+    assert error.message == "The page could not be rendered."
     assert error.__cause__ is None and error.__suppress_context__
     assert "ex.org" not in caplog.text and "secret" not in caplog.text
 

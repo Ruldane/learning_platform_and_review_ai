@@ -1,6 +1,6 @@
-"""L'apprentissage dans la vie de l'application : ce que les requêtes HTTP et les agents
-partagent (base, lanceur de sessions, verrous par objectif). Ouvert par le lifespan
-(`app.state.learning`), avant le moteur d'agents (D87)."""
+"""Learning in the application's lifetime: what HTTP requests and agents share (database,
+session launcher, per-goal locks). Opened by the lifespan (`app.state.learning`), before the
+agent engine (D87)."""
 
 import asyncio
 import weakref
@@ -17,7 +17,7 @@ from app.agents.runtime.launcher import SessionLauncher
 class LearningRuntime:
     session_factory: async_sessionmaker[AsyncSession]
     launcher: SessionLauncher
-    # Faible : un verrou que plus personne ne tient disparaît (une entrée par objectif sinon).
+    # Weak: a lock nobody holds anymore disappears (otherwise one entry per goal).
     _goal_locks: weakref.WeakValueDictionary[tuple[str, str], asyncio.Lock] = field(
         default_factory=weakref.WeakValueDictionary, repr=False, compare=False
     )
@@ -32,9 +32,9 @@ class LearningRuntime:
 
     @asynccontextmanager
     async def goal_lock(self, user_id: str, goal_id: str) -> AsyncIterator[None]:
-        """Section critique d'un objectif : choix du parcours (route `choose`), choix enregistré
-        et lancement du programme (port, nœud `finalize`). Double clic, ou choix en même temps
-        qu'une reprise générique : un seul `program_builder`. Propre à ce processus (un seul
-        worker, comme les verrous de la recherche)."""
+        """A goal's critical section: path choice (`choose` route), saved choice and program
+        start (port, `finalize` node). Double click, or a choice at the same time as a generic
+        resume: a single `program_builder`. Local to this process (a single worker, like the
+        research locks)."""
         async with self._lock(user_id, goal_id):
             yield

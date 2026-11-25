@@ -1,14 +1,13 @@
-"""La barrière de coût du professeur (10.A3, exigence du 2026-11-14) : ce qui a le droit de
-réveiller le modèle, et le lancement du parcours `ide_teacher`.
+"""The professor's cost gate (10.A3, requirement of 2026-11-14): what is allowed to wake the
+model, and launching the `ide_teacher` flow.
 
-Le professeur réagit à une exécution en erreur, à une question, à une demande d'indice ou, en
-option, après 30 s d'arrêt sur une ligne : jamais à la frappe, jamais à une sauvegarde (aucune autre
-route ne le lance). Avant tout appel, `TeachGate` regarde dans cet ordre : la **même erreur au même
-endroit** (renvoi à la note précédente, aucun appel), **un appel à la fois** par séance, le mode
-« sur demande » et la minuterie sans option, puis les **plafonds** de jetons (séance, jour). Une
-question et une demande d'indice sont des gestes explicites : elles sont toujours traitées (sauf si
-un appel court déjà), même après un plafond. Le niveau d'un indice monte de 1 à 3 avec les indices
-déjà donnés pour la même erreur."""
+The professor reacts to a failing run, a question, a hint request or, optionally, after 30 s
+stopped on a line: never to typing, never to a save (no other route launches it). Before any
+call, `TeachGate` looks in this order: the **same error at the same place** (reference to the
+previous note, no call), **one call at a time** per session, the "on demand" mode and the timer
+without the option, then the token **caps** (session, day). A question and a hint request are
+explicit gestures: they are always handled (unless a call is already running), even after a
+cap. The level of a hint rises from 1 to 3 with the hints already given for the same error."""
 
 import asyncio
 import hashlib
@@ -52,19 +51,19 @@ AUTOMATIC: frozenset[str] = frozenset({"run_error", "idle"})
 IDLE_DELAY = timedelta(seconds=30)
 MAX_LEVEL = 3
 COMPLIMENT_KEY = "compliment"
-COMPLIMENT = "Bravo : tes tests passent. Relis ton code une dernière fois, tu peux en être fière."
-REFERENCE = "Même erreur au même endroit : relis ma note précédente, elle s'applique encore."
+COMPLIMENT = "Your tests pass. Read through your code one more time before finishing."
+REFERENCE = "The same error occurred here. The previous note still applies."
 
 PROFESSOR = Caller(kind="app", label=PROFESSOR_LABEL)
-JANUARY = Caller(kind="app", label="app")  # l'interface : l'auteur des notes est alors `user`
+JANUARY = Caller(kind="app", label="app")  # the interface: the notes' author is then `user`
 logger = logging.getLogger(__name__)
 _LOCKS: weakref.WeakValueDictionary[str, asyncio.Lock] = weakref.WeakValueDictionary()
 
 
 @dataclass(frozen=True)
 class GateDecision:
-    """`call` : lancer le professeur (au niveau `level` pour un indice) ; `reference` : renvoyer à
-    la note `note_id` ; `skip` : ne rien lancer, pour `reason`."""
+    """`call`: launch the professor (at level `level` for a hint); `reference`: refer to
+    the note `note_id`; `skip`: launch nothing, for `reason`."""
 
     action: Literal["call", "reference", "skip"]
     reason: SkipReason | None = None
@@ -73,14 +72,14 @@ class GateDecision:
 
 
 def error_key(*parts: str | None) -> str:
-    """L'empreinte (40 signes) d'un endroit ou d'une erreur : jamais le texte lui-même."""
+    """The fingerprint (40 characters) of a place or an error: never the text itself."""
     return hashlib.sha1("|".join(part or "" for part in parts).encode()).hexdigest()  # noqa: S324
 
 
 def signature_of(trigger: str, run: IdeRun | None, body: TeachIn) -> str:
-    """La clé de l'erreur ou de l'endroit d'un déclenchement : la signature de la dernière
-    exécution (type d'erreur et dernière ligne du code de January) ; sinon son état ; sinon
-    l'endroit donné ; sinon la séance."""
+    """The key of the error or place of a trigger: the signature of the last run (error type and
+    last line of January's code); otherwise her state; otherwise the given place; otherwise the
+    session."""
     place = f"{body.file_path}:{body.line}" if body.file_path and body.line else None
     if trigger == "idle":
         return error_key("idle", place)
@@ -113,7 +112,7 @@ class TeachGate:
         return await self._usage.day_tokens() >= day_cap
 
     async def decide(self, session_id: str, trigger: str, signature: str | None) -> GateDecision:
-        """Appeler, renvoyer à la note précédente, ou ne rien faire (et pourquoi)."""
+        """Call, refer to the previous note, or do nothing (and why)."""
         prefs = await self._usage.preferences()
         given = await ProfessorNoteRepository(self._db, self._user_id).of_professor(session_id)
         same = [note for note in given if signature and note.error_key == signature]
@@ -143,7 +142,7 @@ def _lock_of(user_id: str, key: str) -> asyncio.Lock:
 
 
 class TeachingService:
-    """Au nom d'une utilisatrice ; le commit appartient à la requête."""
+    """On behalf of a user; the commit belongs to the request."""
 
     def __init__(self, db: AsyncSession, user_id: str, launcher: SessionLauncher) -> None:
         self._db = db
@@ -164,12 +163,12 @@ class TeachingService:
     async def _note(
         self, session: IdeSession, kind: NoteKind, content: str, **fields: Any
     ) -> IdeNote:
-        """Une note du professeur sans appel de modèle (compliment, renvoi)."""
+        """A professor note without a model call (compliment, reference)."""
         return await notes.add(self._ctx, session.id, NoteIn(kind=kind, content=content), **fields)
 
     async def _compliment(self, session: IdeSession) -> TeachOut:
-        """Une exécution réussie : rien tant que la séance n'est pas réussie ; ensuite, au plus un
-        compliment, sans appel de modèle."""
+        """A successful run: nothing until the session is passed; then, at most one compliment,
+        without a model call."""
         if not session.passed:
             return TeachOut(skipped="on_demand")
         given = await ProfessorNoteRepository(self._db, self._user_id).of_professor(session.id)
@@ -180,7 +179,7 @@ class TeachingService:
         return TeachOut(reference_note_id=note.id)
 
     async def _refer(self, session: IdeSession, previous_id: str, signature: str) -> TeachOut:
-        """Même erreur au même endroit : un seul renvoi écrit par note citée, aucun appel."""
+        """Same error at the same place: a single reference written per cited note, no call."""
         given = await ProfessorNoteRepository(self._db, self._user_id).of_professor(session.id)
         if not any(note.reference_note_id == previous_id for note in given):
             await self._note(
@@ -189,7 +188,7 @@ class TeachingService:
         return TeachOut(reference_note_id=previous_id)
 
     async def teach(self, session_id: str, body: TeachIn) -> TeachOut:
-        """Un seul des trois : la session du professeur, un renvoi, ou pourquoi rien ne se lance."""
+        """Only one of the three: the professor's session, a reference, or why nothing launches."""
         session = await sessions.get(self._ctx, session_id)
         trigger: TeachTrigger = body.trigger
         if trigger == "run_ok":
@@ -207,13 +206,13 @@ class TeachingService:
             path = body.file_path if body.file_path in session.files else None
             question = body.question.strip() if body.question else None
             if trigger == "question" and question:
-                # Sa question reste dans le fil : le professeur la relira avec les suivantes.
+                # Her question stays in the thread: the professor re-reads it with the next ones.
                 await notes.add(
                     self._january, session.id, NoteIn(kind="question", content=question)
                 )
-                # Rangée avant le lancement : le parcours la relit, et il écrit lui aussi en base.
+                # Stored before the launch: the flow re-reads it, and it writes to the database too.
                 await self._db.commit()
-                logger.info("Question rangée : séance %s", session.id)  # jamais son texte
+                logger.info("Question stored: session %s", session.id)  # never its text
             started = await self._launcher.start(
                 self._user_id,
                 TEACHER_GRAPH,
@@ -233,7 +232,7 @@ class TeachingService:
         return TeachOut(session_id=started)
 
     async def generate(self, body: ExerciseGenerateIn) -> IdeSessionStarted:
-        """Lance le parcours des exercices : rend aussitôt la session d'agents à suivre."""
+        """Launches the exercises flow: returns right away the agent session to follow."""
         started = await self._launcher.start(
             self._user_id,
             EXERCISE_GRAPH,

@@ -36,7 +36,9 @@ def paused(monkeypatch: pytest.MonkeyPatch) -> None:
 
 async def lesson_item(app: FastAPI) -> MemoryItem:
     async with app.state.session_factory() as db:
-        return (await db.execute(select(MemoryItem).where(MemoryItem.kind == "lecon"))).scalar_one()
+        return (
+            await db.execute(select(MemoryItem).where(MemoryItem.kind == "lesson"))
+        ).scalar_one()
 
 
 async def chunk_texts(app: FastAPI, item_id: str) -> list[str]:
@@ -126,7 +128,9 @@ async def test_housekeeping_indexes_items_left_pending(
     await write(client, claude, token, drafted, OLD)
     await drain_indexing()
     async with app.state.session_factory() as db:
-        item = (await db.execute(select(MemoryItem).where(MemoryItem.kind == "lecon"))).scalar_one()
+        item = (
+            await db.execute(select(MemoryItem).where(MemoryItem.kind == "lesson"))
+        ).scalar_one()
         item.indexed_at = None  # l'application a redémarré avant la tâche d'indexation
         await db.commit()
     memory = SimpleNamespace(memory=app.state.memory)

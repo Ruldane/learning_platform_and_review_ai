@@ -1,9 +1,8 @@
-"""Les votes du comité (SPEC F19, D147) : après le débat, chaque persona vote — entretien oui, non
-ou peut-être — avec son objection principale. Les quatre votes sont indépendants : ils partent
-ensemble, chacun sur tout ce qui s'est dit. Une fois dans l'état (checkpointer), un vote n'est
-jamais redemandé : le nœud terminé n'est pas rejoué après un redémarrage. Aucune écriture en base.
-Un vote illisible après les nouveaux essais fait échouer la session : un vote de repli serait un
-avis que personne n'a donné."""
+"""The committee votes (SPEC F19, D147): after the debate, each persona votes — interview yes, no
+or maybe — with its main objection. The four votes are independent: they go out together, each
+on everything that was said. Once in the state (checkpointer), a vote is never requested again:
+the finished node is not replayed after a restart. No database write. A vote that is unreadable
+after the retries makes the session fail: a fallback vote would be an opinion nobody gave."""
 
 import logging
 from typing import Any
@@ -29,9 +28,9 @@ from app.agents.tools.committee_schema import (
 )
 
 VOTE_WORDS = {
-    "oui": "oui, je donnerais un entretien",
-    "non": "non, je n'irais pas plus loin",
-    "peut_etre": "peut-être, je veux en savoir plus",
+    "yes": "yes, I'd offer an interview",
+    "no": "no, I wouldn't move forward",
+    "maybe": "maybe, I'd like to know more",
 }
 
 logger = logging.getLogger(__name__)
@@ -42,10 +41,10 @@ async def _vote(
 ) -> PersonaVote:
     model, messages = await persona_call(deps, ctx, persona, "vote", VOTE_REQUEST, spoken=spoken)
     found = await structured_call(
-        model, Vote, messages, agent=persona, step="vote", intent="je vote"
+        model, Vote, messages, agent=persona, step="vote", intent="Voting"
     )
     vote = PersonaVote(persona=persona, **found.model_dump())
-    text = f"Mon vote : {VOTE_WORDS[vote.vote]}.\nObjection principale : {vote.objection}"
+    text = f"I vote {VOTE_WORDS[vote.vote]}.\nMain objection: {vote.objection}"
     emit("agent.message", {"message_id": f"{persona}-vote", "text": text}, agent=persona)
     return vote
 
@@ -53,11 +52,11 @@ async def _vote(
 def make_votes(deps: GraphDeps) -> Node:
     @node_timeout(TURN_TIMEOUT_S)
     async def votes(state: HiringCommitteeState) -> HiringCommitteeState:
-        """Les quatre votes, dans l'ordre des personas."""
+        """The four votes, in the order of the personas."""
         ctx = context_of(state)
         spoken = list(state["spoken"])
         cast = await persona_results(deps, lambda persona: _vote(deps, ctx, spoken, persona))
-        logger.info("Votes rendus : session %s, %d vote(s)", deps.session_id, len(cast))
+        logger.info("Votes cast: session %s, %d vote(s)", deps.session_id, len(cast))
         return {"votes": [vote.model_dump(mode="json") for vote in cast]}
 
     return votes

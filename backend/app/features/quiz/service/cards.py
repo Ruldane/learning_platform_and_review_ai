@@ -1,11 +1,11 @@
-"""Fiches de révision espacée (SPEC F9, D101) : création dédoublonnée par recto, file du jour
-(30 fiches au plus, 15 minutes) et avis. Les jours sont ceux de January (fuseau, D98).
+"""Spaced-review cards (SPEC F9, D101): creation deduplicated by front, today's queue
+(30 cards at most, 15 minutes) and reviews. Days are January's (time zone, D98).
 
-Un avis est gardé par l'échéance (`due_date ≤ aujourd'hui local`) : le second de deux avis
-simultanés trouve la fiche déjà repoussée (409 `card_not_due`). Deux échecs de suite sur les
-fiches d'un acquis `valide` le font redescendre à `en_cours` (`record_review`) ; la mémoire le
-reflète après le commit (`allow_lower`, seule baisse admise). Journaux : identifiants seulement,
-jamais le recto ni le verso."""
+A review is guarded by the due date (`due_date ≤ local today`): the second of two simultaneous
+reviews finds the card already pushed back (409 `card_not_due`). Two failures in a row on the
+cards of a `valide` skill bring it back down to `en_cours` (`record_review`); memory reflects
+it after the commit (`allow_lower`, the only decrease allowed). Logs: identifiers only, never
+the front or the back."""
 
 import logging
 from collections.abc import Iterable
@@ -43,7 +43,7 @@ class NewCard:
 
 
 async def add_cards(db: AsyncSession, user_id: str, cards: Iterable[NewCard], today: date) -> int:
-    """Écrit les fiches dont le recto est nouveau (dues demain) ; rend le nombre créé."""
+    """Writes the cards whose front is new (due tomorrow); returns the number created."""
     repo = FlashcardRepository(db, user_id)
     created = 0
     for card in cards:
@@ -65,7 +65,7 @@ async def add_cards(db: AsyncSession, user_id: str, cards: Iterable[NewCard], to
 
 
 async def due_queue(rt: QuizRuntime, db: AsyncSession, user_id: str) -> DueQueue:
-    """La file du jour : fiches dues, les plus en retard d'abord, dans la place qui reste."""
+    """Today's queue: due cards, most overdue first, within the room left."""
     today = await rt.today(db, user_id)
     repo = FlashcardRepository(db, user_id)
     reviewed = await repo.count_reviewed(today)
@@ -83,8 +83,8 @@ async def due_queue(rt: QuizRuntime, db: AsyncSession, user_id: str) -> DueQueue
 
 
 async def due_skill_names(db: AsyncSession, user_id: str, today: date) -> set[str]:
-    """Noms normalisés des compétences qui ont une fiche due (≤ `today`, jour de January) :
-    prochaine action « Réviser » de la carte (D107). Lecture pour les autres features."""
+    """Normalized names of the skills that have a due card (≤ `today`, January's day): the
+    map's "Review" next action (D107). Read for the other features."""
     skills = await FlashcardRepository(db, user_id).due_skills(today)
     return {norm for norm in map(normalize_skill_name, skills) if norm}
 
@@ -94,11 +94,11 @@ async def count_due_cards(db: AsyncSession, user_id: str, today: date) -> int:
 
 
 def card_not_found() -> AppError:
-    return AppError("card_not_found", "Fiche introuvable.", 404)
+    return AppError("card_not_found", "Card not found.", 404)
 
 
 def card_not_due() -> AppError:
-    return AppError("card_not_due", "Cette fiche n'est pas à revoir aujourd'hui.", 409)
+    return AppError("card_not_due", "This card is not due for review today.", 409)
 
 
 async def _due_card(repo: FlashcardRepository, card_id: str, today: date) -> Flashcard:
@@ -128,7 +128,7 @@ async def review_in_session(
     *,
     expected_due: date | None = None,
 ) -> ReviewOut:
-    """Applique le même avis dans la transaction qui valide la réponse d’un canal."""
+    """Applies the same review in the transaction that commits a channel's answer."""
     today = await rt.today(db, user_id)
     repo = FlashcardRepository(db, user_id)
     card = await _due_card(repo, card_id, today)
@@ -146,7 +146,7 @@ async def review_in_session(
 
 
 async def review_card(rt: QuizRuntime, user_id: str, card_id: str, ok: bool) -> ReviewOut:
-    """Avis sur une fiche due : palier et échéance mis à jour (une erreur : demain local)."""
+    """Review of a due card: step and due date updated (a failure: local tomorrow)."""
     async with rt.session_factory() as db:
         out = await review_in_session(rt, db, user_id, card_id, ok)
         await db.commit()
@@ -155,7 +155,7 @@ async def review_card(rt: QuizRuntime, user_id: str, card_id: str, ok: bool) -> 
 
 
 async def reflect_review(rt: QuizRuntime, user_id: str, out: ReviewOut) -> None:
-    """Répercute dans la mémoire un changement de niveau dont la transaction est validée."""
+    """Reflects in memory a level change whose transaction is committed."""
     demoted = out.demoted_skill
     if demoted is not None:
         try:
@@ -163,14 +163,12 @@ async def reflect_review(rt: QuizRuntime, user_id: str, out: ReviewOut) -> None:
                 rt.memory,
                 user_id,
                 title=demoted,
-                level="en_cours",
+                level="in_progress",
                 author="user",
                 session_id=None,
-                reason="Deux échecs de suite sur les fiches de révision",
+                reason="Two failures in a row on the review cards",
                 allow_lower=True,
             )
         except Exception:
-            logger.warning(
-                "Rétrogradation non reflétée : utilisateur %s, fiche %s", user_id, out.card_id
-            )
-        logger.info("Acquis rétrogradé : utilisateur %s, fiche %s", user_id, out.card_id)
+            logger.warning("Demotion not reflected: user %s, card %s", user_id, out.card_id)
+        logger.info("Skill demoted: user %s, card %s", user_id, out.card_id)

@@ -1,16 +1,16 @@
-"""Port de l'analyse d'offre (`GapStore`, D121) sur la feature `postings` : implémentation branchée
-par `bootstrap_agents.agent_ports(..., gap=...)`. Chaque appel ouvre ses propres sessions de base,
-courtes ; aucune transaction n'est ouverte pendant la vectorisation (D66).
+"""Posting analysis port (`GapStore`, D121) on the `postings` feature: implementation wired by
+`bootstrap_agents.agent_ports(..., gap=...)`. Each call opens its own short database sessions;
+no transaction is open during vectorization (D66).
 
-- `save_analysis` : `UPDATE … WHERE analysis IS NULL` (la première analyse gagne), titre,
-  entreprise et sa clé, statut `ready`, élément de mémoire `offre` (titre, entreprise, texte figé)
-  écrit par `MemoryService.write` puis indexé ; puis doublons probables et possibles, rangés
-  des deux côtés et rendus même au rejeu. Le référentiel n'est pas touché.
-- `save_gap` : `gap` = `{matches, session_id}`, sans effet pour une même session ; dans la même
-  transaction, les besoins restés sans rattachement entrent au référentiel (`upsert_catalog`,
-  domaine de l'offre, sinon `DEFAULT_DOMAIN`, P20). Lignes et score recalculés (`gap_rows`).
+- `save_analysis`: `UPDATE … WHERE analysis IS NULL` (the first analysis wins), title, company
+  and its key, `ready` status, `posting` memory item (title, company, frozen text) written by
+  `MemoryService.write` then indexed; then probable and possible duplicates, stored on both
+  sides and returned even on replay. The reference list is not touched.
+- `save_gap`: `gap` = `{matches, session_id}`, no effect for the same session; in the same
+  transaction, the needs left without a match enter the reference list (`upsert_catalog`,
+  the posting's domain, otherwise `DEFAULT_DOMAIN`, P20). Rows and score recomputed (`gap_rows`).
 
-Le texte d'une offre n'est jamais journalisé : identifiants et nombres seulement."""
+A posting's text is never logged: ids and numbers only."""
 
 import logging
 from collections.abc import Sequence
@@ -45,15 +45,15 @@ from app.features.skills.service import SkillsService
 logger = logging.getLogger(__name__)
 
 AUTHOR = "analyst"
-REASON = "Offre ajoutée par January : copie figée de son texte."
-DEFAULT_DOMAIN = "Autres"  # celui que la carte montre pour une compétence sans domaine
+REASON = "Saved the text of a posting added by January."
+DEFAULT_DOMAIN = "Other"  # what the map shows for a skill without a domain
 _TITLE_MAX = 200
 _REASON_MAX = 300
 _MIN_DOMAIN = 2
 
 
 def not_analyzed() -> AppError:
-    return AppError("posting_not_analyzed", "Cette offre n'est pas encore analysée.", 409)
+    return AppError("posting_not_analyzed", "This posting has not been analyzed yet.", 409)
 
 
 def _domain(domain: str | None) -> str:
@@ -107,7 +107,7 @@ class AgentGapStore:
                 posting.memory_item_id = await self._write_item(db, user_id, session_id, posting)
             item_id = posting.memory_item_id
             await db.commit()
-        await index_capture(self._memory, user_id, item_id)  # avant la recherche des doublons
+        await index_capture(self._memory, user_id, item_id)  # before the duplicates search
         async with self._factory() as db:
             posting = await self._fresh(db, user_id, posting_id)
             hits = await find_duplicates(db, self._memory, user_id, posting)
@@ -116,8 +116,7 @@ class AgentGapStore:
             await store_duplicates(db, user_id, posting, hits)
             await db.commit()
         logger.info(
-            "Analyse d'offre rangée : utilisateur %s, offre %s, première %s, élément %s, "
-            "%d doublon(s)",
+            "Posting analysis stored: user %s, posting %s, first %s, item %s, %d doublon(s)",
             user_id,
             posting_id,
             first,
@@ -129,15 +128,16 @@ class AgentGapStore:
     async def _write_item(
         self, db: AsyncSession, user_id: str, session_id: str, posting: JobPosting
     ) -> str:
-        """L'élément `offre` (même contenu déjà là : l'existant), non indexé ni commité."""
+        """The `posting` item (same content already there: the existing one); not indexed, not
+        committed."""
         analysis = PostingAnalysis.model_validate(posting.analysis)
         draft = WriteDraft(
-            kind="offre",
+            kind="posting",
             title=item_title(analysis),
             text=posting.text,
             author=AUTHOR,
             reason=REASON,
-            tags=("offre",),
+            tags=("posting",),
             session_id=session_id,
         )
         return (await MemoryService(db, user_id, self._memory).write(draft, index=False)).item.id
@@ -150,7 +150,7 @@ class AgentGapStore:
             posting.status = "rejected"
             posting.failure_reason = reason.strip()[:_REASON_MAX] or None
             await db.commit()
-        logger.info("Offre refusée : utilisateur %s, offre %s", user_id, posting_id)
+        logger.info("Posting refused: user %s, posting %s", user_id, posting_id)
 
     async def known_skills(self, user_id: str) -> list[KnownSkill]:
         async with self._factory() as db:
@@ -175,7 +175,7 @@ class AgentGapStore:
         saved = GapSaved(match_score(rows), len(rows), len(absent), sum(r.required for r in absent))
         if written:
             logger.info(
-                "Écart rangé : utilisateur %s, offre %s, session %s, score %d, %d ligne(s)",
+                "Gap stored: user %s, posting %s, session %s, score %d, %d row(s)",
                 user_id,
                 posting_id,
                 session_id,
@@ -187,8 +187,9 @@ class AgentGapStore:
     async def _add_unmatched(
         self, db: AsyncSession, user_id: str, posting: JobPosting, matches: Sequence[SkillMatch]
     ) -> None:
-        """Les besoins apprenables de l'analyse sans rattachement entrent au référentiel (sans
-        niveau) ; un besoin hors du champ d'un programme (« Permis B », « Bac+5 ») n'y entre pas."""
+        """The analysis's learnable needs without a match enter the reference list (without a
+        level); a need outside the scope of a program ("Driver's license", "Master's degree")
+        does not."""
         analysis = PostingAnalysis.model_validate(posting.analysis)
         matched = {normalize_skill_name(m.need) for m in matches if m.known}
         drafts = [

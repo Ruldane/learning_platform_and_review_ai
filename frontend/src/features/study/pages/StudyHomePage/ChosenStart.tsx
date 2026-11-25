@@ -7,7 +7,7 @@ import type { ChosenLesson } from "./chosenLesson";
 import type { StartProps } from "./startTypes";
 
 /**
- * La leçon choisie (`?lecon=` ou « Demander au tuteur ») : mode, leçon, départ. Si une session est
+ * La leçon choisie (`?lesson=` ou « Demander au tuteur ») : mode, leçon, départ. Si une session est
  * déjà ouverte, elle reste à reprendre : le back n'en ouvre pas une seconde.
  */
 export function ChosenStart({
@@ -35,7 +35,7 @@ export function ChosenStart({
           <Button
             variant="outline"
             className="self-start"
-            onClick={() => void navigate(`/etudier/session/${openSessionId}`)}
+            onClick={() => void navigate(`/study/session/${openSessionId}`)}
           >
             {t("study.block.resume")}
           </Button>

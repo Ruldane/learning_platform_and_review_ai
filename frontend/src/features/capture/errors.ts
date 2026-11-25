@@ -1,11 +1,11 @@
 import { ApiError, errorMessage } from "@/shared/api/errors";
-import { fr } from "@/shared/i18n/fr";
+import { en } from "@/shared/i18n/en";
 import { t } from "@/shared/i18n/t";
 
-type CaptureErrorCode = keyof typeof fr.capture.errors;
+type CaptureErrorCode = keyof typeof en.capture.errors;
 
 const isCaptureError = (code: string): code is CaptureErrorCode =>
-  Object.hasOwn(fr.capture.errors, code);
+  Object.hasOwn(en.capture.errors, code);
 
 /**
  * Message français d'un refus de la capture : les codes connus (lien refusé, fichier introuvable,

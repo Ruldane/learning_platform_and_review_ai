@@ -126,7 +126,11 @@ async def test_journal_lists_entries_newest_first_with_filter(
         "links": {
             "session_id": "s3",
             "study_session_id": None,
+            "study_session_kind": None,
             "quiz_attempt_id": None,
+            "quiz_id": None,
+            "ide_session_id": None,
+            "ide_run_id": None,
             "memory_item_id": None,
         },
     }

@@ -9,8 +9,8 @@ import { usePrograms } from "../../hooks/usePrograms";
 import { toProgramSummaryView } from "../../toView";
 
 /**
- * Programmes (`/apprendre/programme`) : la liste pour choisir dès qu'il y en a plusieurs (ou avec
- * `?liste`) ; un seul programme s'ouvre directement ; sans programme, renvoi au Conseil.
+ * Programmes (`/learn/programs`) : la liste pour choisir dès qu'il y en a plusieurs (ou avec
+ * `?list`) ; un seul programme s'ouvre directement ; sans programme, renvoi au Conseil.
  */
 export function ProgramIndexPage() {
   const programs = usePrograms();
@@ -25,8 +25,8 @@ export function ProgramIndexPage() {
     );
   }
   const [only] = list;
-  if (only && list.length === 1 && !params.has("liste")) {
-    return <Navigate to={`/apprendre/programme/${only.id}`} replace />;
+  if (only && list.length === 1 && !params.has("list") && !params.has("liste")) {
+    return <Navigate to={`/learn/programs/${only.id}`} replace />;
   }
   if (list.length > 0) {
     return (
@@ -47,7 +47,7 @@ export function ProgramIndexPage() {
         description={t("program.page.indexEmptyDescription")}
         action={{
           label: t("program.page.indexEmptyAction"),
-          onClick: () => void navigate("/apprendre/conseil"),
+          onClick: () => void navigate("/learn/council"),
         }}
       />
     </div>

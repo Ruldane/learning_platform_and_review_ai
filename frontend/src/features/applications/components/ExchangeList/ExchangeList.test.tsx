@@ -8,7 +8,7 @@ describe("ExchangeList", () => {
     render(
       <ExchangeList exchanges={[makeExchange(0, { answer: "" })]} missed={[]} expected={[]} />,
     );
-    expect(screen.getByText("(pas de réponse)")).toBeVisible();
+    expect(screen.getByText("(no answer)")).toBeVisible();
   });
 
   it("shows no note for an unrated answer, whatever its number", () => {
@@ -19,13 +19,13 @@ describe("ExchangeList", () => {
         expected={[]}
       />,
     );
-    expect(screen.getByText("Non notée")).toBeVisible();
-    expect(screen.queryByText("Note : 3 sur 5")).toBeNull();
+    expect(screen.getByText("Not scored")).toBeVisible();
+    expect(screen.queryByText("Score: 3 out of 5")).toBeNull();
   });
 
   it("shows the answers without any note when there is no debrief (notes undefined)", () => {
     render(<ExchangeList exchanges={[makeExchange(0)]} showNotes={false} />);
     expect(screen.getByText("Ma réponse 1.")).toBeVisible();
-    expect(screen.queryByText(/Note :/)).toBeNull();
+    expect(screen.queryByText(/Score:/)).toBeNull();
   });
 });

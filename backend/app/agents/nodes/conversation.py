@@ -17,6 +17,7 @@ from app.agents.tools.conversation_port import (
     BRAIN_LIBRARIAN,
     CLASSMATE_ROLES,
     CLASSROOM_SCOPE,
+    OFFERS_ADVISER,
     TRAINING_TUTOR,
     TURN_TOKEN_LIMIT,
     ClassmateReply,
@@ -41,7 +42,7 @@ CLASSROOM_MAX_WORDS = 115
 TOKEN_OVERHEAD = 400
 MIN_OUTPUT_TOKENS = 300
 _REVISION = re.compile(
-    r"^À revoir\s+\[(\d{1,2})]\s*:\s*(.{1,500}?)\s*→\s*(.{1,1000})$",
+    r"^(?:À revoir|To review)\s+\[(\d{1,2})]\s*:\s*(.{1,500}?)\s*→\s*(.{1,1000})$",
     re.MULTILINE,
 )
 
@@ -64,7 +65,7 @@ async def _memory_sources(deps: GraphDeps, question: str) -> list[ConversationRe
         memory = await deps.memory.search(
             deps.user_id,
             question,
-            kinds=("acquis", "document", "decision"),
+            kinds=("skill", "document", "decision"),
             k=MAX_HITS,
         )
     except AppError as exc:
@@ -87,7 +88,7 @@ def _fit(text: str, limit: int) -> str:
 def _catalog_text(refs: Sequence[ConversationReference], limit: int) -> str:
     def render(bodies: list[str]) -> str:
         return "\n\n".join(
-            f"[{index}] {untrusted(_fit(ref.source.title, 200) + '\n' + body, 'référence')}"
+            f"[{index}] {untrusted(_fit(ref.source.title, 200) + '\n' + body, 'reference')}"
             for index, (ref, body) in enumerate(zip(refs, bodies, strict=True), 1)
         )
 
@@ -111,19 +112,19 @@ def _messages(
     classroom: bool = False,
 ) -> list[BaseMessage]:
     history = "\n".join(
-        f"Question : {turn.question}\nRéponse : {turn.answer}" for turn in context.history
+        f"Question: {turn.question}\nAnswer: {turn.answer}" for turn in context.history
     )
     history = history.encode()[-(450 if classroom else 650) :].decode(errors="ignore")
     selection = untrusted(
-        _fit(context.selection or "", 450 if classroom else 1200), "passage sélectionné"
+        _fit(context.selection or "", 450 if classroom else 1200), "selected passage"
     )
     suffix = (
-        f"\n\nÉchanges précédents :\n{untrusted(history, 'conversation')}\n\n"
-        f"Passage sélectionné :\n{selection}\n\n"
-        f"Question actuelle :\n{_fit(context.question, 850 if classroom else 2400)}"
+        f"\n\nPrevious exchanges:\n{untrusted(history, 'conversation')}\n\n"
+        f"Selected passage:\n{selection}\n\n"
+        f"Current question:\n{_fit(context.question, 850 if classroom else 2400)}"
     )
     system = render_prompt(context.agent, mode=context.mode)
-    prefix = "Références :\n"
+    prefix = "References:\n"
     fixed = len((system + prefix + suffix).encode())
     input_limit = CLASSROOM_INPUT_BYTES if classroom else MAX_INPUT_BYTES
     catalog = _catalog_text(refs, input_limit - fixed)
@@ -145,7 +146,7 @@ def _output_budget(
     available = cap - spent - TOKEN_OVERHEAD
     if available < MIN_OUTPUT_TOKENS:
         raise AppError(
-            "conversation_budget_reached", "Le budget de ce tour de conversation est atteint.", 429
+            "conversation_budget_reached", "This turn reached its conversation budget.", 429
         )
     return min(output_limit, available)
 
@@ -167,13 +168,13 @@ def _practice_of(answer: str, sources: list[ConversationSource]) -> list[dict[st
 
 
 async def _classroom_reply(deps: GraphDeps, context: ConversationContext) -> ConversationState:
-    """Trois rôles fixes partagent la réserve d'un tour et la même leçon publiée."""
+    """Three fixed roles share a turn's reserve and the same published lesson."""
     reserve = min(TURN_TOKEN_LIMIT, deps.settings.session_token_cap) - context.used_tokens
     reserve_per_role = reserve // len(CLASSMATE_ROLES)
     refs = context.references
     catalog = [CitationEntry(i, ref.source.title) for i, ref in enumerate(refs, 1)]
     model = await deps.models.get_chat_model(
-        deps.user_id, "fort" if context.strong else "rapide", agent=TRAINING_TUTOR
+        deps.user_id, "strong" if context.strong else "fast", agent=TRAINING_TUTOR
     )
     history = list(context.history)
     replies = []
@@ -189,18 +190,16 @@ async def _classroom_reply(deps: GraphDeps, context: ConversationContext) -> Con
             messages,
             agent=TRAINING_TUTOR,
             step=mode,
-            intent="Je réagis à ton explication comme un camarade de classe.",
+            intent="I am responding to your explanation as a classmate.",
             catalog=catalog,
             max_words=CLASSROOM_MAX_WORDS,
             retry=False,
         )
         answer = spoken.text[:1400]
         if not answer:
-            raise AppError(
-                "classroom_reply_empty", "Un camarade n'a pas répondu. Tu peux réessayer.", 503
-            )
+            raise AppError("classroom_reply_empty", "A classmate did not reply. Try again.", 503)
         replies.append(ClassmateReply(role=role, answer=answer))
-        history.append(ConversationExchange("Réplique de ce tour", f"{role} : {answer[:140]}"))
+        history.append(ConversationExchange("Reply in this turn", f"{role}: {answer[:140]}"))
     return {
         "answer": "\n\n".join(reply.answer for reply in replies),
         "classmates": [reply.model_dump(mode="json") for reply in replies],
@@ -239,13 +238,13 @@ def make_reply(deps: GraphDeps) -> Node:
         if context.mode == CLASSROOM_SCOPE:
             return await _classroom_reply(deps, context)
         refs = list(context.references)
-        if context.agent != BRAIN_LIBRARIAN:
+        if context.agent not in (BRAIN_LIBRARIAN, OFFERS_ADVISER):
             refs.extend(await _memory_sources(deps, context.question))
         sources = [reference.source for reference in refs]
         messages = _messages(context, refs)
         max_output = _output_budget(deps, context, messages)
         model = await deps.models.get_chat_model(
-            deps.user_id, "fort" if context.strong else "rapide", agent=context.agent
+            deps.user_id, "strong" if context.strong else "fast", agent=context.agent
         )
         catalog = [
             CitationEntry(
@@ -260,7 +259,11 @@ def make_reply(deps: GraphDeps) -> Node:
             messages,
             agent=context.agent,
             step="reponse",
-            intent="Je t'accompagne dans ton étude.",
+            intent=(
+                "I help you make sense of your saved job offers."
+                if context.agent == OFFERS_ADVISER
+                else "I help you study."
+            ),
             catalog=catalog,
             max_words=600,
             retry=False,
@@ -289,6 +292,6 @@ def make_save(deps: GraphDeps) -> Node:
                     ClassmateReply.model_validate(reply) for reply in state.get("classmates", [])
                 ],
             )
-        return {"summary": "Réponse enregistrée."}
+        return {"summary": "Reply saved."}
 
     return save

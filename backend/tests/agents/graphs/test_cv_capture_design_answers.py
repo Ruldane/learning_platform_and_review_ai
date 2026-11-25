@@ -13,7 +13,7 @@ from tests.support.cv_template import spec as cv_spec
 from tests.support.cv_templates import FakeCvTemplateStore, spec_reply
 
 NOT_JSON = "Voici la description corrigée, sans JSON."
-STALLED = "Je n'ai pas su corriger la description : le modèle reste tel quel."
+STALLED = "The description could not be adjusted. The template is unchanged."
 
 
 async def test_validate_finishes_ready(
@@ -28,11 +28,11 @@ async def test_validate_finishes_ready(
     assert artifact == {
         "artifact_id": "modele-t1",
         "kind": "cv_template",
-        "title": "Modèle de CV",
-        "url": "/carriere/cv/modeles/t1",
+        "title": "CV template",
+        "url": "/career/cv/templates/t1",
     }
     [done] = await run.events("run.completed")
-    assert done["summary"] == "Modèle de CV prêt : il ressemble à ton CV à 90 %."
+    assert done["summary"] == "CV template ready with a 90% match to your original CV."
 
 
 async def test_restart_finishes_failed(
@@ -42,7 +42,7 @@ async def test_restart_finishes_failed(
     await run.question()
     await run.answer("restart")
     await run.wait_status("completed")
-    assert design_store.finished == {"t1": ("failed", "Capture abandonnée.")}
+    assert design_store.finished == {"t1": ("failed", "Template capture cancelled.")}
     assert await run.events("artifact.ready") == []
 
 
@@ -56,9 +56,9 @@ async def test_adjust_runs_fix_with_instruction(
     question = await run.question()  # passe d'un ajustement : question aussitôt, même sous 85
     assert design_store.rendered == [1, 2]
     assert design_store.kept == 2  # l'ajustement remplace la passe gardée, même moins bien noté
-    assert question["question"].startswith("Le modèle ressemble à ton CV à 80 %.")
+    assert question["question"].startswith("The template matches your CV at 80%.")
     [fix] = run.prompts(FIX_REQUEST)
-    assert '<<<CONTENU_NON_FIABLE source="consigne de January">>>' in fix
+    assert '<<<UNTRUSTED_CONTENT source="January\'s instruction">>>' in fix
     assert INSTRUCTION in fix and "Écarts mesurés" not in fix  # 90 % : pas d'écarts décrits
     assert design_store.spec_of(2) == cv_spec()
 
@@ -73,7 +73,7 @@ async def test_adjustments_capped_at_five(
         question = await run.question()
     assert design_store.rendered == [1, 2, 3, 4, 5, 6]
     assert values(question) == ["validate", "restart"] and question["fields"] == []
-    assert "5 ajustements possibles" in question["question"]
+    assert "5 possible adjustments" in question["question"]
     await run.answer({"answers": {"instruction": INSTRUCTION}})
     again = await run.question()  # sixième ajustement refusé : même question, aucun rendu
     assert again["question"] == question["question"] and design_store.rendered[-1] == 6
@@ -104,7 +104,7 @@ async def test_fix_with_invalid_structured_output_keeps_the_last_pass(
     run = await design_runner(designer(fix=[NOT_JSON] * 3))
     question = await run.question()
     assert design_store.rendered == [1] and len(run.prompts(FIX_REQUEST)) == 3
-    assert question["question"].startswith("Le modèle ressemble à ton CV à 60 %.")
+    assert question["question"].startswith("The template matches your CV at 60%.")
     assert (await run.said())[-1] == STALLED and design_store.finished == {}
 
 
@@ -145,7 +145,7 @@ async def test_adjust_after_a_worse_last_pass_starts_from_the_kept_pass(
     await run.question()
     third = run.prompts(FIX_REQUEST)[2]
     assert "#a11111" in third and "#a22222" not in third  # la description de la passe 2
-    assert "Passe 2 : ressemblance de 78 %." in third
+    assert "Pass 2: similarity of 78 %." in third
     assert design_store.passes[4][0].accent == "#a33333" and design_store.kept == 4
 
 

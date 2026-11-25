@@ -12,7 +12,7 @@ import { studyApi } from "./studyApi";
 
 /**
  * Monte la page de la session d'étude `st1` (`makePage` reçoit la fabrique de faux sockets) avec
- * les lectures REST de `studyApi`. Une route `/etudier/session` d'arrivée dit où l'on est allé.
+ * les lectures REST de `studyApi`. Une route `/study/session` d'arrivée dit où l'on est allé.
  */
 export function renderStudySession(
   makePage: (createSocket: FakeSocketServer["factory"]) => ReactElement,
@@ -23,11 +23,11 @@ export function renderStudySession(
   server.use(...study.handlers);
   const router = createMemoryRouter(
     [
-      { path: "/etudier/session/:studyId", element: makePage(sockets.factory) },
-      { path: "/etudier/session", element: <p>Départ de la session</p> },
-      { path: "/etudier/revisions", element: <p>Révisions</p> },
+      { path: "/study/session/:studyId", element: makePage(sockets.factory) },
+      { path: "/study/session", element: <p>Départ de la session</p> },
+      { path: "/study/reviews", element: <p>Révisions</p> },
     ],
-    { initialEntries: ["/etudier/session/st1"] },
+    { initialEntries: ["/study/session/st1"] },
   );
   render(<RouterProvider router={router} />, { wrapper: createQueryWrapper() });
   return { fake: sockets, state: study.state, router, user: userEvent.setup() };

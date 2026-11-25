@@ -37,21 +37,21 @@ it("demande une confirmation explicite avant de préparer le lien GitHub", async
     }),
   );
   const { user } = renderRoutes(
-    [{ path: "/competences/contributions/:id", element: <DossierPage /> }],
-    "/competences/contributions/d1",
+    [{ path: "/skills/contributions/:id", element: <DossierPage /> }],
+    "/skills/contributions/d1",
   );
-  await user.type(await screen.findByLabelText("Compte GitHub"), "camille");
-  await user.type(screen.getByLabelText("Branche à proposer"), "tests");
-  await user.type(screen.getByLabelText("Description de la pull request"), "Ajout de tests");
-  const prepare = screen.getByRole("button", { name: "Préparer la pull request" });
+  await user.type(await screen.findByLabelText("GitHub account"), "camille");
+  await user.type(screen.getByLabelText("Branch to propose"), "tests");
+  await user.type(screen.getByLabelText("Pull request description"), "Ajout de tests");
+  const prepare = screen.getByRole("button", { name: "Prepare the pull request" });
   expect(prepare).toHaveAttribute("aria-disabled", "true");
   await user.click(prepare);
   expect(requests).toEqual([]);
-  expect(screen.queryByRole("link", { name: "Ouvrir GitHub pour publier" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Open GitHub to publish" })).toBeNull();
 
-  await user.click(screen.getByRole("checkbox", { name: "Je confirme le texte et les branches." }));
+  await user.click(screen.getByRole("checkbox", { name: "I confirm the text and branches." }));
   await user.click(prepare);
-  expect(await screen.findByRole("link", { name: "Ouvrir GitHub pour publier" })).toHaveAttribute(
+  expect(await screen.findByRole("link", { name: "Open GitHub to publish" })).toHaveAttribute(
     "href",
     "https://github.com/orga-fictive/biblio/compare/main...camille:tests",
   );

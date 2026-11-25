@@ -15,7 +15,8 @@ async def test_status_via_patch_is_422(client: httpx.AsyncClient) -> None:
     application_id = await created_id(client, **SOCIETE)
     r = await client.patch(f"{API}/{application_id}", json={"status": "applied"})
     assert (r.status_code, r.json()["error"]["code"]) == (422, "validation_error")
-    assert r.json()["error"]["details"] == {"fields": ["status"]}
+    assert r.json()["error"]["details"] == {"fields": ["body"]}
+    assert "applied" not in r.text
     assert (await client.get(f"{API}/{application_id}")).json()["status"] == "to_apply"
 
 
@@ -81,7 +82,7 @@ async def test_patch_replaces_contacts(client: httpx.AsyncClient) -> None:
         ({"title": "  "}, "title"),
         ({"contacts": None}, "contacts"),
         ({"url": "pas un lien secret"}, "url"),
-        ({"inconnu": 1}, "inconnu"),
+        ({"private_extra_field": 1}, "body"),
     ],
 )
 async def test_patch_422_names_the_field(
@@ -91,7 +92,7 @@ async def test_patch_422_names_the_field(
     r = await client.patch(f"{API}/{application_id}", json=body)
     assert r.status_code == 422
     assert r.json()["error"]["details"] == {"fields": [field]}
-    assert "secret" not in r.text
+    assert "secret" not in r.text and "private_extra_field" not in r.text
 
 
 async def test_other_user_sees_nothing(client: httpx.AsyncClient, app: FastAPI) -> None:

@@ -64,7 +64,7 @@ def picks(sources: list[Source]) -> list[ResourcePick]:
             source_id=s.id,
             type="article",
             duration_minutes=20,
-            level="debutant",
+            level="beginner",
             reason="Explique clairement la notion.",
         )
         for s in sources
@@ -111,7 +111,7 @@ async def test_publish_saves_lesson_pdf_resources_and_memory(
         kinds = (await db.execute(select(MemoryItem.kind))).scalars().all()
     assert lesson.status == "ready" and lesson.pdf_key and lesson.word_count == 1500
     assert lesson.report is not None and lesson.report["revisions"] == 1
-    assert len(resources) == 4 and list(kinds) == ["lecon"]
+    assert len(resources) == 4 and list(kinds) == ["lesson"]
     # Auteur, date et langue viennent de la ligne `sources`, pas du modèle.
     first = next(r for r in resources if r.source_id == sources[0].id)
     assert (first.author, first.published, first.lang) == ("Autrice 0", "2025-01-01", "fr")
@@ -220,7 +220,7 @@ async def test_brief_reads_the_module_and_council_seeds(
         await db.commit()
     brief = await store.brief(ME, program.modules[0])
     assert (brief.title, brief.week_rank, brief.week_theme) == ("Module Bases", 1, "Bases")
-    assert brief.goal_text == "Devenir data engineer" and brief.language == "fr"
+    assert brief.goal_text == "Devenir data engineer" and brief.language == "en"
     assert brief.skills == ("pandas",) and brief.program_id == program.program_id
     assert len(brief.seed_urls) == 5 and brief.seed_urls[0] == sources[6].url
 

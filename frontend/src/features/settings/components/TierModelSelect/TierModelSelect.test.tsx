@@ -18,108 +18,108 @@ const openai: ProviderOption = {
   models: ["gpt-6-luna", "gpt-6.1-sol"],
 };
 
+const STRONG_MODEL = "Model (Strong)";
+const STRONG_PROVIDER = "Provider (Strong)";
+
 describe("TierModelSelect", () => {
-  it("passe en saisie libre sans liste de modèles", () => {
+  it("uses a text field when the provider has no model list", () => {
     render(
       <TierModelSelect
-        tier="fort"
+        tier="strong"
         value={{ provider: "glm", model: "x" }}
         providers={[glm]}
         onChange={vi.fn()}
       />,
     );
-    expect(screen.getByRole("textbox", { name: /modèle/i })).toHaveValue("x");
+    expect(screen.getByRole("textbox", { name: STRONG_MODEL })).toHaveValue("x");
   });
 
-  it("propose la liste des modèles du fournisseur quand elle existe", () => {
+  it("shows the provider's model list when available", () => {
     render(
       <TierModelSelect
-        tier="rapide"
+        tier="fast"
         value={{ provider: "anthropic", model: "claude-haiku-5-5" }}
         providers={[anthropic, glm]}
         onChange={vi.fn()}
       />,
     );
-    const select = screen.getByRole("combobox", { name: "Modèle (Rapide)" });
+    const select = screen.getByRole("combobox", { name: "Model (Fast)" });
     expect(select).toHaveValue("claude-haiku-5-5");
     expect(screen.getByRole("option", { name: "claude-sonnet-5-5" })).toBeInTheDocument();
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
   });
 
-  it("garde visible un modèle courant absent de la liste", () => {
+  it("keeps the current model visible if it is missing from the list", () => {
     render(
       <TierModelSelect
-        tier="rapide"
+        tier="fast"
         value={{ provider: "anthropic", model: "claude-ancien" }}
         providers={[anthropic]}
         onChange={vi.fn()}
       />,
     );
-    expect(screen.getByRole("combobox", { name: "Modèle (Rapide)" })).toHaveValue("claude-ancien");
+    expect(screen.getByRole("combobox", { name: "Model (Fast)" })).toHaveValue("claude-ancien");
   });
 
-  it("marque un fournisseur sans clé mais le laisse sélectionnable", () => {
+  it("labels a provider with no key and keeps it selectable", () => {
     render(
       <TierModelSelect
-        tier="fort"
+        tier="strong"
         value={{ provider: "anthropic", model: "claude-haiku-5-5" }}
         providers={[anthropic, openai]}
         onChange={vi.fn()}
       />,
     );
-    expect(screen.getByRole("option", { name: "OpenAI (aucune clé)" })).toBeEnabled();
+    expect(screen.getByRole("option", { name: "OpenAI (no key)" })).toBeEnabled();
     expect(screen.getByRole("option", { name: "Anthropic" })).toBeInTheDocument();
   });
 
-  it("choisit le premier modèle du nouveau fournisseur", async () => {
+  it("selects the first model when the provider changes", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(
       <TierModelSelect
-        tier="fort"
+        tier="strong"
         value={{ provider: "anthropic", model: "claude-sonnet-5-5" }}
         providers={[anthropic, openai]}
         onChange={onChange}
       />,
     );
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Fournisseur (Fort)" }),
-      "openai",
-    );
+    await user.selectOptions(screen.getByRole("combobox", { name: STRONG_PROVIDER }), "openai");
     expect(onChange).toHaveBeenCalledWith({ provider: "openai", model: "gpt-6-luna" });
   });
 
-  it("change de modèle dans la liste", async () => {
+  it("reports a model selected from the list", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(
       <TierModelSelect
-        tier="fort"
+        tier="strong"
         value={{ provider: "anthropic", model: "claude-haiku-5-5" }}
         providers={[anthropic]}
         onChange={onChange}
       />,
     );
     await user.selectOptions(
-      screen.getByRole("combobox", { name: "Modèle (Fort)" }),
+      screen.getByRole("combobox", { name: STRONG_MODEL }),
       "claude-sonnet-5-5",
     );
     expect(onChange).toHaveBeenCalledWith({ provider: "anthropic", model: "claude-sonnet-5-5" });
   });
 
-  it("vers un fournisseur à saisie libre : champ vide, rien n'est enregistré avant le modèle", async () => {
+  it("waits for a model name after switching to a provider with free text", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(
       <TierModelSelect
-        tier="fort"
+        tier="strong"
         value={{ provider: "anthropic", model: "claude-sonnet-5-5" }}
         providers={[anthropic, glm]}
         onChange={onChange}
       />,
     );
-    await user.selectOptions(screen.getByRole("combobox", { name: "Fournisseur (Fort)" }), "glm");
-    const input = screen.getByRole("textbox", { name: /modèle/i });
+    await user.selectOptions(screen.getByRole("combobox", { name: STRONG_PROVIDER }), "glm");
+    const input = screen.getByRole("textbox", { name: STRONG_MODEL });
     expect(input).toHaveValue("");
     expect(onChange).not.toHaveBeenCalled();
     await user.type(input, "glm-5.3");
@@ -129,51 +129,51 @@ describe("TierModelSelect", () => {
     expect(onChange).toHaveBeenCalledWith({ provider: "glm", model: "glm-5.3" });
   });
 
-  it("valide la saisie libre à Entrée, une seule fois par modification", async () => {
+  it("saves a typed model on Enter, once per change", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(
       <TierModelSelect
-        tier="fort"
+        tier="strong"
         value={{ provider: "glm", model: "x" }}
         providers={[glm]}
         onChange={onChange}
       />,
     );
-    const input = screen.getByRole("textbox", { name: /modèle/i });
+    const input = screen.getByRole("textbox", { name: STRONG_MODEL });
     await user.type(input, "y{Enter}");
     expect(onChange).toHaveBeenCalledWith({ provider: "glm", model: "xy" });
     await user.tab();
     expect(onChange).toHaveBeenCalledTimes(1);
   });
 
-  it("ne rappelle pas onChange quand la saisie libre n'a pas changé", async () => {
+  it("skips onChange if the typed model is unchanged", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(
       <TierModelSelect
-        tier="fort"
+        tier="strong"
         value={{ provider: "glm", model: "x" }}
         providers={[glm]}
         onChange={onChange}
       />,
     );
-    await user.click(screen.getByRole("textbox", { name: /modèle/i }));
+    await user.click(screen.getByRole("textbox", { name: STRONG_MODEL }));
     await user.tab();
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it("désactive les champs pendant l'enregistrement", () => {
+  it("disables the fields while saving", () => {
     render(
       <TierModelSelect
-        tier="fort"
+        tier="strong"
         value={{ provider: "anthropic", model: "claude-haiku-5-5" }}
         providers={[anthropic]}
         disabled
         onChange={vi.fn()}
       />,
     );
-    expect(screen.getByRole("combobox", { name: "Fournisseur (Fort)" })).toBeDisabled();
-    expect(screen.getByRole("combobox", { name: "Modèle (Fort)" })).toBeDisabled();
+    expect(screen.getByRole("combobox", { name: STRONG_PROVIDER })).toBeDisabled();
+    expect(screen.getByRole("combobox", { name: STRONG_MODEL })).toBeDisabled();
   });
 });

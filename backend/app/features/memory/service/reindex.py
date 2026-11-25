@@ -1,21 +1,21 @@
-"""Réindexation de la mémoire d'un utilisateur (4.6, D67) : l'index Qdrant est reconstruit à
-partir du texte, qui fait foi en base ; les fragments sont recalculés au passage. Exécutée par le
-worker (`jobs.py`), en série avec les imports : aucun import ne tourne en même temps.
+"""Reindexing of a user's memory (4.6, D67): the Qdrant index is rebuilt from the text, which
+is authoritative in the database; chunks are recomputed along the way. Run by the worker
+(`jobs.py`), serially with imports: no import runs at the same time.
 
-Jamais de transaction SQLite ouverte pendant un appel à Ollama ou à Qdrant, jamais le verrou
-asyncio de l'utilisateur tenu pendant une attente de SQLite (D66) :
+Never an open SQLite transaction during an Ollama or Qdrant call, never the user's asyncio
+lock held while waiting on SQLite (D66):
 
-1. drapeau `reindexing` levé : un `index_item` qui commence ensuite renouvelle ses fragments
-   sans toucher l'index et laisse l'élément non indexé ; on attend la fin de ceux déjà lancés ;
-2. Ollama et Qdrant sondés (une panne arrête tout avant le moindre effacement), puis
-   `clear_indexed` (transaction courte), puis `delete_user` sous le verrou de l'utilisateur ;
-3. par lots de 16 : fragments préparés et validés, poussés (verrou pris et rendu par élément
-   dans `push`), puis `indexed_at` posé si les fragments n'ont pas changé entre-temps ;
-4. fin quand un lot est vide et qu'aucun écrivain n'a agi depuis sa lecture : le drapeau est
-   baissé dans le même pas synchrone. Panne d'Ollama ou de Qdrant : l'erreur du port remonte
-   (message lisible), les éléments restants gardent `indexed_at` nul.
+1. `reindexing` flag raised: an `index_item` starting afterwards renews its chunks without
+   touching the index and leaves the item unindexed; those already started are awaited;
+2. Ollama and Qdrant probed (an outage stops everything before any deletion), then
+   `clear_indexed` (short transaction), then `delete_user` under the user's lock;
+3. in batches of 16: chunks prepared and committed, pushed (lock taken and released per item
+   in `push`), then `indexed_at` set if the chunks have not changed in the meantime;
+4. end when a batch is empty and no writer has acted since it was read: the flag is lowered
+   in the same synchronous step. Ollama or Qdrant outage: the port's error propagates
+   (readable message), the remaining items keep a null `indexed_at`.
 
-Les journaux ne citent que des identifiants et des nombres."""
+Logs only mention identifiers and numbers."""
 
 import logging
 from collections.abc import Callable
@@ -36,8 +36,8 @@ def running(done: int, total: int) -> ReindexState:
 
 
 async def reindex_user(runtime: MemoryRuntime, user_id: str, report: Report) -> None:
-    """Reconstruit l'index de l'utilisateur et rend compte de l'avancement (`report`) ; l'état
-    final `done` est rapporté ici. Une panne lève l'erreur du port : l'appelant la rapporte."""
+    """Rebuilds the user's index and reports progress (`report`); the final `done` state is
+    reported here. An outage raises the port's error: the caller reports it."""
     indexer = runtime.indexer
     indexer.begin_reindex(user_id)
     try:
@@ -47,14 +47,14 @@ async def reindex_user(runtime: MemoryRuntime, user_id: str, report: Report) -> 
     finally:
         indexer.end_reindex(user_id)
     report(ReindexState(status="done", done=done, total=max(total, done), error=None))
-    logger.info("Réindexation de %s terminée : %d élément(s)", user_id, done)
+    logger.info("Reindexing of %s finished: %d item(s)", user_id, done)
 
 
 async def _reset(runtime: MemoryRuntime, user_id: str) -> int:
-    """Étapes 1 et 2 : écrivains en cours terminés, tout marqué à réindexer, vecteurs effacés.
-    Rend le nombre d'éléments à réindexer. Ollama et Qdrant sont sondés avant tout effacement
-    (hors transaction, hors verrou) : en panne, l'erreur du port remonte et l'index existant
-    reste intact."""
+    """Steps 1 and 2: running writers finished, everything marked for reindexing, vectors
+    deleted. Returns the number of items to reindex. Ollama and Qdrant are probed before any
+    deletion (outside any transaction or lock): on an outage, the port's error propagates and
+    the existing index stays intact."""
     await runtime.indexer.wait_writers(user_id)
     await runtime.providers.embedder.aembed_query("ping")
     await runtime.providers.index.vectors(user_id, limit=1)
@@ -70,7 +70,7 @@ async def _reset(runtime: MemoryRuntime, user_id: str) -> int:
 
 
 async def _rebuild(runtime: MemoryRuntime, user_id: str, total: int, report: Report) -> int:
-    """Étapes 3 et 4 : lots jusqu'à épuisement. Rend le nombre d'éléments indexés."""
+    """Steps 3 and 4: batches until exhausted. Returns the number of indexed items."""
     indexer, done = runtime.indexer, 0
     while True:
         generation = indexer.writers_generation(user_id)
@@ -80,15 +80,14 @@ async def _rebuild(runtime: MemoryRuntime, user_id: str, total: int, report: Rep
             report(running(done, total))
             continue
         if indexer.writers_settled(user_id, generation):
-            indexer.end_reindex(user_id)  # sans `await` depuis le constat : rien n'a pu passer
+            indexer.end_reindex(user_id)  # no `await` since the check: nothing could slip in
             return done
         await indexer.wait_writers(user_id)
 
 
 async def _batch(runtime: MemoryRuntime, user_id: str) -> tuple[int, int]:
-    """Un lot : `(éléments marqués indexés, éléments lus)`. Le verrou d'écriture de SQLite est
-    pris avant la lecture (pas de passage lecture → écriture refusé par SQLite) et rendu avant
-    la vectorisation."""
+    """One batch: `(items marked indexed, items read)`. SQLite's write lock is taken before
+    the read (no read → write upgrade rejected by SQLite) and released before embedding."""
     indexer = runtime.indexer
     async with runtime.session_factory() as db:
         items = MemoryItemRepository(db, user_id)

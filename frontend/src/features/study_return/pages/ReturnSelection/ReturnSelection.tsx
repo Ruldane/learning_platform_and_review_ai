@@ -26,7 +26,7 @@ export function ReturnSelection({ plan }: { plan: ReturnPlan }) {
               <li key={item.id}>{item.front}</li>
             ))}
           </ul>
-          <Link className="underline" to="/etudier/revisions">
+          <Link className="underline" to="/study/reviews">
             {t("studyReturn.reviews")}
           </Link>
         </div>

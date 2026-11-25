@@ -1,9 +1,9 @@
-"""Le Recruteur (SPEC 5.3, F9, D129) : il relit le CV comme une personne qui recrute pour cette
-offre (impact, clarté, longueur) et propose des modifications adossées aux faits du profil maître
-(références `r1`, `r2`…), avec les forces et les risques du CV pour le rapport.
+"""The Recruiter (SPEC 5.3, F9, D129): it rereads the CV as a person hiring for this posting
+would (impact, clarity, length) and proposes changes backed by facts from the master profile
+(references `r1`, `r2`...), with the CV's strengths and risks for the report.
 
-Le nœud n'écrit rien : ses propositions rejoignent celles du Lecteur ATS dans l'état. Journaux :
-identifiants et nombres seulement (17.2)."""
+The node writes nothing: its proposals join the ATS Reader's in the state. Logs: identifiers and
+numbers only (17.2)."""
 
 from typing import Protocol
 

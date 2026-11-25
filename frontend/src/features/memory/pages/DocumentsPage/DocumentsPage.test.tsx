@@ -25,8 +25,8 @@ function setup(init: Parameters<typeof memoryBackend>[0] = {}) {
   const fake = createFakeSocketServer();
   server.use(...readHandlers(backend));
   const view = renderRoutes(
-    [{ path: "/memoire/documents", element: <DocumentsPage createSocket={fake.factory} /> }],
-    "/memoire/documents",
+    [{ path: "/memory/documents", element: <DocumentsPage createSocket={fake.factory} /> }],
+    "/memory/documents",
   );
   return { backend, fake, ...view };
 }
@@ -38,7 +38,7 @@ const written = (seq: number, title: string): SessionEvent => ({
   ts: "2026-11-11T10:00:00Z",
   agent: "archivist",
   type: "memory.written",
-  payload: { item_id: `a${seq}`, kind: "acquis", title, reason: "Extrait.", status: "active" },
+  payload: { item_id: `a${seq}`, kind: "skill", title, reason: "Extrait.", status: "active" },
 });
 
 const sessionView = (status: string) => ({
@@ -76,13 +76,13 @@ describe("DocumentsPage import", () => {
         return HttpResponse.json(snapshot);
       }),
     );
-    expect(await screen.findByText("Aucun document importé")).toBeInTheDocument();
+    expect(await screen.findByText("No imported documents")).toBeInTheDocument();
     const pdf = new File(["%PDF-1.4"], "cours.pdf", { type: "application/pdf" });
-    await user.upload(screen.getByLabelText("Choisir un fichier"), pdf);
-    expect(await screen.findByText("En file")).toBeInTheDocument();
+    await user.upload(screen.getByLabelText("Choose a file"), pdf);
+    expect(await screen.findByText("Queued")).toBeInTheDocument();
     expect(contentType).toMatch(/^multipart\/form-data; boundary=/);
     await vi.advanceTimersByTimeAsync(2000);
-    expect(await screen.findByText("Indexé")).toBeInTheDocument();
+    expect(await screen.findByText("Indexed")).toBeInTheDocument();
   });
 
   it("empties the pasted-text form after a successful import, keeps it after a failure", async () => {
@@ -98,19 +98,19 @@ describe("DocumentsPage import", () => {
         return HttpResponse.json({ document, duplicate: false }, { status: 202 });
       }),
     );
-    await user.click(await screen.findByRole("tab", { name: "Texte collé" }));
-    await user.type(screen.getByLabelText("Texte"), "Mon cours");
-    await user.click(screen.getByRole("button", { name: "Importer le texte" }));
+    await user.click(await screen.findByRole("tab", { name: "Pasted text" }));
+    await user.type(screen.getByLabelText("Text"), "Mon cours");
+    await user.click(screen.getByRole("button", { name: "Import text" }));
     expect(await screen.findByText("Texte trop long : 500 000 caractères.")).toBeInTheDocument();
-    expect(screen.getByLabelText("Texte")).toHaveValue("Mon cours");
+    expect(screen.getByLabelText("Text")).toHaveValue("Mon cours");
     refuse = false;
-    await user.click(screen.getByRole("button", { name: "Importer le texte" }));
-    await waitFor(() => expect(screen.getByLabelText("Texte")).toHaveValue(""));
+    await user.click(screen.getByRole("button", { name: "Import text" }));
+    await waitFor(() => expect(screen.getByLabelText("Text")).toHaveValue(""));
     expect(bodies).toEqual([
       { text: "Mon cours", title: null },
       { text: "Mon cours", title: null },
     ]);
-    expect(await screen.findByText("Texte collé", { selector: "span" })).toBeInTheDocument();
+    expect(await screen.findByText("Pasted text", { selector: "span" })).toBeInTheDocument();
   });
 
   it("says when a link was already imported", async () => {
@@ -120,10 +120,10 @@ describe("DocumentsPage import", () => {
         HttpResponse.json({ document: documentOut(), duplicate: true }, { status: 200 }),
       ),
     );
-    await user.click(await screen.findByRole("tab", { name: "Lien" }));
-    await user.type(screen.getByLabelText("Adresse du lien"), "https://exemple.fr/cours");
-    await user.click(screen.getByRole("button", { name: "Importer le lien" }));
-    expect(await screen.findByText("Ce contenu est déjà dans ta mémoire.")).toBeInTheDocument();
+    await user.click(await screen.findByRole("tab", { name: "Link" }));
+    await user.type(screen.getByLabelText("Link URL"), "https://exemple.fr/cours");
+    await user.click(screen.getByRole("button", { name: "Import link" }));
+    expect(await screen.findByText("This content is already in your memory.")).toBeInTheDocument();
   });
 
   it("shows a retryable error when the list fails", async () => {
@@ -136,8 +136,8 @@ describe("DocumentsPage import", () => {
       }),
     );
     expect(await screen.findByText("Liste indisponible.")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Réessayer" }));
-    expect(await screen.findByText("Aucun document importé")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+    expect(await screen.findByText("No imported documents")).toBeInTheDocument();
   });
 });
 
@@ -156,22 +156,23 @@ describe("DocumentsPage Déjà appris", () => {
         return HttpResponse.json({ session_id: "s1" }, { status: 202 });
       }),
     );
-    await view.user.click(await screen.findByRole("button", { name: "Déjà appris" }));
+    await view.user.click(await screen.findByRole("button", { name: "Already learned" }));
     await waitFor(() => expect(view.fake.sockets).toHaveLength(1));
     return view;
   }
 
   it("streams the Archiviste progress, then counts the acquis written", async () => {
     const { fake } = await start();
-    expect(await screen.findByText("L'Archiviste extrait les concepts…")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Déjà appris" })).toBeDisabled();
+    const progress = await screen.findByText("The Archivist is extracting the concepts…");
+    expect(progress).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Already learned" })).toBeDisabled();
     fake
       .last()
       .open()
       .push(started(1, "archivist"), written(2, "Attention"), written(3, "Softmax"));
     fake.last().push(completed(4));
-    expect(await screen.findByText("2 acquis ajouté(s)")).toBeInTheDocument();
-    expect(await screen.findByText("Marqué déjà appris")).toBeInTheDocument();
+    expect(await screen.findByText("2 acquired skill(s) added")).toBeInTheDocument();
+    expect(await screen.findByText("Marked as already learned")).toBeInTheDocument();
   });
 
   it("does not count a proposed decision as an added acquis", async () => {
@@ -179,7 +180,7 @@ describe("DocumentsPage Déjà appris", () => {
     const pending = written(3, "Viser le NLP");
     if (pending.type === "memory.written") pending.payload.status = "pending";
     fake.last().open().push(written(2, "Attention"), pending, completed(4));
-    expect(await screen.findByText("1 acquis ajouté(s)")).toBeInTheDocument();
+    expect(await screen.findByText("1 acquired skill(s) added")).toBeInTheDocument();
   });
 
   it("shows the failure message of the run", async () => {
@@ -202,8 +203,8 @@ describe("DocumentsPage Déjà appris", () => {
         HttpResponse.json({ ...sessionView("running"), id: "s2" }),
       ),
     );
-    const progress = screen.getByRole("region", { name: /Suivi de l'Archiviste/ });
-    await user.click(within(progress).getByRole("button", { name: "Relancer" }));
+    const progress = screen.getByRole("region", { name: /Archivist progress/ });
+    await user.click(within(progress).getByRole("button", { name: "Retry" }));
     await waitFor(() => expect(launches).toBe(1));
     await waitFor(() => expect(fake.sockets).toHaveLength(2));
     fake
@@ -211,7 +212,7 @@ describe("DocumentsPage Déjà appris", () => {
       .open()
       .push({ ...written(2, "Attention"), session_id: "s2" });
     fake.last().push({ ...completed(3), session_id: "s2" });
-    expect(await screen.findByText("1 acquis ajouté(s)")).toBeInTheDocument();
+    expect(await screen.findByText("1 acquired skill(s) added")).toBeInTheDocument();
     useSessionStore.getState().reset("s2");
   });
 
@@ -227,8 +228,8 @@ describe("DocumentsPage Déjà appris", () => {
       }),
     );
     expect(backend.documents).toHaveLength(1);
-    expect(await screen.findByText("Marqué déjà appris")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Relancer" }));
+    expect(await screen.findByText("Marked as already learned")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Retry" }));
     await waitFor(() => expect(launches).toBe(1));
   });
 
@@ -239,7 +240,7 @@ describe("DocumentsPage Déjà appris", () => {
         apiError("document_not_indexed", "Le document n'est pas encore indexé.", 409),
       ),
     );
-    await user.click(await screen.findByRole("button", { name: "Déjà appris" }));
+    await user.click(await screen.findByRole("button", { name: "Already learned" }));
     expect(await screen.findByText("Le document n'est pas encore indexé.")).toBeInTheDocument();
   });
 });
@@ -256,13 +257,13 @@ describe("DocumentsPage after a reload", () => {
   it("follows a running Archiviste session again", async () => {
     const { fake } = setup({ documents, sessions: [sessionOut()] });
     expect(
-      await screen.findByLabelText("Suivi de l'Archiviste pour « Cours NLP »"),
+      await screen.findByLabelText("Archivist progress for “Cours NLP”"),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Déjà appris" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Already learned" })).toBeDisabled();
     await waitFor(() => expect(fake.sockets).toHaveLength(1));
     fake.last().open().push(started(1, "archivist"), written(2, "Attention"), completed(3));
-    expect(await screen.findByText("1 acquis ajouté(s)")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Relancer" })).toBeEnabled();
+    expect(await screen.findByText("1 acquired skill(s) added")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Retry" })).toBeEnabled();
   });
 
   it("ignores running sessions of other subjects", async () => {
@@ -271,7 +272,7 @@ describe("DocumentsPage after a reload", () => {
       sessions: [sessionOut({ subject_type: "goal", subject_id: "g1" })],
     });
     expect(await screen.findByText("Cours NLP")).toBeInTheDocument();
-    expect(screen.queryByLabelText(/Suivi de l'Archiviste/)).toBeNull();
+    expect(screen.queryByLabelText(/Archivist progress/)).toBeNull();
     expect(fake.sockets).toHaveLength(0);
   });
 });

@@ -1,4 +1,4 @@
-"""Entrée et résultat de la lecture Ton futur toi."""
+"""Input and result of the Your future self reading."""
 
 from datetime import date, datetime
 from typing import Annotated

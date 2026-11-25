@@ -31,8 +31,9 @@ from tests.agents.runtime.runner_helpers import TIMEOUT, all_events, get_session
 from tests.support.cv_review import REVIEW_ID, FakeCvReviewStore
 from tests.support.gap import FakeGapStore, analysis_reply
 
-START = "<<<CONTENU_NON_FIABLE"
-END = "<<<FIN_CONTENU_NON_FIABLE>>>"
+START = "<<<UNTRUSTED_CONTENT"
+END = "<<<END_UNTRUSTED_CONTENT>>>"
+CROSS_EXAMINATION = "Cross-examination, round"
 BRIEF: dict[str, Any] = {
     "summary": "Éditeur d'assistants pour le support.",
     "values": [],
@@ -91,7 +92,7 @@ def reviewers(
     models.when("ats_reader", PROPOSE_REQUEST, *ats, *[ATS_DEFAULT] * 10)
     models.when("recruiter", PROPOSE_REQUEST, *recruiter, *[RECRUITER_DEFAULT] * 10)
     for agent, replies in (("ats_reader", ats_confront), ("recruiter", recruiter_confront)):
-        models.when(agent, "Confrontation, tour", *replies, *[stances()] * 10)
+        models.when(agent, CROSS_EXAMINATION, *replies, *[stances()] * 10)
     models.when("scout", COMPANY_REQUEST, *[json.dumps(BRIEF)] * 10)
     models.when("analyst", ANALYZE_REQUEST, *[analysis_reply()] * 5)
     return models

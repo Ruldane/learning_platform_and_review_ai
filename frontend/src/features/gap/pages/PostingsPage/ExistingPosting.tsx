@@ -22,7 +22,7 @@ export function ExistingPosting({ result }: { result: PostingCreatedOut }) {
         <p className="text-sm text-muted-foreground">{t("gap.postings.relaunched")}</p>
       ) : null}
       <Link
-        to={`/carriere/offres/${posting.id}`}
+        to={`/career/postings/${posting.id}`}
         className={buttonVariants({ variant: "outline", className: "self-start" })}
       >
         {t("gap.postings.openExisting")}

@@ -1,6 +1,6 @@
-"""Schémas et constantes de l'Éclaireur (SPEC 9.1, 10.3). Les bornes de la note sont celles du
-barème : le schéma les fait respecter, une note hors barème fait rejouer le modèle puis échouer
-lisiblement (`structured_output_invalid`), jamais passer."""
+"""Schemas and constants of the Scout (SPEC 9.1, 10.3). The score bounds are those of the
+scale: the schema enforces them, an out-of-scale score makes the model replay then fail
+readably (`structured_output_invalid`), never pass."""
 
 from typing import Any, Protocol
 
@@ -10,9 +10,9 @@ from app.agents.runtime.prose import Prose
 from app.agents.state.web_research import WebResearchState
 
 AGENT = "scout"
-MAX_PAGES_PER_RUN = 10  # borné aussi par le plafond de pages de la session
-MAX_EXTRA_URLS = 5  # adresses données en entrée, lues en plus des résultats
-# Pages notées au plus par un nœud `judge` : résultats lus plus adresses de l'entrée.
+MAX_PAGES_PER_RUN = 10  # also bounded by the session's page cap
+MAX_EXTRA_URLS = 5  # addresses given as input, read in addition to the results
+# Pages scored at most by a `judge` node: results read plus the input's addresses.
 MAX_PAGES_JUDGED = MAX_PAGES_PER_RUN + MAX_EXTRA_URLS
 PAGE_CHARS_FOR_SCORING = 6000
 MAX_QUERIES_TOTAL = 6
@@ -20,7 +20,7 @@ QUERIES_PER_LANGUAGE = 3
 
 
 class Node(Protocol):
-    """Forme d'un nœud (paramètre nommé `state`, comme l'attend `StateGraph.add_node`)."""
+    """Shape of a node (parameter named `state`, as `StateGraph.add_node` expects)."""
 
     async def __call__(self, state: WebResearchState) -> WebResearchState: ...
 
@@ -35,8 +35,8 @@ class SearchPlan(BaseModel):
 
 
 class SourceScore(BaseModel):
-    """Barème de 10.3 : autorité 30 + fraîcheur 20 + profondeur 20 + auteur réel 15 + qualité
-    pédagogique 15. Le modèle ne donne pas le total : le code l'additionne."""
+    """Scale of 10.3: authority 30 + freshness 20 + depth 20 + real author 15 + teaching
+    quality 15. The model does not give the total: the code adds it up."""
 
     authority: int = Field(ge=0, le=30)
     freshness: int = Field(ge=0, le=20)
@@ -66,5 +66,5 @@ def one_line(text: str) -> str:
 
 
 def page_title(page: dict[str, Any]) -> str:
-    """Titre de la page sur une ligne, sinon son adresse."""
+    """Page title on one line, otherwise its address."""
     return one_line(page.get("title") or "") or str(page["url"])

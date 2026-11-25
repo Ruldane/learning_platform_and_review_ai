@@ -1,11 +1,11 @@
-"""Routes de la replanification (D106) : lancer une replanification sur un message de January
-(`POST /programs/{id}/replan`) ou depuis l'écart d'une offre (`start_gap_replan`, D123), et lire
-l'historique des versions (`GET /programs/{id}/versions`).
+"""Replanning routes (D106): start a replanning from a message by January
+(`POST /programs/{id}/replan`) or from a posting gap (`start_gap_replan`, D123), and read the
+version history (`GET /programs/{id}/versions`).
 
-Le lancement passe sous le verrou de lancement du programme : programme d'un autre → 404,
-brouillon → 409 `program_not_validated`, replanification déjà ouverte → 409 `replan_open`
-(`details.session_id`). Aucune ligne n'est écrite avant `launcher.start` : la session elle-même
-est la trace (D66, D72). Journaux : identifiants seulement."""
+Launching runs under the program's launch lock: someone else's program → 404, draft → 409
+`program_not_validated`, replanning already open → 409 `replan_open` (`details.session_id`).
+No row is written before `launcher.start`: the session itself is the trace (D66, D72).
+Logs: identifiers only."""
 
 import logging
 from collections.abc import Sequence
@@ -34,20 +34,20 @@ from app.features.sessions.service import find_active_session, session_facts
 
 logger = logging.getLogger(__name__)
 
-TERMINAL = frozenset({"completed", "failed", "cancelled", "expired"})  # sessions closes (D91)
+TERMINAL = frozenset({"completed", "failed", "cancelled", "expired"})  # closed sessions (D91)
 
 
 def replan_open(session_id: str) -> AppError:
     return AppError(
         "replan_open",
-        "Une replanification de ce programme est déjà en cours.",
+        "A replanning of this program is already in progress.",
         409,
         {"session_id": session_id},
     )
 
 
 async def open_replan(db: AsyncSession, user_id: str, program_id: str) -> str | None:
-    """La session `replan` encore ouverte sur ce programme, s'il y en a une."""
+    """The `replan` session still open on this program, if there is one."""
     return await find_active_session(
         db, user_id, graph=GRAPH, subject_type=SUBJECT, subject_id=program_id
     )
@@ -67,7 +67,7 @@ async def _start(rt: ReplanRuntime, user_id: str, payload: dict[str, Any]) -> st
             user_id, GRAPH, payload, subject_type=SUBJECT, subject_id=program_id
         )
     logger.info(
-        "Replanification lancée (%s) : utilisateur %s, programme %s, session %s",
+        "Replanning started (%s): user %s, program %s, session %s",
         payload["trigger"],
         user_id,
         program_id,
@@ -91,9 +91,9 @@ async def start_replan(
 async def start_gap_replan(
     rt: ReplanRuntime, user_id: str, program_id: str, skills: Sequence[str]
 ) -> str:
-    """« Ajouter au planning » (F8, D123) : une replanification au déclencheur `gap`, ajouts
-    seuls dans le module « Compétences des offres », validée par January. Mêmes refus que
-    `start_replan` (404, 409 `program_not_validated`, 409 `replan_open`)."""
+    """ "Add to schedule" (F8, D123): a replanning with the `gap` trigger, additions only in the
+    "Skills from postings" module, validated by January. Same refusals as `start_replan`
+    (404, 409 `program_not_validated`, 409 `replan_open`)."""
     payload = {"program_id": program_id, "trigger": "gap", "skills": list(skills)}
     return await _start(rt, user_id, payload)
 
@@ -125,8 +125,8 @@ def _out(version: PlanVersion, reviews: dict[str, str], closed: set[str]) -> Pla
     )
     return PlanVersionOut(
         version=version.version,
-        kind=version.kind,  # type: ignore[arg-type]  # colonne texte, valeurs de PlanKind
-        status=status,  # type: ignore[arg-type]  # valeurs de PlanStatus
+        kind=version.kind,  # type: ignore[arg-type]  # text column, PlanKind values
+        status=status,  # type: ignore[arg-type]  # PlanStatus values
         reason=version.reason,
         created_at=version.created_at,
         accepted_at=version.accepted_at,
@@ -143,8 +143,8 @@ def _out(version: PlanVersion, reviews: dict[str, str], closed: set[str]) -> Pla
 
 
 async def list_versions(db: AsyncSession, user_id: str, program_id: str) -> list[PlanVersionOut]:
-    """L'historique du plan, la plus récente d'abord ; 404 si le programme est à un autre. Une
-    proposition `pending` dont la session est close est lue `superseded` (`_waiting`)."""
+    """The plan history, most recent first; 404 if the program belongs to someone else. A
+    `pending` proposal whose session is closed is read as `superseded` (`_waiting`)."""
     versions = await version_history(db, user_id, program_id)
     ids = {v.review_entry_id for v in versions if v.review_entry_id}
     reviews = await ReviewRepository(db, user_id).texts(ids)
@@ -154,10 +154,10 @@ async def list_versions(db: AsyncSession, user_id: str, program_id: str) -> list
 
 
 async def _waiting(db: AsyncSession, user_id: str, version: PlanVersion) -> bool:
-    """Une proposition `pending` n'attend que si sa session est encore ouverte ; sinon (session
-    annulée, en échec, finie ou introuvable) elle est lue `superseded`, sans écriture (D91) : la
-    proposition suivante, ou rien, la remplace. Ne vaut que pour une proposition `replan` : la
-    version `build` d'un brouillon peut encore être acceptée par la validation."""
+    """A `pending` proposal only waits while its session is still open; otherwise (session
+    cancelled, failed, finished or missing) it is read as `superseded`, without writing (D91):
+    the next proposal, or nothing, replaces it. Only applies to a `replan` proposal: the `build`
+    version of a draft can still be accepted by validation."""
     if version.kind != "replan":
         return True
     if version.session_id is None:

@@ -19,10 +19,10 @@ function rowOf(skill: string): HTMLElement {
 describe("SkillRanking", () => {
   it("shows the rank, the skill and the share in words and in a bar", () => {
     render(<SkillRanking ranking={[item({ deltaShare: 8 })]} />);
-    const row = within(screen.getByRole("list", { name: "Classement des compétences" }));
+    const row = within(screen.getByRole("list", { name: "Skills ranking" }));
     expect(row.getByText("1.")).toBeInTheDocument();
     expect(row.getByText("SQL")).toBeInTheDocument();
-    expect(row.getByText("62 % des offres")).toBeInTheDocument();
+    expect(row.getByText("62% of postings")).toBeInTheDocument();
     const bar = rowOf("SQL").querySelector("[aria-hidden='true'] > div") as HTMLElement;
     expect(bar.style.width).toBe("62%");
   });
@@ -41,12 +41,12 @@ describe("SkillRanking", () => {
     expect(rowOf("SQL")).toHaveTextContent("+8 pts");
     expect(rowOf("Python")).toHaveTextContent("−2 pts");
     expect(rowOf("dbt")).toHaveTextContent("stable");
-    expect(rowOf("Airflow")).toHaveTextContent("nouvelle");
+    expect(rowOf("Airflow")).toHaveTextContent("new");
   });
 
-  it("says « premier relevé » when there is no previous run", () => {
+  it("marks the first scan when there is no previous run", () => {
     render(<SkillRanking ranking={[item({ deltaShare: null, isNew: false })]} />);
-    expect(rowOf("SQL")).toHaveTextContent("premier relevé");
+    expect(rowOf("SQL")).toHaveTextContent("first scan");
   });
 
   it("keeps the bars out of the accessibility tree", () => {
@@ -57,7 +57,7 @@ describe("SkillRanking", () => {
 
   it("says when there is nothing to rank", () => {
     render(<SkillRanking ranking={[]} />);
-    expect(screen.getByText("Aucune compétence à classer pour ce relevé.")).toBeInTheDocument();
+    expect(screen.getByText("No skills to rank for this scan.")).toBeInTheDocument();
     expect(screen.queryByRole("list")).toBeNull();
   });
 });

@@ -32,7 +32,7 @@ export function AppealDetailPage() {
   });
   return (
     <section className="grid max-w-3xl gap-5">
-      <Link className="w-fit underline" to="/competences/contestations">{t("gradeAppeals.back")}</Link>
+      <Link className="w-fit underline" to="/skills/appeals">{t("gradeAppeals.back")}</Link>
       {row.isPending ? <LoadingState label={t("gradeAppeals.loading")} /> : null}
       {row.error ? <ErrorState message={errorMessage(row.error)} onRetry={() => void row.refetch()} /> : null}
       {row.data ? <>

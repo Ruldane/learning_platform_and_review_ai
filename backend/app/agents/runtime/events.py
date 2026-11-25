@@ -1,8 +1,8 @@
-"""Catalogue des événements temps réel d'une session (SPEC 9.5, plus `user.message`, D4).
+"""Catalogue of a session's real-time events (SPEC 9.5, plus `user.message`, D4).
 
-Chaque événement porte l'enveloppe commune (`id`, `session_id`, `seq`, `ts`, `agent`), un `type`
-discriminant et une charge typée. L'union `SessionEvent` est publiée dans l'OpenAPI (voir
-`openapi.py`) : c'est ainsi que le front reçoit les types du WebSocket (D10).
+Each event carries the common envelope (`id`, `session_id`, `seq`, `ts`, `agent`), a
+discriminating `type` and a typed payload. The `SessionEvent` union is published in the OpenAPI
+(see `openapi.py`): this is how the front end receives the WebSocket types (D10).
 """
 
 from datetime import datetime
@@ -100,7 +100,7 @@ PAYLOAD_MODELS: dict[EventType, type[BaseModel]] = {
 }
 
 
-# --- Enveloppes ----------------------------------------------------------------------------
+# --- Envelopes -----------------------------------------------------------------------------
 
 
 class EventBase(BaseModel):
@@ -209,19 +209,19 @@ SESSION_EVENT_ADAPTER: TypeAdapter[SessionEvent] = TypeAdapter(SessionEvent)
 
 
 def validate_payload(type: EventType, payload: BaseModel | dict[str, Any]) -> BaseModel:
-    """Valide `payload` pour `type` et renvoie le modèle ; `ValueError` si type ou forme invalides.
+    """Validates `payload` for `type` and returns the model; `ValueError` if type or shape invalid.
 
-    Le message d'erreur ne reprend jamais les valeurs reçues (elles peuvent contenir des clés).
+    The error message never repeats the received values (they may contain keys).
     """
     model = PAYLOAD_MODELS.get(type)
     if model is None:
-        raise ValueError(f"Type d'événement inconnu : {type!r}")
+        raise ValueError(f"Unknown event type: {type!r}")
     if isinstance(payload, model):
         return payload
     if isinstance(payload, BaseModel):
-        raise ValueError(f"Charge {payload.__class__.__name__} incompatible avec {type!r}")
+        raise ValueError(f"Payload {payload.__class__.__name__} incompatible with {type!r}")
     try:
         return model.model_validate(payload)
     except ValidationError as exc:
-        fields = ", ".join(".".join(str(p) for p in e["loc"]) or "(racine)" for e in exc.errors())
-        raise ValueError(f"Charge invalide pour {type!r} : {fields}") from None
+        fields = ", ".join(".".join(str(p) for p in e["loc"]) or "(root)" for e in exc.errors())
+        raise ValueError(f"Invalid payload for {type!r}: {fields}") from None

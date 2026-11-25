@@ -1,20 +1,20 @@
-"""Projection 2D de la carte de la mémoire : PCA par SVD (numpy). Fonction pure, déterministe :
-le signe de chaque composante est fixé, donc deux appels sur le même nuage donnent la même carte."""
+"""2D projection of the memory map: PCA by SVD (numpy). Pure, deterministic function:
+the sign of each component is fixed, so two calls on the same cloud give the same map."""
 
 from collections.abc import Sequence
 
 import numpy as np
 
-# En deçà, un axe est considéré comme nul (nuage plat sur cet axe) : bruit d'arrondi de la SVD.
+# Below this, an axis is considered null (flat cloud on that axis): SVD rounding noise.
 _FLAT = 1e-9
 
 
 def project_2d(vectors: Sequence[Sequence[float]]) -> list[tuple[float, float]]:
-    """Coordonnées de chaque vecteur sur les deux premières composantes principales.
+    """Coordinates of each vector on the first two principal components.
 
-    Centrage, SVD, deux premières composantes ; signe fixé (la plus grande charge en valeur
-    absolue de chaque composante est positive) ; chaque axe divisé par son max absolu (0 si nul),
-    d'où des coordonnées sur [-1, 1]. 0 vecteur : [] ; 1 vecteur : [(0.0, 0.0)]."""
+    Centering, SVD, first two components; fixed sign (the largest absolute loading of each
+    component is positive); each axis divided by its absolute max (0 if null), hence
+    coordinates in [-1, 1]. 0 vectors: []; 1 vector: [(0.0, 0.0)]."""
     if not vectors:
         return []
     if len(vectors) == 1:

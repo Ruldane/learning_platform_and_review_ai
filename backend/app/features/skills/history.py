@@ -24,10 +24,10 @@ def _point(week: date, levels: Iterable[object]) -> HistoryPointOut:
     return HistoryPointOut(
         week_start=week,
         counts=LevelCountsOut(
-            declare=counts["declare"],
-            en_cours=counts["en_cours"],
-            valide=counts["valide"],
-            prouve=counts["prouve"],
+            declared=counts["declared"],
+            in_progress=counts["in_progress"],
+            validated=counts["validated"],
+            proven=counts["proven"],
         ),
         score=mean_score(parsed),
     )

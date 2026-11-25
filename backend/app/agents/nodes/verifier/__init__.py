@@ -1,4 +1,4 @@
-"""Le Vérificateur (SPEC 3.5, 9.1) : contrôles déterministes d'une leçon, puis des faits."""
+"""The Verifier (SPEC 3.5, 9.1): deterministic checks of a lesson, then of the facts."""
 
 from app.agents.nodes.verifier.checks import (
     MAX_WORDS,

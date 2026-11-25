@@ -20,7 +20,7 @@ describe("KIND_COLORS", () => {
   });
 
   it("lists the six kinds in a stable order", () => {
-    expect(MEMORY_KINDS).toEqual(["document", "acquis", "lecon", "source", "offre", "decision"]);
+    expect(MEMORY_KINDS).toEqual(["document", "skill", "lesson", "source", "posting", "decision"]);
   });
 
   it("every color reaches AA contrast on the off-white background", () => {

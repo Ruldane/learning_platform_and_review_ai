@@ -25,7 +25,7 @@ API = "/api/v1/skill-transfers"
 
 @pytest.fixture
 def app(settings: Settings, db_engine: AsyncEngine) -> FastAPI:
-    reused = {**EXERCISE, "prompt": question("qcm", 1)["prompt"]}
+    reused = {**EXERCISE, "prompt": question("mcq", 1)["prompt"]}
     return build_app(
         settings,
         scripts={"verifier": [json.dumps(item) for item in (reused, EXERCISE, ASSESSMENT)]},
@@ -38,7 +38,7 @@ async def _control_of_quiz(app: FastAPI, client: httpx.AsyncClient) -> tuple[str
     async with app.state.session_factory() as db:
         service = SkillsService(db, seeded.user_id)
         await service.raise_levels(
-            ["pandas"], "valide", evidence("quiz", quiz_id, "Quiz de pandas", datetime.now(UTC))
+            ["pandas"], "validated", evidence("quiz", quiz_id, "Quiz de pandas", datetime.now(UTC))
         )
         skill_id = await service.skill_id_for("pandas")
         await db.commit()

@@ -37,7 +37,7 @@ async def test_start_block_picks_today_tasks_of_first_ready_module(
         "id": seeded.tasks["Pratiquer les bases"],
         "title": "Pratiquer les bases",
         "minutes": 45,
-        "type": "pratiquer",
+        "type": "practice",
     }
 
 
@@ -60,7 +60,7 @@ async def test_no_block_today_is_404(client: httpx.AsyncClient, app: FastAPI) ->
     r = await start(client)
     assert r.status_code == 404
     assert r.json()["error"]["code"] == "no_block_today"
-    assert r.json()["error"]["message"] == "Rien de prévu aujourd'hui : choisis une leçon."
+    assert r.json()["error"]["message"] == "Nothing is scheduled today. Choose a lesson."
     assert (await client.get(f"{API}/summary")).json()["block"] is None
 
 
@@ -89,11 +89,11 @@ async def test_start_with_question_passes_it_to_the_graph(
     assert found.question == "Pourquoi la racine ?" and found.mode == "feynman"
     assert found.module_title == "Module Bases"
     assert [s.title for s in found.sections] == [
-        "L'essentiel en 5 lignes",
-        "Explication",
-        "Schémas",
-        "Exemple travaillé",
-        "Erreurs fréquentes",
+        "Key points in 5 lines",
+        "Explanation",
+        "Diagrams",
+        "Worked example",
+        "Common mistakes",
     ]
     assert found.exercise.startswith("Calculer") and found.solution.startswith("Les poids")
     assert [(c.index, c.title) for c in found.sources] == [
@@ -112,6 +112,9 @@ async def test_open_session_same_lesson_200_other_lesson_409(
     assert other.status_code == 409
     error = other.json()["error"]
     assert error["code"] == "study_already_open"
+    assert error["message"] == (
+        "Finish the open study session on the other lesson before starting this one."
+    )
     assert error["details"] == {"study_session_id": body["study_session_id"]}
 
 

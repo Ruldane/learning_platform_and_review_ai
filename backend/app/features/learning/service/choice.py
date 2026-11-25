@@ -1,12 +1,13 @@
-"""Choix du parcours (SPEC 3.1, étape 6 ; point d'arrêt n° 2, D85, D87).
+"""Path choice (SPEC 3.1, step 6; breakpoint no. 2, D85, D87).
 
-La route écrit le choix puis reprend l'interruption `choose_path` ; le nœud `finalize` du
-Conseil réécrit le même choix (`write_choice`, la même écriture) et lance seul `program_builder`
-par le port. La reprise générique (`/sessions/{id}/resume`) reste possible : tout passe par
-`finalize`, sous le verrou de l'objectif (`LearningRuntime.goal_lock`), donc un seul programme.
+The route writes the choice then resumes the `choose_path` interrupt; the Council's `finalize`
+node rewrites the same choice (`write_choice`, the same write) and alone starts `program_builder`
+through the port. The generic resume (`/sessions/{id}/resume`) remains possible: everything goes
+through `finalize`, under the goal's lock (`LearningRuntime.goal_lock`), hence a single program.
 
-Lectures et écritures en sessions courtes ouvertes sous le verrou : la requête qui attendait le
-verrou voit ce que la précédente a commité (double clic : même état rendu, rien de relancé)."""
+Reads and writes in short sessions opened under the lock: the request that was waiting for the
+lock sees what the previous one committed (double click: same state returned, nothing
+restarted)."""
 
 import logging
 from collections.abc import Sequence
@@ -33,14 +34,14 @@ CHOICE_KIND = "choose_path"
 
 def invalid_mix() -> AppError:
     return AppError(
-        "invalid_mix", "Un mélange se fait entre deux propositions distinctes du dernier lot.", 422
+        "invalid_mix", "A mix combines two distinct proposals from the latest batch.", 422
     )
 
 
 def proposal_outdated() -> AppError:
     return AppError(
         "proposal_outdated",
-        "Cette proposition vient d'un lot précédent : choisis dans le dernier.",
+        "This proposal comes from an earlier batch: choose from the latest one.",
         409,
     )
 
@@ -48,19 +49,19 @@ def proposal_outdated() -> AppError:
 def council_not_waiting(status: str) -> AppError:
     return AppError(
         "council_not_waiting",
-        "Le Conseil n'attend pas de choix pour le moment.",
+        "The Council is not waiting for a choice right now.",
         409,
         {"status": status},
     )
 
 
 def check_start_date(start: date | None) -> None:
-    """Début du programme : un lundi, aujourd'hui ou plus tard (comme `PATCH /programs`) ;
-    sinon 422 `invalid_start_date`, chemin du champ seulement, jamais la valeur."""
+    """Program start: a Monday, today or later (like `PATCH /programs`); otherwise 422
+    `invalid_start_date`, field path only, never the value."""
     if start is not None and (start.weekday() != MONDAY or start < date.today()):
         raise AppError(
             "invalid_start_date",
-            "Un programme commence un lundi, aujourd'hui ou plus tard.",
+            "A program starts on a Monday, today or later.",
             422,
             {"fields": ["start_date"]},
         )
@@ -69,9 +70,9 @@ def check_start_date(start: date | None) -> None:
 async def write_choice(
     db: AsyncSession, user_id: str, session_id: str, goal_id: str, choice: Choice
 ) -> None:
-    """Marque exactement les propositions choisies dans leur lot (les autres du lot ne le sont
-    plus) : rejouée, la même écriture ne change rien. Propositions de l'objectif et de la
-    session, d'un même lot, sinon 404 / 422."""
+    """Marks exactly the chosen proposals in their batch (the batch's others no longer are):
+    replayed, the same write changes nothing. Proposals of the goal and the session, from a
+    single batch, otherwise 404 / 422."""
     await owned_goal(db, user_id, goal_id)
     repo = ProposalRepository(db, user_id)
     batches: set[int] = set()
@@ -105,8 +106,8 @@ async def _view(
 async def _write(
     learning: LearningRuntime, user_id: str, session_id: str, goal_id: str, choice: Choice | None
 ) -> None:
-    """Écrit le choix (ou l'efface, `choice=None`) et commite aussitôt : le nœud `finalize`
-    réécrit dans sa propre session."""
+    """Writes the choice (or clears it, `choice=None`) and commits right away: the `finalize`
+    node rewrites in its own session."""
     async with learning.session_factory() as db:
         if choice is None:
             batch = await latest_batch(db, user_id, goal_id)
@@ -134,13 +135,13 @@ def _resume_value(choice: Choice) -> dict[str, Any]:
 
 
 async def _forget(learning: LearningRuntime, user_id: str, session_id: str, goal_id: str) -> None:
-    """Efface le choix écrit, au mieux : un choix resté écrit ne bloque rien (le Conseil qui
-    attend encore est toujours repris au clic suivant), il s'afficherait seulement à tort."""
+    """Clears the written choice, best effort: a choice left written blocks nothing (a Council
+    still waiting is always resumed on the next click), it would only be shown wrongly."""
     try:
         await _write(learning, user_id, session_id, goal_id, None)
     except Exception:
         logger.warning(
-            "Choix non effacé après une reprise manquée : utilisateur %s, objectif %s",
+            "Choice not cleared after a failed resume: user %s, goal %s",
             user_id,
             goal_id,
         )
@@ -155,10 +156,10 @@ async def _write_and_resume(
     choice: Choice,
     interrupt_id: str,
 ) -> SessionView:
-    """Choix écrit puis interruption reprise. Reprise manquée, pour quelque raison que ce soit
-    (question déjà répondue, moteur en arrêt, base verrouillée, arrêt du back) : choix effacé,
-    `finalize` écrira celui qu'il recevra ; une question déjà répondue donne 409
-    `council_not_waiting` avec le statut relu après l'échec."""
+    """Choice written then interrupt resumed. Failed resume, for whatever reason (question
+    already answered, engine stopped, database locked, back end shutting down): choice cleared,
+    `finalize` will write the one it receives; an already answered question gives 409
+    `council_not_waiting` with the status read again after the failure."""
     await _write(learning, user_id, session_id, goal_id, choice)
     request = ResumeRequest(interrupt_id=interrupt_id, value=_resume_value(choice))
     try:
@@ -179,13 +180,14 @@ async def choose(
     proposal_id: str,
     req: ChooseRequest,
 ) -> ChooseOut:
-    """Sous le verrou de l'objectif : (1) proposition (et `mix_with`) du dernier lot ; (2) Conseil
-    en attente sur `choose_path` → choix écrit puis interruption reprise, **toujours** (un choix
-    resté écrit par une reprise manquée ne bloque pas) ; (3) Conseil qui n'attend pas : même
-    ensemble déjà choisi → Stratège relancé s'il a échoué sans programme (`retry_program`,
-    `already_chosen` faux), sinon état rendu, `already_chosen` vrai, rien changé (`start_date`
-    comprise ; double clic, reprise générique terminée) ; autre ensemble : 409
-    `council_not_waiting`. `start_date` : un lundi à venir, sinon 422 `invalid_start_date`."""
+    """Under the goal's lock: (1) proposal (and `mix_with`) from the latest batch; (2) Council
+    waiting on `choose_path` → choice written then interrupt resumed, **always** (a choice left
+    written by a failed resume does not block); (3) Council not waiting: same set already
+    chosen → Strategist restarted if it failed without a program (`retry_program`,
+    `already_chosen` false), otherwise state returned, `already_chosen` true, nothing changed
+    (`start_date` included; double click, generic resume finished); another set: 409
+    `council_not_waiting`. `start_date`: an upcoming Monday, otherwise 422
+    `invalid_start_date`."""
     check_start_date(req.start_date)
     goal_id = await ProposalRepository(db, user_id).goal_of(proposal_id)
     if goal_id is None:
@@ -212,7 +214,7 @@ async def choose(
             runtime, learning, user_id, goal_id, session_id, choice, pending.interrupt_id
         )
     logger.info(
-        "Parcours choisi par la route : utilisateur %s, objectif %s, Conseil %s, propositions %s",
+        "Path chosen through the route: user %s, goal %s, Council %s, proposals %s",
         user_id,
         goal_id,
         session_id,

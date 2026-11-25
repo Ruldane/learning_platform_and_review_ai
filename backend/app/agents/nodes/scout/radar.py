@@ -1,20 +1,19 @@
-"""L'Éclaireur du radar du marché (P5, D159) : il cherche les offres du mois, puis les lit par
-passages de dix liens. Aucun modèle : les requêtes sont construites par le code (`radar_searches`),
-les liens retenus par le code, les pages lues par le port du radar.
+"""The market radar Scout (P5, D159): it searches the month's postings, then reads them in
+passes of ten links. No model: the queries are built by the code (`radar_searches`), the links
+selected by the code, the pages read by the radar port.
 
-`search` : une recherche par requête (fenêtre « month »), liens dédoublonnés par `link_key`, 80 au
-plus, rangés par le port. Aucune requête possible ou aucune réponse du moteur : le relevé échoue
-lisiblement (`fail("search_unavailable")`), jamais en silence. `read` : relit `context` à chaque
-passage, lit les dix prochains liens non lus (cinq en parallèle) et s'arrête à 50 offres lisibles,
-à 60 lectures ou sans lien restant ; un nœud rejoué après un arrêt ne relit rien (le port est
-idempotent, et les liens déjà lus ne sont plus demandés). `finish` : le rapport du port, dit avec
-les nombres réels (lues, bloquées, pas des offres, analysées). `load` vérifie d'abord que le modèle
-de l'Analyste existe : sans clé, le relevé échoue tout de suite (`llm_unavailable`), avant la
-moindre recherche ou lecture de page (D173). Si aucune offre lue n'a pu être analysée (l'extraction
-a échoué), le port rend `error_code` : le relevé est `failed` (`analysis_failed`), pas « terminé » à
-vide.
+`search`: one search per query (window "month"), links deduplicated by `link_key`, 80 at most,
+filed by the port. No possible query or no engine answer: the run fails readably
+(`fail("search_unavailable")`), never silently. `read`: rereads `context` at each pass, reads
+the next ten unread links (five in parallel) and stops at 50 readable postings, at 60 reads or
+with no link left; a node replayed after a stop rereads nothing (the port is idempotent, and
+links already read are no longer requested). `finish`: the port's report, stated with the real
+numbers (read, blocked, not postings, analyzed). `load` first checks that the Analyst's model
+exists: without a key, the run fails right away (`llm_unavailable`), before any search or page
+read (D173). If no posting read could be analyzed (the extraction failed), the port returns
+`error_code`: the run is `failed` (`analysis_failed`), not "finished" empty.
 
-Journaux : identifiants et nombres seulement, jamais un lien, un site, un poste ni une zone
+Logs: identifiers and numbers only, never a link, a site, a job or an area
 (17.2)."""
 
 import asyncio
@@ -55,7 +54,7 @@ from app.agents.tools.web_tools import web_search
 from app.core.errors import AppError
 
 AGENT = "scout"
-# Une requête sans réponse n'arrête pas les autres ; le plafond de la session garde ce qu'on a.
+# A query without an answer does not stop the others; the session cap keeps what we have.
 _SKIPPED_CODES = frozenset({SEARCH_UNAVAILABLE_CODE, "web_unavailable", "search_query_empty"})
 
 logger = logging.getLogger(__name__)
@@ -70,8 +69,8 @@ def _say(message_id: str, text: str) -> None:
 
 
 def candidates(found: list[list[str]]) -> list[str]:
-    """Les liens trouvés, un résultat par requête à tour de rôle (aucune requête ne prend toute la
-    place), sans doublon de `link_key`, liens invalides écartés, `MAX_CANDIDATES` au plus."""
+    """The links found, one result per query in turn (no query takes all the room), no `link_key`
+    duplicates, invalid links discarded, `MAX_CANDIDATES` at most."""
     seen: set[str] = set()
     urls: list[str] = []
     for round_ in zip_longest(*found):
@@ -84,17 +83,15 @@ def candidates(found: list[list[str]]) -> list[str]:
 
 
 async def _require_model(deps: GraphDeps, run_id: str) -> None:
-    """Le modèle de l'Analyste doit exister avant toute recherche ou lecture : sinon le relevé
-    échoue lisiblement tout de suite (`llm_unavailable`), au lieu de lire 60 pages pour rien."""
+    """The Analyst's model must exist before any search or read: otherwise the run fails
+    readably right away (`llm_unavailable`), instead of reading 60 pages for nothing."""
     try:
         await deps.models.get_chat_model(deps.user_id, get_agent("analyst").tier, agent="analyst")
     except AppError as exc:
         if exc.code not in MODEL_UNAVAILABLE_CODES:
             raise
         await deps.ports.radar.fail(deps.user_id, deps.session_id, run_id, "llm_unavailable")
-        logger.info(
-            "Aucun modèle : session %s, relevé %s, cause %s", deps.session_id, run_id, exc.code
-        )
+        logger.info("No model: session %s, run %s, cause %s", deps.session_id, run_id, exc.code)
         raise AppError("llm_unavailable", NO_MODEL_TEXT, 503) from None
 
 
@@ -104,7 +101,7 @@ def make_load(deps: GraphDeps) -> Node:
         ctx = await deps.ports.radar.context(deps.user_id, state["run_id"])
         await _require_model(deps, state["run_id"])
         logger.info(
-            "Relevé lu : session %s, relevé %s, %d page(s) déjà lue(s), %d offre(s) extraite(s)",
+            "Run read: session %s, run %s, %d page(s) already read, %d posting(s) extracted",
             deps.session_id,
             ctx.run_id,
             len(ctx.read),
@@ -116,7 +113,7 @@ def make_load(deps: GraphDeps) -> Node:
 
 
 async def _search_all(deps: GraphDeps, ctx: RadarContext) -> tuple[int, list[list[str]]]:
-    """`(requêtes qui ont répondu, liens de chacune)`."""
+    """`(queries that answered, links of each)`."""
     answered, found = 0, []
     for search in radar_searches(ctx.role, ctx.zone, ctx.languages):
         try:
@@ -125,7 +122,7 @@ async def _search_all(deps: GraphDeps, ctx: RadarContext) -> tuple[int, list[lis
             )
         except AppError as exc:
             if exc.code == QUOTA_CODE:
-                break  # plafond de la session : on garde ce qu'on a
+                break  # session cap: we keep what we have
             if exc.code in _SKIPPED_CODES:
                 continue
             raise
@@ -141,20 +138,20 @@ def make_search(deps: GraphDeps) -> Node:
         ctx = await deps.ports.radar.context(deps.user_id, run_id)
         emit(
             "agent.started",
-            {"step": "recherche", "intent": "je cherche les offres du mois"},
+            {"step": "recherche", "intent": "I am searching this month's postings"},
             agent=AGENT,
         )
         answered, found = await _search_all(deps, ctx)
         if answered == 0:
             await deps.ports.radar.fail(deps.user_id, deps.session_id, run_id, "search_unavailable")
-            logger.info("Recherche impossible : session %s, relevé %s", deps.session_id, run_id)
+            logger.info("Search impossible: session %s, run %s", deps.session_id, run_id)
             raise AppError("search_unavailable", UNAVAILABLE_TEXT, 503)
         urls = candidates(found)
         await deps.ports.radar.save_candidates(
             deps.user_id, deps.session_id, run_id, answered, urls
         )
         logger.info(
-            "Recherche faite : session %s, relevé %s, %d requête(s), %d lien(s)",
+            "Search done: session %s, run %s, %d query(ies), %d link(s)",
             deps.session_id,
             run_id,
             answered,
@@ -166,7 +163,7 @@ def make_search(deps: GraphDeps) -> Node:
 
 
 def unread(urls: list[str], ctx: RadarContext) -> list[str]:
-    """Les liens candidats que le relevé n'a pas encore lus, dans l'ordre de la recherche."""
+    """The candidate links the run has not read yet, in the search order."""
     done = {link_key(page.url) for page in ctx.read}
     return [url for url in urls if link_key(url) not in done]
 
@@ -176,13 +173,13 @@ def readable(ctx: RadarContext) -> int:
 
 
 def reading_over(ctx: RadarContext, urls: list[str]) -> bool:
-    """Plus rien à lire : 50 offres lisibles, 60 lectures ou plus de lien non lu."""
+    """Nothing left to read: 50 readable postings, 60 reads or no unread link."""
     return readable(ctx) >= MAX_READABLE or ctx.attempts >= MAX_READS or not unread(urls, ctx)
 
 
 async def _read_all(deps: GraphDeps, run_id: str, batch: list[str]) -> list[PostingPage]:
-    """Lit `batch` par le port, `READ_PARALLEL` à la fois ; si l'une échoue, les autres sont
-    annulées."""
+    """Reads `batch` through the port, `READ_PARALLEL` at a time; if one fails, the others are
+    cancelled."""
     gate = asyncio.Semaphore(READ_PARALLEL)
 
     async def one(url: str) -> PostingPage:
@@ -201,8 +198,8 @@ async def _read_all(deps: GraphDeps, run_id: str, batch: list[str]) -> list[Post
 def make_read(deps: GraphDeps) -> Node:
     @node_timeout()
     async def read(state: MarketRadarState) -> MarketRadarState:
-        """Un passage : les dix prochains liens non lus. `reading_done` est calculé sur ce que le
-        port vient de rendre, jamais sur un compteur gardé dans l'état."""
+        """One pass: the next ten unread links. `reading_done` is computed on what the port just
+        returned, never on a counter kept in the state."""
         run_id, urls = state["run_id"], state.get("urls", [])
         before = await deps.ports.radar.context(deps.user_id, run_id)
         if reading_over(before, urls):
@@ -213,14 +210,14 @@ def make_read(deps: GraphDeps) -> Node:
         blocked = len(after.read) - readable(after)
         _say(f"lecture-{len(after.read)}", counting_text(readable(after), blocked))
         logger.info(
-            "Lecture : session %s, relevé %s, %d lecture(s), %d lisible(s), %d bloquée(s)",
+            "Reading: session %s, run %s, %d read(s), %d readable, %d blocked",
             deps.session_id,
             run_id,
             len(after.read),
             readable(after),
             blocked,
         )
-        stalled = after.attempts <= before.attempts  # aucune lecture de plus : on ne boucle pas
+        stalled = after.attempts <= before.attempts  # no further read: we do not loop
         return {"reading_done": stalled or reading_over(after, urls)}
 
     return read
@@ -235,9 +232,9 @@ def make_finish(deps: GraphDeps) -> Node:
     async def finish(state: MarketRadarState) -> MarketRadarState:
         run_id = state["run_id"]
         report = await deps.ports.radar.finalize(deps.user_id, deps.session_id, run_id)
-        if report.error_code is not None:  # aucune offre analysée : le relevé est déjà `failed`
+        if report.error_code is not None:  # no posting analyzed: the run is already `failed`
             logger.info(
-                "Relevé sans analyse : session %s, relevé %s, %d lisible(s), code %s",
+                "Run without analysis: session %s, run %s, %d readable, code %s",
                 deps.session_id,
                 run_id,
                 report.read_ok,
@@ -247,8 +244,8 @@ def make_finish(deps: GraphDeps) -> Node:
         artifact = {
             "artifact_id": run_id,
             "kind": "radar",
-            "title": "Radar du marché",
-            "url": f"/carriere/radar/{run_id}",
+            "title": "Market Radar",
+            "url": f"/career/radar/{run_id}",
         }
         emit("artifact.ready", artifact, agent=AGENT)
         text = summary_text(report)
@@ -257,8 +254,8 @@ def make_finish(deps: GraphDeps) -> Node:
             _say("echantillon", low)
             text = f"{text} {low}"
         logger.info(
-            "Relevé fini : session %s, relevé %s, %d lisible(s), %d bloquée(s), %d analysée(s), "
-            "échantillon réduit %s",
+            "Run finished: session %s, run %s, %d readable, %d blocked, %d analyzed, "
+            "reduced sample %s",
             deps.session_id,
             run_id,
             report.read_ok,

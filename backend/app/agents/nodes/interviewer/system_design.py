@@ -23,7 +23,7 @@ def ask_design(state: InterviewState) -> InterviewState:
     received = interrupt(
         {
             "kind": "system_design_submission",
-            "question": "Remets le tableau enregistré et explique tes choix d’architecture.",
+            "question": "Submit your saved diagram and explain your design choices.",
         }
     )
     try:
@@ -46,10 +46,10 @@ def make_review_design(deps: GraphDeps) -> Node:
         )
         requirements = "\n".join(f"- {item}" for item in context.requirements)
         data = (
-            f"Sujet : {context.title}\n{context.situation}\n{requirements}\n\n"
-            + untrusted(context.diagram, "schéma enregistré")
+            f"Topic: {context.title}\n{context.situation}\n{requirements}\n\n"
+            + untrusted(context.diagram, "saved diagram")
             + "\n\n"
-            + untrusted(context.defense, "défense")
+            + untrusted(context.defense, "design rationale")
         )
         model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
         assessment = await structured_call(
@@ -58,7 +58,7 @@ def make_review_design(deps: GraphDeps) -> Node:
             [SystemMessage(render_prompt("system_design")), HumanMessage(data)],
             agent=AGENT,
             step="critique_architecture",
-            intent="J’examine le schéma remis et tes choix.",
+            intent="Reviewing your diagram and design choices.",
             retries=0,
         )
         return {"design_review": assessment.model_dump(mode="json")}
@@ -74,6 +74,6 @@ def make_save_design(deps: GraphDeps) -> Node:
             state["interview_id"],
             SystemDesignReview.model_validate(state["design_review"]),
         )
-        return {"summary": "Critique d’architecture enregistrée."}
+        return {"summary": "System design review saved."}
 
     return save

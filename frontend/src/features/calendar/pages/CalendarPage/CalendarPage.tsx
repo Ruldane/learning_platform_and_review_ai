@@ -30,7 +30,7 @@ export function CalendarPage() {
       {query.isError ? (
         <ErrorState message={errorMessage(query.error)} onRetry={() => void query.refetch()} />
       ) : null}
-      {params.get("agenda") === "error" && status === "disconnected" ? (
+      {(params.get("calendar") ?? params.get("agenda")) === "error" && status === "disconnected" ? (
         <p role="alert">{t("calendar.callbackError")}</p>
       ) : null}
       {error ? <p role="alert">{errorMessage(error)}</p> : null}
@@ -50,8 +50,8 @@ export function CalendarPage() {
       ) : null}
       {status === "connected" && !pending ? (
         <Synchronize
-          initialProgram={params.get("programme") ?? ""}
-          initialApplication={params.get("entretien") ?? ""}
+          initialProgram={params.get("program") ?? params.get("programme") ?? ""}
+          initialApplication={params.get("application") ?? params.get("entretien") ?? ""}
         />
       ) : null}
     </div>

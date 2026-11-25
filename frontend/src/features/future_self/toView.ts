@@ -31,8 +31,8 @@ export function toProjectionView(projection: Projection): ProjectionView {
       id: chapter.module_id,
       title: chapter.title,
       link: chapter.lesson_id
-        ? `/apprendre/lecons/${chapter.lesson_id}`
-        : `/apprendre/programme/${chapter.program_id}`,
+        ? `/learn/lessons/${chapter.lesson_id}`
+        : `/learn/programs/${chapter.program_id}`,
       minutes: chapter.minutes,
       unlocked: offers_unlocked,
       improved: offers_improved,

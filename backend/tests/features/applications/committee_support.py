@@ -67,7 +67,7 @@ def votes_of(
     ]
 
 
-def synthesis_of(verdict: str = "oui", *objections: str, needs_skill: bool = False) -> Synthesis:
+def synthesis_of(verdict: str = "yes", *objections: str, needs_skill: bool = False) -> Synthesis:
     texts = objections or ("Aucun mot clé LangGraph dans le CV", "Pas d'agent en production")
     return Synthesis(
         verdict=verdict,  # type: ignore[arg-type]

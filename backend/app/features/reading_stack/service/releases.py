@@ -1,4 +1,4 @@
-"""Les journaux de version déjà collectés par la pile et son WebFetcher."""
+"""Release notes already collected by the stack and its WebFetcher."""
 
 from dataclasses import dataclass
 

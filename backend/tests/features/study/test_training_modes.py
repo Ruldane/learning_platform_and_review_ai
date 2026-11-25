@@ -45,9 +45,9 @@ async def test_training_mode_changes_the_following_turn_without_restarting(
     token = await claude.token(("sessions", "conversations", "study"), "write")
     for index, (mode, instruction) in enumerate(
         [
-            ("socratic", "questions progressives"),
-            ("feynman", "avec ses propres mots"),
-            ("direct", "explique directement"),
+            ("socratic", "Ask progressive questions"),
+            ("feynman", "explain in her own words"),
+            ("direct", "explain the approach directly"),
         ]
     ):
         changed = await client.patch(path, json={"action": "mode", "mode": mode})

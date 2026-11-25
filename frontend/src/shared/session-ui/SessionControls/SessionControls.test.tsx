@@ -12,27 +12,27 @@ function setup(status: SessionStatus, extra?: ReactNode) {
 }
 
 describe("SessionControls", () => {
-  it("shows Pause and Annuler while running", async () => {
+  it("shows Pause and Cancel while running", async () => {
     const user = userEvent.setup();
     const h = setup("running");
-    expect(screen.queryByRole("button", { name: "Reprendre" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Resume" })).toBeNull();
     await user.click(screen.getByRole("button", { name: "Pause" }));
-    await user.click(screen.getByRole("button", { name: "Annuler" }));
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
     expect(h.onPause).toHaveBeenCalledOnce();
     expect(h.onCancel).toHaveBeenCalledOnce();
   });
 
-  it("shows Reprendre when paused", async () => {
+  it("shows Resume when paused", async () => {
     const user = userEvent.setup();
     const h = setup("paused");
     expect(screen.queryByRole("button", { name: "Pause" })).toBeNull();
-    await user.click(screen.getByRole("button", { name: "Reprendre" }));
+    await user.click(screen.getByRole("button", { name: "Resume" }));
     expect(h.onResume).toHaveBeenCalledOnce();
   });
 
-  it("keeps Annuler while waiting for the user but offers no Pause", () => {
+  it("offers only Cancel while waiting for the user", () => {
     setup("waiting_user");
-    expect(screen.getByRole("button", { name: "Annuler" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Pause" })).toBeNull();
   });
 
@@ -42,7 +42,7 @@ describe("SessionControls", () => {
   });
 
   it("renders extra actions next to the controls", () => {
-    setup("running", <button type="button">Plus concret</button>);
-    expect(screen.getByRole("button", { name: "Plus concret" })).toBeInTheDocument();
+    setup("running", <button type="button">More concrete</button>);
+    expect(screen.getByRole("button", { name: "More concrete" })).toBeInTheDocument();
   });
 });

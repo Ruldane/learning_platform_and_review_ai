@@ -1,7 +1,7 @@
-"""Ce qu'un texte peut dire sans que ce soit un fait de January (contrôle `text_claims`) : ses
-propres coordonnées (téléphone, email, liens du profil), les jours du mois (« le 12 novembre ») et
-les expressions citées de l'offre (entreprise, intitulé, contact). Chaque masque remplace le texte
-par des espaces de même longueur : les positions des autres termes ne bougent pas."""
+"""What a text may say without it being a fact from January (`text_claims` check): her own
+contact details (phone, email, profile links), the days of the month ("le 12 novembre") and
+the quoted expressions of the posting (company, title, contact). Each mask replaces the text
+with spaces of the same length: the positions of the other terms do not move."""
 
 import re
 from collections.abc import Sequence
@@ -9,22 +9,22 @@ from collections.abc import Sequence
 from app.agents.tools.cv_schema import MasterProfileData
 from app.agents.tools.posting_schema import normalize_term
 
-# Mots qui désignent l'offre : « votre poste de X », « the X position ».
+# Words that designate the posting: "votre poste de X", "the X position".
 POSTING_WORDS = frozenset(
     "poste offre role candidature opportunite position opening job".split()  # noqa: SIM905
 )
-# Ce qui précède un mot de l'offre quand il parle de l'offre de l'autre, pas du poste de January.
+# What precedes a posting word when it speaks of the other side's posting, not January's job.
 DETERMINERS = frozenset("votre vos ce cette le la l your this the".split())  # noqa: SIM905
-# Un mot qui précède un nom d'entreprise ou de contact : « chez X », « at X », « avec X ».
+# A word that precedes a company or contact name: "chez X", "at X", "avec X".
 EMPLOYER_WORDS = frozenset(
     """chez at pour for avec with rejoindre rejoint join joined joining aupres bonjour hello dear
     madame monsieur""".split()  # noqa: SIM905
 )
-# Mots qui rattachent ce qui suit à January : l'expression n'est plus celle de l'offre.
+# Words that attach what follows to January: the expression is no longer the posting's.
 SELF_WORDS = frozenset(
     """mon ma mes my actuel actuelle current precedent precedente previous j je i""".split()  # noqa: SIM905
 )
-# Le texte se donne un titre (mots normalisés) : « en tant que », « je suis », « j'étais »…
+# The text gives itself a title (normalised words): "en tant que", "je suis", "j'étais"...
 SELF_CUES = (
     ("en", "tant", "que"),
     ("en", "qualite", "de"),
@@ -54,11 +54,12 @@ SELF_CUES = (
     ("my", "experience"),
 )
 _MIN_PHONE_DIGITS = 6
-CITING_WINDOW = 6  # mots avant l'expression, dans la même proposition
+CITING_WINDOW = 6  # words before the expression, in the same clause
 _CLAUSE_BREAK = re.compile(r"[.,;!?\n]")
+# French and English month names: both stay (letters and documents stored before the switch).
 _FRENCH_MONTHS = "janvier février fevrier mars avril mai juin juillet août aout septembre octobre"
 _FRENCH_MONTHS += " novembre décembre decembre"
-# « may » minuscule est le verbe : seul « May » est un mois.
+# Lowercase "may" is the verb: only "May" is a month.
 _ENGLISH_MONTHS = (
     "january|february|march|april|(?-i:May)|june|july|august|september|october|november|december"
 )
@@ -66,8 +67,8 @@ _MONTHS = f"{_FRENCH_MONTHS.replace(' ', '|')}|{_ENGLISH_MONTHS}"
 _DAY_MONTH = re.compile(
     rf"(?<!\w)\d{{1,2}}(?:er|st|nd|rd|th)?\s+(?:(?:de|of)\s+)?(?:{_MONTHS})(?!\w)", re.IGNORECASE
 )
-# « November 12, 2026 », « March 5th », « May 3. » : un nombre suivi d'un nom (« March 5 clients »)
-# est un compte, pas un jour.
+# "November 12, 2026", "March 5th", "May 3.": a number followed by a noun ("March 5 clients")
+# is a count, not a day.
 _MONTH_DAY = re.compile(
     rf"(?<!\w)(?:{_ENGLISH_MONTHS})\s+\d{{1,2}}"
     r"(?:(?:st|nd|rd|th)(?!\w)|(?=\s*(?:[,.;!?\n]|$))|(?=\s+\d{4}))",
@@ -82,16 +83,16 @@ def _blank(match: re.Match[str]) -> str:
 
 
 def mask_dates(text: str) -> str:
-    """Les jours du mois sont masqués (« 12 novembre », « November 12 », « 12/11/ ») : une date
-    n'est pas un chiffre du profil. Une année reste : elle se compare aux dates du profil."""
+    """The days of the month are masked ("12 novembre", "November 12", "12/11/"): a date
+    is not a profile figure. A year stays: it is compared with the profile's dates."""
     text = _DAY_MONTH.sub(_blank, text)
     text = _MONTH_DAY.sub(_blank, text)
     return _NUMERIC_DATE.sub(lambda m: " " * len(m.group(1)) + m.group(2), text)
 
 
 def _literal(value: str, *, phone: bool = False) -> str:
-    """Le motif d'une coordonnée écrite telle quelle : un numéro de téléphone se lit avec
-    n'importe quels séparateurs (espaces, points, tirets) entre ses chiffres."""
+    """The pattern of a contact written as is: a phone number reads with
+    any separators (spaces, dots, dashes) between its digits."""
     if phone:
         digits = re.sub(r"\D", "", value)
         return r"[\s.\-]?".join(digits) if len(digits) >= _MIN_PHONE_DIGITS else ""
@@ -100,8 +101,8 @@ def _literal(value: str, *, phone: bool = False) -> str:
 
 
 def mask_own_contacts(text: str, profile: MasterProfileData) -> str:
-    """Le téléphone, l'email et les liens du profil, écrits dans le texte (signature), sont
-    masqués : leurs chiffres ne sont jamais une référence."""
+    """The phone, the email and the profile's links, written in the text (signature), are
+    masked: their digits are never a reference."""
     patterns = [_literal(profile.identity.phone or "", phone=True)]
     patterns.append(_literal(profile.identity.email or ""))
     patterns += [_literal(link.url) for link in profile.links]
@@ -112,7 +113,7 @@ def mask_own_contacts(text: str, profile: MasterProfileData) -> str:
 
 
 def _has_cue(words: Sequence[str]) -> bool:
-    """Une formule d'attribution (`SELF_CUES`) figure parmi `words`."""
+    """An attribution formula (`SELF_CUES`) appears among `words`."""
     return any(
         tuple(words[rank : rank + len(cue)]) == cue
         for cue in SELF_CUES
@@ -121,10 +122,10 @@ def _has_cue(words: Sequence[str]) -> bool:
 
 
 def _cites_posting(before: str, after: str) -> bool:
-    """L'expression parle de l'offre : « votre poste de X » (un mot de l'offre, précédé de
-    « votre », « le »…, dans les 6 mots d'avant, sans « mon », « actuel », « je » ni formule
-    d'attribution entre le mot de l'offre et l'expression) ou « the X role » (un déterminant
-    avant, un mot de l'offre juste après)."""
+    """The expression speaks of the posting: "votre poste de X" (a posting word, preceded by
+    "votre", "le"..., within the 6 words before, with no "mon", "actuel", "je" or attribution
+    formula between the posting word and the expression) or "the X role" (a determiner
+    before, a posting word right after)."""
     words = normalize_term(_CLAUSE_BREAK.split(before)[-1]).split()
     following = normalize_term(_CLAUSE_BREAK.split(after)[0]).split()[:1]
     if words[-1:] and words[-1] in DETERMINERS and following and following[0] in POSTING_WORDS:
@@ -144,11 +145,11 @@ def _after_employer_word(before: str) -> bool:
 
 
 def mask_phrases(text: str, phrases: Sequence[str]) -> str:
-    """Retire du texte, là où elles figurent, les expressions entières de `phrases` (entreprise,
-    intitulé exact de l'offre, nom d'un contact ; sans la parenthèse « (H/F) »), mais seulement
-    quand le texte les cite : juste après « chez », « at », « avec »… (une entreprise, un
-    contact) ou comme l'offre de l'autre (`_cites_posting`). Ailleurs elles restent lues :
-    « en tant que Lead Data », « Je travaille avec Python en tant que Lead Data Engineer »."""
+    """Removes from the text, where they appear, the whole expressions of `phrases` (company,
+    exact job title, contact name; without the parenthesis "(H/F)"), but only
+    when the text cites them: right after "chez", "at", "avec"... (a company, a
+    contact) or as the other side's posting (`_cites_posting`). Elsewhere they stay read:
+    "en tant que Lead Data", "Je travaille avec Python en tant que Lead Data Engineer"."""
     for phrase in phrases:
         words = _PARENTHESIS.sub(" ", phrase).split()
         if not words:

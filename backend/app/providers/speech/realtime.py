@@ -1,4 +1,4 @@
-"""Synthèse OpenAI Realtime côté serveur. Aucun secret dans les événements ou les erreurs."""
+"""OpenAI Realtime speech synthesis on the server side. No secret in the events or the errors."""
 
 import asyncio
 import base64
@@ -17,9 +17,9 @@ SPEECH_MODEL = "gpt-realtime-2.1-mini"
 PCM_LIMIT = 8 * 1024 * 1024
 VOICES: dict[Speaker, Literal["marin", "cedar"]] = {"host": "marin", "coach": "cedar"}
 _PROMPT = (
-    "Lis le texte transmis mot pour mot dans sa langue, avec une voix naturelle et claire. "
-    "Adopte un débit posé, autour de 145 mots par minute. "
-    "Respecte chaque phrase et rends uniquement la lecture du texte transmis."
+    "Read the supplied text word for word, in its own language, with a natural and clear voice. "
+    "Adopt a measured pace, around 145 words per minute. "
+    "Respect every sentence and return only the reading of the supplied text."
 )
 
 

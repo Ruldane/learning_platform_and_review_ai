@@ -14,7 +14,7 @@ export function PaperLabStart() {
     mutationFn: () => preparePaperLab(url.trim()),
     onSuccess: ({ lab_id }) => {
       void client.invalidateQueries({ queryKey: ["paperLabs"] });
-      void navigate("/apprendre/articles/" + encodeURIComponent(lab_id));
+      void navigate("/learn/papers/" + encodeURIComponent(lab_id));
     },
   });
 

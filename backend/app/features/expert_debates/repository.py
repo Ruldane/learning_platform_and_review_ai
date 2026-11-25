@@ -1,4 +1,4 @@
-"""Lectures au nom du compte des seuls tours de la porte Débat."""
+"""Account-scoped reads of the Debate gate's turns only."""
 
 from sqlalchemy import Select, and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -55,6 +55,6 @@ class DebateRepository:
     ) -> tuple[ConversationTurn, AgentSession]:
         result = (await self.db.execute(stmt)).one_or_none()
         if result is None:
-            raise AppError("debate_not_found", "Débat introuvable.", 404)
+            raise AppError("debate_not_found", "Debate not found.", 404)
         turn, session = result
         return turn, session

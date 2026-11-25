@@ -9,9 +9,9 @@ TODAY = date(2026, 11, 16)
 
 
 def _offers() -> tuple[tuple[GapRow, ...], ...]:
-    python = GapRow("Python", True, "valide", "in_program", None)
+    python = GapRow("Python", True, "validated", "in_program", None)
     rag = GapRow("Ràg", True, None, "in_program", 1)
-    agents = GapRow("Agents", True, "en_cours", "in_program", 2)
+    agents = GapRow("Agents", True, "in_progress", "in_program", 2)
     language = GapRow("Permis", True, None, "out_of_scope", None)
     unrelated = GapRow("Finance", True, None, "to_add", None)
     return ((python,), (rag,), (rag, agents), (agents, language), (unrelated,))
@@ -94,7 +94,7 @@ def test_zero_observed_pace_does_not_forecast_a_date_with_work_remaining() -> No
 
 
 def test_target_already_met_and_rows_from_cv_reviews_do_not_change_coverage() -> None:
-    ready = GapRow("Python", True, "prouve", "in_program", 1)
+    ready = GapRow("Python", True, "proven", "in_program", 1)
     cv_review = GapRow("Autre", True, None, "to_add", None, "cv_review")
     result = project(ProjectionInput(today=TODAY, offers=((ready, cv_review), (cv_review,), ())))
     assert result.offer_count == 1 and result.current_percent == 100
@@ -117,11 +117,11 @@ def test_non_learnable_requirement_cannot_be_unlocked_by_homonymous_chapter() ->
 
 
 def test_readiness_reuses_the_radar_high_match_threshold_and_checks_required_skills() -> None:
-    needed = GapRow("Python", True, "valide", "in_program", None)
-    declared = GapRow("Rust", True, "declare", "in_program", None)
-    acquired = GapRow("Docker", False, "prouve", "in_program", None)
+    needed = GapRow("Python", True, "validated", "in_program", None)
+    declared = GapRow("Rust", True, "declared", "in_program", None)
+    acquired = GapRow("Docker", False, "proven", "in_program", None)
     missing = GapRow("Kubernetes", False, None, "to_add", None)
-    other = GapRow("SQL", False, "valide", "in_program", None)
+    other = GapRow("SQL", False, "validated", "in_program", None)
     result = project(
         ProjectionInput(
             today=TODAY, offers=((needed, acquired, missing), (declared, acquired, other))

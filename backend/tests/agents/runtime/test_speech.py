@@ -114,7 +114,7 @@ def test_extract_citations_reads_grouped_markers() -> None:
 
 
 async def _model(replies: list[str]) -> BaseChatModel:
-    return await fake_llm(replies).get_chat_model("u1", "rapide", agent="skeptic")
+    return await fake_llm(replies).get_chat_model("u1", "fast", agent="skeptic")
 
 
 async def test_speak_emits_capped_message_with_citations(
@@ -164,7 +164,7 @@ async def test_speak_keeps_a_short_reply_whole(emitted: list[dict[str, object]])
 
 async def test_speak_asks_once_more_when_revise_objects(emitted: list[dict[str, object]]) -> None:
     provider_model = fake_llm(["Sans nom [1].", "Je réponds au Sceptique [1].", "jamais"])
-    model = await provider_model.get_chat_model("u1", "rapide", agent="practitioner")
+    model = await provider_model.get_chat_model("u1", "fast", agent="practitioner")
     seen: list[str] = []
 
     def revise(text: str) -> str | None:

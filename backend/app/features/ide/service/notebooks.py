@@ -1,4 +1,4 @@
-"""Édition du fichier `.ipynb` et stockage tardif du résultat de la bonne cellule."""
+"""Editing of the `.ipynb` file and deferred storage of the right cell's result."""
 
 from sqlalchemy import update
 
@@ -21,12 +21,12 @@ def _path(path: str) -> None:
             return
     except ValueError:
         pass
-    raise AppError("notebook_path_invalid", "Choisis un chemin de fichier .ipynb valide.", 422)
+    raise AppError("notebook_path_invalid", "Choose a valid .ipynb file path.", 422)
 
 
 def _read(project: IdeSession, path: str) -> Notebook:
     if path not in project.files:
-        raise AppError("notebook_not_found", "Notebook introuvable.", 404)
+        raise AppError("notebook_not_found", "Notebook not found.", 404)
     return Notebook.parse(str(project.files[path]))
 
 

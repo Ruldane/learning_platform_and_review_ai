@@ -15,13 +15,13 @@ import { listKey, threadKey } from "./useConversationList";
 const key = (id?: string) => threadKey("training", id);
 export function trainingPath(id: string, skillId = "") {
   const path = studySessionPath(id, "training");
-  return skillId ? `${path}?${new URLSearchParams({ competence: skillId })}` : path;
+  return skillId ? `${path}?${new URLSearchParams({ skill: skillId })}` : path;
 }
 
 export function newTrainingPath(skillId = "") {
-  const params = new URLSearchParams({ nouvelle: "1" });
-  if (skillId) params.set("competence", skillId);
-  return `/etudier/training?${params}`;
+  const params = new URLSearchParams({ new: "1" });
+  if (skillId) params.set("skill", skillId);
+  return `/study/training?${params}`;
 }
 
 function useTrainingQuery(studyId: string | undefined, fresh: boolean, submitted: string | null) {

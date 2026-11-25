@@ -33,7 +33,7 @@ export function SalaryScenario({ data }: { data: SalaryScenarioView }) {
           )}
         </p>
         <Link
-          to={`/carriere/radar/${data.runId}`}
+          to={`/career/radar/${data.runId}`}
           className="text-sm text-primary underline underline-offset-4"
         >
           {t("applications.salaryScenario.open")}

@@ -24,7 +24,7 @@ from app.features.study.service.runtime import StudyRuntime
 
 
 def lesson_not_ready() -> AppError:
-    return AppError("lesson_not_ready", "La leçon de ce module n'est pas encore prête.", 409)
+    return AppError("lesson_not_ready", "The lesson for this module isn't ready yet.", 409)
 
 
 class AgentStudyStore:

@@ -1,20 +1,20 @@
-"""Schémas du comité de recrutement simulé (SPEC F19, D147) : les quatre personas, leur vote, la
-synthèse du Modérateur et le contexte que le parcours `hiring_committee` lit.
+"""Schemas of the simulated hiring committee (SPEC F19, D147): the four personas, their vote, the
+Moderator's synthesis and the context that the `hiring_committee` graph reads.
 
-Ce que le code décide, le modèle ne le choisit pas : le verdict est la majorité des quatre votes
-(`majority_verdict`), l'ordre de parole est fixe (`speaking_order`), et un changement qui demande un
-terme que le profil ne dit pas est marqué « à acquérir » (`needs_skill`, `committee_changes`).
-Les textes lus par January sont raccourcis (`Prose`) plutôt que refusés ; le nombre de changements
-(trois exactement) est vérifié et renvoyé au modèle (`structured_call`)."""
+What the code decides, the model does not choose: the verdict is the majority of the four votes
+(`majority_verdict`), the speaking order is fixed (`speaking_order`), and a change that asks for a
+term the profile does not state is marked "to acquire" (`needs_skill`, `committee_changes`).
+The texts read by January are shortened (`Prose`) rather than refused; the number of changes
+(exactly three) is checked and sent back to the model (`structured_call`)."""
 
 from collections import Counter
 from typing import Annotated, Literal, get_args
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, BeforeValidator, Field
 
 from app.agents.runtime.prose import Prose, ShortenToMax
 from app.agents.tools.cv_schema import CvContent, MasterProfileData, facts_of
-from app.agents.tools.kit_schema import CompanyDossier
+from app.agents.tools.kit_schema import CompanyDossier, CompanySize
 from app.agents.tools.posting_schema import Keyword, PostingAnalysis, contains_term, normalize_term
 from app.agents.tools.text_claims import Claim, text_claims
 
@@ -30,8 +30,6 @@ __all__ = [
     "Persona",
     "PersonaVote",
     "RankedObjection",
-    "Size",
-    "VERDICT_WORDS",
     "Synthesis",
     "SynthesisDraft",
     "Verdict",
@@ -44,24 +42,31 @@ __all__ = [
 ]
 
 Persona = Literal["ats_reader", "recruiter", "manager", "colleague"]
-PERSONAS: tuple[Persona, ...] = get_args(Persona)  # filtre machine, RH, manager, futur collègue
-Verdict = Literal["oui", "non", "peut_etre"]
-Size = Literal["startup", "pme", "grand_groupe", "inconnu"]
+PERSONAS: tuple[Persona, ...] = get_args(Persona)  # machine filter, HR, manager, future colleague
+Verdict = Literal["yes", "no", "maybe"]
+_LEGACY_VERDICTS = {"oui": "yes", "non": "no", "peut_etre": "maybe"}
+
+
+def _verdict(value: object) -> object:
+    return _LEGACY_VERDICTS.get(value, value) if isinstance(value, str) else value
+
+
+_SavedVerdict = Annotated[Verdict, BeforeValidator(_verdict)]
 LABELS: dict[str, str] = {
-    "ats_reader": "Lecteur ATS",
-    "recruiter": "Recruteur",
+    "ats_reader": "ATS reader",
+    "recruiter": "Recruiter",
     "manager": "Manager",
-    "colleague": "Futur collègue",
+    "colleague": "Future colleague",
 }
-MAX_WORDS = 150  # une prise de parole (SPEC 9.3)
-VERDICT_WORDS: dict[str, str] = {"oui": "oui", "non": "non", "peut_etre": "peut-être"}
+MAX_WORDS = 150  # one speaking turn (SPEC 9.3)
 MAX_OBJECTIONS = 6
 CHANGES = 3
 MAX_TERMS = 30
 Sentence = Annotated[str, Field(min_length=1, max_length=300), ShortenToMax()]
-ACQUIRE = "À acquérir : {terms}. Ton profil ne le dit pas : ne l'écris pas dans ton CV."
-CHECK = "À vérifier : ton profil ne dit pas {terms}. Ne l'écris pas dans ton CV."
-# Les mots d'une section de CV : une consigne sur le CV (« la section Compétences »), pas un nom.
+ACQUIRE = "Build evidence for {terms} before adding this to your CV."
+CHECK = "To check · Verify {terms} before adding these details to your CV."
+# The words of a CV section: an instruction about the CV ("the Skills section"), not a name.
+# French and English headings both stay: CVs and profiles written before the switch are French.
 _SECTION_NAMES = (
     "Compétences Expériences Expérience Formation Formations Projets Langues Résumé Profil "
     "Certifications Intérêts Loisirs Bénévolat Publications "
@@ -72,9 +77,9 @@ SECTION_WORDS = frozenset(normalize_term(word, plural=True) for word in _SECTION
 
 
 class Vote(BaseModel):
-    """Le vote d'une persona : un entretien, oui, non ou peut-être, et son objection principale."""
+    """A persona's vote: an interview, yes, no or maybe, and its main objection."""
 
-    vote: Verdict
+    vote: _SavedVerdict
     objection: Sentence
     reason: Prose = Field(min_length=1, max_length=500)
 
@@ -84,15 +89,15 @@ class PersonaVote(Vote):
 
 
 class RankedObjection(BaseModel):
-    """Une objection du comité (les plus lourdes d'abord) et les personas qui la portent."""
+    """An objection of the committee (heaviest first) and the personas that carry it."""
 
     text: Sentence
     personas: list[Persona] = Field(default_factory=list, max_length=len(PERSONAS))
 
 
 class ChangeDraft(BaseModel):
-    """Un changement proposé par le Modérateur : la persona dont il ferait basculer le vote et les
-    faits du profil à mettre en avant."""
+    """A change proposed by the Moderator: the persona whose vote it would flip and the
+    profile facts to bring forward."""
 
     text: Sentence
     persona: Persona
@@ -100,47 +105,47 @@ class ChangeDraft(BaseModel):
 
 
 class Change(ChangeDraft):
-    """Un changement rangé. `needs_skill` : il demande un terme que le profil ne dit pas (`terms`) ;
-    c'est alors une compétence « à acquérir », jamais un « ajoute X »."""
+    """A stored change. `needs_skill`: it asks for a term the profile does not state (`terms`);
+    it is then a skill "to acquire", never an "add X"."""
 
     needs_skill: bool = False
     terms: list[str] = Field(default_factory=list, max_length=MAX_TERMS)
 
 
 class SynthesisDraft(BaseModel):
-    """Ce que le Modérateur écrit : le classement des objections et les trois changements."""
+    """What the Moderator writes: the ranking of the objections and the three changes."""
 
     objections: list[RankedObjection] = Field(min_length=1, max_length=MAX_OBJECTIONS)
     changes: list[ChangeDraft] = Field(min_length=CHANGES, max_length=CHANGES)
 
 
 class Synthesis(BaseModel):
-    """Le verdict (fixé par le code), les objections classées et les trois changements."""
+    """The verdict (set by the code), the ranked objections and the three changes."""
 
-    verdict: Verdict
+    verdict: _SavedVerdict
     objections: list[RankedObjection] = Field(max_length=MAX_OBJECTIONS)
     changes: list[Change] = Field(min_length=CHANGES, max_length=CHANGES)
 
 
 class AtsTermsView(BaseModel):
-    """Les termes de l'offre (mots clés et outils) que le CV écrit (`found`) et ceux qu'il n'écrit
-    pas (`missing`) : de quoi dire quelles recherches de recruteur feraient remonter le CV."""
+    """The posting terms (keywords and tools) that the CV writes (`found`) and those it does not
+    write (`missing`): enough to say which recruiter searches would surface the CV."""
 
     found: list[str] = Field(default_factory=list, max_length=MAX_TERMS)
     missing: list[str] = Field(default_factory=list, max_length=MAX_TERMS)
 
 
 class CommitteeContext(BaseModel):
-    """Ce que le parcours lit (lecture seule) : le CV de la version (texte, sans nom ni
-    coordonnées), l'offre, son dossier de moins de 30 jours et la taille de l'entreprise, les
-    termes de l'offre vus dans le CV, le profil validé (pour relire les changements), l'entreprise
-    et l'intitulé exact du poste."""
+    """What the graph reads (read-only): the version's CV (text, without name or
+    contact details), the posting, its dossier under 30 days old and the company size, the
+    posting terms seen in the CV, the validated profile (to re-read the changes), the company
+    and the exact job title."""
 
     cv_text: str
     posting_text: str
     analysis: PostingAnalysis
     dossier: CompanyDossier | None = None
-    size: Size = "inconnu"
+    size: CompanySize = "unknown"
     ats_terms: AtsTermsView = Field(default_factory=AtsTermsView)
     profile: MasterProfileData
     company: str | None = None
@@ -148,24 +153,24 @@ class CommitteeContext(BaseModel):
 
 
 def majority_verdict(votes: list[PersonaVote]) -> Verdict:
-    """La majorité des votes : plus de la moitié sur la même réponse. Égalité ou aucune majorité
-    (2 contre 2, 2-1-1) : « peut-être » (SPEC F19)."""
+    """The majority of the votes: more than half on the same answer. A tie or no majority
+    (2 against 2, 2-1-1): "maybe" (SPEC F19)."""
     counts = Counter(vote.vote for vote in votes)
     for answer in get_args(Verdict):
         if counts[answer] * 2 > len(votes):
             return answer  # type: ignore[no-any-return]
-    return "peut_etre"
+    return "maybe"
 
 
 def speaking_order(round_number: int) -> list[Persona]:
-    """L'ordre de parole, fixé par le code : celui des personas au tour 1, décalé d'un rang à
-    chaque tour suivant (le dernier orateur d'un tour ne parle pas le premier du suivant)."""
+    """The speaking order, fixed by the code: that of the personas in round 1, shifted by one rank
+    at each following round (the last speaker of a round does not speak first in the next)."""
     shift = (round_number - 1) % len(PERSONAS)
     return [*PERSONAS[shift:], *PERSONAS[:shift]]
 
 
 def cv_plain_text(cv: CvContent) -> str:
-    """Le CV lu par le comité : accroche et sections, sans nom ni coordonnées."""
+    """The CV as read by the committee: headline and sections, without name or contact details."""
     lines = [cv.headline] if cv.headline else []
     for section in cv.sections:
         lines.append(f"## {section.title}")
@@ -181,8 +186,8 @@ def _forms(keyword: Keyword) -> list[str]:
 
 
 def ats_terms_of(analysis: PostingAnalysis, cv_text: str) -> AtsTermsView:
-    """Les mots clés et outils de l'offre, écrits dans le CV (une de leurs formes y figure, casse,
-    accents et pluriel simple ignorés) ou non. Du code : aucun terme n'est inventé."""
+    """The posting's keywords and tools, written in the CV (one of their forms appears there,
+    case, accents and simple plural ignored) or not. Code: no term is invented."""
     wanted = [_forms(keyword) for keyword in analysis.keywords]
     wanted += [[tool] for tool in analysis.tools]
     found: list[str] = []
@@ -203,12 +208,12 @@ def _section(claim: Claim) -> bool:
 def committee_changes(
     drafts: list[ChangeDraft], profile: MasterProfileData, allowed: list[str]
 ) -> list[Change]:
-    """Les changements du Modérateur relus par le code : les identifiants de faits inconnus du
-    profil sont retirés ; un texte qui demande un terme que le profil ne dit pas (`text_claims`,
-    `allowed` : l'entreprise et l'intitulé exact seulement) devient « à acquérir », avec ces termes
-    (outils, chiffres, titres), sans jamais garder le « ajoute X » du modèle. Un nom propre absent
-    du profil (employeur, école) donne « à vérifier » (`CHECK`) ; les mots de section d'un CV
-    (`SECTION_WORDS`) ne sont pas des noms."""
+    """The Moderator's changes re-read by the code: the fact identifiers unknown to the
+    profile are removed; a text that asks for a term the profile does not state (`text_claims`,
+    `allowed`: the company and the exact job title only) becomes "to acquire", with these terms
+    (tools, figures, titles), never keeping the model's "add X". A proper noun absent
+    from the profile (employer, school) gives "to check" (`CHECK`); the section words of a CV
+    (`SECTION_WORDS`) are not names."""
     known = set(facts_of(profile))
     changes: list[Change] = []
     for draft in drafts:

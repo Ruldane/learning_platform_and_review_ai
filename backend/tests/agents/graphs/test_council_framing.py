@@ -24,10 +24,10 @@ from tests.agents.graphs.council_support import (
 from tests.agents.runtime.runner_helpers import wait_until
 from tests.support.council import GOAL_TEXT
 
-START = "<<<CONTENU_NON_FIABLE"
-END = "<<<FIN_CONTENU_NON_FIABLE>>>"
+START = "<<<UNTRUSTED_CONTENT"
+END = "<<<END_UNTRUSTED_CONTENT>>>"
 ANSWER = "Je vise un poste en startup"
-PEOPLE_MARKER = "Repère les praticiens."
+PEOPLE_MARKER = "Find practitioners."
 
 
 def _people(*names: str) -> str:
@@ -57,7 +57,7 @@ async def test_council_stops_at_framing_with_fields(make_council_runner: MakeCou
     assert pending["kind"] == "framing"
     assert [f["id"] for f in pending["fields"]] == ["q1", "q2", "q3"]
     assert pending["fields"][0]["label"] == "Question de cadrage numéro 1 ?"
-    assert pending["options"] == [{"value": "go", "label": "Lancer la recherche"}]
+    assert pending["options"] == [{"value": "go", "label": "Start research"}]
     assert c.store.framing_saved == [] and c.web.search.calls == []  # rien avant la réponse
     assert GOAL_TEXT in c.prompts()[0]  # le Modérateur a lu l'objectif
 
@@ -112,8 +112,8 @@ async def test_framing_answer_saved_once_after_replay(
     assert len(second.store.framing_saved) == 1  # … sans seconde écriture différente
     assert second.store.framing_saved[0][1] == {"q2": ANSWER}
     assert "startup" in second.search_queries_prompt()
-    assert "Prépare les requêtes de recherche." in second.prompts()[0]
-    framing = "Prépare les questions de cadrage."
+    assert "Prepare the search queries." in second.prompts()[0]
+    framing = "Prepare the framing questions."
     assert not [p for p in second.prompts() if framing in p]  # Modérateur non rappelé
 
 
@@ -157,7 +157,7 @@ async def test_people_prompt_frames_page_metadata_as_untrusted(
     await c.wait_choice()
     prompt = c.people_prompt()
     assert prompt.count(END) >= PAGE_COUNT + 1  # chaque page, plus la règle partagée
-    line = prompt.index("Auteur : Ada Lovelace")
+    line = prompt.index("Author: Ada Lovelace")
     assert prompt.rfind(START, 0, line) > prompt.rfind(END, 0, line)  # encadré
 
 

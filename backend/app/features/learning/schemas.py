@@ -1,5 +1,4 @@
-"""Schémas de l'API de l'apprentissage (D87) : objectifs, propositions du Conseil, choix du
-parcours et états du tableau."""
+"""Learning API schemas (D87): goals, Council proposals, path choice and board states."""
 
 from datetime import date, datetime
 from typing import Annotated, Any, Literal
@@ -9,7 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_vali
 from app.db.models.agents import SessionStatus
 from app.db.models.learning import BoardKind, GoalStatus
 
-# Les types littéraux sont réexportés : un router n'importe pas `app.db` (contrat 1b).
+# Literal types are re-exported: a router does not import `app.db` (contract 1b).
 __all__ = [
     "BoardEdit",
     "BoardKind",
@@ -30,8 +29,8 @@ _Id = Annotated[str, Field(min_length=1, max_length=36)]
 
 
 class GoalCreate(BaseModel):
-    """L'objectif saisi par January (SPEC 3.1, étape 1). Une échéance passée est refusée (422,
-    chemin du champ seulement, jamais la saisie)."""
+    """The goal entered by January (SPEC 3.1, step 1). A past deadline is refused (422, field
+    path only, never the input)."""
 
     text: _GoalText
     target_role: _Role | None = None
@@ -42,7 +41,7 @@ class GoalCreate(BaseModel):
     @classmethod
     def _not_past(cls, value: date | None) -> date | None:
         if value is not None and value < date.today():
-            raise ValueError("L'échéance est déjà passée.")
+            raise ValueError("The deadline has already passed.")
         return value
 
 
@@ -61,7 +60,7 @@ class GoalOut(BaseModel):
 
 class GoalStarted(BaseModel):
     goal: GoalOut
-    session_id: str  # session `learning_council` lancée pour cet objectif
+    session_id: str  # `learning_council` session started for this goal
 
 
 class ProposalOut(BaseModel):
@@ -83,18 +82,18 @@ class ProposalOut(BaseModel):
 
 
 class ChooseRequest(BaseModel):
-    """`mix_with` : seconde proposition du même lot (mélange) ; `start_date` : début souhaité du
-    programme, un lundi, aujourd'hui ou plus tard (sinon 422 `invalid_start_date`) ; prochain
-    lundi par défaut."""
+    """`mix_with`: second proposal from the same batch (mix); `start_date`: desired program
+    start, a Monday, today or later (otherwise 422 `invalid_start_date`); next Monday by
+    default."""
 
     mix_with: _Id | None = None
     start_date: date | None = None
 
 
 class ChooseOut(BaseModel):
-    """`already_chosen` : ce même choix était déjà fait (double clic, reprise générique) ; la
-    requête n'a rien changé, `start_date` comprise (D87). Faux aussi quand ce même choix relance
-    le Stratège, dont la session a échoué sans programme (D97)."""
+    """`already_chosen`: this same choice was already made (double click, generic resume); the
+    request changed nothing, `start_date` included (D87). Also false when this same choice
+    restarts the Strategist, whose session failed without a program (D97)."""
 
     council_session_id: str
     status: SessionStatus
@@ -118,8 +117,8 @@ class BoardOut(BaseModel):
 
 
 class BoardEdit(BaseModel):
-    """Scène Excalidraw retouchée par January (`serializeAsJSON`) et sa note, renvoyée aux agents
-    comme un message. Corps plafonné à 2 Mio (`core.body_limits.BOARD_BODY_MAX`)."""
+    """Excalidraw scene edited by January (`serializeAsJSON`) and its note, sent back to the
+    agents as a message. Body capped at 2 MiB (`core.body_limits.BOARD_BODY_MAX`)."""
 
     scene: dict[str, Any]
     note: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=2000)]

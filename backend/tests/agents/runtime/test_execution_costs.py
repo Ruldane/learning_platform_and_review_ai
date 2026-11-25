@@ -50,7 +50,7 @@ def _stuck_graph(seconds: float) -> Callable[[GraphDeps], StateGraph[Any, Any, A
     def build(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
         @node_timeout(seconds)
         async def stuck(state: _State) -> dict[str, Any]:
-            model = await deps.models.get_chat_model(deps.user_id, "rapide", "tutor")
+            model = await deps.models.get_chat_model(deps.user_id, "fast", "tutor")
             await call_with_retries(model, [HumanMessage("h" * 400)], agent="tutor")
             return {"done": True}
 

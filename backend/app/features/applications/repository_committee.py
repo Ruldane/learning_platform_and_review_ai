@@ -1,5 +1,5 @@
-"""Exécutions du comité de recrutement (D147). Chaque requête filtre par `user_id` ; les écritures
-font un `flush`, le commit appartient à l'appelant."""
+"""Hiring committee runs (D147). Every query filters by `user_id`; writes `flush`, the commit
+belongs to the caller."""
 
 import builtins
 from collections.abc import Collection
@@ -14,7 +14,7 @@ class CommitteeRepository(UserScopedRepository[CommitteeRun]):
     model = CommitteeRun
 
     async def get_fresh(self, run_id: str) -> CommitteeRun | None:
-        """L'exécution relue en base (jamais l'objet gardé par la session)."""
+        """The run re-read from the database (never the object held by the session)."""
         stmt = (
             select(CommitteeRun)
             .where(CommitteeRun.id == run_id, CommitteeRun.user_id == self.user_id)
@@ -23,7 +23,7 @@ class CommitteeRepository(UserScopedRepository[CommitteeRun]):
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def recent(self, posting_id: str | None = None) -> builtins.list[CommitteeRun]:
-        """Les exécutions (d'une offre), la plus récente d'abord."""
+        """The runs (of a posting), most recent first."""
         stmt = select(CommitteeRun).where(CommitteeRun.user_id == self.user_id)
         if posting_id is not None:
             stmt = stmt.where(CommitteeRun.posting_id == posting_id)
@@ -32,7 +32,7 @@ class CommitteeRepository(UserScopedRepository[CommitteeRun]):
         return builtins.list((await self.session.execute(stmt)).scalars().all())
 
     async def running(self, posting_id: str | None = None) -> builtins.list[CommitteeRun]:
-        """Les exécutions en cours (d'une offre), la plus ancienne d'abord."""
+        """The running runs (of a posting), oldest first."""
         stmt = select(CommitteeRun).where(
             CommitteeRun.user_id == self.user_id, CommitteeRun.status == "running"
         )
@@ -43,7 +43,7 @@ class CommitteeRepository(UserScopedRepository[CommitteeRun]):
         return builtins.list((await self.session.execute(stmt)).scalars().all())
 
     async def last_done(self, posting_id: str) -> CommitteeRun | None:
-        """La dernière exécution terminée de l'offre."""
+        """The posting's last finished run."""
         stmt = (
             select(CommitteeRun)
             .where(

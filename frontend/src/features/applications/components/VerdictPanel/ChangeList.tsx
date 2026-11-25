@@ -2,8 +2,9 @@ import { t } from "@/shared/i18n/t";
 import { agentIdentity } from "@/shared/session-ui";
 import type { ChangeView } from "../viewTypes";
 
-/** Un nom propre que le profil ne dit pas (employeur, école) : le serveur écrit « À vérifier : … ». */
-const isCheck = (change: ChangeView) => change.text.startsWith("À vérifier");
+/** Unsupported proper nouns require a check. Older saved suggestions can use the French tag. */
+const isCheck = (change: ChangeView) =>
+  change.text.startsWith("To check") || change.text.startsWith("À vérifier");
 
 /**
  * Les changements proposés, dans l'ordre du comité. Un changement qui demande une compétence absente

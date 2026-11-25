@@ -11,16 +11,16 @@ const ITEMS: OfferItemView[] = [
 describe("OffersCard", () => {
   it("writes the score in words next to each offer", () => {
     render(<OffersCard items={ITEMS} />);
-    expect(screen.getByText("score 78 sur 100")).toBeInTheDocument();
-    expect(screen.getByText("score 71 sur 100")).toBeInTheDocument();
+    expect(screen.getByText("score 78 out of 100")).toBeInTheDocument();
+    expect(screen.getByText("score 71 out of 100")).toBeInTheDocument();
     expect(screen.getByText("Exemple Tech")).toBeInTheDocument();
-    expect(screen.getByText("Offre sans titre")).toBeInTheDocument();
+    expect(screen.getByText("Untitled posting")).toBeInTheDocument();
   });
 
   it("opens each offer on its own site, in a new tab, without opener or referrer", () => {
     render(<OffersCard items={ITEMS} />);
     const link = screen.getByRole("link", {
-      name: "Data engineer (s'ouvre dans un nouvel onglet)",
+      name: "Data engineer (opens in a new tab)",
     });
     expect(link).toHaveAttribute("href", "https://example.org/jobs/1");
     expect(link).toHaveAttribute("target", "_blank");
@@ -39,7 +39,7 @@ describe("OffersCard", () => {
 
   it("says there is no new offer", () => {
     render(<OffersCard items={[]} />);
-    expect(screen.getByText("Aucune nouvelle offre depuis ton dernier brief.")).toBeInTheDocument();
+    expect(screen.getByText("No new postings since your last brief.")).toBeInTheDocument();
     expect(screen.queryByRole("list")).toBeNull();
   });
 
@@ -61,7 +61,7 @@ describe("OffersCard", () => {
 
   it("says the rubric is unavailable instead of « no new offer » when its source failed", () => {
     render(<OffersCard items={[]} unavailable />);
-    expect(screen.getByText("Rubrique indisponible ce matin.")).toBeInTheDocument();
-    expect(screen.queryByText("Aucune nouvelle offre depuis ton dernier brief.")).toBeNull();
+    expect(screen.getByText("Section unavailable this morning.")).toBeInTheDocument();
+    expect(screen.queryByText("No new postings since your last brief.")).toBeNull();
   });
 });

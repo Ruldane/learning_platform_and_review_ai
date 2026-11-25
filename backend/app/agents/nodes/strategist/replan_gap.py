@@ -1,11 +1,11 @@
-"""Déclencheur `gap` du parcours `replan` (« Ajouter au planning », SPEC F8, D123), sans effet de
-bord : droits du Stratège, re-demandes et nettoyage du brouillon.
+"""`gap` trigger of the `replan` flow ("Add to schedule", SPEC F8, D123), without side effect:
+the Strategist's rights, re-requests and cleaning of the draft.
 
-Avec `gap`, l'option est fixe : ajouts seuls (`ReplanAdds`, D105 (2)). Un retrait proposé est
-ignoré (le schéma n'a pas de `drop`, preflight G12) ; chaque ajout va dans le module cible `m0`
-(« Compétences des offres ») et nomme une compétence de la liste, dans son titre ou son critère
-de fin : sinon il est redemandé, puis retiré. Les autres déclencheurs gardent les droits de leur
-option (`replan_steps`). Un contexte `gap` se reconnaît à ses compétences (`ctx.skills`)."""
+With `gap`, the option is fixed: additions only (`ReplanAdds`, D105 (2)). A proposed removal is
+ignored (the schema has no `drop`, preflight G12); each addition goes into the target module
+`m0` ("Skills from postings") and names a skill from the list, in its title or its completion
+criterion: otherwise it is requested again, then removed. The other triggers keep the rights of
+their option (`replan_steps`). A `gap` context is recognized by its skills (`ctx.skills`)."""
 
 from app.agents.nodes.strategist.replan_steps import (
     schema_for,
@@ -30,12 +30,12 @@ def is_gap(ctx: ReplanContext) -> bool:
 
 
 def schema_of(option: ReplanOption | None, ctx: ReplanContext) -> type[ReplanSummary]:
-    """Le schéma des droits : ajouts seuls avec `gap`, sinon celui de l'option."""
+    """The schema of the rights: additions only with `gap`, otherwise the option's."""
     return ReplanAdds if is_gap(ctx) else schema_for(option)
 
 
 def draft_of(found: ReplanSummary, option: ReplanOption | None, ctx: ReplanContext) -> ReplanDraft:
-    """Le brouillon complet ; avec `gap`, les ajouts seuls, tous dans `m0`."""
+    """The complete draft; with `gap`, additions only, all in `m0`."""
     if not is_gap(ctx):
         return to_draft(found, option)
     adds = [t.model_copy(update={"module": GAP_MODULE_REF}) for t in getattr(found, "add", [])]
@@ -43,25 +43,25 @@ def draft_of(found: ReplanSummary, option: ReplanOption | None, ctx: ReplanConte
 
 
 def unnamed(draft: ReplanDraft, ctx: ReplanContext) -> list[int]:
-    """Rangs (1…) des ajouts qui ne nomment aucune compétence de la liste (`gap` seul)."""
+    """Ranks (1...) of the additions that name no skill from the list (`gap` only)."""
     if not is_gap(ctx):
         return []
     return [n for n, task in enumerate(draft.add, start=1) if not skills_named(task, ctx.skills)]
 
 
 def unnamed_text(ranks: list[int]) -> str:
-    """La re-demande ne cite que des rangs, jamais le texte des offres (17.4)."""
+    """The re-request only quotes ranks, never the postings' text (17.4)."""
     listed = ", ".join(f"n° {n}" for n in ranks)
     return (
-        f"Ces tâches ajoutées ne nomment aucune compétence de la liste : {listed}. Chaque tâche "
-        "ajoutée nomme, dans son titre ou son critère de fin, une compétence de la liste telle "
-        "qu'elle y est écrite. Réponds de nouveau."
+        f"These added tasks name no skill from the list: {listed}. Each added task "
+        "names, in its title or its completion criterion, a skill from the list exactly as "
+        "written there. Answer again."
     )
 
 
 def problem_text(draft: ReplanDraft, ctx: ReplanContext) -> str | None:
-    """Ce qu'il faut redemander au modèle : références inconnues d'abord, puis ajouts sans
-    compétence ; `None` si le brouillon est bon."""
+    """What to ask the model again: unknown references first, then additions without a
+    skill; `None` if the draft is good."""
     unknown = unknown_refs(draft, ctx)
     if unknown:
         return unknown_text(unknown)
@@ -70,7 +70,7 @@ def problem_text(draft: ReplanDraft, ctx: ReplanContext) -> str | None:
 
 
 def cleaned(draft: ReplanDraft, ctx: ReplanContext) -> tuple[ReplanDraft, int]:
-    """Le brouillon sans référence inconnue ni ajout sans compétence, et le nombre retiré."""
+    """The draft without unknown references or skill-less additions, and the number removed."""
     known = without_unknown(draft, ctx)
     bad = set(unnamed(known, ctx))
     kept = [task for n, task in enumerate(known.add, start=1) if n not in bad]

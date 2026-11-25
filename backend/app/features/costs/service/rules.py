@@ -1,6 +1,5 @@
-"""Règles pures du rapport des coûts (P15) : la fenêtre en jours locaux, puis l'agrégation des
-appels par jour, par fonction (le graphe de la session), par agent et par modèle. Aucune
-entrée-sortie."""
+"""Pure rules of the cost report (P15): the window in local days, then the aggregation of
+calls by day, by feature (the session's graph), by agent and by model. No I/O."""
 
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
@@ -15,7 +14,7 @@ _DECIMALS = 6
 
 @dataclass(frozen=True)
 class CallFact:
-    """Un appel journalisé, réduit à ce que le rapport compte."""
+    """A logged call, reduced to what the report counts."""
 
     at: datetime
     graph: str | None
@@ -29,7 +28,7 @@ class CallFact:
 
 
 def window(today: date, days: int) -> tuple[date, date]:
-    """Les `days` derniers jours locaux, aujourd'hui compris : `(since, until)`."""
+    """The last `days` local days, today included: `(since, until)`."""
     return today - timedelta(days=days - 1), today
 
 
@@ -50,7 +49,7 @@ def _totals(facts: Iterable[CallFact]) -> CostTotals:
 
 
 def _rows(facts: Sequence[CallFact], key_of: Callable[[CallFact], str]) -> list[CostRow]:
-    """Une ligne par clé rencontrée, la plus coûteuse d'abord, puis par clé."""
+    """One row per key encountered, most expensive first, then by key."""
     groups: dict[str, list[CallFact]] = {}
     for fact in facts:
         groups.setdefault(key_of(fact), []).append(fact)
@@ -59,10 +58,10 @@ def _rows(facts: Sequence[CallFact], key_of: Callable[[CallFact], str]) -> list[
 
 
 def aggregate(calls: Sequence[CallFact], zone: ZoneInfo, since: date, until: date) -> CostsReport:
-    """Le rapport des appels dont le jour local tombe entre `since` et `until` inclus.
+    """The report of the calls whose local day falls between `since` and `until` inclusive.
 
-    `by_day` compte chaque jour de la fenêtre, zéros compris, dans l'ordre chronologique ; les
-    autres axes ne listent que les clés rencontrées, la plus coûteuse d'abord (puis par clé)."""
+    `by_day` counts every day of the window, zeros included, in chronological order; the
+    other axes list only the keys encountered, most expensive first (then by key)."""
     per_day: dict[date, list[CallFact]] = {}
     for call in calls:
         day = _local_day(call, zone)

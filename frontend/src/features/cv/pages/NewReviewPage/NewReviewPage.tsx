@@ -9,7 +9,7 @@ import { useStartReview } from "../../hooks/useStartReview";
 import { ReviewRefusal } from "./ReviewRefusal";
 
 /**
- * Lancer la revue du CV pour une offre (`/carriere/cv/revue/nouvelle/:postingId`). Le back vérifie le
+ * Lancer la revue du CV pour une offre (`/career/cv/reviews/new/:postingId`). Le back vérifie le
  * profil validé, le modèle actif et l'offre analysée : chaque refus (409) a son texte et son action
  * (« Valide ton profil », « Crée ton modèle »…). Une revue déjà ouverte pour l'offre est reprise.
  * Sinon `POST /cv/reviews`, puis redirection vers la revue.
@@ -24,7 +24,7 @@ export function NewReviewPage() {
       : undefined;
   const { start, refusal, error } = useStartReview(
     postingId,
-    (reviewId) => void navigate(`/carriere/cv/revues/${reviewId}`, { replace: true }),
+    (reviewId) => void navigate(`/career/cv/reviews/${reviewId}`, { replace: true }),
     isRunSource(source) ? source : undefined,
   );
   const launched = useRef(false);

@@ -23,7 +23,7 @@ async def source(
 ) -> ProjectHandoffSource:
     project = await get_project(rt, db, user_id, str(project_id))
     if not project.submissions:
-        raise AppError("project_handoff_no_submission", "Ce projet n’a pas encore de rendu.", 409)
+        raise AppError("project_handoff_no_submission", "This project has no submission yet.", 409)
     submission = project.submissions[0]
     return ProjectHandoffSource(
         project_id=project_id,
@@ -46,9 +46,7 @@ async def approve(
     selected = await source(rt, db, user_id, body.project_id)
     guide = preview_guide(selected, body)
     if not compare_digest(guide.digest, body.expected_digest):
-        raise AppError(
-            "project_handoff_changed", "Le guide a changé. Prévisualise-le de nouveau.", 409
-        )
+        raise AppError("project_handoff_changed", "The guide has changed. Preview it again.", 409)
     row = await ProjectHandoffs(db, user_id).add(
         project_id=str(selected.project_id),
         project_title=selected.project_title,
@@ -62,7 +60,7 @@ async def approve(
 async def read(db: AsyncSession, user_id: str, handoff_id: UUID) -> ProjectHandoffOut:
     row = await ProjectHandoffs(db, user_id).get(str(handoff_id))
     if row is None:
-        raise AppError("project_handoff_not_found", "Guide de reprise introuvable.", 404)
+        raise AppError("project_handoff_not_found", "Handoff guide not found.", 404)
     return ProjectHandoffOut.model_validate(row)
 
 

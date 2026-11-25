@@ -1,4 +1,4 @@
-"""Projection en lecture seule à partir des données appartenant au compte courant."""
+"""Read-only projection from the data owned by the current account."""
 
 from collections import Counter
 from dataclasses import asdict, dataclass
@@ -42,9 +42,7 @@ async def _program_work(
         return None
     program = await get_program(db, user_id, program_id)
     if program.status != "validated":
-        raise AppError(
-            "program_not_validated", "Valide d'abord le programme pour le projeter.", 409
-        )
+        raise AppError("program_not_validated", "Validate the program first to project it.", 409)
     chapters: list[tuple[date, ChapterWork]] = []
     for week in program.weeks:
         for module in week.modules:
@@ -70,7 +68,7 @@ def alias_map(groups: list[frozenset[str]]) -> dict[str, str]:
     count = Counter(name for group in groups for name in group)
     result: dict[str, str] = {}
     for group in groups:
-        # Un synonyme qu'emploient deux compétences ne suffit pas à les confondre.
+        # A synonym shared by two skills is not enough to merge them.
         unique = {name for name in group if count[name] == 1}
         if unique:
             canonical = min(unique)
@@ -106,7 +104,7 @@ def _offer_gaps(
 async def next_chapter_for_skill(
     db: AsyncSession, user_id: str, key: str, aliases: dict[str, str]
 ) -> ChapterWork | None:
-    """Le premier chapitre restant du programme qui vise cette compétence."""
+    """The program's first remaining chapter that targets this skill."""
     program = await _program_work(db, user_id, None)
     if program is None:
         return None

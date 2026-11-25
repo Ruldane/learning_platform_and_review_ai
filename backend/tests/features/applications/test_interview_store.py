@@ -144,7 +144,7 @@ async def test_result_attached_to_application_timeline(
     events = [e for e in await _events(app, application_id) if e.kind == "interview"]
     assert len(events) == 1
     assert events[0].ref_id == started["interview_id"] and events[0].at == NOW
-    assert "Entretien blanc" in (events[0].text or "")
+    assert "Mock interview" in (events[0].text or "")
     detail = (await client.get(f"/api/v1/applications/{application_id}")).json()
     assert [e["ref_id"] for e in detail["events"] if e["kind"] == "interview"] == [
         started["interview_id"]

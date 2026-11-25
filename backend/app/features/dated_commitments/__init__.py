@@ -1,1 +1,1 @@
-"""Planifier et relire un engagement de travail ou d’apprentissage."""
+"""Plan and review a work or learning commitment."""

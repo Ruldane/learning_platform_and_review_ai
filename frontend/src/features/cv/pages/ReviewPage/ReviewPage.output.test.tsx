@@ -9,11 +9,11 @@ import { refusal, reviewOut, versionOut } from "@/test/cvApi";
 import { renderCv } from "@/test/cvHarness";
 import { askOutput } from "@/test/cvReviewKit";
 
-/** Monte la revue `rv1` (session `r1`) avec les routes de `cvApi`. */
+/** Render review `rv1` (session `r1`) using the `cvApi` handlers. */
 function renderReview(api: Parameters<typeof renderCv>[3] = {}) {
   return renderCv(
-    "/carriere/cv/revues/:reviewId",
-    "/carriere/cv/revues/rv1",
+    "/career/cv/reviews/:reviewId",
+    "/career/cv/reviews/rv1",
     (createSocket) => <ReviewPage pollMs={40} createSocket={createSocket} />,
     api,
   );
@@ -26,13 +26,13 @@ describe("ReviewPage: the output question", () => {
 
   it("shows the three buttons once the question is asked, even after a reload", async () => {
     const { sockets } = renderReview();
-    await screen.findByRole("heading", { level: 1, name: "Revue du CV" });
-    expect(screen.queryByRole("button", { name: "Générer le PDF" })).not.toBeInTheDocument();
-    // Un rechargement rouvre le flux : la question est rejouée et les boutons reviennent.
+    await screen.findByRole("heading", { level: 1, name: "CV review" });
+    expect(screen.queryByRole("button", { name: "Generate PDF" })).not.toBeInTheDocument();
+    // Reloading reopens the stream and replays the question with its buttons.
     await askOutput(sockets);
-    expect(screen.getByRole("button", { name: "Voir le rapport" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "Générer le PDF" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "Terminer" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "View the report" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Generate PDF" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Finish" })).toBeEnabled();
   });
 
   it("generates once on a double click, and greys the buttons while it renders", async () => {
@@ -54,24 +54,24 @@ describe("ReviewPage: the output question", () => {
       },
     });
     await askOutput(sockets);
-    await user.dblClick(screen.getByRole("button", { name: "Générer le PDF" }));
-    expect(await screen.findByText("Génération du PDF en cours…")).toBeInTheDocument();
+    await user.dblClick(screen.getByRole("button", { name: "Generate PDF" }));
+    expect(await screen.findByText("Generating PDF…")).toBeInTheDocument();
     expect(state.generates).toHaveLength(1);
     expect(state.generates[0]).toEqual({ allow_extra_pages: false });
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Générer le PDF" })).toBeDisabled(),
+      expect(screen.getByRole("button", { name: "Generate PDF" })).toBeDisabled(),
     );
   });
 
   it("says a generation is already running when the back answers 409", async () => {
     const { sockets, user } = renderReview({
       generate: () =>
-        refusal(409, "generation_in_progress", "Déjà en cours.", { version_id: "v1" }),
+        refusal(409, "generation_in_progress", "Already in progress.", { version_id: "v1" }),
     });
     await askOutput(sockets);
-    await user.click(screen.getByRole("button", { name: "Générer le PDF" }));
+    await user.click(screen.getByRole("button", { name: "Generate PDF" }));
     expect(
-      await screen.findByText("Un PDF est déjà en cours de génération pour cette revue."),
+      await screen.findByText("A PDF is already being generated for this review."),
     ).toBeInTheDocument();
   });
 
@@ -79,17 +79,17 @@ describe("ReviewPage: the output question", () => {
     renderReview({
       reviews: [reviewOut({ versions: [versionOut()], waiting_output: false })],
     });
-    expect(await screen.findByAltText("Page 1 sur 1 du CV")).toHaveAttribute(
+    expect(await screen.findByAltText("Page 1 of 1 of the CV")).toHaveAttribute(
       "src",
       expect.stringContaining("/api/v1/cv/versions/v1/pages/1"),
     );
     const link = screen.getByRole("link", {
-      name: "Télécharger CV_Camille_Exemple_Societe_Fictive.pdf",
+      name: "Download CV_Camille_Exemple_Societe_Fictive.pdf",
     });
     expect(link).toHaveAttribute("href", expect.stringContaining("/api/v1/cv/versions/v1/pdf"));
     expect(link).toHaveAttribute("download", "CV_Camille_Exemple_Societe_Fictive.pdf");
-    // Les indicateurs « après » sont ceux de cette version.
-    expect(screen.getByText(/Couverture des exigences : 50 % → 75 %/)).toBeInTheDocument();
+    // The after indicators belong to this version.
+    expect(screen.getByText(/Requirement coverage: 50% → 75%/)).toBeInTheDocument();
   });
 
   it("offers one more page when the CV is too long, then regenerates with it", async () => {
@@ -98,14 +98,14 @@ describe("ReviewPage: the output question", () => {
     });
     await askOutput(sockets);
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Le CV ciblé fait 2 pages, ton CV d'origine 1 page.",
+      "The targeted CV is 2 pages, your original CV 1 page.",
     );
-    await user.click(screen.getByRole("button", { name: "Autoriser une page de plus" }));
+    await user.click(screen.getByRole("button", { name: "Allow one more page" }));
     await waitFor(() => expect(state.generates).toHaveLength(1));
     expect(state.generates[0]).toEqual({ allow_extra_pages: true });
   });
 
-  it("never says « 0 pages » when the rendered page count is missing", async () => {
+  it("never says 0 pages when the rendered page count is missing", async () => {
     const unknown = versionOut({
       status: "pages_exceeded",
       page_count: null,
@@ -115,7 +115,7 @@ describe("ReviewPage: the output question", () => {
     const { sockets } = renderReview({ reviews: [reviewOut({ versions: [unknown] })] });
     await askOutput(sockets);
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent("Le CV ciblé est plus long que ton CV d'origine (2 pages).");
+    expect(alert).toHaveTextContent("The targeted CV is longer than your original CV (2 pages).");
     expect(alert).not.toHaveTextContent("0 page");
   });
 
@@ -123,41 +123,41 @@ describe("ReviewPage: the output question", () => {
     const failed = versionOut({
       status: "failed",
       page_count: null,
-      failure_reason: "Le rendu a échoué.",
+      failure_reason: "Rendering failed.",
       indicators: null,
     });
     const { sockets, user, state } = renderReview({ reviews: [reviewOut({ versions: [failed] })] });
     await askOutput(sockets);
-    expect(await screen.findByText("Le rendu a échoué.")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Réessayer la génération" }));
+    expect(await screen.findByText("Rendering failed.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Retry generation" }));
     await waitFor(() => expect(state.generates).toHaveLength(1));
   });
 
-  it("answers « Terminer » through the session, never through the generate route", async () => {
+  it("submits Finish through the session", async () => {
     const { sockets, user, state } = renderReview();
     const resumes = recordPosts("/sessions/r1/resume", 200, sessionOut("r1", "running"));
     await askOutput(sockets);
-    await user.click(screen.getByRole("button", { name: "Terminer" }));
+    await user.click(screen.getByRole("button", { name: "Finish" }));
     await waitFor(() => expect(resumes).toHaveLength(1));
     expect(resumes[0]).toEqual({ interrupt_id: "o1", value: "finish" });
     expect(state.generates).toHaveLength(0);
   });
 
-  it("answers « Voir le rapport » through the session and shows the report", async () => {
+  it("submits View the report through the session and shows the report", async () => {
     const { sockets, user } = renderReview();
     const resumes = recordPosts("/sessions/r1/resume", 200, sessionOut("r1", "running"));
     await askOutput(sockets);
-    await user.click(screen.getByRole("button", { name: "Voir le rapport" }));
+    await user.click(screen.getByRole("button", { name: "View the report" }));
     await waitFor(() => expect(resumes).toHaveLength(1));
     expect(resumes[0]).toEqual({ interrupt_id: "o1", value: "report" });
-    expect(screen.getByRole("heading", { name: "Rapport" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Report" })).toBeInTheDocument();
   });
 
   it("report button moves focus to the report title", async () => {
     const { sockets, user } = renderReview();
     recordPosts("/sessions/r1/resume", 200, sessionOut("r1", "running"));
     await askOutput(sockets);
-    await user.click(screen.getByRole("button", { name: "Voir le rapport" }));
-    await waitFor(() => expect(screen.getByRole("heading", { name: "Rapport" })).toHaveFocus());
+    await user.click(screen.getByRole("button", { name: "View the report" }));
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Report" })).toHaveFocus());
   });
 });

@@ -23,7 +23,7 @@ describe("KeysSection", () => {
         onTest={vi.fn()}
       />,
     );
-    expect(screen.getByRole("heading", { level: 2, name: "Clés API" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "API keys" })).toBeInTheDocument();
     expect(screen.getByRole("article", { name: "Anthropic" })).toBeInTheDocument();
   });
 });

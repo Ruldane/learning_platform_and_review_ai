@@ -60,7 +60,7 @@ async def ask_brain(
     thread = await _thread(db, user_id, conversation_id)
 
     async def authorize(tx: AsyncSession) -> TurnOptions:
-        # Seul le chemin historique peut créer son fil à la première question.
+        # Only the legacy path may create its thread on the first question.
         if conversation_id is not None or thread.subject_id != user_id:
             await require_chat(tx, user_id, BRAIN_SCOPE, thread.id)
         return TurnOptions()

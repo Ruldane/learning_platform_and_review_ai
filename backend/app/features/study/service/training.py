@@ -25,7 +25,7 @@ from app.features.study.service.sessions import _live, _settle_kept, study_alrea
 from app.features.study.training_schemas import TrainingSessionOut, TrainingStart
 from app.mcp.recorder import ACTIVE
 
-GREETING = "Qu’aimerais-tu travailler aujourd’hui ? Tu peux choisir un sujet ou une leçon."
+GREETING = "What would you like to practise today? You can choose a topic or a lesson."
 TrainingLink = Callable[[AsyncSession, str], Awaitable[None]]
 
 

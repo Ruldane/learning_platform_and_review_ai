@@ -4,21 +4,21 @@ import { toDocumentRow, toItemDetail, toItemRow, toStats } from "./toView";
 
 describe("toStats", () => {
   it("keeps the six kinds, defaulting the missing ones to 0", () => {
-    const view = toStats(statsOut({ by_kind: { acquis: 4, document: 2 } }));
+    const view = toStats(statsOut({ by_kind: { skill: 4, document: 2 } }));
     expect(view.by_kind).toEqual({
       document: 2,
-      acquis: 4,
-      lecon: 0,
+      skill: 4,
+      lesson: 0,
       source: 0,
-      offre: 0,
+      posting: 0,
       decision: 0,
     });
   });
 
   it("ignores kinds the front does not know and rejects non-numeric counts", () => {
-    const view = toStats(statsOut({ by_kind: { acquis: 1, mystere: 9, lecon: Number.NaN } }));
+    const view = toStats(statsOut({ by_kind: { skill: 1, mystere: 9, lesson: Number.NaN } }));
     expect(Object.keys(view.by_kind)).toHaveLength(6);
-    expect(view.by_kind.lecon).toBe(0);
+    expect(view.by_kind.lesson).toBe(0);
     expect("mystere" in view.by_kind).toBe(false);
   });
 

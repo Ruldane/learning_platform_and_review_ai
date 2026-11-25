@@ -70,13 +70,13 @@ describe("QuizList", () => {
   it("lists modules with best score and prepare action", async () => {
     const { onPrepare, onOpen } = setup();
     expect(screen.getAllByRole("listitem")).toHaveLength(5);
-    expect(row("Bases de données")).toHaveTextContent("Semaine 1");
-    expect(row("Bases de données")).toHaveTextContent("Meilleur score : 85 %");
-    expect(row("API REST")).toHaveTextContent("Pas encore tenté");
-    await userEvent.click(screen.getByRole("button", { name: "Préparer le quiz : API REST" }));
+    expect(row("Bases de données")).toHaveTextContent("Week 1");
+    expect(row("Bases de données")).toHaveTextContent("Best score: 85%");
+    expect(row("API REST")).toHaveTextContent("Not attempted yet");
+    await userEvent.click(screen.getByRole("button", { name: "Prepare the quiz: API REST" }));
     expect(onPrepare).toHaveBeenCalledWith("m2");
     await userEvent.click(
-      screen.getByRole("button", { name: "Refaire le quiz : Bases de données" }),
+      screen.getByRole("button", { name: "Retake the quiz: Bases de données" }),
     );
     expect(onOpen).toHaveBeenCalledWith("z1");
   });
@@ -86,36 +86,35 @@ describe("QuizList", () => {
       items: [{ ...READY, bestScore: null }],
     });
     await userEvent.click(
-      screen.getByRole("button", { name: "Passer le quiz : Bases de données" }),
+      screen.getByRole("button", { name: "Take the quiz: Bases de données" }),
     );
     expect(onOpen).toHaveBeenCalledWith("z1");
   });
 
   it("shows that a quiz is being prepared, without an action", () => {
     setup();
-    expect(row("Tests")).toHaveTextContent("Quiz en préparation");
+    expect(row("Tests")).toHaveTextContent("Preparing the quiz…");
     expect(within(row("Tests")).queryByRole("button")).not.toBeInTheDocument();
   });
 
   it("offers to retry a failed preparation", async () => {
     const { onPrepare } = setup();
-    expect(row("Sécurité")).toHaveTextContent("La préparation du quiz a échoué.");
-    await userEvent.click(screen.getByRole("button", { name: "Réessayer : Sécurité" }));
+    expect(row("Sécurité")).toHaveTextContent("Quiz preparation failed.");
+    await userEvent.click(screen.getByRole("button", { name: "Retry: Sécurité" }));
     expect(onPrepare).toHaveBeenCalledWith("m4");
   });
 
   it("shows the date of the next try instead of the retry button", () => {
     setup();
-    expect(row("Docker")).toHaveTextContent("Nouvel essai à partir du mardi 17 novembre");
-    expect(row("Docker")).toHaveTextContent("Meilleur score : 60 %");
-    // Revue finale 5 (E-I3) : pas de « Refaire » tant que le nouvel essai n'est pas venu.
+    expect(row("Docker")).toHaveTextContent("Try again from Tuesday 17 November");
+    expect(row("Docker")).toHaveTextContent("Best score: 60%");
     expect(within(row("Docker")).queryByRole("button")).not.toBeInTheDocument();
   });
 
   it("disables the buttons while a module is being prepared", () => {
     setup({ pendingModuleId: "m2" });
-    expect(screen.getByRole("button", { name: "Préparer le quiz : API REST" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Réessayer : Sécurité" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Prepare the quiz: API REST" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Retry: Sécurité" })).toBeEnabled();
   });
 
   it("orders the modules by week", () => {
@@ -126,7 +125,7 @@ describe("QuizList", () => {
 
   it("says there is nothing to test yet", () => {
     setup({ items: [] });
-    expect(screen.getByText("Aucun quiz pour le moment")).toBeInTheDocument();
+    expect(screen.getByText("No quizzes yet")).toBeInTheDocument();
     expect(screen.queryByRole("list")).not.toBeInTheDocument();
   });
 });

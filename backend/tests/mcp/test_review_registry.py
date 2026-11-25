@@ -48,12 +48,20 @@ def test_recordable_respects_table_info_and_auth_sessions() -> None:
 @pytest.mark.parametrize(
     ("action", "message"),
     [
-        (McpAction("DELETE /applications/{application_id}", 2, "x"), "suppression"),
+        (McpAction("DELETE /applications/{application_id}", 2, "x"), "deletion is level 3"),
         (McpAction("POST /sessions", 2, "x"), "sessions"),
-        (McpAction("GET /applications", 1, "x", precheck=lambda asked: None), "contrôle"),  # type: ignore[arg-type,return-value]
+        (
+            McpAction(
+                "GET /applications",
+                1,
+                "x",
+                precheck=lambda asked: None,  # type: ignore[arg-type,return-value]
+            ),
+            "precheck only goes with level 3",
+        ),
         (
             McpAction("PATCH /applications/{application_id}", 2, "x", precheck=lambda a: None),
-            "contrôle",
+            "precheck only goes with level 3",
         ),  # type: ignore[arg-type,return-value]
     ],
 )
@@ -66,7 +74,7 @@ def test_registry_refuses_what_the_doc_forbids(
 
 def test_registry_requires_fields_under_every_settings_route() -> None:
     for route, level in (("GET /settings/extra", 1), ("PUT /settings/extra", 2)):
-        with pytest.raises(McpConfigError, match="réglages"):
+        with pytest.raises(McpConfigError, match="settings require"):
             _check_action("settings", McpAction(route, level, "extra"))  # type: ignore[arg-type]
     _check_action(
         "settings", McpAction("GET /settings/extra", 1, "extra", response_fields=frozenset({"a"}))

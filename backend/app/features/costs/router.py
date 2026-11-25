@@ -1,6 +1,6 @@
-"""Coûts de l'IA (SPEC 11.5, phase 9) : le rapport par jour, par fonction, par agent et par modèle,
-et le journal des appels. Au nom de l'utilisatrice courante ; une 422 nomme les champs, sans
-jamais recopier la valeur reçue."""
+"""AI costs (SPEC 11.5, phase 9): the report by day, by feature, by agent and by model, and the
+call log. On behalf of the current user; a 422 names the fields without ever echoing the value
+received."""
 
 from typing import Annotated, Literal
 
@@ -16,8 +16,8 @@ router = APIRouter(prefix="/costs", tags=["costs"], route_class=FieldPathsRoute)
 
 
 def _days_from_query(value: object) -> object:
-    """Un paramètre de requête arrive en texte : pydantic ne lit pas « 7 » comme l'entier 7 pour
-    un `Literal`. Seuls les chiffres ASCII sont convertis ; le reste reste tel quel, donc refusé."""
+    """A query parameter arrives as text: pydantic does not read "7" as the integer 7 for a
+    `Literal`. Only ASCII digits are converted; anything else stays as is, hence rejected."""
     if isinstance(value, str) and value.isascii() and value.isdigit():
         return int(value)
     return value
@@ -29,21 +29,21 @@ Days = Annotated[Literal[7, 30, 90], BeforeValidator(_days_from_query)]
 @router.get(
     "",
     response_model=CostsReport,
-    responses={422: {"description": "`details.fields` : `days` (ni 7, ni 30, ni 90)"}},
+    responses={422: {"description": "`details.fields`: `days` (not 7, 30 or 90)"}},
 )
 async def get_costs(
     current: CurrentUserDep, db: Db, days: Annotated[Days, Query()] = 30
 ) -> CostsReport:
-    """Les coûts des 7, 30 ou 90 derniers jours (jours du fuseau de l'utilisatrice, aujourd'hui
-    compris), agrégés depuis les appels journalisés, aux prix de l'appel. Toute autre durée : 422
-    (`details.fields` : `days`)."""
+    """Costs over the last 7, 30 or 90 days (days in the user's time zone, today included),
+    aggregated from the logged calls, at the prices of each call. Any other duration: 422
+    (`details.fields`: `days`)."""
     return await costs_report(db, current.id, days)
 
 
 @router.get(
     "/calls",
     response_model=AgentCallPage,
-    responses={422: {"description": "`details.fields` : `before` (curseur illisible) ou `limit`"}},
+    responses={422: {"description": "`details.fields`: `before` (unreadable cursor) or `limit`"}},
 )
 async def get_calls(
     current: CurrentUserDep,
@@ -53,7 +53,7 @@ async def get_calls(
     agent: Annotated[str | None, Query(max_length=64)] = None,
     graph: Annotated[str | None, Query(max_length=64)] = None,
 ) -> AgentCallPage:
-    """Le journal des agents : les appels du plus récent au plus ancien, `limit` par page (50 par
-    défaut). `before` est le curseur `next_before` de la page précédente ; `agent` et `graph`
-    filtrent. Aucun contenu de prompt."""
+    """The agent log: calls newest first, `limit` per page (50 by default). `before` is the
+    `next_before` cursor of the previous page; `agent` and `graph` filter. No prompt
+    content."""
     return await list_calls(db, current.id, before=before, limit=limit, agent=agent, graph=graph)

@@ -12,8 +12,7 @@ TODAY = date(2026, 11, 15)
 EXISTING_ID = "00000000-0000-4000-8000-0000000000a1"
 OTHER_EXISTING_ID = "00000000-0000-4000-8000-0000000000a2"
 ALERT_MESSAGE = (
-    "Attention, tu as déjà postulé chez Société Fictive pour le poste Développeuse IA "
-    "le 3 novembre (statut : Postulée)."
+    "You already applied for the Développeuse IA role at Société Fictive on 3 November (Applied)."
 )
 
 
@@ -24,7 +23,7 @@ def alert(application_id: str = EXISTING_ID, level: str = "probable") -> AlertVi
 @dataclass
 class FakeApplicationStore:
     today: date = TODAY
-    language: str = "fr"
+    language: str = "en"
     alerts: list[AlertView] = field(default_factory=list)
     info: list[InfoView] = field(default_factory=list)
     context_calls: int = 0

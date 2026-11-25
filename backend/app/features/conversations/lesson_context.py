@@ -56,7 +56,7 @@ class _VisibleText(HTMLParser):
 async def ready_lesson(db: AsyncSession, user_id: str, lesson_id: str) -> tuple[str, str]:
     lesson = await get_lesson(db, user_id, lesson_id)
     if lesson.status != "ready":
-        raise AppError("lesson_not_ready", "Cette leçon n'est pas encore prête.", 409)
+        raise AppError("lesson_not_ready", "This lesson is not ready yet.", 409)
     return lesson.title, lesson.markdown
 
 
@@ -67,7 +67,7 @@ def lesson_version(markdown: str) -> str:
 def stale_passage() -> AppError:
     return AppError(
         "conversation_passage_stale",
-        "Ce passage a changé. Sélectionne de nouveau le texte dans la leçon.",
+        "This passage has changed. Select the text in the lesson again.",
         409,
     )
 
@@ -77,14 +77,14 @@ def require_current_version(markdown: str, turn: ConversationTurn) -> None:
         if turn.mode == CLASSROOM_SCOPE and turn.passage is None:
             raise AppError(
                 "classroom_lesson_changed",
-                "La leçon a changé pendant la réponse. Tu peux renvoyer ton explication.",
+                "The lesson changed during the reply. You can send your explanation again.",
                 409,
             )
         raise stale_passage()
 
 
 def _without_leading_title(markdown: str) -> str:
-    """Le lecteur affiche séparément le premier titre de niveau 1 avant toute section."""
+    """The reader shows the first level-1 heading separately, before any section."""
     lines = markdown.split("\n")
     fence = False
     for index, line in enumerate(lines):
@@ -108,7 +108,7 @@ def _visible_markdown(markdown: str) -> str:
 
 
 def lesson_excerpt(markdown: str, terms: list[str], size: int = 1_400) -> str:
-    """Cadre un passage qui contient un des termes de la question."""
+    """Frames a passage that contains one of the question's terms."""
     text = _visible_markdown(markdown)
     match = min((at for term in terms if (at := text.lower().find(term)) >= 0), default=0)
     start = max(0, match - size // 3)
@@ -116,7 +116,7 @@ def lesson_excerpt(markdown: str, terms: list[str], size: int = 1_400) -> str:
 
 
 def lesson_material(markdown: str, passage: str | None, occurrence: int | None) -> str:
-    """Relit le texte sélectionnable, y compris autour d'un passage éloigné du début."""
+    """Rereads the selectable text, including around a passage far from the start."""
     text = _visible_markdown(markdown)
     if passage is None:
         return text[:MAX_LESSON_CONTEXT]
@@ -129,7 +129,8 @@ def lesson_material(markdown: str, passage: str | None, occurrence: int | None) 
         if next(matches, None) is not None:
             raise AppError(
                 "conversation_passage_ambiguous",
-                "Ce passage apparaît plusieurs fois dans la leçon. Indique l’occurrence voulue.",
+                "This passage appears several times in the lesson. "
+                "Indicate the occurrence you mean.",
                 409,
             )
     if selected is None:

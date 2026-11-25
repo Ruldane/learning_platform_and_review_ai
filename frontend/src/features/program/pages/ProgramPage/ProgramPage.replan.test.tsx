@@ -11,13 +11,13 @@ function setup(program: Record<string, unknown>, waiting: Record<string, unknown
   server.use(...api.handlers);
   return renderRoutes(
     [
-      { path: "/apprendre/programme/:programId", element: <ProgramPage /> },
+      { path: "/learn/programs/:programId", element: <ProgramPage /> },
       {
-        path: "/apprendre/programme/:programId/replanification",
+        path: "/learn/programs/:programId/replan",
         element: <h1>Replanification</h1>,
       },
     ],
-    "/apprendre/programme/p1",
+    "/learn/programs/p1",
   );
 }
 
@@ -28,30 +28,32 @@ const waitingReplan = (subjectId = "p1") =>
     subject_id: subjectId,
   });
 
+const WAITING_TITLE = "A replan is waiting for your answer";
+
 describe("ProgramPage replan entry", () => {
   it("shows the replan banner on the program page", async () => {
     const { user, router } = setup(programOut({ status: "validated" }), [waitingReplan()]);
-    expect(await screen.findByText("Une replanification attend ta réponse")).toBeInTheDocument();
-    await user.click(screen.getByRole("link", { name: "Voir la proposition" }));
-    expect(router.state.location.pathname).toBe("/apprendre/programme/p1/replanification");
+    expect(await screen.findByText(WAITING_TITLE)).toBeInTheDocument();
+    await user.click(screen.getByRole("link", { name: "See the proposal" }));
+    expect(router.state.location.pathname).toBe("/learn/programs/p1/replan");
   });
 
   it("ignores a waiting replan of another program", async () => {
     setup(programOut({ status: "validated" }), [waitingReplan("p2")]);
     await screen.findByRole("heading", { name: "Python pour la data", level: 1 });
-    expect(screen.getByRole("link", { name: "Replanifier" })).toBeInTheDocument();
-    expect(screen.queryByText("Une replanification attend ta réponse")).toBeNull();
+    expect(screen.getByRole("link", { name: "Replan" })).toBeInTheDocument();
+    expect(screen.queryByText(WAITING_TITLE)).toBeNull();
   });
 
-  it("offers « Replanifier » for a validated program only", async () => {
+  it("offers Replan for a validated program only", async () => {
     const { user, router } = setup(programOut({ status: "validated" }));
-    await user.click(await screen.findByRole("link", { name: "Replanifier" }));
-    expect(router.state.location.pathname).toBe("/apprendre/programme/p1/replanification");
+    await user.click(await screen.findByRole("link", { name: "Replan" }));
+    expect(router.state.location.pathname).toBe("/learn/programs/p1/replan");
   });
 
-  it("does not offer « Replanifier » on a draft", async () => {
+  it("does not offer Replan on a draft", async () => {
     setup(programOut({ status: "draft" }));
     await screen.findByRole("heading", { name: "Python pour la data", level: 1 });
-    expect(screen.queryByRole("link", { name: "Replanifier" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Replan" })).toBeNull();
   });
 });

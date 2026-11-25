@@ -1,5 +1,5 @@
-"""Explorateur de la mémoire (4.6, 14.2) : carte 2D, statistiques, réindexation, export JSON
-(lien direct : `Content-Disposition: attachment`)."""
+"""Memory explorer (4.6, 14.2): 2D map, statistics, reindexing, JSON export
+(direct link: `Content-Disposition: attachment`)."""
 
 from fastapi import APIRouter, Response
 from fastapi import status as http
@@ -29,13 +29,13 @@ async def get_stats(
 
 @router.post("/reindex", status_code=http.HTTP_202_ACCEPTED, response_model=ReindexState)
 async def reindex(current: CurrentUserDep, runtime: MemoryRuntimeDep) -> ReindexState:
-    """Met la réindexation en file (worker) ; déjà en file ou en cours : l'état courant."""
+    """Queues the reindexing (worker); already queued or running: the current state."""
     return runtime.jobs.enqueue_reindex(current.id)
 
 
 @router.get("/export", response_model=MemoryExport)
 async def export(current: CurrentUserDep, db: Db, response: Response) -> MemoryExport:
     body = await memory_export(db, current.id)
-    name = f"tremplin-memoire-{body.exported_at:%Y-%m-%d}.json"
+    name = f"tremplin-memory-{body.exported_at:%Y-%m-%d}.json"
     response.headers["Content-Disposition"] = f'attachment; filename="{name}"'
     return body

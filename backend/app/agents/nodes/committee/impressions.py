@@ -1,7 +1,7 @@
-"""Les premières impressions du comité (SPEC F19, D147) : chaque persona lit le CV et l'offre, et
-elles seulement, puis donne son impression en 150 mots au plus (coupe du code, `speak`). Les
-quatre appels sont indépendants : ils partent ensemble. Le nœud n'écrit rien en base ; il pose les
-paroles dans l'état (checkpointer), un nœud terminé n'est jamais refait."""
+"""The committee's first impressions (SPEC F19, D147): each persona reads the CV and the posting,
+and only those, then gives its impression in 150 words at most (cut by the code, `speak`). The
+four calls are independent: they go out together. The node writes nothing to the database; it
+puts the speeches in the state (checkpointer), a finished node is never redone."""
 
 import logging
 from typing import Any
@@ -30,7 +30,7 @@ async def _impression(deps: GraphDeps, ctx: CommitteeContext, persona: Persona) 
         messages,
         agent=persona,
         step="impression",
-        intent="je donne ma première impression",
+        intent="giving my first impression",
         catalog=[],
         max_words=MAX_WORDS,
     )
@@ -40,10 +40,10 @@ async def _impression(deps: GraphDeps, ctx: CommitteeContext, persona: Persona) 
 def make_impressions(deps: GraphDeps) -> Node:
     @node_timeout(TURN_TIMEOUT_S)
     async def impressions(state: HiringCommitteeState) -> HiringCommitteeState:
-        """Quatre impressions, dans l'ordre des personas."""
+        """Four impressions, in the order of the personas."""
         ctx = context_of(state)
         spoken = await persona_results(deps, lambda persona: _impression(deps, ctx, persona))
-        logger.info("Impressions données : session %s, %d persona(s)", deps.session_id, len(spoken))
+        logger.info("Impressions given: session %s, %d persona(s)", deps.session_id, len(spoken))
         return {"spoken": spoken}
 
     return impressions

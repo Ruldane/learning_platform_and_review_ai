@@ -1,11 +1,11 @@
-"""Lecture d'une page web : texte principal et métadonnées (`trafilatura`, sans réseau : la page
-est téléchargée par le `WebFetcher` sûr, jamais par trafilatura).
+"""Reading of a web page: main text and metadata (`trafilatura`, without network: the page
+is downloaded by the safe `WebFetcher`, never by trafilatura).
 
-Repli des pages rendues en JavaScript (D74) : une page HTML **téléchargée avec succès** dont le
-texte principal est trop court est rendue en PDF par le `PageRenderer` (Gotenberg), qui ne
-reçoit que l'URL finale, déjà validée par la garde SSRF (jamais de HTML, jamais une URL refusée,
-jamais après un statut d'erreur ou un type refusé : le fetch a alors levé). Le délai du rendu
-est ce qui reste des 15 s de la lecture."""
+Fallback for pages rendered in JavaScript (D74): an HTML page **downloaded successfully** whose
+main text is too short is rendered to PDF by the `PageRenderer` (Gotenberg), which only
+receives the final URL, already validated by the SSRF guard (never HTML, never a refused URL,
+never after an error status or a refused type: the fetch then raised). The rendering timeout
+is what remains of the read's 15 s."""
 
 import asyncio
 import dataclasses
@@ -33,8 +33,8 @@ _PLAIN = ("text/plain", "text/markdown")
 
 
 def _html(body: bytes, url: str) -> WebDocument:
-    """Bloquant (lxml) : appelé dans un thread. Deux analyses : `extract` élague l'arbre. L'URL
-    n'est jamais passée à trafilatura, qui la recopierait dans ses journaux."""
+    """Blocking (lxml): called in a thread. Two parses: `extract` prunes the tree. The URL
+    is never passed to trafilatura, which would copy it into its logs."""
     tree = trafilatura.load_html(body)
     if tree is None:
         return WebDocument(url, None, "", None, None, None, None)
@@ -70,8 +70,8 @@ class TrafilaturaWebReader:
         self._renderer = renderer
 
     async def read(self, url: str, *, require_text: bool = True) -> WebDocument:
-        """Sans texte exigé (`require_text=False`, repli YouTube), aucun rendu : seuls le titre
-        et la description sont attendus."""
+        """Without required text (`require_text=False`, YouTube fallback), no rendering: only the
+        title and the description are expected."""
         deadline = base.deadline_within(base.FETCH_TIMEOUT_S)
         resource = await self._fetcher.fetch(url)
         if resource.content_type == "application/pdf":
@@ -96,8 +96,8 @@ class TrafilaturaWebReader:
         renderer: PageRenderer,
         deadline: float,
     ) -> WebDocument:
-        """`doc` avec le texte du rendu ; rendu ou extraction en échec → page illisible
-        (journal : code d'erreur seulement, jamais l'URL)."""
+        """`doc` with the rendered text; rendering or extraction failed -> unreadable page
+        (log: error code only, never the URL)."""
         remaining = deadline - asyncio.get_running_loop().time()
         if remaining <= 0:
             raise UrlUnreadable(TIMEOUT_MESSAGE)
@@ -105,6 +105,6 @@ class TrafilaturaWebReader:
             pdf = await renderer.url_to_pdf(resource.final_url, timeout_s=remaining)
             text = await self._pdf.extract_text(pdf)
         except AppError as exc:
-            logger.info("Repli de rendu sans texte (%s)", exc.code)
+            logger.info("Rendering fallback without text (%s)", exc.code)
             raise UrlUnreadable(NO_TEXT_MESSAGE) from None
         return dataclasses.replace(doc, text=text)

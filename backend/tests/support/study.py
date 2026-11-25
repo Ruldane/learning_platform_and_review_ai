@@ -74,7 +74,7 @@ class FakeStudyStore:
             minutes=42,
             tasks_done=["Lire la leçon"],
             flashcards_created=2,
-            skills=[("Attention", "en_cours")],
+            skills=[("Attention", "in_progress")],
         )
     )
 
@@ -120,7 +120,7 @@ class FakeStudyMemory:
         raise AssertionError("Le Tuteur n'écrit pas en mémoire.")
 
     async def skills(self, user_id: str) -> SkillsSummary:
-        return SkillsSummary(1, {"declare": 1}, [SkillEntry("a1", "Python", "declare", [])])
+        return SkillsSummary(1, {"declared": 1}, [SkillEntry("a1", "Python", "declared", [])])
 
     async def document_text(
         self, user_id: str, document_id: str, *, max_chunks: int

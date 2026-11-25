@@ -10,7 +10,7 @@ export function ProgramItem({ program }: { program: ProgramSummaryView }) {
   return (
     <li className="rounded-lg border border-border bg-card p-4 focus-within:ring-2 focus-within:ring-ring">
       <Link
-        to={`/apprendre/programme/${program.id}`}
+        to={`/learn/programs/${program.id}`}
         className="text-lg font-semibold break-words underline-offset-4 hover:underline focus-visible:outline-none"
       >
         {program.title}

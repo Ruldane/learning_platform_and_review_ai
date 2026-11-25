@@ -4,9 +4,9 @@ import { mcpManifest } from "./manifest";
 describe("mcpManifest", () => {
   it("manifest registers the settings entry", () => {
     expect(mcpManifest.id).toBe("mcp");
-    expect(mcpManifest.routes.map((route) => route.path)).toEqual(["reglages/mcp"]);
+    expect(mcpManifest.routes.map((route) => route.path)).toEqual(["settings/mcp"]);
     expect(mcpManifest.nav).toEqual([
-      { section: "settings", labelKey: "mcp.nav.access", path: "/reglages/mcp", order: 9 },
+      { section: "settings", labelKey: "mcp.nav.access", path: "/settings/mcp", order: 9 },
     ]);
   });
 

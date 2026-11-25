@@ -8,26 +8,26 @@ describe("SkillViewTabs", () => {
     render(<SkillViewTabs value="radar" onChange={() => undefined} />);
     const tabs = screen.getAllByRole("tab");
     expect(tabs.map((tab) => tab.textContent)).toEqual([
-      "Graphe",
+      "Graph",
       "Radar",
-      "Progression",
-      "Comparaison",
+      "Progress",
+      "Comparison",
     ]);
     expect(screen.getByRole("tab", { name: "Radar" })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByRole("tab", { name: "Graphe" })).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("tab", { name: "Graph" })).toHaveAttribute("aria-selected", "false");
   });
 
   it("changes view on click", async () => {
     const onChange = vi.fn();
     render(<SkillViewTabs value="graph" onChange={onChange} />);
-    await userEvent.click(screen.getByRole("tab", { name: "Progression" }));
+    await userEvent.click(screen.getByRole("tab", { name: "Progress" }));
     expect(onChange).toHaveBeenCalledWith("progress");
   });
 
   it("moves between views with the arrow keys, wrapping at the ends", async () => {
     const onChange = vi.fn();
     render(<SkillViewTabs value="graph" onChange={onChange} />);
-    screen.getByRole("tab", { name: "Graphe" }).focus();
+    screen.getByRole("tab", { name: "Graph" }).focus();
     await userEvent.keyboard("{ArrowLeft}");
     expect(onChange).toHaveBeenLastCalledWith("compare");
     await userEvent.keyboard("{ArrowRight}");

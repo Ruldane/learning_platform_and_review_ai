@@ -13,8 +13,8 @@ const progress = (over: object) => ({
 describe("EmbeddingProgressBar", () => {
   it("writes the percentage and fills the bar while the model downloads", () => {
     render(<EmbeddingProgressBar progress={progress({ percent: 42 })} isError={false} />);
-    expect(screen.getByText("bge-m3 : 42 %")).toBeInTheDocument();
-    const bar = screen.getByRole("progressbar", { name: "Modèle d'embeddings" });
+    expect(screen.getByText("bge-m3: 42%")).toBeInTheDocument();
+    const bar = screen.getByRole("progressbar", { name: "Embedding model" });
     expect(bar).toHaveAttribute("value", "42");
     expect(bar).toHaveAttribute("max", "100");
   });
@@ -23,7 +23,7 @@ describe("EmbeddingProgressBar", () => {
     render(
       <EmbeddingProgressBar progress={progress({ present: true, percent: 100 })} isError={false} />,
     );
-    expect(screen.getByText("bge-m3 : prêt")).toBeInTheDocument();
+    expect(screen.getByText("bge-m3: ready")).toBeInTheDocument();
     expect(screen.getByRole("progressbar")).toHaveAttribute("value", "100");
   });
 
@@ -34,14 +34,14 @@ describe("EmbeddingProgressBar", () => {
         isError={false}
       />,
     );
-    expect(screen.getByText("bge-m3 : téléchargement en attente")).toBeInTheDocument();
+    expect(screen.getByText("bge-m3: download pending")).toBeInTheDocument();
     expect(screen.getByText("Ollama ne répond pas.")).toBeInTheDocument();
     expect(screen.getByRole("progressbar")).not.toHaveAttribute("value");
   });
 
   it("says when the progress cannot be read", () => {
     render(<EmbeddingProgressBar isError />);
-    expect(screen.getByRole("status")).toHaveTextContent("Impossible de lire la progression");
+    expect(screen.getByRole("status")).toHaveTextContent("Could not read the model's progress");
   });
 
   it("announces that the model is ready, in a zone that was there before", () => {
@@ -54,8 +54,8 @@ describe("EmbeddingProgressBar", () => {
       <EmbeddingProgressBar progress={progress({ present: true, percent: 100 })} isError={false} />,
     );
     expect(screen.getByRole("status")).toBe(zone);
-    expect(zone).toHaveTextContent("bge-m3 : prêt");
-    expect(screen.getAllByText("bge-m3 : prêt")).toHaveLength(1);
+    expect(zone).toHaveTextContent("bge-m3: ready");
+    expect(screen.getAllByText("bge-m3: ready")).toHaveLength(1);
   });
 
   it("keeps its zone, empty, before the first answer", () => {

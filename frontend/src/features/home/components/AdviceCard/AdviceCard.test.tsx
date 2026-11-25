@@ -10,19 +10,19 @@ describe("AdviceCard", () => {
         sentences={["Révise tes fiches avant de lire.", "Une jointure par jour suffit."]}
       />,
     );
-    expect(screen.getByRole("heading", { level: 2, name: "Le conseil" })).toBeVisible();
+    expect(screen.getByRole("heading", { level: 2, name: "The council" })).toBeVisible();
     expect(screen.getByText("Révise tes fiches avant de lire.")).toBeInTheDocument();
     expect(screen.getByText("Une jointure par jour suffit.")).toBeInTheDocument();
   });
 
   it("says the council is meeting while the advice is pending", () => {
     render(<AdviceCard status="pending" sentences={null} />);
-    expect(screen.getByText("Le conseil se réunit…")).toBeInTheDocument();
+    expect(screen.getByText("The council is meeting…")).toBeInTheDocument();
   });
 
   it("announces the advice when it arrives, in a polite live region that is always there", () => {
     const { rerender } = render(<AdviceCard status="pending" sentences={null} />);
-    const region = screen.getByText("Le conseil se réunit…").parentElement;
+    const region = screen.getByText("The council is meeting…").parentElement;
     expect(region).toHaveAttribute("aria-live", "polite");
     rerender(<AdviceCard status="ready" sentences={["Révise tes fiches avant de lire."]} />);
     expect(screen.getByText("Révise tes fiches avant de lire.").parentElement).toBe(region);
@@ -32,14 +32,14 @@ describe("AdviceCard", () => {
     "says the council could not speak when the status is %s, without any retry",
     (status) => {
       render(<AdviceCard status={status} sentences={null} />);
-      expect(screen.getByText("Le conseil n'a rien pu dire ce matin.")).toBeInTheDocument();
+      expect(screen.getByText("The council had nothing to say this morning.")).toBeInTheDocument();
       expect(screen.queryByRole("button")).toBeNull();
-      expect(screen.queryByText(/clé/i)).toBeNull();
+      expect(screen.queryByText(/\bkey\b/i)).toBeNull();
     },
   );
 
   it("never shows an empty advice marked ready as if it had spoken", () => {
     render(<AdviceCard status="ready" sentences={[]} />);
-    expect(screen.getByText("Le conseil n'a rien pu dire ce matin.")).toBeInTheDocument();
+    expect(screen.getByText("The council had nothing to say this morning.")).toBeInTheDocument();
   });
 });

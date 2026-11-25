@@ -1,4 +1,4 @@
-"""Recherche déterministe d’une semaine faisable sans altérer l’ordre pédagogique."""
+"""Deterministic search for a feasible week without altering the teaching order."""
 
 from dataclasses import dataclass, field
 from datetime import date, datetime
@@ -47,7 +47,7 @@ class Packing:
 def _pack_module(
     packing: Packing, group: ModuleWork, tasks: list[Task], earliest: date
 ) -> list[SharedPlacement]:
-    # Une recherche infructueuse ne réserve aucune minute pour un demi-module.
+    # A failed search reserves no minutes for a half module.
     reservations = [day.planned_minutes for day in packing.days]
     placements = []
     for task in tasks:

@@ -18,7 +18,7 @@ def _first_h1(text: str) -> str | None:
 
 
 class MarkdownSource:
-    """Texte Markdown brut ; titre : premier titre `# `, sinon nom sans extension."""
+    """Raw Markdown text; title: first `# ` heading, otherwise name without extension."""
 
     kind: DocumentSourceKind = "markdown"
 

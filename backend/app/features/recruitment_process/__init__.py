@@ -1,1 +1,1 @@
-"""Répéter les étapes d’un recrutement sur une offre choisie."""
+"""Rehearse the steps of a recruitment process on a chosen job posting."""

@@ -48,7 +48,7 @@ async def test_db_down_is_down() -> None:
 async def test_slow_or_raising_check_is_reported() -> None:
     checks = [ok("db"), _Slow("searxng", 5), RaisingCheck("gotenberg", RuntimeError("secret"))]
     r = await HealthService(checks, timeout=0.05).run()
-    assert r.checks["searxng"].detail == "Délai dépassé" and not r.checks["searxng"].ok
+    assert r.checks["searxng"].detail == "Timed out" and not r.checks["searxng"].ok
     assert r.checks["gotenberg"].ok is False and r.status == "degraded"
 
 
@@ -58,13 +58,13 @@ async def test_check_may_ask_for_a_longer_cap_than_the_default() -> None:
     assert r.checks["searxng"].ok
     impatient = _SlowWithOwnCap("searxng", 5, timeout=0.05)
     r = await HealthService([ok("db"), impatient], timeout=0.01).run()
-    assert r.checks["searxng"].detail == "Délai dépassé"
+    assert r.checks["searxng"].detail == "Timed out"
 
 
 async def test_exception_detail_is_only_the_type_name() -> None:
     boom = RaisingCheck("qdrant", httpx.ConnectError("http://secret-host sk-secret-key"))
     r = await HealthService([ok("db"), boom]).run()
-    assert r.checks["qdrant"].detail == "Erreur : ConnectError"
+    assert r.checks["qdrant"].detail == "Error: ConnectError"
 
 
 async def test_failed_check_is_logged_with_type_name_only(
@@ -81,7 +81,7 @@ async def test_failed_check_is_logged_with_type_name_only(
 
 async def test_httpx_timeout_is_reported_as_timeout() -> None:
     r = await HealthService([ok("db"), RaisingCheck("qdrant", httpx.ReadTimeout("x"))]).run()
-    assert r.checks["qdrant"].detail == "Délai dépassé"
+    assert r.checks["qdrant"].detail == "Timed out"
 
 
 async def test_checks_run_in_parallel() -> None:

@@ -70,7 +70,8 @@ async def _followup(
     result = StudyFinished(minutes, [], count, changed)
     row.minutes, row.worked_minutes = minutes, minutes
     row.status, row.ended_at = "finished", now
-    row.summary = f"Session training terminée. {minutes} min et {count} fiche(s) de révision."
+    card_count_text = f"{count} review card" + ("s" if count != 1 else "")
+    row.summary = f"Training complete. {minutes} min of practice and {card_count_text}."
     row.outcome = {"result": asdict(result)}
     await add_entry(
         db,
@@ -96,7 +97,7 @@ async def _apply(
         if row is None:
             closed = await training_row(db, user_id, study_id)
             if isinstance(body, (TrainingModeUpdate, TrainingLessonsUpdate)):
-                raise AppError("training_closed", "Cette session training est terminée.", 409)
+                raise AppError("training_closed", "This training session has ended.", 409)
             return finished_of(closed) if isinstance(body, TrainingFinish) else None, None
         result, cancelled = None, None
         if isinstance(body, (TrainingModeUpdate, TrainingLessonsUpdate)):
@@ -136,6 +137,6 @@ async def update_training(
                 reason="Session training.",
             )
         except Exception:
-            logger.warning("Acquis non reflétés après le training : étude %s", study_id)
+            logger.warning("Learned items not reflected after the training: study %s", study_id)
     async with rt.session_factory() as db:
         return await training_out(db, await training_row(db, user_id, study_id))

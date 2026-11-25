@@ -1,8 +1,8 @@
 import { t } from "@/shared/i18n/t";
 
-const FULL = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeStyle: "short" });
-const DATE = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeZone: "UTC" });
-const CLOCK = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" });
+const FULL = new Intl.DateTimeFormat("en-GB", { dateStyle: "long", timeStyle: "short" });
+const DATE = new Intl.DateTimeFormat("en-GB", { dateStyle: "long", timeZone: "UTC" });
+const CLOCK = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit" });
 
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;

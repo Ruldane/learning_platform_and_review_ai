@@ -19,7 +19,7 @@ async def episode_for(db: AsyncSession, user_id: str, day: date) -> PodcastEpiso
         return previous
     lesson = await block_of_day(db, user_id, day)
     if lesson is None:
-        raise AppError("podcast_no_chapter", "Aucun chapitre prêt pour le bloc du jour.", 409)
+        raise AppError("podcast_no_chapter", "No chapter is ready for today's block.", 409)
     return await repo.reserve(day, lesson.lesson_id, lesson.module_id, lesson.lesson_title)
 
 

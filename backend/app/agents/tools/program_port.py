@@ -88,7 +88,7 @@ class ProgramStore(Protocol):
 
 
 def program_unavailable() -> AppError:
-    return AppError("program_unavailable", "Le programme n'est pas branché sur ce moteur.", 503)
+    return AppError("program_unavailable", "The program is unavailable in this runtime.", 503)
 
 
 class _NoProgram:

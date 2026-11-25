@@ -47,7 +47,7 @@ async def test_first_google_account_offered_local(
 ) -> None:
     await seed_local_space(db_session_factory)
     r = await sign_in(google_client, google)
-    assert r.status_code == 302 and r.headers["location"] == f"{FRONT}/connexion/reprise"
+    assert r.status_code == 302 and r.headers["location"] == f"{FRONT}/login/claim"
     claim = (set_cookie(r, "tremplin_claim") or "").lower()
     assert "max-age=600" in claim and "path=/api/v1/auth/google" in claim and "httponly" in claim
     assert "samesite=lax" in claim
@@ -129,7 +129,7 @@ async def test_claim_without_cookie_is_409(
     for choice in ("take_local", "fresh"):
         r = await choose(google_client, choice)
         assert error_code(r) == "claim_expired"
-        assert r.json()["error"]["message"] == "Le choix a expiré : reconnecte-toi avec Google."
+        assert r.json()["error"]["message"] == "This choice expired. Sign in with Google again."
     assert await count_users() == 1 and set_cookie(r, "tremplin_session") is None
 
 
@@ -251,4 +251,4 @@ async def test_an_address_not_named_in_the_list_is_not_offered_the_local_space(
 ) -> None:
     await seed_local_space(db_session_factory)
     r = await sign_in(google_client, google, "inconnue.exemple@example.org")
-    assert r.headers["location"].endswith("/connexion?erreur=email_not_allowed")
+    assert r.headers["location"].endswith("/login?error=email_not_allowed")

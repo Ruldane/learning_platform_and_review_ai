@@ -34,8 +34,8 @@ describe("CostTable", () => {
     expect(rows).toHaveLength(3);
     const scribe = within(rows[2]!);
     expect(scribe.getByRole("rowheader", { name: "Scribe" })).toBeInTheDocument();
-    expect(scribe.getByText("1 200")).toBeInTheDocument();
-    expect(scribe.getByText("0,12 $")).toBeInTheDocument();
+    expect(scribe.getByText("1,200")).toBeInTheDocument();
+    expect(scribe.getByText("$0.12")).toBeInTheDocument();
     expect(scribe.getAllByRole("cell").at(-1)).toHaveTextContent("2");
   });
 });

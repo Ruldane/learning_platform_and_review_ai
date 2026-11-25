@@ -32,7 +32,7 @@ async function approveMission(request: APIRequestContext) {
 test("constitue, relit et exporte un manifeste privé", async ({ page, request }) => {
   await finishFirstLaunch(request);
   const mission = await approveMission(request);
-  await page.goto("/carriere/preuves");
+  await page.goto("/career/evidence");
   await page.getByLabel("Nom du dossier").fill(PACKET);
   await page.getByRole("checkbox", { name: /Ingénierie des données/ }).check();
   await page.getByRole("button", { name: "Prévisualiser", exact: true }).click();

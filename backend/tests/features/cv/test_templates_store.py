@@ -94,7 +94,8 @@ async def test_font_unavailable_falls_back(
     template_id = await capture(cv_runtime, make_cv_pdf(SampleCv(font="Calibri")))
     created = await template_row(cv_runtime, template_id)
     assert created.font_gaps == [
-        "La police du texte et des titres n'est pas libre : remplacée par Carlito, très proche."
+        "The original body and heading font is proprietary. "
+        "The template uses Carlito, a very close match."
     ]
     view = await store_real.prepare(ME, template_id)
     assert "Carlito" not in view.available_fonts
@@ -104,7 +105,7 @@ async def test_font_unavailable_falls_back(
     row = await template_row(cv_runtime, template_id)
     assert {(use["family"], use["substitute"]) for use in row.fonts} == {("Liberation Sans", True)}
     assert row.font_gaps == [
-        "La police du texte et des titres n'a pas pu être chargée : remplacée par Liberation Sans."
+        "The body and heading font failed to load. The template uses Liberation Sans."
     ]
     assert not any("Calibri" in gap for gap in row.font_gaps)
 

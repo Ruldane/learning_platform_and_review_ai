@@ -47,8 +47,8 @@ from tests.agents.graphs.web_support import (
 from tests.agents.runtime.runner_helpers import fake_llm_with_provider
 from tests.features.research.conftest import set_settings
 
-MARKER = "<<<CONTENU_NON_FIABLE"
-END = "<<<FIN_CONTENU_NON_FIABLE>>>"
+MARKER = "<<<UNTRUSTED_CONTENT"
+END = "<<<END_UNTRUSTED_CONTENT>>>"
 
 
 def test_score_total_adds_five_bounded_criteria() -> None:
@@ -140,7 +140,7 @@ async def test_read_node_is_capped_by_pages_per_run_and_session_cap(
 
 
 def test_scout_is_a_fast_agent_with_a_prompt_and_the_graph_is_registered() -> None:
-    assert get_agent("scout").tier == "rapide"
+    assert get_agent("scout").tier == "fast"
     assert get_graph("web_research").input_model is WebResearchInput
 
 

@@ -32,7 +32,7 @@ async def start_trial(
 async def get_trial(session_id: Id, trial_id: Id, db: Db, user: CurrentUserDep) -> TrialView:
     view = await read_trial(db, user.id, session_id, trial_id)
     if view is None:
-        raise AppError("code_trial_not_found", "Procès introuvable.", 404)
+        raise AppError("code_trial_not_found", "Trial not found.", 404)
     return view
 
 

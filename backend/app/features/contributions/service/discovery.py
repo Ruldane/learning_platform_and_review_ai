@@ -1,4 +1,4 @@
-"""Suggestions issues des dépôts du programme et des compétences du module en cours."""
+"""Suggestions drawn from the program's repositories and the current module's skills."""
 
 from dataclasses import dataclass
 
@@ -67,6 +67,6 @@ async def suggestions(
         results.extend(rank_issues(repo, issues, context.skills))
         read += 1
     if context.repositories and not read:
-        raise AppError("github_unavailable", "GitHub n’a pas pu être lu. Réessaie plus tard.", 502)
+        raise AppError("github_unavailable", "GitHub could not be read. Try again later.", 502)
     results.sort(key=lambda item: (-len(item.skills), item.repo.name, item.issue.number))
     return context, results[:_MAX_SUGGESTIONS]

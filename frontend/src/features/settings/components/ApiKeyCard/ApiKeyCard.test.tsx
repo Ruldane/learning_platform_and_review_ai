@@ -14,24 +14,25 @@ const entry: ApiKeyEntry = {
 };
 
 const noop = () => undefined;
+const KEY_FIELD = "Anthropic API key";
 
 describe("ApiKeyCard", () => {
-  it("n'affiche jamais la clé et vide le champ après enregistrement", async () => {
+  it("keeps the key hidden and clears the field after saving", async () => {
     const user = userEvent.setup();
     const onSave = vi.fn();
     render(
       <ApiKeyCard entry={entry} pending={false} onSave={onSave} onDelete={noop} onTest={noop} />,
     );
-    await user.type(screen.getByLabelText(/clé/i), "sk-ant-secret-1234");
-    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+    await user.type(screen.getByLabelText(KEY_FIELD), "sk-ant-secret-1234");
+    await user.click(screen.getByRole("button", { name: "Save" }));
     expect(onSave).toHaveBeenCalledWith("sk-ant-secret-1234");
-    expect(screen.getByLabelText(/clé/i)).toHaveValue("");
+    expect(screen.getByLabelText(KEY_FIELD)).toHaveValue("");
     expect(screen.getByText("•••• 1234")).toBeInTheDocument();
     expect(screen.queryByText(/sk-ant/)).not.toBeInTheDocument();
     expect(document.body.innerHTML).not.toContain("sk-ant-secret");
   });
 
-  it("garde la saisie quand l'enregistrement échoue, la vide quand il réussit", async () => {
+  it("keeps the value if saving fails and clears it after a successful retry", async () => {
     const user = userEvent.setup();
     const onSave = vi
       .fn()
@@ -40,32 +41,32 @@ describe("ApiKeyCard", () => {
     render(
       <ApiKeyCard entry={entry} pending={false} onSave={onSave} onDelete={noop} onTest={noop} />,
     );
-    await user.type(screen.getByLabelText(/clé/i), "sk-ant-secret-1234");
-    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
-    expect(screen.getByLabelText(/clé/i)).toHaveValue("sk-ant-secret-1234");
+    await user.type(screen.getByLabelText(KEY_FIELD), "sk-ant-secret-1234");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    expect(screen.getByLabelText(KEY_FIELD)).toHaveValue("sk-ant-secret-1234");
     expect(document.body.innerHTML).not.toContain("sk-ant-secret");
-    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
-    expect(screen.getByLabelText(/clé/i)).toHaveValue("");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    expect(screen.getByLabelText(KEY_FIELD)).toHaveValue("");
   });
 
-  it("a un champ mot de passe, sans saisie automatique, jamais prérempli", () => {
+  it("uses an empty password field with no autofill", () => {
     render(
       <ApiKeyCard entry={entry} pending={false} onSave={noop} onDelete={noop} onTest={noop} />,
     );
-    const input = screen.getByLabelText(/clé/i);
+    const input = screen.getByLabelText(KEY_FIELD);
     expect(input).toHaveAttribute("type", "password");
     expect(input).toHaveAttribute("autocomplete", "new-password");
     expect(input).toHaveValue("");
   });
 
-  it("désactive Enregistrer tant que le champ est vide", () => {
+  it("disables Save while the field is empty", () => {
     render(
       <ApiKeyCard entry={entry} pending={false} onSave={noop} onDelete={noop} onTest={noop} />,
     );
-    expect(screen.getByRole("button", { name: "Enregistrer" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
   });
 
-  it("signale une clé illisible", () => {
+  it("reports an unreadable key", () => {
     render(
       <ApiKeyCard
         entry={{ ...entry, readable: false }}
@@ -75,21 +76,21 @@ describe("ApiKeyCard", () => {
         onTest={noop}
       />,
     );
-    expect(screen.getByText("Clé illisible, ressaisis-la")).toBeInTheDocument();
+    expect(screen.getByText("Unreadable key, enter it again")).toBeInTheDocument();
   });
 
-  it("indique l'origine « saisie ici » et propose la suppression", async () => {
+  it("shows where a key was entered and offers to delete it", async () => {
     const user = userEvent.setup();
     const onDelete = vi.fn();
     render(
       <ApiKeyCard entry={entry} pending={false} onSave={noop} onDelete={onDelete} onTest={noop} />,
     );
-    expect(screen.getByText("saisie ici")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Supprimer" }));
+    expect(screen.getByText("entered here")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Delete" }));
     expect(onDelete).toHaveBeenCalledTimes(1);
   });
 
-  it("indique l'origine « fichier .env » et masque la suppression", () => {
+  it("identifies a key from the .env file and hides Delete", () => {
     render(
       <ApiKeyCard
         entry={{ ...entry, source: "env" }}
@@ -99,12 +100,12 @@ describe("ApiKeyCard", () => {
         onTest={noop}
       />,
     );
-    expect(screen.getByText("fichier .env")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Supprimer" })).not.toBeInTheDocument();
-    expect(screen.getByText(/retire-la de ce fichier/)).toBeInTheDocument();
+    expect(screen.getByText(".env file")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Delete" })).not.toBeInTheDocument();
+    expect(screen.getByText(/remove it from that file/)).toBeInTheDocument();
   });
 
-  it("annonce l'absence de clé et désactive le test", () => {
+  it("reports a missing key and disables Test", () => {
     render(
       <ApiKeyCard
         entry={{ ...entry, source: null, last4: null }}
@@ -114,18 +115,18 @@ describe("ApiKeyCard", () => {
         onTest={noop}
       />,
     );
-    expect(screen.getByText("Aucune clé enregistrée")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Tester" })).toBeDisabled();
-    expect(screen.queryByRole("button", { name: "Supprimer" })).not.toBeInTheDocument();
+    expect(screen.getByText("No key saved")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Test" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Delete" })).not.toBeInTheDocument();
   });
 
-  it("lance le test et annonce le résultat dans une zone status", async () => {
+  it("starts the test and announces the result in a status region", async () => {
     const user = userEvent.setup();
     const onTest = vi.fn();
     const { rerender } = render(
       <ApiKeyCard entry={entry} pending={false} onSave={noop} onDelete={noop} onTest={onTest} />,
     );
-    await user.click(screen.getByRole("button", { name: "Tester" }));
+    await user.click(screen.getByRole("button", { name: "Test" }));
     expect(onTest).toHaveBeenCalledTimes(1);
     rerender(
       <ApiKeyCard
@@ -140,14 +141,14 @@ describe("ApiKeyCard", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Clé valide.");
   });
 
-  it("désactive les boutons pendant une opération", () => {
+  it("disables the buttons while an operation is pending", () => {
     render(<ApiKeyCard entry={entry} pending onSave={noop} onDelete={noop} onTest={noop} />);
-    expect(screen.getByRole("button", { name: "Tester" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Supprimer" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Enregistrer" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Test" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Delete" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
   });
 
-  it("rappelle le dernier test mémorisé par le serveur", () => {
+  it("shows the last test result saved by the server", () => {
     render(
       <ApiKeyCard
         entry={{ ...entry, last_test_ok: false }}
@@ -157,6 +158,6 @@ describe("ApiKeyCard", () => {
         onTest={noop}
       />,
     );
-    expect(screen.getByText("Dernier test : échoué")).toBeInTheDocument();
+    expect(screen.getByText("Last test: failed")).toBeInTheDocument();
   });
 });

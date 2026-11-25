@@ -4,7 +4,7 @@ export const codeTrialManifest: FeatureManifest = {
   id: "code_trial",
   routes: [
     {
-      path: "code/:sessionId/proces/:trialId?",
+      path: "code/:sessionId/trial/:trialId?",
       lazy: async () => ({ Component: (await import("./pages/CodeTrialPage")).CodeTrialPage }),
     },
   ],

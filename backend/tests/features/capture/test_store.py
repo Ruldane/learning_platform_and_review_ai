@@ -79,14 +79,14 @@ async def test_store_writes_summarized_document_and_journal_once(capture: Captur
     [item] = [i for i in await _rows(factory, MemoryItem) if i.kind == "document"]
     assert item.id == stored.memory_item_id and item.created_by == "archivist"
     assert item.title == "Les DataFrames pandas" and item.indexed_at is not None
-    assert item.text == "\n".join(f"- {line}" for line in SUMMARY) + f"\n\nSource : {URL}"
+    assert item.text == "\n".join(f"- {line}" for line in SUMMARY) + f"\n\nSource: {URL}"
     # Revue finale 5 (5.11 m1) : les concepts extraits de la page sont des étiquettes.
     assert item.tags == ["capture", "Module Bases", "pandas", "Docker"] and item.source_id is None
-    assert item.meta["reason"] == "Capture rapide de January." and item.session_id == "s-1"
+    assert item.meta["reason"] == "January's quick capture." and item.session_id == "s-1"
     [entry] = await _rows(factory, JournalEntry)
     assert entry.id == stored.journal_entry_id and entry.kind == "capture"
     assert entry.ref_key == "capture:s-1" and entry.memory_item_id == item.id
-    assert entry.text == "Lien capturé : « Les DataFrames pandas »"
+    assert entry.text == "Captured link “Les DataFrames pandas”"
     assert entry.occurred_on.isoformat() == "2026-11-18" and entry.session_id == "s-1"
     assert "Docker" not in str(await _levels(factory))  # une page ne déclare rien
 
@@ -96,7 +96,7 @@ async def test_learned_note_writes_declare_acquis(capture: Capture) -> None:
     factory = capture.rt.session_factory
     async with factory() as db:  # pandas déjà en cours : jamais baissé
         await SkillsService(db, ME).raise_levels(
-            ["pandas"], "en_cours", {"kind": "study", "ref_id": "x", "label": "S", "at": ""}
+            ["pandas"], "in_progress", {"kind": "study", "ref_id": "x", "label": "S", "at": ""}
         )
         await db.commit()
     note = CaptureMaterial("", "J'ai appris pandas et Docker.", None)
@@ -105,20 +105,20 @@ async def test_learned_note_writes_declare_acquis(capture: Capture) -> None:
     stored = await capture.store.store(ME, "s-2", digest, note, links, source="text")
     await capture.store.store(ME, "s-2", digest, note, links, source="text")  # rejeu
     levels = await _levels(factory)
-    assert levels["pandas"][0] == "en_cours" and levels["docker"][0] == "declare"
+    assert levels["pandas"][0] == "in_progress" and levels["docker"][0] == "declared"
     proofs = [p for p in levels["docker"][1] if p["kind"] == "capture"]
     assert [p["ref_id"] for p in proofs] == [stored.journal_entry_id]  # une preuve, F14
-    assert proofs[0]["label"] == "Capture « Les DataFrames pandas » (18/11)"
+    assert proofs[0]["label"] == "Capture “Les DataFrames pandas” (2026-11-18)"
     acquis = {
         normalize_skill_name(i.title): i.meta["level"]
         for i in await _rows(factory, MemoryItem)
-        if i.kind == "acquis"
+        if i.kind == "skill"
     }
-    assert acquis["docker"] == "declare" and acquis["pandas"] == "en_cours"  # reflet (D6)
+    assert acquis["docker"] == "declared" and acquis["pandas"] == "in_progress"  # reflet (D6)
     [item] = [i for i in await _rows(factory, MemoryItem) if i.kind == "document"]
     assert "Source" not in item.text
     [entry] = await _rows(factory, JournalEntry)
-    assert entry.text == "Note : « Les DataFrames pandas »"
+    assert entry.text == "Note “Les DataFrames pandas”"
 
 
 async def test_tick_task_under_program_lock_and_cards_once(capture: Capture) -> None:
@@ -187,8 +187,8 @@ async def test_failed_reflection_logs_error_type(
     note = CaptureMaterial("", "J'ai appris Docker.", None)
     digest = _digest(learned=True, covered_task=None)
     await capture.store.store(ME, "s-7", digest, note, links, source="text")
-    assert (await _levels(capture.rt.session_factory))["docker"][0] == "declare"
-    [warning] = [r for r in caplog.records if "non reflétés" in r.getMessage()]
+    assert (await _levels(capture.rt.session_factory))["docker"][0] == "declared"
+    [warning] = [r for r in caplog.records if "not reflected" in r.getMessage()]
     assert warning.getMessage().endswith("session s-7 (RuntimeError)")
     assert "indisponible" not in warning.getMessage()
 

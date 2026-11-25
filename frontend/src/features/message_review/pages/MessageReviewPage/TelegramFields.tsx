@@ -33,7 +33,7 @@ export function TelegramFields({ draft, timezone, tokens, onChange }: Props) {
         </select>
       </label>
       <p>{t(missing ? "messageReview.tokenUnavailable" : "messageReview.tokenHelp")}</p>
-      <Link className="text-primary underline" to="/reglages/mcp">
+      <Link className="text-primary underline" to="/settings/mcp">
         {t("messageReview.access")}
       </Link>
       <label className="grid gap-1">

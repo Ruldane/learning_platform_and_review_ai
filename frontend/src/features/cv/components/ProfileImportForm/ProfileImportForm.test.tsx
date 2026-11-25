@@ -27,14 +27,14 @@ function setup(props: { pending?: boolean; error?: string | null } = {}) {
   return { onSubmit };
 }
 
-const cvInput = () => screen.getByLabelText("Ton CV (PDF)");
-const send = () => screen.getByRole("button", { name: "Créer mon profil maître" });
+const cvInput = () => screen.getByLabelText("Your CV (PDF)");
+const send = () => screen.getByRole("button", { name: "Create my master profile" });
 
 describe("ProfileImportForm", () => {
   it("says the CV stays private", () => {
     setup();
     expect(
-      screen.getByText("Ton CV reste privé : il ne sert qu'à ton profil maître."),
+      screen.getByText("Your CV stays private: it's only used for your master profile."),
     ).toBeInTheDocument();
   });
 
@@ -57,9 +57,9 @@ describe("ProfileImportForm", () => {
     const linkedin = pdf("linkedin.pdf");
     const u = user();
     await u.upload(cvInput(), cv);
-    await u.upload(screen.getByLabelText("Ton profil LinkedIn (PDF, facultatif)"), linkedin);
+    await u.upload(screen.getByLabelText("Your LinkedIn profile (PDF, optional)"), linkedin);
     await u.type(
-      screen.getByLabelText("Une précision à ajouter (facultatif)"),
+      screen.getByLabelText("Extra details to add (optional)"),
       "  Mission en 2021. ",
     );
     await u.click(send());
@@ -70,18 +70,18 @@ describe("ProfileImportForm", () => {
     const { onSubmit } = setup();
     await user().upload(cvInput(), docx);
     expect(screen.getByRole("alert")).toHaveTextContent(
-      "Ce fichier n'est pas un PDF : choisis un fichier .pdf.",
+      "This file isn't a PDF: choose a .pdf file.",
     );
     expect(cvInput()).toHaveAttribute("aria-invalid", "true");
     expect(send()).toBeDisabled();
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  it("refuses a file over 10 Mo", async () => {
+  it("refuses a file over 10 MB", async () => {
     setup();
     await user().upload(cvInput(), pdf("gros.pdf", 10 * 1024 * 1024 + 1));
     expect(screen.getByRole("alert")).toHaveTextContent(
-      "Ce fichier dépasse 10 Mo : choisis un PDF plus léger.",
+      "This file is over 10 MB: choose a smaller PDF.",
     );
     expect(send()).toBeDisabled();
   });
@@ -105,7 +105,7 @@ describe("ProfileImportForm", () => {
   it("shows the failure message and locks while pending", () => {
     setup({ pending: true, error: "Envoi impossible." });
     expect(screen.getByRole("alert")).toHaveTextContent("Envoi impossible.");
-    expect(screen.getByRole("button", { name: "Lecture en cours…" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Reading…" })).toBeDisabled();
     expect(cvInput()).toBeDisabled();
   });
 });

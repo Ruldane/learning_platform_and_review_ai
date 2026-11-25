@@ -8,7 +8,7 @@ test("prépare puis applique une semaine qui tient compte des prérequis et de l
   request,
 }) => {
   await finishFirstLaunch(request);
-  await page.goto("/etudier/planning-commun");
+  await page.goto("/study/shared-planning");
   await expect(page.getByRole("heading", { name: "Planning entre programmes" })).toBeVisible();
 
   await page.getByLabel("Lundi de la semaine").fill("2030-01-07");

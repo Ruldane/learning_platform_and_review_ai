@@ -1,7 +1,6 @@
-"""Les relances pour l'API (SPEC 6.2, D140) : qui contacter (le recruteur d'abord si un rôle le
-dit, sinon le premier contact de la fiche), le canal, le lien de recherche LinkedIn sans contact,
-le brouillon (gabarit fixe ; texte du kit quand il est prêt). Lectures groupées : les contacts,
-les offres et les pièces « relances » des fiches sont lus en une fois."""
+"""Build reminders for the API (SPEC 6.2, D140) with the contact, channel and draft.
+Prefer a recruiter when present. When there is no contact, include a LinkedIn search link.
+Load contacts and ready kit follow-ups in batches."""
 
 import re
 from collections.abc import Sequence
@@ -15,13 +14,7 @@ from app.features.applications.repository import (
     KitRepository,
 )
 from app.features.applications.schemas import ContactOut, ReminderChannel, ReminderOut
-from app.features.applications.service.drafts import (
-    Language,
-    draft_for,
-    kit_followup,
-    linkedin_search_url,
-)
-from app.features.postings.service.queries import postings_by_ids
+from app.features.applications.service.drafts import draft_for, kit_followup, linkedin_search_url
 
 _RECRUITER = re.compile(r"\b(recrut\w*|recruit\w*|talent|rh|hr)\b", re.IGNORECASE)
 
@@ -48,24 +41,16 @@ def channel_of(kind: str, contact: Contact | None) -> ReminderChannel:
     return "linkedin" if linkedin else "email"
 
 
-def language_of(analysis: dict[str, object] | None) -> Language:
-    """La langue de l'offre (`fr` ou `en`) ; défaut `fr`."""
-    value = (analysis or {}).get("language")
-    return "en" if value == "en" else "fr"
-
-
 def reminder_out(
     row: Reminder,
     app: Application,
     contacts: Sequence[Contact],
-    language: Language,
     kit_text: str | None,
 ) -> ReminderOut:
     contact = pick_contact(contacts)
     kind: str = row.kind
     draft = draft_for(
         row.kind,  # type: ignore[arg-type]  # la colonne est un texte, les valeurs sont ReminderKind
-        language=language,
         company=app.company,
         title=app.title,
         contact_name=contact.name if contact else None,
@@ -107,19 +92,12 @@ async def reminder_outs(
     apps = await ApplicationRepository(db, user_id).by_ids(ids)
     contacts = await ContactRepository(db, user_id).of_applications(ids)
     kits = await KitRepository(db, user_id).ready_followups(ids)
-    posting_ids = {a.posting_id for a in apps.values() if a.posting_id}
-    postings = await postings_by_ids(db, user_id, posting_ids)
-    result = []
-    for row in rows:
-        app = apps[row.application_id]
-        posting = postings.get(app.posting_id or "")
-        result.append(
-            reminder_out(
-                row,
-                app,
-                contacts.get(app.id, []),
-                language_of(posting.analysis if posting else None),
-                kits.get(app.id),
-            )
+    return [
+        reminder_out(
+            row,
+            apps[row.application_id],
+            contacts.get(row.application_id, []),
+            kits.get(row.application_id),
         )
-    return result
+        for row in rows
+    ]

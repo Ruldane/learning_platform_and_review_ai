@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { CallFilters } from "./CallFilters";
 
 describe("CallFilters", () => {
-  it("reports an agent, a graph, and `null` for « Tous »", async () => {
+  it('reports an agent, a flow, and null for "All"', async () => {
     const onAgentChange = vi.fn();
     const onGraphChange = vi.fn();
     render(
@@ -17,14 +17,14 @@ describe("CallFilters", () => {
     );
     const agent = screen.getByLabelText("Agent");
     expect(agent).toHaveValue("scribe");
-    expect(screen.getByLabelText("Parcours")).toHaveValue("");
+    expect(screen.getByLabelText("Flow")).toHaveValue("");
     await userEvent.selectOptions(agent, "");
     expect(onAgentChange).toHaveBeenCalledWith(null);
-    await userEvent.selectOptions(screen.getByLabelText("Parcours"), "quiz");
+    await userEvent.selectOptions(screen.getByLabelText("Flow"), "quiz");
     expect(onGraphChange).toHaveBeenCalledWith("quiz");
   });
 
-  it("names agents and graphs in French", () => {
+  it("names agents and flows in English", () => {
     render(
       <CallFilters agent={null} graph={null} onAgentChange={vi.fn()} onGraphChange={vi.fn()} />,
     );
@@ -32,7 +32,7 @@ describe("CallFilters", () => {
       within(screen.getByLabelText("Agent")).getByRole("option", { name: "Scribe" }),
     ).toHaveValue("scribe");
     expect(
-      within(screen.getByLabelText("Parcours")).getByRole("option", { name: "Brief du matin" }),
+      within(screen.getByLabelText("Flow")).getByRole("option", { name: "Morning brief" }),
     ).toHaveValue("daily_brief");
   });
 });

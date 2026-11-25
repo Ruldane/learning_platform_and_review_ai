@@ -2,7 +2,7 @@ import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 import type { ShareDetail } from "../../api";
 
-const WHEN = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" });
+const WHEN = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" });
 const STATUS = {
   active: "mentorReviews.statusActive",
   expired: "mentorReviews.statusExpired",

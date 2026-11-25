@@ -32,7 +32,7 @@ class CommitteeStore(Protocol):
 
 def committee_unavailable() -> AppError:
     return AppError(
-        "committee_unavailable", "Le comité de recrutement n'est pas branché sur ce moteur.", 503
+        "committee_unavailable", "The hiring committee is unavailable in this runtime.", 503
     )
 
 

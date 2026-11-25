@@ -44,7 +44,7 @@ def _levels(levels: dict[str, SkillLevel], aliases: dict[str, str]) -> dict[str,
 
 
 def _acquired(level: SkillLevel | None) -> bool:
-    return level in {"valide", "prouve"}
+    return level in {"validated", "proven"}
 
 
 def _quote(

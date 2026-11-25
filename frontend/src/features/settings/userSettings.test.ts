@@ -12,9 +12,9 @@ import {
 } from "./userSettings";
 
 const newTiers = {
-  rapide: { provider: "glm", model: "glm-4.7-flash" },
+  fast: { provider: "glm", model: "glm-4.7-flash" },
   standard: { provider: "glm", model: "glm-4.7-flash" },
-  fort: { provider: "glm", model: "glm-5.3" },
+  strong: { provider: "glm", model: "glm-5.3" },
   vision: { provider: "glm", model: "glm-5.3-flash" },
 };
 

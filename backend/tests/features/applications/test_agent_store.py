@@ -35,7 +35,7 @@ async def test_context_is_the_local_day_and_language(
     app: FastAPI, store: AgentApplicationStore, me: str
 ) -> None:
     context = await store.intake_context(me)
-    assert (context.today, context.language) == (date(2026, 11, 15), "fr")
+    assert (context.today, context.language) == (date(2026, 11, 15), "en")
     async with app.state.session_factory() as db:
         settings = SettingsService(db, me)
         await settings.replace((await settings.get()).model_copy(update={"timezone": "Asia/Tokyo"}))
@@ -53,8 +53,10 @@ async def test_alert_for_the_same_application(
     )  # fmt: skip
     [alert] = await store.intake_alerts(me, DRAFT)
     assert (alert.level, alert.application_id) == ("probable", existing)
-    assert "Attention, tu as déjà postulé chez Société Fictive" in alert.message
-    assert "le 3 novembre" in alert.message and "Postulée" in alert.message
+    assert alert.message == (
+        "You already applied for the Développeuse IA role at Société Fictive"
+        " on 3 November (Applied)."
+    )
 
 
 async def test_no_alert_for_another_company_or_for_a_mere_information(
@@ -81,7 +83,9 @@ async def test_intake_info_gives_the_same_company_information(
         "Chef de cuisine",
         "applied",
     )
-    assert info.message.startswith("Pour info : tu as postulé chez Société Fictive")
+    assert info.message.startswith(
+        "For reference, you applied for the Chef de cuisine role at Société Fictive"
+    )
     assert await store.intake_info(me, DRAFT.model_copy(update={"company": "Autre SA"})) == []
 
 
@@ -199,7 +203,7 @@ async def test_intake_data_never_logged(
         await store.save_intake(me, OTHER_SESSION, secret, [])  # doublon : 409
     for value in ("Ultra Secr", "ultra secr"):
         assert value not in caplog.text
-    assert "Fiche créée" in caplog.text
+    assert "Record created" in caplog.text
 
 
 async def test_intake_info_failure_still_creates(

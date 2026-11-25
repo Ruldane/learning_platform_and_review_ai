@@ -1,4 +1,4 @@
-"""Composition propre à la version d'un CV générée pour une offre."""
+"""Composition specific to a CV version generated for a posting."""
 
 from collections.abc import Sequence
 
@@ -12,6 +12,7 @@ from app.agents.tools.cv_validator import cited_facts
 from app.agents.tools.posting_schema import PostingAnalysis, contains_term
 from app.agents.tools.review_schema import Proposal
 
+# Terms in both languages: a French CV or posting stored earlier still matches.
 _AI_TERMS = (
     ("IA", "AI", "intelligence artificielle", "artificial intelligence"),
     ("agent", "agent IA", "agentique", "agentic", "multiagent", "multi agent"),
@@ -21,7 +22,7 @@ _AI_TERMS = (
 
 
 class TargetedCvContent(CvContent):
-    """Les liens du profil figés avec la version, y compris ceux hors du CV d'origine."""
+    """The profile links frozen with the version, including those outside the original CV."""
 
     header_links: list[Link] = Field(default_factory=list)
 
@@ -56,13 +57,13 @@ def _loses_experience(
     after = ""
     if proposal.action == "rewrite":
         after = proposal.after
-        # La réécriture d'un intitulé laisse ses réalisations en place.
+        # Rewriting a title leaves its achievements in place.
         original_lines = original_lines[:1]
     for before in original_lines:
         if _loses_terms(before, after, terms):
             return True
         original, replacement = figures_in(before), figures_in(after)
-        # Un chiffre corrigé peut être accepté via une proposition d'impact.
+        # A corrected figure can be accepted through an impact proposal.
         if original - replacement and (
             proposal.type != "impact" or len(replacement) < len(original)
         ):
@@ -92,7 +93,7 @@ def compose_targeted_cv(
     portfolio: str | None = None,
     latest_profile: MasterProfileData | None = None,
 ) -> Applied:
-    """Garde les preuves du CV et déplace ses liens dans l'en-tête de la version ciblée."""
+    """Keeps the CV's proofs and moves its links into the header of the targeted version."""
     sections = [section for section in base.sections if section.key != "links"]
     present = {section.key for section in sections}
     sections += [
@@ -126,7 +127,7 @@ def _keeps_numeric_associations(
 ) -> bool:
     if proposal.action in ("remove", "move"):
         return True
-    # Une confirmation manuelle écrit le texte dans le fait correspondant du profil validé.
+    # A manual confirmation writes the text into the matching fact of the validated profile.
     confirmed = current.get(proposal.target or "")
     return numeric_claims_supported(proposal.after, cited_facts(proposal, frozen)) or (
         confirmed is not None and numeric_claims_supported(proposal.after, [confirmed])

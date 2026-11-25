@@ -98,7 +98,7 @@ async def edit(
     if row.profile_version != version:
         raise stale_profile()
     if not await LinkedInRepository(db, user_id).save(draft_id, body.text, revision=body.revision):
-        raise AppError("linkedin_edit_conflict", "La proposition a changé. Recharge-la.", 409)
+        raise AppError("linkedin_edit_conflict", "The proposal has changed. Reload it.", 409)
     await db.commit()
     return LinkedInDraftOut(
         id=draft_id,

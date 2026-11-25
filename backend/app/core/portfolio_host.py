@@ -1,4 +1,4 @@
-"""L’hôte public sert uniquement les fichiers explicitement approuvés."""
+"""The public host only serves the files that were explicitly approved."""
 
 from collections.abc import Callable
 
@@ -32,7 +32,7 @@ class PortfolioPublicHostGuard:
                 {
                     "error": {
                         "code": "not_found",
-                        "message": "Ressource introuvable.",
+                        "message": "Resource not found.",
                         "details": None,
                     }
                 },

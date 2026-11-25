@@ -1,5 +1,5 @@
-"""Ce que les opérations du service de l'IDE partagent : la session de base de données, la
-propriétaire, le bac à sable (`None` tant que la composition ne l'a pas posé) et l'appelant."""
+"""What the IDE service operations share: the database session, the owner, the sandbox (`None`
+until composition has set it) and the caller."""
 
 from dataclasses import dataclass
 

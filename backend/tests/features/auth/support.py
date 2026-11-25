@@ -83,7 +83,7 @@ def set_cookie(response: httpx.Response, name: str) -> str | None:
 
 def failed(code: str) -> str:
     """Où le callback renvoie une connexion refusée."""
-    return f"{FRONT}/connexion?erreur={code}"
+    return f"{FRONT}/login?error={code}"
 
 
 def cookie_value(response: httpx.Response, name: str) -> str:

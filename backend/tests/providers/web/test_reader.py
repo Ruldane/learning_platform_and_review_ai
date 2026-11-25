@@ -61,7 +61,7 @@ async def test_short_page_is_unreadable() -> None:
     )
     with pytest.raises(UrlUnreadable) as caught:
         await reader.read(URL)
-    assert caught.value.message == "Page illisible : aucun texte principal trouvé."
+    assert caught.value.message == "Page unreadable: no main text found."
 
 
 async def test_short_page_keeps_its_metadata_when_text_is_not_required() -> None:

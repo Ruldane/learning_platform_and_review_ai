@@ -11,7 +11,7 @@ export function NoBlockState() {
       description={t("study.home.noBlockDescription")}
       action={{
         label: t("study.home.chooseLesson"),
-        onClick: () => void navigate("/apprendre/lecons"),
+        onClick: () => void navigate("/learn/lessons"),
       }}
     />
   );

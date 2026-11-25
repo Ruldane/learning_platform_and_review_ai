@@ -1,10 +1,9 @@
-"""API de gestion de l'accès MCP (phase 10, P1, P15 à P19) : interrupteur général, tables des
-features et des outils, jetons, demandes « À confirmer », journal des appels, changements et
-annulation. Posée par 10.P (surface et schémas définitifs) ; 10.B1 a rempli l'interrupteur, les
-jetons et le journal, 10.B2 les tables d'outils, les demandes « À confirmer » et les changements.
-Ces routes sont **de l'interface** : la feature `mcp` n'est jamais exposée au MCP (niveau 4), un
-jeton MCP n'ouvre jamais `/api/v1` (refusé ici en 403) et `get_interface_user` refuse même un appel
-porté par une identité MCP."""
+"""MCP access management API (phase 10, P1, P15 to P19): master switch, feature and tool
+tables, tokens, "To confirm" requests, call log, changes and undo. Laid down by 10.P (final
+surface and schemas); 10.B1 filled in the switch, the tokens and the log, 10.B2 the tool
+tables, the "To confirm" requests and the changes. These routes are **the interface's**: the
+`mcp` feature is never exposed to MCP (level 4), an MCP token never opens `/api/v1` (refused
+here with 403) and `get_interface_user` even refuses a call carried by an MCP identity."""
 
 from datetime import UTC, datetime
 from typing import Annotated
@@ -47,20 +46,20 @@ Limit = Annotated[int, Query(ge=1, le=100)]
 
 
 def _known_features(request: Request) -> frozenset[str] | None:
-    """Les features qui déclarent des outils (`None` tant qu'aucune n'en déclare)."""
+    """The features that declare tools (`None` as long as none declares any)."""
     gate = getattr(request.app.state, "mcp_gate", None)
     return gate.known_features if gate is not None else None
 
 
 @router.get("/settings", response_model=McpSettingsOut)
 async def get_settings(current: InterfaceUserDep, db: Db) -> McpSettingsOut:
-    """L'interrupteur général du MCP (coupé par défaut)."""
+    """The MCP master switch (off by default)."""
     return await PrefsService(db, current.id).get()
 
 
 @router.put("/settings", response_model=McpSettingsOut)
 async def put_settings(body: McpSettingsIn, current: InterfaceUserDep, db: Db) -> McpSettingsOut:
-    """Allume ou coupe tout l'accès MCP d'un geste."""
+    """Turns all MCP access on or off in one gesture."""
     return await PrefsService(db, current.id).set_enabled(body.enabled)
 
 
@@ -70,20 +69,20 @@ def _registry(request: Request) -> Registry:
 
 
 def _confirmations(request: Request, user_id: str) -> ConfirmationService:
-    """Le service des demandes de ce compte, avec l'envoyeur qui rejoue une demande confirmée."""
+    """The service of this account's requests, with the sender that replays a confirmed request."""
     service: ConfirmationService = request.app.state.mcp_confirmations(user_id)
     return service
 
 
 @router.get("/features", response_model=list[McpFeatureOut])
 async def list_features(request: Request) -> list[McpFeatureOut]:
-    """Les features qui déclarent des outils, avec le nombre d'outils par niveau."""
+    """The features that declare tools, with the number of tools per level."""
     return table_of_features(_registry(request))
 
 
 @router.get("/actions", response_model=list[McpActionOut])
 async def list_actions(request: Request) -> list[McpActionOut]:
-    """La table des outils exposés et de leur niveau."""
+    """The table of exposed tools and their level."""
     return table_of_actions(_registry(request))
 
 
@@ -95,7 +94,7 @@ async def create_token(
     current: InterfaceUserDep,
     db: Db,
 ) -> McpTokenCreated:
-    """Crée un jeton ; sa valeur n'est rendue qu'ici, une seule fois."""
+    """Creates a token; its value is returned only here, once."""
     service = TokenService(db, current.id, _known_features(request))
     token, plain = await service.create(body.label, body.features, body.mode, body.expires_in_days)
     response.headers["Cache-Control"] = "no-store"
@@ -104,13 +103,13 @@ async def create_token(
 
 @router.get("/tokens", response_model=list[McpTokenOut])
 async def list_tokens(current: InterfaceUserDep, db: Db) -> list[McpTokenOut]:
-    """Mes jetons (sans leur valeur), révoqués compris."""
+    """My tokens (without their value), revoked ones included."""
     return await TokenService(db, current.id).mine()
 
 
 @router.delete("/tokens/{token_id}", status_code=204, response_class=Response)
 async def revoke_token(token_id: Id, current: InterfaceUserDep, db: Db) -> Response:
-    """Révoque un jeton : il cesse de fonctionner aussitôt."""
+    """Revokes a token: it stops working immediately."""
     await TokenService(db, current.id).revoke(token_id)
     return Response(status_code=204)
 
@@ -119,7 +118,7 @@ async def revoke_token(token_id: Id, current: InterfaceUserDep, db: Db) -> Respo
 async def list_confirmations(
     request: Request, current: InterfaceUserDep
 ) -> list[McpConfirmationOut]:
-    """Les demandes « À confirmer », les plus récentes d'abord."""
+    """The "To confirm" requests, most recent first."""
     return await _confirmations(request, current.id).list()
 
 
@@ -127,7 +126,7 @@ async def list_confirmations(
 async def confirm(
     confirmation_id: Id, request: Request, current: InterfaceUserDep
 ) -> McpConfirmationOut:
-    """Exécute la demande, une seule fois ; expirée, refusée ou déjà traitée : 409."""
+    """Executes the request, once only; expired, refused or already handled: 409."""
     service = _confirmations(request, current.id)
     summary = await service.get(confirmation_id)
     result = await service.confirm(confirmation_id)
@@ -145,13 +144,13 @@ async def confirm(
 async def refuse(
     confirmation_id: Id, request: Request, current: InterfaceUserDep
 ) -> McpConfirmationOut:
-    """Refuse la demande : elle ne s'exécutera jamais."""
+    """Refuses the request: it will never run."""
     return await _confirmations(request, current.id).refuse(confirmation_id)
 
 
 @router.get("/calls", response_model=list[McpCallOut])
 async def list_calls(current: InterfaceUserDep, db: Db, limit: Limit = 50) -> list[McpCallOut]:
-    """Le journal des appels MCP (outil, niveau, code, durée), jamais leur contenu."""
+    """The MCP call log (tool, level, code, duration), never their content."""
     return await CallsService(db, current.id).recent(limit)
 
 
@@ -159,14 +158,14 @@ async def list_calls(current: InterfaceUserDep, db: Db, limit: Limit = 50) -> li
 async def list_changes(
     request: Request, current: InterfaceUserDep, limit: Limit = 50
 ) -> list[McpChangeOut]:
-    """Les changements faits par Claude (niveau 2), annulables un appel à la fois."""
+    """The changes made by Claude (level 2), undoable one call at a time."""
     return await ChangesService(request.app.state.session_factory, current.id).recent(limit)
 
 
 @router.post("/changes/{call_id}/undo", response_model=McpUndoOut)
 async def undo_changes(call_id: Id, request: Request, current: InterfaceUserDep) -> McpUndoOut:
-    """Remet les lignes d'un appel dans leur état d'avant, si aucune n'a changé depuis (409
-    sinon). Une mémoire restaurée ou retirée se réindexe ensuite, hors de l'appel."""
+    """Puts a call's rows back in their previous state, if none has changed since (409
+    otherwise). A restored or removed memory is re-indexed afterwards, outside the call."""
     undone = await ChangesService(request.app.state.session_factory, current.id).undo(call_id)
     for sid in undone.cancelled_sessions:
         await request.app.state.runtime.runner.settle_cancelled(current.id, sid)

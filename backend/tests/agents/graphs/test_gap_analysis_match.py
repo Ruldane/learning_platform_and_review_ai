@@ -38,11 +38,11 @@ async def test_need_matches_the_acquired_notion_not_a_new_homonym(
         "Anglais professionnel",
     ]
     [prompt] = run.prompts(MATCH_REQUEST)
-    assert "RAG (obligatoire)" not in prompt.split("Référentiel de January")[1].split("Réponse")[0]
-    assert "- k1 : Recherche vectorielle (niveau : prouvé)" in prompt  # acquises d'abord
-    assert "Génération augmentée par recherche (niveau : validé)" in prompt
-    assert "- k7 : Kubernetes (niveau : sans niveau)" in prompt
-    assert "- n3 : RAG (obligatoire)" in prompt and "- n8 : Docker (souhaitée)" in prompt
+    assert "RAG (required)" not in prompt.split("January's framework")[1].split("Reply")[0]
+    assert "- k1: Recherche vectorielle (level: proven)" in prompt
+    assert "Génération augmentée par recherche (level: validated)" in prompt
+    assert "- k7: Kubernetes (level: no level)" in prompt
+    assert "- n3: RAG (required)" in prompt and "- n8: Docker (preferred)" in prompt
 
 
 async def test_second_posting_sees_needs_added_by_the_first(
@@ -54,7 +54,7 @@ async def test_second_posting_sees_needs_added_by_the_first(
     second = await gap_runner(analyst(matches=[matches_reply(levels=gap_store.levels)]))
     await second.wait_status("completed")
     [prompt] = second.prompts(MATCH_REQUEST)
-    assert "LangGraph (niveau : sans niveau)" in prompt  # entré au référentiel par la 1re offre
+    assert "LangGraph (level: no level)" in prompt
     assert matched(gap_store)["LangGraph"] == "LangGraph"  # même nom : rattaché
     assert gap_store.catalog_added.count("LangGraph") == 1
 
@@ -65,7 +65,7 @@ async def test_long_referential_name_is_matched(
     """Revue 6.5, I1 : un nom du référentiel de 84 caractères (plafond 120) ne fait pas échouer
     le rattachement."""
     assert len(LONG_NAME) == 84
-    levels = {LONG_NAME: "valide", **LEVELS}
+    levels = {LONG_NAME: "validated", **LEVELS}
     gap_store.levels = dict(levels)
     run = await gap_runner(
         analyst(matches=[matches_reply({**MATCHES, "RAG": LONG_NAME}, levels=levels)])

@@ -1,7 +1,7 @@
-"""API des gabarits de CV (SPEC 5.2, 14.2 ; D126). `POST /cv/templates` range le CV d'origine
-(PDF envoyé ou CV déjà importé) et lance la capture du design par le Maquettiste ; les autres
-routes lisent les gabarits, leurs images, choisissent le gabarit actif et archivent. Une 422 nomme
-les champs, jamais leur valeur."""
+"""CV templates API (SPEC 5.2, 14.2; D126). `POST /cv/templates` files the original CV (uploaded
+PDF or already imported CV) and starts the design capture by the Layout designer; the other
+routes read the templates and their images, choose the active template and archive. A 422 names
+the fields, never their value."""
 
 from typing import Annotated
 
@@ -37,7 +37,7 @@ async def post_template(
     file: Annotated[UploadFile | None, File()] = None,
     document_id: Annotated[str | None, Form(min_length=1, max_length=36)] = None,
 ) -> TemplateCreated:
-    """CV en PDF (10 Mo au plus, 4 pages au plus) OU `document_id` d'un CV importé. 409
+    """CV as PDF (10 MB at most, 4 pages at most) OR `document_id` of an imported CV. 409
     `vision_unavailable`, 409 `capture_in_progress`, 413 `file_too_large`, 415
     `unsupported_file_type`, 422 `pdf_unreadable`."""
     return await create_template(
@@ -47,7 +47,7 @@ async def post_template(
 
 @router.get("", response_model=list[TemplateSummaryOut])
 async def get_templates(current: CurrentUserDep, rt: CvDep) -> list[TemplateSummaryOut]:
-    """Les gabarits non archivés, le plus récent d'abord."""
+    """Non-archived templates, newest first."""
     return await list_templates(rt, current.id)
 
 
@@ -61,7 +61,7 @@ async def get_one_template(
 @router.get(
     "/{template_id}/pages/{kind}/{number}",
     response_class=Response,
-    responses={200: {"content": {"image/png": {}}, "description": "Image PNG de la page."}},
+    responses={200: {"content": {"image/png": {}}, "description": "PNG image of the page."}},
 )
 async def get_template_page(
     template_id: TemplateId,
@@ -70,18 +70,18 @@ async def get_template_page(
     current: CurrentUserDep,
     rt: CvDep,
 ) -> Response:
-    """Page `number` (depuis 1) du CV d'origine ou du rendu de la passe courante ; 404 sinon."""
+    """Page `number` (from 1) of the original CV or of the current pass's render; 404 otherwise."""
     data = await page_png(rt, current.id, template_id, kind, number)
     return Response(content=data, media_type="image/png", headers={"Cache-Control": "no-store"})
 
 
 @router.post("/{template_id}/activate", status_code=status.HTTP_204_NO_CONTENT)
 async def post_activate(template_id: TemplateId, current: CurrentUserDep, rt: CvDep) -> None:
-    """Le gabarit devient le seul actif ; 409 `template_not_ready` s'il n'est pas prêt."""
+    """The template becomes the only active one; 409 `template_not_ready` if it is not ready."""
     await activate_template(rt, current.id, template_id)
 
 
 @router.delete("/{template_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_template(template_id: TemplateId, current: CurrentUserDep, rt: CvDep) -> None:
-    """Archivé (statut `archived`) ; 409 `template_in_use` si une revue en cours l'emploie."""
+    """Archived (status `archived`); 409 `template_in_use` if a review in progress uses it."""
     await archive_template(rt, current.id, template_id)

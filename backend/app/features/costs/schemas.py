@@ -4,8 +4,8 @@ from pydantic import BaseModel
 
 
 class CostTotals(BaseModel):
-    """Appels, jetons et coût d'un groupe d'appels ; `estimated_calls` : combien de ces appels
-    ont un coût estimé (le fournisseur n'a pas rendu ses jetons)."""
+    """Calls, tokens and cost of a group of calls; `estimated_calls`: how many of these calls
+    have an estimated cost (the provider did not return its tokens)."""
 
     calls: int
     tokens_in: int
@@ -15,15 +15,15 @@ class CostTotals(BaseModel):
 
 
 class CostRow(CostTotals):
-    """Une ligne du rapport. `key` : le jour (`2026-11-16`), le graphe (`""` hors session),
-    l'agent (`""` aucun) ou `fournisseur:modèle` (`glm:glm-5.3-flash`)."""
+    """A report row. `key`: the day (`2026-11-16`), the graph (`""` outside a session), the
+    agent (`""` none) or `provider:model` (`glm:glm-5.3-flash`)."""
 
     key: str
 
 
 class CostsReport(BaseModel):
-    """Les coûts des `days` derniers jours locaux, de `since` à `until` inclus ; les jours sans
-    appel sont présents, à zéro."""
+    """Costs over the last `days` local days, from `since` to `until` inclusive; days without
+    calls are present, at zero."""
 
     days: int
     since: date
@@ -36,7 +36,7 @@ class CostsReport(BaseModel):
 
 
 class AgentCallOut(BaseModel):
-    """Un appel à un modèle, tel que journalisé : jamais le contenu du prompt."""
+    """A call to a model, as logged: never the prompt content."""
 
     id: str
     at: datetime
@@ -53,8 +53,8 @@ class AgentCallOut(BaseModel):
 
 
 class AgentCallPage(BaseModel):
-    """Une page du journal ; `next_before` (curseur opaque) donne la page suivante, `None` à la
-    fin."""
+    """A page of the log; `next_before` (opaque cursor) gives the next page, `None` at the
+    end."""
 
     items: list[AgentCallOut]
     next_before: str | None

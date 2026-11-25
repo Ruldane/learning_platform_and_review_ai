@@ -7,14 +7,14 @@ describe("FontGapNotice", () => {
     render(
       <FontGapNotice
         gaps={[
-          "La police des titres n'est pas libre : remplacée par Carlito, très proche.",
-          "La police du texte n'a pas d'équivalent connu : remplacée par Liberation Sans.",
+          "The heading font was replaced with Carlito.",
+          "The body font was replaced with Liberation Sans.",
         ]}
       />,
     );
-    expect(screen.getByRole("complementary", { name: "Polices remplacées" })).toBeInTheDocument();
+    expect(screen.getByRole("complementary", { name: "Replaced fonts" })).toBeInTheDocument();
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
-    expect(screen.getByText(/remplacée par Carlito/)).toBeInTheDocument();
+    expect(screen.getByText(/replaced with Carlito/)).toBeInTheDocument();
   });
 
   it("renders nothing when no font was replaced", () => {

@@ -1,7 +1,7 @@
-"""Le brief du jour dans la vie de l'application (D162) : ce que les routes, la tâche du matin et le
-port du parcours `daily_brief` (`AgentBriefStore`) partagent : base, lanceur de sessions (lié au
-moteur ensuite), les features dont il lit les faits (quiz, étude, candidatures), horloge et
-verrous. Créé par `app.bootstrap_daily` avant le moteur d'agents (`app.state.daily.brief`)."""
+"""The daily brief in the application's lifetime (D162): what the routes, the morning job and the
+`daily_brief` flow port (`AgentBriefStore`) share: database, session launcher (bound to the
+engine later), the features whose facts it reads (quiz, study, applications), clock and locks.
+Created by `app.bootstrap_daily` before the agent engine (`app.state.daily.brief`)."""
 
 import asyncio
 from collections.abc import Callable
@@ -36,7 +36,7 @@ class BriefRuntime:
     locks: KeyLocks = field(default_factory=KeyLocks, repr=False, compare=False)
 
     def ensure_lock(self, user_id: str) -> asyncio.Lock:
-        """Le verrou de création du brief d'une utilisatrice : la vérification « déjà là ? »,
-        l'insertion et le lancement de la session forment une seule section. Propre à ce
-        processus ; l'unicité `(user_id, day)` du brief reste le dernier rempart."""
+        """The brief creation lock of a user: the "already there?" check, the insert and the
+        session launch form a single section. Local to this process; the brief's
+        `(user_id, day)` uniqueness remains the last safeguard."""
         return self.locks.get(user_id, _ENSURE)

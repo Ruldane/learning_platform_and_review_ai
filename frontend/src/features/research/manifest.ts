@@ -7,12 +7,12 @@ import { ResearchBenchPage } from "./pages/ResearchBenchPage";
  */
 export const researchManifest: FeatureManifest = {
   id: "research",
-  routes: [{ path: "reglages/recherche/essai", Component: ResearchBenchPage }],
+  routes: [{ path: "settings/search/probe", Component: ResearchBenchPage }],
   nav: [
     {
       section: "settings",
       labelKey: "research.nav.bench",
-      path: "/reglages/recherche/essai",
+      path: "/settings/search/probe",
       order: 2.5,
     },
   ],

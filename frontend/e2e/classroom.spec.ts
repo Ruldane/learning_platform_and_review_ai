@@ -11,12 +11,12 @@ test("explique la leçon, retrouve les trois camarades et ouvre leur source", as
   request,
 }) => {
   await finishFirstLaunch(request);
-  await page.goto("/apprendre/lecons");
+  await page.goto("/learn/lessons");
   await page.getByRole("link", { name: "Lire « Module Bases »", exact: true }).click();
-  await expect(page).toHaveURL(/\/apprendre\/lecons\/[0-9a-f-]+$/);
+  await expect(page).toHaveURL(/\/learn\/lessons\/[0-9a-f-]+$/);
   const lesson = page.url();
   await page.getByRole("link", { name: "Entrer en classe virtuelle" }).click();
-  await expect(page).toHaveURL(lesson + "/classe");
+  await expect(page).toHaveURL(lesson + "/classroom");
 
   const input = page.getByRole("textbox", { name: "Ton explication" });
   await expect(input).toBeEnabled();

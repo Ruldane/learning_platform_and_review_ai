@@ -60,7 +60,7 @@ it.each([false, true])(
     );
     const fetches = vi.spyOn(globalThis, "fetch");
     vi.stubGlobal("ClipboardItem", ClipboardItemDouble);
-    const path = "/carriere/linkedin";
+    const path = "/career/linkedin";
     const { user } = renderRoutes([{ path, Component: LinkedInPage }], path);
     const written = vi.fn();
     const writeText = vi
@@ -72,7 +72,7 @@ it.each([false, true])(
       if (item) written(await blobText(await item.getType("text/plain")));
     });
 
-    const copy = await screen.findByRole("button", { name: "Copier le résumé" });
+    const copy = await screen.findByRole("button", { name: "Copy about section" });
     await user.click(copy);
     expect(write).toHaveBeenCalledOnce();
     await waitFor(() => expect(reads).toHaveBeenCalledTimes(2));
@@ -83,12 +83,12 @@ it.each([false, true])(
 
     if (stale) {
       expect(
-        await screen.findByText("Le profil maître a changé. Prépare une nouvelle proposition."),
+        await screen.findByText("The master profile has changed. Prepare a new suggestion."),
       ).toBeVisible();
       expect(written).not.toHaveBeenCalled();
-      expect(screen.queryByText("Texte copié.")).not.toBeInTheDocument();
+      expect(screen.queryByText("Text copied.")).not.toBeInTheDocument();
     } else {
-      expect(await screen.findByText("Texte copié.")).toBeVisible();
+      expect(await screen.findByText("Text copied.")).toBeVisible();
       expect(written).toHaveBeenCalledWith(initial.text?.about);
     }
   },

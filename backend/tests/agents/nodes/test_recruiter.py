@@ -2,7 +2,7 @@
 inconnues ou en double, `amend` sans texte), les deux tours (`amend` remplace le texte, l'auteur
 retire ou maintient son texte d'origine au tour 2), le débat dit dans le fil."""
 
-from app.agents.nodes.review_common import author_of
+from app.agents.nodes.review_common import LABEL, author_of
 from app.agents.nodes.review_confront import (
     apply_first,
     apply_second,
@@ -32,19 +32,17 @@ def _by_ref(*items: Proposal) -> dict[str, Proposal]:
 async def test_recruiter_prompts() -> None:
     variables = await _vars()
     propose = render_prompt("recruiter", mode="propose", prefix="r", **variables)
-    assert "Tu es le Recruteur" in propose and "`strengths`" in propose
-    assert "Mise à jour : 2026-11-13" not in propose  # la base ATS est au Lecteur ATS
+    assert "You are the Recruiter" in propose and "`strengths`" in propose
+    assert "Notes per ATS" not in propose  # Only the ATS Reader gets the knowledge base.
     second = render_prompt(
         "recruiter", mode="confront", round=2, proposals=proposals_text([R1], {}), **variables
     )
-    assert (
-        "Confrontation, tour 2 sur 2." in second and "Ces propositions sont les tiennes" in second
-    )
-    assert '<<<CONTENU_NON_FIABLE source="propositions">>>' in second
+    assert "Cross-examination, round 2 of 2." in second and "These proposals are yours" in second
+    assert '<<<UNTRUSTED_CONTENT source="proposals">>>' in second
     # `keep` restaure le texte d'origine ; le silence laisse l'amendement (D129).
     flat = " ".join(second.split())
-    assert "restaure ton texte d'origine" in flat
-    assert "l'amendement de l'autre agent reste" in flat
+    assert "restores your original text" in flat
+    assert "the other agent's amendment stands" in flat
 
 
 def test_author_of_ref() -> None:
@@ -63,10 +61,10 @@ def test_stance_problems_never_echo_unknown_refs() -> None:
     problems = stance_problems(found, _by_ref(R1, R2))
     assert "Ignore" not in " ".join(problems)
     assert problems == [
-        "Une position vise une référence absente de la liste : n'emploie que r1, r2.",
-        "La position sur r1 propose une autre formulation sans texte : renseigne `after`.",
-        "La référence r1 a deux positions : une seule par référence.",
-        "La proposition r2 n'écrit aucun texte : choisis `keep` ou `drop`.",
+        "A position targets a reference absent from the list: use only r1, r2.",
+        "The position on r1 proposes another wording without text: fill in `after`.",
+        "Reference r1 has two positions: only one per reference.",
+        "Proposal r2 writes no text: choose `keep` or `drop`.",
     ]
     assert clean_stances(found, _by_ref(R1, R2)) == {"r1": _stance("r1", "keep")}
 
@@ -110,44 +108,44 @@ def test_round_two_amend_then_author_keep_restores_original() -> None:
 def test_round_two_text_shows_original_and_amendment() -> None:
     amended, contested = apply_first([R1], {"r1": _stance("r1", "amend", "Mène l'équipe")})
     text = proposals_text(amended, contested)
-    assert "Texte d'origine (le tien) : Anime l'équipe" in text
-    assert "Texte amendé par l'autre agent : Mène l'équipe" in text
-    assert "Objection : amend" in text and "  Texte : " not in text
+    assert "Original text (yours): Anime l'équipe" in text
+    assert "Text amended by the other agent: Mène l'équipe" in text
+    assert "Objection: amend" in text and "  Text: " not in text
     dropped, contested = apply_first([R1], {"r1": _stance("r1", "drop")})
-    assert "Texte : Anime l'équipe" in proposals_text(dropped, contested)
+    assert "Text: Anime l'équipe" in proposals_text(dropped, contested)
 
 
 def test_debate_text() -> None:
     text = debate_text(1, "ats_reader", [R1, R2], {"r1": _stance("r1", "drop")})
     assert text == (
-        "Tour 1 : mes positions sur les propositions du Recruteur.\n"
-        "- r1 : à retirer. Avis.\n"
-        "- r2 : je garde."
+        f"Round 1: my stances on the {LABEL['recruiter']}'s proposals.\n"
+        "- r1: to remove. Avis.\n"
+        "- r2: I keep it."
     )
-    assert debate_text(2, "recruiter", [R1], {}).startswith("Tour 2 : je réponds aux objections")
+    assert debate_text(2, "recruiter", [R1], {}).startswith("Round 2: I answer the objections")
 
 
 def test_round_two_debate_matches_outcome() -> None:
     contested = {"r1": {"stance": "amend", "reason": "y", "original": "Anime l'équipe"}}
     said = {
-        "drop": "- r1 : je retire. Avis.",
-        "keep": "- r1 : je maintiens mon texte d'origine. Avis.",
-        "amend": "- r1 : je reformule. Avis.",
+        "drop": "- r1: I withdraw it. Avis.",
+        "keep": "- r1: I stand by my original text. Avis.",
+        "amend": "- r1: I rephrase it. Avis.",
     }
     for kind, line in said.items():
         stance = _stance("r1", kind, "Pilote l'équipe" if kind == "amend" else None)
         assert debate_text(2, "recruiter", [R1], {"r1": stance}, contested).endswith(line)
     assert debate_text(2, "recruiter", [R1], {}, contested).endswith(
-        "- r1 : sans réponse, l'amendement de l'autre agent reste."
+        "- r1: no answer, the other agent's amendment stands."
     )
     plain = {"r1": {"stance": "drop", "reason": "y"}}
     assert debate_text(2, "recruiter", [R1], {"r1": _stance("r1", "keep")}, plain).endswith(
-        "- r1 : je maintiens. Avis."
+        "- r1: I stand by it. Avis."
     )
     # Un auteur muet ne « maintient » rien : la proposition reste telle quelle.
     silent = debate_text(2, "recruiter", [R1], {}, plain)
-    assert silent.endswith("- r1 : sans réponse, la proposition reste.")
-    assert "maintiens" not in silent and "maintiens" not in debate_text(
+    assert silent.endswith("- r1: no answer, the proposal stands.")
+    assert "I stand by" not in silent and "I stand by" not in debate_text(
         2, "recruiter", [R1], {}, contested
     )
 

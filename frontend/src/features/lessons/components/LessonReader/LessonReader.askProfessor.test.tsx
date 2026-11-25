@@ -36,11 +36,11 @@ const paragraph = (text: string) => within(screen.getByTestId("lesson-body")).ge
 
 afterEach(() => window.getSelection()?.removeAllRanges());
 
-describe("LessonReader: Demander au professeur", () => {
+describe("LessonReader: Ask the professor", () => {
   it("offers nothing until a passage is selected", () => {
     render(<LessonReader lesson={LESSON} onAskProfessor={vi.fn()} />);
     expect(
-      screen.queryByRole("button", { name: "Demander au professeur" }),
+      screen.queryByRole("button", { name: "Ask the professor" }),
     ).not.toBeInTheDocument();
   });
 
@@ -48,9 +48,9 @@ describe("LessonReader: Demander au professeur", () => {
     const onAskProfessor = vi.fn();
     render(<LessonReader lesson={LESSON} onAskProfessor={onAskProfessor} />);
     select(paragraph("GET lit une ressource."));
-    const bar = screen.getByRole("region", { name: "Question au professeur" });
+    const bar = screen.getByRole("region", { name: "Question for the professor" });
     expect(bar).toHaveTextContent("GET lit une ressource.");
-    const trigger = within(bar).getByRole("button", { name: "Demander au professeur" });
+    const trigger = within(bar).getByRole("button", { name: "Ask the professor" });
     await userEvent.click(trigger);
     expect(onAskProfessor).toHaveBeenCalledExactlyOnceWith({
       text: "GET lit une ressource.",
@@ -70,14 +70,14 @@ describe("LessonReader: Demander au professeur", () => {
       "GET lit une ressource.",
     );
     select(occurrences[1]!);
-    await userEvent.click(screen.getByRole("button", { name: "Demander au professeur" }));
+    await userEvent.click(screen.getByRole("button", { name: "Ask the professor" }));
     expect(onAskProfessor).toHaveBeenCalledWith({ text: "GET lit une ressource.", occurrence: 1 });
   });
 
   it("does not take the selection away when the button is pressed", () => {
     render(<LessonReader lesson={LESSON} onAskProfessor={vi.fn()} />);
     select(paragraph("GET lit une ressource."));
-    const button = screen.getByRole("button", { name: "Demander au professeur" });
+    const button = screen.getByRole("button", { name: "Ask the professor" });
     const press = new MouseEvent("mousedown", { bubbles: true, cancelable: true });
     button.dispatchEvent(press);
     expect(press.defaultPrevented).toBe(true);
@@ -86,10 +86,10 @@ describe("LessonReader: Demander au professeur", () => {
   it("goes away with the selection", () => {
     render(<LessonReader lesson={LESSON} onAskProfessor={vi.fn()} />);
     select(paragraph("PUT remplace une ressource."));
-    expect(screen.getByRole("button", { name: "Demander au professeur" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ask the professor" })).toBeInTheDocument();
     clearSelection();
     expect(
-      screen.queryByRole("button", { name: "Demander au professeur" }),
+      screen.queryByRole("button", { name: "Ask the professor" }),
     ).not.toBeInTheDocument();
   });
 
@@ -97,7 +97,7 @@ describe("LessonReader: Demander au professeur", () => {
     render(<LessonReader lesson={LESSON} onAskProfessor={vi.fn()} />);
     select(screen.getByRole("heading", { name: "Les API REST", level: 1 }));
     expect(
-      screen.queryByRole("button", { name: "Demander au professeur" }),
+      screen.queryByRole("button", { name: "Ask the professor" }),
     ).not.toBeInTheDocument();
   });
 
@@ -105,7 +105,7 @@ describe("LessonReader: Demander au professeur", () => {
     render(<LessonReader lesson={LESSON} />);
     select(paragraph("GET lit une ressource."));
     expect(
-      screen.queryByRole("button", { name: "Demander au professeur" }),
+      screen.queryByRole("button", { name: "Ask the professor" }),
     ).not.toBeInTheDocument();
   });
 
@@ -119,10 +119,9 @@ describe("LessonReader: Demander au professeur", () => {
       />,
     );
     select(paragraph(long));
-    expect(screen.getByRole("region", { name: "Question au professeur" }).textContent).toContain(
-      "…",
-    );
-    const trigger = screen.getByRole("button", { name: "Demander au professeur" });
+    const bar = screen.getByRole("region", { name: "Question for the professor" });
+    expect(bar.textContent).toContain("…");
+    const trigger = screen.getByRole("button", { name: "Ask the professor" });
     await userEvent.click(trigger);
     expect(onAskProfessor).toHaveBeenCalledWith({ text: long, occurrence: 0 });
   });

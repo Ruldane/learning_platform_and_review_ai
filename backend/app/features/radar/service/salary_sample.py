@@ -1,4 +1,4 @@
-"""Relit les rémunérations annuelles brutes en euros du dernier relevé ciblé terminé."""
+"""Re-reads the gross annual salaries in euros of the last finished targeted run."""
 
 import re
 from decimal import Decimal
@@ -36,7 +36,7 @@ def _number(match: re.Match[str]) -> Decimal:
 
 
 def annual_euro_range(text: str) -> tuple[int, int] | None:
-    """Ne convertit aucune période ni devise. Un k€ commun s'applique aux deux bornes."""
+    """Converts no period or currency. A common k€ applies to both bounds."""
     label = normalize_term(text)
     if not _GROSS.search(label) or _AMBIGUOUS.search(label) or "$" in text or "£" in text:
         return None

@@ -26,8 +26,8 @@ from tests.agents.graphs.review_support import in_untrusted
 from tests.agents.runtime.runner_helpers import wait_until
 from tests.support.kit import APPLICATION_ID, COMPANY, TITLE, FakeKitStore
 
-LETTER_TITLE = "Lettre de motivation"
-RETRY_MARKER = "N'écris rien qui ne soit pas dans le profil"
+LETTER_TITLE = "Cover letter"
+RETRY_MARKER = "Remove terms unsupported by the profile"
 
 
 def unsupported_letter() -> str:
@@ -45,7 +45,7 @@ async def test_kit_produces_seven_pieces(kit_runner: MakeKit, kit_store: FakeKit
     assert {a["artifact_id"] for a in artifacts} == {row.id for row in kit_store.rows.values()}
     assert LETTER_TITLE in await run.titles()
     [done] = await run.events("run.completed")
-    assert "7 pièce(s), dont 7 prête(s)" in done["summary"]
+    assert "7 items. 7 ready" in done["summary"]
     assert (
         len(prompts(run.models, "letter")) == 1
     )  # entreprise et intitulé exacts : jamais signalés
@@ -55,7 +55,7 @@ async def test_pieces_are_announced_as_they_finish(kit_runner: MakeKit) -> None:
     models = writers()
 
     async def slow_letter(agent: str, prompt: str) -> None:
-        if "Rédige la lettre de motivation." in prompt:
+        if "Write the cover letter." in prompt:
             await asyncio.sleep(0.4)
 
     models.hooks.append(slow_letter)
@@ -73,10 +73,10 @@ async def test_letter_with_unsupported_claim_retries_then_flags(
     await run.wait_status("completed")
     first, second = prompts(run.models, "letter")
     assert RETRY_MARKER not in first
-    assert f"{RETRY_MARKER} : 5, Kubernetes" in second
+    assert f"{RETRY_MARKER}: 5, Kubernetes" in second
     row = kit_store.piece("letter")
     assert row.status == "to_check" and row.meta["flags"] == ["5", "Kubernetes"]
-    assert row.meta["words"] == 301 and row.meta["language"] == "fr"
+    assert row.meta["words"] == 301 and row.meta["language"] == "en"
     assert "Kubernetes" in row.content  # le texte est gardé : January relit
 
 
@@ -105,7 +105,7 @@ async def test_letter_word_count_enforced(
     run = await kit_runner(writers(letter=[letter(words), letter(words)]))
     await run.wait_status("completed")
     first, second = prompts(run.models, "letter")
-    assert "250" in second and "350" in second and "Respecte les longueurs" in second
+    assert "250" in second and "350" in second and "Follow the word limits" in second
     row = kit_store.piece("letter")
     assert row.status == "to_check" and row.meta["words"] == words and "flags" not in row.meta
 
@@ -144,22 +144,16 @@ async def test_followups_and_linkedin_use_the_separator_line(
         assert first and second and "---" not in first + second
 
 
-async def test_letter_in_posting_language(kit_runner: MakeKit, kit_store: FakeKitStore) -> None:
-    kit_store.update(language="en")
+@pytest.mark.parametrize("posting_language", ["fr", "en"])
+async def test_letter_in_english_for_either_posting_language(
+    kit_runner: MakeKit, kit_store: FakeKitStore, posting_language: str
+) -> None:
+    kit_store.update(language=posting_language)
     run = await kit_runner()
     await run.wait_status("completed")
     prompt = prompts(run.models, "letter")[0]
-    assert "l'anglais (English)" in prompt
-    assert "Langue de la pièce : le français" not in prompt
+    assert "Write the piece in English." in prompt
     assert kit_store.piece("letter").meta["language"] == "en"
-
-
-async def test_french_letter_prompt_says_french(kit_runner: MakeKit) -> None:
-    run = await kit_runner()
-    await run.wait_status("completed")
-    prompt = prompts(run.models, "letter")[0]
-    assert "Langue de la pièce : le français" in prompt
-    assert "English" not in prompt
 
 
 async def test_style_guide_reaches_every_piece_prompt(kit_runner: MakeKit) -> None:
@@ -193,7 +187,7 @@ async def test_kept_piece_is_not_regenerated(kit_runner: MakeKit, kit_store: Fak
     assert kit_store.kinds == set(KIT_KINDS) - {"letter", "pitch"}
     assert len(await run.events("artifact.ready")) == 5
     [done] = await run.events("run.completed")
-    assert "5 pièce(s)" not in done["summary"] and "2 gardée(s)" in done["summary"]
+    assert "7 items. 5 ready" in done["summary"] and "2 kept unchanged" in done["summary"]
 
 
 async def test_every_piece_kept_completes_without_work(
@@ -212,13 +206,13 @@ async def test_failed_piece_does_not_stop_others(
     await run.wait_status("completed")
     row = kit_store.piece("letter")
     assert row.status == "failed" and row.content == ""
-    assert row.meta["code"] == "structured_output_invalid" and "format attendu" in row.meta["error"]
+    assert row.meta["code"] == "structured_output_invalid" and "wrong format" in row.meta["error"]
     assert {r.status for k, r in kit_store.rows.items() if k[1] != "letter"} == {"ready"}
     assert len(await run.events("artifact.ready")) == 6  # la pièce en échec n'est pas annoncée
     [done] = await run.events("run.completed")
-    assert "1 en échec" in done["summary"]
+    assert "1 failed" in done["summary"]
     messages = [e["text"] for e in await run.events("agent.message")]
-    assert any(m.startswith(f"{LETTER_TITLE} : ") for m in messages)
+    assert any(m.startswith(f"{LETTER_TITLE}: ") for m in messages)
 
 
 async def test_kit_replay_saves_each_piece_once(
@@ -238,7 +232,7 @@ async def test_kit_replay_saves_each_piece_once(
     await second.wait_status("completed")
     assert len(kit_store.rows) == 7 and kit_store.save_calls >= 8
     [done] = await second.events("run.completed")
-    assert "7 pièce(s), dont 7 prête(s)" in done["summary"]
+    assert "7 items. 7 ready" in done["summary"]
     artifacts = await second.events("artifact.ready")
     assert {a["artifact_id"] for a in artifacts} == {r.id for r in kit_store.rows.values()}
 
@@ -259,6 +253,6 @@ def test_graph_is_registered_and_route_only() -> None:
     spec = get_graph("application_kit")
     assert spec.input_model is ApplicationKitInput
     assert ROUTE_ONLY["application_kit"] == "POST /applications/{id}/kit"
-    assert AGENTS["tracker"].tier == "rapide" and AGENTS["scout"].tier == "rapide"
+    assert AGENTS["tracker"].tier == "fast" and AGENTS["scout"].tier == "fast"
     with pytest.raises(ValueError):
         ApplicationKitInput.model_validate({"application_id": "court"})

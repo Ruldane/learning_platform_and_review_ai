@@ -27,23 +27,23 @@ describe("ChangeList", () => {
         onUndo={onUndo}
       />,
     );
-    const buttons = screen.getAllByRole("button", { name: "Annuler" });
+    const buttons = screen.getAllByRole("button", { name: "Undo" });
     expect(buttons).toHaveLength(1);
     expect(buttons[0]).toHaveAccessibleDescription("skills_add_proof");
-    expect(screen.getByText(/Annulé le/)).toBeInTheDocument();
-    expect(screen.getByText(/2 lignes dans skill_proofs/)).toBeInTheDocument();
-    expect(screen.getByText(/1 ligne dans/)).toBeInTheDocument();
+    expect(screen.getByText(/Undone on/)).toBeInTheDocument();
+    expect(screen.getByText(/2 rows in skill_proofs/)).toBeInTheDocument();
+    expect(screen.getByText(/1 row in/)).toBeInTheDocument();
     await userEvent.click(buttons[0]!);
     expect(onUndo).toHaveBeenCalledWith("call1");
   });
 
   it("disables the button of a change being undone", () => {
     render(<ChangeList changes={[change()]} busyIds={["call1"]} onUndo={vi.fn()} />);
-    expect(screen.getByRole("button", { name: "Annuler" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Undo" })).toBeDisabled();
   });
 
   it("says when Claude changed nothing", () => {
     render(<ChangeList changes={[]} busyIds={[]} onUndo={vi.fn()} />);
-    expect(screen.getByText("Aucun changement fait par Claude.")).toBeInTheDocument();
+    expect(screen.getByText("No changes made by Claude.")).toBeInTheDocument();
   });
 });

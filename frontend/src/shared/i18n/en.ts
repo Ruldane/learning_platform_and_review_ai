@@ -78,11 +78,10 @@ import { voice } from "./messages/voice";
 import { training } from "./messages/training";
 
 /**
- * Tous les textes de l'interface, en français : agrégat des fichiers `messages/<zone>.ts`.
- * Règle : une nouvelle feature ajoute un fichier `messages/<feature>.ts` (`export const <feature>
- * = { … } as const;`) et une ligne ici. `{nom}` marque une variable (voir `t`).
+ * English UI messages collected from `messages/<feature>.ts`.
+ * Add each feature's messages here. Use `{name}` for a variable passed to `t`.
  */
-export const fr = {
+export const en = {
   ...appMessages,
   navigation,
   systemDesign,

@@ -1,92 +1,149 @@
 # Tremplin
 
-Plateforme locale d'apprentissage et de carrière pilotée par des agents IA, pour une utilisatrice (et quelques comptes en mode Google). Elle tourne sous Docker : back FastAPI + SQLAlchemy async + SQLite + Alembic + LangGraph + Qdrant, front React 19 + TanStack Query + MSW + Vitest.
-Back et front sont deux applications qui ne partagent que `contracts/openapi.json`. La spec est `SPEC.md` ; les choix et écarts sont dans `DECISIONS.md`.
-Ce fichier guide les agents qui **développent** le dépôt. Un agent qui **pilote** Tremplin par son serveur MCP (Claude Code, Codex) lit `docs/mcp/AGENTS.md` : branchement, jeton, niveaux, limites et règles de conduite.
+Tremplin is a local learning and career platform run by AI agents. It serves a primary user
+and supports a few accounts in Google sign-in mode. The Docker stack runs FastAPI, async
+SQLAlchemy, SQLite, Alembic, LangGraph and Qdrant on the backend, and React 19, TanStack Query,
+MSW and Vitest on the frontend.
 
-## Carte du dépôt
+The backend and frontend share only `contracts/openapi.json`. Read `SPEC.md` for product
+requirements and `DECISIONS.md` for choices and deviations. Agents developing the repository
+follow this file. Agents operating Tremplin through MCP read `docs/mcp/AGENTS.md` for connection
+setup, tokens, access levels, limits and rules of conduct.
 
-- `backend/app/features/<f>/` : `router.py` → `service.py` → `repository.py`, `schemas.py`, et `mcp.py` (déclaration MCP). `features/registry.py` tient `FEATURE_ROUTERS` et `MCP_FEATURES`.
-- `backend/app/agents/` (agents `.md` + nœud `.py`, graphes dans `agents/graphs/registry.py` : `GRAPHS`), `providers/` (ports `base` + implémentations), `mcp/` (moteur MCP), `scheduler/` (`JOBS`), `realtime/`, `db/`, `alembic/`, `scripts/`, `tests/`.
-- `frontend/src/features/<f>/` (mêmes noms que le back), `src/shared/` (api, i18n, realtime, session-ui, ui, lib), `src/app/registry.ts` (liste des manifestes de features), `e2e/` (Playwright).
-- `contracts/openapi.json` ; `sandbox/` (image et lanceur du bac à sable de l'IDE) ; `docs/superpowers/{plans,bilans,recette}` ; `DECISIONS.md`.
-- Les plans sont dans `docs/superpowers/plans/`. Pour la reprise, un plan par lot de dix phases, avec une section par phase et un renvoi vers le plan détaillé de la phase 11. Écrire la section avant le code. Le plan directeur §1 fixe l’architecture et le §7 donne les lots (D232).
+## Repository map
+
+- Backend features live in `backend/app/features/<feature>/`. The router calls the service,
+  which calls the repository. Each feature has schemas and an MCP declaration in `mcp.py`.
+  `features/registry.py` defines `FEATURE_ROUTERS` and `MCP_FEATURES`.
+- The backend has Markdown agent prompts and Python nodes under `backend/app/agents/`. The
+  `GRAPHS` registry is in `agents/graphs/registry.py`. Provider ports and implementations live in
+  `providers/`, the MCP engine in `mcp/`, and `JOBS` in `scheduler/`. The backend also has
+  `realtime/`, `db/`, `alembic/`, `scripts/` and `tests/`.
+- Frontend features use the same names in `frontend/src/features/`. API, i18n, realtime, session
+  UI and shared utilities live in `src/shared/`. `src/app/registry.ts` lists feature manifests,
+  and `e2e/` contains the Playwright flows.
+- `sandbox/` contains the IDE sandbox image and launcher. Project records live under
+  `docs/superpowers/{plans,bilans,recette}` and `DECISIONS.md`.
+- Write implementation plans in `docs/superpowers/plans/`. For the resumed work, use one plan
+  per batch of ten phases, with a section per phase and a link to the detailed phase 11 plan.
+  Write each section before its code. The master plan defines the architecture in section 1
+  and the batches in section 7 (D232).
 
 ## Architecture
 
-- **Un dossier par feature des deux côtés, mêmes noms.** Ajouter une feature = un dossier + une ligne dans chaque registre (`FEATURE_ROUTERS`, `MCP_FEATURES`, `GRAPHS`, `JOBS`, `app/registry.ts`) ; ne retoucher aucune autre feature.
-- Le router reçoit et répond, le service porte la logique, le repository parle à la base. Une feature n'importe d'une autre que son `service`.
-- Les contrats import-linter de `backend/pyproject.toml` sont bloquants : les features et agents n'importent jamais une implémentation concrète de `app.providers` ; seul `app.main` importe `app.bootstrap*` ; `app.mcp` n'importe aucune feature ; `app.features` n'importe pas `app.scheduler`.
-- Un modèle de langage s'obtient par `get_chat_model(tier)` seulement. Un service externe passe par un port de `providers/`.
-- Front : un dossier par composant (`X/X.tsx`, `X.test.tsx`, `index.ts`) ; `components/` est présentationnel (props et callbacks, ni `api.ts`, ni hooks, ni store) ; seules les `pages/` branchent les données ; une feature n'importe jamais une autre feature ; `shared/` n'importe ni `features/` ni `app/`. Contrôlé par ESLint.
-- Fichiers ≤ 300 lignes, fonctions ≤ 50 (back : `scripts/check_file_length.py`, front : ESLint). Un fichier qui grossit devient un paquet sans changer ce qu'il exporte.
-- **Contrat d'abord.** Une route ou un schéma change : régénérer `contracts/openapi.json`, puis `frontend/src/shared/api/schema.d.ts`, jamais à la main. Les types de l'API ne s'écrivent pas côté front.
-- Toute table : `id` UUID texte, `user_id`, `created_at`, `updated_at` ; schéma modifié par Alembic seulement ; toute requête de repository filtre par `user_id`. Une nouvelle route a un test d'isolation entre deux utilisateurs (`backend/tests/isolation/`).
-- **MCP** : une nouvelle route est déclarée dans `features/<f>/mcp.py` (action, niveau 1 à 3) ou exclue avec un motif ; le garde `backend/tests/mcp/test_coverage_guard.py` échoue sinon. `python -m scripts.mcp_levels` imprime la table des niveaux. Niveau 4 (clés, auth, réglages de modèles, jeton MCP) : jamais exposé.
-- Textes de l'interface en français, centralisés dans `frontend/src/shared/i18n/messages/*.ts` (assemblés par `fr.ts`), jamais en dur dans un composant.
+- Use one folder per feature on each side, with matching names. Add a feature through its
+  folder and one entry in each registry (`FEATURE_ROUTERS`, `MCP_FEATURES`, `GRAPHS`,
+  `JOBS` and `app/registry.ts`). Keep the change inside the feature.
+- Routers handle requests and responses, services hold business logic, and repositories access
+  the database. A backend feature may import only the service of another feature.
+- The import contracts in `backend/pyproject.toml` are blocking. Features and agents must avoid
+  concrete `app.providers` implementations. Only `app.main` imports `app.bootstrap*`.
+  `app.mcp` must avoid importing features, and `app.features` must avoid `app.scheduler`.
+- Obtain a language model through `get_chat_model(tier)`. Access external services through
+  provider ports.
+- Use one frontend component per folder (`X/X.tsx`, `X.test.tsx`, `index.ts`).
+  `components/` receives props and callbacks. Wire API modules, hooks and stores in `pages/`.
+  Frontend features cannot import each other. `shared/` cannot import `features/` or `app/`.
+  ESLint enforces these boundaries.
+- Keep files to 300 lines and functions to 50 lines. The backend uses
+  `scripts/check_file_length.py`, and the frontend uses ESLint. Split a growing module into a
+  package and preserve its exports.
+- **Contract first.** When a route or schema changes, regenerate `contracts/openapi.json` and
+  then `frontend/src/shared/api/schema.d.ts`. Generate API types from the contract.
+- Every table has a text UUID `id`, `user_id`, `created_at` and `updated_at`. Change the schema
+  with Alembic. Filter every repository query by `user_id`. Add a two-user isolation test in
+  `backend/tests/isolation/` for every new route.
+- Declare each new route in `features/<feature>/mcp.py` with its action and level (1–3), or list
+  the reason for excluding it. `backend/tests/mcp/test_coverage_guard.py` enforces coverage.
+  `python -m scripts.mcp_levels` lists the levels. Keep level 4 operations private, including
+  keys, authentication, model settings and MCP token management.
+- Keep interface text in English in `frontend/src/shared/i18n/messages/*.ts`. The `en.ts` module
+  assembles the messages. Components reference their keys.
 
-## Sécurité et données
+## Security and data
 
-- Ne jamais lire, afficher, copier ni committer `.env`.
-- Une clé d'API n'est jamais renvoyée (4 derniers caractères) ni journalisée.
-- Erreurs : `{"error": {"code", "message", "details"}}`, message en français. Une 422 ne renvoie jamais l'entrée reçue.
-- Les journaux ne portent que des identifiants, nombres, codes et durées : jamais un texte de l'utilisatrice, un e-mail, un lien ni un contenu d'appel MCP.
-- Aucun appel réel à un modèle ou au réseau dans les tests : faux fournisseurs et modèles scriptés. Une requête HTTP n'attend jamais un travail d'agent (elle rend un `session_id`).
-- Le bac à sable de l'IDE ne reçoit jamais de socket Docker, de réseau, de montage de l'hôte ni de secret. Un agent ou Claude ne modifie jamais le code de l'utilisatrice sans qu'elle accepte (la correction est une proposition).
+- Never read, display, copy or commit `.env`.
+- Reveal only the last four characters of an API key in a response. Keep keys out of logs.
+- Return errors as `{"error": {"code", "message", "details"}}` with a message in English.
+  Keep the original input out of 422 responses.
+- Limit logs to identifiers, counts, codes and durations. Keep user text, email addresses,
+  links and MCP call contents out of logs.
+- Use fake providers and scripted models in tests. Keep real model and network calls out of
+  tests. HTTP requests hand off agent work immediately and return a `session_id`.
+- Keep Docker sockets, network access, host mounts and secrets out of the IDE sandbox.
+  Agents and Claude propose fixes for user code and apply them only after acceptance.
 
-## Commandes
+## Commands
 
-Back, depuis `backend/` :
+Run backend commands from `backend/`.
 
 ```bash
 uv sync
-uv run pytest tests/<dossier> -q          # la suite complète dure ~40 min : cibler les dossiers touchés
+uv run pytest tests/<folder> -q           # Target affected folders. The full suite takes ~40 min.
 uv run ruff check . && uv run ruff format --check .
-uv run python -m mypy app                 # strict
+uv run python -m mypy app                 # Strict typing
 uv run lint-imports
-uv run python -m scripts.export_openapi          # régénère ../contracts/openapi.json (--check : vérifie seulement)
-uv run python scripts/check_file_length.py <fichiers.py>
+uv run python -m scripts.export_openapi   # Regenerate the contract. Use --check to verify it.
+uv run python scripts/check_file_length.py <files.py>
 uv run alembic upgrade head
-uv run python -m scripts.mcp_levels       # table des niveaux MCP
+uv run python -m scripts.mcp_levels       # List MCP levels
 ```
 
-Front, depuis `frontend/` (`pnpm <script>` ; sans pnpm, voir « Particularités ») :
+Run frontend commands from `frontend/`. See the Windows notes if `pnpm` is blocked.
 
 ```bash
-pnpm test                       # vitest run ; un fichier : pnpm test src/features/ide/toView.test.ts
+pnpm test                       # A single file: pnpm test src/features/ide/toView.test.ts
 pnpm lint
 pnpm typecheck
-pnpm gen:api                    # schema.d.ts depuis ../contracts/openapi.json
-pnpm gen:api:check              # échoue si schema.d.ts est en retard
+pnpm gen:api                    # Generate schema.d.ts from ../contracts/openapi.json
+pnpm gen:api:check              # Check that schema.d.ts matches the contract
 pnpm build
-pnpm e2e                        # Playwright, parcours n° 1 à 4 ; playwright.auth.config.ts : n° 5
-pnpm e2e:docker                 # mêmes parcours, back lancé dans l'image du back
+pnpm e2e                        # Playwright flows 1–4. playwright.auth.config.ts covers flow 5.
+pnpm e2e:docker                 # Run the same flows against the backend image
 ```
 
-Docker, depuis la racine :
+Run Docker commands from the repository root.
 
 ```bash
-docker build -t learning_career_platform-backend:latest backend       # idem frontend, et sandbox (tag learning_career_platform-sandbox:latest)
+docker build -t learning_career_platform-backend:latest backend
 docker compose up -d --no-build
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up    # rechargement à chaud
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 ```
 
-Les hooks pre-commit (`.pre-commit-config.yaml`) rejouent ruff, longueur, mypy, import-linter, `export_openapi --check`, `gen:api:check`, eslint et tsc. Les tests marqués `live` ou `sandbox_live` sont exclus par défaut ; `sandbox_live` rejoue les tests d'évasion contre le vrai conteneur.
+Build the frontend and sandbox images the same way. Tag the sandbox image
+`learning_career_platform-sandbox:latest`. The development Compose override enables hot reload.
 
-## Façon de travailler
+The hooks in `.pre-commit-config.yaml` run Ruff, length checks, mypy, import-linter, OpenAPI and
+generated type checks, ESLint and TypeScript. The default test selection excludes `live` and
+`sandbox_live`. The latter runs escape tests against a real sandbox container.
 
-- TDD : un test rouge d'abord, puis le code qui le passe.
-- Tests ciblés sur le comportement changé, l’isolation requise et les parcours Playwright concernés. Une revue par phase, puis une ou deux revues d’ensemble à la fin du lot (D232).
-- Tout choix non tranché par la spec ou tout écart est une décision `Dnnn` en fin de `DECISIONS.md` (Date, Sujet, Décision numérotée, Raison).
-- Commits par chemins explicites (`git add <chemins>`, jamais `-A`), hooks jamais sautés, un hook qui échoue se corrige à la source.
-- Les commits intermédiaires restent en local. Pousser sur GitHub après chaque tranche de vingt phases terminées et testées à partir de la phase 11, en laissant la phase 12 de côté. Utiliser l’identité `Ruldane <l.nizzoli@gmail.com>` configurée pour ce dépôt (D231).
-- Interface accessible : contraste AA, tout au clavier, focus visible et jamais sur `body` après une action, animations coupées par `prefers-reduced-motion`.
-- Un essai réel (vrai modèle, vrai conteneur) se fait sur une pile jetable nommée `learning_career_platform-check<N>-*`, retirée ensuite ; ne jamais toucher aux volumes ni conteneurs réels, ni à ceux d'autres projets.
+## Workflow
 
-## Particularités de ce poste (Windows)
+- Start with a failing test, then implement the behavior that makes it pass.
+- Cover changed behavior, user isolation and affected Playwright flows. Review each phase and
+  conduct one or two overall reviews at the end of its batch (D232).
+- Record decisions and deviations from the spec as a new `Dnnn` entry at the end of
+  `DECISIONS.md`. Include the date, subject, decision and reason.
+- Stage explicit paths with `git add <paths>` and keep all pre-commit hooks enabled. Fix hook
+  failures at the source.
+- Keep intermediate commits local. Push to GitHub after every twenty completed and tested
+  phases starting with phase 11, leaving phase 12 aside. Use the repository identity
+  `Ruldane <l.nizzoli@gmail.com>` (D231).
+- Use AA contrast, full keyboard access, visible focus and a purposeful focus target after each
+  action. Respect `prefers-reduced-motion`.
+- Run real model or container checks only in a disposable stack named
+  `learning_career_platform-check<N>-*`. Remove that stack after the check and keep regular
+  volumes and containers, including those from other projects, untouched.
 
-- Smart App Control bloque `pnpm.exe`, le Chromium de Playwright et le `python.exe` du venv. Les outils du front se lancent par `node` : `node frontend/scripts/run-tool.mjs lint|typecheck`, `node frontend/scripts/check-api-types.mjs`, `node node_modules/vitest/vitest.mjs run <chemins>` (depuis `frontend/`).
-- Les parcours Playwright tournent sur Edge, par une config temporaire non versionnée, retirée après usage.
-- Les hooks pre-commit passent par le Python signé d'uv ; `pre-commit install` écrase ce réglage.
-- `docker compose build` demande une autorisation de lecture : construire par `docker build` direct.
-- Si un exécutable est bloqué, le dire à l'utilisatrice et attendre ; ne jamais toucher aux réglages de sécurité de Windows.
+## Windows workstation notes
+
+- If Smart App Control blocks `pnpm.exe`, Playwright Chromium or the virtual environment's
+  `python.exe`, run the frontend tools with Node. From the repository root use
+  `node frontend/scripts/run-tool.mjs lint|typecheck` or
+  `node frontend/scripts/check-api-types.mjs`. From `frontend/` use
+  `node node_modules/vitest/vitest.mjs run <paths>`.
+- Run Playwright on Edge using a temporary untracked config and remove it when done.
+- Preserve the pre-commit setup that uses uv's signed Python. Running `pre-commit install`
+  overwrites it.
+- If `docker compose build` requires read permission, build with `docker build` directly.
+- Report a blocked executable and wait for the user. Leave Windows security settings intact.

@@ -155,5 +155,5 @@ def test_the_location_of_an_experience_is_known_text() -> None:
 
 def test_gap_block_says_the_cited_facts_not_the_profile() -> None:
     v = validate(rewrite("x1a1", "Pilote Terraform"), profile(), analysis(tools=["Terraform"]))
-    assert "faits cités" in GAP
+    assert "cited facts" in GAP
     assert GAP in v.blocks

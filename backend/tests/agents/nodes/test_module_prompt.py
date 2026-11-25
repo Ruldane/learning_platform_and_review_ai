@@ -20,17 +20,17 @@ BRIEF = ModuleBrief(
 
 
 def test_prompt_without_legacy_has_no_legacy_line() -> None:
-    assert "Lire du code ancien" not in module_prompt(BRIEF)
+    assert "Reading older code" not in module_prompt(BRIEF)
 
 
 def test_prompt_with_legacy_asks_for_a_boxed_mention_only() -> None:
     text = module_prompt(replace(BRIEF, legacy=("LLMChain", "LCEL")))
-    assert "API anciennes du chapitre : LLMChain, LCEL" in text
+    assert "Legacy APIs in this chapter: LLMChain, LCEL" in text
     rule = text.rsplit("\n\n", 1)[
         1
     ]  # la règle suit l'encadré non fiable, elle n'en fait pas partie
-    assert "« Lire du code ancien »" in rule and "LLMChain" not in rule
-    assert "citation Markdown" in rule and "jamais" in rule
+    assert '"Reading older code"' in rule and "LLMChain" not in rule
+    assert "Markdown blockquote" in rule and "Recommend current APIs" in rule
 
 
 def test_brief_survives_the_state_round_trip() -> None:

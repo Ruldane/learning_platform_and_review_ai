@@ -27,8 +27,8 @@ from tests.agents.graphs.web_support import add_users
 from tests.agents.runtime.runner_helpers import all_events, wait_status
 from tests.support.brief import BRIEF_ID, FakeBriefStore
 
-PICK_MARKER = "Choisis la ressource du jour."
-ADVICE_MARKER = "Écris le conseil du jour."
+PICK_MARKER = "Choose today's resource."
+ADVICE_MARKER = "Write today's advice."
 GOOD = ("Commence par ton bloc de 45 minutes.", "Puis passe tes 12 fiches en revue.")
 
 

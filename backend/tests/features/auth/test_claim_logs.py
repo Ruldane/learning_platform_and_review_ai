@@ -42,6 +42,6 @@ async def test_claim_never_logged(
         record.getMessage() + " " + str(record.args) + " " + (record.exc_text or "")
         for record in caplog.records
     )
-    assert "espace local repris par l'utilisateur" in logged  # des identifiants, rien d'autre
+    assert "local space taken over by user" in logged  # des identifiants, rien d'autre
     for secret in secrets_seen:
         assert secret not in logged, secret

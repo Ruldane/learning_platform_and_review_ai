@@ -1,4 +1,4 @@
-"""Un appel structuré pour l'évaluation du rapport, puis écriture idempotente."""
+"""Assess the incident report and save the assessment idempotently."""
 
 import json
 from typing import Any, TypedDict
@@ -42,14 +42,14 @@ def build(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
             score = await structured_call(
                 model,
                 ReviewScore,
-                [SystemMessage(prompt), HumanMessage("Évalue le rapport.")],
+                [SystemMessage(prompt), HumanMessage("Assess the report.")],
                 agent=AGENT,
                 step="rapport",
-                intent="j’évalue le raisonnement du rapport",
+                intent="assessing the reasoning in the report",
             )
         proved = await port.record(deps.user_id, incident_id, deps.session_id, score)
         return {
-            "summary": "Rapport d’astreinte évalué.",
+            "summary": "On-call report graded.",
             "score": score.total,
             "proof_recorded": proved,
         }

@@ -13,12 +13,12 @@ test("autorise Agenda, décale un bloc occupé et confirme son créneau", async 
   expect(pageOfPrograms.ok()).toBe(true);
   const [program] = (await pageOfPrograms.json()) as components["schemas"]["ProgramSummaryOut"][];
   expect(program?.status).toBe("validated");
-  await page.goto("/reglages/agenda", { waitUntil: "domcontentloaded" });
+  await page.goto("/settings/calendar", { waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: "Connecter Google Agenda" }).click();
-  await expect(page).toHaveURL(/\/reglages\/agenda\?agenda=connected$/, { timeout: 20_000 });
+  await expect(page).toHaveURL(/\/settings\/calendar\?calendar=connected$/, { timeout: 20_000 });
   await expect(page.getByText("Google Agenda est connecté.")).toBeVisible({ timeout: 25_000 });
 
-  await page.goto("/apprendre/programme/" + program!.id + "/replanification", {
+  await page.goto("/learn/programs/" + program!.id + "/replan", {
     waitUntil: "domcontentloaded",
   });
   await page.getByRole("button", { name: "Replanifier", exact: true }).click();

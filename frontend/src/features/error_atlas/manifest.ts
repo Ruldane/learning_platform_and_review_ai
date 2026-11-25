@@ -3,8 +3,8 @@ import { ErrorAtlasPage } from "./pages/ErrorAtlasPage";
 
 export const errorAtlasManifest: FeatureManifest = {
   id: "error_atlas",
-  routes: [{ path: "etudier/atlas-erreurs", Component: ErrorAtlasPage }],
+  routes: [{ path: "study/error-atlas", Component: ErrorAtlasPage }],
   nav: [
-    { section: "study", labelKey: "errorAtlas.title", path: "/etudier/atlas-erreurs", order: 3.7 },
+    { section: "study", labelKey: "errorAtlas.title", path: "/study/error-atlas", order: 3.7 },
   ],
 };

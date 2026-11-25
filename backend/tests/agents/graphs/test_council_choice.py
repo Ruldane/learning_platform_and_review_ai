@@ -16,10 +16,8 @@ from tests.agents.runtime.runner_helpers import all_events, get_session, wait_un
 
 CHOOSE_PATH = {
     "kind": "choose_path",
-    "question": (
-        "Choisis un parcours dans l'onglet Propositions, mélange-en deux, ou demande un autre tour."
-    ),
-    "options": [{"value": "another_round", "label": "Demander un autre tour"}],
+    "question": ("Choose a path in the Proposals tab, mix two of them, or ask for another round."),
+    "options": [{"value": "another_round", "label": "Ask for another round"}],
 }
 
 
@@ -33,7 +31,7 @@ async def test_two_to_three_proposals_then_choice_interrupt(
     models = CouncilModels()
     four = json.dumps({"proposals": [proposal(f"Parcours {n}") for n in range(4)]})
     three = json.dumps({"proposals": [proposal(f"Parcours {n}") for n in range(3)]})
-    models.when("strategist", "Propose les parcours.", four, three)
+    models.when("strategist", "Propose the paths.", four, three)
     c = await make_council_runner(models=models)
     await c.to_choice()
     ready = await c.events("proposal.ready")
@@ -43,7 +41,7 @@ async def test_two_to_three_proposals_then_choice_interrupt(
     assert list(c.store.batches) == [(c.sid, 1)]
     assert c.store.minutes  # compte rendu gardé sur l'objectif
     propose_prompt = next(
-        call.prompt for call in models.calls if "Propose les parcours." in call.prompt
+        call.prompt for call in models.calls if "Propose the paths." in call.prompt
     )
     assert "Le Conseil s'accorde" in propose_prompt  # le Stratège part du compte rendu
 
@@ -119,7 +117,7 @@ async def test_council_replay_does_not_duplicate_boards_or_proposals(
 ) -> None:
     # Arrêt du back en plein `proposal_boards` : les frises sont écrites, la comparaison se fige.
     models = CouncilModels()
-    models.block = lambda agent, prompt: agent == "scribe" and "comparaison des parcours" in prompt
+    models.block = lambda agent, prompt: agent == "scribe" and "comparison of the paths" in prompt
     first = await make_council_runner(models=models)
     await first.wait_question("framing")
     await first.resume("go")
@@ -142,7 +140,7 @@ async def test_replayed_propose_reads_the_saved_batch(make_council_runner: MakeC
     models = CouncilModels()
     first_batch = [proposal("Premier A"), proposal("Premier B")]
     first_batch[0]["promise"] = "Promesse propre au premier lot."
-    models.when("strategist", "Propose les parcours.", json.dumps({"proposals": first_batch}))
+    models.when("strategist", "Propose the paths.", json.dumps({"proposals": first_batch}))
     first = await make_council_runner(models=models)
     first.store.block_after_proposals = True
     await first.wait_question("framing")
@@ -153,9 +151,9 @@ async def test_replayed_propose_reads_the_saved_batch(make_council_runner: MakeC
     second = await make_council_runner(sid=first.sid)
     assert await second.runner.recover_on_startup() == [first.sid]
     await second.wait_choice()
-    assert not any("Propose les parcours." in call.prompt for call in second.models.calls)
+    assert not any("Propose the paths." in call.prompt for call in second.models.calls)
     assert [r["title"] for r in await second.events("proposal.ready")] == ["Premier A", "Premier B"]
-    timeline = next(call.prompt for call in second.models.calls if "Nom : Premier A" in call.prompt)
+    timeline = next(call.prompt for call in second.models.calls if "Name: Premier A" in call.prompt)
     assert "Promesse propre au premier lot." in timeline
     assert second.store.proposals_calls == 1 and len(second.store.batches) == 1
 
@@ -179,7 +177,7 @@ async def test_token_cap_fails_council_readably(make_council_runner: MakeCouncil
     row = await c.wait_status("failed")
     assert row.error is not None and row.error["code"] == "token_cap_reached"
     failed = await c.events("run.failed")
-    assert failed[-1]["code"] == "token_cap_reached" and "Plafond" in failed[-1]["message"]
+    assert failed[-1]["code"] == "token_cap_reached" and "Token cap" in failed[-1]["message"]
     assert await c.events("proposal.ready") == []
 
 
@@ -190,7 +188,7 @@ async def test_logs_never_contain_debate_content(
     models = CouncilModels()
     bad = '{"title": "Carte secrète", "mermaid": "sequenceDiagram\\nA->>B: x"}'
     models.when("scribe", "dessiner la carte du domaine", bad, bad)
-    models.when("practitioner", "Tour en cours : 2\n", "Avis sans nom ni source.", "Toujours.")
+    models.when("practitioner", "Current round: 2\n", "Avis sans nom ni source.", "Toujours.")
     c = await make_council_runner(models=models)
     await c.wait_question("framing")
     await c.resume("go")

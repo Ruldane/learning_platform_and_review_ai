@@ -1,4 +1,4 @@
-"""Graphe des documents actifs du synchroniseur, sans chemin ni texte."""
+"""Graph of the synchroniser's active documents, without paths or text."""
 
 from collections import defaultdict
 from dataclasses import dataclass

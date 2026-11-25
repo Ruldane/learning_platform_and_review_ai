@@ -171,7 +171,7 @@ def test_spaced_hyphen_title_without_company_is_422(dash: str, target: str, text
     with pytest.raises(AppError) as err:
         with_fact(jobs(), target, given)
     assert (err.value.status_code, err.value.code) == (422, "ambiguous_separator")
-    assert "tiret long" in err.value.message
+    assert "em dash" in err.value.message and "Role — Employer" in err.value.message
     assert given not in err.value.message and err.value.details == {"fields": ["after"]}
 
 

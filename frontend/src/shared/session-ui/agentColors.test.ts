@@ -31,10 +31,11 @@ describe("agentColors", () => {
   });
 
   it("reserves all the slugs of the roadmap", () => {
-    expect(Object.keys(AGENT_COLORS)).toHaveLength(27);
-    expect(agentIdentity("oncall_reviewer").name).toBe("Responsable d’exploitation");
+    expect(Object.keys(AGENT_COLORS)).toHaveLength(32);
+    expect(agentIdentity("oncall_reviewer").name).toBe("Operations lead");
     expect(Object.keys(AGENT_COLORS)).toContain("demo_critic");
     expect(Object.keys(AGENT_COLORS)).toContain("ats_reader");
+    expect(agentIdentity("offers_adviser").name).toBe("Offers assistant");
   });
 
   it("every color reaches AA contrast on the off-white background", () => {
@@ -45,10 +46,10 @@ describe("agentColors", () => {
 
   it("knows examiner and tutor", () => {
     const examiner = agentIdentity("examiner");
-    expect(examiner).toMatchObject({ name: "Examinateur", color: AGENT_COLORS.examiner });
+    expect(examiner).toMatchObject({ name: "Examiner", color: AGENT_COLORS.examiner });
     expect(examiner.role).not.toBe("");
     const tutor = agentIdentity("tutor");
-    expect(tutor).toMatchObject({ name: "Tuteur", color: AGENT_COLORS.tutor });
+    expect(tutor).toMatchObject({ name: "Tutor", color: AGENT_COLORS.tutor });
     expect(tutor.role).not.toBe("");
     for (const color of [examiner.color, tutor.color]) {
       expect(contrast(color, "#fafaf7")).toBeGreaterThanOrEqual(4.5);
@@ -58,9 +59,9 @@ describe("agentColors", () => {
 
   it("knows the tracker, the manager and the colleague, with a readable color each", () => {
     const expected = {
-      tracker: "Assistant de suivi",
+      tracker: "Tracking assistant",
       manager: "Manager",
-      colleague: "Futur collègue",
+      colleague: "Future colleague",
     } as const;
     for (const [slug, name] of Object.entries(expected)) {
       const identity = agentIdentity(slug);
@@ -73,7 +74,7 @@ describe("agentColors", () => {
   });
 
   it("knows the professor and the exercise writer, with a readable color each", () => {
-    const expected = { professor: "Professeur", exercise_writer: "Auteur d'exercices" } as const;
+    const expected = { professor: "Professor", exercise_writer: "Exercise author" } as const;
     for (const [slug, name] of Object.entries(expected)) {
       const identity = agentIdentity(slug);
       expect(identity.name).toBe(name);
@@ -84,9 +85,9 @@ describe("agentColors", () => {
     }
   });
 
-  it("resolves name and role from the French messages", () => {
+  it("resolves name and role from the English messages", () => {
     const identity = agentIdentity("demo_critic");
-    expect(identity.name).toBe("Critique");
+    expect(identity.name).toBe("Critic");
     expect(identity.role).not.toBe("");
     expect(identity.color).toBe(AGENT_COLORS.demo_critic);
   });

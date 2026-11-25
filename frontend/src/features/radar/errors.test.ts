@@ -3,7 +3,7 @@ import { ApiError } from "@/shared/api/errors";
 import { failureReason, launchErrors, openRunId } from "./errors";
 
 const refusal = (code: string, status: number, details: unknown = null) =>
-  new ApiError({ code, message: "Message du serveur.", status, details });
+  new ApiError({ code, message: "Server message.", status, details });
 
 describe("openRunId", () => {
   it("reads the running run of a 409 radar_in_progress", () => {
@@ -13,39 +13,39 @@ describe("openRunId", () => {
   it("ignores any other refusal and a 409 without an identifier", () => {
     expect(openRunId(refusal("radar_role_required", 409))).toBeNull();
     expect(openRunId(refusal("radar_in_progress", 409, {}))).toBeNull();
-    expect(openRunId(new Error("réseau"))).toBeNull();
+    expect(openRunId(new Error("Network error"))).toBeNull();
   });
 });
 
 describe("launchErrors", () => {
   it("puts a missing role on the role field", () => {
     expect(launchErrors(refusal("radar_role_required", 409))).toEqual({
-      role: "Indique le poste visé pour lancer un relevé.",
+      role: "Enter the target role to run a scan.",
     });
   });
 
   it("names the refused fields of a 422 and nothing else", () => {
     const errors = launchErrors(refusal("validation_error", 422, { fields: ["role", "zone"] }));
-    expect(errors.role).toContain("entre 2 et 120");
-    expect(errors.zone).toContain("entre 2 et 120");
+    expect(errors.role).toContain("between 2 and 120");
+    expect(errors.zone).toContain("between 2 and 120");
     expect(errors.general).toBeUndefined();
   });
 
   it("keeps any other refusal as a general message", () => {
-    expect(launchErrors(refusal("engine_unavailable", 503)).general).toBe("Message du serveur.");
+    expect(launchErrors(refusal("engine_unavailable", 503)).general).toBe("Server message.");
   });
 });
 
 describe("failureReason", () => {
   it("explains every known code and falls back for the others", () => {
-    expect(failureReason("session_cancelled")).toBe("le relevé a été arrêté avant la fin.");
+    expect(failureReason("session_cancelled")).toBe("the scan was stopped before the end.");
     expect(failureReason("llm_unavailable")).toBe(
-      "aucun modèle n'est utilisable (clé absente ?) : rien n'a été lu.",
+      "no model is usable (missing key?): nothing was read.",
     );
     expect(failureReason("analysis_failed")).toBe(
-      "les offres lues n'ont pas pu être analysées (le modèle n'a pas répondu) : le relevé n'est pas terminé.",
+      "the postings read couldn’t be analyzed (the model didn’t answer): the scan isn’t finished.",
     );
-    expect(failureReason("RuntimeError")).toBe("une panne inattendue a interrompu le relevé.");
-    expect(failureReason(null)).toBe("une panne inattendue a interrompu le relevé.");
+    expect(failureReason("RuntimeError")).toBe("an unexpected failure interrupted the scan.");
+    expect(failureReason(null)).toBe("an unexpected failure interrupted the scan.");
   });
 });

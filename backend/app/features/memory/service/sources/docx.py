@@ -1,5 +1,5 @@
-"""DOCX : la garde zip (taille, taux, entrées) est refaite avant python-docx, qui lit dans un
-thread. L'analyseur XML de python-docx n'interprète pas les entités (`resolve_entities=False`)."""
+"""DOCX: the zip guard (size, ratio, entries) is rerun before python-docx, which reads in a
+thread. python-docx's XML parser does not resolve entities (`resolve_entities=False`)."""
 
 import asyncio
 import io
@@ -30,8 +30,8 @@ def _is_heading(paragraph: Paragraph) -> bool:
 
 
 def _read(data: bytes) -> tuple[str | None, str]:
-    """Bloquant : (titre des propriétés, sinon premier titre ; texte des paragraphes puis des
-    tableaux, une ligne par rangée)."""
+    """Blocking: (title from the properties, otherwise first heading; text of the paragraphs then
+    of the tables, one line per row)."""
     document = docx.Document(io.BytesIO(data))
     heading: str | None = None
     lines: list[str] = []
@@ -48,7 +48,7 @@ def _read(data: bytes) -> tuple[str | None, str]:
 
 
 class DocxSource:
-    """Titre : propriétés du document, sinon premier titre (`Heading`/`Titre`), sinon nom."""
+    """Title: document properties, otherwise first heading (`Heading`/`Titre`), otherwise name."""
 
     kind: DocumentSourceKind = "docx"
 
@@ -58,7 +58,7 @@ class DocxSource:
         try:
             title, text = await asyncio.to_thread(_read, data)
         except Exception as exc:
-            # Type seul : le message d'une erreur d'analyse peut citer un extrait du fichier.
-            logger.info("DOCX %s illisible (%s)", source.document_id, type(exc).__name__)
+            # Type only: a parse error message may quote an excerpt of the file.
+            logger.info("DOCX %s unreadable (%s)", source.document_id, type(exc).__name__)
             raise upload.docx_invalid() from None
         return Extracted(title=title or stem(source.name), text=text)

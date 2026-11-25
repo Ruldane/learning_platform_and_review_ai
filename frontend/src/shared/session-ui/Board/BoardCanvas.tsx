@@ -77,7 +77,7 @@ export default function BoardCanvas(props: BoardCanvasProps) {
           lastKey.current = key;
           setChangeTick((tick) => tick + 1);
         }}
-        langCode="fr-FR"
+        langCode="en"
         UIOptions={{
           canvasActions: {
             loadScene: false,

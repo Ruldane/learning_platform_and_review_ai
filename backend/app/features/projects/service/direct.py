@@ -1,9 +1,9 @@
-"""L'énoncé d'un mini projet écrit en direct (phase 10, 10.W) : January ou Claude (par le MCP)
-fournit l'énoncé, l'application le range comme le fait le port du Praticien (`save_brief`), sans
-agent ni session : le projet passe à « à faire » et prend le titre de l'énoncé. Le rendu et son
-évaluation restent ceux de l'application (ils lancent un agent : ce n'est pas écrit ici).
+"""A mini project brief written directly (phase 10, 10.W): January or Claude (through MCP)
+provides the brief, the application stores it as the Practitioner's port does (`save_brief`), with
+no agent and no session: the project becomes "to do" and takes the brief's title. The submission
+and its review stay the application's (they launch an agent: not written here).
 
-Un projet par module (index unique) ; l'énoncé ne se retouche que tant que rien n'est rendu."""
+One project per module (unique index); the brief can only be edited while nothing is submitted."""
 
 import logging
 
@@ -30,12 +30,12 @@ from app.features.projects.service.views import project_out_live
 
 logger = logging.getLogger(__name__)
 
-EDITABLE = ("brief_pending", "brief_failed", "todo")  # sans rendu : l'énoncé peut encore changer
+EDITABLE = ("brief_pending", "brief_failed", "todo")  # no submission: the brief can still change
 
 
 async def create_project(rt: ProjectsRuntime, user_id: str, body: ProjectCreateIn) -> ProjectOut:
-    """Le projet du module, à faire, avec l'énoncé donné ; 404 `module_not_found`, 409
-    `project_exists` ou `module_skipped`."""
+    """The module's project, to do, with the given brief; 404 `module_not_found`, 409
+    `project_exists` or `module_skipped`."""
     async with rt.session_factory() as db:
         program_id = await program_of_module(db, user_id, body.module_id)
     async with rt.ensure_lock(user_id), rt.session_factory() as db:
@@ -58,18 +58,18 @@ async def create_project(rt: ProjectsRuntime, user_id: str, body: ProjectCreateI
                 drafts={},
             )
             await db.commit()
-        except IntegrityError:  # une autre requête vient de le créer
+        except IntegrityError:  # another request just created it
             await db.rollback()
             raise project_exists() from None
         project_id = project.id
-    logger.info("Projet écrit en direct : module %s, projet %s", body.module_id, project_id)
+    logger.info("Project written directly: module %s, project %s", body.module_id, project_id)
     async with rt.session_factory() as db:
         return await project_out_live(db, user_id, (await owned(db, user_id, project_id)))
 
 
 def _merged(current: dict[str, object] | None, patch: ProjectBriefPatch) -> ProjectBriefIn:
-    """L'énoncé retouché, revalidé en entier ; 422 `fields` si un champ manque (projet sans
-    énoncé) ou ne tient pas les bornes."""
+    """The edited brief, fully revalidated; 422 `fields` if a field is missing (project without
+    a brief) or out of bounds."""
     given = patch.model_dump(exclude_none=True)
     try:
         return ProjectBriefIn.model_validate({**(current or {}), **given})
@@ -81,8 +81,8 @@ def _merged(current: dict[str, object] | None, patch: ProjectBriefPatch) -> Proj
 async def patch_project(
     rt: ProjectsRuntime, user_id: str, project_id: str, patch: ProjectBriefPatch
 ) -> ProjectOut:
-    """Retouche l'énoncé d'un projet qui n'a pas de rendu (409 `project_not_editable` sinon) ; un
-    projet dont l'énoncé n'est pas écrit le reçoit en entier."""
+    """Edits the brief of a project without a submission (409 `project_not_editable` otherwise); a
+    project whose brief is not written receives it in full."""
     async with rt.project_lock(user_id, project_id), rt.session_factory() as db:
         row = await owned(db, user_id, project_id)
         if row.status not in EDITABLE:
@@ -92,6 +92,6 @@ async def patch_project(
         row.title = brief.title[:200]
         row.status, row.session_id = "todo", None
         await db.commit()
-    logger.info("Énoncé retouché en direct : projet %s", project_id)
+    logger.info("Brief edited directly: project %s", project_id)
     async with rt.session_factory() as db:
         return await project_out_live(db, user_id, (await owned(db, user_id, project_id)))

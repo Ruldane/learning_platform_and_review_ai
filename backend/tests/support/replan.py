@@ -38,12 +38,12 @@ GOAL = "Devenir AI product engineer"
 GAP_MODULE_ID = "module-id-m0"
 MIN_WEEK = 65  # une pratique (45 min) et le quiz (20 min)
 _TASKS: list[tuple[str, TaskType, int, int, str]] = [  # titre, type, minutes, jour, module
-    ("Lire le tutoriel Python", "lire", 120, 0, "m1"),
-    ("Lire le guide des tests", "lire", 90, 1, "m1"),
-    ("Pratiquer les fonctions", "pratiquer", 45, 2, "m1"),
+    ("Lire le tutoriel Python", "read", 120, 0, "m1"),
+    ("Lire le guide des tests", "read", 90, 1, "m1"),
+    ("Pratiquer les fonctions", "practice", 45, 2, "m1"),
     ("Faire le quiz Python", "quiz", 20, 5, "m1"),
-    ("Lire la doc de l'API", "lire", 60, 7, "m2"),
-    ("Pratiquer un appel d'API", "pratiquer", 45, 9, "m2"),
+    ("Lire la doc de l'API", "read", 60, 7, "m2"),
+    ("Pratiquer un appel d'API", "practice", 45, 9, "m2"),
     ("Faire le quiz API", "quiz", 20, 12, "m2"),
 ]
 
@@ -229,7 +229,7 @@ def _dropped(ctx: ReplanContext, call: PreviewCall) -> tuple[list[TaskRef], int]
             for t in left
             if t.type == task.type and _week(t.planned_date) == _week(task.planned_date)
         ]
-        if task.type in ("pratiquer", "quiz") and len(same) == 1:
+        if task.type in ("practice", "quiz") and len(same) == 1:
             kept += 1
             continue
         left.remove(task)

@@ -10,8 +10,7 @@ const CERTAIN: DuplicateAlertView = {
   company: "Acme",
   title: "Data engineer",
   status: "applied",
-  message:
-    "Attention, tu as déjà postulé chez Acme pour le poste Data engineer le 3 novembre (statut : Postulée).",
+  message: "You already applied for the Data engineer role at Acme on 3 November (Applied).",
 };
 const PROBABLE: DuplicateAlertView = {
   level: "probable",
@@ -19,7 +18,7 @@ const PROBABLE: DuplicateAlertView = {
   company: "Acme",
   title: "Data engineer (H/F)",
   status: "to_apply",
-  message: "Attention, tu as déjà une fiche chez Acme pour le poste Data engineer (H/F).",
+  message: "You already have an application for the Data engineer (H/F) role at Acme (To apply).",
 };
 const INFO: DuplicateAlertView = {
   level: "info",
@@ -27,7 +26,7 @@ const INFO: DuplicateAlertView = {
   company: "Acme",
   title: "Analyste",
   status: "applied",
-  message: "Pour info : tu as postulé chez Acme il y a 12 jours, pour le poste Analyste.",
+  message: "For reference, you applied for the Analyste role at Acme 12 days ago.",
 };
 
 function setup(alerts: DuplicateAlertView[]) {
@@ -45,14 +44,14 @@ describe("DuplicateAlert", () => {
 
   it("says the level in words, not only with a colour", () => {
     setup([CERTAIN]);
-    expect(screen.getByText("Doublon certain")).toBeInTheDocument();
+    expect(screen.getByText("Certain duplicate")).toBeInTheDocument();
   });
 
   it.each([
-    ["certain", "Doublon certain"],
-    ["probable", "Doublon probable"],
-    ["possible", "Doublon possible"],
-    ["info", "Pour info"],
+    ["certain", "Certain duplicate"],
+    ["probable", "Likely duplicate"],
+    ["possible", "Possible duplicate"],
+    ["info", "For info"],
   ] as const)("says the level in words for %s", (level, words) => {
     setup([{ ...PROBABLE, level }]);
     expect(screen.getByText(words)).toBeInTheDocument();
@@ -60,19 +59,19 @@ describe("DuplicateAlert", () => {
 
   it("lists the other alerts with their level in words", () => {
     setup([CERTAIN, PROBABLE, INFO]);
-    const others = screen.getByRole("list", { name: "Autres fiches proches" });
+    const others = screen.getByRole("list", { name: "Other similar applications" });
     const items = within(others).getAllByRole("listitem");
     expect(items).toHaveLength(2);
-    expect(items[0]).toHaveTextContent("Acme, Data engineer (H/F) (À postuler) : Doublon probable");
-    expect(items[1]).toHaveTextContent("Acme, Analyste (Postulée) : Pour info");
+    expect(items[0]).toHaveTextContent("Acme, Data engineer (H/F) (To apply): Likely duplicate");
+    expect(items[1]).toHaveTextContent("Acme, Analyste (Applied): For info");
   });
 
   it("offers the three choices of the spec and each calls its handler", async () => {
     const user = userEvent.setup();
     const handlers = setup([PROBABLE, CERTAIN]);
-    await user.click(screen.getByRole("button", { name: "Ouvrir la fiche existante" }));
-    await user.click(screen.getByRole("button", { name: "C'est un autre poste" }));
-    await user.click(screen.getByRole("button", { name: "Annuler" }));
+    await user.click(screen.getByRole("button", { name: "Open the existing application" }));
+    await user.click(screen.getByRole("button", { name: "It's a different role" }));
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
     expect(handlers.onOpen).toHaveBeenCalledWith("a1");
     expect(handlers.onDistinct).toHaveBeenCalledTimes(1);
     expect(handlers.onCancel).toHaveBeenCalledTimes(1);

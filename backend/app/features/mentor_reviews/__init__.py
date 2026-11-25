@@ -1,1 +1,1 @@
-"""Relecture privée d’un dossier figé par un mentor."""
+"""Private review of a frozen dossier by a mentor."""

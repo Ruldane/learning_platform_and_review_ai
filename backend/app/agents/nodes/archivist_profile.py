@@ -1,13 +1,13 @@
-"""L'Archiviste en mode `profile` (SPEC 5.1, D124) : du CV, du profil LinkedIn et de la note de
-January, il tire le brouillon du profil maître. Parcours `cv_capture`, mode `profile`.
+"""The Archivist in `profile` mode (SPEC 5.1, D124): from the CV, the LinkedIn profile and
+January's note, it extracts the draft of the master profile. Flow `cv_capture`, `profile` mode.
 
-`load_sources` lit le texte visible des PDF par le port (texte invisible mis de côté) ;
-`extract` demande le profil (chaque source encadrée par `untrusted`, 17.4), efface les ids et
-les sources rendus par le modèle et pose des ids provisoires ; `check` (code seul) retire les
-lignes dont un chiffre n'est dans aucun document et les faits introuvables, puis pose les
-sources ; `save_draft` range le brouillon (idempotent par session) ; `announce` le dit.
+`load_sources` reads the visible text of the PDFs through the port (invisible text set aside);
+`extract` asks for the profile (each source wrapped by `untrusted`, 17.4), erases the ids and
+sources returned by the model and sets provisional ids; `check` (code only) removes the lines
+whose figure is in no document and the facts that cannot be found, then sets the sources;
+`save_draft` files the draft (idempotent per session); `announce` says so.
 
-Journaux : identifiants et nombres seulement, jamais une ligne du profil ni d'un document
+Logs: identifiers and numbers only, never a line of the profile or of a document
 (17.2)."""
 
 import logging
@@ -35,10 +35,10 @@ from app.agents.tools.profile_port import ProfileSource, SourceKind
 from app.core.errors import AppError
 
 AGENT = "archivist"
-PROFILE_REQUEST = "Établis le profil maître de January à partir de ses documents."
-LOAD_TIMEOUT_S = 180  # deux mises en page de PDF (60 s chacune au plus) et leur lecture
-EXTRACT_TIMEOUT_S = 600  # une longue sortie structurée (GLM), avec ses nouveaux essais
-ARTIFACT_URL = "/carriere/profil"
+PROFILE_REQUEST = "Build January's master profile from her documents."
+LOAD_TIMEOUT_S = 180  # two PDF layouts (60 s each at most) and their reading
+EXTRACT_TIMEOUT_S = 600  # a long structured output (GLM), with its retries
+ARTIFACT_URL = "/career/profile"
 _KINDS: dict[str, SourceKind] = {"cv": "cv", "linkedin": "linkedin", "note": "note"}
 
 logger = logging.getLogger(__name__)
@@ -51,8 +51,7 @@ class Node(Protocol):
 def no_text() -> AppError:
     return AppError(
         "profile_no_text",
-        "Aucun texte lisible dans tes documents : exporte ton CV en PDF avec du texte "
-        "sélectionnable, puis réessaie.",
+        "No readable text was found. Export your CV as a PDF with selectable text and try again.",
         422,
     )
 
@@ -66,7 +65,7 @@ def make_load_sources(deps: GraphDeps) -> Node:
     async def load_sources(state: CvCaptureState) -> CvCaptureState:
         emit(
             "agent.started",
-            {"step": "lecture", "intent": "je lis tes documents"},
+            {"step": "lecture", "intent": "I am reading your documents"},
             agent=AGENT,
         )
         found = await deps.ports.profile.sources(
@@ -75,7 +74,7 @@ def make_load_sources(deps: GraphDeps) -> Node:
         if not any(source.text.strip() for source in found.sources):
             raise no_text()
         logger.info(
-            "Sources du profil lues : session %s, %d source(s), %d ligne(s) invisible(s)",
+            "Profile sources read: session %s, %d source(s), %d invisible line(s)",
             deps.session_id,
             len(found.sources),
             len(found.hidden),
@@ -95,7 +94,7 @@ def _documents(sources: list[ProfileSource]) -> str:
 def make_extract(deps: GraphDeps) -> Node:
     @node_timeout(EXTRACT_TIMEOUT_S)
     async def extract(state: CvCaptureState) -> CvCaptureState:
-        """Le profil de l'Archiviste, ids et sources du modèle effacés, ids provisoires posés."""
+        """The Archivist's profile, model ids and sources erased, provisional ids set."""
         sources = _sources(state)
         kinds = {source.kind for source in sources}
         prompt = render_prompt(
@@ -112,7 +111,7 @@ def make_extract(deps: GraphDeps) -> Node:
             [SystemMessage(prompt), HumanMessage(PROFILE_REQUEST)],
             agent=AGENT,
             step="profil",
-            intent="je tire ton profil maître de tes documents",
+            intent="building your master profile from your documents",
         )
         draft = assign_fact_ids(blank_facts(found))
         return {"draft": draft.model_dump(mode="json")}
@@ -121,7 +120,7 @@ def make_extract(deps: GraphDeps) -> Node:
 
 
 def check(state: CvCaptureState) -> CvCaptureState:
-    """Code seul : chiffres introuvables, faits introuvables, sources posées."""
+    """Code only: figures not found, facts not found, sources set."""
     sources = _sources(state)
     draft = MasterProfileData.model_validate(state["draft"])
     bad = unsupported_lines(draft, sources)
@@ -147,7 +146,7 @@ def make_save_draft(deps: GraphDeps) -> Node:
             deps.user_id, deps.session_id, draft, state.get("dropped", [])
         )
         logger.info(
-            "Brouillon du profil rangé : session %s, version %d, %d ligne(s) retirée(s)",
+            "Profile draft stored: session %s, version %d, %d line(s) removed",
             deps.session_id,
             version,
             len(state.get("dropped", [])),
@@ -158,26 +157,26 @@ def make_save_draft(deps: GraphDeps) -> Node:
 
 
 def _count(n: int, one: str, many: str) -> str:
-    return f"{n} {one if n <= 1 else many}"
+    return f"{n} {one if n == 1 else many}"
 
 
 def announce_text(state: CvCaptureState) -> str:
-    """« Profil maître prêt à relire : 4 expériences, 18 compétences. », puis les retraits."""
+    """Summarize the draft profile and the claims omitted from it."""
     draft = MasterProfileData.model_validate(state["draft"])
     parts = [
-        "Profil maître prêt à relire : "
-        f"{_count(len(draft.experiences), 'expérience', 'expériences')}, "
-        f"{_count(len(draft.skills), 'compétence', 'compétences')}."
+        "Your master profile is ready to review with "
+        f"{_count(len(draft.experiences), 'role', 'roles')} and "
+        f"{_count(len(draft.skills), 'skill', 'skills')}."
     ]
     if n := state.get("unsupported", 0):
-        removed = _count(n, "ligne retirée", "lignes retirées")
-        parts.append(f"{removed} : chiffre introuvable dans tes documents.")
+        removed = _count(n, "line", "lines")
+        parts.append(f"Removed {removed} with numbers missing from your documents.")
     if n := state.get("untraced", 0):
-        removed = _count(n, "fait retiré", "faits retirés")
-        parts.append(f"{removed} : introuvable dans tes documents.")
+        removed = _count(n, "fact", "facts")
+        parts.append(f"Removed {removed} missing from your documents.")
     if n := len(state.get("hidden", [])):
-        hidden = _count(n, "ligne de texte invisible ignorée", "lignes de texte invisible ignorées")
-        parts.append(f"{hidden} dans tes documents.")
+        hidden = _count(n, "line", "lines")
+        parts.append(f"Ignored {hidden} of hidden text in your documents.")
     return " ".join(parts)
 
 
@@ -187,7 +186,7 @@ def announce(state: CvCaptureState) -> CvCaptureState:
     artifact = {
         "artifact_id": f"profil-v{state['version']}",
         "kind": "master_profile",
-        "title": "Profil maître",
+        "title": "Master profile",
         "url": ARTIFACT_URL,
     }
     emit("artifact.ready", artifact, agent=AGENT)

@@ -1,8 +1,8 @@
-"""Import des documents (14.2) : `POST /documents` (multipart : un fichier ou un lien, un seul),
-`POST /documents/text` (JSON : texte collé et titre) et `GET /documents`. Le texte collé passe
-en JSON : un champ multipart autre qu'un fichier est plafonné à 1 Mio par Starlette, qui
-répondrait une 400 générique. La taille du corps est bornée avant l'analyse par
-`app.core.limits.BodySizeLimit` ; le fichier l'est encore à sa lecture."""
+"""Document import (14.2): `POST /documents` (multipart: one file or one link, only one),
+`POST /documents/text` (JSON: pasted text and title) and `GET /documents`. Pasted text goes
+as JSON: a non-file multipart field is capped at 1 MiB by Starlette, which would answer a
+generic 400. The body size is bounded before parsing by `app.core.limits.BodySizeLimit`;
+the file is bounded again when read."""
 
 from typing import Annotated, Any
 
@@ -16,7 +16,7 @@ from app.features.memory.service.documents import DocumentService
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 _RESPONSES: dict[int | str, dict[str, Any]] = {
-    200: {"model": DocumentCreated, "description": "Contenu déjà importé"}
+    200: {"model": DocumentCreated, "description": "Content already imported"}
 }
 
 
@@ -28,7 +28,7 @@ Service = Annotated[DocumentService, Depends(_service)]
 
 
 def _created(response: Response, document: DocumentOut, new: bool) -> DocumentCreated:
-    """202 : nouveau document ou document remis en file ; 200 : doublon (existant)."""
+    """202: new document or document requeued; 200: duplicate (existing)."""
     if not new:
         response.status_code = http.HTTP_200_OK
     return DocumentCreated(document=document, duplicate=not new)
@@ -64,11 +64,11 @@ async def paste_document(
     "/{document_id}/learned", status_code=http.HTTP_202_ACCEPTED, response_model=LearnedStarted
 )
 async def mark_learned(document_id: str, service: Service, runtime: RuntimeDep) -> LearnedStarted:
-    """« Déjà appris » : l'Archiviste crée des acquis déclarés à partir du document indexé."""
+    """ "Already learned": the Archivist creates declared skills from the indexed document."""
     return LearnedStarted(session_id=await service.mark_learned(document_id, runtime.runner))
 
 
 @router.get("", response_model=list[DocumentOut])
 async def list_documents(service: Service) -> list[DocumentOut]:
-    """Les 200 plus récents, du plus récent au plus ancien."""
+    """The 200 most recent, newest first."""
     return await service.list()

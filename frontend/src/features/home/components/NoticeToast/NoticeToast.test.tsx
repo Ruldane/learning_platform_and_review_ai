@@ -11,7 +11,7 @@ describe("NoticeToast", () => {
     render(<NoticeToast notice={notice} onDismiss={onDismiss} onHold={vi.fn()} />);
     expect(screen.getByText("Leçon prête")).toBeVisible();
     expect(screen.getByText("Les jointures")).toBeVisible();
-    await userEvent.setup().click(screen.getByRole("button", { name: /Fermer/ }));
+    await userEvent.setup().click(screen.getByRole("button", { name: /Close notification/ }));
     expect(onDismiss).toHaveBeenCalledWith("a");
   });
 

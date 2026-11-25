@@ -3,7 +3,7 @@ import { t } from "@/shared/i18n/t";
 import { ComparisonBody } from "./ComparisonBody";
 import type { Metrics, Reference } from "./viewTypes";
 
-const at = new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "medium" });
+const at = new Intl.DateTimeFormat("en-GB", { dateStyle: "short", timeStyle: "medium" });
 
 interface Props {
   kind: "ide" | "quiz";

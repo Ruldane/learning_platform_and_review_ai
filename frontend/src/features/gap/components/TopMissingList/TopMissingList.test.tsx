@@ -17,9 +17,9 @@ describe("TopMissingList", () => {
       />,
     );
     expect(screen.getAllByRole("listitem").map((item) => item.textContent)).toEqual([
-      "Python — 5 offres, exigée dans 4",
-      "Docker — 1 offre, exigée dans 1",
-      "Kafka — 2 offres, jamais exigée",
+      "Python — 5 postings, required in 4",
+      "Docker — 1 posting, required in 1",
+      "Kafka — 2 postings, never required",
     ]);
     await userEvent.click(screen.getByRole("button", { name: /Python/ }));
     expect(onOpenSkill).toHaveBeenCalledExactlyOnceWith("Python");
@@ -27,6 +27,6 @@ describe("TopMissingList", () => {
 
   it("says when nothing is missing", () => {
     render(<TopMissingList items={[]} onOpenSkill={vi.fn()} />);
-    expect(screen.getByText("Aucune compétence manquante pour l'instant.")).toBeInTheDocument();
+    expect(screen.getByText("No missing skills yet.")).toBeInTheDocument();
   });
 });

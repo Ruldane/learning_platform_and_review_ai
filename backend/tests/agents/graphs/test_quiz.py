@@ -46,12 +46,12 @@ def _with(n: int, **over: object) -> dict[str, object]:
 
 
 DRAFTS = {
-    "qcm_two_choices": _with(1, **question("qcm", 1, choices=["Oui", "Non"])),
-    "qcm_index_out_of_range": _with(1, **question("qcm", 1, correct_index=3)),
-    "qcm_duplicate_choices": _with(1, **question("qcm", 1, choices=["A", "a", "B"])),
+    "mcq_two_choices": _with(1, **question("mcq", 1, choices=["Oui", "Non"])),
+    "mcq_index_out_of_range": _with(1, **question("mcq", 1, correct_index=3)),
+    "mcq_duplicate_choices": _with(1, **question("mcq", 1, choices=["A", "a", "B"])),
     "code_without_code": _with(3, **question("code", 3, code=None)),
     "open_with_choices": _with(2, **question("short", 2, choices=["A", "B", "C"])),
-    "two_types_only": quiz_draft(types=("qcm", "short")),
+    "two_types_only": quiz_draft(types=("mcq", "short")),
 }
 
 
@@ -61,17 +61,17 @@ async def test_quiz_generate_saves_questions_and_cards(make_quiz_runner: MakeQui
     saved = run.store.saved[QUIZ_ID]
     assert len(saved.questions) == 10 and len(saved.flashcards) == 4
     assert len(run.prompts()) == 1 and done.pending_interrupt is None
-    assert between_untrusted_markers(run.prompts()[0], "leçon") == LESSON
-    assert (await run.events("run.completed"))[0]["summary"] == f"Quiz prêt : « {TITLE} »."
+    assert between_untrusted_markers(run.prompts()[0], "lesson") == LESSON
+    assert (await run.events("run.completed"))[0]["summary"] == f"Quiz ready for “{TITLE}”."
     ready = (await run.events("artifact.ready"))[0]
     assert ready == {
         "artifact_id": QUIZ_ID,
         "kind": "quiz",
         "title": f"Quiz : {TITLE}",
-        "url": f"/etudier/quiz/{QUIZ_ID}",
+        "url": f"/study/quiz/{QUIZ_ID}",
     }
     said = await run.events("agent.message")
-    assert said[-1]["text"] == "Quiz prêt : 10 questions et 4 fiches de révision."
+    assert said[-1]["text"] == "Quiz ready with 10 questions and 4 review cards."
 
 
 def test_good_quiz_has_no_problems() -> None:
@@ -88,11 +88,11 @@ async def test_invalid_quiz_is_reasked_then_marked_failed(make_quiz_runner: Make
     bad = DRAFTS["two_types_only"]
     run = await make_quiz_runner(_writer(bad, bad, bad))
     await run.wait_status("completed")
-    assert run.store.failed[QUIZ_ID].startswith("Quiz invalide")
+    assert run.store.failed[QUIZ_ID].startswith("Quiz still invalid")
     assert len(run.prompts()) == 3 and run.store.saved == {}
-    assert "au moins 3 types" in run.prompts()[1]
+    assert "Use at least 3 of the question types mcq, short, code and explain" in run.prompts()[1]
     summary = (await run.events("run.completed"))[0]["summary"]
-    assert summary == f"Quiz en échec : « {TITLE} »."
+    assert summary == f"Quiz generation failed for “{TITLE}”."
 
 
 async def test_invalid_quiz_is_fixed_on_second_ask(make_quiz_runner: MakeQuiz) -> None:
@@ -116,7 +116,7 @@ async def test_grade_only_open_questions_go_to_model(make_quiz_runner: MakeQuiz)
     [prompt] = run.prompts()
     assert all(f"### {ref}" in prompt for ref in ("q2", "q3", "q4"))
     assert "q1" not in prompt and "q5" not in prompt
-    assert between_untrusted_markers(prompt, "leçon") == LESSON
+    assert between_untrusted_markers(prompt, "lesson") == LESSON
     assert run.store.grades[ATTEMPT_ID] == {
         "q1": (1.0, ""),
         "q5": (0.0, ""),
@@ -125,7 +125,7 @@ async def test_grade_only_open_questions_go_to_model(make_quiz_runner: MakeQuiz)
         "q4": (0.0, "Hors sujet."),
     }
     said = (await run.events("agent.message"))[-1]["text"]
-    assert said.startswith("Note : 50 %, il faut 80 %.") and "3 fiche(s)" in said
+    assert said.startswith("You scored 50%. Passing requires 80%.") and "3 review cards" in said
 
 
 async def test_no_open_question_skips_the_model(make_quiz_runner: MakeQuiz) -> None:
@@ -135,7 +135,7 @@ async def test_no_open_question_skips_the_model(make_quiz_runner: MakeQuiz) -> N
     await run.wait_status("completed")
     assert run.prompts() == [] and run.store.graded[ATTEMPT_ID].score == 100
     summary = (await run.events("run.completed"))[0]["summary"]
-    assert summary == f"Quiz noté : « {TITLE} », 100 %."
+    assert summary == f"Graded the quiz on “{TITLE}” at 100%."
 
 
 async def test_answer_is_framed_as_untrusted(make_quiz_runner: MakeQuiz) -> None:
@@ -144,7 +144,7 @@ async def test_answer_is_framed_as_untrusted(make_quiz_runner: MakeQuiz) -> None
     run.sid = await run.runner.start(run.user_id, "quiz", GRADE)
     await run.wait_status("completed")
     [prompt] = run.prompts()
-    assert TRAP in between_untrusted_markers(prompt, "réponse de January")
+    assert TRAP in between_untrusted_markers(prompt, "January's answer")
     assert TRAP not in outside_untrusted_markers(prompt)
     assert "Énoncé de q4" in between_untrusted_markers(prompt, "question q4")
     # Relecture de 5.3 : le titre du module est encadré, lui aussi (il vient du Stratège).
@@ -152,8 +152,8 @@ async def test_answer_is_framed_as_untrusted(make_quiz_runner: MakeQuiz) -> None
     assert TITLE not in outside_untrusted_markers(prompt)
 
 
-async def test_qcm_slipped_into_open_items_is_never_sent(make_quiz_runner: MakeQuiz) -> None:
-    """Défensif : un QCM glissé par le port parmi les ouvertes ne va jamais au modèle."""
+async def test_legacy_multiple_choice_item_is_never_sent(make_quiz_runner: MakeQuiz) -> None:
+    """A multiple-choice item from an old checkpoint is still scored locally."""
     run = await make_quiz_runner(start=False)
     run.store.add_attempt(run.user_id, open_items=[open_item("q1", "qcm"), open_item("q4")])
     run.sid = await run.runner.start(run.user_id, "quiz", GRADE)
@@ -168,7 +168,7 @@ async def test_grade_out_of_scale_is_refused(make_quiz_runner: MakeQuiz) -> None
     )
     await run.wait_status("completed")
     second = run.prompts()[1]  # refusée par le schéma, redemandée avec le motif
-    assert "items.0.score : Value error, la note vaut exactement 0, 0.5 ou 1" in second
+    assert "items.0.score: Value error, The score must be exactly 0, 0.5, or 1." in second
     assert run.store.grades[ATTEMPT_ID]["q2"] == (0.5, "Presque.")
 
 
@@ -192,7 +192,7 @@ async def test_renumbered_grades_are_reasked_once(make_quiz_runner: MakeQuiz) ->
     run = await make_quiz_runner(_grader(renumbered, completed), mode="grade")
     await run.wait_status("completed")
     _, second = run.prompts()
-    assert "Ta notation oublie ces questions : q4." in second
+    assert "Your grading forgets these questions: q4." in second
     found = run.store.grades[ATTEMPT_ID]
     assert found["q4"] == (1.0, "Juste aussi.") and found["q2"] == (1.0, "Juste.")
     assert found["q1"] == (1.0, "")  # le QCM garde le point du code

@@ -1,4 +1,4 @@
-"""Créneaux contigus de la journée d’étude, dans le fuseau de Tremplin."""
+"""Contiguous slots of the study day, in Tremplin's time zone."""
 
 from datetime import UTC, date, datetime, time, timedelta
 from zoneinfo import ZoneInfo

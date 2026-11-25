@@ -12,7 +12,7 @@ class LabPreferencesRepository(UserScopedRepository[LabPreferencesRow]):
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def locked(self) -> LabPreferencesRow | None:
-        # Commence l'écriture SQLite avant la lecture pour sérialiser les deux champs du PATCH.
+        # Start the SQLite write before the read to serialize the two PATCH fields.
         stmt = update(self.model).where(self.model.user_id == self.user_id, self.model.id == "")
         await self.session.execute(stmt.values(updated_at=self.model.updated_at))
         return await self.read()

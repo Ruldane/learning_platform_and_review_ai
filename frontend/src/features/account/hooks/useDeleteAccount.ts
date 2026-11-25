@@ -8,7 +8,7 @@ import { accountKeys } from "../queryKeys";
 import { GOOGLE_MODE, type Me } from "../types";
 
 /** Où mène « Tout supprimer » en mode local : le premier lancement (réglages vides). */
-const WELCOME_PATH = "/bienvenue";
+const WELCOME_PATH = "/welcome";
 
 function readCurrentMe(queryClient: QueryClient): Promise<Me | null> {
   return queryClient.fetchQuery({
@@ -52,7 +52,7 @@ async function deleteWithConsent(
  * actuel (`AccountChangedError`). Une fois la suppression faite, rien de ce que l'espace
  * contenait ne reste en mémoire (requêtes, mais aussi ce que les features gardent hors du cache :
  * `resetLocalState`) ; puis :
- * - mode Google : `me` passe à « pas de session », la porte de la coquille mène à `/connexion`
+ * - mode Google : `me` passe à « pas de session », la porte de la coquille mène à `/login`
  *   (comme un 401 `auth_required`) ;
  * - mode local : l'identité reste (même utilisateur), retour au premier lancement, qui sait que
  *   les données viennent d'être supprimées (`state.deleted`).

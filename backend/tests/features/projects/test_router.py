@@ -139,7 +139,7 @@ async def test_journal_kind_project_returns_the_project_entry(
     await AgentProjectStore(env.rt).save_review(env.user_id, "s-journal", pid, outcome())
     journal = (await client.get("/api/v1/journal", params={"kind": "project"})).json()
     [entry] = journal["entries"]
-    assert (entry["kind"], entry["text"]) == ("project", f"Projet validé : {TITLE}")
+    assert (entry["kind"], entry["text"]) == ("project", f"Project validated: {TITLE}")
     assert entry["occurred_on"] == "2026-11-24" and entry["links"]["session_id"] == "s-journal"
     others = (await client.get("/api/v1/journal", params={"kind": "quiz"})).json()
     assert others["entries"] == []

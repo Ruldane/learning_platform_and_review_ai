@@ -43,7 +43,7 @@ export function ReadingPlan({ id }: { id: string }) {
           {start.isSuccess ? (
             <Link
               className="self-start text-sm underline"
-              to={`/apprendre/programmes/${start.variables}/replanification`}
+              to={`/learn/programmes/${start.variables}/replanification`}
             >
               {t("reading.actions.openPlan")}
             </Link>

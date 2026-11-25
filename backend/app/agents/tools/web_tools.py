@@ -1,11 +1,11 @@
-"""Outils web des agents (SPEC 10.1, 10.2, 9.5, D77) : des fonctions appelables depuis un nœud,
-qui annoncent leur appel (`tool.called`) puis rendent leur issue (`tool.result`) ; plus
-`web_tools_for`, les mêmes outils sous forme de `StructuredTool` pour l'appel d'outils par le LLM.
+"""Web tools of the agents (SPEC 10.1, 10.2, 9.5, D77): functions callable from a node,
+which announce their call (`tool.called`) then return their outcome (`tool.result`); plus
+`web_tools_for`, the same tools as `StructuredTool` for tool calling by the LLM.
 
-La recherche et la lecture sont derrière le port `WebGateway` (`GraphDeps.web`). Les arguments de
-`tool.called` portent la requête NETTOYÉE (celle que la passerelle a réellement envoyée, SPEC
-17.3) : l'événement d'une recherche en échec n'en porte aucune. Tout texte venu du web rendu à un
-modèle est encadré par `untrusted()` (17.4)."""
+Search and reading sit behind the `WebGateway` port (`GraphDeps.web`). The arguments of
+`tool.called` carry the CLEANED query (the one the gateway actually sent, SPEC
+17.3): the event of a failed search carries none. Any text from the web handed to a
+model is framed by `untrusted()` (17.4)."""
 
 from typing import Any
 from uuid import uuid4
@@ -50,31 +50,31 @@ async def web_search(
     time_range: str | None = None,
     agent: str,
 ) -> WebSearchResult:
-    """Cherche sur le web (SearXNG, Brave en secours) ; `time_range` (« month »…) est transmis à
-    la passerelle. Lève `AppError` : plafond atteint (429), aucun moteur disponible (503),
-    requête vide une fois nettoyée (422)."""
+    """Searches the web (SearXNG, Brave as fallback); `time_range` ("month"...) is passed to
+    the gateway. Raises `AppError`: cap reached (429), no engine available (503),
+    query empty once cleaned (422)."""
 
     async def search() -> WebSearchResult:
         found = await deps.web.search(
             deps.user_id, deps.session_id, query, lang=lang, time_range=time_range
         )
         call_id = _call(agent, "web_search", {"query": found.query, "lang": lang})
-        provider = found.provider or "aucun fournisseur"
-        summary = f"{len(found.hits)} résultat(s) via {provider}"
+        provider = found.provider or "no provider"
+        summary = f"{len(found.hits)} result(s) via {provider}"
         _result(agent, call_id, "web_search", ok=True, summary=summary)
         return found
 
     try:
         return await task(search)() if played_by(deps.user_id) else await search()
     except AppError as exc:
-        call_id = _call(agent, "web_search", {"lang": lang})  # la requête brute n'est jamais émise
+        call_id = _call(agent, "web_search", {"lang": lang})  # the raw query is never emitted
         _failed(agent, call_id, "web_search", exc)
         raise
 
 
 async def web_read(deps: GraphDeps, url: str, *, agent: str) -> PageRead:
-    """Lit une page : statut `ok` ou `unreadable` (avec la raison). Une page illisible n'est
-    jamais citée (SPEC 10.2). Lève `AppError` : plafond de pages (429), adresse refusée (422)."""
+    """Reads a page: status `ok` or `unreadable` (with the reason). An unreadable page is
+    never cited (SPEC 10.2). Raises `AppError`: page cap (429), address refused (422)."""
 
     async def read() -> PageRead:
         call_id = _call(agent, "web_read", {"url": url})
@@ -83,56 +83,56 @@ async def web_read(deps: GraphDeps, url: str, *, agent: str) -> PageRead:
         except AppError as exc:
             _failed(agent, call_id, "web_read", exc)
             raise
-        summary = "Lue" if page.status == "ok" else f"Illisible : {page.reason or '?'}"
+        summary = "Read" if page.status == "ok" else f"Unreadable: {page.reason or '?'}"
         _result(agent, call_id, "web_read", ok=True, summary=summary)
         return page
 
     return await task(read)() if played_by(deps.user_id) else await read()
 
 
-# --- Outils pour l'appel d'outils par le LLM --------------------------------------------------
+# --- Tools for tool calling by the LLM --------------------------------------------------------
 
 
 class _SearchArgs(BaseModel):
-    query: str = Field(min_length=2, max_length=300, description="Ce qu'on cherche.")
+    query: str = Field(min_length=2, max_length=300, description="What to search for.")
     lang: str | None = Field(
-        default=None, pattern=r"^[a-z]{2}$", description="Langue des résultats (fr, en…)."
+        default=None, pattern=r"^[a-z]{2}$", description="Language of the results (fr, en...)."
     )
 
 
 class _ReadArgs(BaseModel):
-    url: str = Field(min_length=1, max_length=2000, description="Adresse http(s) de la page.")
+    url: str = Field(min_length=1, max_length=2000, description="http(s) address of the page.")
 
 
 def search_agent_text(found: WebSearchResult) -> str:
-    """Résultats rendus au modèle : titres et extraits viennent du web, donc encadrés."""
+    """Results handed to the model: titles and snippets come from the web, hence framed."""
     if not found.hits:
-        return "Aucun résultat."
+        return "No results."
     lines = []
     for number, hit in enumerate(found.hits, 1):
-        star = " (domaine privilégié)" if hit.preferred else ""
+        star = " (preferred domain)" if hit.preferred else ""
         snippet = " ".join(hit.snippet.split())[:MAX_SNIPPET_CHARS]
         lines.append(f"{number}. {' '.join(hit.title.split())}{star}\n{hit.url}\n{snippet}")
-    return untrusted("\n\n".join(lines), "résultats de recherche")
+    return untrusted("\n\n".join(lines), "search results")
 
 
 def page_agent_text(page: PageRead) -> str:
-    """Page rendue au modèle : titre, auteur, date, langue et texte, tous encadrés (17.4). Une
-    page illisible n'a pas de texte et ne doit pas être citée."""
+    """Page handed to the model: title, author, date, language and text, all framed (17.4). An
+    unreadable page has no text and must not be cited."""
     if page.status != "ok":
-        return f"Page illisible : {page.reason or 'raison inconnue'}. Ne pas la citer."
+        return f"Unreadable page: {page.reason or 'unknown reason'}. Do not cite it."
     head = [
-        f"Titre : {' '.join((page.title or 'sans titre').split())}",
-        f"Auteur : {page.author or 'inconnu'}",
-        f"Date : {page.date or 'inconnue'}",
-        f"Langue : {page.lang or 'inconnue'}",
+        f"Title: {' '.join((page.title or 'untitled').split())}",
+        f"Author: {page.author or 'unknown'}",
+        f"Date: {page.date or 'unknown'}",
+        f"Language: {page.lang or 'unknown'}",
     ]
-    label = f"page {page.source_id or 'sans identifiant'}"
+    label = f"page {page.source_id or 'no identifier'}"
     return untrusted("\n".join(head) + "\n\n" + page.text, label)
 
 
 def web_tools_for(deps: GraphDeps, *, agent: str) -> list[BaseTool]:
-    """`web_search` et `web_read`, liés à `deps` et à `agent`."""
+    """`web_search` and `web_read`, bound to `deps` and to `agent`."""
 
     async def search(query: str, lang: str | None = None) -> str:
         return search_agent_text(await web_search(deps, query, lang=lang, agent=agent))
@@ -144,13 +144,13 @@ def web_tools_for(deps: GraphDeps, *, agent: str) -> list[BaseTool]:
         StructuredTool.from_function(
             coroutine=search,
             name="web_search",
-            description="Cherche sur le web. Rend des titres, adresses et extraits.",
+            description="Searches the web. Returns titles, addresses and snippets.",
             args_schema=_SearchArgs,
         ),
         StructuredTool.from_function(
             coroutine=read,
             name="web_read",
-            description="Lit une page web. Une page illisible ne se cite jamais.",
+            description="Reads a web page. An unreadable page is never cited.",
             args_schema=_ReadArgs,
         ),
     ]

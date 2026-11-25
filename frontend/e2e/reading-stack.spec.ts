@@ -32,7 +32,7 @@ test("ouvre une lecture au clavier sur mobile et enregistre son état", async ({
     }
     return route.fulfill({ json: entry });
   });
-  await page.goto("/memoire/lecture");
+  await page.goto("/memory/reading");
   const link = page.getByRole("link", { name: entry.title });
   await link.focus();
   await page.keyboard.press("Enter");

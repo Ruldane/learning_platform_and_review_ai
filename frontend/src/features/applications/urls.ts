@@ -1,26 +1,27 @@
 import { apiBaseUrl } from "@/shared/api/client";
 
-/** Adresses internes des candidatures : les pages de 7.14 à 7.16 y sont déjà promises. */
-export const BOARD_PATH = "/candidatures";
-export const REMINDERS_PATH = "/candidatures/relances";
-export const NEW_APPLICATION_PATH = "/candidatures/nouvelle";
-export const FREE_INTERVIEW_PATH = "/candidatures/entretien";
+/** Internal routes for applications and their tools. */
+export const BOARD_PATH = "/applications";
+export const REMINDERS_PATH = "/applications/reminders";
+export const NEW_APPLICATION_PATH = "/applications/new";
+export const FREE_INTERVIEW_PATH = "/applications/interview";
 
 export const applicationPath = (applicationId: string) => `${BOARD_PATH}/${applicationId}`;
 export const kitPath = (applicationId: string) => `${applicationPath(applicationId)}/kit`;
 export const interviewPath = (applicationId: string) =>
-  `${applicationPath(applicationId)}/entretien`;
-export const committeePath = (applicationId: string) => `${applicationPath(applicationId)}/comite`;
+  `${applicationPath(applicationId)}/interview`;
+export const committeePath = (applicationId: string) =>
+  `${applicationPath(applicationId)}/committee`;
 
-/** Les versions de CV (la page de la feature `cv`) : la fiche y renvoie pour la version envoyée. */
-export const CV_VERSIONS_PATH = "/carriere/cv/versions";
+/** Résumé versions are linked from the application that used them. */
+export const CV_VERSIONS_PATH = "/career/cv/versions";
 
-/** `GET /applications/{id}/kit.zip` : l'archive du kit (les pièces, le PDF du CV, un LISEZMOI). */
+/** The kit archive contains the generated pieces, résumé PDF, and README. */
 export const kitZipUrl = (applicationId: string) =>
   `${apiBaseUrl}/api/v1/applications/${applicationId}/kit.zip`;
 
-/** Les révisions (la page des fiches, feature `quiz`) : les fiches d'un entretien y attendent. */
-export const REVISIONS_PATH = "/etudier/revisions";
+/** Review cards from a practice interview appear here. */
+export const REVISIONS_PATH = "/study/reviews";
 
-/** Le profil maître validé (la page de la feature `cv`) : le kit part de lui. */
-export const PROFILE_PATH = "/carriere/profil";
+/** The kit uses the validated master profile. */
+export const PROFILE_PATH = "/career/profile";

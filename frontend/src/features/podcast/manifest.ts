@@ -4,6 +4,6 @@ import { PodcastPage } from "./pages/PodcastPage";
 
 export const podcastManifest: FeatureManifest = {
   id: "podcast",
-  routes: [{ path: "etudier/podcast", element: createElement(PodcastPage) }],
-  nav: [{ section: "study", labelKey: "podcast.title", path: "/etudier/podcast", order: 8 }],
+  routes: [{ path: "study/podcast", element: createElement(PodcastPage) }],
+  nav: [{ section: "study", labelKey: "podcast.title", path: "/study/podcast", order: 8 }],
 };

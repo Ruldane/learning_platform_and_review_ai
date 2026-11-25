@@ -1,5 +1,5 @@
-"""Éléments de la mémoire et recherche (14.2). `since` et `until` bornent la date de création,
-bornes incluses ; une date sans fuseau est lue en UTC."""
+"""Memory items and search (14.2). `since` and `until` bound the creation date, inclusive;
+a date without a timezone is read as UTC."""
 
 from datetime import UTC, datetime
 from typing import Annotated
@@ -80,7 +80,8 @@ async def delete_item(item_id: str, service: Service) -> Response:
 
 @router.post("/items/{item_id}/merge", response_model=MemoryItemOut)
 async def merge_items(item_id: str, body: MergeRequest, service: Service) -> MemoryItemOut:
-    """Fond `other_ids` dans l'élément (D67) : même type, ni document ni décision en attente."""
+    """Merges `other_ids` into the item (D67): same kind, neither a document nor a
+    pending decision."""
     return await merge(service, item_id, body.other_ids)
 
 

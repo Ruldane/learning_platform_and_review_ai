@@ -1,4 +1,4 @@
-"""Port de l’évaluateur, lié à la réponse réservée par le moteur."""
+"""Evaluator port, bound to the answer reserved by the engine."""
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -22,7 +22,9 @@ def _bound(
     steps = stored_steps(row)
     found = next((step for step in steps if step.session_id == session_id), None)
     if found is None:
-        raise AppError("recruitment_step_changed", "Cette étape n’est plus liée à la session.", 409)
+        raise AppError(
+            "recruitment_step_changed", "This step is no longer bound to the session.", 409
+        )
     return steps, found
 
 
@@ -35,7 +37,7 @@ class AgentRecruitmentStore:
             row = await RecruitmentCases(db, user_id).require(process_id)
             _, step = _bound(row, session_id)
             if step.answer is None:
-                raise AppError("recruitment_answer_missing", "La réponse de l’étape manque.", 409)
+                raise AppError("recruitment_answer_missing", "The step answer is missing.", 409)
             return RecruitmentContext(
                 offer=str(row.offer["title"]),
                 requirements=[str(item)[:600] for item in row.offer["requirements"][:10]],

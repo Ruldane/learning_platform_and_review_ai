@@ -9,13 +9,13 @@ MCP = FeatureMcp(
             "GET /costs",
             1,
             "costs_get_report",
-            "Coûts de l'IA sur 7, 30 ou 90 jours, par jour, fonction, agent et modèle.",
+            "AI costs over 7, 30 or 90 days, by day, feature, agent and model.",
         ),
         McpAction(
             "GET /costs/calls",
             1,
             "costs_list_calls",
-            "Journal des appels des agents (jamais le contenu des prompts).",
+            "Log of agent calls (never the prompt content).",
         ),
     ),
 )

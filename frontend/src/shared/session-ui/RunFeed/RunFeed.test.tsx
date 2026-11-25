@@ -56,7 +56,7 @@ describe("RunFeed", () => {
   it("says when the live feed is reconnecting", () => {
     const { run } = fakeRun({}, "reconnecting");
     render(<RunFeed run={run} label="Fil" />);
-    expect(screen.getByText("Reconnexion au fil…")).toBeVisible();
+    expect(screen.getByText("Reconnecting to the feed…")).toBeVisible();
   });
 
   it("does not let a question be answered twice while an answer is on its way", () => {

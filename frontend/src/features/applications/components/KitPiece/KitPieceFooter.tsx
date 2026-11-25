@@ -1,5 +1,6 @@
 import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
+import { MAX_CONTENT } from "./parts";
 
 interface KitPieceFooterProps {
   title: string;
@@ -31,7 +32,7 @@ export function KitPieceFooter({
     <>
       {tooLong ? (
         <p role="alert" className="text-sm text-destructive">
-          {t("applications.kitPiece.tooLong", { max: "20 000" })}
+          {t("applications.kitPiece.tooLong", { max: MAX_CONTENT.toLocaleString("en-GB") })}
         </p>
       ) : null}
       {error ? (

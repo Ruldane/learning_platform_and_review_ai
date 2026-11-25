@@ -1,13 +1,13 @@
-"""Le Stratège écrit le programme semaine par semaine (SPEC 3.4 ; point d'arrêt n° 3, D86).
+"""The Strategist writes the program week by week (SPEC 3.4; stop point no. 3, D86).
 
-`draft` demande un `PlanDraft` au modèle et le fait vérifier par les règles de la feature (port,
-`check_draft`) : les problèmes repartent au modèle, deux fois au plus (`MAX_PLAN_ASKS` = une
-demande et deux re-demandes) ; ensuite le brouillon est gardé tel quel et c'est le rangement du
-code (`save_draft` : acquis, 85 %, pratique et quiz) qui le met aux règles (D83 §4).
+`draft` asks the model for a `PlanDraft` and has it checked by the feature's rules (port,
+`check_draft`): the problems go back to the model, twice at most (`MAX_PLAN_ASKS` = one request
+and two re-requests); after that the draft is kept as is and it is the code's filing (`save_draft`:
+acquired skills, 85%, practice and quiz) that brings it to the rules (D83 section 4).
 
-`save` enregistre la version (idempotent par `(session, revision)`) ; `ask_validation` ne fait
-qu'`interrupt()` puis analyse la réponse (pur) ; une révision repart de `draft` avec le plan
-courant relu en base (modifications de January comprises) et sa note ; `finalize` valide
+`save` records the version (idempotent per `(session, revision)`); `ask_validation` only does
+`interrupt()` then parses the answer (pure); a revision restarts from `draft` with the current
+plan reread from the database (January's changes included) and her note; `finalize` validates
 (idempotent)."""
 
 import logging
@@ -32,19 +32,18 @@ from app.agents.tools.plan_schema import PlanDraft
 from app.agents.tools.program_port import DraftSaved
 
 AGENT = "strategist"
-MAX_PLAN_ASKS = 3  # une demande + deux re-demandes avec les problèmes de `check_draft`
+MAX_PLAN_ASKS = 3  # one request + two re-requests with the problems from `check_draft`
 MAX_PROBLEMS_SHOWN = 30
 MAX_NOTE_CHARS = 2000
-PLAN_TIMEOUT_S = 600  # trois demandes d'un programme complet au modèle fort
-PLAN_REQUEST = "Écris le programme semaine par semaine."
+PLAN_TIMEOUT_S = 600  # three requests of a complete program to the strong model
+PLAN_REQUEST = "Write the program week by week."
 VALIDATION_INTERRUPT: dict[str, Any] = {
     "kind": "validate_program",
     "question": (
-        "Déplace, supprime ou ajoute des tâches dans le calendrier, puis valide le programme ou "
-        "demande une révision."
+        "Arrange the tasks in the calendar, then validate the program or request a revision."
     ),
-    "options": [{"value": "validate", "label": "Valider le programme"}],
-    "fields": [{"id": "note", "label": "Ce qu'il faut revoir (pour une révision)"}],
+    "options": [{"value": "validate", "label": "Validate the program"}],
+    "fields": [{"id": "note", "label": "What should change in a revision?"}],
 }
 
 logger = logging.getLogger(__name__)
@@ -62,7 +61,7 @@ class ValidationAnswer(BaseModel):
 def make_context(deps: GraphDeps) -> Node:
     @node_timeout()
     async def context(state: ProgramState) -> ProgramState:
-        """Objectif, propositions choisies, budget, acquis, langue et compte rendu (port)."""
+        """Goal, chosen proposals, budget, acquired skills, language and minutes (port)."""
         found = await deps.ports.program.context(
             deps.user_id, state["goal_id"], state["proposal_ids"], None
         )
@@ -74,16 +73,16 @@ def make_context(deps: GraphDeps) -> Node:
 def _problems_text(problems: list[str]) -> str:
     shown = [f"- {problem}" for problem in problems[:MAX_PROBLEMS_SHOWN]]
     if len(problems) > MAX_PROBLEMS_SHOWN:
-        shown.append(f"- … et {len(problems) - MAX_PROBLEMS_SHOWN} autres problèmes.")
+        shown.append(f"- ... and {len(problems) - MAX_PROBLEMS_SHOWN} more problems.")
     return (
-        "Ton programme ne respecte pas les règles :\n"
+        "Your program does not follow the rules:\n"
         + "\n".join(shown)
-        + "\nCorrige-le et rends de nouveau le programme complet, toutes les semaines."
+        + "\nFix it and return the complete program again, all the weeks."
     )
 
 
 async def _write(deps: GraphDeps, goal_id: str, prompt: str, revision: int) -> PlanDraft:
-    """Une demande, puis deux re-demandes au plus avec les problèmes ; la dernière est gardée."""
+    """One request, then two re-requests at most with the problems; the last one is kept."""
     model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
     messages: list[BaseMessage] = [SystemMessage(prompt), HumanMessage(PLAN_REQUEST)]
     check = deps.ports.program.check_draft
@@ -98,14 +97,13 @@ async def _write(deps: GraphDeps, goal_id: str, prompt: str, revision: int) -> P
             messages,
             agent=AGENT,
             step=f"programme-{revision}-{ask}",
-            intent="j'écris le programme" if ask == 1 else "je corrige le programme",
+            intent="writing the program" if ask == 1 else "revising the program",
         )
         problems = await check(deps.user_id, goal_id, found)
         if not problems:
             return found
     logger.info(
-        "Programme : brouillon gardé avec %d problème(s), rangé par les règles "
-        "(session %s, révision %d)",
+        "Program: draft kept with %d problem(s), filed by the rules (session %s, revision %d)",
         len(problems),
         deps.session_id,
         revision,
@@ -119,7 +117,7 @@ def make_draft(deps: GraphDeps) -> Node:
     async def draft(state: ProgramState) -> ProgramState:
         revision = state.get("revision", 0)
         plan_vars = state.get("plan_vars", {})
-        if revision > 0:  # le plan est en base : relu, modifications de January comprises
+        if revision > 0:  # the plan is in the database: reread, January's changes included
             program_id = state["saved"]["program_id"]
             found = await deps.ports.program.context(
                 deps.user_id, state["goal_id"], state["proposal_ids"], program_id
@@ -131,7 +129,7 @@ def make_draft(deps: GraphDeps) -> Node:
             mode="plan",
             **plan_vars,
             revision=revision,
-            note=untrusted(note, "note de révision de January") if note else "",
+            note=untrusted(note, "January's revision note") if note else "",
         )
         written = await _write(deps, state["goal_id"], prompt, revision)
         return {"draft": written.model_dump(mode="json"), "plan_vars": plan_vars}
@@ -141,28 +139,26 @@ def make_draft(deps: GraphDeps) -> Node:
 
 def _reason(revision: int, note: str) -> str:
     if revision == 0:
-        return "Première version du Stratège"
-    return (f"Révision {revision} : {note}" if note else f"Révision {revision}")[:300]
+        return "First version by the Strategist"
+    return (f"Revision {revision}: {note}" if note else f"Revision {revision}")[:300]
 
 
 def _saved_text(title: str, saved: DraftSaved) -> str:
     parts = [
-        f"Programme « {title} » : {saved.weeks} semaine(s), {hours(saved.total_minutes)} "
-        "planifiées, jamais plus de 85 % de ton budget par semaine."
+        f'Program "{title}": {saved.weeks} week(s), {hours(saved.total_minutes)} '
+        "planned, never more than 85% of your weekly budget."
     ]
     if saved.skipped_modules:
-        parts.append(f"Déjà acquis, sautés : {', '.join(saved.skipped_modules)}.")
+        parts.append(f"Already acquired, skipped: {', '.join(saved.skipped_modules)}.")
     if saved.moved_tasks:
-        parts.append(
-            f"{saved.moved_tasks} tâche(s) reportée(s) à la semaine suivante pour tenir le budget."
-        )
+        parts.append(f"{saved.moved_tasks} task(s) moved to the following week to fit the budget.")
     return " ".join(parts)
 
 
 def make_save(deps: GraphDeps) -> Node:
     @node_timeout()
     async def save(state: ProgramState) -> ProgramState:
-        """Version enregistrée (idempotent par `(session, revision)`), puis annoncée."""
+        """Version recorded (idempotent per `(session, revision)`), then announced."""
         draft = PlanDraft.model_validate(state["draft"])
         revision = state.get("revision", 0)
         raw_start = state.get("start_date")
@@ -176,7 +172,7 @@ def make_save(deps: GraphDeps) -> Node:
             reason=_reason(revision, state.get("note", "")),
         )
         logger.info(
-            "Programme enregistré : session %s, programme %s, version %d",
+            "Program stored: session %s, program %s, version %d",
             deps.session_id,
             saved.program_id,
             saved.version,
@@ -187,7 +183,7 @@ def make_save(deps: GraphDeps) -> Node:
             "artifact_id": saved.program_id,
             "kind": "program",
             "title": draft.title,
-            "url": f"/apprendre/programme/{saved.program_id}",
+            "url": f"/learn/programs/{saved.program_id}",
         }
         emit("artifact.ready", artifact, agent=AGENT)
         return {"saved": asdict(saved)}
@@ -196,9 +192,9 @@ def make_save(deps: GraphDeps) -> Node:
 
 
 def parse_validation(value: Any) -> ValidationAnswer | None:
-    """`"validate"`, `{"action": "validate"}`, `{"action": "revise", "note": …}` ou
-    `{"answers": {"note": …}}` (révision). Note coupée à 2 000 caractères plutôt que refusée (la
-    saisie de January n'est jamais perdue). Toute autre forme : `None`."""
+    """`"validate"`, `{"action": "validate"}`, `{"action": "revise", "note": ...}` or
+    `{"answers": {"note": ...}}` (revision). Note cut at 2,000 characters rather than refused
+    (January's input is never lost). Any other shape: `None`."""
     if value == "validate":
         return ValidationAnswer(action="validate")
     if not isinstance(value, dict):
@@ -218,7 +214,7 @@ def parse_validation(value: Any) -> ValidationAnswer | None:
 
 
 def ask_validation(state: ProgramState) -> ProgramState:
-    """Point d'arrêt n° 3. Rien avant `interrupt()` ; une réponse invalide repose la question."""
+    """Stop point no. 3. Nothing before `interrupt()`; an invalid answer asks the question again."""
     answer = parse_validation(interrupt(VALIDATION_INTERRUPT))
     if answer is None:
         return {"validation": None}
@@ -238,11 +234,11 @@ def route_validation(state: ProgramState) -> str:
 def make_finalize(deps: GraphDeps) -> Node:
     @node_timeout()
     async def finalize(state: ProgramState) -> ProgramState:
-        """Programme validé (idempotent : un nœud rejoué revalide sans effet de plus)."""
+        """Program validated (idempotent: a replayed node revalidates with no further effect)."""
         program_id = state["saved"]["program_id"]
         await deps.ports.program.validate(deps.user_id, deps.session_id, program_id)
-        logger.info("Programme validé : session %s, programme %s", deps.session_id, program_id)
-        summary = f"Programme validé : « {state['draft']['title']} »."
+        logger.info("Program validated: session %s, program %s", deps.session_id, program_id)
+        summary = f"Validated the program “{state['draft']['title']}”."
         emit("agent.message", {"message_id": f"{AGENT}-validation", "text": summary}, agent=AGENT)
         return {"summary": summary}
 

@@ -1,12 +1,12 @@
-"""Passerelle mémoire des agents (D68) : implémente le port `MemoryGateway` de `app.agents` sur le
-service mémoire. Chaque appel ouvre sa propre session de base, courte : une session d'agent ne
-tient jamais de transaction ouverte pendant un appel à Ollama ou à Qdrant (D66).
+"""Agents' memory gateway (D68): implements the `MemoryGateway` port of `app.agents` on the
+memory service. Each call opens its own short database session: an agent session never holds
+an open transaction during a call to Ollama or Qdrant (D66).
 
-L'écriture passe par `MemoryService.write` : règles d'écriture, dédoublonnage (un nœud rejoué ne
-double rien), journal (agent, session, raison) et indexation, qui est la DERNIÈRE étape (elle
-valide la transaction avant de vectoriser, puis pose `indexed_at` à part). Pendant une
-réindexation, `index_item` laisse l'élément non indexé : la boucle de réindexation le rattrape.
-Aucun journal ne cite de contenu."""
+Writing goes through `MemoryService.write`: write rules, deduplication (a replayed node doubles
+nothing), log (agent, session, reason) and indexing, which is the LAST step (it commits the
+transaction before vectorizing, then sets `indexed_at` separately). During a reindexing,
+`index_item` leaves the item unindexed: the reindexing loop catches it up. No log quotes
+content."""
 
 import logging
 from collections import Counter
@@ -23,7 +23,7 @@ from app.agents.tools.memory_port import (
     WriteResult,
 )
 from app.core.errors import AppError
-from app.db.models.memory import MEMORY_KINDS, MemoryKind
+from app.db.models.memory import MEMORY_KINDS, MemoryKind, current_memory_kind
 from app.features.memory.repository import (
     ChunkRepository,
     DocumentRepository,
@@ -40,17 +40,18 @@ logger = logging.getLogger(__name__)
 
 QUERY_MAX = 500  # `SearchRequest.query`
 K_MAX = 50  # `SearchRequest.k`
-SKILLS_MAX = 500  # acquis lus pour le résumé (les plus récents)
+SKILLS_MAX = 500  # learned items read for the summary (the most recent)
 
 
 def _kinds(kinds: Sequence[str] | None) -> list[MemoryKind] | None:
     if not kinds:
         return None
-    if unknown := [kind for kind in kinds if kind not in MEMORY_KINDS]:
+    resolved = [current_memory_kind(kind) for kind in kinds]
+    if unknown := [kind for kind in resolved if kind not in MEMORY_KINDS]:
         raise AppError(
-            "memory_kind_invalid", "Type de mémoire inconnu.", 422, {"kinds": sorted(set(unknown))}
+            "memory_kind_invalid", "Unknown memory item type.", 422, {"kinds": sorted(set(unknown))}
         )
-    return cast(list[MemoryKind], list(kinds))
+    return cast(list[MemoryKind], resolved)
 
 
 class AgentMemoryGateway:
@@ -60,8 +61,8 @@ class AgentMemoryGateway:
     async def search(
         self, user_id: str, query: str, *, kinds: Sequence[str] | None, k: int
     ) -> MemorySearchResult:
-        """Requête rognée à 500 caractères, `k` borné à 1..50 ; Ollama ou Qdrant arrêté : 503
-        lisible (l'erreur du service)."""
+        """Query trimmed to 500 characters, `k` bounded to 1..50; Ollama or Qdrant down: readable
+        503 (the service's error)."""
         request = SearchRequest(
             query=query.strip()[:QUERY_MAX] or " ", kinds=_kinds(kinds), k=max(1, min(k, K_MAX))
         )
@@ -106,25 +107,25 @@ class AgentMemoryGateway:
                 status="pending" if item.status == "pending" else "active",
                 created=outcome.created,
             )
-            if item.status != "active":  # rien n'a validé l'écriture : pas d'indexation
+            if item.status != "active":  # nothing validated the write: no indexing
                 await db.commit()
         if result.created:
-            logger.info("Mémoire : %s écrit par %s (session %s)", item.id, author, session_id)
+            logger.info("Memory: %s written by %s (session %s)", item.id, author, session_id)
         return result
 
     async def skills(self, user_id: str) -> SkillsSummary:
-        """Acquis actifs (les 500 plus récents) : le total est exact, la répartition par niveau
-        porte sur les acquis lus. Jusqu'à la phase 4 (`user_skills`, D6), les acquis sont lus
-        dans la mémoire."""
+        """Active learned items (the 500 most recent): the total is exact, the breakdown by level
+        covers the items read. Until phase 4 (`user_skills`, D6), learned items are read from
+        memory."""
         async with self._runtime.session_factory() as db:
             rows, total = await MemoryItemRepository(db, user_id).filtered(
-                ItemFilter(kind="acquis"), limit=SKILLS_MAX, offset=0
+                ItemFilter(kind="skill"), limit=SKILLS_MAX, offset=0
             )
         skills = [
             SkillEntry(
                 item_id=row.id,
                 title=row.title,
-                level=str((row.meta or {}).get("level", "declare")),
+                level=str((row.meta or {}).get("level", "declared")),
                 tags=[str(tag) for tag in row.tags],
             )
             for row in rows
@@ -134,8 +135,8 @@ class AgentMemoryGateway:
     async def document_text(
         self, user_id: str, document_id: str, *, max_chunks: int
     ) -> DocumentText | None:
-        """Les premiers fragments d'un document indexé de l'utilisateur, dans l'ordre ; `None` si
-        le document n'existe pas, n'est pas à lui ou n'est pas (encore) indexé."""
+        """The first chunks of one of the user's indexed documents, in order; `None` if the
+        document does not exist, is not theirs or is not (yet) indexed."""
         async with self._runtime.session_factory() as db:
             doc = await DocumentRepository(db, user_id).get(document_id)
             if doc is None or doc.status != "indexed" or doc.item_id is None:

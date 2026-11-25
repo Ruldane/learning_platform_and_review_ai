@@ -5,7 +5,7 @@ test.skip(process.env.E2E_INCIDENT_REPLAY !== "1", "Requiert la base locale de r
 
 test("revient au premier signal et retrouve la décision proposée", async ({ page, request }) => {
   await finishFirstLaunch(request);
-  await page.goto("/etudier/replay-incident");
+  await page.goto("/study/incident-replay");
   await page
     .getByRole("region", { name: "File d’attente en surcharge" })
     .getByRole("button", { name: "Rejouer cet incident" })

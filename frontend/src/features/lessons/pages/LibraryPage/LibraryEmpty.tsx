@@ -22,8 +22,8 @@ export function LibraryEmpty({ filtered, latestProgramId, onClearFilters }: Libr
     );
   }
   const programPath = latestProgramId
-    ? `/apprendre/programme/${latestProgramId}`
-    : "/apprendre/programme";
+    ? `/learn/programs/${latestProgramId}`
+    : "/learn/programs";
   return (
     <EmptyState
       title={t("lessons.library.emptyTitle")}

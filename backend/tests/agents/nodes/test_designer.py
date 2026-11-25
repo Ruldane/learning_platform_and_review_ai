@@ -64,20 +64,17 @@ def test_compared_interleaves_original_and_render_within_the_limit() -> None:
     legend, images = compared([b"o1", b"o2", b"o3"], [b"r1", b"r2", b"r3", b"r4"])
     assert images == [b"o1", b"r1", b"o2", b"r2"]
     assert legend == (
-        "Images, dans l'ordre : original, page 1 ; rendu, page 1 ; original, page 2 ; "
-        "rendu, page 2."
+        "Images, in order: original, page 1; rendu, page 1; original, page 2; rendu, page 2."
     )
     assert compared([b"o1"], [b"r1", b"r2"])[1] == [b"o1", b"r1", b"r2"]
 
 
 def test_question_offers_three_options_then_two_at_the_cap() -> None:
     ask = question(87, 0)
-    assert ask["question"] == "Le modèle ressemble à ton CV à 87 %. Tu valides ?"
+    assert ask["question"] == "The template matches your CV at 87%. Do you approve it?"
     assert [o["value"] for o in ask["options"]] == ["validate", "adjust", "restart"]
-    assert [o["label"] for o in ask["options"]] == ["Valider", "Ajuster", "Recommencer la capture"]
-    assert ask["fields"] == [
-        {"id": "instruction", "label": "Ce qu'il faut changer", "max_length": 500}
-    ]
+    assert [o["label"] for o in ask["options"]] == ["Approve", "Adjust", "Restart the capture"]
+    assert ask["fields"] == [{"id": "instruction", "label": "What to change", "max_length": 500}]
     capped = question(70, MAX_ADJUSTMENTS)
     assert [o["value"] for o in capped["options"]] == ["validate", "restart"]
     assert capped["fields"] == []

@@ -231,7 +231,7 @@ def test_posting_keyword_variant_reports_the_keyword() -> None:
     posting = PostingAnalysis(
         is_job_posting=True,
         title="Data Scientist",
-        level="confirme",
+        level="mid_level",
         language="fr",
         keywords=[Keyword(term="AWS", variants=["Amazon Web Services"])],
     )

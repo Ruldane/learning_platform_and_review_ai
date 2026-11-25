@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fr } from "./fr";
+import { en } from "./en";
 import { t } from "./t";
 
 describe("t", () => {
@@ -20,22 +20,22 @@ describe("t", () => {
   });
 
   it("refuse une clé inconnue à la compilation", () => {
-    // @ts-expect-error la clé n'existe pas dans `fr`
+    // @ts-expect-error la clé n'existe pas dans `en`
     expect(t("n.existe.pas")).toBe("n.existe.pas");
   });
 
   it("merges sessions into session", () => {
-    expect("sessions" in fr).toBe(false);
-    expect(t("session.errors.stale_interrupt")).toBe("Cette question a déjà reçu une réponse.");
-    expect(t("session.stream.not_found")).toBe("Cette session est introuvable.");
-    expect(t("session.status.paused")).toBe("En pause");
+    expect("sessions" in en).toBe(false);
+    expect(t("session.errors.stale_interrupt")).toBe("This question has already been answered.");
+    expect(t("session.stream.not_found")).toBe("This session can’t be found.");
+    expect(t("session.status.paused")).toBe("Paused");
   });
 
   it("aggregates the memory zone", () => {
-    expect(t("memory.kind.lecon")).toBe("Leçon");
-    expect(t("memory.level.prouve")).toBe("Prouvé");
-    expect(t("memory.action.merge")).toBe("Fusion");
-    expect(t("memory.empty")).toBe("Aucun élément en mémoire");
-    expect(t("memory.drawer.deleteAsk")).toBe("Supprimer définitivement ?");
+    expect(t("memory.kind.lesson")).toBe("Lesson");
+    expect(t("memory.level.proven")).toBe("Proven");
+    expect(t("memory.action.merge")).toBe("Merge");
+    expect(t("memory.empty")).toBe("No items in memory");
+    expect(t("memory.drawer.deleteAsk")).toBe("Delete permanently?");
   });
 });

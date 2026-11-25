@@ -1,1 +1,1 @@
-"""Compilation des chapitres publiés du programme."""
+"""Compilation of the program's published chapters."""

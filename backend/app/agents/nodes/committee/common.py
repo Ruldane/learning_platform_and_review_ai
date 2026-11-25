@@ -1,7 +1,6 @@
-"""Ce que les nœuds du comité de recrutement ont en commun (D147) : le type d'un nœud, les
-demandes (marqueurs des prompts), le contexte relu depuis l'état et le modèle d'une persona avec
-ses deux messages. Journaux : identifiants et nombres seulement, jamais une parole, le CV ni
-l'offre."""
+"""What the hiring committee nodes have in common (D147): the type of a node, the requests
+(prompt markers), the context reread from the state and a persona's model with its two
+messages. Logs: identifiers and numbers only, never a speech, the CV or the posting."""
 
 import asyncio
 from collections.abc import Callable, Coroutine, Mapping, Sequence
@@ -19,11 +18,11 @@ from app.agents.tools.committee_schema import PERSONAS, CommitteeContext, Person
 from app.core.played import played_by
 from app.providers.llm.base import Tier
 
-IMPRESSION_REQUEST = "Donne ta première impression."
-DEBATE_REQUEST = "Prends la parole au débat."
-VOTE_REQUEST = "Rends ton vote."
-SYNTHESIS_REQUEST = "Rédige la synthèse du comité."
-TURN_TIMEOUT_S = 300  # quatre prises de parole de suite, chacune avec ses nouveaux essais (GLM)
+IMPRESSION_REQUEST = "Give your first impression."
+DEBATE_REQUEST = "Respond in the debate."
+VOTE_REQUEST = "Cast your vote."
+SYNTHESIS_REQUEST = "Summarize the committee's discussion."
+TURN_TIMEOUT_S = 300  # four speeches in a row, each with its retries (GLM)
 
 
 class Node(Protocol):
@@ -45,8 +44,8 @@ async def persona_call(
     round_number: int = 0,
     addressee: Persona | None = None,
 ) -> tuple[BaseChatModel, list[BaseMessage]]:
-    """Le modèle de la persona (niveau de son agent) et ses messages : son prompt en mode
-    `committee` pour l'étape `step` (`impression`, `debate`, `vote`), puis la demande."""
+    """The persona's model (its agent's tier) and its messages: its prompt in `committee` mode
+    for step `step` (`impression`, `debate`, `vote`), then the request."""
     variables = persona_vars(ctx, persona, step, spoken, round_number, addressee)
     return await role_call(deps, persona, persona, request, variables)
 
@@ -60,7 +59,7 @@ async def role_call(
     *,
     tier: Tier | None = None,
 ) -> tuple[BaseChatModel, list[BaseMessage]]:
-    """Fabrique et messages d'une voix de débat."""
+    """Factory and messages of a debate voice."""
     model = await deps.models.get_chat_model(
         deps.user_id, tier or get_agent(agent).tier, agent=agent
     )
@@ -69,8 +68,8 @@ async def role_call(
 
 
 async def together[T](*calls: Coroutine[Any, Any, T]) -> list[T]:
-    """Les appels indépendants d'un nœud, ensemble ; si l'un échoue, les autres sont arrêtés avant
-    que l'erreur remonte (aucune parole ni aucun vote ne continue après l'échec du nœud)."""
+    """A node's independent calls, together; if one fails, the others are stopped before the
+    error bubbles up (no speech or vote continues after the node's failure)."""
     tasks = [asyncio.ensure_future(call) for call in calls]
     try:
         return list(await asyncio.gather(*tasks))
@@ -84,7 +83,7 @@ async def together[T](*calls: Coroutine[Any, Any, T]) -> list[T]:
 async def persona_results[T](
     deps: GraphDeps, ask: Callable[[Persona], Coroutine[Any, Any, T]]
 ) -> list[T]:
-    # Une interruption LangGraph par nœud doit être rencontrée dans le même ordre au rejeu.
+    # One LangGraph interrupt per node must be met in the same order on replay.
     if played_by(deps.user_id):
         return [await ask(persona) for persona in PERSONAS]
     return await together(*(ask(persona) for persona in PERSONAS))

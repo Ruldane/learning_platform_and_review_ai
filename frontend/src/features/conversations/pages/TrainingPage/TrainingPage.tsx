@@ -13,8 +13,8 @@ export function TrainingPage() {
   const navigate = useNavigate();
   const [revision, clear] = useState(0);
   const heading = useRef<HTMLHeadingElement>(null);
-  const skillId = trainingSkillId(params.get("competence"));
-  const fresh = !studyId && params.has("nouvelle");
+  const skillId = trainingSkillId(params.get("skill") ?? params.get("competence"));
+  const fresh = !studyId && (params.has("new") || params.has("nouvelle"));
   const start = () => {
     void navigate(newTrainingPath(skillId));
     heading.current?.focus();

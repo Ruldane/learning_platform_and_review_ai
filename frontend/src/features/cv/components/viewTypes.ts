@@ -166,7 +166,7 @@ export const MAX_EDIT_CHARS = 600;
  * chaque côté, dans une zone de la page.
  */
 export interface ZoneView {
-  zone: "haut" | "milieu" | "bas" | "gauche" | "droite";
+  zone: "top" | "middle" | "bottom" | "left" | "right";
   original: number;
   render: number;
 }

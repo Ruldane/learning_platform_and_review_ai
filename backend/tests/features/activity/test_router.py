@@ -28,7 +28,7 @@ async def test_get_activity_shape_and_bounds(client: httpx.AsyncClient, env: Env
         "id": f"brief:{brief_id}:ready",
         "kind": "brief",
         "at": "2026-11-17T09:00:00Z",
-        "title": "Brief du jour prêt",
+        "title": "Daily brief ready",
         "detail": None,
         "link": "/",
     }

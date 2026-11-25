@@ -115,7 +115,7 @@ from app.features.voice.mcp import MCP as voice_mcp
 from app.features.voice.router import router as voice_router
 from app.mcp.base import FeatureMcp
 
-# Chaque feature ajoute ici son routeur ; `create_app` les monte sous `/api/v1`.
+# Each feature adds its router here; `create_app` mounts them under `/api/v1`.
 FEATURE_ROUTERS: list[APIRouter] = [
     auth_router,
     settings_router,
@@ -181,8 +181,8 @@ FEATURE_ROUTERS: list[APIRouter] = [
     mcp_relay_router,
 ]
 
-# Chaque feature déclare ici ses outils MCP (`features/<f>/mcp.py`, `MCP: FeatureMcp`), une
-# ligne par feature : liste blanche, aucune route n'est exposée d'elle-même (phase 10, P11).
+# Each feature declares its MCP tools here (`features/<f>/mcp.py`, `MCP: FeatureMcp`), one
+# line per feature: allowlist, no route is exposed on its own (phase 10, P11).
 MCP_FEATURES: list[FeatureMcp] = [
     account_mcp,
     activity_mcp,

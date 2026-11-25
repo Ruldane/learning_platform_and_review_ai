@@ -11,7 +11,7 @@ export function ImportEmptyState({ title }: { title: string }) {
       description={t("memory.page.emptyDescription")}
       action={{
         label: t("memory.page.importDocument"),
-        onClick: () => void navigate("/memoire/documents"),
+        onClick: () => void navigate("/memory/documents"),
       }}
     />
   );

@@ -42,8 +42,8 @@ async def test_last_round_removes_unsupported_sentences_and_publishes(
     words = check_lesson(pub.markdown, title=TITLE, sources=[]).words
     assert pub.report.words == words and pub.report.revisions == 2
     texts = [m["text"] for m in await c.events("agent.message")]
-    assert any("Leçon conforme après retrait de 1 phrase(s)" in t for t in texts)
-    assert "1 phrase(s) retirée(s)" in caplog.text and "1 hors périmètre" in caplog.text
+    assert any("Lesson passed after removing unsupported sentences (1)" in t for t in texts)
+    assert "1 sentences removed" in caplog.text and "1 out of scope" in caplog.text
     for content in ("applications", "Alice", "Python", "VS Code"):
         assert content not in caplog.text
 
@@ -79,7 +79,7 @@ async def test_earlier_rounds_ask_the_writer_instead_of_removing(
     c = await make_lesson_runner(writer=[LESSON, LESSON], verifier=[claims(C_APPS)])
     await c.wait_status("completed")
     assert c.writer_calls == 2
-    assert f"Affirmation non sourcée : {C_APPS}" in c.prompt_of_writer(2)
+    assert f"Unsupported claim: {C_APPS}" in c.prompt_of_writer(2)
     assert "construire des applications" in c.store.published[0].markdown
 
 
@@ -90,7 +90,7 @@ async def test_unlocated_claim_after_last_revision_fails_the_lesson(
     await c.wait_status("completed")
     assert c.store.published == [] and len(c.store.failures) == 1
     module, reason = c.store.failures[0]
-    assert module == MODULE_ID and "1 affirmation(s) non sourcée(s) introuvable(s)" in reason
+    assert module == MODULE_ID and "Could not locate unsupported claims" in reason
     assert c.store.next_calls == [(PROGRAM_ID, c.sid)]
 
 
@@ -101,5 +101,5 @@ async def test_removal_that_breaks_the_checks_fails_the_lesson(
     await c.wait_status("completed")
     assert c.store.published == []
     _module, reason = c.store.failures[0]
-    assert "Retrait de 1 phrase(s) non sourcée(s) impossible" in reason
-    assert "L'essentiel en 5 lignes" in reason
+    assert "Removing unsupported sentences (1) made the lesson invalid" in reason
+    assert "Key points in 5 lines" in reason

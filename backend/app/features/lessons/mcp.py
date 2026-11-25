@@ -12,35 +12,36 @@ MCP = FeatureMcp(
             "GET /programs/{program_id}/lessons",
             1,
             "lessons_list_lessons",
-            "Les leçons d'un programme.",
+            "The lessons of a program.",
         ),
         McpAction(
             "GET /lessons/{lesson_id}",
             1,
             "lessons_get_lesson",
-            "Le contenu d'une leçon.",
+            "The content of a lesson.",
             untrusted=_LESSON_RESOURCE_TEXT,
         ),
         McpAction(
             "GET /resources",
             1,
             "lessons_list_resources",
-            "La Bibliothèque : ressources filtrables par programme, type, langue et statut.",
+            "The Library: resources filterable by program, type, language and status.",
             untrusted=tuple(f"[].{name}" for name in _RESOURCE_TEXT),
         ),
         McpAction(
             "PATCH /resources/{resource_id}",
             2,
             "lessons_update_resource",
-            "Change le statut de lecture d'une ressource.",
+            "Changes the reading status of a resource.",
             untrusted=_RESOURCE_TEXT,
         ),
         McpAction(
             "POST /modules/{module_id}/lesson",
             2,
             "lessons_write_lesson",
-            "Soumet le Markdown d'un module à la Fabrique (`title` et `resources` facultatifs). "
-            "Suis `verification_session_id` : après contrôle, la Fabrique publie la leçon.",
+            "Submits the Markdown of a module to the Lesson Factory (`title` and `resources` "
+            "optional). Follow `verification_session_id`: after the check, the Factory "
+            "publishes the lesson.",
             launches="lesson_factory",
             untrusted=_LESSON_RESOURCE_TEXT,
         ),
@@ -48,8 +49,8 @@ MCP = FeatureMcp(
             "PATCH /lessons/{lesson_id}",
             2,
             "lessons_update_lesson",
-            "Soumet le titre ou le Markdown d'une leçon prête à la Fabrique. L'ajout seul de "
-            "`resources` est immédiat. La version publiée reste lisible pendant le contrôle.",
+            "Submits the title or Markdown of a ready lesson to the Lesson Factory. Adding only "
+            "`resources` is immediate. The published version stays readable during the check.",
             launches="lesson_factory",
             untrusted=_LESSON_RESOURCE_TEXT,
         ),
@@ -57,22 +58,22 @@ MCP = FeatureMcp(
             "GET /lessons/{lesson_id}/pdf",
             1,
             "lessons_get_lesson_pdf",
-            "Lit les métadonnées du PDF. Le texte se lit avec lessons_get_lesson.",
+            "Reads the PDF metadata. Read the text with lessons_get_lesson.",
             artifact=True,
         ),
         McpAction(
             "GET /resources/{resource_id}/file",
             1,
             "lessons_get_resource_file",
-            "Lit les métadonnées du fichier tiers téléchargé et donne le lien local.",
+            "Reads the metadata of the downloaded third-party file and gives the local link.",
             artifact=True,
         ),
     ),
     graphs=(
         McpGraph(
             "lesson_factory",
-            summary="Écrit la leçon d'un module (`program_id`, `module_id`) : recherche, "
-            "lecture, ressources et rédaction.",
+            summary="Writes the lesson of a module (`program_id`, `module_id`): research, "
+            "reading, resources and writing.",
             untrusted=("result",),
         ),
     ),

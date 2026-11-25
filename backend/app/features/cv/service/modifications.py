@@ -1,16 +1,16 @@
-"""Décisions de January sur les modifications d'une revue (SPEC 5.3 étape 7, 5.5 ; D128, D130).
+"""January's decisions on the modifications of a review (SPEC 5.3 step 7, 5.5; D128, D130).
 
-- Refuser : toujours possible tant que la revue n'est pas terminée.
-- Accepter : une modification « à confirmer » (`blocks` non vide : chiffre, outil, titre ou nom
-  absent du profil) ne s'accepte qu'avec `confirm: true`, une par une ; le fait entre alors au
-  profil maître (nouvelle version validée, `profile_facts`) et `blocks` est vidé.
-- Texte réécrit par January (`after`, réécriture ou ajout seulement) : revalidé contre le profil
-  figé dans la revue ; il peut devenir « à confirmer » ; un mot clé de l'offre absent du profil
-  n'entre jamais dans le CV (422 `keyword_not_in_profile`, sans écho).
-- En groupe : les « à confirmer » ne sont jamais acceptés (sautés et rendus dans `skipped`).
+- Refuse: always possible while the review is not finished.
+- Accept: a "to confirm" modification (`blocks` not empty: figure, tool, title or name absent
+  from the profile) is only accepted with `confirm: true`, one by one; the fact then enters the
+  master profile (new validated version, `profile_facts`) and `blocks` is emptied.
+- Text rewritten by January (`after`, rewrite or addition only): re-validated against the
+  profile frozen in the review; it may become "to confirm"; a posting keyword absent from the
+  profile never enters the CV (422 `keyword_not_in_profile`, without echo).
+- As a group: the "to confirm" ones are never accepted (skipped and returned in `skipped`).
 
-Après « Terminer » (ou l'échec de la revue) : 409 `review_closed`. Sous le verrou des revues : un
-clic sur « Générer » fige les décisions d'un instant précis. Journaux : identifiants seulement."""
+After "Finish" (or the review's failure): 409 `review_closed`. Under the reviews lock: a click
+on "Generate" freezes the decisions of a precise instant. Logs: ids only."""
 
 import logging
 
@@ -47,8 +47,7 @@ EDITABLE = ("rewrite", "add")
 def confirmation_required() -> AppError:
     return AppError(
         "confirmation_required",
-        "Cette modification cite un fait absent de ton profil : confirme qu'il est vrai pour "
-        "l'accepter.",
+        "Confirm that the fact missing from your profile is true before accepting this edit.",
         409,
     )
 
@@ -56,8 +55,8 @@ def confirmation_required() -> AppError:
 def keyword_not_in_profile() -> AppError:
     return AppError(
         "keyword_not_in_profile",
-        "Ce texte cite un mot clé de l'offre absent de ton profil : il ne peut pas entrer dans le "
-        "CV (il reste dans l'écart).",
+        "This edit contains a posting keyword missing from your profile. "
+        "It stays in the skill gap.",
         422,
         {"fields": ["after"]},
     )
@@ -77,8 +76,8 @@ async def _open_review(db: AsyncSession, user_id: str, review_id: str) -> CvRevi
 async def _revalidate(
     db: AsyncSession, user_id: str, review: CvReview, row: CvModification, after: str
 ) -> bool:
-    """Le texte de January remplace `after`, revalidé contre le profil figé (D128) ; vrai s'il
-    est « à confirmer »."""
+    """January's text replaces `after`, re-validated against the frozen profile (D128); true
+    if it is "to confirm"."""
     if row.action not in EDITABLE:
         raise invalid_after()
     profile, _ = await frozen_base(db, user_id, review)
@@ -95,8 +94,8 @@ async def _revalidate(
 async def _accept(
     rt: CvRuntime, db: AsyncSession, user_id: str, row: CvModification, body: ModificationPatch
 ) -> int | None:
-    """Accepte, ou garde « à confirmer » un texte réécrit sans confirmation ; rend la version
-    du profil écrite par une confirmation."""
+    """Accepts, or keeps "to confirm", a rewritten text without confirmation; returns the
+    profile version written by a confirmation."""
     review = await _open_review(db, user_id, row.review_id)
     if body.after is not None:
         needs = await _revalidate(db, user_id, review, row, body.after.strip())
@@ -105,7 +104,7 @@ async def _accept(
     if needs and not body.confirm:
         if body.after is None:
             raise confirmation_required()
-        row.status = "to_confirm"  # texte réécrit : gardé, à confirmer une par une
+        row.status = "to_confirm"  # rewritten text: kept, to confirm one by one
         return None
     confirmed = await confirm_fact(rt, user_id, row.target, row.after) if needs else None
     row.status, row.blocks = "accepted", []
@@ -115,7 +114,7 @@ async def _accept(
 async def decide(
     rt: CvRuntime, user_id: str, modification_id: str, body: ModificationPatch
 ) -> ModificationOut:
-    """Voir l'en-tête du module ; rend la modification telle qu'elle est rangée."""
+    """See the module header; returns the modification as it is stored."""
     async with rt.review_lock(user_id), rt.session_factory() as db:
         await settle(db, user_id)
         row = await ModificationRepository(db, user_id).get(modification_id)
@@ -130,7 +129,7 @@ async def decide(
         await db.commit()
         out = modification_out(row)
     logger.info(
-        "Décision : utilisateur %s, modification %s, statut %s, profil confirmé %s",
+        "Decision: user %s, modification %s, status %s, profile confirmed %s",
         user_id,
         modification_id,
         out.status,
@@ -142,7 +141,7 @@ async def decide(
 async def decide_many(
     rt: CvRuntime, user_id: str, review_id: str, body: BulkDecision
 ) -> BulkResult:
-    """Décision groupée ; les « à confirmer » ne sont jamais acceptés en groupe."""
+    """Group decision; the "to confirm" ones are never accepted as a group."""
     async with rt.review_lock(user_id), rt.session_factory() as db:
         await settle(db, user_id)
         await _open_review(db, user_id, review_id)
@@ -160,7 +159,7 @@ async def decide_many(
             updated += 1
         await db.commit()
     logger.info(
-        "Décisions groupées : utilisateur %s, revue %s, %d appliquée(s), %d sautée(s)",
+        "Group decisions: user %s, review %s, %d applied, %d skipped",
         user_id,
         review_id,
         updated,

@@ -5,10 +5,10 @@ import { CommitteeDiffView } from "./CommitteeDiffView";
 
 const diff: DiffView = {
   votes: [
-    { persona: "ats_reader", before: "non", after: "oui" },
-    { persona: "recruiter", before: "oui", after: "oui" },
-    { persona: "manager", before: "oui", after: "peut_etre" },
-    { persona: "colleague", before: "peut_etre", after: "oui" },
+    { persona: "ats_reader", before: "no", after: "yes" },
+    { persona: "recruiter", before: "yes", after: "yes" },
+    { persona: "manager", before: "yes", after: "maybe" },
+    { persona: "colleague", before: "maybe", after: "yes" },
   ],
   resolved: ["Mot clé Kubernetes absent."],
   added: ["Résumé trop long."],
@@ -18,7 +18,7 @@ describe("CommitteeDiffView", () => {
   it("says there is nothing to compare for the first committee", () => {
     render(<CommitteeDiffView diff={null} />);
     expect(
-      screen.getByText("C'est le premier comité pour cette offre : il n'y a rien à comparer."),
+      screen.getByText("This is the first committee for this posting: there's nothing to compare."),
     ).toBeVisible();
     expect(screen.queryByRole("table")).toBeNull();
   });
@@ -27,22 +27,22 @@ describe("CommitteeDiffView", () => {
     render(<CommitteeDiffView diff={diff} />);
     const rows = within(screen.getByRole("table")).getAllByRole("row").slice(1);
     expect(rows).toHaveLength(4);
-    expect(rows[0]).toHaveTextContent(/Lecteur ATS.*Non.*Oui.*Plus favorable/);
-    expect(rows[1]).toHaveTextContent(/Recruteur.*Oui.*Oui.*Inchangé/);
-    expect(rows[2]).toHaveTextContent(/Manager.*Oui.*Peut-être.*Moins favorable/);
+    expect(rows[0]).toHaveTextContent(/ATS reader.*No.*Yes.*More favorable/);
+    expect(rows[1]).toHaveTextContent(/Recruiter.*Yes.*Yes.*Unchanged/);
+    expect(rows[2]).toHaveTextContent(/Manager.*Yes.*Maybe.*Less favorable/);
   });
 
   it("lists the objections that are gone and the new ones", () => {
     render(<CommitteeDiffView diff={diff} />);
-    expect(screen.getByRole("heading", { name: "Objections levées" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Objections resolved" })).toBeVisible();
     expect(screen.getByText("Mot clé Kubernetes absent.")).toBeVisible();
-    expect(screen.getByRole("heading", { name: "Nouvelles objections" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "New objections" })).toBeVisible();
     expect(screen.getByText("Résumé trop long.")).toBeVisible();
   });
 
   it("says when no objection is gone or new", () => {
     render(<CommitteeDiffView diff={{ ...diff, resolved: [], added: [] }} />);
-    expect(screen.getByText("Aucune objection levée.")).toBeVisible();
-    expect(screen.getByText("Aucune nouvelle objection.")).toBeVisible();
+    expect(screen.getByText("No objections resolved.")).toBeVisible();
+    expect(screen.getByText("No new objections.")).toBeVisible();
   });
 });

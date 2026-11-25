@@ -8,6 +8,9 @@ import { expectCoherentOutline } from "@/test/headingOutline";
 import { applicationsManifest } from "../../manifest";
 
 const routes = applicationsManifest.routes;
+const LINKEDIN_FOLLOW_UP = "LinkedIn follow-up after 7 days";
+const CLOSE_APPLICATION = "Close the application?";
+const POSTPONE = "Postpone 3 days";
 
 const REMINDERS = () => [
   reminderOut({ id: "r1", draft: "Bonjour Camille, une petite relance." }),
@@ -24,7 +27,7 @@ const REMINDERS = () => [
 ];
 
 function setup(api: Parameters<typeof renderApplications>[2] = {}) {
-  return renderApplications(routes, "/candidatures/relances", {
+  return renderApplications(routes, "/applications/reminders", {
     applications: [
       applicationOut(),
       applicationOut({ id: "a2", company: "Beta", title: "Analyste", status: "followed_up" }),
@@ -42,13 +45,13 @@ const cardOf = async (title: string) => {
 describe("RemindersPage", () => {
   it("has one h1, then one h2 per reminder (one h1 per applications page)", async () => {
     setup();
-    await cardOf("Relance LinkedIn à 7 jours");
+    await cardOf(LINKEDIN_FOLLOW_UP);
     expectCoherentOutline();
     expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(2);
     expect(screen.queryByRole("heading", { level: 3 })).toBeNull();
   });
 
-  it("disables Fait, Reporter and Ignorer on every card while an action runs (reminder buttons disabled while pending)", async () => {
+  it("disables actions on every card while a reminder update is pending", async () => {
     let release: () => void = () => undefined;
     const gate = new Promise<void>((resolve) => {
       release = resolve;
@@ -59,22 +62,22 @@ describe("RemindersPage", () => {
         return undefined;
       },
     });
-    const card = await cardOf("Relance LinkedIn à 7 jours");
+    const card = await cardOf(LINKEDIN_FOLLOW_UP);
     expect(
       screen.getAllByRole("article").every((a) => a.getAttribute("aria-busy") === "false"),
     ).toBe(true);
-    await user.click(card.getByRole("button", { name: "Reporter de 3 jours" }));
+    await user.click(card.getByRole("button", { name: POSTPONE }));
     await waitFor(() =>
       expect(screen.getAllByRole("article")[0]).toHaveAttribute("aria-busy", "true"),
     );
-    for (const name of ["Fait", "Classer en Sans réponse", "Reporter de 3 jours", "Ignorer"]) {
+    for (const name of ["Done", "Mark as No answer", POSTPONE, "Ignore"]) {
       for (const button of screen.getAllByRole("button", { name }))
         expect(button).toHaveAttribute("aria-disabled", "true");
     }
-    expect(card.getByRole("button", { name: "Copier" })).toBeEnabled();
+    expect(card.getByRole("button", { name: "Copy" })).toBeEnabled();
     release();
     await waitFor(() =>
-      expect(screen.getAllByRole("button", { name: "Ignorer" })[0]).toHaveAttribute(
+      expect(screen.getAllByRole("button", { name: "Ignore" })[0]).toHaveAttribute(
         "aria-disabled",
         "false",
       ),
@@ -87,8 +90,8 @@ describe("RemindersPage", () => {
       reminderAction: () =>
         HttpResponse.json(apiError("internal_error", "Panne."), { status: 500 }),
     });
-    const card = await cardOf("Relance LinkedIn à 7 jours");
-    const postpone = card.getByRole("button", { name: "Reporter de 3 jours" });
+    const card = await cardOf(LINKEDIN_FOLLOW_UP);
+    const postpone = card.getByRole("button", { name: POSTPONE });
     await user.click(postpone);
     expect(await screen.findByRole("alert")).toBeVisible();
     expect(postpone).toHaveFocus();
@@ -96,65 +99,65 @@ describe("RemindersPage", () => {
 
   it("lists the due reminders with who to contact and the draft", async () => {
     setup();
-    expect(await screen.findByRole("heading", { level: 1, name: "Relances" })).toBeVisible();
-    const linkedin = await cardOf("Relance LinkedIn à 7 jours");
+    expect(await screen.findByRole("heading", { level: 1, name: "Follow-ups" })).toBeVisible();
+    const linkedin = await cardOf(LINKEDIN_FOLLOW_UP);
     expect(linkedin.getByText("Camille Durand, Responsable data")).toBeVisible();
     expect(linkedin.getByText("Bonjour Camille, une petite relance.")).toBeVisible();
-    expect(screen.getAllByText(/Rien n'est envoyé par l'application/)).toHaveLength(2);
+    expect(screen.getAllByText(/The app sends nothing: copy it/)).toHaveLength(2);
   });
 
   it("copies the draft to the clipboard and confirms it", async () => {
     const { user } = setup();
-    const card = await cardOf("Relance LinkedIn à 7 jours");
-    await user.click(card.getByRole("button", { name: "Copier" }));
-    expect(await card.findByText("Brouillon copié.")).toBeVisible();
+    const card = await cardOf(LINKEDIN_FOLLOW_UP);
+    await user.click(card.getByRole("button", { name: "Copy" }));
+    expect(await card.findByText("Draft copied.")).toBeVisible();
     expect(await navigator.clipboard.readText()).toBe("Bonjour Camille, une petite relance.");
   });
 
   it("says when the clipboard is not available", async () => {
     const { user } = setup();
-    const card = await cardOf("Relance LinkedIn à 7 jours");
+    const card = await cardOf(LINKEDIN_FOLLOW_UP);
     vi.spyOn(navigator.clipboard, "writeText").mockRejectedValueOnce(new Error("denied"));
-    await user.click(card.getByRole("button", { name: "Copier" }));
-    expect(await card.findByText(/Copie impossible/)).toBeVisible();
+    await user.click(card.getByRole("button", { name: "Copy" }));
+    expect(await card.findByText(/Can't copy/)).toBeVisible();
   });
 
-  it("marks a reminder as done: it leaves the list, it is announced and the focus moves up", async () => {
+  it("announces completion and moves focus to the heading when a reminder is done", async () => {
     const { user, state } = setup();
-    const card = await cardOf("Relance LinkedIn à 7 jours");
-    await user.click(card.getByRole("button", { name: "Fait" }));
+    const card = await cardOf(LINKEDIN_FOLLOW_UP);
+    await user.click(card.getByRole("button", { name: "Done" }));
     expect(state.reminderActions).toEqual([{ id: "r1", action: "done" }]);
-    await waitFor(() => expect(screen.queryByText("Relance LinkedIn à 7 jours")).toBeNull());
-    expect(screen.getByText("Relance traitée.")).toBeVisible();
-    expect(screen.getByRole("heading", { level: 1, name: "Relances" })).toHaveFocus();
-    expect(screen.getByText("Classer la fiche ?")).toBeVisible();
+    await waitFor(() => expect(screen.queryByText(LINKEDIN_FOLLOW_UP)).toBeNull());
+    expect(screen.getByText("Follow-up handled.")).toBeVisible();
+    expect(screen.getByRole("heading", { level: 1, name: "Follow-ups" })).toHaveFocus();
+    expect(screen.getByText(CLOSE_APPLICATION)).toBeVisible();
   });
 
   it("postpones a reminder by three days", async () => {
     const { user, state } = setup();
-    const card = await cardOf("Relance LinkedIn à 7 jours");
-    await user.click(card.getByRole("button", { name: "Reporter de 3 jours" }));
+    const card = await cardOf(LINKEDIN_FOLLOW_UP);
+    await user.click(card.getByRole("button", { name: POSTPONE }));
     expect(state.reminderActions).toEqual([{ id: "r1", action: "postpone" }]);
-    expect(await screen.findByText("Relance traitée.")).toBeVisible();
+    expect(await screen.findByText("Follow-up handled.")).toBeVisible();
   });
 
   it("ignores a reminder", async () => {
     const { user, state } = setup();
-    const card = await cardOf("Relance LinkedIn à 7 jours");
-    await user.click(card.getByRole("button", { name: "Ignorer" }));
+    const card = await cardOf(LINKEDIN_FOLLOW_UP);
+    await user.click(card.getByRole("button", { name: "Ignore" }));
     expect(state.reminderActions).toEqual([{ id: "r1", action: "ignore" }]);
-    await waitFor(() => expect(screen.queryByText("Relance LinkedIn à 7 jours")).toBeNull());
+    await waitFor(() => expect(screen.queryByText(LINKEDIN_FOLLOW_UP)).toBeNull());
   });
 
-  it("files the application as Sans réponse for the last reminder, then closes the reminder", async () => {
+  it("marks the application as No answer and closes the last reminder", async () => {
     const { user, state, rows } = setup();
-    const card = await cardOf("Classer la fiche ?");
-    await user.click(card.getByRole("button", { name: "Classer en Sans réponse" }));
+    const card = await cardOf(CLOSE_APPLICATION);
+    await user.click(card.getByRole("button", { name: "Mark as No answer" }));
     await waitFor(() => expect(state.reminderActions).toEqual([{ id: "r2", action: "done" }]));
     expect(state.events).toEqual([{ id: "a2", body: { kind: "status", status: "no_answer" } }]);
     expect(rows.find((row) => row.id === "a2")?.status).toBe("no_answer");
-    expect(await screen.findByText("Fiche classée en Sans réponse.")).toBeVisible();
-    expect(screen.queryByText("Classer la fiche ?")).toBeNull();
+    expect(await screen.findByText("Application marked as No answer.")).toBeVisible();
+    expect(screen.queryByText(CLOSE_APPLICATION)).toBeNull();
   });
 
   it("is happy when the status change already closed the reminder", async () => {
@@ -162,9 +165,9 @@ describe("RemindersPage", () => {
       reminderAction: () =>
         HttpResponse.json(apiError("reminder_closed", "Déjà traitée."), { status: 409 }),
     });
-    const card = await cardOf("Classer la fiche ?");
-    await user.click(card.getByRole("button", { name: "Classer en Sans réponse" }));
-    expect(await screen.findByText("Fiche classée en Sans réponse.")).toBeVisible();
+    const card = await cardOf(CLOSE_APPLICATION);
+    await user.click(card.getByRole("button", { name: "Mark as No answer" }));
+    expect(await screen.findByText("Application marked as No answer.")).toBeVisible();
     expect(screen.queryByRole("alert")).toBeNull();
   });
 
@@ -173,22 +176,22 @@ describe("RemindersPage", () => {
       reminderAction: () =>
         HttpResponse.json(apiError("internal_error", "Le serveur ne répond pas."), { status: 500 }),
     });
-    const card = await cardOf("Relance LinkedIn à 7 jours");
-    await user.click(card.getByRole("button", { name: "Fait" }));
+    const card = await cardOf(LINKEDIN_FOLLOW_UP);
+    await user.click(card.getByRole("button", { name: "Done" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Le serveur ne répond pas.");
-    expect(screen.getByText("Relance LinkedIn à 7 jours")).toBeVisible();
+    expect(screen.getByText(LINKEDIN_FOLLOW_UP)).toBeVisible();
   });
 
   it("says there is nothing to do when no reminder is due", async () => {
     const { user, router } = setup({ reminders: [] });
-    expect(await screen.findByText("Aucune relance due")).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "Retour au suivi" }));
-    expect(router.state.location.pathname).toBe("/candidatures");
+    expect(await screen.findByText("No follow-ups due")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Back to tracking" }));
+    expect(router.state.location.pathname).toBe("/applications");
   });
 
   it("says it is loading", () => {
     setup();
-    expect(screen.getByText("Chargement des relances…")).toBeVisible();
+    expect(screen.getByText("Loading follow-ups…")).toBeVisible();
   });
 
   it("shows an error with a retry when the reminders cannot be read", async () => {
@@ -204,7 +207,7 @@ describe("RemindersPage", () => {
       },
     });
     expect(await screen.findByRole("alert")).toHaveTextContent("Le serveur ne répond pas.");
-    await user.click(screen.getByRole("button", { name: "Réessayer" }));
-    expect(await cardOf("Relance LinkedIn à 7 jours")).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+    expect(await cardOf(LINKEDIN_FOLLOW_UP)).toBeTruthy();
   });
 });

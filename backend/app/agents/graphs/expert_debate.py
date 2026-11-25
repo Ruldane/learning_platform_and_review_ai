@@ -1,4 +1,4 @@
-"""Un catalogue lu, puis trois voix du débat avec reprise entre les voix."""
+"""Read the source catalog and resume the debate between each of its three speakers."""
 
 import re
 from typing import Any, Protocol, TypedDict
@@ -74,14 +74,14 @@ def _prompt(
 ) -> dict[str, object]:
     return {
         "role": _LABELS[role],
-        "question": untrusted(question[:1_500], "question de l’utilisatrice"),
+        "question": untrusted(question[:1_500], "user's question"),
         "catalog": "\n\n".join(
-            f"[{source.index}] {untrusted(source.title + '\n' + source.material, 'page web lue')}"
+            f"[{source.index}] {untrusted(source.title + '\n' + source.material, 'web page read')}"
             for source in sources
         ),
         "previous": untrusted(
             "\n".join(f"{_LABELS[entry.role]} — {entry.text[:320]}" for entry in speeches),
-            "prises de parole précédentes",
+            "previous statements",
         ),
     }
 
@@ -101,19 +101,21 @@ def make_speech(deps: GraphDeps, role: ExpertRole) -> ExpertNode:
             "expert_debate",
             DEBATE_REQUEST,
             _prompt(role, draft.question, sources, speeches),
-            tier="fort" if draft.strong else None,
+            tier="strong" if draft.strong else None,
         )
         cap = min(TURN_TOKEN_LIMIT, deps.settings.session_token_cap)
         estimated = sum(len(message_text(message).encode()) for message in messages)
         output = min(600, cap - draft.used_tokens - estimated)
         if output < 200:
-            raise AppError("conversation_budget_reached", "Le budget du débat est atteint.", 429)
+            raise AppError(
+                "conversation_budget_reached", "The debate budget has been reached.", 429
+            )
         said = await speak(
             with_output_limit(model, output),
             messages,
             agent=agent,
             step=f"debate_{role}",
-            intent="je réponds à la question en tenant compte des autres experts",
+            intent="answering the question in light of the other experts' statements",
             catalog=[
                 CitationEntry(source.index, source.title, str(source.url)) for source in sources
             ],
@@ -123,7 +125,7 @@ def make_speech(deps: GraphDeps, role: ExpertRole) -> ExpertNode:
         valid = {citation.index for citation in said.citations}
         text = _safe_markers(said.text, valid)
         if not text:
-            raise AppError("debate_speech_empty", "Un expert n’a pas répondu.", 503)
+            raise AppError("debate_speech_empty", "One of the experts did not respond.", 503)
         by_index = {source.index: source for source in sources}
         citations = [
             ExpertCitation(index=index, title=by_index[index].title, url=by_index[index].url)
@@ -140,7 +142,7 @@ def build(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
     async def research(state: ExpertState) -> ExpertState:
         draft = await deps.ports.expert_debates.draft(*_arguments(deps, state))
         if draft.saved:
-            return {"saved": True, "summary": "Débat terminé."}
+            return {"saved": True, "summary": "Debate complete."}
         sources = await debate_sources(deps, draft.question)
         return {"sources": [source.model_dump(mode="json") for source in sources]}
 
@@ -148,7 +150,7 @@ def build(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
         if not state.get("saved"):
             speeches = [ExpertSpeech.model_validate(entry) for entry in state["speeches"]]
             await deps.ports.expert_debates.publish(*_arguments(deps, state), speeches)
-        return {"summary": "Débat terminé."}
+        return {"summary": "Debate complete."}
 
     graph = StateGraph(ExpertState)
     graph.add_node("research", research)

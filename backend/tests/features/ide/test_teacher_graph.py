@@ -88,7 +88,7 @@ async def test_guide_note_has_no_replacement_or_long_code(
     assert note["kind"] == "explanation" and note["replacement"] is None
     assert note["base_hash"] is None and "x7 = 7" not in note["content"]
     assert "`x = 1`" in note["content"]  # le code court reste
-    assert "démarche" in note["content"]
+    assert "Describe the approach" in note["content"]
 
 
 async def test_hint_level_three_never_contains_code(
@@ -103,7 +103,7 @@ async def test_hint_level_three_never_contains_code(
     notes: list[dict[str, Any]] = (await client.get(f"{API}/sessions/{sid}/notes")).json()
     assert [n["level"] for n in notes] == [1, 2, 3]
     assert "x = 1" in notes[0]["content"] and "x = 1" not in notes[2]["content"]
-    assert "Niveau 3" in str(models.received[2][1].content)
+    assert "level 3 out of 3" in str(models.received[2][1].content)
 
 
 async def test_binome_proposal_has_range_and_base_hash(
@@ -161,7 +161,7 @@ async def test_binome_run_error_is_a_margin_annotation_on_the_light_tier(
     [note] = (await client.get(f"{API}/sessions/{sid}/notes")).json()
     assert note["kind"] == "annotation" and note["file_path"] == "main.py"
     assert note["line_start"] == 3  # le dernier cadre de la trace (TRACE : ligne 7 puis 3)
-    assert models.calls[0].tier == "rapide"
+    assert models.calls[0].tier == "fast"
     assert "ZeroDivisionError" in str(models.received[0][1].content)
 
 
@@ -205,7 +205,7 @@ async def test_each_call_logs_only_session_model_tokens(
     ours = [r for r in caplog.records if r.name.startswith("app.agents.nodes.professor")]
     [record] = ours
     message = record.getMessage()
-    assert sid in message and "modele-fort" in message and "jetons" in message
+    assert sid in message and "modele-strong" in message and "tokens" in message
     secrets = [MAIN[:30], QUESTION, answer, "line_3 = 3", "ZeroDivisionError"]
     for entry in caplog.records:
         if entry.name.startswith("app."):  # (aiosqlite journalise ses paramètres en DEBUG)

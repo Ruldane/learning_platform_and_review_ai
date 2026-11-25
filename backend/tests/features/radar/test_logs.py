@@ -64,7 +64,7 @@ async def test_weekly_and_start_run_never_log_the_role(
     text = _text(caplog)
     for secret in (ROLE, ZONE, "Poste secret"):
         assert secret not in text
-    assert "relevé" in text.casefold()
+    assert "run" in text.casefold()
 
 
 async def test_routes_never_log_the_role_zone_or_422_input(

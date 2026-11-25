@@ -20,14 +20,14 @@ const running = (id: string) =>
     blocked_domains: [],
   });
 
-describe("RadarPage : un seul lancement, une seule session", () => {
+describe("RadarPage launch and session", () => {
   it("sends one launch on a double click and follows the session of the 202", async () => {
     const { user, state, sockets } = setup();
-    await user.dblClick(await screen.findByRole("button", { name: "Lancer un relevé" }));
+    await user.dblClick(await screen.findByRole("button", { name: "Run a scan" }));
     await openStream(sockets, "sess-new1");
     expect(state.bodies).toHaveLength(1);
     expect(state.runs.filter((run) => run.status === "running")).toHaveLength(1);
-    expect(screen.queryByText("Un relevé était déjà en cours : on le suit.")).toBeNull();
+    expect(screen.queryByText("A scan was already in progress: following it.")).toBeNull();
     expect(sockets.sockets.map((s) => s.url).filter((url) => url.includes("/stream"))).toHaveLength(
       1,
     );
@@ -38,7 +38,7 @@ describe("RadarPage : un seul lancement, une seule session", () => {
       runs: [running("r9"), radarRun("r1")],
       sessions: [
         sessionOut("sess-other", "running", radarSession("r5")),
-        // Même sujet, autre parcours : à écarter.
+        // This session has the same subject ID but belongs to a different workflow.
         sessionOut("sess-wrong-graph", "running", {
           graph: "learning_council",
           subject_type: "goal",
@@ -54,7 +54,7 @@ describe("RadarPage : un seul lancement, une seule session", () => {
   });
 });
 
-describe("RadarPage : relevé fini sans que le flux le dise", () => {
+describe("RadarPage polling after a silent stream", () => {
   beforeEach(() => vi.useFakeTimers({ shouldAdvanceTime: true }));
   afterEach(() => vi.useRealTimers());
 
@@ -64,71 +64,71 @@ describe("RadarPage : relevé fini sans que le flux le dise", () => {
       sessions: [sessionOut("sess-r9", "running", radarSession("r9"))],
     });
     await openStream(sockets, "sess-r9");
-    expect(await screen.findByRole("button", { name: "Relevé en cours…" })).toHaveAttribute(
+    expect(await screen.findByRole("button", { name: "Scan in progress…" })).toHaveAttribute(
       "aria-disabled",
       "true",
     );
     expect(
-      within(screen.getByRole("list", { name: "Relevés précédents" })).getByText("En cours"),
+      within(screen.getByRole("list", { name: "Previous scans" })).getByText("Running"),
     ).toBeVisible();
 
-    // Le flux reste muet : seul le repli de 10 s peut voir la fin.
+    // The poll sees completion even when the stream sends no update.
     finish("r9");
     await act(() => vi.advanceTimersByTimeAsync(10_500));
-    expect(await screen.findByRole("button", { name: "Lancer un relevé" })).toHaveAttribute(
+    expect(await screen.findByRole("button", { name: "Run a scan" })).toHaveAttribute(
       "aria-disabled",
       "false",
     );
-    const history = screen.getByRole("list", { name: "Relevés précédents" });
-    expect(within(history).getByText("Terminé")).toBeVisible();
-    expect(within(history).queryByText("En cours")).toBeNull();
+    const history = screen.getByRole("list", { name: "Previous scans" });
+    expect(within(history).getByText("Done")).toBeVisible();
+    expect(within(history).queryByText("Running")).toBeNull();
     expect(state.latestReads).toBeGreaterThan(1);
   });
 });
 
-describe("RadarPage : messages et redirections", () => {
+describe("RadarPage messages and redirects", () => {
   it("clears a server refusal on a field as soon as that field is edited", async () => {
     const { user } = setup({
       startReply: () =>
-        HttpResponse.json(apiError("validation_error", "Requête invalide.", { fields: ["zone"] }), {
+        HttpResponse.json(apiError("validation_error", "Invalid request.", { fields: ["zone"] }), {
           status: 422,
         }),
     });
-    await user.click(await screen.findByRole("button", { name: "Lancer un relevé" }));
-    const zone = await screen.findByLabelText("Zone");
+    await user.click(await screen.findByRole("button", { name: "Run a scan" }));
+    const zone = await screen.findByLabelText("Area");
     await waitFor(() => expect(zone).toBeInvalid());
     await user.type(zone, "x");
     expect(zone).toBeValid();
-    expect(zone).not.toHaveAccessibleDescription(/pas acceptée/);
+    expect(zone).not.toHaveAccessibleDescription(/This area isn’t accepted/);
   });
 
-  it("drops the « already running » note once the run is over", async () => {
+  it("clears the already running notice once the scan is over", async () => {
     const { user, state, finish, sockets } = setup({ runs: [radarRun("r1")] });
-    await screen.findByText("47 offres lues · 6 bloquées · 41 analysées");
+    await screen.findByText("47 postings read · 6 blocked · 41 analyzed");
     state.runs.unshift(running("r9"));
     state.sessions.push(sessionOut("sess-r9", "running", radarSession("r9")));
-    await user.click(screen.getByRole("button", { name: "Lancer un relevé" }));
-    expect(await screen.findByText("Un relevé était déjà en cours : on le suit.")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Run a scan" }));
+    expect(await screen.findByText("A scan was already in progress: following it.")).toBeVisible();
 
     const stream = await openStream(sockets, "sess-r9");
     finish("r9");
     stream.push(councilEvents("sess-r9").completed());
-    await screen.findByRole("heading", { name: "Compétences les plus demandées" });
-    expect(screen.queryByText("Un relevé était déjà en cours : on le suit.")).toBeNull();
+    await screen.findByRole("heading", { name: "Most in-demand skills" });
+    expect(screen.queryByText("A scan was already in progress: following it.")).toBeNull();
   });
 
   it("follows a scheduled run that starts after the page's own run is over", async () => {
     const { user, state, finish, sockets, router } = setup();
-    await user.click(await screen.findByRole("button", { name: "Lancer un relevé" }));
+    await user.click(await screen.findByRole("button", { name: "Run a scan" }));
     const stream = await openStream(sockets, "sess-new1");
-    // Le relevé du lundi démarre à la fin du premier.
+    // The scheduled scan starts as the first scan ends.
     finish("new1");
     state.runs.unshift(running("r9"));
     state.sessions.push(sessionOut("sess-r9", "running", radarSession("r9")));
     stream.push(councilEvents("sess-new1").completed());
-    await screen.findByRole("heading", { name: "Compétences les plus demandées" });
+    await screen.findByRole("heading", { name: "Most in-demand skills" });
 
-    await act(() => router.navigate("/carriere/radar"));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/carriere/radar/r9"));
+    await act(() => router.navigate("/career/radar"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/career/radar/r9"));
   });
 });

@@ -49,7 +49,7 @@ test("accepte une invitation Nod et reçoit un bilan après trois questions tech
     data: { enabled: true, token_id: revision.id, chat_id: chat, start: "18:00", end: "19:00" },
   });
   expect(linked.ok()).toBe(true);
-  await page.goto("/reglages/entretien-surprise");
+  await page.goto("/settings/surprise-interviews");
   await expect(page.getByRole("heading", { name: "Entretien surprise" })).toBeVisible();
   await expect(page.getByText("Créneau de 18:00 à 19:00 · Europe/Paris")).toBeVisible();
   const consent = page.getByRole("checkbox", { name: "Autoriser les invitations d’entretien" });

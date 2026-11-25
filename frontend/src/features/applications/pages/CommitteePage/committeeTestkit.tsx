@@ -6,7 +6,7 @@ import { server } from "@/test/server";
 import { applicationsManifest } from "../../manifest";
 import { CommitteePage } from "./CommitteePage";
 
-const ROUTE = "candidatures/:applicationId/comite";
+const ROUTE = "applications/:applicationId/committee";
 
 /** La session d'un comité lancé depuis la page (celle que `committeeApi` range au lancement). */
 export const SESSION = "cm-s-new";
@@ -15,7 +15,7 @@ export const SESSION = "cm-s-new";
 export function setup(
   options: CommitteeApiOptions = {},
   application: Record<string, unknown> = {},
-  path = "/candidatures/a1/comite",
+  path = "/applications/a1/committee",
 ) {
   const sockets = createFakeSocketServer();
   const committee = committeeApi(options);

@@ -11,10 +11,10 @@ const at = (status: Status) => ({ reindex: { status, done: 0, total: 0, error: n
 
 describe("useMemoryStats", () => {
   it("keeps the six kinds even when the API sends fewer", async () => {
-    server.use(...readHandlers(memoryBackend({ stats: statsOut({ by_kind: { acquis: 2 } }) })));
+    server.use(...readHandlers(memoryBackend({ stats: statsOut({ by_kind: { skill: 2 } }) })));
     const { result } = renderHook(() => useMemoryStats(), { wrapper: createQueryWrapper() });
-    await waitFor(() => expect(result.current.data?.by_kind.acquis).toBe(2));
-    expect(result.current.data?.by_kind.offre).toBe(0);
+    await waitFor(() => expect(result.current.data?.by_kind.skill).toBe(2));
+    expect(result.current.data?.by_kind.posting).toBe(0);
   });
 
   it("polls only while the reindex is queued or running", () => {

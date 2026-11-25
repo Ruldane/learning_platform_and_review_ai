@@ -1,4 +1,4 @@
-"""Collecte du matin, reprise par le registre des tâches et écritures atomiques."""
+"""Morning collection, resumed by the job registry, with atomic writes."""
 
 import logging
 from datetime import datetime
@@ -83,9 +83,7 @@ async def _run_user(rt: ResearchRuntime, user_id: str, started_at: datetime) -> 
             )
             await db.commit()
         return 0
-    logger.info(
-        "Pile de lecture : utilisateur %s, passage %s, %d ajout(s)", user_id, running.run_id, added
-    )
+    logger.info("Reading stack: user %s, run %s, %d added", user_id, running.run_id, added)
     return added
 
 

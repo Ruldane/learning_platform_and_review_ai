@@ -3,12 +3,12 @@ import { authorLabel } from "./authorLabel";
 import { formatScore } from "./formatScore";
 
 describe("authorLabel", () => {
-  it("maps user to Toi", () => {
-    expect(authorLabel("user")).toBe("Toi");
+  it("maps user to You", () => {
+    expect(authorLabel("user")).toBe("You");
   });
 
   it("uses the agent name otherwise", () => {
-    expect(authorLabel("archivist")).toBe("Archiviste");
+    expect(authorLabel("archivist")).toBe("Archivist");
   });
 
   it("falls back to the slug for an unknown author", () => {
@@ -17,12 +17,12 @@ describe("authorLabel", () => {
 });
 
 describe("formatScore", () => {
-  it("uses a French decimal comma", () => {
-    expect(formatScore(0.834)).toBe("0,83");
+  it("uses an English decimal point", () => {
+    expect(formatScore(0.834)).toBe("0.83");
   });
 
   it("always shows two decimals", () => {
-    expect(formatScore(1)).toBe("1,00");
-    expect(formatScore(0)).toBe("0,00");
+    expect(formatScore(1)).toBe("1.00");
+    expect(formatScore(0)).toBe("0.00");
   });
 });

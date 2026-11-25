@@ -39,27 +39,27 @@ def first_week() -> WeekRow:
         1,
         W1,
         [
-            t("w1-r1", "lire", 120, d(W1, 0), "done"),
-            t("w1-r2", "lire", 120, d(W1, 1), "done"),
-            t("w1-r3", "lire", 120, d(W1, 2)),
-            t("w1-r4", "lire", 120, d(W1, 3)),
-            t("w1-p", "pratiquer", 45, d(W1, 4), "done"),
+            t("w1-r1", "read", 120, d(W1, 0), "done"),
+            t("w1-r2", "read", 120, d(W1, 1), "done"),
+            t("w1-r3", "read", 120, d(W1, 2)),
+            t("w1-r4", "read", 120, d(W1, 3)),
+            t("w1-p", "practice", 45, d(W1, 4), "done"),
             t("w1-q", "quiz", 20, d(W1, 5), "done"),
         ],
     )
 
 
 def second_week() -> WeekRow:
-    reads = [t(f"w2-r{n}", "lire", 120, d(W2, n)) for n in range(4)]
+    reads = [t(f"w2-r{n}", "read", 120, d(W2, n)) for n in range(4)]
     return week(
-        2, W2, [*reads, t("w2-p", "pratiquer", 45, d(W2, 4)), t("w2-q", "quiz", 20, d(W2, 5))]
+        2, W2, [*reads, t("w2-p", "practice", 45, d(W2, 4)), t("w2-q", "quiz", 20, d(W2, 5))]
     )
 
 
 def third_week(reads: int = 2, minutes: int = 60) -> WeekRow:
-    tasks = [t(f"w3-r{n}", "lire", minutes, d(W3, n)) for n in range(reads)]
+    tasks = [t(f"w3-r{n}", "read", minutes, d(W3, n)) for n in range(reads)]
     return week(
-        3, W3, [*tasks, t("w3-p", "pratiquer", 45, d(W3, 4)), t("w3-q", "quiz", 20, d(W3, 5))]
+        3, W3, [*tasks, t("w3-p", "practice", 45, d(W3, 4)), t("w3-q", "quiz", 20, d(W3, 5))]
     )
 
 
@@ -103,20 +103,20 @@ def test_repack_with_week_override_respects_255() -> None:
     assert (current.rank, current.cap) == (2, 255) and current.after <= 255
     assert result.loads[1].cap == 714 and result.loads[1].after <= 714
     kinds = {x.type for x in in_week(result.tasks, W2)}
-    assert {"pratiquer", "quiz"} <= kinds  # la semaine garde sa pratique et son quiz
+    assert {"practice", "quiz"} <= kinds  # la semaine garde sa pratique et son quiz
 
 
 def test_repack_overflow_appends_suite_week() -> None:
     result = run(plan(third_week(reads=5, minutes=120)))
     assert result.deadline_moved
     new = result.new_weeks[0]
-    assert (new.rank, new.start_date, new.theme) == (4, date(2026, 11, 30), "Suite : Thème 3")
+    assert (new.rank, new.start_date, new.theme) == (4, date(2026, 11, 30), "Continued: Thème 3")
     suite = [x for x in result.tasks if x.suite_rank == 4]
-    assert sorted(x.type for x in suite) == ["pratiquer", "quiz"]
+    assert sorted(x.type for x in suite) == ["practice", "quiz"]
     assert [w.rank for w in result.loads] == [2, 3, 4]
     assert all(w.after <= w.cap for w in result.loads)
     after = after_rows(plan(third_week(5, 120)), result.tasks, result.removed, result.new_weeks)
-    assert [w.theme for w in after.weeks][-1] == "Suite : Thème 3"
+    assert [w.theme for w in after.weeks][-1] == "Continued: Thème 3"
 
 
 def test_repack_keeps_done_and_past_tasks() -> None:
@@ -137,8 +137,8 @@ def test_advance_pulls_next_week_into_current() -> None:
         2,
         W2,
         [
-            t("w2-r", "lire", 60, d(W2, 1)),
-            t("w2-p", "pratiquer", 45, d(W2, 2)),
+            t("w2-r", "read", 60, d(W2, 1)),
+            t("w2-p", "practice", 45, d(W2, 2)),
             t("w2-q", "quiz", 20, d(W2, 5)),
         ],
     )

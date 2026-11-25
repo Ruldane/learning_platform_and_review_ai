@@ -22,8 +22,8 @@ beforeEach(() => {
 });
 
 async function record(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole("button", { name: "Démarrer l’enregistrement" }));
-  await user.click(await screen.findByRole("button", { name: "Arrêter l’enregistrement" }));
+  await user.click(screen.getByRole("button", { name: "Start recording" }));
+  await user.click(await screen.findByRole("button", { name: "Stop recording" }));
 }
 
 it("asks on demand and only proposes a draft after the explicit transcription", async () => {
@@ -34,7 +34,7 @@ it("asks on demand and only proposes a draft after the explicit transcription", 
   expect(doubles.openCapture).not.toHaveBeenCalled();
   await record(user);
   expect(doubles.transcribe).not.toHaveBeenCalled();
-  await user.click(screen.getByRole("button", { name: "Transcrire l’enregistrement" }));
+  await user.click(screen.getByRole("button", { name: "Transcribe the recording" }));
   await waitFor(() => expect(onDraft).toHaveBeenCalledWith("Je relis cette réponse."));
 });
 
@@ -50,20 +50,20 @@ it("aborts a pending transcription and discards its late result", async () => {
   );
   render(<VoiceDraftControls onDraft={onDraft} />);
   await record(user);
-  await user.click(screen.getByRole("button", { name: "Transcrire l’enregistrement" }));
-  await user.click(screen.getByRole("button", { name: "Annuler l’audio" }));
+  await user.click(screen.getByRole("button", { name: "Transcribe the recording" }));
+  await user.click(screen.getByRole("button", { name: "Discard audio" }));
   const signal: AbortSignal = doubles.transcribe.mock.calls[0]?.[1];
   expect(signal.aborted).toBe(true);
   await act(async () => resolve("Texte arrivé après l’annulation."));
   expect(onDraft).not.toHaveBeenCalled();
-  expect(screen.getByRole("button", { name: "Démarrer l’enregistrement" })).toHaveFocus();
+  expect(screen.getByRole("button", { name: "Start recording" })).toHaveFocus();
 });
 
 function TypedDraft() {
   const [draft, setDraft] = useState("Début de réponse.");
   return (
     <>
-      <textarea aria-label="Brouillon" value={draft} onChange={(e) => setDraft(e.target.value)} />
+      <textarea aria-label="Draft" value={draft} onChange={(e) => setDraft(e.target.value)} />
       <VoiceDraftControls onDraft={setDraft} />
     </>
   );
@@ -74,9 +74,9 @@ it("preserves typed text and permits editing after a transcription error", async
   doubles.transcribe.mockRejectedValueOnce(new Error("Échec simulé"));
   render(<TypedDraft />);
   await record(user);
-  await user.click(screen.getByRole("button", { name: "Transcrire l’enregistrement" }));
+  await user.click(screen.getByRole("button", { name: "Transcribe the recording" }));
   await screen.findByRole("alert");
-  const draft = screen.getByRole("textbox", { name: "Brouillon" });
+  const draft = screen.getByRole("textbox", { name: "Draft" });
   expect(draft).toHaveValue("Début de réponse.");
   await user.type(draft, " Suite au clavier.");
   expect(draft).toHaveValue("Début de réponse. Suite au clavier.");

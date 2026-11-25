@@ -19,13 +19,13 @@ describe("HomePage : relecture de secours du conseil", () => {
       (createSocket) => <HomePage createSocket={createSocket} />,
       { brief: { advice_status: "pending", advice: null, session_id: "s9" } },
     );
-    expect(await screen.findByText("Le conseil se réunit…")).toBeVisible();
+    expect(await screen.findByText("The council is meeting…")).toBeVisible();
     await openStream(sockets, "s9");
 
     const before = state.briefReads;
     await advance(15_500);
     expect(state.briefReads).toBeGreaterThan(before);
-    expect(screen.getByText("Le conseil se réunit…")).toBeVisible();
+    expect(screen.getByText("The council is meeting…")).toBeVisible();
 
     state.brief = {
       ...state.brief,
@@ -35,7 +35,7 @@ describe("HomePage : relecture de secours du conseil", () => {
     };
     await advance(15_500);
     expect(await screen.findByText("Phrase du conseil un.")).toBeVisible();
-    expect(screen.queryByText("Le conseil se réunit…")).toBeNull();
+    expect(screen.queryByText("The council is meeting…")).toBeNull();
 
     const settled = state.briefReads;
     await advance(60_000);
@@ -46,7 +46,9 @@ describe("HomePage : relecture de secours du conseil", () => {
     const { state } = renderHome((createSocket) => <HomePage createSocket={createSocket} />, {
       brief: { advice_status: "unavailable", advice: null, session_id: null },
     });
-    expect(await screen.findByText("Le conseil n'a rien pu dire ce matin.")).toBeVisible();
+    expect(
+      await screen.findByText("The council had nothing to say this morning."),
+    ).toBeVisible();
     await advance(60_000);
     expect(state.briefReads).toBe(1);
   });

@@ -1,1 +1,1 @@
-"""Collecte et actions sur la pile de lecture."""
+"""Collection and actions on the reading stack."""

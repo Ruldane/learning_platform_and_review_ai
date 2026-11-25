@@ -50,7 +50,7 @@ test("le Cerveau cite une note synchronisée puis l’écarte après son retrait
 }, testInfo) => {
   const { endpoint, headers } = await syncNote(request);
   const question = "Calendrier turquoise";
-  await page.goto("/memoire/cerveau");
+  await page.goto("/memory/brain");
   const field = page.getByRole("textbox", { name: "Ta question au Cerveau" });
   await expect(
     page.getByRole("log", { name: "Conversation avec le bibliothécaire" }),
@@ -59,7 +59,7 @@ test("le Cerveau cite une note synchronisée puis l’écarte après son retrait
   await field.press("Enter");
   await expect(page.getByText(/La note indique le code TX-482-B/)).toBeVisible();
   await page.getByRole("link", { name: title }).click();
-  await expect(page).toHaveURL(/\/memoire\?item=[0-9a-f-]+$/);
+  await expect(page).toHaveURL(/\/memory\?item=[0-9a-f-]+$/);
   await expect(page.getByRole("dialog").getByRole("heading", { name: title })).toBeVisible();
   await expect(
     page
@@ -70,7 +70,7 @@ test("le Cerveau cite une note synchronisée puis l’écarte après son retrait
 
   const removed = await request.post(`${endpoint}/remove`, { headers, data: { path: filename } });
   expect(removed.status()).toBe(204);
-  await page.goto("/memoire/cerveau");
+  await page.goto("/memory/brain");
   await expect(
     page.getByRole("log", { name: "Conversation avec le bibliothécaire" }),
   ).toBeVisible();

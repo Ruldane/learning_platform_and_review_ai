@@ -1,12 +1,12 @@
-"""Versions d'une replanification (SPEC F13, D106) : proposition rangée et enregistrée
-(`save_proposal`), acceptation (`apply_version`), refus (`refuse_version`) et historique.
+"""Versions of a replanning (SPEC F13, D106): proposal packed and stored (`save_proposal`),
+acceptance (`apply_version`), refusal (`refuse_version`) and history.
 
-Tout passe sous `program_lock`, pris AVANT d'ouvrir la transaction (F4) : une modification de
-January et l'acceptation d'une proposition se suivent, jamais ensemble. La proposition garde
-l'empreinte des lignes qu'elle a rangées (`base_fingerprint`) et ce qu'il faut écrire
-(`snapshot.changes`) : acceptée sur des lignes qui ont bougé, elle est périmée et rien n'est
-écrit. Une proposition vide sans option ou impossible est close dès son écriture (`empty`,
-`impossible`), jamais `pending`. Journaux : identifiants seulement."""
+Everything goes under `program_lock`, taken BEFORE opening the transaction (F4): an edit by
+January and the acceptance of a proposal follow one another, never together. The proposal keeps
+the fingerprint of the rows it packed (`base_fingerprint`) and what must be written
+(`snapshot.changes`): accepted on rows that have moved, it is stale and nothing is written. An
+empty proposal without an option or an impossible one is closed as soon as it is written
+(`empty`, `impossible`), never `pending`. Logs: ids only."""
 
 import logging
 from collections.abc import Mapping, Sequence, Set
@@ -32,7 +32,12 @@ from app.features.program.service.diff import PlanDiff, diff_plans, snapshot
 from app.features.program.service.drafting import budget_of
 from app.features.program.service.planning import PlanningImpossible
 from app.features.program.service.programs import Loaded, day_budget, load, rows_of
-from app.features.program.service.replan_gap import NEW_GAP_MODULE, gap_target, with_gap_module
+from app.features.program.service.replan_gap import (
+    LEGACY_NEW_GAP_MODULE,
+    NEW_GAP_MODULE,
+    gap_target,
+    with_gap_module,
+)
 from app.features.program.service.replan_json import (
     changes_json,
     earliest_date,
@@ -52,12 +57,12 @@ logger = logging.getLogger(__name__)
 
 
 def version_not_found() -> AppError:
-    return AppError("version_not_found", "Version introuvable.", 404)
+    return AppError("version_not_found", "Version not found.", 404)
 
 
 @dataclass(frozen=True)
 class Proposal:
-    """Ce que le Stratège propose, références déjà résolues en ids par le port."""
+    """What the Strategist proposes, references already resolved into ids by the port."""
 
     session_id: str
     revision: int
@@ -68,13 +73,13 @@ class Proposal:
     week_cap_override: int | None
     review_entry_id: str | None
     today: date
-    skills: Sequence[str] = ()  # déclencheur `gap` : compétences du module des offres (D123)
+    skills: Sequence[str] = ()  # `gap` trigger: skills of the postings module (D123)
     daily_caps: Mapping[date, int] = field(default_factory=dict)
 
 
 async def program_budget(db: AsyncSession, user_id: str, loaded: Loaded) -> Budget:
-    """Le budget par jour du plan appliqué (instantané de sa dernière version), sinon celui des
-    réglages à l'échelle de l'objectif."""
+    """The per-day budget of the applied plan (snapshot of its last version), otherwise that of
+    the settings at the goal's scale."""
     latest = await PlanVersionRepository(db, user_id).latest(loaded.program.id)
     weekday, weekend = day_budget(latest)
     if weekday or weekend:
@@ -96,7 +101,10 @@ async def _write_proposal(
     rows = with_gap_module(rows_of(loaded), proposal.add)
     budget = replace(await program_budget(db, user_id, loaded), daily_caps=proposal.daily_caps)
     todo = {t.id for t in loaded.tasks if t.status == "todo"}
-    modules = {m.id for m in loaded.modules if not m.skipped} | {NEW_GAP_MODULE}
+    modules = {m.id for m in loaded.modules if not m.skipped} | {
+        NEW_GAP_MODULE,
+        LEGACY_NEW_GAP_MODULE,
+    }
     try:
         result: RepackResult | None = repack(
             rows,
@@ -118,8 +126,8 @@ async def _write_proposal(
     diff = diff_plans(before, after)
     status = _status(result, diff, proposal.option)
     versions = PlanVersionRepository(db, user_id)
-    # Toute nouvelle version, même close, remplace celle qui attendait (D99, D106) : aucune
-    # proposition ne reste `pending` sans question qui l'attende.
+    # Any new version, even a closed one, replaces the one that was waiting (D99, D106): no
+    # proposal stays `pending` without a question waiting for it.
     await versions.supersede_pending(loaded.program.id)
     days = {"weekday_minutes": budget.weekday_minutes, "weekend_minutes": budget.weekend_minutes}
     changes = {**changes_json(result, finished=finished), "gap_skills": list(proposal.skills)}
@@ -142,8 +150,8 @@ async def _write_proposal(
 async def save_proposal(
     rt: ProgramRuntime, user_id: str, program_id: str, proposal: Proposal
 ) -> PreviewSaved:
-    """Range et enregistre la proposition (idempotent par `(session, revision)`) ; jamais
-    `planning_impossible` : une version close `impossible`. 404 si le programme est à un autre."""
+    """Packs and stores the proposal (idempotent per `(session, revision)`); never
+    `planning_impossible`: a closed `impossible` version. 404 if the program is another user's."""
     async with rt.program_lock(user_id, program_id), rt.session_factory() as db:
         found = await PlanVersionRepository(db, user_id).by_revision(
             proposal.session_id, proposal.revision
@@ -165,8 +173,8 @@ async def save_proposal(
 
 
 async def _write_changes(db: AsyncSession, user_id: str, loaded: Loaded, raw: Any) -> None:
-    """Dates déplacées, tâches retirées et ajoutées, semaines « Suite » et leur module, module
-    « Compétences des offres » (créé ou complété, D123)."""
+    """Dates moved, tasks removed and added, "Continued" weeks and their module, "Postings
+    skills" module (created or completed, D123)."""
     tasks_repo = TaskRepository(db, user_id)
     program_id = loaded.program.id
     suite_modules: dict[int, str] = {}
@@ -191,7 +199,7 @@ async def _write_changes(db: AsyncSession, user_id: str, loaded: Loaded, raw: An
             by_id[task.task_id].planned_date = task.planned_date
             continue
         module_id = task.module_id or suite_modules[task.suite_rank or 0]
-        module_id = gap_id if module_id == NEW_GAP_MODULE else module_id
+        module_id = gap_id if module_id in (NEW_GAP_MODULE, LEGACY_NEW_GAP_MODULE) else module_id
         await tasks_repo.add(
             module_id=module_id,
             program_id=program_id,
@@ -207,8 +215,8 @@ async def _write_changes(db: AsyncSession, user_id: str, loaded: Loaded, raw: An
 
 
 def _outdated(row: PlanVersion, loaded: Loaded, today: date) -> bool:
-    """Périmée : plus en attente, lignes changées depuis la proposition, ou un jour qu'elle
-    écrirait est déjà passé (acceptée trop tard)."""
+    """Stale: no longer pending, rows changed since the proposal, or a day it would write has
+    already passed (accepted too late)."""
     if row.status != "pending" or fingerprint(rows_of(loaded)) != row.base_fingerprint:
         return True
     first = earliest_date(row.snapshot.get("changes", {}))
@@ -218,10 +226,10 @@ def _outdated(row: PlanVersion, loaded: Loaded, today: date) -> bool:
 async def apply_version(
     rt: ProgramRuntime, user_id: str, program_id: str, version: int, now: datetime, today: date
 ) -> Applied:
-    """Applique la proposition (voir le module). Déjà acceptée : rendue sans rien écrire (rejeu) ;
-    remplacée, refusée ou close, lignes changées depuis la proposition, ou un jour à écrire
-    avant `today` (jour local) : `stale=True`, rien n'est écrit. Les autres propositions en
-    attente du programme passent `superseded`."""
+    """Applies the proposal (see the module). Already accepted: returned without writing
+    anything (replay); replaced, refused or closed, rows changed since the proposal, or a day
+    to write before `today` (local day): `stale=True`, nothing is written. The program's other
+    pending proposals become `superseded`."""
     async with rt.program_lock(user_id, program_id), rt.session_factory() as db:
         versions = PlanVersionRepository(db, user_id)
         row = await versions.by_number(program_id, version)
@@ -240,7 +248,7 @@ async def apply_version(
             await db.commit()
             stale = False
     logger.info(
-        "Replanification : utilisateur %s, programme %s, version %d, périmée %s",
+        "Replanning: user %s, program %s, version %d, stale %s",
         user_id,
         program_id,
         version,
@@ -250,7 +258,7 @@ async def apply_version(
 
 
 async def refuse_version(rt: ProgramRuntime, user_id: str, program_id: str, version: int) -> None:
-    """La proposition en attente devient `refused` ; sinon rien (idempotent)."""
+    """The pending proposal becomes `refused`; otherwise nothing (idempotent)."""
     async with rt.program_lock(user_id, program_id), rt.session_factory() as db:
         row = await PlanVersionRepository(db, user_id).by_number(program_id, version)
         if row is None or row.kind != "replan":
@@ -261,6 +269,6 @@ async def refuse_version(rt: ProgramRuntime, user_id: str, program_id: str, vers
 
 
 async def version_history(db: AsyncSession, user_id: str, program_id: str) -> list[PlanVersion]:
-    """Les versions du programme, la plus récente d'abord ; 404 s'il est à un autre."""
+    """The program's versions, most recent first; 404 if it is another user's."""
     await load(db, user_id, program_id)
     return await PlanVersionRepository(db, user_id).history(program_id)

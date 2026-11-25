@@ -1,5 +1,5 @@
-"""Entretiens blancs (D146). Chaque requête filtre par `user_id` ; les écritures font un `flush`, le
-commit appartient à l'appelant."""
+"""Mock interviews (D146). Every query filters by `user_id`; writes `flush`, the commit belongs
+to the caller."""
 
 import builtins
 
@@ -13,7 +13,7 @@ class InterviewRepository(UserScopedRepository[Interview]):
     model = Interview
 
     async def get_fresh(self, interview_id: str) -> Interview | None:
-        """L'entretien relu en base (jamais l'objet gardé par la session)."""
+        """The interview re-read from the database (never the object held by the session)."""
         stmt = (
             select(Interview)
             .where(Interview.id == interview_id, Interview.user_id == self.user_id)
@@ -22,7 +22,7 @@ class InterviewRepository(UserScopedRepository[Interview]):
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def recent(self, application_id: str | None = None) -> builtins.list[Interview]:
-        """Les entretiens (d'une fiche), le plus récent d'abord."""
+        """The interviews (of a record), most recent first."""
         stmt = select(Interview).where(
             Interview.user_id == self.user_id, Interview.system_design.is_(None)
         )

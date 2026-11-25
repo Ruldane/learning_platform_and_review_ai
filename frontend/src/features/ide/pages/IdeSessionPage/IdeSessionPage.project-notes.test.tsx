@@ -9,6 +9,6 @@ it("ouvre le fichier du projet lié à une note du professeur", async () => {
     notes: [noteOut({ file_path: "src/calcul.py", line_start: 1 })],
   });
   expect(await findEditor()).toHaveValue("a = 1");
-  await user.click(await screen.findByRole("button", { name: "Ouvrir src/calcul.py" }));
+  await user.click(await screen.findByRole("button", { name: "Open src/calcul.py" }));
   expect(await findEditor()).toHaveValue("x = 2");
 });

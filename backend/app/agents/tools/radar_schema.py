@@ -1,37 +1,37 @@
-"""Schémas du radar du marché (P5, P6) : les requêtes de recherche, construites par le code (aucun
-modèle n'écrit une requête), et la sortie de l'Analyste, une extraction par lot de cinq offres.
+"""Schemas of the market radar (P5, P6): the search queries, built by the code (no model writes
+a query), and the Analyst's output, an extraction per batch of five postings.
 
-Rien ici n'invente une donnée : les requêtes ne contiennent que le poste, la zone et des sites
-d'offres publics ; l'extraction est contrôlée par le code (`analyst_radar`) avant d'être rangée."""
+Nothing here invents data: the queries only contain the role, the area and public job
+board sites; the extraction is checked by the code (`analyst_radar`) before being stored."""
 
 import re
 from collections.abc import Sequence
 from itertools import zip_longest
-from typing import Literal, NamedTuple
+from typing import NamedTuple
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from pydantic import BaseModel, Field
 
-# Pages d'offres publiques (SPEC 10) : une requête ciblée par site.
+from app.agents.tools.posting_schema import CheckpointPostingLevel
+
+# Public posting pages (SPEC 10): one targeted query per site.
 SITE_HINTS = (
     "jobs.lever.co",
     "boards.greenhouse.io",
     "welcometothejungle.com",
     "jobs.ashbyhq.com",
 )
-MAX_QUERIES = 12  # le plafond de requêtes d'une session : le radar en est le seul chercheur
-SITE_RESERVE = 2  # requêtes ciblées gardées même quand les langues remplissent le plafond
-BATCH = 5  # offres par appel de l'Analyste (10 appels au plus pour 50 offres)
-TEXT_MAX = 4000  # caractères d'une offre montrés à l'Analyste
-READ_BATCH = 10  # liens lus par passage de la boucle de lecture
-READ_PARALLEL = 5  # lectures simultanées
-TIME_RANGE = "month"  # fenêtre de la recherche : les offres du mois
-
-type Level = Literal["junior", "confirme", "senior", "lead", "inconnu"]
+MAX_QUERIES = 12  # the query cap of a session: the radar is its only searcher
+SITE_RESERVE = 2  # targeted queries kept even when the languages fill the cap
+BATCH = 5  # postings per Analyst call (at most 10 calls for 50 postings)
+TEXT_MAX = 4000  # characters of a posting shown to the Analyst
+READ_BATCH = 10  # links read per pass of the reading loop
+READ_PARALLEL = 5  # simultaneous reads
+TIME_RANGE = "month"  # search window: the postings of the month
 
 
 class RadarSearch(NamedTuple):
-    """Une requête du radar et la langue des résultats attendus (`None` : sans préférence)."""
+    """A radar query and the language of the expected results (`None`: no preference)."""
 
     query: str
     lang: str | None
@@ -41,10 +41,10 @@ _DIGITS = re.compile(r"\d+")
 
 
 def salary_in_text(salary: str | None, text: str) -> str | None:
-    """Le salaire relevé par le modèle, gardé seulement si chacun de ses nombres figure dans le
-    texte de l'offre (nombre entier de chiffres : 45 n'est pas 450). Même règle que
-    `radar.service.rules.salary_shown` (le moteur n'importe pas la feature ; un test vérifie
-    l'accord). Un salaire vide ou sans chiffre : `None`."""
+    """The salary noted by the model, kept only if each of its numbers appears in the
+    text of the posting (whole number of digits: 45 is not 450). Same rule as
+    `radar.service.rules.salary_shown` (the engine imports no feature; a test checks
+    they agree). An empty salary or one without digits: `None`."""
     figures = _DIGITS.findall(salary or "")
     if not figures:
         return None
@@ -65,10 +65,10 @@ def _is_tracking(key: str) -> bool:
 
 
 def link_key(url: str) -> str | None:
-    """La clé d'un lien d'offre pour dédoublonner les résultats et suivre les lectures : la même
-    que `postings.service.rules.posting_url_key` (le moteur n'importe pas la feature ; un test
-    vérifie l'accord sur une table de liens). `None` : lien invalide (autre schéma, sans hôte,
-    avec identifiants) ; il n'est jamais lu."""
+    """The key of a posting link to deduplicate the results and follow the reads: the same as
+    `postings.service.rules.posting_url_key` (the engine imports no feature; a test checks
+    they agree on a table of links). `None`: invalid link (other scheme, no host,
+    with credentials); it is never read."""
     try:
         parts = urlsplit(url.strip())
         host, port = parts.hostname, parts.port
@@ -97,9 +97,10 @@ def _clean(text: str) -> str:
     return " ".join(text.split())
 
 
-# Requêtes générales par langue, de la plus courante à la plus rare (`{r}` poste, `{w}` zone).
-# Chaque variante ramène d'autres offres que les précédentes : un moteur ne rend que dix résultats
-# par requête et SearXNG n'a pas de seconde page ici (D164).
+# General queries per language, from the most common to the rarest (`{r}` role, `{w}` area).
+# The French phrases below are real search queries for French-language results: kept in French.
+# Each variant brings back other postings than the previous ones: an engine only returns ten
+# results per query and SearXNG has no second page here (D164).
 _GENERIC = {
     "fr": (
         "offre d'emploi {r}{w}",
@@ -116,12 +117,12 @@ _GENERIC = {
 
 
 def radar_searches(role: str, zone: str, languages: Sequence[str]) -> list[RadarSearch]:
-    """Les requêtes du relevé, `MAX_QUERIES` au plus, sans doublon. D'abord les requêtes générales
-    (en français « offre d'emploi {poste} {zone} », « {poste} H/F {zone} »… ; pour toute autre
-    langue « {poste} job {zone} », « {poste} {zone} hiring »…), les langues alternant pour que le
-    plafond n'en prive aucune ; puis « {poste} {zone} site:{site} » pour chaque site d'offres,
-    qu'un moteur sert mal et qui passent donc en dernier (`SITE_RESERVE` au moins en restent).
-    Sans poste : aucune."""
+    """The queries of the survey, `MAX_QUERIES` at most, without duplicates. First the general
+    queries (in French "offre d'emploi {role} {area}", "{role} H/F {area}"...; for any other
+    language "{role} job {area}", "{role} {area} hiring"...), the languages alternating so
+    that the cap deprives none of them; then "{role} {area} site:{site}" for each job board,
+    which an engine serves poorly and which therefore come last (at least `SITE_RESERVE` remain).
+    Without a role: none."""
     role, zone = _clean(role), _clean(zone)
     if not role:
         return []
@@ -150,27 +151,27 @@ def _unique(searches: Sequence[RadarSearch]) -> list[RadarSearch]:
 
 
 def radar_queries(role: str, zone: str, languages: Sequence[str]) -> list[str]:
-    """Le texte des requêtes de `radar_searches`."""
+    """The text of the `radar_searches` queries."""
     return [search.query for search in radar_searches(role, zone, languages)]
 
 
 class SkillNeedLite(BaseModel):
-    """Une compétence demandée par l'offre ; `required` : exigée plutôt que souhaitée."""
+    """A skill requested by the posting; `required`: demanded rather than wished."""
 
     name: str = Field(min_length=2, max_length=80)
     required: bool
 
 
 class RadarItem(BaseModel):
-    """L'extraction d'une offre. `ref` : le repère de l'offre dans le lot (`p1` à `p5`) ; le port
-    la reçoit réécrite avec le repère de la page (`PostingPage.ref`). `is_job_posting` faux : la
-    page n'est pas une offre, le reste est ignoré."""
+    """The extraction of a posting. `ref`: the posting's marker in the batch (`p1` to `p5`); the
+    port receives it rewritten with the page's marker (`PostingPage.ref`). `is_job_posting`
+    false: the page is not a posting, the rest is ignored."""
 
     ref: str = Field(pattern=r"^p[1-5]$")
     is_job_posting: bool
     title: str | None = Field(default=None, max_length=200)
     company: str | None = Field(default=None, max_length=200)
-    level: Level = "inconnu"
+    level: CheckpointPostingLevel = "unknown"
     remote: str | None = Field(default=None, max_length=60)
     salary: str | None = Field(default=None, max_length=80)
     skills: list[SkillNeedLite] = Field(default_factory=list, max_length=15)
@@ -182,9 +183,9 @@ class RadarBatch(BaseModel):
 
 
 class RadarFinding(RadarItem):
-    """L'extraction d'une offre rangée sous le repère de sa **page** (`PostingPage.ref` : `p1`,
-    `p12`, `r1`…), pas sous le repère du lot de cinq (`RadarItem.ref`, `p1` à `p5`). C'est ce que
-    le port reçoit : `ref` y est libre (1 à 16 caractères), si bien qu'une relecture de
-    validation, ici ou dans l'adaptateur, n'échoue jamais sur un repère de page."""
+    """The extraction of a posting stored under the marker of its **page** (`PostingPage.ref`:
+    `p1`, `p12`, `r1`...), not under the marker of the batch of five (`RadarItem.ref`, `p1` to
+    `p5`). This is what the port receives: `ref` is free there (1 to 16 characters), so that a
+    validation re-read, here or in the adapter, never fails on a page marker."""
 
     ref: str = Field(min_length=1, max_length=16)

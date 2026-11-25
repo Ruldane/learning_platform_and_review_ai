@@ -1,16 +1,17 @@
-"""La sortie de la revue (SPEC 5.3, D129) : « Que veux-tu maintenant ? », en boucle.
+"""The review output (SPEC 5.3, D129): "What would you like to do next?", in a loop.
 
-`ask_output` ne fait qu'`interrupt()` puis analyse la réponse (pur) : aucune écriture ni appel
-payant avant l'arrêt, le nœud est rejoué depuis son début à la reprise (SPEC 9.4). Réponses
-admises : `"report"`, `"finish"`, `{"choice": "report" | "finish"}` et `{"choice": "pdf",
-"version_id": …}` (la version est créée par la route `POST /cv/reviews/{id}/generate`, 6.14) ; une
-forme inconnue, ou « pdf » sans version, repose la question sans rien écrire.
+`ask_output` only does `interrupt()` then parses the answer (pure): no write or paid call
+before the stop, the node is replayed from its beginning on resume (SPEC 9.4). Accepted
+answers: `"report"`, `"finish"`, `{"choice": "report" | "finish"}` and `{"choice": "pdf",
+"version_id": ...}` (the version is created by the route `POST /cv/reviews/{id}/generate`,
+6.14); an unknown shape, or "pdf" without a version, asks the question again without writing
+anything.
 
-`apply_output` : rapport → `artifact.ready` (`cv_report`) ; PDF → `render_version` (idempotent :
-une version déjà rendue est relue) puis `artifact.ready` (`cv_pdf`), ou la phrase « dépasse » ;
-puis la question revient. `close` (« Terminer ») ferme la revue (idempotent).
+`apply_output`: report -> `artifact.ready` (`cv_report`); PDF -> `render_version` (idempotent:
+an already rendered version is reread) then `artifact.ready` (`cv_pdf`), or the "exceeds"
+sentence; then the question comes back. `close` ("Finish") closes the review (idempotent).
 
-Journaux : identifiants et nombres, jamais le nom du fichier (17.2)."""
+Logs: identifiers and numbers, never the file name (17.2)."""
 
 import logging
 from typing import Any, Literal, Protocol
@@ -26,17 +27,17 @@ from app.providers.pdf.base import HTML_RENDER_TIMEOUT_S, LAYOUT_TIMEOUT_S
 
 AGENT = "recruiter"
 OUTPUT_KIND = "cv_output"
-QUESTION = "Que veux-tu maintenant ?"
+QUESTION = "What would you like to do next?"
 OPTIONS = [
-    {"value": "report", "label": "Voir le rapport"},
-    {"value": "pdf", "label": "Générer le PDF"},
-    {"value": "finish", "label": "Terminer"},
+    {"value": "report", "label": "View the report"},
+    {"value": "pdf", "label": "Generate PDF"},
+    {"value": "finish", "label": "Finish"},
 ]
-REPORT_URL = "/carriere/cv/revues/{review_id}#rapport"
+REPORT_URL = "/career/cv/reviews/{review_id}#report"
 PDF_URL = "/api/v1/cv/versions/{version_id}/pdf"
-RENDER_FAILED = "Le PDF n'a pas pu être généré : réessaie dans un instant."
-CLOSED = "Revue terminée. Tes modifications et tes versions restent dans la revue."
-# Rendu, extraction et jusqu'à trois resserrements (6.14), chacun re-rendu.
+RENDER_FAILED = "The PDF could not be generated. Try again in a moment."
+CLOSED = "Review complete. Your changes and versions are saved in the review."
+# Rendering, extraction and up to three tightenings (6.14), each re-rendered.
 RENDER_TIMEOUT_S = 4 * (HTML_RENDER_TIMEOUT_S + LAYOUT_TIMEOUT_S) + 30
 
 logger = logging.getLogger(__name__)
@@ -56,7 +57,7 @@ def question() -> dict[str, Any]:
 
 
 def parse_output(value: Any) -> OutputAnswer | None:
-    """Voir l'en-tête du module ; `None` : la question est reposée."""
+    """See the module header; `None`: the question is asked again."""
     if value in ("report", "finish"):
         return OutputAnswer(choice=value)
     if not isinstance(value, dict):
@@ -71,7 +72,7 @@ def parse_output(value: Any) -> OutputAnswer | None:
 
 
 def ask_output(state: CvReviewState) -> CvReviewState:
-    """`interrupt()` seul : rien avant lui ; la réponse est analysée sans aucun port."""
+    """`interrupt()` alone: nothing before it; the answer is parsed without any port."""
     answer = parse_output(interrupt(question()))
     return {"output": answer.model_dump() if answer is not None else None}
 
@@ -82,7 +83,7 @@ def route_output(state: CvReviewState) -> str:
 
 def pages_text(original: int) -> str:
     pages = "1 page" if original == 1 else f"{original} pages"
-    return f"Le CV ciblé dépasse {pages} : retire une ligne ou autorise une page de plus."
+    return f"The tailored CV exceeds {pages}. Remove a line or allow one more page."
 
 
 def _say(message_id: str, text: str) -> None:
@@ -92,7 +93,7 @@ def _say(message_id: str, text: str) -> None:
 async def _pdf(deps: GraphDeps, version_id: str) -> None:
     outcome = await deps.ports.cv_review.render_version(deps.user_id, version_id)
     logger.info(
-        "Version rendue : session %s, version %s, statut %s, %s page(s)",
+        "Version rendered: session %s, version %s, status %s, %s page(s)",
         deps.session_id,
         outcome.version_id,
         outcome.status,
@@ -102,7 +103,7 @@ async def _pdf(deps: GraphDeps, version_id: str) -> None:
         artifact = {
             "artifact_id": outcome.version_id,
             "kind": "cv_pdf",
-            "title": "CV ciblé (PDF)",
+            "title": "Tailored CV (PDF)",
             "url": PDF_URL.format(version_id=outcome.version_id),
         }
         emit("artifact.ready", artifact, agent=AGENT)
@@ -121,12 +122,12 @@ def make_apply_output(deps: GraphDeps) -> Node:
             artifact = {
                 "artifact_id": f"rapport-{review_id}",
                 "kind": "cv_report",
-                "title": "Rapport de la revue du CV",
+                "title": "CV review report",
                 "url": REPORT_URL.format(review_id=review_id),
             }
             emit("artifact.ready", artifact, agent=AGENT)
         elif answer.choice == "pdf":
-            assert answer.version_id is not None  # garanti par `parse_output`
+            assert answer.version_id is not None  # guaranteed by `parse_output`
             await _pdf(deps, answer.version_id)
         return {}
 
@@ -142,7 +143,7 @@ def make_close(deps: GraphDeps) -> Node:
     @node_timeout()
     async def close(state: CvReviewState) -> CvReviewState:
         await deps.ports.cv_review.close(deps.user_id, state["review_id"])
-        logger.info("Revue terminée : session %s, revue %s", deps.session_id, state["review_id"])
+        logger.info("Review finished: session %s, review %s", deps.session_id, state["review_id"])
         _say("fin", CLOSED)
         return {"summary": CLOSED}
 

@@ -1,13 +1,13 @@
-"""Les rubriques du brief calculées par le code (P11, D162) : bloc d'étude, révisions, relances,
-nouvelles offres du radar, avancement de la semaine. Aucun modèle ici : chaque rubrique est un fait
-lu dans une autre feature (leur service), figé en JSON dans le brief du jour.
+"""The brief sections computed by the code (P11, D162): study block, reviews, reminders, new radar
+offers, week progress. No model here: each section is a fact read from another feature (its
+service), frozen as JSON in the daily brief.
 
-Une rubrique sans objet vaut `None` (aucun bloc prévu, aucun programme validé) ; les nombres
-(`reviews`, `reminders`) valent 0. `offers.items[*].key` (le lien normalisé) et `week.best_quiz`
-sont des détails internes du brief, jamais rendus par l'API : l'un nourrit « déjà montré » des 7
-jours suivants, l'autre les faits du conseil. Chaque rubrique est calculée à part (savepoint) : une
-source en panne rend la rubrique vide et la nomme dans `unavailable`, jamais une erreur 500 pour
-tout l'écran du matin (D173). Journaux : le nom de la rubrique et la classe de l'exception."""
+A section with nothing to show is `None` (no block planned, no validated program); the counts
+(`reviews`, `reminders`) are 0. `offers.items[*].key` (the normalised link) and `week.best_quiz`
+are internal brief details, never returned by the API: the first feeds "already shown" for the
+next 7 days, the second the advice facts. Each section is computed separately (savepoint): a
+failing source empties its section and names it in `unavailable`, never a 500 error for the
+whole morning screen (D173). Logs: the section name and the exception class."""
 
 import logging
 from collections.abc import Awaitable, Callable
@@ -77,7 +77,7 @@ async def _reminders(rt: BriefRuntime, user_id: str) -> dict[str, Any]:
 
 
 async def _offers(db: AsyncSession, user_id: str, today: date, now: datetime) -> dict[str, Any]:
-    """Reclasse la semaine locale et publie les entrées inédites de ses cinq meilleures offres."""
+    """Re-rank the local week and publish the new entries among its five best offers."""
     repo = BriefRepository(db, user_id)
     monday = week_start(today)
     settings = await SettingsService(db, user_id).get()
@@ -110,7 +110,8 @@ async def _offers(db: AsyncSession, user_id: str, today: date, now: datetime) ->
 async def _week(
     rt: BriefRuntime, db: AsyncSession, user_id: str, today: date
 ) -> dict[str, Any] | None:
-    """La semaine locale du programme validé le plus récent ; la série vient du résumé d'étude."""
+    """The local week of the most recent validated program; the streak comes from
+    the study summary."""
     programs = await list_programs(db, user_id)
     current = next((program for program in programs if program.status == "validated"), None)
     if current is None:
@@ -132,8 +133,8 @@ logger = logging.getLogger(__name__)
 
 
 def _empty(name: str) -> Any:
-    """Ce que vaut une rubrique dont la source est en panne : vide, jamais inventée. Une valeur
-    neuve à chaque appel (jamais un objet partagé) ; le front et le conseil lisent `unavailable`."""
+    """The value of a section whose source is down: empty, never made up. A fresh value on each
+    call (never a shared object); the front end and the advice read `unavailable`."""
     empty: dict[str, Any] = {
         "block": None,
         "reviews": {"queue": 0, "remaining": 0},
@@ -147,14 +148,14 @@ def _empty(name: str) -> Any:
 async def _isolated(
     db: AsyncSession, name: str, build: Callable[[], Awaitable[Any]], failed: list[str]
 ) -> Any:
-    """La rubrique `name`, dans son propre savepoint : en cas de panne, sa valeur vide et son nom
-    dans `failed` (la transaction reste valide pour les rubriques suivantes). `build` est une
-    fabrique : la coroutine n'existe qu'une fois le savepoint ouvert, jamais abandonnée."""
+    """Section `name`, in its own savepoint: on failure, its empty value and its name in `failed`
+    (the transaction stays valid for the following sections). `build` is a factory: the
+    coroutine only exists once the savepoint is open, never abandoned."""
     try:
         async with db.begin_nested():
             return await build()
     except Exception as exc:
-        logger.warning("Brief : rubrique %s indisponible (%s)", name, type(exc).__name__)
+        logger.warning("Brief: section %s unavailable (%s)", name, type(exc).__name__)
         failed.append(name)
         return _empty(name)
 
@@ -162,8 +163,8 @@ async def _isolated(
 async def build_sections(
     rt: BriefRuntime, db: AsyncSession, user_id: str, today: date
 ) -> dict[str, Any]:
-    """Les rubriques du code (`BRIEF_KEYS`) du jour local `today`, plus `unavailable` (les
-    rubriques en panne) seulement s'il y en a."""
+    """The code sections (`BRIEF_KEYS`) of the local day `today`, plus `unavailable` (the
+    failing sections) only if there are any."""
     failed: list[str] = []
     sections: dict[str, Any] = {
         "block": await _isolated(db, "block", lambda: _block(db, user_id, today), failed),

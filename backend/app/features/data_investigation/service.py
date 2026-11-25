@@ -22,7 +22,7 @@ _ROWS = TypeAdapter(list[InvestigationRow])
 async def require(repo: Investigations, investigation_id: str) -> DataInvestigation:
     row = await repo.get(investigation_id)
     if row is None:
-        raise AppError("investigation_not_found", "Enquête introuvable.", 404)
+        raise AppError("investigation_not_found", "Investigation not found.", 404)
     return row
 
 
@@ -77,7 +77,9 @@ async def history(db: AsyncSession, user_id: str) -> list[InvestigationSummary]:
 
 
 def _closed() -> AppError:
-    return AppError("investigation_completed", "Cette enquête est déjà remise.", 409)
+    return AppError(
+        "investigation_completed", "This investigation has already been submitted.", 409
+    )
 
 
 async def set_operations(

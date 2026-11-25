@@ -34,7 +34,7 @@ export function renderHome(options: Options = {}) {
   const view = renderRoutes(
     [
       { path: "/code", element: <IdeHomePage createSocket={sockets.factory} /> },
-      { path: "/code/:sessionId", element: <p>Séance ouverte</p> },
+      { path: "/code/:sessionId", element: <p>Session opened</p> },
     ],
     "/code",
   );
@@ -42,7 +42,7 @@ export function renderHome(options: Options = {}) {
 }
 
 /** Attend que l'éditeur soit monté (le faux est une zone de texte nommée par l'éditeur réel). */
-export const findEditor = () => screen.findByRole("textbox", { name: "Code Python de la séance" });
+export const findEditor = () => screen.findByRole("textbox", { name: "Session Python code" });
 
 /** Laisse passer `ms` millisecondes réelles : pour prouver qu'une chose n'arrive plus. */
 export const settle = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));

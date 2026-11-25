@@ -8,7 +8,7 @@ describe("MessageComposer", () => {
     const user = userEvent.setup();
     const onSend = vi.fn();
     render(<MessageComposer disabled={false} onSend={onSend} />);
-    const field = screen.getByRole("textbox", { name: "Ton message" });
+    const field = screen.getByRole("textbox", { name: "Your message" });
     await user.type(field, "ligne 1{Shift>}{Enter}{/Shift}ligne 2");
     expect(onSend).not.toHaveBeenCalled();
     expect(field).toHaveValue("ligne 1\nligne 2");
@@ -25,13 +25,13 @@ describe("MessageComposer", () => {
     expect(onSend).not.toHaveBeenCalled();
     await user.clear(screen.getByRole("textbox"));
     await user.type(screen.getByRole("textbox"), "Salut");
-    await user.click(screen.getByRole("button", { name: "Envoyer" }));
+    await user.click(screen.getByRole("button", { name: "Send" }));
     expect(onSend).toHaveBeenCalledWith("Salut");
   });
 
   it("is fully disabled when asked to", () => {
     render(<MessageComposer disabled onSend={vi.fn()} />);
     expect(screen.getByRole("textbox")).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Envoyer" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Send" })).toBeDisabled();
   });
 });

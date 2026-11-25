@@ -182,7 +182,7 @@ export type InterviewLanguageView = (typeof INTERVIEW_LANGUAGES)[number];
 export type InterviewStatusView = "running" | "done" | "stopped" | "debrief_failed" | "failed";
 
 /** Les quatre notes du débrief, dans l'ordre où elles s'affichent. */
-export const SCORE_KEYS = ["clarte", "structure", "profondeur_technique", "adequation"] as const;
+export const SCORE_KEYS = ["clarity", "structure", "technical_depth", "role_fit"] as const;
 export type ScoreKeyView = (typeof SCORE_KEYS)[number];
 
 /** Une question de l'entretien, la réponse de January, la relance éventuelle et la note (1 à 5). */
@@ -244,7 +244,7 @@ export const PERSONA_ORDER = ["ats_reader", "recruiter", "manager", "colleague"]
 
 export type PersonaView = (typeof PERSONA_ORDER)[number];
 
-export type VoteValueView = "oui" | "non" | "peut_etre";
+export type VoteValueView = "yes" | "no" | "maybe";
 
 export type CommitteeStatusView = "running" | "done" | "failed" | "stopped";
 

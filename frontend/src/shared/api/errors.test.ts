@@ -1,20 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { ApiError, errorMessage } from "./errors";
 
-const GENERIC = "Une erreur est survenue. Réessaie dans un instant.";
+const GENERIC = "Something went wrong. Try again in a moment.";
 
 describe("errorMessage", () => {
-  it("renvoie le message français d'une ApiError", () => {
+  it("returns the message from an ApiError", () => {
     const error = new ApiError({
       code: "invalid_key",
-      message: "La clé est trop courte.",
+      message: "The key is too short.",
       status: 422,
     });
-    expect(errorMessage(error)).toBe("La clé est trop courte.");
+    expect(errorMessage(error)).toBe("The key is too short.");
   });
 
-  it("renvoie le message général pour toute autre erreur", () => {
+  it("returns the generic message for other errors", () => {
     expect(errorMessage(new Error("boom"))).toBe(GENERIC);
-    expect(errorMessage("texte")).toBe(GENERIC);
+    expect(errorMessage("text")).toBe(GENERIC);
   });
 });

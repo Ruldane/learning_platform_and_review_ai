@@ -1,5 +1,5 @@
-"""Contrat de la carte de compétences (SPEC F15, D107) : graphe et radar, détail d'une
-compétence (preuves, offres, prochaine action), comparaison avec une cible, courbe."""
+"""Skills map contract (SPEC F15, D107): graph and radar, detail of a skill (evidence,
+postings, next action), comparison with a target, curve."""
 
 from datetime import date, datetime
 from typing import Annotated, Literal
@@ -10,7 +10,7 @@ from app.core.skills import EvidenceKind
 from app.db.models.skills import SkillLevel
 
 NextActionKind = Literal["study", "quiz", "review", "project"]
-CompareTarget = Literal["goal", "posting"]  # poste cible ; offre précise (D123)
+CompareTarget = Literal["goal", "posting"]  # target job; a specific posting (D123)
 
 SkillName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=120)]
 
@@ -30,9 +30,9 @@ class SkillCreated(BaseModel):
 class SkillNodeOut(BaseModel):
     id: str
     name: str
-    domain: str  # « Autres » sans domaine
-    level: SkillLevel | None  # `None` : aucune ligne `user_skills` (absente)
-    demand: float | None  # part du dernier relevé du radar (0 à 1) ; `None` sans relevé fini
+    domain: str  # "Other" without a domain
+    level: SkillLevel | None  # `None`: no `user_skills` row (absent)
+    demand: float | None  # share of the last radar run (0 to 1); `None` without a finished run
     evidence_count: int
 
 
@@ -43,7 +43,7 @@ class SkillEdgeOut(BaseModel):
 
 class DomainScoreOut(BaseModel):
     domain: str
-    score: int  # 0 à 100
+    score: int  # 0 to 100
 
 
 class SkillGraphOut(BaseModel):
@@ -55,13 +55,13 @@ class SkillGraphOut(BaseModel):
 class EvidenceOut(BaseModel):
     kind: EvidenceKind
     label: str
-    at: datetime | None  # `None` : preuve de la phase 4, sans date
-    url: str | None  # chemin dans l'application ; `None` sans page
+    at: datetime | None  # `None`: phase 4 evidence, undated
+    url: str | None  # path in the application; `None` without a page
 
 
 class PostingRefOut(BaseModel):
-    """Une offre prête dont l'analyse cite la compétence (D123) ; `url` : sa page dans
-    l'application."""
+    """A ready posting whose analysis cites the skill (D123); `url`: its page in the
+    application."""
 
     id: str
     title: str
@@ -71,7 +71,7 @@ class PostingRefOut(BaseModel):
 class NextActionOut(BaseModel):
     kind: NextActionKind
     label: str
-    url: str | None  # `None` : pas encore disponible (projet preuve)
+    url: str | None  # `None`: not available yet (evidence project)
 
 
 class SkillDetailOut(BaseModel):
@@ -80,9 +80,9 @@ class SkillDetailOut(BaseModel):
     domain: str
     synonyms: list[str]
     level: SkillLevel | None
-    evidence: list[EvidenceOut]  # la plus récente d'abord
-    postings: list[PostingRefOut]  # 10 au plus, les plus récentes d'abord
-    next_action: NextActionOut | None  # `None` : compétence prouvée
+    evidence: list[EvidenceOut]  # most recent first
+    postings: list[PostingRefOut]  # 10 at most, most recent first
+    next_action: NextActionOut | None  # `None`: proven skill
 
 
 class CompareRowOut(BaseModel):
@@ -91,27 +91,27 @@ class CompareRowOut(BaseModel):
     domain: str
     mine: SkillLevel | None
     target: SkillLevel
-    gap: int  # rang de la cible moins le mien (absente = −1) ; 0 ou moins : atteint
+    gap: int  # target rank minus mine (absent = -1); 0 or less: reached
 
 
 class CompareOut(BaseModel):
     target_label: str
-    coverage: int  # part des cibles atteintes, en %
+    coverage: int  # share of the targets reached, in %
     rows: list[CompareRowOut]
 
 
 class LevelCountsOut(BaseModel):
-    declare: int
-    en_cours: int
-    valide: int
-    prouve: int
+    declared: int
+    in_progress: int
+    validated: int
+    proven: int
 
 
 class HistoryPointOut(BaseModel):
-    week_start: date  # lundi de la semaine locale
+    week_start: date  # Monday of the local week
     counts: LevelCountsOut
-    score: int  # 0 à 100
+    score: int  # 0 to 100
 
 
 class HistoryOut(BaseModel):
-    points: list[HistoryPointOut]  # du plus ancien au plus récent ; la semaine en cours en direct
+    points: list[HistoryPointOut]  # oldest to most recent; the current week live

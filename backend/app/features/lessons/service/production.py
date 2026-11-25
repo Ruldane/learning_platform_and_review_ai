@@ -1,19 +1,18 @@
-"""Production des leçons en chaîne (SPEC 3.5, 3.6 ; D90, D91).
+"""Chained lesson production (SPEC 3.5, 3.6; D90, D91).
 
-Une seule chaîne `lesson_factory` par programme, un module à la fois (pas de rafale d'appels au
-modèle) : `ensure_lessons` lance la leçon du premier module dû si aucune session de leçon n'est
-ouverte pour le programme. Elle est appelée par la validation (semaines 1 et 2 tout de suite),
-par la fin de chaque leçon (`next_module`, qui exclut sa propre session) et par la tâche
-planifiée (semaines suivantes 7 jours avant leur début). Tout passe sous le verrou des leçons du
-programme : deux appels simultanés ne lancent jamais deux sessions, ni deux leçons d'un module.
+A single `lesson_factory` chain per program, one module at a time (no burst of model calls):
+`ensure_lessons` starts the lesson of the first due module if no lesson session is open for the
+program. It is called by the validation (weeks 1 and 2 right away), by the end of each lesson
+(`next_module`, which excludes its own session) and by the scheduled job (later weeks 7 days
+before they start). Everything runs under the program's lessons lock: two simultaneous calls
+never start two sessions, nor two lessons for one module.
 
-Une session de leçon qui s'arrête sans passer par le port (Vérificateur invalide, quota,
-annulation…) laisse sa leçon `generating` : la leçon passe en échec au prochain appel (sa
-session n'est plus ouverte), au plus tard au passage suivant de la tâche (15 minutes) ; les
-lectures la montrent en échec dès l'arrêt (`status`). Une leçon en échec est relancée tant
-qu'elle a eu moins de `MAX_ATTEMPTS` essais, après les modules jamais tentés. Sans rien de dû,
-un appel ne fait que lire la base : ni écriture, ni lancement, ni appel au modèle. Journaux :
-identifiants seulement."""
+A lesson session that stops without going through the port (invalid Verifier, quota,
+cancellation…) leaves its lesson `generating`: the lesson is marked failed on the next call (its
+session is no longer open), at the latest on the job's next run (15 minutes); reads show it as
+failed as soon as it stops (`status`). A failed lesson is retried while it has had fewer than
+`MAX_ATTEMPTS` attempts, after the modules never attempted. With nothing due, a call only reads
+the database: no write, no start, no model call. Logs: identifiers only."""
 
 import logging
 from contextlib import AbstractAsyncContextManager
@@ -53,7 +52,7 @@ class ProductionContext(Protocol):
 class _Pick:
     lesson_id: str
     module_id: str
-    # Statut, essais et raison d'avant : rétablis si le lancement échoue.
+    # Previous status, attempts and reason: restored if the start fails.
     previous: tuple[str, int, str | None]
     played_by: str | None
     model_provider: str | None
@@ -61,13 +60,13 @@ class _Pick:
 
 
 def week_due(rank: int, start: date, today: date) -> bool:
-    """Semaines 1 et 2 tout de suite, les suivantes dès 7 jours avant leur début (UTC)."""
+    """Weeks 1 and 2 right away, later ones from 7 days before they start (UTC)."""
     return rank in FIRST_WEEKS or start <= today + timedelta(days=HORIZON_DAYS)
 
 
 def _missing_lessons(db: AsyncSession, user_id: str, loaded: Loaded, have: set[str]) -> int:
-    """Une leçon `pending` pour chaque module planifié qui n'en a pas (liste des leçons) ;
-    rend le nombre de leçons ajoutées (zéro hors de la première passe après la validation)."""
+    """A `pending` lesson for each planned module that has none (lessons list); returns the
+    number of lessons added (zero outside the first pass after validation)."""
     missing = [m for m in loaded.modules if has_lesson(m) and m.id not in have]
     for module in missing:
         db.add(
@@ -83,7 +82,7 @@ def _missing_lessons(db: AsyncSession, user_id: str, loaded: Loaded, have: set[s
 
 
 def _reconcile(lessons: list[Lesson], open_ids: list[str]) -> int:
-    """Leçon `generating` dont la session n'est plus ouverte : en échec (relancée ensuite)."""
+    """A `generating` lesson whose session is no longer open: failed (retried later)."""
     stale = [
         x
         for x in lessons
@@ -97,7 +96,7 @@ def _reconcile(lessons: list[Lesson], open_ids: list[str]) -> int:
 
 
 def _first_due(loaded: Loaded, lessons: dict[str, Lesson], today: date) -> Lesson | None:
-    """Premier module dû : jamais tentés d'abord, puis en échec ; par semaine puis rang."""
+    """First due module: never-attempted ones first, then failed; by week then rank."""
     weeks = {week.id: week for week in loaded.weeks}
     due: list[tuple[bool, int, Lesson]] = []
     for index, module in enumerate(loaded.modules):
@@ -108,7 +107,7 @@ def _first_due(loaded: Loaded, lessons: dict[str, Lesson], today: date) -> Lesso
         if lesson.status not in ("pending", "failed") or lesson.attempts >= MAX_ATTEMPTS:
             continue
         if lesson.verification_failure_reason is not None:
-            continue  # une soumission manuelle refusée se corrige puis se soumet à nouveau
+            continue  # a rejected manual submission is fixed then submitted again
         if week_due(week.rank, week.start_date, today):
             due.append((lesson.status == "failed", index, lesson))
     return min(due, key=lambda item: (item[0], item[1]))[2] if due else None
@@ -129,9 +128,9 @@ async def _prepare(
         db, user_id, graph=GRAPH, subject_type=SUBJECT, subject_id=program_id
     )
     if stale := _reconcile(rows, open_ids):
-        logger.info("Leçons interrompues : programme %s, %d en échec", program_id, stale)
+        logger.info("Interrupted lessons: program %s, %d failed", program_id, stale)
     if any(session_id != exclude for session_id in open_ids):
-        return None  # une chaîne tourne déjà pour ce programme
+        return None  # a chain is already running for this program
     lesson = _first_due(loaded, {x.module_id: x for x in rows}, today)
     if lesson is None:
         return None
@@ -151,7 +150,7 @@ async def _prepare(
 
 
 async def _set_session(ctx: ProductionContext, user_id: str, pick: _Pick, sid: str | None) -> None:
-    """Session lancée rangée sur la leçon ; `None` : lancement raté, état d'avant rétabli."""
+    """Stores the started session on the lesson; `None`: failed start, previous state restored."""
     async with ctx.session_factory() as db:
         lesson = await LessonRepository(db, user_id).get_fresh(pick.lesson_id)
         if lesson is not None:
@@ -170,9 +169,9 @@ async def ensure_lessons(
     exclude_session_id: str | None = None,
     today: date | None = None,
 ) -> str | None:
-    """Lance la leçon du premier module dû si aucune autre session de leçon n'est ouverte pour le
-    programme ; rend l'id de la session lancée, `None` sinon. Programme d'un autre : 404.
-    Lancement refusé (moteur indisponible) : la leçon retrouve son état et l'erreur remonte."""
+    """Starts the lesson of the first due module if no other lesson session is open for the
+    program; returns the started session's id, `None` otherwise. Someone else's program: 404.
+    Start refused (engine unavailable): the lesson gets its state back and the error propagates."""
     day = today or datetime.now(UTC).date()
     async with ctx.lessons_lock(user_id, program_id):
         async with ctx.session_factory() as db:
@@ -193,7 +192,7 @@ async def ensure_lessons(
             raise
         await _set_session(ctx, user_id, pick, sid)
     logger.info(
-        "Leçon lancée : utilisateur %s, programme %s, module %s, session %s",
+        "Lesson started: user %s, program %s, module %s, session %s",
         user_id,
         program_id,
         pick.module_id,
@@ -203,18 +202,18 @@ async def ensure_lessons(
 
 
 async def start_lessons(ctx: ProductionContext, user_id: str, program_id: str) -> None:
-    """`ensure_lessons` sans jamais lever (après une validation) : une panne est journalisée
-    par son type, la tâche planifiée rattrapera."""
+    """`ensure_lessons` without ever raising (after a validation): a failure is logged by its
+    type, the scheduled job will catch up."""
     try:
         await ensure_lessons(ctx, user_id, program_id)
     except Exception as exc:
-        logger.warning("Leçons non lancées : programme %s (%s)", program_id, type(exc).__name__)
+        logger.warning("Lessons not started: program %s (%s)", program_id, type(exc).__name__)
 
 
 async def list_programs_due(
     session_factory: async_sessionmaker[AsyncSession],
 ) -> list[tuple[str, str]]:
-    """`(utilisateur, programme)` des programmes validés : seule lecture sans `user_id` de la
-    phase, réservée à la tâche planifiée (D91), identifiants seulement."""
+    """`(user, program)` of validated programs: the phase's only read without `user_id`,
+    reserved for the scheduled job (D91), identifiers only."""
     async with session_factory() as db:
         return await list_validated_programs(db)

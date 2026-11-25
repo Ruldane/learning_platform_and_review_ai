@@ -3,9 +3,27 @@
 import httpx
 
 from app.core.practice import RECENT_PRACTICE
-from app.db.models.study import QuizAttempt
+from app.db.models.study import QuizAttempt, QuizQuestion
+from app.features.quiz.service.ghost import question_version
 from tests.features.quiz.conftest import Seeded
 from tests.features.quiz.support import API, PASS_85, answers, grade, ready_quiz, started_attempt
+
+
+def test_renaming_the_multiple_choice_code_keeps_attempts_on_the_same_version() -> None:
+    row = QuizQuestion(
+        id="q1",
+        quiz_id="quiz",
+        user_id="u1",
+        rank=1,
+        type="qcm",
+        prompt="Which query filters the rows?",
+        choices=["SELECT", "WHERE", "ORDER BY"],
+        correct_index=1,
+        skill="SQL",
+    )
+    legacy = question_version([row])
+    row.type = "mcq"
+    assert question_version([row]) == legacy
 
 
 async def test_ghost_shows_recorded_metrics_without_replaying_answers(

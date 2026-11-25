@@ -1,5 +1,5 @@
-"""La mémoire dans la vie de l'application : ce que les requêtes et le worker partagent. Ouvert
-par le lifespan (`app.state.memory`), avant le moteur d'agents."""
+"""Memory in the application's lifecycle: what requests and the worker share. Opened
+by the lifespan (`app.state.memory`), before the agent engine."""
 
 import asyncio
 from collections.abc import AsyncIterator
@@ -13,7 +13,7 @@ from app.core.providers import MemoryProviders
 from app.features.memory.service.indexer import MemoryIndexer
 
 if TYPE_CHECKING:
-    # `jobs` importe la chaîne d'ingestion, qui importe ce module : import différé.
+    # `jobs` imports the ingestion chain, which imports this module: deferred import.
     from app.features.memory.service.jobs import MemoryJobs
 
 
@@ -26,9 +26,9 @@ class MemoryRuntime:
     _learn_locks: dict[str, asyncio.Lock] = field(default_factory=dict, repr=False, compare=False)
 
     def learn_lock(self, user_id: str) -> asyncio.Lock:
-        """Verrou de « Déjà appris » de l'utilisateur (D71) : ne couvre que la section « session
-        déjà ouverte ? sinon lancer », pour qu'un double clic ne lance qu'une session. Propre à
-        ce processus (un seul worker). Un verrou par utilisateur, gardé pour la vie du processus."""
+        """The user's "Already learned" lock (D71): covers only the "session already open?
+        otherwise start" section, so a double click starts only one session. Local to this
+        process (single worker). One lock per user, kept for the process lifetime."""
         return self._learn_locks.setdefault(user_id, asyncio.Lock())
 
 
@@ -36,8 +36,8 @@ class MemoryRuntime:
 async def memory_runtime(
     session_factory: async_sessionmaker[AsyncSession], providers: MemoryProviders
 ) -> AsyncIterator[MemoryRuntime]:
-    """Démarre le worker (reprise des documents `queued` et `processing` comprise) et l'arrête à
-    la sortie : un import interrompu reste `processing` et repart au prochain démarrage."""
+    """Starts the worker (including resuming `queued` and `processing` documents) and stops it
+    on exit: an interrupted import stays `processing` and restarts on the next startup."""
     from app.features.memory.service.jobs import MemoryJobs
 
     built: list[MemoryRuntime] = []

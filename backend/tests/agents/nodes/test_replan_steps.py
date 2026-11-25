@@ -26,7 +26,7 @@ from app.agents.tools.study_schema import ReplanOption
 from tests.support.replan import replan_context
 
 EXTRA = ReplanTaskDraft(
-    module="m9", title="Lire un article", type="lire", minutes=30, done_criterion="Notes prises"
+    module="m9", title="Lire un article", type="read", minutes=30, done_criterion="Notes prises"
 )
 
 

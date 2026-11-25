@@ -5,6 +5,7 @@ au modèle."""
 from typing import Any
 
 import httpx
+import pytest
 from fastapi import FastAPI
 from sqlalchemy import select
 
@@ -14,7 +15,7 @@ from tests.support.direct import API, OTHER, Seed, assert_no_agent
 
 SECRET = "SECRET-DU-QUIZ"
 QCM: dict[str, Any] = {
-    "type": "qcm",
+    "type": "mcq",
     "prompt": "Que renvoie len([1, 2, 3]) ?",
     "choices": ["2", "3", "4"],
     "correct_index": 1,
@@ -73,7 +74,7 @@ async def test_write_quiz_is_ready_and_hides_the_answers(
         "Quiz des bases",
         drafted.modules[0],
     )
-    assert [q["type"] for q in quiz["questions"]][::4] == ["qcm", "short"] and quiz[
+    assert [q["type"] for q in quiz["questions"]][::4] == ["mcq", "short"] and quiz[
         "attempts"
     ] == []
     assert "correct_index" not in r.text and "expected" not in r.text  # jamais avant une note
@@ -202,14 +203,23 @@ async def test_quiz_write_is_isolated_between_users(
         assert (await db.execute(select(Quiz))).scalars().all()[0].title == "Quiz des bases"
 
 
+@pytest.mark.parametrize("legacy_draft", [False, True])
 async def test_incomplete_quiz_stays_in_preparation_and_refuses_attempts(
-    client: httpx.AsyncClient, app: FastAPI, drafted: Seed
+    client: httpx.AsyncClient, app: FastAPI, drafted: Seed, legacy_draft: bool
 ) -> None:
     made = await write(client, drafted, questions=[QCM])
     assert made.status_code == 201, made.text
     quiz = made.json()
     assert quiz["status"] == "generating" and quiz["session_id"] is None
-    assert "En cours d'écriture" in quiz["failure_reason"] and len(quiz["questions"]) == 1
+    assert quiz["failure_reason"].startswith("This draft needs more questions")
+    assert len(quiz["questions"]) == 1
+    if legacy_draft:
+        async with app.state.session_factory.begin() as db:
+            row = await db.get(Quiz, quiz["id"])
+            assert row is not None
+            row.failure_reason = (
+                "En cours d'écriture : il manque des questions avant de pouvoir répondre au quiz."
+            )
     listed = (await client.get(f"{API}/programs/{drafted.program_id}/quizzes")).json()
     assert listed[0]["status"] == "generating"
 

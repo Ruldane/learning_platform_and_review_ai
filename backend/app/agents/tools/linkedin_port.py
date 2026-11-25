@@ -24,12 +24,12 @@ class LinkedInStore(Protocol):
 
 class _UnwiredLinkedIn:
     async def context(self, user_id: str, session_id: str, draft_id: str) -> LinkedInContext:
-        raise RuntimeError("La rédaction LinkedIn n’est pas branchée.")
+        raise RuntimeError("LinkedIn drafting is not wired.")
 
     async def propose(
         self, user_id: str, session_id: str, draft_id: str, text: LinkedInText
     ) -> None:
-        raise RuntimeError("La rédaction LinkedIn n’est pas branchée.")
+        raise RuntimeError("LinkedIn drafting is not wired.")
 
 
 NO_LINKEDIN: LinkedInStore = _UnwiredLinkedIn()

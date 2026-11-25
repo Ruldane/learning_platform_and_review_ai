@@ -1,23 +1,22 @@
-"""Grammaire stricte du Mermaid du Scribe (SPEC 3.3, 17.4, D85 §11f). L'analyseur n'admet
-qu'un `flowchart` fait de nœuds, d'arêtes, de libellés et de `subgraph` / `end` / `direction`.
-Tout le reste est refusé avec un motif lisible. `mermaid_rules` réémet ensuite le schéma depuis
-l'arbre : le texte du modèle ne sort jamais.
+"""Strict Mermaid grammar for the Scribe (SPEC 3.3, 17.4, D85 §11f).
 
-- En-tête : `flowchart` ou `graph`, puis `TD`, `TB`, `BT`, `LR` ou `RL` (suivi de `;` admis).
-- Instructions : une ligne, ou des morceaux de ligne séparés par `;` hors libellés.
-  - `subgraph <id>`, avec un libellé facultatif `[...]` ;
-  - `end` ;
-  - `direction <dir>` ;
-  - une chaîne de groupes de nœuds `A & B` reliés par des arêtes.
-- Nœud : identifiant `[A-Za-z][A-Za-z0-9_]{0,63}`, suivi au plus d'une forme connue (`SHAPES`).
-- Arête : voir `mermaid_edges` (traits, pointillés, épaisses, longues ou à pointe double ;
-  libellé `|...|` ou forme `-- texte -->`).
-- Libellé : entre guillemets, ou sans guillemets s'il ne contient aucun caractère réservé.
-  Entités Mermaid décodées, `<br>` (et `<br/>`) changé en saut de ligne, blancs réduits. Un
-  libellé vide compte comme absent : le nœud garde son identifiant d'origine pour texte.
-- Commentaires `%%` (ligne entière ou fin de ligne) : ignorés ; `%%{` (directive) : refusé.
-- Une ligne de plus de `MAX_LINE_CHARS` caractères est refusée avant toute analyse ; toutes les
-  expressions régulières sont sans retour arrière (possessives) : temps linéaire."""
+The parser reports unsupported syntax. `mermaid_rules` serializes the parsed tree to keep
+raw model output away from the renderer.
+
+- Start with `flowchart` or `graph`, then `TD`, `TB`, `BT`, `LR`, or `RL` and an optional `;`.
+- Statements occupy a line or are separated by `;` outside labels.
+  - `subgraph <id>` with an optional `[...]` label
+  - `end`
+  - `direction <dir>`
+  - Node groups such as `A & B` connected by edges
+- Node IDs match `[A-Za-z][A-Za-z0-9_]{0,63}` with at most one shape from `SHAPES`.
+- See `mermaid_edges` for solid, dotted, thick, long, and double-headed edges and their labels.
+- Quote labels containing reserved characters. Mermaid entities are decoded, `<br>` and
+  `<br/>` become newlines, and whitespace is collapsed. Empty labels fall back to the node ID.
+- The parser ignores `%%` comments and rejects `%%{` directives.
+- Lines longer than `MAX_LINE_CHARS` are rejected before parsing. Possessive regex quantifiers
+  keep parsing linear.
+"""
 
 import re
 
@@ -39,7 +38,7 @@ from app.agents.nodes.mermaid_tree import (
 MAX_LINE_CHARS = 400
 
 KEYWORDS = frozenset({"subgraph", "end", "direction"})
-# Instructions Mermaid hors grammaire, nommées dans le motif du refus pour aider le Scribe.
+# Include known unsupported instructions in diagnostics to help the Scribe revise.
 FORBIDDEN = frozenset(
     {"click", "call", "callback", "href", "style", "classdef", "class", "linkstyle", "interpolate"}
     | {"acctitle", "accdescr"}
@@ -77,9 +76,9 @@ class _Cursor:
 
     def unexpected(self, expected: str) -> MermaidSyntaxError:
         if self.done():
-            return MermaidSyntaxError(f"{expected} attendu en fin de ligne")
+            return MermaidSyntaxError(f"Expected {expected} at the end of the line")
         return MermaidSyntaxError(
-            f"{expected} attendu avant « {self.text[self.pos : self.pos + 16]} »"
+            f'Expected {expected} before "{self.text[self.pos : self.pos + 16]}"'
         )
 
 
@@ -87,7 +86,7 @@ def _label(cur: _Cursor, closing: str) -> str:
     if cur.take('"'):
         end = cur.text.find('"', cur.pos)
         if end < 0:
-            raise MermaidSyntaxError("guillemet non fermé dans un libellé")
+            raise MermaidSyntaxError("Unclosed quote in a label")
         raw, cur.pos = cur.text[cur.pos : end], end + 1
         cur.skip_blanks()
         if not cur.take(closing):
@@ -95,10 +94,10 @@ def _label(cur: _Cursor, closing: str) -> str:
         return label_text(raw)
     end = cur.text.find(closing, cur.pos)
     if end < 0:
-        raise MermaidSyntaxError(f"libellé non fermé (`{closing}` attendu)")
+        raise MermaidSyntaxError(f"Unclosed label. Expected `{closing}`")
     raw = cur.text[cur.pos : end]
     if _RESERVED_IN_BARE_LABEL & set(raw):
-        raise MermaidSyntaxError("libellé avec un caractère réservé : mets-le entre guillemets")
+        raise MermaidSyntaxError("Put labels containing reserved characters in quotes")
     cur.pos = end + len(closing)
     return label_text(raw)
 
@@ -108,15 +107,15 @@ def _identifier(cur: _Cursor, what: str) -> str:
     if found is None:
         raise cur.unexpected(what)
     if found.group().casefold() in KEYWORDS:
-        raise MermaidSyntaxError(f"« {found.group()} » est réservé : il ne nomme pas un nœud")
+        raise MermaidSyntaxError(f'Use a different node ID. "{found.group()}" is reserved')
     return found.group()
 
 
 def _node(cur: _Cursor) -> NodeRef:
-    key = _identifier(cur, "identifiant de nœud (lettres ASCII, chiffres, `_`)")
+    key = _identifier(cur, "a node ID (ASCII letters, digits, or `_`)")
     for index, (opening, closing) in enumerate(SHAPES):
         if cur.take(opening):
-            return NodeRef(key, index, _label(cur, closing) or None)  # vide : l'identifiant
+            return NodeRef(key, index, _label(cur, closing) or None)
     return NodeRef(key)
 
 
@@ -154,7 +153,7 @@ def _chain(cur: _Cursor) -> Chain:
 
 def _blank_then(cur: _Cursor) -> None:
     if not cur.take(" ") and not cur.take("\t"):
-        raise cur.unexpected("un blanc")
+        raise cur.unexpected("whitespace")
     cur.skip_blanks()
 
 
@@ -163,8 +162,8 @@ def _statement(cur: _Cursor) -> Statement:
     word = found.group().casefold() if found is not None else ""
     if word in FORBIDDEN:
         raise MermaidSyntaxError(
-            f"instruction `{found.group() if found else word}` interdite : seulement des nœuds, "
-            "des arêtes, `subgraph`, `end` et `direction`"
+            f"The `{found.group() if found else word}` instruction is forbidden. "
+            "Use nodes, edges, `subgraph`, `end`, and `direction`"
         )
     if found is None or word not in KEYWORDS:
         return _chain(cur)
@@ -175,9 +174,9 @@ def _statement(cur: _Cursor) -> Statement:
     if word == "direction":
         value = cur.match(_DIRECTION)
         if value is None:
-            raise cur.unexpected("direction (TD, TB, BT, LR ou RL)")
+            raise cur.unexpected("a direction (TD, TB, BT, LR, or RL)")
         return Direction(value.group())
-    key = _identifier(cur, "identifiant du sous-graphe")
+    key = _identifier(cur, "a subgraph ID")
     saved = cur.pos
     cur.skip_blanks()
     if cur.take("["):
@@ -187,11 +186,11 @@ def _statement(cur: _Cursor) -> Statement:
 
 
 def _comment(cur: _Cursor) -> bool:
-    """Commentaire `%%` jusqu'à la fin de la ligne (ignoré) ; `%%{` est une directive, refusée."""
+    """Recognize a `%%` line comment and reject any `%%{` directive in it."""
     if not cur.text.startswith("%%", cur.pos):
         return False
     if "%%{" in cur.text[cur.pos :]:
-        raise MermaidSyntaxError("directive `%%{` interdite")
+        raise MermaidSyntaxError("The `%%{` directive is forbidden")
     return True
 
 
@@ -206,7 +205,7 @@ def _parse_line(text: str, chart: Flowchart) -> None:
         chart.statements.append(_statement(cur))
         cur.skip_blanks()
         if not cur.done() and not cur.take(";") and not _comment(cur):
-            raise cur.unexpected("`;` ou une fin de ligne")
+            raise cur.unexpected("`;` or a line break")
 
 
 def _balance_problems(statements: list[Statement]) -> list[str]:
@@ -216,36 +215,36 @@ def _balance_problems(statements: list[Statement]) -> list[str]:
             depth += 1
         elif isinstance(statement, End):
             if depth == 0:
-                return ["`end` sans `subgraph` ouvert"]
+                return ["`end` without an open `subgraph`"]
             depth -= 1
-    return ["`subgraph` non fermé par `end`"] if depth else []
+    return ["Close each `subgraph` with `end`"] if depth else []
 
 
 def parse_flowchart(code: str) -> tuple[Flowchart | None, list[str]]:
-    """L'arbre du schéma et la liste des problèmes (l'arbre est `None` s'il y en a)."""
+    """Return the parsed chart or a list of syntax problems."""
     chart: Flowchart | None = None
     problems: list[str] = []
     for number, line in enumerate(code.splitlines(), start=1):
         text = line.strip()
         if len(text) > MAX_LINE_CHARS:
-            problems.append(f"ligne {number} : plus de {MAX_LINE_CHARS} caractères")
+            problems.append(f"Line {number}: exceeds {MAX_LINE_CHARS} characters")
             continue
         if text.startswith("%%"):
             if "%%{" in text:
-                problems.append(f"ligne {number} : directive `%%{{` interdite")
+                problems.append(f"Line {number}: the `%%{{` directive is forbidden")
             continue
         if not text:
             continue
         if chart is None:
             header = _HEADER.fullmatch(text)
             if header is None:
-                return None, ["la première ligne doit être `flowchart TD` (ou TB, BT, LR, RL)"]
+                return None, ["Start with `flowchart TD` or use TB, BT, LR, or RL"]
             chart, text = Flowchart(header.group(1)), header.group(2) or ""
         try:
             _parse_line(text, chart)
         except MermaidSyntaxError as exc:
-            problems.append(f"ligne {number} : {exc}")
+            problems.append(f"Line {number}: {exc}")
     if chart is None:
-        return None, problems or ["schéma vide"]
+        return None, problems or ["The diagram is empty"]
     problems += _balance_problems(chart.statements)
     return (None if problems else chart), problems

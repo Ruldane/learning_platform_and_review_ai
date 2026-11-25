@@ -1,6 +1,6 @@
-"""Le comité de recrutement simulé (SPEC F19, D147) : quatre personas (Lecteur ATS, Recruteur,
-Manager, Futur collègue) donnent leur impression, débattent deux tours, votent ; le Modérateur
-classe les objections et propose trois changements. Utilisé par le parcours `hiring_committee`."""
+"""The simulated hiring committee (SPEC F19, D147): four personas (ATS Reader, Recruiter,
+Manager, Future colleague) give their impression, debate for two rounds, vote; the Moderator
+ranks the objections and proposes three changes. Used by the `hiring_committee` flow."""
 
 from app.agents.nodes.committee.debate import make_round
 from app.agents.nodes.committee.impressions import make_impressions

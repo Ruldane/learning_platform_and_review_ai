@@ -1,8 +1,7 @@
-"""Ce que le code impose à la note du professeur (10.A3), quoi que dise le modèle : le type de note
-permis par le plan, jamais de texte de remplacement ni de long bloc de code en mode guide, la
-démarche seule (jamais de code) au niveau 3 d'un indice, une proposition qui tient dans le fichier
-montré, avec l'empreinte de ce fichier. Une règle violée est corrigée par le code, sans nouvel appel
-(chaque appel coûte)."""
+"""What the code imposes on the professor's note (10.A3), whatever the model says: the note type
+allowed by the plan, never replacement text or a long code block in guide mode, only the approach
+(never code) at hint level 3, a proposal that fits in the file shown, with that file's
+fingerprint. A violated rule is corrected by the code, without a new call (each call costs)."""
 
 import re
 
@@ -11,15 +10,15 @@ from app.agents.nodes.professor.plan import MAX_LEVEL, Plan
 from app.agents.tools.ide_port import TeachInputs
 from app.agents.tools.ide_schema import TeacherNote
 
-MAX_CODE_LINES = 3  # mode guide : un bloc de code plus long est retiré
-REMOVED = "(code retiré : décris la démarche avec tes mots.)"
+MAX_CODE_LINES = 3  # guide mode: a longer code block is removed
+REMOVED = "(Code removed. Describe the approach in your own words.)"
 _FENCE = re.compile(r"```[^\n]*\n(.*?)(?:```|\Z)", re.DOTALL)
-_INDENTED = re.compile(r"(?:^(?: {4}|\t)\S.*\n?){4,}", re.MULTILINE)  # plus de MAX_CODE_LINES
+_INDENTED = re.compile(r"(?:^(?: {4}|\t)\S.*\n?){4,}", re.MULTILINE)  # more than MAX_CODE_LINES
 
 
 def strip_code(text: str, *, keep_short: bool) -> str:
-    """Retire les blocs de code (balisés par trois accents graves, ou indentés de 4 lignes et plus)
-    de plus de `MAX_CODE_LINES` lignes ; `keep_short=False` retire tous les blocs balisés."""
+    """Removes the code blocks (fenced by three backticks, or indented by 4 lines or more) of
+    more than `MAX_CODE_LINES` lines; `keep_short=False` removes all the fenced blocks."""
 
     def fenced(match: re.Match[str]) -> str:
         code = [line for line in match[1].splitlines() if line.strip()]
@@ -29,7 +28,7 @@ def strip_code(text: str, *, keep_short: bool) -> str:
 
 
 def _place(raw: TeacherNote, ctx: TeacherContext) -> tuple[str | None, int | None, int | None]:
-    """L'endroit visé s'il est dans le fichier montré (jamais un autre fichier), sinon rien."""
+    """The targeted place if it is in the file shown (never another file), otherwise nothing."""
     if raw.path != ctx.path or raw.start_line is None:
         return None, None, None
     start = raw.start_line
@@ -42,20 +41,20 @@ def _place(raw: TeacherNote, ctx: TeacherContext) -> tuple[str | None, int | Non
 def finish(
     raw: TeacherNote, plan: Plan, inputs: TeachInputs, ctx: TeacherContext, level: int
 ) -> tuple[TeacherNote, str | None]:
-    """`(note, empreinte)` : la note corrigée selon le plan et le style, et l'empreinte du fichier
-    montré si c'est une proposition (sinon `None`)."""
+    """`(note, fingerprint)`: the note corrected according to the plan and the style, and the
+    fingerprint of the file shown if it is a proposal (otherwise `None`)."""
     kind = raw.kind if raw.kind in plan.kinds else plan.kind
     path, start, end = _place(raw, ctx)
     replacement = raw.replacement
     if kind == "proposal" and (path is None or start is None or replacement is None):
-        kind = "explanation"  # pas de plage valable dans le fichier montré : une explication
+        kind = "explanation"  # no valid range in the file shown: an explanation
     if kind != "proposal" or inputs.style == "guide":
         replacement = None
     if kind == "annotation" and path is None:
-        path, start, end = ctx.path, ctx.focus, ctx.focus  # une annotation vit dans la marge
+        path, start, end = ctx.path, ctx.focus, ctx.focus  # an annotation lives in the margin
     text = raw.text
     if kind == "hint" and level >= MAX_LEVEL:
-        text = strip_code(text, keep_short=False)  # niveau 3 : la démarche, jamais le code
+        text = strip_code(text, keep_short=False)  # level 3: the approach, never the code
     elif inputs.style == "guide":
         text = strip_code(text, keep_short=True)
     note = TeacherNote(

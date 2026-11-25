@@ -17,7 +17,7 @@ import { ProjectPage } from "./ProjectPage";
 
 const setup = (
   api: Parameters<typeof renderProjects>[1] = {},
-  path = "/competences/portfolio/p1",
+  path = "/skills/portfolio/p1",
 ) =>
   renderProjects(
     (createSocket) => ({
@@ -35,7 +35,7 @@ beforeEach(() => {
 });
 
 const TODO = projectOut("p1");
-const submitButton = () => screen.findByRole("button", { name: "Rendre le projet" });
+const submitButton = () => screen.findByRole("button", { name: "Submit the project" });
 const png = (name: string) => new File([new Uint8Array(20)], name, { type: "image/png" });
 
 describe("ProjectPage : l'énoncé", () => {
@@ -44,22 +44,22 @@ describe("ProjectPage : l'énoncé", () => {
     expect(
       await screen.findByRole("heading", { level: 1, name: "Pipeline de ventes" }),
     ).toBeVisible();
-    expect(screen.getByText("Statut : À faire")).toBeVisible();
+    expect(screen.getByText("Status: To do")).toBeVisible();
     expect(screen.getByText("Un export CSV de ventes sans identité réelle.")).toBeVisible();
     expect(screen.getByText("Agréger les ventes de « Société Fictive » par mois.")).toBeVisible();
     expect(screen.getByText("SQL uniquement")).toBeVisible();
     expect(screen.getByText("Un test vérifie le total")).toBeVisible();
-    expect(screen.getByText("Durée estimée : 6 h")).toBeVisible();
-    expect(screen.getByRole("link", { name: "Retour au Portfolio" })).toHaveAttribute(
+    expect(screen.getByText("Estimated time: 6 h")).toBeVisible();
+    expect(screen.getByRole("link", { name: "Back to Portfolio" })).toHaveAttribute(
       "href",
-      "/competences/portfolio",
+      "/skills/portfolio",
     );
   });
 
   it("says a project is missing", async () => {
-    setup({ projects: [] }, "/competences/portfolio/nope");
+    setup({ projects: [] }, "/skills/portfolio/nope");
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Projet introuvable" }),
+      await screen.findByRole("heading", { level: 1, name: "Project not found" }),
     ).toBeVisible();
   });
 
@@ -71,7 +71,7 @@ describe("ProjectPage : l'énoncé", () => {
     });
     const { settle, sockets } = setup({ projects: [pending] });
     expect(
-      await screen.findByRole("heading", { name: "Énoncé en cours d'écriture" }),
+      await screen.findByRole("heading", { name: "Brief being written" }),
     ).toBeVisible();
     const stream = await openStream(sockets, "sess-brief");
     const events = councilEvents("sess-brief");
@@ -88,20 +88,20 @@ describe("ProjectPage : l'énoncé", () => {
   it("offers « Réessayer l'énoncé » when the brief failed, and follows the new session", async () => {
     const failed = projectOut("p1", { status: "brief_failed", brief: null });
     const { user, state, sockets } = setup({ projects: [failed] });
-    await user.click(await screen.findByRole("button", { name: "Réessayer l'énoncé" }));
+    await user.click(await screen.findByRole("button", { name: "Retry the brief" }));
     expect(state.briefs).toEqual(["p1"]);
     expect(
-      await screen.findByRole("heading", { name: "Énoncé en cours d'écriture" }),
+      await screen.findByRole("heading", { name: "Brief being written" }),
     ).toBeVisible();
     await openStream(sockets, "sess-brief-p1");
-    expect(screen.queryByRole("button", { name: "Réessayer l'énoncé" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Retry the brief" })).toBeNull();
   });
 
   it("sends one brief retry on a double click", async () => {
     const failed = projectOut("p1", { status: "brief_failed", brief: null });
     const { user, state } = setup({ projects: [failed] });
-    await user.dblClick(await screen.findByRole("button", { name: "Réessayer l'énoncé" }));
-    await screen.findByRole("heading", { name: "Énoncé en cours d'écriture" });
+    await user.dblClick(await screen.findByRole("button", { name: "Retry the brief" }));
+    await screen.findByRole("heading", { name: "Brief being written" });
     expect(state.briefs).toEqual(["p1"]);
     expect(screen.queryByRole("alert")).toBeNull();
   });
@@ -110,7 +110,7 @@ describe("ProjectPage : l'énoncé", () => {
     const other = projectOut("p2", { title: "Autre projet" });
     const { user, router } = setup({ projects: [TODO, other] });
     await user.type(await screen.findByLabelText("Description"), "Une requête SQL.");
-    await router.navigate("/competences/portfolio/p2");
+    await router.navigate("/skills/portfolio/p2");
     expect(await screen.findByRole("heading", { level: 1, name: "Autre projet" })).toBeVisible();
     expect(screen.getByLabelText("Description")).toHaveValue("");
   });
@@ -124,9 +124,9 @@ describe("ProjectPage : l'énoncé", () => {
           status: 409,
         }),
     });
-    await user.click(await screen.findByRole("button", { name: "Réessayer l'énoncé" }));
+    await user.click(await screen.findByRole("button", { name: "Retry the brief" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "L'énoncé de ce projet n'est pas en échec : il est peut-être déjà relancé.",
+      "This project’s brief hasn’t failed: it may already have been retried.",
     );
   });
 });
@@ -135,11 +135,11 @@ describe("ProjectPage : rendre le projet et suivre l'évaluation", () => {
   it("sends the submission as multipart, follows the review, then shows the evaluation", async () => {
     const { user, state, settle, sockets } = setup({ projects: [TODO] });
     await user.type(
-      await screen.findByLabelText("Lien du dépôt"),
+      await screen.findByLabelText("Repository link"),
       "https://example.org/camille/ventes",
     );
     await user.type(screen.getByLabelText("Description"), "Une requête SQL.");
-    await user.upload(screen.getByLabelText("Captures d'écran"), [png("a.png"), png("b.png")]);
+    await user.upload(screen.getByLabelText("Screenshots"), [png("a.png"), png("b.png")]);
     await user.click(await submitButton());
 
     await waitFor(() => expect(state.submits).toHaveLength(1));
@@ -152,9 +152,9 @@ describe("ProjectPage : rendre le projet et suivre l'évaluation", () => {
     });
     expect(sent.screenshots.map((file) => file.name)).toEqual(["a.png", "b.png"]);
 
-    expect(await screen.findByRole("heading", { name: "Évaluation en cours" })).toBeVisible();
-    expect(screen.getByText("Statut : En cours d'évaluation")).toBeVisible();
-    expect(screen.queryByRole("form", { name: "Rendre ton projet" })).toBeNull();
+    expect(await screen.findByRole("heading", { name: "Review in progress" })).toBeVisible();
+    expect(screen.getByText("Status: Under review")).toBeVisible();
+    expect(screen.queryByRole("form", { name: "Submit your project" })).toBeNull();
     const stream = await openStream(sockets, "sess-p1-1");
     const events = councilEvents("sess-p1-1");
     stream.push(events.message("m1", "Je lis ton dépôt.", "practitioner"));
@@ -170,12 +170,12 @@ describe("ProjectPage : rendre le projet et suivre l'évaluation", () => {
       }),
     });
     stream.push(events.completed());
-    expect(await screen.findByText("Projet à refaire")).toBeVisible();
-    const checklist = screen.getByRole("list", { name: "Résultat de chaque critère" });
+    expect(await screen.findByText("Project to redo")).toBeVisible();
+    const checklist = screen.getByRole("list", { name: "Result for each criterion" });
     const items = within(checklist).getAllByRole("listitem");
     expect(items[0]).toHaveTextContent("Ventes agrégées par mois");
     expect(items[0]).toHaveTextContent("La requête groupe par mois.");
-    expect(items[1]).toHaveTextContent("Pas encore évalué");
+    expect(items[1]).toHaveTextContent("Not reviewed yet");
     expect(items[2]).toHaveTextContent("Le README est vide.");
   });
 
@@ -183,11 +183,11 @@ describe("ProjectPage : rendre le projet et suivre l'évaluation", () => {
     const { user, state } = setup({ projects: [TODO] });
     await user.type(await screen.findByLabelText("Description"), "Une requête SQL.");
     await user.dblClick(await submitButton());
-    await screen.findByRole("heading", { name: "Évaluation en cours" });
+    await screen.findByRole("heading", { name: "Review in progress" });
     expect(state.submits).toHaveLength(1);
     expect(submitSpy).toHaveBeenCalledTimes(1);
     // Un second envoi aurait reçu un 409 `review_in_progress` et la page l'aurait dit.
-    expect(screen.queryByText("Une évaluation était déjà en cours : on la suit.")).toBeNull();
+    expect(screen.queryByText("A review was already in progress: following it.")).toBeNull();
     expect(screen.queryByRole("alert")).toBeNull();
   });
 
@@ -209,13 +209,13 @@ describe("ProjectPage : rendre le projet et suivre l'évaluation", () => {
       ],
     });
     setup({ projects: [project] });
-    const history = await screen.findByRole("region", { name: "Tes rendus" });
+    const history = await screen.findByRole("region", { name: "Your submissions" });
     const card = (day: string) =>
       within(history)
-        .getByRole("heading", { name: new RegExp(`Rendu du ${day}`) })
+        .getByRole("heading", { name: new RegExp(`Submission of ${day}`) })
         .closest("li")!;
-    const latest = card("16 novembre 2026");
-    const older = card("15 novembre 2026");
+    const latest = card("16 November 2026");
+    const older = card("15 November 2026");
     expect(latest).toHaveTextContent("Deuxième rendu.");
     const latestShots = within(latest).getAllByRole("img");
     expect(latestShots.map((img) => img.getAttribute("src"))).toEqual([
@@ -235,9 +235,9 @@ describe("ProjectPage : rendre le projet et suivre l'évaluation", () => {
   it("shows the previous evaluation and the form again for a project to redo", async () => {
     const project = projectOut("p1", { status: "to_redo", evaluation: evaluationOut() });
     setup({ projects: [project] });
-    expect(await screen.findByText("Projet à refaire")).toBeVisible();
+    expect(await screen.findByText("Project to redo")).toBeVisible();
     expect(
-      screen.getByText("À reprendre : corrige ce qui manque, puis rends à nouveau ton projet."),
+      screen.getByText("To rework: fix what’s missing, then submit your project again."),
     ).toBeVisible();
     expect(await submitButton()).toHaveAttribute("aria-disabled", "false");
   });

@@ -1,10 +1,11 @@
-"""Les pièces du kit vues par l'API (D143) : une ligne `kit_items` devient un `KitItemOut`, et le
-texte qu'January modifie est recontrôlé par le code (`text_claims`, comme à la rédaction : SPEC 1,
-18.3). Fonctions pures.
+"""The kit pieces as the API sees them (D143): a `kit_items` row becomes a `KitItemOut`, and the
+text January edits is re-checked by the code (`text_claims`, as at writing time: SPEC 1,
+18.3). Pure functions.
 
-Conventions du contenu rangé (D142) : `followups` = courriel de 7 jours, une ligne `---`,
-courriel de 14 jours ; `linkedin` = invitation, une ligne `---`, message ; `form_answers` =
-`### question` puis la réponse (« À remplir par toi » ou « À compléter » si le code l'a vidée)."""
+Stored content conventions (D142): `followups` = 7-day email, a `---` line, 14-day email;
+`linkedin` = invitation, a `---` line, message; `form_answers` = `### question` then the answer
+("For you to fill in" or "To complete" if the code emptied it; the French spellings stored
+before the switch to English are still recognised)."""
 
 import re
 from dataclasses import dataclass
@@ -26,11 +27,14 @@ from app.features.applications.schemas_kit import KitItemOut, KitKind, KitSource
 
 CHECKED: frozenset[str] = frozenset({"letter", "linkedin", "followups", "form_answers", "pitch"})
 _QUESTION = re.compile(r"^### +(.*)$")
-_BLANKS = frozenset({SALARY_BLANK, TO_COMPLETE})
+# The French spellings are what rows stored before the switch to English contain.
+_SALARY_BLANKS = frozenset({SALARY_BLANK, "À remplir par toi"})
+_BLANKS = _SALARY_BLANKS | {TO_COMPLETE, "À compléter"}
+_NO_QUESTIONS = frozenset({NO_QUESTION, "Aucune question éliminatoire repérée dans l'offre."})
 
 
 def pending_item(kind: KitKind) -> KitItemOut:
-    """Une pièce pas encore rangée."""
+    """A piece not stored yet."""
     return KitItemOut(
         id=None,
         kind=kind,
@@ -47,8 +51,8 @@ def pending_item(kind: KitKind) -> KitItemOut:
 
 
 def form_items(content: str) -> list[tuple[str, str]]:
-    """`(question, réponse)` d'un `form_answers` (le texte sous chaque `### question`) ; sans
-    titre, tout le texte est une réponse sans question."""
+    """`(question, answer)` of a `form_answers` (the text under each `### question`); without a
+    title, the whole text is an answer without a question."""
     items: list[tuple[str, list[str]]] = []
     for line in content.splitlines():
         if match := _QUESTION.match(line):
@@ -57,7 +61,7 @@ def form_items(content: str) -> list[tuple[str, str]]:
             items[-1][1].append(line)
     if not items:
         text = content.strip()
-        return [("", text)] if text and text != NO_QUESTION else []
+        return [("", text)] if text and text not in _NO_QUESTIONS else []
     return [(question, "\n".join(lines).strip()) for question, lines in items]
 
 
@@ -66,12 +70,12 @@ def form_bodies(content: str) -> list[str]:
 
 
 def salary_fields(content: str) -> int:
-    """Les réponses laissées à January parce qu'elles engagent sa prétention salariale."""
-    return sum(1 for body in form_bodies(content) if body == SALARY_BLANK)
+    """The answers left to January because they commit her salary expectation."""
+    return sum(1 for body in form_bodies(content) if body in _SALARY_BLANKS)
 
 
 def words_of(kind: str, content: str) -> int | dict[str, int] | None:
-    """Le compte de mots rangé dans `meta.words` (même forme qu'à la rédaction)."""
+    """The word count stored in `meta.words` (same shape as at writing time)."""
     if kind in ("letter", "pitch"):
         return len(content.split())
     if kind == "linkedin":
@@ -93,7 +97,7 @@ def total_words(words: object) -> int | None:
 
 
 def sources_of(meta: dict[str, object]) -> list[KitSourceOut]:
-    """Les pages du dossier rangées avec la pièce, dans l'ordre des citations `[n]`."""
+    """The dossier pages stored with the piece, in the order of the `[n]` citations."""
     refs = meta.get("source_refs")
     if not isinstance(refs, list):
         return []
@@ -110,7 +114,7 @@ def item_out(row: KitItem) -> KitItemOut:
     error = meta.get("error")
     return KitItemOut(
         id=row.id,
-        kind=cast(KitKind, row.kind),  # la colonne est un texte, les valeurs sont KitKind
+        kind=cast(KitKind, row.kind),  # the column is a text, the values are KitKind
         status=cast(KitStatus, row.status),
         content=row.content,
         flags=[str(flag) for flag in flags] if isinstance(flags, list) else [],
@@ -124,11 +128,11 @@ def item_out(row: KitItem) -> KitItemOut:
 
 
 def texts_to_check(kind: str, content: str) -> list[str]:
-    """Les textes de January que `text_claims` relit : jamais les questions du formulaire."""
+    """The texts of January that `text_claims` re-reads: never the form questions."""
     if kind in ("linkedin", "followups"):
         return split_parts(content)
     if kind == "form_answers":
-        # La prétention salariale est celle de January : aucun fait du profil ne la dit.
+        # The salary expectation is January's: no profile fact states it.
         return [
             body
             for question, body in form_items(content)
@@ -138,13 +142,14 @@ def texts_to_check(kind: str, content: str) -> list[str]:
 
 
 def has_blank(kind: str, content: str) -> bool:
-    """Une réponse du formulaire reste à remplir ou à compléter."""
+    """A form answer is still to be filled in or completed."""
     return kind == "form_answers" and any(body in _BLANKS for body in form_bodies(content))
 
 
 def flagged(kind: str, content: str, ctx: KitContext) -> list[str]:
-    """Les termes (chiffres, outils, titres, noms) que le profil ne dit pas, sans doublon. Pour
-    une pièce hors `CHECKED`, aucun : le dossier vient du web, le CV n'est pas un texte écrit."""
+    """The terms (figures, tools, titles, names) that the profile does not state, without
+    duplicates. For a piece outside `CHECKED`, none: the dossier comes from the web, the CV is
+    not a written text."""
     if kind not in CHECKED:
         return []
     allowed = allowed_phrases(ctx)
@@ -163,15 +168,14 @@ class Rechecked:
 
 
 def needs_context(status: str, content: str) -> bool:
-    """La pièce sera relue : une pièce prête avec du texte ne l'est pas."""
+    """The piece will be re-read: a ready piece with text is not."""
     return not (status == "ready" and content.strip())
 
 
 def recheck(row: KitItem, content: str, ctx: KitContext | None) -> Rechecked:
-    """Le statut et le `meta` après la modification de January. Une pièce « à vérifier » (ou en
-    échec, qu'elle remplit) est relue par `text_claims` : `flags` mis à jour, « prête » si rien ne
-    reste (ni terme, ni réponse à remplir) ; une pièce prête reste prête. Un texte vide est
-    toujours « à vérifier »."""
+    """The status and the `meta` after January's edit. A piece "to check" (or failed, which she
+    fills in) is re-read by `text_claims`: `flags` updated, "ready" if nothing remains (no term,
+    no answer to fill in); a ready piece stays ready. An empty text is always "to check"."""
     meta = {key: value for key, value in (row.meta or {}).items() if key not in ("error", "code")}
     words = words_of(row.kind, content)
     if words is not None:
@@ -179,7 +183,7 @@ def recheck(row: KitItem, content: str, ctx: KitContext | None) -> Rechecked:
     if not needs_context(row.status, content):
         return Rechecked("ready", meta)
     if ctx is None:
-        raise ValueError("Le contexte du kit est nécessaire pour relire une pièce.")
+        raise ValueError("The kit context is needed to re-read a piece.")
     terms = flagged(row.kind, content, ctx)
     if terms:
         meta["flags"] = terms

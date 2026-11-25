@@ -64,7 +64,7 @@ async def callback(request: Request, user: InterfaceUserDep, rt: CalendarDep) ->
     front: str = request.app.state.settings.frontend_url
     result = "connected" if connected else "error"
     response = RedirectResponse(
-        f"{front.rstrip('/')}/reglages/agenda?agenda={result}", status_code=303, headers=PRIVATE
+        f"{front.rstrip('/')}/settings/calendar?calendar={result}", status_code=303, headers=PRIVATE
     )
     response.delete_cookie(
         oauth.OAUTH_COOKIE, path=oauth.COOKIE_PATH, secure=rt.secure, httponly=True, samesite="lax"

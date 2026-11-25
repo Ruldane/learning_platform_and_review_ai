@@ -8,7 +8,7 @@ import { useProjects } from "../../hooks/useProjects";
 import { groupByStatus } from "../../toView";
 
 /**
- * Le Portfolio (`/competences/portfolio`) : un mini projet par module du programme, groupés par
+ * Le Portfolio (`/skills/portfolio`) : un mini projet par module du programme, groupés par
  * statut (ce qui attend January d'abord) ; chaque carte mène à la page du projet.
  */
 export function PortfolioPage() {

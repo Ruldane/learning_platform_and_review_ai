@@ -8,8 +8,8 @@ import { server } from "./server";
 
 /** Les pages où les liens des candidatures mènent : des repères, pour vérifier qu'on y arrive. */
 const LANDINGS: RouteObject[] = [
-  { path: "/carriere/cv/versions", element: <p>Page des versions de CV</p> },
-  { path: "/carriere/offres/:postingId", element: <p>{"Page de l'offre"}</p> },
+  { path: "/career/cv/versions", element: <p>Page des versions de CV</p> },
+  { path: "/career/postings/:postingId", element: <p>{"Page de l'offre"}</p> },
 ];
 
 /**

@@ -104,9 +104,7 @@ def exercise_done(outcomes: list[Outcome]) -> bool:
 
 
 def study_unavailable() -> AppError:
-    return AppError(
-        "study_unavailable", "Les sessions d'étude ne sont pas branchées sur ce moteur.", 503
-    )
+    return AppError("study_unavailable", "Study sessions are unavailable in this runtime.", 503)
 
 
 class _NoStudy:

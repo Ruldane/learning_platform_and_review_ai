@@ -36,4 +36,4 @@ async def alert_source(db: AsyncSession, user_id: str, run_id: str, ref: str) ->
                     str(entry["url"]),
                     tuple(SkillNeedLite.model_validate(item) for item in entry["skills"]),
                 )
-    raise AppError("offer_alert_not_found", "Offre du radar introuvable.", 404)
+    raise AppError("offer_alert_not_found", "Radar posting not found.", 404)

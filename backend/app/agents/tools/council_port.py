@@ -143,7 +143,7 @@ class CouncilStore(Protocol):
 
 
 def council_unavailable() -> AppError:
-    return AppError("council_unavailable", "Le Conseil n'est pas branché sur ce moteur.", 503)
+    return AppError("council_unavailable", "The Council is unavailable in this runtime.", 503)
 
 
 class _NoCouncil:

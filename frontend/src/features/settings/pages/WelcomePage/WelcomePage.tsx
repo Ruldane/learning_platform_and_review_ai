@@ -8,7 +8,7 @@ import { useSettings } from "../../hooks/useSettings";
 import { WelcomeSteps } from "./WelcomeSteps";
 
 /**
- * `/bienvenue` : le premier lancement en cinq étapes (SPEC 15.5, 17.3), hors de la navigation. La
+ * `/welcome` : le premier lancement en cinq étapes (SPEC 15.5, 17.3), hors de la navigation. La
  * porte a déjà lu les réglages, donc la page s'ouvre sans attendre ; si la lecture manque, elle le
  * dit avec « Réessayer » (le titre de l'étape prend le focus quand les réglages arrivent). Après
  * « Tout supprimer » en mode local, `state.deleted` fait dire que les données sont parties : la

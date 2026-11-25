@@ -106,7 +106,7 @@ async def test_quiz_tree_defaults(db_session: AsyncSession) -> None:
     module, quiz = await _quiz(db_session)
     assert quiz.status == "generating" and quiz.session_id is None
     question = QuizQuestion(
-        user_id="u1", quiz_id=quiz.id, rank=1, type="qcm", prompt="2 + 2 ?", skill="Calcul"
+        user_id="u1", quiz_id=quiz.id, rank=1, type="mcq", prompt="2 + 2 ?", skill="Calcul"
     )
     attempt = _attempt(quiz.id)
     db_session.add_all([question, attempt])
@@ -139,7 +139,7 @@ async def test_question_rank_is_unique_per_quiz(db_session: AsyncSession) -> Non
     _, quiz = await _quiz(db_session)
     for _ in range(2):
         db_session.add(
-            QuizQuestion(user_id="u1", quiz_id=quiz.id, rank=1, type="qcm", prompt="p", skill="s")
+            QuizQuestion(user_id="u1", quiz_id=quiz.id, rank=1, type="mcq", prompt="p", skill="s")
         )
     with pytest.raises(IntegrityError):
         await db_session.flush()
@@ -190,12 +190,14 @@ async def test_new_columns_defaults(db_session: AsyncSession) -> None:
 
 async def test_skill_snapshot_is_unique_per_user_and_week(db_session: AsyncSession) -> None:
     def snapshot(user_id: str) -> SkillSnapshot:
-        return SkillSnapshot(user_id=user_id, week_start=date(2026, 11, 9), levels={"s1": "valide"})
+        return SkillSnapshot(
+            user_id=user_id, week_start=date(2026, 11, 9), levels={"s1": "validated"}
+        )
 
     first = snapshot("u1")
     db_session.add_all([first, snapshot("u2")])
     await db_session.flush()
-    assert first.levels == {"s1": "valide"}
+    assert first.levels == {"s1": "validated"}
     db_session.add(snapshot("u1"))
     with pytest.raises(IntegrityError):
         await db_session.flush()

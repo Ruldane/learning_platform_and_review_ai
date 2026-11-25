@@ -29,7 +29,7 @@ class ProofPacketSelection(BaseModel):
     @model_validator(mode="after")
     def unique_sources(self) -> Self:
         if len({source.mission_id for source in self.sources}) != len(self.sources):
-            raise ValueError("Sélectionne des rendus distincts.")
+            raise ValueError("Select distinct submissions.")
         return self
 
 

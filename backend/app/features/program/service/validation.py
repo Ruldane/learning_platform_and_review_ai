@@ -1,13 +1,13 @@
-"""Validation d'un programme (SPEC 3.1 étape 7, 3.2 point d'arrêt n° 3 ; D7, D6, D86, D88).
+"""Validating a program (SPEC 3.1 step 7, 3.2 stop point no. 3; D7, D6, D86, D88).
 
-`validate_program` (`commit_validation` sous le verrou, puis `sync_skills` hors du verrou)
-est idempotente : statut `validated`, version acceptée (une version
-« Modifications de January » est écrite d'abord si les lignes ont bougé depuis la dernière
-version du Stratège), référentiel de compétences, compétences couvertes montées à « en cours »
-(jamais baissées) et chaque niveau changé reflété dans l'acquis de la mémoire.
+`validate_program` (`commit_validation` under the lock, then `sync_skills` outside the lock) is
+idempotent: `validated` status, accepted version (a "January's edits" version is written first
+if the rows have moved since the Strategist's last version), skills reference list, covered
+skills raised to "in progress" (never lowered) and each changed level reflected in the memory's
+learned item.
 
-La route reprend la session du Stratège qui attend sa validation, sinon valide en ligne ; tout
-passe sous le verrou du programme. Journaux : identifiants seulement (SPEC 17.2)."""
+The route resumes the Strategist session waiting for its validation, otherwise validates
+inline; everything goes under the program lock. Logs: ids only (SPEC 17.2)."""
 
 import logging
 from dataclasses import dataclass
@@ -52,7 +52,7 @@ class ValidationContext(Protocol):
 def program_busy(status: str) -> AppError:
     return AppError(
         "program_not_waiting",
-        "Le Stratège travaille encore sur ce programme : réessaie dans un instant.",
+        "The Strategist is still working on this program. Try again in a moment.",
         409,
         {"status": status},
     )
@@ -63,7 +63,7 @@ def _same_plan(a: dict[str, Any], b: dict[str, Any]) -> bool:
 
 
 async def _accept(db: AsyncSession, user_id: str, loaded: Loaded, now: datetime) -> int:
-    """Accepte la version qui décrit les lignes actuelles (écrite si elles ont bougé)."""
+    """Accepts the version that describes the current rows (written if they have moved)."""
     versions = PlanVersionRepository(db, user_id)
     latest = await versions.latest(loaded.program.id)
     current = snapshot(rows_of(loaded))
@@ -98,34 +98,35 @@ def _catalog(raw: dict[str, Any]) -> tuple[list[SkillDraft], list[EdgeDraft]]:
 
 
 def _covered(loaded: Loaded) -> list[str]:
-    """Compétences des modules planifiés (les modules sautés sont déjà acquis)."""
+    """Skills of the planned modules (skipped modules are already known)."""
     return [str(skill) for m in loaded.modules if not m.skipped for skill in m.skills]
 
 
 async def _raise_skills(
     db: AsyncSession, user_id: str, loaded: Loaded, now: datetime
 ) -> list[tuple[str, SkillLevel]]:
-    """Référentiel du Stratège, puis compétences des modules planifiés à « en cours »."""
+    """The Strategist's reference list, then skills of the planned modules to "in progress"."""
     service = SkillsService(db, user_id)
     version = await PlanVersionRepository(db, user_id).latest_with_catalog(loaded.program.id)
     if version is not None:
         await service.upsert_catalog(*_catalog(version.snapshot.get("catalog", {})))
     proof = evidence("program", loaded.program.id, f"Programme {loaded.program.title}", now)
-    return await service.raise_levels(_covered(loaded), "en_cours", proof)
+    return await service.raise_levels(_covered(loaded), "in_progress", proof)
 
 
 @dataclass(frozen=True)
 class SkillSync:
-    """Ce qu'il reste à refléter dans la mémoire, hors du verrou : TOUTES les compétences
-    couvertes par le programme, à leur niveau actuel (le reflet est idempotent)."""
+    """What remains to be reflected in memory, outside the lock: ALL the skills covered by the
+    program, at their current level (the reflection is idempotent)."""
 
     title: str
     levels: list[tuple[str, SkillLevel]]
 
 
 async def commit_validation(ctx: ValidationContext, user_id: str, program_id: str) -> SkillSync:
-    """Valide le programme et commite (idempotent : déjà validé, rien ne change) ; rend les
-    niveaux à refléter, branche « déjà validé » comprise. À appeler sous le verrou."""
+    """Validates the program and commits (idempotent: already validated, nothing changes);
+    returns the levels to reflect, the "already validated" branch included. To be called under
+    the lock."""
     async with ctx.session_factory() as db:
         loaded = await load(db, user_id, program_id)
         program = loaded.program
@@ -140,7 +141,7 @@ async def commit_validation(ctx: ValidationContext, user_id: str, program_id: st
         await db.commit()
     if changed is not None:
         logger.info(
-            "Programme validé : utilisateur %s, programme %s, %d niveau(x) changé(s)",
+            "Program validated: user %s, program %s, %d level(s) changed",
             user_id,
             program_id,
             len(changed),
@@ -151,9 +152,9 @@ async def commit_validation(ctx: ValidationContext, user_id: str, program_id: st
 async def sync_skills(
     ctx: ValidationContext, user_id: str, sync: SkillSync, *, session_id: str | None
 ) -> None:
-    """Reflète les niveaux dans les acquis de la mémoire (D6), HORS du verrou (la vectorisation
-    d'un acquis créé appelle Ollama). Idempotent : un reflet manqué (panne, arrêt) est rattrapé
-    par l'appel suivant (rejeu de `finalize`, second « Valider »). Une panne est journalisée."""
+    """Reflects the levels in the memory's learned items (D6), OUTSIDE the lock (vectorizing a
+    created item calls Ollama). Idempotent: a missed reflection (failure, stop) is caught up by
+    the next call (replay of `finalize`, second "Validate"). A failure is logged."""
     try:
         await reflect_skill_levels(
             ctx.memory,
@@ -161,16 +162,16 @@ async def sync_skills(
             sync.levels,
             author="strategist" if session_id else "user",
             session_id=session_id,
-            reason=f"Programme « {sync.title} » validé",
+            reason=f'Program "{sync.title}" validated',
         )
     except Exception:
-        logger.warning("Acquis non reflétés après validation : utilisateur %s", user_id)
+        logger.warning("Learned items not reflected after validation: user %s", user_id)
 
 
 async def validate_program(
     ctx: ValidationContext, user_id: str, program_id: str, *, session_id: str | None
 ) -> None:
-    """Valide (sous le verrou si l'appelant le tient) puis reflète les niveaux en mémoire."""
+    """Validates (under the lock if the caller holds it) then reflects the levels in memory."""
     sync = await commit_validation(ctx, user_id, program_id)
     await sync_skills(ctx, user_id, sync, session_id=session_id)
 
@@ -233,12 +234,12 @@ async def _under_lock(
 async def request_validation(
     runtime: AgentRuntime, rt: ProgramRuntime, user_id: str, program_id: str
 ) -> ValidateOut:
-    """Sous le verrou du programme : déjà validé → 202 sans session ; règles vérifiées sur l'état
-    courant (422) ; Stratège en attente sur `validate_program` → reprise (« validate ») ;
-    validation déjà reprise et en cours → même état ; Stratège occupé (révision) → 409 ;
-    sinon (brouillon sans session ouverte) → validation en ligne. Hors du verrou ensuite : les
-    niveaux sont reflétés dans la mémoire (rattrape un reflet manqué, programme déjà validé
-    compris)."""
+    """Under the program lock: already validated → 202 without a session; rules checked on the
+    current state (422); Strategist waiting on `validate_program` → resume ("validate");
+    validation already resumed and running → same state; Strategist busy (revision) → 409;
+    otherwise (draft without an open session) → inline validation. Outside the lock afterwards:
+    the levels are reflected in memory (catches up a missed reflection, already validated
+    program included)."""
     async with rt.program_lock(user_id, program_id):
         out, sync = await _under_lock(runtime, rt, user_id, program_id)
     if sync is not None:
@@ -248,8 +249,8 @@ async def request_validation(
 
 
 async def start_production(rt: ProgramRuntime, user_id: str, program_id: str) -> None:
-    """Après la validation, hors de tout verrou du programme : leçons des semaines 1 et 2
-    lancées en chaîne (D91, idempotent : une seule chaîne par programme). Jamais d'erreur ici :
-    une panne est journalisée et la tâche planifiée rattrape."""
+    """After the validation, outside any program lock: lessons of weeks 1 and 2 launched in a
+    chain (D91, idempotent: a single chain per program). Never an error here: a failure is
+    logged and the scheduled task catches up."""
     if rt.lessons is not None:
         await start_lessons(rt.lessons, user_id, program_id)

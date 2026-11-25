@@ -114,7 +114,7 @@ describe("BackgroundNotices", () => {
     expect(await within(region()).findByText("Pendant l'absence")).toBeVisible();
   });
 
-  it("closes a notice on Fermer and keeps the others", async () => {
+  it("closes one notice and keeps the others", async () => {
     const { state, user } = setup({ events: [activityItem("e1", T(1))] });
     await waitFor(() => expect(state.queries.length).toBeGreaterThan(1));
     state.events.push(
@@ -123,7 +123,7 @@ describe("BackgroundNotices", () => {
     );
     expect(await within(region()).findByText("Seconde")).toBeVisible();
     await user.click(
-      within(region()).getByRole("button", { name: /Fermer la notification : Seconde/ }),
+      within(region()).getByRole("button", { name: "Close notification: Seconde" }),
     );
     expect(within(region()).queryByText("Seconde")).toBeNull();
     expect(within(region()).getByText("Première")).toBeVisible();
@@ -137,12 +137,12 @@ describe("BackgroundNotices", () => {
     );
     await within(region()).findByText("Nouveauté 6");
     const titles = within(region())
-      .getAllByRole("button", { name: /Fermer/ })
+      .getAllByRole("button", { name: /Close notification/ })
       .map((button) => button.getAttribute("aria-label"));
     expect(titles).toEqual([
-      "Fermer la notification : Nouveauté 6",
-      "Fermer la notification : Nouveauté 5",
-      "Fermer la notification : Nouveauté 4",
+      "Close notification: Nouveauté 6",
+      "Close notification: Nouveauté 5",
+      "Close notification: Nouveauté 4",
     ]);
     // Les plus anciennes de la rafale ne sont ni montrées plus tard, ni annoncées une seconde fois.
     await new Promise((resolve) => setTimeout(resolve, POLL * 5));
@@ -158,11 +158,11 @@ describe("BackgroundNotices", () => {
     state.events.push(activityItem("e3", T(3), { title: "Seconde" }));
     await within(region()).findByText("Seconde");
     const titles = within(region())
-      .getAllByRole("button", { name: /Fermer/ })
+      .getAllByRole("button", { name: /Close notification/ })
       .map((button) => button.getAttribute("aria-label"));
     expect(titles).toEqual([
-      "Fermer la notification : Première",
-      "Fermer la notification : Seconde",
+      "Close notification: Première",
+      "Close notification: Seconde",
     ]);
   });
 
@@ -191,14 +191,14 @@ describe("BackgroundNotices", () => {
     },
   );
 
-  it("holds a notice while the focus is on its Fermer button", { timeout: 20_000 }, async () => {
+  it("holds a notice while its close button has focus", { timeout: 20_000 }, async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     const { state, user } = setup({ events: [activityItem("e1", T(1))] }, 2_000);
     await waitFor(() => expect(state.queries.length).toBeGreaterThan(1));
     state.events.push(activityItem("e2", T(2), { title: "Au clavier" }));
     await within(region()).findByText("Au clavier");
     await user.tab();
-    expect(within(region()).getByRole("button", { name: /Fermer/ })).toHaveFocus();
+    expect(within(region()).getByRole("button", { name: /Close notification/ })).toHaveFocus();
     await advance(8_000);
     expect(within(region()).getByText("Au clavier")).toBeVisible();
     await user.tab();

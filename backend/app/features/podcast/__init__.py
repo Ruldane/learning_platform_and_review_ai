@@ -1,1 +1,1 @@
-"""Podcast d’apprentissage du matin."""
+"""Morning learning podcast."""

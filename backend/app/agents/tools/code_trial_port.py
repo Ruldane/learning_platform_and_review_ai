@@ -42,12 +42,12 @@ class CodeTrialPort(Protocol):
 
 class _Unavailable:
     async def passages(self, user_id: str, session_id: str, trial_id: str) -> list[CodePassage]:
-        raise AppError("code_trial_unavailable", "Le procès du code est indisponible.", 503)
+        raise AppError("code_trial_unavailable", "The code trial is unavailable.", 503)
 
     async def save(
         self, user_id: str, session_id: str, trial_id: str, pleadings: list[CodePleading]
     ) -> None:
-        raise AppError("code_trial_unavailable", "Le procès du code est indisponible.", 503)
+        raise AppError("code_trial_unavailable", "The code trial is unavailable.", 503)
 
 
 NO_CODE_TRIAL: CodeTrialPort = _Unavailable()

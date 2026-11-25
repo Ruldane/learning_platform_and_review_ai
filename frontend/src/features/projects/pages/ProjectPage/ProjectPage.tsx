@@ -11,7 +11,7 @@ import { BackLink } from "./BackLink";
 import { ProjectView } from "./ProjectView";
 
 /**
- * Un projet (`/competences/portfolio/:projectId`) : l'énoncé, le rendu et son suivi, l'évaluation,
+ * Un projet (`/skills/portfolio/:projectId`) : l'énoncé, le rendu et son suivi, l'évaluation,
  * puis, une fois validé, les brouillons et l'ajout au profil maître. `createSocket` ne sert
  * qu'aux tests.
  */

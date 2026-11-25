@@ -25,7 +25,7 @@ ENRICH_SHARE = 0.3
 ENRICH_MAX = 15
 
 _DIGITS = re.compile(r"\d+")
-_ACQUIRED: frozenset[str] = frozenset({"valide", "prouve"})
+_ACQUIRED: frozenset[str] = frozenset({"validated", "proven"})
 
 
 @dataclass(frozen=True)
@@ -128,8 +128,8 @@ def evolution(
 
 
 def alert_message(share: float) -> str:
-    """« Demandée dans 62 % des offres, absente de ton programme. »"""
-    return f"Demandée dans {round(share * 100)} % des offres, absente de ton programme."
+    """Describe a skill that appears often in postings and is missing from the program."""
+    return f"Requested in {round(share * 100)}% of postings and missing from your program."
 
 
 def program_alerts(

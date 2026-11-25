@@ -1,10 +1,10 @@
-"""Lecture d'un article arXiv (SPEC 10.2) : métadonnées par l'API
-(`https://export.arxiv.org/api/query?id_list=<id>`, flux Atom analysé par `defusedxml`, sans
-DTD ni entité), puis texte du PDF (`https://arxiv.org/pdf/<id>`) ; le résumé sert de texte si le
-PDF manque. Les deux appels passent par le `WebFetcher` sûr (garde SSRF, débit : 3 s entre deux
-appels à l'API, consigne d'arXiv, D74).
+"""Reading of an arXiv paper (SPEC 10.2): metadata through the API
+(`https://export.arxiv.org/api/query?id_list=<id>`, Atom feed parsed by `defusedxml`, without
+DTD or entity), then the PDF text (`https://arxiv.org/pdf/<id>`); the abstract serves as text if the
+PDF is missing. Both calls go through the safe `WebFetcher` (SSRF guard, rate: 3 s between two
+calls to the API, arXiv's guideline, D74).
 
-Seul l'identifiant, validé par expression régulière, entre dans les URL appelées."""
+Only the identifier, validated by regular expression, enters the URLs called."""
 
 import asyncio
 import logging
@@ -33,19 +33,19 @@ logger = logging.getLogger(__name__)
 API_URL = "https://export.arxiv.org/api/query"
 PDF_ROOT = "https://arxiv.org/pdf"
 _HOSTS = frozenset({"arxiv.org", "www.arxiv.org", "export.arxiv.org"})
-# Part des 15 s de la lecture gardée après l'étape du PDF : un PDF trop lent laisse le temps de
-# rendre le résumé (revue 3.4).
+# Share of the 15 s of the read kept after the PDF step: a PDF that is too slow leaves time to
+# return the abstract (review 3.4).
 _PDF_MARGIN_RATIO = 0.15
 _ATOM_TYPES = ("application/atom+xml", "application/xml", "text/xml")
 _NS = "{http://www.w3.org/2005/Atom}"
-# Identifiants récents (`1706.03762`, `2401.12345v2`) et anciens (`hep-th/9901001`,
-# `math.GT/0309136v1`), version gardée.
+# Recent identifiers (`1706.03762`, `2401.12345v2`) and old ones (`hep-th/9901001`,
+# `math.GT/0309136v1`), version kept.
 _ID = r"\d{4}\.\d{4,5}(?:v\d+)?|[a-z-]+(?:\.[A-Z]{2})?/\d{7}(?:v\d+)?"
 _PATH = re.compile(rf"/(?:abs|pdf)/(?P<id>{_ID})(?:\.pdf)?/?")
 
 
 def arxiv_id(url: str) -> str | None:
-    """Identifiant d'une URL `arxiv.org/abs/<id>` ou `arxiv.org/pdf/<id>[.pdf]`, sinon `None`."""
+    """Identifier of a URL `arxiv.org/abs/<id>` or `arxiv.org/pdf/<id>[.pdf]`, otherwise `None`."""
     try:
         parts = urlsplit(url)
         host = (parts.hostname or "").lower()
@@ -60,14 +60,14 @@ def arxiv_id(url: str) -> str | None:
 
 
 def _clean(element: Element | None) -> str | None:
-    """Texte d'un élément, blancs (dont les retours à la ligne du flux) réduits à une espace."""
+    """Text of an element, blanks (including the feed's line breaks) reduced to one space."""
     text = " ".join((element.text or "").split()) if element is not None else ""
     return text or None
 
 
 def _entry(body: bytes) -> Element:
-    """Bloquant (expat) : appelé dans un thread. Première entrée du flux ; un flux vide, une
-    entrée d'erreur de l'API ou un XML refusé → `ARXIV_UNREADABLE`."""
+    """Blocking (expat): called in a thread. First entry of the feed; an empty feed, an
+    error entry from the API or a refused XML -> `ARXIV_UNREADABLE`."""
     try:
         root = fromstring(body, forbid_dtd=True)
     except (ParseError, DefusedXmlException, ValueError):
@@ -87,10 +87,10 @@ class ArxivReader:
         self._pdf = pdf
 
     async def read(self, url: str) -> WebDocument:
-        """Titre, auteurs joints, date de publication, résumé et texte du PDF. API en échec ou
-        article absent → `UrlUnreadable(ARXIV_UNREADABLE)` ; une adresse refusée et le délai
-        dépassé passent tels quels ; un PDF en échec ou trop lent laisse le résumé comme texte.
-        L'étape du PDF s'arrête `_PDF_MARGIN_RATIO` × 15 s avant l'échéance de la lecture."""
+        """Title, joined authors, publication date, abstract and PDF text. API failure or
+        missing paper -> `UrlUnreadable(ARXIV_UNREADABLE)`; a refused address and the exceeded
+        timeout pass through as they are; a failed or too slow PDF leaves the abstract as the text.
+        The PDF step stops `_PDF_MARGIN_RATIO` x 15 s before the read's deadline."""
         paper = arxiv_id(url)
         if paper is None:
             raise UrlUnreadable(ARXIV_UNREADABLE)
@@ -128,11 +128,11 @@ class ArxivReader:
         return resource.body
 
     async def _pdf_text(self, paper: str, deadline: float) -> str:
-        """Texte du PDF avant `deadline`, ou `""` en cas d'échec ou de délai (journal : code
-        d'erreur seulement). L'échéance est publiée au fetcher (débit et téléchargement) ; le
-        sous-processus d'extraction est tué à l'annulation (D72)."""
+        """PDF text before `deadline`, or `""` on failure or timeout (log: error code
+        only). The deadline is published to the fetcher (rate and download); the
+        extraction subprocess is killed on cancellation (D72)."""
         if deadline <= asyncio.get_running_loop().time():
-            logger.info("PDF arXiv non lu, résumé gardé (délai)")
+            logger.info("arXiv PDF not read, abstract kept (timeout)")
             return ""
         token = base.READ_DEADLINE.set(deadline)
         try:
@@ -142,10 +142,10 @@ class ArxivReader:
                 )
                 text = await self._pdf.extract_text(resource.body)
         except TimeoutError:
-            logger.info("PDF arXiv trop lent, résumé gardé")
+            logger.info("arXiv PDF too slow, abstract kept")
             return ""
         except AppError as exc:
-            logger.info("PDF arXiv illisible, résumé gardé (%s)", exc.code)
+            logger.info("arXiv PDF unreadable, abstract kept (%s)", exc.code)
             return ""
         finally:
             base.READ_DEADLINE.reset(token)

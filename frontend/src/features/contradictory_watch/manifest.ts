@@ -4,13 +4,13 @@ export const contradictoryWatchManifest: FeatureManifest = {
   id: "contradictory_watch",
   routes: [
     {
-      path: "etudier/veille-contradictoire",
+      path: "study/contradictory-watch",
       lazy: async () => ({
         Component: (await import("./pages/WatchPage")).WatchPage,
       }),
     },
     {
-      path: "etudier/veille-contradictoire/:experimentId",
+      path: "study/contradictory-watch/:experimentId",
       lazy: async () => ({
         Component: (await import("./pages/WatchPage")).WatchDetailPage,
       }),
@@ -20,7 +20,7 @@ export const contradictoryWatchManifest: FeatureManifest = {
     {
       section: "study",
       labelKey: "contradictoryWatch.title",
-      path: "/etudier/veille-contradictoire",
+      path: "/study/contradictory-watch",
       order: 7.5,
     },
   ],

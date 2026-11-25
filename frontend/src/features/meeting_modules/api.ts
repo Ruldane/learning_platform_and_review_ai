@@ -2,7 +2,7 @@ import { api } from "@/shared/api/client";
 import { unwrap } from "@/shared/api/errors";
 import type { components } from "@/shared/api/schema";
 
-export const meetingPath = "/etudier/modules-reunion";
+export const meetingPath = "/study/meeting-modules";
 export const meetingsKey = ["meeting_modules"] as const;
 
 type ModuleDraft = components["schemas"]["MeetingModuleIn"];

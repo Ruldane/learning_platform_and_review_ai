@@ -1,10 +1,10 @@
-"""Modifications de January sur un programme (SPEC 3.4, D88) : déplacer ou retoucher une tâche,
-ajouter et supprimer des tâches, décaler la date de début d'un brouillon.
+"""January's edits to a program (SPEC 3.4, D88): move or edit a task, add and remove tasks,
+shift a draft's start date.
 
-Tout se fait sous `program_lock(user_id, program_id)`, sur l'état relu dans une session neuve :
-les règles de la semaine (85 % du budget, au moins une pratique, un quiz) sont vérifiées sur
-chaque semaine touchée avant le commit. Deux déplacements qui tiennent chacun mais pas ensemble :
-le second voit le premier et reçoit une 422 lisible, sans recopie de la saisie."""
+Everything happens under `program_lock(user_id, program_id)`, on the state re-read in a new
+session: the week rules (85% of the budget, at least one practice, one quiz) are checked on
+each touched week before the commit. Two moves that each hold but not together: the second
+sees the first and receives a readable 422, without echoing the input."""
 
 import logging
 from collections.abc import Iterable
@@ -25,7 +25,7 @@ MONDAY = 0
 
 
 class WeekRuleBroken(AppError):
-    """Une règle de la semaine serait cassée ; `details` : rang, charge et plafond (nombres)."""
+    """A week rule would be broken; `details`: rank, load and cap (numbers)."""
 
     def __init__(
         self, code: str, message: str, week: Week | None, planned: int | None, cap: int
@@ -39,31 +39,31 @@ class WeekRuleBroken(AppError):
 
 
 def task_not_found() -> AppError:
-    return AppError("task_not_found", "Tâche introuvable.", 404)
+    return AppError("task_not_found", "Task not found.", 404)
 
 
 def module_not_found() -> AppError:
-    return AppError("module_not_found", "Module introuvable.", 404)
+    return AppError("module_not_found", "Module not found.", 404)
 
 
 def _outside(cap: int) -> WeekRuleBroken:
     return WeekRuleBroken(
-        "date_outside_program", "Ce jour est en dehors des semaines du programme.", None, None, cap
+        "date_outside_program", "Choose a day within the program.", None, None, cap
     )
 
 
 _MESSAGES: dict[WeekRule, str] = {
     "week_over_budget": (
-        "{label} dépasserait 85 % de ton budget : {total} min prévues, {cap} au plus."
+        "{label} would exceed 85% of your budget. {total} min planned, limit {cap} min."
     ),
-    "week_needs_practice": "{label} doit garder au moins une tâche de pratique.",
-    "week_needs_quiz": "{label} doit garder son quiz.",
+    "week_needs_practice": "{label} needs at least one practice task.",
+    "week_needs_quiz": "{label} needs a quiz.",
 }
 
 
 def check_weeks(loaded: Loaded, weeks: Iterable[Week | None]) -> None:
-    """Règle de chaque semaine donnée (`rules.week_breaks`, la même que pour le Stratège), sur
-    les tâches planifiées dans ses sept jours : la première cassée lève `WeekRuleBroken`."""
+    """Rule of each given week (`rules.week_breaks`, the same as for the Strategist), on the
+    tasks planned within its seven days: the first one broken raises `WeekRuleBroken`."""
     cap = loaded.program.cap_minutes
     for week in sorted({w for w in weeks if w is not None}, key=lambda w: w.rank):
         tasks = [
@@ -73,13 +73,13 @@ def check_weeks(loaded: Loaded, weeks: Iterable[Week | None]) -> None:
         ]
         total = sum(minutes for minutes, _ in tasks)
         for rule in week_breaks(tasks, cap):
-            label = f"La semaine {week.rank}"
+            label = f"Week {week.rank}"
             message = _MESSAGES[rule].format(label=label, total=total, cap=cap)
             raise WeekRuleBroken(rule, message, week, total, cap)
 
 
 def _apply(loaded: Loaded, task: Task, patch: TaskPatch) -> set[Week | None]:
-    """Applique la retouche ; rend les semaines touchées (charge ou type changés)."""
+    """Applies the edit; returns the touched weeks (load or type changed)."""
     touched: set[Week | None] = set()
     if patch.planned_date is not None and patch.planned_date != task.planned_date:
         target = loaded.week_of(patch.planned_date)
@@ -100,7 +100,7 @@ def _apply(loaded: Loaded, task: Task, patch: TaskPatch) -> set[Week | None]:
 async def move_or_edit_task(
     rt: ProgramRuntime, user_id: str, task_id: str, patch: TaskPatch
 ) -> TaskOut:
-    """Déplace ou retouche une tâche (jour, durée, titre, statut) sous le verrou du programme."""
+    """Moves or edits a task (day, duration, title, status) under the program lock."""
     async with rt.session_factory() as db:
         program_id = await TaskRepository(db, user_id).program_of(task_id)
     if program_id is None:
@@ -113,24 +113,23 @@ async def move_or_edit_task(
         check_weeks(loaded, _apply(loaded, task, patch))
         await db.commit()
         out = task_out(task)
-    logger.info(
-        "Tâche modifiée : utilisateur %s, programme %s, tâche %s", user_id, program_id, task_id
-    )
+    logger.info("Task edited: user %s, program %s, task %s", user_id, program_id, task_id)
     return out
 
 
 def _shift(loaded: Loaded, patch: ProgramPatch) -> None:
-    """Décale tout le brouillon (semaines et tâches) à une nouvelle date de début, un lundi."""
+    """Shifts the whole draft (weeks and tasks) to a new start date, a Monday."""
     program, start = loaded.program, patch.start_date
     if start is None or start == program.start_date:
         return
     if program.status != "draft":
-        raise AppError(
-            "program_validated", "La date de début d'un programme validé ne change plus.", 409
-        )
+        raise AppError("program_validated", "A validated program has a fixed start date.", 409)
     if start.weekday() != MONDAY:
         raise AppError(
-            "invalid_start_date", "Un programme commence un lundi.", 422, {"fields": ["start_date"]}
+            "invalid_start_date",
+            "A program must start on a Monday.",
+            422,
+            {"fields": ["start_date"]},
         )
     delta: timedelta = start - program.start_date
     for week in loaded.weeks:
@@ -174,8 +173,8 @@ async def _add(loaded: Loaded, repo: TaskRepository, patch: ProgramPatch) -> set
 async def add_and_delete(
     rt: ProgramRuntime, user_id: str, program_id: str, patch: ProgramPatch
 ) -> ProgramOut:
-    """Date de début (brouillon), suppressions puis ajouts, appliqués ensemble sous le verrou :
-    une règle cassée annule tout (rien n'est commité)."""
+    """Start date (draft), removals then additions, applied together under the lock: a broken
+    rule cancels everything (nothing is committed)."""
     async with rt.program_lock(user_id, program_id), rt.session_factory() as db:
         loaded = await load(db, user_id, program_id)
         repo = TaskRepository(db, user_id)
@@ -186,7 +185,7 @@ async def add_and_delete(
         await db.commit()
         view = await view_of(db, user_id, loaded)
     logger.info(
-        "Programme modifié : utilisateur %s, programme %s, %d ajout(s), %d suppression(s)",
+        "Program edited: user %s, program %s, %d addition(s), %d removal(s)",
         user_id,
         program_id,
         len(patch.add_tasks),

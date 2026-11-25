@@ -1,4 +1,4 @@
-"""Canal de la passerelle partagé exclusivement avec le lanceur du bac."""
+"""Gateway channel shared exclusively with the sandbox launcher."""
 
 import asyncio
 import json
@@ -16,12 +16,12 @@ _FRAME_BYTES = MAX_REQUEST_BYTES + 512
 
 async def _complete(gateway: ModelGateway, payload: object) -> str:
     if not isinstance(payload, dict):
-        raise ValueError("enveloppe invalide")
+        raise ValueError("invalid envelope")
     owner, run = payload.get("user_id"), payload.get("run_id")
     if not isinstance(owner, str) or not isinstance(run, str) or len(owner) > 36 or len(run) > 36:
-        raise ValueError("travail invalide")
+        raise ValueError("invalid job")
     if not await gateway.allowed_run(owner, run):
-        raise AppError("gateway_run_refused", "Ce travail ne dispose pas de la passerelle.", 403)
+        raise AppError("gateway_run_refused", "This job does not have access to the gateway.", 403)
     return await gateway.complete(owner, payload.get("request"))
 
 
@@ -32,7 +32,7 @@ async def _serve(
         async with asyncio.timeout(10):
             raw = await reader.readline()
             if not raw.endswith(b"\n") or len(raw) > _FRAME_BYTES:
-                raise ValueError("requête modèle illisible")
+                raise ValueError("unreadable model request")
             content = await _complete(gateway, json.loads(raw))
             result: dict[str, str] = {"content": content}
     except AppError as exc:

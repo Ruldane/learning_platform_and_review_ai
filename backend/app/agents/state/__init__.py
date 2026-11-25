@@ -1,1 +1,1 @@
-"""États (TypedDict) des graphes d'agents : un module par parcours."""
+"""States (TypedDict) of the agent graphs: one module per flow."""

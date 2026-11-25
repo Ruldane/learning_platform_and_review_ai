@@ -14,7 +14,7 @@ async function repairAndSave(page: Page): Promise<void> {
     (result) => result.request().method() === "PUT" && result.url().endsWith("/files"),
   );
   await page.keyboard.insertText(
-    'def planifier(demandes):\n    return [d["id"] for d in sorted(demandes, key=lambda d: not d["urgente"])]\n',
+    'def schedule(requests):\n    return [r["id"] for r in sorted(requests, key=lambda r: not r["urgent"])]\n',
   );
   expect((await saved).ok()).toBe(true);
   await page.goBack();
@@ -29,7 +29,7 @@ test("le Boss reprend le changement client et note la remise sauvegardée", asyn
   expect(programs.ok()).toBe(true);
   const [program] = (await programs.json()) as { id: string }[];
   if (!program) throw new Error("Programme de recette introuvable.");
-  await page.goto(`/apprendre/programme/${program.id}`);
+  await page.goto(`/learn/programs/${program.id}`);
   await page.getByRole("link", { name: "Voir le Boss de fin de programme" }).click();
   await page.getByRole("button", { name: "Démarrer les 30 minutes" }).click();
   await expect(page.getByText("Demande initiale")).toBeVisible();

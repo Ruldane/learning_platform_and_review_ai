@@ -1,4 +1,4 @@
-"""Lancement dans un fil P11, lecture des sources et sauvegarde du jugement."""
+"""Launch in a P11 thread, source reading and saving of the verdict."""
 
 from collections.abc import Sequence
 from uuid import UUID
@@ -80,7 +80,7 @@ class ExpertDebates:
     async def judge(self, debate_id: UUID, text: str) -> ExpertDebateOut:
         turn, session = await self._repo.by_debate(str(debate_id))
         if session.status != "completed" or not turn.expert_speeches:
-            raise AppError("debate_pending", "Attends la fin des prises de parole.", 409)
+            raise AppError("debate_pending", "Wait until the speakers have finished.", 409)
         turn.expert_judgment = text
         return _view(turn, session)
 
@@ -116,5 +116,5 @@ class AgentExpertDebates:
             turn = await claim_turn_reply(db, user_id, thread_id, turn_id, session_id)
             if turn is not None:
                 turn.expert_speeches = [speech.model_dump(mode="json") for speech in speeches]
-                turn.answer = "Débat terminé."
+                turn.answer = "Debate finished."
             await db.commit()

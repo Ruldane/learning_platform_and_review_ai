@@ -8,7 +8,7 @@ export const taskOut = (over: Record<string, unknown> = {}) => ({
   id: "t1",
   module_id: "m1",
   title: "Lire le chapitre 1",
-  type: "lire",
+  type: "read",
   minutes: 60,
   done_criterion: "Je sais expliquer les variables.",
   planned_date: "2026-11-16",
@@ -31,7 +31,7 @@ export const moduleOut = (over: Record<string, unknown> = {}) => ({
   legacy: [],
   tasks: [
     taskOut(),
-    taskOut({ id: "t2", title: "Pratiquer les boucles", type: "pratiquer", minutes: 90 }),
+    taskOut({ id: "t2", title: "Pratiquer les boucles", type: "practice", minutes: 90 }),
     taskOut({
       id: "t3",
       title: "Faire le quiz",
@@ -81,7 +81,7 @@ const WEEK_2 = weekOut({
           id: "t5",
           module_id: "m2",
           title: "Pratiquer le tri",
-          type: "pratiquer",
+          type: "practice",
           planned_date: "2026-11-24",
           status: "done",
         }),

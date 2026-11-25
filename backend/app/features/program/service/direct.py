@@ -1,13 +1,13 @@
-"""Programme complet écrit en direct (phase 10, D213) : Claude (par le MCP) donne l'objectif, le
-titre, la date de début et les semaines, modules et tâches ; l'application les range comme le fait
-le port du Stratège (`AgentProgramStore.save_draft` : mêmes bornes, mêmes règles `check_draft` et
-`schedule`, mêmes lignes, une version « en attente »), sans agent, sans session et sans appel au
-modèle. Le programme entre en brouillon, « à valider » ; la validation reste la même
-(`POST /programs/{id}/validate`, niveau 3 pour le MCP).
+"""A complete program written directly (phase 10, D213): Claude (through MCP) gives the goal,
+the title, the start date and the weeks, modules and tasks; the application stores them as the
+Strategist's port does (`AgentProgramStore.save_draft`: same bounds, same `check_draft` and
+`schedule` rules, same rows, a "pending" version), without an agent, a session or a model call.
+The program enters as a draft, "to validate"; the validation stays the same
+(`POST /programs/{id}/validate`, level 3 for MCP).
 
-Tout est écrit par l'ORM dans une seule transaction : l'annulation de l'historique retire le
-programme, ses semaines, ses modules, ses tâches et sa version. Sous le verrou de l'objectif (clé
-du verrou des programmes) : un objectif n'a qu'un programme (409 `program_exists`)."""
+Everything is written by the ORM in a single transaction: undoing from the history removes the
+program, its weeks, its modules, its tasks and its version. Under the goal's lock (key of the
+programs lock): a goal has only one program (409 `program_exists`)."""
 
 import logging
 from datetime import date
@@ -42,17 +42,15 @@ from app.features.program.service.runtime import ProgramRuntime
 
 logger = logging.getLogger(__name__)
 
-REASON = "Programme écrit directement, sans agent."
-DEFAULT_DOMAIN = (
-    "Autres"  # le domaine affiché d'une compétence sans domaine (radar des compétences)
-)
-MAX_SKILLS = 60  # le référentiel du Stratège (`PlanDraft.skills`)
+REASON = "Program written directly, without an agent."
+DEFAULT_DOMAIN = "Other"  # the displayed domain of a skill without a domain (skills radar)
+MAX_SKILLS = 60  # the Strategist's reference list (`PlanDraft.skills`)
 
 
 def program_exists() -> AppError:
     return AppError(
         "program_exists",
-        "Cet objectif a déjà un programme : retouche-le (PATCH /programs/{id}, semaines, modules).",
+        "This goal already has a program. Edit it using PATCH /programs/{id}.",
         409,
     )
 
@@ -60,14 +58,14 @@ def program_exists() -> AppError:
 def plan_invalid(problems: list[str]) -> AppError:
     return AppError(
         "plan_invalid",
-        "Le programme ne respecte pas les règles du calendrier : corrige-le et renvoie-le.",
+        "The program does not meet the scheduling rules. Correct it and submit it again.",
         422,
         {"problems": problems},
     )
 
 
 def _draft_of(body: ProgramWrite) -> PlanDraft:
-    """Le brouillon du Stratège : sans référentiel donné, celui des compétences des modules."""
+    """The Strategist's draft: without a given reference list, the one of the modules' skills."""
     data = body.model_dump(mode="json", exclude={"goal_id", "start_date"})
     if not data["skills"]:
         names = dict.fromkeys(
@@ -81,13 +79,15 @@ def _draft_of(body: ProgramWrite) -> PlanDraft:
         ]
     try:
         return PlanDraft.model_validate(data)
-    except ValidationError as exc:  # l'ordre des notions : messages sans la valeur reçue (D303)
+    except (
+        ValidationError
+    ) as exc:  # the order of the notions: messages without the received value (D303)
         raise plan_invalid([str(error["msg"]) for error in exc.errors()]) from None
 
 
 async def write_program(rt: ProgramRuntime, user_id: str, body: ProgramWrite) -> ProgramOut:
-    """Voir le module : 404 `goal_not_found` (objectif d'une autre compris), 409 `program_exists`,
-    422 `invalid_start_date`, `planning_impossible`, `plan_invalid` (les problèmes, en phrases)."""
+    """See the module: 404 `goal_not_found` (another user's goal included), 409 `program_exists`,
+    422 `invalid_start_date`, `planning_impossible`, `plan_invalid` (the problems, in sentences)."""
     check_start_date(body.start_date)
     async with rt.program_lock(user_id, body.goal_id), rt.session_factory() as db:
         goal = await owned_goal(db, user_id, body.goal_id)
@@ -96,7 +96,7 @@ async def write_program(rt: ProgramRuntime, user_id: str, body: ProgramWrite) ->
         program_id = await _write(db, user_id, goal.weekly_minutes, body)
         await db.commit()
         out = await get_program(db, user_id, program_id)
-    logger.info("Programme écrit en direct : objectif %s, programme %s", body.goal_id, program_id)
+    logger.info("Program written directly: goal %s, program %s", body.goal_id, program_id)
     return out
 
 

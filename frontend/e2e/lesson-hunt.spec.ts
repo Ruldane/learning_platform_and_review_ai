@@ -8,7 +8,7 @@ test("repère deux erreurs dans la copie et retrouve la leçon publiée", async 
   request,
 }) => {
   await finishFirstLaunch(request);
-  await page.goto("/apprendre/lecons");
+  await page.goto("/learn/lessons");
   await page.getByRole("link", { name: "Lire « Module Bases »", exact: true }).click();
   const lesson = page.url();
   await expect(page.getByText("Un tuple est immuable.", { exact: true })).toBeVisible();

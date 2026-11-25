@@ -46,14 +46,14 @@ async def test_put_profile_creates_validated_version_and_raises_skills(
     assert body["data"]["education"][0]["sources"] == ["january"]  # aucune : January
     levels = await skill_rows(app.state.session_factory, app.state.local_user_id)
     assert {name: level for name, (level, _) in levels.items()} == {
-        name: "declare" for name in CV_FACTS["tools"].split(", ")
+        name: "declared" for name in CV_FACTS["tools"].split(", ")
     }
     [proof] = levels["Python"][1]
-    assert (proof["kind"], proof["label"]) == ("cv", "Profil maître") and proof["ref_id"]
+    assert (proof["kind"], proof["label"]) == ("cv", "Master profile") and proof["ref_id"]
     async with app.state.session_factory() as db:  # reflet dans les acquis de la mémoire (D6)
-        acquis = (await db.execute(select(MemoryItem).where(MemoryItem.kind == "acquis"))).scalars()
+        acquis = (await db.execute(select(MemoryItem).where(MemoryItem.kind == "skill"))).scalars()
         reflected = {item.title: item.meta["level"] for item in acquis}
-    assert reflected == {name: "declare" for name in CV_FACTS["tools"].split(", ")}
+    assert reflected == {name: "declared" for name in CV_FACTS["tools"].split(", ")}
     state = (await client.get(f"{API}/profile")).json()
     assert state["validated"]["version"] == 1 and state["draft"] is None
     assert state["session_id"] is None
@@ -67,18 +67,18 @@ async def test_put_profile_never_lowers_a_skill(client: httpx.AsyncClient, app: 
     user = app.state.local_user_id
     async with app.state.session_factory() as db:
         quiz = evidence("quiz", "q1", "Quiz", app.state.career.cv.now())
-        await SkillsService(db, user).raise_levels(["Python"], "valide", quiz)
+        await SkillsService(db, user).raise_levels(["Python"], "validated", quiz)
         await db.commit()
     assert (await put(client, profile_data(), None)).status_code == 200
     levels = await skill_rows(app.state.session_factory, user)
-    assert levels["Python"][0] == "valide" and levels["Docker"][0] == "declare"
+    assert levels["Python"][0] == "validated" and levels["Docker"][0] == "declared"
     async with app.state.session_factory() as db:  # l'acquis suit le niveau qui fait foi
         python = (
             await db.execute(
-                select(MemoryItem).where(MemoryItem.kind == "acquis", MemoryItem.title == "Python")
+                select(MemoryItem).where(MemoryItem.kind == "skill", MemoryItem.title == "Python")
             )
         ).scalar_one()
-    assert python.meta["level"] == "valide"
+    assert python.meta["level"] == "validated"
     assert [p["kind"] for p in levels["Python"][1]] == ["quiz", "cv"]
 
 
@@ -86,6 +86,7 @@ async def test_put_profile_conflict_and_ids_kept(client: httpx.AsyncClient) -> N
     first = (await put(client, profile_data(), None)).json()
     stale = await put(client, profile_data(), None)
     assert stale.status_code == 409 and stale.json()["error"]["code"] == "profile_conflict"
+    assert stale.json()["error"]["message"] == "Your profile has changed. Reload it before saving."
     edited = first["data"]
     edited["experiences"][0]["role"] = "Ingénieure IA"
     edited["skills"].append({"id": "", "name": "Qdrant"})
@@ -188,10 +189,12 @@ async def test_import_rejects_non_pdf(
         r = await client.post(f"{API}/profile/import", files=files)
         assert r.status_code == 415
         error = r.json()["error"]
-        assert error["code"] == "unsupported_file_type" and "PDF uniquement" in error["message"]
+        assert error["code"] == "unsupported_file_type"
+        assert error["message"] == "Upload a PDF file."
     big = {"cv": ("cv.pdf", b"%PDF-" + b"0" * (10 * 1024 * 1024), "application/pdf")}
     r = await client.post(f"{API}/profile/import", files=big)
-    assert r.status_code == 413 and "10 Mo" in r.json()["error"]["message"]
+    assert r.status_code == 413
+    assert r.json()["error"]["message"] == "The file exceeds the 10 MB limit."
     missing = await client.post(f"{API}/profile/import", data={"note": NOTE})
     assert missing.status_code == 422 and missing.json()["error"]["details"]["fields"] == ["cv"]
     assert launcher_spy.started == []

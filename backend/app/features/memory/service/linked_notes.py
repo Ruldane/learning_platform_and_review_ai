@@ -1,4 +1,4 @@
-"""Résolution des renvois Obsidian à partir des documents de la mémoire."""
+"""Resolution of Obsidian links from the memory documents."""
 
 import posixpath
 from collections import defaultdict
@@ -47,7 +47,7 @@ def _index_candidates(
 
 
 class NoteLinkIndex:
-    """Un index par dossier, réutilisable pour chaque note du dossier."""
+    """One index per folder, reusable for each note of the folder."""
 
     def __init__(self, candidates: list[NoteCandidate]) -> None:
         self._names, self._paths = _index_candidates(candidates)

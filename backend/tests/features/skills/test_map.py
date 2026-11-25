@@ -39,21 +39,21 @@ def _proof(kind: str, ref_id: str | None, label: str) -> dict[str, object]:
 
 async def test_graph_lists_nodes_edges_and_domains(db_session_factory: Factory) -> None:
     proofs = [_proof("quiz", "q1", "Quiz"), "Programme Data"]
-    pandas = await add_skill(db_session_factory, ME, "Pandas", "Données", "valide", proofs)
+    pandas = await add_skill(db_session_factory, ME, "Pandas", "Données", "validated", proofs)
     numpy = await add_skill(db_session_factory, ME, "NumPy", "Données")
-    sql = await add_skill(db_session_factory, ME, "SQL", None, "declare")
+    sql = await add_skill(db_session_factory, ME, "SQL", None, "declared")
     await add_edge(db_session_factory, ME, numpy, pandas)
-    await add_skill(db_session_factory, OTHER, "Rust", "Système", "prouve")
+    await add_skill(db_session_factory, OTHER, "Rust", "Système", "proven")
     async with db_session_factory() as db:
         graph = await skill_graph(db, ME)
     assert [(n.id, n.name, n.domain, n.level, n.demand, n.evidence_count) for n in graph.nodes] == [
         (numpy, "NumPy", "Données", None, None, 0),
-        (pandas, "Pandas", "Données", "valide", None, 2),
-        (sql, "SQL", "Autres", "declare", None, 0),
+        (pandas, "Pandas", "Données", "validated", None, 2),
+        (sql, "SQL", "Other", "declared", None, 0),
     ]
     assert [(e.before_id, e.after_id) for e in graph.edges] == [(numpy, pandas)]
-    # Données : (75 + 0) / 2 = 37,5 → 38 ; Autres : 25.
-    assert [(d.domain, d.score) for d in graph.domains] == [("Autres", 25), ("Données", 38)]
+    # Données: (75 + 0) / 2 = 37.5 → 38; Other: 25.
+    assert [(d.domain, d.score) for d in graph.domains] == [("Données", 38), ("Other", 25)]
 
 
 async def test_detail_shows_structured_and_legacy_evidence(db_session_factory: Factory) -> None:
@@ -68,7 +68,7 @@ async def test_detail_shows_structured_and_legacy_evidence(db_session_factory: F
         {"kind": "inconnu", "label": "ignorée"},
     ]
     skill_id = await add_skill(
-        db_session_factory, ME, "Pandas", "Données", "prouve", proofs, synonyms=["pd"]
+        db_session_factory, ME, "Pandas", "Données", "proven", proofs, synonyms=["pd"]
     )
     async with db_session_factory() as db:
         detail = await skill_detail(db, ME, skill_id, NOW)
@@ -76,15 +76,15 @@ async def test_detail_shows_structured_and_legacy_evidence(db_session_factory: F
         "Pandas",
         "Données",
         ["pd"],
-        "prouve",
+        "proven",
     )
     assert [(e.kind, e.url) for e in detail.evidence] == [
         ("cv", None),
-        ("program", "/apprendre/programme/p1"),
-        ("lesson", "/apprendre/lecons/l1"),
-        ("capture", "/etudier/journal"),
-        ("study", "/etudier/session/s1"),
-        ("quiz", "/etudier/quiz/q1"),
+        ("program", "/learn/programs/p1"),
+        ("lesson", "/learn/lessons/l1"),
+        ("capture", "/study/journal"),
+        ("study", "/study/session/s1"),
+        ("quiz", "/study/quiz/q1"),
         ("program", None),  # chaîne de la phase 4 : ni référence ni date
     ]
     assert detail.evidence[5].label == "Quiz « Bases » : 85 % (17/11)"
@@ -96,7 +96,7 @@ async def test_detail_shows_structured_and_legacy_evidence(db_session_factory: F
 
 
 async def test_detail_of_another_user_is_404(db_session_factory: Factory) -> None:
-    skill_id = await add_skill(db_session_factory, OTHER, "Pandas", "Données", "valide")
+    skill_id = await add_skill(db_session_factory, OTHER, "Pandas", "Données", "validated")
     async with db_session_factory() as db:
         with pytest.raises(AppError) as caught:
             await skill_detail(db, ME, skill_id, NOW)
@@ -109,21 +109,21 @@ BASES = ActionFacts(module="Bases", lesson_id="L1", quiz_id="Q1")
 @pytest.mark.parametrize(
     ("level", "facts", "expected"),
     [
-        (None, BASES, ("study", "Étudier « Bases »", "/etudier/session?lecon=L1")),
-        ("declare", ActionFacts(), ("study", "Étudier « Pandas »", "/etudier/session")),
-        ("en_cours", BASES, ("quiz", "Passer le quiz « Bases »", "/etudier/quiz/Q1")),
+        (None, BASES, ("study", "Study “Bases”", "/study/session?lesson=L1")),
+        ("declared", ActionFacts(), ("study", "Study “Pandas”", "/study/session")),
+        ("in_progress", BASES, ("quiz", "Take the quiz on “Bases”", "/study/quiz/Q1")),
         (
-            "en_cours",
+            "in_progress",
             ActionFacts(module="Bases"),
-            ("quiz", "Passer le quiz « Bases »", "/etudier/quiz"),
+            ("quiz", "Take the quiz on “Bases”", "/study/quiz"),
         ),
         (
-            "valide",
+            "validated",
             ActionFacts(cards_due=True),
-            ("review", "Réviser les fiches « Pandas »", "/etudier/revisions"),
+            ("review", "Review cards for “Pandas”", "/study/reviews"),
         ),
-        ("valide", ActionFacts(), ("project", "Projet preuve (bientôt)", None)),
-        ("prouve", BASES, None),
+        ("validated", ActionFacts(), ("project", "Evidence project (coming soon)", None)),
+        ("proven", BASES, None),
     ],
 )
 def test_next_action_by_level(
@@ -135,7 +135,7 @@ def test_next_action_by_level(
 
 def test_evidence_url_escapes_reference() -> None:
     item = Evidence(kind="quiz", ref_id="a/../b", label="Quiz", at="")
-    assert evidence_url(item) == "/etudier/quiz/a%2F..%2Fb"
+    assert evidence_url(item) == "/study/quiz/a%2F..%2Fb"
 
 
 async def test_detail_next_action_reads_lesson_quiz_and_due_cards(
@@ -154,22 +154,22 @@ async def test_detail_next_action_reads_lesson_quiz_and_due_cards(
     )  # fmt: skip
     lesson_id = await add_lesson(db_session_factory, ME, rows, 1)
     quiz_id = await add_quiz(db_session_factory, ME, rows, 1)
-    skill_id = await add_skill(db_session_factory, ME, "Pandas", "Données", "declare")
+    skill_id = await add_skill(db_session_factory, ME, "Pandas", "Données", "declared")
 
     async def action() -> tuple[str, str, str | None] | None:
         async with db_session_factory() as db:
             found = (await skill_detail(db, ME, skill_id, NOW)).next_action
         return None if found is None else (found.kind, found.label, found.url)
 
-    assert await action() == ("study", "Étudier « Bases »", f"/etudier/session?lecon={lesson_id}")
-    await set_level(db_session_factory, ME, skill_id, "en_cours")
-    assert await action() == ("quiz", "Passer le quiz « Bases »", f"/etudier/quiz/{quiz_id}")
-    await set_level(db_session_factory, ME, skill_id, "valide")
+    assert await action() == ("study", "Study “Bases”", f"/study/session?lesson={lesson_id}")
+    await set_level(db_session_factory, ME, skill_id, "in_progress")
+    assert await action() == ("quiz", "Take the quiz on “Bases”", f"/study/quiz/{quiz_id}")
+    await set_level(db_session_factory, ME, skill_id, "validated")
     await add_card(db_session_factory, ME, "PANDAS ", NOW.date() + timedelta(days=1))
     await add_card(db_session_factory, OTHER, "pandas", NOW.date())
-    assert await action() == ("project", "Projet preuve (bientôt)", None)
+    assert await action() == ("project", "Evidence project (coming soon)", None)
     await add_card(db_session_factory, ME, "Pandas", NOW.date())
-    assert await action() == ("review", "Réviser les fiches « Pandas »", "/etudier/revisions")
+    assert await action() == ("review", "Review cards for “Pandas”", "/study/reviews")
 
 
 async def test_study_action_without_ready_lesson_opens_study_home(
@@ -179,17 +179,17 @@ async def test_study_action_without_ready_lesson_opens_study_home(
     rows = await add_program(db_session_factory, ME, goal, [("Bases", ["pandas"])])
     await add_lesson(db_session_factory, ME, rows, 0, status="generating")
     await add_quiz(db_session_factory, ME, rows, 0, status="generating")
-    skill_id = await add_skill(db_session_factory, ME, "Pandas", None, "declare")
+    skill_id = await add_skill(db_session_factory, ME, "Pandas", None, "declared")
     async with db_session_factory() as db:
         study = (await skill_detail(db, ME, skill_id, NOW)).next_action
-    await set_level(db_session_factory, ME, skill_id, "en_cours")
+    await set_level(db_session_factory, ME, skill_id, "in_progress")
     async with db_session_factory() as db:
         quiz = (await skill_detail(db, ME, skill_id, NOW)).next_action
     assert study is not None and (study.label, study.url) == (
-        "Étudier « Bases »",
-        "/etudier/session",
+        "Study “Bases”",
+        "/study/session",
     )
-    assert quiz is not None and quiz.url == "/etudier/quiz"
+    assert quiz is not None and quiz.url == "/study/quiz"
 
 
 async def test_graph_demand_comes_from_the_latest_done_radar_run(

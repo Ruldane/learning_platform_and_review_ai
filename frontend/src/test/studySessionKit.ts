@@ -17,7 +17,7 @@ export const finishedOut = (over: Record<string, unknown> = {}) =>
     summary: "Tu as compris les verbes HTTP.",
     tasks_done: ["Lire la leçon"],
     flashcards_created: 3,
-    skills: [{ name: "REST", level: "en_cours" }],
+    skills: [{ name: "REST", level: "in_progress" }],
     ended_at: "2026-11-17T10:50:00Z",
     ...over,
   });

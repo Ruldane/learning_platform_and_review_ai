@@ -1,4 +1,4 @@
-"""Sélection explicite de faits validés et de preuves publiques."""
+"""Explicit selection of validated facts and public proofs."""
 
 from urllib.parse import urlsplit
 
@@ -31,13 +31,13 @@ def web_link(text: str | None) -> str | None:
 def _profile_choices(profile: MasterProfileData) -> list[Candidate]:
     identity = profile.identity
     fields = [
-        ("name", "Nom affiché", identity.name),
+        ("name", "Display name", identity.name),
         (
             "headline",
-            "Titre professionnel",
+            "Professional title",
             profile.title.text if profile.title else identity.headline,
         ),
-        ("summary", "Présentation", profile.summary.text if profile.summary else None),
+        ("summary", "About", profile.summary.text if profile.summary else None),
     ]
     choices = [
         Candidate(id=key, kind="profile", label=label, text=text)
@@ -67,8 +67,8 @@ async def _linkedin(db: AsyncSession, user_id: str) -> list[Candidate]:
         return []
     blocked = {claim.field for claim in draft.claims}
     fields = [
-        ("headline", "Titre LinkedIn relu", draft.text.headline),
-        ("about", "Présentation LinkedIn relue", draft.text.about),
+        ("headline", "Reviewed LinkedIn headline", draft.text.headline),
+        ("about", "Reviewed LinkedIn summary", draft.text.about),
     ]
     return [
         Candidate(id=f"linkedin:{key}", kind="linkedin", label=label, text=text)
@@ -87,7 +87,7 @@ async def _projects(db: AsyncSession, user_id: str) -> list[Candidate]:
                 id=f"github:{project_id}:{proof.sha}",
                 kind="github",
                 label=title,
-                text=f"Commit vérifié · {proof.sha[:12]}",
+                text=f"Verified commit · {proof.sha[:12]}",
                 url=web_link(str(proof.commit_url)),
             )
             for proof in proofs[:MAX_PROOFS_PER_PROJECT]

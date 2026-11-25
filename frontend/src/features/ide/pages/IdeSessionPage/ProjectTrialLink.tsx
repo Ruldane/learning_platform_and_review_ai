@@ -10,7 +10,7 @@ export function ProjectTrialLink({
   save: () => Promise<boolean>;
 }) {
   const navigate = useNavigate();
-  const to = `/code/${encodeURIComponent(sessionId)}/proces`;
+  const to = `/code/${encodeURIComponent(sessionId)}/trial`;
   async function open(event: MouseEvent<HTMLAnchorElement>) {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
       return;

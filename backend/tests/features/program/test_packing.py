@@ -24,8 +24,8 @@ def _entries(specs: list[tuple[str, TaskType, int]], week: int = 0) -> list[Entr
 
 
 def _own(reads: list[int]) -> list[Entry]:
-    specs: list[tuple[str, TaskType, int]] = [(f"Lire {i}", "lire", m) for i, m in enumerate(reads)]
-    return _entries([*specs, ("Pratiquer", "pratiquer", 45), ("Quiz", "quiz", 20)])
+    specs: list[tuple[str, TaskType, int]] = [(f"Lire {i}", "read", m) for i, m in enumerate(reads)]
+    return _entries([*specs, ("Pratiquer", "practice", 45), ("Quiz", "quiz", 20)])
 
 
 def _titles(entries: list[Entry]) -> list[str]:
@@ -42,7 +42,7 @@ def test_light_week_fits_and_quiz_closes_saturday(budget: Budget) -> None:
 
 def test_practice_takes_first_day_with_room(budget: Budget) -> None:
     packing = pack_week([], _own([30]), budget, MONDAY)
-    practice = next(p for p in packing.placed if p.entry.task.type == "pratiquer")
+    practice = next(p for p in packing.placed if p.entry.task.type == "practice")
     assert practice.day == MONDAY
 
 
@@ -62,16 +62,16 @@ def test_after_a_deferral_every_later_task_is_deferred(budget: Budget) -> None:
 
 
 def test_carried_tasks_come_first(budget: Budget) -> None:
-    carried = _entries([("Reste", "lire", 60)], week=0)
+    carried = _entries([("Reste", "read", 60)], week=0)
     own = [Entry(e.task, (1, 0, i)) for i, e in enumerate(_own([30]))]
     packing = pack_week(carried, own, budget, MONDAY)
-    reads = [p for p in packing.placed if p.entry.task.type == "lire"]
+    reads = [p for p in packing.placed if p.entry.task.type == "read"]
     assert [p.entry.task.title for p in reads] == ["Reste", "Lire 0"]
 
 
 def test_practice_still_fits_when_days_are_fragmented(budget: Budget) -> None:
     packing = pack_week([], _own([100] * 5), budget, MONDAY)
-    assert any(p.entry.task.type == "pratiquer" for p in packing.placed)
+    assert any(p.entry.task.type == "practice" for p in packing.placed)
     assert packing.deferred == []
 
 
@@ -88,13 +88,13 @@ def test_reserve_above_the_cap_has_no_room() -> None:
 
 
 def test_week_without_practice_or_quiz_reserves_nothing(budget: Budget) -> None:
-    only_reads = _entries([("Lire un", "lire", 60), ("Lire deux", "lire", 60)])
+    only_reads = _entries([("Lire un", "read", 60), ("Lire deux", "read", 60)])
     packing = pack_week([], only_reads, budget, MONDAY)
     assert packing.deferred == [] and not any(p.final_quiz for p in packing.placed)
 
 
 def test_same_task_object_is_not_duplicated(budget: Budget) -> None:
-    draft = TaskDraft(title="Lire un", type="lire", minutes=30, done_criterion="Notes prises")
+    draft = TaskDraft(title="Lire un", type="read", minutes=30, done_criterion="Notes prises")
     twin = [Entry(draft, (0, 0, 0)), Entry(draft, (0, 0, 1))]
     packing = pack_week([], twin, budget, MONDAY)
     assert len(packing.placed) == 2
@@ -134,17 +134,17 @@ def _light() -> ScheduledWeek:
     return _week(
         1,
         [
-            ("Lire 0", "lire", 30, 0, 0),
-            ("Pratiquer 1", "pratiquer", 45, 0, 0),
+            ("Lire 0", "read", 30, 0, 0),
+            ("Pratiquer 1", "practice", 45, 0, 0),
             ("Quiz 1", "quiz", 20, 5, 0),
         ],
     )
 
 
 def _full(rank: int = 2) -> ScheduledWeek:
-    reads: list[Spec] = [(f"Lire {rank}.{i}", "lire", 120, i, 0) for i in range(1, 5)]
+    reads: list[Spec] = [(f"Lire {rank}.{i}", "read", 120, i, 0) for i in range(1, 5)]
     return _week(
-        rank, [("Pratiquer 2", "pratiquer", 45, 0, 0), *reads, ("Quiz 2", "quiz", 20, 5, 0)], ("B",)
+        rank, [("Pratiquer 2", "practice", 45, 0, 0), *reads, ("Quiz 2", "quiz", 20, 5, 0)], ("B",)
     )
 
 
@@ -160,7 +160,7 @@ def _assert_rules(w: ScheduledWeek, budget: Budget) -> None:
         assert 0 <= t.module_index < len(w.modules)
     assert all(m <= budget.day_capacity(d) for d, m in per_day.items())
     assert w.load_minutes == sum(per_day.values()) <= budget.cap_minutes
-    assert w.tasks[-1].type == "quiz" and any(t.type == "pratiquer" for t in w.tasks)
+    assert w.tasks[-1].type == "quiz" and any(t.type == "practice" for t in w.tasks)
 
 
 def test_pull_forward_fills_a_light_week_up_to_the_floor(budget: Budget) -> None:
@@ -175,14 +175,14 @@ def test_pull_forward_fills_a_light_week_up_to_the_floor(budget: Budget) -> None
     ]
     assert first.load_minutes == 455 and second.load_minutes == 185
     assert _titles_of(second) == ["Pratiquer 2", "Lire 2.4", "Quiz 2"]
-    assert [m.title for m in first.modules] == ["Module A", "Module B (suite)"]
+    assert [m.title for m in first.modules] == ["Module A", "Module B (continued)"]
     assert [t.title for t in first.modules[1].tasks] == ["Lire 2.1", "Lire 2.2", "Lire 2.3"]
     for w in (first, second):
         _assert_rules(w, budget)
 
 
 def test_pull_forward_never_moves_the_quiz_or_the_reserved_practice(budget: Budget) -> None:
-    bare = _week(2, [("Pratiquer 2", "pratiquer", 45, 0, 0), ("Quiz 2", "quiz", 20, 5, 0)])
+    bare = _week(2, [("Pratiquer 2", "practice", 45, 0, 0), ("Quiz 2", "quiz", 20, 5, 0)])
     first, second = pull_forward([_light(), bare], budget, floor_share=1.0)
     assert first == _light() and second == bare
 
@@ -203,13 +203,17 @@ def test_full_share_fills_up_to_the_cap_in_order(budget: Budget) -> None:
 
 def test_emptied_module_leaves_its_week(budget: Budget) -> None:
     specs: list[Spec] = [
-        ("Lire seul", "lire", 60, 0, 0),
-        ("Pratiquer 2", "pratiquer", 45, 0, 1),
-        ("Lire 2.1", "lire", 120, 1, 1),
+        ("Lire seul", "read", 60, 0, 0),
+        ("Pratiquer 2", "practice", 45, 0, 1),
+        ("Lire 2.1", "read", 120, 1, 1),
         ("Quiz 2", "quiz", 20, 5, 1),
     ]
     first, second = pull_forward([_light(), _week(2, specs, ("X", "Y"))], budget, floor_share=0.6)
-    assert [m.title for m in first.modules] == ["Module A", "Module X (suite)", "Module Y (suite)"]
+    assert [m.title for m in first.modules] == [
+        "Module A",
+        "Module X (continued)",
+        "Module Y (continued)",
+    ]
     assert [m.title for m in second.modules] == ["Module Y"]
     assert all(t.module_index == 0 for t in second.tasks)
     for w in (first, second):
@@ -223,7 +227,7 @@ def test_pull_forward_does_not_change_its_input(budget: Budget) -> None:
 
 
 def test_same_module_in_the_receiving_week_is_reused(budget: Budget) -> None:
-    same = _week(2, [("Pratiquer 2", "pratiquer", 45, 0, 0), ("Lire 2.1", "lire", 120, 1, 0),
+    same = _week(2, [("Pratiquer 2", "practice", 45, 0, 0), ("Lire 2.1", "read", 120, 1, 0),
                      ("Quiz 2", "quiz", 20, 5, 0)])  # fmt: skip
     first, _ = pull_forward([_light(), same], budget, floor_share=0.6)
     assert [m.title for m in first.modules] == ["Module A"]

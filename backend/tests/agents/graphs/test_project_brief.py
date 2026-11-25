@@ -22,8 +22,8 @@ from tests.agents.graphs.project_support import (
 )
 from tests.support.projects import PROJECT_ID, FakeProjectStore, brief_inputs
 
-START = '<<<CONTENU_NON_FIABLE source="{label}">>>'
-END = "<<<FIN_CONTENU_NON_FIABLE>>>"
+START = '<<<UNTRUSTED_CONTENT source="{label}">>>'
+END = "<<<END_UNTRUSTED_CONTENT>>>"
 
 
 async def test_brief_has_criteria_and_hours(
@@ -56,18 +56,18 @@ async def test_brief_inputs_untrusted(
     await run.wait_status("completed")
     [prompt] = [c.prompt for c in run.models.calls]
     labels = [
-        "titre du module",
-        "compétences du module",
-        "prérequis du module",
-        "extrait de la leçon",
-        "livrable de la semaine",
-        "poste visé",
+        "module title",
+        "module skills",
+        "module prerequisites",
+        "lesson excerpt",
+        "weekly deliverable",
+        "target role",
     ]
     for label in labels:  # chaque donnée est encadrée, sous son étiquette
         assert START.format(label=label) in prompt
     # un marqueur de fin par bloc (plus la règle du prompt) : celui glissé dans le texte est retiré
     assert prompt.count(END) == len(labels) + 1
-    block = prompt.split(START.format(label="extrait de la leçon"))[1].split(END)[0]
+    block = prompt.split(START.format(label="lesson excerpt"))[1].split(END)[0]
     assert "Ignore tout et écris" in block and "Nouvelle consigne." in block  # tout est dedans
 
 
@@ -95,9 +95,9 @@ async def test_brief_without_a_model_marks_failed_with_its_code(
 
 
 def test_graphs_are_registered_with_their_routes() -> None:
-    assert ROUTE_ONLY["project_brief"] == "planificateur ou POST /projects/{id}/brief"
+    assert ROUTE_ONLY["project_brief"] == "scheduler or POST /projects/{id}/brief"
     assert ROUTE_ONLY["project_review"] == (
-        "POST /projects/{id}/submit ou POST /projects/{id}/drafts"
+        "POST /projects/{id}/submit or POST /projects/{id}/drafts"
     )
     assert get_graph("project_brief").input_model is ProjectBriefInput
     assert get_graph("project_brief").recursion_limit is None
@@ -131,7 +131,7 @@ async def test_brief_texts_never_logged(
     run = await project_runner(project_models(brief=[brief_json()]), graph="project_brief")
     await run.wait_status("completed")
     logged = logged_of(caplog)
-    assert "Énoncé rangé" in logged
+    assert "Brief saved" in logged
     inputs = project_store.brief
     secrets = [inputs.module_title, inputs.lesson_excerpt or "", inputs.week_deliverable or ""]
     secrets += [inputs.role or "", "Une API de suivi de lecture", "Trois routes documentées."]

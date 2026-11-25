@@ -1,1 +1,1 @@
-"""Pile de lecture quotidienne."""
+"""Daily reading stack."""

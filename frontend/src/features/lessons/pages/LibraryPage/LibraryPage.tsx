@@ -10,7 +10,7 @@ import { LibraryResults } from "./LibraryResults";
 const NO_FILTER: LibraryFilterValue = { programId: null, type: null, lang: null, status: null };
 
 /**
- * Bibliothèque (`/apprendre/bibliotheque`) : toutes les ressources des programmes, filtrables par
+ * Bibliothèque (`/learn/library`) : toutes les ressources des programmes, filtrables par
  * programme, type, langue et statut de lecture (à lire, lue).
  */
 export function LibraryPage() {

@@ -15,7 +15,7 @@ const started = { study_session_id: "st1", session_id: "s1", lesson_id: "l1" };
 
 type Summary = Record<string, unknown> | (() => Response | Promise<Response>);
 
-function setup(summary: Summary = summaryOut(), entry: InitialEntry = "/etudier/session") {
+function setup(summary: Summary = summaryOut(), entry: InitialEntry = "/study/session") {
   server.use(
     http.get(`${API}/study-sessions/summary`, () =>
       typeof summary === "function" ? summary() : HttpResponse.json(summary),
@@ -23,10 +23,10 @@ function setup(summary: Summary = summaryOut(), entry: InitialEntry = "/etudier/
     http.get(`${API}/lessons/l1`, () => HttpResponse.json({ id: "l1", title: "Les API REST" })),
   );
   const routes: { path: string; element: ReactElement }[] = [
-    { path: "/etudier/session", element: <StudyHomePage /> },
-    { path: "/etudier/session/:studyId", element: <p>Session ouverte</p> },
-    { path: "/etudier/training/:studyId", element: <p>Training ouvert</p> },
-    { path: "/apprendre/lecons", element: <p>Liste des leçons</p> },
+    { path: "/study/session", element: <StudyHomePage /> },
+    { path: "/study/session/:studyId", element: <p>Session opened</p> },
+    { path: "/study/training/:studyId", element: <p>Training opened</p> },
+    { path: "/learn/lessons", element: <p>Lesson list</p> },
   ];
   const router = createMemoryRouter(routes, { initialEntries: [entry] });
   render(<RouterProvider router={router} />, { wrapper: createQueryWrapper() });
@@ -39,26 +39,26 @@ describe("StudyHomePage", () => {
     const { router, user } = setup();
     expect(await screen.findByRole("heading", { name: "Les API REST" })).toBeInTheDocument();
     await user.click(screen.getByRole("radio", { name: /Feynman/ }));
-    await user.click(screen.getByRole("button", { name: "Commencer mon bloc" }));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/etudier/session/st1"));
+    await user.click(screen.getByRole("button", { name: "Start my block" }));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/study/session/st1"));
     expect(posts).toEqual([{ mode: "feynman" }]);
   });
 
   it("starts only once on a double click", async () => {
     const posts = recordPosts("/study-sessions", 202, started);
     const { user } = setup();
-    const button = await screen.findByRole("button", { name: "Commencer mon bloc" });
+    const button = await screen.findByRole("button", { name: "Start my block" });
     await user.dblClick(button);
-    await screen.findByText("Session ouverte");
+    await screen.findByText("Session opened");
     expect(posts).toHaveLength(1);
   });
 
   it("resumes the open session", async () => {
     const posts = recordPosts("/study-sessions", 202, started);
     const { router, user } = setup(summaryOut({ open_session_id: "st9" }));
-    await user.click(await screen.findByRole("button", { name: "Reprendre ma session" }));
-    expect(router.state.location.pathname).toBe("/etudier/session/st9");
-    expect(screen.queryByRole("button", { name: "Commencer mon bloc" })).not.toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: "Resume my session" }));
+    expect(router.state.location.pathname).toBe("/study/session/st9");
+    expect(screen.queryByRole("button", { name: "Start my block" })).not.toBeInTheDocument();
     expect(posts).toHaveLength(0);
   });
 
@@ -66,64 +66,73 @@ describe("StudyHomePage", () => {
     recordPosts(
       "/study-sessions",
       409,
-      apiError("study_already_open", "Une session est déjà ouverte.", { study_session_id: "st9" }),
+      apiError(
+        "study_already_open",
+        "Finish the open study session on the other lesson before starting this one.",
+        { study_session_id: "st9" },
+      ),
     );
     const { router, user } = setup();
-    await user.click(await screen.findByRole("button", { name: "Commencer mon bloc" }));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/etudier/session/st9"));
+    await user.click(await screen.findByRole("button", { name: "Start my block" }));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/study/session/st9"));
   });
 
   it("reopens the training that is blocking a guided session", async () => {
     recordPosts(
       "/study-sessions",
       409,
-      apiError("study_already_open", "Un training est ouvert.", {
+      apiError("study_already_open", "Finish the open training session before starting this one.", {
         study_session_id: "training-1",
         kind: "training",
       }),
     );
     const { router, user } = setup();
-    await user.click(await screen.findByRole("button", { name: "Commencer mon bloc" }));
-    expect(await screen.findByText("Training ouvert")).toBeVisible();
-    expect(router.state.location.pathname).toBe("/etudier/training/training-1");
+    await user.click(await screen.findByRole("button", { name: "Start my block" }));
+    expect(await screen.findByText("Training opened")).toBeVisible();
+    expect(router.state.location.pathname).toBe("/study/training/training-1");
   });
 
   it("offers to choose a lesson on no_block_today", async () => {
-    recordPosts("/study-sessions", 404, apiError("no_block_today", "Pas de bloc aujourd'hui."));
+    recordPosts(
+      "/study-sessions",
+      404,
+      apiError("no_block_today", "Nothing is scheduled today. Choose a lesson."),
+    );
     const { router, user } = setup();
-    await user.click(await screen.findByRole("button", { name: "Commencer mon bloc" }));
+    await user.click(await screen.findByRole("button", { name: "Start my block" }));
     expect(
-      await screen.findByRole("heading", { name: "Aucun bloc prévu aujourd'hui" }),
+      await screen.findByRole("heading", { name: "No block planned today" }),
     ).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Choisir une leçon" }));
-    expect(router.state.location.pathname).toBe("/apprendre/lecons");
+    await user.click(screen.getByRole("button", { name: "Choose a lesson" }));
+    expect(router.state.location.pathname).toBe("/learn/lessons");
   });
 
   it("shows an empty state with an action when there is no block and no session", async () => {
     const { user, router } = setup(summaryOut({ block: null }));
     expect(
-      await screen.findByRole("heading", { name: "Aucun bloc prévu aujourd'hui" }),
+      await screen.findByRole("heading", { name: "No block planned today" }),
     ).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Choisir une leçon" }));
-    expect(router.state.location.pathname).toBe("/apprendre/lecons");
+    await user.click(screen.getByRole("button", { name: "Choose a lesson" }));
+    expect(router.state.location.pathname).toBe("/learn/lessons");
   });
 
   it("shows another start error inline and keeps the button", async () => {
-    recordPosts("/study-sessions", 409, apiError("lesson_not_ready", "La leçon n'est pas prête."));
+    const message = "The lesson for this module isn't ready yet.";
+    recordPosts("/study-sessions", 409, apiError("lesson_not_ready", message));
     const { user } = setup();
-    await user.click(await screen.findByRole("button", { name: "Commencer mon bloc" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("La leçon n'est pas prête.");
-    expect(screen.getByRole("button", { name: "Commencer mon bloc" })).toBeEnabled();
+    await user.click(await screen.findByRole("button", { name: "Start my block" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(message);
+    expect(screen.getByRole("button", { name: "Start my block" })).toBeEnabled();
   });
 
-  it("preselects the lesson from ?lecon", async () => {
+  it("preselects the lesson from ?lesson", async () => {
     const posts = recordPosts("/study-sessions", 202, started);
-    const { router, user } = setup(summaryOut(), "/etudier/session?lecon=l1");
+    const { router, user } = setup(summaryOut(), "/study/session?lesson=l1");
     expect(await screen.findByRole("heading", { name: "Les API REST" })).toBeInTheDocument();
-    expect(screen.queryByText("Ton bloc du jour")).not.toBeInTheDocument();
-    expect(screen.queryByText("Ta question pour le tuteur")).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Étudier cette leçon" }));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/etudier/session/st1"));
+    expect(screen.queryByText("Your block for today")).not.toBeInTheDocument();
+    expect(screen.queryByText("Your question for the tutor")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Study this lesson" }));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/study/session/st1"));
     expect(posts).toEqual([{ lesson_id: "l1", mode: "socratic" }]);
   });
 
@@ -131,12 +140,12 @@ describe("StudyHomePage", () => {
     const posts = recordPosts("/study-sessions", 202, started);
     const passage = "x".repeat(2500);
     const { user } = setup(summaryOut(), {
-      pathname: "/etudier/session",
+      pathname: "/study/session",
       state: { lessonId: "l1", question: passage },
     } as InitialEntry);
-    expect(await screen.findByText("Ta question pour le tuteur")).toBeInTheDocument();
+    expect(await screen.findByText("Your question for the tutor")).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: /Direct/ })).toBeChecked();
-    await user.click(screen.getByRole("button", { name: "Poser ma question au tuteur" }));
+    await user.click(screen.getByRole("button", { name: "Ask the tutor my question" }));
     await waitFor(() => expect(posts).toHaveLength(1));
     expect(posts[0]).toEqual({ lesson_id: "l1", mode: "direct", question: "x".repeat(2000) });
   });
@@ -144,16 +153,16 @@ describe("StudyHomePage", () => {
   it("keeps the open session within reach when a lesson is chosen", async () => {
     const { router, user } = setup(
       summaryOut({ open_session_id: "st9" }),
-      "/etudier/session?lecon=l1",
+      "/study/session?lesson=l1",
     );
     await screen.findByRole("heading", { name: "Les API REST" });
-    await user.click(screen.getByRole("button", { name: "Reprendre ma session" }));
-    expect(router.state.location.pathname).toBe("/etudier/session/st9");
+    await user.click(screen.getByRole("button", { name: "Resume my session" }));
+    expect(router.state.location.pathname).toBe("/study/session/st9");
   });
 
   it("announces the loading", () => {
     setup(() => new Promise<Response>(() => {}));
-    expect(screen.getByRole("status")).toHaveTextContent("Chargement de ton bloc du jour…");
+    expect(screen.getByRole("status")).toHaveTextContent("Loading your block for today…");
   });
 
   it("shows an error with a retry button", async () => {
@@ -161,19 +170,19 @@ describe("StudyHomePage", () => {
     const { user } = setup(() => {
       calls += 1;
       return calls === 1
-        ? HttpResponse.json(apiError("boom", "Panne du serveur."), { status: 500 })
+        ? HttpResponse.json(apiError("boom", "The server is unavailable."), { status: 500 })
         : HttpResponse.json(summaryOut());
     });
-    expect(await screen.findByRole("alert")).toHaveTextContent("Panne du serveur.");
-    await user.click(screen.getByRole("button", { name: "Réessayer" }));
-    expect(await screen.findByRole("button", { name: "Commencer mon bloc" })).toBeInTheDocument();
+    expect(await screen.findByRole("alert")).toHaveTextContent("The server is unavailable.");
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+    expect(await screen.findByRole("button", { name: "Start my block" })).toBeInTheDocument();
   });
 
   it("never opens a browser dialog", async () => {
     const dialog = vi.spyOn(window, "confirm");
     recordPosts("/study-sessions", 202, started);
     const { user } = setup();
-    await user.click(await screen.findByRole("button", { name: "Commencer mon bloc" }));
+    await user.click(await screen.findByRole("button", { name: "Start my block" }));
     expect(dialog).not.toHaveBeenCalled();
   });
 });

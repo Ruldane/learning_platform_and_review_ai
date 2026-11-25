@@ -20,7 +20,9 @@ from app.features.skill_transfer.repository import Transfers
 
 def _phase(row: SkillTransfer, session_id: str) -> None:
     if row.session_id != session_id:
-        raise AppError("skill_transfer_changed", "Ce contrôle n’a plus cette session active.", 409)
+        raise AppError(
+            "skill_transfer_changed", "This session is no longer active for the check.", 409
+        )
 
 
 async def _previous(repo: Transfers, row: SkillTransfer) -> tuple[str, ...]:
@@ -43,7 +45,7 @@ def _require_novel(prompt: str, previous: tuple[str, ...]) -> None:
         SequenceMatcher(None, comparison, normalize_skill_name(old)).ratio() >= 0.85
         for old in previous
     ):
-        raise AppError("skill_transfer_reused", "L’énoncé reprend un exercice précédent.", 409)
+        raise AppError("skill_transfer_reused", "This prompt repeats an earlier exercise.", 409)
 
 
 class AgentSkillTransferStore:

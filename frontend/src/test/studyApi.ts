@@ -31,7 +31,7 @@ export const summaryOut = (over: Record<string, unknown> = {}) => ({
     lesson_id: "l1",
     lesson_title: "Les API REST",
     module_title: "Web",
-    tasks: [{ id: "t1", title: "Lire la leçon", minutes: 30, type: "lire" }],
+    tasks: [{ id: "t1", title: "Lire la leçon", minutes: 30, type: "read" }],
   },
   ...over,
 });

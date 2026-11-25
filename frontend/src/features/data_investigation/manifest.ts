@@ -4,13 +4,13 @@ export const dataInvestigationManifest: FeatureManifest = {
   id: "data_investigation",
   routes: [
     {
-      path: "etudier/enquetes",
+      path: "study/investigations",
       lazy: async () => ({
         Component: (await import("./pages/InvestigationPages")).InvestigationLibrary,
       }),
     },
     {
-      path: "etudier/enquetes/:investigationId",
+      path: "study/investigations/:investigationId",
       lazy: async () => ({
         Component: (await import("./pages/InvestigationPages")).InvestigationDetail,
       }),
@@ -20,7 +20,7 @@ export const dataInvestigationManifest: FeatureManifest = {
     {
       section: "study",
       labelKey: "dataInvestigation.title",
-      path: "/etudier/enquetes",
+      path: "/study/investigations",
       order: 7.7,
     },
   ],

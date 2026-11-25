@@ -67,7 +67,7 @@ async def _apply(plan: Plan, session_id: str, program_id: str, skill: str, title
     )  # fmt: skip
     assert ctx.modules[0].ref == "m0" and ctx.modules[0].title == GAP_MODULE_TITLE
     task = ReplanTaskDraft(
-        module="m0", title=title, type="pratiquer", minutes=45, done_criterion="Montré"
+        module="m0", title=title, type="practice", minutes=45, done_criterion="Montré"
     )
     draft = ReplanDraft(summary="J'ajoute.", add=[task], drop=["t1"])
     saved = await plan.store.preview(
@@ -189,16 +189,20 @@ async def test_plan_gap_without_program_is_409(client: httpx.AsyncClient, plan: 
     r = await client.post(f"{API}/postings/{posting_id}/gap/plan", json={"skills": ["LangGraph"]})
     assert r.status_code == 409 and r.json()["error"] == {
         "code": "no_program",
-        "message": "Aucun programme validé : crée d'abord ton programme.",
+        "message": "Create and approve a program before adding skills to your schedule.",
         "details": None,
     }
     other = await client.post(f"{API}/postings/inconnue/gap/plan", json={"skills": ["LangGraph"]})
     assert other.status_code == 404 and other.json()["error"]["code"] == "posting_not_found"
 
 
-async def test_gap_module_created_once(client: httpx.AsyncClient, plan: Plan) -> None:
+@pytest.mark.parametrize("legacy_title", [False, True])
+async def test_gap_module_created_once(
+    client: httpx.AsyncClient, plan: Plan, legacy_title: bool
+) -> None:
     program_id = await validated(plan.program, plan.user_id)
     posting_id = await _posting(client, plan)
+    expected_title = "Compétences des offres" if legacy_title else GAP_MODULE_TITLE
     for skill, title in (
         ("LangGraph", "Pratiquer LangGraph sur un agent"),
         ("Évaluation de RAG", "Pratiquer l'évaluation de RAG"),
@@ -206,11 +210,18 @@ async def test_gap_module_created_once(client: httpx.AsyncClient, plan: Plan) ->
         r = await client.post(f"{API}/postings/{posting_id}/gap/plan", json={"skills": [skill]})
         assert r.status_code == 202, r.text
         await _apply(plan, r.json()["session_id"], program_id, skill, title)
+        if legacy_title and skill == "LangGraph":
+            async with plan.app.state.session_factory.begin() as db:
+                loaded = await load(db, plan.user_id, program_id)
+                next(
+                    module for module in loaded.modules if module.title == GAP_MODULE_TITLE
+                ).title = expected_title
     async with plan.app.state.session_factory() as db:
         loaded = await load(db, plan.user_id, program_id)
-    modules = [m for m in loaded.modules if m.title == GAP_MODULE_TITLE]
+    modules = [m for m in loaded.modules if m.title in {GAP_MODULE_TITLE, expected_title}]
     assert len(modules) == 1
     module = modules[0]
+    assert module.title == expected_title
     assert module.skills == ["LangGraph", "Évaluation de RAG"]
     assert module.week_id == loaded.weeks[-1].id  # en fin de programme
     assert module.rank == 1  # après le module de la dernière semaine
@@ -245,7 +256,7 @@ async def test_refused_proposal_creates_no_module(client: httpx.AsyncClient, pla
         message=None, skills=["LangGraph"],
     )  # fmt: skip
     task = ReplanTaskDraft(
-        module="m0", title="Pratiquer LangGraph", type="pratiquer", minutes=45,
+        module="m0", title="Pratiquer LangGraph", type="practice", minutes=45,
         done_criterion="Montré",
     )  # fmt: skip
     saved = await plan.store.preview(

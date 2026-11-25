@@ -12,6 +12,7 @@ CONVERSATION_GRAPH = "conversation"
 LESSON_PROFESSOR = "lesson_professor"
 TRAINING_TUTOR = "training_tutor"
 BRAIN_LIBRARIAN = "brain_librarian"
+OFFERS_ADVISER = "offers_adviser"
 CLASSROOM_SCOPE = "classroom"
 TURN_TOKEN_LIMIT = 12_000
 
@@ -27,7 +28,7 @@ class ClassmateReply(BaseModel):
 
 
 class ConversationSource(BaseModel):
-    kind: Literal["lesson", "memory"]
+    kind: Literal["lesson", "memory", "posting", "application"]
     id: UUID
     title: str
     excerpt: str | None
@@ -102,7 +103,7 @@ class ConversationStore(Protocol):
 
 
 def _unavailable() -> AppError:
-    return AppError("conversation_unavailable", "La conversation est indisponible.", 503)
+    return AppError("conversation_unavailable", "The conversation is unavailable.", 503)
 
 
 class _NoConversation:

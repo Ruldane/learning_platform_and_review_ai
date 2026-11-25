@@ -6,11 +6,11 @@ import { CostsPage } from "./pages/CostsPage";
 export const costsManifest: FeatureManifest = {
   id: "costs",
   routes: [
-    { path: "reglages/couts", Component: CostsPage },
-    { path: "reglages/journal", Component: AgentLogPage },
+    { path: "settings/costs", Component: CostsPage },
+    { path: "settings/agent-log", Component: AgentLogPage },
   ],
   nav: [
-    { section: "settings", labelKey: "costs.nav.costs", path: "/reglages/couts", order: 6 },
-    { section: "settings", labelKey: "costs.nav.log", path: "/reglages/journal", order: 7 },
+    { section: "settings", labelKey: "costs.nav.costs", path: "/settings/costs", order: 6 },
+    { section: "settings", labelKey: "costs.nav.log", path: "/settings/agent-log", order: 7 },
   ],
 };

@@ -36,7 +36,7 @@ describe("toNoteViews", () => {
       ["Claude", "mcp"],
       ["Claude Code", "mcp"],
       ["Claude (Mon jeton)", "mcp"],
-      ["Le professeur", "app"],
+      ["The professor", "app"],
     ]);
   });
 
@@ -77,7 +77,7 @@ describe("toNoteViews", () => {
       [note({ id: "a" }), note({ id: "b", author: "claude", author_label: "Claude Code" })],
       {},
     );
-    expect(views.map((view) => view.authorLabel)).toEqual(["Le professeur", "Claude Code"]);
+    expect(views.map((view) => view.authorLabel)).toEqual(["The professor", "Claude Code"]);
   });
 
   it("reads the lines a proposal targets from the open file, never rewriting it", () => {

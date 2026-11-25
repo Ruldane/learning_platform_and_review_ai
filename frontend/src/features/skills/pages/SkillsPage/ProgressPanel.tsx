@@ -11,7 +11,7 @@ export function ProgressPanel() {
   const navigate = useNavigate();
   const toStudy = {
     label: t("skills.progress.emptyAction"),
-    onClick: () => void navigate("/etudier/session"),
+    onClick: () => void navigate("/study/session"),
   };
   return (
     <QueryPanel query={query}>

@@ -141,7 +141,7 @@ class WebGateway(Protocol):
 
 
 def web_unavailable() -> AppError:
-    return AppError("web_unavailable", "La recherche web n'est pas branchée sur ce moteur.", 503)
+    return AppError("web_unavailable", "Web search is unavailable in this runtime.", 503)
 
 
 class _NoWeb:

@@ -1,11 +1,11 @@
-"""Transport du lecteur web : la connexion se fait sur une adresse vérifiée (anti rebinding DNS).
+"""Transport of the web reader: the connection is made on a verified address (anti DNS rebinding).
 
-httpcore résout lui-même l'hôte dans `connect_tcp` : entre la vérification de `SafeHttpFetcher`
-et la connexion, un DNS à TTL nul peut répondre une autre adresse (127.0.0.1) et la requête
-partirait vers le service interne. `GuardedBackend` résout avec le résolveur injecté, refuse
-si une adresse n'est pas publique, puis se connecte à l'**adresse** validée : aucune seconde
-résolution. TLS reste vérifié sur le nom (httpcore passe `server_hostname=origin.host` à
-`start_tls`) et l'en-tête `Host` est inchangé."""
+httpcore resolves the host itself in `connect_tcp`: between the check by `SafeHttpFetcher`
+and the connection, a zero-TTL DNS can answer another address (127.0.0.1) and the request
+would go to the internal service. `GuardedBackend` resolves with the injected resolver, refuses
+if an address is not public, then connects to the validated **address**: no second
+resolution. TLS stays verified on the name (httpcore passes `server_hostname=origin.host` to
+`start_tls`) and the `Host` header is unchanged."""
 
 from collections.abc import Iterable
 
@@ -39,7 +39,7 @@ class GuardedBackend(httpcore.AsyncNetworkBackend):
         socket_options: Iterable[httpcore.SOCKET_OPTION] | None = None,
     ) -> httpcore.AsyncNetworkStream:
         addresses = await self._validated(host, port)
-        last: Exception = httpcore.ConnectError("connexion impossible")
+        last: Exception = httpcore.ConnectError("connection impossible")
         for address in addresses:
             try:
                 return await self._inner.connect_tcp(
@@ -62,7 +62,7 @@ class GuardedBackend(httpcore.AsyncNetworkBackend):
             except UnicodeError:
                 raise AddressRefused() from None
             except OSError:
-                raise httpcore.ConnectError("résolution impossible") from None
+                raise httpcore.ConnectError("resolution impossible") from None
         if not addresses or not all(is_public_address(a) for a in addresses):
             raise AddressRefused()
         return list(dict.fromkeys(addresses))
@@ -80,7 +80,7 @@ class GuardedBackend(httpcore.AsyncNetworkBackend):
 
 
 class GuardedTransport(httpx.AsyncHTTPTransport):
-    """`AsyncHTTPTransport` dont le pool passe par `GuardedBackend` ; jamais de proxy."""
+    """`AsyncHTTPTransport` whose pool goes through `GuardedBackend`; never a proxy."""
 
     def __init__(
         self,

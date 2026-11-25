@@ -19,7 +19,7 @@ export function ReplanBanner({ programId, enabled }: { programId: string; enable
         <p className="font-semibold">{t("program.replan.waitingTitle")}</p>
         <p className="text-sm text-muted-foreground">{t("program.replan.waitingHint")}</p>
       </div>
-      <Link to={`/apprendre/programme/${programId}/replanification`} className={buttonVariants()}>
+      <Link to={`/learn/programs/${programId}/replan`} className={buttonVariants()}>
         {t("program.replan.open")}
       </Link>
     </div>

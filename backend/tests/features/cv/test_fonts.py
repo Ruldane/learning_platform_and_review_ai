@@ -69,14 +69,13 @@ def test_gap_sentences_never_name_the_pdf_font() -> None:
         FontRole("heading", "Georgia", "Gelasio", free=False, known=True),
     ]
     assert font_gaps(found, {"Carlito", "Gelasio"}) == [
-        "La police du texte n'est pas libre : remplacée par Carlito, très proche.",
-        "La police des titres n'est pas libre : remplacée par Gelasio, proche.",
+        "The original body font is proprietary. The template uses Carlito, a very close match.",
+        "The original heading font is proprietary. The template uses Gelasio, a close match.",
     ]
     roles: tuple[Role, ...] = ("body", "heading")
     unknown = [FontRole(r, "MaPoliceMaison", "Liberation Sans", False, False) for r in roles]
     assert font_gaps(unknown, set()) == [
-        "La police du texte et des titres n'a pas d'équivalent connu : "
-        "remplacée par Liberation Sans."
+        "No known match for the body and heading font. The template uses Liberation Sans."
     ]
 
 
@@ -87,8 +86,8 @@ def test_unloaded_family_falls_back_to_the_gotenberg_image() -> None:
     ]
     gaps = font_gaps(found, set())
     assert gaps == [
-        "La police du texte n'a pas pu être chargée : remplacée par Liberation Sans.",
-        "La police des titres n'a pas pu être chargée : remplacée par Liberation Serif.",
+        "The body font failed to load. The template uses Liberation Sans.",
+        "The heading font failed to load. The template uses Liberation Serif.",
     ]
     uses = {use.role: (use.family, use.substitute) for use in font_uses(found, set())}
     assert uses == {"body": ("Liberation Sans", True), "heading": ("Liberation Serif", True)}
@@ -118,9 +117,7 @@ async def test_unavailable_family_attaches_no_file(cv_runtime: CvRuntime) -> Non
     pdf = await cv_runtime.layout.extract_layout(make_cv_pdf(SampleCv(font="Calibri")))
     files, uses, gaps = await resolve_fonts(cv_runtime, "u1", pdf)
     assert files == [] and {use.family for use in uses} == {"Liberation Sans"}
-    assert gaps == [
-        "La police du texte et des titres n'a pas pu être chargée : remplacée par Liberation Sans."
-    ]
+    assert gaps == ["The body and heading font failed to load. The template uses Liberation Sans."]
 
 
 def test_available_families_always_offer_the_image_fonts() -> None:

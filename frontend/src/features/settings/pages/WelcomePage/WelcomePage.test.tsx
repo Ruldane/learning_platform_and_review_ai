@@ -16,22 +16,24 @@ import {
   WEEKDAY,
 } from "./welcomeTestkit";
 
+const DELETED = "Your data has been deleted: Tremplin is starting from scratch.";
+
 describe("WelcomePage", () => {
   it("five steps in order with step counter", async () => {
     const { user } = setup();
     for (const [index, name] of TITLES.entries()) {
       const heading = await title(name);
       await waitFor(() => expect(heading).toHaveFocus());
-      expect(screen.getByText(`Étape ${index + 1} sur 5`)).toBeInTheDocument();
-      if (index === 0) expect(screen.queryByRole("button", { name: "Précédent" })).toBeNull();
+      expect(screen.getByText(`Step ${index + 1} of 5`)).toBeInTheDocument();
+      if (index === 0) expect(screen.queryByRole("button", { name: "Previous" })).toBeNull();
       if (index < 4) await user.click(next());
     }
     // Le dernier bouton termine ; « Précédent » revient d'une étape.
     expect(finish()).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Précédent" }));
+    await user.click(screen.getByRole("button", { name: "Previous" }));
     const back = await title(TITLES[3]!);
     await waitFor(() => expect(back).toHaveFocus());
-    expect(screen.getByText("Étape 4 sur 5")).toBeInTheDocument();
+    expect(screen.getByText("Step 4 of 5")).toBeInTheDocument();
   });
 
   it("step 1 writes the state of each service and the progress of the model", async () => {
@@ -44,10 +46,10 @@ describe("WelcomePage", () => {
       ],
       embedding: [embeddingOut(42)],
     });
-    const list = await screen.findByRole("list", { name: "État des services" });
-    expect(within(list).getByText(/Base de données : répond/)).toBeInTheDocument();
-    expect(within(list).getByText(/Mémoire vectorielle \(Qdrant\) : ne répond pas/)).toBeVisible();
-    expect(await screen.findByText("bge-m3 : 42 %")).toBeInTheDocument();
+    const list = await screen.findByRole("list", { name: "Service status" });
+    expect(within(list).getByText("Database : responding")).toBeInTheDocument();
+    expect(within(list).getByText(/Vector memory \(Qdrant\) : not responding/)).toBeVisible();
+    expect(await screen.findByText("bge-m3: 42%")).toBeInTheDocument();
     await user.click(next());
     await title(TITLES[1]!);
   });
@@ -55,11 +57,9 @@ describe("WelcomePage", () => {
   it("says the data are gone when it comes after « Tout supprimer »", async () => {
     const { router } = setup();
     await title(TITLES[0]!);
-    expect(screen.queryByText(/Tes données ont été supprimées/)).toBeNull();
-    await router.navigate("/bienvenue", { state: { deleted: true }, replace: true });
-    expect(
-      await screen.findByText("Tes données ont été supprimées : Tremplin repart de zéro."),
-    ).toBeVisible();
+    expect(screen.queryByText(DELETED)).toBeNull();
+    await router.navigate("/welcome", { state: { deleted: true }, replace: true });
+    expect(await screen.findByText(DELETED)).toBeVisible();
   });
 
   it("puts the arrival message into a zone that was already in the page", async () => {
@@ -68,7 +68,7 @@ describe("WelcomePage", () => {
     observer.observe(document.body, { childList: true, subtree: true, characterData: true });
     setup({}, { deleted: true });
     const notice = await screen.findByTestId("welcome-notice");
-    await screen.findByText("Tes données ont été supprimées : Tremplin repart de zéro.");
+    await screen.findByText(DELETED);
     records.push(...observer.takeRecords());
     observer.disconnect();
     expect(notice).toHaveAttribute("role", "status");
@@ -87,8 +87,8 @@ describe("WelcomePage", () => {
   it("step 2 explains what leaves the machine, before any key is asked", async () => {
     const { user } = setup();
     await goTo(user, 2);
-    expect(screen.getByRole("table", { name: "Ce qui sort de ta machine" })).toBeInTheDocument();
-    expect(screen.getByText(/retire ton nom, ton e-mail et ton téléphone/)).toBeInTheDocument();
+    expect(screen.getByRole("table", { name: "What leaves your machine" })).toBeInTheDocument();
+    expect(screen.getByText(/removes your name, email and phone number/)).toBeInTheDocument();
   });
 
   it("finish saves availability and onboarding_done", async () => {
@@ -101,7 +101,7 @@ describe("WelcomePage", () => {
     expect(weekday).toHaveValue(120);
     await user.clear(weekday);
     await user.type(weekday, "90");
-    expect(screen.getByText("Budget hebdomadaire : 11 h 30")).toBeInTheDocument();
+    expect(screen.getByText("Weekly budget: 11 h 30")).toBeInTheDocument();
     await user.click(finish());
     expect(await screen.findByText("Accueil de Tremplin")).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/");
@@ -127,7 +127,7 @@ describe("WelcomePage", () => {
     await user.clear(weekday);
     await user.type(weekday, "2000");
     expect(finish()).toHaveAttribute("aria-disabled", "true");
-    expect(finish()).toHaveAccessibleDescription("Corrige les champs signalés avant de terminer.");
+    expect(finish()).toHaveAccessibleDescription("Fix the flagged fields before finishing.");
     await user.click(finish());
     expect(puts).toEqual([]);
     expect(screen.getByRole("heading", { level: 1, name: TITLES[4]! })).toBeInTheDocument();
@@ -141,7 +141,7 @@ describe("WelcomePage", () => {
     });
     await goTo(user, 5);
     await user.click(finish());
-    expect(await screen.findByRole("alert")).toHaveTextContent("Requête invalide");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Invalid request.");
     expect(field(WEEKDAY)).toHaveAttribute("aria-invalid", "true");
     expect(screen.getByRole("heading", { level: 1, name: TITLES[4]! })).toBeInTheDocument();
     await user.click(finish());
@@ -185,9 +185,9 @@ describe("WelcomePage", () => {
     await goTo(user, 5);
     await user.click(finish());
     await screen.findByText("Accueil de Tremplin");
-    await router.navigate("/reglages");
+    await router.navigate("/settings");
     expect(await screen.findByText("Réglages")).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe("/reglages");
+    expect(router.state.location.pathname).toBe("/settings");
     await router.navigate("/");
     expect(await screen.findByText("Accueil de Tremplin")).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/");
@@ -198,7 +198,7 @@ describe("WelcomePage", () => {
       settings: { ...fresh, availability: null },
       health: [healthReport({ llm: [false, "Aucune clé"] }, "degraded")],
     });
-    expect(await screen.findByText(/Clé d'un modèle de langage : à configurer/)).toBeVisible();
+    expect(await screen.findByText("Language model key : to set up in step 3")).toBeVisible();
     await goTo(user, 5);
     expect(field(WEEKDAY)).toHaveValue(120);
     await user.click(finish());

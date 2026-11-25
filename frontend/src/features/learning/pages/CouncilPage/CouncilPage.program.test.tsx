@@ -37,16 +37,18 @@ describe("CouncilPage : programme", () => {
       ),
     );
     const e = councilEvents("c1");
-    (await openCouncil(fake)).push(e.message("moderator-choix", "Parcours choisi"), e.completed());
-    expect(await screen.findByText("Le Stratège prépare ton programme…")).toBeInTheDocument();
+    (await openCouncil(fake)).push(e.message("moderator-choix", "Path chosen"), e.completed());
+    expect(
+      await screen.findByText("The Strategist is preparing your program…"),
+    ).toBeInTheDocument();
     await waitFor(() => expect(socketsOf(fake, "pr1")).toHaveLength(1));
     const program = councilEvents("pr1");
     socketsOf(fake, "pr1")[0]!
       .open()
-      .push(program.artifactReady("program", "pr9", "/apprendre/programme/pr9"));
-    const link = await screen.findByRole("link", { name: "Voir le programme" });
-    expect(link).toHaveAttribute("href", "/apprendre/programme/pr9");
-    expect(document.querySelector('[aria-current="step"]')).toHaveTextContent("Programme");
+      .push(program.artifactReady("program", "pr9", "/learn/programs/pr9"));
+    const link = await screen.findByRole("link", { name: "View the program" });
+    expect(link).toHaveAttribute("href", "/learn/programs/pr9");
+    expect(document.querySelector('[aria-current="step"]')).toHaveTextContent("Program");
   });
 
   it("finds the program again after a reload from the goal alone", async () => {
@@ -55,10 +57,10 @@ describe("CouncilPage : programme", () => {
       status: "completed",
     });
     const e = councilEvents("c1");
-    (await openCouncil(fake)).push(e.message("moderator-choix", "Parcours choisi"), e.completed());
-    expect(await screen.findByRole("link", { name: "Voir le programme" })).toHaveAttribute(
+    (await openCouncil(fake)).push(e.message("moderator-choix", "Path chosen"), e.completed());
+    expect(await screen.findByRole("link", { name: "View the program" })).toHaveAttribute(
       "href",
-      "/apprendre/programme/pr3",
+      "/learn/programs/pr3",
     );
   });
 
@@ -77,7 +79,7 @@ describe("CouncilPage : programme", () => {
       ),
     );
     const e = councilEvents("c1");
-    (await openCouncil(fake)).push(e.message("moderator-choix", "Parcours choisi"));
+    (await openCouncil(fake)).push(e.message("moderator-choix", "Path chosen"));
     await waitFor(() => expect(socketsOf(fake, "pr1")).toHaveLength(1), { timeout: 8000 });
   }, 12000);
 });

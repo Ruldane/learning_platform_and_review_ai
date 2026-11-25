@@ -1,6 +1,6 @@
-"""Refus de démarrer en mode Google quand la configuration ne permet pas de se connecter en
-sécurité (P11, arbitrage `ALLOWED_EMAILS`) : message clair, comme la base non migrée. Aucune valeur
-de configuration n'est citée."""
+"""Refusing to start in Google mode when the configuration does not allow signing in safely
+(P11, `ALLOWED_EMAILS` arbitration): a clear message, like the unmigrated database. No
+configuration value is quoted."""
 
 from urllib.parse import urlsplit
 
@@ -11,8 +11,8 @@ _LOOPBACK = ("localhost", "127.0.0.1", "::1")
 
 
 def check_google_config(settings: Settings) -> None:
-    """Sans effet en mode local ; en mode Google, lève `RuntimeError` si les identifiants Google
-    manquent, si `ALLOWED_EMAILS` est vide, ou si le point `token` n'est pas en `https`."""
+    """No effect in local mode; in Google mode, raises `RuntimeError` if the Google credentials
+    are missing, if `ALLOWED_EMAILS` is empty, or if the `token` endpoint is not `https`."""
     if settings.auth_mode != "google":
         return
     missing = [
@@ -25,19 +25,19 @@ def check_google_config(settings: Settings) -> None:
     ]
     if missing:
         raise RuntimeError(
-            f"Mode Google : {' et '.join(missing)} manque(nt). Renseigne-les dans `.env` "
-            "(console Google Cloud, identifiants OAuth) ou repasse en AUTH_MODE=local."
+            f"Google mode: {' and '.join(missing)} missing. Set them in `.env` "
+            "(Google Cloud console, OAuth credentials) or switch back to AUTH_MODE=local."
         )
     if not entries(settings.allowed_emails):
         raise RuntimeError(
-            "Mode Google : ALLOWED_EMAILS est vide. Liste les adresses autorisées, séparées par "
-            "des virgules, ou mets `*` pour accepter tous les comptes Google."
+            "Google mode: ALLOWED_EMAILS is empty. List the allowed addresses, separated by "
+            "commas, or put `*` to accept all Google accounts."
         )
     token_url = urlsplit(settings.google_token_url)
     if token_url.scheme != "https" and not (
         token_url.scheme == "http" and token_url.hostname in _LOOPBACK
     ):
         raise RuntimeError(
-            "Mode Google : GOOGLE_TOKEN_URL doit être en https (seule la boucle locale, "
-            "`localhost` ou `127.0.0.1`, peut rester en http, pour le faux fournisseur d'essai)."
+            "Google mode: GOOGLE_TOKEN_URL must be https (only the loopback, "
+            "`localhost` or `127.0.0.1`, may stay http, for the test fake provider)."
         )

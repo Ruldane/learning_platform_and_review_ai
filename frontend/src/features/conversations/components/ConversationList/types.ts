@@ -8,6 +8,7 @@ export type ConversationListAction =
 
 export interface ListProps {
   heading?: "h2" | "h3";
+  createLabel?: string;
   entries: Entry[];
   visibleEntries: Entry[];
   search: string;

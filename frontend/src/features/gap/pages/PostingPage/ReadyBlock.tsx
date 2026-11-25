@@ -39,7 +39,7 @@ export function ReadyBlock({ posting, pollMs, createSocket }: ReadyBlockProps) {
     <>
       <DuplicateNotice
         duplicates={duplicates}
-        onOpen={(postingId) => void navigate(`/carriere/offres/${postingId}`)}
+        onOpen={(postingId) => void navigate(`/career/postings/${postingId}`)}
         onDistinct={distinct}
       />
       {error ? <InlineError message={error} /> : null}
@@ -49,7 +49,11 @@ export function ReadyBlock({ posting, pollMs, createSocket }: ReadyBlockProps) {
       {cvs ? <PostingCvList cvs={cvs} /> : null}
       <div className="flex flex-wrap items-end gap-2">
         {provider.menu}
-        <Link to={`/carriere/cv/revue/nouvelle/${posting.id}`} state={{ runSource: provider.source }} className={buttonVariants()}>
+        <Link
+          to={`/career/cv/reviews/new/${posting.id}`}
+          state={{ runSource: provider.source }}
+          className={buttonVariants()}
+        >
           {t("gap.posting.reviewCv")}
         </Link>
         {posting.url ? (

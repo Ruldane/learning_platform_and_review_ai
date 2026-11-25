@@ -13,7 +13,7 @@ test("écoute la question, corrige le brouillon audio et ouvre le débrief", asy
   request,
 }) => {
   await finishFirstLaunch(request);
-  await page.goto("/candidatures/entretien");
+  await page.goto("/applications/interview");
   await page.getByRole("textbox", { name: "Intitulé du poste" }).fill("Développeuse Python");
   await page.getByRole("radio", { name: "Technique", exact: true }).check();
   await page.getByRole("radio", { name: "15 minutes" }).check();

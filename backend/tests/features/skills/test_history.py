@@ -15,7 +15,7 @@ def _points(out: Any) -> list[tuple[date, tuple[int, int, int, int], int]]:
     return [
         (
             p.week_start,
-            (p.counts.declare, p.counts.en_cours, p.counts.valide, p.counts.prouve),
+            (p.counts.declared, p.counts.in_progress, p.counts.validated, p.counts.proven),
             p.score,
         )
         for p in out.points
@@ -25,14 +25,16 @@ def _points(out: Any) -> list[tuple[date, tuple[int, int, int, int], int]]:
 async def test_history_includes_live_current_week(db_session_factory: Factory) -> None:
     """Le relevé de la semaine W (écrit au début de W) est l'état de fin de W − 1 : tracé sous
     W − 1 (revue finale 5, relecture 5.10 m7)."""
-    a = await add_skill(db_session_factory, ME, "Pandas", None, "valide")
-    b = await add_skill(db_session_factory, ME, "SQL", None, "prouve")
+    a = await add_skill(db_session_factory, ME, "Pandas", None, "validated")
+    b = await add_skill(db_session_factory, ME, "SQL", None, "proven")
     await add_skill(db_session_factory, ME, "Git")  # sans niveau : hors de la courbe
-    await add_snapshot(db_session_factory, ME, date(2026, 8, 3), {a: "declare"})  # trop ancien
-    await add_snapshot(db_session_factory, ME, date(2026, 11, 2), {a: "declare", b: "en_cours"})
-    await add_snapshot(db_session_factory, ME, date(2026, 11, 9), {a: "en_cours", b: "valide"})
-    await add_snapshot(db_session_factory, ME, WEEK, {a: "declare"})  # fin de la semaine du 9/11
-    await add_snapshot(db_session_factory, OTHER, date(2026, 11, 9), {"x": "prouve"})
+    await add_snapshot(db_session_factory, ME, date(2026, 8, 3), {a: "declared"})  # trop ancien
+    await add_snapshot(db_session_factory, ME, date(2026, 11, 2), {a: "declared", b: "in_progress"})
+    await add_snapshot(
+        db_session_factory, ME, date(2026, 11, 9), {a: "in_progress", b: "validated"}
+    )
+    await add_snapshot(db_session_factory, ME, WEEK, {a: "declared"})  # fin de la semaine du 9/11
+    await add_snapshot(db_session_factory, OTHER, date(2026, 11, 9), {"x": "proven"})
     async with db_session_factory() as db:
         twelve = await skill_history(db, ME, 12, NOW)
         two = await skill_history(db, ME, 2, NOW)

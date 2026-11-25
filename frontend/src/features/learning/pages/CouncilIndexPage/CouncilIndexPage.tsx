@@ -8,7 +8,7 @@ import { useGoals } from "../../hooks/useGoals";
 import { councilPath } from "../../hooks/useCreateGoal";
 
 /**
- * Conseil (`/apprendre/conseil`) : ouvre le Conseil de l'objectif le plus récent ; sans objectif,
+ * Conseil (`/learn/council`) : ouvre le Conseil de l'objectif le plus récent ; sans objectif,
  * invite à en saisir un.
  */
 export function CouncilIndexPage() {
@@ -29,7 +29,7 @@ export function CouncilIndexPage() {
         description={t("learning.council.indexEmptyDescription")}
         action={{
           label: t("learning.council.indexEmptyAction"),
-          onClick: () => void navigate("/apprendre/objectifs"),
+          onClick: () => void navigate("/learn/goals"),
         }}
       />
     </div>

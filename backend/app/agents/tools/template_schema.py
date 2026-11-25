@@ -1,6 +1,6 @@
-"""Ce que le Maquettiste écrit : une description du design d'un CV (`TemplateSpec`), jamais du
-HTML ni du CSS, que le code écrit à partir d'elle (D118). Les couleurs, les polices et l'agencement
-sont vérifiés par `template_problems`, dont les phrases sont rendues au modèle pour qu'il corrige.
+"""What the Designer writes: a description of a CV's design (`TemplateSpec`), never HTML or
+CSS, which the code writes from it (D118). The colours, the fonts and the layout are checked by
+`template_problems`, whose sentences are sent back to the model so that it corrects them.
 """
 
 import re
@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 
 from app.agents.tools.cv_schema import SectionKey
 
-# Le format #rrggbb des couleurs est vérifié par `template_problems` (redemandé, pas refusé).
+# The #rrggbb colour format is checked by `template_problems` (asked again, not refused).
 _HEX_COLOR = re.compile(r"^#[0-9a-fA-F]{6}$")
 ColumnBlock = SectionKey | Literal["identity"]
 Margin = Annotated[float, Field(ge=0, le=40)]
@@ -21,7 +21,7 @@ Margin = Annotated[float, Field(ge=0, le=40)]
 class PageSpec(BaseModel):
     width_pt: float = Field(ge=200, le=1000)
     height_pt: float = Field(ge=200, le=1400)
-    margins_mm: tuple[Margin, Margin, Margin, Margin]  # haut, droite, bas, gauche
+    margins_mm: tuple[Margin, Margin, Margin, Margin]  # top, right, bottom, left
 
 
 class ColumnSpec(BaseModel):
@@ -56,8 +56,8 @@ class TemplateSpec(BaseModel):
 
 
 class FontUse(BaseModel):
-    """Une police d'un gabarit (`cv_templates.fonts`) : `family` est la police libre employée,
-    `substitute` dit qu'elle remplace celle du PDF d'origine (preflight G25)."""
+    """A font of a template (`cv_templates.fonts`): `family` is the free font used,
+    `substitute` says it replaces the one of the original PDF (preflight G25)."""
 
     role: Literal["body", "heading"]
     family: str = Field(min_length=1, max_length=60)
@@ -68,26 +68,24 @@ def _layout_problems(spec: TemplateSpec) -> list[str]:
     problems: list[str] = []
     total = sum(column.width_pct for column in spec.columns)
     if total != 100:
-        problems.append(
-            f"Les largeurs des colonnes font {total} % au total : elles doivent faire 100 %."
-        )
+        problems.append(f"The column widths total {total}%: they must total 100%.")
     counts = Counter(block for column in spec.columns for block in column.sections)
     if counts["identity"] != 1:
         problems.append(
-            f"Le bloc « identity » doit figurer exactement une fois (il figure "
-            f"{counts['identity']} fois)."
+            f"The “identity” block must appear exactly once (it appears "
+            f"{counts['identity']} times)."
         )
     heads = {column.sections[0] for column in spec.columns}
     if spec.header_band is not None and counts["identity"] == 1 and "identity" not in heads:
         problems.append(
-            "Le bandeau (« header_band ») porte le bloc « identity » : place « identity » en "
-            "tête d'une colonne, ou retire le bandeau."
+            "The band (“header_band”) carries the “identity” block: put “identity” at the "
+            "head of a column, or remove the band."
         )
     for block, count in counts.items():
         if block != "identity" and count > 1:
             problems.append(
-                f"La section « {block} » figure {count} fois : place-la une seule fois, "
-                "dans une seule colonne."
+                f"The section “{block}” appears {count} times: place it only once, "
+                "in a single column."
             )
     return problems
 
@@ -96,7 +94,7 @@ def _font_problems(spec: TemplateSpec, available_fonts: Collection[str]) -> list
     known = {font.casefold() for font in available_fonts}
     choices = ", ".join(sorted(available_fonts))
     return [
-        f"La police « {family} » n'est pas disponible : choisis parmi {choices}."
+        f"The font “{family}” is not available: choose among {choices}."
         for family in dict.fromkeys((spec.fonts.body, spec.fonts.heading))
         if family.casefold() not in known
     ]
@@ -110,19 +108,19 @@ def _color_problems(spec: TemplateSpec) -> list[str]:
         ("header_band", spec.header_band),
     ]
     for rank, column in enumerate(spec.columns, start=1):
-        colors.append((f"colonne {rank}, background", column.background))
-        colors.append((f"colonne {rank}, text_color", column.text_color))
+        colors.append((f"column {rank}, background", column.background))
+        colors.append((f"column {rank}, text_color", column.text_color))
     return [
-        f"La couleur « {value} » ({field}) n'est pas au format #rrggbb (par exemple #1f4e79)."
+        f"The colour “{value}” ({field}) is not in the #rrggbb format (for example #1f4e79)."
         for field, value in colors
         if value is not None and not _HEX_COLOR.match(value)
     ]
 
 
 def template_problems(spec: TemplateSpec, available_fonts: Collection[str]) -> list[str]:
-    """Les défauts d'une description, en phrases françaises rendues au modèle : largeurs des
-    colonnes à 100 % au total, chaque section au plus une fois et « identity » exactement une
-    fois, polices prises dans `available_fonts` (casse ignorée), couleurs #rrggbb."""
+    """The defects of a description, as English sentences sent back to the model: column widths
+    totalling 100%, each section at most once and "identity" exactly once, fonts taken from
+    `available_fonts` (case ignored), #rrggbb colours."""
     return [
         *_layout_problems(spec),
         *_font_problems(spec, available_fonts),

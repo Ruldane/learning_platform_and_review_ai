@@ -44,7 +44,7 @@ def accept_lesson(lesson_models: LessonModels) -> LessonModels:
 
 async def lesson_memory(app: FastAPI) -> list[MemoryItem]:
     async with app.state.session_factory() as db:
-        return list(await db.scalars(select(MemoryItem).where(MemoryItem.kind == "lecon")))
+        return list(await db.scalars(select(MemoryItem).where(MemoryItem.kind == "lesson")))
 
 
 async def wait_session(client: httpx.AsyncClient, sid: str) -> dict[str, object]:

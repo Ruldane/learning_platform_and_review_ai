@@ -1,6 +1,6 @@
-"""« Ajouter au planning » depuis l'écart d'une offre (SPEC F8, D123) : les lignes cochées
-alimentent une proposition de replanification pour le programme validé choisi, avec le plus récent
-par défaut. Une 422 donne le rang fautif, et les journaux gardent identifiants et nombres."""
+""" "Add to the plan" from a posting's gap (SPEC F8, D123): the ticked lines feed a replanning
+proposal for the chosen validated program, the most recent by default. A 422 gives the faulty
+rank, and the logs keep ids and numbers."""
 
 import logging
 from collections.abc import Sequence
@@ -18,23 +18,25 @@ logger = logging.getLogger(__name__)
 
 
 def gap_skill_unknown(fields: list[str], *, allow_out_of_scope: bool) -> AppError:
-    lines = "« à ajouter » ou « hors périmètre »" if allow_out_of_scope else "« à ajouter »"
+    sections = '"To add" or "Out of scope"' if allow_out_of_scope else '"To add"'
     return AppError(
         "gap_skill_unknown",
-        f"Compétence absente des lignes {lines} de l'écart de cette offre.",
+        f"Select a skill listed under {sections} in this posting's gap analysis.",
         422,
         {"fields": fields},
     )
 
 
 def no_program() -> AppError:
-    return AppError("no_program", "Aucun programme validé : crée d'abord ton programme.", 409)
+    return AppError(
+        "no_program", "Create and approve a program before adding skills to your schedule.", 409
+    )
 
 
 def chosen_skills(
     rows: Sequence[GapRow], skills: Sequence[str], *, allow_out_of_scope: bool = False
 ) -> list[str]:
-    """Renvoie les noms canoniques des lignes cochées, sans doublon, dans l'ordre de la demande."""
+    """The canonical names of the ticked lines, without duplicates, in the request's order."""
     allowed = {"to_add", "out_of_scope"} if allow_out_of_scope else {"to_add"}
     to_add = {normalize_skill_name(r.skill): r.skill for r in rows if r.action in allowed}
     names: list[str] = []
@@ -58,7 +60,7 @@ async def plan_gap(
     *,
     program_id: str | None = None,
 ) -> str:
-    """Lance une proposition dans un programme validé appartenant à l'utilisatrice."""
+    """Launches a proposal in a validated program belonging to the user."""
     async with rt.session_factory() as db:
         posting = await get_posting(db, user_id, posting_id)
         names = chosen_skills(await gap_rows(db, user_id, posting), skills, allow_out_of_scope=True)
@@ -67,7 +69,7 @@ async def plan_gap(
         raise no_program()
     session_id = await start_gap_replan(rt, user_id, target, names)
     logger.info(
-        "Ajout au planning : utilisateur %s, offre %s, programme %s, %d compétence(s), session %s",
+        "Added to the plan: user %s, posting %s, program %s, %d skill(s), session %s",
         user_id,
         posting_id,
         target,

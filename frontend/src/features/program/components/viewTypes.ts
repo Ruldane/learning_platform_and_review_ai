@@ -1,6 +1,6 @@
 /** Types de vue des composants du programme : indépendants du contrat d'API (D34). */
 
-export type TaskType = "lire" | "regarder" | "pratiquer" | "quiz" | "projet";
+export type TaskType = "read" | "watch" | "practice" | "quiz" | "project";
 
 /** Durée d'une tâche, en minutes (SPEC 3.4) : de 15 à 120. */
 export const TASK_MIN_MINUTES = 15;
@@ -28,7 +28,7 @@ export interface DayView {
 }
 
 /** Étape du livre où se place une semaine. */
-export type WeekStage = "fondations" | "pratique" | "avance";
+export type WeekStage = "foundations" | "practice" | "advanced";
 
 export interface WeekView {
   rank: number;

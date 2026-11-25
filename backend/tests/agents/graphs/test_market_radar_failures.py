@@ -38,7 +38,7 @@ async def test_provider_error_on_a_batch_fails_it_and_continues_then_stops_after
     models = analyst(batch(5), default=0)
 
     async def down(agent: str, prompt: str) -> None:
-        if RADAR_REQUEST in prompt and "offre p1" in prompt and len(analyst_prompts(models)) >= 1:
+        if RADAR_REQUEST in prompt and "posting p1" in prompt and len(analyst_prompts(models)) >= 1:
             raise AppError("llm_timeout", "Trop long.", 504)
 
     models.hooks.append(down)

@@ -5,6 +5,7 @@ import { http, HttpResponse } from "msw";
 import { createMemoryRouter, Outlet, RouterProvider } from "react-router";
 import { describe, expect, it } from "vitest";
 import { DataPage } from "@/features/account/pages/DataPage";
+import { accountKeys } from "@/features/account/queryKeys";
 import { settingsFixture } from "@/features/settings/fixtures";
 import { OnboardingGate } from "@/features/settings/OnboardingGate";
 import { WelcomePage } from "@/features/settings/pages/WelcomePage";
@@ -14,8 +15,8 @@ import { onboardingApi } from "@/test/onboardingApi";
 import { createQueryWrapper } from "@/test/queryWrapper";
 import { server } from "@/test/server";
 
-describe("« Tout supprimer » avec la porte du premier lancement", () => {
-  it("local mode: the real gate re-reads the settings and lands on /bienvenue with the notice", async () => {
+describe("« Delete everything » avec la porte du premier lancement", () => {
+  it("returns to the welcome page with a notice after local account deletion", async () => {
     const api = onboardingApi({ settings: settingsFixture });
     server.use(
       // La suppression remet les réglages à zéro : le back les recrée au prochain `GET`.
@@ -29,6 +30,7 @@ describe("« Tout supprimer » avec la porte du premier lancement", () => {
     const client = new QueryClient({
       defaultOptions: { queries: { retry: false, staleTime: 15_000 } },
     });
+    client.setQueryData(accountKeys.me, localMe);
     const router = createMemoryRouter(
       [
         {
@@ -39,12 +41,12 @@ describe("« Tout supprimer » avec la porte du premier lancement", () => {
             </OnboardingGate>
           ),
           children: [
-            { path: "reglages/donnees", element: <DataPage /> },
-            { path: "bienvenue", element: <WelcomePage /> },
+            { path: "settings/data", element: <DataPage /> },
+            { path: "welcome", element: <WelcomePage /> },
           ],
         },
       ],
-      { initialEntries: ["/reglages/donnees"] },
+      { initialEntries: ["/settings/data"] },
     );
     const Wrapper = createQueryWrapper(client);
     render(
@@ -53,15 +55,15 @@ describe("« Tout supprimer » avec la porte du premier lancement", () => {
       </Wrapper>,
     );
     const user = userEvent.setup();
-    await user.type(await screen.findByLabelText("Tape SUPPRIMER pour confirmer"), "SUPPRIMER");
-    await user.click(screen.getByRole("button", { name: "Tout supprimer" }));
+    await user.type(await screen.findByLabelText("Type SUPPRIMER to confirm"), "SUPPRIMER");
+    await user.click(screen.getByRole("button", { name: "Delete everything" }));
 
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Les services de Tremplin" }),
+      await screen.findByRole("heading", { level: 1, name: "Tremplin's services" }),
     ).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe("/bienvenue");
+    expect(router.state.location.pathname).toBe("/welcome");
     expect(
-      screen.getByText("Tes données ont été supprimées : Tremplin repart de zéro."),
+      screen.getByText("Your data has been deleted: Tremplin is starting from scratch."),
     ).toBeVisible();
     // Les réglages d'avant ne sont plus là : la porte les a relus, et le premier lancement a la main.
     expect(api.reads.settings).toBe(2);

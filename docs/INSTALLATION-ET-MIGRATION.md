@@ -1,86 +1,81 @@
-# Installer ou transférer Tremplin vers un autre PC
+# Install Tremplin or move it to another PC
 
-Le dépôt Git contient le code et les migrations. Le volume Docker `app_data`
-contient la base SQLite, les points de reprise des agents, les fichiers
-importés et la clé locale qui permet de déchiffrer les secrets stockés. Une
-installation neuve peut démarrer avec une base vide. Un transfert requiert une
-copie cohérente de ce volume.
+The Git repository contains the code and migrations. The Docker volume `app_data`
+holds the SQLite database, agent checkpoints, imported files, and the local key
+that decrypts saved secrets. A fresh installation can start with an empty database.
+A transfer requires a consistent copy of the volume.
 
-Les commandes ci-dessous s’exécutent depuis la racine du dépôt. Elles utilisent
-le nom de projet Compose `learning_career_platform`, indépendamment du nom
-du dossier. Docker doit fonctionner en mode conteneurs Linux.
+Run the commands from the repository root. They use the Compose project name
+`learning_career_platform` regardless of the folder name. Docker must be in Linux
+container mode.
 
-## 1. Sauvegarder l’ancien PC
+## 1. Back up the original PC
 
-1. Créer un dossier neuf `tremplin-donnees` dans un emplacement privé, distinct
-   du dépôt Git.
-2. Arrêter le backend, copier son dossier `/data` entier, puis le redémarrer.
-   L’exemple utilise un dossier frère du dépôt.
+1. Create a new private folder named `tremplin-data` outside the Git repository.
+2. Stop the backend, copy its entire `/data` directory, and restart it. The following
+   commands use a backup folder beside the repository.
 
    ```sh
    docker compose -p learning_career_platform stop backend
-   docker compose -p learning_career_platform cp backend:/data/. ../tremplin-donnees
+   docker compose -p learning_career_platform cp backend:/data/. ../tremplin-data
    docker compose -p learning_career_platform start backend
    ```
 
-3. Vérifier que la copie contient `app.db`, `checkpoints.db`, `secret.key`
-   et `storage/`. Inclure les fichiers compagnons `-wal` et `-shm` présents.
-   Garder la sauvegarde intacte jusqu’à validation du nouveau PC.
-4. Transférer la sauvegarde par un canal privé. Stocker le fichier de configuration
-   `.env` ou recréer ses valeurs sur le nouveau PC par un canal séparé. La base,
-   les fichiers personnels, `.env` et `secret.key` restent hors de GitHub.
+3. Check for `app.db`, `checkpoints.db`, `secret.key`, and `storage/`. Include any
+   `-wal` and `-shm` companion files. Keep this backup until you verify the new PC.
+4. Transfer the backup privately. Recreate the settings in `.env` on the new PC,
+   keeping that configuration separate from the backup. Keep the databases,
+   personal files, `.env`, and `secret.key` out of GitHub.
 
-Qdrant et Ollama ont leurs propres volumes. Sur un nouveau PC, Tremplin peut
-reconstruire l’index Qdrant depuis les textes de la base. Ollama peut
-retélécharger son modèle d’embeddings.
+Qdrant and Ollama use separate volumes. On a new PC, Tremplin can rebuild its
+Qdrant index from the database text. Ollama can download the embedding model again.
 
-## 2. Récupérer le code et configurer le nouveau PC
+## 2. Get the code and configure the new PC
 
-Cloner le dépôt GitHub, sélectionner la branche publiée souhaitée et ouvrir
-la racine. `git log -1 --oneline` permet de relever la version qui sera installée.
-Créer `.env` sur le nouveau PC à partir du fichier d’exemple s’il est
-présent. Renseigner `OPENAI_API_KEY` en local et reprendre les ports souhaités.
+Clone the repository, select the published branch you want, and open the repository
+root. Record the version with `git log -1 --oneline`. Create a local `.env` from the
+example file if available, then enter your `OPENAI_API_KEY` and any port settings.
 
-Construire les trois images. Avec le port API par défaut, utiliser ces commandes.
-Si `BACKEND_PORT` vaut autre chose, reprendre cette valeur dans `VITE_API_URL`
-à la construction du frontend.
+Build all three images. The example uses the default API port. If you change
+`BACKEND_PORT`, use the same port in `VITE_API_URL` when building the frontend.
 
 ```sh
 docker build -t learning_career_platform-backend:latest backend
-docker build --build-arg VITE_API_URL=http://localhost:8000 -t learning_career_platform-frontend:latest frontend
+docker build -t learning_career_platform-frontend:latest \
+  --build-arg VITE_API_URL=http://localhost:8000 frontend
 docker build -t learning_career_platform-sandbox:latest sandbox
 ```
 
-Pour une base neuve, passer directement à l’étape 4.
+For a fresh database, continue to step 4.
 
-## 3. Restaurer dans un volume neuf
+## 3. Restore to a new volume
 
-Vérifier les volumes avant de créer la pile.
+Check the volumes before creating the stack.
 
 ```sh
 docker volume ls --filter label=com.docker.compose.project=learning_career_platform
 ```
 
-Pour un transfert sur un PC qui héberge déjà Tremplin, prendre d’abord une
-sauvegarde de cette installation. Utiliser un projet Compose distinct et ses
-images nommées en conséquence pour tester la restauration dans un volume neuf.
-Configurer des ports distincts si les deux piles tournent ensemble.
+If the destination already runs Tremplin, back up that installation first.
+Use a separate Compose project with matching image names to try the restore in
+a new volume. Set different ports if both stacks will run at once.
 
-Sur un PC neuf, créer le conteneur backend sans le démarrer. Placer le dossier
-de sauvegarde à côté de la racine ou ajuster son chemin dans la commande
-`cp`. L’option `--no-deps` limite cette préparation au backend.
+On a new PC, create the backend container without starting it. Place the backup
+folder beside the repository or adjust the path in the copy command. The
+`--no-deps` flag limits this preparation to the backend.
 
 ```sh
 docker compose -p learning_career_platform up --no-start --no-build --no-deps backend
-docker compose -p learning_career_platform cp ../tremplin-donnees/. backend:/data
-docker compose -p learning_career_platform run --rm --no-deps --user 0 --entrypoint chown backend -R app:app /data
+docker compose -p learning_career_platform cp ../tremplin-data/. backend:/data
+docker compose -p learning_career_platform run --rm --no-deps --user 0 \
+  --entrypoint chown backend -R app:app /data
 ```
 
-Copier la base, ses fichiers compagnons et la clé ensemble avant le premier
-démarrage. Le backend pourra alors lire les écritures SQLite récentes et
-déchiffrer les réglages transférés.
+Restore the database, its companion files, and its key together before the
+first start. This lets the backend read recent SQLite writes and decrypt the
+transferred settings.
 
-## 4. Démarrer et contrôler la migration
+## 4. Start the app and verify the migration
 
 ```sh
 docker compose -p learning_career_platform up -d --no-build
@@ -89,77 +84,72 @@ docker compose -p learning_career_platform exec -T backend alembic current
 docker compose -p learning_career_platform exec -T backend alembic heads
 ```
 
-À partir de la réorganisation des conversations, la migration attribue un titre
-aux anciens fils du Cerveau et d’Étudier à partir du premier message. Elle
-conserve leurs identifiants et les données pédagogiques déjà enregistrées.
-Après restauration, vérifier un ancien fil dans chacun des deux écrans et
-ouvrir une fiche de révision avant de retirer la sauvegarde.
+The conversation migration assigns titles to older Brain and Study threads
+from their first message. It keeps the thread IDs and saved learning data.
+Before retiring the backup, check an older thread on each page and open a flashcard.
 
-Le backend applique `alembic upgrade head` à son démarrage. La révision
-courante doit correspondre à la tête de l’image. Vérifier l’API à
-`http://localhost:8000/api/v1/health`, ou sur le port configuré, puis ouvrir
-l’interface sur le port `FRONTEND_PORT` (5173 par défaut).
+The backend runs `alembic upgrade head` at startup. The current revision should match
+the image's head revision. Check `http://localhost:8000/api/v1/health` on the configured
+API port, then open the app on `FRONTEND_PORT`, which defaults to 5173.
 
-1. Dans **Apprendre**, vérifier les programmes, les leçons et quelques fichiers
-   par rapport à la sauvegarde. Le jeu transféré d’origine comptait quatre
-   programmes et 123 leçons.
-2. Dans **Réglages > Modèles et clés**, vérifier que les niveaux sont réglés
-   sur OpenAI. Une clé saisie auparavant dans l’interface prime sur la
-   clé du même fournisseur dans `.env`.
-3. Dans **Mémoire**, choisir **Réindexer** après le téléchargement de `bge-m3`.
-   Attendre la fin de l’indexation et vérifier une recherche en mémoire.
-4. Pour reconnecter un client MCP, créer son jeton dans **Réglages > Accès
-   MCP** et suivre le [guide MCP](mcp/AGENTS.md). Conserver le jeton dans une
-   variable locale du client.
+1. In **Learn**, compare programs, lessons, and a few files with the backup. The
+   original transfer contained four programs and 123 lessons.
+2. In **Settings > Models and keys**, verify the expected provider and model for
+   each tier. A key entered in the app takes precedence over that provider's key in
+   `.env`. The original transfer used OpenAI.
+3. In **Memory**, select **Reindex** once Ollama has downloaded `bge-m3`.
+   Wait for indexing to finish and try a memory search.
+4. To reconnect an MCP client, create its token in **Settings > MCP access**
+   and keep the token in a local environment variable for the client.
+   [MCP guide](mcp/AGENTS.md)
 
-## En cas d’échec
+## Troubleshooting
 
 ```sh
 docker compose -p learning_career_platform logs --tail 60 backend ollama-init
 ```
 
-Si Alembic échoue, relever la révision et l’erreur avant de relancer. Garder la
-sauvegarde intacte. Une nouvelle tentative de restauration peut partir d’une
-autre copie et d’un volume neuf. Si le problème concerne les anciennes clés,
-vérifier la présence de `secret.key` avec la base correspondante avant de
-modifier les réglages.
+If Alembic fails, record the revision and error before retrying. Keep the
+backup intact and use another copy and a fresh volume for a second attempt.
+If saved keys cannot be decrypted, check that `secret.key` came from the same
+backup as the database before changing settings.
 
-Sous Windows, le [guide du dépôt](../AGENTS.md) indique les commandes Node et
-la configuration Edge utilisées lorsque le contrôle d’applications bloque
-les exécutables Playwright ou pnpm.
+On Windows, the repository guide covers the Node commands and Edge configuration
+for machines where Smart App Control blocks the Playwright or pnpm executables.
+[Repository guide](../AGENTS.md)
 
-## Reprendre le projet avec Claude Code
+## Resume development with Claude Code
 
-Sur le nouveau PC, utiliser le nom de la branche livrée et comparer le
-commit affiché à celui de la livraison.
+On the new PC, use the published branch and compare the local commit with the
+published commit.
 
 ```sh
-git clone --branch "<branche livrée>" "https://github.com/Ruldane/learning_platform_and_review_ai.git" Tremplin
+git clone --branch "<published branch>" \
+  "https://github.com/Ruldane/learning_platform_and_review_ai.git" Tremplin
 cd Tremplin
 git rev-parse HEAD
 ```
 
-Pour créer des commits depuis ce PC, configurer l’identité sur ce dépôt.
+Before committing from this PC, configure the repository's Git identity.
 
 ```sh
 git config --local user.name "Ruldane"
 git config --local user.email "l.nizzoli@gmail.com"
 ```
 
-Si le dépôt existe déjà, garder une trace du travail local avec
-`git status --short`. Récupérer la branche publiée avec `git fetch origin`.
-Une branche locale neuve peut ensuite suivre la livraison avec
-`git switch --track "origin/<branche livrée>"`. Une branche locale déjà créée
-peut avancer par `git pull --ff-only` quand elle suit la bonne branche distante.
+If the repository is already present, check local changes with
+`git status --short` and fetch the published branch with `git fetch origin`.
+Create a local tracking branch with `git switch --track "origin/<published branch>"`.
+For an existing branch that tracks the correct remote, use `git pull --ff-only`.
 
-Texte à donner à Claude Code, avec les mêmes valeurs et le chemin du transfert.
+Give Claude Code the repository and backup details for the transfer.
 
-> Reprends Tremplin sur ce PC à partir du dépôt GitHub « <URL du dépôt> »,
-> branche « <branche livrée> », commit « <commit livré> ». Vérifie le commit
-> local et lis AGENTS.md, CLAUDE.md et docs/INSTALLATION-ET-MIGRATION.md.
-> Préserve mes modifications locales et les volumes existants. Le dossier
-> de sauvegarde est « <chemin de tremplin-donnees> ». Prépare un volume neuf,
-> restaure la base SQLite, les points de reprise et les fichiers ensemble,
-> puis vérifie la révision Alembic, les programmes, les leçons et la mémoire.
-> La configuration privée reste dans .env et la plateforme utilise OpenAI.
-> Vérifie le démarrage local et donne les résultats sans afficher de clé.
+> Resume Tremplin on this PC from GitHub repository "<repository URL>", branch
+> "<published branch>", and commit "<published commit>". Check the local commit
+> and read AGENTS.md, CLAUDE.md, and docs/INSTALLATION-ET-MIGRATION.md.
+> Preserve my local changes and existing volumes. The backup is in
+> "<path to tremplin-data>". Prepare a fresh volume and restore the SQLite
+> database, checkpoints, and files together. Check the Alembic revision,
+> programs, lessons, and memory.
+> Leave private configuration in .env. This installation uses OpenAI.
+> Verify local startup and report the results without displaying any key.

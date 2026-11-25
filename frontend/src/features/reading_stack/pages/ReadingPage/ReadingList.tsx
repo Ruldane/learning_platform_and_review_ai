@@ -3,7 +3,7 @@ import { t } from "@/shared/i18n/t";
 import { Button } from "@/shared/ui/button";
 import type { ReadingItem } from "../../api";
 
-export const READING_PATH = "/memoire/lecture";
+export const READING_PATH = "/memory/reading";
 
 interface ReadingListProps {
   items: ReadingItem[];

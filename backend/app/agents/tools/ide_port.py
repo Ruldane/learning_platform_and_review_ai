@@ -89,7 +89,7 @@ class IdeStore(Protocol):
 
 
 def ide_unavailable() -> AppError:
-    return AppError("ide_unavailable", "L'IDE n'est pas branché sur ce moteur.", 503)
+    return AppError("ide_unavailable", "The IDE is unavailable in this runtime.", 503)
 
 
 class _NoIde:

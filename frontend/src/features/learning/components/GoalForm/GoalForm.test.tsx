@@ -3,11 +3,11 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { GoalForm } from "./GoalForm";
 
-const TEXT = "Ce que tu veux apprendre ou atteindre";
-const ROLE = "Poste visé (facultatif)";
-const DEADLINE = "Échéance (facultatif)";
-const HOURS = "Heures disponibles par semaine (facultatif)";
-const SUBMIT = "Convoquer le Conseil";
+const TEXT = "What you want to learn or achieve";
+const ROLE = "Target role (optional)";
+const DEADLINE = "Deadline (optional)";
+const HOURS = "Hours available per week (optional)";
+const SUBMIT = "Convene the Council";
 
 function setup(busy = false) {
   const onSubmit = vi.fn();
@@ -44,9 +44,9 @@ describe("GoalForm", () => {
   });
 
   it.each([
-    ["", "Décris ton objectif en 5 caractères au moins."],
-    ["abc", "Décris ton objectif en 5 caractères au moins."],
-    ["x".repeat(501), "500 caractères au plus."],
+    ["", "Describe your goal in at least 5 characters."],
+    ["abc", "Describe your goal in at least 5 characters."],
+    ["x".repeat(501), "500 characters max."],
   ])("refuses the text %j", async (typed, message) => {
     const { onSubmit, user } = setup();
     if (typed) {
@@ -65,7 +65,7 @@ describe("GoalForm", () => {
     await user.type(screen.getByLabelText(DEADLINE), "2020-01-01");
     await user.click(screen.getByRole("button", { name: SUBMIT }));
     expect(onSubmit).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert")).toHaveTextContent("L'échéance doit être une date à venir.");
+    expect(screen.getByRole("alert")).toHaveTextContent("The deadline must be a future date.");
   });
 
   it.each(["0", "41", "2.5", "-3"])("refuses %s hours per week", async (hours) => {
@@ -74,7 +74,7 @@ describe("GoalForm", () => {
     await user.type(screen.getByLabelText(HOURS), hours);
     await user.click(screen.getByRole("button", { name: SUBMIT }));
     expect(onSubmit).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert")).toHaveTextContent("Entre 1 et 40 heures par semaine");
+    expect(screen.getByRole("alert")).toHaveTextContent("Between 1 and 40 hours per week");
   });
 
   it("refuses a target role over 120 characters", async () => {
@@ -84,12 +84,12 @@ describe("GoalForm", () => {
     await user.paste("r".repeat(121));
     await user.click(screen.getByRole("button", { name: SUBMIT }));
     expect(onSubmit).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert")).toHaveTextContent("120 caractères au plus.");
+    expect(screen.getByRole("alert")).toHaveTextContent("120 characters max.");
   });
 
   it("locks the form while the goal is being sent", () => {
     setup(true);
     expect(screen.getByLabelText(TEXT)).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Envoi en cours…" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Sending…" })).toBeDisabled();
   });
 });

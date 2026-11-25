@@ -1,4 +1,4 @@
-"""Passages déterministes et bornés d'une copie Python du projet."""
+"""Deterministic, bounded passages from a Python copy of the project."""
 
 from collections.abc import Iterator
 from itertools import zip_longest

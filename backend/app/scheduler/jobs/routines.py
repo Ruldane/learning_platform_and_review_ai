@@ -17,4 +17,4 @@ async def run(ctx: JobContext) -> None:
             async with ctx.session_factory() as db:
                 await run_daily(db, owner, now)
         except Exception as error:
-            logger.warning("Routine en échec pour %s (%s)", owner, type(error).__name__)
+            logger.warning("Routine failed for %s (%s)", owner, type(error).__name__)

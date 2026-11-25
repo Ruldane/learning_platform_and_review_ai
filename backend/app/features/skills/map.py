@@ -40,26 +40,26 @@ from app.features.skills.schemas import (
     SkillNodeOut,
 )
 
-STUDY_URL = "/etudier/session"
-QUIZ_URL = "/etudier/quiz"
-REVIEW_URL = "/etudier/revisions"
-JOURNAL_URL = "/etudier/journal"
-POSTING_PAGE = "/carriere/offres/"
+STUDY_URL = "/study/session"
+QUIZ_URL = "/study/quiz"
+REVIEW_URL = "/study/reviews"
+JOURNAL_URL = "/study/journal"
+POSTING_PAGE = "/career/postings/"
 # Page de chaque genre de preuve qui désigne un objet (`ref_id`) ; « capture » mène au journal.
 _EVIDENCE_PAGES: dict[EvidenceKind, str] = {
-    "lesson": "/apprendre/lecons/",
-    "quiz": "/etudier/quiz/",
-    "study": "/etudier/session/",
-    "program": "/apprendre/programme/",
-    "github": "/competences/portfolio/",
-    "system_design": "/candidatures/system-design/",
-    "contribution": "/competences/contributions/",
-    "feynman": "/etudier/explique-moi/",
+    "lesson": "/learn/lessons/",
+    "quiz": "/study/quiz/",
+    "study": "/study/session/",
+    "program": "/learn/programs/",
+    "github": "/skills/portfolio/",
+    "system_design": "/applications/system-design/",
+    "contribution": "/skills/contributions/",
+    "feynman": "/study/explain/",
 }
 
 
 def skill_not_found() -> AppError:
-    return AppError("skill_not_found", "Compétence introuvable.", 404)
+    return AppError("skill_not_found", "Skill not found.", 404)
 
 
 def _demand(demand: dict[str, float], skill: Skill) -> float | None:
@@ -140,33 +140,33 @@ def next_action(level: SkillLevel | None, skill: str, facts: ActionFacts) -> Nex
     cours → passer le quiz ; validée → réviser ses fiches dues, sinon le projet preuve (bientôt) ;
     prouvée → rien. Sans module qui l'enseigne, le libellé nomme la compétence."""
     subject = facts.module or skill
-    if level is None or level == "declare":
-        url = f"{STUDY_URL}?lecon={quote(facts.lesson_id, safe='')}" if facts.lesson_id else None
-        return NextActionOut(kind="study", label=f"Étudier « {subject} »", url=url or STUDY_URL)
-    if level == "en_cours":
+    if level is None or level == "declared":
+        url = f"{STUDY_URL}?lesson={quote(facts.lesson_id, safe='')}" if facts.lesson_id else None
+        return NextActionOut(kind="study", label=f"Study “{subject}”", url=url or STUDY_URL)
+    if level == "in_progress":
         url = f"{QUIZ_URL}/{quote(facts.quiz_id, safe='')}" if facts.quiz_id else QUIZ_URL
-        return NextActionOut(kind="quiz", label=f"Passer le quiz « {subject} »", url=url)
-    if level == "valide":
+        return NextActionOut(kind="quiz", label=f"Take the quiz on “{subject}”", url=url)
+    if level == "validated":
         if facts.cards_due:
-            label = f"Réviser les fiches « {skill} »"
+            label = f"Review cards for “{skill}”"
             return NextActionOut(kind="review", label=label, url=REVIEW_URL)
-        return NextActionOut(kind="project", label="Projet preuve (bientôt)", url=None)
+        return NextActionOut(kind="project", label="Evidence project (coming soon)", url=None)
     return None
 
 
 async def _facts(
     db: AsyncSession, user_id: str, skill: Skill, level: SkillLevel | None, now: datetime
 ) -> ActionFacts:
-    if level == "prouve":
+    if level == "proven":
         return ActionFacts()
-    if level == "valide":
+    if level == "validated":
         zone = user_zone((await SettingsService(db, user_id).get()).timezone)
         due = await due_skill_names(db, user_id, local_today(zone, now))
         return ActionFacts(cards_due=skill.norm_name in due)
     module = await module_teaching(db, user_id, skill.norm_name)
     if module is None:
         return ActionFacts()
-    if level == "en_cours":
+    if level == "in_progress":
         quiz_id = await ready_quiz_of_module(db, user_id, module.module_id)
         return ActionFacts(module=module.title, quiz_id=quiz_id)
     lesson_id = await ready_lesson_id(db, user_id, module.module_id)

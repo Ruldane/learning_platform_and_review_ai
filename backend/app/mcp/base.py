@@ -30,14 +30,14 @@ READ_ONLY_POSTS = frozenset({"POST /memory/search"})
 
 
 class McpExclusion(StrEnum):
-    AUTH = "Niveau 4 — authentification et sessions de connexion."
-    MCP_ADMIN = "Niveau 4 — jetons, appairage, droits et confirmations MCP."
-    MODEL_SETTINGS = "Niveau 4 — clés d’API et choix des modèles."
-    BRAIN_SYNC = "Niveau 4 — jeton et canal protégé du relais Cerveau."
-    CALENDAR_OAUTH = "Niveau 4 — consentement OAuth et connexion Agenda."
-    IDE_RIGHTS = "Niveau 4 — modification des droits d’écriture et plafonds du jeton."
-    SHARING_TOKEN = "Niveau 4 — émission ou usage des accès invités du mentor."
-    INTEGRATION_TOKEN = "Niveau 4 — consentement et appairage du jeton de l’intégration."
+    AUTH = "Level 4 — authentication and sign-in sessions."
+    MCP_ADMIN = "Level 4 — MCP tokens, pairing, rights and confirmations."
+    MODEL_SETTINGS = "Level 4 — API keys and model choices."
+    BRAIN_SYNC = "Level 4 — token and protected channel of the Brain relay."
+    CALENDAR_OAUTH = "Level 4 — OAuth consent and Calendar connection."
+    IDE_RIGHTS = "Level 4 — changes to write rights and token caps."
+    SHARING_TOKEN = "Level 4 — issuing or using the mentor's guest access."
+    INTEGRATION_TOKEN = "Level 4 — consent and pairing of the integration token."
 
 
 # Grammaire des chemins `untrusted` : chemins pointés dans `data` de la réponse JSON (la racine est
@@ -111,17 +111,17 @@ class McpAction:
 
     def __post_init__(self) -> None:
         if self.side_effects == "external" and self.level == 2:
-            raise ValueError("un effet externe est de niveau 3 (P14)")
+            raise ValueError("an external side effect is level 3 (P14)")
         if self.merge_from is not None and (
             self.body_fields is None or not self.merge_from.startswith("GET ")
         ):
-            raise ValueError("merge_from est une route GET et exige body_fields")
+            raise ValueError("merge_from is a GET route and requires body_fields")
         if not untrusted_paths_valid(self.untrusted):
-            raise ValueError("chemin untrusted hors grammaire")
+            raise ValueError("untrusted path outside the grammar")
         if self.manual_url and (
             self.level != 1 or not re.fullmatch(r"/[a-z0-9][a-z0-9/-]*", self.manual_url)
         ):
-            raise ValueError("un lien vers une page Tremplin est une lecture")
+            raise ValueError("a link to a Tremplin page is a read")
 
 
 @dataclass(frozen=True)
@@ -142,7 +142,7 @@ class McpGraph:
 
     def __post_init__(self) -> None:
         if not untrusted_paths_valid(self.untrusted):
-            raise ValueError("chemin untrusted hors grammaire")
+            raise ValueError("untrusted path outside the grammar")
 
 
 @dataclass(frozen=True)

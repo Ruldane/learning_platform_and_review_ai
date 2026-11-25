@@ -1,13 +1,13 @@
-"""Programme complet écrit en direct (D213), avec les champs du livre (plan « zéro à expert ») :
-étape et raison de chaque semaine, pages officielles, encadré « code ancien » et notions de chaque
-chapitre. Tous facultatifs ; donnés, ils suivent les règles du Stratège (`PlanDraft`)."""
+"""A complete program written directly (D213), with the book's fields ("zero to expert" plan):
+stage and reason of each week, official pages, "legacy code" box and notions of each chapter.
+All optional; when given, they follow the Strategist's rules (`PlanDraft`)."""
 
 from datetime import date
-from typing import Annotated, Literal
+from typing import Annotated
 
 from pydantic import AnyHttpUrl, BaseModel, Field, StringConstraints
 
-from app.db.models.program import TaskType
+from app.db.models.program import Stage, TaskType
 
 _Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=120)]
 _Criterion = Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=200)]
@@ -18,12 +18,11 @@ _Text = Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, ma
 _Skill = Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=120)]
 _Url = Annotated[AnyHttpUrl, Field(max_length=500)]
 Url = _Url
-Stage = Literal["fondations", "pratique", "avance"]
 
 
 class TaskWrite(BaseModel):
-    """Une tâche d'un programme écrit en direct : les champs et les bornes de `TaskDraft`. Son jour
-    est choisi par l'application, comme pour le Stratège."""
+    """A task of a program written directly: the fields and bounds of `TaskDraft`. Its day is
+    chosen by the application, like for the Strategist."""
 
     title: _Title
     type: TaskType
@@ -32,7 +31,7 @@ class TaskWrite(BaseModel):
 
 
 class NotionWrite(BaseModel):
-    """Une notion introduite par un chapitre, avec sa définition courte."""
+    """A notion introduced by a chapter, with its short definition."""
 
     name: _Skill
     definition: _Text
@@ -46,18 +45,18 @@ class ModuleWrite(BaseModel):
     requires: list[_Skill] = Field(
         default_factory=list,
         max_length=10,
-        description="Notions introduites par un chapitre précédent, dont celui-ci a besoin.",
+        description="Notions introduced by a previous chapter, which this one needs.",
     )
     introduces: list[NotionWrite] = Field(
         default_factory=list, max_length=10, description="Notions nouvelles de ce chapitre."
     )
     official_urls: list[_Url] = Field(
-        default_factory=list, max_length=3, description="Pages de la documentation officielle."
+        default_factory=list, max_length=3, description="Pages of the official documentation."
     )
     legacy: list[_Skill] = Field(
         default_factory=list,
         max_length=5,
-        description="API dépréciées, montrées seulement dans l'encadré « Lire du code ancien ».",
+        description='Deprecated APIs, shown only in the "Read legacy code" box.',
     )
 
 
@@ -66,17 +65,17 @@ class WeekWrite(BaseModel):
     objective: _Text
     deliverable: _Text
     stage: Stage | None = Field(
-        default=None, description="Étape du livre : les étapes ne reculent jamais."
+        default=None, description="Stage in the book. Weeks follow the stages in order."
     )
     rationale: _Text | None = Field(
-        default=None, description="Pourquoi cette semaine arrive à cette place."
+        default=None, description="Why the week appears at this point in the program."
     )
     modules: list[ModuleWrite] = Field(min_length=1, max_length=4)
 
 
 class SkillWrite(BaseModel):
-    """Une compétence du référentiel, avec son domaine (facultatif : celles des modules sont
-    créées sans domaine à la validation)."""
+    """A skill of the reference list, with its domain (optional: those of the modules are
+    created without a domain at validation)."""
 
     name: _Skill
     domain: _Skill
@@ -84,16 +83,16 @@ class SkillWrite(BaseModel):
 
 
 class EdgeWrite(BaseModel):
-    """`before` précède `after` (noms de compétences)."""
+    """`before` precedes `after` (skill names)."""
 
     before: _Skill
     after: _Skill
 
 
 class ProgramWrite(BaseModel):
-    """Un programme complet écrit en un appel, sans agent (semaines, modules, tâches : les champs
-    et les bornes du Stratège, 1 à 52 semaines). L'application range les tâches sur le calendrier
-    selon les règles du Stratège ; le programme entre en brouillon, « à valider »."""
+    """A complete program written in one call, without an agent (weeks, modules, tasks: the
+    Strategist's fields and bounds, 1 to 52 weeks). The application places the tasks on the
+    calendar following the Strategist's rules; the program enters as a draft, "to validate"."""
 
     goal_id: _Id
     title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=200)]

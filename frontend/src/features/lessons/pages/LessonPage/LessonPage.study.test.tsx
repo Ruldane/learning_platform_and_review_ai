@@ -17,10 +17,10 @@ function Conversation({
   onClose: () => void;
 }) {
   return (
-    <section role="dialog" aria-label="Professeur">
+    <section role="dialog" aria-label="Professor">
       <p>{passage?.text}</p>
       <button type="button" onClick={onClose}>
-        Fermer
+        Close conversation
       </button>
     </section>
   );
@@ -31,15 +31,15 @@ function setup(lesson: Record<string, unknown> = lessonOut()) {
   return renderRoutes(
     [
       {
-        path: "/apprendre/lecons/:lessonId",
+        path: "/learn/lessons/:lessonId",
         element: <LessonPage conversationPanel={Conversation} />,
       },
     ],
-    "/apprendre/lecons/l1",
+    "/learn/lessons/l1",
   );
 }
 
-describe("LessonPage: étudier avec le tuteur", () => {
+describe("LessonPage: studying with the tutor", () => {
   it("opens the selected passage in the lesson and restores focus on close", async () => {
     const { router, user } = setup();
     const body = await screen.findByTestId("lesson-body");
@@ -51,31 +51,31 @@ describe("LessonPage: étudier avec le tuteur", () => {
     act(() => {
       document.dispatchEvent(new Event("selectionchange"));
     });
-    const ask = screen.getByRole("button", { name: "Demander au professeur" });
+    const ask = screen.getByRole("button", { name: "Ask the professor" });
     ask.focus();
     await user.keyboard("{Enter}");
-    expect(router.state.location.pathname).toBe("/apprendre/lecons/l1");
-    const dialog = await screen.findByRole("dialog", { name: "Professeur" });
+    expect(router.state.location.pathname).toBe("/learn/lessons/l1");
+    const dialog = await screen.findByRole("dialog", { name: "Professor" });
     expect(within(dialog).getByText("Une variable nomme une valeur.")).toBeVisible();
-    await user.click(within(dialog).getByRole("button", { name: "Fermer" }));
+    await user.click(within(dialog).getByRole("button", { name: "Close conversation" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Ouvrir la conversation avec le professeur" }),
+      screen.getByRole("button", { name: "Open the conversation with the professor" }),
     ).toHaveFocus();
     window.getSelection()!.removeAllRanges();
   });
 
   it("links a ready lesson to a guided session on it", async () => {
     setup();
-    expect(await screen.findByRole("link", { name: "Étudier cette leçon" })).toHaveAttribute(
+    expect(await screen.findByRole("link", { name: "Study this lesson" })).toHaveAttribute(
       "href",
-      "/etudier/session?lecon=l1",
+      "/study/session?lesson=l1",
     );
   });
 
   it("does not offer to study a lesson that is not ready", async () => {
     setup(lessonOut({ status: "pending", markdown: "" }));
-    await screen.findByRole("link", { name: "Toutes les leçons" });
-    expect(screen.queryByRole("link", { name: "Étudier cette leçon" })).not.toBeInTheDocument();
+    await screen.findByRole("link", { name: "All lessons" });
+    expect(screen.queryByRole("link", { name: "Study this lesson" })).not.toBeInTheDocument();
   });
 });

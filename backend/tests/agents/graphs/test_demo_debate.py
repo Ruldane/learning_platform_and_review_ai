@@ -25,8 +25,8 @@ from tests.agents.runtime.runner_helpers import (
 type Factory = async_sessionmaker[AsyncSession]
 
 R = ["Défenseur 1", "Critique 1", "Défenseur 2", "Critique 2", "Défenseur 3", "Critique 3"]
-QUESTION = "Quel angle pour le second tour ?"
-OPTIONS = [{"value": "concret", "label": "Plus concret"}, {"value": "court", "label": "Plus court"}]
+QUESTION = "What approach should we take in round 2?"
+OPTIONS = [{"value": "concret", "label": "More concrete"}, {"value": "court", "label": "Shorter"}]
 
 
 async def _until_asked(d: Debate, db: Factory, user_id: str, sid: str, *, not_id: str = "") -> str:
@@ -162,8 +162,8 @@ async def test_ask_user_has_no_side_effect_before_interrupt(
 
 
 def test_agents_and_graph_are_registered():
-    assert get_agent("demo_proponent").tier == "rapide"
-    assert get_agent("demo_critic").tier == "rapide"
+    assert get_agent("demo_proponent").tier == "fast"
+    assert get_agent("demo_critic").tier == "fast"
     assert get_graph("demo_debate") is GRAPHS["demo_debate"]
     assert GRAPHS["demo_debate"].input_model is DemoDebateInput
     assert {"demo_proponent", "demo_critic"} <= set(AGENTS)
@@ -189,8 +189,8 @@ VARS = {
 def test_prompts_render_with_their_variables(agent: str):
     out = render_prompt(agent, **VARS)
     assert "apprendre Rust" in out and "Texte de l'autre agent" in out
-    assert "Réponds nommément à January sur" in out and "Pense aux débutants" in out
-    assert "80 mots" in out
+    assert "Reply to January by name about" in out and "Pense aux débutants" in out
+    assert "in 80 words at most" in out
 
 
 @pytest.mark.parametrize("agent", ["demo_proponent", "demo_critic"])
@@ -200,7 +200,7 @@ def test_prompts_without_notes_nor_angle_omit_those_parts(agent: str):
 
 
 def test_critic_answers_the_proponent_by_name():
-    assert "Défenseur" in render_prompt("demo_critic", **VARS)
+    assert 'answer by name ("Defender,' in render_prompt("demo_critic", **VARS)
 
 
 @pytest.mark.parametrize("agent", ["demo_proponent", "demo_critic"])

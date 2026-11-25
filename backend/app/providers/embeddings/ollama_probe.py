@@ -27,7 +27,5 @@ class OllamaProbe:
         if response.status_code != 200:
             return unexpected_status(response)
         if not self._has_model(response.json()):
-            return HealthStatus(
-                ok=False, detail=f"Le modèle {self._model} est en cours de téléchargement."
-            )
+            return HealthStatus(ok=False, detail=f"Downloading {self._model}.")
         return available()

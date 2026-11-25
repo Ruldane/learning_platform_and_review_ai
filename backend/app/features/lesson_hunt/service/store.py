@@ -1,4 +1,4 @@
-"""Publier le brouillon ou le bilan seulement dans la session chargée de cette étape."""
+"""Publish the draft or the assessment only in the session in charge of this step."""
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -12,7 +12,9 @@ from app.features.lesson_hunt.service.exercise import apply_edits
 async def _assigned(repo: HuntRepository, hunt_id: str, session_id: str) -> LessonHunt:
     row = await repo.require(hunt_id)
     if row.session_id != session_id:
-        raise AppError("lesson_hunt_changed", "L’exercice de lecture a changé. Relis-le.", 409)
+        raise AppError(
+            "lesson_hunt_changed", "The reading exercise has changed. Read it again.", 409
+        )
     return row
 
 
@@ -44,7 +46,7 @@ class AgentLessonHuntStore:
             except ValueError:
                 raise AppError(
                     "lesson_hunt_invalid",
-                    "Les deux passages proposés ne correspondent pas au chapitre.",
+                    "The two proposed passages do not match the chapter.",
                     422,
                 ) from None
             await repo.replace(

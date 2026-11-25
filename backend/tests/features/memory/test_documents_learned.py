@@ -109,10 +109,10 @@ async def test_agent_write_shows_author_and_reason(
     listed = (await client.get(MEMORY, params={"author": "archivist"})).json()
     assert listed["total"] == 2
     item = listed["items"][0]
-    assert item["kind"] == "acquis" and item["level"] == "declare" and item["indexed"] is True
+    assert item["kind"] == "skill" and item["level"] == "declared" and item["indexed"] is True
     detail = (await client.get(f"{MEMORY}/{item['id']}")).json()
     assert detail["writes"][0]["author"] == "archivist"
-    assert "déjà appris" in detail["writes"][0]["reason"]
+    assert "already learned" in detail["writes"][0]["reason"]
     assert detail["writes"][0]["session_id"] == sid
     assert detail["source_id"] == doc["id"] and detail["evidence"] == [doc["id"]]
     found = (await client.post("/api/v1/memory/search", json={"query": "Transformeur"})).json()

@@ -7,11 +7,11 @@ describe("EventTimeline", () => {
   it("lists the events from the oldest to the newest, whatever the order given", () => {
     render(<EventTimeline events={makeEvents()} />);
     const items = within(
-      screen.getByRole("list", { name: "Historique de la candidature" }),
+      screen.getByRole("list", { name: "Application history" }),
     ).getAllByRole("listitem");
     expect(items).toHaveLength(3);
-    expect(items[0]).toHaveTextContent("Fiche créée");
-    expect(items[1]).toHaveTextContent("Changement de statut");
+    expect(items[0]).toHaveTextContent("Application created");
+    expect(items[1]).toHaveTextContent("Status change");
     expect(items[2]).toHaveTextContent("Note");
   });
 
@@ -25,7 +25,7 @@ describe("EventTimeline", () => {
 
   it("writes a status change as from → to, with the statuses in words", () => {
     render(<EventTimeline events={makeEvents()} />);
-    expect(screen.getByText("À postuler → Postulée")).toBeInTheDocument();
+    expect(screen.getByText("To apply → Applied")).toBeInTheDocument();
   });
 
   it("shows the text of a note", () => {
@@ -48,7 +48,7 @@ describe("EventTimeline", () => {
         ]}
       />,
     );
-    expect(screen.getByText("Statut : Offre")).toBeInTheDocument();
+    expect(screen.getByText("Status: Offer")).toBeInTheDocument();
   });
 
   it("names every kind of event of the thread", () => {
@@ -66,11 +66,11 @@ describe("EventTimeline", () => {
       />,
     );
     for (const label of [
-      "Relance",
-      "Kit de candidature",
-      "Entretien d'entraînement",
-      "Comité de recrutement",
-      "Version du CV",
+      "Follow-up",
+      "Application kit",
+      "Practice interview",
+      "Hiring committee",
+      "Résumé version",
     ]) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
@@ -78,6 +78,6 @@ describe("EventTimeline", () => {
 
   it("says so when there is no event", () => {
     render(<EventTimeline events={[]} />);
-    expect(screen.getByText("Rien dans l'historique pour l'instant.")).toBeInTheDocument();
+    expect(screen.getByText("Nothing in the history yet.")).toBeInTheDocument();
   });
 });

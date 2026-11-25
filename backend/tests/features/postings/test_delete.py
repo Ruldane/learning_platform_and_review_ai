@@ -68,7 +68,7 @@ async def test_delete_refused_while_the_analysis_is_open(
     created = await _create(client)  # sa session d'analyse tourne
     r = await client.delete(f"{API}/postings/{created['id']}")
     assert (r.status_code, r.json()["error"]["code"]) == (409, "analysis_in_progress")
-    assert "réessaie" in r.json()["error"]["message"]
+    assert r.json()["error"]["message"] == "This posting is being analyzed. Try again in a moment."
     await launcher_spy.end(app.state.local_user_id, created["session"], "failed")
     assert (await client.delete(f"{API}/postings/{created['id']}")).status_code == 204
 

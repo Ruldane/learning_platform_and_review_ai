@@ -1,11 +1,12 @@
-"""Schémas des offres (SPEC F8, 14.2, D122). Une 422 ne recopie jamais la saisie (gestionnaire
-commun : chemins et messages seulement ; erreurs métier : `details.fields` seulement)."""
+"""Postings schemas (SPEC F8, 14.2, D122). A 422 never copies the input back (common handler:
+paths and messages only; business errors: `details.fields` only)."""
 
 from datetime import datetime
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
+from app.agents.tools.posting_schema import PostingLevel
 from app.db.models.postings import PostingSource, PostingStatus
 
 URL_MAX = 2048
@@ -15,7 +16,7 @@ DuplicateLevelOut = Literal["certain", "probable", "possible"]
 
 
 class PostingIn(BaseModel):
-    """Exactement une source : le lien de l'offre ou son texte collé ; sinon 422
+    """Exactly one source: the posting's link or its pasted text; otherwise 422
     `posting_source`."""
 
     url: str | None = Field(default=None, max_length=URL_MAX)
@@ -31,7 +32,7 @@ class DuplicateOut(BaseModel):
     posting_id: str
     title: str | None
     company: str | None
-    created_at: datetime  # dans le fuseau de January
+    created_at: datetime  # in January's time zone
 
 
 class RequirementOut(BaseModel):
@@ -58,11 +59,11 @@ class SkillNeedOut(BaseModel):
 
 
 class PostingAnalysisOut(BaseModel):
-    """L'analyse de l'Analyste (`PostingAnalysis`, D121), telle qu'elle est rangée."""
+    """The Analyst's analysis (`PostingAnalysis`, D121), as it is stored."""
 
     title: str
     company: str | None
-    level: Literal["junior", "confirme", "senior", "lead", "inconnu"]
+    level: PostingLevel
     location: str | None
     remote: str | None
     language: str
@@ -78,27 +79,27 @@ class PostingSummaryOut(BaseModel):
     id: str
     title: str | None
     company: str | None
-    status: PostingStatus  # `failed` aussi pour une analyse interrompue (D122)
+    status: PostingStatus  # `failed` also for an interrupted analysis (D122)
     source: PostingSource
-    score: int | None  # score de match (F8), dès que l'écart est rangé
+    score: int | None  # match score (F8), as soon as the gap is stored
     created_at: datetime
     has_review: bool
 
 
 class PostingOut(PostingSummaryOut):
     url: str | None
-    text: str  # copie figée lue à l'ajout
+    text: str  # frozen copy read at the time of adding
     analysis: PostingAnalysisOut | None
-    # Doublons probables et possibles, connus après l'analyse (G35) ; « certain » : la réponse
-    # 200 de `POST /postings`.
+    # Probable and possible duplicates, known after the analysis (G35); "certain": the 200
+    # response of `POST /postings`.
     duplicates: list[DuplicateOut]
     failure_reason: str | None
     gap_session_id: str | None
 
 
 class PostingCreatedOut(BaseModel):
-    """`created` faux : même lien ou même texte (doublon « certain »), l'offre existante ;
-    `session_id` : l'analyse lancée (ou relancée), sinon `None`."""
+    """`created` false: same link or same text ("certain" duplicate), the existing posting;
+    `session_id`: the analysis launched (or relaunched), otherwise `None`."""
 
     posting: PostingOut
     created: bool
@@ -136,17 +137,18 @@ class SkillNeedIn(BaseModel):
 
 
 class PostingAnalysisIn(BaseModel):
-    """L'analyse d'une offre écrite à la main ou par Claude (aucun agent) : les mêmes champs et les
-    mêmes bornes que celle de l'Analyste. Chaque mot clé doit figurer tel quel dans le texte de
-    l'offre, et chaque exigence obligatoire nomme des compétences listées dans `skills` (sinon 422
-    `posting_analysis_invalid`, qui nomme le champ)."""
+    """Analysis supplied with a posting using the same fields and limits as the Analyst.
+
+    Keywords must occur verbatim in the posting text. Required qualifications must name
+    entries from `skills`. A 422 `posting_analysis_invalid` identifies unsupported fields.
+    """
 
     title: str = Field(min_length=2, max_length=200)
     company: str | None = Field(default=None, max_length=200)
-    level: Literal["junior", "confirme", "senior", "lead", "inconnu"] = "inconnu"
+    level: PostingLevel = "unknown"
     location: str | None = Field(default=None, max_length=120)
     remote: str | None = Field(default=None, max_length=60)
-    language: str = Field(default="fr", pattern=r"^[a-z]{2}$")
+    language: str = Field(default="en", pattern=r"^[a-z]{2}$")
     requirements: list[RequirementIn] = Field(default_factory=list, max_length=40)
     keywords: list[KeywordIn] = Field(default_factory=list, max_length=40)
     eliminatory: list[EliminatoryIn] = Field(default_factory=list, max_length=10)
@@ -156,20 +158,21 @@ class PostingAnalysisIn(BaseModel):
 
 
 class PostingDirectIn(PostingAnalysisIn):
-    """Une offre écrite en direct : son texte (copie figée, 300 caractères et 50 mots au moins), son
-    lien s'il y en a un (jamais lu : rien n'est téléchargé), et son analyse."""
+    """A posting written directly: its text (frozen copy, 300 characters and 50 words at least),
+    its link if there is one (never read: nothing is downloaded), and its analysis."""
 
     text: str = Field(max_length=TEXT_MAX)
     url: str | None = Field(default=None, max_length=URL_MAX)
 
 
 class PostingPatch(BaseModel):
-    """Retouche de l'analyse d'une offre : les champs donnés remplacent ceux de l'analyse (une liste
-    donnée remplace toute la liste), qui est revalidée en entier. Le texte figé ne change pas."""
+    """Edit of a posting's analysis: the given fields replace those of the analysis (a given
+    list replaces the whole list), which is re-validated in full. The frozen text does not
+    change."""
 
     title: str | None = Field(default=None, min_length=2, max_length=200)
     company: str | None = Field(default=None, max_length=200)
-    level: Literal["junior", "confirme", "senior", "lead", "inconnu"] | None = None
+    level: PostingLevel | None = None
     location: str | None = Field(default=None, max_length=120)
     remote: str | None = Field(default=None, max_length=60)
     language: str | None = Field(default=None, pattern=r"^[a-z]{2}$")
@@ -183,5 +186,5 @@ class PostingPatch(BaseModel):
     @model_validator(mode="after")
     def _something(self) -> "PostingPatch":
         if not self.model_dump(exclude_none=True):
-            raise ValueError("rien à changer")
+            raise ValueError("nothing to change")
         return self

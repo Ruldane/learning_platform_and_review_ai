@@ -62,10 +62,10 @@ async def test_committee_never_logged(
     await client.post(f"{ROOT}/committee", json={})  # 422
     user = str(app.state.local_user_id)
     await committee_store(app).context(user, started["run_id"])
-    votes = votes_of("oui", "non", "non", "oui", objection=secrets[1])
+    votes = votes_of("yes", "no", "no", "yes", objection=secrets[1])
     for vote in votes:
         vote.reason = secrets[2]
-    await save_done(app, started, votes, synthesis_of("peut_etre", secrets[1]))
+    await save_done(app, started, votes, synthesis_of("maybe", secrets[1]))
     await spy(app).end(user, started["session_id"])
     await client.get(f"{ROOT}/committee", params={"posting_id": posting})
     await client.get(f"{ROOT}/committee/{started['run_id']}")

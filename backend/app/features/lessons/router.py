@@ -1,7 +1,7 @@
-"""API des leçons et des ressources (SPEC 3.5, 3.6, 14.2 ; D91) : leçon et son PDF, Bibliothèque
-filtrable, statut de lecture d'une ressource, copie locale d'un PDF libre. Hors 14.2 :
-`GET /programs/{id}/lessons` (liste d'un programme) et `GET /resources/{id}/file`. Les fichiers
-ne sont servis qu'à leur propriétaire (404 sinon)."""
+"""Lessons and resources API (SPEC 3.5, 3.6, 14.2; D91): a lesson and its PDF, filterable
+Library, reading status of a resource, local copy of a free PDF. Outside 14.2:
+`GET /programs/{id}/lessons` (a program's list) and `GET /resources/{id}/file`. Files are only
+served to their owner (404 otherwise)."""
 
 from typing import Annotated, Any
 
@@ -34,7 +34,7 @@ _PDF_RESPONSE: dict[int | str, dict[str, Any]] = {
 
 
 def get_lessons_runtime(conn: HTTPConnection) -> LessonsRuntime:
-    """Les leçons ouvertes par le lifespan (`app.state.lessons`)."""
+    """The lessons runtime opened by the lifespan (`app.state.lessons`)."""
     runtime: LessonsRuntime = conn.app.state.lessons
     return runtime
 
@@ -43,9 +43,9 @@ LessonsDep = Annotated[LessonsRuntime, Depends(get_lessons_runtime)]
 
 
 def _pdf(body: bytes, filename: str, *, third_party: bool = False) -> Response:
-    """Notre PDF de leçon s'ouvre dans le navigateur (`inline`). Le PDF d'un tiers (copie
-    locale d'une ressource) est téléchargé (`attachment`) et mis en bac à sable (CSP `sandbox`) :
-    jamais affiché sur l'origine de l'application (D97)."""
+    """Our lesson PDF opens in the browser (`inline`). A third-party PDF (local copy of a
+    resource) is downloaded (`attachment`) and sandboxed (CSP `sandbox`): never displayed on the
+    application's origin (D97)."""
     disposition = "attachment" if third_party else "inline"
     headers = {
         "Content-Disposition": f'{disposition}; filename="{filename}"',
@@ -76,14 +76,14 @@ async def get_lesson(lesson_id: str, current: CurrentUserDep, db: Db) -> LessonO
         404: {"description": "`module_not_found`"},
         409: {
             "description": "`lesson_exists`, `lesson_generating`, `module_skipped`"
-            " ou `module_without_lesson`"
+            " or `module_without_lesson`"
         },
     },
 )
 async def write_lesson(
     module_id: str, body: LessonWriteIn, current: CurrentUserDep, rt: LessonsDep, caller: CallerDep
 ) -> LessonOut:
-    """Soumet le Markdown fourni à la Fabrique et renvoie sa session de vérification."""
+    """Submits the given Markdown to the Factory and returns its verification session."""
     return await direct.write_lesson(rt, current.id, module_id, body, is_mcp=caller.kind == "mcp")
 
 
@@ -91,9 +91,9 @@ async def write_lesson(
     "/lessons/{lesson_id}",
     response_model=LessonOut,
     responses={
-        202: {"model": LessonOut, "description": "Brouillon soumis à la vérification."},
+        202: {"model": LessonOut, "description": "Draft submitted for verification."},
         404: {"description": "`lesson_not_found`"},
-        409: {"description": "`lesson_not_ready` ou `lesson_generating`"},
+        409: {"description": "`lesson_not_ready` or `lesson_generating`"},
     },
 )
 async def patch_lesson(
@@ -104,12 +104,12 @@ async def patch_lesson(
     caller: CallerDep,
     response: Response,
 ) -> LessonOut:
-    """Soumet une retouche de titre ou de texte. Un ajout de ressources seul est immédiat."""
+    """Submits a title or text edit. Adding resources alone is immediate."""
     play = PLAY_CONTEXT.get()
     if play and play.graph == "lesson_factory" and body.title is None and body.markdown is None:
         raise AppError(
             "lesson_draft_required",
-            "Pour jouer la vérification, fournis un titre ou un texte de leçon.",
+            "To play the verification, provide a lesson title or text.",
             422,
         )
     result, submitted = await direct.patch_lesson(
@@ -124,9 +124,9 @@ async def patch_lesson(
 async def get_lesson_pdf(
     lesson_id: str, current: CurrentUserDep, db: Db, rt: LessonsDep
 ) -> Response:
-    """PDF A4 de la leçon ; 404 `lesson_pdf_missing` tant qu'il n'est pas produit."""
+    """A4 PDF of the lesson; 404 `lesson_pdf_missing` until it is produced."""
     _, body = await lessons.lesson_pdf(db, rt.storage, current.id, lesson_id)
-    return _pdf(body, "lecon.pdf")
+    return _pdf(body, "lesson.pdf")
 
 
 @router.get("/resources", response_model=list[ResourceOut])
@@ -138,8 +138,8 @@ async def list_resources(
     lang: Annotated[str | None, Query(min_length=2, max_length=8)] = None,
     status: ResourceStatus | None = None,
 ) -> list[ResourceOut]:
-    """Bibliothèque : ressources de l'utilisateur, les plus récentes d'abord, filtrées par
-    programme, type, langue et statut."""
+    """Library: the user's resources, most recent first, filtered by program, type, language
+    and status."""
     f = resources.ResourceFilter(program_id=program_id, type=type, lang=lang, status=status)
     return await resources.list_resources(db, current.id, f)
 
@@ -155,7 +155,7 @@ async def patch_resource(
 async def get_resource_file(
     resource_id: str, current: CurrentUserDep, db: Db, rt: LessonsDep
 ) -> Response:
-    """Copie locale du PDF libre, en téléchargement ; 404 `resource_file_missing` s'il n'y en a
-    pas."""
+    """Local copy of the free PDF, as a download; 404 `resource_file_missing` if there is
+    none."""
     body = await resources.resource_file(db, rt.storage, current.id, resource_id)
-    return _pdf(body, "ressource.pdf", third_party=True)
+    return _pdf(body, "resource.pdf", third_party=True)

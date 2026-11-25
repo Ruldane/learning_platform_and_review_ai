@@ -1,6 +1,6 @@
-"""Indexation d'un élément : fragments en base, vecteurs dans Qdrant. Le texte fait foi en base ;
-l'index se reconstruit (D65) : une panne d'Ollama ou de Qdrant laisse l'élément non indexé, sans
-erreur pour l'appelant, et la réindexation le rattrape."""
+"""Indexing an item: chunks in the database, vectors in Qdrant. The text is authoritative in
+the database; the index can be rebuilt (D65): an Ollama or Qdrant outage leaves the item
+unindexed, without error for the caller, and the reindexing catches it up."""
 
 import asyncio
 import logging
@@ -25,9 +25,9 @@ logger = logging.getLogger(__name__)
 
 
 class _Writers:
-    """Appels de `index_item` en cours, par utilisateur : leur nombre, une génération qui avance
-    à chaque fin d'appel, et un événement levé quand il n'en reste aucun. Tout est synchrone
-    (une seule boucle asyncio) : lire puis modifier sans `await` entre les deux est atomique."""
+    """`index_item` calls in progress, per user: their number, a generation that advances at
+    each end of call, and an event raised when none remains. Everything is synchronous (a
+    single asyncio loop): reading then modifying without an `await` between the two is atomic."""
 
     def __init__(self) -> None:
         self._count: Counter[str] = Counter()
@@ -66,14 +66,14 @@ class MemoryIndexer:
         self._writers = _Writers()
 
     def lock(self, user_id: str) -> asyncio.Lock:
-        """Verrou de l'utilisateur sur ses vecteurs : une seule écriture dans l'index à la fois
-        chez lui. Jamais tenu pendant une attente de SQLite (voir `push`)."""
+        """The user's lock on their vectors: a single write to the index at a time for them.
+        Never held while waiting on SQLite (see `push`)."""
         return self._locks.setdefault(user_id, asyncio.Lock())
 
-    # --- réindexation (D67) : drapeau et écrivains en cours ------------------------------------
+    # --- reindexing (D67): flag and writers in progress ---------------------------------------
 
     def reindexing(self, user_id: str) -> bool:
-        """Vrai pendant une réindexation de l'utilisateur (posée par la tâche de réindexation)."""
+        """True during a reindexing of the user (set by the reindexing task)."""
         return user_id in self._reindexing
 
     def begin_reindex(self, user_id: str) -> None:
@@ -86,31 +86,31 @@ class MemoryIndexer:
         return self._writers.generation(user_id)
 
     def writers_settled(self, user_id: str, generation: int) -> bool:
-        """Aucun `index_item` en cours ni terminé depuis la lecture de `generation`."""
+        """No `index_item` in progress or finished since the reading of `generation`."""
         return not self._writers.busy(user_id) and self._writers.generation(user_id) == generation
 
     async def wait_writers(self, user_id: str) -> None:
-        """Attend la fin des `index_item` en cours. Sans danger : ils n'attendent jamais celui
-        qui appelle (la réindexation ne tient ni transaction ni verrou en attendant)."""
+        """Waits for the `index_item` calls in progress to end. Safe: they never wait for the
+        caller (the reindexing holds neither a transaction nor a lock while waiting)."""
         await self._writers.drained(user_id)
 
     # --- indexation ------------------------------------------------------------------------------
 
     async def index_item(self, db: AsyncSession, item: MemoryItem) -> bool:
-        """(Ré)indexe l'élément : fragments renouvelés, anciens vecteurs retirés, nouveaux
-        insérés. Vrai si l'élément est indexé. Un élément `pending` n'est jamais indexé ; une
-        panne d'Ollama ou de Qdrant le laisse non indexé (faux), sans exception.
+        """(Re)indexes the item: chunks renewed, old vectors removed, new ones inserted. True if
+        the item is indexed. A `pending` item is never indexed; an Ollama or Qdrant outage
+        leaves it unindexed (false), without an exception.
 
-        **Valide la transaction de l'appelant** (D66) avant la vectorisation, comme le worker :
-        le verrou d'écriture de SQLite n'est jamais tenu pendant l'appel à Ollama ni pendant
-        l'attente du verrou de l'utilisateur. `indexed_at` est ensuite posé par une seconde
-        transaction courte. Une panne après le premier commit laisse l'élément enregistré,
-        lisible et non indexé : la réindexation le rattrapera.
+        **Commits the caller's transaction** (D66) before vectorizing, like the worker:
+        SQLite's write lock is never held during the call to Ollama nor while waiting for the
+        user's lock. `indexed_at` is then set by a second short transaction. A failure after
+        the first commit leaves the item stored, readable and unindexed: the reindexing will
+        catch it up.
 
-        Pendant une réindexation de l'utilisateur (D67), les fragments sont renouvelés et
-        validés mais l'index n'est pas touché : l'élément reste non indexé (faux) et la boucle de
-        réindexation le rattrape. Le drapeau est lu sans `await` avant de se compter parmi les
-        écrivains en cours : une réindexation qui démarre après attend la fin de cet appel."""
+        During a reindexing of the user (D67), the chunks are renewed and committed but the
+        index is not touched: the item stays unindexed (false) and the reindexing loop catches
+        it up. The flag is read without an `await` before counting oneself among the writers in
+        progress: a reindexing that starts afterwards waits for the end of this call."""
         if item.status != "active":
             return False
         user_id = item.user_id
@@ -120,13 +120,13 @@ class MemoryIndexer:
             chunks = await self.prepare(db, item)
             await db.commit()
             if deferred:
-                logger.info("Élément %s laissé à la réindexation en cours", item.id)
+                logger.info("Item %s left to the reindexing in progress", item.id)
                 return False
             try:
                 await self.push(user_id, item.id, chunks)
             except (EmbeddingsUnavailable, VectorStoreUnavailable) as exc:
                 logger.warning(
-                    "Élément %s gardé non indexé (%s), la réindexation le rattrapera",
+                    "Item %s kept unindexed (%s), the reindexing will catch it up",
                     item.id,
                     type(exc).__name__,
                 )
@@ -141,10 +141,10 @@ class MemoryIndexer:
         user_id: str,
         pushed: Sequence[tuple[MemoryItem, list[ChunkToIndex]]],
     ) -> int:
-        """Après `push`, transaction courte validée ici : `indexed_at` posé pour chaque élément
-        dont les fragments poussés sont toujours en base (sinon une écriture concurrente les a
-        renouvelés : il reste non indexé, à rattraper). Les vecteurs d'un élément supprimé
-        pendant `push` sont retirés après le commit. Rend le nombre d'éléments marqués."""
+        """After `push`, short transaction committed here: `indexed_at` set for each item whose
+        pushed chunks are still in the database (otherwise a concurrent write renewed them: it
+        stays unindexed, to be caught up). The vectors of an item deleted during `push` are
+        removed after the commit. Returns the number of items marked."""
         repo = MemoryItemRepository(db, user_id)
         at, marked, gone = utcnow(), 0, []
         for item, chunks in pushed:
@@ -158,10 +158,10 @@ class MemoryIndexer:
         return marked
 
     async def prepare(self, db: AsyncSession, item: MemoryItem) -> list[ChunkToIndex]:
-        """Première moitié, en base seulement : fragments renouvelés (nouveaux `id`), élément
-        marqué non indexé. Le worker la valide (commit) avant `push`, pour ne jamais tenir le
-        verrou d'écriture de SQLite pendant la vectorisation. L'appelant a vérifié que l'élément
-        appartient à l'utilisateur (`replace_for_item` ne le revérifie pas)."""
+        """First half, in the database only: chunks renewed (new `id`s), item marked unindexed.
+        The worker commits it before `push`, to never hold SQLite's write lock during
+        vectorization. The caller checked that the item belongs to the user
+        (`replace_for_item` does not re-check)."""
         rows = await ChunkRepository(db, item.user_id).replace_for_item(
             item.id, chunk_text(item.text)
         )
@@ -169,10 +169,10 @@ class MemoryIndexer:
         return [ChunkToIndex(row.id, _payload(item, row.ordinal, row.text)) for row in rows]
 
     async def push(self, user_id: str, item_id: str, chunks: list[ChunkToIndex]) -> None:
-        """Seconde moitié, index seulement : tous les vecteurs de l'élément retirés (y compris ceux
-        d'un essai interrompu), puis les fragments vectorisés et insérés. Le verrou de
-        l'utilisateur ne couvre que ces appels : jamais d'attente de SQLite sous ce verrou.
-        Lève `EmbeddingsUnavailable` ou `VectorStoreUnavailable`."""
+        """Second half, index only: all the item's vectors removed (including those of an
+        interrupted attempt), then the vectorized chunks inserted. The user's lock only covers
+        these calls: never waiting on SQLite under this lock. Raises `EmbeddingsUnavailable` or
+        `VectorStoreUnavailable`."""
         async with self.lock(user_id):
             if user_id in self._retired_users:
                 return
@@ -180,21 +180,19 @@ class MemoryIndexer:
             await self._index.index(chunks)
 
     async def purge_retired_user(self, user_id: str) -> None:
-        """Ferme définitivement l'indexation d'un compte Google effacé. Attend une écriture
-        éventuelle sous le verrou, puis efface ses vecteurs. Un compte recréé a un autre id."""
+        """Closes the indexing of a deleted Google account for good. Waits for any write under
+        the lock, then erases its vectors. A recreated account has another id."""
         self._retired_users.add(user_id)
         async with self.lock(user_id):
             await self._index.delete_user(user_id)
 
     async def unindex(self, user_id: str, item_ids: Sequence[str]) -> None:
-        """Retire les vecteurs ; une panne du magasin est journalisée et avalée (les vecteurs
-        orphelins sont écartés à la recherche, la réindexation les purge)."""
+        """Removes the vectors; a store outage is logged and swallowed (orphan vectors are
+        discarded at search time, the reindexing purges them)."""
         try:
             await self._index.delete_items(user_id, item_ids)
         except VectorStoreUnavailable:
-            logger.warning(
-                "Vecteurs de %d élément(s) non retirés : magasin indisponible", len(item_ids)
-            )
+            logger.warning("Vectors of %d item(s) not removed: store unavailable", len(item_ids))
 
 
 def _payload(item: MemoryItem, ordinal: int, text: str) -> ChunkPayload:

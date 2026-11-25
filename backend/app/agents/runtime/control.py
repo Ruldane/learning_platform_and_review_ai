@@ -28,7 +28,7 @@ def _conflict(code: str, message: str, status: str) -> AppError:
 
 
 def stale_interrupt(status: str) -> AppError:
-    return _conflict("stale_interrupt", "Cette question a déjà reçu une réponse.", status)
+    return _conflict("stale_interrupt", "This question has already been answered.", status)
 
 
 async def get_owned(db: Factory, user_id: str, session_id: str) -> AgentSession:
@@ -36,7 +36,7 @@ async def get_owned(db: Factory, user_id: str, session_id: str) -> AgentSession:
     async with db() as session:
         row = await SessionRepository(session, user_id).get(session_id)
     if row is None:
-        raise AppError("session_not_found", "Session introuvable.", 404)
+        raise AppError("session_not_found", "Session not found.", 404)
     return row
 
 
@@ -65,7 +65,7 @@ async def claim_resume(
     checkpoint). 409 lisible si la question est périmée ou la session pas en attente."""
     row = await get_owned(db, user_id, session_id)
     if (row.pending_interrupt or {}).get("brief") is not None:
-        raise AppError("played_step_required", "Cette étape attend le client MCP.", 409)
+        raise AppError("played_step_required", "This step is waiting for the MCP client.", 409)
     if row.status == "waiting_user" and interrupt_id is not None:
         pending = (row.pending_interrupt or {}).get("interrupt_id")
         if interrupt_id != pending or not await transition(
@@ -88,14 +88,16 @@ async def claim_resume(
         raise stale_interrupt(row.status)  # déjà répondue, ou session plus en attente
     if row.status == "waiting_user":
         raise _conflict(
-            "interrupt_required", "Cette session attend une réponse à sa question.", row.status
+            "interrupt_required",
+            "This session is waiting for an answer to its question.",
+            row.status,
         )
     raise _not_resumable(row.status)
 
 
 def _not_resumable(status: str) -> AppError:
     return _conflict(
-        "session_not_resumable", "Cette session ne peut pas être reprise dans son état.", status
+        "session_not_resumable", "This session cannot be resumed in its current state.", status
     )
 
 
@@ -118,7 +120,7 @@ async def claim_pause(db: Factory, user_id: str, session_id: str) -> bool:
         if status == "paused":
             return False
         raise _conflict(
-            "session_not_pausable", "Cette session est terminée : pas de pause possible.", status
+            "session_not_pausable", "This session has ended and cannot be paused.", status
         )
     return True
 
@@ -135,7 +137,7 @@ async def claim_cancel(db: Factory, user_id: str, session_id: str) -> None:
         user_delivery=None,
     ):
         status = (await get_owned(db, user_id, session_id)).status
-        raise _conflict("session_not_cancellable", "Cette session est déjà terminée.", status)
+        raise _conflict("session_not_cancellable", "This session has already ended.", status)
 
 
 async def check_open(db: Factory, user_id: str, session_id: str) -> None:
@@ -144,6 +146,6 @@ async def check_open(db: Factory, user_id: str, session_id: str) -> None:
     if row.status not in OPEN:
         raise _conflict(
             "session_closed",
-            "Cette session est terminée : elle ne reçoit plus de message.",
+            "This session has ended and cannot receive messages.",
             row.status,
         )

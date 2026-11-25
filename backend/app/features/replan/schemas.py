@@ -1,6 +1,6 @@
-"""Contrat de la replanification (SPEC F13, D106) : demande de January (« cette semaine je n'ai
-que 5 heures »), historique des versions du plan. Les schémas de différence portent leur propre
-nom (`VersionDiffOut`, `VersionMoveOut`), mêmes champs que `PlanDiffOut` du programme (F8)."""
+"""Replanning contract (SPEC F13, D106): January's request ("this week I only have 5 hours"),
+plan version history. The diff schemas carry their own names (`VersionDiffOut`,
+`VersionMoveOut`), same fields as the program's `PlanDiffOut` (F8)."""
 
 from datetime import date, datetime
 
@@ -8,8 +8,8 @@ from pydantic import BaseModel, Field
 
 from app.db.models.program import PlanKind, PlanStatus
 
-# Les valeurs du modèle, jamais recopiées : un statut ajouté plus tard ne ferait pas de 500 sur
-# `GET /versions` (relecture 5.9 m6, revue finale de la phase 5). Contrat inchangé.
+# The model's values, never copied: a status added later would not cause a 500 on
+# `GET /versions` (review 5.9 m6, final review of phase 5). Contract unchanged.
 PlanKindOut = PlanKind
 PlanStatusOut = PlanStatus
 
@@ -24,7 +24,7 @@ class ReplanStarted(BaseModel):
 
 
 class VersionMoveOut(BaseModel):
-    task: str  # « {module} / {tâche} »
+    task: str  # "{module} / {task}"
     before: date
     after: date
 
@@ -38,7 +38,7 @@ class VersionDiffOut(BaseModel):
 
 
 class WeekLoadOut(BaseModel):
-    """Charge d'une semaine touchée, avant et après la proposition, et son plafond."""
+    """Load of an affected week, before and after the proposal, and its cap."""
 
     rank: int
     start_date: date
@@ -48,8 +48,8 @@ class WeekLoadOut(BaseModel):
 
 
 class PlanVersionOut(BaseModel):
-    """Une version du plan. `pending` : proposition qui attend January (dans sa session) ;
-    `empty` et `impossible` : propositions closes dès leur écriture, jamais à valider."""
+    """A plan version. `pending`: proposal waiting for January (in its session);
+    `empty` and `impossible`: proposals closed as soon as written, never to validate."""
 
     version: int
     kind: PlanKindOut
@@ -58,6 +58,6 @@ class PlanVersionOut(BaseModel):
     created_at: datetime
     accepted_at: datetime | None
     session_id: str | None
-    review: str | None  # texte du bilan qui l'a déclenchée
+    review: str | None  # text of the review that triggered it
     diff: VersionDiffOut | None
     week_loads: list[WeekLoadOut]

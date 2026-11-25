@@ -24,7 +24,7 @@ export function PaperLabIndex() {
           {labs.data.map((lab) => (
             <li key={lab.id} className="break-words">
               <Link
-                to={"/apprendre/articles/" + encodeURIComponent(lab.id)}
+                to={"/learn/papers/" + encodeURIComponent(lab.id)}
                 className="underline underline-offset-4"
               >
                 {lab.title ?? lab.url}

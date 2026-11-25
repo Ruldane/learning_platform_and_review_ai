@@ -1,8 +1,8 @@
-"""Semaines et modules écrits en direct (phase 10, 10.W) : January ou Claude (par le MCP) ajoute une
-semaine à la fin du programme, un module à une semaine, ou retouche leur texte, sans agent. Les
-tâches d'un module s'ajoutent ensuite par `PATCH /programs/{id}` (`add_tasks`), qui vérifie la
-règle de la semaine (85 %, pratique, quiz) : une semaine ou un module neufs n'ont donc encore rien à
-vérifier. Tout se fait sous le verrou du programme, sur l'état relu."""
+"""Weeks and modules written directly (phase 10, 10.W): January or Claude (through MCP) adds a
+week at the end of the program, a module to a week, or edits their text, without an agent. The
+tasks of a module are added afterwards through `PATCH /programs/{id}` (`add_tasks`), which
+checks the week rule (85%, practice, quiz): a new week or module therefore has nothing to
+check yet. Everything happens under the program lock, on the re-read state."""
 
 import logging
 from datetime import date, timedelta
@@ -31,15 +31,15 @@ MAX_MODULES_PER_WEEK = 4
 
 
 def week_not_found() -> AppError:
-    return AppError("week_not_found", "Semaine introuvable.", 404)
+    return AppError("week_not_found", "Week not found.", 404)
 
 
 def too_many_weeks() -> AppError:
-    return AppError("too_many_weeks", f"Un programme compte {MAX_WEEKS} semaines au plus.", 409)
+    return AppError("too_many_weeks", f"A program has {MAX_WEEKS} weeks at most.", 409)
 
 
 def week_full() -> AppError:
-    return AppError("week_full", f"Une semaine compte {MAX_MODULES_PER_WEEK} modules au plus.", 409)
+    return AppError("week_full", f"A week has {MAX_MODULES_PER_WEEK} modules at most.", 409)
 
 
 async def _week_program(rt: ProgramRuntime, user_id: str, week_id: str) -> str:
@@ -77,7 +77,7 @@ def _next_start(loaded: Loaded) -> date:
 
 
 async def add_week(rt: ProgramRuntime, user_id: str, program_id: str, body: WeekCreate) -> WeekOut:
-    """Une semaine à la fin du programme (404 `program_not_found`, 409 `too_many_weeks`)."""
+    """A week at the end of the program (404 `program_not_found`, 409 `too_many_weeks`)."""
     async with rt.program_lock(user_id, program_id), rt.session_factory() as db:
         loaded = await load(db, user_id, program_id)
         if len(loaded.weeks) >= MAX_WEEKS:
@@ -93,7 +93,7 @@ async def add_week(rt: ProgramRuntime, user_id: str, program_id: str, body: Week
         await db.commit()
         week_id = week.id
         out = await _week_view(db, user_id, program_id, week_id)
-    logger.info("Semaine ajoutée : programme %s, semaine %s", program_id, week_id)
+    logger.info("Week added: program %s, week %s", program_id, week_id)
     return out
 
 
@@ -107,14 +107,14 @@ async def patch_week(rt: ProgramRuntime, user_id: str, week_id: str, patch: Week
             setattr(week, name, value)
         await db.commit()
         out = await _week_view(db, user_id, program_id, week_id)
-    logger.info("Semaine modifiée : programme %s, semaine %s", program_id, week_id)
+    logger.info("Week edited: program %s, week %s", program_id, week_id)
     return out
 
 
 async def add_module(
     rt: ProgramRuntime, user_id: str, program_id: str, body: ModuleCreate
 ) -> ModuleOut:
-    """Un module dans une semaine du programme (404 `program_not_found` ou `week_not_found`, 409
+    """A module in a week of the program (404 `program_not_found` or `week_not_found`, 409
     `week_full`)."""
     async with rt.program_lock(user_id, program_id), rt.session_factory() as db:
         loaded = await load(db, user_id, program_id)
@@ -126,7 +126,7 @@ async def add_module(
         module = await ModuleRepository(db, user_id).add(
             week_id=body.week_id,
             program_id=program_id,
-            rank=max((m.rank for m in mine), default=-1) + 1,  # les modules se comptent dès 0
+            rank=max((m.rank for m in mine), default=-1) + 1,  # modules are counted from 0
             title=body.title,
             skills=list(body.skills),
             prerequisites=list(body.prerequisites),
@@ -135,7 +135,7 @@ async def add_module(
         await db.commit()
         module_id = module.id
         out = await _module_view(db, user_id, program_id, module_id)
-    logger.info("Module ajouté : programme %s, module %s", program_id, module_id)
+    logger.info("Module added: program %s, module %s", program_id, module_id)
     return out
 
 
@@ -151,5 +151,5 @@ async def patch_module(
             setattr(module, name, list(value) if isinstance(value, list) else value)
         await db.commit()
         out = await _module_view(db, user_id, program_id, module_id)
-    logger.info("Module modifié : programme %s, module %s", program_id, module_id)
+    logger.info("Module edited: program %s, module %s", program_id, module_id)
     return out

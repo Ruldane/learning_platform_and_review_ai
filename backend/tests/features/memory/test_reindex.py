@@ -92,7 +92,7 @@ async def test_reindex_rebuilds_vectors_from_text(app: FastAPI, client: httpx.As
     texts = ["Je sais écrire des scripts Python.", "Poste à Lyon.", "Viser le Rust."]
     for i, text in enumerate(texts):
         r = await client.post(
-            "/api/v1/memory/items", json={"kind": "offre", "title": f"T{i}", "text": text}
+            "/api/v1/memory/items", json={"kind": "posting", "title": f"T{i}", "text": text}
         )
         assert r.status_code == 201
     n = len(texts)
@@ -234,7 +234,7 @@ async def test_reindex_failure_reports_readable_error(
         state = runtime.jobs.reindex_state(USER)
         assert state.status == "failed" and state.done == 0  # Ollama sondé avant tout effacement
         assert state.error is not None
-        assert state.error.startswith("Le service d'embeddings (Ollama)")
+        assert state.error.startswith("The embedding service (Ollama)")
         assert not runtime.indexer.reindexing(USER)
         async with db_session_factory() as db:
             assert await MemoryItemRepository(db, USER).count_unindexed() == 1  # gardé, à rattraper
@@ -251,7 +251,7 @@ async def test_unexpected_reindex_error_is_generic(
     await rt.jobs.join()
     state = rt.jobs.reindex_state(USER)
     assert state.status == "failed"
-    assert state.error == "La réindexation a échoué de façon inattendue."
+    assert state.error == "Reindexing failed unexpectedly."
 
 
 async def test_reindex_with_embeddings_down_keeps_the_existing_index(
@@ -271,6 +271,6 @@ async def test_reindex_with_embeddings_down_keeps_the_existing_index(
     await rt.jobs.join()
     state = rt.jobs.reindex_state(USER)
     assert state.status == "failed" and state.error is not None
-    assert state.error.startswith("Le service d'embeddings (Ollama)")
+    assert state.error.startswith("The embedding service (Ollama)")
     assert not rt.indexer.reindexing(USER)
     await _consistent(rt, db_session_factory, item_id)  # vecteurs et `indexed_at` intacts

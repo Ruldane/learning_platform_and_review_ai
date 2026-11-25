@@ -75,7 +75,7 @@ async def test_documents_recent_and_for_item(db: AsyncSession, make_item: MakeIt
 
 async def test_filtered_by_kind_tag_author_dates(db: AsyncSession, make_item: MakeItem) -> None:
     day = timedelta(days=1)
-    a = await make_item(title="a", kind="acquis", tags=["python", "web"], created_at=T0)
+    a = await make_item(title="a", kind="skill", tags=["python", "web"], created_at=T0)
     b = await make_item(title="b", tags=["python"], created_by="agent", created_at=T0 + day)
     c = await make_item(title="c", tags=[], created_at=T0 + 2 * day)
     d = await make_item(title="d", tags=["python"], status="pending")
@@ -87,7 +87,7 @@ async def test_filtered_by_kind_tag_author_dates(db: AsyncSession, make_item: Ma
         return [i.id for i in items], total
 
     assert await ids(ItemFilter()) == ([c.id, b.id, a.id], 3)  # récents d'abord, actifs seulement
-    assert await ids(ItemFilter(kind="acquis")) == ([a.id], 1)
+    assert await ids(ItemFilter(kind="skill")) == ([a.id], 1)
     assert await ids(ItemFilter(tag="python")) == ([b.id, a.id], 2)
     assert await ids(ItemFilter(tag="pyth")) == ([], 0)  # étiquette exacte, pas une sous-chaîne
     assert await ids(ItemFilter(author="agent")) == ([b.id], 1)
@@ -99,13 +99,13 @@ async def test_filtered_by_kind_tag_author_dates(db: AsyncSession, make_item: Ma
 
 async def test_item_counts_and_batches(db: AsyncSession, make_item: MakeItem) -> None:
     day = timedelta(days=1)
-    a = await make_item(title="a", kind="acquis", indexed_at=datetime.now(UTC), created_at=T0)
+    a = await make_item(title="a", kind="skill", indexed_at=datetime.now(UTC), created_at=T0)
     b = await make_item(title="b", created_at=T0 + day)
     c = await make_item(title="c", created_at=T0 + 2 * day)
     await make_item(title="d", kind="decision", status="pending")
     await make_item("u2", title="x")
     repo = MemoryItemRepository(db, "u1")
-    assert await repo.count_by_kind() == {"acquis": 1, "lecon": 2}
+    assert await repo.count_by_kind() == {"skill": 1, "lesson": 2}
     assert await repo.count_by_kind("pending") == {"decision": 1}
     assert await repo.count_status("active") == 3 and await repo.count_status("pending") == 1
     assert await repo.count_unindexed() == 2
@@ -164,13 +164,13 @@ async def test_delete_item_cascades_chunks_and_unlinks_document(
 
 
 async def test_writes_keep_title_after_item_deletion(db: AsyncSession, make_item: MakeItem) -> None:
-    item = await make_item(title="Python", kind="acquis")
+    item = await make_item(title="Python", kind="skill")
     writes = WriteRepository(db, "u1")
     assert await writes.last() is None
     created = await writes.log(
         item=item, action="create", author="agent", session_id="s1", reason="vu en entretien"
     )
-    assert (created.item_id, created.item_title, created.kind) == (item.id, "Python", "acquis")
+    assert (created.item_id, created.item_title, created.kind) == (item.id, "Python", "skill")
     await MemoryItemRepository(db, "u1").delete(item.id)
     deleted = await writes.log(
         item=item, action="delete", author="user", session_id=None, reason=None

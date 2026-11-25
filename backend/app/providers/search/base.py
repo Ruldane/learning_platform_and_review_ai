@@ -1,7 +1,7 @@
-"""Port de la recherche web (SPEC 10.1) : types partagés, limites et erreur unique.
+"""Web search port (SPEC 10.1): shared types, limits and the single error.
 
-Aucun message d'erreur ni journal ne cite la requête, une URL ou une clé (SPEC 17.2) : les
-implémentations ne journalisent que leur nom, un statut HTTP ou un type d'exception."""
+No error message or log quotes the query, a URL or a key (SPEC 17.2): the
+implementations only log their name, an HTTP status or an exception type."""
 
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -13,7 +13,7 @@ from app.core.errors import AppError
 TimeRange = Literal["day", "week", "month", "year"]
 SEARCH_CATEGORIES = ("general", "it", "science", "videos")
 MAX_RESULTS = 10
-# Délai d'une recherche (SearXNG interroge ses moteurs en parallèle, Brave répond vite).
+# Timeout of a search (SearXNG queries its engines in parallel, Brave answers fast).
 SEARCH_TIMEOUT_S = 10.0
 
 
@@ -27,18 +27,16 @@ class SearchResult:
 
 
 class SearchUnavailable(AppError):
-    """Fournisseur injoignable, en erreur ou sans moteur qui réponde : message fixe."""
+    """Provider unreachable, in error or with no engine that answers: fixed message."""
 
     def __init__(self) -> None:
-        super().__init__(
-            "search_unavailable", "La recherche web est indisponible pour le moment.", 503
-        )
+        super().__init__("search_unavailable", "Web search is unavailable for the moment.", 503)
 
 
 class SearchNotServed(SearchUnavailable):
-    """Même erreur pour l'appelant, mais le fournisseur n'a **ni servi ni facturé** la requête :
-    rien n'est parti (clé invalide, connexion impossible) ou elle a été refusée d'emblée (429
-    de débit, 401/403 clé refusée). Une requête réservée sur un compteur peut être rendue."""
+    """Same error for the caller, but the provider **neither served nor billed** the request:
+    nothing left (invalid key, connection impossible) or it was refused outright (429
+    rate limit, 401/403 key refused). A request reserved on a counter can be given back."""
 
 
 class SearchProvider(Protocol):
@@ -52,12 +50,12 @@ class SearchProvider(Protocol):
         time_range: TimeRange | None = None,
         categories: Sequence[str] = (),
     ) -> list[SearchResult]:
-        """`MAX_RESULTS` résultats au plus, liens http(s) uniques. Lève `SearchUnavailable`."""
+        """At most `MAX_RESULTS` results, unique http(s) links. Raises `SearchUnavailable`."""
         ...
 
 
 def is_web_url(url: object) -> bool:
-    """Lien http(s) avec un hôte : tout autre résultat (javascript:, ftp:, vide) est écarté."""
+    """http(s) link with a host: any other result (javascript:, ftp:, empty) is dropped."""
     if not isinstance(url, str):
         return False
     try:
@@ -72,7 +70,7 @@ def text_or_empty(value: object) -> str:
 
 
 def keep_unique(results: list[SearchResult]) -> list[SearchResult]:
-    """Premier résultat de chaque URL, `MAX_RESULTS` au plus, dans l'ordre reçu."""
+    """First result of each URL, `MAX_RESULTS` at most, in the order received."""
     seen: set[str] = set()
     unique: list[SearchResult] = []
     for result in results:

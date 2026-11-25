@@ -15,8 +15,8 @@ from app.db.repository import UserScopedRepository
 
 
 def _prior_data(user_id: InstrumentedAttribute[str] | str) -> ColumnElement[bool]:
-    """Le compte a déjà une clé d'API, un objectif ou un appel de modèle (D183) : une seule
-    définition, pour un compte (`has_prior_data`) comme pour tous (`onboarded_user_ids`)."""
+    """The account already has an API key, a goal or a model call (D183): a single
+    definition, for one account (`has_prior_data`) as for all (`onboarded_user_ids`)."""
     key = select(ApiKey.id).where(ApiKey.user_id == user_id)
     goal = select(Goal.id).where(Goal.user_id == user_id)
     call = select(LlmCall.id).where(LlmCall.user_id == user_id)
@@ -24,11 +24,11 @@ def _prior_data(user_id: InstrumentedAttribute[str] | str) -> ColumnElement[bool
 
 
 async def onboarded_user_ids(session: AsyncSession) -> list[str]:
-    """Les comptes dont le premier lancement est fini, **la même règle que `GET /settings`**
-    (`SettingsService.get`, D183) : avec une ligne de réglages, sa clé `onboarding_done` vaut vrai ;
-    sans ligne, le compte est fait s'il a déjà des données (`_prior_data`). SEULE lecture sans
-    `user_id` des réglages (comme D18, D91), réservée aux tâches planifiées ; ne lit que des
-    identifiants et n'écrit rien."""
+    """The accounts whose first run is done, **the same rule as `GET /settings`**
+    (`SettingsService.get`, D183): with a settings row, its `onboarding_done` key is true;
+    without a row, the account is done if it already has data (`_prior_data`). The ONLY read of
+    settings without `user_id` (like D18, D91), reserved for scheduled jobs; reads identifiers
+    only and writes nothing."""
     mine = UserSettingsRow.user_id == User.id
     done = exists(
         select(UserSettingsRow.id).where(
@@ -46,7 +46,7 @@ async def onboarded_user_ids(session: AsyncSession) -> list[str]:
 
 
 class UserSettingsRepository(UserScopedRepository[UserSettingsRow]):
-    """Une seule ligne `user_settings` par utilisateur (contrainte d'unicité sur `user_id`)."""
+    """A single `user_settings` row per user (uniqueness constraint on `user_id`)."""
 
     model = UserSettingsRow
 
@@ -59,18 +59,18 @@ class UserSettingsRepository(UserScopedRepository[UserSettingsRow]):
         return row.data if row is not None else None
 
     async def save_data(self, data: dict[str, Any]) -> None:
-        """Remplace les réglages. Si `data` porte `onboarding_done`, il s'écrit de façon
-        **monotone**, dans la requête même : `onboarding_done = onboarding_done OR :nouveau`. Une
-        requête qui a lu `faux` avant qu'une autre commite `vrai` ne le défait donc jamais (P20).
-        La clé réservée `local_claim_closed` survit à tout remplacement (elle n'est pas un
-        réglage)."""
+        """Replaces the settings. If `data` carries `onboarding_done`, it is written
+        **monotonically**, in the query itself: `onboarding_done = onboarding_done OR :new`. A
+        request that read `false` before another one committed `true` therefore never undoes it
+        (P20). The reserved key `local_claim_closed` survives every replacement (it is not a
+        setting)."""
         row = await self._row()
         if row is not None and row.data.get(LOCAL_CLAIM_CLOSED) is True:
             data = {**data, LOCAL_CLAIM_CLOSED: True}
         if row is None:
             await self.add(data=dict(data))
         elif "onboarding_done" not in data:
-            # La colonne JSON n'est pas suivie en profondeur : on affecte toujours un nouveau dict.
+            # The JSON column is not tracked deeply: always assign a new dict.
             await self.update(row.id, data=dict(data))
         else:
             was_done = func.coalesce(
@@ -92,8 +92,8 @@ class UserSettingsRepository(UserScopedRepository[UserSettingsRow]):
             await self.session.refresh(row)
 
     async def close_local_claim(self) -> None:
-        """Pose la clé réservée `local_claim_closed` (idempotent), en créant au besoin la ligne
-        de réglages avec le même `onboarding_done` qu'un premier accès (D183)."""
+        """Sets the reserved key `local_claim_closed` (idempotent), creating the settings row if
+        needed with the same `onboarding_done` as a first access (D183)."""
         await self.initialize({"onboarding_done": await self.has_prior_data()})
         stmt = update(UserSettingsRow).where(UserSettingsRow.user_id == self.user_id)
         flag = func.json_set(UserSettingsRow.data, f"$.{LOCAL_CLAIM_CLOSED}", func.json("true"))
@@ -102,22 +102,21 @@ class UserSettingsRepository(UserScopedRepository[UserSettingsRow]):
         )
 
     async def has_prior_data(self) -> bool:
-        """Vrai si le compte a déjà une clé d'API enregistrée, un objectif ou un appel de modèle
-        (clé seulement dans `.env`) : il s'en est déjà servi, il n'a pas de premier lancement à
-        faire (P20)."""
+        """True if the account already has a saved API key, a goal or a model call (key only in
+        `.env`): it has already used the app, it has no first run to do (P20)."""
         found = await self.session.execute(select(_prior_data(self.user_id)))
         return bool(found.scalar())
 
     async def initialize(self, data: dict[str, Any]) -> dict[str, Any]:
-        """Crée la ligne si elle n'existe pas encore, sans jamais écraser celle qu'une requête
-        simultanée vient de créer (un seul `INSERT` gagne, l'autre ne fait rien) ; rend les
-        données qui sont en base."""
+        """Creates the row if it does not exist yet, without ever overwriting the one a
+        concurrent request has just created (a single `INSERT` wins, the other does nothing);
+        returns the data that is in the database."""
         now = datetime.now(UTC)
         stmt = insert(UserSettingsRow).values(
             id=new_id(), user_id=self.user_id, data=dict(data), created_at=now, updated_at=now
         )
         await self.session.execute(stmt.on_conflict_do_nothing(index_elements=["user_id"]))
-        # Lecture de la colonne seule : l'ORM ne doit pas garder une ligne écrite hors de lui.
+        # Read the column only: the ORM must not keep a row written outside of it.
         read = select(UserSettingsRow.data).where(UserSettingsRow.user_id == self.user_id)
         stored = (await self.session.execute(read)).scalar_one_or_none()
         return stored if isinstance(stored, dict) else dict(data)

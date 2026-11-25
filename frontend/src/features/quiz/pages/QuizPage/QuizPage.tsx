@@ -19,7 +19,7 @@ interface QuizPageProps {
 }
 
 /**
- * Un quiz (`/etudier/quiz/:quizId`). En préparation : attente (relue toutes les 3 s, 40 fois). Prêt :
+ * Un quiz (`/study/quiz/:quizId`). En préparation : attente (relue toutes les 3 s, 40 fois). Prêt :
  * le formulaire, puis la note (relue toutes les 2 s, 90 fois) et le résultat. Raté : relancer la
  * préparation. Une relecture ratée en arrière-plan se dit en ligne, sans remplacer la page.
  */
@@ -39,7 +39,7 @@ export function QuizPage({
         <EmptyState
           title={t("quiz.page.notFoundTitle")}
           description={t("quiz.page.notFoundDescription")}
-          action={{ label: t("quiz.page.back"), onClick: () => void navigate("/etudier/quiz") }}
+          action={{ label: t("quiz.page.back"), onClick: () => void navigate("/study/quiz") }}
         />
       );
     }
@@ -48,7 +48,7 @@ export function QuizPage({
   return (
     <div className="flex flex-col gap-4">
       <nav>
-        <Link to="/etudier/quiz" className="text-sm underline underline-offset-2">
+        <Link to="/study/quiz" className="text-sm underline underline-offset-2">
           {t("quiz.page.back")}
         </Link>
       </nav>

@@ -1,6 +1,6 @@
-"""API des entretiens blancs (SPEC F10, D146) : lancement du parcours `interview` depuis une fiche
-ou librement (offre ou intitulé seul), liste et détail (échanges, débrief, fiches de révision).
-Toutes au nom de l'utilisatrice courante ; une 422 nomme les champs, sans jamais citer l'entrée."""
+"""Mock interviews API (SPEC F10, D146): starts the `interview` flow from a record or freely
+(posting or job title only), list and detail (exchanges, debrief, revision cards). All on
+behalf of the current user; a 422 names the fields, never quoting the input."""
 
 from typing import Annotated, Any
 
@@ -30,9 +30,9 @@ router = APIRouter(tags=["interviews"], route_class=FieldPathsRoute)
 _START: dict[int | str, dict[str, Any]] = {
     409: {
         "description": (
-            "`interview_in_progress` (`details.interview_id` : l'entretien ouvert), "
-            "`profile_required` (aucun profil maître validé), "
-            "`radar_salary_missing` (pas de montant annuel brut pour le scénario salarial)"
+            "`interview_in_progress` (`details.interview_id`: the open interview), "
+            "`profile_required` (no validated master profile), "
+            "`radar_salary_missing` (no gross annual amount for the salary scenario)"
         )
     },
     503: {"description": "`engine_unavailable`"},
@@ -48,8 +48,8 @@ _START: dict[int | str, dict[str, Any]] = {
 async def post_application_interview(
     application_id: Id, body: InterviewIn, current: CurrentUserDep, rt: ApplicationsDep
 ) -> InterviewStartOut:
-    """Lance l'entretien blanc de la fiche : les questions arrivent par `interrupt.requested`
-    (`kind` `interview_answer`), le débrief et les fiches de révision à la fin."""
+    """Starts the record's mock interview: questions arrive through `interrupt.requested`
+    (`kind` `interview_answer`), the debrief and revision cards at the end."""
     return await start_for_application(rt, current.id, application_id, body)
 
 
@@ -62,11 +62,11 @@ async def post_application_interview(
 async def post_free_interview(
     body: FreeInterviewIn, current: CurrentUserDep, rt: ApplicationsDep
 ) -> InterviewStartOut:
-    """Entretien libre, sans fiche : sur une offre (`posting_id`) ou sur un intitulé (`role`) ;
-    rien n'est écrit au fil d'une candidature."""
+    """Free interview, without a record: on a posting (`posting_id`) or a job title (`role`);
+    nothing is written to an application's timeline."""
     if body.system_design:
         if MCP_IDENTITY.get() is not None:
-            raise AppError("interface_only", "Cet entretien se réalise dans l’interface.", 403)
+            raise AppError("interface_only", "This interview takes place in the interface.", 403)
         return await start_system_design(rt, current.id)
     return await start_free(rt, current.id, body)
 
@@ -81,8 +81,8 @@ async def get_interviews(
     rt: ApplicationsDep,
     application_id: Annotated[str | None, Query(min_length=1, max_length=36)] = None,
 ) -> list[InterviewOut]:
-    """Les entretiens (d'une fiche), le plus récent d'abord ; un entretien dont la session s'est
-    terminée sans résultat passe en `failed`."""
+    """The interviews (of a record), most recent first; an interview whose session ended
+    without a result turns `failed`."""
     return await list_interviews(rt, current.id, application_id)
 
 

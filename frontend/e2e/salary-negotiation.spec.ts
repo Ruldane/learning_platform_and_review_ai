@@ -11,7 +11,7 @@ test("négocie dans la fourchette du relevé et retrouve la marge au bilan", asy
   request,
 }) => {
   await finishFirstLaunch(request);
-  await page.goto("/candidatures/entretien");
+  await page.goto("/applications/interview");
   await page.getByRole("textbox", { name: "Intitulé du poste" }).fill("Ingénieure IA");
   await page.getByRole("radio", { name: "Négociation de salaire" }).check();
   await page.getByRole("radio", { name: "15 minutes" }).check();
@@ -22,7 +22,7 @@ test("négocie dans la fourchette du relevé et retrouve la marge au bilan", asy
   await expect(source).toContainText("50 000 € à 70 000 € bruts par an");
   await expect(source.getByRole("link", { name: "Consulter le relevé" })).toHaveAttribute(
     "href",
-    /\/carriere\/radar\/[0-9a-f-]+$/,
+    /\/career\/radar\/[0-9a-f-]+$/,
   );
   await expect(page.getByRole("region", { name: "Règles de la simulation" })).toBeVisible();
   const answer = page.getByRole("textbox", { name: "Ta réponse écrite" });

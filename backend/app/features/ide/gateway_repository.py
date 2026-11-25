@@ -6,7 +6,7 @@ from app.db.models.ide_gateway import IdeGatewayBudget
 
 
 async def reserve(db: AsyncSession, user_id: str, day: str, amount: int, cap: int) -> bool:
-    """Réserve d'un coup, y compris sous requêtes concurrentes."""
+    """Reserves in one go, including under concurrent requests."""
     if amount > cap:
         return False
     budget = IdeGatewayBudget

@@ -1,7 +1,7 @@
-"""Exécutions et vérifications dans le bac à sable (P5 à P7). Une seule à la fois par
-utilisatrice ; la sortie se lit par décalage d'octets ; la fin (statut, sortie complète, signature
-d'erreur) est figée à la première lecture qui la voit. Un code d'utilisatrice ne tourne jamais
-ici : seul le bac l'exécute. La sortie n'est jamais journalisée."""
+"""Runs and verifications in the sandbox (P5 to P7). Only one at a time per user; the output
+is read by byte offset; the end (status, full output, error signature) is frozen at the first
+read that sees it. A user's code never runs here: only the sandbox executes it. The output is
+never logged."""
 
 import logging
 from typing import Any, cast
@@ -33,8 +33,8 @@ from app.providers.sandbox.base import (
 
 logger = logging.getLogger(__name__)
 
-JOB_TIMEOUT_S = 10  # durée réelle demandée au bac (il plafonne à 15)
-PROOF_LABEL = "Exercice réussi : "
+JOB_TIMEOUT_S = 10  # real duration requested from the sandbox (it caps at 15)
+PROOF_LABEL = "Completed exercise "
 RECENT_RUNS = 20
 
 
@@ -45,7 +45,7 @@ def _sandbox(ctx: IdeContext) -> CodeSandbox:
 
 
 async def _poll(ctx: IdeContext, run_id: str, offset: int) -> SandboxProgress | None:
-    """Ce que le bac rend ; `None` s'il ne connaît pas le travail (nettoyé, jamais déposé)."""
+    """What the sandbox returns; `None` if it does not know the job (cleaned up or never sent)."""
     try:
         return await _sandbox(ctx).poll(run_id, offset)
     except UnknownRun:
@@ -55,24 +55,24 @@ async def _poll(ctx: IdeContext, run_id: str, offset: int) -> SandboxProgress | 
 
 
 def _clean(text: str) -> str:
-    """La sortie du code est hostile : le NUL est remplacé par `?` (un octet comme lui, pour que
-    les décalages du bac restent valables) ; le front l'affiche comme du texte."""
+    """The code's output is hostile: NUL is replaced by `?` (a single byte like it, so that the
+    sandbox's offsets stay valid); the front end displays it as text."""
     return text.replace("\x00", "?")
 
 
 def _chunk(output: str, after: int) -> tuple[str, int]:
-    """La sortie à partir de l'octet `after` (UTF-8), et le décalage suivant."""
+    """The output from byte `after` (UTF-8), and the next offset."""
     data = output.encode()
     return data[after:].decode(errors="ignore"), len(data)
 
 
 async def _record_pass(ctx: IdeContext, session: IdeSession) -> None:
-    """Première vérification réussie : la séance est réussie, et la compétence de l'exercice (son
-    sujet, sinon son titre) gagne une preuve « ide », jamais au-delà de « en cours »."""
+    """First successful verification: the session is passed, and the exercise's skill (its
+    subject, otherwise its title) earns "ide" evidence, never beyond "in progress"."""
     if session.passed_at is None:
         session.passed_at = utcnow()
     names: list[str] = []
-    if session.exercise_id is not None:  # supprimé depuis : la séance garde son titre
+    if session.exercise_id is not None:  # deleted since: the session keeps its title
         exercise = await ExerciseRepository(ctx.db, ctx.user_id).get(session.exercise_id)
         if exercise is not None:
             names = [name for name in (exercise.topic, exercise.title) if name]
@@ -85,7 +85,7 @@ async def _record_pass(ctx: IdeContext, session: IdeSession) -> None:
 
 
 async def _freeze(ctx: IdeContext, run: IdeRun, progress: SandboxProgress | None) -> None:
-    """Fige la fin d'une exécution : statut, code, durée, sortie complète, signature d'erreur."""
+    """Freezes the end of a run: status, code, duration, full output, error signature."""
     session = await sessions.get(ctx, run.session_id)
     if progress is None or progress.result is None:
         run.status = "error"
@@ -98,8 +98,8 @@ async def _freeze(ctx: IdeContext, run: IdeRun, progress: SandboxProgress | None
         run.output = _clean(progress.output)
         run.error_signature = error_signature(run.output, set(session.files))
     await ctx.db.flush()
-    logger.info("Exécution %s terminée : %s", run.id, run.status)
-    # Seule une vérification de January valide l'exercice : celle de Claude ne compte pas.
+    logger.info("Run %s finished: %s", run.id, run.status)
+    # Only a verification by January validates the exercise: Claude's does not count.
     if run.kind == "check" and run.status == "done" and run.origin == "app":
         if run.exit_code == 0:
             await _record_pass(ctx, session)
@@ -109,7 +109,7 @@ async def _freeze(ctx: IdeContext, run: IdeRun, progress: SandboxProgress | None
 
 
 async def _settle(ctx: IdeContext, run: IdeRun) -> bool:
-    """Interroge le bac sur une exécution en cours ; la fige si elle est finie. Vrai si finie."""
+    """Polls the sandbox for a run in progress; freezes it if finished. True if finished."""
     progress = await _poll(ctx, run.id, 0)
     if progress is not None and progress.result is None:
         return False
@@ -169,7 +169,7 @@ async def progress(
     kind: SandboxKind | None = None,
     persist: bool = True,
 ) -> RunProgress:
-    """La sortie depuis l'octet `after`. Fin vue = tout figé (sortie complète, signature)."""
+    """The output from byte `after`. End seen = everything frozen (full output, signature)."""
     run = await RunRepository(ctx.db, ctx.user_id).get_fresh(run_id)
     allowed = ("run", "check") if kind is None else (kind,)
     if run is None or run.kind not in allowed:
@@ -215,13 +215,13 @@ def _live_progress(run_id: str, live: SandboxProgress | None, after: int) -> Run
 
 
 async def _settle_with(ctx: IdeContext, run: IdeRun, live: SandboxProgress | None) -> None:
-    """Fige une exécution dont la fin vient d'être vue : relit la sortie complète (le journal est
-    complet dès que la fin est visible)."""
+    """Freezes a run whose end has just been seen: re-reads the full output (the log is
+    complete as soon as the end is visible)."""
     full = await _poll(ctx, run.id, 0) if live is not None else None
     await _freeze(ctx, run, full)
 
 
 async def list_for(ctx: IdeContext, session_id: str) -> list[IdeRun]:
-    """Les `RECENT_RUNS` dernières exécutions de la séance (la page les relit toutes les 3 s)."""
+    """The session's last `RECENT_RUNS` runs (the page re-reads them all every 3 s)."""
     session = await sessions.get(ctx, session_id)
     return await RunRepository(ctx.db, ctx.user_id).recent_of_session(session.id, RECENT_RUNS)

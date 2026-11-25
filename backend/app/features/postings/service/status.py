@@ -17,8 +17,8 @@ from app.db.models.postings import JobPosting
 from app.features.postings.service.runtime import GRAPH, SUBJECT
 from app.features.sessions.service import list_open_sessions, list_open_sessions_by_subject
 
-INTERRUPTED = "L'analyse de l'offre s'est arrêtée avant la fin : relance-la."
-LAUNCH_FAILED = "L'analyse de l'offre n'a pas pu démarrer : relance-la."
+INTERRUPTED = "Posting analysis stopped. Restart the analysis."
+LAUNCH_FAILED = "Posting analysis could not start. Restart the analysis."
 GapStatus = Literal["pending", "ready", "failed"]
 
 

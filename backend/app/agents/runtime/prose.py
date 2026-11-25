@@ -1,14 +1,14 @@
-"""Texte libre d'une sortie structurée : trop long, il est raccourci au lieu d'être refusé.
+"""Free text of a structured output: too long, it is shortened instead of being refused.
 
-Un modèle ne compte pas les caractères : GLM 5.3 dépasse le plafond d'un résumé ou d'une raison
-dans la plupart des réponses, et le nouvel essai ne le raccourcit que d'un dixième (D97). Le
-refus perdait alors une page notée, voire le Conseil entier. Le plafond reste dans le schéma JSON
-envoyé au modèle ; seul le texte qui le dépasse est coupé, en fin de phrase si possible.
+A model does not count characters: GLM 5.3 exceeds the cap of a summary or a reason in most
+replies, and the retry only shortens it by a tenth (D97). The refusal then lost a graded page,
+even the whole Council. The cap stays in the JSON schema sent to the model; only the text that
+exceeds it is cut, at the end of a sentence if possible.
 
-Usage : `summary: Prose = Field(min_length=1, max_length=400)` ; dans une liste,
-`Annotated[str, Field(max_length=300), ShortenToMax()]` (le plafond avant la métadonnée).
-Réservé au texte qu'on lit (résumé, raison, intention) : un identifiant, un nom ou du code
-coupé serait faux, il reste refusé.
+Usage: `summary: Prose = Field(min_length=1, max_length=400)`; in a list,
+`Annotated[str, Field(max_length=300), ShortenToMax()]` (the cap before the metadata).
+Reserved for text that is read (summary, reason, intent): an identifier, a name or cut code
+would be wrong, it stays refused.
 """
 
 import logging
@@ -22,13 +22,13 @@ logger = logging.getLogger(__name__)
 
 ELLIPSIS = "…"
 _SENTENCE_END = re.compile(r"[.!?…](?=\s)")
-_KEEP_SENTENCE = 0.6  # couper en fin de phrase si l'on garde au moins 60 % du plafond
+_KEEP_SENTENCE = 0.6  # cut at the end of a sentence if at least 60% of the cap is kept
 _TRAILING = " \t\n,;:-–—"
 
 
 def shorten(text: str, limit: int) -> str:
-    """`text` ramené à `limit` caractères au plus : à la dernière fin de phrase si elle garde
-    l'essentiel, sinon entre deux mots, suivi de « … »."""
+    """`text` brought down to at most `limit` characters: at the last end of a sentence if it
+    keeps the essentials, otherwise between two words, followed by "…"."""
     if len(text) <= limit:
         return text
     ends = [m.end() for m in _SENTENCE_END.finditer(text[: limit + 1])]
@@ -43,8 +43,8 @@ def shorten(text: str, limit: int) -> str:
 
 
 class ShortenToMax:
-    """Métadonnée pydantic : lit le plafond (`max_length`) du schéma qu'elle enveloppe et
-    raccourcit le texte avant la validation. Sans plafond : `TypeError` dès la définition."""
+    """Pydantic metadata: reads the cap (`max_length`) of the schema it wraps and
+    shortens the text before validation. Without a cap: `TypeError` from the definition."""
 
     def __get_pydantic_core_schema__(
         self, source: Any, handler: GetCoreSchemaHandler
@@ -52,14 +52,14 @@ class ShortenToMax:
         inner = handler(source)
         limit = inner.get("max_length") if inner["type"] == "str" else None
         if not isinstance(limit, int):
-            raise TypeError("Prose demande une chaîne avec un plafond : Field(max_length=...)")
+            raise TypeError("Prose needs a string with a cap: Field(max_length=...)")
 
         def fit(value: Any, info: core_schema.ValidationInfo) -> Any:
             if not isinstance(value, str) or len(value) <= limit:
                 return value
             logger.info(
-                "Texte raccourci : champ %s, %d caractères, plafond %d",
-                info.field_name or "(inconnu)",
+                "Text shortened: field %s, %d characters, cap %d",
+                info.field_name or "(unknown)",
                 len(value),
                 limit,
             )

@@ -1,14 +1,14 @@
-"""L'Archiviste range une capture rapide (SPEC F18, D108) : parcours `capture`.
+"""The Archivist files a quick capture (SPEC F18, D108): flow `capture`.
 
-`read` lit la source sans appeler le modèle : un lien par `web_read` (garde SSRF, cache, 15 s au
-plus), un document importé par le port (toutes les 3 s, 90 s au plus), un texte tel quel. Un lien
-illisible est signalé tout de suite (message, puis question `capture_text`). `digest` fait
-résumer la capture (texte encadré par `untrusted`) et ignore les références inconnues ; `store`
-la range par le port (idempotent par session). Les questions (`ask_text`, `ask_task`,
-`ask_cards`) ne font qu'`interrupt()`, puis lisent la réponse (rien avant l'arrêt, SPEC 9.4) ; la
-tâche n'est cochée et les fiches créées qu'après un oui.
+`read` reads the source without calling the model: a link through `web_read` (SSRF guard, cache,
+15 s at most), a document imported through the port (every 3 s, 90 s at most), a text as is. An
+unreadable link is reported right away (message, then `capture_text` question). `digest` has the
+capture summarized (text wrapped by `untrusted`) and ignores unknown references; `store` files it
+through the port (idempotent per session). The questions (`ask_text`, `ask_task`, `ask_cards`)
+only `interrupt()`, then read the answer (nothing before the stop, SPEC 9.4); the task is ticked
+and the cards created only after a yes.
 
-Journaux : identifiants et nombres seulement, jamais l'adresse, le titre ni le texte capturé."""
+Logs: identifiers and numbers only, never the address, the title or the captured text."""
 
 import asyncio
 import logging
@@ -54,11 +54,11 @@ from app.agents.tools.study_schema import CardDraft
 from app.agents.tools.web_tools import web_read
 from app.core.errors import AppError
 
-READ_TIMEOUT_S = 15.0  # lecture d'un lien
-DOC_POLL_S = 3.0  # document pas encore indexé : nouvel essai
-DOC_WAIT_S = 90.0  # puis « Document pas encore indexé. »
+READ_TIMEOUT_S = 15.0  # reading a link
+DOC_POLL_S = 3.0  # document not indexed yet: try again
+DOC_WAIT_S = 90.0  # then "Document not indexed yet."
 DIGEST_TIMEOUT_S = 300
-STORE_TIMEOUT_S = 300  # vectorisation de l'élément et reflet des acquis
+STORE_TIMEOUT_S = 300  # vectorization of the item and reflection of the acquired skills
 
 logger = logging.getLogger(__name__)
 
@@ -72,22 +72,22 @@ def _say(message_id: str, text: str) -> None:
 
 
 async def _read_url(deps: GraphDeps, url: str) -> CaptureMaterial | None:
-    """La page lue, ou `None` : illisible, refusée (garde SSRF), plafond atteint, trop lente."""
+    """The page read, or `None`: unreadable, refused (SSRF guard), cap reached, too slow."""
     try:
         async with asyncio.timeout(READ_TIMEOUT_S):
             page = await web_read(deps, url, agent=AGENT)
     except (TimeoutError, AppError) as exc:
         code = exc.code if isinstance(exc, AppError) else "timeout"
-        logger.info("Capture : lien non lu (session %s, %s)", deps.session_id, code)
+        logger.info("Capture: link not read (session %s, %s)", deps.session_id, code)
         return None
     if page.status != "ok" or not page.text.strip():
-        logger.info("Capture : lien illisible (session %s)", deps.session_id)
+        logger.info("Capture: link unreadable (session %s)", deps.session_id)
         return None
     return CaptureMaterial(page.title or "", page.text[:MAX_TEXT_CHARS], page.url)
 
 
 async def _read_document(deps: GraphDeps, document_id: str) -> CaptureMaterial:
-    """Le document dès qu'il est indexé ; au-delà de `DOC_WAIT_S` : run.failed."""
+    """The document as soon as it is indexed; beyond `DOC_WAIT_S`: run.failed."""
     loop = asyncio.get_running_loop()
     deadline = loop.time() + DOC_WAIT_S
     while True:
@@ -95,7 +95,7 @@ async def _read_document(deps: GraphDeps, document_id: str) -> CaptureMaterial:
         if found is not None:
             return CaptureMaterial(found.title, found.text[:MAX_TEXT_CHARS], found.url)
         if loop.time() + DOC_POLL_S > deadline:
-            logger.info("Capture : document %s pas encore indexé", document_id)
+            logger.info("Capture: document %s not indexed yet", document_id)
             raise document_not_indexed()
         await asyncio.sleep(DOC_POLL_S)
 
@@ -103,7 +103,7 @@ async def _read_document(deps: GraphDeps, document_id: str) -> CaptureMaterial:
 def make_read(deps: GraphDeps) -> Node:
     @node_timeout(DOC_WAIT_S + 30)
     async def read(state: CaptureState) -> CaptureState:
-        emit("agent.started", {"step": "lecture", "intent": "je lis ta capture"}, agent=AGENT)
+        emit("agent.started", {"step": "lecture", "intent": "Reading your capture"}, agent=AGENT)
         source = source_of(dict(state))
         if source == "url":
             page = await _read_url(deps, state["url"] or "")
@@ -125,7 +125,7 @@ def route_read(state: CaptureState) -> str:
 
 
 def ask_text(state: CaptureState) -> CaptureState:
-    """Point d'arrêt : le texte de la page illisible, ou « Abandonner »."""
+    """Stop point: the text of the unreadable page, or "Cancel"."""
     text = parse_text(interrupt(TEXT_INTERRUPT))
     if text is None:
         _say("capture-fin", CANCELLED_TEXT)
@@ -141,7 +141,7 @@ def route_text(state: CaptureState) -> str:
 def make_digest(deps: GraphDeps) -> Node:
     @node_timeout(DIGEST_TIMEOUT_S)
     async def digest(state: CaptureState) -> CaptureState:
-        """Le résumé de l'Archiviste, relié aux modules et aux tâches de l'instantané."""
+        """The Archivist's summary, linked to the modules and tasks of the snapshot."""
         links = await deps.ports.capture.links(deps.user_id)
         source = source_of(dict(state))
         material = material_of(state["material"])
@@ -154,11 +154,11 @@ def make_digest(deps: GraphDeps) -> Node:
             [SystemMessage(prompt), HumanMessage(CAPTURE_REQUEST)],
             agent=AGENT,
             step="capture",
-            intent="je résume ta capture et la relie à ton programme",
+            intent="Summarizing your capture and linking it to your program",
         )
         if unknown := unknown_refs(found, links):
             logger.info(
-                "Capture : %d référence(s) inconnue(s) ignorée(s) (session %s)",
+                "Capture: %d unknown reference(s) ignored (session %s)",
                 unknown,
                 deps.session_id,
             )
@@ -171,7 +171,7 @@ def make_digest(deps: GraphDeps) -> Node:
 def make_store(deps: GraphDeps) -> Node:
     @node_timeout(STORE_TIMEOUT_S)
     async def store(state: CaptureState) -> CaptureState:
-        """La capture rangée par le port (idempotent par session), puis annoncée."""
+        """The capture filed by the port (idempotent per session), then announced."""
         found = CaptureDigest.model_validate(state["digest"])
         stored = await deps.ports.capture.store(
             deps.user_id,
@@ -182,8 +182,8 @@ def make_store(deps: GraphDeps) -> Node:
             source=source_of(dict(state)),
         )
         logger.info(
-            "Capture rangée : session %s, élément %s, journal %s, tâche couverte %s, "
-            "%d fiche(s) proposée(s), acquis déclarés %s",
+            "Capture stored: session %s, item %s, journal %s, task covered %s, "
+            "%d card(s) proposed, declared skills %s",
             deps.session_id,
             stored.memory_item_id,
             stored.journal_entry_id,
@@ -209,7 +209,7 @@ def route_store(state: CaptureState) -> str:
 
 
 def ask_task(state: CaptureState) -> CaptureState:
-    """Point d'arrêt : cocher la tâche que la capture couvre ?"""
+    """Stop point: tick the task the capture covers?"""
     task = state["stored"]["covered_task"]
     return {"tick": parse_yes(interrupt(task_payload(task["title"])))}
 
@@ -221,13 +221,13 @@ def route_task(state: CaptureState) -> str:
 def make_tick(deps: GraphDeps) -> Node:
     @node_timeout()
     async def tick(state: CaptureState) -> CaptureState:
-        """L'id vient de l'instantané gardé dans l'état (F7), jamais du modèle."""
+        """The id comes from the snapshot kept in the state (F7), never from the model."""
         task_id = state["stored"]["covered_task"]["task_id"]
         ticked = await deps.ports.capture.tick_task(deps.user_id, deps.session_id, task_id)
         logger.info(
-            "Capture : tâche %s %s (session %s)",
+            "Capture: task %s %s (session %s)",
             task_id,
-            "cochée" if ticked else "introuvable",
+            "ticked" if ticked else "not found",
             deps.session_id,
         )
         return {"ticked": ticked}
@@ -244,7 +244,7 @@ def route_after_task(state: CaptureState) -> str:
 
 
 def ask_cards(state: CaptureState) -> CaptureState:
-    """Point d'arrêt : créer les fiches proposées (rectos montrés) ?"""
+    """Stop point: create the proposed cards (fronts shown)?"""
     fronts = [str(card["front"]) for card in state["digest"]["flashcards"]]
     return {"want_cards": parse_yes(interrupt(cards_payload(fronts)))}
 
@@ -258,7 +258,7 @@ def make_cards(deps: GraphDeps) -> Node:
     async def cards(state: CaptureState) -> CaptureState:
         drafts = [CardDraft.model_validate(card) for card in state["digest"]["flashcards"]]
         created = await deps.ports.capture.add_cards(deps.user_id, deps.session_id, drafts)
-        logger.info("Capture : %d fiche(s) créée(s) (session %s)", created, deps.session_id)
+        logger.info("Capture: %d card(s) created (session %s)", created, deps.session_id)
         return {"cards_created": created}
 
     return cards

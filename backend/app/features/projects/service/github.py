@@ -1,4 +1,4 @@
-"""Défi temporaire de contrôle du profil et preuve attachée au rendu."""
+"""Temporary profile-control challenge and proof attached to the submission."""
 
 import asyncio
 import re
@@ -41,19 +41,19 @@ def _repo(url: str) -> RepoRef:
             and not (parts.query or parts.fragment)
         ):
             return ref
-    raise AppError("github_invalid_repo", "Saisis l’adresse HTTPS d’un dépôt GitHub.", 422)
+    raise AppError("github_invalid_repo", "Enter the HTTPS address of a GitHub repository.", 422)
 
 
 def _taken() -> AppError:
-    return AppError("github_commit_claimed", "Ce commit figure déjà parmi tes preuves.", 409)
+    return AppError("github_commit_claimed", "This commit is already among your proofs.", 409)
 
 
 def _expired() -> AppError:
-    return AppError("github_claim_expired", "Crée un nouveau code de vérification GitHub.", 409)
+    return AppError("github_claim_expired", "Create a new GitHub verification code.", 409)
 
 
 def _timeout() -> AppError:
-    return AppError("github_unavailable", "GitHub n’a pas pu être lu. Réessaie plus tard.", 502)
+    return AppError("github_unavailable", "GitHub could not be read. Try again later.", 502)
 
 
 async def _commit(port: GithubContributions, repo: RepoRef, sha: str) -> GithubCommit:
@@ -71,7 +71,7 @@ async def issue_github_claim(
         project = await owned(db, user_id, project_id)
         if project.status not in ("todo", "to_redo") or not project.brief:
             raise AppError(
-                "github_project_not_open", "Le projet ne peut pas recevoir de rendu.", 409
+                "github_project_not_open", "The project cannot receive a submission.", 409
             )
     commit = await _commit(rt.github, _repo(body.repo_url), body.sha)
     code = f"tremplin:{token_urlsafe(24)}"
@@ -109,7 +109,7 @@ async def get_github_claim(
         await owned(db, user_id, project_id)
         claim = await GithubClaimRepository(db, user_id).get(project_id, str(claim_id))
     if claim is None:
-        raise AppError("github_claim_not_found", "Défi GitHub introuvable.", 404)
+        raise AppError("github_claim_not_found", "GitHub challenge not found.", 404)
     return claim
 
 
@@ -128,7 +128,7 @@ async def verify_github_claim(rt: ProjectsRuntime, claim: ProjectGithubClaim) ->
         raise _timeout() from None
     if not bio or not any(compare_digest(_digest(tag), digest) for tag in _CODE.findall(bio)):
         raise AppError(
-            "github_code_missing", "Place le code fourni dans la bio GitHub de l’auteur.", 409
+            "github_code_missing", "Put the provided code in the author's GitHub bio.", 409
         )
 
 
@@ -147,14 +147,14 @@ async def record_github_proof(
         raise _expired()
     skills = await module_skills(db, project.user_id, project)
     if not skills:
-        raise AppError("github_skills_missing", "Le projet n’a plus de compétences associées.", 409)
+        raise AppError("github_skills_missing", "The project no longer has associated skills.", 409)
     proof = evidence(
         "github",
         f"{project.id}:{claim.id}",
-        f"Contribution GitHub vérifiée ({claim.sha[:8]})",
+        f"Verified GitHub contribution ({claim.sha[:8]})",
         moment,
     )
-    await SkillsService(db, project.user_id).raise_levels(skills, "en_cours", proof)
+    await SkillsService(db, project.user_id).raise_levels(skills, "in_progress", proof)
 
 
 async def list_github_proofs(

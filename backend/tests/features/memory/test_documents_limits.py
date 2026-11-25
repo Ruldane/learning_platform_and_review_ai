@@ -19,7 +19,8 @@ from tests.features.memory.helpers import with_embeddings_down
 
 API = "/api/v1/documents"
 MAX = 20 * 1024 * 1024
-TOO_LARGE = "Fichier trop volumineux : 20 Mo au maximum."
+TOO_LARGE = "The maximum file size is 20 MB."
+BODY_TOO_LARGE = "File too large: 20 MB maximum."
 
 
 def _stored(tmp_path: Path) -> list[Path]:
@@ -40,7 +41,7 @@ async def test_body_far_over_the_limit_is_413(client: httpx.AsyncClient) -> None
     """Au-delà de 21 Mio, le middleware refuse avant toute analyse du multipart."""
     data = b"%PDF-" + b"0" * (MAX + 2 * 1024 * 1024)
     r = await client.post(API, files={"file": ("gros.pdf", data, "application/pdf")})
-    assert r.status_code == 413 and r.json()["error"]["message"] == TOO_LARGE
+    assert r.status_code == 413 and r.json()["error"]["message"] == BODY_TOO_LARGE
 
 
 class _Quick:
@@ -98,7 +99,7 @@ async def test_embeddings_down_marks_error_never_500(
     doc = listing.json()[0]
     assert doc["status"] == "error" and doc["item_id"] is not None
     assert doc["error"]["code"] == "embeddings_unavailable"
-    assert doc["error"]["message"].startswith("Le service d'embeddings (Ollama) est indisponible")
+    assert doc["error"]["message"].startswith("The embedding service (Ollama) is unavailable")
 
 
 async def test_concurrent_identical_uploads_make_one_document(
@@ -135,7 +136,7 @@ async def test_streamed_multipart_over_the_limit_is_413(
 
     headers = {"content-type": "multipart/form-data; boundary=xyz"}
     r = await client.post(API, content=body(), headers=headers)
-    assert r.status_code == 413 and r.json()["error"]["message"] == TOO_LARGE
+    assert r.status_code == 413 and r.json()["error"]["message"] == BODY_TOO_LARGE
     assert _stored(tmp_path) == []
 
 
@@ -154,7 +155,7 @@ async def test_paste_is_json_capped_at_500k_characters(
     too_long = await client.post(f"{API}/text", json={"text": "secret" + "x" * 500_000})
     assert too_long.status_code == 422 and too_long.json()["error"] == {
         "code": "paste_too_long",
-        "message": "Texte trop long : 500 000 caractères au maximum.",
+        "message": "Text can contain up to 500,000 characters.",
         "details": None,
     }
     assert "secret" not in too_long.text

@@ -1,4 +1,4 @@
-"""Reconstruit les éditions demandées sans transaction pendant le rendu."""
+"""Rebuild the requested editions with no transaction open during rendering."""
 
 import asyncio
 import logging
@@ -65,14 +65,14 @@ async def _compile(runtime: BookRuntime, user_id: str, build: _Build) -> None:
     try:
         await asyncio.shield(committing)
     except asyncio.CancelledError:
-        # La publication et le nettoyage doivent observer le même résultat du commit.
+        # Publication and cleanup must observe the same commit outcome.
         with suppress(Exception):
             await committing
         raise
 
 
 async def refresh_book(runtime: BookRuntime, user_id: str, program_id: str) -> None:
-    """Reprend une demande persistée, ou publie les nouveaux chapitres d'une édition."""
+    """Resume a persisted request, or publish the new chapters of an edition."""
     async with runtime.session_factory() as db:
         row = await BookRepository(db, user_id).get(program_id)
         if row is None:
@@ -86,7 +86,7 @@ async def refresh_book(runtime: BookRuntime, user_id: str, program_id: str) -> N
     try:
         await _compile(runtime, user_id, _Build(revision, previous, snapshot, digest))
     except Exception as error:
-        logger.warning("Édition du programme %s en échec (%s)", program_id, type(error).__name__)
+        logger.warning("Program %s edition failed (%s)", program_id, type(error).__name__)
         async with runtime.session_factory() as db:
             await BookRepository(db, user_id).fail(program_id, revision)
             await db.commit()
@@ -102,6 +102,4 @@ async def refresh_books(runtime: BookRuntime) -> None:
             try:
                 await refresh_book(runtime, user_id, program_id)
             except Exception as error:
-                logger.warning(
-                    "Lecture du livre %s en échec (%s)", program_id, type(error).__name__
-                )
+                logger.warning("Reading book %s failed (%s)", program_id, type(error).__name__)

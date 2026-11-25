@@ -48,7 +48,7 @@ async def test_kit_launch_202_then_409(client: httpx.AsyncClient, app: FastAPI) 
     # L'événement « lancé » entre au fil de la fiche, une seule fois.
     detail = (await client.get(f"{API}/{application_id}")).json()
     kits = [e for e in detail["events"] if e["kind"] == "kit"]
-    assert [(e["text"], e["ref_id"]) for e in kits] == [("Kit de candidature lancé.", session_id)]
+    assert [(e["text"], e["ref_id"]) for e in kits] == [("Application kit started.", session_id)]
     # Une fois la session finie, le kit se relance.
     assert (await client.post(f"{ROOT}/sessions/{session_id}/cancel")).status_code == 200
     second = await client.post(f"{API}/{application_id}/kit")

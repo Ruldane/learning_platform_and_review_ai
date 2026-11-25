@@ -36,10 +36,10 @@ test("l’astreinte lance l’alerte, rétablit le projet et conserve une preuve
   request,
 }) => {
   await finishFirstLaunch(request);
-  await page.goto("/astreinte");
+  await page.goto("/on-call");
   await page.getByRole("combobox", { name: "Scénario" }).selectOption("queue");
   await page.getByRole("button", { name: "Démarrer un incident" }).click();
-  await expect(page).toHaveURL(/\/astreinte\/[0-9a-f-]+$/);
+  await expect(page).toHaveURL(/\/on-call\/[0-9a-f-]+$/);
   const incident = page.url();
   await expect(page.getByText("En attente d’alerte")).toBeVisible();
 

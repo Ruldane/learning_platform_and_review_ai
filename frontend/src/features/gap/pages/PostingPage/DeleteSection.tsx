@@ -43,7 +43,7 @@ export function DeleteSection({ postingId, hasReview, onDeleted }: DeleteSection
       </p>
       {error ? <InlineError message={error} /> : null}
       {code === "review_in_progress" ? (
-        <Link to={`/carriere/cv/revue/nouvelle/${postingId}`} className="text-sm underline">
+        <Link to={`/career/cv/reviews/new/${postingId}`} className="text-sm underline">
           {t("gap.posting.openReview")}
         </Link>
       ) : null}

@@ -1,11 +1,11 @@
-"""ATS reconnu par le domaine d'un lien (D118, D129) : lien de candidature, lien de l'offre ou page
-lue par l'Éclaireur. Règle pure, partagée par la feature `postings` et le parcours `cv_review` (le
-moteur n'importe aucune feature, contrat 6)."""
+"""ATS recognized from a link's domain (D118, D129): application link, posting link or page read by
+the Scout. Pure rule, shared by the `postings` feature and the `cv_review` flow (the engine imports
+no feature, contract 6)."""
 
 from collections.abc import Iterable
 from urllib.parse import urlsplit
 
-# Domaine (suffixe d'hôte) → nom de l'ATS.
+# Domain (host suffix) -> ATS name.
 ATS_HOSTS: dict[str, str] = {
     "greenhouse.io": "Greenhouse",
     "lever.co": "Lever",
@@ -33,7 +33,7 @@ def _host(url: str) -> str | None:
 
 
 def detect_ats(urls: Iterable[str]) -> str | None:
-    """Le premier ATS reconnu parmi les liens (hôte égal au domaine ou sous-domaine de lui)."""
+    """The first ATS recognized among the links (host equal to the domain or a subdomain of it)."""
     for url in urls:
         host = _host(url)
         if not host:

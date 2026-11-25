@@ -33,7 +33,7 @@ async def test_post_sessions_returns_id_fast(client: httpx.AsyncClient, probe: P
 async def test_unknown_graph_returns_404_in_french(client: httpx.AsyncClient):
     r = await client.post(API, json={"graph": "nope"})
     assert r.status_code == 404 and r.json()["error"]["code"] == "unknown_graph"
-    assert r.json()["error"]["message"].startswith("Parcours inconnu")
+    assert r.json()["error"]["message"].startswith("Unknown workflow")
 
 
 async def test_generic_route_refuses_quiz_and_study_session(client: httpx.AsyncClient):
@@ -127,7 +127,7 @@ async def test_find_active_session_picks_latest_open_session_of_the_subject(
 async def test_get_unknown_session_returns_404(client: httpx.AsyncClient):
     r = await client.get(f"{API}/{new_id()}")
     assert r.status_code == 404 and r.json()["error"]["code"] == "session_not_found"
-    assert r.json()["error"]["message"] == "Session introuvable."
+    assert r.json()["error"]["message"] == "Session not found."
 
 
 async def test_failed_session_exposes_its_error(client: httpx.AsyncClient):

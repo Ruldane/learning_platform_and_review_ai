@@ -1,8 +1,8 @@
-"""Les offres vues depuis la carte de compétences (SPEC F15, D123) : les offres prêtes dont
-l'analyse cite une compétence (détail d'une compétence) et les compétences d'une offre (cible de
-la comparaison « moi face à cette offre »). Une compétence d'offre est citée sous le nom du
-besoin ou sous celui du référentiel auquel l'Analyste l'a rattachée (`job_postings.gap`) ; les
-noms sont comparés normalisés."""
+"""Postings seen from the skills map (SPEC F15, D123): the ready postings whose analysis cites a
+skill (detail of a skill) and the skills of a posting (target of the "me against this posting"
+comparison). A posting skill is cited under the name of the need or under that of the
+reference-list skill the Analyst attached it to (`job_postings.gap`); names are compared
+normalized."""
 
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -27,12 +27,12 @@ class PostingRef:
 
 @dataclass(frozen=True)
 class PostingSkills:
-    label: str  # « Titre — Entreprise »
-    names: list[str]  # un nom normalisé par besoin apprenable, dans l'ordre de l'analyse
+    label: str  # "Title — Company"
+    names: list[str]  # one normalized name per learnable need, in the analysis's order
 
 
 def _needs(posting: JobPosting, *, learnable_only: bool) -> list[tuple[str, str | None]]:
-    """`(nom du besoin, nom rattaché ou None)` de chaque besoin de l'analyse, normalisés."""
+    """`(need name, attached name or None)` of each need of the analysis, normalized."""
     if posting.analysis is None:
         return []
     analysis = PostingAnalysis.model_validate(posting.analysis)
@@ -48,13 +48,13 @@ def _needs(posting: JobPosting, *, learnable_only: bool) -> list[tuple[str, str 
 
 
 def _cited(posting: JobPosting) -> set[str]:
-    """Les noms sous lesquels l'analyse cite ses compétences : besoins et rattachements."""
+    """The names under which the analysis cites its skills: needs and attachments."""
     return {name for pair in _needs(posting, learnable_only=False) for name in pair if name}
 
 
 def _targets(posting: JobPosting) -> list[str]:
-    """Un nom par besoin apprenable : le rattachement s'il existe, sinon le besoin (le nom que
-    `save_gap` a mis au référentiel), dans l'ordre de l'analyse, sans doublon."""
+    """One name per learnable need: the attachment if there is one, otherwise the need (the name
+    `save_gap` put in the reference list), in the analysis's order, without duplicates."""
     names = (known or need for need, known in _needs(posting, learnable_only=True))
     return list(dict.fromkeys(name for name in names if name))
 
@@ -62,25 +62,25 @@ def _targets(posting: JobPosting) -> list[str]:
 async def postings_citing(
     db: AsyncSession, user_id: str, names: Sequence[str], limit: int = POSTINGS_PER_SKILL
 ) -> list[PostingRef]:
-    """Les offres prêtes dont l'analyse cite l'un de ces noms (la compétence et ses synonymes),
-    les plus récentes d'abord, `limit` au plus."""
+    """The ready postings whose analysis cites one of these names (the skill and its synonyms),
+    most recent first, `limit` at most."""
     wanted = {norm for norm in map(normalize_skill_name, names) if norm}
     found: list[PostingRef] = []
     for posting in await GapRepository(db, user_id).ready_recent():
         if wanted & _cited(posting):
-            found.append(PostingRef(posting.id, posting.title or "Offre"))
+            found.append(PostingRef(posting.id, posting.title or "Posting"))
             if len(found) == limit:
                 break
     return found
 
 
 async def posting_skills(db: AsyncSession, user_id: str, posting_id: str) -> PostingSkills | None:
-    """Les compétences apprenables d'une offre de January ; `None` tant qu'elle n'est pas
-    analysée et son écart rangé (ses besoins n'entrent au référentiel qu'à `save_gap`).
-    404 `posting_not_found` si elle n'est pas à elle."""
+    """The learnable skills of one of January's postings; `None` as long as it is not analyzed
+    and its gap stored (its needs only enter the reference list at `save_gap`).
+    404 `posting_not_found` if it is not hers."""
     posting = await get_posting(db, user_id, posting_id)
     if posting.analysis is None or posting.gap is None or posting.status == "rejected":
         return None
-    title = posting.title or "Offre"
+    title = posting.title or "Posting"
     label = f"{title} — {posting.company}" if posting.company else title
     return PostingSkills(label[:LABEL_MAX], _targets(posting))

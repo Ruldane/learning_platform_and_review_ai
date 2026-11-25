@@ -3,9 +3,9 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { ResearchBenchForm } from "./ResearchBenchForm";
 
-const QUERY = "Requête";
-const URLS = "Adresses supplémentaires";
-const SUBMIT = "Lancer l'essai";
+const QUERY = "Query";
+const URLS = "Extra addresses";
+const SUBMIT = "Run the test";
 
 describe("ResearchBenchForm", () => {
   it("envoie la requête et les adresses nettoyées, sans doublon", async () => {
@@ -41,7 +41,7 @@ describe("ResearchBenchForm", () => {
     await user.click(screen.getByRole("button", { name: SUBMIT }));
     expect(onSubmit).not.toHaveBeenCalled();
     expect(screen.getByRole("alert")).toHaveTextContent(
-      "La requête doit faire de 2 à 300 caractères.",
+      "The query must be from 2 to 300 characters.",
     );
     expect(screen.getByLabelText(QUERY)).toHaveAttribute("aria-invalid", "true");
   });
@@ -55,7 +55,7 @@ describe("ResearchBenchForm", () => {
     await user.click(screen.getByRole("button", { name: SUBMIT }));
     expect(onSubmit).not.toHaveBeenCalled();
     expect(screen.getByRole("alert")).toHaveTextContent(
-      "Cette adresse doit commencer par http:// ou https:// : ftp://exemple.org/fichier",
+      "This address must start with http:// or https://: ftp://exemple.org/fichier",
     );
   });
 
@@ -68,7 +68,7 @@ describe("ResearchBenchForm", () => {
     await user.paste(Array.from({ length: 6 }, (_, i) => `https://s${i}.org`).join("\n"));
     await user.click(screen.getByRole("button", { name: SUBMIT }));
     expect(onSubmit).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert")).toHaveTextContent("5 adresses supplémentaires au plus.");
+    expect(screen.getByRole("alert")).toHaveTextContent("5 extra addresses at most.");
   });
 
   it("efface les erreurs dès qu'on corrige", async () => {
@@ -86,7 +86,7 @@ describe("ResearchBenchForm", () => {
     render(<ResearchBenchForm onSubmit={onSubmit} busy />);
     expect(screen.getByLabelText(QUERY)).toBeDisabled();
     expect(screen.getByLabelText(URLS)).toBeDisabled();
-    const button = screen.getByRole("button", { name: "Essai en cours…" });
+    const button = screen.getByRole("button", { name: "Test in progress…" });
     expect(button).toBeDisabled();
     await user.click(button);
     expect(onSubmit).not.toHaveBeenCalled();

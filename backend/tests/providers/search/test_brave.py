@@ -181,7 +181,7 @@ async def test_brave_key_test_sends_minimal_request_and_reports_ok() -> None:
     sent: list[httpx.Request] = []
     provider = BraveKeyProvider(_http(_web(), sent))
     result = await provider.test_key(_KEY)
-    assert result.ok is True and result.message == "Clé valide."
+    assert result.ok is True and result.message == "API key is valid."
     assert provider.name == "brave" and provider.label == "Brave Search"
     params = sent[-1].url.params
     assert params["count"] == "1" and sent[-1].headers["X-Subscription-Token"] == _KEY
@@ -190,15 +190,15 @@ async def test_brave_key_test_sends_minimal_request_and_reports_ok() -> None:
 @pytest.mark.parametrize(
     ("status", "body", "expected"),
     [
-        (401, {}, "Clé refusée par Brave Search."),
-        (403, {}, "Clé refusée par Brave Search."),
+        (401, {}, "Brave Search rejected the API key."),
+        (403, {}, "Brave Search rejected the API key."),
         (
             422,
             {"error": {"code": "SUBSCRIPTION_TOKEN_INVALID", "detail": _KEY}},
-            "Clé refusée par Brave Search.",
+            "Brave Search rejected the API key.",
         ),
-        (429, {}, "Limite de requêtes atteinte chez Brave Search, réessaie plus tard."),
-        (500, {"error": {"detail": _KEY}}, "Brave Search a répondu par une erreur (500)."),
+        (429, {}, "Brave Search's request limit was reached. Try again later."),
+        (500, {"error": {"detail": _KEY}}, "Brave Search returned an error (500)."),
     ],
 )
 async def test_brave_key_test_reports_invalid_key(
@@ -215,9 +215,9 @@ async def test_brave_key_test_never_raises() -> None:
 
     result = await BraveKeyProvider(_http(boom)).test_key(_KEY)
     assert result.ok is False and _KEY not in result.message
-    assert result.message == "Impossible de joindre Brave Search. Vérifie ta connexion."
+    assert result.message == "Could not reach Brave Search. Check your connection."
     invalid = await BraveKeyProvider(_http(_web())).test_key("clé-é")
-    assert invalid.ok is False and invalid.message == "La clé contient des caractères invalides."
+    assert invalid.ok is False and invalid.message == "The API key contains invalid characters."
 
 
 @pytest.mark.parametrize(

@@ -29,13 +29,13 @@ async def test_played_web_uses_client_sources(make_web_runner: MakeWeb, user_id:
         await web.runner.submit_step(user_id, sid, brief["step_id"], json.dumps(value))
 
     await answer("SearchPlan", {"queries": [{"text": "attention", "lang": "fr"}]})
-    with pytest.raises(AppError, match="Réponse invalide"):
+    with pytest.raises(AppError, match="Invalid reply"):
         await answer("SearchSources", {"sources": [{"url": "file:///tmp"}]})
     await answer("SearchSources", {"sources": [{"url": u, "title": "Doc"} for u in [URL_A, URL_B]]})
     for url in [URL_A, URL_B]:
         await answer("ReadSource", {"text": "Phrase du web.", "title": "Doc"}, contains=url)
     for _ in [URL_A, URL_B]:
-        await answer("SourceScore", json.loads(SCORE_82), contains="<<<CONTENU_NON_FIABLE")
+        await answer("SourceScore", json.loads(SCORE_82), contains="<<<UNTRUSTED_CONTENT")
     await wait_idle(web.runner, sid)
     row = await get_session(web.factory, user_id, sid)
     assert (row.status, row.cost_usd) == ("completed", 0)

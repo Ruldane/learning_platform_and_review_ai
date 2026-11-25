@@ -1,10 +1,10 @@
-"""Lien d'une fiche sans offre avec l'offre qui arrive plus tard (SPEC 6.3, D155). Une fiche saisie
-à la main ou en une phrase n'a pas d'offre ; quand January colle l'offre et qu'une version de CV
-est prête, l'adoption ne crée pas une seconde fiche pour le même poste : elle relie la fiche sans
-offre qui ressemble (même lien : certain ; même entreprise et intitulé proche : probable), jamais
-une fiche déjà liée à une autre offre ni une fiche confirmée « autre poste » (`matching.match`).
-Une offre qui ressemble à une autre fiche (déjà liée, ou « possible ») n'a pas de fiche créée :
-l'alerte de la page de l'offre reste le chemin."""
+"""Linking a record without a posting to the posting that arrives later (SPEC 6.3, D155). A record
+entered by hand or in one sentence has no posting; when January pastes the posting and a CV
+version is ready, adoption does not create a second record for the same position: it links the
+look-alike record without a posting (same link: certain; same company and close job title:
+probable), never a record already linked to another posting nor one confirmed as "another
+position" (`matching.match`). A posting that looks like another record (already linked, or
+"possible") gets no record: the alert on the posting's page remains the way."""
 
 from collections.abc import Sequence
 from datetime import date
@@ -22,30 +22,30 @@ LINKABLE = ("certain", "probable")
 def target_of(
     posting: JobPosting, rows: Sequence[Application], zone: ZoneInfo, today: date
 ) -> tuple[Application | None, bool]:
-    """`(fiche à relier, ressemble à une autre fiche)` : la fiche sans offre la plus ressemblante
-    de l'offre. Les hits certains (même lien) passent avant les probables : si seuls des fiches déjà
-    liées à une autre offre sont certaines, rien n'est relié, même si une fiche sans offre est
-    probable. Sinon `(None, True)` si une autre fiche ressemble (déjà liée, ou « possible »),
-    `(None, False)` si rien ne ressemble."""
+    """`(record to link, looks like another record)`: the record without a posting that best
+    matches the posting. Certain hits (same link) come before probable ones: if only records
+    already linked to another posting are certain, nothing is linked, even if a record without a
+    posting is probable. Otherwise `(None, True)` if another record looks alike (already linked,
+    or "possible"), `(None, False)` if nothing looks alike."""
     hits = [
         hit
         for hit in match(incoming_from_posting(posting), [view_of(r, zone) for r in rows], today)
         if hit.level != "info"
     ]
     by_id = {row.id: row for row in rows}
-    for level in LINKABLE:  # un hit certain décide seul : jamais un probable à sa place
+    for level in LINKABLE:  # a certain hit decides alone: never a probable one in its place
         group = [hit for hit in hits if hit.level == level]
         for hit in group:
             row = by_id[hit.application_id]
             if row.posting_id is None:
                 return row, True
         if group:
-            return None, True  # la même offre est déjà suivie par une fiche liée ailleurs
+            return None, True  # the same posting is already tracked by a record linked elsewhere
     return None, bool(hits)
 
 
 def link_posting(row: Application, posting: JobPosting) -> None:
-    """La fiche prend l'offre : son identifiant, le texte figé et le lien s'ils manquent."""
+    """The record takes the posting: its id, the frozen text and the link if missing."""
     row.posting_id = posting.id
     if not (row.posting_text or "").strip():
         row.posting_text = posting.text

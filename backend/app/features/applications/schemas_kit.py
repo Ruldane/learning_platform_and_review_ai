@@ -1,6 +1,5 @@
-"""Schémas du kit de candidature (SPEC 6.4, F16, D143) : les sept pièces d'une fiche, dans l'ordre
-fixe de `KIT_ORDER`. Une 422 nomme les champs, jamais le texte envoyé (une pièce est une donnée
-personnelle)."""
+"""Application kit schemas (SPEC 6.4, F16, D143): the seven pieces of a record, in the fixed order
+of `KIT_ORDER`. A 422 names the fields, never the text sent (a piece is personal data)."""
 
 from datetime import datetime
 from typing import Annotated
@@ -12,7 +11,7 @@ from app.db.models.applications import KitKind as KitKind
 from app.db.models.applications import KitStatus as KitStatus
 
 CONTENT_MAX = 20_000
-# `KIT_ORDER` : l'ordre fixe des pièces (F16), celui de la liste et des fichiers de l'archive.
+# `KIT_ORDER`: the fixed order of the pieces (F16), used by the list and the archive files.
 __all__ = [
     "KIT_ORDER",
     "KitItemOut",
@@ -26,8 +25,7 @@ __all__ = [
 
 
 class KitSourceOut(BaseModel):
-    """Une page lue pour le dossier de l'entreprise. `rank` : son numéro dans le texte (`[rank]`),
-    depuis 1."""
+    """A page read for the company file. `rank`: its number in the text (`[rank]`), from 1."""
 
     rank: int = Field(ge=1)
     url: str
@@ -35,11 +33,11 @@ class KitSourceOut(BaseModel):
 
 
 class KitItemOut(BaseModel):
-    """Une pièce. `id` : `artifact_id` de l'événement `artifact.ready` (vide tant que la pièce n'est
-    pas rangée, statut `pending`). `flags` : les termes que le profil ne dit pas (pièce « à
-    vérifier »). `salary_fields` : les réponses salariales laissées à January. `words` : le compte
-    des mots (le message pour `linkedin`, les deux relances ensemble pour `followups`). `error` :
-    le motif lisible d'une pièce en échec. `sources` : les pages du dossier (`company_brief`)."""
+    """A piece. `id`: `artifact_id` of the `artifact.ready` event (empty while the piece is not
+    stored, status `pending`). `flags`: the terms the profile does not state (piece "to check").
+    `salary_fields`: the salary answers left to January. `words`: the word count (the message for
+    `linkedin`, both follow-ups together for `followups`). `error`: the readable reason of a
+    failed piece. `sources`: the company file's pages (`company_brief`)."""
 
     id: str | None
     kind: KitKind
@@ -55,8 +53,8 @@ class KitItemOut(BaseModel):
 
 
 class KitOut(BaseModel):
-    """Le kit d'une fiche : toujours sept pièces, `pending` pour celles pas encore rangées.
-    `session_id` : la session ouverte, sinon la dernière ; `running` : une session est ouverte."""
+    """A record's kit: always seven pieces, `pending` for those not stored yet. `session_id`: the
+    open session, otherwise the last one; `running`: a session is open."""
 
     session_id: str | None
     running: bool
@@ -68,6 +66,6 @@ class KitStartOut(BaseModel):
 
 
 class KitPatch(BaseModel):
-    """Le texte de January pour la pièce (vide permis : la pièce redevient « à vérifier »)."""
+    """January's text for the piece (empty allowed: the piece goes back to "to check")."""
 
     content: Annotated[str, Field(max_length=CONTENT_MAX)]

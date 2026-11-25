@@ -1,7 +1,7 @@
-"""API du comité de recrutement simulé (SPEC F19, D147) : lancement du parcours `hiring_committee`
-sur une version de CV prête, liste et détail (votes, verdict, objections, changements, avant et
-après). Toutes au nom de l'utilisatrice courante ; une 422 nomme les champs, sans jamais citer
-l'entrée. L'écran dit qu'il s'agit d'une simulation, jamais d'une prédiction."""
+"""Simulated hiring committee API (SPEC F19, D147): starts the `hiring_committee` flow on a ready
+CV version, list and detail (votes, verdict, objections, changes, before and after). All on
+behalf of the current user; a 422 names the fields, never quoting the input. The screen says it
+is a simulation, never a prediction."""
 
 from typing import Annotated, Any
 
@@ -23,9 +23,9 @@ _START: dict[int | str, dict[str, Any]] = {
     404: {"description": "`version_not_found`, `posting_not_found`"},
     409: {
         "description": (
-            "`version_not_ready` (le PDF de la version n'est pas rendu), "
-            "`committee_in_progress` (`details.run_id` : l'exécution ouverte de l'offre), "
-            "`profile_required` (aucun profil maître validé)"
+            "`version_not_ready` (the version's PDF is not rendered), "
+            "`committee_in_progress` (`details.run_id`: the posting's open run), "
+            "`profile_required` (no validated master profile)"
         )
     },
     503: {"description": "`engine_unavailable`"},
@@ -36,8 +36,8 @@ _START: dict[int | str, dict[str, Any]] = {
 async def post_committee(
     body: CommitteeIn, current: CurrentUserDep, rt: ApplicationsDep
 ) -> CommitteeStartOut:
-    """Réunit le comité sur la version de CV : impressions, deux tours de débat, votes et
-    synthèse arrivent par les événements de la session ; le résultat est rangé à la fin."""
+    """Convenes the committee on the CV version: impressions, two debate rounds, votes and
+    synthesis arrive through the session events; the result is stored at the end."""
     return await start_committee(rt, current.id, body)
 
 
@@ -47,8 +47,8 @@ async def get_committees(
     rt: ApplicationsDep,
     posting_id: Annotated[str | None, Query(min_length=1, max_length=36)] = None,
 ) -> list[CommitteeRunOut]:
-    """Les exécutions (d'une offre), la plus récente d'abord, chacune avec son avant et après ;
-    une exécution dont la session s'est terminée sans résultat passe en `failed`."""
+    """The runs (of a posting), most recent first, each with its before and after; a run whose
+    session ended without a result turns `failed`."""
     return await list_runs(rt, current.id, posting_id)
 
 

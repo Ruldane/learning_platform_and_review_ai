@@ -1,9 +1,9 @@
-"""Le quiz d'un module écrit en direct (phase 10, 10.W) : January ou Claude (par le MCP) fournit les
-questions, l'application les range comme le fait le port de l'Examinateur (`save_quiz`), sans agent,
-sans session et sans appel au modèle. Le quiz est prêt dès son écriture.
+"""A module quiz written directly (phase 10, 10.W): January or Claude (through the MCP)
+provides the questions, the application stores them as the Examiner's port does (`save_quiz`),
+with no agent, no session and no model call. The quiz is ready as soon as it is written.
 
-Un quiz par module (index unique). Tant qu'une tentative existe, ses questions ne bougent plus (les
-réponses et les notes s'y réfèrent). Sous le verrou du module, comme le lancement d'un quiz."""
+One quiz per module (unique index). Once an attempt exists, its questions no longer change (the
+answers and grades refer to them). Under the module lock, like launching a quiz."""
 
 import logging
 from typing import Any
@@ -28,46 +28,48 @@ from app.features.quiz.schemas import (
 from app.features.quiz.service.completeness import quiz_complete
 from app.features.quiz.service.quizzes import get_quiz, owned_quiz
 from app.features.quiz.service.runtime import QuizRuntime
-from app.features.quiz.service.status import DRAFT_REASON, open_sessions
+from app.features.quiz.service.status import DRAFT_REASON, is_draft_reason, open_sessions
 
 logger = logging.getLogger(__name__)
 
 
 def quiz_exists() -> AppError:
     return AppError(
-        "quiz_exists", "Ce module a déjà son quiz : ajoute ou retouche ses questions.", 409
+        "quiz_exists", "This module already has its quiz: add or edit its questions.", 409
     )
 
 
 def quiz_generating() -> AppError:
     return AppError(
-        "quiz_generating", "Une session écrit déjà le quiz de ce module : attends sa fin.", 409
+        "quiz_generating",
+        "A session is already writing this module's quiz: wait for it to finish.",
+        409,
     )
 
 
 def quiz_has_attempts() -> AppError:
     return AppError(
         "quiz_has_attempts",
-        "Ce quiz a déjà des tentatives : ses questions ne changent plus.",
+        "This quiz already has attempts: its questions can no longer change.",
         409,
     )
 
 
 def quiz_full() -> AppError:
-    return AppError("quiz_full", f"Un quiz compte {MAX_QUESTIONS} questions au plus.", 409)
+    return AppError("quiz_full", f"A quiz has at most {MAX_QUESTIONS} questions.", 409)
 
 
 def question_not_found() -> AppError:
-    return AppError("question_not_found", "Question introuvable.", 404)
+    return AppError("question_not_found", "Question not found.", 404)
 
 
 def module_skipped() -> AppError:
-    return AppError("module_skipped", "Ce module est sauté : il n'a pas de quiz.", 409)
+    return AppError("module_skipped", "This module is skipped: it has no quiz.", 409)
 
 
 def _skill(name: str, module: Module) -> str:
-    """La compétence d'une question : celle du module de même nom normalisé, sinon la première du
-    module (une compétence hors du module n'entre jamais au graphe)."""
+    """A question's skill: the module skill with the same normalized name, otherwise the
+    module's first one (a skill outside the module never enters the graph)."""
     skills = [str(s) for s in module.skills]
     by_norm = {normalize_skill_name(s): s for s in skills}
     return by_norm.get(normalize_skill_name(name)) or (skills[0] if skills else name)
@@ -93,16 +95,16 @@ async def _module(db: AsyncSession, user_id: str, program_id: str, module_id: st
 
 
 async def _busy(db: AsyncSession, user_id: str, quiz: Quiz) -> bool:
-    """Un agent écrit le quiz : sa session est encore ouverte (sous le verrou du module, un quiz
-    `generating` sans session n'est plus en cours de lancement)."""
+    """An agent is writing the quiz: its session is still open (under the module lock, a
+    `generating` quiz with no session is no longer being launched)."""
     if quiz.status != "generating" or quiz.session_id is None:
         return False
     return quiz.session_id in await open_sessions(db, user_id, quiz.id)
 
 
 async def create_quiz(rt: QuizRuntime, user_id: str, body: QuizWriteIn) -> QuizOut:
-    """Voir le module : crée le quiz du module, ou remplit celui que la préparation avait laissé en
-    échec ; 404 `module_not_found`, 409 `quiz_exists`, `quiz_generating` ou `module_skipped`."""
+    """See the module: creates the module quiz, or fills the one preparation left failed;
+    404 `module_not_found`, 409 `quiz_exists`, `quiz_generating` or `module_skipped`."""
     async with rt.session_factory() as db:
         program_id = await program_of_module(db, user_id, body.module_id)
     async with rt.quiz_lock(user_id, body.module_id), rt.session_factory() as db:
@@ -112,7 +114,7 @@ async def create_quiz(rt: QuizRuntime, user_id: str, body: QuizWriteIn) -> QuizO
         repo = QuizRepository(db, user_id)
         quiz = await repo.by_module(body.module_id)
         if quiz is not None:
-            if quiz.status == "ready" or quiz.failure_reason == DRAFT_REASON:
+            if quiz.status == "ready" or is_draft_reason(quiz.failure_reason):
                 raise quiz_exists()
             if await _busy(db, user_id, quiz):
                 raise quiz_generating()
@@ -125,13 +127,13 @@ async def create_quiz(rt: QuizRuntime, user_id: str, body: QuizWriteIn) -> QuizO
         _settle(quiz, await questions.for_quiz(quiz.id))
         await db.commit()
         quiz_id = quiz.id
-    logger.info("Quiz écrit en direct : module %s, quiz %s", body.module_id, quiz_id)
+    logger.info("Quiz written directly: module %s, quiz %s", body.module_id, quiz_id)
     async with rt.session_factory() as db:
         return await get_quiz(db, user_id, quiz_id)
 
 
 def _settle(quiz: Quiz, questions: list[QuizQuestion]) -> None:
-    """Prêt aux bornes de l'Examinateur, sinon « en préparation » (voir `completeness`)."""
+    """Ready within the Examiner's bounds, otherwise "being prepared" (see `completeness`)."""
     if quiz_complete(questions):
         quiz.status, quiz.failure_reason = "ready", None
     else:
@@ -139,17 +141,17 @@ def _settle(quiz: Quiz, questions: list[QuizQuestion]) -> None:
 
 
 async def _editable(db: AsyncSession, user_id: str, quiz_id: str) -> Quiz:
-    """Le quiz de l'utilisatrice dont les questions peuvent changer : prêt et sans tentative."""
+    """The user's quiz whose questions may change: ready and without attempts."""
     quiz = await owned_quiz(db, user_id, quiz_id)
-    if quiz.status != "ready" and quiz.failure_reason != DRAFT_REASON:
-        raise AppError("quiz_not_ready", "Ce quiz n'est pas prêt : écris-le d'abord.", 409)
+    if quiz.status != "ready" and not is_draft_reason(quiz.failure_reason):
+        raise AppError("quiz_not_ready", "This quiz is not ready: write it first.", 409)
     if await AttemptRepository(db, user_id).for_quizzes([quiz_id]):
         raise quiz_has_attempts()
     return quiz
 
 
 async def add_question(rt: QuizRuntime, user_id: str, quiz_id: str, body: QuestionIn) -> QuizOut:
-    """Une question de plus à la fin d'un quiz prêt sans tentative (409 `quiz_full` à 12)."""
+    """One more question at the end of a ready quiz without attempts (409 `quiz_full` at 12)."""
     async with rt.session_factory() as db:
         module_id = (await owned_quiz(db, user_id, quiz_id)).module_id
     async with rt.quiz_lock(user_id, module_id), rt.session_factory() as db:
@@ -166,13 +168,13 @@ async def add_question(rt: QuizRuntime, user_id: str, quiz_id: str, body: Questi
         )
         _settle(quiz, await questions.for_quiz(quiz_id))
         await db.commit()
-    logger.info("Question ajoutée en direct : quiz %s", quiz_id)
+    logger.info("Question added directly: quiz %s", quiz_id)
     async with rt.session_factory() as db:
         return await get_quiz(db, user_id, quiz_id)
 
 
 def _merged(question: QuizQuestion, patch: QuestionPatch) -> QuestionIn:
-    """La question retouchée, revalidée en entier ; 422 `fields` sinon (jamais la valeur)."""
+    """The edited question, revalidated in full; 422 `fields` otherwise (never the value)."""
     current = {
         "type": question.type,
         "prompt": question.prompt,
@@ -190,7 +192,7 @@ def _merged(question: QuizQuestion, patch: QuestionPatch) -> QuestionIn:
         fields = sorted(patch.model_dump(exclude_none=True)) or ["body"]
         raise AppError(
             "validation_error",
-            "Requête invalide : vérifie les champs signalés.",
+            "Invalid request: check the reported fields.",
             422,
             {"fields": fields},
         ) from None
@@ -199,7 +201,7 @@ def _merged(question: QuizQuestion, patch: QuestionPatch) -> QuestionIn:
 async def patch_question(
     rt: QuizRuntime, user_id: str, quiz_id: str, question_id: str, patch: QuestionPatch
 ) -> QuizOut:
-    """Retouche une question d'un quiz prêt sans tentative (404 `question_not_found`)."""
+    """Edits a question of a ready quiz without attempts (404 `question_not_found`)."""
     async with rt.session_factory() as db:
         module_id = (await owned_quiz(db, user_id, quiz_id)).module_id
     async with rt.quiz_lock(user_id, module_id), rt.session_factory() as db:
@@ -213,17 +215,17 @@ async def patch_question(
         await db.flush()
         _settle(quiz, await QuestionRepository(db, user_id).for_quiz(quiz_id))
         await db.commit()
-    logger.info("Question retouchée en direct : quiz %s, question %s", quiz_id, question_id)
+    logger.info("Question edited directly: quiz %s, question %s", quiz_id, question_id)
     async with rt.session_factory() as db:
         return await get_quiz(db, user_id, quiz_id)
 
 
 async def patch_quiz(rt: QuizRuntime, user_id: str, quiz_id: str, patch: QuizPatch) -> QuizOut:
-    """Change le titre d'un quiz prêt."""
+    """Changes the title of a ready quiz."""
     async with rt.session_factory() as db:
         quiz = await owned_quiz(db, user_id, quiz_id)
-        if quiz.status != "ready" and quiz.failure_reason != DRAFT_REASON:
-            raise AppError("quiz_not_ready", "Ce quiz n'est pas prêt : écris-le d'abord.", 409)
+        if quiz.status != "ready" and not is_draft_reason(quiz.failure_reason):
+            raise AppError("quiz_not_ready", "This quiz is not ready: write it first.", 409)
         quiz.title = patch.title
         await db.commit()
     async with rt.session_factory() as db:

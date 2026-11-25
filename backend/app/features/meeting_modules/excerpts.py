@@ -3,13 +3,16 @@ import re
 from app.features.meeting_modules.schemas import ExcerptKind, MeetingExcerpt, MeetingStudyStep
 
 _MARKER = re.compile(r"^\s*(?:[-*•]|\d+[.)])\s+")
+# French labels and sentences still match: transcripts written in French stay supported.
 _LABEL = re.compile(
-    r"^(décision|decision|choix|à étudier|a etudier|sujet|question|action)\s*:\s*",
+    r"^(décision|decision|choix|choice|à étudier|a etudier|to study|sujet|topic|subject|question"
+    r"|action)\s*:\s*",
     re.IGNORECASE,
 )
-_DECISIONS = frozenset({"décision", "decision", "choix"})
+_DECISIONS = frozenset({"décision", "decision", "choix", "choice"})
 _DECISION_SENTENCE = re.compile(
-    r"^(?:nous\s+avons|on\s+a|il\s+a\s+été|j[’']ai|l[’']équipe\s+a)\s+décidé\b",
+    r"^(?:(?:nous\s+avons|on\s+a|il\s+a\s+été|j[’']ai|l[’']équipe\s+a)\s+décidé"
+    r"|(?:we|i|the\s+team)\s+(?:have\s+|had\s+)?decided)\b",
     re.IGNORECASE,
 )
 
@@ -44,13 +47,15 @@ def _study_step(item: MeetingExcerpt) -> MeetingStudyStep:
     if item.kind == "decision":
         return MeetingStudyStep(
             source_line=item.line,
-            instruction="Reformule la décision et compare-la à une solution de ton choix.",
-            criterion="Donne un avantage, un inconvénient et le contexte où ton choix changerait.",
+            instruction="Restate the decision and compare it with a solution of your choice.",
+            criterion=(
+                "Give one advantage, one drawback and the context where your choice would change."
+            ),
             minutes=8,
         )
     return MeetingStudyStep(
         source_line=item.line,
-        instruction="Trouve un exemple concret de ce sujet et vérifie-le sur un cas comparable.",
-        criterion="Nomme la donnée qui vérifie ton exemple et explique ton résultat.",
+        instruction="Find a concrete example of this topic and check it on a comparable case.",
+        criterion="Name the data that checks your example and explain your result.",
         minutes=10,
     )

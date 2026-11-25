@@ -51,7 +51,7 @@ async def test_rubrics_already_stored_are_skipped(
     assert run.models.calls == [] and brief_web.searches == [] and brief_web.reads == []
     assert brief_store.resource_saves == 0 and brief_store.advice_saves == 0
     [done] = await run.events("run.completed")
-    assert done["summary"] == "Brief du jour prêt."
+    assert done["summary"] == "Your daily brief is ready."
 
 
 async def test_replay_with_only_the_advice_missing(
@@ -76,7 +76,7 @@ async def test_brief_graph_never_logs_texts(
     run = await brief_runner(brief_models([pick(2, why)]))
     await run.wait_status("completed")
     logged = "\n".join(r.getMessage() for r in caplog.records if r.name.startswith("app"))
-    assert "Ressource du brief rangée" in logged and "Conseil du brief rangé" in logged
+    assert "Brief resource stored" in logged and "Brief advice stored" in logged
     secrets = [TOPIC, BLOCK, why, "exemple.org", "https://", "Guide LangGraph", "Extrait du guide"]
     secrets += ["Commence par ton bloc", "tes 12 fiches", FACTS.block_title or ""]
     for secret in secrets:

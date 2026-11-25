@@ -9,7 +9,7 @@ test("Ton livre prépare une édition et télécharge le PDF et l’EPUB", async
   const seeded = await request.post(`${api}/__e2e/book/seed`);
   expect(seeded.ok()).toBeTruthy();
   const { program_id: programId } = (await seeded.json()) as { program_id: string };
-  await page.goto("/apprendre/livre");
+  await page.goto("/learn/book");
   await page.getByRole("combobox", { name: "Programme" }).selectOption(programId);
 
   const prepare = page.getByRole("button", { name: "Préparer le livre" });

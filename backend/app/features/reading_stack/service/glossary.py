@@ -1,4 +1,4 @@
-"""Rapproche le texte de lecture et les notions des programmes validés."""
+"""Match the reading text with the concepts of validated programs."""
 
 import re
 from dataclasses import dataclass

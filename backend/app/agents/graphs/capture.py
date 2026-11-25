@@ -68,7 +68,7 @@ class CaptureInput(BaseModel):
         """Un seul des trois, non vide (422 `invalid_input` sinon)."""
         given = [v for v in (self.url, self.text, self.document_id) if v is not None and v.strip()]
         if len(given) != 1:
-            raise ValueError("Une capture demande une seule source : lien, texte ou document.")
+            raise ValueError("Provide a single link, text entry, or document for the capture.")
         return self
 
 

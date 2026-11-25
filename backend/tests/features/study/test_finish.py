@@ -89,7 +89,7 @@ async def test_finish_ticks_block_tasks_and_raises_en_cours_not_valide(
 ) -> None:
     async with seeded.rt.session_factory() as db:
         proof = evidence("quiz", "q1", "Quiz réussi", datetime(2026, 11, 10, tzinfo=UTC))
-        await SkillsService(db, seeded.user_id).raise_levels(["pandas"], "valide", proof)
+        await SkillsService(db, seeded.user_id).raise_levels(["pandas"], "validated", proof)
         await db.commit()
     study_id = await _open(client, seeded)
     done = await AgentStudyStore(seeded.rt).finish(
@@ -98,12 +98,15 @@ async def test_finish_ticks_block_tasks_and_raises_en_cours_not_valide(
     assert done.minutes == 45
     assert done.tasks_done == ["Lire le chapitre 1", "Pratiquer les bases", "Lire le chapitre 2"]
     assert await _done_titles(seeded) == set(done.tasks_done)  # ni le quiz ni la suite
-    assert sorted(done.skills) == [("Index", "en_cours"), ("Séries", "en_cours")]
+    assert sorted(done.skills) == [("Index", "in_progress"), ("Séries", "in_progress")]
     async with seeded.rt.session_factory() as db:
         levels = await SkillsService(db, seeded.user_id).levels_of(["pandas", "Index"])
         cards = (await db.execute(select(Flashcard))).scalars().all()
         [entry] = (await db.execute(select(JournalEntry))).scalars().all()
-    assert dict(levels) == {"pandas": "valide", "Index": "en_cours"}  # jamais baissé ni validé
+    assert dict(levels) == {
+        "pandas": "validated",
+        "Index": "in_progress",
+    }  # jamais baissé ni validé
     assert sorted(c.front for c in cards) == [
         "Calcule la softmax.",
         "Pourquoi la racine ?",
@@ -113,7 +116,9 @@ async def test_finish_ticks_block_tasks_and_raises_en_cours_not_valide(
         ("study", study_id, seeded.modules[0])
     }
     assert entry.kind == "study_session" and entry.ref_key == f"study:{study_id}"
-    assert entry.text == "Session « Module Bases » : 45 min, 3 tâches cochées, 3 fiches."
+    assert entry.text == (
+        "Studied Module Bases for 45 min. 3 tasks completed, 3 flashcards created."
+    )
     assert entry.study_session_id == study_id and entry.session_id is not None
 
 
@@ -201,7 +206,7 @@ async def test_context_drops_an_exercise_without_solution(
     async with seeded.rt.session_factory() as db:
         lesson = await db.get(Lesson, seeded.lessons[0])
         assert lesson is not None
-        start = lesson.markdown.index("## Corrigé de l'exercice")
+        start = lesson.markdown.index("## Solution")
         end = lesson.markdown.index("## Sources")
         lesson.markdown = lesson.markdown[:start] + lesson.markdown[end:]
         await db.commit()
@@ -218,18 +223,18 @@ async def test_logs_carry_ids_only(
     outcome = replace(full_outcome(), summary="Bilan très personnel")
     await AgentStudyStore(seeded.rt).finish(seeded.user_id, "s-tutor", study_id, outcome)
     text = "\n".join(r.getMessage() for r in caplog.records)
-    assert study_id in text and "Session guidée rangée" in text
+    assert study_id in text and "Guided session stored" in text
     for secret in ("softmax", "Bilan très personnel", "Module Bases", "Lire le chapitre", "pandas"):
         assert secret not in text
 
 
-EN_COURS = {"Index": "en_cours", "Séries": "en_cours", "pandas": "en_cours"}
+EN_COURS = {"Index": "in_progress", "Séries": "in_progress", "pandas": "in_progress"}
 NO_TRACE = StudyOutcome(outcomes=[], exercise_done=False, ended_early=True, summary="")
 
 
 async def _acquis(s: Seeded) -> dict[str, str]:
     async with s.rt.session_factory() as db:
-        items = (await db.execute(select(MemoryItem).where(MemoryItem.kind == "acquis"))).scalars()
+        items = (await db.execute(select(MemoryItem).where(MemoryItem.kind == "skill"))).scalars()
         return {item.title: (item.meta or {}).get("level", "") for item in items}
 
 
@@ -282,4 +287,4 @@ async def test_time_alone_or_one_answer_alone_raises_skills(
     answered = await _open(client, seeded, worked=None, lesson_id=seeded.lessons[1])
     one = replace(NO_TRACE, outcomes=full_outcome().outcomes[:1])
     other = await AgentStudyStore(seeded.rt).finish(seeded.user_id, "s-tutor", answered, one)
-    assert (other.minutes, other.skills) == (0, [("numpy", "en_cours")])
+    assert (other.minutes, other.skills) == (0, [("numpy", "in_progress")])

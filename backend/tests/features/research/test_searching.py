@@ -95,7 +95,7 @@ async def test_no_provider_left_is_readable(
     searxng_fake.error = SearchUnavailable()
     with pytest.raises(NoSearchProvider) as error:
         await search(runtime, UID, "s1", "rag")
-    assert error.value.status_code == 503 and "moteur" in error.value.message
+    assert error.value.status_code == 503 and "search engine" in error.value.message
     assert error.value.code == "search_unavailable"
     assert await count_queries(db_session_factory, "s1") == 0  # rien à rejouer
 
@@ -138,7 +138,7 @@ async def test_query_quota_stops_at_setting(
     with pytest.raises(WebQuotaReached) as error:
         await search(runtime, UID, "s1", "trois")
     assert (error.value.code, error.value.status_code) == (QUOTA_CODE, 429)
-    assert error.value.message == "Plafond de 2 requêtes atteint pour cette session."
+    assert error.value.message == "Limit of 2 queries reached for this session."
     assert len(searxng_fake.calls) == 2
     await search(runtime, UID, "s2", "trois")  # le plafond est celui d'une session
 

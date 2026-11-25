@@ -1,9 +1,9 @@
 import { t } from "@/shared/i18n/t";
 import type { ArchitectureMeasures, ComparisonView } from "../viewTypes";
 
-const number = new Intl.NumberFormat("fr-FR");
-const percentage = new Intl.NumberFormat("fr-FR", { style: "percent", maximumFractionDigits: 2 });
-const euros = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" });
+const number = new Intl.NumberFormat("en-GB");
+const percentage = new Intl.NumberFormat("en-GB", { style: "percent", maximumFractionDigits: 2 });
+const euros = new Intl.NumberFormat("en-GB", { style: "currency", currency: "EUR" });
 const ARCHITECTURES = [
   ["first", "decisionLab.architectureA"],
   ["second", "decisionLab.architectureB"],

@@ -12,8 +12,8 @@ describe("authManifest", () => {
     expect(authManifest.routes).toEqual([]);
     expect(authManifest.nav).toBeUndefined();
     expect(authManifest.publicRoutes?.map((route) => route.path)).toEqual([
-      "/connexion",
-      "/connexion/reprise",
+      "/login",
+      "/login/claim",
     ]);
   });
 });

@@ -97,7 +97,7 @@ async def test_page_quota_stops_at_setting(
     with pytest.raises(WebQuotaReached) as error:
         await read(runtime, UID, "s1", "https://ex.org/3")
     assert (error.value.code, error.value.status_code) == (QUOTA_CODE, 429)
-    assert error.value.message == "Plafond de 2 pages lues atteint pour cette session."
+    assert error.value.message == "Limit of 2 pages read reached for this session."
     assert len(fake_web.calls) == 2
     await read(runtime, UID, "s1", "https://ex.org/1")  # déjà lue : rendue, pas refusée
 

@@ -157,7 +157,7 @@ def check_skills(step: str, graph: dict[str, Any], names: list[str]) -> int:
     if not names:
         raise CheckFailed(step, "Module sans compétence : rien à prouver.")
     nodes = {norm_skill(node["name"]): node for node in graph["nodes"]}
-    short = [name for name in names if (nodes.get(norm_skill(name)) or {}).get("level") != "prouve"]
+    short = [name for name in names if (nodes.get(norm_skill(name)) or {}).get("level") != "proven"]
     if short:
         raise CheckFailed(step, f"{len(short)} compétence(s) sur {len(names)} pas à « prouve ».")
     return len(names)

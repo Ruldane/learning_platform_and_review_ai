@@ -176,7 +176,7 @@ class GapStore(Protocol):
 
 
 def gap_unavailable() -> AppError:
-    return AppError("gap_unavailable", "L'analyse d'offre n'est pas branchée sur ce moteur.", 503)
+    return AppError("gap_unavailable", "Posting analysis is unavailable in this runtime.", 503)
 
 
 class _NoGap:

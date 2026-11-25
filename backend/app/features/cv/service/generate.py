@@ -1,16 +1,16 @@
-"""Rendu d'une version du CV ciblé (SPEC 5.3 étapes 8 et 9 ; D130), appelé par le port de la
-revue (`AgentCvReviewStore.render_version`) depuis la sortie du parcours `cv_review`.
+"""Rendering a targeted CV version (SPEC 5.3 steps 8 and 9; D130), called by the review port
+(`AgentCvReviewStore.render_version`) from the exit of the `cv_review` flow.
 
-Le contenu a été composé et figé au clic sur « Générer » (`cv_versions.content`, décisions
-comprises) ; ici, il est seulement rendu avec le gabarit figé. Si le PDF a plus de pages que
-l'original et que January n'a pas autorisé de page de plus, les trois paliers de resserrement
-(`TIGHTEN_STEPS`) s'appliquent un à un, chacun re-rendu ; encore trop long : `pages_exceeded`
-(January choisit : retirer une ligne ou autoriser une page de plus). Le PDF prêt et les images de
-ses pages sont rangés (`cv_versions`), avec les indicateurs après : couverture des lignes adossées
-à un fait et contrôles ATS du PDF rendu.
+The content was composed and frozen at the "Generate" click (`cv_versions.content`, decisions
+included); here, it is only rendered with the frozen template. If the PDF has more pages than
+the original and January has not allowed one more page, the three tightening tiers
+(`TIGHTEN_STEPS`) apply one by one, each re-rendered; still too long: `pages_exceeded`
+(January chooses: remove a line or allow one more page). The ready PDF and its page images are
+stored (`cv_versions`), with the after indicators: coverage of the lines backed by a fact and
+ATS checks of the rendered PDF.
 
-Idempotent : une version déjà rendue (`ready`, `pages_exceeded`, `failed`) est relue, jamais
-rendue deux fois. Journaux : version, pages, durée ; jamais le nom du fichier (17.2)."""
+Idempotent: an already rendered version (`ready`, `pages_exceeded`, `failed`) is re-read, never
+rendered twice. Logs: version, pages, duration; never the file name (17.2)."""
 
 import logging
 import time
@@ -44,15 +44,15 @@ from app.providers.pdf.base import PdfLayout, PdfUnreadable, RenderFailed
 
 logger = logging.getLogger(__name__)
 
-RENDER_FAILED = "Le PDF n'a pas pu être généré : réessaie dans un instant."
-NO_TEMPLATE = "Le modèle de CV de cette revue n'est plus lisible : relance une revue."
+RENDER_FAILED = "The PDF could not be generated. Try again in a moment."
+NO_TEMPLATE = "The CV template could not be read. Start a new review."
 
 
 @dataclass(frozen=True)
 class Rendered:
     pdf: bytes
     layout: PdfLayout
-    tightened: int  # paliers de resserrement appliqués
+    tightened: int  # tightening tiers applied
 
 
 def outcome(row: CvVersion) -> VersionOutcome:
@@ -68,7 +68,7 @@ def outcome(row: CvVersion) -> VersionOutcome:
 async def _fonts(
     rt: CvRuntime, user_id: str, template: CvTemplate, spec: TemplateSpec
 ) -> list[FontFile]:
-    """Les polices rangées du gabarit (résolues pendant la capture) ; aucune sinon."""
+    """The template's stored fonts (resolved during the capture); none otherwise."""
     stored = [StoredFont.from_json(f) for f in (template.prepared or {}).get("font_files", [])]
     return await load_files(rt, user_id, stored, {spec.fonts.body, spec.fonts.heading})
 
@@ -90,8 +90,8 @@ async def render_fitting(
     allow_extra: bool,
     min_body_pt: float,
 ) -> Rendered:
-    """Rendu, puis paliers de resserrement tant que le PDF dépasse `original` pages (sauf
-    `allow_extra`) ; rend le dernier rendu."""
+    """Render, then tightening tiers as long as the PDF exceeds `original` pages (unless
+    `allow_extra`); returns the last render."""
     spec = TemplateSpec.model_validate(template.spec)
     fonts = await _fonts(rt, user_id, template, spec)
     pdf, layout = await _once(rt, spec, content, fonts)
@@ -108,7 +108,7 @@ async def render_fitting(
 async def _store(
     rt: CvRuntime, user_id: str, row: CvVersion, done: Rendered, analysis: PostingAnalysis | None
 ) -> None:
-    """PDF, images des pages et indicateurs après, sur la ligne relue (encore `rendering`)."""
+    """PDF, page images and after indicators, on the re-read row (still `rendering`)."""
     content = CvContent.model_validate(row.content)
     keys = [
         await rt.storage.save(user_id, VERSION_CATEGORY, page.image_png, ".png")
@@ -124,7 +124,7 @@ async def _store(
 
 
 async def _min_body(db: AsyncSession, user_id: str, review_id: str) -> float:
-    """Plancher du corps (preflight G20) : `MIN_BODY_PT` si l'original passait `font_sizes`."""
+    """Body floor (preflight G20): `MIN_BODY_PT` if the original passed `font_sizes`."""
     review = await ReviewRepository(db, user_id).get(review_id)
     checks = ((review.before if review else None) or {}).get("checks", [])
     passed = any(c.get("id") == "font_sizes" and c.get("passed") for c in checks)
@@ -149,7 +149,7 @@ async def _render(rt: CvRuntime, db: AsyncSession, user_id: str, row: CvVersion)
 async def render_version(
     rt: CvRuntime, db: AsyncSession, user_id: str, version_id: str
 ) -> VersionOutcome:
-    """Voir l'en-tête du module ; 404 `version_not_found` pour la version d'une autre."""
+    """See the module header; 404 `version_not_found` for another user's version."""
     repo = VersionRepository(db, user_id)
     row = await repo.get_fresh(version_id)
     if row is None:
@@ -166,7 +166,7 @@ async def render_version(
     fresh = await repo.get_fresh(version_id)
     if fresh is None:
         raise version_not_found()
-    if fresh.status != "rendering":  # rendue entre-temps : la première écrite gagne
+    if fresh.status != "rendering":  # rendered meanwhile: the first one written wins
         return outcome(fresh)
     if done is None:
         fresh.status, fresh.failure_reason = "failed", RENDER_FAILED
@@ -178,7 +178,7 @@ async def render_version(
             await _store(rt, user_id, fresh, done, analysis)
     await db.commit()
     logger.info(
-        "Version du CV : version %s, statut %s, %s page(s) pour %d, %s palier(s), %.1f s%s",
+        "CV version: version %s, status %s, %s page(s) for %d, %s tier(s), %.1f s%s",
         version_id,
         fresh.status,
         fresh.page_count,

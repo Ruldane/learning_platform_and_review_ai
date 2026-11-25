@@ -206,7 +206,7 @@ async def test_calls_limit_out_of_bounds_is_422_without_echo(
     assert r.json() == {
         "error": {
             "code": "validation_error",
-            "message": "Requête invalide : vérifie les champs signalés.",
+            "message": "Invalid request. Check the highlighted fields.",
             "details": {"fields": ["limit"]},
         }
     }
@@ -237,7 +237,7 @@ async def test_bad_cursor_is_422_without_echo(client: httpx.AsyncClient, cursor:
     assert r.json() == {
         "error": {
             "code": "validation_error",
-            "message": "Requête invalide : vérifie les champs signalés.",
+            "message": "Invalid request: check the reported fields.",
             "details": {"fields": ["before"]},
         }
     }

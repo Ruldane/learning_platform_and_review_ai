@@ -22,12 +22,16 @@ describe("DocumentList", () => {
         onMarkLearned={vi.fn()}
       />,
     );
-    expect(screen.getAllByRole("button", { name: "Déjà appris" })).toHaveLength(1);
-    expect(within(rowOf("indexe.pdf")).getByRole("button", { name: "Déjà appris" })).toBeVisible();
-    expect(within(rowOf("appris.pdf")).getByText("Marqué déjà appris")).toBeInTheDocument();
-    expect(within(rowOf("indexe.pdf")).queryByText("Marqué déjà appris")).not.toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "Relancer" })).toHaveLength(1);
-    expect(within(rowOf("appris.pdf")).getByRole("button", { name: "Relancer" })).toBeEnabled();
+    expect(screen.getAllByRole("button", { name: "Already learned" })).toHaveLength(1);
+    expect(
+      within(rowOf("indexe.pdf")).getByRole("button", { name: "Already learned" }),
+    ).toBeVisible();
+    expect(within(rowOf("appris.pdf")).getByText("Marked as already learned")).toBeInTheDocument();
+    expect(
+      within(rowOf("indexe.pdf")).queryByText("Marked as already learned"),
+    ).not.toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Retry" })).toHaveLength(1);
+    expect(within(rowOf("appris.pdf")).getByRole("button", { name: "Retry" })).toBeEnabled();
   });
 
   it("disables Relancer while the Archiviste runs on that document", () => {
@@ -38,8 +42,8 @@ describe("DocumentList", () => {
         onMarkLearned={vi.fn()}
       />,
     );
-    expect(screen.queryByRole("button", { name: "Relancer" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Déjà appris" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Already learned" })).toBeDisabled();
   });
 
   it("calls back with the document id", async () => {
@@ -52,7 +56,7 @@ describe("DocumentList", () => {
         onMarkLearned={onMarkLearned}
       />,
     );
-    await user.click(screen.getByRole("button", { name: "Déjà appris" }));
+    await user.click(screen.getByRole("button", { name: "Already learned" }));
     expect(onMarkLearned).toHaveBeenCalledWith("a");
   });
 
@@ -64,7 +68,7 @@ describe("DocumentList", () => {
         onMarkLearned={vi.fn()}
       />,
     );
-    const [first, second] = screen.getAllByRole("button", { name: "Déjà appris" });
+    const [first, second] = screen.getAllByRole("button", { name: "Already learned" });
     expect(first).toBeDisabled();
     expect(second).toBeEnabled();
   });
@@ -82,10 +86,10 @@ describe("DocumentList", () => {
         onMarkLearned={vi.fn()}
       />,
     );
-    expect(within(rowOf("a.pdf")).getByText("En file")).toBeInTheDocument();
-    expect(within(rowOf("b.pdf")).getByText("En cours")).toBeInTheDocument();
-    expect(within(rowOf("c.pdf")).getByText("Indexé")).toBeInTheDocument();
-    expect(within(rowOf("d.pdf")).getByText("Erreur")).toBeInTheDocument();
+    expect(within(rowOf("a.pdf")).getByText("Queued")).toBeInTheDocument();
+    expect(within(rowOf("b.pdf")).getByText("Processing")).toBeInTheDocument();
+    expect(within(rowOf("c.pdf")).getByText("Indexed")).toBeInTheDocument();
+    expect(within(rowOf("d.pdf")).getByText("Error")).toBeInTheDocument();
   });
 
   it("shows the server error message", () => {
@@ -115,7 +119,7 @@ describe("DocumentList", () => {
         onMarkLearned={vi.fn()}
       />,
     );
-    for (const label of ["PDF", "DOCX", "Markdown", "Texte", "Lien", "YouTube", "Texte collé"]) {
+    for (const label of ["PDF", "DOCX", "Markdown", "Text", "Link", "YouTube", "Pasted text"]) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
   });
@@ -137,6 +141,6 @@ describe("DocumentList", () => {
 
   it("shows an empty state without documents", () => {
     render(<DocumentList documents={[]} learningIds={none} onMarkLearned={vi.fn()} />);
-    expect(screen.getByText("Aucun document importé")).toBeInTheDocument();
+    expect(screen.getByText("No imported documents")).toBeInTheDocument();
   });
 });

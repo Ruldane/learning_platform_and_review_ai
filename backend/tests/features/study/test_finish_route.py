@@ -118,9 +118,9 @@ async def test_finish_records_minutes_clamped_to_wall_time(
     assert done["tasks_done"] == ["Lire le chapitre 1", "Pratiquer les bases", "Lire le chapitre 2"]
     assert done["flashcards_created"] == 3
     assert sorted((g["name"], g["level"]) for g in done["skills"]) == [
-        ("Index", "en_cours"),
-        ("Séries", "en_cours"),
-        ("pandas", "en_cours"),
+        ("Index", "in_progress"),
+        ("Séries", "in_progress"),
+        ("pandas", "in_progress"),
     ]
     assert stub_tutor.finished[0]["minutes"] == 8
 

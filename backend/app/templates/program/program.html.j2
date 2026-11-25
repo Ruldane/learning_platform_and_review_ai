@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="{{ csp }}">
@@ -8,38 +8,46 @@
 </head>
 <body>
 <header class="cover">
-<p class="kicker">Programme{% if program.status == "draft" %} · brouillon{% endif %}</p>
+<p class="kicker">Program{% if program.status == "draft" %} · draft{% endif %}</p>
 <h1>{{ program.title }}</h1>
 <p class="facts">
-Début le {{ day(program.start_date) }} · {{ program.weeks | length }} semaine{% if program.weeks | length > 1 %}s{% endif %}
- · {{ hours(program.weekly_minutes) }} disponibles par semaine, {{ hours(program.cap_minutes) }} planifiées au plus
+Starts {{ day(program.start_date) }} · {{ program.weeks | length }}
+week{% if program.weeks | length != 1 %}s{% endif %} · {{ hours(program.weekly_minutes) }}
+available per week, with up to {{ hours(program.cap_minutes) }} scheduled
 </p>
 <p class="facts">
-Avancement : {{ program.progress.done_tasks }} / {{ program.progress.total_tasks }} tâches,
-{{ hours(program.progress.done_minutes) }} sur {{ hours(program.progress.total_minutes) }}
+Progress: {{ program.progress.done_tasks }} / {{ program.progress.total_tasks }} tasks,
+{{ hours(program.progress.done_minutes) }} out of {{ hours(program.progress.total_minutes) }}
 </p>
 </header>
 {% for week in program.weeks %}
 <section class="week">
-<h2>Semaine {{ week.rank }} · {{ week.theme }}</h2>
+<h2>Week {{ week.rank }} · {{ week.theme }}</h2>
 <dl class="week-facts">
-<dt>Objectif</dt><dd>{{ week.objective }}</dd>
-<dt>Livrable</dt><dd>{{ week.deliverable }}</dd>
-<dt>Charge</dt><dd>{{ hours(week.load_minutes) }} à partir du {{ day(week.start_date) }}</dd>
+<dt>Objective</dt><dd>{{ week.objective }}</dd>
+<dt>Deliverable</dt><dd>{{ week.deliverable }}</dd>
+<dt>Workload</dt><dd>{{ hours(week.load_minutes) }} starting {{ day(week.start_date) }}</dd>
 </dl>
 {% for module in week.modules %}
 <div class="module">
-<h3>{{ module.title }}{% if module.skipped %} <span class="tag">déjà acquis</span>{% endif %}</h3>
-{% if module.skills %}<p class="skills">Compétences : {{ module.skills | join(", ") }}</p>{% endif %}
-{% if module.prerequisites %}<p class="skills">Prérequis : {{ module.prerequisites | join(", ") }}</p>{% endif %}
+<h3>{{ module.title }}{% if module.skipped %} <span class="tag">Already known</span>{% endif %}</h3>
+{% if module.skills %}<p class="skills">Skills: {{ module.skills | join(", ") }}</p>{% endif %}
+{% if module.prerequisites %}
+<p class="skills">Prerequisites: {{ module.prerequisites | join(", ") }}</p>
+{% endif %}
 {% if module.tasks %}
 <table>
-<thead><tr><th class="day">Jour</th><th>Tâche</th><th class="kind">Type</th><th class="minutes">Durée</th><th>Critère de fin</th><th class="status">Fait</th></tr></thead>
+<thead><tr>
+<th class="day">Day</th><th>Task</th><th class="kind">Type</th><th class="minutes">Duration</th>
+<th>Completion criterion</th><th class="status">Done</th>
+</tr></thead>
 <tbody>
 {% for task in module.tasks | sort(attribute="planned_date") %}
 <tr>
 <td class="day">{{ day(task.planned_date) }}</td>
-<td>{{ task.title }}{% if task.already_known %} <span class="tag">déjà acquis</span>{% endif %}</td>
+<td>
+  {{ task.title }}{% if task.already_known %} <span class="tag">Already known</span>{% endif %}
+</td>
 <td class="kind">{{ types.get(task.type, task.type) }}</td>
 <td class="minutes">{{ task.minutes }} min</td>
 <td>{{ task.done_criterion }}</td>

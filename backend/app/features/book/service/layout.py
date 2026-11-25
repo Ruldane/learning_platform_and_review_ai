@@ -1,4 +1,4 @@
-"""Structure du livre en HTML pour l'impression et en XHTML pour la liseuse."""
+"""Book structure in HTML for print and in XHTML for e-readers."""
 
 from dataclasses import dataclass
 from xml.etree.ElementTree import Element, SubElement
@@ -78,12 +78,12 @@ def _cover(book: PreparedBook, epub: bool) -> BookPage:
         element.set("epub:type", "cover")
     _text(element, "h1", book.source.title)
     if not book.chapters:
-        _text(element, "p", "Aucun chapitre publié.")
-    return BookPage("cover", "Couverture", element)
+        _text(element, "p", "No published chapter.")
+    return BookPage("cover", "Cover", element)
 
 
 def _contents(pages: list[BookPage], links: _Links) -> BookPage:
-    page = _section("contents", "Sommaire")
+    page = _section("contents", "Contents")
     nav = SubElement(page.element, "nav", {"aria-label": page.title})
     if links.epub:
         nav.set("epub:type", "toc")
@@ -105,41 +105,41 @@ def _chapter(chapter: PreparedChapter, links: _Links) -> BookPage:
     if chapter.exercises:
         _link(
             SubElement(page.element, "p"),
-            "Voir les exercices et corrigés de ce chapitre",
+            "See this chapter's exercises and solutions",
             links.href("exercises", f"exercises-{chapter.anchor}"),
         )
     return page
 
 
 def _exercises(book: PreparedBook, links: _Links) -> BookPage:
-    page = _section("exercises", "Annexe · Exercices et corrigés")
+    page = _section("exercises", "Appendix · Exercises and solutions")
     chapters = [chapter for chapter in book.chapters if chapter.exercises]
     if not chapters:
-        _text(page.element, "p", "Aucun exercice publié.")
+        _text(page.element, "p", "No published exercise.")
     for chapter in chapters:
         section = SubElement(page.element, "section", {"id": f"exercises-{chapter.anchor}"})
         _text(section, "h3", chapter.label)
         section.extend(chapter.exercises)
-        _link(SubElement(section, "p"), "Revenir au chapitre", links.href(chapter.anchor))
+        _link(SubElement(section, "p"), "Back to the chapter", links.href(chapter.anchor))
     return page
 
 
 def _glossary(book: PreparedBook) -> BookPage:
-    page = _section("glossary", "Glossaire")
+    page = _section("glossary", "Glossary")
     if book.glossary:
         entries = SubElement(page.element, "dl")
         for item in book.glossary:
             _text(entries, "dt", item.term)
             _text(entries, "dd", item.definition)
     else:
-        _text(page.element, "p", "Aucune notion dans le glossaire.")
+        _text(page.element, "p", "No concept in the glossary.")
     return page
 
 
 def _index(book: PreparedBook, links: _Links) -> BookPage:
     page = _section("index", "Index")
     if not book.index:
-        _text(page.element, "p", "Aucune entrée dans l’index.")
+        _text(page.element, "p", "No entry in the index.")
         return page
     entries = SubElement(page.element, "dl")
     for item in book.index:

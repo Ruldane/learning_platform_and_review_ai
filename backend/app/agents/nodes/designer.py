@@ -1,16 +1,17 @@
-"""Le Maquettiste (vision, D125) : parcours `cv_capture`, mode `design`. Il voit les pages du CV.
+"""The Layout designer (vision, D125): flow `cv_capture`, `design` mode. It sees the CV pages.
 
-`sample` : le contenu de démonstration. CV au texte sélectionnable : le modèle le recopie
-(`CvContent`, images et blocs), chaque texte absent du CV est redemandé une fois puis retiré ; CV
-scanné : le contenu du profil validé (`sample_fallback`), sinon un échec lisible.
-`draft` : la description du design (`TemplateSpec`) ; ses défauts (`template_problems`) sont
-redemandés deux fois au plus, puis la capture échoue lisiblement.
-`fix` : une description corrigée, depuis la description courante, les écarts du score
-(`describe`, seulement sous `TARGET_SCORE`), les images d'origine et du rendu, et la consigne de
-January si elle existe ; sans description valable (défauts après les re-demandes, ou sortie
-structurée invalide), la description courante est gardée (`stalled`) et la question est posée.
+`sample`: the demonstration content. CV with selectable text: the model copies it
+(`CvContent`, images and blocks), each text absent from the CV is requested again once then
+removed; scanned CV: the content of the validated profile (`sample_fallback`), otherwise a
+readable failure.
+`draft`: the description of the design (`TemplateSpec`); its defects (`template_problems`) are
+requested again twice at most, then the capture fails readably.
+`fix`: a corrected description, from the current description, the score gaps (`describe`, only
+under `TARGET_SCORE`), the original and rendered images, and January's instruction if there is
+one; without a valid description (defects after the re-requests, or invalid structured output),
+the current description is kept (`stalled`) and the question is asked.
 
-Journaux : identifiants et nombres, jamais un texte, une image ni une police du CV (17.2)."""
+Logs: identifiers and numbers, never a text, an image or a font of the CV (17.2)."""
 
 import logging
 from typing import Protocol
@@ -33,18 +34,15 @@ from app.agents.tools.vision import MAX_IMAGES, image_message
 from app.core.errors import AppError
 
 AGENT = "designer"
-SAMPLE_REQUEST = "Recopie le contenu de ce CV, tel quel."
-DRAFT_REQUEST = "Décris le design de ce CV."
-FIX_REQUEST = "Corrige la description pour rapprocher le rendu de l'original."
-MAX_SAMPLE_ASKS = 2  # une demande, puis une re-demande avec les textes absents du CV
-MAX_SPEC_ASKS = 3  # une demande, puis deux re-demandes avec les défauts
-VISION_TIMEOUT_S = 600  # sorties structurées avec images, et leurs re-demandes
-NO_SAMPLE = (
-    "Ton CV est une image (scanné) et ton profil maître n'est pas encore validé : valide-le, "
-    "puis relance la capture du modèle."
-)
-NO_SPEC = "Le Maquettiste n'a pas su décrire le design de ce CV. Recommence la capture."
-STRUCTURED_INVALID = "structured_output_invalid"  # code de `structured_call` après ses essais
+SAMPLE_REQUEST = "Transcribe the contents of this CV verbatim."
+DRAFT_REQUEST = "Describe this CV's design."
+FIX_REQUEST = "Revise the description so the render better matches the original."
+MAX_SAMPLE_ASKS = 2  # one request, then one re-request with the texts absent from the CV
+MAX_SPEC_ASKS = 3  # one request, then two re-requests with the defects
+VISION_TIMEOUT_S = 600  # structured outputs with images, and their re-requests
+NO_SAMPLE = "For a scanned CV, approve your master profile and then restart template capture."
+NO_SPEC = "The Layout Designer couldn't describe this CV. Restart template capture."
+STRUCTURED_INVALID = "structured_output_invalid"  # code of `structured_call` after its retries
 
 logger = logging.getLogger(__name__)
 
@@ -56,14 +54,14 @@ class Node(Protocol):
 async def _failed(
     deps: GraphDeps, template_id: str, code: str, reason: str, status: int
 ) -> AppError:
-    """Le gabarit passe en `failed` (idempotent) avant que la session échoue : jamais en
-    « capture » pour toujours."""
+    """The template goes to `failed` (idempotent) before the session fails: never stuck in
+    "capture" forever."""
     await deps.ports.cv_templates.finish(deps.user_id, template_id, "failed", reason)
     return AppError(code, reason, status)
 
 
 async def _view(deps: GraphDeps, state: CvCaptureState) -> OriginalView:
-    """Relu par le port (idempotent) : les images ne passent jamais par l'état."""
+    """Reread by the port (idempotent): the images never go through the state."""
     return await deps.ports.cv_templates.prepare(deps.user_id, str(state["template_id"]))
 
 
@@ -81,7 +79,7 @@ async def _copy(deps: GraphDeps, view: OriginalView) -> tuple[CvContent, int]:
             messages,
             agent=AGENT,
             step=f"contenu-{ask}",
-            intent="je recopie le contenu de ton CV" if ask == 1 else "je recopie mieux",
+            intent="Transcribing your CV" if ask == 1 else "Correcting the transcription",
         )
         invented = invented_lines(found, view.original_text)
         if not invented or ask == MAX_SAMPLE_ASKS:
@@ -103,8 +101,7 @@ def make_sample(deps: GraphDeps) -> Node:
                 raise await _failed(deps, template_id, "design_no_sample", NO_SAMPLE, 422)
             content = fallback
         logger.info(
-            "Contenu de démonstration : session %s, gabarit %s, %d section(s), "
-            "%d texte(s) retiré(s)",
+            "Demonstration content: session %s, template %s, %d section(s), %d text(s) removed",
             deps.session_id,
             template_id,
             len(content.sections),
@@ -118,7 +115,7 @@ def make_sample(deps: GraphDeps) -> Node:
 async def ask_spec(
     deps: GraphDeps, messages: list[BaseMessage], fonts: list[str], step: str
 ) -> TemplateSpec | None:
-    """Une demande, puis deux re-demandes au plus avec les défauts ; `None` s'il en reste."""
+    """One request, then two re-requests at most with the defects; `None` if some remain."""
     model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
     for ask in range(1, MAX_SPEC_ASKS + 1):
         found = await structured_call(
@@ -127,15 +124,13 @@ async def ask_spec(
             messages,
             agent=AGENT,
             step=f"{step}-{ask}",
-            intent="je décris le design de ton CV" if ask == 1 else "je corrige la description",
+            intent="Describing your CV's design" if ask == 1 else "Revising the description",
         )
         problems = template_problems(found, fonts)
         if not problems:
             return found
-        # Le nombre seulement : un défaut cite une police, peut-être lue dans le PDF (17.2).
-        logger.info(
-            "Description refusée : session %s, %d défaut(s)", deps.session_id, len(problems)
-        )
+        # The number only: a defect quotes a font, possibly read from the PDF (17.2).
+        logger.info("Description refused: session %s, %d defect(s)", deps.session_id, len(problems))
         messages = [
             *messages,
             AIMessage(found.model_dump_json()),
@@ -173,7 +168,7 @@ def make_draft(deps: GraphDeps) -> Node:
 
 
 def compared(original: list[bytes], render: list[bytes]) -> tuple[str, list[bytes]]:
-    """Original et rendu page à page (`MAX_IMAGES` au plus), et la légende des images."""
+    """Original and render page by page (`MAX_IMAGES` at most), and the image caption."""
     labelled: list[tuple[str, bytes]] = []
     for page in range(max(len(original), len(render))):
         if page < len(original):
@@ -181,21 +176,21 @@ def compared(original: list[bytes], render: list[bytes]) -> tuple[str, list[byte
         if page < len(render):
             labelled.append((f"rendu, page {page + 1}", render[page]))
     kept = labelled[:MAX_IMAGES]
-    legend = "Images, dans l'ordre : " + " ; ".join(label for label, _ in kept) + "."
+    legend = "Images, in order: " + "; ".join(label for label, _ in kept) + "."
     return legend, [png for _, png in kept]
 
 
 async def _correction(
     deps: GraphDeps, messages: list[BaseMessage], fonts: list[str], step: str
 ) -> TemplateSpec | None:
-    """`ask_spec`, où une sortie structurée invalide (GLM : JSON tronqué) vaut « aucune
-    description valable » : une passe rendue existe, la question reste posable (revue 6.9, I2)."""
+    """`ask_spec`, where an invalid structured output (GLM: truncated JSON) counts as "no valid
+    description": a rendered pass exists, the question can still be asked (review 6.9, I2)."""
     try:
         return await ask_spec(deps, messages, fonts, step)
     except AppError as exc:
         if exc.code != STRUCTURED_INVALID:
             raise
-        logger.info("Correction sans sortie valable : session %s", deps.session_id)
+        logger.info("Correction without a valid output: session %s", deps.session_id)
         return None
 
 
@@ -205,8 +200,8 @@ def make_fix(deps: GraphDeps) -> Node:
         template_id, pass_no = str(state["template_id"]), state["pass_no"]
         view = await _view(deps, state)
         adjusting = state.get("adjustments", 0) > 0
-        # Un ajustement repart de la passe gardée (la meilleure : 69, 78, 69 repart de 78), avec
-        # sa description ; un checkpoint d'avant `kept_spec` repart de la dernière passe.
+        # An adjustment restarts from the kept pass (the best one: 69, 78, 69 restarts from 78),
+        # with its description; a checkpoint from before `kept_spec` restarts from the last pass.
         from_kept = adjusting and "kept_spec" in state and "kept_pass" in state
         base_no = state["kept_pass"] if from_kept else pass_no
         base_spec = state["kept_spec"] if from_kept else state["spec"]
@@ -219,7 +214,7 @@ def make_fix(deps: GraphDeps) -> Node:
             pass_no=base_no,
             score=done.score,
             hints=describe(done.similarity) if done.score < TARGET_SCORE else "",
-            instruction=untrusted(instruction, "consigne de January") if instruction else "",
+            instruction=untrusted(instruction, "January's instruction") if instruction else "",
             fonts=", ".join(view.available_fonts),
         )
         legend, images = compared(view.pages_png, done.render_png)
@@ -233,7 +228,7 @@ def make_fix(deps: GraphDeps) -> Node:
                 "agent.message",
                 {
                     "message_id": f"{AGENT}-correction-{pass_no}-{state.get('adjustments', 0)}",
-                    "text": "Je n'ai pas su corriger la description : le modèle reste tel quel.",
+                    "text": "The description could not be adjusted. The template is unchanged.",
                 },
                 agent=AGENT,
             )

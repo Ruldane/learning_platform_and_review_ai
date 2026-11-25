@@ -4,8 +4,8 @@ import { API } from "./councilApi";
 /** Un graphe de compétences tel que le back le rend (`SkillGraphOut`). */
 export const graphOut = (over: Record<string, unknown> = {}) => ({
   nodes: [
-    { id: "s1", name: "HTML", domain: "web", level: "valide", demand: null, evidence_count: 3 },
-    { id: "s2", name: "CSS", domain: "web", level: "en_cours", demand: null, evidence_count: 1 },
+    { id: "s1", name: "HTML", domain: "web", level: "validated", demand: null, evidence_count: 3 },
+    { id: "s2", name: "CSS", domain: "web", level: "in_progress", demand: null, evidence_count: 1 },
     { id: "s3", name: "React", domain: "web", level: null, demand: null, evidence_count: 0 },
   ],
   edges: [
@@ -22,18 +22,18 @@ export const detailOut = (over: Record<string, unknown> = {}) => ({
   name: "CSS",
   domain: "web",
   synonyms: [],
-  level: "en_cours",
+  level: "in_progress",
   evidence: [
     {
       kind: "lesson",
       label: "Leçon : Sélecteurs",
       at: "2026-11-10T09:00:00Z",
-      url: "/apprendre/lecons/l1",
+      url: "/learn/lessons/l1",
     },
     { kind: "program", label: "Programme web", at: null, url: null },
   ],
   postings: [],
-  next_action: { kind: "quiz", label: "Passer le quiz « Mise en page »", url: "/etudier/quiz/q1" },
+  next_action: { kind: "quiz", label: "Passer le quiz « Mise en page »", url: "/study/quiz/q1" },
   ...over,
 });
 
@@ -41,12 +41,12 @@ export const historyOut = () => ({
   points: [
     {
       week_start: "2026-11-09",
-      counts: { declare: 1, en_cours: 1, valide: 1, prouve: 0 },
+      counts: { declared: 1, in_progress: 1, validated: 1, proven: 0 },
       score: 50,
     },
     {
       week_start: "2026-11-16",
-      counts: { declare: 0, en_cours: 2, valide: 1, prouve: 0 },
+      counts: { declared: 0, in_progress: 2, validated: 1, proven: 0 },
       score: 58,
     },
   ],
@@ -56,8 +56,8 @@ export const compareOut = () => ({
   target_label: "Data engineer",
   coverage: 33,
   rows: [
-    { skill_id: "s1", name: "HTML", domain: "web", mine: "prouve", target: "valide", gap: -1 },
-    { skill_id: "s3", name: "React", domain: "web", mine: null, target: "valide", gap: 3 },
+    { skill_id: "s1", name: "HTML", domain: "web", mine: "proven", target: "validated", gap: -1 },
+    { skill_id: "s3", name: "React", domain: "web", mine: null, target: "validated", gap: 3 },
   ],
 });
 

@@ -1,7 +1,7 @@
 import { t } from "@/shared/i18n/t";
 import type { VoteValueView } from "../viewTypes";
 
-const MARKS: Record<VoteValueView, string> = { oui: "✓", non: "✗", peut_etre: "?" };
+const MARKS: Record<VoteValueView, string> = { yes: "✓", no: "✗", maybe: "?" };
 
 /** Un vote écrit en toutes lettres (« Oui », « Non », « Peut-être ») ; le signe est décoratif, jamais la couleur seule. */
 export function VoteLabel({ vote }: { vote: VoteValueView }) {

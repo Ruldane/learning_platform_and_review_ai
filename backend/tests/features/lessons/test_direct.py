@@ -86,6 +86,7 @@ async def test_invalid_input_is_422_without_echo(
 
 
 @pytest.mark.usefixtures("accept_lesson")
+@pytest.mark.usefixtures("accept_lesson")
 async def test_lesson_write_is_isolated_between_users(
     client: httpx.AsyncClient, app: FastAPI, drafted: Seed
 ) -> None:

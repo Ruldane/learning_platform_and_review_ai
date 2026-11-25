@@ -20,7 +20,7 @@ from tests.providers.web.fetch_support import (
     redirect,
 )
 
-UNREACHABLE = "Page injoignable."
+UNREACHABLE = "Page unreachable."
 
 
 @pytest.mark.parametrize(

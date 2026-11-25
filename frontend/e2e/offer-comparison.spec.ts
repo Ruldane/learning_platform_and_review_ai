@@ -8,7 +8,7 @@ test("règle les poids, compare deux offres et relit le scénario sauvegardé", 
   const seed = await request.post(`${new URL(API).origin}/e2e/offer-comparison/ready`);
   expect(seed.ok()).toBe(true);
   const { first, second } = (await seed.json()) as { first: string; second: string };
-  await page.goto("/carriere/comparer-les-offres");
+  await page.goto("/career/offer-comparison");
   await page.getByLabel("Première offre").selectOption(first);
   await page.getByLabel("Deuxième offre").selectOption(second);
   await page.getByLabel("Mode de travail souhaité").selectOption("hybrid");

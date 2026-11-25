@@ -2,13 +2,17 @@ import { Link } from "react-router";
 import { t } from "@/shared/i18n/t";
 import type { Appeal } from "../../api";
 
-const dateFormat = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long" });
+const dateFormat = new Intl.DateTimeFormat("en-GB", { dateStyle: "long" });
 
 export function Readings({ row }: { row: Appeal }) {
   const original = row.source.criterion;
   return (
     <>
-      <p><Link className="underline" to={`/competences/portfolio/${row.source.project.id}`}>{row.source.project.title}</Link></p>
+      <p>
+        <Link className="underline" to={`/skills/portfolio/${row.source.project.id}`}>
+          {row.source.project.title}
+        </Link>
+      </p>
       <details className="rounded-xl border bg-card p-4">
         <summary>{t("gradeAppeals.snapshot")}</summary>
         <time dateTime={row.source.submitted_at} className="text-sm text-muted-foreground">

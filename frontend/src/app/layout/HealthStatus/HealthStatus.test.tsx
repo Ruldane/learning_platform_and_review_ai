@@ -9,15 +9,15 @@ import { HealthStatus } from "./HealthStatus";
 const HEALTH_URL = `${apiBaseUrl}/api/v1/health`;
 
 describe("HealthStatus", () => {
-  it("branche useHealth sur le voyant", async () => {
+  it("shows when services are responding", async () => {
     server.use(http.get(HEALTH_URL, () => HttpResponse.json({ status: "ok", checks: {} })));
     render(<HealthStatus />, { wrapper: createQueryWrapper() });
-    expect(await screen.findByText("Tous les services répondent")).toBeInTheDocument();
+    expect(await screen.findByText("All services are responding")).toBeInTheDocument();
   });
 
-  it("signale un serveur injoignable", async () => {
+  it("reports an unreachable server", async () => {
     server.use(http.get(HEALTH_URL, () => new HttpResponse("boom", { status: 500 })));
     render(<HealthStatus />, { wrapper: createQueryWrapper() });
-    expect(await screen.findByText("Serveur injoignable")).toBeInTheDocument();
+    expect(await screen.findByText("Server unreachable")).toBeInTheDocument();
   });
 });

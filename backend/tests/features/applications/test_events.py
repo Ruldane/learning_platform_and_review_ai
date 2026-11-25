@@ -108,9 +108,7 @@ async def test_applied_freezes_version(
     detail = r.json()
     assert detail["cv_version_id"] == ready_version
     versions = [e for e in detail["events"] if e["kind"] == "version"]
-    assert [(e["ref_id"], e["text"]) for e in versions] == [
-        (ready_version, "Version 1 du CV envoyée.")
-    ]
+    assert [(e["ref_id"], e["text"]) for e in versions] == [(ready_version, "CV version 1 sent.")]
 
 
 async def test_version_frozen_after_applied(

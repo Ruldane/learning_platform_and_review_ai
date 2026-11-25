@@ -7,7 +7,7 @@ import { RunFeed } from "@/shared/session-ui";
 import { Button } from "@/shared/ui/button";
 import { useKitSync } from "../../hooks/useKitSync";
 
-/** Les pièces que la session a rangées : chaque `artifact.ready` de genre `kit_item` (rien pour une pièce en échec). */
+/** Count the kit item artifacts announced by the current run. */
 function kitArrivals(events: SessionEvent[]): number {
   return events.filter(
     (event) => event.type === "artifact.ready" && event.payload.kind === "kit_item",
@@ -17,17 +17,15 @@ function kitArrivals(events: SessionEvent[]): number {
 interface KitRunProps {
   applicationId: string;
   sessionId: string;
-  /** Le serveur dit qu'un kit est en cours. */
+  /** Whether the server reports an active kit run. */
   running: boolean;
-  /** La note « le kit se prépare » : elle reçoit le focus quand January vient de lancer le kit. */
+  /** The preparation note receives focus after the user starts the kit. */
   noteRef: RefObject<HTMLParagraphElement | null>;
   createSocket?: SocketFactory;
 }
 
 /**
- * La session du kit suivie en direct. Le flux ne fait que dire quand relire le kit : à chaque
- * pièce rangée (`artifact.ready`), à chaque changement d'état de la session (dont sa fin) ; l'état
- * des pièces vient toujours de la lecture du kit.
+ * Follow the run and refresh kit data when a piece arrives or the session status changes.
  */
 export function KitRun({ applicationId, sessionId, running, noteRef, createSocket }: KitRunProps) {
   const sync = useKitSync(applicationId);

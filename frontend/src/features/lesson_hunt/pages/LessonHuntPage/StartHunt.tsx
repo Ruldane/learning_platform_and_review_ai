@@ -8,7 +8,7 @@ export function StartHunt({ lessonId }: { lessonId: string }) {
   const navigate = useNavigate();
   const start = useMutation({
     mutationFn: () => startHunt(lessonId),
-    onSuccess: ({ hunt_id }) => void navigate("/apprendre/erreurs/" + encodeURIComponent(hunt_id)),
+    onSuccess: ({ hunt_id }) => void navigate("/learn/error-hunts/" + encodeURIComponent(hunt_id)),
   });
   return (
     <>

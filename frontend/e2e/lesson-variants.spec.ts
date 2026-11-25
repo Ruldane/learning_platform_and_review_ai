@@ -5,7 +5,7 @@ test.skip(process.env.E2E_LESSON_VARIANTS !== "1", "Requiert une leçon fictive 
 
 test("compare deux lectures et retrouve la version source", async ({ page, request }) => {
   await finishFirstLaunch(request);
-  await page.goto("/apprendre/variantes");
+  await page.goto("/learn/lesson-variants");
   await page.getByRole("combobox", { name: "Programme" }).selectOption({ index: 1 });
   await page.getByRole("combobox", { name: "Leçon publiée" }).selectOption({ label: "Index et recherche" });
   await page.getByRole("button", { name: "Préparer les variantes" }).click();

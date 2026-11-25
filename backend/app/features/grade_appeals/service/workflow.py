@@ -1,4 +1,4 @@
-"""Lancer une relecture et conserver la décision explicite sans réécrire la première note."""
+"""Start a review and keep the explicit decision without rewriting the first grade."""
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -58,7 +58,7 @@ async def review(launcher: SessionLauncher, user_id: str, appeal_id: str) -> Gra
     async def reserve(db: AsyncSession, session_id: str) -> None:
         row = await GradeAppeals(db, user_id).require(appeal_id)
         if await _state(db, row) not in {"draft", "failed"}:
-            raise AppError("grade_appeal_review_started", "La relecture est déjà lancée.", 409)
+            raise AppError("grade_appeal_review_started", "The review has already started.", 409)
         row.session_id = session_id
 
     session_id = await launcher.start(
@@ -78,9 +78,9 @@ async def decide(
     await db.execute(text("BEGIN IMMEDIATE"))
     row = await GradeAppeals(db, user_id).require(appeal_id)
     if row.second is None:
-        raise AppError("grade_appeal_review_pending", "Attends la seconde lecture.", 409)
+        raise AppError("grade_appeal_review_pending", "Wait for the second reading.", 409)
     if row.decision is not None and row.decision != decision:
-        raise AppError("grade_appeal_decided", "Une décision définitive est déjà enregistrée.", 409)
+        raise AppError("grade_appeal_decided", "A final decision is already recorded.", 409)
     if row.decision is None:
         row.decision = decision
         row.decided_at = utcnow()

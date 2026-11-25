@@ -160,10 +160,10 @@ export function makeExchange(index: number, overrides: Partial<ExchangeView> = {
 export function makeDebrief(overrides: Partial<DebriefDataView> = {}): DebriefDataView {
   return {
     scores: [
-      { key: "clarte", value: 4 },
+      { key: "clarity", value: 4 },
       { key: "structure", value: 3 },
-      { key: "profondeur_technique", value: 2 },
-      { key: "adequation", value: 5 },
+      { key: "technical_depth", value: 2 },
+      { key: "role_fit", value: 5 },
     ],
     strengths: ["Exemples concrets", "Ton posé", "Résultats chiffrés"],
     fixes: ["Structure plus nette", "Plus de détails techniques", "Une conclusion"],
@@ -202,7 +202,7 @@ export function makeInterview(overrides: Partial<InterviewView> = {}): Interview
 export function makeVote(overrides: Partial<VoteView> = {}): VoteView {
   return {
     persona: "ats_reader",
-    vote: "oui",
+    vote: "yes",
     objection: "Il manque le mot clé Kubernetes.",
     reason: "Le CV se lit bien par un logiciel de tri.",
     ...overrides,
@@ -212,9 +212,9 @@ export function makeVote(overrides: Partial<VoteView> = {}): VoteView {
 /** Les quatre votes d'un comité : 3 oui, 1 non. */
 export function makeVotes(): VoteView[] {
   return [
-    makeVote({ persona: "ats_reader", vote: "oui", objection: "Mot clé Kubernetes absent." }),
-    makeVote({ persona: "recruiter", vote: "oui", objection: "Parcours un peu long." }),
-    makeVote({ persona: "manager", vote: "non", objection: "Peu de résultats chiffrés." }),
-    makeVote({ persona: "colleague", vote: "oui", objection: "Rien de personnel." }),
+    makeVote({ persona: "ats_reader", vote: "yes", objection: "Mot clé Kubernetes absent." }),
+    makeVote({ persona: "recruiter", vote: "yes", objection: "Parcours un peu long." }),
+    makeVote({ persona: "manager", vote: "no", objection: "Peu de résultats chiffrés." }),
+    makeVote({ persona: "colleague", vote: "yes", objection: "Rien de personnel." }),
   ];
 }

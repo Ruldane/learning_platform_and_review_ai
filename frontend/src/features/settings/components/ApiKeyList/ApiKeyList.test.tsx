@@ -24,7 +24,7 @@ const entries: ApiKeyEntry[] = [
 ];
 
 describe("ApiKeyList", () => {
-  it("affiche une carte par fournisseur", () => {
+  it("shows one card per provider", () => {
     render(
       <ApiKeyList
         entries={entries}
@@ -36,10 +36,10 @@ describe("ApiKeyList", () => {
       />,
     );
     expect(screen.getAllByRole("article")).toHaveLength(2);
-    expect(screen.getByLabelText("Clé API OpenAI")).toBeInTheDocument();
+    expect(screen.getByLabelText("OpenAI API key")).toBeInTheDocument();
   });
 
-  it("transmet le résultat du test et l'état en cours à la bonne carte", () => {
+  it("shows the test result and pending state on the matching card", () => {
     const onTest = vi.fn();
     render(
       <ApiKeyList
@@ -53,11 +53,11 @@ describe("ApiKeyList", () => {
     );
     const anthropic = within(screen.getByRole("article", { name: "Anthropic" }));
     expect(anthropic.getByRole("status")).toHaveTextContent("Clé valide.");
-    expect(anthropic.getByRole("button", { name: "Tester" })).toBeDisabled();
+    expect(anthropic.getByRole("button", { name: "Test" })).toBeDisabled();
     expect(onTest).not.toHaveBeenCalled();
   });
 
-  it("lance le test du bon fournisseur", async () => {
+  it("tests the selected provider", async () => {
     const user = userEvent.setup();
     const onTest = vi.fn();
     render(
@@ -71,11 +71,11 @@ describe("ApiKeyList", () => {
       />,
     );
     const anthropic = within(screen.getByRole("article", { name: "Anthropic" }));
-    await user.click(anthropic.getByRole("button", { name: "Tester" }));
+    await user.click(anthropic.getByRole("button", { name: "Test" }));
     expect(onTest).toHaveBeenCalledWith("anthropic");
   });
 
-  it("enregistre une clé pour le bon fournisseur", async () => {
+  it("saves the key for the selected provider", async () => {
     const user = userEvent.setup();
     const onSave = vi.fn();
     render(
@@ -88,13 +88,13 @@ describe("ApiKeyList", () => {
         onTest={vi.fn()}
       />,
     );
-    await user.type(screen.getByLabelText("Clé API OpenAI"), "sk-openai-9999");
+    await user.type(screen.getByLabelText("OpenAI API key"), "sk-openai-9999");
     const openai = within(screen.getByRole("article", { name: "OpenAI" }));
-    await user.click(openai.getByRole("button", { name: "Enregistrer" }));
+    await user.click(openai.getByRole("button", { name: "Save" }));
     expect(onSave).toHaveBeenCalledWith("openai", "sk-openai-9999");
   });
 
-  it("marque occupés plusieurs fournisseurs à la fois", () => {
+  it("marks several providers busy at once", () => {
     render(
       <ApiKeyList
         entries={entries}
@@ -106,7 +106,7 @@ describe("ApiKeyList", () => {
       />,
     );
     const anthropic = within(screen.getByRole("article", { name: "Anthropic" }));
-    expect(anthropic.getByRole("button", { name: "Tester" })).toBeDisabled();
-    expect(anthropic.getByRole("button", { name: "Supprimer" })).toBeDisabled();
+    expect(anthropic.getByRole("button", { name: "Test" })).toBeDisabled();
+    expect(anthropic.getByRole("button", { name: "Delete" })).toBeDisabled();
   });
 });

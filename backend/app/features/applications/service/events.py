@@ -1,7 +1,7 @@
-"""Le fil d'une fiche (SPEC 6.1, D139) : un changement de statut ou une note, daté. Le statut ne
-change que par ici (jamais par `PATCH`). Un changement de statut pose les dates de `on_status`
-(7.1) ; le passage à « Postulée » fige la version de CV envoyée. Sous le verrou des
-candidatures. Journaux : identifiants et statuts seulement, jamais une note."""
+"""A record's timeline (SPEC 6.1, D139): a status change or a note, dated. The status only
+changes here (never by `PATCH`). A status change sets the `on_status` dates (7.1); moving to
+"Applied" freezes the CV version sent. Under the applications lock. Logs: ids and statuses
+only, never a note."""
 
 import logging
 from datetime import date, datetime
@@ -24,8 +24,8 @@ logger = logging.getLogger(__name__)
 
 
 def event_moment(day: date, today: date, now: datetime, zone: ZoneInfo) -> datetime:
-    """L'instant du fil : maintenant pour aujourd'hui, midi (heure de January) pour un autre
-    jour, qui place l'événement à sa date sans heure inventée."""
+    """The timeline instant: now for today, noon (January's time) for another day, which places
+    the event on its date without an invented time."""
     return now if day == today else local_moment(day, "12:00", zone)
 
 
@@ -36,9 +36,9 @@ async def change_status(
     body: EventIn,
     when: tuple[date, datetime, ZoneInfo],
 ) -> None:
-    """Applique le nouveau statut : dates de `on_status`, jour d'entretien donné, version figée à
-    la première sortie de « À postuler » (sauf vers « Retirée »), événement `status`. Sans effet
-    si le statut ne change pas."""
+    """Applies the new status: `on_status` dates, given interview day, version frozen on the
+    first exit from "To apply" (except toward "Withdrawn"), `status` event. No effect if the
+    status does not change."""
     assert body.status is not None
     day, at, zone = when
     old = row.status
@@ -63,16 +63,14 @@ async def change_status(
     )
     if leaves_to_apply:
         await freeze_version(db, user_id, row, at)
-    logger.info(
-        "Statut changé : utilisateur %s, fiche %s, %s vers %s", user_id, row.id, old, body.status
-    )
+    logger.info("Status changed: user %s, record %s, %s to %s", user_id, row.id, old, body.status)
 
 
 async def add_event(
     rt: ApplicationsRuntime, user_id: str, application_id: str, body: EventIn
 ) -> ApplicationDetail:
-    """Ajoute l'événement au fil. 404 `application_not_found` ; 422 `status` (changement sans
-    statut), `text` (note vide) ou `on` (jour futur, celui de January), sans écho."""
+    """Adds the event to the timeline. 404 `application_not_found`; 422 `status` (change without
+    status), `text` (empty note) or `on` (future day, January's), without echo."""
     if body.kind == "status" and body.status is None:
         raise invalid("status")
     if body.kind == "note" and not body.text:
@@ -83,7 +81,7 @@ async def add_event(
         now = rt.now()
         today = local_today(zone, now)
         if body.on is not None and body.on > today:
-            raise invalid("on")  # un événement n'a pas lieu dans le futur (jour de January)
+            raise invalid("on")  # an event does not happen in the future (January's day)
         day = body.on or today
         at = event_moment(day, today, now, zone)
         if body.kind == "status":

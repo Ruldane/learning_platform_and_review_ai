@@ -42,7 +42,7 @@ async def test_context_reads_cv_posting_profile_and_terms(
     assert ctx.posting_text == "Offre : agents Python et LangGraph."
     assert (ctx.company, ctx.title) == (COMPANY, "Développeuse IA")  # la fiche de l'offre
     assert ctx.analysis.title == "AI Product Engineer" and ctx.profile.skills
-    assert "LangGraph" in ctx.ats_terms.missing and ctx.dossier is None and ctx.size == "inconnu"
+    assert "LangGraph" in ctx.ats_terms.missing and ctx.dossier is None and ctx.size == "unknown"
 
 
 async def test_context_without_fiche_uses_the_posting(
@@ -56,10 +56,10 @@ async def test_context_without_fiche_uses_the_posting(
 
 async def test_dossier_gives_the_size_when_recent(client: httpx.AsyncClient, app: FastAPI) -> None:
     _, version = await ready_committee(client, app)
-    await store_company(app, COMPANY, "grand_groupe", at=NOW - timedelta(days=29))
+    await store_company(app, COMPANY, "large_company", at=NOW - timedelta(days=29))
     started = await launch(client, version)
     ctx = await _ctx(app, started["run_id"])
-    assert ctx.size == "grand_groupe" and ctx.dossier is not None
+    assert ctx.size == "large_company" and ctx.dossier is not None
 
 
 async def test_old_dossier_is_not_used(client: httpx.AsyncClient, app: FastAPI) -> None:
@@ -67,7 +67,7 @@ async def test_old_dossier_is_not_used(client: httpx.AsyncClient, app: FastAPI) 
     await store_company(app, COMPANY, "startup", at=NOW - timedelta(days=31))
     started = await launch(client, version)
     ctx = await _ctx(app, started["run_id"])
-    assert ctx.size == "inconnu" and ctx.dossier is None
+    assert ctx.size == "unknown" and ctx.dossier is None
 
 
 async def test_context_refusals(client: httpx.AsyncClient, app: FastAPI) -> None:
@@ -85,11 +85,11 @@ async def test_context_refusals(client: httpx.AsyncClient, app: FastAPI) -> None
 async def test_save_is_idempotent_per_session(client: httpx.AsyncClient, app: FastAPI) -> None:
     posting, version = await ready_committee(client, app)
     started = await launch(client, version)
-    await save_done(app, started, votes_of("oui", "oui", "oui", "non"), synthesis_of("oui"))
-    await save_done(app, started, votes_of("non", "non", "non", "non"), synthesis_of("non"))
+    await save_done(app, started, votes_of("yes", "yes", "yes", "no"), synthesis_of("yes"))
+    await save_done(app, started, votes_of("no", "no", "no", "no"), synthesis_of("no"))
     row = await run_row(app, started["run_id"])
-    assert (row.status, row.verdict) == ("done", "oui")
-    assert [v["vote"] for v in row.votes] == ["oui", "oui", "oui", "non"]
+    assert (row.status, row.verdict) == ("done", "yes")
+    assert [v["vote"] for v in row.votes] == ["yes", "yes", "yes", "no"]
     applications = (await client.get(f"{ROOT}/applications", params={"posting_id": posting})).json()
     [application] = applications
     events = [
@@ -98,14 +98,14 @@ async def test_save_is_idempotent_per_session(client: httpx.AsyncClient, app: Fa
         if e["kind"] == "committee"
     ]
     assert len(events) == 1  # un seul événement, malgré le rejeu
-    assert "verdict oui" in events[0]["text"] and "3 oui, 1 non, 0 peut-être" in events[0]["text"]
+    assert "voted yes" in events[0]["text"] and "3 yes, 1 no, 0 maybe" in events[0]["text"]
     assert row.application_id == application["id"]
 
 
 async def test_no_event_without_fiche(client: httpx.AsyncClient, app: FastAPI) -> None:
     _, version = await ready_committee(client, app, fiche=False)
     started = await launch(client, version)
-    await save_done(app, started, votes_of("oui", "oui", "oui", "oui"), synthesis_of("oui"))
+    await save_done(app, started, votes_of("yes", "yes", "yes", "yes"), synthesis_of("yes"))
     row = await run_row(app, started["run_id"])
     assert (row.status, row.application_id) == ("done", None)  # aucune fiche : aucun événement
 
@@ -117,9 +117,9 @@ async def test_second_run_shows_diff(client: httpx.AsyncClient, app: FastAPI) ->
     await save_done(
         app,
         first,
-        votes_of("non", "non", "peut_etre", "non"),
+        votes_of("no", "no", "maybe", "no"),
         synthesis_of(
-            "non", "Aucun mot clé LangGraph dans le CV", "Résultat chiffré enfoui", "Peu d'équipe"
+            "no", "Aucun mot clé LangGraph dans le CV", "Résultat chiffré enfoui", "Peu d'équipe"
         ),
     )
     await spy(app).end(str(app.state.local_user_id), first["session_id"])
@@ -132,17 +132,17 @@ async def test_second_run_shows_diff(client: httpx.AsyncClient, app: FastAPI) ->
     await save_done(
         app,
         second,
-        votes_of("oui", "non", "oui", "peut_etre"),
-        synthesis_of("peut_etre", "Aucun mot-clé LangGraph dans le CV.", "Pas d'agent en prod"),
+        votes_of("yes", "no", "yes", "maybe"),
+        synthesis_of("maybe", "Aucun mot-clé LangGraph dans le CV.", "Pas d'agent en prod"),
     )
     got = (await client.get(f"{ROOT}/committee/{second['run_id']}")).json()
     assert got["previous"] == {
         "previous_id": first["run_id"],
         "votes": [
-            {"persona": "ats_reader", "before": "non", "after": "oui"},
-            {"persona": "recruiter", "before": "non", "after": "non"},
-            {"persona": "manager", "before": "peut_etre", "after": "oui"},
-            {"persona": "colleague", "before": "non", "after": "peut_etre"},
+            {"persona": "ats_reader", "before": "no", "after": "yes"},
+            {"persona": "recruiter", "before": "no", "after": "no"},
+            {"persona": "manager", "before": "maybe", "after": "yes"},
+            {"persona": "colleague", "before": "no", "after": "maybe"},
         ],
         "objections_resolved": ["Résultat chiffré enfoui", "Peu d'équipe"],
         "objections_new": ["Pas d'agent en prod"],
@@ -158,7 +158,7 @@ async def test_previous_is_the_last_done_run_of_the_posting(
     """Une exécution en échec n'est jamais « l'avant » : on compare à la dernière terminée."""
     _, version = await ready_committee(client, app)
     first = await launch(client, version)
-    await save_done(app, first, votes_of("oui", "oui", "oui", "oui"), synthesis_of("oui"))
+    await save_done(app, first, votes_of("yes", "yes", "yes", "yes"), synthesis_of("yes"))
     await spy(app).end(str(app.state.local_user_id), first["session_id"])
     failed = await launch(client, version)
     await spy(app).end(str(app.state.local_user_id), failed["session_id"], "failed")

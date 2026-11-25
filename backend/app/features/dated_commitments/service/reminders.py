@@ -1,4 +1,4 @@
-"""Lecteur local des engagements échus pour les routines de ce compte."""
+"""Local reader of due commitments for this account's routines."""
 
 from datetime import date
 from decimal import Decimal
@@ -28,6 +28,6 @@ def summary(row: DatedCommitment) -> CommitmentReminder:
 async def due_reminders(
     db: AsyncSession, user_id: str, today: date, *, limit: int = 5
 ) -> list[CommitmentReminder]:
-    """Échéances ouvertes et écarts d’aujourd’hui ou d’hier, au plus cinq."""
+    """Open deadlines and gaps from today or yesterday, at most five."""
     rows = await repository.reminders(db, user_id, today, min(max(limit, 0), 5))
     return [summary(row) for row in rows]

@@ -1,1 +1,1 @@
-"""Débats d'experts fictifs sur une question de l'utilisatrice."""
+"""Debates between fictional experts on the user's question."""

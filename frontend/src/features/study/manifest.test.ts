@@ -5,12 +5,12 @@ describe("studyManifest", () => {
   it("declares the guided session routes, its entry and the top bar slot", () => {
     expect(studyManifest.id).toBe("study");
     expect(studyManifest.routes.map((route) => route.path)).toEqual([
-      "etudier/session",
-      "etudier/session/:studyId",
+      "study/session",
+      "study/session/:studyId",
     ]);
     expect(studyManifest.routes[1]?.handle).toEqual({ wide: true });
     expect(studyManifest.nav).toEqual([
-      { section: "study", labelKey: "study.nav.session", path: "/etudier/session", order: 1 },
+      { section: "study", labelKey: "study.nav.session", path: "/study/session", order: 1 },
     ]);
     expect(studyManifest.shell?.topbar).toBeDefined();
   });

@@ -89,6 +89,10 @@ async def test_january_own_capture_is_not_activity(env: Env) -> None:
     kept = await add_write(env, hours(3), author=CAPTURE_AUTHOR, reason="Le document dit X.")
     no_reason = await add_write(env, hours(4), author=CAPTURE_AUTHOR, reason=None)
     other = await add_write(env, hours(5), author="scribe", reason=CAPTURE_REASON)
+    await add_write(env, hours(6), author=CAPTURE_AUTHOR, reason="Capture rapide de January.")
+    await add_write(
+        env, hours(7), author=CAPTURE_AUTHOR, reason="Capture « Pandas » : déjà appris."
+    )
     page = await _page(env)
     assert [item.id for item in page.items] == [
         f"memory:{other}:create",

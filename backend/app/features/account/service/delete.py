@@ -1,18 +1,18 @@
-"""« Tout supprimer » (P19) : l'ordre est celui qui se rejoue jusqu'au bout.
+"""The "Delete everything" flow (P19): the order is the one that can be replayed to the end.
 
-Plus aucune session du compte ne démarre ni ne reprend (garde du moteur, levée à la fin, réussie
-ou non), les sessions actives sont annulées, puis vecteurs, fichiers, points de reprise des
-sessions, enfin les lignes de **toutes** les tables à `user_id` (`all_user_tables`) dans une seule
-transaction, enfants d'abord. L'annulation est reprise juste avant la lecture des fils : aucune
-session ne survit au compte. Chaque étape est idempotente et la base ne change qu'à la fin : un
-appel interrompu (Qdrant en panne, disque verrouillé) se refait entier, et rien n'est supprimé en
-base tant que les vecteurs, les fichiers et les points de reprise ne le sont pas. Une dernière
-purge retire les vecteurs éventuels d'un `indexer.push` en vol. Pour un compte Google, la
-transaction inscrit cette purge sous l'ancien identifiant, pour pouvoir la reprendre sans session.
-Après `ROUNDS` tours d'annulation sans y arriver : 503 `account_busy`, avant toute écriture.
+No session of the account starts or resumes any more (engine guard, lifted at the end, whether
+it succeeded or not), active sessions are cancelled, then vectors, files, session checkpoints,
+and finally the rows of **every** table with `user_id` (`all_user_tables`) in a single
+transaction, children first. Cancellation is repeated just before reading the threads: no
+session outlives the account. Each step is idempotent and the database only changes at the end:
+an interrupted call (Qdrant down, locked disk) is redone in full, and nothing is deleted from
+the database until the vectors, files and checkpoints are. A final purge removes any vectors
+from an in-flight `indexer.push`. For a Google account, the transaction records this purge under
+the old id, so it can be resumed without a session.
+After `ROUNDS` cancellation rounds without success: 503 `account_busy`, before any write.
 
-Même verrou par compte que l'export : les deux ne se croisent pas. Les journaux ne portent que
-l'identifiant, des nombres et la durée.
+Same per-account lock as the export: the two never overlap. Logs only carry the id, numbers
+and the duration.
 """
 
 import logging
@@ -34,8 +34,8 @@ from app.providers.vector.base import VectorStoreUnavailable
 
 logger = logging.getLogger(__name__)
 
-NOT_CANCELLABLE = "session_not_cancellable"  # terminée entre la lecture et l'annulation
-ROUNDS = 5  # tours d'annulation au plus : la garde empêche qu'il en naisse, c'est un filet
+NOT_CANCELLABLE = "session_not_cancellable"  # finished between the read and the cancellation
+ROUNDS = 5  # at most this many cancellation rounds: the guard stops new ones, this is a net
 _SESSIONS = Base.metadata.tables["sessions"]
 
 
@@ -46,10 +46,10 @@ async def _session_ids(rt: AccountRuntime, user_id: str) -> list[str]:
 
 
 async def _cancel_open_sessions(rt: AccountRuntime, user_id: str) -> int:
-    """Annule les sessions `running`, `waiting_user` et `paused` : plus aucune tâche n'écrit dans
-    la base ni dans les points de reprise du compte. Relit les sessions ouvertes et recommence
-    jusqu'à n'en plus trouver (une session née entre-temps est rattrapée). Une session qui vient
-    de finir est laissée."""
+    """Cancels `running`, `waiting_user` and `paused` sessions: no task writes to the database
+    or the account's checkpoints any more. Re-reads the open sessions and starts again until
+    none is left (a session born in the meantime is caught). A session that just finished is
+    left alone."""
     cancelled = 0
     for _ in range(ROUNDS):
         open_ids = await rt.runtime.open_sessions(user_id)
@@ -64,7 +64,7 @@ async def _cancel_open_sessions(rt: AccountRuntime, user_id: str) -> int:
                     raise
     raise AppError(
         "account_busy",
-        "Des sessions du compte ne s'arrêtent pas : rien n'est supprimé en base, réessaie.",
+        "Some of the account's sessions will not stop: nothing was deleted, try again.",
         503,
     )
 
@@ -76,12 +76,12 @@ async def _delete_vectors(rt: AccountRuntime, user_id: str, *, rows_deleted: boo
         if rows_deleted:
             raise AppError(
                 "vector_purge_incomplete",
-                "Tes données sont effacées en base. La purge des vecteurs reste à terminer.",
+                "Your data is erased from the database. The vector purge still has to finish.",
                 503,
             ) from None
         raise AppError(
             "vector_store_unavailable",
-            "La base vectorielle est indisponible : rien n'est supprimé en base, réessaie.",
+            "The vector store is unavailable: nothing was deleted, try again.",
             503,
         ) from None
 
@@ -89,21 +89,19 @@ async def _delete_vectors(rt: AccountRuntime, user_id: str, *, rows_deleted: boo
 async def _delete_files(rt: AccountRuntime, user_id: str) -> int:
     try:
         return await rt.storage.delete_user(user_id)
-    except (
-        OSError
-    ):  # fichier ouvert ailleurs (Windows), disque verrouillé : le rejeu est sans danger
+    except OSError:  # file open elsewhere (Windows), locked disk: replaying is safe
         raise AppError(
             "storage_unavailable",
-            "Des fichiers sont verrouillés : rien n'est supprimé en base, réessaie.",
+            "Some files are locked: nothing was deleted, try again.",
             503,
         ) from None
 
 
 async def _delete_rows(rt: AccountRuntime, user_id: str, *, keep_user: bool) -> tuple[int, int]:
-    """`(tables vidées, lignes supprimées)`, en une transaction : tout part ou rien."""
+    """`(tables emptied, rows deleted)`, in one transaction: all or nothing."""
     tables = tuple(
         table
-        for table in reversed(all_user_tables())  # les enfants avant leurs parents
+        for table in reversed(all_user_tables())  # children before their parents
         if table.name != AccountVectorPurge.__tablename__
         and not (keep_user and table.name == "users")
     )
@@ -120,15 +118,15 @@ async def _delete_rows(rt: AccountRuntime, user_id: str, *, keep_user: bool) -> 
 async def delete_account(
     rt: AccountRuntime, user_id: str, *, auth_mode: Literal["local", "google"]
 ) -> bool:
-    """Efface tout ce que `user_id` a posé. Mode local : la ligne `users` reste (l'application
-    continue, vide) ; mode Google : elle part aussi, avec les sessions de connexion.
-    Renvoie faux si seule la purge finale des vecteurs d'un compte Google reste en attente."""
+    """Erases everything `user_id` created. Local mode: the `users` row stays (the application
+    goes on, empty); Google mode: it goes too, along with the login sessions.
+    Returns false if only the final vector purge of a Google account is still pending."""
     started = time.monotonic()
     async with export_lock(rt.locks, user_id), rt.runtime.refusing_starts(user_id):
         cancelled = await _cancel_open_sessions(rt, user_id)
         await _delete_vectors(rt, user_id)
         files = await _delete_files(rt, user_id)
-        cancelled += await _cancel_open_sessions(rt, user_id)  # juste avant de lire les fils
+        cancelled += await _cancel_open_sessions(rt, user_id)  # just before reading the threads
         threads = await _session_ids(rt, user_id)
         await rt.runtime.delete_threads(threads)
         tables, rows = await _delete_rows(rt, user_id, keep_user=auth_mode == "local")
@@ -138,7 +136,7 @@ async def delete_account(
         else:
             await _delete_vectors(rt, user_id, rows_deleted=True)
     logger.info(
-        "Tout supprimer : user=%s sessions_cancelled=%d threads=%d files=%d tables=%d rows=%d"
+        "Delete everything: user=%s sessions_cancelled=%d threads=%d files=%d tables=%d rows=%d"
         " duration_ms=%d",
         user_id,
         cancelled,

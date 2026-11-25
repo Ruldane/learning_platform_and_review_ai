@@ -1,13 +1,12 @@
-"""Port de la capture rapide (`CaptureStore`, D108) sur la feature `capture` : implémentation
-branchée par `bootstrap.agent_ports`. Chaque appel ouvre sa propre session de base, courte.
+"""Quick capture port (`CaptureStore`, D108) on the `capture` feature: implementation wired by
+`bootstrap.agent_ports`. Each call opens its own short database session.
 
-`store` range, en une transaction, l'élément de mémoire `document` (titre, résumé en cinq lignes,
-« Source : {adresse} », étiquettes des modules), la ligne de journal `capture`
-(« capture:{session} », qui le rend idempotent) et, pour une note « j'ai appris », les
-compétences montées à `declare` au moins avec une preuve `capture` (F14 : `user_skills` fait
-foi, jamais au-delà de ce qu'elles avaient). Après le commit : l'élément est indexé et les
-niveaux reflétés dans la mémoire (idempotents, refaits au rejeu). `tick_task` prend le verrou
-du programme AVANT sa transaction (F4). Journaux : identifiants et nombres seulement."""
+`store` stores, in one transaction, the `document` memory item (title, five-line summary,
+"Source: {address}", module tags), the `capture` journal line ("capture:{session}", which makes
+it idempotent) and, for an "I learned" note, the skills raised to `declared` at least with
+`capture` evidence (F14: `user_skills` is authoritative, never beyond what they had). After the
+commit: the item is indexed and the levels reflected in memory (idempotent, redone on replay).
+`tick_task` takes the program lock BEFORE its transaction (F4). Logs: ids and numbers only."""
 
 import logging
 from collections.abc import Sequence
@@ -45,31 +44,31 @@ from app.features.skills.service import SkillsService
 
 logger = logging.getLogger(__name__)
 
-MAX_CHUNKS = 40  # premiers fragments d'un document importé
+MAX_CHUNKS = 40  # first chunks of an imported document
 MAX_TEXT_CHARS = 20_000
-_SOURCE_LABEL = {"url": "Lien capturé", "document": "Document capturé", "text": "Note"}
+_SOURCE_LABEL = {"url": "Captured link", "document": "Captured document", "text": "Note"}
 
 
 def document_not_found() -> AppError:
-    return AppError("document_not_found", "Document introuvable.", 404)
+    return AppError("document_not_found", "Document not found.", 404)
 
 
 def document_failed() -> AppError:
-    return AppError("document_failed", "Ce document n'a pas pu être importé.", 409)
+    return AppError("document_failed", "This document could not be imported.", 409)
 
 
 def item_text(digest: CaptureDigest, material: CaptureMaterial) -> str:
     lines = "\n".join(f"- {line}" for line in digest.summary)
-    return f"{lines}\n\nSource : {material.url}" if material.url else lines
+    return f"{lines}\n\nSource: {material.url}" if material.url else lines
 
 
 def journal_text(source: CaptureSource, title: str) -> str:
-    return f"{_SOURCE_LABEL[source]} : « {title} »"
+    return f"{_SOURCE_LABEL[source]} “{title}”"
 
 
 def _learned(digest: CaptureDigest, material: CaptureMaterial, source: CaptureSource) -> list[str]:
-    """Les concepts « j'ai appris » d'une note de January (jamais d'une page, d'un document ni
-    d'un long texte collé : `is_note`)."""
+    """The "I learned" concepts of a note by January (never of a page, a document or a long
+    pasted text: `is_note`)."""
     return list(digest.concepts) if digest.learned and is_note(source, material.text) else []
 
 
@@ -113,7 +112,7 @@ class AgentCaptureStore:
     ) -> CaptureStored:
         async with self._rt.session_factory() as db:
             entry = await entry_by_ref(db, user_id, _ref(session_id))
-            if entry is not None and entry.memory_item_id:  # rejeu : déjà rangée
+            if entry is not None and entry.memory_item_id:  # replay: already stored
                 written, entry_id, item_id = False, entry.id, entry.memory_item_id
             else:
                 today = await self._rt.today(db, user_id)
@@ -127,7 +126,7 @@ class AgentCaptureStore:
             await self._reflect(user_id, session_id, concepts, digest.title)
         if written:
             logger.info(
-                "Capture rangée : utilisateur %s, session %s, élément %s, journal %s",
+                "Capture stored: user %s, session %s, item %s, journal %s",
                 user_id,
                 session_id,
                 item_id,
@@ -147,7 +146,7 @@ class AgentCaptureStore:
         source: CaptureSource,
         today: date,
     ) -> tuple[str, str]:
-        """Élément, journal et acquis dans la transaction de `db` (non commitée)."""
+        """Item, journal and learned items in the transaction of `db` (not committed)."""
         modules = [m for ref in digest.modules if (m := links.module(ref)) is not None]
         item = await write_capture(
             db,
@@ -155,8 +154,8 @@ class AgentCaptureStore:
             user_id,
             title=digest.title,
             text=item_text(digest, material),
-            # Étiquettes : « capture », modules reliés, puis concepts extraits (F18 ; `clean_tags`
-            # borne le nombre et la longueur).
+            # Tags: "capture", linked modules, then extracted concepts (F18; `clean_tags`
+            # bounds the number and the length).
             tags=("capture", *(m.title for m in modules), *digest.concepts),
             session_id=session_id,
         )
@@ -178,17 +177,17 @@ class AgentCaptureStore:
             },
         )
         if concepts:
-            label = f"Capture « {digest.title} » ({today:%d/%m})"
+            label = f"Capture “{digest.title}” ({today.isoformat()})"
             await SkillsService(db, user_id).raise_levels(
-                concepts, "declare", evidence("capture", entry_id, label, self._rt.now())
+                concepts, "declared", evidence("capture", entry_id, label, self._rt.now())
             )
         return entry_id, item.id
 
     async def _reflect(
         self, user_id: str, session_id: str, concepts: list[str], title: str
     ) -> None:
-        """Le niveau de chaque compétence (qui fait foi) reflété dans les acquis de la mémoire ;
-        idempotent, jamais plus bas : refait au rejeu pour rattraper un arrêt."""
+        """The level of each skill (which is authoritative) reflected in the memory's learned
+        items; idempotent, never lower: redone on replay to catch up after a stop."""
         try:
             async with self._rt.session_factory() as db:
                 levels = await SkillsService(db, user_id).levels_of(concepts)
@@ -202,22 +201,22 @@ class AgentCaptureStore:
             )
         except Exception as exc:
             logger.warning(
-                "Acquis non reflétés après une capture : session %s (%s)",
+                "Learned items not reflected after a capture: session %s (%s)",
                 session_id,
                 type(exc).__name__,
             )
 
     async def tick_task(self, user_id: str, session_id: str, task_id: str) -> bool:
-        """Vrai si la tâche est cochée (déjà faite comprise : rejeu) ; faux si elle n'existe plus
-        ou n'est pas à January."""
+        """True if the task is ticked (already done included: replay); false if it no longer
+        exists or is not January's."""
         async with self._rt.session_factory() as db:
             program_id = await program_of_task(db, user_id, task_id)
         if program_id is None:
-            logger.info("Capture : tâche inconnue ignorée (session %s)", session_id)
+            logger.info("Capture: unknown task ignored (session %s)", session_id)
             return False
         lock = self._rt.program.program_lock(user_id, program_id)
-        async with lock, self._rt.session_factory() as db:  # le verrou AVANT la transaction (F4)
-            if await program_of_task(db, user_id, task_id) is None:  # retirée entre-temps
+        async with lock, self._rt.session_factory() as db:  # the lock BEFORE the transaction (F4)
+            if await program_of_task(db, user_id, task_id) is None:  # removed meanwhile
                 return False
             await tick_tasks(db, self._rt.program, user_id, [task_id])
             await db.commit()
@@ -230,8 +229,8 @@ class AgentCaptureStore:
             module_id = modules[0] if modules else None
             source_id = entry.id if entry else None
             new = [
-                # Jamais de compétence (revue finale de la phase 5, A-I2) : le nom viendrait d'un
-                # contenu non fiable et deux échecs rétrograderaient un acquis validé.
+                # Never a skill (final review of phase 5, A-I2): the name would come from
+                # untrusted content and two failures would demote a validated learned item.
                 NewCard(card.front, card.back, None, module_id, "capture", source_id)
                 for card in cards
             ]

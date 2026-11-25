@@ -13,6 +13,7 @@ from app.agents.tools.cv_validator import NUMBER, TOOL
 from app.agents.tools.review_schema import CompanyBrief
 from scripts.sample_posting import POSTING_TRAP
 from tests.agents.graphs.review_support import (
+    CROSS_EXAMINATION,
     FakeWeb,
     MakeReview,
     calls,
@@ -35,13 +36,13 @@ async def test_review_proposes_validates_and_waits_for_output(
     run = await review_runner()
     question = await run.question()
     assert review_store.saved_refs == ["a1", "a2", "r1"] and question["kind"] == "cv_output"
-    assert question["question"] == "Que veux-tu maintenant ?"
+    assert question["question"] == "What would you like to do next?"
     assert [o["label"] for o in question["options"]] == [
-        "Voir le rapport",
-        "Générer le PDF",
-        "Terminer",
+        "View the report",
+        "Generate PDF",
+        "Finish",
     ]
-    assert "3 modifications proposées, 0 à confirmer." in await run.said()
+    assert "3 changes proposed, 0 to confirm." in await run.said()
     report = review_store.report
     assert report is not None and report.strengths == ["Résultat chiffré."]
     assert report.ats_notes == ["Sections usuelles : bien lues."]
@@ -80,15 +81,13 @@ async def test_confrontation_stops_after_two_rounds(
     run = await review_runner(models)
     await run.question()
     assert len(confront_calls(models, 1)) == 2 and len(confront_calls(models, 2)) == 2
-    assert len([c for c in models.calls if "Confrontation, tour" in c.prompt]) == 4
-    [second] = [p for p in confront_calls(models, 2) if "Tu es le Recruteur" in p]
-    assert "Objection : drop" in second and "r1 —" in second and "a1 —" not in second
+    assert len([c for c in models.calls if CROSS_EXAMINATION in c.prompt]) == 4
+    [second] = [p for p in confront_calls(models, 2) if "You are the Recruiter" in p]
+    assert "Objection: drop" in second and "r1 —" in second and "a1 —" not in second
     assert review_store.saved_refs == ["a1", "a2", "r1"]  # désaccord : January tranche
     said = await run.said()
-    assert any(
-        s.startswith("Tour 1 : mes positions sur les propositions du Recruteur.") for s in said
-    )
-    assert any(s.startswith("Tour 2 : je réponds aux objections") for s in said)
+    assert any(s.startswith("Round 1: my stances on the Recruiter's proposals.") for s in said)
+    assert any(s.startswith("Round 2: I answer the objections") for s in said)
 
 
 async def test_a_silent_agent_does_not_lose_the_proposals(
@@ -99,13 +98,13 @@ async def test_a_silent_agent_does_not_lose_the_proposals(
     avec les positions du Recruteur (revue 6.13, m1)."""
     monkeypatch.setattr(review_confront, "STANCE_TIMEOUT_S", 0.2)
     models = reviewers(recruiter_confront=[stances(("a2", "drop", None))])
-    models.block = lambda agent, prompt: agent == "ats_reader" and "Confrontation, tour" in prompt
+    models.block = lambda agent, prompt: agent == "ats_reader" and CROSS_EXAMINATION in prompt
     run = await review_runner(models)
     await run.question()  # la session n'a pas échoué : la question de sortie est posée
     assert review_store.saved_refs == ["a1", "a2", "r1"]  # a2 contestée, January tranche
     said = await run.said()
-    assert any(s.startswith("Tour 1 : mes positions sur les propositions du Lecteur") for s in said)
-    assert any("r1 : je garde." in s for s in said)
+    assert any(s.startswith("Round 1: my stances on the ATS Reader's proposals.") for s in said)
+    assert any("r1: I keep it." in s for s in said)
     assert review_confront.CONFRONT_TIMEOUT_S > 2 * review_confront.STANCE_TIMEOUT_S
 
 
@@ -133,7 +132,7 @@ async def test_amend_then_author_drop_removes_and_says_so(
     await run.question()
     assert review_store.saved_refs == ["a1", "a2"]
     said = await run.said()
-    assert any("- r1 : je retire." in s for s in said)
+    assert any("- r1: I withdraw it." in s for s in said)
 
 
 async def test_amend_then_author_keep_restores_original_text(
@@ -145,14 +144,14 @@ async def test_amend_then_author_keep_restores_original_text(
     )
     run = await review_runner(models)
     await run.question()
-    [second] = [p for p in confront_calls(models, 2) if "Tu es le Recruteur" in p]
-    assert "Texte d'origine (le tien) : Anime l'équipe au quotidien" in second
-    assert "Texte amendé par l'autre agent : Mène l'équipe" in second
+    [second] = [p for p in confront_calls(models, 2) if "You are the Recruiter" in p]
+    assert "Original text (yours): Anime l'équipe au quotidien" in second
+    assert "Text amended by the other agent: Mène l'équipe" in second
     assert in_untrusted(second, "Anime l'équipe au quotidien")
     assert in_untrusted(second, "Mène l'équipe")
     assert review_store.saved["r1"][0].after == "Anime l'équipe au quotidien"
     said = await run.said()
-    assert any("- r1 : je maintiens mon texte d'origine." in s for s in said)
+    assert any("- r1: I stand by my original text." in s for s in said)
 
 
 async def test_amended_text_is_revalidated(
@@ -164,7 +163,7 @@ async def test_amended_text_is_revalidated(
     proposal, verdict = review_store.saved["r1"]
     assert proposal.after == AMENDED and review_store.status_of("r1") == "to_confirm"
     assert NUMBER in verdict.blocks
-    assert "3 modifications proposées, 1 à confirmer." in await run.said()
+    assert "3 changes proposed, 1 to confirm." in await run.said()
 
 
 async def test_posting_keyword_absent_goes_to_gap_terms(
@@ -178,9 +177,7 @@ async def test_posting_keyword_absent_goes_to_gap_terms(
     await run.question()
     assert review_store.saved_refs == ["a2", "r1"] and review_store.gap_terms == ["LangGraph"]
     said = await run.said()
-    assert (
-        "2 modifications proposées, 0 à confirmer. 1 mot clé de l'offre part vers l'écart." in said
-    )
+    assert "2 changes proposed, 0 to confirm. 1 posting keyword moves to the gap." in said
 
 
 async def test_review_inputs_are_untrusted(
@@ -247,8 +244,8 @@ async def test_ats_detected_from_apply_url(
     assert ats == "Greenhouse"
     assert review_store.report is not None and review_store.report.ats == "Greenhouse"
     [prompt] = calls(run.models, "ats_reader", PROPOSE_REQUEST)
-    assert "ATS repéré par le lien de l'offre : Greenhouse" in prompt
-    assert "Mise à jour : 2026-11-13" in prompt
+    assert "ATS detected from the posting's link: Greenhouse" in prompt
+    assert "Updated: 2026-11-13" in prompt
 
 
 async def test_proposals_with_unknown_fact_are_reasked(
@@ -258,9 +255,9 @@ async def test_proposals_with_unknown_fact_are_reasked(
     run = await review_runner(reviewers(ats=[bad]))
     await run.question()
     first, second = calls(run.models, "ats_reader", PROPOSE_REQUEST)
-    assert "vise un fait qui n'est pas dans le profil" in second
-    assert "La référence r5 n'est pas à toi" in second
-    assert "vise un fait qui n'est pas dans le profil" not in first
+    assert "targets a fact that is not in the profile" in second
+    assert "Reference r5 is not yours" in second
+    assert "targets a fact that is not in the profile" not in first
     assert review_store.saved_refs == ["a1", "a2", "r1"]
 
 

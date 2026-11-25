@@ -11,23 +11,23 @@ import {
 import { openedInfo } from "./navState";
 
 const refused = (code: string, details: unknown = null) =>
-  new ApiError({ code, message: `Message du serveur (${code}).`, status: 409, details });
+  new ApiError({ code, message: `Server message (${code}).`, status: 409, details });
 
 describe("errors", () => {
-  it("gives a French text to the refusals it knows, the server's message to the others", () => {
+  it("uses the interface copy for known errors and the server's message for others", () => {
     expect(applicationsErrorMessage(refused("reminder_closed"))).toBe(
-      "Cette relance est déjà traitée.",
+      "This follow-up has already been handled.",
     );
     expect(applicationsErrorMessage(refused("validation_error"))).toBe(
-      "Message du serveur (validation_error).",
+      "Server message (validation_error).",
     );
     expect(applicationsErrorMessage(new Error("boom"))).toBe(
-      "Une erreur est survenue. Réessaie dans un instant.",
+      "Something went wrong. Try again in a moment.",
     );
   });
 
   it("reads the near-duplicates of a 409 application_duplicate, and only those", () => {
-    const alerts = [{ application_id: "a9", level: "certain", message: "Déjà là." }];
+    const alerts = [{ application_id: "a9", level: "certain", message: "Already exists." }];
     expect(duplicateAlerts(refused("application_duplicate", { alerts }))).toEqual(alerts);
     expect(duplicateAlerts(refused("application_duplicate", { alerts: [{ nope: 1 }] }))).toEqual(
       [],
@@ -54,18 +54,18 @@ describe("errors", () => {
     expect(openKitSessionId(refused("posting_required", { session_id: "k7" }))).toBeNull();
   });
 
-  it("speaks of the kit on a refused start, and of the edit with the server's words on a refused save", () => {
-    expect(applicationsErrorMessage(refused("posting_required"))).toMatch(/ni offre liée/);
+  it("uses the server's message when a kit edit can't be saved", () => {
+    expect(applicationsErrorMessage(refused("posting_required"))).toMatch(/no linked posting/);
     expect(kitSaveErrorMessage(refused("profile_required"))).toBe(
-      "Message du serveur (profile_required).",
+      "Server message (profile_required).",
     );
-    expect(kitSaveErrorMessage(refused("kit_item_not_found"))).toMatch(/pas encore arrivée/);
+    expect(kitSaveErrorMessage(refused("kit_item_not_found"))).toMatch(/hasn't arrived yet/);
   });
 
-  it("reads the info passed to an opened fiche, ignoring anything else", () => {
-    const info = [{ application_id: "a1", message: "Pour info." }];
+  it("reads informational matches passed to an open application", () => {
+    const info = [{ application_id: "a1", message: "For reference." }];
     expect(openedInfo({ info })).toEqual(info);
-    expect(openedInfo({ info: [{ message: "sans fiche" }] })).toEqual([]);
+    expect(openedInfo({ info: [{ message: "Missing application ID." }] })).toEqual([]);
     expect(openedInfo(null)).toEqual([]);
     expect(openedInfo({ info: "x" })).toEqual([]);
   });

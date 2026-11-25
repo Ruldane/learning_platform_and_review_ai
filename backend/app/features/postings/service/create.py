@@ -1,19 +1,19 @@
-"""Ajout d'une offre (SPEC F8, 14.2, D122) : `POST /postings` avec son lien OU son texte collé.
+"""Adding a posting (SPEC F8, 14.2, D122): `POST /postings` with its link OR its pasted text.
 
-- Lien : clé `posting_url_key` (paramètres de suivi retirés). Même clé déjà là → l'offre
-  existante (200, doublon « certain »). Sinon la page est lue **dans la requête** par la
-  recherche web (cache 7 jours, aucune transaction pendant la lecture, D66) ; illisible ou trop
-  courte (`enough_text`) → 422 `posting_unreadable` qui demande le texte : aucune offre devinée.
-- Texte : trop court → 422 `posting_too_short` ; empreinte sha256 du texte normalisé ; même
-  empreinte déjà là → l'offre existante (200).
-- Deux envois simultanés de la même source attendent l'un l'autre (verrou par source) ; l'index
-  unique (`uq_job_postings_url`, `uq_job_postings_text`) rattrape le reste : la perdante relit la
-  gagnante.
-- Une offre existante refusée, en échec ou interrompue est relancée plutôt que rendue telle
-  quelle.
+- Link: key `posting_url_key` (tracking parameters removed). Same key already there → the
+  existing posting (200, "certain" duplicate). Otherwise the page is read **within the
+  request** by the web search (7-day cache, no transaction during the read, D66); unreadable or
+  too short (`enough_text`) → 422 `posting_unreadable` asking for the text: no posting guessed.
+- Text: too short → 422 `posting_too_short`; sha256 fingerprint of the normalized text; same
+  fingerprint already there → the existing posting (200).
+- Two simultaneous sends of the same source wait for each other (lock per source); the unique
+  index (`uq_job_postings_url`, `uq_job_postings_text`) catches the rest: the loser re-reads
+  the winner.
+- An existing posting that is refused, failed or interrupted is relaunched rather than
+  returned as is.
 
-Une 422 ne recopie jamais l'entrée (`details.fields` seulement). Journaux : identifiants
-seulement, jamais le lien, le texte ni l'entreprise (SPEC 17.2)."""
+A 422 never copies the input back (`details.fields` only). Logs: ids only, never the link, the
+text or the company (SPEC 17.2)."""
 
 import hashlib
 import logging
@@ -44,7 +44,7 @@ _URL_ERRORS = ("invalid_url", "url_forbidden")
 def posting_source() -> AppError:
     return AppError(
         "posting_source",
-        "Donne soit le lien de l'offre, soit son texte.",
+        "Provide either the posting link or its text.",
         422,
         {"fields": ["url", "text"]},
     )
@@ -53,7 +53,7 @@ def posting_source() -> AppError:
 def posting_unreadable() -> AppError:
     return AppError(
         "posting_unreadable",
-        "Impossible de lire cette offre depuis le lien. Colle son texte.",
+        "This posting could not be read from its link. Paste the posting text instead.",
         422,
         {"fields": ["url"]},
     )
@@ -62,28 +62,28 @@ def posting_unreadable() -> AppError:
 def posting_too_short() -> AppError:
     return AppError(
         "posting_too_short",
-        "Ce texte est trop court pour une offre : colle l'offre complète.",
+        "Posting text is too short. Paste the full posting.",
         422,
         {"fields": ["text"]},
     )
 
 
 def _url_error(exc: AppError) -> AppError:
-    """`invalid_url` ou `url_forbidden`, message fixe, sans l'adresse reçue."""
+    """`invalid_url` or `url_forbidden`, fixed message, without the received address."""
     return AppError(exc.code, exc.message, 422, {"fields": ["url"]})
 
 
 def text_digest(text: str) -> str:
-    """Empreinte d'un texte d'offre : NFC, blancs réduits à une espace, bords retirés."""
+    """Fingerprint of a posting text: NFC, whitespace collapsed to one space, edges stripped."""
     normalized = _SPACES.sub(" ", unicodedata.normalize("NFC", text)).strip()
     return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
 
 @dataclass(frozen=True)
 class Source:
-    url: str | None  # le lien normalisé (`normalize_url`), lu tel quel
-    url_norm: str | None  # la clé d'idempotence (`posting_url_key`)
-    text: str | None  # le texte collé ; `None` pour un lien (lu ensuite)
+    url: str | None  # the normalized link (`normalize_url`), read as is
+    url_norm: str | None  # the idempotency key (`posting_url_key`)
+    text: str | None  # the pasted text; `None` for a link (read afterwards)
 
     @property
     def key(self) -> str:
@@ -95,7 +95,7 @@ def _given(value: str | None) -> bool:
 
 
 def source_of(body: PostingIn) -> Source:
-    """Exactement une source, contrôlée (voir le module)."""
+    """Exactly one source, checked (see the module)."""
     if _given(body.url) == _given(body.text):
         raise posting_source()
     if body.url is not None and body.url.strip():
@@ -106,8 +106,8 @@ def source_of(body: PostingIn) -> Source:
                 raise _url_error(exc) from None
             raise
         if len(url) > URL_MAX or len(key) > URL_MAX:
-            raise AppError("invalid_url", "Lien trop long.", 422, {"fields": ["url"]})
-        if route_fragment(body.url):  # l'offre est dans l'ancre : la racine du site n'est pas elle
+            raise AppError("invalid_url", "The posting link is too long.", 422, {"fields": ["url"]})
+        if route_fragment(body.url):  # the posting is in the anchor: the site root is not it
             raise posting_unreadable()
         return Source(url, key, None)
     text = (body.text or "").strip()
@@ -127,25 +127,25 @@ async def _existing(rt: PostingsRuntime, user_id: str, source: Source) -> str | 
 
 
 async def _read_page(rt: PostingsRuntime, user_id: str, url: str) -> str:
-    """Le texte de la page, lu hors transaction ; illisible ou trop court : 422."""
+    """The page text, read outside a transaction; unreadable or too short: 422."""
     try:
         outcome = await read(rt.research, user_id, None, url)
     except AppError as exc:
         if exc.code in _URL_ERRORS:
             raise _url_error(exc) from None
-        if exc.status_code == 429:  # noqa: PLR2004  # plafond de la recherche web : tel quel
+        if exc.status_code == 429:  # noqa: PLR2004  # web search cap: as is
             raise
-        logger.info("Offre illisible : utilisateur %s (%s)", user_id, exc.code)
+        logger.info("Unreadable posting: user %s (%s)", user_id, exc.code)
         raise posting_unreadable() from None
     text = outcome.text.strip()
     if outcome.status != "ok" or not enough_text(text):
-        logger.info("Offre illisible ou trop courte : utilisateur %s", user_id)
+        logger.info("Posting unreadable or too short: user %s", user_id)
         raise posting_unreadable()
     return text[:TEXT_MAX]
 
 
 async def _insert(rt: PostingsRuntime, user_id: str, source: Source, text: str) -> tuple[str, bool]:
-    """`(id, créée)` ; l'index unique tranche une course : la perdante relit la gagnante."""
+    """`(id, created)`; the unique index settles a race: the loser re-reads the winner."""
     async with rt.session_factory() as db:
         row = JobPosting(
             user_id=user_id,
@@ -164,8 +164,8 @@ async def _insert(rt: PostingsRuntime, user_id: str, source: Source, text: str) 
             await db.rollback()
     winner = await _existing(rt, user_id, source)
     if winner is None:
-        raise RuntimeError("offre gagnante introuvable après un conflit d'unicité")
-    logger.info("Offre ajoutée en double rattrapée : utilisateur %s, offre %s", user_id, winner)
+        raise RuntimeError("winning posting not found after a uniqueness conflict")
+    logger.info("Duplicate posting add caught up: user %s, posting %s", user_id, winner)
     return winner, False
 
 
@@ -178,7 +178,7 @@ async def _answer(
 
 
 async def create_posting(rt: PostingsRuntime, user_id: str, body: PostingIn) -> PostingCreatedOut:
-    """Voir le module. Rend l'offre, `created` et la session lancée (ou `None`)."""
+    """See the module. Returns the posting, `created` and the session launched (or `None`)."""
     source = source_of(body)
     async with rt.source_locks.get(user_id, source.key):
         posting_id = await _existing(rt, user_id, source)
@@ -186,12 +186,12 @@ async def create_posting(rt: PostingsRuntime, user_id: str, body: PostingIn) -> 
             text = source.text if source.url is None else await _read_page(rt, user_id, source.url)
             posting_id, created = await _insert(rt, user_id, source, text or "")
             if created:
-                logger.info("Offre ajoutée : utilisateur %s, offre %s", user_id, posting_id)
+                logger.info("Posting added: user %s, posting %s", user_id, posting_id)
                 sid = await launch_new(rt, user_id, posting_id)
                 return await _answer(rt, user_id, posting_id, True, sid)
         again = await relaunch(rt, user_id, posting_id, if_needed=True)
         logger.info(
-            "Offre déjà ajoutée : utilisateur %s, offre %s, relancée %s",
+            "Posting already added: user %s, posting %s, relaunched %s",
             user_id,
             posting_id,
             again is not None,

@@ -1,8 +1,8 @@
-"""L'Éclaireur choisit les ressources d'un module (SPEC 3.6, D90) parmi les sources que la session
-a lues et retenues (note 60 ou plus) : jamais une adresse écrite par le modèle. De 3 à 6 ; moins
-si le web n'en a pas donné assez (signalé au rapport, jamais inventé).
+"""The Scout chooses a module's resources (SPEC 3.6, D90) among the sources the session read and
+selected (score 60 or more): never an address written by the model. From 3 to 6; fewer if the
+web did not give enough (reported in the report, never invented).
 
-Rien n'est écrit ici : le choix voyage dans l'état et le port l'enregistre à la publication."""
+Nothing is written here: the choice travels in the state and the port records it at publication."""
 
 import logging
 from typing import Any
@@ -22,9 +22,9 @@ from app.agents.tools.lesson_port import ResourcePick, ResourcePicks
 
 MIN_RESOURCES = 3
 MAX_RESOURCES = 6
-ASKS = 2  # une demande, puis une re-demande si trop d'identifiants étaient inventés
+ASKS = 2  # one request, then one re-request if too many identifiers were invented
 RESOURCES_TIMEOUT_S = 240
-INSUFFICIENT = "Ressources insuffisantes : {found} source(s) retenue(s) sur {wanted} attendues."
+INSUFFICIENT = "Too few resources. Kept {found} of {wanted} required sources."
 
 logger = logging.getLogger(__name__)
 
@@ -34,16 +34,16 @@ def _candidates_prompt(candidates: list[dict[str, Any]]) -> str:
     for verdict in candidates:
         sid = verdict["source_id"]
         body = (
-            f"Titre : {one_line(verdict['title'])}\nAdresse : {verdict['url']}\n"
-            f"Langue : {verdict['lang'] or 'inconnue'}\nRésumé : {verdict['summary']}"
+            f"Title: {one_line(verdict['title'])}\nURL: {verdict['url']}\n"
+            f"Language: {verdict['lang'] or 'unknown'}\nSummary: {verdict['summary']}"
         )
-        header = f"source_id : {sid} (note {verdict['score']}/100)"
-        blocks.append(f"{header}\n{untrusted(body, f'ressource {sid}')}")
+        header = f"source_id: {sid} (score {verdict['score']}/100)"
+        blocks.append(f"{header}\n{untrusted(body, f'resource {sid}')}")
     return "\n\n".join(blocks)
 
 
 def _valid(picks: ResourcePicks, allowed: set[str]) -> list[ResourcePick]:
-    """Choix du modèle limités aux candidates, sans doublon : un identifiant inventé est retiré."""
+    """Model choices limited to the candidates, no duplicates: an invented identifier is removed."""
     seen: set[str] = set()
     kept: list[ResourcePick] = []
     for pick in picks.resources:
@@ -54,7 +54,7 @@ def _valid(picks: ResourcePicks, allowed: set[str]) -> list[ResourcePick]:
 
 
 class _FewPicks(ResourcePicks):
-    """Moins de 3 sources retenues : le web n'en a pas donné assez, on garde ce qu'il y a."""
+    """Fewer than 3 selected sources: the web did not give enough, we keep what there is."""
 
     resources: list[ResourcePick] = Field(min_length=1, max_length=MAX_RESOURCES)
 
@@ -62,18 +62,16 @@ class _FewPicks(ResourcePicks):
 def make_pick_resources(deps: GraphDeps) -> Node:
     @node_timeout(RESOURCES_TIMEOUT_S)
     async def pick_resources(state: LessonFactoryState) -> LessonFactoryState:
-        """3 sources retenues ou plus : le modèle choisit 3 à 6 ressources parmi elles, les
-        identifiants hors candidates sont retirés. Moins de 3 : toutes les retenues sont
-        décrites, avec la remarque « Ressources insuffisantes » (jamais une ressource inventée)."""
+        """3 or more selected sources: the model chooses 3 to 6 resources among them, identifiers
+        outside the candidates are removed. Fewer than 3: all the selected ones are described,
+        with the remark "Too few resources" (never an invented resource)."""
         candidates = kept_verdicts(state)
         enough = len(candidates) >= MIN_RESOURCES
         picks = await _ask(deps, state, candidates, ResourcePicks if enough else _FewPicks)
         notes = []
         if len(picks) < MIN_RESOURCES:
             notes.append(INSUFFICIENT.format(found=len(picks), wanted=MIN_RESOURCES))
-            logger.info(
-                "Ressources insuffisantes : session %s, %d retenue(s)", deps.session_id, len(picks)
-            )
+            logger.info("Too few resources: session %s, %d kept", deps.session_id, len(picks))
         return {"resources": [p.model_dump() for p in picks], "resource_notes": notes}
 
     return pick_resources
@@ -100,7 +98,7 @@ async def _ask(
     )
     allowed = {v["source_id"] for v in candidates}
     model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
-    messages: list[BaseMessage] = [SystemMessage(prompt), HumanMessage("Choisis les ressources.")]
+    messages: list[BaseMessage] = [SystemMessage(prompt), HumanMessage("Choose the resources.")]
     picks: list[ResourcePick] = []
     for ask in range(ASKS):
         found = await structured_call(
@@ -109,7 +107,7 @@ async def _ask(
             messages,
             agent=AGENT,
             step=f"ressources-{ask + 1}",
-            intent="je choisis les ressources du module",
+            intent="choosing resources for the module",
         )
         picks = _valid(found, allowed)
         if len(picks) >= wanted:
@@ -117,8 +115,7 @@ async def _ask(
         messages += [
             AIMessage(found.model_dump_json()),
             HumanMessage(
-                "Certains source_id n'existent pas ou sont en double : choisis uniquement "
-                "parmi ceux de la liste, sans doublon."
+                "Some source IDs are missing or repeated. Use each ID from the list at most once."
             ),
         ]
     return picks

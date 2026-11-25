@@ -1,7 +1,5 @@
-"""Lisibilité d'un CV par une machine (SPEC 5.3 étape 4, 5.4 ; D120) : cinq contrôles sur la mise
-en page extraite du PDF (`PdfLayout`) et le contenu attendu (`CvContent`). Aucune garantie de
-passage n'est promise. Les `detail` sont des phrases françaises faites de nombres et de noms de
-section du code, **jamais** de texte du CV (donnée personnelle, 17.2)."""
+"""Check CV readability from the PDF layout and expected content (SPEC 5.3, 5.4, D120).
+Details use counts and standard section names to protect CV content (SPEC 17.2)."""
 
 import re
 from collections.abc import Iterator, Sequence
@@ -11,6 +9,8 @@ from app.agents.tools.posting_schema import Keyword, contains_term, normalize_te
 from app.features.cv.service.indicators import AtsCheck
 from app.providers.pdf.base import PdfLayout, TextBlock
 
+# French headings recognise CVs written in French (and rows stored before the switch to
+# English); the English ones recognise the rest.
 STANDARD_HEADINGS: dict[SectionKey, tuple[str, ...]] = {
     "summary": (
         "Profil", "Profil professionnel", "Résumé", "Résumé professionnel", "À propos",
@@ -34,27 +34,27 @@ STANDARD_HEADINGS: dict[SectionKey, tuple[str, ...]] = {
     "links": ("Liens", "Sites", "En ligne", "Links", "Online", "Portfolio"),
 }  # fmt: skip
 _SECTION_NAMES: dict[SectionKey, str] = {
-    "summary": "profil",
-    "experience": "expérience",
-    "education": "formation",
-    "skills": "compétences",
-    "projects": "projets",
-    "languages": "langues",
-    "links": "liens",
+    "summary": "profile",
+    "experience": "experience",
+    "education": "education",
+    "skills": "skills",
+    "projects": "projects",
+    "languages": "languages",
+    "links": "links",
 }
 MIN_BODY_PT = 10.0
 BODY_SHARE = 0.95
 EDGE_BAND = 0.04
 READING_SHARE = 0.9
-LINE_START_CHARS = 30  # début normalisé d'une ligne cherché dans le flux
+LINE_START_CHARS = 30  # normalized start of a line searched for in the stream
 _SIZE_TOLERANCE = 0.05
 _MIN_PHONE_DIGITS = 8
-_EDGE_SLACK_PT = 1.0  # chevauchement toléré entre deux lignes voisines
+_EDGE_SLACK_PT = 1.0  # overlap tolerated between two neighbouring lines
 _NON_DIGIT = re.compile(r"\D")
 
 
 def _visible(layout: PdfLayout) -> Iterator[tuple[float, TextBlock]]:
-    """(hauteur de la page, bloc) de chaque bloc visible."""
+    """(page height, block) of each visible block."""
     for page in layout.pages:
         for block in page.blocks:
             if not block.invisible:
@@ -64,18 +64,18 @@ def _visible(layout: PdfLayout) -> Iterator[tuple[float, TextBlock]]:
 def _selectable(layout: PdfLayout) -> AtsCheck:
     hidden = sum(block.invisible for page in layout.pages for block in page.blocks)
     if not layout.selectable:
-        detail = "Le texte n'est pas sélectionnable : un parseur ne lit rien (PDF scanné ?)."
+        detail = "The text is not selectable. The PDF may be a scan."
     elif hidden:
-        detail = f"{hidden} ligne(s) de texte invisible (couleur du fond ou taille minuscule)."
+        detail = f"Hidden lines: {hidden}. The text is too small or matches the background."
     else:
-        detail = "Texte sélectionnable, aucun texte invisible."
+        detail = "Text is selectable and all lines are visible."
     return AtsCheck("selectable_text", layout.selectable and not hidden, detail)
 
 
 def _needles(section: CvSection) -> list[str]:
-    """Ce qu'on cherche de chaque ligne de la section dans le flux normalisé : ses
-    `LINE_START_CHARS` premiers caractères (début de mot à gauche), ou la ligne entière entre deux
-    frontières de mot si elle est plus courte (« C » ne se trouve pas dans « Conçu »)."""
+    """What is searched for from each line of the section in the normalized stream: its first
+    `LINE_START_CHARS` characters (word start on the left), or the whole line between two word
+    boundaries if it is shorter ("C" is not found in "Conçu")."""
     lines: list[str] = []
     for entry in section.entries:
         lines += [entry.heading, entry.subheading or "", entry.dates or ""]
@@ -92,8 +92,8 @@ def _needles(section: CvSection) -> list[str]:
 
 
 def _stream_lines(layout: PdfLayout) -> tuple[str, list[tuple[int, str]]]:
-    """Flux normalisé (une espace entre deux lignes, une aux bords) et (début, texte) de chacune
-    de ses lignes non vides."""
+    """Normalized stream (one space between two lines, one at the edges) and (start, text) of
+    each of its non-empty lines."""
     stream = " "
     lines: list[tuple[int, str]] = []
     for page in layout.pages:
@@ -108,10 +108,10 @@ def _stream_lines(layout: PdfLayout) -> tuple[str, list[tuple[int, str]]]:
 def _title_positions(
     stream: str, lines: list[tuple[int, str]], sections: Sequence[CvSection]
 ) -> list[tuple[int, int, int]]:
-    """(début, fin, rang de la section) de chaque intitulé trouvé, triés par position :
-    l'intitulé est cherché comme **ligne entière** du flux (un `<h2>` est une ligne à lui seul ;
-    « Chef de projets » ne place pas la section « Projets ») ; à défaut, sa première occurrence
-    en mots entiers."""
+    """(start, end, section rank) of each heading found, sorted by position: the heading is
+    searched for as a **whole line** of the stream (an `<h2>` is a line on its own; "Project
+    manager" does not place the "Projects" section); failing that, its first occurrence as
+    whole words."""
     found: list[tuple[int, int, int]] = []
     taken: set[int] = set()
     for rank, section in enumerate(sections):
@@ -139,9 +139,9 @@ def _reading_order(layout: PdfLayout, content: CvContent) -> AtsCheck:
         found += sum(needle in segment for needle in expected[rank])
     passed = total == 0 or found >= READING_SHARE * total
     detail = (
-        f"{found} ligne(s) sur {total} lues dans leur section, dans l'ordre du texte du PDF."
+        f"{found} of {total} lines appear in their section in the PDF reading order."
         if total
-        else "Aucune ligne à retrouver."
+        else "There are no lines to match."
     )
     return AtsCheck("reading_order", passed, detail)
 
@@ -155,17 +155,17 @@ def _standard_headings(content: CvContent) -> AtsCheck:
     ]
     total = len(content.sections)
     if odd:
-        detail = f"Intitulé peu courant pour : {', '.join(odd)} ({total - len(odd)} sur {total})."
+        detail = f"Unusual headings for {', '.join(odd)} ({total - len(odd)} of {total} standard)."
     else:
-        detail = f"Intitulés standard ({total} sur {total})."
+        detail = f"Standard headings: {total} of {total}."
     return AtsCheck("standard_headings", not odd, detail)
 
 
 def _in_body(block: TextBlock, visible: Sequence[TextBlock], height: float) -> bool:
-    """Le bloc est dans le corps de la page : hors des bandes haute et basse (`EDGE_BAND`), ou
-    dans l'une d'elles mais séparé du bord par un autre bloc visible (un contact sous le nom,
-    dans un bandeau collé au haut de la page, suit le flux du corps ; une ligne isolée au bord,
-    seule entre le bord et le reste, se lit comme un en-tête ou un pied de page)."""
+    """The block is in the page body: outside the top and bottom bands (`EDGE_BAND`), or inside
+    one of them but separated from the edge by another visible block (a contact under the name,
+    in a banner stuck to the top of the page, follows the body flow; a lone line at the edge,
+    alone between the edge and the rest, reads as a header or footer)."""
     if block.top < EDGE_BAND * height:
         return any(other.bottom <= block.top + _EDGE_SLACK_PT for other in visible)
     if block.bottom > (1 - EDGE_BAND) * height:
@@ -195,11 +195,11 @@ def _contact_in_body(layout: PdfLayout, content: CvContent) -> AtsCheck:
         if found:
             break
     if not emails and not phones:
-        detail = "Aucun email ni téléphone dans les coordonnées."
+        detail = "No email address or phone number was provided."
     elif found:
-        detail = "Email ou téléphone lisible dans le corps de la page."
+        detail = "The email address or phone number is readable in the page body."
     else:
-        detail = "Email et téléphone introuvables hors des bandes haute et basse de la page."
+        detail = "No email address or phone number was found in the page body."
     return AtsCheck("contact_in_body", found, detail)
 
 
@@ -213,15 +213,15 @@ def _font_sizes(layout: PdfLayout) -> AtsCheck:
     share = large / total if total else 0.0
     percent = int(share * 100)
     detail = (
-        f"{percent} % des caractères à {MIN_BODY_PT:g} pt ou plus."
+        f"{percent}% of characters are {MIN_BODY_PT:g} pt or larger."
         if total
-        else "Aucun caractère visible."
+        else "No characters are visible."
     )
     return AtsCheck("font_sizes", total > 0 and share >= BODY_SHARE, detail)
 
 
 def ats_checks(layout: PdfLayout, content: CvContent) -> list[AtsCheck]:
-    """Les cinq contrôles, dans l'ordre de `AtsCheckId`."""
+    """The five checks, in the order of `AtsCheckId`."""
     return [
         _selectable(layout),
         _reading_order(layout, content),
@@ -232,8 +232,8 @@ def ats_checks(layout: PdfLayout, content: CvContent) -> list[AtsCheck]:
 
 
 def keyword_hits(text: str, keywords: Sequence[Keyword]) -> dict[str, bool]:
-    """Terme → présent dans `text` (lui ou l'une de ses variantes, mots entiers ; casse, accents,
-    ponctuation et pluriel simple ignorés, comme la couverture)."""
+    """Term → present in `text` (itself or one of its variants, whole words; case, accents,
+    punctuation and simple plural ignored, like the coverage)."""
     return {
         keyword.term: any(
             contains_term(text, form, plural=True) for form in (keyword.term, *keyword.variants)

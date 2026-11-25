@@ -20,7 +20,7 @@ export function useCodeTrial(sessionId: string, trialId?: string) {
     async onSuccess(result) {
       await cache.invalidateQueries({ queryKey: trials(sessionId) });
       await navigate(
-        `/code/${encodeURIComponent(sessionId)}/proces/${encodeURIComponent(result.trial_id)}`,
+        `/code/${encodeURIComponent(sessionId)}/trial/${encodeURIComponent(result.trial_id)}`,
         {
           replace: !!trialId,
         },

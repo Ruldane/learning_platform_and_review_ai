@@ -1,13 +1,13 @@
-"""Mise en page d'un CV en sous-processus (D119, mêmes gardes que D72) : un PDF piégé ne peut ni
-bloquer le back au-delà du délai, ni épuiser sa mémoire.
+"""Layout of a CV in a subprocess (D119, same guards as D72): a booby-trapped PDF can neither
+block the back end beyond the timeout, nor exhaust its memory.
 
-Chaque appel lance `app.providers.pdf.layout_worker` avec l'interpréteur courant ; délai réel (le
-processus est tué), espace d'adressage plafonné (POSIX), `concurrency` workers au plus à la fois,
-environnement réduit (aucune clé d'API), sortie JSON bornée à `LAYOUT_MAX_OUTPUT_BYTES`. stderr
-est jeté ; le journal ne garde que le code de sortie et le nombre de pages.
+Each call launches `app.providers.pdf.layout_worker` with the current interpreter; real timeout
+(the process is killed), capped address space (POSIX), at most `concurrency` workers at a time,
+reduced environment (no API key), JSON output bounded to `LAYOUT_MAX_OUTPUT_BYTES`. stderr
+is thrown away; the log only keeps the exit code and the page count.
 
-`LocalPdfLayoutExtractor` fait le même travail dans un thread, sans délai réel ni plafond de
-mémoire : extracteur réel mais local des tests (aucun processus lancé)."""
+`LocalPdfLayoutExtractor` does the same work in a thread, without a real timeout or memory
+cap: a real but local extractor for the tests (no process launched)."""
 
 import asyncio
 import base64
@@ -36,21 +36,21 @@ from app.providers.pdf.subprocess import exchange_with_worker, reap_worker, spaw
 logger = logging.getLogger(__name__)
 
 WORKER_MODULE = "app.providers.pdf.layout_worker"
-# Codes de sortie du worker (`layout_worker.EXIT_*`, non importés ici : le parent ne charge ni
-# pdfplumber ni PDFium) : trop de pages, page tournée avec du texte.
+# Worker exit codes (`layout_worker.EXIT_*`, not imported here: the parent loads neither
+# pdfplumber nor PDFium): too many pages, rotated page with text.
 EXIT_TOO_MANY_PAGES = 4
 EXIT_ROTATED_PAGE = 5
 _BLOCK_FIELDS = 10
 
 
 def worker_command(max_memory_bytes: int, max_pages: int = base.MAX_CV_PAGES) -> list[str]:
-    """Plafonds lus à chaque appel dans `base` (pages, résolution, côté de page)."""
+    """Limits read at each call in `base` (pages, resolution, page side)."""
     limits = (max_pages, max_memory_bytes, base.LAYOUT_DPI, base.MAX_PAGE_SIDE_PT)
     return [sys.executable, "-m", WORKER_MODULE, *(str(value) for value in limits)]
 
 
 class SubprocessPdfLayoutExtractor:
-    """`PdfLayoutExtractor` de la composition."""
+    """`PdfLayoutExtractor` of the composition."""
 
     def __init__(
         self,
@@ -69,34 +69,34 @@ class SubprocessPdfLayoutExtractor:
             try:
                 process = await spawn_worker(command)
             except OSError as exc:
-                logger.info("Mise en page PDF : worker non lancé (%s)", type(exc).__name__)
+                logger.info("PDF layout: worker not launched (%s)", type(exc).__name__)
                 raise PdfUnreadable() from None
             try:
                 async with asyncio.timeout(self._timeout_s):
                     output = await exchange_with_worker(process, data, LAYOUT_MAX_OUTPUT_BYTES)
             except TimeoutError:
-                logger.info("Mise en page PDF interrompue : délai dépassé")
+                logger.info("PDF layout interrupted: timeout exceeded")
                 raise PdfUnreadable(PDF_TIMEOUT_MESSAGE) from None
             finally:
-                # Délai, annulation ou erreur : le worker ne survit jamais à l'appel.
+                # Timeout, cancellation or error: the worker never outlives the call.
                 await reap_worker(process)
         code = process.returncode
         if code == EXIT_TOO_MANY_PAGES:
-            logger.info("Mise en page PDF refusée : trop de pages (code %s)", code)
+            logger.info("PDF layout refused: too many pages (code %s)", code)
             raise PdfUnreadable(CV_TOO_LONG_MESSAGE) from None
         if code == EXIT_ROTATED_PAGE:
-            logger.info("Mise en page PDF refusée : page tournée (code %s)", code)
+            logger.info("PDF layout refused: rotated page (code %s)", code)
             raise PdfUnreadable(ROTATED_PAGE_MESSAGE) from None
         if output is None or code != 0:
-            logger.info("Mise en page PDF : worker en échec (code %s)", code)
+            logger.info("PDF layout: worker failed (code %s)", code)
             raise PdfUnreadable() from None
-        # Hors de la boucle d'événements : relire 40 Mo de JSON bloque (revue 6.3, I4).
+        # Outside the event loop: re-reading 40 MB of JSON blocks it (review 6.3, I4).
         layout = await asyncio.to_thread(parse_layout, output, max_pages)
-        logger.info("Mise en page PDF extraite (code %s, %s pages)", code, len(layout.pages))
+        logger.info("PDF layout extracted (code %s, %s pages)", code, len(layout.pages))
         return layout
 
 
-# PDFium n'accepte pas deux appels à la fois dans un même processus.
+# PDFium does not accept two calls at a time in the same process.
 _PDFIUM_LOCK = threading.Lock()
 
 
@@ -109,8 +109,8 @@ def _extract_locally(data: bytes, max_pages: int) -> bytes:
 
 
 class LocalPdfLayoutExtractor:
-    """`PdfLayoutExtractor` dans un thread (tests) : même extraction et même relecture que le
-    worker, mêmes refus."""
+    """`PdfLayoutExtractor` in a thread (tests): same extraction and same re-reading as the
+    worker, same refusals."""
 
     async def extract_layout(self, data: bytes, *, max_pages: int = base.MAX_CV_PAGES) -> PdfLayout:
         from app.providers.pdf.layout_extract import RotatedPage, TooManyPages
@@ -122,19 +122,19 @@ class LocalPdfLayoutExtractor:
         except RotatedPage:
             raise PdfUnreadable(ROTATED_PAGE_MESSAGE) from None
         except Exception as exc:
-            logger.info("Mise en page PDF illisible (%s)", type(exc).__name__)
+            logger.info("PDF layout unreadable (%s)", type(exc).__name__)
             raise PdfUnreadable() from None
         return await asyncio.to_thread(parse_layout, output)
 
 
 def _block(raw: Any) -> TextBlock:
     if not isinstance(raw, list) or len(raw) != _BLOCK_FIELDS:
-        raise ValueError("bloc mal formé")
+        raise ValueError("malformed block")
     text, x0, top, x1, bottom, font, size, color, bold, invisible = raw
     if not all(isinstance(value, str) for value in (text, font, color)):
-        raise ValueError("bloc mal formé")
+        raise ValueError("malformed block")
     if not isinstance(bold, bool) or not isinstance(invisible, bool):
-        raise ValueError("bloc mal formé")
+        raise ValueError("malformed block")
     return TextBlock(
         text,
         float(x0),
@@ -151,7 +151,7 @@ def _block(raw: Any) -> TextBlock:
 
 def _page(raw: Any) -> PageLayout:
     if not isinstance(raw["stream"], str) or not isinstance(raw["blocks"], list):
-        raise ValueError("page mal formée")
+        raise ValueError("malformed page")
     return PageLayout(
         width_pt=float(raw["width"]),
         height_pt=float(raw["height"]),
@@ -163,23 +163,23 @@ def _page(raw: Any) -> PageLayout:
 
 def _png_bytes(value: Any) -> bytes:
     if not isinstance(value, str):
-        raise ValueError("image mal formée")
+        raise ValueError("malformed image")
     return base64.b64decode(value, validate=True)
 
 
 def parse_layout(output: bytes, max_pages: int = base.MAX_CV_PAGES) -> PdfLayout:
-    """Sortie JSON du worker relue en `PdfLayout` ; toute forme inattendue (sortie tronquée,
-    worker remplacé) donne `PdfUnreadable`, jamais une erreur interne."""
+    """JSON output of the worker read back into a `PdfLayout`; any unexpected shape (truncated
+    output, replaced worker) gives `PdfUnreadable`, never an internal error."""
     try:
         payload = json.loads(output)
         pages = [_page(page) for page in payload["pages"]]
         fonts = payload["fonts"]
         selectable = payload["selectable"]
         if not isinstance(fonts, list) or not all(isinstance(name, str) for name in fonts):
-            raise ValueError("polices mal formées")
+            raise ValueError("malformed fonts")
         if not isinstance(selectable, bool) or not 1 <= len(pages) <= max_pages:
-            raise ValueError("mise en page mal formée")
+            raise ValueError("malformed layout")
     except (ValueError, KeyError, TypeError, binascii.Error) as exc:
-        logger.info("Mise en page PDF : sortie du worker illisible (%s)", type(exc).__name__)
+        logger.info("PDF layout: worker output unreadable (%s)", type(exc).__name__)
         raise PdfUnreadable() from None
     return PdfLayout(pages=pages, fonts=list(fonts), selectable=selectable)

@@ -10,8 +10,8 @@ from app.features.memory.service.sources.base import (
 
 
 class UrlSource:
-    """Page lue par le lecteur sûr (garde SSRF, 15 s, 20 Mo) ; titre : celui de la page, sinon
-    l'hôte ; langue : celle des métadonnées de la page."""
+    """Page read by the safe reader (SSRF guard, 15 s, 20 MB); title: the page's, otherwise
+    the host; language: the one from the page metadata."""
 
     kind: DocumentSourceKind = "url"
 

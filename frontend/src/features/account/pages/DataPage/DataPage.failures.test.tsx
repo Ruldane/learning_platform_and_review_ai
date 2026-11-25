@@ -28,8 +28,8 @@ describe("DataPage, failures and order of calls", () => {
     await confirmAndDelete(user);
     const message = await screen.findByTestId("delete-failure");
     expect(message).toHaveTextContent("Erreur.");
-    expect(message).toHaveTextContent("Rien n'a été supprimé");
-    expect(message).not.toHaveTextContent("reprend là où elle s'est arrêtée");
+    expect(message).toHaveTextContent("Nothing was deleted");
+    expect(message).not.toHaveTextContent("deletion resumes where it stopped");
     expect(deleteBodies).toEqual([]);
     expect(word()).toHaveValue("SUPPRIMER");
   });
@@ -37,18 +37,18 @@ describe("DataPage, failures and order of calls", () => {
   it("says nothing was deleted when the memory is unavailable (503, before deleting)", async () => {
     const { user } = setup("local", { delete: "unavailable" });
     await confirmAndDelete(user);
-    expect(await screen.findByTestId("delete-failure")).toHaveTextContent("Rien n'a été supprimé");
+    expect(await screen.findByTestId("delete-failure")).toHaveTextContent("Nothing was deleted");
   });
 
   it("a network failure keeps the typed word, says it can be replayed, takes focus", async () => {
     const { user, router } = setup("local", { delete: "network" });
     await confirmAndDelete(user);
     const message = await screen.findByTestId("delete-failure");
-    expect(message).toHaveTextContent("Impossible de joindre le serveur");
-    expect(message).toHaveTextContent("reprend là où elle s'est arrêtée");
+    expect(message).toHaveTextContent("Can't reach the server");
+    expect(message).toHaveTextContent("deletion resumes where it stopped");
     await waitFor(() => expect(message).toHaveFocus());
     expect(word()).toHaveValue("SUPPRIMER");
-    expect(router.state.location.pathname).toBe("/reglages/donnees");
+    expect(router.state.location.pathname).toBe("/settings/data");
   });
 
   it("a second validation in the same instant sends one deletion only", async () => {
@@ -69,7 +69,7 @@ describe("DataPage, failures and order of calls", () => {
     const held = closedGate();
     const { user, deleteBodies } = setup("local", { gate: held.promise });
     await confirmAndDelete(user);
-    expect(await screen.findByRole("status")).toHaveTextContent("Suppression en cours…");
+    expect(await screen.findByRole("status")).toHaveTextContent("Deleting…");
     expect(deleteButton()).toHaveAttribute("aria-disabled", "true");
     await user.click(deleteButton());
     held.open();

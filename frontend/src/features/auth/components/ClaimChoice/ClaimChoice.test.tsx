@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { ClaimChoice } from "./ClaimChoice";
 
-const TAKE = "Reprendre les données de cet ordinateur";
+const TAKE = "Take over this computer's data";
 
 describe("ClaimChoice", () => {
   it("sends the choice of each button", async () => {
@@ -11,7 +11,7 @@ describe("ClaimChoice", () => {
     const onChoose = vi.fn();
     render(<ClaimChoice onChoose={onChoose} pending={false} />);
     await user.click(screen.getByRole("button", { name: TAKE }));
-    await user.click(screen.getByRole("button", { name: "Commencer un espace vide" }));
+    await user.click(screen.getByRole("button", { name: "Start with an empty space" }));
     expect(onChoose.mock.calls).toEqual([["take_local"], ["fresh"]]);
   });
 
@@ -25,7 +25,7 @@ describe("ClaimChoice", () => {
     expect(onChoose).not.toHaveBeenCalled();
     expect(take).toHaveFocus();
     expect(take).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByRole("status")).toHaveTextContent("Un instant");
+    expect(screen.getByRole("status")).toHaveTextContent("One moment…");
   });
 
   it("shows an error under the buttons", () => {

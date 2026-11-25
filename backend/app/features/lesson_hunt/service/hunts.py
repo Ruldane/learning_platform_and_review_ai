@@ -1,4 +1,4 @@
-"""Démarrer la lecture critique depuis une version publiée et recevoir les réponses."""
+"""Start the critical reading from a published version and receive the answers."""
 
 from uuid import uuid4
 
@@ -27,7 +27,7 @@ async def start_hunt(launcher: SessionLauncher, user_id: str, lesson_id: str) ->
     async def prepare(db: AsyncSession, session_id: str) -> None:
         lesson = await get_lesson(db, user_id, lesson_id)
         if lesson.status != "ready" or not lesson.markdown.strip():
-            raise AppError("lesson_unpublished", "Publie d’abord cette leçon.", 409)
+            raise AppError("lesson_unpublished", "Publish this lesson first.", 409)
         db.add(
             LessonHunt(
                 id=hunt_id,
@@ -59,9 +59,7 @@ async def submit_answers(
         row = await repo.require(hunt_id)
         retry = row.stage == "reviewing" and await _failed(db, user_id, row)
         if row.stage != "ready" and not retry:
-            raise AppError(
-                "lesson_hunt_not_ready", "L’exercice ne peut pas recevoir de réponses.", 409
-            )
+            raise AppError("lesson_hunt_not_ready", "The exercise cannot receive answers.", 409)
         await repo.replace(
             row, stage="reviewing", session_id=session_id, responses=answers.responses
         )

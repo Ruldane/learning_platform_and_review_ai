@@ -9,10 +9,10 @@ const base = { result: null, pending: false, onRun: vi.fn() };
 async function run(onRun: () => void, k?: string) {
   const user = userEvent.setup();
   render(<SearchBench {...base} onRun={onRun} />);
-  await user.type(screen.getByLabelText("Requête"), "attention");
+  await user.type(screen.getByLabelText("Query"), "attention");
   if (k !== undefined)
-    fireEvent.change(screen.getByLabelText("Nombre de résultats"), { target: { value: k } });
-  await user.click(screen.getByRole("button", { name: "Lancer" }));
+    fireEvent.change(screen.getByLabelText("Number of results"), { target: { value: k } });
+  await user.click(screen.getByRole("button", { name: "Run" }));
 }
 
 describe("SearchBench", () => {
@@ -23,7 +23,7 @@ describe("SearchBench", () => {
   });
 
   it("renders the agent text untouched in a pre", () => {
-    const agentText = '<<<CONTENU_NON_FIABLE source="memoire">>>\n  ligne  indentée\n<<<FIN>>>';
+    const agentText = '<<<UNTRUSTED_CONTENT source="memory">>>\n  ligne  indentée\n<<<FIN>>>';
     const { container } = render(<SearchBench {...base} result={{ hits: [hit()], agentText }} />);
     const pre = container.querySelector("pre");
     expect(pre?.textContent).toBe(agentText);
@@ -31,7 +31,7 @@ describe("SearchBench", () => {
 
   it("shows the retrieved fragments with their scores", () => {
     render(<SearchBench {...base} result={{ hits: [hit()], agentText: "texte" }} />);
-    expect(screen.getByText("0,83")).toBeInTheDocument();
+    expect(screen.getByText("0.83")).toBeInTheDocument();
     expect(screen.getByText("Cours NLP")).toBeInTheDocument();
   });
 
@@ -39,8 +39,8 @@ describe("SearchBench", () => {
     const onRun = vi.fn();
     await run(onRun, "500");
     expect(onRun).toHaveBeenLastCalledWith("attention", [], 50);
-    fireEvent.change(screen.getByLabelText("Nombre de résultats"), { target: { value: "0" } });
-    await userEvent.setup().click(screen.getByRole("button", { name: "Lancer" }));
+    fireEvent.change(screen.getByLabelText("Number of results"), { target: { value: "0" } });
+    await userEvent.setup().click(screen.getByRole("button", { name: "Run" }));
     expect(onRun).toHaveBeenLastCalledWith("attention", [], 1);
   });
 
@@ -54,16 +54,16 @@ describe("SearchBench", () => {
     const onRun = vi.fn();
     const user = userEvent.setup();
     render(<SearchBench {...base} onRun={onRun} />);
-    await user.type(screen.getByLabelText("Requête"), "cv");
-    await user.click(screen.getByRole("checkbox", { name: "Offre" }));
-    await user.click(screen.getByRole("button", { name: "Lancer" }));
-    expect(onRun).toHaveBeenCalledWith("cv", ["offre"], 8);
+    await user.type(screen.getByLabelText("Query"), "cv");
+    await user.click(screen.getByRole("checkbox", { name: "Posting" }));
+    await user.click(screen.getByRole("button", { name: "Run" }));
+    expect(onRun).toHaveBeenCalledWith("cv", ["posting"], 8);
   });
 
   it("needs a query and locks while pending", () => {
     const { rerender } = render(<SearchBench {...base} />);
-    expect(screen.getByRole("button", { name: "Lancer" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Run" })).toBeDisabled();
     rerender(<SearchBench {...base} pending />);
-    expect(screen.getByRole("button", { name: "En cours…" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Running…" })).toBeDisabled();
   });
 });

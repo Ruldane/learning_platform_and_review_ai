@@ -13,7 +13,7 @@ test("programme, résout et retrouve un contrôle de transfert pour une compéte
   const { skill_id: skillId } = (await seeded.json()) as { skill_id: string };
   const skillPath = `${API}/skills/${skillId}`;
   const { evidence, level } = await (await request.get(skillPath)).json();
-  const path = `/competences/transfert?competence=${skillId}`;
+  const path = `/skills/transfer?skill=${skillId}`;
   await page.goto(path);
   await expect(page.getByRole("heading", { name: "Contrôles de transfert" })).toBeVisible();
   await page.getByLabel("Preuve de compétence").selectOption({

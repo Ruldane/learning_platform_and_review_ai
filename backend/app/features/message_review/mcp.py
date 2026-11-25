@@ -11,22 +11,22 @@ MCP = FeatureMcp(
             f"POST {_ROOT}/claim",
             2,
             "message_review_claim",
-            "Réserve une fiche due dans le créneau consenti. Même défi sur rejeu. Nod seul.",
+            "Reserves a due card within the consented window. Same challenge on replay. Nod only.",
             untrusted=("challenge.question",),
         ),
         McpAction(
             f"GET {_ANSWER}",
             1,
             "message_review_reveal",
-            "Lit le verso du défi quand la personne de la discussion le demande. Nod seul.",
+            "Reads the back of the challenge when the person in the chat asks for it. Nod only.",
             untrusted=("answer",),
         ),
         McpAction(
             f"POST {_ANSWER}",
             2,
             "message_review_answer",
-            "Relaye uniquement l'avis explicite de la personne de la discussion privée sur ce "
-            "défi. Réussi : ok. À revoir : fail. Ne jamais choisir l'avis à sa place. Nod seul.",
+            "Relays only the explicit verdict of the person in the private chat on this "
+            "challenge. Passed: ok. To review: fail. Never choose the verdict for them. Nod only.",
         ),
     ),
     excluded={

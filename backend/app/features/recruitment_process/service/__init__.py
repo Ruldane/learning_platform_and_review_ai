@@ -1,1 +1,1 @@
-"""Instantanés des offres et progression du dossier simulé."""
+"""Job posting snapshots and progress of the simulated process."""

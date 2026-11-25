@@ -52,7 +52,7 @@ class InterviewStore(Protocol):
 
 def interview_unavailable() -> AppError:
     return AppError(
-        "interview_unavailable", "L'entretien blanc n'est pas branché sur ce moteur.", 503
+        "interview_unavailable", "Mock interviews are unavailable in this runtime.", 503
     )
 
 

@@ -8,9 +8,9 @@ from app.db.repository import UserScopedRepository
 
 
 class GoalRepository(UserScopedRepository[Goal]):
-    """Objectifs d'un utilisateur. Les lectures rafraîchissent les lignes déjà chargées
-    (`populate_existing`) : sous le verrou d'un objectif, une requête voit l'état commité par la
-    précédente, pas une copie gardée par la session."""
+    """A user's goals. Reads refresh rows already loaded (`populate_existing`): under a goal's
+    lock, a request sees the state committed by the previous one, not a copy kept by the
+    session."""
 
     model = Goal
 
@@ -31,7 +31,7 @@ class GoalRepository(UserScopedRepository[Goal]):
         return builtins.list((await self.session.execute(stmt)).scalars().all())
 
     async def latest_program(self, goal_id: str) -> tuple[str, str | None] | None:
-        """Le programme le plus récent de l'objectif : `(id, session program_builder)`."""
+        """The goal's most recent program: `(id, program_builder session)`."""
         stmt = (
             select(Program.id, Program.session_id)
             .where(Program.user_id == self.user_id, Program.goal_id == goal_id)

@@ -19,7 +19,7 @@ export function IncidentList({ incidents }: { incidents: ListEntry[] }) {
           <li key={incident.id} className="flex flex-wrap items-center gap-2">
             <Link
               className="underline underline-offset-2"
-              to={`/astreinte/${encodeURIComponent(incident.id)}`}
+              to={`/on-call/${encodeURIComponent(incident.id)}`}
             >
               {incident.title}
             </Link>

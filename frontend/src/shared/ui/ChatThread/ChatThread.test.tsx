@@ -10,7 +10,7 @@ describe("chat components", () => {
     render(
       <ChatThread label="Conversation avec le bibliothécaire" emptyText="Écris un message">
         <ChatMessage author="assistant" label="Le bibliothécaire" content="Un **retriever**.">
-          <a href="/memoire?document=note-1">Note sur la recherche</a>
+          <a href="/memory?document=note-1">Note sur la recherche</a>
         </ChatMessage>
       </ChatThread>,
     );
@@ -19,7 +19,7 @@ describe("chat components", () => {
     expect(within(message).getByText("retriever").tagName).toBe("STRONG");
     expect(within(message).getByRole("link", { name: "Note sur la recherche" })).toHaveAttribute(
       "href",
-      "/memoire?document=note-1",
+      "/memory?document=note-1",
     );
   });
 

@@ -8,10 +8,12 @@ import pytest
 from app.agents.tools.template_schema import ColumnSpec
 from app.features.cv.service.ats_checks import ats_checks
 from app.features.cv.service.template import CV_CSP, cv_css, cv_document
+from app.features.cv.service.templates_data import profile_content
 from app.providers.fonts.base import FontFile
 from app.providers.pdf.layout import LocalPdfLayoutExtractor
 from scripts.sample_cv import CV_FACTS
 from tests.support.cv_template import content, letter, spec
+from tests.support.profile import profile
 from tests.support.text_renderer import TextHtmlRenderer, visible_lines
 
 
@@ -21,11 +23,27 @@ def _body(html: str) -> str:
 
 def test_cv_document_has_no_script_and_escapes_content() -> None:
     doc = cv_document(spec(), content(lines=["<script>alert(1)</script> & co"]), [])
+    assert '<html lang="en">' in doc.index_html
     assert "<script>" not in doc.index_html and "&lt;script&gt;" in doc.index_html
     assert "&amp; co" in doc.index_html
     assert f'content="{escape(CV_CSP)}"' in doc.index_html.replace("&#39;", "&#x27;")
     assert "<img" not in doc.index_html and "javascript:" not in doc.index_html
     assert not any(name.endswith(".js") for name in doc.assets)
+
+
+def test_profile_preview_uses_english_headings_and_preserves_profile_text() -> None:
+    saved = profile()
+    preview = profile_content(saved)
+    assert [section.title for section in preview.sections] == [
+        "Profile",
+        "Experience",
+        "Education",
+        "Skills",
+        "Languages",
+    ]
+    assert saved.summary is not None
+    assert preview.sections[0].items[0].text == saved.summary.text
+    assert preview.sections[-1].items[0].text == "Anglais C1"
 
 
 def test_dom_order_is_column_one_then_two() -> None:
@@ -96,10 +114,10 @@ def test_css_values_are_typed(changes: dict[str, str]) -> None:
 def test_css_refuses_font_outside_catalog_and_unbounded_numbers() -> None:
     bad_font = spec()
     bad_font.fonts.body = "Evil'; } * { background: url(x)"
-    with pytest.raises(ValueError, match="catalogue"):
+    with pytest.raises(ValueError, match="catalog"):
         cv_css(bad_font, [])
     bad_number = spec().model_copy(update={"gap_mm": float("nan")})
-    with pytest.raises(ValueError, match="bornes"):
+    with pytest.raises(ValueError, match="bounds"):
         cv_css(bad_number, [])
     css = cv_css(spec(), [])
     assert "url(" not in css and "--accent: #21549a;" in css
@@ -130,7 +148,7 @@ def test_font_faces_point_to_attached_assets() -> None:
     assert "--body-font: 'Lato', 'Liberation Sans', sans-serif;" in css
     assert {"base.css", "cv.css"} <= set(doc.assets)
     assert '<link rel="stylesheet" href="cv.css">' in doc.index_html
-    with pytest.raises(ValueError, match="catalogue"):
+    with pytest.raises(ValueError, match="catalog"):
         cv_css(spec(), [FontFile("Comic Sans", 400, "normal", b"x", ".ttf")])
 
 

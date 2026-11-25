@@ -9,7 +9,7 @@ export function ReviewDone() {
     <EmptyState
       title={t("quiz.reviews.doneTitle")}
       description={t("quiz.reviews.doneDescription")}
-      action={{ label: t("quiz.reviews.toQuiz"), onClick: () => void navigate("/etudier/quiz") }}
+      action={{ label: t("quiz.reviews.toQuiz"), onClick: () => void navigate("/study/quiz") }}
     />
   );
 }

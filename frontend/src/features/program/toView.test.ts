@@ -15,12 +15,15 @@ const program = (over: Record<string, unknown> = {}) => programOut(over) as unkn
 
 describe("toWeekViews", () => {
   it("carries the stage and the reason of each week, or null when the program has none", () => {
-    const withStage = weekOut({ stage: "avance", rationale: "Le sujet suppose tout le reste." });
+    const withStage = weekOut({ stage: "advanced", rationale: "Le sujet suppose tout le reste." });
     const [first, second] = toWeekViews(
       program({ weeks: [withStage, weekOut({ id: "w2", rank: 2, start_date: "2026-11-23" })] }),
       BUDGET,
     );
-    expect(first).toMatchObject({ stage: "avance", rationale: "Le sujet suppose tout le reste." });
+    expect(first).toMatchObject({
+      stage: "advanced",
+      rationale: "Le sujet suppose tout le reste.",
+    });
     expect(second).toMatchObject({ stage: null, rationale: null });
   });
 
@@ -71,7 +74,7 @@ describe("toWeekViews", () => {
       id: "t1",
       moduleTitle: "Bases du langage",
       title: "Lire le chapitre 1",
-      type: "lire",
+      type: "read",
       minutes: 60,
       doneCriterion: "Je sais expliquer les variables.",
       plannedDate: "2026-11-16",

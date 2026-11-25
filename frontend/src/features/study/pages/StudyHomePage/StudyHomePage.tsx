@@ -12,7 +12,7 @@ import { DayStart } from "./DayStart";
 import { useChosenLesson } from "./chosenLesson";
 
 /**
- * Session guidée (`/etudier/session`) : le bloc du jour, ou la leçon choisie (`?lecon=` et
+ * Session guidée (`/study/session`) : le bloc du jour, ou la leçon choisie (`?lesson=` et
  * « Demander au tuteur » depuis une leçon), le mode du tuteur, et la reprise d'une session ouverte.
  */
 export function StudyHomePage() {

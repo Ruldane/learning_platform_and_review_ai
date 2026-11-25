@@ -37,10 +37,10 @@ const setup = (api: Parameters<typeof renderStudySession>[1] = {}) =>
 async function waitingOnQuestion(api: Parameters<typeof renderStudySession>[1] = {}) {
   const view = setup({ status: "waiting_user", ...api });
   (await openStudyStream(view.fake)).push(tutorQuestion(councilEvents("s1")));
-  return { ...view, finish: await screen.findByRole("button", { name: "Terminer" }) };
+  return { ...view, finish: await screen.findByRole("button", { name: "Finish" }) };
 }
 
-describe("StudySessionPage: Terminer", () => {
+describe("StudySessionPage: Finish", () => {
   beforeEach(() => useSessionStore.getState().reset("s1"));
   afterEach(() => useSessionStore.getState().reset("s1"));
 
@@ -52,10 +52,10 @@ describe("StudySessionPage: Terminer", () => {
     (await openStudyStream(fake)).push(
       e.interrupt("finish_session", "i9", { question: "Veux-tu terminer la session ?" }),
     );
-    await user.click(await screen.findByRole("button", { name: "Terminer la session" }));
+    await user.click(await screen.findByRole("button", { name: "Finish the session" }));
     await waitFor(() => expect(patches).toEqual([{ action: "finish", worked_minutes: 2 }]));
     expect(resumes).toHaveLength(0);
-    expect(await screen.findByRole("heading", { name: "Session terminée" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Session complete" })).toBeInTheDocument();
   });
 
   it("also finishes from the header on a tutor question", async () => {
@@ -72,13 +72,13 @@ describe("StudySessionPage: Terminer", () => {
       sessions: [studyOut(), studyOut(), studyOut(), finishedOut()],
     });
     await user.click(finish);
-    expect(await screen.findByText("Le tuteur rédige ton bilan…")).toBeInTheDocument();
-    expect(await screen.findByRole("heading", { name: "Session terminée" })).toBeInTheDocument();
+    expect(await screen.findByText("The tutor is writing your review…")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Session complete" })).toBeInTheDocument();
     expect(screen.getByText("Tu as compris les verbes HTTP.")).toBeInTheDocument();
     expect(screen.getByText("REST")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Réviser mes fiches" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Review my cards" })).toHaveAttribute(
       "href",
-      "/etudier/revisions",
+      "/study/reviews",
     );
   });
 
@@ -89,12 +89,12 @@ describe("StudySessionPage: Terminer", () => {
       sessions: [...Array.from({ length: 22 }, () => open), finishedOut()],
     });
     await user.click(finish);
-    expect(await screen.findByText(/Le bilan met du temps à arriver/)).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Relire le bilan" }));
-    expect(await screen.findByRole("heading", { name: "Session terminée" })).toBeInTheDocument();
+    expect(await screen.findByText(/The review is taking a while/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Reload the review" }));
+    expect(await screen.findByRole("heading", { name: "Session complete" })).toBeInTheDocument();
   });
 
-  it("shows a refused Terminer and lets the person try again", async () => {
+  it("shows a refused finish request and lets the person try again", async () => {
     const patches = recordPatches(
       "/study-sessions/st1",
       409,
@@ -103,26 +103,26 @@ describe("StudySessionPage: Terminer", () => {
     const { user, finish } = await waitingOnQuestion();
     await user.click(finish);
     expect(await screen.findByRole("alert")).toHaveTextContent("Le tuteur écrit encore.");
-    expect(screen.getByRole("button", { name: "Terminer" })).toBeEnabled();
-    await user.click(screen.getByRole("button", { name: "Terminer" }));
+    expect(screen.getByRole("button", { name: "Finish" })).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: "Finish" }));
     await waitFor(() => expect(patches).toHaveLength(2));
   });
 
-  it("sends Terminer once on a double click", async () => {
+  it("sends one finish request on a double click", async () => {
     const patches = recordPatches("/study-sessions/st1", 202, studyOut());
     const { user, finish } = await waitingOnQuestion();
     await user.dblClick(finish);
     await waitFor(() => expect(patches).toHaveLength(1));
-    expect(screen.getByRole("button", { name: "Terminer" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Finish" })).toBeDisabled();
   });
 
-  it("closes the composer once Terminer is accepted and never opens a dialog", async () => {
+  it("closes the composer after finishing without opening a dialog", async () => {
     const dialog = vi.spyOn(window, "confirm");
     recordPatches("/study-sessions/st1", 202, studyOut());
     const { user, finish } = await waitingOnQuestion();
-    expect(await screen.findByLabelText("Ton message")).toBeEnabled();
+    expect(await screen.findByLabelText("Your message")).toBeEnabled();
     await user.click(finish);
-    await waitFor(() => expect(screen.getByLabelText("Ton message")).toBeDisabled());
+    await waitFor(() => expect(screen.getByLabelText("Your message")).toBeDisabled());
     expect(dialog).not.toHaveBeenCalled();
   });
 });

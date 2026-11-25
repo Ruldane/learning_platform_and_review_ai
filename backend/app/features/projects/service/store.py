@@ -1,14 +1,15 @@
-"""Port des parcours `project_brief` et `project_review` (`ProjectStore`, D165, D166) sur la feature
-`projects` : implémentation branchée par `bootstrap_agents.agent_ports(..., projects=...)`. Chaque
-appel ouvre ses propres sessions de base, courtes ; la lecture du dépôt se fait hors transaction.
+"""Port of the `project_brief` and `project_review` flows (`ProjectStore`, D165, D166) on the
+`projects` feature: implementation wired by `bootstrap_agents.agent_ports(..., projects=...)`.
+Each call opens its own short database sessions; the repository read happens outside a
+transaction.
 
-Les écritures sont **idempotentes par session** (SPEC 9.4) : l'énoncé n'est rangé que s'il est
-encore absent, l'évaluation que si cette session ne l'a pas déjà rangée (`review.save_review`).
-Le port n'a pas de « rendu en échec » : une session de l'évaluation qui échoue ou est annulée
-ne range rien, et le statut `reviewing` suit la session (`settle`) : January peut rendre de nouveau.
+Writes are **idempotent per session** (SPEC 9.4): the statement is only stored if it is still
+absent, the evaluation only if this session has not already stored it (`review.save_review`).
+The port has no "failed submission": an evaluation session that fails or is cancelled stores
+nothing, and the `reviewing` status follows the session (`settle`): January can submit again.
 
-Énoncé, rendu, dépôt, critères et brouillons sont des données de January ou du web : jamais
-journalisés (17.2) ; les journaux portent des identifiants, des nombres et des codes."""
+Statement, submission, repository, criteria and drafts are January's or the web's data: never
+logged (17.2); the logs carry ids, numbers and codes."""
 
 import logging
 
@@ -34,7 +35,7 @@ class AgentProjectStore:
     async def save_brief(
         self, user_id: str, session_id: str, project_id: str, brief: ProjectBrief
     ) -> None:
-        """L'énoncé, une seule fois : le projet passe à « à faire » et prend son titre."""
+        """The statement, once only: the project becomes "to do" and takes its title."""
         async with self._rt.project_lock(user_id, project_id), self._rt.session_factory() as db:
             row = await inputs.owned(db, user_id, project_id)
             written = not row.brief and row.status in ("brief_pending", "brief_failed")
@@ -44,15 +45,15 @@ class AgentProjectStore:
                 row.status, row.session_id = "todo", None
                 await db.commit()
         logger.info(
-            "Énoncé rangé : session %s, projet %s, première écriture %s",
+            "Statement stored: session %s, project %s, first write %s",
             session_id,
             project_id,
             written,
         )
 
     async def brief_failed(self, user_id: str, session_id: str, project_id: str, code: str) -> None:
-        """L'énoncé a échoué : à la troisième tentative le projet passe en `brief_failed`
-        (« Réessayer »), avant, la tâche relance un essai quand la session est close."""
+        """The statement failed: on the third try the project becomes `brief_failed`
+        ("Retry"), before that, the task relaunches a try when the session is closed."""
         failed = False
         async with self._rt.project_lock(user_id, project_id), self._rt.session_factory() as db:
             row = await inputs.owned(db, user_id, project_id)
@@ -65,7 +66,7 @@ class AgentProjectStore:
                 await db.commit()
                 failed = True
         logger.info(
-            "Énoncé en échec : session %s, projet %s, code %s, définitif %s",
+            "Statement failed: session %s, project %s, code %s, final %s",
             session_id,
             project_id,
             safe_code(code),
@@ -76,13 +77,15 @@ class AgentProjectStore:
         return await inputs.review_inputs(self._rt, user_id, project_id)
 
     async def repo_text(self, user_id: str, session_id: str, url: str) -> str | None:
-        """Le texte d'une page du dépôt (cache, débit par domaine, garde SSRF, domaines exclus :
-        ceux de la recherche web, hors session) ; `None` si elle ne se lit pas. Point d'accroche
-        de la phase 14 (GitHub)."""
+        """The text of a repository page (cache, per-domain rate, SSRF guard, excluded domains:
+        those of the web search, outside a session); `None` if it cannot be read. Hook for
+        phase 14 (GitHub)."""
         try:
             outcome = await read(self._rt.research, user_id, None, url)
-        except AppError as exc:  # lien refusé (`invalid_url`, `url_forbidden`) : dépôt illisible
-            logger.info("Dépôt refusé : utilisateur %s, code %s", user_id, safe_code(exc.code))
+        except (
+            AppError
+        ) as exc:  # link refused (`invalid_url`, `url_forbidden`): unreadable repository
+            logger.info("Repository refused: user %s, code %s", user_id, safe_code(exc.code))
             return None
         return outcome.text if outcome.status == "ok" and outcome.text.strip() else None
 

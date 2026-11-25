@@ -1,21 +1,21 @@
-"""Erreurs de la recherche web. Aucun message ne cite une requête ni une URL (SPEC 17.2)."""
+"""Web research errors. No message quotes a query or a URL (SPEC 17.2)."""
 
 from typing import Literal
 
 from app.core.errors import AppError
 
 QUOTA_CODE = "web_quota_reached"
-# Requêtes Brave par mois civil UTC et par clé, tous utilisateurs confondus (SPEC 11.3).
+# Brave requests per UTC calendar month and per key, all users combined (SPEC 11.3).
 BRAVE_MONTHLY_CAP = 900
 
 _QUOTA_MESSAGES = {
-    "queries": "Plafond de {cap} requêtes atteint pour cette session.",
-    "pages": "Plafond de {cap} pages lues atteint pour cette session.",
+    "queries": "Limit of {cap} queries reached for this session.",
+    "pages": "Limit of {cap} pages read reached for this session.",
 }
 
 
 class WebQuotaReached(AppError):
-    """Plafond de la session atteint (SPEC 10.4) : `kind` dit lequel."""
+    """Session cap reached (SPEC 10.4): `kind` says which."""
 
     def __init__(self, cap: int, kind: Literal["queries", "pages"]) -> None:
         message = _QUOTA_MESSAGES[kind].format(cap=cap)
@@ -25,18 +25,16 @@ class WebQuotaReached(AppError):
 
 
 class NoSearchProvider(AppError):
-    """Tous les fournisseurs de l'ordre de repli ont échoué, ou aucun n'a trouvé de résultat."""
+    """All the providers of the fallback order failed, or none found a result."""
 
     def __init__(self) -> None:
-        super().__init__("search_unavailable", "Aucun moteur de recherche n'a répondu.", 503)
+        super().__init__("search_unavailable", "No search engine answered.", 503)
 
 
 def empty_query() -> AppError:
-    """Requête vide, ou vide une fois nettoyée de toute donnée personnelle : message fixe."""
-    return AppError(
-        "search_query_empty", "Requête vide une fois les données personnelles retirées.", 422
-    )
+    """Empty query, or empty once cleaned of any personal data: fixed message."""
+    return AppError("search_query_empty", "The query is empty after removing personal data.", 422)
 
 
 def source_not_found() -> AppError:
-    return AppError("source_not_found", "Source introuvable.", 404)
+    return AppError("source_not_found", "Source not found.", 404)

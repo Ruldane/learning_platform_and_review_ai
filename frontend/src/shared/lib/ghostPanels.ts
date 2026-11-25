@@ -22,9 +22,9 @@ export interface IdeGhostProps {
 }
 
 export function ideGhostPath(sessionId: string, runId: string): string {
-  return `/code/${encodeURIComponent(sessionId)}?fantome=${encodeURIComponent(runId)}`;
+  return `/code/${encodeURIComponent(sessionId)}?ghost=${encodeURIComponent(runId)}`;
 }
 
 export function quizGhostPath(quizId: string, attemptId: string): string {
-  return `/etudier/quiz/${encodeURIComponent(quizId)}?fantome=${encodeURIComponent(attemptId)}`;
+  return `/study/quiz/${encodeURIComponent(quizId)}?ghost=${encodeURIComponent(attemptId)}`;
 }

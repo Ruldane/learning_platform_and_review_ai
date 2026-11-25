@@ -11,7 +11,7 @@ test("compare une autre disponibilité et ouvre le chapitre classé au clavier",
   request,
 }) => {
   await finishFirstLaunch(request);
-  await page.goto("/carriere/futur");
+  await page.goto("/career/future-self");
   await expect(page.getByRole("heading", { name: "Ton futur toi" })).toBeVisible();
   const observed = page.getByRole("region", { name: "Rythme observé" });
   await expect(observed.getByText("2 h par semaine")).toBeVisible();
@@ -33,7 +33,7 @@ test("compare une autre disponibilité et ouvre le chapitre classé au clavier",
   await expect(alternative.getByText("75 %")).toBeVisible();
   await expect(page.getByRole("link", { name: "Proposer une replanification" })).toHaveAttribute(
     "href",
-    /\/apprendre\/programme\/[0-9a-f-]+\/replanification$/,
+    /\/learn\/programs\/[0-9a-f-]+\/replan$/,
   );
 
   const chapter = page.getByRole("link", { name: "Recherche augmentée" });
@@ -46,6 +46,6 @@ test("compare une autre disponibilité et ouvre le chapitre classé au clavier",
   }
   await expect(chapter).toBeFocused();
   await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/\/apprendre\/lecons\/[0-9a-f-]+$/);
+  await expect(page).toHaveURL(/\/learn\/lessons\/[0-9a-f-]+$/);
   await expect(page.getByText("Chapitre synthétique.")).toBeVisible();
 });

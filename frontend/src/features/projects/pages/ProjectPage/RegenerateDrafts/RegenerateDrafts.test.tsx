@@ -24,8 +24,8 @@ const regeneration = (over: Partial<DraftsRegeneration> = {}): DraftsRegeneratio
   ...over,
 });
 
-const REGENERATE = { name: "Régénérer les brouillons" };
-const FAILED = /n'ont pas pu être écrits/;
+const REGENERATE = { name: "Regenerate the drafts" };
+const FAILED = /couldn’t be written/;
 
 describe("RegenerateDrafts", () => {
   it("offers the button alone before any attempt", () => {
@@ -44,7 +44,7 @@ describe("RegenerateDrafts", () => {
       />,
     );
     expect(screen.queryByRole("button", REGENERATE)).toBeNull();
-    expect(screen.getByRole("heading", { name: "Brouillons en cours d'écriture" })).toHaveFocus();
+    expect(screen.getByRole("heading", { name: "Drafts being written" })).toHaveFocus();
   });
 
   it.each(["failed", "cancelled", "completed"])(

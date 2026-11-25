@@ -15,7 +15,7 @@ const PANELS: Record<SkillViewId, () => ReactNode> = {
 };
 
 /**
- * La carte des compétences (`/competences`) : graphe, radar, progression et comparaison. Seul
+ * La carte des compétences (`/skills`) : graphe, radar, progression et comparaison. Seul
  * l'onglet ouvert lit ses données ; le graphe est relu toutes les 30 s.
  */
 export function SkillsPage() {

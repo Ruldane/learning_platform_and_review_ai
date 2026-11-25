@@ -39,7 +39,7 @@ async def test_stale_after_revision_keeps_note(make_replan_runner: MakeReplan) -
     assert [c.revision for c in run.store.previews] == [0, 1, 2]
     last = run.prompts()[-1]
     assert STALE_NOTE in last and "Garde la pratique de l'API" in last
-    assert run.store.previews[2].reason.endswith(": Garde la pratique de l'API")
+    assert run.store.previews[2].reason.endswith("— Garde la pratique de l'API")
 
 
 async def test_finished_program_ends_with_its_own_text(make_replan_runner: MakeReplan) -> None:

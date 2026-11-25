@@ -48,7 +48,7 @@ async def test_wrong_confirmation_is_422_without_echo(
     assert response.json() == {
         "error": {
             "code": "confirmation_required",
-            "message": "Écris SUPPRIMER pour confirmer.",
+            "message": "Type SUPPRIMER to confirm.",
             "details": {"fields": ["confirm"]},
         }
     }

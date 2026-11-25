@@ -66,10 +66,10 @@ describe("useChooseProposal", () => {
     );
     const { hook } = setup();
     await act(() => hook.result.current.choose("p1"));
-    expect(hook.result.current.notice).toMatch(/plus d'actualité/);
+    expect(hook.result.current.notice).toMatch(/out of date/);
     expect(hook.result.current.error).toBeNull();
     await act(() => hook.result.current.choose("p2"));
-    expect(hook.result.current.notice).toMatch(/état : Terminée/);
+    expect(hook.result.current.notice).toMatch(/state: Completed/);
     expect(hook.result.current.error).toBeNull();
     // Le statut relu est appliqué au flux.
     await waitFor(() =>
@@ -88,7 +88,7 @@ describe("useChooseProposal", () => {
     );
     const { hook } = setup();
     await act(() => hook.result.current.choose("p1"));
-    expect(hook.result.current.notice).toMatch(/date de début est restée la même/);
+    expect(hook.result.current.notice).toMatch(/start date stayed the same/);
   });
 
   it("keeps any other failure as an error", async () => {

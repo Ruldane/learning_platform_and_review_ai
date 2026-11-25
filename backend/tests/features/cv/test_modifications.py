@@ -110,12 +110,15 @@ async def test_edited_text_is_revalidated(
     r = await decide(client, mid, "accepted", after=invented)
     assert r.status_code == 200, r.text
     assert (r.json()["status"], r.json()["after"]) == ("to_confirm", invented)
-    assert r.json()["blocks"] == ["Chiffre absent de ton profil"]
+    assert r.json()["blocks"] == ["Number missing from your profile"]
     r = await decide(client, mid, "accepted", after=EDITED)
     assert (r.json()["status"], r.json()["after"], r.json()["blocks"]) == ("accepted", EDITED, [])
     gap = "Réduit les coûts de 30 % avec Python et RAG"
     r = await decide(client, mid, "accepted", after=gap)
     assert (r.status_code, r.json()["error"]["code"]) == (422, "keyword_not_in_profile")
+    assert r.json()["error"]["message"] == (
+        "This edit contains a posting keyword missing from your profile. It stays in the skill gap."
+    )
     assert "RAG" not in r.text and gap not in r.text
     assert (await mods(client, review_id))["a1"]["after"] == EDITED  # rien n'a changé
     remove_id = (await mods(client, review_id))["r2"]["id"]
@@ -142,9 +145,7 @@ async def test_confirm_refused_while_a_profile_draft_is_pending(
     r = await decide(client, mid, "accepted", confirm=True)
     error = r.json()["error"]
     assert (r.status_code, error["code"]) == (409, "profile_draft_pending")
-    assert error["message"] == (
-        "Un brouillon de ton profil attend ta validation : valide-le avant de confirmer ce fait."
-    )
+    assert error["message"] == ("Approve the pending profile draft before confirming this fact.")
     assert (await mods(client, review_id))["r1"]["status"] == "to_confirm"  # rien d'écrit
     assert (await latest_profile(app)).status == "draft"
     state = (await client.get(f"{API}/profile")).json()

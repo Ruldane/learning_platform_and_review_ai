@@ -11,7 +11,7 @@ class GradeAppeals(UserScopedRepository[GradeAppeal]):
     async def require(self, appeal_id: str) -> GradeAppeal:
         row = await self.get(appeal_id)
         if row is None:
-            raise AppError("grade_appeal_not_found", "Contestation de note introuvable.", 404)
+            raise AppError("grade_appeal_not_found", "Grade appeal not found.", 404)
         return row
 
     async def history(self) -> list[GradeAppeal]:

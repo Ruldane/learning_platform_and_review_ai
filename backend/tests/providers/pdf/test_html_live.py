@@ -74,7 +74,7 @@ async def test_gotenberg_renders_lesson_with_svg_diagram(gotenberg_url: str) -> 
     assert "Données" in text and "Modèle" in text
     # Rendu en SVG : le code réémis (`n1["…"]`, `flowchart`) n'apparaît pas.
     assert "flowchart" not in text and "n1" not in text
-    assert "Sommaire" in text and "pirate" not in text
+    assert "Contents" in text and "pirate" not in text
     assert "Pipeline 1 / 1" in text  # pied de page : titre et numéros
 
 

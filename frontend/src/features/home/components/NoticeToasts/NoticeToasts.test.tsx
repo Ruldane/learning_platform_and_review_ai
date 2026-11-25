@@ -23,11 +23,11 @@ describe("NoticeToasts", () => {
   it("shows three notifications at most", () => {
     const notices = ["a", "b", "c", "d", "e"].map((id) => notice(id, `Titre ${id}`));
     render(<NoticeToasts notices={notices} onDismiss={vi.fn()} />);
-    expect(screen.getAllByRole("button", { name: /Fermer/ })).toHaveLength(3);
+    expect(screen.getAllByRole("button", { name: /Close notification/ })).toHaveLength(3);
     expect(screen.queryByText("Titre d")).toBeNull();
   });
 
-  it("dismisses the notification whose Fermer button is used, with the keyboard", async () => {
+  it("dismisses the selected notification using the keyboard", async () => {
     const user = userEvent.setup();
     const onDismiss = vi.fn();
     render(
@@ -39,11 +39,11 @@ describe("NoticeToasts", () => {
     await user.tab();
     await user.tab();
     expect(
-      screen.getByRole("button", { name: "Fermer la notification : Relevé fini" }),
+      screen.getByRole("button", { name: "Close notification: Relevé fini" }),
     ).toHaveFocus();
     await user.keyboard("{Enter}");
     expect(onDismiss).toHaveBeenCalledWith("b");
-    expect(screen.getAllByText("Fermer")).toHaveLength(2);
+    expect(screen.getAllByText("Close")).toHaveLength(2);
   });
 });
 

@@ -1,6 +1,6 @@
-"""Exercices, séances, exécutions et notes de l'IDE (phase 10). Les lectures qui précèdent une
-écriture rafraîchissent la ligne (`populate_existing`) : deux requêtes qui se suivent voient l'état
-commité par la précédente. Le commit appartient à l'appelant."""
+"""IDE exercises, sessions, runs and notes (phase 10). Reads that precede a write refresh the row
+(`populate_existing`): two successive requests see the state committed by the earlier one. The
+commit belongs to the caller."""
 
 import builtins
 from datetime import datetime
@@ -52,8 +52,8 @@ class SessionRepository(UserScopedRepository[IdeSession]):
     async def passed_between(
         self, after: datetime | None, before: datetime | None, limit: int
     ) -> builtins.list[IdeSession]:
-        """Les séances dont la première vérification réussie date de `[after, before]` (bornes
-        incluses), la plus récente d'abord."""
+        """Sessions whose first successful check falls within `[after, before]` (inclusive
+        bounds), most recent first."""
         stmt = select(IdeSession).where(
             IdeSession.user_id == self.user_id, IdeSession.passed_at.is_not(None)
         )
@@ -91,7 +91,7 @@ class RunRepository(UserScopedRepository[IdeRun]):
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def latest_of_session(self, session_id: str) -> IdeRun | None:
-        """La dernière exécution de la séance, `None` s'il n'y en a pas."""
+        """The session's last run, `None` if there is none."""
         stmt = (
             select(IdeRun)
             .where(
@@ -106,7 +106,7 @@ class RunRepository(UserScopedRepository[IdeRun]):
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def recent_of_session(self, session_id: str, limit: int) -> builtins.list[IdeRun]:
-        """Les dernières exécutions de la séance, la plus récente d'abord."""
+        """The session's latest runs, most recent first."""
         stmt = (
             select(IdeRun)
             .where(
@@ -149,7 +149,7 @@ class RunRepository(UserScopedRepository[IdeRun]):
         return checks
 
     async def running(self) -> builtins.list[IdeRun]:
-        """Les exécutions que le bac n'a pas encore rendues (au plus une par utilisatrice)."""
+        """Runs the sandbox has not returned yet (at most one per user)."""
         stmt = (
             select(IdeRun)
             .where(IdeRun.user_id == self.user_id, IdeRun.status == "running")
@@ -171,7 +171,7 @@ class NoteRepository(UserScopedRepository[IdeNote]):
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def of_session(self, session_id: str) -> builtins.list[IdeNote]:
-        """Les notes de la séance, les plus anciennes d'abord."""
+        """The session's notes, oldest first."""
         stmt = (
             select(IdeNote)
             .where(IdeNote.user_id == self.user_id, IdeNote.session_id == session_id)
@@ -181,7 +181,7 @@ class NoteRepository(UserScopedRepository[IdeNote]):
         return builtins.list((await self.session.execute(stmt)).scalars().all())
 
     async def open_proposals(self, session_id: str) -> builtins.list[IdeNote]:
-        """Les propositions de la séance encore ouvertes."""
+        """The session's proposals that are still open."""
         stmt = (
             select(IdeNote)
             .where(
@@ -196,12 +196,12 @@ class NoteRepository(UserScopedRepository[IdeNote]):
 
 
 class ProfessorNoteRepository(UserScopedRepository[IdeNote]):
-    """Les notes du professeur interne : anti-répétition, gradation, délai d'inactivité."""
+    """The internal professor's notes: anti-repetition, grading, idle delay."""
 
     model = IdeNote
 
     async def of_professor(self, session_id: str) -> builtins.list[IdeNote]:
-        """Les notes du professeur de la séance, les plus anciennes d'abord."""
+        """The professor's notes in the session, oldest first."""
         stmt = (
             select(IdeNote)
             .where(
@@ -228,9 +228,9 @@ class PreferenceRepository(UserScopedRepository[IdePreference]):
 
 
 class TeacherUsageRepository:
-    """Les jetons du professeur, lus dans le journal des appels (`llm_calls`) : la séance d'agents
-    d'un appel porte la séance de code en sujet. Une seule source (retentatives et appels coupés
-    comptés), jamais un compteur à tenir à jour."""
+    """The professor's tokens, read from the call log (`llm_calls`): a call's agent session carries
+    the code session as its subject. A single source (retries and cut-off calls counted), never a
+    counter to keep up to date."""
 
     def __init__(self, session: AsyncSession, user_id: str) -> None:
         self.session = session
@@ -242,7 +242,7 @@ class TeacherUsageRepository:
         )
 
     async def of_session(self, ide_session_id: str) -> int:
-        """Les jetons (entrée + sortie) des appels du professeur dans cette séance de code."""
+        """Tokens (input + output) of the professor's calls in this code session."""
         stmt = self._sum().where(
             LlmCall.session_id.in_(
                 select(AgentSession.id).where(
@@ -256,6 +256,6 @@ class TeacherUsageRepository:
         return int((await self.session.execute(stmt)).scalar_one() or 0)
 
     async def since(self, moment: datetime) -> int:
-        """Les jetons du professeur depuis `moment` (début du jour de l'utilisatrice)."""
+        """The professor's tokens since `moment` (start of the user's day)."""
         stmt = self._sum().where(LlmCall.created_at >= moment)
         return int((await self.session.execute(stmt)).scalar_one() or 0)

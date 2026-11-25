@@ -29,7 +29,7 @@ def week(theme: str, minutes: list[int], skill: str) -> dict[str, Any]:
     tasks = [
         {
             "title": f"Lire le chapitre {i}",
-            "type": "lire",
+            "type": "read",
             "minutes": m,
             "done_criterion": "Notes prises",
         }
@@ -38,7 +38,7 @@ def week(theme: str, minutes: list[int], skill: str) -> dict[str, Any]:
     tasks += [
         {
             "title": f"Pratiquer {theme}",
-            "type": "pratiquer",
+            "type": "practice",
             "minutes": 45,
             "done_criterion": "Un résultat montrable",
         },
@@ -184,7 +184,7 @@ async def test_direct_program_validates_like_an_agent_program(
         levels = (await db.execute(select(UserSkill.level))).scalars().all()
     assert goal.status == "planned"
     assert [v.status for v in await versions(app)] == ["accepted"]  # la version écrite, acceptée
-    assert list(levels) == ["en_cours", "en_cours"]  # les compétences des deux modules
+    assert list(levels) == ["in_progress", "in_progress"]  # les compétences des deux modules
 
 
 @pytest.mark.usefixtures("accept_lesson")
@@ -256,8 +256,8 @@ async def test_direct_program_breaking_the_rules_is_422_with_the_problems(
     error = r.json()["error"]
     assert error["code"] == "plan_invalid"
     assert error["details"]["problems"] == [
-        "Semaine 1 : 545 min prévues, 357 au plus.",
-        "Semaine 2 : aucun quiz.",
+        "Week 1: 545 min planned. The limit is 357 min.",
+        "Week 2: add a quiz at the end of the week.",
     ]
     assert (await client.get(f"{API}/programs")).json() == []
     await assert_no_agent(app)
@@ -268,8 +268,8 @@ async def test_direct_program_keeps_the_book_fields(client: httpx.AsyncClient) -
     officielles et l'encadré « code ancien » de chaque chapitre, et l'ordre de ses notions."""
     body = program_body(await new_goal(client))
     first, second = body["weeks"]
-    first |= {"stage": "fondations", "rationale": "Le socle de tout le reste."}
-    second |= {"stage": "pratique", "rationale": "On applique la régression aux arbres."}
+    first |= {"stage": "foundations", "rationale": "Le socle de tout le reste."}
+    second |= {"stage": "practice", "rationale": "On applique la régression aux arbres."}
     first["modules"][0] |= {
         "official_urls": ["https://scikit-learn.org/stable/modules/linear_model.html"],
         "legacy": ["sklearn.cross_validation"],
@@ -280,8 +280,8 @@ async def test_direct_program_keeps_the_book_fields(client: httpx.AsyncClient) -
     assert r.status_code == 201, r.text
     weeks = r.json()["weeks"]
     assert [(w["stage"], w["rationale"]) for w in weeks] == [
-        ("fondations", "Le socle de tout le reste."),
-        ("pratique", "On applique la régression aux arbres."),
+        ("foundations", "Le socle de tout le reste."),
+        ("practice", "On applique la régression aux arbres."),
     ]
     module = weeks[0]["modules"][0]
     assert module["official_urls"] == ["https://scikit-learn.org/stable/modules/linear_model.html"]

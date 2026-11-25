@@ -1,5 +1,5 @@
-const DAY = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" });
-const DAY_TIME = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" });
+const DAY = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium" });
+const DAY_TIME = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" });
 
 function parse(iso: string): Date | null {
   const date = new Date(iso);

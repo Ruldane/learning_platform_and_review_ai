@@ -35,7 +35,7 @@ async def seed_return(app: FastAPI, user_id: str | None = None) -> tuple[str, st
         db.add(block)
         await db.flush()
         await ensure_conversation(db, owner, thread_for(block.id))
-        for name, level in ((ACQUIRED, "valide"), (UNFINISHED, "en_cours")):
+        for name, level in ((ACQUIRED, "validated"), (UNFINISHED, "in_progress")):
             row = Skill(id=new_id(), user_id=owner, name=name, norm_name=normalize_skill_name(name))
             db.add(row)
             await db.flush()

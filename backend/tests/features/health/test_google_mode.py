@@ -36,7 +36,7 @@ async def google_app_for_health(
 
 
 HEALTH = "/api/v1/health"
-MESSAGE = "Mode Google : les clés de chaque compte se vérifient dans ses réglages."
+MESSAGE = "Google mode: each account's keys are checked in its settings."
 
 
 def llm_check(app: FastAPI) -> LlmKeysCheck:
@@ -48,7 +48,7 @@ def llm_check(app: FastAPI) -> LlmKeysCheck:
 async def test_health_llm_ok_in_google_mode(google_app_for_health: FastAPI) -> None:
     status = await llm_check(google_app_for_health).check()
     assert status.ok and status.detail == MESSAGE == GOOGLE_MODE_DETAIL
-    assert "Aucun utilisateur local" not in status.detail
+    assert "No local user" not in status.detail
 
 
 async def test_llm_check_in_google_mode_needs_no_user_and_no_database() -> None:
@@ -63,7 +63,7 @@ async def test_llm_check_in_google_mode_needs_no_user_and_no_database() -> None:
 async def test_llm_check_in_local_mode_is_unchanged() -> None:
     check = LlmKeysCheck(lambda: None, None, {}, {}, lambda: None)  # type: ignore[arg-type]
     status = await check.check()
-    assert not status.ok and status.detail == "Aucun utilisateur local."
+    assert not status.ok and status.detail == "No local user."
 
 
 async def test_health_route_is_public_and_not_degraded_by_the_llm_check(
@@ -99,4 +99,4 @@ async def test_scheduler_and_startup_do_not_depend_on_a_local_user(
         assert not hasattr(app.state, "local_user_id")
         await asyncio.sleep(0.5)  # les tâches du démarrage passent
     messages = " ".join(record.getMessage() for record in caplog.records)
-    assert "Planificateur démarré" in messages and "en échec" not in messages
+    assert "Scheduler started" in messages and "en échec" not in messages

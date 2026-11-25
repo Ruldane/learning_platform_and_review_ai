@@ -58,7 +58,7 @@ def build_answers(quiz: dict[str, Any], known: dict[str, str]) -> list[dict[str,
     answers: list[dict[str, Any]] = []
     for question in quiz["questions"]:
         right = known.get(question["id"])
-        if question["type"] == "qcm":
+        if question["type"] == "mcq":
             index = question["choices"].index(right) if right in question["choices"] else 0
             answers.append({"question_id": question["id"], "choice": index})
         else:

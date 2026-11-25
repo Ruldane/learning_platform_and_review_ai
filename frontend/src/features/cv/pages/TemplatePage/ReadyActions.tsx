@@ -20,7 +20,7 @@ export function ReadyActions({ template }: { template: TemplateOut }) {
             {t("cv.templatePage.activate")}
           </Button>
         )}
-        <Link to="/carriere/offres" className={buttonVariants({ variant: "outline" })}>
+        <Link to="/career/postings" className={buttonVariants({ variant: "outline" })}>
           {t("cv.templatePage.reviewLink")}
         </Link>
       </div>

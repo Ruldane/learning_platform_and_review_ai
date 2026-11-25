@@ -1,13 +1,13 @@
-"""Tâche du matin (P12, P13, D162) : appelée par la tâche planifiée `daily_brief` (`app.scheduler`,
-jamais importé ici : contrat 8), toutes les 10 minutes et au démarrage.
+"""Morning job (P12, P13, D162): called by the scheduled `daily_brief` job (`app.scheduler`, never
+imported here: contract 8), every 10 minutes and at startup.
 
-Par compte, une fois l'heure du brief passée **chez January** (`brief_due`, fuseau et heure
-réglés) : le passage du jour local se gagne dans le registre (`claim`, période =
-`day_period(brief_day(now, zone))`, jamais `now.date()`), puis `ensure_today(origin="schedule")`.
-Le passage se ferme `done` si ce passage a créé le brief, `skipped` s'il existait déjà (ouvert à
-l'accueil avant l'heure), avec l'id du brief et demain à l'heure du brief ; une panne le met
-`failed` (repris au passage suivant, 3 essais au plus). Une panne pour un compte n'arrête pas les
-autres. Journaux : identifiants, nombres et codes."""
+Per account, once the brief time has passed **for January** (`brief_due`, set time zone and
+time): the run for the local day is won in the ledger (`claim`, period =
+`day_period(brief_day(now, zone))`, never `now.date()`), then `ensure_today(origin="schedule")`.
+The run closes `done` if it created the brief, `skipped` if the brief already existed (opened on
+the home page before the time), with the brief id and tomorrow at the brief time; a failure marks
+it `failed` (retried on the next run, 3 attempts at most). A failure for one account does not
+stop the others. Logs: ids, numbers and codes."""
 
 import logging
 from dataclasses import dataclass
@@ -34,8 +34,8 @@ def _code(exc: Exception) -> str:
 
 @dataclass(frozen=True)
 class Due:
-    """Un compte dû : le passage gagné, le jour local et le prochain passage (demain à l'heure du
-    brief)."""
+    """An account that is due: the run won, the local day and the next run (tomorrow at the
+    brief time)."""
 
     got: Claim
     today: date
@@ -43,8 +43,8 @@ class Due:
 
 
 async def _claim_due(rt: BriefRuntime, user_id: str, now: datetime) -> Due | None:
-    """Le passage gagné si ce compte est dû : l'heure du brief est passée et le jour local n'est
-    pas déjà pris (ni fait, ni sauté, ni en cours, ni sans essai restant)."""
+    """The run won if this account is due: the brief time has passed and the local day is not
+    already taken (not done, skipped, running, or out of attempts)."""
     async with rt.session_factory() as db:
         settings = await SettingsService(db, user_id).get()
         zone = user_zone(settings.timezone)
@@ -85,11 +85,11 @@ async def _fail(rt: BriefRuntime, user_id: str, got: Claim, now: datetime, exc: 
     async with rt.session_factory() as db:
         await fail(db, user_id, got.run_id, attempt=got.attempt, code=_code(exc), now=now)
         await db.commit()
-    logger.warning("Brief du matin manqué : utilisateur %s, %s", user_id, _code(exc))
+    logger.warning("Morning brief missed: user %s, %s", user_id, _code(exc))
 
 
 async def _morning(rt: BriefRuntime, user_id: str, now: datetime) -> bool:
-    """Un compte : rend vrai si ce passage a créé le brief du jour."""
+    """One account: return true if this run created the daily brief."""
     due = await _claim_due(rt, user_id, now)
     if due is None:
         return False
@@ -101,12 +101,12 @@ async def _morning(rt: BriefRuntime, user_id: str, now: datetime) -> bool:
     await _close(
         rt, user_id, due.got, now, "done" if created else "skipped", brief.id, due.next_due_at
     )
-    logger.info("Brief du matin : utilisateur %s, brief %s, créé %s", user_id, brief.id, created)
+    logger.info("Morning brief: user %s, brief %s, created %s", user_id, brief.id, created)
     return created
 
 
 async def run_daily_briefs(rt: BriefRuntime, now: datetime) -> int:
-    """Un passage de la tâche planifiée ; rend le nombre de briefs créés."""
+    """One run of the scheduled job; return the number of briefs created."""
     async with rt.session_factory() as db:
         users = await scheduled_user_ids(db)
     created = 0
@@ -114,9 +114,7 @@ async def run_daily_briefs(rt: BriefRuntime, now: datetime) -> int:
         try:
             created += await _morning(rt, user_id, now)
         except Exception as exc:
-            logger.warning(
-                "Brief du matin : utilisateur %s non traité (%s)", user_id, type(exc).__name__
-            )
+            logger.warning("Morning brief: user %s not processed (%s)", user_id, type(exc).__name__)
     level = logging.INFO if created else logging.DEBUG
-    logger.log(level, "Brief du matin : %d compte(s), %d brief(s)", len(users), created)
+    logger.log(level, "Morning brief: %d account(s), %d brief(s)", len(users), created)
     return created

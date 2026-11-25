@@ -46,20 +46,18 @@ class WriteOutcome:
 
 
 def not_found() -> AppError:
-    return AppError("memory_item_not_found", "Élément de mémoire introuvable.", 404)
+    return AppError("memory_item_not_found", "Memory item not found.", 404)
 
 
 def duplicate() -> AppError:
-    return AppError("memory_duplicate", "Un élément identique existe déjà.", 409)
+    return AppError("memory_duplicate", "An identical item already exists.", 409)
 
 
 def _content(title: str, text: str) -> tuple[str, str]:
     """Titre et texte nettoyés ; ni l'un ni l'autre ne peut être vide."""
     title, text = title.strip()[:TITLE_MAX], clean_text(text)
     if not title or not text:
-        raise AppError(
-            "memory_content_required", "Le titre et le texte ne peuvent pas être vides.", 422
-        )
+        raise AppError("memory_content_required", "Enter both a title and some text.", 422)
     return title, text
 
 
@@ -228,8 +226,8 @@ class MemoryService:
         `update` ; confirmer une décision en attente la rend active, l'indexe et journalise
         `confirm`."""
         item = await self.get(item_id)
-        if patch.level is not None and item.kind != "acquis":
-            raise AppError("memory_level_forbidden", "Seul un acquis a un niveau.", 422)
+        if patch.level is not None and item.kind != "skill":
+            raise AppError("memory_level_forbidden", "Only skills have a level.", 422)
         content = await self._edit(item, patch)
         level = patch.level is not None and item.meta.get("level") != patch.level
         if level:

@@ -1,11 +1,11 @@
-"""Composition du CV ciblé par le code (SPEC 5.3, critère 18.3) : le modèle ne rédige jamais le CV.
-Le contenu part des faits du CV d'origine (`base_content`), puis reçoit les modifications
-acceptées (`apply_modifications`). Chaque ligne porte les identifiants des faits du profil dont
-elle vient : aucune ligne sans fait.
+"""Composition of the targeted CV by the code (SPEC 5.3, criterion 18.3): the model never writes
+the CV. The content starts from the facts of the original CV (`base_content`), then receives the
+accepted changes (`apply_modifications`). Each line carries the identifiers of the profile facts
+it comes from: no line without a fact.
 
-Le module ne juge pas : le contrôle contre le profil (`cv_validator`) et la décision de
-l'utilisatrice se font avant. Il refuse seulement d'écrire ce qu'il ne sait pas placer : une cible
-absente du contenu ou du profil est ignorée, comptée, et rendue à l'appelant."""
+The module does not judge: the check against the profile (`cv_validator`) and the user's
+decision come before. It only refuses to write what it cannot place: a target absent from the
+content or the profile is ignored, counted, and returned to the caller."""
 
 import logging
 from collections.abc import Sequence
@@ -31,7 +31,7 @@ _ACTION_ORDER = {"remove": 0, "rewrite": 1, "add": 2, "move": 3}
 
 @dataclass(frozen=True)
 class Applied:
-    """Le contenu composé et les références des modifications ignorées (cible introuvable)."""
+    """The composed content and the references of the ignored changes (target not found)."""
 
     content: CvContent
     ignored: list[str]
@@ -40,7 +40,7 @@ class Applied:
 def _entries(
     profile: MasterProfileData, ids: set[str], facts: dict[str, str]
 ) -> dict[str, list[CvEntry]]:
-    """Les entrées du CV d'origine, par genre de fait (`x`, `f`, `p`), avec leurs lignes."""
+    """The entries of the original CV, by kind of fact (`x`, `f`, `p`), with their lines."""
     children: dict[str, list[str]] = {}
     for x in profile.experiences:
         children[x.id] = [line.id for line in x.achievements]
@@ -73,9 +73,9 @@ def _items(facts: dict[str, str], ids: set[str], prefix: str) -> list[CvLine]:
 
 
 def base_content(profile: MasterProfileData, order: Sequence[SectionKey]) -> CvContent:
-    """Le CV d'origine : les faits venus du CV (`in_cv`), dans l'ordre des sections du gabarit
-    (`order`), chaque ligne avec son `fact_id`. Une section vide, ou que le gabarit ne prévoit
-    pas, n'apparaît pas."""
+    """The original CV: the facts that came from the CV (`in_cv`), in the order of the template's
+    sections (`order`), each line with its `fact_id`. A section that is empty, or that the
+    template does not provide, does not appear."""
     ids = in_cv(profile)
     facts = facts_of(profile)
     entries = _entries(profile, ids, facts)
@@ -107,13 +107,13 @@ def base_content(profile: MasterProfileData, order: Sequence[SectionKey]) -> CvC
 def apply_with_report(
     base: CvContent, profile: MasterProfileData, accepted: Sequence[Proposal]
 ) -> Applied:
-    """`apply_modifications` et les références ignorées. Ordre d'application : remove, rewrite,
-    add, move (à l'intérieur d'un genre, l'ordre reçu). `base` n'est pas modifié."""
+    """`apply_modifications` and the ignored references. Order of application: remove, rewrite,
+    add, move (within a kind, the order received). `base` is not modified."""
     composer = Composer(base, profile)
     ordered = sorted(accepted, key=lambda p: _ACTION_ORDER[p.action])
     ignored = [p.ref for p in ordered if not composer.apply(p)]
     logger.info(
-        "CV composé : %d modification(s) appliquée(s), %d ignorée(s)",
+        "CV composed: %d change(s) applied, %d ignored",
         len(ordered) - len(ignored),
         len(ignored),
     )
@@ -123,8 +123,8 @@ def apply_with_report(
 def apply_modifications(
     base: CvContent, profile: MasterProfileData, accepted: Sequence[Proposal]
 ) -> CvContent:
-    """Le CV ciblé : `base` et les modifications acceptées. `rewrite` remplace le texte de la
-    ligne `target` ; `add` ajoute le fait `target` du profil (texte `after`) dans sa section, à sa
-    place dans le profil ; `remove` retire `target` ; `move` place la section `section` avant la
-    section `after`. Une cible absente est ignorée (`apply_with_report` la compte)."""
+    """The targeted CV: `base` and the accepted changes. `rewrite` replaces the text of the
+    line `target`; `add` adds the profile's fact `target` (text `after`) in its section, at its
+    place in the profile; `remove` removes `target`; `move` places the section `section` before the
+    section `after`. An absent target is ignored (`apply_with_report` counts it)."""
     return apply_with_report(base, profile, accepted).content

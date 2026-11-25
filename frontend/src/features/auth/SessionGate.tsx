@@ -13,7 +13,7 @@ import type { Me } from "./types";
  * La porte de connexion de la coquille (`shell.gate`) : branche `me` sur `AuthGate`. Un 401
  * `auth_required` reçu par n'importe quel appel passe `me` à « pas de session » sans le relire :
  * relire `me` d'ici le ferait échouer de nouveau, donc émettre de nouveau. `AuthGate` mène alors
- * à `/connexion`, une seule fois, et la page de connexion ne renvoie jamais vers la porte.
+ * à `/login`, une seule fois, et la page de connexion ne renvoie jamais vers la porte.
  *
  * Le cookie de session est partagé par tous les onglets : quand l'onglet redevient visible, `me`
  * est relu sans cache. Si le compte a changé (ou la session s'est close) dans un autre onglet,

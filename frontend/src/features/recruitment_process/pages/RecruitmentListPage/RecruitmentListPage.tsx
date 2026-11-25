@@ -8,7 +8,7 @@ import { LoadingState } from "@/shared/ui/states/LoadingState";
 import { createCase, listCases, options, RECRUITMENTS } from "../../api";
 import { RecruitmentForm } from "../../components/RecruitmentForm";
 
-const ROOT = "/carriere/recrutement-simule";
+const ROOT = "/career/recruitment-process";
 
 export function RecruitmentListPage() {
   const navigate = useNavigate();

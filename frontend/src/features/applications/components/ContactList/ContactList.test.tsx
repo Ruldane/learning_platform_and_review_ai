@@ -17,16 +17,16 @@ describe("ContactList", () => {
         onChange={vi.fn()}
       />,
     );
-    expect(screen.getByRole("textbox", { name: "Nom, contact 1" })).toHaveValue("Camille");
-    expect(screen.getByRole("textbox", { name: "Rôle, contact 1" })).toHaveValue("RH");
-    expect(screen.getByRole("textbox", { name: "Adresse du profil, contact 1" })).toHaveValue(
+    expect(screen.getByRole("textbox", { name: "Name, contact 1" })).toHaveValue("Camille");
+    expect(screen.getByRole("textbox", { name: "Role, contact 1" })).toHaveValue("RH");
+    expect(screen.getByRole("textbox", { name: "Profile URL, contact 1" })).toHaveValue(
       "https://example.com/c",
     );
   });
 
   it("says so when there is no contact", () => {
     render(<ContactList contacts={[]} onChange={vi.fn()} />);
-    expect(screen.getByText("Aucun contact.")).toBeInTheDocument();
+    expect(screen.getByText("No contacts.")).toBeInTheDocument();
   });
 
   it("adds an empty contact and reports the new list", async () => {
@@ -34,7 +34,7 @@ describe("ContactList", () => {
     const onChange = vi.fn();
     const first = makeContact({ name: "Camille" });
     render(<ContactList contacts={[first]} onChange={onChange} />);
-    await user.click(screen.getByRole("button", { name: "Ajouter un contact" }));
+    await user.click(screen.getByRole("button", { name: "Add a contact" }));
     expect(onChange).toHaveBeenCalledWith([first, { id: "", name: "", role: null, url: null }]);
   });
 
@@ -43,7 +43,7 @@ describe("ContactList", () => {
     const onChange = vi.fn();
     const [a, b] = many(2) as [ContactView, ContactView];
     render(<ContactList contacts={[a, b]} onChange={onChange} />);
-    await user.click(screen.getByRole("button", { name: "Retirer le contact Contact 1" }));
+    await user.click(screen.getByRole("button", { name: "Remove contact Contact 1" }));
     expect(onChange).toHaveBeenCalledWith([b]);
   });
 
@@ -52,9 +52,9 @@ describe("ContactList", () => {
     const onChange = vi.fn();
     const contact = makeContact({ name: "Cam", role: null, url: null });
     render(<ContactList contacts={[contact]} onChange={onChange} />);
-    await user.type(screen.getByRole("textbox", { name: "Nom, contact 1" }), "x");
+    await user.type(screen.getByRole("textbox", { name: "Name, contact 1" }), "x");
     expect(onChange).toHaveBeenLastCalledWith([{ ...contact, name: "Camx" }]);
-    await user.type(screen.getByRole("textbox", { name: "Rôle, contact 1" }), "R");
+    await user.type(screen.getByRole("textbox", { name: "Role, contact 1" }), "R");
     expect(onChange).toHaveBeenLastCalledWith([{ ...contact, role: "R" }]);
   });
 
@@ -63,25 +63,25 @@ describe("ContactList", () => {
     const onChange = vi.fn();
     const contact = makeContact({ role: "R" });
     render(<ContactList contacts={[contact]} onChange={onChange} />);
-    await user.clear(screen.getByRole("textbox", { name: "Rôle, contact 1" }));
+    await user.clear(screen.getByRole("textbox", { name: "Role, contact 1" }));
     expect(onChange).toHaveBeenLastCalledWith([{ ...contact, role: null }]);
   });
 
   it("stops at 10 contacts: the add button is disabled and says why", () => {
     render(<ContactList contacts={many(10)} onChange={vi.fn()} />);
-    expect(screen.getByRole("button", { name: "Ajouter un contact" })).toBeDisabled();
-    expect(screen.getByText("10 contacts au plus.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add a contact" })).toBeDisabled();
+    expect(screen.getByText("10 contacts at most.")).toBeInTheDocument();
   });
 
   it("still allows adding at 9 contacts", () => {
     render(<ContactList contacts={many(9)} onChange={vi.fn()} />);
-    expect(screen.getByRole("button", { name: "Ajouter un contact" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Add a contact" })).toBeEnabled();
   });
 
   it("flags a contact with no name", () => {
     render(<ContactList contacts={[makeContact({ name: "" })]} onChange={vi.fn()} />);
-    expect(screen.getByRole("textbox", { name: "Nom, contact 1" })).toBeInvalid();
-    expect(screen.getByText("Le nom est obligatoire.")).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Name, contact 1" })).toBeInvalid();
+    expect(screen.getByText("Name is required.")).toBeInTheDocument();
   });
 
   it("is a named group", () => {

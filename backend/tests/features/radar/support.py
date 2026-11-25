@@ -42,7 +42,7 @@ def finding(ref: str, *skills: str, **over: Any) -> RadarFinding:
         "is_job_posting": True,
         "title": f"Poste {ref}",
         "company": "Société Fictive",
-        "level": "confirme",
+        "level": "mid_level",
         "skills": [{"name": name, "required": True} for name in skills],
         "tools": [],
     }

@@ -25,7 +25,7 @@ describe("MermaidSvg", () => {
       expect.stringMatching(/^mermaid-/),
       "flowchart TD\n A-->B",
     );
-    expect(screen.getByRole("img", { name: "Schéma : Carte du domaine" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Diagram: Carte du domaine" })).toBeInTheDocument();
   });
 
   it("shows the code in a pre block when rendering fails", async () => {
@@ -35,6 +35,6 @@ describe("MermaidSvg", () => {
     const code = alert.nextElementSibling;
     expect(code?.tagName).toBe("PRE");
     expect(code?.textContent).toBe("flowchart TD\n A-->");
-    expect(screen.getByRole("alert")).toHaveTextContent("n'a pas pu être dessiné");
+    expect(screen.getByRole("alert")).toHaveTextContent("This diagram couldn’t be drawn.");
   });
 });

@@ -34,5 +34,5 @@ class EpisodeRepository(UserScopedRepository[PodcastEpisode]):
         await self.session.execute(stmt)
         row = await self.by_day(day)
         if row is None:
-            raise RuntimeError("L’épisode réservé est introuvable.")
+            raise RuntimeError("The reserved episode cannot be found.")
         return row

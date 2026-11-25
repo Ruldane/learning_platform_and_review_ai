@@ -10,7 +10,7 @@ describe("NumberField", () => {
       <NumberField label="Tours" value="3" min={1} max={5} invalid={false} onChange={onChange} />,
     );
     const field = screen.getByLabelText("Tours");
-    expect(field).toHaveAccessibleDescription("Entre 1 et 5.");
+    expect(field).toHaveAccessibleDescription("Between 1 and 5.");
     expect(field).toHaveAttribute("aria-invalid", "false");
     await userEvent.setup().type(field, "4");
     expect(onChange).toHaveBeenCalledWith("34");
@@ -21,9 +21,9 @@ describe("NumberField", () => {
       <NumberField label="Tours" value="9" min={1} max={5} invalid onChange={vi.fn()} />,
     );
     expect(screen.getByLabelText("Tours")).toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByText("Erreur : Entre 1 et 5.")).toHaveClass("text-destructive");
+    expect(screen.getByText("Error: Between 1 and 5.")).toHaveClass("text-destructive");
     // l'état ne tient pas à la couleur seule : un mot, et le cadre du champ (variante aria-invalid)
-    expect(screen.getByLabelText("Tours")).toHaveAccessibleDescription("Erreur : Entre 1 et 5.");
+    expect(screen.getByLabelText("Tours")).toHaveAccessibleDescription("Error: Between 1 and 5.");
     rerender(
       <NumberField
         label="Tours"
@@ -36,7 +36,7 @@ describe("NumberField", () => {
       />,
     );
     expect(screen.getByLabelText("Tours")).toHaveAccessibleDescription(
-      "Erreur : Le serveur a refusé cette valeur : vérifie-la.",
+      "Error: The server refused this value: check it.",
     );
   });
 
@@ -56,7 +56,7 @@ describe("NumberField", () => {
       </>,
     );
     expect(screen.getByLabelText("Tours")).toHaveAccessibleDescription(
-      "Erreur : Entre 1 et 5. Message commun.",
+      "Error: Between 1 and 5. Message commun.",
     );
   });
 
@@ -65,7 +65,7 @@ describe("NumberField", () => {
       <NumberField label="Plafond" value="1" hint="Au moins 10 000." invalid onChange={vi.fn()} />,
     );
     expect(screen.getByLabelText("Plafond")).toHaveAccessibleDescription(
-      "Erreur : Au moins 10 000.",
+      "Error: Au moins 10 000.",
     );
   });
 });

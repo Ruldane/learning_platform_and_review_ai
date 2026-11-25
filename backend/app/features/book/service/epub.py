@@ -1,4 +1,4 @@
-"""Emballage EPUB 3 de l'édition, sans date ni chemin dépendant de la machine."""
+"""EPUB 3 packaging of the edition, with no machine-dependent date or path."""
 
 from collections.abc import Mapping
 from datetime import UTC
@@ -81,7 +81,7 @@ def _package(source: BookSource, pages: list[BookPage], diagrams: Mapping[str, b
 
 def _write(archive: ZipFile, name: str, body: bytes, *, compression: int = ZIP_DEFLATED) -> None:
     entry = ZipInfo(name)
-    entry.create_system = 3  # Même en-tête quel que soit l'OS qui prépare l'édition.
+    entry.create_system = 3  # Same header whatever OS prepares the edition.
     entry.external_attr = 0o100644 << 16
     archive.writestr(entry, body, compress_type=compression)
 

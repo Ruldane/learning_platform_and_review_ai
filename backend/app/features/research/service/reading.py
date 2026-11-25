@@ -1,8 +1,8 @@
-"""Lecture d'une page pour la recherche web (SPEC 10.2, 10.4) : statut `ok` ou `unreadable` avec
-la raison, cache de 7 jours, plafond de pages de la session, ligne `sources` en attente de note.
+"""Reading a page for web research (SPEC 10.2, 10.4): status `ok` or `unreadable` with the
+reason, 7-day cache, session page cap, `sources` row awaiting a score.
 
-Aucune transaction pendant la lecture (D66). Journaux : identifiants seulement, jamais l'URL ni
-le titre (SPEC 17.2)."""
+No transaction during the read (D66). Logs: ids only, never the URL or the title
+(SPEC 17.2)."""
 
 import logging
 from collections.abc import Awaitable, Callable
@@ -25,8 +25,8 @@ from app.providers.web.base import UrlForbidden, UrlTooLarge, UrlUnreadable, Url
 
 logger = logging.getLogger(__name__)
 
-EXCLUDED_REASON = "Domaine exclu dans les réglages."
-# Erreurs de lecture rendues comme une page illisible (leur message, fixe, devient la raison).
+EXCLUDED_REASON = "Domain excluded in the settings."
+# Read errors returned as an unreadable page (their fixed message becomes the reason).
 _READ_ERRORS = (UrlForbidden, UrlTooLarge, UrlUnsupported, UrlUnreadable, PdfUnreadable)
 _MAX_REASON = 300
 _MAX_LANG = 8
@@ -36,7 +36,7 @@ type PageFromClient = Callable[[str], Awaitable[CachedPage]]
 
 @dataclass(frozen=True)
 class Judged:
-    """Verdict déjà posé sur une source de la session (nœud rejoué, seconde lecture)."""
+    """Verdict already set on a source of the session (replayed node, second read)."""
 
     score: int | None
     verdict: Literal["kept", "rejected"]
@@ -47,7 +47,7 @@ class Judged:
 @dataclass(frozen=True)
 class PageOutcome:
     source_id: str | None
-    url: str  # l'URL normalisée
+    url: str  # the normalized URL
     status: PageStatus
     title: str | None
     text: str
@@ -105,8 +105,8 @@ async def _settings(runtime: ResearchRuntime, user_id: str) -> ResearchPrefs:
 async def _fetch(
     runtime: ResearchRuntime, user_id: str, url: str, client: PageFromClient | None = None
 ) -> tuple[CachedPage, bool]:
-    """Page du cache (rien n'est relu), sinon lue par le lecteur web ; une erreur de lecture
-    devient une page illisible avec sa raison. Rend aussi « venait du cache »."""
+    """Page from the cache (nothing is re-read), otherwise read by the web reader; a read error
+    becomes an unreadable page with its reason. Also returns "came from the cache"."""
     async with runtime.session_factory() as db:
         page = await WebCache(db, user_id, now=runtime.now).get_page(url, client=client is not None)
     if page is not None:
@@ -146,8 +146,8 @@ async def _save(
     *,
     client: bool = False,
 ) -> str | None:
-    """Une transaction courte : page mise en cache (si elle vient d'être lue), ligne `sources`
-    de la session, purge du cache si due. Rend l'id de la source créée."""
+    """A short transaction: page cached (if it has just been read), the session's `sources` row,
+    cache purge if due. Returns the id of the source created."""
     page, cached = found
     source_id: str | None = None
     async with runtime.session_factory() as db:
@@ -168,9 +168,9 @@ async def _in_session(
     url: str,
     client: PageFromClient | None = None,
 ) -> PageOutcome:
-    """À appeler sous `session_lock`. Une URL déjà lue par la session (nœud rejoué) rend sa
-    source, et son verdict si elle est déjà notée, sans compter une page de plus ni créer de
-    seconde ligne."""
+    """To call under `session_lock`. A URL already read by the session (replayed node) returns
+    its source, and its verdict if already scored, without counting one more page or creating a
+    second row."""
     async with runtime.session_factory() as db:
         repo = SourceRepository(db, user_id)
         known = await repo.get_by_url(session_id, url_key(url))
@@ -196,8 +196,8 @@ async def read(
     *,
     client: PageFromClient | None = None,
 ) -> PageOutcome:
-    """Lit `url` (http(s), normalisée ; sinon 422 `invalid_url` ou `url_forbidden`). Un domaine
-    exclu n'est jamais lu. Lève `WebQuotaReached` (429) au-delà du plafond de pages."""
+    """Reads `url` (http(s), normalized; otherwise 422 `invalid_url` or `url_forbidden`). An
+    excluded domain is never read. Raises `WebQuotaReached` (429) beyond the page cap."""
     target = normalize_url(url)
     settings = await _settings(runtime, user_id)
     if _is_excluded(target, settings):
@@ -218,7 +218,7 @@ async def read(
         )
         raise
     logger.info(
-        "Lecture web : utilisateur %s, session %s, source %s, statut %s, cache %s, rejouée %s",
+        "Web read: user %s, session %s, source %s, status %s, cache %s, replayed %s",
         user_id,
         session_id,
         outcome.source_id,
@@ -239,11 +239,11 @@ async def record_verdict(
     reason: str,
     summary: str,
 ) -> Source:
-    """Note (bornée à 0..100) et verdict d'une source : `kept` si la note atteint
-    `SOURCE_THRESHOLD` et que la page est lisible, sinon `rejected` (une page illisible n'est
-    jamais retenue ni citée, SPEC 10.2). `score=None` : note impossible à établir, écartée sans
-    note ni détail. Idempotent. La raison d'une page illisible reste celle de la lecture. Le
-    commit appartient à l'appelant."""
+    """Score (bounded to 0..100) and verdict of a source: `kept` if the score reaches
+    `SOURCE_THRESHOLD` and the page is readable, otherwise `rejected` (an unreadable page is
+    never kept or cited, SPEC 10.2). `score=None`: score impossible to establish, discarded
+    without a score or detail. Idempotent. The reason of an unreadable page stays that of the
+    read. The commit belongs to the caller."""
     source = await SourceRepository(db, user_id).get(source_id)
     if source is None:
         raise source_not_found()
@@ -262,11 +262,11 @@ async def record_verdict(
 
 
 async def session_verdicts(db: AsyncSession, user_id: str, session_id: str) -> dict[str, Judged]:
-    """Verdicts déjà posés sur les sources de la session de l'utilisateur, par `source_id`."""
+    """Verdicts already set on the sources of the user's session, by `source_id`."""
     sources = await SourceRepository(db, user_id).list_for_session(session_id)
     return {source.id: judged for source in sources if (judged := _judged(source)) is not None}
 
 
 async def list_sources(db: AsyncSession, user_id: str, session_id: str) -> list[Source]:
-    """Sources d'une session de l'utilisateur, dans l'ordre où elles ont été repérées."""
+    """Sources of a user's session, in the order they were spotted."""
     return await SourceRepository(db, user_id).list_for_session(session_id)

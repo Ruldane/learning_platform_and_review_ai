@@ -37,10 +37,10 @@ export function SettingsTabs({ cards }: { cards: Destination[] }) {
       </div>
       <div role="tabpanel" id={`${prefix}-panel`} aria-labelledby={`${prefix}-${area}`}>
         <DestinationCards cards={cards.filter(({ settingsArea }) => settingsArea === area)} />
-        {area === "access" ? <Link className="mt-4 inline-block underline" to="/memoire/cerveau">
+        {area === "access" ? <Link className="mt-4 inline-block underline" to="/memory/brain">
           {t("brain.title")}
         </Link> : null}
-        {area === "profile" ? <Link className="mt-4 inline-block underline" to="/carriere/profil">
+        {area === "profile" ? <Link className="mt-4 inline-block underline" to="/career/profile">
           {t("cv.nav.profile")}
         </Link> : null}
       </div>

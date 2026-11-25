@@ -16,7 +16,7 @@ _SHA = re.compile(r"[a-f0-9]{40}")
 
 
 def _unavailable() -> AppError:
-    return AppError("github_unavailable", "GitHub n’a pas pu être lu. Réessaie plus tard.", 502)
+    return AppError("github_unavailable", "GitHub could not be reached. Try again later.", 502)
 
 
 def _identity(raw: object) -> int:
@@ -41,7 +41,7 @@ def _commit_author(value: object, sha: str) -> tuple[int, str]:
     ):
         raise AppError(
             "github_commit_unverified",
-            "Choisis un commit signé, vérifié par GitHub et rattaché à son auteur.",
+            "Choose a signed commit that GitHub has verified and linked to its author.",
             409,
         )
     return author_id, login
@@ -131,10 +131,10 @@ class PublicGithub:
 
     async def attributed_commit(self, repo: RepoRef, sha: str) -> GithubCommit:
         if not _SHA.fullmatch(sha):
-            raise AppError("github_invalid_sha", "Le SHA complet du commit est attendu.", 422)
+            raise AppError("github_invalid_sha", "Enter the full commit SHA.", 422)
         metadata = await self._read(repo.name)
         if _field(metadata, "private") is not False:
-            raise AppError("github_repo_not_public", "Choisis un dépôt GitHub public.", 409)
+            raise AppError("github_repo_not_public", "Choose a public GitHub repository.", 409)
         repo_id = _identity(_field(metadata, "id"))
         branch = _field(metadata, "default_branch")
         full_name = _field(metadata, "full_name")
@@ -157,7 +157,7 @@ class PublicGithub:
         ):
             raise AppError(
                 "github_commit_outside_branch",
-                "Choisis un commit présent dans l’historique de la branche par défaut.",
+                "Choose a commit from the default branch’s history.",
                 409,
             )
         return GithubCommit(found, repo_id, sha, author_id, login)

@@ -10,15 +10,15 @@ describe("CancelCouncilCard", () => {
     const onConfirm = vi.fn();
     const onKeep = vi.fn();
     render(<CancelCouncilCard disabled={false} onConfirm={onConfirm} onKeep={onKeep} />);
-    await user.click(screen.getByRole("button", { name: "Non, continuer" }));
+    await user.click(screen.getByRole("button", { name: "No, continue" }));
     expect(onKeep).toHaveBeenCalledTimes(1);
-    await user.click(screen.getByRole("button", { name: "Oui, arrêter" }));
+    await user.click(screen.getByRole("button", { name: "Yes, stop" }));
     expect(onConfirm).toHaveBeenCalledTimes(1);
     expect(confirmDialog).not.toHaveBeenCalled();
   });
 
   it("locks the confirmation while the cancellation is sent", () => {
     render(<CancelCouncilCard disabled onConfirm={vi.fn()} onKeep={vi.fn()} />);
-    expect(screen.getByRole("button", { name: "Oui, arrêter" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Yes, stop" })).toBeDisabled();
   });
 });

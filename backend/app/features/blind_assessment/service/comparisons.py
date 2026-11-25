@@ -1,4 +1,4 @@
-"""Figer les deux CV, réserver l’évaluation et révéler les sources au résultat."""
+"""Freeze both CVs, reserve the evaluation and reveal the sources with the result."""
 
 from dataclasses import asdict
 from secrets import randbelow
@@ -101,7 +101,9 @@ async def evaluate(launcher: SessionLauncher, user_id: str, assessment_id: str) 
         row = await BlindAssessments(db, user_id).require(assessment_id)
         if await _stage(db, row) not in {"draft", "failed"}:
             raise AppError(
-                "blind_evaluation_started", "Cette épreuve est en cours ou déjà évaluée.", 409
+                "blind_evaluation_started",
+                "This assessment is in progress or already evaluated.",
+                409,
             )
         row.session_id = session_id
         row.stage = "evaluating"

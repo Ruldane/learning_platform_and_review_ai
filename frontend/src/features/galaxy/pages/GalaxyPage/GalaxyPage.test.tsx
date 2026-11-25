@@ -6,7 +6,7 @@ import { renderRoutes } from "@/test/renderRoutes";
 import { server } from "@/test/server";
 import { GalaxyPage } from "./GalaxyPage";
 
-const route = "/competences/galaxie";
+const route = "/skills/galaxy";
 const routes = [{ path: route, element: <GalaxyPage /> }];
 const empty = { nodes: [], edges: [], target_label: null };
 
@@ -15,7 +15,7 @@ afterEach(() => vi.restoreAllMocks());
 it("rend un état vide sans projection de données inventées", async () => {
   server.use(http.get(`${API}/galaxy`, () => HttpResponse.json(empty)));
   renderRoutes(routes, route);
-  expect(await screen.findByText("Aucune compétence ni note active à afficher.")).toBeVisible();
+  expect(await screen.findByText("No active skills or notes to display.")).toBeVisible();
 });
 
 it("ouvre le chapitre lié depuis la sélection au clavier", async () => {
@@ -28,7 +28,7 @@ it("ouvre le chapitre lié depuis la sélection au clavier", async () => {
             id: "skill:python",
             title: "Python",
             kind: "skill",
-            level: "declare",
+            level: "declared",
             gap: 2,
             domain: "Données",
             action: { kind: "lesson", ref: "lecon-test" },
@@ -40,14 +40,14 @@ it("ouvre le chapitre lié depuis la sélection au clavier", async () => {
     ),
   );
   const { user } = renderRoutes(routes, route);
-  const node = await screen.findByRole("button", { name: "Python Compétence" });
+  const node = await screen.findByRole("button", { name: "Python Skill" });
   node.focus();
   await user.keyboard("{Enter}");
   expect(node).toHaveAttribute("aria-pressed", "true");
-  expect(screen.getByText("Écart de 2 niveaux")).toBeVisible();
-  expect(screen.getByRole("link", { name: "Ouvrir le chapitre" })).toHaveAttribute(
+  expect(screen.getByText("Gap of 2 levels")).toBeVisible();
+  expect(screen.getByRole("link", { name: "Open the chapter" })).toHaveAttribute(
     "href",
-    "/apprendre/lecons/lecon-test",
+    "/learn/lessons/lecon-test",
   );
 });
 
@@ -70,11 +70,11 @@ it("distingue les homonymes et garde le sujet hors de l’adresse de training", 
     ),
   );
   const { user } = renderRoutes(routes, route);
-  const skill = await screen.findByRole("button", { name: "Python Compétence" });
-  expect(screen.getByRole("button", { name: "Python Note du Cerveau" })).toBeVisible();
+  const skill = await screen.findByRole("button", { name: "Python Skill" });
+  expect(screen.getByRole("button", { name: "Python Brain note" })).toBeVisible();
   await user.click(skill);
-  expect(screen.getByRole("link", { name: "Ouvrir l’entraînement" })).toHaveAttribute(
+  expect(screen.getByRole("link", { name: "Open the practice" })).toHaveAttribute(
     "href",
-    "/etudier/training?competence=identifiant",
+    "/study/training?skill=identifiant",
   );
 });

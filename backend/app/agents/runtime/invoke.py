@@ -1,8 +1,8 @@
-"""Appel d'un modèle depuis un nœud : événements d'intention, nouveaux essais avec attente
-croissante sur les erreurs du fournisseur, plafond de 120 s par nœud (SPEC 9.6, D44).
+"""Calling a model from a node: intent events, retries with increasing wait on provider
+errors, 120 s cap per node (SPEC 9.6, D44).
 
-Les modèles de la fabrique sont construits sans nouveaux essais du SDK (`max_retries=0`) : c'est
-ici, et ici seulement, qu'un appel est retenté.
+The factory's models are built without SDK retries (`max_retries=0`): it is here, and only
+here, that a call is retried.
 """
 
 import asyncio
@@ -29,11 +29,11 @@ F = TypeVar("F", bound=Callable[..., Awaitable[Any]])
 
 
 async def _sleep(seconds: float) -> None:
-    await asyncio.sleep(seconds)  # point d'accroche des tests
+    await asyncio.sleep(seconds)  # hook for the tests
 
 
 def message_text(message: BaseMessage) -> str:
-    """Texte d'un message : `content` est une chaîne, ou une liste de blocs (Anthropic)."""
+    """Text of a message: `content` is a string, or a list of blocks (Anthropic)."""
     content = message.content
     if isinstance(content, str):
         return content
@@ -55,12 +55,12 @@ async def call_with_retries(
     stream: bool = True,
     retry: bool = True,
 ) -> AIMessage:
-    """`model.ainvoke` étiqueté par agent (l'étiquette et les métadonnées remontent aux
-    callbacks du coût et au mode `messages` du runner), retenté sur erreur transitoire.
+    """`model.ainvoke` tagged by agent (the tag and the metadata go up to the cost callbacks
+    and to the runner's `messages` mode), retried on a transient error.
 
-    Une réponse vide (GLM : réflexion seule, `content` vide) est retentée de même, sauf si
-    `allow_empty` (l'appelant la traite alors lui-même). `stream=False` : la réponse n'est pas
-    diffusée token par token (étiquette `nostream` de LangGraph), pour du JSON brut par exemple.
+    An empty reply (GLM: reasoning only, empty `content`) is retried the same way, unless
+    `allow_empty` (the caller then handles it itself). `stream=False`: the reply is not
+    streamed token by token (LangGraph's `nostream` tag), for raw JSON for example.
     """
     tags = [f"agent:{agent}"] if stream else [f"agent:{agent}", TAG_NOSTREAM]
     chat = model.with_config(metadata={"agent": agent}, tags=tags)
@@ -69,15 +69,15 @@ async def call_with_retries(
     for attempt in range(attempts):
         last = attempt == attempts - 1
         try:
-            async with asyncio.timeout(deadline):  # échéance totale (`None` : aucune)
+            async with asyncio.timeout(deadline):  # total deadline (`None`: none)
                 reply = await chat.ainvoke(messages)
         except Exception as exc:
             if last or not is_transient(exc):
                 if (readable := _readable(exc, model, agent)) is None:
                     raise
-                raise readable from None  # ni message ni corps du fournisseur en chaîne
+                raise readable from None  # no provider message or body in the chain
             logger.warning(
-                "Appel LLM retenté : agent %s, essai %d/%d, %s",
+                "LLM call retried: agent %s, attempt %d/%d, %s",
                 agent,
                 attempt + 1,
                 attempts,
@@ -90,34 +90,34 @@ async def call_with_retries(
             if last:
                 raise AppError(
                     "llm_empty_reply",
-                    f"L'agent {agent} a renvoyé une réponse vide.",
+                    f"The {agent} agent returned an empty reply.",
                     502,
                     {"agent": agent},
                 )
         await _sleep(RETRY_DELAYS_S[attempt])
-    raise AssertionError("inatteignable")  # pragma: no cover
+    raise AssertionError("unreachable")  # pragma: no cover
 
 
 def _deadline(model: BaseChatModel) -> float | None:
-    """Échéance totale d'un appel, posée par la fabrique (`CALL_DEADLINE_KEY`) ; le délai du SDK
-    ne borne que l'attente de chaque morceau d'une réponse en flux (contrôle 5.18)."""
+    """Total deadline of a call, set by the factory (`CALL_DEADLINE_KEY`); the SDK's timeout
+    only bounds the wait for each chunk of a streamed reply (check 5.18)."""
     value = (model.metadata or {}).get(CALL_DEADLINE_KEY)
     return float(value) if isinstance(value, int | float) and value > 0 else None
 
 
 def _readable(exc: Exception, model: BaseChatModel, agent: str) -> AppError | None:
-    """Panne du fournisseur → `AppError` française (clé refusée, crédit épuisé, limite, service
-    indisponible, délai) au lieu de l'« erreur inattendue » générique ; `None` pour toute autre
-    exception. Journal : agent, fournisseur et type d'exception, jamais son texte."""
+    """Provider failure -> readable `AppError` (key refused, credit exhausted, limit, service
+    unavailable, timeout) instead of the generic "unexpected error"; `None` for any other
+    exception. Log: agent, provider and exception type, never its text."""
     metadata = model.metadata or {}
     provider = metadata.get("tremplin_provider")
-    label = metadata.get("tremplin_provider_label") or "le fournisseur"
+    label = metadata.get("tremplin_provider_label") or "The provider"
     described = describe_provider_error(exc, provider=provider, label=str(label))
     if described is not None:
         logger.warning(
-            "Appel LLM en échec : agent %s, fournisseur %s, %s (%s)",
+            "LLM call failed: agent %s, provider %s, %s (%s)",
             agent,
-            provider or "inconnu",
+            provider or "unknown",
             type(exc).__name__,
             described.code,
         )
@@ -133,8 +133,8 @@ async def invoke_agent(
     intent: str,
     expose_reply: bool = True,
 ) -> AIMessage:
-    """Annonce l'intention (`agent.started`), appelle le modèle (tokens en direct par le mode
-    `messages` du runner), puis émet le texte final (`agent.message`)."""
+    """Announces the intent (`agent.started`), calls the model (live tokens through the
+    runner's `messages` mode), then emits the final text (`agent.message`)."""
     emit("agent.started", {"step": step, "intent": intent}, agent=agent)
     reply = await call_with_retries(model, messages, agent=agent, stream=expose_reply)
     if expose_reply:
@@ -147,7 +147,7 @@ async def invoke_agent(
 
 
 def node_timeout(seconds: float = NODE_TIMEOUT_S) -> Callable[[F], F]:
-    """Décorateur de nœud asynchrone : au-delà de `seconds`, `AppError("node_timeout")`."""
+    """Async node decorator: beyond `seconds`, `AppError("node_timeout")`."""
 
     def decorator(func: F) -> F:
         @functools.wraps(func)
@@ -158,10 +158,10 @@ def node_timeout(seconds: float = NODE_TIMEOUT_S) -> Callable[[F], F]:
                     return await func(*args, **kwargs)
             except TimeoutError:
                 if not limit.expired():
-                    raise  # un délai levé par le nœud lui-même, pas notre plafond
+                    raise  # a timeout raised by the node itself, not our cap
                 raise AppError(
                     "node_timeout",
-                    f"L'étape {func.__name__} a dépassé {seconds:g} secondes.",
+                    f"The {func.__name__} step exceeded {seconds:g} seconds.",
                     504,
                     {"node": func.__name__, "seconds": seconds},
                 ) from None

@@ -62,7 +62,7 @@ async def test_search_down_raises_search_unavailable(
 ) -> None:
     with pytest.raises(AppError) as exc:
         await gateway.search(UID, "s1", "attention")
-    assert exc.value.code == SEARCH_UNAVAILABLE_CODE and "moteur" in exc.value.message
+    assert exc.value.code == SEARCH_UNAVAILABLE_CODE and "search engine" in exc.value.message
 
 
 async def test_read_ok_and_replay_give_the_same_source(

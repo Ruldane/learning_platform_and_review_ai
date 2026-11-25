@@ -29,7 +29,7 @@ def test_check_lesson_accepts_a_valid_lesson() -> None:
 
 
 def test_sections_are_the_eleven_fixed_headings() -> None:
-    assert len(SECTIONS) == 11 and SECTIONS[8] == "Corrigé de l'exercice"
+    assert len(SECTIONS) == 11 and SECTIONS[8] == "Solution"
     headings = re.findall(r"^## (.+)$", lesson_markdown(1500), flags=re.MULTILINE)
     assert tuple(headings) == SECTIONS
 
@@ -42,23 +42,23 @@ def test_word_limits_are_inclusive(words: int) -> None:
 @pytest.mark.parametrize(
     ("mutation", "problem"),
     [
-        ("drop:Corrigé de l'exercice", "Section manquante : « ## Corrigé de l'exercice »"),
-        ("drop:Sources", "Section manquante"),
-        ("objectives:4", "3 objectifs au plus"),
-        ("words:900", "1 200"),
-        ("words:2600", "2 500"),
-        ("link:https://inconnu.example/page", "Lien absent des sources lues"),
-        ("bare:https://inconnu.example/nu", "Lien absent des sources lues"),
-        ("copy:40", "recopié"),
-        ("no_mermaid", "schéma"),
-        ("bad_mermaid", "Schéma Mermaid 1 refusé"),
-        ("marker:7", "Marqueur [7] inconnu"),
-        ("essential:4", "« L'essentiel en 5 lignes » compte 4"),
-        ("selftest:4", "L'auto-évaluation compte 4"),
-        ("title:Autre titre", "Titre « # Attention multi-têtes » absent"),
-        ("extra_section", "Section en trop"),
-        ("swap", "désordre"),
-        ("long_quote", "Citation de plus de 25 mots"),
+        ("drop:Solution", 'Missing section "## Solution"'),
+        ("drop:Sources", "Missing section"),
+        ("objectives:4", "Use at most 3"),
+        ("words:900", "1,200"),
+        ("words:2600", "2,500"),
+        ("link:https://inconnu.example/page", "The link does not appear in the sources"),
+        ("bare:https://inconnu.example/nu", "The link does not appear in the sources"),
+        ("copy:40", "copied from source"),
+        ("no_mermaid", "Add at least one Mermaid flowchart"),
+        ("bad_mermaid", "Mermaid diagram 1 is invalid"),
+        ("marker:7", "No source matches citation [7]"),
+        ("essential:4", '"Key points in 5 lines" has 4 bullets'),
+        ("selftest:4", "Self-assessment has 4 questions"),
+        ("title:Autre titre", 'Start the lesson with "# Attention multi-têtes"'),
+        ("extra_section", "Unexpected section"),
+        ("swap", "out of order"),
+        ("long_quote", "A quotation exceeds 25 words"),
     ],
 )
 def test_check_lesson_reports(mutation: str, problem: str) -> None:
@@ -69,19 +69,19 @@ def test_check_lesson_reports(mutation: str, problem: str) -> None:
     elif kind == "drop":
         lesson = drop_section(lesson, arg)
     elif kind == "objectives":
-        lesson = with_section_text(lesson, "Objectifs", "- Un\n- Deux\n- Trois\n- Quatre")
+        lesson = with_section_text(lesson, "Objectives", "- Un\n- Deux\n- Trois\n- Quatre")
     elif kind == "link":
         lesson += f"\n[Ailleurs]({arg})\n"
     elif kind == "bare":
         lesson += f"\nVoir {arg}.\n"
     elif kind == "copy":
-        lesson = with_section_text(lesson, "Explication", LONG_PASSAGE)
+        lesson = with_section_text(lesson, "Explanation", LONG_PASSAGE)
     elif kind == "no_mermaid":
         lesson = re.sub(r"```mermaid.*?```", "", lesson, flags=re.DOTALL)
     elif kind == "bad_mermaid":
         lesson = lesson.replace("flowchart TD", "pie title Chats")
     elif kind == "marker":
-        lesson = with_section_text(lesson, "Explication", f"Un fait [{arg}].")
+        lesson = with_section_text(lesson, "Explanation", f"Un fait [{arg}].")
     elif kind == "essential":
         lesson = lesson.replace("- Les têtes sont concaténées puis projetées [1].\n", "")
     elif kind == "selftest":
@@ -91,11 +91,13 @@ def test_check_lesson_reports(mutation: str, problem: str) -> None:
     elif kind == "extra_section":
         lesson += "\n## Bonus\n\nUn texte en plus.\n"
     elif kind == "swap":
-        lesson = lesson.replace("## Prérequis", "## TMP").replace("## Objectifs", "## Prérequis")
-        lesson = lesson.replace("## TMP", "## Objectifs")
+        lesson = lesson.replace("## Prerequisites", "## TMP").replace(
+            "## Objectives", "## Prerequisites"
+        )
+        lesson = lesson.replace("## TMP", "## Objectives")
     elif kind == "long_quote":
         quote = " ".join(f"mot{n}" for n in range(MAX_QUOTE_WORDS + 5))
-        lesson = with_section_text(lesson, "Explication", f"Il écrit « {quote} » [1].")
+        lesson = with_section_text(lesson, "Explanation", f"Il écrit « {quote} » [1].")
     found = problems_of(lesson)
     assert any(problem in p for p in found), found
 
@@ -104,25 +106,25 @@ def test_code_blocks_are_not_counted_in_words() -> None:
     lesson = lesson_markdown(1500)
     code = "\n```python\n" + "x = 1\n" * 2000 + "```\n"
     result = check_lesson(
-        with_section_text(lesson, "Explication", code), title=TITLE, sources=SOURCES
+        with_section_text(lesson, "Explanation", code), title=TITLE, sources=SOURCES
     )
     assert result.words == 1500 and result.problems == []
 
 
 def test_short_attributed_quotation_is_not_a_copy() -> None:
     short = " ".join(SOURCE_ONE.split()[:20])
-    quoted = with_section_text(lesson_markdown(1500), "Explication", f"« {short} » [1]")
+    quoted = with_section_text(lesson_markdown(1500), "Explanation", f"« {short} » [1]")
     assert problems_of(quoted) == []
 
 
 def test_long_copy_in_quotation_without_marker_is_a_copy() -> None:
-    quoted = with_section_text(lesson_markdown(1500), "Explication", f"« {LONG_PASSAGE} »")
-    assert any("recopié de la source [1]" in p for p in problems_of(quoted))
+    quoted = with_section_text(lesson_markdown(1500), "Explanation", f"« {LONG_PASSAGE} »")
+    assert any("copied from source [1]" in p for p in problems_of(quoted))
 
 
 def test_copy_of_exactly_25_words_is_allowed() -> None:
     passage = " ".join(SOURCE_ONE.split()[:MAX_QUOTE_WORDS])
-    assert problems_of(with_section_text(lesson_markdown(1500), "Explication", passage)) == []
+    assert problems_of(with_section_text(lesson_markdown(1500), "Explanation", passage)) == []
 
 
 def test_links_are_compared_loosely() -> None:
@@ -131,11 +133,11 @@ def test_links_are_compared_loosely() -> None:
         "https://site0.exemple.org/article", "https://site0.EXEMPLE.org/article#haut"
     )
     found = check_lesson(lesson, title=TITLE, sources=sources).problems
-    assert not any("Lien absent" in p and "site0" in p for p in found)
+    assert not any("The link does not appear" in p and "site0" in p for p in found)
 
 
 def test_headings_inside_code_blocks_are_ignored() -> None:
-    fenced = with_section_text(lesson_markdown(1500), "Explication", "```\n## Faux titre\n```")
+    fenced = with_section_text(lesson_markdown(1500), "Explanation", "```\n## Faux titre\n```")
     assert problems_of(fenced) == []
 
 
@@ -154,18 +156,18 @@ def test_problems_are_in_french_and_never_empty_strings() -> None:
     ],
 )
 def test_raw_html_outside_code_is_refused(raw: str) -> None:
-    lesson = with_section_text(lesson_markdown(1500), "Explication", raw)
+    lesson = with_section_text(lesson_markdown(1500), "Explanation", raw)
     found = problems_of(lesson)
-    assert any("HTML brut hors d'un bloc de code" in p for p in found), found
+    assert any("Raw HTML outside code" in p for p in found), found
 
 
 def test_review_reproduction_keeps_sections_seen_by_the_renderer() -> None:
     """Revue finale de la phase 4, I2 : le Vérificateur lit comme le rendu (`html: True`)."""
-    found = problems_of("## Objectifs\n- a\n<pre>\nx\n## Explication\nLong texte important.\n")
-    assert any("HTML brut" in p for p in found)
-    assert any("Section manquante : « ## Explication »" in p for p in found)
+    found = problems_of("## Objectives\n- a\n<pre>\nx\n## Explanation\nLong texte important.\n")
+    assert any("Raw HTML" in p for p in found)
+    assert any('Missing section "## Explanation"' in p for p in found)
 
 
 def test_html_inside_code_is_accepted() -> None:
     code = "Écrire `<script>` ou :\n\n```html\n<pre>\n<script>x</script>\n```"
-    assert problems_of(with_section_text(lesson_markdown(1500), "Explication", code)) == []
+    assert problems_of(with_section_text(lesson_markdown(1500), "Explanation", code)) == []

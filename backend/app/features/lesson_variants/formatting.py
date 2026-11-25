@@ -35,7 +35,7 @@ def _priority(title: str) -> int:
 
 
 def prepare_formats(markdown: str) -> tuple[str, list[str]]:
-    """La fiche avance les objectifs et exemples. La lecture suit l'ordre publié."""
+    """The sheet puts objectives and examples first. The reading follows the published order."""
     sections = _sections(markdown)
     if not sections:
         return markdown, []

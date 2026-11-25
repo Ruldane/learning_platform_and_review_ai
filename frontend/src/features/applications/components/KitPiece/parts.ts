@@ -11,10 +11,12 @@ export interface Part {
   label: string | null;
   text: string;
   blank: Blank;
+  blankMarker?: string;
 }
 
-export const SALARY_BLANK = "À remplir par toi";
-export const TO_COMPLETE = "À compléter";
+export const SALARY_BLANK = "For you to fill in";
+export const TO_COMPLETE = "To complete";
+export const MAX_CONTENT = 20_000;
 const SEPARATOR = /^\s*---\s*$/;
 const QUESTION = /^### +(.*)$/;
 const TWO_PARTS: readonly KitKindView[] = ["linkedin", "followups"];
@@ -39,8 +41,8 @@ function twoParts(kind: "linkedin" | "followups", content: string): Part[] {
 }
 
 function blankOf(answer: string): Blank {
-  if (answer === SALARY_BLANK) return "salary";
-  return answer === TO_COMPLETE ? "complete" : null;
+  if (answer === SALARY_BLANK || answer === "À remplir par toi") return "salary";
+  return answer === TO_COMPLETE || answer === "À compléter" ? "complete" : null;
 }
 
 function formParts(content: string): Part[] | null {
@@ -54,7 +56,13 @@ function formParts(content: string): Part[] | null {
   return items.map(({ question, lines }, rank) => {
     const answer = lines.join("\n").trim();
     const blank = blankOf(answer);
-    return { key: `q${rank}`, label: question, text: blank ? "" : answer, blank };
+    return {
+      key: `q${rank}`,
+      label: question,
+      text: blank ? "" : answer,
+      blank,
+      blankMarker: blank ? answer : undefined,
+    };
   });
 }
 
@@ -85,5 +93,5 @@ export function joinParts(kind: KitKindView, parts: Part[]): string {
 function answerOf(part: Part): string {
   const text = part.text.trim();
   if (text !== "") return text;
-  return part.blank === "salary" ? SALARY_BLANK : TO_COMPLETE;
+  return part.blankMarker ?? (part.blank === "salary" ? SALARY_BLANK : TO_COMPLETE);
 }

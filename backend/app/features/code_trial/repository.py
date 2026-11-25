@@ -72,4 +72,4 @@ class TrialRepository(UserScopedRepository[CodeTrial]):
 
 
 def missing() -> AppError:
-    return AppError("code_trial_not_found", "Procès introuvable.", 404)
+    return AppError("code_trial_not_found", "Trial not found.", 404)

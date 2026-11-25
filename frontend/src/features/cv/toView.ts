@@ -98,9 +98,9 @@ export function toReportView(report: ReviewReport): ReportView {
   };
 }
 
-const ZONES: ZoneView["zone"][] = ["haut", "milieu", "bas", "gauche", "droite"];
+const ZONES: ZoneView["zone"][] = ["top", "middle", "bottom", "left", "right"];
 
-/** Les écarts de mise en page d'un modèle (parts d'encre de 0 à 1) ; une zone inconnue est ignorée. */
+/** Read known CV region codes and their ink coverage. */
 export function toZoneViews(zones: TemplateOut["zones"]): ZoneView[] {
   return zones.flatMap(({ zone, original, render }): ZoneView[] => {
     const known = ZONES.find((name) => name === zone);

@@ -8,10 +8,10 @@ import { server } from "@/test/server";
 import { LessonsPage } from "./LessonsPage";
 
 const routes = [
-  { path: "/apprendre/lecons", element: <LessonsPage /> },
-  { path: "/apprendre/lecons/:lessonId", element: <h1>Leçon ouverte</h1> },
-  { path: "/apprendre/programme/:programId", element: <h1>Programme ouvert</h1> },
-  { path: "/apprendre/conseil", element: <h1>Conseil ouvert</h1> },
+  { path: "/learn/lessons", element: <LessonsPage /> },
+  { path: "/learn/lessons/:lessonId", element: <h1>Leçon ouverte</h1> },
+  { path: "/learn/programs/:programId", element: <h1>Programme ouvert</h1> },
+  { path: "/learn/council", element: <h1>Conseil ouvert</h1> },
 ];
 
 function setup(lessons: Record<string, unknown>[], programs: unknown[] = [summaryOut()]) {
@@ -19,7 +19,7 @@ function setup(lessons: Record<string, unknown>[], programs: unknown[] = [summar
     http.get(`${API}/programs`, () => HttpResponse.json(programs)),
     http.get(`${API}/programs/p1/lessons`, () => HttpResponse.json(lessons)),
   );
-  return renderRoutes(routes, "/apprendre/lecons");
+  return renderRoutes(routes, "/learn/lessons");
 }
 
 describe("LessonsPage", () => {
@@ -30,32 +30,32 @@ describe("LessonsPage", () => {
       lessonSummary({ id: "l3", title: "Les dates", week_rank: 3, status: "pending" }),
       lessonSummary({ id: "l4", title: "Les API", week_rank: 3, status: "failed" }),
     ]);
-    const week2 = await screen.findByRole("region", { name: "Semaine 2" });
-    expect(within(week2).getByText("En préparation")).toBeInTheDocument();
+    const week2 = await screen.findByRole("region", { name: "Week 2" });
+    expect(within(week2).getByText("Being prepared")).toBeInTheDocument();
     expect(
-      within(screen.getByRole("region", { name: "Semaine 3" })).getByText("À venir"),
+      within(screen.getByRole("region", { name: "Week 3" })).getByText("Upcoming"),
     ).toBeInTheDocument();
-    expect(screen.getByText("Nouvelle tentative prévue")).toBeInTheDocument();
-    expect(screen.getByText("1 400 mots")).toBeInTheDocument();
-    await user.click(screen.getByRole("link", { name: "Lire « Les variables et les types »" }));
-    expect(router.state.location.pathname).toBe("/apprendre/lecons/l1");
+    expect(screen.getByText("Retry scheduled")).toBeInTheDocument();
+    expect(screen.getByText("1,400 words")).toBeInTheDocument();
+    await user.click(screen.getByRole("link", { name: "Read “Les variables et les types”" }));
+    expect(router.state.location.pathname).toBe("/learn/lessons/l1");
   });
 
   it("explains that lessons come with the validated program", async () => {
     const { router, user } = setup([]);
-    expect(await screen.findByText("Pas encore de leçon")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Voir le programme" }));
-    expect(router.state.location.pathname).toBe("/apprendre/programme/p1");
+    expect(await screen.findByText("No lessons yet")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "View the program" }));
+    expect(router.state.location.pathname).toBe("/learn/programs/p1");
   });
 
   it("sends to the council when there is no program", async () => {
     const { router, user } = setup([], []);
-    expect(await screen.findByText("Pas encore de programme")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Ouvrir le Conseil" }));
-    expect(router.state.location.pathname).toBe("/apprendre/conseil");
+    expect(await screen.findByText("No program yet")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Open the Council" }));
+    expect(router.state.location.pathname).toBe("/learn/council");
   });
 
-  it("offers « Réessayer » when the lessons cannot be read", async () => {
+  it("offers Retry when the lessons cannot be read", async () => {
     let calls = 0;
     server.use(
       http.get(`${API}/programs`, () => HttpResponse.json([summaryOut()])),
@@ -66,8 +66,8 @@ describe("LessonsPage", () => {
           : HttpResponse.json([lessonSummary()]);
       }),
     );
-    const { user } = renderRoutes(routes, "/apprendre/lecons");
-    await user.click(await screen.findByRole("button", { name: "Réessayer" }));
+    const { user } = renderRoutes(routes, "/learn/lessons");
+    await user.click(await screen.findByRole("button", { name: "Retry" }));
     expect(await screen.findByText("Les variables et les types")).toBeInTheDocument();
   });
 
@@ -81,20 +81,20 @@ describe("LessonsPage", () => {
       ),
       http.get(`${API}/programs/p1/lessons`, () => HttpResponse.json([lessonSummary()])),
     );
-    const { router, user } = renderRoutes(routes, "/apprendre/lecons");
+    const { router, user } = renderRoutes(routes, "/learn/lessons");
     expect(await screen.findByText("La régression")).toBeInTheDocument();
-    const picker = screen.getByRole("combobox", { name: "Programme" });
+    const picker = screen.getByRole("combobox", { name: "Program" });
     expect(picker).toHaveValue("p2");
     await user.selectOptions(picker, "Python pour la data");
     expect(await screen.findByText("Les variables et les types")).toBeInTheDocument();
     expect(screen.queryByText("La régression")).not.toBeInTheDocument();
-    expect(router.state.location.search).toBe("?programme=p1");
+    expect(router.state.location.search).toBe("?program=p1");
   });
 
   it("hides the picker with a single program", async () => {
     setup([lessonSummary()]);
     expect(await screen.findByText("Les variables et les types")).toBeInTheDocument();
-    expect(screen.queryByRole("combobox", { name: "Programme" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("combobox", { name: "Program" })).not.toBeInTheDocument();
   });
 
   it("marks a lesson finished once its module tasks are done in the program", async () => {
@@ -106,8 +106,8 @@ describe("LessonsPage", () => {
       HTMLElement,
       HTMLElement,
     ];
-    expect(within(finished).getByText("Terminée")).toBeInTheDocument();
-    expect(within(started).queryByText("Terminée")).not.toBeInTheDocument();
-    expect(within(started).getByText("1 / 3 tâches faites")).toBeInTheDocument();
+    expect(within(finished).getByText("Completed")).toBeInTheDocument();
+    expect(within(started).queryByText("Completed")).not.toBeInTheDocument();
+    expect(within(started).getByText("1 / 3 tasks done")).toBeInTheDocument();
   });
 });

@@ -61,7 +61,7 @@ def _pages(*numbers: int) -> list[PostingPage]:
 
 
 async def _ask(models: ScriptedModels, agent: str, system: str, request: str) -> str:
-    model = await models.get_chat_model("u1", "rapide", agent=agent)
+    model = await models.get_chat_model("u1", "fast", agent=agent)
     reply = await model.ainvoke([SystemMessage(system), HumanMessage(request)])
     return str(reply.content)
 
@@ -139,6 +139,7 @@ async def test_the_batch_is_read_by_the_reference_of_each_page_not_by_its_place(
         offer = OFFERS[number - 1]
         assert finding.ref == page.ref
         assert finding.title == offer.title
+        assert finding.level == offer.level
         assert finding.tools == list(offer.tools)  # le code ne retire aucun outil : ils sont lus
         assert finding.salary == offer.salary  # ni un salaire : ses chiffres sont dans la page
         assert [s.name for s in finding.skills] == [name for name, _ in offer.skills]

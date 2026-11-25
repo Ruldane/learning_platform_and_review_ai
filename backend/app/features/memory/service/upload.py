@@ -47,19 +47,17 @@ _ZIP_MAGIC = b"PK\x03\x04"
 def unsupported_file_type() -> AppError:
     return AppError(
         "unsupported_file_type",
-        "Type de fichier non pris en charge : PDF, DOCX, Markdown ou texte uniquement.",
+        "Upload a PDF, DOCX, Markdown, or plain text file.",
         415,
     )
 
 
 def docx_invalid() -> AppError:
-    return AppError(
-        "docx_invalid", "Fichier DOCX invalide ou trop volumineux une fois décompressé.", 422
-    )
+    return AppError("docx_invalid", "The DOCX file is invalid or too large when decompressed.", 422)
 
 
 def file_too_large() -> AppError:
-    return AppError("file_too_large", "Fichier trop volumineux : 20 Mo au maximum.", 413)
+    return AppError("file_too_large", "The maximum file size is 20 MB.", 413)
 
 
 def _suffix(filename: str | None) -> str:
@@ -125,7 +123,7 @@ def classify_url(url: str) -> Literal["url", "youtube"]:
 
 
 def invalid_url() -> AppError:
-    return AppError("invalid_url", "Lien invalide : une adresse http(s) est attendue.", 422)
+    return AppError("invalid_url", "Enter a valid HTTP or HTTPS link.", 422)
 
 
 def normalize_url(url: str) -> str:

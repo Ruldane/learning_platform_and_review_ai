@@ -4,7 +4,7 @@ import { OnboardingGate } from "./OnboardingGate";
 
 describe("settingsManifest", () => {
   it("le premier lancement est une page nue : sans navigation latérale (handle bare)", () => {
-    const welcome = settingsManifest.routes.find((route) => route.path === "bienvenue");
+    const welcome = settingsManifest.routes.find((route) => route.path === "welcome");
     expect(welcome?.handle).toEqual({ bare: true });
   });
 
@@ -14,48 +14,48 @@ describe("settingsManifest", () => {
       {
         section: "settings",
         labelKey: "settings.models.navLabel",
-        path: "/reglages/modeles",
+        path: "/settings/models",
         order: 1,
       },
       {
         section: "settings",
         labelKey: "settings.search.navLabel",
-        path: "/reglages/recherche",
+        path: "/settings/search",
         order: 2,
       },
       {
         section: "settings",
         labelKey: "settings.availability.navLabel",
-        path: "/reglages/disponibilite",
+        path: "/settings/availability",
         order: 3,
       },
       {
         section: "settings",
         labelKey: "settings.study.navLabel",
-        path: "/reglages/etude",
+        path: "/settings/study",
         order: 4,
       },
       {
         section: "settings",
         labelKey: "settings.style.navLabel",
-        path: "/reglages/style",
+        path: "/settings/style",
         order: 5,
       },
     ]);
     expect(settingsManifest.routes.map((route) => route.path)).toEqual([
-      "reglages/modeles",
-      "reglages/recherche",
-      "reglages/disponibilite",
-      "reglages/etude",
-      "reglages/style",
-      "bienvenue",
+      "settings/models",
+      "settings/search",
+      "settings/availability",
+      "settings/study",
+      "settings/style",
+      "welcome",
     ]);
   });
 
   it("puts the first launch behind a gate, and out of the navigation", () => {
     expect(settingsManifest.shell?.gate).toBe(OnboardingGate);
-    // /bienvenue est une route, jamais une entrée de navigation.
-    expect(settingsManifest.nav?.map((entry) => entry.path)).not.toContain("/bienvenue");
+    // /welcome est une route, jamais une entrée de navigation.
+    expect(settingsManifest.nav?.map((entry) => entry.path)).not.toContain("/welcome");
     expect(settingsManifest.publicRoutes).toBeUndefined();
   });
 });

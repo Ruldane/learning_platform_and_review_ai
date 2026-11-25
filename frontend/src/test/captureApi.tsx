@@ -25,7 +25,7 @@ export function renderCapture(makeUi: (createSocket: FakeSocketServer["factory"]
   const router = createMemoryRouter(
     [
       { path: "/", element: makeUi(sockets.factory) },
-      { path: "/etudier/journal", element: <p>Page du journal</p> },
+      { path: "/study/journal", element: <p>Page du journal</p> },
     ],
     { initialEntries: ["/"] },
   );

@@ -62,6 +62,6 @@ async def list_models(current: CurrentUserDep, db: Db, providers: ProvidersDep) 
 
 @router.get("/agents", response_model=list[AgentOut])
 async def list_agents(current: CurrentUserDep) -> list[AgentOut]:
-    """Les agents dont on peut surcharger le modèle (mode avancé) : nom et niveau, sans les agents
-    de démonstration `demo_*`. Dans l'ordre du registre `AGENTS`."""
+    """The agents whose model can be overridden (advanced mode): name and tier, without the
+    `demo_*` demo agents. In the order of the `AGENTS` registry."""
     return agent_catalogue()

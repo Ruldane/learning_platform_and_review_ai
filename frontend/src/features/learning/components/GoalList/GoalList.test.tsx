@@ -38,33 +38,33 @@ describe("GoalList", () => {
     const items = screen.getAllByRole("listitem");
     expect(items).toHaveLength(2);
     expect(within(items[0]!).getByText("Devenir ingénieure data")).toBeInTheDocument();
-    expect(within(items[0]!).getByText("Programme planifié")).toBeInTheDocument();
+    expect(within(items[0]!).getByText("Program planned")).toBeInTheDocument();
     expect(within(items[0]!).getByText("Data engineer")).toBeInTheDocument();
-    expect(within(items[0]!).getByText("8 h par semaine")).toBeInTheDocument();
-    expect(within(items[1]!).getByText("Le Conseil délibère")).toBeInTheDocument();
+    expect(within(items[0]!).getByText("8 h per week")).toBeInTheDocument();
+    expect(within(items[1]!).getByText("The Council is deliberating")).toBeInTheDocument();
   });
 
   it("links to the council of each goal", () => {
     renderList(goals);
-    const links = screen.getAllByRole("link", { name: /Ouvrir le Conseil/ });
+    const links = screen.getAllByRole("link", { name: /Open the Council/ });
     expect(links.map((a) => a.getAttribute("href"))).toEqual([
-      "/apprendre/objectifs/g2/conseil",
-      "/apprendre/objectifs/g1/conseil",
+      "/learn/goals/g2/council",
+      "/learn/goals/g1/council",
     ]);
   });
 
   it("links to the program only once there is a parcours", () => {
     renderList(goals);
-    const links = screen.getAllByRole("link", { name: /Voir le programme/ });
+    const links = screen.getAllByRole("link", { name: /View the program/ });
     expect(links).toHaveLength(1);
-    expect(links[0]).toHaveAttribute("href", "/apprendre/programme/pr2");
+    expect(links[0]).toHaveAttribute("href", "/learn/programs/pr2");
   });
 
   it("links a chosen goal without program id to the program index", () => {
     renderList([{ ...goals[1]!, status: "chosen" }]);
-    expect(screen.getByRole("link", { name: /Voir le programme/ })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /View the program/ })).toHaveAttribute(
       "href",
-      "/apprendre/programme",
+      "/learn/programs",
     );
   });
 });

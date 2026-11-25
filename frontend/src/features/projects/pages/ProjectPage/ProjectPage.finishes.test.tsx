@@ -12,7 +12,7 @@ const setup = (api: Parameters<typeof renderProjects>[1] = {}) =>
       project: <ProjectPage createSocket={createSocket} />,
     }),
     api,
-    "/competences/portfolio/p1",
+    "/skills/portfolio/p1",
   );
 
 const validated = (over: Record<string, unknown> = {}) =>
@@ -24,7 +24,7 @@ const validated = (over: Record<string, unknown> = {}) =>
     ...over,
   });
 
-const addButton = () => screen.findByRole("button", { name: "Ajouter au profil maître" });
+const addButton = () => screen.findByRole("button", { name: "Add to master profile" });
 
 describe("ProjectPage : finitions", () => {
   it("lets a long link and a long description wrap instead of overflowing", async () => {
@@ -46,15 +46,15 @@ describe("ProjectPage : finitions", () => {
   it("drops the « to check » warning of the entry once it is added", async () => {
     const drafts = fourDrafts({ profile_entry: { status: "to_check", flags: ["10000"] } });
     const { user } = setup({ projects: [validated({ drafts })] });
-    expect(await screen.findByText(/absent de ton profil et de ton rendu : 10000/)).toBeVisible();
+    expect(await screen.findByText(/not in your profile or your submission: 10000/)).toBeVisible();
     await user.click(await addButton());
-    await screen.findByText("Ajouté au profil (version 4)");
-    expect(screen.queryByText(/absent de ton profil et de ton rendu : 10000/)).toBeNull();
+    await screen.findByText("Added to profile (version 4)");
+    expect(screen.queryByText(/not in your profile or your submission: 10000/)).toBeNull();
   });
 
   it("says no draft was written for a validated project that has none", async () => {
     setup({ projects: [validated({ drafts: [] })] });
-    expect(await screen.findByText("Aucun brouillon n'a été écrit pour ce projet.")).toBeVisible();
+    expect(await screen.findByText("No drafts have been written for this project.")).toBeVisible();
     expect(await addButton()).toHaveAttribute("aria-disabled", "false");
   });
 });

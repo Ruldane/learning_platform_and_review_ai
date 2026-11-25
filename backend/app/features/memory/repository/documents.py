@@ -17,7 +17,7 @@ class DocumentRepository(UserScopedRepository[Document]):
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def list_recent(self, limit: int | None = 200) -> builtins.list[Document]:
-        """Documents de l'utilisateur, les plus récents d'abord (`None` : tous, pour l'export)."""
+        """The user's documents, most recent first (`None`: all, for the export)."""
         stmt = (
             select(Document)
             .where(Document.user_id == self.user_id)
@@ -28,7 +28,7 @@ class DocumentRepository(UserScopedRepository[Document]):
         return builtins.list((await self.session.execute(stmt)).scalars().all())
 
     async def for_item(self, item_id: str) -> builtins.list[Document]:
-        """Documents dont l'élément `item_id` est le résumé appris."""
+        """Documents whose learned summary is the item `item_id`."""
         stmt = (
             select(Document)
             .where(Document.user_id == self.user_id, Document.item_id == item_id)
@@ -38,12 +38,12 @@ class DocumentRepository(UserScopedRepository[Document]):
 
 
 async def list_documents_to_resume(db: AsyncSession) -> list[tuple[str, str]]:
-    """`(user_id, document_id)` des documents `queued` ou `processing`, tous utilisateurs
-    confondus, du plus ancien au plus récent.
+    """`(user_id, document_id)` of `queued` or `processing` documents, across all users,
+    oldest to newest.
 
-    Deuxième lecture du projet qui ne filtre pas par `user_id`, après `list_sessions_to_recover` :
-    elle est réservée au démarrage du serveur, quand le worker reprend les ingestions
-    interrompues par un arrêt. Ne jamais l'appeler depuis une requête d'un utilisateur.
+    Second read in the project that does not filter by `user_id`, after
+    `list_sessions_to_recover`: it is reserved for server startup, when the worker resumes
+    ingestions interrupted by a shutdown. Never call it from a user's request.
     """
     stmt = (
         select(Document.user_id, Document.id)

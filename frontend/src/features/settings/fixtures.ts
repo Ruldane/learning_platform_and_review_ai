@@ -10,7 +10,7 @@ import type {
 /** Données de test de la feature (réponses typiques du back) ; jamais importées par le code de l'application. */
 function allTiers(provider: string, model: string) {
   const choice: ModelChoice = { provider, model };
-  return { rapide: choice, standard: choice, fort: choice, vision: choice };
+  return { fast: choice, standard: choice, strong: choice, vision: choice };
 }
 
 export const settingsFixture: SettingsOut = {
@@ -89,7 +89,7 @@ export const modelsFixture: ModelsOut = {
     all_haiku: allTiers("anthropic", "claude-haiku-5-5"),
     haiku_sonnet_strong: {
       ...allTiers("anthropic", "claude-haiku-5-5"),
-      fort: { provider: "anthropic", model: "claude-sonnet-5-5" },
+      strong: { provider: "anthropic", model: "claude-sonnet-5-5" },
     },
     all_glm: allTiers("glm", "glm-5.3"),
     all_openai: allTiers("openai", "gpt-6-luna"),
@@ -102,8 +102,8 @@ export const searchUsageFixture: SearchUsageOut = {
 
 /** Quelques agents de `GET /settings/agents`, dans l'ordre du registre (sans `demo_*`). */
 export const agentsFixture: AgentOut[] = [
-  { name: "scout", tier: "rapide" },
-  { name: "strategist", tier: "fort" },
+  { name: "scout", tier: "fast" },
+  { name: "strategist", tier: "strong" },
   { name: "tutor", tier: "standard" },
   { name: "designer", tier: "vision" },
 ];

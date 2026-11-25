@@ -1,7 +1,7 @@
 from app.mcp.base import FeatureMcp, McpAction
 
-_PRIVATE = "Les fichiers privés sont réservés à l’interface."
-_CONFIRM = "La publication et l’usage du lien exigent une décision explicite dans l’interface."
+_PRIVATE = "Private files are reserved for the interface."
+_CONFIRM = "Publishing and using the link require an explicit decision in the interface."
 
 MCP = FeatureMcp(
     feature="portfolio",
@@ -10,56 +10,56 @@ MCP = FeatureMcp(
             "GET /portfolio",
             1,
             "portfolio_read_private",
-            "Relit les éléments du compte et l’état de son portfolio.",
+            "Reads the account's items and the state of its portfolio.",
             untrusted=("candidates[].label", "candidates[].text", "candidates[].url"),
         ),
         McpAction(
             "POST /portfolio/drafts",
             3,
             "portfolio_prepare_draft",
-            "Il faut confirmer la création du brouillon privé et de ses fichiers.",
+            "Creates the private draft and its files. Asks for confirmation.",
             side_effects="external",
         ),
         McpAction(
             "GET /portfolio/drafts/{draft_id}/preview",
             1,
             "portfolio_open_draft_preview",
-            "Lit les métadonnées de la prévisualisation privée et donne son lien local.",
+            "Reads the private preview's metadata and gives its local link.",
             artifact=True,
         ),
         McpAction(
             "GET /portfolio/drafts/{draft_id}/zip",
             1,
             "portfolio_get_draft_archive",
-            "Lit les métadonnées de l’archive privée et donne son lien local.",
+            "Reads the private archive's metadata and gives its local link.",
             artifact=True,
         ),
         McpAction(
             "GET /public/portfolios/{slug}",
             1,
             "portfolio_open_public_portfolio",
-            "Vérifie la disponibilité d’un portfolio publié et donne son lien local.",
+            "Checks that a published portfolio is available and gives its local link.",
             artifact=True,
         ),
         McpAction(
             "POST /portfolio/publish",
             3,
             "portfolio_publish_site",
-            "Publie le portfolio sur son lien public. Demande à confirmer.",
+            "Publishes the portfolio at its public link. Asks for confirmation.",
             side_effects="external",
         ),
         McpAction(
             "POST /portfolio/withdraw",
             3,
             "portfolio_withdraw_site",
-            "Retire le portfolio publié. Demande à confirmer.",
+            "Withdraws the published portfolio. Asks for confirmation.",
             side_effects="external",
         ),
         McpAction(
             "PUT /portfolio/links/{target}",
             3,
             "portfolio_set_profile_link",
-            "Choisit si le lien public apparaît dans un profil. Demande à confirmer.",
+            "Chooses whether the public link appears in a profile. Asks for confirmation.",
             side_effects="external",
         ),
     ),

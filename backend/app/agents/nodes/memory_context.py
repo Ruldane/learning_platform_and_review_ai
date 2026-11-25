@@ -1,6 +1,6 @@
-"""Contexte mémoire d'un agent (SPEC 4.4), réutilisable par tout parcours : acquis connus,
-décisions et documents proches de l'objectif. Chaque lecture est un appel d'outil visible
-(`tool.called` / `tool.result`). Les fragments sont déjà encadrés comme non fiables par le port."""
+"""An agent's memory context (SPEC 4.4), reusable by any flow: known skills, decisions and
+documents close to the objective. Each read is a visible tool call (`tool.called` /
+`tool.result`). The port already wraps the fragments as untrusted."""
 
 from dataclasses import dataclass
 
@@ -19,15 +19,15 @@ class MemoryContext:
 
     def as_prompt(self) -> str:
         return (
-            f"Ce que January sait déjà faire :\n{self.skills.as_agent_text()}\n\n"
-            f"Décisions passées proches de l'objectif :\n{self.decisions.agent_text}\n\n"
-            f"Documents de January proches de l'objectif :\n{self.documents.agent_text}"
+            f"What January can already do:\n{self.skills.as_agent_text()}\n\n"
+            f"Past decisions close to the objective:\n{self.decisions.agent_text}\n\n"
+            f"January's documents close to the objective:\n{self.documents.agent_text}"
         )
 
 
 async def load_memory_context(deps: GraphDeps, *, objective: str, agent: str) -> MemoryContext:
-    """Acquis, puis décisions et documents proches de `objective` (8 fragments chacun). Une
-    mémoire absente ou arrêtée lève l'`AppError` du port : le nœud appelant décide."""
+    """Skills, then decisions and documents close to `objective` (8 fragments each). A missing
+    or stopped memory raises the port's `AppError`: the calling node decides."""
     skills = await memory_get_skills(deps, agent=agent)
     decisions = await memory_search(deps, objective, ["decision"], CONTEXT_K, agent=agent)
     documents = await memory_search(deps, objective, ["document"], CONTEXT_K, agent=agent)

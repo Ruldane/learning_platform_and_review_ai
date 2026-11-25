@@ -21,7 +21,7 @@ export function ReviewRefusal({ code, postingId, fallback }: ReviewRefusalProps)
         <EmptyState
           title={t("cv.newReview.profileTitle")}
           description={t("cv.newReview.profileHint")}
-          action={{ label: t("cv.newReview.profileAction"), onClick: to("/carriere/profil") }}
+          action={{ label: t("cv.newReview.profileAction"), onClick: to("/career/profile") }}
         />
       );
     case "template_required":
@@ -29,7 +29,7 @@ export function ReviewRefusal({ code, postingId, fallback }: ReviewRefusalProps)
         <EmptyState
           title={t("cv.newReview.templateTitle")}
           description={t("cv.newReview.templateHint")}
-          action={{ label: t("cv.newReview.templateAction"), onClick: to("/carriere/cv") }}
+          action={{ label: t("cv.newReview.templateAction"), onClick: to("/career/cv") }}
         />
       );
     case "posting_not_ready":
@@ -39,7 +39,7 @@ export function ReviewRefusal({ code, postingId, fallback }: ReviewRefusalProps)
           description={t("cv.newReview.notReadyHint")}
           action={{
             label: t("cv.newReview.postingAction"),
-            onClick: to(`/carriere/offres/${postingId}`),
+            onClick: to(`/career/postings/${postingId}`),
           }}
         />
       );
@@ -47,7 +47,7 @@ export function ReviewRefusal({ code, postingId, fallback }: ReviewRefusalProps)
       return (
         <EmptyState
           title={t("cv.newReview.notFoundTitle")}
-          action={{ label: t("cv.newReview.postingsAction"), onClick: to("/carriere/offres") }}
+          action={{ label: t("cv.newReview.postingsAction"), onClick: to("/career/postings") }}
         />
       );
     default:

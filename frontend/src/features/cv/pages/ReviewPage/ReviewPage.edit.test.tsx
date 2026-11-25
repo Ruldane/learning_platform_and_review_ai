@@ -7,8 +7,8 @@ import { renderCv } from "@/test/cvHarness";
 
 function renderReview(api: Parameters<typeof renderCv>[3] = {}) {
   return renderCv(
-    "/carriere/cv/revues/:reviewId",
-    "/carriere/cv/revues/rv1",
+    "/career/cv/reviews/:reviewId",
+    "/career/cv/reviews/rv1",
     (createSocket) => <ReviewPage pollMs={40} createSocket={createSocket} />,
     api,
   );
@@ -20,11 +20,11 @@ describe("ReviewPage: editing and placing modifications", () => {
   it("sends an edited « à confirmer » text without the confirmation", async () => {
     const { user, state } = renderReview();
     const toConfirm = (await screen.findAllByRole("article"))[1]!;
-    await user.click(within(toConfirm).getByRole("button", { name: "Modifier" }));
-    const field = within(toConfirm).getByLabelText("Texte modifié");
+    await user.click(within(toConfirm).getByRole("button", { name: "Edit" }));
+    const field = within(toConfirm).getByLabelText("Edited text");
     await user.clear(field);
     await user.type(field, "Déploiement sur Kubernetes pendant 2 ans");
-    await user.click(within(toConfirm).getByRole("button", { name: "Enregistrer et accepter" }));
+    await user.click(within(toConfirm).getByRole("button", { name: "Save and accept" }));
     await waitFor(() => expect(state.patches).toHaveLength(1));
     expect(state.patches[0]).toEqual({
       id: "m2",
@@ -42,15 +42,15 @@ describe("ReviewPage: editing and placing modifications", () => {
         refusal(422, "keyword_not_in_profile", "Le mot clé « AWS » n'est pas dans ton profil."),
     });
     const first = (await screen.findAllByRole("article"))[0]!;
-    await user.click(within(first).getByRole("button", { name: "Modifier" }));
-    const field = within(first).getByLabelText("Texte modifié");
+    await user.click(within(first).getByRole("button", { name: "Edit" }));
+    const field = within(first).getByLabelText("Edited text");
     await user.clear(field);
     await user.type(field, "Pipelines de 2 To sur AWS");
-    await user.click(within(first).getByRole("button", { name: "Enregistrer et accepter" }));
+    await user.click(within(first).getByRole("button", { name: "Save and accept" }));
     expect(await within(first).findByRole("alert")).toHaveTextContent(
       "Le mot clé « AWS » n'est pas dans ton profil.",
     );
-    expect(within(first).getByLabelText("Texte modifié")).toHaveValue("Pipelines de 2 To sur AWS");
+    expect(within(first).getByLabelText("Edited text")).toHaveValue("Pipelines de 2 To sur AWS");
   });
 
   it("offers no « Modifier » on a removal or a move", async () => {
@@ -65,7 +65,7 @@ describe("ReviewPage: editing and placing modifications", () => {
       ],
     });
     expect(await screen.findAllByRole("article")).toHaveLength(2);
-    expect(screen.queryByRole("button", { name: "Modifier" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
   });
 
   it("says which accepted modification the generated CV could not place", async () => {
@@ -83,10 +83,10 @@ describe("ReviewPage: editing and placing modifications", () => {
       ],
     });
     const [first, second] = await screen.findAllByRole("article");
-    expect(within(first!).getByText("Non placée dans la version 1")).toBeInTheDocument();
-    expect(within(second!).queryByText(/Non placée/)).toBeNull();
+    expect(within(first!).getByText("Not placed in version 1")).toBeInTheDocument();
+    expect(within(second!).queryByText(/Not placed/)).toBeNull();
     expect(
-      await screen.findByText("1 modification acceptée n'a pas pu être placée dans ce CV."),
+      await screen.findByText("1 accepted change couldn't be placed in this CV."),
     ).toBeInTheDocument();
   });
 });

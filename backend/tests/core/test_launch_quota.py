@@ -23,7 +23,7 @@ def test_refuses_after_the_limit_in_french_without_content() -> None:
         quota.reserve("u1", T0 + timedelta(minutes=5))
     error = caught.value
     assert error.code == "mcp_graph_quota" and error.status_code == 429
-    assert "3 lancements de parcours par jour" in error.message
+    assert "3 workflow launches" in error.message
     assert error.details == {"limit": 3, "window": "day"}
 
 

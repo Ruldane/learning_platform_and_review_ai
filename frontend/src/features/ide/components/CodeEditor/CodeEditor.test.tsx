@@ -20,7 +20,7 @@ describe("CodeEditor", () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     const handlers = props();
     render(<CodeEditor {...handlers} />);
-    const editor = await screen.findByRole("textbox", { name: "Code Python de la séance" });
+    const editor = await screen.findByRole("textbox", { name: "Session Python code" });
     act(() => fakeEditor.moveCursor(3));
     expect(handlers.onCursorLine).toHaveBeenCalledWith(3);
     await userEvent.setup().type(editor, "x");
@@ -33,7 +33,7 @@ describe("CodeEditor", () => {
   it("runs on Ctrl+Enter, once per press", async () => {
     const handlers = props();
     render(<CodeEditor {...handlers} />);
-    const editor = await screen.findByRole("textbox", { name: "Code Python de la séance" });
+    const editor = await screen.findByRole("textbox", { name: "Session Python code" });
     await userEvent.setup().type(editor, "{Control>}{Enter}{/Control}");
     expect(handlers.onRun).toHaveBeenCalledTimes(1);
   });
@@ -42,7 +42,7 @@ describe("CodeEditor", () => {
     const handlers = props();
     const note = { id: "n1", line: 2, text: "Ce nom est trompeur." };
     const { rerender } = render(<CodeEditor {...handlers} annotations={[note]} />);
-    await screen.findByRole("textbox", { name: "Code Python de la séance" });
+    await screen.findByRole("textbox", { name: "Session Python code" });
     expect(fakeEditor.decorations).toHaveLength(1);
     expect(fakeEditor.decorations[0]?.range.startLineNumber).toBe(2);
     expect(fakeEditor.decorations[0]?.options.glyphMarginHoverMessage?.value).toBe(note.text);

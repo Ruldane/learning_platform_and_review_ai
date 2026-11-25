@@ -83,7 +83,7 @@ describe("Board", () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
     parse.mockRejectedValue(new Error("Parse error near A[MLOps]"));
     renderBoard();
-    expect(await screen.findByRole("img", { name: "Schéma : Carte du domaine" })).toBeVisible();
+    expect(await screen.findByRole("img", { name: "Diagram: Carte du domaine" })).toBeVisible();
     expect(mermaid.initialize).toHaveBeenCalledWith(
       expect.objectContaining({ securityLevel: "strict" }),
     );
@@ -105,7 +105,7 @@ describe("Board", () => {
     const user = userEvent.setup();
     const { onSendEdit } = renderBoard();
     await screen.findByTestId("excalidraw");
-    const send = screen.getByRole("button", { name: "Envoyer mes modifications aux agents" });
+    const send = screen.getByRole("button", { name: "Send my changes to the agents" });
     expect(send).toBeDisabled();
     // Même sans animation, le canevas reste un instant en lecture seule (ajustements d'Excalidraw).
     await waitFor(() =>
@@ -124,7 +124,7 @@ describe("Board", () => {
     await user.click(send);
     expect(onSendEdit).toHaveBeenCalledWith("b1", {
       scene: expect.any(Object),
-      note: "Ajouté : « Docker »",
+      note: "Added: « Docker »",
     });
     await waitFor(() => expect(send).toBeDisabled());
   });
@@ -139,9 +139,9 @@ describe("Board", () => {
     renderBoard();
     await screen.findByTestId("excalidraw");
 
-    await user.click(await screen.findByRole("button", { name: "Exporter en PNG" }));
-    await user.click(screen.getByRole("button", { name: "Exporter en SVG" }));
-    await user.click(screen.getByRole("button", { name: "Exporter (.excalidraw)" }));
+    await user.click(await screen.findByRole("button", { name: "Export as PNG" }));
+    await user.click(screen.getByRole("button", { name: "Export as SVG" }));
+    await user.click(screen.getByRole("button", { name: "Export (.excalidraw)" }));
     await waitFor(() => expect(serializeAsJSON).toHaveBeenCalled());
     expect(exportToBlob).toHaveBeenCalled();
     expect(exportToSvg).toHaveBeenCalled();
@@ -152,19 +152,19 @@ describe("Board", () => {
     exportToBlob.mockRejectedValue(new Error("canvas"));
     renderBoard();
     await screen.findByTestId("excalidraw");
-    await user.click(await screen.findByRole("button", { name: "Exporter en PNG" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("L'export a échoué");
+    await user.click(await screen.findByRole("button", { name: "Export as PNG" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Export failed.");
   });
 
   it("keyboard: state list and toolbar are reachable and labelled", async () => {
     const user = userEvent.setup();
     const { onSelect } = renderBoard();
     await screen.findByTestId("excalidraw");
-    const list = screen.getByRole("navigation", { name: "États du tableau" });
-    const first = within(list).getByRole("button", { name: /^Carte du domaine Carte/ });
-    expect(first).toHaveAccessibleName("Carte du domaine Carte du domaine · Scribe");
+    const list = screen.getByRole("navigation", { name: "Board states" });
+    const first = within(list).getByRole("button", { name: /^Carte du domaine Domain map/ });
+    expect(first).toHaveAccessibleName("Carte du domaine Domain map · Scribe");
     expect(first).toHaveAttribute("aria-current", "true");
-    expect(within(list).getByRole("button", { name: /^Ma version/ })).toHaveTextContent("Toi");
+    expect(within(list).getByRole("button", { name: /^Ma version/ })).toHaveTextContent("You");
 
     await user.tab();
     expect(first).toHaveFocus();
@@ -172,24 +172,24 @@ describe("Board", () => {
     await user.keyboard("{Enter}");
     expect(onSelect).toHaveBeenCalledWith("b2");
 
-    const toolbar = screen.getByRole("toolbar", { name: "Actions du tableau" });
+    const toolbar = screen.getByRole("toolbar", { name: "Board actions" });
     await waitFor(() =>
-      expect(within(toolbar).getByRole("button", { name: "Exporter en PNG" })).toBeEnabled(),
+      expect(within(toolbar).getByRole("button", { name: "Export as PNG" })).toBeEnabled(),
     );
     await user.tab();
-    expect(within(toolbar).getByRole("button", { name: "Exporter en PNG" })).toHaveFocus();
+    expect(within(toolbar).getByRole("button", { name: "Export as PNG" })).toHaveFocus();
   });
 
   it("hides the send button on a read-only board", async () => {
     renderBoard({ readOnly: true });
     await screen.findByTestId("excalidraw");
-    expect(screen.queryByRole("button", { name: /Envoyer mes modifications/ })).toBeNull();
-    expect(screen.getByRole("button", { name: "Exporter en PNG" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Send my changes/ })).toBeNull();
+    expect(screen.getByRole("button", { name: "Export as PNG" })).toBeInTheDocument();
   });
 
   it("shows an empty state without any board state", () => {
     renderBoard({ states: [], activeId: null });
-    expect(screen.getByText("Le Scribe n'a encore rien dessiné.")).toBeInTheDocument();
+    expect(screen.getByText("The Scribe hasn’t drawn anything yet.")).toBeInTheDocument();
   });
 
   it("falls back to the latest state when the active one is unknown", async () => {

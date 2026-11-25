@@ -128,7 +128,7 @@ async def test_searxng_403_is_unavailable_with_fixed_message(
         await _client(_json({}, status=403)).search(_QUERY)
     error = caught.value
     assert error.code == "search_unavailable" and error.status_code == 503
-    assert error.message == "La recherche web est indisponible pour le moment."
+    assert error.message == "Web search is unavailable for the moment."
     assert error.__cause__ is None and error.__suppress_context__
     assert _QUERY not in caplog.text and "searxng:8080" not in caplog.text
 

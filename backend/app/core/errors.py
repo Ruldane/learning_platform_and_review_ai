@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class AppError(Exception):
-    """Erreur métier rendue au format `{"error": {"code", "message", "details"}}`."""
+    """Business error rendered as `{"error": {"code", "message", "details"}}`."""
 
     def __init__(
         self,
@@ -31,12 +31,12 @@ class AppError(Exception):
 
 
 _HTTP_MESSAGES = {
-    401: "Connexion requise.",
-    403: "Accès refusé.",
-    405: "Méthode non autorisée.",
-    429: "Trop de requêtes, réessaie dans un instant.",
+    401: "Sign-in required.",
+    403: "Access denied.",
+    405: "Method not allowed.",
+    429: "Too many requests, try again in a moment.",
 }
-_DEFAULT_HTTP_MESSAGE = "La requête n'a pas pu aboutir."
+_DEFAULT_HTTP_MESSAGE = "The request could not be completed."
 
 
 def _error_response(
@@ -58,25 +58,25 @@ async def _handle_app_error(_: Request, exc: Exception) -> JSONResponse:
 async def _handle_validation_error(request: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, RequestValidationError)
     details = {"errors": [public_validation_error(request, error) for error in exc.errors()]}
-    return _error_response(422, "validation_error", "Requête invalide.", details)
+    return _error_response(422, "validation_error", "Invalid request.", details)
 
 
 async def _handle_http_error(_: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, StarletteHTTPException)
     if exc.status_code == 404:
-        return _error_response(404, "not_found", "Ressource introuvable.", headers=exc.headers)
+        return _error_response(404, "not_found", "Resource not found.", headers=exc.headers)
     message = _HTTP_MESSAGES.get(exc.status_code, _DEFAULT_HTTP_MESSAGE)
     return _error_response(exc.status_code, "http_error", message, headers=exc.headers)
 
 
 class UnexpectedErrorMiddleware:
-    """Transforme toute exception non gérée en 500 au format d'erreur de l'API.
+    """Turns any unhandled exception into a 500 in the API error format.
 
-    Starlette envoie le gestionnaire `Exception` dans `ServerErrorMiddleware`, à l'extérieur de
-    `CORSMiddleware` : le 500 partait sans en-tête CORS et le navigateur le masquait. Ce
-    middleware est ajouté AVANT `CORSMiddleware` (donc à l'intérieur) pour que la réponse
-    d'erreur traverse CORS. Les WebSockets et les réponses déjà commencées sont laissées telles
-    quelles (l'exception remonte).
+    Starlette sends the `Exception` handler to `ServerErrorMiddleware`, outside
+    `CORSMiddleware`: the 500 left without a CORS header and the browser hid it. This
+    middleware is added BEFORE `CORSMiddleware` (so inside it) so that the error response
+    goes through CORS. WebSockets and responses already started are left as they are (the
+    exception propagates).
     """
 
     def __init__(self, app: ASGIApp) -> None:
@@ -99,15 +99,15 @@ class UnexpectedErrorMiddleware:
         except Exception as exc:
             if started:
                 raise
-            logger.error("Erreur non gérée", exc_info=exc)
+            logger.error("Unhandled error", exc_info=exc)
             response = _error_response(
-                500, "internal_error", "Erreur interne. Réessaie dans un instant."
+                500, "internal_error", "Internal error. Try again in a moment."
             )
             await response(scope, receive, send)
 
 
 def register_error_handlers(app: FastAPI) -> None:
-    """Gestionnaires d'erreurs. À appeler AVANT d'ajouter `CORSMiddleware` (voir ci-dessus)."""
+    """Error handlers. Call BEFORE adding `CORSMiddleware` (see above)."""
     app.add_exception_handler(AppError, _handle_app_error)
     app.add_exception_handler(RequestValidationError, _handle_validation_error)
     app.add_exception_handler(StarletteHTTPException, _handle_http_error)

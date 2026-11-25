@@ -36,7 +36,7 @@ async def test_merge_combines_text_tags_and_deletes_others(
     service: MemoryService, db: AsyncSession, runtime: MemoryRuntime
 ) -> None:
     # Acquis : reconnus à leur titre, deux acquis peuvent porter le même texte.
-    acquis = {"kind": "acquis", "level": "declare"}
+    acquis = {"kind": "skill", "level": "declared"}
     target = await _write(
         service, title="Cible", text="A", tags=("nlp",), evidence=("e1",), **acquis
     )
@@ -52,25 +52,25 @@ async def test_merge_combines_text_tags_and_deletes_others(
     assert out.text == "A\n\nB" and out.tags == ["nlp", "python"]
     assert out.evidence == ["e1", "e2"] and out.indexed is True
     target_writes = await WriteRepository(db, "u1").for_item(target.id)
-    assert [(w.action, w.reason) for w in target_writes][0] == ("merge", "Fusion de 2 élément(s).")
+    assert [(w.action, w.reason) for w in target_writes][0] == ("merge", "Merge of 2 item(s).")
     for gone in (other, twin):
         assert await MemoryItemRepository(db, "u1").get(gone.id) is None
         assert await ChunkRepository(db, "u1").for_item(gone.id) == []
         assert await _vectors(runtime, gone.id) == 0
         log = await WriteRepository(db, "u1").for_item(gone.id)
-        assert [(w.action, w.reason) for w in log][0] == ("delete", "Fusionné dans « Cible ».")
+        assert [(w.action, w.reason) for w in log][0] == ("delete", 'Merged into "Cible".')
     assert await _vectors(runtime, target.id) == 1
     found = await search(db, "u1", runtime, SearchRequest(query="B"))
     assert [h.item_id for h in found.hits] == [target.id]
 
 
 async def test_merge_requires_same_kind(service: MemoryService) -> None:
-    target = await _write(service, kind="lecon", title="Leçon")
-    other = await _write(service, kind="offre", title="Offre", text="Poste à Lyon.")
+    target = await _write(service, kind="lesson", title="Leçon")
+    other = await _write(service, kind="posting", title="Offre", text="Poste à Lyon.")
     with pytest.raises(AppError) as err:
         await merge(service, target.id, [other.id])
     assert (err.value.code, err.value.status_code) == ("merge_kind_mismatch", 422)
-    assert err.value.message == "On ne fusionne que des éléments du même type."
+    assert err.value.message == "Only items of the same kind can be merged."
 
 
 async def test_merge_rejects_documents(service: MemoryService) -> None:
@@ -79,14 +79,14 @@ async def test_merge_rejects_documents(service: MemoryService) -> None:
     with pytest.raises(AppError) as err:
         await merge(service, target.id, [other.id])
     assert (err.value.code, err.value.status_code) == ("merge_document_forbidden", 409)
-    assert err.value.message == "Un document ne se fusionne pas : supprime le doublon."
+    assert err.value.message == "A document cannot be merged: delete the duplicate."
 
 
 async def test_merge_acquis_keeps_highest_level(service: MemoryService) -> None:
-    target = await _write(service, kind="acquis", title="Python", text="Scripts.", level="declare")
-    other = await _write(service, kind="acquis", title="Python 2", text="API.", level="en_cours")
+    target = await _write(service, kind="skill", title="Python", text="Scripts.", level="declared")
+    other = await _write(service, kind="skill", title="Python 2", text="API.", level="in_progress")
     out = await merge(service, target.id, [other.id])
-    assert out.level == "en_cours" and out.kind == "acquis"
+    assert out.level == "in_progress" and out.kind == "skill"
 
 
 async def test_merge_refuses_pending_and_self(service: MemoryService) -> None:
@@ -105,7 +105,7 @@ async def test_merge_refuses_pending_and_self(service: MemoryService) -> None:
 
 async def test_merge_route_and_isolation(app: FastAPI, client: httpx.AsyncClient) -> None:
     async def create(title: str, text: str) -> str:
-        body = {"kind": "offre", "title": title, "text": text}
+        body = {"kind": "posting", "title": title, "text": text}
         r = await client.post(API, json=body)
         assert r.status_code == 201, r.text
         return str(r.json()["id"])
@@ -137,7 +137,7 @@ async def test_merge_into_existing_content_is_refused_and_rolled_back(
     ids = []
     merged = "Poste A.\n\nPoste B."
     for title, text in (("A", "Poste A."), ("B", "Poste B."), ("AB", merged)):
-        r = await client.post(API, json={"kind": "offre", "title": title, "text": text})
+        r = await client.post(API, json={"kind": "posting", "title": title, "text": text})
         assert r.status_code == 201, r.text
         ids.append(r.json()["id"])
     r = await client.post(f"{API}/{ids[0]}/merge", json={"other_ids": [ids[1]]})
@@ -155,8 +155,8 @@ async def test_merge_interrupted_before_reindexing_leaves_the_target_unindexed(
 ) -> None:
     """Arrêt juste après le commit du texte fusionné : la cible ne doit pas se dire indexée
     avec ses anciens fragments, la réindexation doit la rattraper."""
-    target = await _write(service, kind="lecon", title="Cible", text="Texte A.")
-    other = await _write(service, kind="lecon", title="Autre", text="Texte B.")
+    target = await _write(service, kind="lesson", title="Cible", text="Texte A.")
+    other = await _write(service, kind="lesson", title="Autre", text="Texte B.")
     assert target.indexed_at is not None
 
     async def crash(*_: Any) -> bool:

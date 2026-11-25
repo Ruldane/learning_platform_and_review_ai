@@ -13,7 +13,7 @@ interface Props {
   onAnswer: (answer: string) => void;
 }
 
-const dateFormat = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeZone: "UTC" });
+const dateFormat = new Intl.DateTimeFormat("en-GB", { dateStyle: "long", timeZone: "UTC" });
 
 function renderAction({ view, busy, onPrepare, onAnswer }: Props): ReactNode {
   const action = view.action;

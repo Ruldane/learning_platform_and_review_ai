@@ -1,10 +1,9 @@
-"""Route de la capture rapide (SPEC F18, D108) : `POST /capture` contrôle la source puis lance le
-parcours `capture` de l'Archiviste. Une seule source (sinon 422 `invalid_input`) ; un lien qui
-n'est pas http(s) : 422 `invalid_url`, message fixe sans recopie ; le document d'une autre :
-404 `document_not_found` (un fichier passe d'abord par `POST /documents`, même chaîne
-d'ingestion, même garde de taille et de type). Aucune ligne n'est écrite avant
-`launcher.start` : la session elle-même est la trace (D66, D72). Journaux : identifiants
-seulement, jamais l'adresse ni le texte."""
+"""Quick capture route (SPEC F18, D108): `POST /capture` checks the source then launches the
+Archivist's `capture` flow. A single source (otherwise 422 `invalid_input`); a link that is not
+http(s): 422 `invalid_url`, fixed message without echo; another user's document: 404
+`document_not_found` (a file goes through `POST /documents` first, same ingestion chain, same
+size and type guard). No row is written before `launcher.start`: the session itself is the
+trace (D66, D72). Logs: ids only, never the address or the text."""
 
 import logging
 from typing import Any
@@ -23,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 def invalid_input() -> AppError:
     return AppError(
-        "invalid_input", "Une capture demande une seule source : lien, texte ou document.", 422
+        "invalid_input", "Provide a single link, text entry, or document for the capture.", 422
     )
 
 
@@ -32,7 +31,7 @@ def _given(value: str | None) -> bool:
 
 
 async def _payload(db: AsyncSession, user_id: str, body: CaptureRequest) -> dict[str, Any]:
-    """L'entrée du parcours : une seule source, contrôlée."""
+    """The flow's input: a single source, checked."""
     if sum(map(_given, (body.url, body.text, body.document_id))) != 1:
         raise invalid_input()
     if body.url is not None and body.url.strip():
@@ -49,7 +48,7 @@ async def start_capture(rt: CaptureRuntime, user_id: str, body: CaptureRequest) 
         payload = await _payload(db, user_id, body)
     session_id = await rt.launcher.start(user_id, GRAPH, payload)
     logger.info(
-        "Capture lancée : utilisateur %s, session %s, source %s",
+        "Capture started: user %s, session %s, source %s",
         user_id,
         session_id,
         next(iter(payload)),

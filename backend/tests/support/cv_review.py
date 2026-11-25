@@ -65,7 +65,7 @@ def analysis(**kwargs: Any) -> PostingAnalysis:
     fields: dict[str, Any] = {
         "is_job_posting": True,
         "title": "Data Scientist (H/F)",
-        "level": "confirme",
+        "level": "mid_level",
         "language": "fr",
     } | kwargs
     fields["keywords"] = [Keyword(term=term) for term in fields.get("keywords", [])]

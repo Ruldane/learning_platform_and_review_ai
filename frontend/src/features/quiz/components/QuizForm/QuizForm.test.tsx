@@ -10,7 +10,7 @@ const QUESTIONS: QuestionView[] = [
   {
     id: "q1",
     rank: 1,
-    type: "qcm",
+    type: "mcq",
     prompt: "Quel index accélère une recherche par égalité ?",
     code: null,
     choices: ["Hash", "Aucun", "Bitmap"],
@@ -34,7 +34,7 @@ function setup(props: Partial<Parameters<typeof QuizForm>[0]> = {}) {
 }
 
 const field = (rank: number) =>
-  screen.getByRole("textbox", { name: `Ta réponse à la question ${rank}` });
+  screen.getByRole("textbox", { name: `Your answer to question ${rank}` });
 
 async function answerAll() {
   await userEvent.click(screen.getByRole("radio", { name: "Bitmap" }));
@@ -52,16 +52,16 @@ describe("QuizForm", () => {
       name: /Quel index accélère une recherche par égalité/,
     });
     expect(within(group).getAllByRole("radio")).toHaveLength(3);
-    expect(screen.getByText("QCM")).toBeInTheDocument();
-    expect(screen.getByText("Réponse courte")).toBeInTheDocument();
-    expect(screen.getByText("Lecture de code")).toBeInTheDocument();
-    expect(screen.getByText("Explique avec tes mots")).toBeInTheDocument();
+    expect(screen.getByText("Multiple choice")).toBeInTheDocument();
+    expect(screen.getByText("Short answer")).toBeInTheDocument();
+    expect(screen.getByText("Code reading")).toBeInTheDocument();
+    expect(screen.getByText("Explain in your own words")).toBeInTheDocument();
     expect(screen.getAllByRole("textbox")).toHaveLength(3);
   });
 
   it("shows code as inert text in a pre block", () => {
     setup();
-    const pre = screen.getByLabelText("Code de la question 3");
+    const pre = screen.getByLabelText("Code for question 3");
     expect(pre.tagName).toBe("PRE");
     expect(pre.textContent).toBe(CODE);
     expect(pre.querySelector("script")).toBeNull();
@@ -79,7 +79,7 @@ describe("QuizForm", () => {
   it("sends every answer in rank order when all are filled", async () => {
     const { onSubmit } = setup();
     await answerAll();
-    await userEvent.click(screen.getByRole("button", { name: "Envoyer" }));
+    await userEvent.click(screen.getByRole("button", { name: "Submit" }));
     expect(onSubmit).toHaveBeenCalledTimes(1);
     expect(onSubmit).toHaveBeenCalledWith(
       [
@@ -98,12 +98,12 @@ describe("QuizForm", () => {
     const { onSubmit } = setup();
     await userEvent.click(screen.getByRole("radio", { name: "Hash" }));
     await userEvent.type(field(2), "x");
-    await userEvent.click(screen.getByRole("button", { name: "Envoyer" }));
+    await userEvent.click(screen.getByRole("button", { name: "Submit" }));
     expect(confirm).not.toHaveBeenCalled();
     expect(onSubmit).not.toHaveBeenCalled();
     const ask = screen.getByRole("alert");
-    expect(ask).toHaveTextContent("2 questions sans réponse (3, 4)");
-    await userEvent.click(screen.getByRole("button", { name: "Envoyer quand même" }));
+    expect(ask).toHaveTextContent("2 unanswered questions (3, 4)");
+    await userEvent.click(screen.getByRole("button", { name: "Submit anyway" }));
     expect(onSubmit).toHaveBeenCalledTimes(1);
     expect(onSubmit).toHaveBeenCalledWith(
       [
@@ -119,11 +119,11 @@ describe("QuizForm", () => {
 
   it("goes back to the quiz instead of sending", async () => {
     const { onSubmit } = setup();
-    await userEvent.click(screen.getByRole("button", { name: "Envoyer" }));
-    expect(screen.getByRole("alert")).toHaveTextContent("4 questions sans réponse");
-    await userEvent.click(screen.getByRole("button", { name: "Continuer le quiz" }));
+    await userEvent.click(screen.getByRole("button", { name: "Submit" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("4 unanswered questions");
+    await userEvent.click(screen.getByRole("button", { name: "Continue the quiz" }));
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Envoyer" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Submit" })).toBeInTheDocument();
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
@@ -132,15 +132,15 @@ describe("QuizForm", () => {
     await userEvent.click(screen.getByRole("radio", { name: "Hash" }));
     await userEvent.type(field(2), "x");
     await userEvent.type(field(3), "x");
-    await userEvent.click(screen.getByRole("button", { name: "Envoyer" }));
-    expect(screen.getByRole("alert")).toHaveTextContent("1 question sans réponse (4)");
+    await userEvent.click(screen.getByRole("button", { name: "Submit" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("1 unanswered question (4)");
   });
 
   it("counts a blank text as empty", async () => {
     setup();
     await userEvent.type(field(2), "   ");
-    await userEvent.click(screen.getByRole("button", { name: "Envoyer" }));
-    expect(screen.getByRole("alert")).toHaveTextContent("4 questions sans réponse");
+    await userEvent.click(screen.getByRole("button", { name: "Submit" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("4 unanswered questions");
   });
 
   it("disables every field and the button while sending", () => {
@@ -148,7 +148,7 @@ describe("QuizForm", () => {
     for (const control of [...screen.getAllByRole("radio"), ...screen.getAllByRole("textbox")]) {
       expect(control).toBeDisabled();
     }
-    expect(screen.getByRole("button", { name: "Envoyer" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Submit" })).toBeDisabled();
   });
 
   it("limits open answers to 4000 characters", () => {
@@ -158,8 +158,8 @@ describe("QuizForm", () => {
 
   it("counts the answers given", async () => {
     setup();
-    expect(screen.getByText("Répondu : 0 sur 4")).toBeInTheDocument();
+    expect(screen.getByText("Answered: 0 of 4")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("radio", { name: "Hash" }));
-    expect(screen.getByText("Répondu : 1 sur 4")).toBeInTheDocument();
+    expect(screen.getByText("Answered: 1 of 4")).toBeInTheDocument();
   });
 });

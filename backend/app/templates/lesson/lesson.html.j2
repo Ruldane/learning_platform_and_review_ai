@@ -8,12 +8,12 @@
 </head>
 <body>
 <header class="cover">
-<p class="kicker">{{ labels.kicker }}</p>
+<p class="kicker" lang="en">Lesson</p>
 <h1>{{ title }}</h1>
 </header>
 {% if toc %}
 <nav class="toc">
-<h2>{{ labels.toc }}</h2>
+<h2 lang="en">Contents</h2>
 <ol>
 {% for anchor, heading in toc %}
 <li><a href="#{{ anchor }}">{{ heading }}</a></li>

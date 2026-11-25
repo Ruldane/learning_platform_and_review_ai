@@ -33,6 +33,6 @@ def posting_analysis(stored: dict[str, Any] | None, row: Application, text: str)
         is_job_posting=True,
         title=row.title.ljust(2, "."),
         company=row.company,
-        level="inconnu",
+        level="unknown",
         language=text_language(text),
     )

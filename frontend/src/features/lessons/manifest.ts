@@ -18,20 +18,20 @@ export function makeLessonsManifest(
   return {
     id: "lessons",
     routes: [
-      { path: "apprendre/lecons", Component: LessonsPage },
+      { path: "learn/lessons", Component: LessonsPage },
       {
-        path: "apprendre/lecons/:lessonId",
+        path: "learn/lessons/:lessonId",
         element: createElement(LessonPage, { conversationPanel, updatesPanel }),
         handle: { wide: true },
       },
-      { path: "apprendre/bibliotheque", Component: LibraryPage },
+      { path: "learn/library", Component: LibraryPage },
     ],
     nav: [
-      { section: "learn", labelKey: "lessons.nav.lessons", path: "/apprendre/lecons", order: 4 },
+      { section: "learn", labelKey: "lessons.nav.lessons", path: "/learn/lessons", order: 4 },
       {
         section: "learn",
         labelKey: "lessons.nav.library",
-        path: "/apprendre/bibliotheque",
+        path: "/learn/library",
         order: 5,
       },
     ],

@@ -11,7 +11,7 @@ test("fige deux versions de CV et ouvre leurs sources après le verdict", async 
   const seed = await request.post(`${new URL(API).origin}/e2e/blind-assessment/ready`);
   expect(seed.ok()).toBe(true);
   const { version_ids: versions } = (await seed.json()) as { version_ids: [string, string] };
-  await page.goto("/carriere/epreuve-aveugle");
+  await page.goto("/career/blind-assessment");
   await expect(page.getByRole("heading", { name: "Épreuve en aveugle" })).toBeVisible();
   await page.getByLabel("Première version de CV").selectOption(versions[0]);
   await page.getByLabel("Seconde version de CV").selectOption(versions[1]);

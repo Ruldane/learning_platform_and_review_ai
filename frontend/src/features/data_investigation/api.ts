@@ -2,7 +2,7 @@ import { api } from "@/shared/api/client";
 import { unwrap } from "@/shared/api/errors";
 import type { components } from "@/shared/api/schema";
 
-export const investigationsPath = "/etudier/enquetes";
+export const investigationsPath = "/study/investigations";
 export const investigationsKey = ["data_investigations"] as const;
 
 type CaseKey = components["schemas"]["InvestigationCreate"]["dataset"];

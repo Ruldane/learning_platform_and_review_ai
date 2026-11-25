@@ -1,5 +1,5 @@
-const DAY = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long" });
-const INSTANT = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeStyle: "short" });
+const DAY = new Intl.DateTimeFormat("en-GB", { dateStyle: "long" });
+const INSTANT = new Intl.DateTimeFormat("en-GB", { dateStyle: "long", timeStyle: "short" });
 
 /** « 16 novembre 2026 » : le jour d'un instant ISO. */
 export const formatDay = (iso: string): string => DAY.format(new Date(iso));

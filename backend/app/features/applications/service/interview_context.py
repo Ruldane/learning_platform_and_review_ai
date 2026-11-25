@@ -1,10 +1,10 @@
-"""Ce que le parcours `interview` lit (`InterviewContext`, D146) : le réglage de l'entretien, puis,
-selon son origine, la fiche (intitulé exact, copie figée du texte de l'offre, version de CV
-envoyée, offre liée), l'offre seule d'un entretien libre, ou l'intitulé seul. Le dossier de
-l'entreprise (`companies.dossier`) n'est repris que s'il a moins de 30 jours ; les écarts sont les
-besoins de l'offre qu'aucune compétence connue ne couvre ; le profil maître validé est exigé.
+"""What the `interview` flow reads (`InterviewContext`, D146): the interview's setting, then,
+depending on its origin, the record (exact title, frozen copy of the posting text, CV version
+sent, linked posting), the posting alone for a free interview, or the title alone. The company
+dossier (`companies.dossier`) is only used if it is under 30 days old; the gaps are the
+posting's needs that no known skill covers; the validated master profile is required.
 
-Lecture seule, au nom de l'utilisatrice. Rien n'est journalisé ici."""
+Read-only, on behalf of the user. Nothing is logged here."""
 
 from dataclasses import dataclass
 
@@ -32,12 +32,12 @@ from app.features.cv.service.versions import (
 )
 from app.features.postings.service.queries import postings_by_ids
 
-DEFAULT_ROLE = "Poste"
+DEFAULT_ROLE = "Role"
 
 
 @dataclass(frozen=True)
 class Source:
-    """D'où vient l'entretien : l'intitulé, l'entreprise, l'offre (texte et analyse)."""
+    """Where the interview comes from: the title, the company, the posting (text and analysis)."""
 
     role: str
     company: str | None
@@ -73,7 +73,7 @@ def _from_posting(posting: JobPosting, role: str) -> Source:
 
 
 async def load_source(db: AsyncSession, user_id: str, row: Interview) -> Source:
-    """La fiche (si elle existe encore : un entretien lui survit), sinon l'offre, sinon le titre."""
+    """The record (if it still exists: an interview outlives it), else the posting or the title."""
     application = None
     if row.application_id is not None:
         application = await ApplicationRepository(db, user_id).get(row.application_id)
@@ -90,7 +90,7 @@ async def load_source(db: AsyncSession, user_id: str, row: Interview) -> Source:
 
 
 def gaps_of(posting: JobPosting | None) -> list[str]:
-    """Les besoins de l'offre qu'aucune compétence connue ne couvre (analyse d'écart rangée)."""
+    """The posting's needs that no known skill covers (stored gap analysis)."""
     matches = (posting.gap or {}).get("matches", []) if posting is not None else []
     return [str(match["need"]) for match in matches if match.get("known") is None]
 
@@ -105,7 +105,7 @@ async def _dossier(
 
 
 async def build_context(rt: ApplicationsRuntime, user_id: str, row: Interview) -> InterviewContext:
-    """Le contexte de l'entretien `row` ; 409 `profile_required` sans profil validé."""
+    """The context of interview `row`; 409 `profile_required` without a validated profile."""
     async with rt.session_factory() as db:
         profile = await validated_profile(db, user_id)
         if profile is None:

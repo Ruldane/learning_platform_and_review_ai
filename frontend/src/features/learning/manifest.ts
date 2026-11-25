@@ -10,13 +10,13 @@ import { GoalsPage } from "./pages/GoalsPage";
 export const learningManifest: FeatureManifest = {
   id: "learning",
   routes: [
-    { path: "apprendre/objectifs", Component: GoalsPage },
+    { path: "learn/goals", Component: GoalsPage },
     // Deux zones côte à côte (SPEC 15.2) : la page prend toute la largeur de la coquille.
-    { path: "apprendre/objectifs/:goalId/conseil", Component: CouncilPage, handle: { wide: true } },
-    { path: "apprendre/conseil", Component: CouncilIndexPage },
+    { path: "learn/goals/:goalId/council", Component: CouncilPage, handle: { wide: true } },
+    { path: "learn/council", Component: CouncilIndexPage },
   ],
   nav: [
-    { section: "learn", labelKey: "learning.nav.goals", path: "/apprendre/objectifs", order: 1 },
-    { section: "learn", labelKey: "learning.nav.council", path: "/apprendre/conseil", order: 2 },
+    { section: "learn", labelKey: "learning.nav.goals", path: "/learn/goals", order: 1 },
+    { section: "learn", labelKey: "learning.nav.council", path: "/learn/council", order: 2 },
   ],
 };

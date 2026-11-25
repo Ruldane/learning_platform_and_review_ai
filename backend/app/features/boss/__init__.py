@@ -1,1 +1,1 @@
-"""Boss de fin de programme."""
+"""End-of-program Boss."""

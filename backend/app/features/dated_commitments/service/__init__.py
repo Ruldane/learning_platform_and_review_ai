@@ -29,7 +29,7 @@ def _amount(value: Decimal) -> str:
 async def _owned(db: AsyncSession, user_id: str, commitment_id: str) -> DatedCommitment:
     row = await repository.by_id(db, user_id, commitment_id)
     if row is None:
-        raise AppError("commitment_not_found", "Engagement introuvable.", 404)
+        raise AppError("commitment_not_found", "Commitment not found.", 404)
     return row
 
 
@@ -74,9 +74,7 @@ async def create(rt: CommitmentsRuntime, user_id: str, action: CommitmentCreate)
         row = await repository.by_request(db, user_id, request_id)
         if row is not None:
             if any(getattr(row, name) != value for name, value in fields.items()):
-                raise AppError(
-                    "commitment_request_used", "Ce brouillon a déjà été enregistré.", 409
-                )
+                raise AppError("commitment_request_used", "This draft has already been saved.", 409)
             return _view(row, today)
         row = DatedCommitment(user_id=user_id, request_id=request_id, **fields)
         db.add(row)
@@ -95,11 +93,9 @@ async def review(
         if row.observed is not None:
             if row.observed == observed and row.note == note:
                 return _view(row, today)
-            raise AppError("commitment_reviewed", "La mesure est déjà enregistrée.", 409)
+            raise AppError("commitment_reviewed", "The measurement is already recorded.", 409)
         if row.due_on > today:
-            raise AppError(
-                "commitment_not_due", "Cet engagement n’est pas encore arrivé à échéance.", 409
-            )
+            raise AppError("commitment_not_due", "This commitment is not due yet.", 409)
         row.observed, row.note = observed, note
         row.reviewed_on, row.reviewed_at = today, now
         await db.commit()

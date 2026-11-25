@@ -1,5 +1,5 @@
-"""Compétences de January (SPEC 4.2, 13.4 ; D6, D7) : référentiel du Stratège (compétences,
-prérequis) et niveaux, qui ne baissent jamais. Le commit appartient à l'appelant."""
+"""January's skills (SPEC 4.2, 13.4; D6, D7): the Strategist's reference list (skills,
+prerequisites) and levels, which never go down. The commit belongs to the caller."""
 
 import logging
 from collections.abc import Sequence
@@ -30,11 +30,11 @@ __all__ = ["SkillLevel", "SkillsService", "higher_level", "write_weekly_snapshot
 
 logger = logging.getLogger(__name__)
 
-EVIDENCE_MAX = 20  # preuves gardées par compétence (les plus récentes)
+EVIDENCE_MAX = 20  # evidence kept per skill (the most recent)
 
 
 async def learning_graph(db: AsyncSession, user_id: str) -> tuple[SkillGraphOut, CompareOut | None]:
-    """Carte et écarts de l'objectif courant. Les lectures dépendent du service Programme."""
+    """Map and gaps of the current goal. Reads depend on the Program service."""
     from app.features.skills.compare import compare_with_goal
     from app.features.skills.map import skill_graph
 
@@ -53,13 +53,13 @@ def higher_level(a: SkillLevel, b: SkillLevel) -> SkillLevel:
 
 
 def _proof_key(item: Evidence) -> tuple[str, str | None]:
-    """Clé de dédoublonnage : (genre, référence) ; sans référence, le libellé fait foi."""
+    """Deduplication key: (kind, reference); without a reference, the label decides."""
     return (item["kind"], item["ref_id"] if item["ref_id"] is not None else item["label"])
 
 
 def _with_proof(raw: Sequence[Any], proof: Evidence) -> list[Evidence]:
-    """Les preuves relues, plus `proof` si son couple (genre, référence) manque (la première
-    gagne : un rejeu ne réécrit rien), au plus `EVIDENCE_MAX` des plus récentes."""
+    """The re-read evidence, plus `proof` if its (kind, reference) pair is missing (the first
+    wins: a replay rewrites nothing), at most `EVIDENCE_MAX` of the most recent."""
     kept = read_evidence(raw)
     if all(_proof_key(item) != _proof_key(proof) for item in kept):
         kept.append(proof)
@@ -76,17 +76,17 @@ class SkillsService:
     async def create(self, body: SkillCreate) -> str:
         norm = normalize_skill_name(body.name)
         if not norm:
-            raise AppError("invalid_skill_name", "Nom de compétence invalide.", 422)
+            raise AppError("invalid_skill_name", "Invalid skill name.", 422)
         created = await self._skills.create(body.name, norm, body.domain, body.synonyms)
         if created is None:
-            raise AppError("skill_exists", "Cette compétence existe déjà.", 409)
+            raise AppError("skill_exists", "This skill already exists.", 409)
         return created
 
     async def upsert_catalog(
         self, skills: Sequence[SkillDraft], edges: Sequence[EdgeDraft]
     ) -> dict[str, str]:
-        """Compétences (dédoublonnées par nom normalisé) et liens de prérequis ; rend
-        `nom normalisé → id`. Un lien dont un bout est inconnu, ou une boucle, est ignoré."""
+        """Skills (deduplicated by normalized name) and prerequisite links; returns
+        `normalized name → id`. A link with an unknown end, or a loop, is ignored."""
         for skill in skills:
             norm = normalize_skill_name(skill.name)
             if norm:
@@ -103,7 +103,7 @@ class SkillsService:
         return ids
 
     async def _skill_ids(self, names: Sequence[str]) -> dict[str, tuple[str, str]]:
-        """`nom normalisé → (id, nom affiché)`, compétences créées au besoin (sans domaine)."""
+        """`normalized name → (id, display name)`, skills created as needed (without a domain)."""
         wanted: dict[str, str] = {}
         for name in names:
             norm = normalize_skill_name(name)
@@ -117,14 +117,14 @@ class SkillsService:
     async def raise_levels(
         self, names: Sequence[str], level: SkillLevel, evidence: Evidence
     ) -> list[tuple[str, SkillLevel]]:
-        """Monte chaque compétence à `level` au moins (jamais plus bas) et note la preuve,
-        dédoublonnée par (genre, référence) ;
-        rend `(nom, nouveau niveau)` des seuls niveaux changés (créés compris)."""
+        """Raises each skill to at least `level` (never lower) and records the evidence,
+        deduplicated by (kind, reference);
+        returns `(name, new level)` of the changed levels only (created ones included)."""
         skills = await self._skill_ids(names)
         ids = [skill_id for skill_id, _ in skills.values()]
         before = await self._levels.for_skills(ids)
         for skill_id in ids:
-            if skill_id not in before:  # nouvelle : créée au niveau voulu (une course : rien)
+            if skill_id not in before:  # new: created at the wanted level (a race: nothing)
                 await self._levels.ensure(skill_id, level)
         rows = await self._levels.for_skills(ids)
         changed: list[tuple[str, SkillLevel]] = []
@@ -141,8 +141,8 @@ class SkillsService:
         return changed
 
     async def levels_of(self, names: Sequence[str]) -> list[tuple[str, SkillLevel]]:
-        """`(nom affiché, niveau)` actuel de chacune de ces compétences qui a un niveau, une
-        fois par nom normalisé (pour refléter les niveaux dans la mémoire)."""
+        """Current `(display name, level)` of each of these skills that has a level, once per
+        normalized name (to reflect the levels in memory)."""
         norms = [norm for norm in dict.fromkeys(map(normalize_skill_name, names)) if norm]
         rows = await self._skills.by_norm(norms)
         levels = await self._levels.for_skills([row.id for row in rows.values()])
@@ -153,8 +153,8 @@ class SkillsService:
         ]
 
     async def catalog(self) -> list[tuple[str, SkillLevel | None]]:
-        """`(nom affiché, niveau ou None)` de chaque compétence du référentiel de January, par
-        nom (écart d'une offre, D122)."""
+        """`(display name, level or None)` of each skill of January's reference list, by name
+        (posting gap, D122)."""
         levels = await self._levels.by_skill()
         return [
             (skill.name, _as_level(levels[skill.id]) if skill.id in levels else None)
@@ -162,8 +162,8 @@ class SkillsService:
         ]
 
     async def alias_groups(self) -> list[frozenset[str]]:
-        """Les groupes de noms normalisés qui désignent une même compétence du référentiel : son
-        nom et ses synonymes (radar du marché, P8)."""
+        """The groups of normalized names that designate the same skill of the reference list: its
+        name and its synonyms (market radar, P8)."""
         groups: list[frozenset[str]] = []
         for skill in await self._skills.list_all():
             names = {skill.norm_name, *(normalize_skill_name(str(s)) for s in skill.synonyms)}
@@ -171,11 +171,11 @@ class SkillsService:
         return groups
 
     async def known_levels(self) -> dict[str, SkillLevel]:
-        """`nom normalisé → niveau` de chaque compétence connue de January."""
+        """`normalized name → level` of each skill known to January."""
         return {norm: _as_level(level) for norm, level in await self._levels.levels()}
 
     async def _level_row(self, name: str) -> tuple[str, UserSkill] | None:
-        """`(nom affiché, ligne de niveau)` de la compétence, `None` si January n'en a pas."""
+        """`(display name, level row)` of the skill, `None` if January does not have it."""
         norm = normalize_skill_name(name)
         rows = await self._skills.by_norm([norm]) if norm else {}
         if norm not in rows:
@@ -185,7 +185,7 @@ class SkillsService:
         return None if row is None else (rows[norm].name, row)
 
     async def reset_fail_streaks(self, names: Sequence[str]) -> None:
-        """Un quiz réussi remet à zéro les échecs de fiches de ces compétences (D101)."""
+        """A passed quiz resets the card failures of these skills (D101)."""
         for name in dict.fromkeys(names):
             found = await self._level_row(name)
             if found is not None:
@@ -193,44 +193,51 @@ class SkillsService:
         await self._db.flush()
 
     async def record_review(self, skill: str, ok: bool) -> SkillLevel | None:
-        """Avis sur une fiche de `skill` (F9, D101) : réussite → échecs remis à 0 ; échec → +1.
-        Un acquis `valide` qui atteint `DEMOTE_AFTER` échecs consécutifs redescend à `en_cours`
-        (échecs remis à 0) : seule baisse de niveau admise ; rend alors le nouveau niveau, sinon
-        `None` (compétence sans niveau comprise)."""
+        """Review of a card of `skill` (F9, D101): success → failures reset to 0; failure → +1.
+        A `validated` skill that reaches `DEMOTE_AFTER` consecutive failures drops back to
+        `in_progress` (failures reset to 0): the only level decrease allowed; then returns the
+        new level, otherwise `None` (skill without a level included)."""
         found = await self._level_row(skill)
         if found is None:
             return None
         row = found[1]
         row.fail_streak = 0 if ok else row.fail_streak + 1
         demoted: SkillLevel | None = None
-        if row.level == "valide" and row.fail_streak >= DEMOTE_AFTER:
-            row.level, row.fail_streak, demoted = "en_cours", 0, "en_cours"
+        if row.level == "validated" and row.fail_streak >= DEMOTE_AFTER:
+            row.level, row.fail_streak, demoted = "in_progress", 0, "in_progress"
         await self._db.flush()
         return demoted
 
     async def skill_id_for(self, name: str) -> str | None:
-        """L'identifiant de la compétence de ce nom (normalisé), `None` si le référentiel de
-        January ne l'a pas : on ne crée jamais une compétence pour une simple preuve."""
+        """The id of the skill of this (normalized) name, `None` if January's reference list
+        does not have it: a skill is never created for a mere piece of evidence."""
         norm = normalize_skill_name(name)
         rows = await self._skills.by_norm([norm]) if norm else {}
         return rows[norm].id if norm in rows else None
 
+    async def existing_name(self, preferred: str, legacy: str) -> str:
+        """`legacy` when only a skill of that name exists (stored before the switch to English),
+        otherwise `preferred`."""
+        if await self.skill_id_for(preferred) is None and await self.skill_id_for(legacy):
+            return legacy
+        return preferred
+
     async def add_proof(self, skill_id: str, kind: Literal["ide"], label: str, ref: str) -> None:
-        """Une preuve d'exercice de code réussi (`ide`, P20), dédoublonnée par `ref`. Elle ne
-        monte jamais au-delà de `en_cours` : une compétence `declare` y passe, une compétence
-        `en_cours`, `valide` ou `prouve` garde son niveau (un exercice ne valide rien)."""
-        await self._levels.ensure(skill_id, "en_cours")
+        """Evidence of a passed code exercise (`ide`, P20), deduplicated by `ref`. It never
+        raises above `in_progress`: a `declared` skill moves there, an `in_progress`,
+        `validated` or `proven` skill keeps its level (an exercise validates nothing)."""
+        await self._levels.ensure(skill_id, "in_progress")
         row = (await self._levels.for_skills([skill_id])).get(skill_id)
         if row is None:
             return
         proof = make_evidence(kind, ref, label[:200], datetime.now(UTC))
         row.evidence = list(_with_proof(row.evidence, proof))
-        if row.level == "declare":
-            row.level = "en_cours"
+        if row.level == "declared":
+            row.level = "in_progress"
         await self._db.flush()
 
     async def display_name(self, skill: str) -> str | None:
-        """Le nom affiché de la compétence, `None` si elle n'a pas de niveau."""
+        """The display name of the skill, `None` if it has no level."""
         found = await self._level_row(skill)
         return None if found is None else found[0]
 
@@ -238,9 +245,9 @@ class SkillsService:
 async def write_weekly_snapshots(
     session_factory: async_sessionmaker[AsyncSession], now: datetime
 ) -> int:
-    """Un relevé des niveaux (`compétence → niveau`) par utilisateur et par semaine locale
-    (D98) : le premier passage de la semaine l'écrit, les suivants ne changent rien (D106).
-    Appelé par la tâche planifiée `skill_snapshots` ; rend le nombre de relevés écrits."""
+    """A snapshot of the levels (`skill → level`) per user and per local week (D98): the first
+    pass of the week writes it, the following ones change nothing (D106). Called by the
+    scheduled task `skill_snapshots`; returns the number of snapshots written."""
     async with session_factory() as db:
         users = await users_with_levels(db)
     written = 0
@@ -252,7 +259,5 @@ async def write_weekly_snapshots(
             written += await SkillSnapshotRepository(db, user_id).insert_once(week, levels)
             await db.commit()
     level = logging.INFO if written else logging.DEBUG
-    logger.log(
-        level, "Relevés des compétences : %d utilisateur(s), %d écrit(s)", len(users), written
-    )
+    logger.log(level, "Skill snapshots: %d user(s), %d written", len(users), written)
     return written

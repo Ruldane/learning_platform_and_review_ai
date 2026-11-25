@@ -28,7 +28,7 @@ export function CaptureEnd({ status, failure, onAgain, onClose }: CaptureEndProp
       </p>
       {failure ? <InlineError message={failure} /> : null}
       <div className="flex flex-wrap gap-2">
-        <Link to="/etudier/journal" onClick={onClose} className={buttonVariants()}>
+        <Link to="/study/journal" onClick={onClose} className={buttonVariants()}>
           {t("capture.run.journal")}
         </Link>
         <Button variant="outline" onClick={onAgain}>

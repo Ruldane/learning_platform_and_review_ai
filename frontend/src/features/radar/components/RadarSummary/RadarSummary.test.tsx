@@ -22,58 +22,58 @@ const RUN: RunSummaryView = {
 describe("RadarSummary", () => {
   it("says how many offers were really read, blocked and analyzed", () => {
     render(<RadarSummary run={RUN} />);
-    expect(screen.getByText("47 offres lues · 6 bloquées · 41 analysées")).toBeInTheDocument();
-    expect(screen.getByText("Poste : Data engineer, zone : France")).toBeInTheDocument();
+    expect(screen.getByText("47 postings read · 6 blocked · 41 analyzed")).toBeInTheDocument();
+    expect(screen.getByText("Role: Data engineer, area: France")).toBeInTheDocument();
   });
 
   it("counts only the postings as offers read, the other pages are said apart", () => {
     render(<RadarSummary run={{ ...RUN, readCount: 35, notPostings: 7, analyzed: 28 }} />);
-    expect(screen.getByText("28 offres lues · 6 bloquées · 28 analysées")).toBeInTheDocument();
-    expect(screen.getByText("7 pages lues n'étaient pas des offres.")).toBeInTheDocument();
+    expect(screen.getByText("28 postings read · 6 blocked · 28 analyzed")).toBeInTheDocument();
+    expect(screen.getByText("7 pages read weren’t job postings.")).toBeInTheDocument();
   });
 
   it("uses the singular", () => {
     render(<RadarSummary run={{ ...RUN, readCount: 1, blockedCount: 1, analyzed: 1 }} />);
-    expect(screen.getByText("1 offre lue · 1 bloquée · 1 analysée")).toBeInTheDocument();
+    expect(screen.getByText("1 posting read · 1 blocked · 1 analyzed")).toBeInTheDocument();
   });
 
   it("keeps the blocked domains folded until they are opened (the summary takes focus with Tab)", async () => {
     const user = userEvent.setup();
     render(<RadarSummary run={RUN} />);
-    const summary = screen.getByText("Domaines bloqués (2)");
+    const summary = screen.getByText("Blocked domains (2)");
     const details = summary.closest("details") as HTMLDetailsElement;
     expect(details.open).toBe(false);
     await user.tab();
     expect(summary).toHaveFocus();
     await user.click(summary);
     expect(details.open).toBe(true);
-    expect(screen.getByText("example.org : 4 pages")).toBeVisible();
-    expect(screen.getByText("example.invalid : 1 page")).toBeVisible();
+    expect(screen.getByText("example.org: 4 pages")).toBeVisible();
+    expect(screen.getByText("example.invalid: 1 page")).toBeVisible();
   });
 
   it("shows no blocked domain block when none was blocked", () => {
     render(<RadarSummary run={{ ...RUN, blockedCount: 0, blockedDomains: [] }} />);
-    expect(screen.queryByText(/Domaines bloqués/)).toBeNull();
+    expect(screen.queryByText(/Blocked domains/)).toBeNull();
   });
 
   it("warns about a small sample and only then", () => {
     const { rerender } = render(<RadarSummary run={RUN} />);
     expect(screen.queryByRole("note")).toBeNull();
     rerender(<RadarSummary run={{ ...RUN, lowSample: true }} />);
-    expect(screen.getByRole("note")).toHaveTextContent("Échantillon réduit : moins de 30 offres");
+    expect(screen.getByRole("note")).toHaveTextContent("Small sample: fewer than 30 readable");
   });
 
   it("counts the pages that were not postings apart", () => {
     render(<RadarSummary run={{ ...RUN, notPostings: 3 }} />);
-    expect(screen.getByText("3 pages lues n'étaient pas des offres.")).toBeInTheDocument();
+    expect(screen.getByText("3 pages read weren’t job postings.")).toBeInTheDocument();
   });
 
   it("never hides the gap between the offers read and the offers analyzed", () => {
     const { rerender } = render(<RadarSummary run={{ ...RUN, notAnalyzed: 5 }} />);
-    expect(screen.getByText("5 offres lues n'ont pas été analysées.")).toBeInTheDocument();
+    expect(screen.getByText("5 postings read weren’t analyzed.")).toBeInTheDocument();
     rerender(<RadarSummary run={{ ...RUN, notAnalyzed: 1 }} />);
-    expect(screen.getByText("1 offre lue n'a pas été analysée.")).toBeInTheDocument();
+    expect(screen.getByText("1 posting read wasn’t analyzed.")).toBeInTheDocument();
     rerender(<RadarSummary run={RUN} />);
-    expect(screen.queryByText(/n'a pas été analysée|n'ont pas été analysées/)).toBeNull();
+    expect(screen.queryByText(/wasn’t analyzed|weren’t analyzed/)).toBeNull();
   });
 });

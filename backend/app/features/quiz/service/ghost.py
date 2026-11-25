@@ -1,4 +1,4 @@
-"""Version du questionnaire et repères consultables lors d’un nouvel essai."""
+"""Questionnaire version and markers viewable during a retry."""
 
 from collections.abc import Sequence
 
@@ -11,12 +11,13 @@ from app.features.quiz.service.quizzes import owned_quiz
 
 
 def question_version(questions: Sequence[QuizQuestion]) -> str:
+    """Keep stored version hashes stable across the multiple-choice code migration."""
     return content_version(
         [
             (
                 q.id,
                 q.rank,
-                q.type,
+                "qcm" if q.type == "mcq" else q.type,
                 q.prompt,
                 q.code,
                 q.choices,

@@ -1,7 +1,7 @@
-"""Ce que le professeur fait pour un déclencheur et un style (10.A3) : le type de note permis et le
-niveau de modèle. Choisis par le code **avant** l'appel (le modèle ne choisit jamais son prix) :
-le niveau léger (`rapide`) pour les indices et les annotations en marge, le niveau fort pour les
-vraies explications et les corrections proposées."""
+"""Pick the professor's note type and model tier before the call (10.A3).
+
+Use fast for hints and annotations and strong for explanations and proposed fixes.
+"""
 
 from dataclasses import dataclass
 from typing import Literal
@@ -15,7 +15,7 @@ MAX_LEVEL = 3
 
 @dataclass(frozen=True)
 class Plan:
-    kinds: tuple[TeacherKind, ...]  # types de note permis ; le premier est celui par défaut
+    kinds: tuple[TeacherKind, ...]  # Allowed kinds in order, with the default first.
     tier: Tier
 
     @property
@@ -24,13 +24,15 @@ class Plan:
 
 
 def plan_of(trigger: Trigger, style: Literal["guide", "pair"]) -> Plan:
-    """`hint` : un indice gradué (léger). `run_error` et `idle` : un indice en mode guide, une
-    annotation de marge en binôme (léger). `question` : une explication (fort) ; en binôme, une
-    proposition de correction est aussi permise. `run_ok` n'appelle jamais le modèle."""
+    """Use hints in guide mode and annotations in pair mode for errors or inactivity.
+
+    Explicit hints are incremental. Questions allow explanations and, in pair mode, proposed
+    fixes. A successful run needs no model.
+    """
     if trigger == "run_ok":
-        raise ValueError("run_ok n'appelle jamais le modèle")
+        raise ValueError("run_ok does not call the model")
     if trigger == "question":
-        return Plan(("explanation",) if style == "guide" else ("explanation", "proposal"), "fort")
+        return Plan(("explanation",) if style == "guide" else ("explanation", "proposal"), "strong")
     if trigger == "hint" or style == "guide":
-        return Plan(("hint",), "rapide")
-    return Plan(("annotation",), "rapide")
+        return Plan(("hint",), "fast")
+    return Plan(("annotation",), "fast")

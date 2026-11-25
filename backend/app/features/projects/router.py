@@ -1,7 +1,7 @@
-"""API des mini projets preuves (SPEC 14.2, P1 à P3, P19, D166) : Portfolio, projet, rendu (202,
-l'évaluation tourne en tâche de fond), captures, brouillons retouchés, entrée au profil maître et
-nouvel essai de l'énoncé. Toutes au nom de l'utilisatrice courante (404 sur le projet d'une autre) ;
-une 422 nomme les champs, sans jamais recopier le rendu."""
+"""Proof mini projects API (SPEC 14.2, P1 to P3, P19, D166): Portfolio, project, submission (202,
+the review runs in the background), screenshots, edited drafts, master profile entry and
+new brief attempt. All on behalf of the current user (404 on another user's project);
+a 422 names the fields, never copying the submission."""
 
 from collections.abc import Callable, Coroutine
 from typing import Annotated, Any
@@ -51,9 +51,9 @@ from app.features.projects.service.views import get_project, list_projects
 
 
 class FormRoute(FieldPathsRoute):
-    """Comme `FieldPathsRoute`, et un champ texte du rendu de plus de 1 Mo (limite de Starlette,
-    jamais une capture) est une 422 `fields: ["description"]` : la description est le seul champ
-    qui peut raisonnablement l'atteindre. Un corps mal formé reste une 400."""
+    """Like `FieldPathsRoute`, and a submission text field over 1 MB (Starlette's limit,
+    never a screenshot) is a 422 `fields: ["description"]`: the description is the only field
+    that can reasonably reach it. A malformed body stays a 400."""
 
     def get_route_handler(self) -> Callable[[Request], Coroutine[Any, Any, Response]]:
         handler = super().get_route_handler()
@@ -62,8 +62,8 @@ class FormRoute(FieldPathsRoute):
             try:
                 return await handler(request)
             except HTTPException as exc:
-                # Starlette refuse un champ de formulaire de plus de 1 Mo par une 400 (« Part
-                # exceeded maximum size ») : c'est une `HTTPException` de Starlette, pas de FastAPI.
+                # Starlette rejects a form field over 1 MB with a 400 ("Part exceeded
+                # maximum size"): it is a Starlette `HTTPException`, not a FastAPI one.
                 if exc.status_code == 400 and "maximum size" in str(exc.detail):
                     raise invalid_submission(["description"]) from None
                 raise
@@ -78,18 +78,18 @@ _NOT_FOUND: dict[int | str, dict[str, Any]] = {404: {"description": "`project_no
 _SUBMIT_ERRORS: dict[int | str, dict[str, Any]] = {
     404: {"description": "`project_not_found`"},
     409: {
-        "description": "`project_not_ready` (énoncé absent), `review_in_progress` "
-        "(`details.session_id`) ou `project_validated`"
+        "description": "`project_not_ready` (no brief), `review_in_progress` "
+        "(`details.session_id`) or `project_validated`"
     },
-    413: {"description": "`file_too_large` : une capture dépasse 5 Mo, ou le corps 26 Mo"},
+    413: {"description": "`file_too_large`: a screenshot exceeds 5 MB, or the body 26 MB"},
     422: {"description": "`details.fields` : `repo_url`, `description`, `screenshots`"},
-    503: {"description": "`review_unavailable` : le rendu n'est pas gardé"},
+    503: {"description": "`review_unavailable`: the submission is not kept"},
 }
 _ENTRY_ERRORS: dict[int | str, dict[str, Any]] = {
     404: {"description": "`project_not_found`"},
     409: {
         "description": "`project_not_validated`, `entry_already_added`, `profile_required`, "
-        "`profile_draft_pending` ou `profile_projects_full`"
+        "`profile_draft_pending` or `profile_projects_full`"
     },
 }
 _IMAGE_RESPONSE: dict[int | str, dict[str, Any]] = {
@@ -99,12 +99,12 @@ _IMAGE_RESPONSE: dict[int | str, dict[str, Any]] = {
             for media in ("image/png", "image/jpeg", "image/webp")
         }
     },
-    404: {"description": "`project_not_found` ou `screenshot_not_found`"},
+    404: {"description": "`project_not_found` or `screenshot_not_found`"},
 }
 
 
 def get_projects_runtime(conn: HTTPConnection) -> ProjectsRuntime:
-    """Les projets ouverts par le lifespan (`app.state.daily.projects`)."""
+    """The projects runtime opened by the lifespan (`app.state.daily.projects`)."""
     runtime: ProjectsRuntime = conn.app.state.daily.projects
     return runtime
 
@@ -116,7 +116,7 @@ ProjectsDep = Annotated[ProjectsRuntime, Depends(get_projects_runtime)]
 async def get_projects(
     current: CurrentUserDep, db: Db, rt: ProjectsDep, status: ProjectStatus | None = None
 ) -> list[ProjectSummary]:
-    """Le Portfolio : programme, semaine et rang de chaque projet ; `status` filtre."""
+    """The Portfolio: program, week and rank of each project; `status` filters."""
     return await list_projects(rt, db, current.id, status)
 
 
@@ -126,14 +126,14 @@ async def get_projects(
     status_code=status.HTTP_201_CREATED,
     responses={
         404: {"description": "`module_not_found`"},
-        409: {"description": "`project_exists` ou `module_skipped`"},
+        409: {"description": "`project_exists` or `module_skipped`"},
     },
 )
 async def post_project(
     body: ProjectCreateIn, current: CurrentUserDep, rt: ProjectsDep
 ) -> ProjectOut:
-    """Écrit le mini projet d'un module en direct : l'énoncé est celui de January ou de Claude,
-    sans agent ni appel au modèle ; le projet est « à faire »."""
+    """Writes a module's mini project directly: the brief is January's or Claude's,
+    with no agent and no model call; the project is "to do"."""
     return await create_project(rt, current.id, body)
 
 
@@ -142,13 +142,15 @@ async def post_project(
     response_model=ProjectOut,
     responses={
         404: {"description": "`project_not_found`"},
-        409: {"description": "`project_not_editable` : le projet est rendu, évalué ou validé"},
+        409: {
+            "description": "`project_not_editable`: the project is submitted, reviewed or validated"
+        },
     },
 )
 async def patch_one_project(
     project_id: ProjectId, body: ProjectBriefPatch, current: CurrentUserDep, rt: ProjectsDep
 ) -> ProjectOut:
-    """Retouche l'énoncé d'un projet sans rendu, sans agent."""
+    """Edits the brief of a project without a submission, with no agent."""
     return await patch_project(rt, current.id, project_id, body)
 
 
@@ -194,9 +196,9 @@ async def post_submit(
     screenshots: Annotated[list[UploadFile] | None, File()] = None,
     github_claim_id: Annotated[UUID | None, Form()] = None,
 ) -> SessionStarted:
-    """Rend le projet : un lien http(s) et/ou une description (4 000 caractères au plus), jusqu'à
-    cinq captures PNG, JPEG ou WebP de 5 Mo (vérifiées par leurs octets, jamais par leur nom).
-    Les captures ne sont pas envoyées au modèle : elles sont montrées dans le Portfolio."""
+    """Submits the project: an http(s) link and/or a description (4,000 characters at most), up to
+    five PNG, JPEG or WebP screenshots of 5 MB (checked by their bytes, never by their name).
+    Screenshots are not sent to the model: they are shown in the Portfolio."""
     return await submit_project(
         rt,
         current.id,
@@ -220,8 +222,8 @@ async def get_screenshot(
     rt: ProjectsDep,
     submission: Annotated[int, Query(ge=1, le=10)] = 1,
 ) -> Response:
-    """La capture `number` (de 1 à 5) du rendu `submission` (1 : le dernier, 2 : celui d'avant…),
-    dans son type d'origine, jamais mise en cache."""
+    """Screenshot `number` (1 to 5) of submission `submission` (1: the latest, 2: the one before…),
+    in its original type, never cached."""
     data, media_type = await screenshot_file(rt, current.id, project_id, number, submission)
     headers = {
         "Cache-Control": "no-store",
@@ -240,8 +242,8 @@ async def patch_one_draft(
     current: CurrentUserDep,
     rt: ProjectsDep,
 ) -> ProjectOut:
-    """Retouche un brouillon : `entry` pour `profile_entry`, `content` (3 000 caractères au plus)
-    pour les autres. Un brouillon « à vérifier » modifié est recontrôlé."""
+    """Edits a draft: `entry` for `profile_entry`, `content` (3,000 characters at most)
+    for the others. An edited "to check" draft is checked again."""
     return await patch_draft(rt, current.id, project_id, kind, body)
 
 
@@ -249,7 +251,7 @@ async def patch_one_draft(
 async def post_profile_entry(
     project_id: ProjectId, body: ProfileEntryIn, current: CurrentUserDep, rt: ProjectsDep
 ) -> ProjectOut:
-    """Ajoute le projet validé au profil maître (nouvelle version validée) : le seul chemin."""
+    """Adds the validated project to the master profile (new validated version): the only path."""
     return await add_profile_entry(rt, current.id, project_id, body)
 
 
@@ -266,7 +268,7 @@ async def post_profile_entry(
 async def post_brief(
     project_id: ProjectId, current: CurrentUserDep, rt: ProjectsDep
 ) -> SessionStarted:
-    """Relance l'énoncé d'un projet dont les trois essais ont échoué."""
+    """Restarts the brief of a project whose three attempts failed."""
     return await retry_brief(rt, current.id, project_id)
 
 
@@ -277,15 +279,15 @@ async def post_brief(
     responses={
         404: {"description": "`project_not_found`"},
         409: {
-            "description": "`project_not_validated`, `drafts_present` (le projet a déjà ses "
-            "brouillons) ou `review_in_progress` (`details.session_id`)"
+            "description": "`project_not_validated`, `drafts_present` (the project already has its "
+            "drafts) or `review_in_progress` (`details.session_id`)"
         },
-        503: {"description": "`drafts_unavailable` : le lancement est refusé, rien n'est changé"},
+        503: {"description": "`drafts_unavailable`: the launch is refused, nothing changes"},
     },
 )
 async def post_drafts(
     project_id: ProjectId, current: CurrentUserDep, rt: ProjectsDep
 ) -> SessionStarted:
-    """Relance les brouillons d'un projet validé qui n'en a pas (leur écriture avait échoué,
-    D173 n° 4) : une session les écrit sans refaire l'évaluation."""
+    """Restarts the drafts of a validated project that has none (writing them had failed,
+    D173 no. 4): a session writes them without redoing the review."""
     return await regenerate_drafts(rt, current.id, project_id)

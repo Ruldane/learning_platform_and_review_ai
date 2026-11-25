@@ -12,12 +12,12 @@ interface LessonNavProps {
 export function LessonNav({ lessonId, ready }: LessonNavProps) {
   return (
     <nav className="flex flex-wrap items-center justify-between gap-3">
-      <Link to="/apprendre/lecons" className="text-sm underline underline-offset-2">
+      <Link to="/learn/lessons" className="text-sm underline underline-offset-2">
         {t("lessons.page.back")}
       </Link>
       {ready ? (
         <Link
-          to={`/etudier/session?lecon=${lessonId}`}
+          to={`/study/session?lesson=${lessonId}`}
           className={buttonVariants({ variant: "outline" })}
         >
           {t("lessons.page.study")}

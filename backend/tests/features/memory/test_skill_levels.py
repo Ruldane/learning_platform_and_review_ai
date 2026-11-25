@@ -14,7 +14,7 @@ USER = "u1"
 
 async def _items(factory: Factory) -> list[MemoryItem]:
     async with factory() as db:
-        stmt = select(MemoryItem).where(MemoryItem.kind == "acquis")
+        stmt = select(MemoryItem).where(MemoryItem.kind == "skill")
         return list((await db.execute(stmt)).scalars().all())
 
 
@@ -39,14 +39,14 @@ async def _reflect(runtime: MemoryRuntime, title: str, level: str) -> str:
 async def test_reflect_creates_then_raises_never_lowers(
     runtime: MemoryRuntime, db_session_factory: Factory
 ) -> None:
-    created = await _reflect(runtime, "Pandas", "en_cours")
+    created = await _reflect(runtime, "Pandas", "in_progress")
     [item] = await _items(db_session_factory)
-    assert item.id == created and item.meta["level"] == "en_cours"
+    assert item.id == created and item.meta["level"] == "in_progress"
     assert item.created_by == "strategist" and item.session_id == "s1"
-    assert await _reflect(runtime, "pandas ", "declare") == created  # même nom normalisé
-    assert await _reflect(runtime, "PANDAS", "valide") == created
+    assert await _reflect(runtime, "pandas ", "declared") == created  # même nom normalisé
+    assert await _reflect(runtime, "PANDAS", "validated") == created
     [item] = await _items(db_session_factory)
-    assert item.meta["level"] == "valide"
+    assert item.meta["level"] == "validated"
     assert await _writes(db_session_factory) == [
         ("create", "strategist", "s1", "Programme validé"),
         ("update", "strategist", "s1", "Programme validé"),
@@ -56,64 +56,64 @@ async def test_reflect_creates_then_raises_never_lowers(
 async def test_reflect_creates_above_writable_level_in_two_steps(
     runtime: MemoryRuntime, db_session_factory: Factory
 ) -> None:
-    await _reflect(runtime, "SQL", "prouve")
+    await _reflect(runtime, "SQL", "proven")
     [item] = await _items(db_session_factory)
-    assert item.meta["level"] == "prouve"
+    assert item.meta["level"] == "proven"
     assert [w[0] for w in await _writes(db_session_factory)] == ["create", "update"]
 
 
 async def test_acquis_levels_keep_the_highest_per_name(
     runtime: MemoryRuntime, db_session_factory: Factory
 ) -> None:
-    await _reflect(runtime, "Pandas", "en_cours")
+    await _reflect(runtime, "Pandas", "in_progress")
     async with db_session_factory() as db:
         db.add(
             MemoryItem(
                 user_id=USER,
-                kind="acquis",
+                kind="skill",
                 title="PANDAS",
                 text="autre",
                 created_by="user",
                 content_hash="h-bis",
-                meta={"level": "valide"},
+                meta={"level": "validated"},
             )
         )
         db.add(
             MemoryItem(
                 user_id="autre",
-                kind="acquis",
+                kind="skill",
                 title="Rust",
                 text="r",
                 created_by="user",
                 content_hash="h-rust",
-                meta={"level": "prouve"},
+                meta={"level": "proven"},
             )
         )
         await db.commit()
         levels = await acquis_levels(db, USER)
-    assert levels == {"pandas": "valide"}
+    assert levels == {"pandas": "validated"}
 
 
 async def test_allow_lower_is_the_only_way_down(
     runtime: MemoryRuntime, db_session_factory: Factory
 ) -> None:
     """D101 : la rétrogradation de F9 (deux échecs de fiches) est la seule baisse admise."""
-    await _reflect(runtime, "Pandas", "valide")
-    await _reflect(runtime, "Pandas", "en_cours")
+    await _reflect(runtime, "Pandas", "validated")
+    await _reflect(runtime, "Pandas", "in_progress")
     [item] = await _items(db_session_factory)
-    assert item.meta["level"] == "valide"  # sans `allow_lower` : jamais baissé
+    assert item.meta["level"] == "validated"  # sans `allow_lower` : jamais baissé
     await reflect_skill_level(
         runtime,
         USER,
         title="pandas",
-        level="en_cours",
+        level="in_progress",
         author="user",
         session_id=None,
         reason="Deux échecs de suite",
         allow_lower=True,
     )
     [item] = await _items(db_session_factory)
-    assert item.meta["level"] == "en_cours"
+    assert item.meta["level"] == "in_progress"
     assert (await _writes(db_session_factory))[-1] == (
         "update",
         "user",

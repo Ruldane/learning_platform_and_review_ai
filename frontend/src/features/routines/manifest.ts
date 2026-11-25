@@ -3,8 +3,8 @@ import { RoutinesPage } from "./pages/RoutinesPage";
 
 export const routinesManifest: FeatureManifest = {
   id: "routines",
-  routes: [{ path: "reglages/routines", Component: RoutinesPage }],
+  routes: [{ path: "settings/routines", Component: RoutinesPage }],
   nav: [
-    { section: "settings", labelKey: "routines.title", path: "/reglages/routines", order: 6.5 },
+    { section: "settings", labelKey: "routines.title", path: "/settings/routines", order: 6.5 },
   ],
 };

@@ -7,7 +7,7 @@ type Over = Record<string, unknown>;
 
 /** Un débrief (`DebriefOut`) : quatre notes, trois points forts, trois points à corriger. */
 export const debriefOut = (over: Over = {}) => ({
-  scores: { clarte: 4, structure: 3, profondeur_technique: 2, adequation: 5 },
+  scores: { clarity: 4, structure: 3, technical_depth: 2, role_fit: 5 },
   strengths: ["Exemples concrets", "Ton posé", "Résultats chiffrés"],
   fixes: ["Structure plus nette", "Plus de détails techniques", "Une conclusion"],
   weakest_index: 1,
@@ -22,7 +22,7 @@ export const debriefOut = (over: Over = {}) => ({
 export const exchangeOut = (index: number, over: Over = {}) => ({
   index,
   question: `Question ${index + 1} du recruteur ?`,
-  criterion: "clarte",
+  criterion: "clarity",
   source: "general",
   answer: `Ma réponse ${index + 1}.`,
   follow_up: null,

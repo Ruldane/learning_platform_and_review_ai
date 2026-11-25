@@ -19,7 +19,7 @@ interface DrawerBodyProps {
 
 /** Seuls les niveaux « déclaré » et « en cours » se modifient à la main (SPEC 4.2). */
 function toEdit(item: MemoryItemDetailView): ItemEdit {
-  const level = item.level === "declare" || item.level === "en_cours" ? item.level : null;
+  const level = item.level === "declared" || item.level === "in_progress" ? item.level : null;
   return { title: item.title, text: item.text, tags: item.tags, level };
 }
 

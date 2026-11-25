@@ -27,44 +27,53 @@ ActivitySource = Callable[
     [AsyncSession, str, datetime | None, datetime | None, int], Awaitable[list[ActivityItem]]
 ]
 
-# Noms lisibles des agents (miroir du front, `messages/agents.ts`) et des tâches planifiées.
+# Display names for agents (matching `messages/agents.ts`) and scheduled jobs.
 AGENT_NAMES: dict[str, str] = {
-    "moderator": "Le Modérateur",
-    "strategist": "Le Stratège",
-    "practitioner": "Le Praticien",
-    "scout": "L'Éclaireur",
-    "skeptic": "Le Sceptique",
-    "scribe": "Le Scribe",
-    "writer": "Le Rédacteur",
-    "verifier": "Le Vérificateur",
-    "archivist": "L'Archiviste",
-    "ats_reader": "Le Lecteur ATS",
-    "recruiter": "Le Recruteur",
-    "designer": "Le Maquettiste",
-    "analyst": "L'Analyste",
-    "examiner": "L'Examinateur",
-    "interviewer": "L'Intervieweur",
-    "tutor": "Le Tuteur",
-    "tracker": "L'Assistant de suivi",
-    "manager": "Le Manager",
-    "colleague": "Le Futur collègue",
-    "demo_proponent": "L'Avocat",
-    "demo_critic": "Le Critique",
-    "professor": "Le Professeur",
-    "exercise_writer": "L'Auteur d'exercices",
+    "moderator": "Moderator",
+    "strategist": "Strategist",
+    "practitioner": "Practitioner",
+    "scout": "Scout",
+    "skeptic": "Skeptic",
+    "scribe": "Scribe",
+    "writer": "Writer",
+    "verifier": "Verifier",
+    "archivist": "Archivist",
+    "ats_reader": "ATS reader",
+    "recruiter": "Recruiter",
+    "designer": "Layout designer",
+    "analyst": "Analyst",
+    "examiner": "Examiner",
+    "interviewer": "Interviewer",
+    "tutor": "Tutor",
+    "tracker": "Tracking assistant",
+    "manager": "Manager",
+    "colleague": "Future colleague",
+    "demo_proponent": "Advocate",
+    "demo_critic": "Critic",
+    "professor": "Professor",
+    "exercise_writer": "Exercise author",
+    "boss_reviewer": "Challenge reviewer",
+    "code_prosecutor": "Prosecutor",
+    "code_defender": "Defender",
+    "oncall_reviewer": "Operations lead",
+    "lesson_professor": "Lesson tutor",
+    "training_tutor": "Training tutor",
+    "brain_librarian": "Knowledge librarian",
+    "podcast_host": "Podcast host",
+    "offers_adviser": "Offers assistant",
 }
-DEFAULT_AGENT = "Un agent"
+DEFAULT_AGENT = "An agent"
 JOB_NAMES: dict[str, str] = {
-    "lessons_due": "préparation des leçons",
-    "weekly_review": "bilan de la semaine",
-    "skill_snapshots": "relevé des compétences",
-    "reminders_due": "relances",
-    "ats_refresh": "mise à jour des règles ATS",
-    "market_radar": "radar du marché",
-    "daily_brief": "brief du matin",
-    "project_briefs": "énoncés des projets",
+    "lessons_due": "lesson preparation",
+    "weekly_review": "weekly review",
+    "skill_snapshots": "skills snapshot",
+    "reminders_due": "follow-up reminders",
+    "ats_refresh": "ATS rules update",
+    "market_radar": "market radar",
+    "daily_brief": "morning brief",
+    "project_briefs": "project briefs",
 }
-DEFAULT_JOB = "tâche de fond"
+DEFAULT_JOB = "background job"
 
 
 async def lessons_source(
@@ -72,14 +81,14 @@ async def lessons_source(
 ) -> list[ActivityItem]:
     items: list[ActivityItem] = []
     for lesson in await recent_lessons(db, user_id, after, before, limit):
-        label = "Leçon prête" if lesson.status == "ready" else "Leçon en échec"
+        label = "Lesson ready" if lesson.status == "ready" else "Lesson failed"
         items.append(
             ActivityItem(
                 id=f"lesson:{lesson.id}:{lesson.status}",
                 kind="lesson",
                 at=lesson.at,
-                title=f"{label} : {lesson.title}",
-                link=f"/apprendre/lecons/{lesson.id}",
+                title=f"{label}: {lesson.title}",
+                link=f"/learn/lessons/{lesson.id}",
             )
         )
     return items
@@ -93,8 +102,8 @@ async def radar_source(
             id=f"radar:{run.id}:done",
             kind="radar",
             at=run.at,
-            title=f"Relevé du radar : {run.offers_read} offres lues, {run.blocked_count} bloquées",
-            link=f"/carriere/radar/{run.id}",
+            title=f"Radar scan: {run.offers_read} offers read, {run.blocked_count} blocked",
+            link=f"/career/radar/{run.id}",
         )
         for run in await recent_runs(db, user_id, after, before, limit)
     ]
@@ -108,7 +117,7 @@ async def brief_source(
             id=f"brief:{brief.id}:ready",
             kind="brief",
             at=brief.at,
-            title="Brief du jour prêt",
+            title="Daily brief ready",
             link="/",
         )
         for brief in await recent_briefs(db, user_id, after, before, limit)
@@ -121,7 +130,7 @@ async def project_source(
     items: list[ActivityItem] = []
     for project in await recent_projects(db, user_id, after, before, limit):
         validated = project.verdict == "validated"
-        label = "Projet validé" if validated else "Projet à reprendre"
+        label = "Project approved" if validated else "Project needs revision"
         items.append(
             ActivityItem(
                 id=(
@@ -131,8 +140,8 @@ async def project_source(
                 ),
                 kind="project",
                 at=project.at,
-                title=f"{label} : {project.title}",
-                link=f"/competences/portfolio/{project.id}",
+                title=f"{label}: {project.title}",
+                link=f"/skills/portfolio/{project.id}",
             )
         )
     return items
@@ -149,7 +158,7 @@ async def ide_source(
             id=f"ide:{item.id}:passed",
             kind="project",
             at=item.at,
-            title=f"Exercice de code réussi : {item.title}",
+            title=f"Coding exercise passed: {item.title}",
             link=f"/code/{item.id}",
         )
         for item in await recent_passes(db, user_id, after, before, limit)
@@ -165,11 +174,11 @@ async def memory_source(
             kind="memory",
             at=write.at,
             title=(
-                f"{AGENT_NAMES.get(write.author, DEFAULT_AGENT)} a écrit en mémoire : "
+                f"{AGENT_NAMES.get(write.author, DEFAULT_AGENT)} wrote to memory: "
                 f"{write.item_title}"
             ),
             detail=write.reason,
-            link="/memoire",
+            link="/memory",
         )
         for write in await recent_agent_writes(db, user_id, after, before, limit)
     ]
@@ -184,11 +193,11 @@ async def job_failures_source(
             kind="job_failed",
             at=job.finished_at or job.started_at,
             title=(
-                f"Un passage planifié a échoué ({JOB_NAMES.get(job.name, DEFAULT_JOB)}) : "
+                f"Scheduled run failed ({JOB_NAMES.get(job.name, DEFAULT_JOB)}). "
                 + (
-                    "abandonné, aucun nouvel essai."
+                    "No further attempts."
                     if job.attempts >= MAX_ATTEMPTS or job.error_code == "abandoned"
-                    else "nouvel essai au prochain passage."
+                    else "Will retry on the next run."
                 )
             ),
         )

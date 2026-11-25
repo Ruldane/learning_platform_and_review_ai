@@ -36,7 +36,7 @@ class InvestigationOperations(BaseModel):
     @model_validator(mode="after")
     def unique(self) -> Self:
         if len(set(self.operations)) != len(self.operations):
-            raise ValueError("Une opération ne peut être ajoutée qu’une fois.")
+            raise ValueError("An operation can only be added once.")
         return self
 
 

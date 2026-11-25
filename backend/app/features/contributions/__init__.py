@@ -1,1 +1,1 @@
-"""Issues d’apprentissage et suivi des contributions ouvertes."""
+"""Learning issues and tracking of open-source contributions."""

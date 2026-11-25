@@ -12,7 +12,7 @@ const covers = (path: string, pathname: string) =>
 
 /**
  * L'entrée active : « / » seulement sur l'accueil ; les autres restent actives sur leurs
- * sous-routes (la fiche ouverte sous `/candidatures/:id`), l'entrée la plus précise l'emportant
+ * sous-routes (la fiche ouverte sous `/applications/:id`), l'entrée la plus précise l'emportant
  * quand une autre entrée est elle-même une sous-route (jamais deux entrées actives à la fois).
  */
 export function currentNav(groups: NavGroup[], pathname: string): CurrentNav | null {

@@ -28,13 +28,17 @@ function useCreateRun() {
   });
 }
 
-export function BlindAssessmentPage() {
-  const queries = useQueryClient();
-  const history = useRef<HTMLHeadingElement>(null);
-  const options = useQuery({
+function useAssessmentOptions() {
+  return useQuery({
     queryKey: ["blind-assessment", "options"],
     queryFn: ({ signal }) => listOptions(signal),
   });
+}
+
+export function BlindAssessmentPage() {
+  const queries = useQueryClient();
+  const history = useRef<HTMLHeadingElement>(null);
+  const options = useAssessmentOptions();
   const runs = useAssessmentRuns();
   const create = useCreateRun();
   const launch = useMutation({
@@ -51,7 +55,12 @@ export function BlindAssessmentPage() {
       {options.isPending || runs.isPending ? <LoadingState label={t("blindAssessment.loading")} /> : null}
       {options.error ? <ErrorState message={errorMessage(options.error)} onRetry={() => void options.refetch()} /> : null}
       {sourceOptions && sourceOptions.length < 2 ? (
-        <p>{t("blindAssessment.insufficient")} <Link className="underline" to="/carriere/cv/versions">{t("blindAssessment.versions")}</Link></p>
+        <p>
+          {t("blindAssessment.insufficient")}{" "}
+          <Link className="underline" to="/career/cv/versions">
+            {t("blindAssessment.versions")}
+          </Link>
+        </p>
       ) : null}
       {options.data && sourceOptions && sourceOptions.length >= 2 ? (
         <BlindForm

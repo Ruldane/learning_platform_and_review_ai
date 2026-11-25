@@ -10,8 +10,8 @@ import { openStream, renderCv } from "@/test/cvHarness";
 /** Monte la revue `rv1` (session `r1`) avec les routes de `cvApi`. */
 function renderReview(api: Parameters<typeof renderCv>[3] = {}) {
   return renderCv(
-    "/carriere/cv/revues/:reviewId",
-    "/carriere/cv/revues/rv1",
+    "/career/cv/reviews/:reviewId",
+    "/career/cv/reviews/rv1",
     (createSocket) => <ReviewPage pollMs={40} createSocket={createSocket} />,
     api,
   );
@@ -23,18 +23,18 @@ describe("ReviewPage: reading and deciding", () => {
   it("reads the whole review on one page", async () => {
     const { sockets } = renderReview();
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Revue du CV" }),
+      await screen.findByRole("heading", { level: 1, name: "CV review" }),
     ).toBeInTheDocument();
     const stream = await openStream(sockets, "r1");
     stream.push(councilEvents("r1").message("m1", "Je lis ton CV comme un ATS.", "ats_reader"));
     expect(await screen.findByText("Je lis ton CV comme un ATS.")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Indicateurs" })).toBeInTheDocument();
-    expect(screen.getByText(/Couverture des exigences : 50 %/)).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Modifications proposées" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Rapport" })).toBeInTheDocument();
-    expect(screen.getByText("Logiciel de recrutement détecté : Greenhouse")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Indicators" })).toBeInTheDocument();
+    expect(screen.getByText(/Requirement coverage: 50%/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Suggested changes" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Report" })).toBeInTheDocument();
+    expect(screen.getByText("Applicant tracking system detected: Greenhouse")).toBeInTheDocument();
     expect(
-      screen.getByText(/Mots clés de l'offre à appuyer par un fait ou à acquérir : Kubernetes/),
+      screen.getByText(/Posting keywords to back up with a fact or to acquire: Kubernetes/),
     ).toBeInTheDocument();
   });
 
@@ -70,7 +70,7 @@ describe("ReviewPage: reading and deciding", () => {
     expect(
       await within(first).findByText("Pipelines de 2 To par jour", { selector: "li" }),
     ).toBeInTheDocument();
-    await user.click(within(first).getByRole("button", { name: "Accepter" }));
+    await user.click(within(first).getByRole("button", { name: "Accept" }));
     await waitFor(() => expect(state.patches).toHaveLength(1));
     expect(state.patches[0]).toEqual({ id: "m1", body: { status: "accepted", confirm: false } });
   });
@@ -87,11 +87,11 @@ describe("ReviewPage: reading and deciding", () => {
         return HttpResponse.json({ updated: 1, skipped: ["m2"] });
       },
     });
-    await user.click(await screen.findByRole("button", { name: "Tout accepter" }));
+    await user.click(await screen.findByRole("button", { name: "Accept all" }));
     await waitFor(() => expect(state.bulks).toHaveLength(1));
     expect(state.bulks[0]).toEqual({ ids: ["m1"], status: "accepted" });
-    expect(await screen.findByText(/1 modification à confirmer une par une/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Tout accepter" })).toBeDisabled();
+    expect(await screen.findByText(/1 change to confirm individually/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Accept all" })).toBeDisabled();
   });
 
   it("accepts a modification to confirm only with the confirmation", async () => {
@@ -100,9 +100,9 @@ describe("ReviewPage: reading and deciding", () => {
     const toConfirm = screen.getAllByRole("article")[1]!;
     expect(within(toConfirm).getByText("Outil absent : Kubernetes.")).toBeInTheDocument();
     await user.click(
-      within(toConfirm).getByRole("checkbox", { name: "Je confirme que c'est vrai" }),
+      within(toConfirm).getByRole("checkbox", { name: "I confirm this is true" }),
     );
-    await user.click(within(toConfirm).getByRole("button", { name: "Accepter" }));
+    await user.click(within(toConfirm).getByRole("button", { name: "Accept" }));
     await waitFor(() => expect(state.patches).toHaveLength(1));
     expect(state.patches[0]).toEqual({ id: "m2", body: { status: "accepted", confirm: true } });
   });
@@ -110,11 +110,11 @@ describe("ReviewPage: reading and deciding", () => {
   it("sends the rewritten text with the decision", async () => {
     const { user, state } = renderReview();
     const first = (await screen.findAllByRole("article"))[0]!;
-    await user.click(within(first).getByRole("button", { name: "Modifier" }));
-    const field = within(first).getByLabelText("Texte modifié");
+    await user.click(within(first).getByRole("button", { name: "Edit" }));
+    const field = within(first).getByLabelText("Edited text");
     await user.clear(field);
     await user.type(field, "Pipelines de 2 To");
-    await user.click(within(first).getByRole("button", { name: "Enregistrer et accepter" }));
+    await user.click(within(first).getByRole("button", { name: "Save and accept" }));
     await waitFor(() => expect(state.patches).toHaveLength(1));
     expect(state.patches[0]).toEqual({
       id: "m1",
@@ -129,15 +129,15 @@ describe("ReviewPage: reading and deciding", () => {
     await screen.findAllByRole("article");
     const toConfirm = screen.getAllByRole("article")[1]!;
     await user.click(
-      within(toConfirm).getByRole("checkbox", { name: "Je confirme que c'est vrai" }),
+      within(toConfirm).getByRole("checkbox", { name: "I confirm this is true" }),
     );
-    await user.click(within(toConfirm).getByRole("button", { name: "Accepter" }));
+    await user.click(within(toConfirm).getByRole("button", { name: "Accept" }));
     expect(
       await screen.findByText(
-        "Un brouillon de ton profil attend ta validation : valide-le avant de confirmer ce fait.",
+        "A draft of your profile is waiting for approval: approve it before confirming this fact.",
       ),
     ).toBeInTheDocument();
-    await user.click(screen.getByRole("link", { name: "Valider mon profil" }));
+    await user.click(screen.getByRole("link", { name: "Approve my profile" }));
     expect(await screen.findByText("Page du profil")).toBeInTheDocument();
   });
 
@@ -146,10 +146,10 @@ describe("ReviewPage: reading and deciding", () => {
       patchModification: () => refusal(409, "review_closed", "Revue terminée."),
     });
     const first = (await screen.findAllByRole("article"))[0]!;
-    await user.click(within(first).getByRole("button", { name: "Refuser" }));
+    await user.click(within(first).getByRole("button", { name: "Refuse" }));
     expect(
       await screen.findByText(
-        "Cette revue est terminée : lance une nouvelle revue pour un nouveau PDF.",
+        "This review is finished: start a new review for a new PDF.",
       ),
     ).toBeInTheDocument();
   });
@@ -157,19 +157,19 @@ describe("ReviewPage: reading and deciding", () => {
   it("freezes the decisions once the review is done", async () => {
     renderReview({ reviews: [reviewOut({ status: "done", waiting_output: false })] });
     expect(
-      await screen.findByText(/La revue est terminée : les décisions sont figées/),
+      await screen.findByText(/Review finished: your decisions and versions stay here/),
     ).toBeInTheDocument();
     const [first] = await screen.findAllByRole("article");
-    expect(within(first!).getByRole("button", { name: "Accepter" })).toBeDisabled();
+    expect(within(first!).getByRole("button", { name: "Accept" })).toBeDisabled();
   });
 });
 
 describe("ReviewPage: states", () => {
   it("shows a loading state, then the review", async () => {
     renderReview();
-    expect(screen.getByText("Chargement de la revue…")).toBeInTheDocument();
+    expect(screen.getByText("Loading review…")).toBeInTheDocument();
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Revue du CV" }),
+      await screen.findByRole("heading", { level: 1, name: "CV review" }),
     ).toBeInTheDocument();
   });
 
@@ -177,12 +177,12 @@ describe("ReviewPage: states", () => {
     const { user } = renderReview({
       review: () => refusal(404, "review_not_found", "Introuvable."),
     });
-    expect(await screen.findByText("Revue introuvable")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Voir mes versions" }));
+    expect(await screen.findByText("Review not found")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "View my versions" }));
     expect(await screen.findByText("Page des versions")).toBeInTheDocument();
   });
 
-  it("shows an error with « Réessayer »", async () => {
+  it("shows an error with « Retry »", async () => {
     let failing = true;
     const { user } = renderReview({
       review: () =>
@@ -190,9 +190,9 @@ describe("ReviewPage: states", () => {
     });
     expect(await screen.findByRole("alert", {}, { timeout: 3000 })).toBeInTheDocument();
     failing = false;
-    await user.click(screen.getByRole("button", { name: "Réessayer" }));
+    await user.click(screen.getByRole("button", { name: "Retry" }));
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Revue du CV" }),
+      await screen.findByRole("heading", { level: 1, name: "CV review" }),
     ).toBeInTheDocument();
   });
 });

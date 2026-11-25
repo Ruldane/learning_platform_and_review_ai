@@ -14,7 +14,7 @@ function setup(api: Parameters<typeof postingsApi>[0] = {}) {
 const alert = (over: Record<string, unknown> = {}) => ({
   application_id: "ap9",
   level: "probable",
-  message: "Attention, tu as déjà une fiche chez Société Fictive pour ce poste.",
+  message: "You already have an application at Société Fictive for this role.",
   company: "Société Fictive",
   title: "Ingénieure données (H/F)",
   status: "applied",
@@ -28,9 +28,10 @@ const check =
   () =>
     HttpResponse.json({ own: null, alerts: [], info: [], ...over });
 
-const block = () => screen.findByRole("region", { name: "Candidature pour cette offre" });
+const block = () => screen.findByRole("region", { name: "Application for this posting" });
+const CREATE = "Create the application";
 
-describe("PostingPage, candidature", () => {
+describe("PostingPage applications", () => {
   beforeEach(() => useSessionStore.getState().reset("a1"));
 
   it("checks the posting and offers to create the application when there is none", async () => {
@@ -38,8 +39,8 @@ describe("PostingPage, candidature", () => {
     const section = within(await block());
     expect(state.checks).toEqual(["?posting_id=p1"]);
     expect(section.queryByRole("alert")).toBeNull();
-    await user.click(section.getByRole("button", { name: "Créer la candidature" }));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/candidatures/ap1"));
+    await user.click(section.getByRole("button", { name: CREATE }));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/applications/ap1"));
     expect(state.applications).toEqual([{ posting_id: "p1", status: "to_apply" }]);
   });
 
@@ -57,29 +58,28 @@ describe("PostingPage, candidature", () => {
     });
     const section = within(await block());
     expect(
-      section.getByText(
-        "Tu as déjà une candidature pour cette offre : Société Fictive, Ingénieure données (Postulée).",
-      ),
+      section.getByText(/You already have an application for this posting: Société Fictive/),
     ).toBeVisible();
-    expect(section.queryByRole("button", { name: "Créer la candidature" })).toBeNull();
-    await user.click(section.getByRole("button", { name: "Ouvrir la candidature" }));
-    expect(router.state.location.pathname).toBe("/candidatures/ap2");
+    expect(section.getByText(/Ingénieure données \(Applied\)/)).toBeVisible();
+    expect(section.queryByRole("button", { name: CREATE })).toBeNull();
+    await user.click(section.getByRole("button", { name: "Open the application" }));
+    expect(router.state.location.pathname).toBe("/applications/ap2");
   });
 
   it("shows the duplicate alert of the check, with its three choices and no create button", async () => {
     const { user, router } = setup({ check: check({ alerts: [alert()] }) });
     const section = within(await block());
-    expect(section.getByRole("alert")).toHaveTextContent("Doublon probable");
-    expect(section.getByText(/tu as déjà une fiche chez Société Fictive/)).toBeVisible();
-    expect(section.queryByRole("button", { name: "Créer la candidature" })).toBeNull();
-    await user.click(section.getByRole("button", { name: "Ouvrir la fiche existante" }));
-    expect(router.state.location.pathname).toBe("/candidatures/ap9");
+    expect(section.getByRole("alert")).toHaveTextContent("Likely duplicate");
+    expect(section.getByText(/You already have an application at Société Fictive/)).toBeVisible();
+    expect(section.queryByRole("button", { name: CREATE })).toBeNull();
+    await user.click(section.getByRole("button", { name: "Open the existing application" }));
+    expect(router.state.location.pathname).toBe("/applications/ap9");
   });
 
-  it("creates the application with « C'est un autre poste » and the confirmed ones", async () => {
+  it("creates the application when confirmed as a different role", async () => {
     const { user, state, router } = setup({ check: check({ alerts: [alert()] }) });
-    await user.click(await screen.findByRole("button", { name: "C'est un autre poste" }));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/candidatures/ap1"));
+    await user.click(await screen.findByRole("button", { name: "It's a different role" }));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/applications/ap1"));
     expect(state.applications).toEqual([
       { posting_id: "p1", status: "to_apply", distinct_from: ["ap9"] },
     ]);
@@ -90,14 +90,14 @@ describe("PostingPage, candidature", () => {
       check: check({ alerts: [alert()] }),
       application: () =>
         HttpResponse.json(
-          apiError("application_duplicate", "Existe déjà.", { alerts: [alert()] }),
+          apiError("application_duplicate", "Application already exists.", { alerts: [alert()] }),
           { status: 409 },
         ),
     });
-    await user.click(await screen.findByRole("button", { name: "Annuler" }));
+    await user.click(await screen.findByRole("button", { name: "Cancel" }));
     expect(screen.queryByRole("alert")).toBeNull();
-    await user.click(screen.getByRole("button", { name: "Créer la candidature" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("Doublon probable");
+    await user.click(screen.getByRole("button", { name: CREATE }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Likely duplicate");
     expect(state.applications).toHaveLength(1);
   });
 
@@ -107,39 +107,41 @@ describe("PostingPage, candidature", () => {
         info: [
           alert({
             level: "info",
-            message: "Pour info : tu as postulé chez Société Fictive il y a 12 jours.",
+            message: "You applied at Société Fictive 12 days ago.",
           }),
         ],
       }),
     });
     const section = within(await block());
-    expect(section.getByRole("note")).toHaveTextContent("Pour info : tu as postulé chez");
+    expect(section.getByRole("note")).toHaveTextContent("You applied at Société Fictive");
     expect(section.queryByRole("alert")).toBeNull();
-    expect(section.getByRole("button", { name: "Créer la candidature" })).toBeEnabled();
+    expect(section.getByRole("button", { name: CREATE })).toBeEnabled();
   });
 
   it("opens the application the posting already has when the server says it exists (409)", async () => {
     const { user, router } = setup({
       application: () =>
         HttpResponse.json(
-          apiError("application_exists", "Cette offre a déjà une candidature.", {
+          apiError("application_exists", "This posting already has an application.", {
             application_id: "ap5",
           }),
           { status: 409 },
         ),
     });
-    await user.click(await screen.findByRole("button", { name: "Créer la candidature" }));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/candidatures/ap5"));
+    await user.click(await screen.findByRole("button", { name: CREATE }));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/applications/ap5"));
   });
 
   it("says why the creation failed and keeps the button", async () => {
     const { user } = setup({
       application: () =>
-        HttpResponse.json(apiError("internal_error", "Le serveur ne répond pas."), { status: 500 }),
+        HttpResponse.json(apiError("internal_error", "The server is not responding."), {
+          status: 500,
+        }),
     });
-    await user.click(await screen.findByRole("button", { name: "Créer la candidature" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("Le serveur ne répond pas.");
-    expect(screen.getByRole("button", { name: "Créer la candidature" })).toBeEnabled();
+    await user.click(await screen.findByRole("button", { name: CREATE }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("The server is not responding.");
+    expect(screen.getByRole("button", { name: CREATE })).toBeEnabled();
   });
 
   it("says when the check fails, with a retry", async () => {
@@ -148,14 +150,14 @@ describe("PostingPage, candidature", () => {
       check: () => {
         calls += 1;
         return calls === 1
-          ? HttpResponse.json(apiError("internal_error", "Panne."), { status: 500 })
+          ? HttpResponse.json(apiError("internal_error", "Unavailable."), { status: 500 })
           : HttpResponse.json({ own: null, alerts: [], info: [] });
       },
     });
     expect(
-      await screen.findByText("La recherche d'une candidature existante a échoué. Panne."),
+      await screen.findByText("The search for an existing application failed. Unavailable."),
     ).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "Réessayer" }));
-    expect(await screen.findByRole("button", { name: "Créer la candidature" })).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+    expect(await screen.findByRole("button", { name: CREATE })).toBeVisible();
   });
 });

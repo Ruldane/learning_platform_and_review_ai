@@ -1,12 +1,12 @@
-"""Port du profil maître vu par l'Archiviste (`ProfileStore`, D124).
+"""Master profile port as seen by the Archivist (`ProfileStore`, D124).
 
-`sources` relit chaque PDF rangé par son fichier (jamais les fragments indexés : rien avant
-l'indexation, fragments seuls, texte invisible repris ; preflight G6), passe sa mise en page et
-garde les blocs visibles dans l'ordre du flux ; les blocs invisibles sont mis de côté pour être
-signalés. `save_draft` range le brouillon une seule fois par session, ids repris de la dernière
-version validée et jamais réattribués (`profile_merge`).
+`sources` re-reads each stored PDF from its file (never the indexed chunks: nothing before
+indexing, chunks alone, invisible text taken back; preflight G6), passes its layout and keeps
+the visible blocks in flow order; the invisible blocks are set aside to be reported.
+`save_draft` stores the draft once per session, ids taken from the last validated version and
+never reassigned (`profile_merge`).
 
-Journaux : identifiants et nombres seulement, jamais un texte du profil ni d'un document (17.2)."""
+Logs: ids and numbers only, never a profile or document text (17.2)."""
 
 import logging
 from collections.abc import Sequence
@@ -34,20 +34,20 @@ HIDDEN_LINE_MAX = 200
 
 
 def document_not_found() -> AppError:
-    return AppError("document_not_found", "Document introuvable.", 404)
+    return AppError("document_not_found", "Document not found.", 404)
 
 
 def not_a_pdf() -> AppError:
-    return AppError("profile_source_invalid", "Le profil maître se tire d'un PDF seulement.", 422)
+    return AppError("profile_source_invalid", "Import the master profile from a PDF.", 422)
 
 
 def _kind(file: StoredFile) -> SourceKind:
-    """LinkedIn s'il est étiqueté ainsi (et pas aussi comme CV), sinon le CV."""
+    """LinkedIn if it is labelled so (and not also as a CV), otherwise the CV."""
     return "linkedin" if "linkedin" in file.tags and "cv" not in file.tags else "cv"
 
 
 def _texts(layout: PdfLayout) -> tuple[str, list[str]]:
-    """Texte visible (blocs dans l'ordre du flux, une page par paragraphe) et lignes invisibles."""
+    """Visible text (blocks in flow order, one page per paragraph) and invisible lines."""
     pages: list[str] = []
     hidden: list[str] = []
     for page in layout.pages:
@@ -57,7 +57,7 @@ def _texts(layout: PdfLayout) -> tuple[str, list[str]]:
 
 
 class AgentProfileStore:
-    """`ProfileStore` de la composition (`app.bootstrap_career`)."""
+    """The composition's `ProfileStore` (`app.bootstrap_career`)."""
 
     def __init__(self, runtime: CvRuntime) -> None:
         self._rt = runtime
@@ -83,14 +83,14 @@ class AgentProfileStore:
         read = [await self._read(user_id, doc_id) for doc_id in dict.fromkeys(document_ids)]
         docs: list[ProfileSource] = []
         hidden: list[str] = []
-        for kind, layout in sorted(read, key=lambda pair: pair[0] != "cv"):  # CV d'abord
+        for kind, layout in sorted(read, key=lambda pair: pair[0] != "cv"):  # CV first
             text, invisible = _texts(layout)
             docs.append(ProfileSource(kind, text))
             hidden += invisible
         if note is not None and note.strip():
             docs.append(ProfileSource("note", note.strip()[:MAX_NOTE_CHARS]))
         logger.info(
-            "Sources du profil : utilisateur %s, %d document(s), %d ligne(s) invisible(s)",
+            "Profile sources: user %s, %d document(s), %d invisible line(s)",
             user_id,
             len(read),
             len(hidden),
@@ -124,7 +124,7 @@ class AgentProfileStore:
             )
             await db.commit()
         logger.info(
-            "Brouillon du profil : utilisateur %s, session %s, version %d",
+            "Profile draft: user %s, session %s, version %d",
             user_id,
             session_id,
             version,

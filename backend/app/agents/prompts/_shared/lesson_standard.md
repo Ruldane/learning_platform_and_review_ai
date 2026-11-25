@@ -1,35 +1,34 @@
-## Norme du chapitre
+## Chapter standard
 
-Introduis une idée à la fois, dans un ordre où chaque étape prépare la suivante. Définis
-chaque notion avant de l'utiliser. Rappelle brièvement une notion déjà vue et renvoie au chapitre
-pertinent quand le programme le précise. Pour une notion nouvelle, explique son rôle, son
-mécanisme, la raison des choix et les cas où l'approche atteint ses limites.
+Introduce one idea at a time, in an order where each step prepares the next. Define each notion
+before using it. Briefly recall a notion already covered and refer to the relevant chapter when
+the program specifies it. For a new notion, explain its role, its mechanism, the reasons for the
+choices and the cases where the approach reaches its limits.
 
-Écris les identifiants, les commentaires et les messages du code en anglais. Écris les explications dans
-la langue de la leçon, le français par défaut. Présente le code par étapes courtes. Avant chaque
-bloc, indique le résultat attendu, puis explique comment lire ce que le bloc produit.
+Write code identifiers, comments and messages in English. Write the explanations in the lesson's
+language, English by default. Present the code in short steps. Before each block, state the
+expected result, then explain how to read what the block produces.
 
-Structure EXACTE, dans cet ordre, avec ces titres tels quels (même en {{ language }}) :
+Use the headings below in this exact order. Keep the headings in English in a {{ language }} lesson.
 {{ title }}
 {% for section in sections %}
 ## {{ section }}
 {% endfor %}
 
-Reprends l'en-tête de niveau 1 tel qu'il est indiqué, en retirant seulement les marqueurs
-d'encadrement du titre.
+Reproduce the level 1 heading as given, removing only the markers that frame the title.
 
-- **Objectifs**. Au plus trois puces sur ce que January saura faire à la fin.
-- **Prérequis**. Les notions déjà introduites, avec un rappel et le renvoi disponible.
-- **L'essentiel en 5 lignes**. Exactement cinq puces.
-- **Explication**. Les notions dans l'ordre avec des sous-titres de niveau 3. Glisse des questions
-  de rappel après les étapes importantes. Termine par une fiche de référence qui rassemble les
-  notions et les décisions à retenir.
-- **Schémas**. Au moins un bloc Mermaid de type `flowchart`. Explique ce que les flèches et les
-  nœuds représentent. Utilise par exemple `flowchart TD` puis `A["Texte"] --> B["Texte"]`.
-- **Exemple travaillé**. Pars d'un cas concret et montre le raisonnement et le résultat.
-- **Erreurs fréquentes**. Donne le symptôme et l'explication de chaque erreur retenue.
-- **Exercice**. Présente le problème, les éléments fournis et le résultat attendu.
-- **Corrigé de l'exercice**. Justifie les étapes de la solution et explique comment la vérifier.
-- **Sources**. Identifie la référence principale. Pour chaque source, indique `[n]` et un lien
-  Markdown vers son adresse exacte.
-- **Auto-évaluation**. Exactement cinq questions numérotées pour restituer et appliquer les notions.
+- **Objectives**. At most three bullets on what January will be able to do at the end.
+- **Prerequisites**. The notions already introduced, with a recap and the available reference.
+- **Key points in 5 lines**. Exactly five bullets.
+- **Explanation**. The notions in order with level 3 subheadings. Insert recall questions after
+  the important steps. End with a reference sheet that gathers the notions and the decisions to
+  remember.
+- **Diagrams**. At least one Mermaid block of type `flowchart`. Explain what the arrows and the
+  nodes represent. Use for example `flowchart TD` then `A["Text"] --> B["Text"]`.
+- **Worked example**. Start from a concrete case and show the reasoning and the result.
+- **Common mistakes**. Give the symptom and the explanation of each error selected.
+- **Exercise**. Present the problem, the elements provided and the expected result.
+- **Solution**. Justify the steps of the solution and explain how to check it.
+- **Sources**. Identify the main reference. For each source, give `[n]` and a Markdown link to
+  its exact address.
+- **Self-assessment**. Exactly five numbered questions to recall and apply the notions.

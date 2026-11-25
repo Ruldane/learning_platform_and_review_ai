@@ -1,8 +1,8 @@
-"""États du tableau du Conseil (SPEC 3.3 : « chaque état est enregistré », « modifications renvoyées
-aux agents »). Le Scribe écrit par le port (upsert par session et étape) ; January retouche une
-scène, enregistrée comme un nouvel état, et sa note part au Conseil comme un message.
+"""Council board states (SPEC 3.3: "each state is saved", "edits sent back to the agents").
+The Scribe writes through the port (upsert by session and step); January edits a scene, saved as
+a new state, and her note goes to the Council as a message.
 
-Journaux : identifiants seulement, jamais une note ni un libellé (SPEC 17.2)."""
+Logs: identifiers only, never a note or a label (SPEC 17.2)."""
 
 import builtins
 import logging
@@ -20,11 +20,11 @@ from app.features.sessions.service import MessageRequest, SessionsService
 
 logger = logging.getLogger(__name__)
 
-NOTE_PREFIX = "[Tableau] "
+NOTE_PREFIX = "[Board] "
 
 
 def board_not_found() -> AppError:
-    return AppError("board_not_found", "État du tableau introuvable.", 404)
+    return AppError("board_not_found", "Board state not found.", 404)
 
 
 async def save_board(
@@ -38,8 +38,8 @@ async def save_board(
     title: str,
     mermaid: str,
 ) -> str:
-    """État du Scribe, upsert par `(session, étape)` : rejoué, le dernier écrit gagne (la base
-    reste alignée sur le dernier `board.update`, D85 §11) et l'id ne change pas."""
+    """Scribe state, upsert by `(session, step)`: on replay, the last write wins (the database
+    stays aligned with the latest `board.update`, D85 §11) and the id does not change."""
     await owned_goal(db, user_id, goal_id)
     repo = BoardRepository(db, user_id)
     key = scribe_key(session_id, step)
@@ -70,9 +70,9 @@ async def list_boards(db: AsyncSession, user_id: str, goal_id: str) -> builtins.
 async def save_edit(
     db: AsyncSession, runtime: AgentRuntime, user_id: str, board_id: str, edit: BoardEdit
 ) -> BoardOut:
-    """Nouvel état « user » (`parent_id` = l'état retouché), commité avant le message ; Conseil
-    ouvert → `user.message` « [Tableau] {note} », lu au tour suivant ; Conseil clos (ou qui se
-    ferme entre-temps) → état gardé, aucun message."""
+    """New "user" state (`parent_id` = the edited state), committed before the message; open
+    Council → `user.message` "[Board] {note}", read on the next turn; closed Council (or one that
+    closes in the meantime) → state kept, no message."""
     repo = BoardRepository(db, user_id)
     parent = await repo.get(board_id)
     if parent is None:
@@ -93,7 +93,7 @@ async def save_edit(
         parent_id=parent.id,
     )
     out = BoardOut.model_validate(row)
-    await db.commit()  # le bus écrit dans sa propre session : rien ne doit tenir la base
+    await db.commit()  # the bus writes in its own session: nothing must hold the database
     council = await open_council(db, user_id, parent.goal_id)
     if council is not None:
         try:
@@ -102,9 +102,9 @@ async def save_edit(
         except AppError as exc:
             if exc.status_code != 409:
                 raise
-            council = None  # fermé entre la lecture et l'envoi : l'état reste enregistré
+            council = None  # closed between the read and the send: the state stays saved
     logger.info(
-        "Tableau retouché : utilisateur %s, objectif %s, état %s, Conseil %s",
+        "Board edited: user %s, goal %s, state %s, Council %s",
         user_id,
         parent.goal_id,
         row.id,

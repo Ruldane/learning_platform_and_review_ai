@@ -48,10 +48,10 @@ def check_arguments(schema: Mapping[str, Any], arguments: Mapping[str, Any]) -> 
     unknown = [name for name in arguments if name not in known]
     if unknown:
         listed = ", ".join(clip(name) for name in unknown[:5])
-        raise ArgumentError(f"Argument inconnu : {listed}. Lis l'inputSchema de l'outil.", unknown)
+        raise ArgumentError(f"Unknown argument: {listed}. Read the tool's inputSchema.", unknown)
     missing = [name for name in schema.get("required", ()) if name not in arguments]
     if missing:
-        raise ArgumentError(f"Argument manquant : {', '.join(missing)}.", missing)
+        raise ArgumentError(f"Missing argument: {', '.join(missing)}.", missing)
 
 
 def _segment(name: str, value: Any) -> str:
@@ -61,7 +61,7 @@ def _segment(name: str, value: Any) -> str:
     bad = not text or text in (".", "..") or len(text) > 200
     bad = bad or any(ch in "/\\?#%{}" or not ch.isprintable() or ch.isspace() for ch in text)
     if bad:
-        raise ArgumentError(f"Argument « {name} » invalide : un identifiant, sans / ni ..", [name])
+        raise ArgumentError(f'Invalid argument "{name}": an identifier, without / or ..', [name])
     return text
 
 
@@ -71,7 +71,7 @@ def _query_value(name: str, value: Any) -> Any:
         isinstance(value, list) and all(isinstance(item, scalar) for item in value)
     ):
         return value
-    raise ArgumentError(f"Argument « {name} » invalide : un texte, un nombre ou une liste.", [name])
+    raise ArgumentError(f'Invalid argument "{name}": a text, a number or a list.', [name])
 
 
 def _fill(template: str, segments: Mapping[str, str]) -> str:

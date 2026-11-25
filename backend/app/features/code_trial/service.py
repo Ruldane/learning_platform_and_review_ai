@@ -1,4 +1,4 @@
-"""Ouverture transactionnelle du procès et verdict de l’utilisatrice."""
+"""Transactional opening of the trial and the user's verdict."""
 
 from uuid import NAMESPACE_URL, uuid5
 
@@ -19,7 +19,7 @@ from app.features.sessions.service import session_facts
 
 
 def project_reader(db: AsyncSession, user_id: str) -> IdeService:
-    return IdeService(db, user_id, None, Caller("app", "procès du code"))
+    return IdeService(db, user_id, None, Caller("app", "code trial"))
 
 
 def _verdict(row: CodeTrial) -> TrialVerdict | None:
@@ -66,7 +66,7 @@ async def open_trial(
     launcher: SessionLauncher, db: AsyncSession, user_id: str, project_id: str
 ) -> TrialOpened:
     project = await project_reader(db, user_id).get_session(project_id)
-    # Stable par compte/version, y compris deux ouvertures simultanées.
+    # Stable per account/version, including two simultaneous openings.
     trial_id = str(
         uuid5(NAMESPACE_URL, f"tremplin/code-trial/{user_id}/{project_id}/{project.files_version}")
     )
@@ -75,7 +75,7 @@ async def open_trial(
         fresh = await project_reader(write, user_id).get_session(project_id)
         if project.files_version != fresh.files_version:
             raise AppError(
-                "code_trial_project_changed", "Le projet a changé. Relance le procès.", 409
+                "code_trial_project_changed", "The project has changed. Restart the trial.", 409
             )
         repo = TrialRepository(write, user_id)
         row = await repo.for_version(project_id, fresh.files_version)
@@ -86,9 +86,7 @@ async def open_trial(
             return
         selected = python_files(fresh.files)
         if not excerpts(selected):
-            raise AppError(
-                "code_trial_no_passage", "Aucun passage Python assez court à citer.", 422
-            )
+            raise AppError("code_trial_no_passage", "No Python passage short enough to quote.", 422)
         await repo.add(
             id=trial_id,
             ide_session_id=project_id,
@@ -136,9 +134,9 @@ async def save_verdict(
         raise missing()
     if not row.pleadings:
         raise AppError(
-            "code_trial_not_ready", "Attends les deux plaidoiries pour rendre ton verdict.", 409
+            "code_trial_not_ready", "Wait for both pleadings before giving your verdict.", 409
         )
     await repo.set_verdict(row, verdict)
     if _verdict(row) != verdict:
-        raise AppError("code_trial_already_decided", "Un verdict a déjà été enregistré.", 409)
+        raise AppError("code_trial_already_decided", "A verdict has already been recorded.", 409)
     return await _view(db, row, project.files_version)

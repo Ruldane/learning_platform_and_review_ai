@@ -3,83 +3,82 @@
 from app.mcp.base import FeatureMcp, McpAction, McpGraph
 
 _FILE = (
-    "Réponse en fichier (calendrier ou PDF), pas du JSON : le MCP lit le programme par "
+    "File response (calendar or PDF), not JSON: the MCP reads the program through "
     "`program_get_program`."
 )
 
 MCP = FeatureMcp(
     feature="program",
     actions=(
-        McpAction("GET /programs", 1, "program_list_programs", "Les programmes d'apprentissage."),
+        McpAction("GET /programs", 1, "program_list_programs", "The learning programs."),
         McpAction(
             "GET /programs/{program_id}",
             1,
             "program_get_program",
-            "Un programme complet : modules, semaines, tâches.",
+            "A full program: modules, weeks, tasks.",
         ),
         McpAction(
             "POST /programs/direct",
             2,
             "program_write_program",
-            "Écriture directe, aucun agent : écrit un programme complet d'un objectif "
-            "(`goal_id`, titre, date de début, puis semaines, modules, tâches) en brouillon, à "
-            "valider ; mêmes bornes et mêmes règles que le Stratège (4 modules par semaine, 12 "
-            "tâches par module, 85 % du budget, pratique et quiz chaque semaine : l'application "
-            "range les jours). Leçons et quiz s'écrivent ensuite par module.",
+            "Direct write, no agent: writes a full program for a goal (`goal_id`, title, start "
+            "date, then weeks, modules, tasks) as a draft to validate; same limits and rules as "
+            "the Strategist (4 modules per week, 12 tasks per module, 85% of the budget, "
+            "practice and a quiz every week: the app schedules the days). Lessons and quizzes "
+            "are then written per module.",
         ),
         McpAction(
             "PATCH /programs/{program_id}",
             2,
             "program_update_program",
-            "Ajoute ou supprime des tâches, change la date de début d'un programme.",
+            "Adds or removes tasks, changes the start date of a program.",
         ),
         McpAction(
             "POST /programs/{program_id}/validate",
             3,
             "program_validate_program",
-            "Valide le programme : compétences en cours, acquis en mémoire, leçons lancées. "
-            "Décision de January et effets hors base : demande à confirmer.",
+            "Validates the program: skills in progress, acquired skills in memory, lessons "
+            "launched. January's decision, with effects outside the database: needs "
+            "confirmation.",
             side_effects="external",
         ),
         McpAction(
             "PATCH /tasks/{task_id}",
             2,
             "program_update_task",
-            "Déplace ou retouche une tâche du programme.",
+            "Moves or edits a program task.",
         ),
         McpAction(
             "POST /programs/{program_id}/weeks",
             2,
             "program_add_week",
-            "Écriture directe, aucun agent : ajoute une semaine (thème, objectif, livrable) à la "
-            "fin du programme ; ses modules et ses tâches viennent ensuite.",
+            "Direct write, no agent: adds a week (theme, objective, deliverable) at the end of "
+            "the program; its modules and tasks come next.",
         ),
         McpAction(
             "PATCH /weeks/{week_id}",
             2,
             "program_update_week",
-            "Écriture directe, aucun agent : retouche le thème, l'objectif ou le livrable d'une "
-            "semaine.",
+            "Direct write, no agent: edits the theme, objective or deliverable of a week.",
         ),
         McpAction(
             "POST /programs/{program_id}/modules",
             2,
             "program_add_module",
-            "Écriture directe, aucun agent : ajoute un module (titre, compétences, prérequis) à "
-            "une semaine du programme ; ses tâches se posent par `program_update_program`.",
+            "Direct write, no agent: adds a module (title, skills, prerequisites) to a week of "
+            "the program; its tasks are set through `program_update_program`.",
         ),
         McpAction(
             "PATCH /modules/{module_id}",
             2,
             "program_update_module",
-            "Écriture directe, aucun agent : retouche le titre, les compétences ou les prérequis "
-            "d'un module.",
+            "Direct write, no agent: edits the title, skills or prerequisites of a module.",
         ),
         McpAction(
             "GET /programs/{program_id}/export.ics",
             1,
             "program_get_calendar_file",
-            "Lit le calendrier du programme et donne le lien local du fichier.",
+            "Reads the program calendar and gives the local link to the file.",
             artifact=True,
             untrusted=("text",),
         ),
@@ -87,15 +86,15 @@ MCP = FeatureMcp(
             "GET /programs/{program_id}/export.pdf",
             1,
             "program_get_program_pdf",
-            "Lit les métadonnées du PDF du programme et donne son lien local.",
+            "Reads the metadata of the program PDF and gives its local link.",
             artifact=True,
         ),
     ),
     graphs=(
         McpGraph(
             "program_builder",
-            summary="Construit un programme depuis un objectif (`goal_id`) et ses parcours "
-            "choisis (`proposal_ids`).",
+            summary="Builds a program from a goal (`goal_id`) and its chosen paths "
+            "(`proposal_ids`).",
         ),
     ),
 )

@@ -1,16 +1,16 @@
-"""Arêtes du Mermaid du Scribe (D85 §11f), lues **sans retour arrière**. Chaque motif est fait
-de classes disjointes et de quantificateurs possessifs. La fin d'une arête à texte n'est
-cherchée qu'au début d'une suite de `-`, `.` ou `=`. L'analyse reste ainsi linéaire
-(re-relecture 3 : `A -- ` suivi de milliers d'espaces bloquait la boucle d'événements).
+"""Parse the Scribe's Mermaid edges in linear time (D85 §11f).
 
-- Arêtes :
-  - traits : `-->`, `--->`… (2 à 8 traits et une pointe), `---`, `----`… (3 à 8 traits) ;
-  - pointillés : `-.->`, `-..->`, `-.-` (1 à 4 points) ;
-  - épaisses : `==>`, `===`… ;
-  - pointe double : `<-->`, `<-.->`, `<==>`.
-- Libellé : `|…|` après l'arête, ou forme à texte `-- texte -->`, `-. texte .->`, `== texte ==>`.
-  Le texte peut contenir des `-`, `.` ou `=` isolés (`pré-requis`, `v1.2`). Il est entre
-  guillemets, ou sans `"`, `|` ni `;`."""
+Disjoint character classes and possessive quantifiers prevent backtracking. The closing
+arrow of a labeled edge matches only at the start of a run of `-`, `.`, or `=`.
+
+- Solid edges use two to eight dashes with an arrowhead or three to eight dashes alone.
+- Dotted edges such as `-.->` and `-.-` use one to four dots.
+- Thick edges use `==>`, `===`, and their longer forms.
+- Double-headed edges use `<-->`, `<-.->`, or `<==>`.
+- Labels follow an edge as `|text|` or appear within it as `-- text -->`, `-. text .->`, or
+  `== text ==>`. Text can contain standalone dashes, dots, and equals signs. Quote labels
+  or omit reserved characters such as `"`, `|`, and `;`.
+"""
 
 import re
 
@@ -21,7 +21,7 @@ _SOLID = re.compile(r"(<?)(-{2,8}+)(>?)")
 _DOTTED = re.compile(r"(<?)-(\.{1,4}+)-(>?)")
 _THICK = re.compile(r"(<?)(={2,8}+)(>?)")
 _PIPE = re.compile(r'[ \t]*+\|(?:"([^"]*+)"|([^"|]*+))\|')
-# Fins d'une arête à texte, par ouvrant ; seulement au début d'une suite (lookbehind).
+# Match the closing pattern for each opener only at the beginning of a run.
 _CLOSERS = {
     "--": re.compile(r"(?<!-)(-{2,}+)(>?)"),
     "-.": re.compile(r"(?<!\.)(\.++)-(>?)"),
@@ -32,7 +32,7 @@ _FORBIDDEN_IN_BARE_TEXT = set('"|;')
 
 
 def _arrow(text: str, pos: int) -> tuple[str, int] | None:
-    """Une arête sans texte à `pos` (forme rendue, fin) ; `None` si ce n'en est pas une."""
+    """Return the arrow and end position of an unlabeled edge at `pos`, if present."""
     for pattern in (_DOTTED, _SOLID, _THICK):
         found = pattern.match(text, pos)
         if found is None:
@@ -40,13 +40,13 @@ def _arrow(text: str, pos: int) -> tuple[str, int] | None:
         left, run, right = found.groups()
         dotted = pattern is _DOTTED
         if (left and not right) or (not dotted and len(run) < 3 and not right):
-            return None  # `<--` sans pointe ; `--` et `==` seuls ouvrent une arête à texte
+            return None  # A left head needs a right head. Bare `--` and `==` open labels.
         return left + (f"-{run}-" if dotted else run) + right, found.end()
     return None
 
 
 def _closing(opener: str, found: re.Match[str]) -> str | None:
-    """L'arête que ferme `found`, ou `None` si cette suite fait partie du texte."""
+    """Return the closing arrow when the matched run ends the edge label."""
     run, head = found.group(1), found.group(2)
     if opener == "-.":
         return f"-{run}-{head}" if len(run) <= 4 else None
@@ -59,7 +59,7 @@ def _bare_text(raw: str) -> str | None:
     text = raw.strip()
     if not text or _FORBIDDEN_IN_BARE_TEXT & set(text):
         raise MermaidSyntaxError(
-            'texte d\'arête vide ou avec `"`, `|` ou `;` : écris plutôt `-->|"texte"|`'
+            'Use `-->|"text"|` for empty edge text or text containing `"`, `|`, or `;`'
         )
     return label_text(text) or None
 
@@ -70,7 +70,7 @@ def _text_edge(text: str, pos: int) -> tuple[Edge, int] | None:
     if pattern is None:
         return None
     quoted = _QUOTED_TEXT.match(text, pos + 2)
-    if quoted is not None:  # `-- "texte" -->` : la fin n'est cherchée qu'après le guillemet
+    if quoted is not None:  # A quoted label must be followed immediately by a closer.
         found = pattern.match(text, quoted.end())
         arrow = None if found is None else _closing(opener, found)
         if found is None or arrow is None:
@@ -84,7 +84,7 @@ def _text_edge(text: str, pos: int) -> tuple[Edge, int] | None:
 
 
 def edge_at(text: str, pos: int) -> tuple[Edge, int] | None:
-    """L'arête qui commence à `pos` et sa fin, ou `None` s'il n'y en a pas."""
+    """Return the edge at `pos` and its end position, if present."""
     plain = _arrow(text, pos)
     if plain is None:
         return _text_edge(text, pos)

@@ -1,4 +1,4 @@
-"""Le passage quotidien se réserve dans le registre déjà utilisé par le brief."""
+"""The daily run is reserved in the registry already used by the brief."""
 
 from datetime import datetime
 

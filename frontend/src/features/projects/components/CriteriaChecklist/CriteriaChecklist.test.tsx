@@ -17,14 +17,14 @@ describe("CriteriaChecklist", () => {
       />,
     );
     const items = within(
-      screen.getByRole("list", { name: "Résultat de chaque critère" }),
+      screen.getByRole("list", { name: "Result for each criterion" }),
     ).getAllByRole("listitem");
     expect(items[0]).toHaveTextContent("Ventes agrégées par mois");
-    expect(items[0]).toHaveTextContent("Atteint");
+    expect(items[0]).toHaveTextContent("Met");
     expect(items[0]).toHaveTextContent("La requête groupe bien par mois.");
-    expect(items[1]).toHaveTextContent("Non atteint");
+    expect(items[1]).toHaveTextContent("Not met");
     expect(items[1]).toHaveTextContent("Aucun test trouvé.");
-    expect(items[2]).toHaveTextContent("Atteint");
+    expect(items[2]).toHaveTextContent("Met");
   });
 
   it("never relies on the icons: they are hidden from assistive technology", () => {
@@ -38,12 +38,12 @@ describe("CriteriaChecklist", () => {
 
   it("says a criterion is not evaluated yet when there are no results or no result for it", () => {
     const { rerender } = render(<CriteriaChecklist criteria={CRITERIA} results={null} />);
-    expect(screen.getAllByText("Pas encore évalué")).toHaveLength(3);
+    expect(screen.getAllByText("Not reviewed yet")).toHaveLength(3);
     rerender(
       <CriteriaChecklist criteria={CRITERIA} results={[{ index: 2, met: true, comment: "" }]} />,
     );
-    expect(screen.getAllByText("Pas encore évalué")).toHaveLength(2);
-    expect(screen.getAllByText("Atteint")).toHaveLength(1);
+    expect(screen.getAllByText("Not reviewed yet")).toHaveLength(2);
+    expect(screen.getAllByText("Met")).toHaveLength(1);
   });
 
   it("matches results by their index, whatever their order, and ignores an index outside the criteria", () => {
@@ -58,14 +58,14 @@ describe("CriteriaChecklist", () => {
       />,
     );
     const items = within(
-      screen.getByRole("list", { name: "Résultat de chaque critère" }),
+      screen.getByRole("list", { name: "Result for each criterion" }),
     ).getAllByRole("listitem");
     expect(items).toHaveLength(3);
     expect(items[0]).toHaveTextContent("Ventes agrégées par mois");
     expect(items[0]).toHaveTextContent("Requête correcte.");
-    expect(items[1]).toHaveTextContent("Pas encore évalué");
+    expect(items[1]).toHaveTextContent("Not reviewed yet");
     expect(items[2]).toHaveTextContent("README clair");
-    expect(items[2]).toHaveTextContent("Non atteint");
+    expect(items[2]).toHaveTextContent("Not met");
     expect(items[2]).toHaveTextContent("README absent.");
     expect(screen.queryByText("Hors critères.")).toBeNull();
   });

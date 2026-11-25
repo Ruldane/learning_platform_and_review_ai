@@ -12,7 +12,7 @@ interface Notice {
   delta?: number | string | null;
 }
 
-const dateLabel = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeZone: "UTC" });
+const dateLabel = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeZone: "UTC" });
 
 export function CommitmentNotices({ notices }: { notices: readonly Notice[] }) {
   if (!notices.length) return null;
@@ -22,7 +22,7 @@ export function CommitmentNotices({ notices }: { notices: readonly Notice[] }) {
         <li className="border-l pl-3" key={notice.id}>
           <Link
             className="font-medium underline"
-            to={`/etudier/engagements/${encodeURIComponent(notice.id)}`}
+            to={`/study/commitments/${encodeURIComponent(notice.id)}`}
           >
             {notice.title}
           </Link>

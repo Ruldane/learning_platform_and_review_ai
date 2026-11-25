@@ -1,11 +1,9 @@
-"""Le Praticien écrit l'énoncé d'un mini projet (P1, D165) : `load` relit les entrées du module par
-le port, `write` appelle le modèle (un appel standard), `save` range l'énoncé.
+"""Read module inputs and draft and save a small project brief (P1, D165).
 
-Le titre du module, ses compétences et prérequis, l'extrait de la leçon, le livrable de la semaine
-et le poste visé sont des données (leçon écrite par un agent d'après le web, objectif de January) :
-chacun est encadré par `untrusted` (17.4). Une sortie invalide, ou toute autre panne du modèle,
-range l'échec par le port (`brief_failed`, un code) puis arrête le parcours : `run.failed` dit la
-cause, « Réessayer » relance. Journaux : identifiants, nombres et codes, jamais un énoncé (17.2)."""
+The prompt wraps the module, lesson excerpt, weekly deliverable, and target role as
+untrusted data (SPEC 17.4). An invalid model response or provider error records
+`brief_failed`, which the user can retry. Logs use IDs, counts, and codes (SPEC 17.2).
+"""
 
 import asyncio
 import logging
@@ -26,11 +24,11 @@ from app.core.errors import AppError
 __all__ = ["ASK", "SUMMARY", "make_close", "make_load", "make_save", "make_write"]
 
 AGENT = "practitioner"
-ASK = "Écris l'énoncé du projet."
-SUMMARY = "Énoncé du projet prêt."
-NONE = "(aucun)"
-BUDGET_S = 100.0  # plus court que `node_timeout` (120 s) : un dépassement est rangé par le port
-LANGUAGES = {"fr": "français", "en": "anglais"}
+ASK = "Write the project brief."
+SUMMARY = "The project brief is ready."
+NONE = "(none)"
+BUDGET_S = 100.0  # Leave time to store a failure before the node times out.
+LANGUAGES = {"fr": "French", "en": "English"}
 
 logger = logging.getLogger(__name__)
 
@@ -40,18 +38,17 @@ def _names(items: list[str]) -> str:
 
 
 def prompt_of(inputs: BriefInputs) -> str:
-    """Le prompt de l'énoncé : chaque donnée du module encadrée comme contenu non fiable (l'extrait
-    de leçon est coupé à `LESSON_EXCERPT_MAX` caractères)."""
+    """Wrap the module inputs separately and limit the lesson excerpt."""
     excerpt = (inputs.lesson_excerpt or NONE)[:LESSON_EXCERPT_MAX]
     return render_prompt(
         AGENT,
         mode="project_brief",
-        module=untrusted(" ".join(inputs.module_title.split()), "titre du module"),
-        skills=untrusted(_names(inputs.skills), "compétences du module"),
-        prerequisites=untrusted(_names(inputs.prerequisites), "prérequis du module"),
-        excerpt=untrusted(excerpt, "extrait de la leçon"),
-        deliverable_week=untrusted(inputs.week_deliverable or NONE, "livrable de la semaine"),
-        role=untrusted(inputs.role or NONE, "poste visé"),
+        module=untrusted(" ".join(inputs.module_title.split()), "module title"),
+        skills=untrusted(_names(inputs.skills), "module skills"),
+        prerequisites=untrusted(_names(inputs.prerequisites), "module prerequisites"),
+        excerpt=untrusted(excerpt, "lesson excerpt"),
+        deliverable_week=untrusted(inputs.week_deliverable or NONE, "weekly deliverable"),
+        role=untrusted(inputs.role or NONE, "target role"),
         language=LANGUAGES[inputs.language],
     )
 
@@ -61,7 +58,7 @@ def make_load(deps: GraphDeps) -> Node:
     async def load(state: ProjectBriefState) -> ProjectBriefState:
         inputs = await deps.ports.projects.brief_inputs(deps.user_id, state["project_id"])
         logger.info(
-            "Énoncé : session %s, projet %s, %d compétence(s), extrait de leçon %s",
+            "Brief inputs: session %s, project %s, %d skills, lesson excerpt %s",
             deps.session_id,
             state["project_id"],
             len(inputs.skills),
@@ -80,7 +77,7 @@ def make_write(deps: GraphDeps) -> Node:
         inputs = await ports.brief_inputs(deps.user_id, project_id)
         messages: list[BaseMessage] = [SystemMessage(prompt_of(inputs)), HumanMessage(ASK)]
         try:
-            async with asyncio.timeout(BUDGET_S):  # plus court que le plafond du nœud : rangé
+            async with asyncio.timeout(BUDGET_S):  # shorter than the node cap: stored
                 tier = get_agent(AGENT).tier
                 model = await deps.models.get_chat_model(deps.user_id, tier, agent=AGENT)
                 brief = await structured_call(
@@ -89,11 +86,11 @@ def make_write(deps: GraphDeps) -> Node:
                     messages,
                     agent=AGENT,
                     step="enonce",
-                    intent="j'écris l'énoncé du projet",
+                    intent="writing the project brief",
                 )
         except GraphInterrupt:
             raise
-        except Exception as exc:  # l'échec est rangé (un code), puis le parcours s'arrête
+        except Exception as exc:  # the failure is stored (a code), then the flow stops
             timed_out = isinstance(exc, TimeoutError)
             code = (
                 "node_timeout"
@@ -103,7 +100,7 @@ def make_write(deps: GraphDeps) -> Node:
                 else type(exc).__name__
             )
             logger.info(
-                "Énoncé impossible : session %s, projet %s, cause %s",
+                "Brief failed: session %s, project %s, cause %s",
                 deps.session_id,
                 project_id,
                 code,
@@ -111,7 +108,9 @@ def make_write(deps: GraphDeps) -> Node:
             await ports.brief_failed(deps.user_id, deps.session_id, project_id, code)
             if timed_out:
                 raise AppError(
-                    "node_timeout", f"L'étape write a dépassé {BUDGET_S:g} secondes.", 504
+                    "node_timeout",
+                    f"Writing the project brief took over {BUDGET_S:g} seconds.",
+                    504,
                 ) from None
             raise
         return {"brief": brief.model_dump()}
@@ -127,7 +126,7 @@ def make_save(deps: GraphDeps) -> Node:
             deps.user_id, deps.session_id, state["project_id"], brief
         )
         logger.info(
-            "Énoncé rangé : session %s, projet %s, %d critère(s), %d heure(s)",
+            "Brief saved: session %s, project %s, %d criteria, %d hours",
             deps.session_id,
             state["project_id"],
             len(brief.criteria),

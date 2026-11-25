@@ -23,7 +23,7 @@ export function useComparison() {
     mutationFn: saveComparison,
     onSuccess: ({ id }) => {
       void queryClient.invalidateQueries({ queryKey: HISTORY });
-      void navigate(`/carriere/comparer-les-offres/${id}`);
+      void navigate(`/career/offer-comparison/${id}`);
     },
   });
   const change = (set: () => void) => {

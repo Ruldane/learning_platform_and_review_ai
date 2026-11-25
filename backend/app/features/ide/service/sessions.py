@@ -1,5 +1,5 @@
-"""Séances de code : les fichiers en cours (au plus 20, 200 Ko), le fichier d'entrée, la première
-vérification réussie (`passed_at`)."""
+"""Code sessions: the files in progress (at most 20, 200 KB), the entry file, the first
+successful verification (`passed_at`)."""
 
 import logging
 from dataclasses import dataclass
@@ -33,7 +33,7 @@ from app.providers.sandbox.base import MAX_FILES, MAX_TOTAL_BYTES, check_file_na
 logger = logging.getLogger(__name__)
 
 DEFAULT_ENTRY = "main.py"
-FREE_TITLE = "Séance libre"
+FREE_TITLE = "Free session"
 
 
 @dataclass(frozen=True)
@@ -55,8 +55,8 @@ async def list_all(ctx: IdeContext) -> list[IdeSession]:
 
 
 async def open_session(ctx: IdeContext, exercise_id: str | None, title: str | None) -> IdeSession:
-    """Une séance sur les fichiers de départ de l'exercice, ou une séance libre (un `main.py`
-    vide). L'exercice d'une autre utilisatrice est introuvable."""
+    """A session on the exercise's starting files, or a free session (an empty `main.py`).
+    Another user's exercise is not found."""
     files: dict[str, str] = {DEFAULT_ENTRY: ""}
     entry = DEFAULT_ENTRY
     name = title or FREE_TITLE
@@ -83,7 +83,7 @@ async def open_session(ctx: IdeContext, exercise_id: str | None, title: str | No
 
 
 def check_files(files: dict[str, str], entry: str) -> None:
-    """Les plafonds du bac (20 fichiers, 200 000 octets, noms permis) et l'entrée présente."""
+    """The sandbox's caps (20 files, 200,000 bytes, allowed names) and the entry present."""
     try:
         check_file_name(entry)
     except ValueError:
@@ -96,9 +96,9 @@ def check_files(files: dict[str, str], entry: str) -> None:
 
 
 async def claim_files(ctx: IdeContext, session: IdeSession) -> bool:
-    """Réserve l'écriture des fichiers de la séance lue : la base ne l'accorde que si personne n'a
-    écrit depuis la lecture (`files_version` inchangée). Atomique : deux écritures qui partent de la
-    même lecture, une seule passe. Faux : relis la séance."""
+    """Reserves the writing of the files of the session read: the database only grants it if
+    nobody has written since the read (`files_version` unchanged). Atomic: of two writes that
+    start from the same read, only one goes through. False: re-read the session."""
     read = session.files_version
     taken = await ctx.db.execute(
         update(IdeSession)
@@ -117,14 +117,14 @@ async def claim_files(ctx: IdeContext, session: IdeSession) -> bool:
 
 
 def _clashes(session: IdeSession, files: dict[str, str], base_hashes: dict[str, str]) -> list[str]:
-    """Les fichiers dont la version du serveur n'est plus celle de `base_hashes` et que `files`
-    changerait (envoyer le texte actuel n'efface rien)."""
+    """The files whose server version is no longer that of `base_hashes` and that `files` would
+    change (sending the current text erases nothing)."""
     clash: list[str] = []
     for name, base in sorted(base_hashes.items()):
         current = str(session.files.get(name, ""))
         if file_hash(current) != base and files.get(name, "") != current:
             clash.append(name)
-    # Un fichier que Claude a créé depuis : absent de l'instantané, l'envoi l'effacerait.
+    # A file Claude has created since: absent from the snapshot, the upload would erase it.
     known = base_hashes.keys() | files.keys()
     return sorted({*clash, *(name for name in session.files if name not in known)})
 
@@ -136,19 +136,19 @@ async def save_files(
     entry: str | None,
     base_hashes: dict[str, str] | None = None,
 ) -> IdeSession:
-    """Remplace les fichiers (geste de l'interface). L'entrée reste celle de la séance sauf si
-    `entry` en donne une autre. `base_hashes` (facultatif) : la version sur laquelle chaque fichier
-    a été édité ; un fichier que Claude a changé depuis et que l'envoi écraserait donne 409
-    `stale_base` (noms seulement), rien n'est écrit."""
+    """Replaces the files (an interface gesture). The entry stays that of the session unless
+    `entry` gives another. `base_hashes` (optional): the version on which each file was edited;
+    a file Claude has changed since and that the upload would overwrite gives 409 `stale_base`
+    (names only), nothing is written."""
     session = await get(ctx, session_id)
     if base_hashes:
         clash = _clashes(session, files, base_hashes)
         if clash:
-            logger.info("stale_base : enregistrement refusé dans la séance %s", session.id)
+            logger.info("stale_base: save refused in session %s", session.id)
             raise files_changed(clash)
     wanted = entry or session.entry
     check_files(files, wanted)
-    if not await claim_files(ctx, session):  # quelqu'un a écrit entre la lecture et ici
+    if not await claim_files(ctx, session):  # someone wrote between the read and here
         await ctx.db.refresh(session)
         raise files_changed(sorted(files))
     session.files = dict(files)
@@ -159,8 +159,8 @@ async def save_files(
 
 
 def is_test_file(name: str) -> bool:
-    """Un fichier que pytest collecte (`test_*.py`, `*_test.py`) ou qui le configure
-    (`conftest.py`), où qu'il soit dans les dossiers de la séance."""
+    """A file that pytest collects (`test_*.py`, `*_test.py`) or that configures it
+    (`conftest.py`), wherever it is in the session's folders."""
     base = name.rsplit("/", 1)[-1]
     return base == "conftest.py" or (
         base.endswith(".py") and (base.startswith("test_") or base.endswith("_test.py"))
@@ -170,33 +170,33 @@ def is_test_file(name: str) -> bool:
 async def write_file_as_claude(
     ctx: IdeContext, session_id: str, files: dict[str, str], base_hash: str | None
 ) -> IdeSession:
-    """Claude (MCP) écrit **un** fichier, les autres sont gardés. Seulement si January a allumé
-    l'interrupteur (403 `mcp_ide_write_off`, jamais de contenu dans le message ni le journal) ;
-    `base_hash` doit être le sha256 du contenu actuel (texte vide pour un nouveau fichier), sinon
-    409 `stale_base` : on n'écrase jamais ce que January vient de taper. L'entrée ne change pas.
-    Dans une séance sur exercice, jamais un fichier de test (403 `mcp_ide_test_file`) : ce sont les
-    siens."""
+    """Claude (MCP) writes **one** file, the others are kept. Only if January has turned the
+    switch on (403 `mcp_ide_write_off`, never any content in the message or the log);
+    `base_hash` must be the sha256 of the current content (empty text for a new file),
+    otherwise 409 `stale_base`: what January has just typed is never overwritten. The entry does
+    not change. In an exercise session, never a test file (403 `mcp_ide_test_file`): those are
+    hers."""
     session = await get(ctx, session_id)
     prefs = await PreferenceRepository(ctx.db, ctx.user_id).mine()
     if prefs is None or not prefs.mcp_can_write_files:
-        logger.info("mcp_ide_write_off : écriture refusée dans la séance %s", session.id)
+        logger.info("mcp_ide_write_off: write refused in session %s", session.id)
         raise mcp_ide_write_off()
     if len(files) != 1:
         raise mcp_write_one_file()
     ((name, text),) = files.items()
     if session.exercise_id is not None and is_test_file(name):
-        logger.info("mcp_ide_test_file : écriture refusée dans la séance %s", session.id)
+        logger.info("mcp_ide_test_file: write refused in session %s", session.id)
         raise mcp_ide_test_file()
     if not is_file_hash(base_hash):
         raise base_hash_required()
     current = session.files.get(name)
     if base_hash != file_hash("" if current is None else str(current)):
-        logger.info("stale_base : écriture refusée dans la séance %s", session.id)
+        logger.info("stale_base: write refused in session %s", session.id)
         raise stale_base()
     merged = {**session.files, name: text}
     check_files(merged, session.entry)
     if not await claim_files(ctx, session):
-        logger.info("stale_base : écriture concurrente refusée dans la séance %s", session.id)
+        logger.info("stale_base: concurrent write refused in session %s", session.id)
         raise stale_base()
     session.files = merged
     session.updated_at = utcnow()
@@ -207,7 +207,7 @@ async def write_file_as_claude(
 async def recent_passes(
     db: AsyncSession, user_id: str, after: datetime | None, before: datetime | None, limit: int
 ) -> list[PassedSession]:
-    """Les séances réussies (première vérification) dans `[after, before]`, la plus récente
-    d'abord (fil d'activité). Ni fichier ni sortie."""
+    """The successful sessions (first verification) in `[after, before]`, most recent first
+    (activity feed). No file, no output."""
     rows = await SessionRepository(db, user_id).passed_between(after, before, limit)
     return [PassedSession(row.id, row.title, row.passed_at) for row in rows if row.passed_at]

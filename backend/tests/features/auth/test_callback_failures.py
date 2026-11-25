@@ -1,4 +1,4 @@
-"""Le retour de Google qui tourne mal : toujours une redirection vers `/connexion?erreur=<code>`,
+"""Le retour de Google qui tourne mal : toujours une redirection vers `/login?error=<code>`,
 jamais une 500, rien d'écrit, le témoin `tremplin_oauth` effacé (suites de la revue de 9.A2)."""
 
 import logging

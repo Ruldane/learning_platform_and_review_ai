@@ -19,42 +19,43 @@ FactoryWith = Callable[..., LlmFactory]
 
 async def test_resolve_uses_tier_then_agent_override(factory_with: FactoryWith) -> None:
     f = factory_with(
-        tiers={"fort": ("fake", "m-fort")},
+        tiers={"strong": ("fake", "m-strong")},
         overrides={"writer": ("fake", "m-writer")},
         keys={"fake": "k"},
     )
-    assert (await f.resolve("u1", "fort")).model == "m-fort"
-    assert (await f.resolve("u1", "fort", agent="writer")).model == "m-writer"
+    assert (await f.resolve("u1", "strong")).model == "m-strong"
+    assert (await f.resolve("u1", "strong", agent="writer")).model == "m-writer"
 
 
 async def test_get_chat_model_builds_with_resolved_key(
     factory_with: FactoryWith, fake_provider: FakeLlmProvider
 ) -> None:
-    f = factory_with(tiers={"rapide": ("fake", "m1")}, keys={"fake": "k-123"})
-    await f.get_chat_model("u1", "rapide")
+    f = factory_with(tiers={"fast": ("fake", "m1")}, keys={"fake": "k-123"})
+    await f.get_chat_model("u1", "fast")
     assert fake_provider.built == [("m1", "k-123")]
 
 
 async def test_missing_key_is_readable_error(factory_with: FactoryWith) -> None:
-    f = factory_with(tiers={"fort": ("fake", "m")}, keys={})
+    f = factory_with(tiers={"strong": ("fake", "m")}, keys={})
     with pytest.raises(AppError) as e:
-        await f.get_chat_model("u1", "fort")
-    assert e.value.code == "llm_key_missing" and "« fort »" in e.value.message
-    assert e.value.details == {"provider": "fake", "tier": "fort"}
+        await f.get_chat_model("u1", "strong")
+    assert e.value.code == "llm_key_missing" and "strong tier" in e.value.message
+    assert "Settings > Models and keys" in e.value.message
+    assert e.value.details == {"provider": "fake", "tier": "strong"}
 
 
 async def test_unreadable_key_is_readable_error(factory_with: FactoryWith) -> None:
-    f = factory_with(tiers={"fort": ("fake", "m")}, keys=SecretUnreadable)
+    f = factory_with(tiers={"strong": ("fake", "m")}, keys=SecretUnreadable)
     with pytest.raises(AppError) as e:
-        await f.get_chat_model("u1", "fort")
+        await f.get_chat_model("u1", "strong")
     assert e.value.code == "llm_key_unreadable"
     assert e.value.status_code == 400
 
 
 async def test_unknown_provider_is_readable_error(factory_with: FactoryWith) -> None:
-    f = factory_with(tiers={"fort": ("inconnu", "m")}, keys={"inconnu": "secret-value-123"})
+    f = factory_with(tiers={"strong": ("inconnu", "m")}, keys={"inconnu": "secret-value-123"})
     with pytest.raises(AppError) as e:
-        await f.get_chat_model("u1", "fort")
+        await f.get_chat_model("u1", "strong")
     assert e.value.code == "llm_provider_unknown" and e.value.status_code == 400
     assert "secret-value-123" not in e.value.message
 
@@ -63,9 +64,9 @@ async def test_base_url_is_passed_to_the_provider(
     factory_with: FactoryWith, fake_provider: FakeLlmProvider
 ) -> None:
     f = factory_with(
-        tiers={"rapide": ("fake", "m")}, keys={"fake": "k"}, base_urls={"fake": "https://x.test/"}
+        tiers={"fast": ("fake", "m")}, keys={"fake": "k"}, base_urls={"fake": "https://x.test/"}
     )
-    await f.get_chat_model("u1", "rapide")
+    await f.get_chat_model("u1", "fast")
     assert fake_provider.base_urls == ["https://x.test/"]
 
 
@@ -138,7 +139,7 @@ def test_every_default_model_has_a_price() -> None:
 async def test_built_models_carry_the_call_deadline(factory_with: FactoryWith) -> None:
     """Contrôle 5.18 : l'échéance totale d'un appel voyage dans les métadonnées du modèle
     (lue par `call_with_retries`), sans perdre celles du fournisseur."""
-    f = factory_with(tiers={"rapide": ("fake", "m1")}, keys={"fake": "k"})
-    model = await f.get_chat_model("u1", "rapide")
+    f = factory_with(tiers={"fast": ("fake", "m1")}, keys={"fake": "k"})
+    model = await f.get_chat_model("u1", "fast")
     assert (model.metadata or {})[CALL_DEADLINE_KEY] == LLM_CALL_DEADLINE_S == 600.0
     assert Settings().llm_call_deadline_s == LLM_CALL_DEADLINE_S

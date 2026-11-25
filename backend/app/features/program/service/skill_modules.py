@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.agents.tools.replan_port import GAP_MODULE_TITLE
+from app.agents.tools.replan_port import GAP_MODULE_TITLES
 from app.core.skills import normalize_skill_name
 from app.db.models.program import Module
 from app.features.program.repository import ProgramRepository
@@ -92,6 +92,6 @@ async def skill_coverage(db: AsyncSession, user_id: str) -> SkillCoverage:
                 continue
             for norm in _norms(module):
                 coverage.weeks.setdefault(norm, number)
-                if module.title == GAP_MODULE_TITLE:
+                if module.title in GAP_MODULE_TITLES:
                     coverage.offer_weeks.setdefault(norm, number)
     return coverage

@@ -1,13 +1,13 @@
-"""Le Stratège replanifie la suite du programme (SPEC F13, D105) : parcours `replan`.
+"""The Strategist replans the rest of the program (SPEC F13, D105): flow `replan`.
 
-`context` lit le bilan, les options et le plan à faire par références (port) ; `ask_option` et
-`ask_accept` ne font qu'`interrupt()` puis analysent la réponse (pur, rien avant l'arrêt,
-SPEC 9.4). `propose` demande au modèle ce que ses droits permettent (schéma de l'option, ou
-ajouts seuls avec le déclencheur `gap`, `replan_gap`) ; une référence inconnue, ou un ajout
-`gap` qui ne nomme aucune compétence, est renvoyé une fois au modèle, puis retiré. `preview`
-fait ranger et enregistrer la proposition par le port (idempotent par `(session, revision)`),
-séparé de `propose` : rejoué, il ne rappelle pas le modèle. `apply` et `refuse` sont
-idempotents ; une acceptation périmée (lignes changées) repart de `propose` sur le plan relu."""
+`context` reads the review, the options and the plan to do by references (port); `ask_option`
+and `ask_accept` only do `interrupt()` then parse the answer (pure, nothing before the stop,
+SPEC 9.4). `propose` asks the model for what its rights allow (option schema, or additions only
+with the `gap` trigger, `replan_gap`); an unknown reference, or a `gap` addition that names no
+skill, is sent back once to the model, then removed. `preview` has the port file and record the
+proposal (idempotent per `(session, revision)`), separate from `propose`: replayed, it does not
+call the model again. `apply` and `refuse` are idempotent; a stale acceptance (lines changed)
+restarts from `propose` on the reread plan."""
 
 import logging
 from typing import Protocol
@@ -43,7 +43,7 @@ from app.agents.state.replan import ReplanState
 from app.agents.tools.replan_port import ReplanContext, ReplanDraft
 from app.agents.tools.study_schema import ReplanOption
 
-MAX_ASKS = 2  # une demande + une re-demande si une référence est inconnue
+MAX_ASKS = 2  # one request + one re-request if a reference is unknown
 PROPOSE_TIMEOUT_S = 300
 
 logger = logging.getLogger(__name__)
@@ -61,7 +61,7 @@ async def _read(deps: GraphDeps, state: ReplanState) -> ReplanContext:
     return await deps.ports.replan.context(
         deps.user_id,
         state["program_id"],
-        trigger=state["trigger"],  # type: ignore[arg-type]  # validé par `ReplanInput`
+        trigger=state["trigger"],  # type: ignore[arg-type]  # validated by `ReplanInput`
         review_entry_id=state.get("review_entry_id"),
         available_minutes=state.get("available_minutes"),
         message=state.get("message"),
@@ -72,7 +72,7 @@ async def _read(deps: GraphDeps, state: ReplanState) -> ReplanContext:
 def make_context(deps: GraphDeps) -> Node:
     @node_timeout()
     async def context(state: ReplanState) -> ReplanState:
-        """L'instantané du plan, puis le bilan annoncé s'il y en a un."""
+        """The plan snapshot, then the review announced if there is one."""
         found = await _read(deps, state)
         if found.review is not None:
             _say("replan-bilan", found.review.text)
@@ -82,14 +82,14 @@ def make_context(deps: GraphDeps) -> Node:
 
 
 def route_start(state: ReplanState) -> str:
-    """Le déclencheur `gap` n'a pas d'option (ajouts seuls, D123) : `ask_option` est sauté."""
+    """The `gap` trigger has no option (additions only, D123): `ask_option` is skipped."""
     if state.get("trigger") == "gap" or not state["context"]["options"]:
         return "propose"
     return "ask_option"
 
 
 def ask_option(state: ReplanState) -> ReplanState:
-    """Point d'arrêt : l'option (réduire ou repousser, avancer ou approfondir)."""
+    """Stop point: the option (reduce or push back, bring forward or deepen)."""
     ctx = context_from_state(state["context"])
     value = interrupt(option_payload(ctx))
     return {"option": parse_option(value, list(ctx.options))}
@@ -112,7 +112,7 @@ async def _write(
             messages,
             agent=AGENT,
             step=f"replanification-{revision}-{ask}",
-            intent="je replanifie" if ask == 1 else "je corrige la proposition",
+            intent="Updating the plan" if ask == 1 else "Revising the proposal",
         )
         draft = draft_of(found, option, ctx)
         problem = problem_text(draft, ctx)
@@ -121,8 +121,7 @@ async def _write(
         messages += [AIMessage(found.model_dump_json()), HumanMessage(problem)]
     draft, removed = cleaned(draft, ctx)
     logger.info(
-        "Replanification : %d retrait(s) ou ajout(s) invalide(s) retiré(s) (session %s, "
-        "proposition %d)",
+        "Replanning: %d invalid removal(s) or addition(s) dropped (session %s, proposal %d)",
         removed,
         deps.session_id,
         revision,
@@ -133,14 +132,14 @@ async def _write(
 def make_propose(deps: GraphDeps) -> Node:
     @node_timeout(PROPOSE_TIMEOUT_S)
     async def propose(state: ReplanState) -> ReplanState:
-        """Le brouillon du Stratège ; après une révision ou une proposition périmée, sur le plan
-        relu en base (modifications de January comprises)."""
+        """The Strategist's draft; after a revision or a stale proposal, on the plan reread from
+        the database (January's changes included)."""
         revision = state.get("revision", 0)
         ctx = context_from_state(state["context"])
         if revision > 0:
             ctx = await _read(deps, state)
         if state["trigger"] == "reading":
-            draft = ReplanDraft(summary="Ajout de la lecture choisie au programme.")
+            draft = ReplanDraft(summary="Added the chosen reading to the program.")
             return {"context": as_json(ctx), "draft": draft.model_dump(mode="json")}
         option: ReplanOption | None = state.get("option")  # type: ignore[assignment]
         variables = replan_vars(
@@ -160,7 +159,7 @@ def make_propose(deps: GraphDeps) -> Node:
 def make_preview(deps: GraphDeps) -> Node:
     @node_timeout()
     async def preview(state: ReplanState) -> ReplanState:
-        """La proposition rangée et enregistrée par le port, puis annoncée."""
+        """The proposal filed and recorded by the port, then announced."""
         ctx = context_from_state(state["context"])
         draft = ReplanDraft.model_validate(state["draft"])
         revision = state.get("revision", 0)
@@ -177,8 +176,8 @@ def make_preview(deps: GraphDeps) -> Node:
             week_cap_override=ctx.week_cap_override,
         )
         logger.info(
-            "Replanification proposée : session %s, programme %s, version %d, %d retirée(s), "
-            "%d ajoutée(s), %d déplacée(s), %d retrait(s) ignoré(s), impossible %s",
+            "Replanning proposed: session %s, program %s, version %d, %d removed, "
+            "%d added, %d moved, %d removal(s) ignored, impossible %s",
             deps.session_id,
             ctx.program_id,
             saved.version,
@@ -192,15 +191,15 @@ def make_preview(deps: GraphDeps) -> Node:
             outcome = "finished" if saved.finished else "impossible"
             return {"preview": as_json(saved), "outcome": outcome}
         if saved.empty and option is None:
-            # Seul « Rien à changer » est dit : le résumé du Stratège pourrait le contredire
-            # (relecture 5.8 m5, revue finale de la phase 5).
+            # Only "Nothing to change" is said: the Strategist's summary could contradict it
+            # (reread 5.8 m5, final review of phase 5).
             return {"preview": as_json(saved), "outcome": "empty"}
         _say(f"replan-{revision}", preview_text(draft.summary, saved))
         artifact = {
             "artifact_id": ctx.program_id,
             "kind": "plan_version",
             "title": f"Replanification : {ctx.title}",
-            "url": f"/apprendre/programme/{ctx.program_id}/replanification",
+            "url": f"/learn/programs/{ctx.program_id}/replan",
         }
         emit("artifact.ready", artifact, agent=AGENT)
         return {"preview": as_json(saved), "outcome": ""}
@@ -215,9 +214,9 @@ def route_preview(state: ReplanState) -> str:
 
 
 def ask_accept(state: ReplanState) -> ReplanState:
-    """Point d'arrêt : accepter, garder le plan actuel, ou une note pour une autre proposition.
-    Rien avant `interrupt()` (la question ne dépend que de l'état) ; une réponse invalide repose
-    la question, une note vide avec une aide (« Écris ce que tu veux changer. »)."""
+    """Stop point: accept, keep the current plan, or a note for another proposal.
+    Nothing before `interrupt()` (the question only depends on the state); an invalid answer asks
+    the question again, an empty note with a hint ("Describe what you'd like to change.")."""
     value = interrupt(accept_payload(state.get("hint", "")))
     answer = parse_accept(value)
     if answer is None:
@@ -245,11 +244,11 @@ def route_accept(state: ReplanState) -> str:
 def make_apply(deps: GraphDeps) -> Node:
     @node_timeout()
     async def apply(state: ReplanState) -> ReplanState:
-        """Version appliquée (idempotent) ; périmée : rien n'est écrit, nouvelle proposition."""
+        """Version applied (idempotent); stale: nothing is written, new proposal."""
         program_id, version = state["program_id"], state["preview"]["version"]
         applied = await deps.ports.replan.apply(deps.user_id, deps.session_id, program_id, version)
         logger.info(
-            "Replanification : session %s, programme %s, version %d, périmée %s",
+            "Replanning: session %s, program %s, version %d, stale %s",
             deps.session_id,
             program_id,
             version,
@@ -258,7 +257,7 @@ def make_apply(deps: GraphDeps) -> Node:
         if applied.stale:
             revision = state.get("revision", 0)
             _say(f"replan-perimee-{revision}", STALE_NOTE)
-            # La note de January reste pour la proposition suivante (D106, relecture m4).
+            # January's note stays for the next proposal (D106, reread m4).
             return {"stale": True, "revision": revision + 1}
         return {"stale": False, "outcome": "accepted"}
 
@@ -275,7 +274,7 @@ def make_refuse(deps: GraphDeps) -> Node:
         program_id, version = state["program_id"], state["preview"]["version"]
         await deps.ports.replan.refuse(deps.user_id, deps.session_id, program_id, version)
         logger.info(
-            "Replanification refusée : session %s, programme %s, version %d",
+            "Replanning refused: session %s, program %s, version %d",
             deps.session_id,
             program_id,
             version,
@@ -286,7 +285,7 @@ def make_refuse(deps: GraphDeps) -> Node:
 
 
 def finalize(state: ReplanState) -> ReplanState:
-    """La fin annoncée : appliquée, refusée, rien à changer ou rangement impossible."""
+    """The announced end: applied, refused, nothing to change or filing impossible."""
     text = end_text(state.get("outcome", ""), state["preview"]["version"], state["trigger"])
     _say("replan-fin", text)
     return {"summary": text}

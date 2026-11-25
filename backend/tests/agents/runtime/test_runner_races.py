@@ -289,5 +289,5 @@ async def test_outcome_failure_during_cancellation_is_logged_not_lost(
     del task
     gc.collect()
     await asyncio.sleep(0)
-    assert "Issue d'une session non écrite (RuntimeError)" in caplog.text
+    assert "Session outcome not written (RuntimeError)" in caplog.text
     assert "never retrieved" not in caplog.text

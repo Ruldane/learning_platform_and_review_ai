@@ -1,4 +1,4 @@
-"""Port du Vérificateur avec lecture limitée aux textes neutralisés."""
+"""Verifier port, reading only the neutralised texts."""
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -15,7 +15,7 @@ async def _bound(
 ) -> BlindAssessment:
     row = await BlindAssessments(db, user_id).require(assessment_id)
     if row.session_id != session_id:
-        raise AppError("blind_evaluation_changed", "Cette évaluation n’est plus active.", 409)
+        raise AppError("blind_evaluation_changed", "This evaluation is no longer active.", 409)
     return row
 
 

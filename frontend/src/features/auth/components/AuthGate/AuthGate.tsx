@@ -19,7 +19,7 @@ interface AuthGateProps {
 
 /**
  * La porte de connexion, présentationnelle : ouverte (`ready`), elle montre la mise en page ;
- * sans session elle mène à `/connexion` (un remplacement, jamais un empilement) ; en erreur ou en
+ * sans session elle mène à `/login` (un remplacement, jamais un empilement) ; en erreur ou en
  * chargement elle montre un état seul, sans la mise en page. Le conteneur reste le même élément :
  * « Réessayer » lui garde le focus ; si la relecture réussit, le focus passe au contenu de la
  * mise en page (`#contenu`, cible du lien d'évitement) : le conteneur est démonté avec le bouton.
@@ -33,7 +33,7 @@ export function AuthGate({ status, message, onRetry, children }: AuthGateProps) 
     document.getElementById(CONTENT_ID)?.focus();
   }, [status]);
   if (status === "ready") return children;
-  if (status === "signedOut") return <Navigate to="/connexion" replace />;
+  if (status === "signedOut") return <Navigate to="/login" replace />;
   const retry = () => {
     retried.current = true;
     holder.current?.focus();

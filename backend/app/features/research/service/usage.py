@@ -1,4 +1,4 @@
-"""Plafond mensuel de Brave (SPEC 11.3) : 900 requêtes par mois civil UTC et par clé."""
+"""Brave monthly cap (SPEC 11.3): 900 requests per UTC calendar month and per key."""
 
 import hashlib
 import logging
@@ -18,27 +18,27 @@ BRAVE = "brave"
 
 
 def key_fingerprint(api_key: str) -> str:
-    """Empreinte courte de la clé (jamais la clé) : un compteur par clé, pas par utilisateur."""
+    """Short fingerprint of the key (never the key): one counter per key, not per user."""
     return hashlib.sha256(api_key.encode("utf-8")).hexdigest()[:16]
 
 
 def month_of(now: datetime) -> str:
-    """Mois civil UTC, « AAAA-MM »."""
+    """UTC calendar month, "YYYY-MM"."""
     return now.astimezone(UTC).strftime("%Y-%m")
 
 
 async def brave_key(keys: KeyReader, user_id: str) -> str | None:
-    """Clé Brave en vigueur (réglages, sinon `.env`) ; une clé illisible compte comme absente."""
+    """The current Brave key (settings, otherwise `.env`); an unreadable key counts as absent."""
     try:
         return await keys.get_key(user_id, BRAVE)
     except SecretUnreadable:
-        logger.warning("Clé Brave illisible, Brave sauté (utilisateur %s)", user_id)
+        logger.warning("Brave key unreadable, Brave skipped (user %s)", user_id)
         return None
 
 
 @dataclass(frozen=True)
 class BraveReservation:
-    """Requête Brave réservée : de quoi la rendre au bon compteur (même mois, même clé)."""
+    """Brave request reserved: enough to give it back to the right counter (month, key)."""
 
     fingerprint: str
     month: str
@@ -47,9 +47,9 @@ class BraveReservation:
 async def reserve_brave(
     db: AsyncSession, user_id: str, api_key: str, now: datetime
 ) -> BraveReservation | None:
-    """Réserve une requête Brave du mois si la clé est sous le plafond, et la commite aussitôt
-    (transaction propre, fermée avant l'appel réseau). Contrôle et ajout indivisibles
-    (`SearchUsageRepository.reserve`). `None` : plafond atteint."""
+    """Reserves a Brave request of the month if the key is under the cap, and commits it at once
+    (own transaction, closed before the network call). Indivisible check and increment
+    (`SearchUsageRepository.reserve`). `None`: cap reached."""
     reservation = BraveReservation(key_fingerprint(api_key), month_of(now))
     repo = SearchUsageRepository(db, user_id)
     reserved = await repo.reserve(
@@ -60,8 +60,8 @@ async def reserve_brave(
 
 
 async def release_brave(db: AsyncSession, user_id: str, reservation: BraveReservation) -> bool:
-    """Rend une requête que Brave n'a ni servie ni facturée (429, clé refusée, rien d'envoyé),
-    dans sa propre transaction courte ; jamais sous zéro (`SearchUsageRepository.release`)."""
+    """Gives back a request that Brave neither served nor billed (429, key refused, nothing
+    sent), in its own short transaction; never below zero (`SearchUsageRepository.release`)."""
     released = await SearchUsageRepository(db, user_id).release(
         BRAVE, reservation.month, reservation.fingerprint
     )
@@ -78,7 +78,7 @@ class BraveUsage:
 
 
 async def brave_usage(db: AsyncSession, keys: KeyReader, user_id: str, now: datetime) -> BraveUsage:
-    """Requêtes Brave du mois pour la clé en vigueur de l'utilisateur (0 sans clé)."""
+    """Brave requests of the month for the user's current key (0 without a key)."""
     month = month_of(now)
     api_key = await brave_key(keys, user_id)
     if api_key is None:

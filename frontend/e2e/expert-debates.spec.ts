@@ -22,11 +22,11 @@ test("le débat ouvre une source au clavier et retrouve le jugement", async ({
     }),
   );
   await finishFirstLaunch(request);
-  await page.goto("/etudier/debats");
+  await page.goto("/study/debates");
   const input = page.getByRole("textbox", { name: "Ta question" });
   await input.fill(question);
   await page.getByRole("button", { name: "Lancer le débat" }).press("Enter");
-  await expect(page).toHaveURL(/\/etudier\/debats\/[0-9a-f-]+$/);
+  await expect(page).toHaveURL(/\/study\/debates\/[0-9a-f-]+$/);
   const expert = page.getByRole("article", { name: "Chercheur" });
   const reference = expert.getByRole("link", { name: /Méthode de comparaison/ });
   await expect(reference).toBeVisible();
@@ -37,7 +37,7 @@ test("le débat ouvre une source au clavier et retrouve le jugement", async ({
   await page.getByRole("textbox", { name: "Ton jugement" }).fill(judgment);
   await page.getByRole("button", { name: "Enregistrer mon jugement" }).press("Enter");
   await expect(page.getByText("Jugement enregistré.")).toBeVisible();
-  await page.goto("/etudier/debats");
+  await page.goto("/study/debates");
   await page.getByRole("link", { name: question, exact: true }).press("Enter");
   await expect(page.getByRole("textbox", { name: "Ton jugement" })).toHaveValue(judgment);
 });

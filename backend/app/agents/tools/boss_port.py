@@ -1,4 +1,4 @@
-"""Contrat entre le graphe d'évaluation et les tentatives Boss."""
+"""Contract between the review graph and Boss attempts."""
 
 from collections.abc import Awaitable
 from typing import Literal, Protocol
@@ -67,12 +67,12 @@ class BossReviewPort(Protocol):
 
 class _Unavailable:
     async def diagnose(self, user_id: str, program_id: str, session_id: str) -> BossSubmission:
-        raise AppError("boss_unavailable", "L’évaluation du Boss est indisponible.", 503)
+        raise AppError("boss_unavailable", "The Boss review is unavailable.", 503)
 
     async def grade(
         self, user_id: str, program_id: str, session_id: str, rubric: BossRubric
     ) -> BossGrade:
-        raise AppError("boss_unavailable", "L’évaluation du Boss est indisponible.", 503)
+        raise AppError("boss_unavailable", "The Boss review is unavailable.", 503)
 
 
 NO_BOSS: BossReviewPort = _Unavailable()

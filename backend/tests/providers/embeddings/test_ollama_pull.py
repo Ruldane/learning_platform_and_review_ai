@@ -135,7 +135,7 @@ async def test_ollama_down_is_readable() -> None:
     watcher, http = watcher_for(ollama)
     async with http:
         data = await watcher.progress()
-    assert (data.present, data.percent, data.detail) == (False, None, "Ollama ne répond pas.")
+    assert (data.present, data.percent, data.detail) == (False, None, "Ollama is not responding.")
     assert data.model == MODEL and ollama.pulls == []
 
 
@@ -146,7 +146,7 @@ async def test_ollama_error_status_is_readable() -> None:
     http = httpx.AsyncClient(transport=httpx.MockTransport(handler))
     async with http:
         data = await OllamaPullWatcher(BASE, MODEL, http).progress()
-    assert not data.present and data.percent is None and data.detail == "Ollama ne répond pas."
+    assert not data.present and data.percent is None and data.detail == "Ollama is not responding."
 
 
 async def test_failed_pull_is_retried_only_after_a_pause(caplog: pytest.LogCaptureFixture) -> None:
@@ -160,7 +160,7 @@ async def test_failed_pull_is_retried_only_after_a_pause(caplog: pytest.LogCaptu
         await settle()
         again = await watcher.progress()  # échec tout frais : on attend
         assert len(ollama.pulls) == 1 and not again.present and again.percent is None
-        assert "échoué" in again.detail
+        assert "failed" in again.detail
         now[0] += 3600
         await watcher.progress()
         await settle()
@@ -181,7 +181,7 @@ async def test_pull_cut_short_is_a_failure_not_a_crash() -> None:
         await watcher.progress()
         await settle()
         data = await watcher.progress()
-    assert not data.present and "échoué" in data.detail
+    assert not data.present and "failed" in data.detail
 
 
 async def test_stream_closed_without_success_is_a_failure_then_retried() -> None:
@@ -193,7 +193,7 @@ async def test_stream_closed_without_success_is_a_failure_then_retried() -> None
         await watcher.progress()
         await settle()
         data = await watcher.progress()
-        assert data.percent is None and "échoué" in data.detail and len(ollama.pulls) == 1
+        assert data.percent is None and "failed" in data.detail and len(ollama.pulls) == 1
         now[0] += 31
         await watcher.progress()
         await settle()

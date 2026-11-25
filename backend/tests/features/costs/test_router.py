@@ -77,7 +77,7 @@ async def test_costs_days_not_in_windows_is_422(client: httpx.AsyncClient, days:
     assert r.json() == {
         "error": {
             "code": "validation_error",
-            "message": "Requête invalide : vérifie les champs signalés.",
+            "message": "Invalid request. Check the highlighted fields.",
             "details": {"fields": ["days"]},
         }
     }

@@ -49,7 +49,7 @@ async def _seed_deadlines(app: FastAPI) -> None:
     async with app.state.session_factory() as db:
         skills = SkillsService(db, owner)
         await skills.raise_levels(
-            ["Transactions"], "prouve", evidence("project", "sample", "Test", now)
+            ["Transactions"], "proven", evidence("project", "sample", "Test", now)
         )
         skill = await skills.skill_id_for("Transactions")
         assert skill is not None

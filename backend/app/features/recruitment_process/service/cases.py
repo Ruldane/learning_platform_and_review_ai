@@ -1,4 +1,4 @@
-"""Une offre analysée, des acquis attestés et trois étapes comparables."""
+"""An analyzed job posting, attested skills and three comparable steps."""
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -22,16 +22,16 @@ from app.features.recruitment_process.service.steps import view
 _REVIEWED = {"validated", "to_redo"}
 _RUBRIC = (
     RecruitmentCriterion(
-        label="Lien avec l’offre",
-        instructions="La réponse traite les attentes de l’offre et justifie les priorités.",
+        label="Fit with the job posting",
+        instructions="The answer addresses the posting's expectations and justifies priorities.",
     ),
     RecruitmentCriterion(
-        label="Démarche",
-        instructions="Les étapes, contrôles et limites de la démarche sont explicites.",
+        label="Approach",
+        instructions="The steps, checks and limits of the approach are explicit.",
     ),
     RecruitmentCriterion(
-        label="Preuves vérifiables",
-        instructions="Les affirmations sont appuyées par des éléments, mesures ou tests précis.",
+        label="Verifiable evidence",
+        instructions="Claims are backed by specific facts, measurements or tests.",
     ),
 )
 
@@ -41,27 +41,27 @@ def _prompts(requirement: str) -> list[RecruitmentStep]:
         RecruitmentStep(
             kind="project",
             prompt=(
-                f"Présente comment ton projet répond à cette attente de l’offre. {requirement}\n"
-                "Explique ton rôle, les décisions prises et un résultat vérifiable. "
-                "Précise les éléments qui restent à démontrer."
+                f"Show how your project meets this expectation of the job posting. {requirement}\n"
+                "Explain your role, the decisions made and a verifiable result. "
+                "State what still remains to be demonstrated."
             ),
         ),
         RecruitmentStep(
             kind="exercise",
             prompt=(
-                f"Mise en situation. Une première solution répond partiellement à cette attente. "
+                "Scenario. A first solution partially meets this expectation. "
                 f"{requirement}\n"
-                "Le délai est court et les données sont incomplètes. Décris la première mesure "
-                "que tu prendrais, un risque et la vérification qui te ferait changer d’avis."
+                "The deadline is short and the data is incomplete. Describe the first step "
+                "you would take, one risk, and the check that would make you change your mind."
             ),
         ),
         RecruitmentStep(
             kind="interview",
             prompt=(
-                f"Le recruteur te demande ce que ton expérience démontre pour cette attente. "
+                "The recruiter asks what your experience demonstrates for this expectation. "
                 f"{requirement}\n"
-                "Donne un exemple avec contexte, action et résultat. Si le recruteur met en "
-                "doute ton résultat, quelle preuve peux-tu présenter et quelle limite admettre ?"
+                "Give an example with context, action and result. If the recruiter questions "
+                "your result, what evidence can you present and which limit would you admit?"
             ),
         ),
     ]
@@ -72,7 +72,9 @@ async def options(rt: ProjectsRuntime, db: AsyncSession, user_id: str) -> Recrui
         postings=[
             RecruitmentChoice(
                 id=item.id,
-                title=" · ".join(filter(None, (item.title or "Offre analysée", item.company))),
+                title=" · ".join(
+                    filter(None, (item.title or "Analyzed job posting", item.company))
+                ),
             )
             for item in await list_postings(db, user_id)
             if item.status == "ready"
@@ -92,7 +94,9 @@ async def _project(
         return None
     found = await get_project(rt, db, user_id, project_id)
     if found.status not in _REVIEWED or not found.submissions or found.evaluation is None:
-        raise AppError("recruitment_project_not_reviewed", "Choisis un projet déjà évalué.", 409)
+        raise AppError(
+            "recruitment_project_not_reviewed", "Choose a project that was already reviewed.", 409
+        )
     return {
         "id": found.id,
         "title": found.title,
@@ -109,7 +113,7 @@ async def create(
     analysis = posting.analysis
     if posting.status != "ready" or analysis is None:
         raise AppError(
-            "recruitment_offer_pending", "Choisis une offre dont l’analyse est prête.", 409
+            "recruitment_offer_pending", "Choose a job posting whose analysis is ready.", 409
         )
     cases = RecruitmentCases(db, user_id)
     demonstrated = await cases.demonstrated_skills()

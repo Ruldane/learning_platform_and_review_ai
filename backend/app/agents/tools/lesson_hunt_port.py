@@ -1,4 +1,4 @@
-"""Échanges du Vérificateur avec un exercice de lecture critique."""
+"""Exchanges between the Verifier and a critical-reading exercise."""
 
 from dataclasses import dataclass
 from typing import Protocol, Self
@@ -16,7 +16,7 @@ class ErrorEdit(BaseModel):
     @model_validator(mode="after")
     def is_a_change(self) -> Self:
         if self.source.strip() == self.replacement.strip() or not self.replacement.strip():
-            raise ValueError("Le passage modifié doit contenir une erreur distincte.")
+            raise ValueError("The modified passage must contain a distinct error.")
         return self
 
 
@@ -57,17 +57,17 @@ class LessonHuntStore(Protocol):
 
 class _MissingLessonHunt:
     async def context(self, user_id: str, hunt_id: str, session_id: str) -> HuntContext:
-        raise RuntimeError("La lecture critique n’est pas branchée.")
+        raise RuntimeError("Critical reading is not wired.")
 
     async def publish(
         self, user_id: str, hunt_id: str, session_id: str, changes: ErrorPair
     ) -> None:
-        raise RuntimeError("La lecture critique n’est pas branchée.")
+        raise RuntimeError("Critical reading is not wired.")
 
     async def assess(
         self, user_id: str, hunt_id: str, session_id: str, feedback: HuntAssessment
     ) -> None:
-        raise RuntimeError("La lecture critique n’est pas branchée.")
+        raise RuntimeError("Critical reading is not wired.")
 
 
 NO_HUNT: LessonHuntStore = _MissingLessonHunt()

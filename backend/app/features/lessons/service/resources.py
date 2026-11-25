@@ -1,7 +1,7 @@
-"""Ressources des leçons (SPEC 3.6, D91) : 3 à 6 par module, choisies par l'Éclaireur parmi les
-sources notées 60 ou plus de la session ; auteur, date et langue viennent de la ligne `sources`,
-jamais du modèle. Bibliothèque filtrable par programme, type, langue et statut ; la copie locale
-d'un PDF libre n'est servie qu'à son propriétaire."""
+"""Lesson resources (SPEC 3.6, D91): 3 to 6 per module, chosen by the Scout among the session's
+sources scored 60 or more; author, date and language come from the `sources` row, never from the
+model. Library filterable by program, type, language and status; the local copy of a free PDF is
+only served to its owner."""
 
 from collections.abc import Sequence
 
@@ -32,13 +32,11 @@ READING_NOTE_MAX = 2000
 
 
 def resource_not_found() -> AppError:
-    return AppError("resource_not_found", "Ressource introuvable.", 404)
+    return AppError("resource_not_found", "Resource not found.", 404)
 
 
 def resource_file_missing() -> AppError:
-    return AppError(
-        "resource_file_missing", "Aucune copie locale pour cette ressource : ouvre son lien.", 404
-    )
+    return AppError("resource_file_missing", "No local copy for this resource: open its link.", 404)
 
 
 def to_out(row: Resource) -> ResourceOut:
@@ -69,7 +67,7 @@ def _cut(value: str | None, size: int) -> str | None:
 
 
 def _fields(pick: ResourcePick, source: Source) -> dict[str, object]:
-    """Le choix du modèle (type, durée, niveau, raison) et la source telle qu'elle a été lue."""
+    """The model's choice (type, duration, level, reason) and the source as it was read."""
     return {
         "source_id": source.id,
         "type": pick.type,
@@ -95,8 +93,8 @@ async def upsert_resources(
     sources: dict[str, Source],
     preserve_existing: bool = False,
 ) -> int:
-    """Ressources du module, une par adresse (`url_hash` de la source) : rejoué, rien ne double.
-    Un choix qui ne désigne pas une page retenue de la session est ignoré."""
+    """The module's resources, one per address (the source's `url_hash`): replayed, nothing is
+    duplicated. A pick that does not point to a kept page of the session is ignored."""
     repo = ResourceRepository(db, user_id)
     kept = 0
     for pick in picks:
@@ -107,7 +105,7 @@ async def upsert_resources(
         row = await repo.by_url(module_id, source.url_hash)
         if row is None:
             if preserve_existing:
-                text = (source.summary or source.reason or "Fiche indisponible.").strip()
+                text = (source.summary or source.reason or "Note unavailable.").strip()
                 fields["note"] = text[:READING_NOTE_MAX]
             await repo.add(
                 module_id=module_id, program_id=program_id, url_hash=source.url_hash, **fields
@@ -128,7 +126,7 @@ async def attach_resources(
     program_id: str,
     readings: Sequence[ResourceWriteIn],
 ) -> None:
-    """Ajoute les liens dans la transaction de la leçon, sans toucher aux fiches déjà lues."""
+    """Adds the links in the lesson's transaction, without touching notes already read."""
     if not readings:
         return
     repo = ResourceRepository(db, user_id)
@@ -153,8 +151,8 @@ async def list_resources(db: AsyncSession, user_id: str, f: ResourceFilter) -> l
 async def repository_resources(
     db: AsyncSession, user_id: str, program_id: str
 ) -> tuple[tuple[str, str], ...]:
-    """Liens de dépôts étudiés, avec leur module, pour les suggestions de contribution."""
-    filter_ = ResourceFilter(program_id=program_id, type="depot")
+    """Links of studied repositories, with their module, for contribution suggestions."""
+    filter_ = ResourceFilter(program_id=program_id, type="repository")
     rows = await ResourceRepository(db, user_id).filtered(filter_)
     return tuple((row.module_id, row.url) for row in rows)
 
@@ -171,7 +169,7 @@ async def patch_resource(
 async def resource_file(
     db: AsyncSession, storage: FileStorage, user_id: str, resource_id: str
 ) -> bytes:
-    """La copie locale du PDF, à son propriétaire seulement (ressource d'un autre : 404)."""
+    """The local copy of the PDF, to its owner only (someone else's resource: 404)."""
     row = await ResourceRepository(db, user_id).get(resource_id)
     if row is None:
         raise resource_not_found()

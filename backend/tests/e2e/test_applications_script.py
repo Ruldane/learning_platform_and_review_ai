@@ -44,12 +44,12 @@ MANUAL_TITLE = "Développeuse IA (H/F)"  # la fiche manuelle du parcours (préfl
 
 
 def _prompt(today: date = TODAY) -> str:
-    return render_prompt("tracker", **parse_vars(SENTENCE, today, "fr"))
+    return render_prompt("tracker", **parse_vars(SENTENCE, today, "en"))
 
 
 async def _read(today: date = TODAY) -> str:
     models = ScriptedModels(applications_scripts())
-    model = await models.get_chat_model("u1", "rapide", agent="tracker")
+    model = await models.get_chat_model("u1", "fast", agent="tracker")
     reply = await model.ainvoke([SystemMessage(_prompt(today)), HumanMessage(INTAKE_REQUEST)])
     return str(reply.content)
 
@@ -75,12 +75,12 @@ async def test_a_reading_the_real_validation_would_refuse_is_caught_here() -> No
     """Garde-fou de ce test : le contrôle des mots de la phrase refuse bien un poste inventé."""
     invented = json.loads(await _read()) | {"title": "Ingénieure produit"}
 
-    with pytest.raises(ValueError, match="recopié de la phrase"):
+    with pytest.raises(ValueError, match="copied from the sentence"):
         reading_schema(TODAY, SENTENCE).model_validate(invented)
 
 
 def test_a_prompt_without_yesterday_fails_naming_the_cause() -> None:
-    with pytest.raises(RuntimeError, match="hier"):
+    with pytest.raises(RuntimeError, match="yesterday"):
         intake_reading([HumanMessage("Rien.")])
 
 
@@ -97,7 +97,7 @@ def test_the_sentence_matches_the_manual_application_but_not_the_posting_ones() 
 
 async def test_the_queue_serves_every_sentence_and_retry_of_the_journey() -> None:
     models = ScriptedModels(applications_scripts())
-    model = await models.get_chat_model("u1", "rapide", agent="tracker")
+    model = await models.get_chat_model("u1", "fast", agent="tracker")
     messages = [SystemMessage(_prompt()), HumanMessage(INTAKE_REQUEST)]
 
     for _ in range(applications_script.LONG):

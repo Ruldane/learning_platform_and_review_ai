@@ -1,14 +1,14 @@
-"""Polices libres depuis Google Fonts (D119) : la feuille CSS2 (`fonts.googleapis.com`) donne
-l'adresse de chaque fichier (`fonts.gstatic.com`) ; ces deux hôtes seulement, en HTTPS, 15 s par
-requête, 2 Mo par fichier, aucune redirection suivie.
+"""Free fonts from Google Fonts (D119): the CSS2 stylesheet (`fonts.googleapis.com`) gives
+the address of each file (`fonts.gstatic.com`); these two hosts only, over HTTPS, 15 s per
+request, 2 MB per file, no redirect followed.
 
-Un agent utilisateur neutre fait servir des fichiers TrueType complets (un fichier par graisse,
-tous les caractères), là où un navigateur reçoit du `woff2` découpé par alphabet. « Liberation
-Sans » et « Liberation Serif » n'y sont pas : Google sert leurs jumelles « Arimo » et « Tinos »
-(même dessin, mêmes métriques), rendues sous le nom du catalogue.
+A neutral user agent gets complete TrueType files served (one file per weight,
+all characters), where a browser receives `woff2` split by alphabet. "Liberation
+Sans" and "Liberation Serif" are not there: Google serves their twins "Arimo" and "Tinos"
+(same design, same metrics), returned under the catalogue's name.
 
-Journal : statut et nombre de fichiers, jamais la famille (elle trahirait la police du PDF, D126),
-l'adresse ni la réponse."""
+Log: status and number of files, never the family (it would betray the PDF's font, D126),
+the address or the response."""
 
 import asyncio
 import logging
@@ -40,19 +40,19 @@ _STYLE = re.compile(r"font-style:\s*(normal|italic)")
 _WEIGHT = re.compile(r"font-weight:\s*(\d{3})\s*;")
 _SRC = re.compile(r"src:\s*url\(([^)\s'\"]+)\)\s*format\('(truetype|woff2)'\)")
 _SUFFIXES: dict[str, Literal[".woff2", ".ttf"]] = {"truetype": ".ttf", "woff2": ".woff2"}
-# Signatures : TrueType (version 1.0 ou « true »), OpenType CFF, WOFF2.
+# Signatures: TrueType (version 1.0 or "true"), OpenType CFF, WOFF2.
 _MAGIC = {".ttf": (b"\x00\x01\x00\x00", b"true", b"OTTO"), ".woff2": (b"wOF2",)}
 
 
 def fonts_http() -> httpx.AsyncClient:
-    """Client de Google Fonts, ouvert par la composition : ni proxy ni réglage de
-    l'environnement, aucune redirection, 15 s."""
+    """Google Fonts client, opened by the composition: no proxy or environment
+    setting, no redirect, 15 s."""
     return httpx.AsyncClient(follow_redirects=False, trust_env=False, timeout=FONT_TIMEOUT_S)
 
 
 def _faces(css: str, weights: set[int]) -> dict[int, tuple[str, str]]:
-    """Graisse → (adresse, format) des faces normales demandées ; la première face d'une graisse
-    l'emporte (sans `unicode-range` avec notre agent utilisateur)."""
+    """Weight -> (address, format) of the requested normal faces; the first face of a weight
+    wins (without `unicode-range` with our user agent)."""
     found: dict[int, tuple[str, str]] = {}
     for body in _FACE.findall(css):
         style, weight, src = _STYLE.search(body), _WEIGHT.search(body), _SRC.search(body)
@@ -65,33 +65,33 @@ def _faces(css: str, weights: set[int]) -> dict[int, tuple[str, str]]:
 
 
 async def _get(http: httpx.AsyncClient, url: str, limit: int, **params: str) -> bytes:
-    """Corps d'une réponse 200 de `url`, `limit` octets au plus ; `FontUnavailable` sinon."""
+    """Body of a 200 response from `url`, `limit` bytes at most; `FontUnavailable` otherwise."""
     parts = urlsplit(url)
     if parts.scheme != "https" or parts.hostname not in {"fonts.googleapis.com", FILES_HOST}:
-        raise _Refused("hôte refusé")
+        raise _Refused("host refused")
     async with (
         asyncio.timeout(FONT_TIMEOUT_S),
         http.stream("GET", url, params=params, headers={"User-Agent": USER_AGENT}) as response,
     ):
         if response.status_code != 200:
-            raise _Refused(f"statut {response.status_code}")
+            raise _Refused(f"status {response.status_code}")
         body = bytearray()
         async for chunk in response.aiter_bytes():
             body += chunk
             if len(body) > limit:
-                raise _Refused("trop volumineux")
+                raise _Refused("too large")
     return bytes(body)
 
 
 class _Refused(Exception):
-    """Refus lisible dans le journal : jamais l'adresse ni le corps."""
+    """Refusal readable in the log: never the address or the body."""
 
     def __init__(self, reason: str) -> None:
         self.reason = reason
 
 
 class GoogleFontsSource:
-    """`FontSource` de la composition, sur le client de `fonts_http`."""
+    """`FontSource` of the composition, on the `fonts_http` client."""
 
     def __init__(self, http: httpx.AsyncClient) -> None:
         self._http = http
@@ -103,10 +103,10 @@ class GoogleFontsSource:
         try:
             return await self._fetch(family, wanted)
         except _Refused as refused:
-            logger.info("Police indisponible (%s)", refused.reason)
+            logger.info("Font unavailable (%s)", refused.reason)
         except (TimeoutError, httpx.HTTPError, UnicodeDecodeError) as exc:
-            # Type seul : le message d'une erreur httpx peut citer l'adresse.
-            logger.info("Police indisponible (%s)", type(exc).__name__)
+            # Type only: the message of an httpx error may quote the address.
+            logger.info("Font unavailable (%s)", type(exc).__name__)
         raise FontUnavailable() from None
 
     async def _fetch(self, family: str, weights: list[int]) -> list[FontFile]:
@@ -115,14 +115,14 @@ class GoogleFontsSource:
         css = (await _get(self._http, CSS_URL, _CSS_MAX_BYTES, family=spec)).decode("utf-8")
         faces = _faces(css, set(weights))
         if set(faces) != set(weights):
-            # Résultat jamais partiel : le gabarit compte sur chaque graisse (revue 6.3, M5).
-            raise _Refused("graisse absente")
+            # Never a partial result: the template relies on each weight (review 6.3, M5).
+            raise _Refused("weight missing")
         files: list[FontFile] = []
         for weight, (url, kind) in sorted(faces.items()):
             suffix = _SUFFIXES[kind]
             data = await _get(self._http, url, FONT_MAX_BYTES)
             if not data.startswith(_MAGIC[suffix]):
-                raise _Refused("fichier invalide")
+                raise _Refused("invalid file")
             files.append(FontFile(family, weight, "normal", data, suffix))
-        logger.info("Police chargée (%s fichiers)", len(files))
+        logger.info("Font loaded (%s files)", len(files))
         return files

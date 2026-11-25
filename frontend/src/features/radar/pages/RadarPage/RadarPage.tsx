@@ -8,10 +8,10 @@ import { useRadar } from "../../hooks/useRadar";
 import { useStartRadar } from "../../hooks/useStartRadar";
 import { RadarContent } from "./RadarContent";
 
-const RADAR_PATH = "/carriere/radar";
+const RADAR_PATH = "/career/radar";
 
 /**
- * Le radar du marché (`/carriere/radar`, `/carriere/radar/:runId`) : le formulaire prérempli, le
+ * Le radar du marché (`/career/radar`, `/career/radar/:runId`) : le formulaire prérempli, le
  * relevé montré (le dernier fini, ou celui de l'adresse ; en cours, suivi par sa session), puis
  * l'historique. Un relevé déjà en cours est suivi, jamais relancé. `createSocket` ne sert qu'aux
  * tests.

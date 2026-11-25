@@ -1,4 +1,4 @@
-"""Lecture de l’article par le port web et préparation du mini-cours par le Rédacteur."""
+"""Read the paper and prepare a short lesson on its method and experiment."""
 
 import json
 from typing import Any, TypedDict
@@ -29,7 +29,7 @@ class PaperLabState(TypedDict, total=False):
 async def _read(deps: GraphDeps, url: str) -> ArticleSource:
     page = await deps.ports.web.read(deps.user_id, deps.session_id, url)
     if page.status != "ok" or len(page.text.strip()) < 100:
-        raise AppError("paper_lab_source", "Le texte de cet article est indisponible.", 422)
+        raise AppError("paper_lab_source", "The text of this paper is unavailable.", 422)
     return ArticleSource(page.url, page.title or "Article source", page.text[:28_000])
 
 
@@ -43,15 +43,15 @@ async def _prepare(deps: GraphDeps, source: ArticleSource) -> PaperDraft:
             HumanMessage(
                 untrusted(
                     json.dumps(
-                        {"titre": source.title, "texte": source.material}, ensure_ascii=False
+                        {"title": source.title, "text": source.material}, ensure_ascii=False
                     ),
-                    "texte principal de l’article",
+                    "main text of the paper",
                 )
             ),
         ],
         agent=AGENT,
         step="experience_article",
-        intent="je relie la méthode de l’article à une expérience",
+        intent="connecting the paper's method to an experiment",
         retries=1,
     )
 
@@ -65,7 +65,7 @@ def build(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
             source = await _read(deps, context.url)
             draft = await _prepare(deps, source)
             await store.publish(deps.user_id, lab_id, deps.session_id, source, draft)
-        return {"summary": "Le mini-cours et le notebook sont prêts."}
+        return {"summary": "The short lesson and notebook are ready."}
 
     graph = StateGraph(PaperLabState)
     graph.add_node("prepare", prepare)

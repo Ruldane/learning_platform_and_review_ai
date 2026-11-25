@@ -1,1 +1,1 @@
-"""Comparaison de versions à l’aveugle."""
+"""Blind comparison of versions."""

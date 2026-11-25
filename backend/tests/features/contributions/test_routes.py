@@ -47,7 +47,7 @@ async def seed(app: FastAPI, program: Draft) -> GithubDouble:
                 program_id=program.program_id,
                 module_id=source.modules[0].id,
                 title="Dépôt de préparation",
-                type="depot",
+                type="repository",
                 url=f"https://github.com/{REPO.name}",
                 url_hash="recette",
             )

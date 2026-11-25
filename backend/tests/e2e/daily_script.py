@@ -39,8 +39,8 @@ LONG = 12  # réponses prévues par agent : bien plus que les appels du parcours
 
 # --- Brief -----------------------------------------------------------------------------------
 
-PICK_REQUEST = "Choisis la ressource du jour."  # la demande de l'Éclaireur (`brief_resource.py`)
-ADVICE_REQUEST = "Écris le conseil du jour."  # celle du Modérateur (`moderator_brief.py`)
+PICK_REQUEST = "Choose today's resource."  # The Scout's request.
+ADVICE_REQUEST = "Write today's advice."  # The Moderator's request.
 TOPIC_QUERY = f"{ROLE} actualités"
 PICKED = 2  # le rang du résultat choisi (à partir de 1)
 WHY = "Un état des lieux récent du métier, utile pour ton poste visé."
@@ -117,7 +117,7 @@ OFFERS = [
     Offer(
         "Ingénieur données",
         "Société Fictive",
-        "confirme",
+        "mid_level",
         "partiel",
         "45 000 à 55 000 euros",
         (("Python", True), ("SQL", True), ("Modélisation de données", False)),
@@ -153,7 +153,7 @@ OFFERS = [
     Offer(
         "Analytics engineer",
         "Autre SA",
-        "confirme",
+        "mid_level",
         "partiel",
         None,
         (("SQL", True), ("Modélisation de données", True)),
@@ -162,7 +162,7 @@ OFFERS = [
     Offer(
         "Ingénieur données, équipe produit",
         "Exemple Tech",
-        "confirme",
+        "mid_level",
         "total",
         None,
         (("Python", True), ("Pipelines de données", True), ("Communication", False)),
@@ -180,7 +180,7 @@ OFFERS = [
     Offer(
         "Ingénieure données, finance",
         "Autre SA",
-        "confirme",
+        "mid_level",
         "non",
         None,
         (("Python", True), ("SQL", True), ("Qualité des données", True)),
@@ -205,7 +205,7 @@ def offer_text(number: int) -> str:
 
 
 _PAGE = re.compile(
-    r'<<<CONTENU_NON_FIABLE source="offre (p\d+)">>>\n(.*?)\n<<<FIN_CONTENU_NON_FIABLE>>>',
+    r'<<<UNTRUSTED_CONTENT source="posting (p\d+)">>>\n(.*?)\n<<<END_UNTRUSTED_CONTENT>>>',
     re.DOTALL,
 )
 _NUMBER = re.compile(re.escape(REFERENCE) + r" (\d+)\.")

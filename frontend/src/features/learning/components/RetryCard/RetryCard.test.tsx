@@ -5,7 +5,7 @@ import { RetryCard } from "./RetryCard";
 
 const base = {
   help: "Le Conseil repart du début.",
-  actionLabel: "Relancer le Conseil",
+  actionLabel: "Restart the Council",
   busy: false,
   notice: null,
   error: null,
@@ -15,7 +15,7 @@ describe("RetryCard", () => {
   it("relaunches on click and says what it does", async () => {
     const onRetry = vi.fn();
     render(<RetryCard {...base} title="Échec." onRetry={onRetry} />);
-    const button = screen.getByRole("button", { name: "Relancer le Conseil" });
+    const button = screen.getByRole("button", { name: "Restart the Council" });
     expect(button).toHaveAccessibleDescription("Le Conseil repart du début.");
     expect(screen.getByText("Échec.")).toBeInTheDocument();
     await userEvent.setup().click(button);
@@ -26,7 +26,7 @@ describe("RetryCard", () => {
     render(
       <RetryCard {...base} busy notice="Relu." error="Panne." onRetry={vi.fn()} />,
     );
-    expect(screen.getByRole("button", { name: "Relance en cours…" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Restarting…" })).toBeDisabled();
     expect(screen.getByRole("status")).toHaveTextContent("Relu.");
     expect(screen.getByRole("alert")).toHaveTextContent("Panne.");
   });

@@ -1,4 +1,4 @@
-"""Correspondance statique des API de Python et remplacement ciblé des clôtures Markdown."""
+"""Static mapping of Python APIs and targeted replacement of Markdown fences."""
 
 import ast
 from collections import Counter
@@ -89,7 +89,7 @@ def _instances(
         if len(statement.targets) != 1 or not isinstance(target := statement.targets[0], ast.Name):
             continue
         constructor = _resolve(statement.value.func, aliases)
-        # Limité aux constructeurs importés, affectés une seule fois au niveau du bloc.
+        # Limited to imported constructors, assigned only once at block level.
         if (
             bindings[target.id] == 1
             and constructor

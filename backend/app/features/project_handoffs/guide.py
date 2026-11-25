@@ -15,24 +15,24 @@ def _literal(text: str) -> str:
 def preview_guide(
     source: ProjectHandoffSource, draft: ProjectHandoffDraft
 ) -> ProjectHandoffPreview:
-    """Le rendu et les notes sont du texte littéral, dans des blocs Markdown indentés."""
+    """The submission and the notes are literal text, in indented Markdown blocks."""
     parts = [
-        "# Guide de reprise",
-        "## Projet",
+        "# Handoff guide",
+        "## Project",
         _literal(source.project_title),
-        f"Identifiant du projet `{source.project_id}`",
-        f"Rendu du `{source.submitted_at.isoformat()}`",
+        f"Project identifier `{source.project_id}`",
+        f"Submitted on `{source.submitted_at.isoformat()}`",
     ]
     if source.description:
-        parts += ["## Rendu existant", _literal(source.description)]
+        parts += ["## Existing submission", _literal(source.description)]
     if source.repo_url:
-        parts += ["## Dépôt du rendu", _literal(source.repo_url)]
+        parts += ["## Submission repository", _literal(source.repo_url)]
     parts += [
-        "## Commandes de recette",
+        "## Acceptance commands",
         _literal(draft.commands),
-        "## Limites connues",
+        "## Known limitations",
         _literal(draft.limitations),
-        "## Étapes de prise en main",
+        "## Getting started steps",
         _literal(draft.steps),
     ]
     markdown = "\n\n".join(parts) + "\n"

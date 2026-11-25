@@ -19,7 +19,7 @@ export function toFrozenWatch(item: WatchResult): FrozenWatchView {
   };
 }
 
-export const basePath = "/etudier/veille-contradictoire";
+export const basePath = "/study/contradictory-watch";
 export const watchKey = ["contradictory_watch"] as const;
 export const experimentKey = (id: string) => [...watchKey, id] as const;
 

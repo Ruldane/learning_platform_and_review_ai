@@ -1,4 +1,4 @@
-"""Contrôles de santé qui s'appuient sur les features : la base et les clés LLM (sans réseau)."""
+"""Health checks that rely on features: the database and the LLM keys (no network)."""
 
 from collections.abc import Callable, Mapping
 from typing import Protocol
@@ -26,8 +26,8 @@ class DatabaseCheck:
 
 
 class _KeyEntry(Protocol):
-    """Ce que `_describe` lit d'une entrée de `ApiKeyService.list()` (type local : une feature
-    n'importe d'une autre que son service)."""
+    """What `_describe` reads from an entry of `ApiKeyService.list()` (local type: a feature
+    imports only the service of another feature)."""
 
     @property
     def label(self) -> str: ...
@@ -39,20 +39,20 @@ class _KeyEntry(Protocol):
 
 def _describe(entry: _KeyEntry) -> str:
     if entry.source is None:
-        return f"{entry.label} : aucune clé"
-    return f"{entry.label} : {'clé présente' if entry.readable else 'clé illisible'}"
+        return f"{entry.label}: no key"
+    return f"{entry.label}: {'key present' if entry.readable else 'key unreadable'}"
 
 
-GOOGLE_MODE_DETAIL = "Mode Google : les clés de chaque compte se vérifient dans ses réglages."
+GOOGLE_MODE_DETAIL = "Google mode: each account's keys are checked in its settings."
 
 
 class LlmKeysCheck:
-    """`ok` si l'utilisateur local a au moins une clé LLM lisible (interface ou `.env`).
-    Aucun appel réseau : le test réel d'une clé reste l'action « Tester » des réglages.
+    """`ok` if the local user has at least one readable LLM key (interface or `.env`).
+    No network call: the real test of a key remains the "Test" action in the settings.
 
-    Mode Google (P12) : `/health` est public et il n'y a plus « un » utilisateur ; les clés sont
-    celles de chaque compte (ou du `.env`), vérifiées dans ses réglages : le contrôle est `ok`
-    avec une indication, jamais un état dégradé permanent (D28 n° 3)."""
+    Google mode (P12): `/health` is public and there is no longer "one" user; the keys are
+    those of each account (or of `.env`), checked in its settings: the check is `ok`
+    with a hint, never a permanent degraded state (D28 no. 3)."""
 
     name = "llm"
 
@@ -78,22 +78,23 @@ class LlmKeysCheck:
             return HealthStatus(ok=True, detail=GOOGLE_MODE_DETAIL)
         user_id = self._local_user_id()
         if user_id is None:
-            return HealthStatus(ok=False, detail="Aucun utilisateur local.")
+            return HealthStatus(ok=False, detail="No local user.")
         async with self._session_factory() as session:
             service = ApiKeyService(
                 session, user_id, self._cipher, self._env_keys, self._providers, llm=self._providers
             )
             entries = await service.list()
         usable = any(e.source is not None and e.readable for e in entries)
-        return HealthStatus(ok=usable, detail=" ; ".join(_describe(e) for e in entries))
+        return HealthStatus(ok=usable, detail="; ".join(_describe(e) for e in entries))
 
 
 class SandboxCheck:
-    """`ok` si le bac à sable bat (le lanceur du conteneur `sandbox` écrit son battement chaque
-    seconde). Aucun code n'est exécuté : le contrôle ne lit qu'un horodatage."""
+    """`ok` if the sandbox has a heartbeat (the `sandbox` container launcher writes its
+    heartbeat every
+    second). No code is executed: the check only reads a timestamp."""
 
     name = "sandbox"
-    label = "Bac à sable"
+    label = "Sandbox"
 
     def __init__(self, sandbox: CodeSandbox) -> None:
         self._sandbox = sandbox
@@ -101,4 +102,4 @@ class SandboxCheck:
     async def check(self) -> HealthStatus:
         if await self._sandbox.healthy():
             return available()
-        return HealthStatus(ok=False, detail="Bac à sable : le conteneur ne répond pas.")
+        return HealthStatus(ok=False, detail="Sandbox: the container is not responding.")

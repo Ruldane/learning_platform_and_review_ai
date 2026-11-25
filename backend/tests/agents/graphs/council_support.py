@@ -127,10 +127,10 @@ class Council:
 
     def search_queries_prompt(self) -> str:
         """Prompt du nœud `plan` de l'Éclaireur."""
-        return next(p for p in self.prompts() if "Prépare les requêtes de recherche." in p)
+        return next(p for p in self.prompts() if "Prepare the search queries." in p)
 
     def people_prompt(self) -> str:
-        return next(p for p in self.prompts() if "Repère les praticiens." in p)
+        return next(p for p in self.prompts() if "Find practitioners." in p)
 
 
 type MakeCouncil = Callable[..., Awaitable[Council]]

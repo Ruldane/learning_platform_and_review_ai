@@ -21,8 +21,12 @@ from datetime import date, timedelta
 from app.agents.tools.kit_schema import CompanyDossier, NewsItem, SourceRef
 
 NEWS_MAX_AGE = timedelta(days=183)
-UNSOURCED = "Non trouvé dans les sources lues."
-SIZES = {"startup": "startup", "pme": "PME", "grand_groupe": "grand groupe", "inconnu": "inconnue"}
+UNSOURCED = "No evidence found in the sources read."
+SIZES = {
+    "startup": "startup",
+    "sme": "small or medium-sized business",
+    "large_company": "large company",
+}
 _CITATION = re.compile(r"\s*\[(\d+(?:\s*[,;]\s*\d+)*)\]")
 _NUMBER = re.compile(r"\d+")
 
@@ -119,25 +123,28 @@ def _bullets(items: list[str]) -> str:
 
 def render_dossier(company: str, dossier: CompanyDossier, sources: list[SourceRef]) -> str:
     """Le dossier en Markdown, avec la liste des pages lues."""
-    news = [f"{item.date.isoformat() if item.date else ''} : {item.text}" for item in dossier.news]
+    news = [
+        f"{item.date.isoformat()} · {item.text}" if item.date else item.text
+        for item in dossier.news
+    ]
     asked = [text for text in dossier.questions if text.strip()]
     questions = "\n".join(f"{rank}. {text}" for rank, text in enumerate(asked, 1))
-    known = dossier.size != "inconnu"
+    size = SIZES.get(dossier.size)
     listed = [
         f"[{rank}] {source.title or source.url} — {source.url}"
         for rank, source in enumerate(sources, 1)
     ]
     parts = [
-        f"# Dossier : {company}",
-        _section("Activité", dossier.activity),
-        _section("Produit", dossier.product),
-        _section("Technologies", _bullets(dossier.stack)),
-        _section("Actualité (moins de 6 mois)", _bullets(news)),
+        f"# Company dossier for {company}",
+        _section("Business", dossier.activity),
+        _section("Product", dossier.product),
+        _section("Technology", _bullets(dossier.stack)),
+        _section("News from the last six months", _bullets(news)),
         _section("Culture", dossier.culture),
-        _section("Processus d'entretien", dossier.interview_process),
-        _section("Cinq questions à poser", questions),
-        _section("Points de vigilance", _bullets(dossier.watch_points)),
-        *([f"Taille estimée : {SIZES[dossier.size]} (estimation non sourcée)"] if known else []),
+        _section("Interview process", dossier.interview_process),
+        _section("Five questions to ask", questions),
+        _section("Points to watch", _bullets(dossier.watch_points)),
+        *([f"Estimated size (unsourced) · {size}"] if size else []),
         _section("Sources", "\n".join(listed)),
     ]
     return "\n\n".join(parts)

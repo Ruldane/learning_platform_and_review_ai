@@ -13,22 +13,22 @@ DB_CHECK = "db"
 
 
 def _cap(check: HealthCheck, default: float) -> float:
-    """Un contrôle peut demander un plafond plus long (attribut `timeout`), jamais plus court."""
+    """A check may ask for a longer cap (`timeout` attribute), never a shorter one."""
     own = getattr(check, "timeout", None)
     return max(default, float(own)) if isinstance(own, int | float) else default
 
 
 async def _run_one(check: HealthCheck, timeout: float) -> HealthStatus:
-    """Un contrôle ne fait jamais échouer le rapport. Seul le nom du type d'exception est
-    rapporté : le message d'une exception réseau peut contenir une adresse ou une clé."""
+    """A check never makes the report fail. Only the name of the exception type is
+    reported: the message of a network exception may contain an address or a key."""
     try:
         return await asyncio.wait_for(check.check(), timeout)
     except (TimeoutError, httpx.TimeoutException) as exc:
         logger.warning("health check %s failed: %s", check.name, type(exc).__name__)
-        return HealthStatus(ok=False, detail="Délai dépassé")
+        return HealthStatus(ok=False, detail="Timed out")
     except Exception as exc:
         logger.warning("health check %s failed: %s", check.name, type(exc).__name__)
-        return HealthStatus(ok=False, detail=f"Erreur : {type(exc).__name__}")
+        return HealthStatus(ok=False, detail=f"Error: {type(exc).__name__}")
 
 
 class HealthService:

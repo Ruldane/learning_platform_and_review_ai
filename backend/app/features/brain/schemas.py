@@ -1,4 +1,4 @@
-"""Schémas de gestion et de synchronisation des dossiers Cerveau."""
+"""Schemas for managing and syncing Brain folders."""
 
 from datetime import datetime
 from typing import Annotated, Literal

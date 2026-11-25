@@ -1,20 +1,20 @@
-"""Mode `design` du parcours `cv_capture` (SPEC 5.2, D125) : le Maquettiste capture le design
-d'un CV en trois passes automatiques au plus, puis January valide ou ajuste.
+"""`design` mode of the `cv_capture` graph (SPEC 5.2, D125): the Designer captures the design of
+a CV in at most three automatic passes, then January validates or adjusts.
 
 START -> prepare -> sample -> draft -> render
-render : score >= TARGET_SCORE, passe = MAX_FIX_PASSES ou ajustement -> ask_validate ; sinon fix
-fix -> render (description corrigée) ; fix -> ask_validate (aucune description valable)
-ask_validate : `interrupt()` seul (aucune écriture, aucun appel payant) ; réponse invalide ->
-  ask_validate (même question)
-apply_answer : Valider -> finish(ready) -> END ; Recommencer -> finish(failed) -> END ;
-  Ajuster + consigne -> fix (5 ajustements au plus)
+render: score >= TARGET_SCORE, pass = MAX_FIX_PASSES or adjustment -> ask_validate; otherwise fix
+fix -> render (description corrected); fix -> ask_validate (no usable description)
+ask_validate: `interrupt()` alone (no write, no paid call); invalid answer ->
+  ask_validate (same question)
+apply_answer: Validate -> finish(ready) -> END; Start over -> finish(failed) -> END;
+  Adjust + instruction -> fix (at most 5 adjustments)
 
-Chaque écriture du port est idempotente (`prepare` par gabarit, `render_pass` par passe,
-`finish` par gabarit) : un nœud rejoué ne rend jamais une passe deux fois, et `durability="sync"`
-(D46) ne rejoue jamais un nœud terminé. La question est posée **quel que soit le score** : jamais
-d'échec silencieux. Le gabarit garde la **meilleure** des passes automatiques
-(`keeps_pass` : à égalité la plus récente ; un ajustement remplace toujours) ;
-la question et le message final disent le score de la passe gardée."""
+Every port write is idempotent (`prepare` per template, `render_pass` per pass,
+`finish` per template): a replayed node never renders a pass twice, and `durability="sync"`
+(D46) never replays a finished node. The question is asked **whatever the score**: never a
+silent failure. The template keeps the **best** of the automatic passes
+(`keeps_pass`: on a tie the most recent; an adjustment always replaces);
+the question and the final message state the score of the kept pass."""
 
 import logging
 from typing import Any
@@ -38,12 +38,12 @@ from app.providers.pdf.base import HTML_RENDER_TIMEOUT_S, LAYOUT_TIMEOUT_S
 __all__ = ["DESIGN_ENTRY", "add_design"]
 
 DESIGN_ENTRY = "prepare"
-# Mise en page (60 s) et deux polices en deux graisses (15 s chacune) ; rendu (45 s), extraction
-# du rendu (60 s) et score (preflight G27 : au-delà des 120 s par défaut de SPEC 9.6).
+# Layout (60 s) and two fonts in two weights (15 s each); render (45 s), render extraction
+# (60 s) and score (preflight G27: beyond the 120 s default of SPEC 9.6).
 PREPARE_TIMEOUT_S = LAYOUT_TIMEOUT_S + 4 * FONT_TIMEOUT_S + 30
 RENDER_TIMEOUT_S = HTML_RENDER_TIMEOUT_S + LAYOUT_TIMEOUT_S + 30
-ARTIFACT_URL = "/carriere/cv/modeles/{template_id}"
-RESTARTED = "Capture abandonnée."
+ARTIFACT_URL = "/career/cv/templates/{template_id}"
+RESTARTED = "Template capture cancelled."
 
 logger = logging.getLogger(__name__)
 
@@ -53,12 +53,12 @@ def make_prepare(deps: GraphDeps) -> Node:
     async def prepare(state: CvCaptureState) -> CvCaptureState:
         emit(
             "agent.started",
-            {"step": "lecture", "intent": "je lis la mise en page de ton CV"},
+            {"step": "lecture", "intent": "Reading your CV layout"},
             agent=AGENT,
         )
         view = await deps.ports.cv_templates.prepare(deps.user_id, str(state["template_id"]))
         logger.info(
-            "CV d'origine préparé : session %s, gabarit %s, %d page(s), sélectionnable %s",
+            "Original CV prepared: session %s, template %s, %d page(s), selectable %s",
             deps.session_id,
             view.template_id,
             view.page_count,
@@ -72,11 +72,11 @@ def make_prepare(deps: GraphDeps) -> Node:
 def make_render(deps: GraphDeps) -> Node:
     @node_timeout(RENDER_TIMEOUT_S)
     async def render(state: CvCaptureState) -> CvCaptureState:
-        """Passe suivante, rendue puis rangée par le port (déjà rendue : relue)."""
+        """Next pass, rendered then stored by the port (already rendered: read back)."""
         template_id, pass_no = str(state["template_id"]), state.get("pass_no", 0) + 1
         emit(
             "agent.started",
-            {"step": f"rendu-{pass_no}", "intent": "je mets ton CV en page"},
+            {"step": f"rendu-{pass_no}", "intent": "Laying out your CV"},
             agent=AGENT,
         )
         spec = TemplateSpec.model_validate(state["spec"])
@@ -92,14 +92,14 @@ def make_render(deps: GraphDeps) -> Node:
             pass_no,
             done.score,
         )
-        text = f"Passe {pass_no} : le rendu ressemble à ton CV à {done.score} %."
+        text = f"Pass {pass_no}: the render looks {done.score}% like your CV."
         kept = state.get("kept_score")
         out: CvCaptureState = {"pass_no": pass_no, "score": done.score}
         if keeps_pass(adjusted, done.score, kept):
             out["kept_pass"], out["kept_score"] = pass_no, done.score
             out["kept_spec"] = state["spec"]
-        else:  # une passe moins bonne ne remplace pas la meilleure (le port fait de même)
-            text += f" Je garde la passe {state['kept_pass']} ({kept} %)."
+        else:  # a worse pass does not replace the best one (the port does the same)
+            text += f" I'm keeping pass {state['kept_pass']} ({kept}%)."
         emit("agent.message", {"message_id": f"{AGENT}-passe-{pass_no}", "text": text}, agent=AGENT)
         return out
 
@@ -107,7 +107,7 @@ def make_render(deps: GraphDeps) -> Node:
 
 
 def route_render(state: CvCaptureState) -> str:
-    """Après un ajustement, la question revient aussitôt ; sinon trois passes au plus."""
+    """After an adjustment, the question comes straight back; otherwise at most three passes."""
     if state.get("adjustments", 0) > 0:
         return "ask_validate"
     if state["score"] >= TARGET_SCORE or state["pass_no"] >= MAX_FIX_PASSES:
@@ -120,12 +120,12 @@ def route_fix(state: CvCaptureState) -> str:
 
 
 def kept_score_of(state: CvCaptureState) -> int:
-    """Le score de la passe gardée ; un checkpoint d'avant ce champ montre la dernière passe."""
+    """The score of the kept pass; a checkpoint from before this field shows the last pass."""
     return state.get("kept_score", state.get("score", 0))
 
 
 def ask_validate(state: CvCaptureState) -> CvCaptureState:
-    """`interrupt()` seul : rien avant lui ; la réponse est analysée sans aucun port."""
+    """`interrupt()` alone: nothing before it; the answer is parsed without any port."""
     adjustments = state.get("adjustments", 0)
     answer = parse_answer(interrupt(question(kept_score_of(state), adjustments)), adjustments)
     return {"answer": answer.model_dump() if answer is not None else None}
@@ -139,7 +139,7 @@ def _artifact(template_id: str) -> dict[str, Any]:
     return {
         "artifact_id": f"modele-{template_id}",
         "kind": "cv_template",
-        "title": "Modèle de CV",
+        "title": "CV template",
         "url": ARTIFACT_URL.format(template_id=template_id),
     }
 
@@ -147,7 +147,7 @@ def _artifact(template_id: str) -> dict[str, Any]:
 def make_apply_answer(deps: GraphDeps) -> Node:
     @node_timeout()
     async def apply_answer(state: CvCaptureState) -> CvCaptureState:
-        """Valider ou recommencer : `finish` (idempotent) ; ajuster : la consigne part à `fix`."""
+        """Validate or start over: `finish` (idempotent); adjust: the instruction goes to `fix`."""
         answer = DesignAnswer.model_validate(state["answer"])
         template_id = str(state["template_id"])
         if answer.action == "adjust":
@@ -158,12 +158,12 @@ def make_apply_answer(deps: GraphDeps) -> Node:
         store = deps.ports.cv_templates
         if answer.action == "validate":
             await store.finish(deps.user_id, template_id, "ready", None)
-            text = f"Modèle de CV prêt : il ressemble à ton CV à {kept_score_of(state)} %."
+            text = f"CV template ready with a {kept_score_of(state)}% match to your original CV."
         else:
             await store.finish(deps.user_id, template_id, "failed", RESTARTED)
-            text = f"{RESTARTED} Tu peux relancer la capture du modèle."
+            text = f"{RESTARTED} You can start the template capture again."
         logger.info(
-            "Gabarit terminé : session %s, gabarit %s, %s, %d passe(s), %d ajustement(s)",
+            "Template finished: session %s, template %s, %s, %d pass(es), %d adjustment(s)",
             deps.session_id,
             template_id,
             answer.action,
@@ -184,7 +184,7 @@ def route_apply(state: CvCaptureState) -> str:
 
 
 def add_design(graph: StateGraph[Any, Any, Any, Any], deps: GraphDeps) -> None:
-    """Les nœuds du mode `design` ; l'entrée est `DESIGN_ENTRY`, aiguillée par `cv_capture`."""
+    """The `design` mode nodes; the entry is `DESIGN_ENTRY`, routed by `cv_capture`."""
     graph.add_node("prepare", make_prepare(deps))
     graph.add_node("sample", make_sample(deps))
     graph.add_node("draft", make_draft(deps))

@@ -1,4 +1,4 @@
-"""Le Vérificateur ne peut préparer que les blocs dont l’usage a été constaté."""
+"""The Verifier can only prepare blocks whose usage has been observed."""
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -17,7 +17,7 @@ from app.features.lessons.service.versions import PublishedVersion, published_ve
 
 def _stale() -> AppError:
     return AppError(
-        "lesson_update_stale", "La leçon publiée a changé depuis cette proposition.", 409
+        "lesson_update_stale", "The published lesson has changed since this proposal.", 409
     )
 
 
@@ -26,7 +26,7 @@ async def _bound(
 ) -> tuple[LessonUpdate, PublishedVersion]:
     row = await UpdatesRepository(db, user_id).get(proposal_id)
     if row is None or row.preparation_session_id != session_id:
-        raise AppError("lesson_update_not_found", "Proposition de mise à jour introuvable.", 404)
+        raise AppError("lesson_update_not_found", "Update proposal not found.", 404)
     lesson = await published_version(db, user_id, row.lesson_id)
     if lesson.digest != row.base_hash:
         raise _stale()
@@ -43,7 +43,7 @@ def _affected(row: LessonUpdate, lesson: PublishedVersion) -> tuple[dict[str, st
 
 def _invalid() -> AppError:
     return AppError(
-        "lesson_update_ungrounded", "La correction n’applique pas les changements documentés.", 502
+        "lesson_update_ungrounded", "The correction does not apply the documented changes.", 502
     )
 
 

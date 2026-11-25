@@ -1,6 +1,6 @@
-"""Nœuds de l'Éclaireur qui collectent : préparer les requêtes, chercher, lire. Chaque nœud est
-une fonction de `GraphDeps` ; chaque appel externe est idempotent par la passerelle (piège 9.4) :
-un nœud rejoué ne recompte ni requête ni page et ne dédouble aucune source."""
+"""Scout nodes that collect: prepare the queries, search, read. Each node is a function of
+`GraphDeps`; each external call is idempotent through the gateway (trap 9.4): a replayed node
+neither recounts a query or a page nor duplicates any source."""
 
 from typing import Any
 from urllib.parse import urlsplit
@@ -29,14 +29,14 @@ from app.agents.tools.web_port import QUOTA_CODE, SEARCH_UNAVAILABLE_CODE, PageR
 from app.agents.tools.web_tools import web_read, web_search
 from app.core.errors import AppError
 
-READ_TIMEOUT_S = 300  # jusqu'à 15 s par page, une requête par seconde et par domaine
+READ_TIMEOUT_S = 300  # up to 15 s per page, one query per second and per domain
 SEARCH_TIMEOUT_S = 180
-# Erreurs d'adresse : la page est signalée illisible (message fixe), la recherche continue.
+# Address errors: the page is reported unreadable (fixed message), the search continues.
 _URL_ERRORS = ("invalid_url", "url_forbidden")
 
 
 def _fit(plan: SearchPlan, languages: tuple[str, ...], limit: int) -> list[PlannedQuery]:
-    """Requêtes dans les langues réglées, sans doublon, tronquées au plafond de la session."""
+    """Queries in the configured languages, without duplicates, truncated to the session cap."""
     seen: set[tuple[str, str]] = set()
     kept: list[PlannedQuery] = []
     for query in plan.queries:
@@ -64,13 +64,13 @@ def make_plan(deps: GraphDeps) -> Node:
         found = await structured_call(
             model,
             SearchPlan,
-            [SystemMessage(prompt), HumanMessage("Prépare les requêtes de recherche.")],
+            [SystemMessage(prompt), HumanMessage("Prepare the search queries.")],
             agent=AGENT,
             step="plan",
-            intent="je prépare les requêtes",
+            intent="preparing the search queries",
         )
         queries = _fit(found, languages, max(1, limits.max_queries))
-        if not queries:  # le modèle n'a rien rendu d'exploitable : la demande elle-même
+        if not queries:  # the model returned nothing usable: the request itself
             queries = [PlannedQuery(text=one_line(state["query"])[:200], lang=languages[0])]
         return {"queries": [query.model_dump() for query in queries]}
 
@@ -88,12 +88,12 @@ def make_search(deps: GraphDeps) -> Node:
                 found = await web_search(deps, query["text"], lang=query["lang"], agent=AGENT)
             except AppError as exc:
                 if exc.code == QUOTA_CODE:
-                    break  # plafond de la session : on garde ce qu'on a
+                    break  # session cap: we keep what we have
                 if exc.code == SEARCH_UNAVAILABLE_CODE:
                     failure = exc
                     continue
                 if exc.code == "search_query_empty":
-                    continue  # requête réduite à rien une fois nettoyée
+                    continue  # query reduced to nothing once cleaned
                 raise
             answered += 1
             for hit in found.hits:
@@ -101,7 +101,7 @@ def make_search(deps: GraphDeps) -> Node:
                     hit.url, {"url": hit.url, "title": hit.title, "preferred": hit.preferred}
                 )
         if failure is not None and answered == 0:
-            raise failure  # moteur en panne : la session échoue avec son message lisible
+            raise failure  # engine down: the session fails with its readable message
         ordered = sorted(hits.values(), key=lambda hit: not hit["preferred"])  # stable
         return {"hits": ordered}
 
@@ -114,8 +114,8 @@ def _is_preferred(url: str, preferred: tuple[str, ...]) -> bool:
 
 
 def _to_read(state: WebResearchState, budget: int) -> list[str]:
-    """Adresses à lire : résultats (privilégiés d'abord) puis adresses de l'entrée, sans doublon.
-    Les adresses de l'entrée sont lues en priorité sur les résultats quand le plafond est bas."""
+    """Addresses to read: results (preferred first) then the input's addresses, no duplicates.
+    The input's addresses are read in priority over the results when the cap is low."""
     extra = list(dict.fromkeys(state.get("urls", [])))[:budget]
     room = max(0, budget - len(extra))
     found = [hit["url"] for hit in state.get("hits", [])][: min(room, MAX_PAGES_PER_RUN)]
@@ -123,7 +123,7 @@ def _to_read(state: WebResearchState, budget: int) -> list[str]:
 
 
 def _unreadable(url: str, reason: str, page: PageRead | None = None) -> None:
-    """Page non lue : signalée tout de suite, jamais notée ni citée."""
+    """Page not read: reported right away, never scored or cited."""
     emit(
         "source.found",
         {
@@ -164,13 +164,13 @@ def make_read(deps: GraphDeps) -> Node:
                 continue
             if page.source_id is not None:
                 if page.source_id in seen:
-                    continue  # même page par deux adresses
+                    continue  # same page through two addresses
                 seen.add(page.source_id)
             if page.status != "ok":
                 reason = page.reason or "Page illisible."
                 _unreadable(url, reason, page)
                 unreadable += 1
-                if page.source_id is not None and page.verdict is None:  # plus « en attente »
+                if page.source_id is not None and page.verdict is None:  # no longer "pending"
                     await deps.web.judge(
                         deps.user_id, deps.session_id, page.source_id, criteria={}, reason=reason,
                         summary="",
@@ -197,8 +197,8 @@ def _scoring_page(page: PageRead, preferred: tuple[str, ...]) -> dict[str, Any]:
 
 
 def _known_verdict(page: PageRead) -> dict[str, Any] | None:
-    """Verdict déjà posé dans la session (D82), gardé dans l'état pour que `judge` ne rappelle
-    pas le modèle."""
+    """Verdict already set in the session (D82), kept in the state so that `judge` does not call
+    the model again."""
     known = page.verdict
     if known is None:
         return None

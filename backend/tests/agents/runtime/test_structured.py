@@ -36,7 +36,7 @@ async def test_structured_call_fails_after_three_attempts() -> None:
     with pytest.raises(AppError) as e:
         await structured_call(model, Title, [HumanMessage("x")], **{**ARGS, "agent": "demo"})
     assert e.value.code == "structured_output_invalid"
-    assert e.value.message == "La réponse de l'agent demo n'a pas le format attendu après 3 essais."
+    assert e.value.message == "The demo agent's reply had the wrong format after 3 attempts."
     assert len(provider.received) == 3
 
 
@@ -99,9 +99,9 @@ async def test_structured_call_logs_each_failed_attempt_without_any_value(
     await structured_call(model, Title, [HumanMessage("x")], **{**ARGS, "agent": "moderator"})
     warnings = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
     assert len(warnings) == 2
-    assert all("moderator" in w and "étape s" in w for w in warnings)
-    assert "essai 1/3" in warnings[0] and "aucun objet JSON" in warnings[0]
-    assert "essai 2/3" in warnings[1] and "title : Input should be a valid string" in warnings[1]
+    assert all("moderator" in w and "step s" in w for w in warnings)
+    assert "attempt 1/3" in warnings[0] and "No JSON object" in warnings[0]
+    assert "attempt 2/3" in warnings[1] and "title: Input should be a valid string" in warnings[1]
     assert "secret" not in caplog.text and "31415" not in caplog.text
 
 

@@ -32,7 +32,7 @@ test("lit la transcription et répond aux trois questions quand l’audio est in
     }));
     return route.fulfill({ json: { score: 3, corrections } });
   });
-  await page.goto("/etudier/podcast");
+  await page.goto("/study/podcast");
   await expect(page.getByRole("heading", { name: episode.title })).toBeVisible();
   await expect(page.getByText("La transcription et les questions sont disponibles.")).toBeVisible();
   await expect(page.getByText("Elle relie plusieurs opérations.", { exact: false })).toBeVisible();

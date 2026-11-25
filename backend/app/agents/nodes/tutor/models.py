@@ -1,10 +1,10 @@
-"""Le Tuteur (SPEC F14, 9.1, D102) : sorties structurées, réponses de January aux questions, et ce
-que partagent ses nœuds (lecture du contexte, prompts, messages).
+"""The Tutor (SPEC F14, 9.1, D102): structured outputs, January's answers to the questions, and
+what its nodes share (context reading, prompts, messages).
 
-Tout texte libre du modèle passe par `Prose` (raccourci, jamais refusé : D97 n° 10), sauf la
-question, refusée puis redemandée au-delà de 500 caractères. Le schéma Mermaid n'a pas de plafond
-dans le schéma : un refus ferait échouer l'étape ; trop long ou invalide, il est retiré par le code
-(`teach`), jamais un échec."""
+Any free text from the model goes through `Prose` (shortened, never refused: D97 no. 10), except
+the question, refused then requested again beyond 500 characters. The Mermaid schema has no cap
+in the schema: a refusal would make the step fail; too long or invalid, it is removed by the code
+(`teach`), never a failure."""
 
 from dataclasses import dataclass
 from typing import Any, Literal, Protocol
@@ -26,11 +26,11 @@ from app.agents.tools.study_port import LessonSection, StudyContext
 AGENT = "tutor"
 MAX_HINTS = 3
 MAX_ANSWER_CHARS = 4000
-LESSON_CHARS = 20_000  # une leçon de 2 500 mots tient en entier
+LESSON_CHARS = 20_000  # a 2,500-word lesson fits entirely
 TUTOR_QUESTION = "tutor_question"
 FINISH_SESSION = "finish_session"
-LESSON_LABEL = "leçon"
-ANSWER_LABEL = "réponse de January"
+LESSON_LABEL = "lesson"
+ANSWER_LABEL = "January's answer"
 
 TutorAction = Literal["answer", "stuck", "skip", "finish"]
 
@@ -43,7 +43,7 @@ class TeachTurn(BaseModel):
     message: Prose = Field(min_length=1, max_length=2500)
     question: str = Field(min_length=5, max_length=500)
     expected: Prose = Field(min_length=1, max_length=800)
-    mermaid: str | None = None  # sans plafond ici : trop long ou invalide, retiré par le code
+    mermaid: str | None = None  # no cap here: too long or invalid, removed by the code
 
 
 class AnswerCheck(BaseModel):
@@ -61,8 +61,8 @@ class FinalQuestion(BaseModel):
 
 
 class FinalQuestions(BaseModel):
-    """Exactement 3 questions ; au-delà, les 3 premières sont gardées sans échec (m2 de la
-    relecture de 5.5) ; moins de 3 reste un refus, redemandé."""
+    """Exactly 3 questions; beyond that, the first 3 are kept without failure (m2 of the
+    5.5 reread); fewer than 3 remains a refusal, requested again."""
 
     questions: list[FinalQuestion] = Field(min_length=3, max_length=3)
 
@@ -77,7 +77,7 @@ class SessionSummary(BaseModel):
 
 
 class TutorReply(BaseModel):
-    """Réponse à une question de January (à l'ouverture, ou par message pendant la séance)."""
+    """Answer to a January question (at the opening, or by message during the session)."""
 
     message: Prose = Field(min_length=1, max_length=1500)
 
@@ -92,9 +92,9 @@ _ACTIONS: dict[Any, TutorAction] = {"stuck": "stuck", "skip": "skip", "finish": 
 
 
 def parse_tutor_answer(value: Any) -> TutorAnswer | None:
-    """`{"answers": {"answer": texte}}` (texte non vide, coupé à 4 000) → `answer` ; `"stuck"`,
-    `"skip"`, `"finish"` (valeur d'une option) ; `{"action": "finish"}` (« Terminer », 5.6) →
-    `finish`. Toute autre forme : `None` (la question est reposée)."""
+    """`{"answers": {"answer": text}}` (non-empty text, cut at 4,000) -> `answer`; `"stuck"`,
+    `"skip"`, `"finish"` (value of an option); `{"action": "finish"}` ("Finish", 5.6) ->
+    `finish`. Any other shape: `None` (the question is asked again)."""
     if isinstance(value, str):
         action = _ACTIONS.get(value)
         return TutorAnswer(action) if action is not None else None
@@ -121,36 +121,36 @@ def section_text(section: LessonSection) -> str:
 
 
 def lesson_prompt(text: str) -> str:
-    """Leçon (écrite par le Rédacteur depuis le web) : contenu non fiable, encadré."""
+    """Lesson (written by the Writer from the web): untrusted content, wrapped."""
     return untrusted(text[:LESSON_CHARS], LESSON_LABEL)
 
 
 def whole_lesson(context: StudyContext) -> str:
     parts = [section_text(s) for s in context.sections]
-    parts.append(f"## Exercice\n\n{context.exercise}")
+    parts.append(f"## Exercise\n\n{context.exercise}")
     return lesson_prompt("\n\n".join(parts))
 
 
 def _sources_prompt(sources: list[CitationEntry]) -> str:
     if not sources:
-        return "Aucune source citable : ne mets aucun numéro entre crochets."
+        return "No sources are available to cite. Omit bracketed numbers."
     return "\n".join(
         f"[{s.index}] " + untrusted(" ".join(s.title.split()), f"source {s.index}") for s in sources
     )
 
 
 def _module_prompt(context: StudyContext) -> str:
-    """Titre et objectifs viennent du programme et de la leçon (sorties d'agents) : encadrés."""
-    lines = [f"Titre : {context.module_title}", "Objectifs :"]
-    lines += [f"- {objective}" for objective in context.objectives] or ["- aucun précisé"]
+    """Title and objectives come from the program and the lesson (agent outputs): wrapped."""
+    lines = [f"Title: {context.module_title}", "Objectives"]
+    lines += [f"- {objective}" for objective in context.objectives] or ["- None specified"]
     return untrusted("\n".join(lines), "module")
 
 
 def tutor_prompt(
     state: StudySessionState, task: str, *, memory: bool = False, **variables: object
 ) -> str:
-    """Le prompt du Tuteur pour `task` : module, sources et mode d'étude toujours ; le contexte
-    mémoire (déjà encadré par le port) quand `memory`."""
+    """The Tutor's prompt for `task`: module, sources and study mode always; the memory context
+    (already wrapped by the port) when `memory`."""
     context = context_of(state)
     return render_prompt(
         AGENT,
@@ -178,8 +178,8 @@ async def ask_tutor[T: BaseModel](
 
 
 def say(state: StudySessionState, text: str, message_id: str) -> None:
-    """`agent.message` du Tuteur, avec les citations `[n]` des sources de la leçon. Un id fixe
-    par étape : rejoué, le message remplace le précédent au lieu de s'ajouter (D57)."""
+    """The Tutor's `agent.message`, with the `[n]` citations of the lesson's sources. A fixed id
+    per step: replayed, the message replaces the previous one instead of adding to it (D57)."""
     sources = context_of(state).sources
     payload = AgentMessagePayload(
         message_id=message_id, text=text, citations=extract_citations(text, sources)
@@ -188,16 +188,16 @@ def say(state: StudySessionState, text: str, message_id: str) -> None:
 
 
 def notes_prompt(notes: list[str]) -> str:
-    """Messages de January (non encadrés, D53 §5), une ligne chacun."""
+    """January's messages (not wrapped, D53 section 5), one line each."""
     return "\n".join(f"- {' '.join(note.split())}" for note in notes)
 
 
 def outcome_record(
     state: StudySessionState, verdict: str, *, checked: bool = True
 ) -> list[dict[str, Any]]:
-    """`outcomes` complété du sort de la question en cours. `checked=False` : January a répondu
-    mais le modèle n'a pas pu juger (repli, `skipped`) ; marqué dans l'état seulement (`unchecked`),
-    jamais dans `StudyOutcome` (D115 n° 17)."""
+    """`outcomes` completed with the fate of the current question. `checked=False`: January
+    answered but the model could not judge (fallback, `skipped`); marked in the state only
+    (`unchecked`), never in `StudyOutcome` (D115 no. 17)."""
     record: dict[str, Any] = {
         "phase": state["phase"],
         "index": state.get("index", 0),
@@ -212,13 +212,13 @@ def outcome_record(
 
 
 _VERDICTS = {
-    "correct": "juste",
-    "partial": "en partie juste",
-    "wrong": "fausse",
-    "skipped": "passée",
-    "revealed": "solution montrée",
+    "correct": "correct",
+    "partial": "partly correct",
+    "wrong": "incorrect",
+    "skipped": "skipped",
+    "revealed": "solution shown",
 }
-UNCHECKED_LABEL = "répondue, non corrigée (le modèle n'a pas répondu)"
+UNCHECKED_LABEL = "answered, unchecked (the model did not respond)"
 
 
 def _verdict_label(outcome: dict[str, Any]) -> str:
@@ -226,13 +226,13 @@ def _verdict_label(outcome: dict[str, Any]) -> str:
 
 
 def outcomes_prompt(state: StudySessionState) -> str:
-    """Les questions déjà réglées et leur sort. Les questions viennent du Tuteur, écrites depuis
-    une leçon non fiable : encadrées."""
+    """The questions already settled and their fate. The questions come from the Tutor, written
+    from an untrusted lesson: wrapped."""
     outcomes = state.get("outcomes", [])
     if not outcomes:
-        return "Aucune question réglée pour l'instant."
+        return "No questions resolved yet."
     lines = [
-        f"- {' '.join(o['question'].split())[:300]} : {_verdict_label(o)}, {o['hints']} indice(s)"
+        f"- {' '.join(o['question'].split())[:300]}: {_verdict_label(o)}, {o['hints']} hint(s)"
         for o in outcomes
     ]
-    return untrusted("\n".join(lines), "séance")
+    return untrusted("\n".join(lines), "session")

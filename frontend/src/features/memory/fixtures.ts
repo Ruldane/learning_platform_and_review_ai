@@ -17,7 +17,7 @@ const NOW = "2026-11-11T10:00:00Z";
 export function itemOut(overrides: Partial<MemoryItemOut> = {}): MemoryItemOut {
   return {
     id: "i1",
-    kind: "acquis",
+    kind: "skill",
     title: "Attention",
     text: "Le mécanisme d'attention pondère les jetons.",
     tags: ["nlp"],
@@ -27,7 +27,7 @@ export function itemOut(overrides: Partial<MemoryItemOut> = {}): MemoryItemOut {
     updated_at: NOW,
     status: "active",
     indexed: true,
-    level: "declare",
+    level: "declared",
     lang: "fr",
     reason: "Document « Cours NLP » marqué « déjà appris ».",
     session_id: "s1",
@@ -60,7 +60,7 @@ export function itemDetail(overrides: Partial<MemoryItemDetail> = {}): MemoryIte
 
 export function statsOut(overrides: Partial<StatsOut> = {}): StatsOut {
   return {
-    by_kind: { document: 3, acquis: 5, lecon: 2, source: 1, offre: 0, decision: 1 },
+    by_kind: { document: 3, skill: 5, lesson: 2, source: 1, posting: 0, decision: 1 },
     dashboard_url: "http://localhost:6333/dashboard",
     dimension: 1024,
     last_write: {
@@ -125,13 +125,13 @@ export const mapOut: MapResponse = {
   method: "pca",
   truncated: false,
   points: [
-    { item_id: "i1", title: "Attention", kind: "acquis", x: 0.2, y: -0.3 },
+    { item_id: "i1", title: "Attention", kind: "skill", x: 0.2, y: -0.3 },
     { item_id: "i2", title: "Cours NLP", kind: "document", x: -0.5, y: 0.4 },
   ],
 };
 
 export const searchOut: SearchResponse = {
-  agent_text: "<<<CONTENU_NON_FIABLE>>>Cours NLP<<<FIN_CONTENU_NON_FIABLE>>>",
+  agent_text: "<<<UNTRUSTED_CONTENT>>>Cours NLP<<<END_UNTRUSTED_CONTENT>>>",
   hits: [
     {
       chunk_id: "c9",
@@ -160,7 +160,10 @@ export interface MemoryBackend {
 
 export function memoryBackend(init: Partial<MemoryBackend> = {}): MemoryBackend {
   return {
-    items: [itemOut(), itemOut({ id: "i3", title: "Backpropagation", kind: "lecon", level: null })],
+    items: [
+      itemOut(),
+      itemOut({ id: "i3", title: "Backpropagation", kind: "lesson", level: null }),
+    ],
     stats: statsOut(),
     map: mapOut,
     documents: [],

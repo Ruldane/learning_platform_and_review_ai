@@ -10,7 +10,7 @@ export const resourceOut = (over: Record<string, unknown> = {}) => ({
   type: "documentation",
   lang: "en",
   duration_minutes: 45,
-  level: "debutant",
+  level: "beginner",
   author: "Python Software Foundation",
   date: "2025-10-01",
   reason: "La référence, à jour de la dernière version.",

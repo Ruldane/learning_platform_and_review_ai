@@ -113,7 +113,7 @@ async def test_unknown_tool_is_refused_readably(mcp: Mcp, inner: FakeDispatcher)
     assert response.status_code == 200
     error = response.json()["error"]
     assert error["code"] == -32602
-    assert "Outil inconnu" in error["message"] and "tools/list" in error["message"]
+    assert "Unknown tool" in error["message"] and "tools/list" in error["message"]
     assert inner.calls == []
 
 
@@ -127,7 +127,7 @@ async def test_tool_call_wraps_result_in_envelope(mcp: Mcp, inner: FakeDispatche
     result = response.json()["result"]
     assert result["isError"] is False
     body = json.loads(result["content"][0]["text"])
-    assert body["ok"] is True and "données" in body["notice"]
+    assert body["ok"] is True and "data" in body["notice"]
     description = body["data"]["description"]
     assert description.startswith("<donnee_non_fiable>")
     assert description.endswith("</donnee_non_fiable>")

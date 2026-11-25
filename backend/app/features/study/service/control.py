@@ -1,18 +1,18 @@
-"""Fin et abandon d'une session guidée (`PATCH`, SPEC 14.2 ; D103 n° 2, 3), sous le verrou de
-l'utilisatrice. Une session déjà terminée ou abandonnée est rendue telle quelle (idempotent).
+"""End and abandonment of a guided session (`PATCH`, SPEC 14.2; D103 no. 2, 3), under the user's
+lock. A session already finished or abandoned is returned as is (idempotent).
 
-« Terminer » : le minuteur du front (`worked_minutes`, absent : 0) est gardé, borné par la durée
-réelle depuis le départ (arrondie à la minute supérieure) et jamais en dessous du temps déjà
-gardé (un second « Terminer » sans minuteur ne l'efface pas), PUIS la question en attente reçoit
-`{"action": "finish"}` quel que soit son genre (`tutor_question` ou `finish_session`) : le Tuteur
-fait son bilan et range la fin par le port (`finish.py`). Fin déjà demandée (temps gardé, Tuteur
-en train de conclure) : état rendu ; temps gardé mais question encore en attente (arrêt du back
-avant la reprise) : reprise. Tuteur en train d'écrire (aucune question en attente) : 409
-`study_not_waiting`, rien n'est gardé. Session d'agents terminée en route (échec, annulation) :
-la route range elle-même la fin, sans résultat de questions, pour que le temps compte.
+"Finish": the front end's timer (`worked_minutes`, absent: 0) is kept, bounded by the real
+duration since the start (rounded up to the minute) and never below the time already kept (a
+second "Finish" without a timer does not erase it), THEN the waiting question receives
+`{"action": "finish"}` whatever its kind (`tutor_question` or `finish_session`): the Tutor
+makes its summary and stores the end through the port (`finish.py`). End already requested
+(time kept, Tutor concluding): state returned; time kept but question still waiting (back-end
+stop before the resume): resume. Tutor writing (no question waiting): 409 `study_not_waiting`,
+nothing is kept. Agent session ended on the way (failure, cancellation): the route stores the
+end itself, without question results, so that the time counts.
 
-« Abandonner » : la session passe à `cancelled` (rien d'autre : ni temps, ni tâche, ni fiche),
-puis sa session d'agents est annulée."""
+"Abandon": the session becomes `cancelled` (nothing else: no time, task or card), then its
+agent session is cancelled."""
 
 import logging
 import math
@@ -36,14 +36,14 @@ FINISH = {"action": "finish"}
 def study_not_waiting(status: str) -> AppError:
     return AppError(
         "study_not_waiting",
-        "Le tuteur écrit encore : tu pourras terminer dès qu'il t'aura posé sa question.",
+        "The tutor is still writing. You can finish after the next question.",
         409,
         {"status": status},
     )
 
 
 def clamped_minutes(worked: int | None, started: datetime, now: datetime) -> int:
-    """`min(minuteur, durée réelle arrondie à la minute supérieure)`, jamais négatif."""
+    """`min(timer, real duration rounded up to the minute)`, never negative."""
     elapsed = max(0.0, (now - started).total_seconds())
     return max(0, min(worked or 0, math.ceil(elapsed / 60)))
 
@@ -51,7 +51,7 @@ def clamped_minutes(worked: int | None, started: datetime, now: datetime) -> int
 async def _keep_minutes(
     rt: StudyRuntime, user_id: str, row: StudySession, worked: int | None
 ) -> None:
-    # Absent n'efface jamais le temps déjà gardé (un second « Terminer » sans minuteur).
+    # Absent never erases the time already kept (a second "Finish" without a timer).
     minutes = max(row.worked_minutes or 0, clamped_minutes(worked, row.created_at, rt.now()))
     async with rt.session_factory() as db:
         await StudyRepository(db, user_id).close_open(row.id, worked_minutes=minutes)
@@ -59,8 +59,8 @@ async def _keep_minutes(
 
 
 async def _forget_minutes(rt: StudyRuntime, user_id: str, row: StudySession) -> None:
-    """La reprise a échoué : le temps redevient celui d'avant CE clic (un temps gardé par un
-    « Terminer » précédent n'est jamais effacé ; revue finale de la phase 5, S-m5)."""
+    """The resume failed: the time goes back to what it was before THIS click (a time kept by a
+    previous "Finish" is never erased; final review of phase 5, S-m5)."""
     async with rt.session_factory() as db:
         await StudyRepository(db, user_id).close_open(row.id, worked_minutes=row.worked_minutes)
         await db.commit()
@@ -92,15 +92,15 @@ async def _finish(
     if row.session_id is None or is_dead(row, status):
         await _keep_minutes(rt, user_id, row, worked)
         await finish_study(rt, user_id, None, row.id, NO_OUTCOME)
-        logger.info("Fin rangée par la route (Tuteur arrêté) : étude %s", row.id)
+        logger.info("End stored by the route (Tutor stopped): study %s", row.id)
         return
     view = await _agent_view(runtime, rt, user_id, row.session_id)
     pending = view.pending_interrupt
     if view.status != "waiting_user" or pending is None:
         if row.worked_minutes is not None:
-            return  # fin déjà demandée : le Tuteur conclut
+            return  # end already requested: the Tutor concludes
         raise study_not_waiting(view.status)
-    # Encore en attente (temps gardé puis arrêt du back avant la reprise) : on reprend.
+    # Still waiting (time kept then back-end stop before the resume): we resume.
     await _keep_minutes(rt, user_id, row, worked)
     try:
         await _resume(runtime, rt, user_id, row.session_id, pending.interrupt_id)
@@ -111,7 +111,7 @@ async def _finish(
                 (await _agent_view(runtime, rt, user_id, row.session_id)).status
             ) from None
         raise
-    logger.info("Fin demandée : étude %s, session %s", row.id, row.session_id)
+    logger.info("End requested: study %s, session %s", row.id, row.session_id)
 
 
 async def _cancel(runtime: AgentRuntime, rt: StudyRuntime, user_id: str, row: StudySession) -> None:
@@ -125,16 +125,16 @@ async def _cancel(runtime: AgentRuntime, rt: StudyRuntime, user_id: str, row: St
     try:
         async with rt.session_factory() as db:
             await SessionsService(db, user_id, runtime).cancel(row.session_id)
-    except AppError as exc:  # déjà terminée ou introuvable : rien à arrêter
+    except AppError as exc:  # already finished or not found: nothing to stop
         if exc.code not in ("session_not_cancellable", "session_not_found"):
             raise
-    logger.info("Session d'étude abandonnée : étude %s", row.id)
+    logger.info("Study session abandoned: study %s", row.id)
 
 
 async def update_study(
     runtime: AgentRuntime, rt: StudyRuntime, user_id: str, study_id: str, body: StudyUpdate
 ) -> StudySessionOut:
-    """« Terminer » ou « Abandonner » (voir le module) ; 404 pour la session d'une autre."""
+    """ "Finish" or "Abandon" (see the module); 404 for another user's session."""
     async with rt.study_lock(user_id):
         async with rt.session_factory() as db:
             row, status = await read_row(db, user_id, study_id)

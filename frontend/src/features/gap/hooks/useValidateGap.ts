@@ -9,7 +9,7 @@ export function useValidateGap(postingId: string, provider?: RunSource) {
   const navigate = useNavigate();
   const mutation = useMutation({
     mutationFn: (skills: string[]) => validateGap(postingId, skills, provider),
-    onSuccess: (started) => void navigate(`/etudier/quiz/${started.quiz_id}`),
+    onSuccess: (started) => void navigate(`/study/quiz/${started.quiz_id}`),
   });
   return {
     validate: (skills: string[]) => mutation.mutate(skills),

@@ -1,4 +1,4 @@
-"""Contenu autorisé avant de poursuivre la publication sur GitHub."""
+"""Content allowed before continuing the publication on GitHub."""
 
 from dataclasses import dataclass
 from urllib.parse import quote, urlencode

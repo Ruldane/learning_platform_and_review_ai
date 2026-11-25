@@ -46,7 +46,7 @@ class ExplicitNote:
 async def explicitly_linked_lesson_notes(
     db: AsyncSession, user_id: str, lesson_ids: Collection[str]
 ) -> tuple[ExplicitNote, ...]:
-    """Notes Markdown synchronisées qui nomment précisément une leçon."""
+    """Synced Markdown notes that name a lesson precisely."""
     references = {f"{LESSON_REFERENCE}{lesson_id}": lesson_id for lesson_id in lesson_ids}
     rows = await NoteReadingRepository(db, user_id).explicitly_linked(references.keys())
     return tuple(

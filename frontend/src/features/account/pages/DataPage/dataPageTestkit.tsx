@@ -25,11 +25,11 @@ export function setup(
   client.setQueryData(["goals"], [{ id: "g1" }]);
   const router = createMemoryRouter(
     [
-      { path: "/reglages/donnees", element: <DataPage /> },
-      { path: "/bienvenue", element: <p>Premier lancement</p> },
-      { path: "/connexion", element: <p>Connexion</p> },
+      { path: "/settings/data", element: <DataPage /> },
+      { path: "/welcome", element: <p>Premier lancement</p> },
+      { path: "/login", element: <p>Connexion</p> },
     ],
-    { initialEntries: ["/reglages/donnees"] },
+    { initialEntries: ["/settings/data"] },
   );
   const Wrapper = createQueryWrapper(client);
   render(
@@ -40,11 +40,11 @@ export function setup(
   return { ...account, auth: authentication, client, router, user: userEvent.setup() };
 }
 
-export const word = () => screen.getByLabelText("Tape SUPPRIMER pour confirmer");
+export const word = () => screen.getByLabelText("Type SUPPRIMER to confirm");
 export const deleteButton = () =>
-  screen.getByRole("button", { name: /^(Tout supprimer|Suppression en cours…)$/ });
+  screen.getByRole("button", { name: /^(Delete everything|Deleting…)$/ });
 
 export async function confirmAndDelete(user: ReturnType<typeof userEvent.setup>) {
   await user.type(word(), "SUPPRIMER");
-  await user.click(screen.getByRole("button", { name: "Tout supprimer" }));
+  await user.click(screen.getByRole("button", { name: "Delete everything" }));
 }

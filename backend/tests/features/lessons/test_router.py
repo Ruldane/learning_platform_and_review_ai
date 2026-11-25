@@ -39,7 +39,7 @@ def _resource(user_id: str, module_id: str, program_id: str, n: int, **extra: ob
         "published": "2025-03-01",
         "lang": "fr",
         "duration_minutes": 15,
-        "level": "debutant",
+        "level": "beginner",
         "reason": "Bonne introduction.",
         "score": 75,
     }
@@ -102,7 +102,7 @@ async def test_lesson_routes_and_isolation(client: httpx.AsyncClient, app: FastA
     copy = await client.get(f"{API}/resources/{s.resources[0]}/file")
     assert copy.status_code == 200 and copy.content == PDF
     # Revue finale de la phase 4, M6 : PDF d'un tiers, jamais ouvert sur notre origine.
-    assert copy.headers["content-disposition"] == 'attachment; filename="ressource.pdf"'
+    assert copy.headers["content-disposition"] == 'attachment; filename="resource.pdf"'
     assert copy.headers["content-security-policy"] == "sandbox"
     assert copy.headers["x-content-type-options"] == "nosniff"
 
@@ -148,6 +148,7 @@ async def test_resources_filters(client: httpx.AsyncClient, app: FastAPI) -> Non
     assert await ids(program_id=s.program_id) == every
     assert await ids(program_id="programme-inconnu") == set()
     assert await ids(type="video") == {s.resources[1]}
+    assert await ids(type="paper") == set()
     assert await ids(lang="en") == {s.resources[1], s.resources[2]}
     assert await ids(status="read") == {s.resources[2]}
     assert await ids(type="article", lang="en", status="read") == {s.resources[2]}

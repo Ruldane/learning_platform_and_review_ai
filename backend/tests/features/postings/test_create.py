@@ -120,7 +120,7 @@ async def test_unreadable_link_is_422_without_echo(
     r = await client.post(f"{API}/postings", json={"url": "https://exemple.org/login"})
     assert r.status_code == 422 and r.json()["error"]["code"] == "posting_unreadable"
     assert r.json()["error"]["message"] == (
-        "Impossible de lire cette offre depuis le lien. Colle son texte."
+        "This posting could not be read from its link. Paste the posting text instead."
     )
     assert r.json()["error"]["details"] == {"fields": ["url"]}
     assert "exemple.org" not in r.text and await count_postings(app.state.session_factory) == 0
@@ -163,6 +163,7 @@ async def test_short_page_is_unreadable(
 async def test_short_text_is_422_without_echo(client: httpx.AsyncClient, app: FastAPI) -> None:
     r = await client.post(f"{API}/postings", json={"text": "Poste secret chez Fictive SA."})
     assert r.status_code == 422 and r.json()["error"]["code"] == "posting_too_short"
+    assert r.json()["error"]["message"] == "Posting text is too short. Paste the full posting."
     assert r.json()["error"]["details"] == {"fields": ["text"]}
     assert "secret" not in r.text and await count_postings(app.state.session_factory) == 0
 
@@ -228,9 +229,7 @@ async def test_interrupted_analysis_is_shown_failed_then_relaunched(
     await launcher_spy.end(app.state.local_user_id, first["session_id"], "failed")
     shown = (await client.get(f"{API}/postings/{posting_id}")).json()
     assert shown["status"] == "failed" and shown["gap_session_id"] == first["session_id"]
-    assert (
-        shown["failure_reason"] == "L'analyse de l'offre s'est arrêtée avant la fin : relance-la."
-    )
+    assert shown["failure_reason"] == "Posting analysis stopped. Restart the analysis."
     again = await client.post(f"{API}/postings", json={"text": POSTING_TEXT})
     assert again.status_code == 200 and again.json()["session_id"] is not None
     assert again.json()["posting"]["status"] == "analyzing"

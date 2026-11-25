@@ -34,7 +34,7 @@ class RelayPairingService:
 
     async def _require_enabled(self, user_id: str) -> None:
         if not (await PrefsService(self._db, user_id).get()).enabled:
-            raise AppError("mcp_disabled", "Allume l’accès MCP dans les réglages de Tremplin.", 403)
+            raise AppError("mcp_disabled", "Enable MCP access in Tremplin's settings.", 403)
 
     async def start(self, user_id: str) -> str:
         await self._require_enabled(user_id)
@@ -48,12 +48,12 @@ class RelayPairingService:
         now = utcnow()
         claimed = await self._pairs.claim(hash_token(code), now)
         if claimed is None or not await user_allowed(self._db, claimed[0]):
-            raise AppError("relay_code_invalid", "Code de connexion invalide ou expiré.", 401)
+            raise AppError("relay_code_invalid", "Pairing code is invalid or expired.", 401)
         user_id, previous = claimed
         await self._require_enabled(user_id)
         await self._revoke_token(user_id, previous)
         token, plain = await TokenService(self._db, user_id).create(
-            "Relais Tremplin", self._features, "write", _TOKEN_DAYS
+            "Tremplin relay", self._features, "write", _TOKEN_DAYS
         )
         await self._pairs.attach(user_id, token.id)
         return plain

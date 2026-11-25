@@ -30,7 +30,7 @@ router = APIRouter(
 def _transport(request: Request, db: Db, runtime: RuntimeDep) -> SurpriseInterviews:
     actor = MCP_IDENTITY.get()
     if actor is None:
-        raise AppError("surprise_nod_only", "Cette action est réservée au jeton Nod associé.", 403)
+        raise AppError("surprise_nod_only", "This action requires the linked Nod token.", 403)
     rt: ApplicationsRuntime = request.app.state.career.applications
     return SurpriseInterviews(db, rt, actor, runtime.runner)
 

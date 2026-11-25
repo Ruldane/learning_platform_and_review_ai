@@ -1,4 +1,4 @@
-"""Routes de la mémoire (14.2), montées sous `/api/v1` : `/memory/...` et `/documents`."""
+"""Memory routes (14.2), mounted under `/api/v1`: `/memory/...` and `/documents`."""
 
 from fastapi import APIRouter
 

@@ -17,7 +17,7 @@ async def quiz_ghost(
     db: Db,
     attempt_id: Annotated[str | None, Query(min_length=1, max_length=36)] = None,
 ) -> list[PracticeSummary]:
-    """Repères récents et tentative éventuellement choisie depuis le journal, sans réponses."""
+    """Recent markers and the attempt optionally chosen from the log, without answers."""
     return await read_quiz_history(db, current.id, quiz_id, attempt_id)
 
 
@@ -28,5 +28,5 @@ async def ide_ghost(
     db: Db,
     run_id: Annotated[str | None, Query(min_length=1, max_length=36)] = None,
 ) -> list[PracticeSummary]:
-    """Repères des vérifications personnelles, dont la référence du journal, sans sortie."""
+    """Markers of personal checks, including the log reference, without output."""
     return await read_ide_history(db, current.id, session_id, run_id)

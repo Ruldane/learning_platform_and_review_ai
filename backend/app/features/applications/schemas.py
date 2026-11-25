@@ -1,6 +1,6 @@
-"""Schémas des candidatures (SPEC 6, D139). Une 422 nomme les champs (`details.fields`), jamais
-leur valeur : entreprise, intitulé, contacts et notes sont des données personnelles. Une 409 de
-doublon renvoie les fiches existantes (`AlertOut`), jamais l'entrée."""
+"""Applications schemas (SPEC 6, D139). A 422 names the fields (`details.fields`), never their
+value: company, job title, contacts and notes are personal data. A duplicate 409 returns the
+existing records (`AlertOut`), never the input."""
 
 from datetime import date, datetime
 from typing import Annotated, Literal
@@ -16,7 +16,7 @@ COMPANY_MAX = 200
 TITLE_MAX = 200
 URL_MAX = 2000
 POSTING_TEXT_MAX = 60_000
-TEXT_MAX = 2000  # une note du fil
+TEXT_MAX = 2000  # a timeline note
 NOTES_MAX = 10_000
 LETTER_MAX = 20_000
 CONTACTS_MAX = 10
@@ -26,14 +26,14 @@ AlertLevel = Literal["certain", "probable", "possible", "info"]
 
 
 def _link(value: str) -> str:
-    """Un lien `http` ou `https` avec un hôte ; la valeur n'est jamais citée dans l'erreur."""
+    """An `http` or `https` link with a host; the value is never quoted in the error."""
     try:
         parts = urlsplit(value)
         ok = parts.scheme.lower() in ("http", "https") and bool(parts.hostname)
     except ValueError:
         ok = False
     if not ok:
-        raise ValueError("lien invalide")
+        raise ValueError("invalid link")
     return value
 
 
@@ -62,10 +62,10 @@ class ContactOut(BaseModel):
 
 
 class ApplicationIn(BaseModel):
-    """Création manuelle ou depuis une offre. Avec `posting_id`, l'entreprise, l'intitulé, le
-    lien et le texte figé viennent de l'offre (les champs donnés ne servent que si l'offre ne les
-    dit pas encore) ; sans `posting_id`, `company` et `title` sont obligatoires (422 `fields`).
-    `distinct_from` : les fiches de l'alerte que January a confirmées « autre poste »."""
+    """Manual creation or from a posting. With `posting_id`, the company, job title, link and
+    frozen text come from the posting (the given fields are only used if the posting does not
+    state them yet); without `posting_id`, `company` and `title` are required (422 `fields`).
+    `distinct_from`: the alert's records that January confirmed as "another position"."""
 
     posting_id: Id | None = None
     company: Company | None = None
@@ -81,25 +81,25 @@ class ApplicationIn(BaseModel):
 
 
 class IntakeIn(BaseModel):
-    """La phrase de January : « j'ai postulé hier chez X pour le poste Y » (1 à 1 000 caractères).
-    Une 422 nomme `text`, sans jamais la citer."""
+    """January's sentence: "I applied yesterday at X for the Y position" (1 to 1,000 characters).
+    A 422 names `text`, never quoting it."""
 
     text: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1000)]
 
 
 class IntakeOut(BaseModel):
-    """La session de l'Assistant de suivi : la fiche en préparation arrive par ses événements
+    """The Tracking Assistant session: the record being prepared arrives through its events
     (`interrupt.requested`, `kind` `application_confirm`)."""
 
     session_id: str
 
 
 class ApplicationPatch(BaseModel):
-    """Les champs à changer (ceux qui sont envoyés, `null` efface un champ facultatif) ; `contacts`
-    remplace la liste. `posting_text` : le texte de l'offre d'une fiche saisie sans lui (il ouvre
-    son kit) ; un texte vide l'efface. Le statut ne se change que par
-    `POST /applications/{id}/events` : l'envoyer ici est une 422 (`fields: ["status"]`), comme tout
-    champ inconnu."""
+    """The fields to change (those sent; `null` clears an optional field); `contacts` replaces
+    the list. `posting_text`: the posting text of a record entered without it (it unlocks its
+    kit); an empty text clears it. The status only changes through
+    `POST /applications/{id}/events`: sending it here is a 422 (`fields: ["status"]`), like any
+    unknown field."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -118,10 +118,9 @@ class ApplicationPatch(BaseModel):
 
 
 class EventIn(BaseModel):
-    """Un événement du fil : un changement de statut (`status` obligatoire) ou une note (`text`
-    obligatoire). `on` : le jour de l'événement (défaut : aujourd'hui, fuseau de January ; jamais
-    plus tard : 422 `on`) ;
-    `interview_on` : le jour de l'entretien, pour le statut « Entretien » (défaut : `on`)."""
+    """A timeline event: a status change (`status` required) or a note (`text` required). `on`:
+    the day of the event (default: today, in January's time zone; never later: 422 `on`);
+    `interview_on`: the interview day, for the "Interview" status (default: `on`)."""
 
     kind: Literal["status", "note"]
     status: ApplicationStatus | None = None
@@ -145,9 +144,9 @@ ReminderActionName = Literal["done", "postpone", "ignore"]
 
 
 class ReminderOut(BaseModel):
-    """Une relance : qui contacter, un brouillon prêt à copier (gabarit fixe, aucun LLM), le canal.
-    Sans contact : `linkedin_search_url`, la recherche LinkedIn pré remplie (entreprise et poste
-    visé). `close_21` : `channel` « none », `draft` est la proposition de classer la fiche."""
+    """A follow-up: whom to contact, a draft ready to copy (fixed template, no LLM), the channel.
+    Without a contact: `linkedin_search_url`, the prefilled LinkedIn search (company and target
+    position). `close_21`: `channel` "none", `draft` is the suggestion to close the record."""
 
     id: str
     application_id: str
@@ -163,14 +162,14 @@ class ReminderOut(BaseModel):
 
 
 class ReminderPatch(BaseModel):
-    """Fait, Reporter de 3 jours ou Ignorer ; toute autre valeur est une 422 sans écho."""
+    """Done, Postpone 3 days or Ignore; any other value is a 422 without echo."""
 
     action: ReminderActionName
 
 
 class AlertOut(BaseModel):
-    """Une fiche existante qui ressemble à l'offre entrante : niveau, fiche, message en français
-    (date et statut). `info` : simple information, ne bloque rien."""
+    """An existing record that looks like the incoming posting: level, record, message (date and
+    status). `info`: plain information, blocks nothing."""
 
     level: AlertLevel
     application_id: str
@@ -214,18 +213,18 @@ class ApplicationDetail(ApplicationOut):
     letter: str | None
     notes: str | None
     contacts: list[ContactOut]
-    events: list[EventOut]  # chronologique
+    events: list[EventOut]  # chronological
     reminders: list[ReminderOut]
 
 
 class CreatedOut(BaseModel):
     application: ApplicationDetail
-    info: list[AlertOut]  # une autre fiche chez la même entreprise dans les 30 jours
+    info: list[AlertOut]  # another record at the same company within 30 days
 
 
 class CheckOut(BaseModel):
-    """`own` : la fiche de cette offre, si elle existe ; `alerts` : certain, probable, possible ;
-    `info` : même entreprise dans les 30 jours."""
+    """`own`: this posting's record, if any; `alerts`: certain, probable, possible; `info`: same
+    company within 30 days."""
 
     own: ApplicationRef | None
     alerts: list[AlertOut]
@@ -233,7 +232,7 @@ class CheckOut(BaseModel):
 
 
 class ApplicationStatsOut(BaseModel):
-    """Les indicateurs (SPEC 6.4) ; `StatsOut` est déjà le nom des statistiques de la mémoire."""
+    """The indicators (SPEC 6.4); `StatsOut` is already the name of the memory statistics."""
 
     by_status: dict[ApplicationStatus, int]
     response_rate: float | None

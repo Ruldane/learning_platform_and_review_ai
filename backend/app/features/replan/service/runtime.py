@@ -1,7 +1,7 @@
-"""La replanification dans la vie de l'application (D106) : ce que les routes, le port du
-Stratège (`AgentReplanStore`) et le bilan planifié partagent : base, lanceur de sessions (lié au
-moteur ensuite), programme (verrou, écriture des versions), horloge et verrous de lancement.
-Créé par le lifespan avant le moteur d'agents (`app.state.replan`)."""
+"""Replanning in the application's lifetime (D106): what the routes, the Strategist port
+(`AgentReplanStore`) and the scheduled review share: database, session launcher (bound to the
+engine afterwards), program (lock, version writes), clock and launch locks.
+Created by the lifespan before the agent engine (`app.state.replan`)."""
 
 import asyncio
 import weakref
@@ -32,18 +32,18 @@ class ReplanRuntime:
     session_factory: async_sessionmaker[AsyncSession]
     launcher: Launcher
     program: ProgramRuntime
-    now: Callable[[], datetime] = utc_now  # remplacée par les tests (heure figée)
+    now: Callable[[], datetime] = utc_now  # replaced by tests (frozen time)
     calendar: CalendarRuntime | None = field(default=None, kw_only=True)
-    # Faible : un verrou que plus personne ne tient disparaît.
+    # Weak: a lock that nobody holds any more disappears.
     _locks: weakref.WeakValueDictionary[tuple[str, str], asyncio.Lock] = field(
         default_factory=weakref.WeakValueDictionary, repr=False, compare=False
     )
 
     @asynccontextmanager
     async def launch_lock(self, user_id: str, program_id: str) -> AsyncIterator[None]:
-        """Lancement d'une replanification : deux demandes simultanées sur un programme passent
-        l'une après l'autre (la seconde voit la session de la première : 409 `replan_open`).
-        Propre à ce processus (un seul worker)."""
+        """Launching a replanning: two simultaneous requests on a program go one after the other
+        (the second sees the first one's session: 409 `replan_open`).
+        Local to this process (a single worker)."""
         lock = self._locks.get((user_id, program_id))
         if lock is None:
             lock = asyncio.Lock()
@@ -55,5 +55,5 @@ class ReplanRuntime:
         return user_zone((await SettingsService(db, user_id).get()).timezone)
 
     async def today(self, db: AsyncSession, user_id: str) -> date:
-        """Le jour de January dans son fuseau (D98)."""
+        """January's day in her time zone (D98)."""
         return local_today(await self.zone(db, user_id), self.now())

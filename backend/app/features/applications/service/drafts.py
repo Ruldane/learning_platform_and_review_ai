@@ -1,80 +1,18 @@
-"""Brouillons de relance (SPEC 6.2, D140) : des gabarits fixes, jamais un appel LLM. Aucun fait
-inventé : seuls l'entreprise, le poste, les dates et le prénom du contact y figurent ; une date
-absente est omise. Langue de l'offre (`fr` ou `en`) ; la proposition de classer (`close_21`) est
-adressée à January, donc toujours en français. Quand la pièce « relances » du kit est prête (et pas
-« à vérifier »), son texte remplace le gabarit de 7 jours (`linkedin_7`) et de 14 jours
-(`email_14`). Journaux : un brouillon n'est jamais journalisé."""
+"""English follow-up templates (SPEC 6.2, D140) use the company, role, dates, and contact name.
+A missing date is omitted. A ready kit draft takes precedence over the 7-day and 14-day
+templates and keeps the saved wording. Drafts are never logged."""
 
 from datetime import date
-from typing import Literal
 from urllib.parse import quote
 
 from app.agents.tools.kit_schema import split_followups
+from app.core.clock import english_day
 from app.db.models.applications import ReminderKind
 
-Language = Literal["fr", "en"]
-
 LINKEDIN_SEARCH = "https://www.linkedin.com/search/results/people/?keywords="
-_FR_MONTHS = (
-    "janvier",
-    "février",
-    "mars",
-    "avril",
-    "mai",
-    "juin",
-    "juillet",
-    "août",
-    "septembre",
-    "octobre",
-    "novembre",
-    "décembre",
-)
-_EN_MONTHS = (
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-)
 _KIT_INDEX: dict[ReminderKind, int] = {"linkedin_7": 0, "email_14": 1}
 
-_FR: dict[ReminderKind, str] = {
-    "linkedin_7": (
-        "{hello}\n\nJ'ai postulé{applied} au poste de {title} chez {company}. Je me permets de "
-        "revenir vers vous pour savoir si ma candidature a bien été reçue et si vous avez besoin "
-        "d'un complément d'information de ma part. Ce poste continue de m'intéresser vivement.\n\n"
-        "Merci d'avance pour votre retour."
-    ),
-    "email_14": (
-        "Objet : Ma candidature au poste de {title} : relance\n\n{hello}\n\nJe reviens vers vous "
-        "au sujet de ma candidature{applied} au poste de {title} chez {company}, restée sans "
-        "réponse à ce jour. Ce poste m'intéresse toujours et je reste disponible pour un échange "
-        "à votre convenance.\n\nCordialement,"
-    ),
-    "thanks": (
-        "{hello}\n\nMerci pour le temps que vous m'avez accordé lors de notre entretien"
-        "{interview} pour le poste de {title} chez {company}. Notre échange a renforcé mon "
-        "intérêt pour ce poste. Je reste à votre disposition pour tout complément "
-        "d'information.\n\nCordialement,"
-    ),
-    "news_7": (
-        "{hello}\n\nJe me permets de revenir vers vous au sujet de notre entretien{interview} "
-        "pour le poste de {title} chez {company}. Auriez-vous des nouvelles sur la suite du "
-        "processus ?\n\nMerci d'avance pour votre retour.\n\nCordialement,"
-    ),
-    "close_21": (
-        "{company} ne t'a pas répondu depuis ta candidature{applied} au poste de {title}. "
-        "Veux-tu classer cette fiche en « Sans réponse » ?"
-    ),
-}
-_EN: dict[ReminderKind, str] = {
+_TEMPLATES: dict[ReminderKind, str] = {
     "linkedin_7": (
         "{hello}\n\nI applied{applied} for the {title} position at {company}. I wanted to follow "
         "up to check that my application reached you, and to see whether you need anything more "
@@ -96,31 +34,21 @@ _EN: dict[ReminderKind, str] = {
         "{company}. Would you have any news on the next steps of the process?\n\n"
         "Thank you in advance for your reply.\n\nBest regards,"
     ),
-    "close_21": _FR["close_21"],
+    "close_21": (
+        "{company} hasn't replied to your application{applied} for {title}. Mark as No answer?"
+    ),
 }
 
 
-def _day(day: date, language: Language) -> str:
-    if language == "en":
-        return f"{_EN_MONTHS[day.month - 1]} {day.day}, {day.year}"
-    number = "1er" if day.day == 1 else str(day.day)
-    return f"{number} {_FR_MONTHS[day.month - 1]} {day.year}"
-
-
-def _when(day: date | None, language: Language, kind: Literal["applied", "interview"]) -> str:
-    """« le 8 novembre 2026 », « du 14 novembre 2026 », « on November 8, 2026 » ; rien sans date."""
+def _when(day: date | None) -> str:
     if day is None:
         return ""
-    text = _day(day, language)
-    if language == "en":
-        return f" on {text}"
-    return f" du {text}" if kind == "interview" else f" le {text}"
+    return f" on {english_day(day)}"
 
 
-def _hello(contact_name: str | None, language: Language) -> str:
+def _hello(contact_name: str | None) -> str:
     first = (contact_name or "").split()
-    word = "Hello" if language == "en" else "Bonjour"
-    return f"{word} {first[0]}," if first else f"{word},"
+    return f"Hello {first[0]}," if first else "Hello,"
 
 
 def kit_followup(content: str, kind: ReminderKind) -> str | None:
@@ -141,7 +69,6 @@ def linkedin_search_url(company: str, title: str) -> str:
 def draft_for(
     kind: ReminderKind,
     *,
-    language: Language,
     company: str,
     title: str,
     contact_name: str | None,
@@ -149,15 +76,13 @@ def draft_for(
     interview_on: date | None,
     kit_followup: str | None,
 ) -> str:
-    """Le brouillon prêt à copier (voir le module)."""
+    """Return the draft the user can copy."""
     if kit_followup and kind in _KIT_INDEX:
         return kit_followup
-    lang: Language = "fr" if kind == "close_21" else language
-    templates = _EN if lang == "en" else _FR
-    return templates[kind].format(
-        hello=_hello(contact_name, lang),
+    return _TEMPLATES[kind].format(
+        hello=_hello(contact_name),
         company=company,
         title=title,
-        applied=_when(applied_on, lang, "applied"),
-        interview=_when(interview_on, lang, "interview"),
+        applied=_when(applied_on),
+        interview=_when(interview_on),
     )

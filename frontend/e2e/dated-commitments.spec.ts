@@ -11,7 +11,7 @@ test("retrouve après échéance le contexte et l’écart réellement mesuré",
   request,
 }) => {
   await finishFirstLaunch(request);
-  await page.goto("/etudier/engagements");
+  await page.goto("/study/commitments");
   await page.getByLabel("Décision", { exact: true }).fill("Changer la cadence");
   await page.getByLabel("Version de la décision").fill("v2");
   await page.getByLabel("Intention", { exact: true }).fill("Réduire le temps d’une révision.");
@@ -20,7 +20,7 @@ test("retrouve après échéance le contexte et l’écart réellement mesuré",
   await page.getByLabel("Valeur cible").fill("4,25");
   await page.getByLabel("Date du retour").fill("2030-01-08");
   await page.getByRole("button", { name: "Planifier l’engagement" }).press("Enter");
-  await expect(page).toHaveURL(/\/etudier\/engagements\/[0-9a-f-]+$/);
+  await expect(page).toHaveURL(/\/study\/commitments\/[0-9a-f-]+$/);
   await expect(page.getByText("À venir", { exact: false })).toBeVisible();
   await expect(page.getByText("4,25 min", { exact: true })).toBeVisible();
 

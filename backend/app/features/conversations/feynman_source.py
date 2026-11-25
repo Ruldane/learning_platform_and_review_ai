@@ -1,4 +1,4 @@
-"""Références d'explication liées à une version en lecture seule."""
+"""Explanation references bound to a read-only version."""
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,12 +9,16 @@ from app.features.conversations.lesson_context import lesson_material, lesson_ve
 from app.features.ide.service import IdeService
 from app.features.lessons.service.lessons import get_lesson
 from app.features.program.service.programs import load
+from app.features.skills.service import SkillsService
+
+PYTHON_SKILL = "Python development"
+LEGACY_PYTHON_SKILL = "Développement Python"  # the French name stored before the switch
 
 
 async def lesson_source(db: AsyncSession, user: str, lesson_id: str) -> tuple[FeynmanData, str]:
     lesson = await get_lesson(db, user, lesson_id)
     if lesson.status != "ready":
-        raise AppError("lesson_not_ready", "Cette leçon n'est pas encore prête.", 409)
+        raise AppError("lesson_not_ready", "This lesson is not ready yet.", 409)
     program = await load(db, user, lesson.program_id)
     module = next((m for m in program.modules if m.id == lesson.module_id), None)
     skill = next((str(s) for s in module.skills if str(s).strip()), None) if module else None
@@ -35,8 +39,10 @@ async def file_source(
     project = await ide.get_session(session_id)
     file = path if path is not None else project.entry
     if file not in project.files:
-        raise AppError("feynman_file_not_found", "Fichier enregistré introuvable.", 404)
-    skill = "Développement Python" if file.lower().endswith((".py", ".ipynb")) else None
+        raise AppError("feynman_file_not_found", "Saved file not found.", 404)
+    skill = None
+    if file.lower().endswith((".py", ".ipynb")):
+        skill = await SkillsService(db, user).existing_name(PYTHON_SKILL, LEGACY_PYTHON_SKILL)
     data = FeynmanData.model_validate(
         {
             "source": {"kind": "ide", "id": session_id, "title": project.title, "path": file},
@@ -54,6 +60,6 @@ async def material(db: AsyncSession, user: str, source: FeynmanSource, version: 
         _, raw = await file_source(db, user, target, source.path)
     if lesson_version(raw) != version:
         raise AppError(
-            "feynman_source_changed", "La source a changé. Commence une nouvelle explication.", 409
+            "feynman_source_changed", "The source has changed. Start a new explanation.", 409
         )
     return lesson_material(raw, None, None) if source.kind == "lesson" else raw

@@ -1,4 +1,4 @@
-"""Réponses publiques de la chasse aux erreurs."""
+"""Public responses of the error hunt."""
 
 from typing import Annotated, Literal
 

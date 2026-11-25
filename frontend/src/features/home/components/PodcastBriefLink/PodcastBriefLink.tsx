@@ -5,7 +5,7 @@ export function PodcastBriefLink() {
   return (
     <Link
       className="rounded-xl border bg-card p-4 font-medium underline underline-offset-4"
-      to="/etudier/podcast"
+      to="/study/podcast"
     >
       {t("podcast.title")}
     </Link>

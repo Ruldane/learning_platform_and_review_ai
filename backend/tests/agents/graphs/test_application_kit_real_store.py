@@ -76,7 +76,7 @@ async def test_graph_writes_seven_pieces_through_the_real_store(
     announced = {event["artifact_id"] for event in await run.events("artifact.ready")}
     assert announced == {row.id for row in stored}  # chaque pièce est annoncée par son id
     [done] = await end_events(db_session_factory)
-    assert done.ref_id == run.sid and done.text.startswith("Kit de candidature terminé : ")
+    assert done.ref_id == run.sid and done.text.startswith("Application kit complete: ")
 
 
 async def test_the_dossier_pages_keep_their_rank_through_the_store(
@@ -122,4 +122,4 @@ async def test_relaunch_redoes_only_the_pieces_january_did_not_edit(
     assert len(await second.events("artifact.ready")) == 6  # la lettre gardée n'est pas annoncée
     events = await end_events(db_session_factory)
     assert [e.ref_id for e in events] == [first.sid, second.sid]
-    assert events[1].text.endswith("1 gardée(s) telle(s) quelle(s).")
+    assert events[1].text.endswith("1 kept unchanged.")

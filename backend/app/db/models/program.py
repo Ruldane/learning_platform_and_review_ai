@@ -7,9 +7,10 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base, UserScopedMixin, UTCDateTime
 
 # Types partagés avec `app.agents`, qui ne peut pas importer une feature (contrat 6).
-TaskType = Literal["lire", "regarder", "pratiquer", "quiz", "projet"]
+TaskType = Literal["read", "watch", "practice", "quiz", "project"]
 TaskStatus = Literal["todo", "done"]
 ProgramStatus = Literal["draft", "validated"]
+Stage = Literal["foundations", "practice", "advanced"]
 PlanKind = Literal["build", "replan"]
 # `empty` et `impossible` (D106) : propositions closes dès leur écriture (rien à changer sans
 # option, rangement impossible), jamais montrées « à valider ».
@@ -45,7 +46,7 @@ class Week(UserScopedMixin, Base):
     objective: Mapped[str] = mapped_column(Text)
     deliverable: Mapped[str] = mapped_column(Text)
     start_date: Mapped[date] = mapped_column(Date)
-    # Étape du livre (`fondations`, `pratique`, `avance`) et raison de la place de la semaine.
+    # The week’s stage in the book and the reason for its position.
     stage: Mapped[str | None] = mapped_column(String(16), default=None)
     rationale: Mapped[str | None] = mapped_column(Text, default=None)
 

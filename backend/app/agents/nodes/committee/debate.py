@@ -1,12 +1,12 @@
-"""Le débat du comité (SPEC F19, D147) : deux tours, chaque persona voit tout ce qui s'est dit.
-L'ordre de parole est fixé par le code (`speaking_order` : celui des personas, décalé d'un rang au
-tour 2), jamais par un modèle ; le Modérateur ne parle qu'à la synthèse.
+"""The committee debate (SPEC F19, D147): two rounds, each persona sees everything that was said.
+The speaking order is set by the code (`speaking_order`: that of the personas, shifted by one
+rank in round 2), never by a model; the Moderator only speaks at the synthesis.
 
-Les règles du débat sont celles du Conseil (SPEC 9.3, `council_rules`) : 150 mots au plus (coupe du
-code dans `speak`) et, dès le tour 2, répondre nommément à au moins un autre. Pour tenir le budget
-d'appels (17 au plus), la règle n'est pas redemandée au modèle : le prompt désigne à qui répondre
-(le dernier à avoir parlé), et une règle non tenue est acceptée puis journalisée (identifiants et
-code de règle seulement, comme le Conseil après sa relance)."""
+The debate rules are the Council's (SPEC 9.3, `council_rules`): 150 words at most (cut by the
+code in `speak`) and, from round 2, answer at least one other by name. To hold the call budget
+(17 at most), the rule is not requested again from the model: the prompt designates who to
+answer (the last to have spoken), and a rule not met is accepted then logged (identifiers and
+rule code only, like the Council after its retry)."""
 
 import logging
 import re
@@ -26,22 +26,22 @@ from app.agents.state.hiring_committee import HiringCommitteeState
 from app.agents.tools.committee_schema import MAX_WORDS, Persona, speaking_order
 
 _NAME_PATTERNS: dict[str, re.Pattern[str]] = {
-    "ats_reader": re.compile(r"\b(?:Lecteur ATS|filtre machine)\b", re.IGNORECASE),
-    "recruiter": re.compile(r"\bRecruteu(?:r|se)\b"),
+    "ats_reader": re.compile(r"\b(?:ATS reader|Lecteur ATS|filtre machine)\b", re.IGNORECASE),
+    "recruiter": re.compile(r"\b(?:Recruiter|Recruteu(?:r|se))\b"),
     "manager": re.compile(r"\bManager\b"),
-    "colleague": re.compile(r"\b(?:Futur(?:e)? coll[èe]gue|Coll[èe]gue)\b"),
+    "colleague": re.compile(r"\b(?:Future colleague|Futur(?:e)? coll[èe]gue|Coll[èe]gue)\b"),
 }
 
 logger = logging.getLogger(__name__)
 
 
 def names_other_persona(text: str, persona: str) -> bool:
-    """Vrai si `text` nomme une autre persona du comité (nom avec majuscule : « le Manager »)."""
+    """True if `text` names another committee persona (name with a capital: "the Manager")."""
     return any(p.search(text) for name, p in _NAME_PATTERNS.items() if name != persona)
 
 
 def addressee_of(spoken: list[dict[str, Any]], persona: Persona) -> Persona | None:
-    """À qui répondre : la dernière persona à avoir parlé, une autre que `persona`."""
+    """Who to answer: the last persona to have spoken, other than `persona`."""
     for item in reversed(spoken):
         if item["persona"] != persona:
             return item["persona"]  # type: ignore[no-any-return]
@@ -51,7 +51,7 @@ def addressee_of(spoken: list[dict[str, Any]], persona: Persona) -> Persona | No
 def make_round(deps: GraphDeps, number: int) -> Node:
     @node_timeout(TURN_TIMEOUT_S)
     async def debate_round(state: HiringCommitteeState) -> HiringCommitteeState:
-        """Le tour `number` : quatre prises de parole de suite, chacune après les précédentes."""
+        """Round `number`: four speeches in a row, each after the previous ones."""
         ctx = context_of(state)
         spoken = list(state["spoken"])
         for persona in speaking_order(number):
@@ -71,13 +71,13 @@ def make_round(deps: GraphDeps, number: int) -> Node:
                 messages,
                 agent=persona,
                 step=f"tour-{number}",
-                intent="je réponds au comité" if number >= 2 else "je donne ma position",
+                intent="responding to the committee" if number >= 2 else "stating my position",
                 catalog=[],
                 max_words=MAX_WORDS,
             )
             if number >= 2 and not names_other_persona(said.text, persona):
                 logger.info(
-                    "Règle du débat non tenue (name) : session %s, persona %s, tour %d",
+                    "Debate rule not met (name): session %s, persona %s, round %d",
                     deps.session_id,
                     persona,
                     number,

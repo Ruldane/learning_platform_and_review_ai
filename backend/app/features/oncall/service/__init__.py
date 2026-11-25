@@ -1,4 +1,4 @@
-"""Parcours d'astreinte, en temps simulé et au nom d'un seul compte."""
+"""On-call journey, in simulated time and on behalf of a single account."""
 
 import secrets
 from typing import Literal, cast
@@ -49,7 +49,7 @@ def _summary(row: OncallIncident) -> IncidentSummary:
 
 
 def sandbox_unavailable() -> AppError:
-    return AppError("sandbox_unavailable", "Le bac à sable est indisponible.", 503)
+    return AppError("sandbox_unavailable", "The sandbox is unavailable.", 503)
 
 
 async def review_state(
@@ -80,7 +80,7 @@ class OncallService:
     async def create(self, draft: IncidentCreate) -> IncidentView:
         seed = draft.seed if draft.seed is not None else secrets.randbelow(1_000_000)
         kind = draft.kind or KINDS[seed % len(KINDS)]
-        session = await self.ide.open_session(title=f"Astreinte · {FIXTURES[kind].title}")
+        session = await self.ide.open_session(title=f"On-call · {FIXTURES[kind].title}")
         await self.ide.save_files(session.id, project_files(kind), entry=SOURCE)
         row = await self.repo.add(
             kind=kind, seed=seed, alert_at=2 + seed % 3, ide_session_id=session.id
@@ -105,7 +105,7 @@ class OncallService:
     async def observe(self, incident_id: str, event_id: str) -> IncidentView:
         row = await self.repo.require(incident_id)
         if all(event["id"] != event_id for event in row.events):
-            raise AppError("incident_event_not_found", "Événement introuvable.", 404)
+            raise AppError("incident_event_not_found", "Event not found.", 404)
         if event_id not in row.observed_events:
             await self.repo.claim(row)
             row.observed_events = [*row.observed_events, event_id][-30:]
@@ -169,7 +169,7 @@ class OncallService:
     async def diagnose(self, incident_id: str) -> DiagnosticView:
         row = await self.repo.require(incident_id)
         if row.minute < row.alert_at:
-            raise AppError("before_alert", "Attends l’alerte simulée avant de diagnostiquer.", 409)
+            raise AppError("before_alert", "Wait for the simulated alert before diagnosing.", 409)
         if self._sandbox is None:
             raise sandbox_unavailable()
         active = await self.repo.running_diagnostic()
@@ -181,7 +181,7 @@ class OncallService:
                 raise diagnostic_in_progress()
         files = await self._project_files(row)
         if SOURCE not in files:
-            raise AppError("incident_source_missing", "Le fichier service.py est absent.", 422)
+            raise AppError("incident_source_missing", "The service.py file is missing.", 422)
         run_id = new_id()
         try:
             job = diagnostic.job_for(run_id, files)
@@ -190,7 +190,7 @@ class OncallService:
         except ValueError:
             raise AppError(
                 "incident_source_invalid",
-                "Réduis le nombre ou la taille des fichiers pour laisser la place au diagnostic.",
+                "Reduce the number or size of files to leave room for the diagnostic.",
                 422,
             ) from None
         except OSError:

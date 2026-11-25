@@ -19,7 +19,7 @@ export function SystemDesignPage() {
   return (
     <section className="flex flex-col gap-4">
       <header className="flex flex-col gap-2">
-        <Link to="/candidatures/entretien" className="w-fit text-sm underline underline-offset-4">
+        <Link to="/applications/interview" className="w-fit text-sm underline underline-offset-4">
           {t("systemDesign.back")}
         </Link>
         <h1 className="text-2xl font-semibold">{t("systemDesign.title")}</h1>

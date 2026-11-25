@@ -5,7 +5,7 @@ import { makeWeek } from "../fixtures";
 import type { WeekView } from "../viewTypes";
 import { WeekCalendar } from "./WeekCalendar";
 
-const MOVE_T1 = "Déplacer « Lire le chapitre 1 »";
+const MOVE_T1 = "Move “Lire le chapitre 1”";
 
 /** La semaine après le déplacement de `taskId` vers `date` (ce que rend la mutation optimiste). */
 function moved(week: WeekView, taskId: string, date: string): WeekView {
@@ -26,7 +26,7 @@ describe("WeekCalendar", () => {
     const onMoveTask = vi.fn();
     render(<WeekCalendar week={makeWeek()} editable onMoveTask={onMoveTask} />);
     await user.click(screen.getByRole("button", { name: MOVE_T1 }));
-    await user.click(screen.getByRole("menuitem", { name: /mercredi 18 novembre/ }));
+    await user.click(screen.getByRole("menuitem", { name: /Wednesday 18 November/ }));
     expect(onMoveTask).toHaveBeenCalledWith("t1", "2026-11-18");
     expect(screen.queryByRole("menu")).toBeNull();
   });
@@ -38,7 +38,7 @@ describe("WeekCalendar", () => {
     screen.getByRole("button", { name: MOVE_T1 }).focus();
     await user.keyboard("{Enter}{ArrowDown}{Enter}");
     rerender(<WeekCalendar week={moved(week, "t1", "2026-11-18")} editable onMoveTask={vi.fn()} />);
-    const wednesday = screen.getByRole("group", { name: /^mer\. / });
+    const wednesday = screen.getByRole("group", { name: /^Wed / });
     const trigger = within(wednesday).getByRole("button", { name: MOVE_T1 });
     expect(trigger).toHaveFocus();
   });
@@ -49,7 +49,7 @@ describe("WeekCalendar", () => {
     render(<WeekCalendar week={makeWeek()} editable onMoveTask={onMoveTask} />);
     screen.getByRole("button", { name: MOVE_T1 }).focus();
     await user.keyboard("{Enter}");
-    expect(screen.getByRole("menuitem", { name: /mardi 17 novembre/ })).toHaveFocus();
+    expect(screen.getByRole("menuitem", { name: /Tuesday 17 November/ })).toHaveFocus();
     await user.keyboard("{ArrowDown}{Enter}");
     expect(onMoveTask).toHaveBeenCalledWith("t1", "2026-11-18");
   });
@@ -68,36 +68,36 @@ describe("WeekCalendar", () => {
     const user = userEvent.setup();
     render(<WeekCalendar week={makeWeek()} editable onMoveTask={vi.fn()} />);
     await user.click(screen.getByRole("button", { name: MOVE_T1 }));
-    expect(screen.queryByRole("menuitem", { name: /lundi 16 novembre/ })).toBeNull();
+    expect(screen.queryByRole("menuitem", { name: /Monday 16 November/ })).toBeNull();
     expect(screen.getAllByRole("menuitem")).toHaveLength(6);
   });
 
   it("flags a day over its capacity in text", () => {
     render(<WeekCalendar week={makeWeek()} editable onMoveTask={vi.fn()} />);
-    expect(screen.getByText("Jour chargé : 150 / 120 min")).toBeInTheDocument();
+    expect(screen.getByText("Busy day: 150 / 120 min")).toBeInTheDocument();
     expect(screen.getAllByText("0 / 120 min").length).toBeGreaterThan(0);
   });
 
   it("shows seven day columns, the already-known label and the done mark", () => {
     render(<WeekCalendar week={makeWeek()} editable onMoveTask={vi.fn()} />);
     expect(
-      screen.getAllByRole("group", { name: /^(lun|mar|mer|jeu|ven|sam|dim)\. / }),
+      screen.getAllByRole("group", { name: /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun) / }),
     ).toHaveLength(7);
     const known = screen.getByText("Réviser les types").closest("li") as HTMLElement;
-    expect(within(known).getByText("déjà acquis")).toBeInTheDocument();
-    expect(within(known).getByText("Fait")).toBeInTheDocument();
+    expect(within(known).getByText("already known")).toBeInTheDocument();
+    expect(within(known).getByText("Done")).toBeInTheDocument();
   });
 
   it("is read-only when not editable", () => {
     render(<WeekCalendar week={makeWeek()} editable={false} onMoveTask={vi.fn()} />);
     expect(screen.getByText("Lire le chapitre 1")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Déplacer/ })).toBeNull();
-    expect(screen.queryByRole("button", { name: /Glisser/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Move / })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Drag / })).toBeNull();
   });
 
-  it("gives each task a drag handle announced in French", () => {
+  it("gives each task a drag handle announced in English", () => {
     render(<WeekCalendar week={makeWeek()} editable onMoveTask={vi.fn()} />);
-    const handle = screen.getByRole("button", { name: "Glisser « Lire le chapitre 1 »" });
-    expect(handle).toHaveAttribute("aria-roledescription", "tâche déplaçable");
+    const handle = screen.getByRole("button", { name: "Drag “Lire le chapitre 1”" });
+    expect(handle).toHaveAttribute("aria-roledescription", "draggable task");
   });
 });

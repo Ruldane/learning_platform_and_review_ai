@@ -9,7 +9,9 @@ export function CaseContext({ row }: { row: Recruitment }) {
       {row.project ? (
         <p>
           {t("recruitmentProcess.projectSource")} ·{" "}
-          <Link className="underline" to={`/competences/portfolio/${row.project.id}`}>{row.project.title}</Link>
+          <Link className="underline" to={`/skills/portfolio/${row.project.id}`}>
+            {row.project.title}
+          </Link>
         </p>
       ) : <p>{t("recruitmentProcess.noProject")}</p>}
       {row.missing_proofs.length ? (

@@ -1,12 +1,14 @@
-"""Arbre du Mermaid du Scribe (D85 §11f) : ce que `mermaid_grammar` produit et ce que
-`mermaid_rules` réémet. Les libellés y sont du texte décodé (entités Mermaid résolues, `<br>`
-devenu `\\n`) : l'échappement est refait à la réémission, par nos propres entités."""
+"""The parsed Mermaid tree shared by the grammar and emitter (D85 §11f).
+
+Labels hold decoded text. The grammar resolves Mermaid entities and converts line breaks
+to newline characters. The emitter escapes labels with its own entities.
+"""
 
 import html
 import re
 from dataclasses import dataclass, field
 
-# (ouvrant, fermant), les plus longs d'abord ; l'index sert de forme dans l'arbre.
+# Longest delimiter pairs first. The index identifies the shape in the parsed tree.
 SHAPES = (
     ("([", "])"),
     ("[[", "]]"),
@@ -20,13 +22,13 @@ SHAPES = (
 )
 RECTANGLE = SHAPES.index(("[", "]"))
 
-# Quantificateurs possessifs : aucun retour arrière, temps linéaire (D85 §11f, round 4).
+# Possessive quantifiers keep entity parsing linear (D85 §11f, round 4).
 _ENTITY = re.compile(r"#(\d++|[A-Za-z][A-Za-z0-9]*+);")
 _BREAK = re.compile(r"<br[ \t]*+/?>", re.IGNORECASE)
 
 
 class MermaidSyntaxError(ValueError):
-    """Une instruction hors grammaire ; le message est le motif rendu au Scribe."""
+    """A grammar error with a diagnostic for the Scribe."""
 
 
 @dataclass(frozen=True)
@@ -81,6 +83,6 @@ def _decode(match: re.Match[str]) -> str:
 
 
 def label_text(raw: str) -> str:
-    """Texte d'un libellé : entités décodées, `<br>` changé en `\\n`, blancs réduits."""
+    """Decode entities and line breaks and collapse whitespace within each line."""
     parts = _BREAK.split(_ENTITY.sub(_decode, raw))
     return "\n".join(" ".join(part.split()) for part in parts).strip("\n")

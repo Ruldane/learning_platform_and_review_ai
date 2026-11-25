@@ -2,7 +2,7 @@
   "id": "/mobile",
   "name": "Tremplin",
   "short_name": "Tremplin",
-  "lang": "fr",
+  "lang": "en",
   "start_url": "/mobile",
   "scope": "/",
   "display": "standalone",

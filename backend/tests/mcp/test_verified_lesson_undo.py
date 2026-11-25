@@ -56,7 +56,7 @@ async def test_a_published_submission_and_its_resources_can_be_undone(
     assert (
         await client.get(f"{API}/resources", params={"program_id": drafted.program_id})
     ).json() == []
-    assert await count(app, MemoryItem, kind="lecon") == 0
+    assert await count(app, MemoryItem, kind="lesson") == 0
 
 
 @pytest.mark.usefixtures("accept_lesson")

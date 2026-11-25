@@ -22,7 +22,7 @@ describe("CostByDayChart", () => {
     );
     expect(
       screen.getByRole("img", {
-        name: "Coût par jour, du sam. 14 nov. au lun. 16 nov. : 0,25 $ au total",
+        name: "Cost per day, from Sat 14 Nov to Mon 16 Nov: $0.25 in total",
       }),
     ).toBeInTheDocument();
     expect(container.querySelector(".recharts-bar")).toBeInTheDocument();
@@ -32,10 +32,10 @@ describe("CostByDayChart", () => {
     render(
       <CostByDayChart rows={rows} since="2026-11-14" until="2026-11-16" totalCostUsd={0.25} />,
     );
-    const table = screen.getByRole("table", { name: "Appels, jetons et coût par jour" });
+    const table = screen.getByRole("table", { name: "Calls, tokens and cost per day" });
     expect(within(table).getAllByRole("row")).toHaveLength(4);
-    const monday = within(within(table).getByRole("row", { name: /lun\. 16 nov\./ }));
-    expect(monday.getByText("0,05 $")).toBeInTheDocument();
+    const monday = within(within(table).getByRole("row", { name: /Mon 16 Nov/ }));
+    expect(monday.getByText("$0.05")).toBeInTheDocument();
     expect(monday.getByText("500")).toBeInTheDocument();
   });
 });

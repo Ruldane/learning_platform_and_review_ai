@@ -1,4 +1,4 @@
-"""Données de la Galaxie, calculées à la lecture pour un seul compte."""
+"""Galaxy data, computed on read for a single account."""
 
 from sqlalchemy.ext.asyncio import AsyncSession
 

@@ -1,4 +1,4 @@
-"""La carte de Tremplin et les outils disponibles pour le compte courant."""
+"""The Tremplin map and the tools available to the current account."""
 
 from collections import defaultdict
 from typing import Annotated
@@ -20,13 +20,13 @@ from app.mcp.registry import Registry
 
 router = APIRouter()
 _SECTIONS = {
-    "home": ("Accueil", "/"),
-    "learn": ("Étudier", "/etudier"),
-    "code": ("Coder", "/coder"),
-    "memory": ("Cerveau", "/cerveau"),
-    "career": ("Carrière", "/carriere"),
-    "lab": ("Labo", "/labo"),
-    "settings": ("Réglages", "/reglages"),
+    "home": ("Home", "/"),
+    "learn": ("Study", "/learn"),
+    "code": ("Code", "/coding"),
+    "memory": ("Brain", "/brain"),
+    "career": ("Career", "/career"),
+    "lab": ("Lab", "/lab"),
+    "settings": ("Settings", "/settings"),
 }
 _WITH_MODELS = frozenset(
     {
@@ -133,7 +133,7 @@ async def overview(
     db: Db,
     providers: Annotated[Providers, Depends(get_providers)],
 ) -> Overview:
-    """Les rubriques, leurs activités, les outils du jeton et les prérequis manquants."""
+    """The sections, their activities, the token's tools and the missing prerequisites."""
     available = _tools(request.app.state.mcp_registry)
     missing = await _missing(request, current, db, providers)
     sections: list[OverviewSection] = []

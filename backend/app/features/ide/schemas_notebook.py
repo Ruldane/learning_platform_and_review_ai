@@ -1,4 +1,4 @@
-"""Lecture, édition et exécution d'un notebook Python dans le projet."""
+"""Reading, editing and running a Python notebook in the project."""
 
 from typing import Annotated, Literal
 

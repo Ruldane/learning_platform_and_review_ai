@@ -21,7 +21,7 @@ const setup = (api: Parameters<typeof renderProjects>[1] = {}) =>
       project: <ProjectPage createSocket={createSocket} />,
     }),
     api,
-    "/competences/portfolio/p1",
+    "/skills/portfolio/p1",
   );
 
 const validated = (over: Record<string, unknown> = {}) =>
@@ -38,28 +38,28 @@ const validated = (over: Record<string, unknown> = {}) =>
     ...over,
   });
 
-const addButton = () => screen.findByRole("button", { name: "Ajouter au profil maître" });
+const addButton = () => screen.findByRole("button", { name: "Add to master profile" });
 
 describe("ProjectPage : un projet validé", () => {
   it("shows the validation, the evaluation, the drafts and the entry, and links to the skills map", async () => {
     const { user, router } = setup({ projects: [validated()] });
-    expect(await screen.findByRole("heading", { name: "Projet validé" })).toBeVisible();
-    expect(screen.getByText("Validé le 16 novembre 2026.")).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "Project validated" })).toBeVisible();
+    expect(screen.getByText("Validated on 16 November 2026.")).toBeVisible();
     expect(screen.getByText("Tout est atteint.")).toBeVisible();
-    expect(screen.getAllByText("Atteint").length).toBeGreaterThanOrEqual(3);
-    expect(screen.getByLabelText("Ligne de CV")).toHaveValue("Texte du brouillon cv_line.");
-    expect(screen.getByLabelText("Post LinkedIn")).toHaveValue("Texte du brouillon linkedin_post.");
-    expect(screen.getByLabelText("Plan de README")).toHaveValue("Texte du brouillon readme_plan.");
-    expect(screen.getByLabelText("Nom du projet")).toHaveValue("Pipeline de ventes");
-    expect(screen.getByLabelText("Réalisations")).toHaveValue(
+    expect(screen.getAllByText("Met").length).toBeGreaterThanOrEqual(3);
+    expect(screen.getByLabelText("CV line")).toHaveValue("Texte du brouillon cv_line.");
+    expect(screen.getByLabelText("LinkedIn post")).toHaveValue("Texte du brouillon linkedin_post.");
+    expect(screen.getByLabelText("README outline")).toHaveValue("Texte du brouillon readme_plan.");
+    expect(screen.getByLabelText("Project name")).toHaveValue("Pipeline de ventes");
+    expect(screen.getByLabelText("Achievements")).toHaveValue(
       "Requêtes SQL optimisées\nTest du total",
     );
-    expect(screen.getByText("Rien n'entre dans ton profil sans ton accord.")).toBeVisible();
-    expect(screen.getByText("Captures non lues par le Praticien.")).toBeVisible();
-    expect(screen.queryByRole("form", { name: "Rendre ton projet" })).toBeNull();
+    expect(screen.getByText("Nothing goes into your profile without your consent.")).toBeVisible();
+    expect(screen.getByText("Screenshots not read by the Practitioner.")).toBeVisible();
+    expect(screen.queryByRole("form", { name: "Submit your project" })).toBeNull();
 
-    await user.click(screen.getByRole("link", { name: "Voir la carte des compétences" }));
-    expect(router.state.location.pathname).toBe("/competences");
+    await user.click(screen.getByRole("link", { name: "See the skills map" }));
+    expect(router.state.location.pathname).toBe("/skills");
   });
 
   it("does not claim the screenshots were unread when the last submission had none", async () => {
@@ -96,13 +96,13 @@ describe("ProjectPage : les brouillons", () => {
       recheckFlags: [],
     });
     expect(
-      await screen.findByText(/absent de ton profil et de ton rendu : Kubernetes/),
+      await screen.findByText(/not in your profile or your submission: Kubernetes/),
     ).toBeVisible();
-    const field = screen.getByLabelText("Ligne de CV");
+    const field = screen.getByLabelText("CV line");
     await user.clear(field);
     await user.type(field, "Déployé avec Docker.");
     await user.click(
-      within(field.closest("article")!).getByRole("button", { name: "Enregistrer" }),
+      within(field.closest("article")!).getByRole("button", { name: "Save" }),
     );
     await waitFor(() =>
       expect(state.patches).toEqual([
@@ -110,10 +110,10 @@ describe("ProjectPage : les brouillons", () => {
       ]),
     );
     await waitFor(() =>
-      expect(screen.queryByText(/absent de ton profil et de ton rendu : Kubernetes/)).toBeNull(),
+      expect(screen.queryByText(/not in your profile or your submission: Kubernetes/)).toBeNull(),
     );
-    expect(screen.getByLabelText("Ligne de CV")).toHaveValue("Déployé avec Docker.");
-    expect(screen.getByText("Retouché par toi")).toBeVisible();
+    expect(screen.getByLabelText("CV line")).toHaveValue("Déployé avec Docker.");
+    expect(screen.getByText("Edited by you")).toBeVisible();
   });
 
   it("keeps the warning when the server still finds a term to check", async () => {
@@ -121,33 +121,33 @@ describe("ProjectPage : les brouillons", () => {
       projects: [validated({ drafts: flagged(["Kubernetes"]) })],
       recheckFlags: ["Kubernetes"],
     });
-    const field = await screen.findByLabelText("Ligne de CV");
+    const field = await screen.findByLabelText("CV line");
     await user.type(field, " Merci.");
     await user.click(
-      within(field.closest("article")!).getByRole("button", { name: "Enregistrer" }),
+      within(field.closest("article")!).getByRole("button", { name: "Save" }),
     );
-    await screen.findByText("Retouché par toi");
-    expect(screen.getByText(/absent de ton profil et de ton rendu : Kubernetes/)).toBeVisible();
+    await screen.findByText("Edited by you");
+    expect(screen.getByText(/not in your profile or your submission: Kubernetes/)).toBeVisible();
   });
 
   it("copies the text on screen and confirms", async () => {
     const { user } = setup({ projects: [validated()] });
-    const field = await screen.findByLabelText("Post LinkedIn");
+    const field = await screen.findByLabelText("LinkedIn post");
     await user.type(field, " Merci !");
-    await user.click(within(field.closest("article")!).getByRole("button", { name: "Copier" }));
-    expect(await screen.findByText("Brouillon copié.")).toBeVisible();
+    await user.click(within(field.closest("article")!).getByRole("button", { name: "Copy" }));
+    expect(await screen.findByText("Draft copied.")).toBeVisible();
     expect(await navigator.clipboard.readText()).toBe("Texte du brouillon linkedin_post. Merci !");
   });
 
   it("does not say the draft was copied when the clipboard is missing", async () => {
     const { user } = setup({ projects: [validated()] });
-    const field = await screen.findByLabelText("Post LinkedIn");
+    const field = await screen.findByLabelText("LinkedIn post");
     const original = Object.getOwnPropertyDescriptor(navigator, "clipboard");
     Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true });
     try {
-      await user.click(within(field.closest("article")!).getByRole("button", { name: "Copier" }));
-      expect(await screen.findByText(/Copie impossible/)).toBeVisible();
-      expect(screen.queryByText("Brouillon copié.")).toBeNull();
+      await user.click(within(field.closest("article")!).getByRole("button", { name: "Copy" }));
+      expect(await screen.findByText(/Can’t copy/)).toBeVisible();
+      expect(screen.queryByText("Draft copied.")).toBeNull();
     } finally {
       if (original) Object.defineProperty(navigator, "clipboard", original);
     }
@@ -155,22 +155,22 @@ describe("ProjectPage : les brouillons", () => {
 
   it("does not say the draft was copied when the browser refuses", async () => {
     const { user } = setup({ projects: [validated()] });
-    const field = await screen.findByLabelText("Post LinkedIn");
+    const field = await screen.findByLabelText("LinkedIn post");
     vi.spyOn(navigator.clipboard, "writeText").mockRejectedValueOnce(new Error("denied"));
-    await user.click(within(field.closest("article")!).getByRole("button", { name: "Copier" }));
-    expect(await screen.findByText(/Copie impossible/)).toBeVisible();
-    expect(screen.queryByText("Brouillon copié.")).toBeNull();
+    await user.click(within(field.closest("article")!).getByRole("button", { name: "Copy" }));
+    expect(await screen.findByText(/Can’t copy/)).toBeVisible();
+    expect(screen.queryByText("Draft copied.")).toBeNull();
   });
 });
 
 describe("ProjectPage : l'ajout au profil maître", () => {
-  it("adds nothing on its own, then replaces the button by « Ajouté au profil (version 4) »", async () => {
+  it("shows the new profile version after the user adds the project", async () => {
     const { user, state } = setup({ projects: [validated()], nextVersion: 4 });
     await addButton();
     expect(state.entries).toHaveLength(0);
     await user.click(await addButton());
-    expect(await screen.findByText("Ajouté au profil (version 4)")).toBeVisible();
-    expect(screen.queryByRole("button", { name: "Ajouter au profil maître" })).toBeNull();
+    expect(await screen.findByText("Added to profile (version 4)")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Add to master profile" })).toBeNull();
     expect(state.entries).toEqual([
       {
         id: "p1",
@@ -185,16 +185,16 @@ describe("ProjectPage : l'ajout au profil maître", () => {
 
   it("sends the entry as January retouched it, without blank achievement lines", async () => {
     const { user, state } = setup({ projects: [validated()] });
-    const name = await screen.findByLabelText("Nom du projet");
+    const name = await screen.findByLabelText("Project name");
     await user.clear(name);
     await user.type(name, "  Ventes mensuelles  ");
-    await user.clear(screen.getByLabelText("Réalisations"));
+    await user.clear(screen.getByLabelText("Achievements"));
     await user.type(
-      screen.getByLabelText("Réalisations"),
+      screen.getByLabelText("Achievements"),
       "Une réalisation{Enter}{Enter}   {Enter}",
     );
     await user.click(await addButton());
-    await screen.findByText("Ajouté au profil (version 4)");
+    await screen.findByText("Added to profile (version 4)");
     expect(state.entries[0]!.body).toMatchObject({
       name: "Ventes mensuelles",
       achievements: ["Une réalisation"],
@@ -204,22 +204,22 @@ describe("ProjectPage : l'ajout au profil maître", () => {
   it("sends one request on a double click", async () => {
     const { user, state } = setup({ projects: [validated()] });
     await user.dblClick(await addButton());
-    await screen.findByText("Ajouté au profil (version 4)");
+    await screen.findByText("Added to profile (version 4)");
     expect(state.entries).toHaveLength(1);
   });
 
   it("shows a project already in the profile as such", async () => {
     setup({ projects: [validated({ profile_version: 7 })] });
-    expect(await screen.findByText("Ajouté au profil (version 7)")).toBeVisible();
-    expect(screen.queryByRole("button", { name: "Ajouter au profil maître" })).toBeNull();
-    expect(screen.getByLabelText("Nom du projet")).toBeDisabled();
+    expect(await screen.findByText("Added to profile (version 7)")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Add to master profile" })).toBeNull();
+    expect(screen.getByLabelText("Project name")).toBeDisabled();
   });
 
   it("proposes the project name alone when there is no entry draft", async () => {
     const drafts = fourDrafts().filter((draft) => draft.kind !== "profile_entry");
     setup({ projects: [validated({ drafts })] });
-    expect(await screen.findByLabelText("Nom du projet")).toHaveValue("Pipeline de ventes");
-    expect(screen.getByLabelText("Réalisations")).toHaveValue("");
+    expect(await screen.findByLabelText("Project name")).toHaveValue("Pipeline de ventes");
+    expect(screen.getByLabelText("Achievements")).toHaveValue("");
   });
 
   it("warns that the entry draft is to check", async () => {
@@ -227,25 +227,26 @@ describe("ProjectPage : l'ajout au profil maître", () => {
       profile_entry: { status: "to_check", flags: ["10000"], entry: undefined },
     });
     setup({ projects: [validated({ drafts })] });
-    expect(await screen.findByText(/absent de ton profil et de ton rendu : 10000/)).toBeVisible();
+    expect(await screen.findByText(/not in your profile or your submission: 10000/)).toBeVisible();
   });
 
   it.each([
-    ["project_not_validated", "Seul un projet validé peut entrer dans ton profil.", false],
-    ["entry_already_added", "Ce projet est déjà dans ton profil maître.", false],
+    ["project_not_validated", "Only a validated project can be added to your profile.", false],
+    ["entry_already_added", "This project is already in your master profile.", false],
     [
       "profile_required",
-      "Valide d'abord ton profil maître : le projet s'y ajoute comme une nouvelle version.",
+      "Approve your master profile first: the project is added to it as a new version.",
       true,
     ],
     [
       "profile_draft_pending",
-      "Un brouillon de profil attend ta validation : valide-le ou écarte-le, puis reviens ajouter ce projet.",
+      "A profile draft is waiting for your approval: approve or discard it, " +
+        "then come back to add this project.",
       true,
     ],
     [
       "profile_projects_full",
-      "Ton profil maître a déjà 20 projets : retires-en un avant d'en ajouter un.",
+      "Your master profile already has 20 projects: remove one before adding another.",
       false,
     ],
   ])("writes the 409 %s in clear", async (code, message, withLink) => {
@@ -256,9 +257,9 @@ describe("ProjectPage : l'ajout au profil maître", () => {
     await user.click(await addButton());
     const alert = await screen.findByText(message);
     expect(alert).toBeVisible();
-    const link = screen.queryByRole("link", { name: "Ouvrir ton profil maître" });
+    const link = screen.queryByRole("link", { name: "Open your master profile" });
     expect(link !== null).toBe(withLink);
-    expect(screen.getByRole("button", { name: "Ajouter au profil maître" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "Add to master profile" })).toHaveAttribute(
       "aria-disabled",
       "false",
     );
@@ -273,15 +274,15 @@ describe("ProjectPage : l'ajout au profil maître", () => {
         }),
     });
     await user.click(await addButton());
-    await user.click(await screen.findByRole("link", { name: "Ouvrir ton profil maître" }));
-    expect(router.state.location.pathname).toBe("/carriere/profil");
+    await user.click(await screen.findByRole("link", { name: "Open your master profile" }));
+    expect(router.state.location.pathname).toBe("/career/profile");
   });
 });
 
 describe("ProjectPage : un brouillon seul", () => {
   it("renders a project whose drafts were not generated without a draft card", async () => {
     setup({ projects: [validated({ drafts: [draftOut("cv_line")] })] });
-    expect(await screen.findByLabelText("Ligne de CV")).toBeVisible();
-    expect(screen.queryByLabelText("Post LinkedIn")).toBeNull();
+    expect(await screen.findByLabelText("CV line")).toBeVisible();
+    expect(screen.queryByLabelText("LinkedIn post")).toBeNull();
   });
 });

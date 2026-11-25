@@ -25,7 +25,7 @@ export function LessonVariantsPage() {
       {view.edition.data && (
         <>
           <VariantReading edition={view.edition.data} format={view.format} onFormat={view.setFormat} />
-          <Link className="w-fit underline" to={`/apprendre/lecons/${view.edition.data.lesson_id}`}>
+          <Link className="w-fit underline" to={`/learn/lessons/${view.edition.data.lesson_id}`}>
             {t("lessonVariants.openSource")}
           </Link>
         </>

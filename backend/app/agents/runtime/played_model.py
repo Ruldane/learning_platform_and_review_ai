@@ -35,7 +35,7 @@ class PlayedChat(BaseChatModel):
             value = interrupt(
                 {
                     "kind": PLAY_KIND,
-                    "question": "Réponse du client MCP en attente.",
+                    "question": "Waiting for the MCP client to respond.",
                     "brief": {
                         **brief,
                         "step_id": str(uuid4()),
@@ -55,7 +55,7 @@ class PlayedChat(BaseChatModel):
             if not self.refresh_changed_brief:
                 break
             # LangGraph rejoue les anciennes livraisons avant de suspendre au nouveau brief.
-        raise AppError("played_step_changed", "La demande de cette étape a changé.", 409)
+        raise AppError("played_step_changed", "The request for this step has changed.", 409)
 
     async def _agenerate(
         self, messages: list[BaseMessage], *args: Any, **kwargs: Any

@@ -1,16 +1,13 @@
-"""L'Éclaireur en mode `dossier` (SPEC 6.4, F16, D142) : la branche `company_brief` du kit de
-candidature, un dossier d'une page sur l'entreprise.
+"""The Scout's one-page company brief for the application kit (SPEC 6.4, F16, D142).
 
-Dossier de moins de 30 jours (`KitContext.company_dossier`) → repris : ni recherche, ni appel du
-modèle, ni écriture de `companies` ; `check_dossier` le revérifie (un texte vidé = « à vérifier »,
-une actualité de plus de 6 mois retirée). Sinon : `web_search` du nom de l'entreprise (deux
-requêtes au plus), quatre lectures au plus (`web_read`, pages privilégiées d'abord),
-`CompanyDossier` demandé au modèle sur les pages lues, numérotées `[n]`. Le code tient le rôle du
-Vérificateur (`kit_dossier`) : une citation sans page lue est retirée, un texte sans source lue
-est vidé, l'actualité doit être datée de moins de 6 mois. Aucune page lue : « Aucune source
-lisible : dossier non produit. » (`to_check`, rien n'est rangé dans `companies`).
+Reuse and recheck a dossier younger than 30 days without searching or rewriting it.
+For a new dossier, search at most twice and read at most four pages, starting with
+preferred sources. Number the pages for the model. Verification removes citations
+without a read page, clears sections without sources, and drops news older than six
+months. If no pages can support a dossier, save a kit piece marked for review.
 
-Journaux : identifiants et nombres, jamais le nom de l'entreprise ni une adresse (17.2)."""
+Logs use identifiers and counts (SPEC 17.2).
+"""
 
 import logging
 from datetime import date
@@ -31,11 +28,11 @@ from app.agents.tools.web_port import QUOTA_CODE, SEARCH_UNAVAILABLE_CODE, PageR
 from app.agents.tools.web_tools import page_agent_text, web_read, web_search
 from app.core.errors import AppError
 
-DOSSIER_REQUEST = "Rédige le dossier de l'entreprise."
-NO_SOURCE = "Aucune source lisible : dossier non produit."
-NO_COMPANY = "Entreprise inconnue : dossier non produit."
+DOSSIER_REQUEST = "Write the company dossier."
+NO_SOURCE = "The dossier needs at least one readable source."
+NO_COMPANY = "The company is required to prepare a dossier."
 MAX_READS = 4
-DOSSIER_LIMIT_S = 360  # deux recherches, quatre pages (15 s chacune), une sortie structurée
+DOSSIER_LIMIT_S = 360  # Two searches, four page reads, and one structured response.
 MAX_POSTING_CHARS = 2000
 _URL_ERRORS = ("invalid_url", "url_forbidden")
 
@@ -43,11 +40,12 @@ logger = logging.getLogger(__name__)
 
 
 async def _hits(deps: GraphDeps, ctx: KitContext) -> list[WebHit]:
-    """Les résultats des deux requêtes, sans doublon, pages privilégiées d'abord."""
+    """Search twice and return distinct results with preferred pages first."""
     found: dict[str, WebHit] = {}
     answered = 0
     failure: AppError | None = None
-    for query in (ctx.company, f"{ctx.company} actualités"):
+    news = "actualités" if ctx.language == "fr" else "news"
+    for query in (ctx.company, f"{ctx.company} {news}"):
         try:
             result = await web_search(deps, query, lang=ctx.language, agent=AGENT)
         except AppError as exc:
@@ -62,12 +60,12 @@ async def _hits(deps: GraphDeps, ctx: KitContext) -> list[WebHit]:
         for hit in result.hits:
             found.setdefault(hit.url, hit)
     if failure is not None and answered == 0:
-        raise failure  # moteur en panne : la pièce échoue avec son message lisible
+        raise failure  # Report the provider outage when neither search returned.
     return sorted(found.values(), key=lambda hit: not hit.preferred)  # stable
 
 
 async def _read(deps: GraphDeps, hits: list[WebHit]) -> list[PageRead]:
-    """Quatre lectures au plus ; seules les pages lisibles et distinctes sont gardées."""
+    """Read up to four results and keep distinct, readable pages."""
     pages: list[PageRead] = []
     seen: set[str] = set()
     for hit in hits[:MAX_READS]:
@@ -92,8 +90,8 @@ async def _ask(deps: GraphDeps, ctx: KitContext, pages: list[PageRead]) -> Compa
     prompt = render_prompt(
         AGENT,
         mode="dossier",
-        company=untrusted(ctx.company, "entreprise"),
-        title=untrusted(one_line(ctx.title)[:MAX_POSTING_CHARS], "poste visé"),
+        company=untrusted(ctx.company, "company"),
+        title=untrusted(one_line(ctx.title)[:MAX_POSTING_CHARS], "target role"),
         today=ctx.today.isoformat(),
         pages="\n\n".join(numbered),
     )
@@ -104,12 +102,12 @@ async def _ask(deps: GraphDeps, ctx: KitContext, pages: list[PageRead]) -> Compa
         [SystemMessage(prompt), HumanMessage(DOSSIER_REQUEST)],
         agent=AGENT,
         step="dossier",
-        intent="je prépare le dossier de l'entreprise",
+        intent="preparing the company dossier",
     )
 
 
 def _page_date(page: PageRead) -> date | None:
-    """La date connue de la page (ISO 8601, début de la chaîne), sinon `None`."""
+    """Read the leading ISO date when available."""
     try:
         return date.fromisoformat((page.date or "")[:10])
     except ValueError:
@@ -137,7 +135,7 @@ async def _produce(deps: GraphDeps, ctx: KitContext) -> Piece:
         deps.user_id, deps.session_id, ctx.company, checked.dossier, sources
     )
     logger.info(
-        "Dossier rangé : session %s, %d page(s) lue(s), %d texte(s) vidé(s), %d retiré(s)",
+        "Dossier saved: session %s, %d pages read, %d sections cleared, %d items removed",
         deps.session_id,
         len(pages),
         checked.emptied,
@@ -149,8 +147,7 @@ async def _produce(deps: GraphDeps, ctx: KitContext) -> Piece:
 
 
 def _reused(ctx: KitContext, dossier: CompanyDossier) -> Piece:
-    """Le dossier repris, revérifié par le code (fonction pure, sans page relue) : un texte déjà
-    vidé le garde « à vérifier », une actualité devenue trop vieille est retirée."""
+    """Recheck the saved dossier for missing sections and outdated news."""
     sources = ctx.company_dossier_sources
     checked = check_dossier(dossier, len(sources), ctx.today)
     meta = {
@@ -170,7 +167,7 @@ def make_dossier(deps: GraphDeps) -> Node:
             done = Piece("to_check", NO_COMPANY)
         elif ctx.company_dossier is not None:
             logger.info(
-                "Dossier repris : session %s, fiche %s", deps.session_id, ctx.application_id
+                "Dossier reused: session %s, application %s", deps.session_id, ctx.application_id
             )
             done = _reused(ctx, ctx.company_dossier)
         else:

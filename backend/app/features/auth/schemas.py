@@ -11,7 +11,7 @@ class MeOut(BaseModel):
 
 
 class ClaimIn(BaseModel):
-    """Le choix de la toute première connexion Google : reprendre l'espace local (même `id`,
-    donc aucune donnée déplacée) ou repartir d'un espace vide (l'espace local reste intact)."""
+    """The choice of the very first Google sign-in: take over the local space (same `id`, so no
+    data moved) or start from an empty space (the local space stays intact)."""
 
     choice: Literal["take_local", "fresh"]

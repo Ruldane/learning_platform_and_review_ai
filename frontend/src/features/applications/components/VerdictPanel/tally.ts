@@ -9,9 +9,9 @@ const countOf = (votes: VoteView[], value: VoteValueView): string => {
 /** « 3 oui ; 1 non ; 0 peut-être » : le décompte des voix, dit en mots. */
 export function tallyOf(votes: VoteView[]): string {
   return t("applications.verdictPanel.tally", {
-    oui: countOf(votes, "oui"),
-    non: countOf(votes, "non"),
-    peut_etre: countOf(votes, "peut_etre"),
+    yes: countOf(votes, "yes"),
+    no: countOf(votes, "no"),
+    maybe: countOf(votes, "maybe"),
   });
 }
 
@@ -20,9 +20,9 @@ export function tallyOf(votes: VoteView[]): string {
  * trois lecteurs au moins l'ont voté, sinon c'est l'absence de majorité.
  */
 export function explanationOf(verdict: VoteValueView, votes: VoteView[]): string {
-  const maybe = votes.filter((vote) => vote.vote === "peut_etre").length;
-  if (verdict === "peut_etre" && maybe >= 3) {
-    return t("applications.verdictPanel.explain.peut_etre_majority");
+  const maybe = votes.filter((vote) => vote.vote === "maybe").length;
+  if (verdict === "maybe" && maybe >= 3) {
+    return t("applications.verdictPanel.explain.maybe_majority");
   }
   return t(`applications.verdictPanel.explain.${verdict}`);
 }

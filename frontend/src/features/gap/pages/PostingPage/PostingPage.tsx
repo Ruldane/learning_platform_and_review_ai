@@ -10,7 +10,7 @@ interface PostingPageProps {
 }
 
 /**
- * Une offre (`/carriere/offres/:postingId`). Pendant l'analyse : le fil de la session et une
+ * Une offre (`/career/postings/:postingId`). Pendant l'analyse : le fil de la session et une
  * relecture toutes les 3 s, 40 fois. Ensuite : la fiche, les doublons, l'écart avec le profil,
  * « Ajouter au planning » et « Revoir mon CV pour cette offre ». La suppression se confirme dans
  * la page.

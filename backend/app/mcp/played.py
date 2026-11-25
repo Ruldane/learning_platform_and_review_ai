@@ -21,7 +21,7 @@ def play_identity(user_id: str, *, write: bool = False) -> McpIdentity:
         or "sessions" not in identity.features
         or (write and identity.mode != "write")
     ):
-        raise AppError("play_forbidden", "Accès MCP insuffisant pour cette session.", 403)
+        raise AppError("play_forbidden", "Insufficient MCP access for this session.", 403)
     return identity
 
 
@@ -34,12 +34,12 @@ def launch_request(
 ) -> tuple[ToolRequest, str]:
     tool = registry.play_tool(launch)
     if tool is None or tool.feature not in identity.features:
-        raise AppError("play_forbidden", "Outil de lancement hors de la portée du jeton.", 403)
+        raise AppError("play_forbidden", "Launch tool outside the token's scope.", 403)
     graph = tool.graph or tool.launches
     if not graph or tool.level != 2:
-        raise AppError("not_a_launch", "Cet outil ne lance pas de parcours jouable.", 422)
+        raise AppError("not_a_launch", "This tool does not launch a playable workflow.", 422)
     if registry.graph_features.get(graph) not in identity.features:
-        raise AppError("play_forbidden", "Parcours hors de la portée du jeton.", 403)
+        raise AppError("play_forbidden", "Workflow outside the token's scope.", 403)
     try:
         check_arguments(tool.input_schema, arguments)
         if tool.graph:
@@ -51,8 +51,8 @@ def launch_request(
             routes.ensure_declared(tool, request)
             return request, graph
     except ArgumentError:
-        raise AppError("invalid_arguments", "Arguments de lancement invalides.", 422) from None
-    raise AppError("not_a_launch", "Cet outil ne lance pas de parcours jouable.", 422)
+        raise AppError("invalid_arguments", "Invalid launch arguments.", 422) from None
+    raise AppError("not_a_launch", "This tool does not launch a playable workflow.", 422)
 
 
 @dataclass(frozen=True)
@@ -81,6 +81,6 @@ class PlayLauncher:
             )
         if not play.started:
             raise AppError(
-                "play_not_started", "La route n’a pas créé de nouvelle session jouée.", 409
+                "play_not_started", "The route did not create a new played session.", 409
             )
         return {"session_id": play.started[0]}

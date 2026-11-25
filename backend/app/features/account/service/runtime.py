@@ -1,6 +1,6 @@
-"""Ce que « Mes données » reçoit du démarrage : le stockage des fichiers, le moteur d'agents (que
-« Tout supprimer » interroge pour annuler les sessions en cours et effacer leurs points de
-reprise), la fabrique de sessions de base (sa transaction) et les verrous par compte."""
+"""What "My data" receives from startup: file storage, the agent engine (which "Delete
+everything" queries to cancel running sessions and erase their checkpoints), the database
+session factory (its transaction) and the per-account locks."""
 
 from dataclasses import dataclass, field
 

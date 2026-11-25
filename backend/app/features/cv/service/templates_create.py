@@ -1,11 +1,11 @@
-"""Création d'un gabarit de CV et lancement de la capture du design (SPEC 5.2, 14.2 ; D126).
+"""Creating a CV template and launching the design capture (SPEC 5.2, 14.2; D126).
 
-Le PDF d'origine est toujours rangé comme document de la mémoire (`document_id` jamais vide,
-preflight G26) ; sa mise en page est extraite **avant** tout lancement (PDF illisible ou de plus de
-4 pages : 422, rien n'est rangé) et gardée dans le gabarit (images, géométrie, blocs, texte,
-rôles des polices) : le Maquettiste ne l'extrait plus. Une capture de gabarit à la fois (409
-`capture_in_progress`) ; sans modèle de vision, 409 `vision_unavailable` (11.2). Journaux :
-identifiants et nombres, jamais le nom du gabarit, un fichier ni une police."""
+The original PDF is always stored as a memory document (`document_id` never empty, preflight
+G26); its layout is extracted **before** any launch (unreadable PDF or more than 4 pages: 422,
+nothing is stored) and kept in the template (images, geometry, blocks, text, font roles): the
+Designer no longer extracts it. One template capture at a time (409 `capture_in_progress`);
+without a vision model, 409 `vision_unavailable` (11.2). Logs: ids and numbers, never the
+template name, a file or a font."""
 
 import logging
 
@@ -32,14 +32,14 @@ from app.providers.pdf.base import PdfLayout
 
 logger = logging.getLogger(__name__)
 
-DESIGNER = "designer"  # l'agent qui capture le design (niveau `vision`, D125)
-LAUNCH_FAILED = "La capture du modèle n'a pas pu démarrer : relance-la."
+DESIGNER = "designer"  # the agent that captures the design (`vision` tier, D125)
+LAUNCH_FAILED = "Template capture could not start. Try again."
 
 
 def vision_unavailable() -> AppError:
     return AppError(
         "vision_unavailable",
-        "La capture du design demande un modèle qui lit les images. Active-le dans les réglages.",
+        "Template capture needs a model that can read images. Enable one in Settings.",
         409,
     )
 
@@ -47,14 +47,14 @@ def vision_unavailable() -> AppError:
 def one_source() -> AppError:
     return AppError(
         "validation_error",
-        "Requête invalide : vérifie les champs signalés.",
+        "Invalid request. Check the highlighted fields.",
         422,
         {"fields": ["file", "document_id"]},
     )
 
 
 async def vision_enabled(db: AsyncSession, user_id: str) -> bool:
-    """Le modèle du Maquettiste (son réglage propre, sinon le niveau `vision`) lit les images."""
+    """The Designer's model (its own setting, otherwise the `vision` tier) reads the images."""
     settings = await SettingsService(db, user_id).get()
     return supports_vision(settings.agent_overrides.get(DESIGNER, settings.tiers["vision"]))
 
@@ -79,7 +79,7 @@ async def _row(
     rt: CvRuntime, db: AsyncSession, user_id: str, name: str, document_id: str, layout: PdfLayout
 ) -> CvTemplate:
     roles = font_roles(layout)
-    families = {role.family for role in roles}  # supposées chargées ; `prepare` corrige
+    families = {role.family for role in roles}  # assumed loaded; `prepare` corrects
     first = layout.pages[0]
     images = [page.image_png for page in layout.pages]
     keys = [await rt.storage.save(user_id, IMAGE_CATEGORY, png, ".png") for png in images]
@@ -143,11 +143,11 @@ async def create_template(
             )
             document_id = document.id
         row = await _row(rt, db, user_id, name, str(document_id), layout)
-        await db.commit()  # le Maquettiste relit le gabarit dans sa propre session
+        await db.commit()  # the Designer re-reads the template in its own session
         session_id = await _launch(rt, db, user_id, row)
         template_id = row.id
     logger.info(
-        "Capture du design lancée : utilisateur %s, gabarit %s, session %s, %d page(s)",
+        "Design capture started: user %s, template %s, session %s, %d page(s)",
         user_id,
         template_id,
         session_id,

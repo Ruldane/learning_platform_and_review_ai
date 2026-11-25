@@ -13,33 +13,33 @@ const entry: ApiKeyEntry = {
 };
 
 describe("ApiKeySummary", () => {
-  it("affiche le fournisseur, les 4 derniers caractères et l'origine", () => {
+  it("shows the provider, the last four characters, and the source", () => {
     render(<ApiKeySummary entry={entry} headingId="titre" />);
     expect(screen.getByRole("heading", { name: "Anthropic" })).toHaveAttribute("id", "titre");
     expect(screen.getByText("•••• 1234")).toBeInTheDocument();
-    expect(screen.getByText("saisie ici")).toBeInTheDocument();
-    expect(screen.getByText("Dernier test : réussi")).toBeInTheDocument();
+    expect(screen.getByText("entered here")).toBeInTheDocument();
+    expect(screen.getByText("Last test: passed")).toBeInTheDocument();
   });
 
-  it("explique qu'une clé du fichier .env se retire de ce fichier", () => {
+  it("explains how to remove a key that comes from the .env file", () => {
     render(<ApiKeySummary entry={{ ...entry, source: "env" }} headingId="titre" />);
-    expect(screen.getByText("fichier .env")).toBeInTheDocument();
-    expect(screen.getByText(/retire-la de ce fichier/)).toBeInTheDocument();
+    expect(screen.getByText(".env file")).toBeInTheDocument();
+    expect(screen.getByText(/remove it from that file/)).toBeInTheDocument();
   });
 
-  it("annonce l'absence de clé", () => {
+  it("reports a missing key", () => {
     render(
       <ApiKeySummary
         entry={{ ...entry, source: null, last4: null, last_test_ok: null }}
         headingId="titre"
       />,
     );
-    expect(screen.getByText("Aucune clé enregistrée")).toBeInTheDocument();
-    expect(screen.queryByText(/Dernier test/)).not.toBeInTheDocument();
+    expect(screen.getByText("No key saved")).toBeInTheDocument();
+    expect(screen.queryByText(/^Last test:/)).not.toBeInTheDocument();
   });
 
-  it("signale une clé illisible", () => {
+  it("reports an unreadable key", () => {
     render(<ApiKeySummary entry={{ ...entry, readable: false }} headingId="titre" />);
-    expect(screen.getByText("Clé illisible, ressaisis-la")).toBeInTheDocument();
+    expect(screen.getByText("Unreadable key, enter it again")).toBeInTheDocument();
   });
 });

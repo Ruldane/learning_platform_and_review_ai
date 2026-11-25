@@ -3,8 +3,7 @@ import { t } from "@/shared/i18n/t";
 import { cn } from "@/shared/lib/utils";
 import { Button } from "@/shared/ui/button";
 import { fieldClass } from "@/shared/ui/fieldClass";
-import { MAX_CONTENT } from "./useKitDraft";
-import type { Part } from "./parts";
+import { MAX_CONTENT, type Part } from "./parts";
 
 interface KitPartFieldProps {
   part: Part;

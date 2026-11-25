@@ -30,7 +30,7 @@ describe("useMemoryItems", () => {
   it("sends the filters, the status and the paging as query parameters", async () => {
     const backend = memoryBackend();
     server.use(...readHandlers(backend));
-    const filters = { ...NO_FILTERS, kind: "lecon" as const, tag: " nlp ", author: "user" };
+    const filters = { ...NO_FILTERS, kind: "lesson" as const, tag: " nlp ", author: "user" };
     const { result } = renderHook(
       () => useMemoryItems(query({ filters, status: "pending", offset: 50, limit: 10 })),
       { wrapper: createQueryWrapper() },
@@ -38,7 +38,7 @@ describe("useMemoryItems", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     const params = backend.requests[0]!.url.searchParams;
     expect(Object.fromEntries(params)).toEqual({
-      kind: "lecon",
+      kind: "lesson",
       tag: "nlp",
       author: "user",
       status: "pending",

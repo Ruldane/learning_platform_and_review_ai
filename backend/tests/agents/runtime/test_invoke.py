@@ -81,7 +81,7 @@ async def test_exhausted_glm_credit_is_not_retried(sleeps: list[float]) -> None:
     with pytest.raises(AppError) as e:
         await invoke_agent(model, [HumanMessage("x")], agent="a", step="s", intent="i")
     assert e.value.code == "llm_credit_exhausted"
-    assert e.value.message == "Crédit Z.ai insuffisant pour ce modèle."
+    assert e.value.message == "Insufficient Z.ai credit for this model."
     assert model.calls == 1 and sleeps == []
 
 
@@ -183,7 +183,7 @@ async def test_node_timeout_raises_readable_error() -> None:
     with pytest.raises(AppError) as e:
         await slow({})
     assert e.value.code == "node_timeout"
-    assert e.value.message == "L'étape slow a dépassé 0.01 secondes."
+    assert e.value.message == "The slow step exceeded 0.01 seconds."
 
 
 async def test_node_timeout_keeps_result_and_signature() -> None:
@@ -218,7 +218,7 @@ async def test_call_deadline_cuts_a_hanging_call_then_retries(
         await invoke_agent(model, [HumanMessage("x")], agent="tutor", step="s", intent="i")
     assert e.value.code == "llm_timeout"
     assert model.calls == 1 + len(RETRY_DELAYS_S) and sleeps == list(RETRY_DELAYS_S)
-    assert caplog.text.count("Appel LLM retenté : agent tutor") == len(RETRY_DELAYS_S)
+    assert caplog.text.count("LLM call retried: agent tutor") == len(RETRY_DELAYS_S)
     assert "TimeoutError" in caplog.text
 
 

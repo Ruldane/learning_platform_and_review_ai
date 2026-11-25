@@ -57,19 +57,18 @@ def test_preferences_read_only_returns_the_preference_fields(
     assert not tool.response_fields & PROTECTED_FIELDS  # jamais `tiers` ni `agent_overrides`
 
 
-def test_january_gestures_are_excluded_and_not_tools(real: tuple[FastAPI, Registry]) -> None:
-    """10.R (I1) : répondre à un quiz, noter une fiche et rendre un projet sont des gestes de
-    January, jamais faits à sa place : ni outil, ni action déclarée (motif dans `excluded`)."""
-    names = {tool.name for tool in real[1].all()}
-    assert {"quiz_submit_attempt", "quiz_review_card", "projects_submit_project"}.isdisjoint(names)
-    for feature, route in (
-        ("quiz", "POST /quizzes/{quiz_id}/attempts"),
-        ("quiz", "POST /flashcards/{card_id}/review"),
-        ("projects", "POST /projects/{project_id}/submit"),
+def test_january_gestures_require_confirmation(real: tuple[FastAPI, Registry]) -> None:
+    """Only January can approve quiz answers, card ratings, and project submissions."""
+    for name, path in (
+        ("quiz_submit_attempt", "/quizzes/{quiz_id}/attempts"),
+        ("quiz_rate_flashcard", "/flashcards/{card_id}/review"),
+        ("projects_submit_project", "/projects/{project_id}/submit"),
     ):
-        declared = next(item for item in MCP_FEATURES if item.feature == feature)
-        assert "geste de january" in declared.excluded[route].lower(), route
-        assert route not in {action.route for action in declared.actions}
+        tool = real[1].get(name)
+        assert tool is not None, name
+        assert tool.route == ("POST", path)
+        assert tool.level == 3
+        assert "To confirm" in tool.description
 
 
 def test_route_only_graphs_have_no_launch_tool_only_their_route(
@@ -91,11 +90,13 @@ def test_every_launching_route_is_marked_and_every_route_only_graph_follows() ->
     Le plafond (M11) ne dépend pas de ces marques."""
     declared: dict[str, list[str]] = {}
     for feature in MCP_FEATURES:
+        assert all(action.level == 2 for action in feature.play_actions), feature.feature
         for action in (*feature.actions, *feature.play_actions):
             if action.launches is not None:
                 assert action.launches in GRAPHS, action.route
-                assert action.level == 2, action.route
-                assert action.route.startswith("POST ") or action.route == "GET /brief/today"
+                assert action.level in (2, 3), action.route
+                method, _ = action.route.split(" ", 1)
+                assert method in {"POST", "PATCH"} or action.route == "GET /brief/today"
                 declared.setdefault(action.launches, []).append(action.route)
     excluded_graphs = {
         key.removeprefix("graph:")
@@ -103,7 +104,8 @@ def test_every_launching_route_is_marked_and_every_route_only_graph_follows() ->
         for key in feature.excluded
         if key.startswith("graph:")
     }
-    assert not set(ROUTE_ONLY) - set(declared) - excluded_graphs
+    # The lesson watch scheduler is the sole launcher for lesson updates.
+    assert set(ROUTE_ONLY) - set(declared) - excluded_graphs == {"lesson_update"}
     for feature in MCP_FEATURES:
         for graph in feature.graphs:
             assert graph.follow_only == (graph.graph in ROUTE_ONLY), graph.graph
@@ -239,7 +241,7 @@ async def test_a_timeout_on_a_write_says_it_may_have_been_applied(
 
     assert is_error
     assert envelope["data"]["error"]["code"] == "tool_timeout"
-    assert "a pu écrire" in envelope["notice"] and "vérifie" in envelope["notice"]
+    assert "may have written" in envelope["notice"] and "check the state" in envelope["notice"]
     async with db_session_factory() as db:
         row = (await db.execute(select(McpCall).where(McpCall.action == "slow_write"))).scalar_one()
     assert row.code == 504 and row.ids == {"outcome": "timeout"}

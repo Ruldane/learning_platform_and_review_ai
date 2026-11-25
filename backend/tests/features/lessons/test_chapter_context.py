@@ -19,7 +19,7 @@ async def test_brief_follows_chapter_order(
     first_id, second_id = program.modules
 
     first = await store.brief(ME, first_id)
-    assert "Chapitre suivant : Module Projet" in first.chapter_context
+    assert "Next chapter: Module Projet" in first.chapter_context
 
     await publish(store, program, [])
     async with db_session_factory() as db:
@@ -29,6 +29,6 @@ async def test_brief_follows_chapter_order(
             row.title = "Nouveau titre choisi"
         await db.commit()
     second = await store.brief(ME, second_id)
-    assert "Attention : Pondérer les informations pertinentes." in second.chapter_context
-    assert "Chapitre précédent : Module Bases" in second.chapter_context
+    assert "Attention: Pondérer les informations pertinentes." in second.chapter_context
+    assert "Previous chapter: Module Bases" in second.chapter_context
     assert "L'attention pondère les positions" in second.chapter_context

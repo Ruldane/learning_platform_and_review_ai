@@ -1,4 +1,4 @@
-"""Défi d’une seule fiche due associé au compte, au consentement et à sa discussion."""
+"""Challenge on a single due card, tied to the account, the consent and its chat."""
 
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -26,7 +26,7 @@ from app.features.settings.service import SettingsService
 def _forbidden() -> AppError:
     return AppError(
         "telegram_review_not_authorized",
-        "Ce jeton et cette discussion ne sont pas associés à une révision active.",
+        "This token and this chat are not linked to an active review.",
         403,
     )
 
@@ -41,7 +41,7 @@ class TelegramConnection:
 
 
 async def telegram_connection(db: AsyncSession, user_id: str) -> TelegramConnection | None:
-    """Discussion et créneau déjà consentis, sans partager le jeton de la révision."""
+    """Chat and time slot already consented to, without sharing the review token."""
     row = await ConsentRepository(db, user_id).mine()
     if row is None or not row.enabled or row.chat_id is None:
         return None
@@ -104,12 +104,12 @@ class TelegramReviews:
     async def _owned(self, challenge_id: str, consent_id: str) -> TelegramReviewChallenge:
         row = await self._challenges.get(challenge_id)
         if row is None or row.consent_id != consent_id:
-            raise AppError("telegram_challenge_not_found", "Défi introuvable.", 404)
+            raise AppError("telegram_challenge_not_found", "Challenge not found.", 404)
         return row
 
     async def _check_day(self, day: date) -> None:
         if day != (await self._local_now()).date():
-            raise AppError("telegram_challenge_expired", "Le défi du jour est expiré.", 409)
+            raise AppError("telegram_challenge_expired", "Today's challenge has expired.", 409)
 
     async def reveal(self, challenge_id: str, chat_id: str) -> TelegramRevealOut:
         prefs = await self._consent(chat_id, lock=False)
@@ -123,7 +123,9 @@ class TelegramReviews:
         row = await self._owned(challenge_id, prefs.consent_id)
         if row.outcome is not None:
             if row.rating != body.result:
-                raise AppError("telegram_already_rated", "Ce défi a déjà reçu un avis.", 409)
+                raise AppError(
+                    "telegram_already_rated", "This challenge has already received a rating.", 409
+                )
             return TelegramAnswerOut.model_validate(row.outcome)
         await self._check_day(row.day)
         review = await cards.review_in_session(

@@ -40,14 +40,14 @@ from app.agents.tools.review_schema import Proposal
 
 VerdictStatus = Literal["ok", "to_confirm", "to_gap"]
 
-NO_FACT = "Aucun fait de ton profil n'appuie cette modification"
-NUMBER = "Chiffre absent de ton profil"
-RATIO = "Proportion sans chiffre dans ton profil"
-NUMERIC_ASSOCIATION = "Lien entre un chiffre et sa mesure à confirmer"
-TOOL = "Outil absent de ton profil"
-NAME = "Nom propre absent de ton profil"
-TITLE = "Titre absent de ton profil"
-GAP = "Mot clé de l'offre absent des faits cités et de tes compétences : il part vers l'écart"
+NO_FACT = "Your profile has no evidence for this change"
+NUMBER = "Number missing from your profile"
+RATIO = "Proportion with no supporting number in your profile"
+NUMERIC_ASSOCIATION = "Confirm what this number measures"
+TOOL = "Tool missing from your profile"
+NAME = "Proper name missing from your profile"
+TITLE = "Title missing from your profile"
+GAP = "Posting keyword unsupported by the cited facts or skills. See the skill gap."
 
 _TECH = {normalize_term(term, plural=True): term for term in TECH_TERMS}
 _TITLE_WORDS = {normalize_term(word, plural=True) for word in TITLE_WORDS}
@@ -204,11 +204,11 @@ def _names(after: str, profile: MasterProfileData, *, skip_first: bool) -> set[s
 
 
 def validate(p: Proposal, profile: MasterProfileData, analysis: PostingAnalysis) -> Verdict:
-    """Le verdict sur une proposition : voir l'en-tête du module. `blocks` : des raisons fixes en
-    français, jamais le texte du CV ; `gap_terms` : les mots clés de l'offre que les faits cités
-    ne portent pas, comme l'offre les écrit : à appuyer par un fait ou à acquérir (ils peuvent
-    figurer ailleurs dans le profil : un terme est « à l'écart » quand le fait cité ne le dit pas,
-    pas quand le profil entier l'ignore)."""
+    """Return the verdict for a proposed CV edit.
+
+    `blocks` contains fixed English reasons. `gap_terms` preserves the posting's keywords that
+    lack support in the cited facts. A keyword can appear elsewhere in the profile.
+    """
     if p.action in ("remove", "move"):
         return Verdict("ok", [], [])
     facts = facts_of(profile)

@@ -1,15 +1,12 @@
-"""Les pièces du kit de candidature écrites par l'Assistant de suivi (SPEC 6.4, F16, D142) : `cv`
-(sans modèle), `letter`, `linkedin`, `followups`, `pitch` et `form_answers`, une branche chacune.
+"""Prepare the application kit pieces handled by the Tracker (SPEC 6.4, F16, D142).
 
-Une pièce de texte : profil, offre, fiche et guide de style dans le prompt (`untrusted`), puis le
-contrôle du code (`honesty`) : `text_claims` sur chaque partie et mots comptés. Un problème
-renvoie la pièce au modèle **une seule fois**, avec les termes nommés (« n'écris rien qui ne soit
-pas dans le profil : … ») ; ce qui reste après l'essai rend la pièce « à vérifier » (`meta.flags`
-les termes, `meta.words` le compte). `form_answers` : une réponse à une question salariale est
-vidée par le code (`meta.salary`), de même qu'une réponse sans fait valide du profil.
-
-`meta` de chaque pièce de texte : `language`, `words` ; `flags` si des termes restent. Un échec de
-l'agent (`failed`, motif lisible) n'arrête pas les autres branches."""
+The résumé branch uses the latest ready version. The other branches draft text from
+the profile, posting, application, and style guide, supplied as untrusted data.
+`honesty` checks claims and word counts. One retry names the issues to fix. A piece
+that still needs review records `to_check` with any unsupported terms in `meta.flags`
+and word counts in `meta.words`. Salary answers and answers without valid supporting
+facts are cleared. Each branch can fail independently.
+"""
 
 from dataclasses import dataclass
 from typing import Any
@@ -46,34 +43,34 @@ from app.agents.tools.kit_schema import (
 )
 from app.core.errors import AppError
 
-PIECE_LIMIT_S = 240  # deux demandes au plus, chacune avec ses nouveaux essais (GLM)
-NO_CV = "Lance la revue de CV de cette offre pour obtenir ton CV ciblé."
+PIECE_LIMIT_S = 240  # At most two requests, each with its own provider retries.
+NO_CV = "Run the résumé review for this posting to create a tailored résumé."
 
 
 @dataclass(frozen=True)
 class TextSpec:
     kind: KitKind
     schema: type[Draft]
-    request: str  # le message de l'utilisatrice : le marqueur des tests
+    request: str
     intent: str
 
 
 SPECS: dict[str, TextSpec] = {
     spec.kind: spec
     for spec in (
-        TextSpec("letter", Letter, "Rédige la lettre de motivation.", "j'écris la lettre"),
+        TextSpec("letter", Letter, "Write the cover letter.", "writing the cover letter"),
         TextSpec(
-            "linkedin", LinkedInMessages, "Rédige l'invitation et le message LinkedIn.",
-            "j'écris les messages LinkedIn",
+            "linkedin", LinkedInMessages, "Write the LinkedIn invitation and message.",
+            "writing the LinkedIn messages",
         ),
         TextSpec(
-            "followups", Followups, "Rédige les deux courriels de relance.",
-            "j'écris les relances",
+            "followups", Followups, "Write the two follow-up emails.",
+            "writing the follow-up emails",
         ),
-        TextSpec("pitch", Pitch, "Rédige le pitch de présentation.", "j'écris le pitch"),
+        TextSpec("pitch", Pitch, "Write the elevator pitch.", "writing the elevator pitch"),
         TextSpec(
-            "form_answers", FormAnswers, "Rédige les réponses aux questions éliminatoires.",
-            "je prépare les réponses du formulaire",
+            "form_answers", FormAnswers, "Answer the screening questions.",
+            "preparing the form answers",
         ),
     )
 }  # fmt: skip
@@ -82,18 +79,18 @@ SPECS: dict[str, TextSpec] = {
 @dataclass(frozen=True)
 class Written:
     draft: Draft
-    found: Review  # ce qui reste après le seul nouvel essai
+    found: Review  # Issues that remain after the retry.
 
 
 def _fixed(draft: Draft, ctx: KitContext) -> Draft:
-    """Le brouillon vérifié par le code avant le contrôle des faits (réponses de formulaire)."""
+    """Check the form's fact IDs and clear answers that should be left blank."""
     if isinstance(draft, FormAnswers):
         return fix_answers(draft, set(facts_of(ctx.profile)))
     return draft
 
 
 async def write(deps: GraphDeps, ctx: KitContext, spec: TextSpec) -> Written:
-    """Le brouillon de la pièce, contrôlé ; un seul nouvel essai avec les problèmes nommés."""
+    """Draft and check the piece, with one retry that names the issues."""
     model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
     prompt = render_prompt(AGENT, mode=spec.kind, **prompt_vars(ctx, deps.settings.style_guide))
     messages = [SystemMessage(prompt), HumanMessage(spec.request)]
@@ -114,14 +111,14 @@ async def write(deps: GraphDeps, ctx: KitContext, spec: TextSpec) -> Written:
     except AppError as exc:
         if exc.code != "structured_output_invalid":
             raise
-        return Written(draft, found)  # le second essai est illisible : le premier, à vérifier
+        return Written(draft, found)  # If the retry cannot be parsed, keep the draft for review.
     return Written(again, review(again, ctx))
 
 
-def piece_of(written: Written, ctx: KitContext) -> Piece:
-    """La pièce rangée : `ready` si rien ne reste, sinon `to_check` avec de quoi relire."""
+def piece_of(written: Written) -> Piece:
+    """Save a ready piece or flag the draft for the user's review."""
     draft = written.draft
-    meta: dict[str, Any] = {"language": ctx.language}
+    meta: dict[str, Any] = {"language": "en"}
     words = meta_words(draft)
     if words is not None:
         meta["words"] = words
@@ -147,7 +144,7 @@ def make_text_piece(deps: GraphDeps, kind: str) -> Node:
         ctx = await deps.ports.kit.context(deps.user_id, state["application_id"])
 
         async def work() -> Piece:
-            return piece_of(await write(deps, ctx, spec), ctx)
+            return piece_of(await write(deps, ctx, spec))
 
         done = await guarded(PIECE_LIMIT_S, work)
         return await finish(deps, ctx.application_id, spec.kind, done, agent=AGENT)
@@ -159,13 +156,13 @@ def make_text_piece(deps: GraphDeps, kind: str) -> Node:
 def make_cv(deps: GraphDeps) -> Node:
     @node_timeout()
     async def cv(state: ApplicationKitState) -> ApplicationKitState:
-        """La version de CV prête la plus récente de l'offre : aucun modèle, aucun contrôle."""
+        """Point to the posting's latest ready résumé version."""
         ctx = await deps.ports.kit.context(deps.user_id, state["application_id"])
         version = ctx.cv_version
         if version is None:
             done = Piece("to_check", NO_CV)
         else:
-            content = f"CV ciblé : version n° {version.number}"
+            content = f"Tailored résumé (version {version.number})"
             done = Piece("ready", content, {"version_id": version.version_id})
         return await finish(deps, ctx.application_id, "cv", done, agent=AGENT)
 

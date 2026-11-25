@@ -1,4 +1,4 @@
-"""Notes indexées encore présentes dans le dossier de synchronisation de la source."""
+"""Indexed notes still present in the source's sync folder."""
 
 from dataclasses import dataclass
 

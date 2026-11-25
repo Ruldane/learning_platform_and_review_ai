@@ -1,9 +1,9 @@
-"""Passerelle web des agents (D77) : implémente le port `WebGateway` de `app.agents` sur le service
-de recherche. Chaque appel ouvre ses propres sessions de base, courtes (D66) ; la recherche et la
-lecture d'une session passent sous son verrou (`searching`, `reading`), donc un nœud rejoué ne
-recompte rien et ne dédouble aucune source.
+"""Agents' web gateway (D77): implements the `WebGateway` port of `app.agents` on the research
+service. Each call opens its own short database sessions (D66); a session's search and read
+go under its lock (`searching`, `reading`), so a replayed node recounts nothing and duplicates
+no source.
 
-Journaux : identifiants seulement, jamais une requête, une URL ni un titre (SPEC 17.2)."""
+Logs: ids only, never a query, a URL or a title (SPEC 17.2)."""
 
 import logging
 from collections.abc import Sequence
@@ -40,7 +40,7 @@ _TIME_RANGES: tuple[str, ...] = get_args(TimeRange)
 
 
 def _time_range(value: str | None) -> TimeRange | None:
-    """Une période inconnue est ignorée (le modèle peut en inventer une) plutôt que refusée."""
+    """An unknown period is ignored (the model may invent one) rather than refused."""
     return value if value in _TIME_RANGES else None  # type: ignore[return-value]
 
 
@@ -70,7 +70,7 @@ def _view(source_id: str, judged: Judged) -> SourceVerdictView:
 
 
 def _verdict(outcome: PageOutcome) -> SourceVerdictView | None:
-    """Verdict déjà posé dans la session (D82) : `judge` le réémet sans rappeler le modèle."""
+    """Verdict already set in the session (D82): `judge` re-emits it without calling the model."""
     judged = outcome.judged
     if judged is None or outcome.source_id is None:
         return None
@@ -94,8 +94,8 @@ def _page(outcome: PageOutcome) -> PageRead:
 
 
 def _detail(criteria: dict[str, int]) -> dict[str, int]:
-    """Points par critère, chacun borné à son barème (10.3) ; une clé inconnue ne compte pas. La
-    note sur 100 est la somme : le modèle ne donne jamais le total."""
+    """Points per criterion, each bounded to its scale (10.3); an unknown key does not count.
+    The score out of 100 is the sum: the model never gives the total."""
     return {
         name: max(0, min(maximum, criteria.get(name, 0))) for name, maximum in CRITERIA_MAX.items()
     }
@@ -143,9 +143,9 @@ class AgentWebGateway:
         reason: str,
         summary: str,
     ) -> SourceVerdictView:
-        """Enregistre la note et le verdict (idempotent : un nœud rejoué écrit la même chose).
-        `criteria=None` : écartée sans note (note impossible à établir). `source_not_found`
-        (404) si la source n'est pas à l'utilisateur."""
+        """Records the score and the verdict (idempotent: a replayed node writes the same thing).
+        `criteria=None`: discarded without a score (score impossible to establish).
+        `source_not_found` (404) if the source is not the user's."""
         detail = None if criteria is None else _detail(criteria)
         async with self._runtime.session_factory() as db:
             source = await record_verdict(
@@ -166,7 +166,7 @@ class AgentWebGateway:
                 summary=source.summary or "",
             )
         logger.info(
-            "Source notée : utilisateur %s, session %s, source %s, %s",
+            "Source scored: user %s, session %s, source %s, %s",
             user_id,
             session_id,
             source_id,
@@ -177,7 +177,7 @@ class AgentWebGateway:
     async def verdicts(
         self, user_id: str, session_id: str, source_ids: Sequence[str]
     ) -> dict[str, SourceVerdictView]:
-        """Verdicts déjà posés (filtrés par utilisateur et session) parmi `source_ids`."""
+        """Verdicts already set (filtered by user and session) among `source_ids`."""
         wanted = set(source_ids)
         if not wanted:
             return {}
@@ -186,8 +186,8 @@ class AgentWebGateway:
         return {sid: _view(sid, judged) for sid, judged in known.items() if sid in wanted}
 
     async def add_person(self, user_id: str, session_id: str, person: PersonFound) -> str:
-        """Praticien enregistré dans les sources de la session (idempotent), sous le verrou de
-        la session comme une lecture : deux écritures de la même personne n'en font qu'une."""
+        """Practitioner recorded in the session's sources (idempotent), under the session lock
+        like a read: two writes of the same person make only one."""
         lock = self._runtime.session_lock(user_id, session_id)
         async with lock, self._runtime.session_factory() as db:
             source = await record_person(db, user_id, session_id, person)
@@ -195,7 +195,7 @@ class AgentWebGateway:
             return source.id
 
     async def people(self, user_id: str, session_id: str) -> list[tuple[str, PersonFound]]:
-        """Praticiens déjà enregistrés (filtrés par utilisateur et session)."""
+        """Practitioners already recorded (filtered by user and session)."""
         async with self._runtime.session_factory() as db:
             rows = await session_people(db, user_id, session_id)
         return [(row.id, person_of(row)) for row in rows]

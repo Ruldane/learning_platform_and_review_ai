@@ -1,5 +1,5 @@
-"""Contrat du fil d'activité (SPEC 14.2, P15, D163) : ce que les agents et les tâches de fond ont
-fait, sans contenu inventé. Le texte est écrit par le code, jamais par un modèle."""
+"""Activity feed contract (SPEC 14.2, P15, D163): what agents and background tasks have done,
+with no invented content. The text is written by the code, never by a model."""
 
 from datetime import datetime
 from typing import Literal
@@ -10,8 +10,8 @@ ActivityKind = Literal["lesson", "radar", "brief", "memory", "project", "job_fai
 
 
 class ActivityItem(BaseModel):
-    """Un événement. `id` est stable (`{kind}:{ref}:{état}`) : le front ne montre pas deux fois le
-    même ; `link` est une route du front."""
+    """An event. `id` is stable (`{kind}:{ref}:{state}`): the front end does not show the same one
+    twice; `link` is a front-end route."""
 
     id: str
     kind: ActivityKind
@@ -22,9 +22,9 @@ class ActivityItem(BaseModel):
 
 
 class ActivityPage(BaseModel):
-    """Les événements, le plus récent d'abord. `latest_at` : l'instant du plus récent d'entre eux
-    (`None` sans événement). Curseur de relecture : `after` = `latest_at`, `after_id` = `id` du
-    premier élément de `items` ; curseur de page ancienne : `at` et `id` du dernier élément."""
+    """The events, most recent first. `latest_at`: the instant of the most recent of them
+    (`None` with no event). Re-read cursor: `after` = `latest_at`, `after_id` = the `id` of the
+    first item of `items`; older-page cursor: `at` and `id` of the last item."""
 
     items: list[ActivityItem]
     latest_at: datetime | None

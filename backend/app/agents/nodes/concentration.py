@@ -1,4 +1,4 @@
-"""Le repère optionnel du Tuteur sur la dernière réponse à un exercice."""
+"""The Tutor's optional marker on the latest answer to an exercise."""
 
 import re
 

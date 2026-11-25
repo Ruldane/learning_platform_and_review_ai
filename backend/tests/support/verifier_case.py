@@ -77,7 +77,7 @@ def real_case_lesson(words: int = 1400) -> str:
     for anchor, extra in [
         ("- Savoir lire un masque causal [2].\n", OBJECTIVE + "\n"),
         ("Les produits matriciels et la fonction softmax.\n", "\n" + PREREQUISITE + "\n"),
-        ("## Explication\n\n", PYTHON + "\n\n" + EDITOR + "\n\n"),
+        ("## Explanation\n\n", PYTHON + "\n\n" + EDITOR + "\n\n"),
         ("étape par étape.\n", "\n" + STEP + "\n\n" + CODE + "\n"),
         ("Oublier la normalisation par la racine de la dimension.\n", "\n" + MISTAKES + "\n"),
     ]:

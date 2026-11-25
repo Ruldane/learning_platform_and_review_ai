@@ -3,12 +3,12 @@ import { MessageReviewPage } from "./pages/MessageReviewPage";
 
 export const messageReviewManifest: FeatureManifest = {
   id: "message_review",
-  routes: [{ path: "reglages/revision-messagerie", Component: MessageReviewPage }],
+  routes: [{ path: "settings/message-review", Component: MessageReviewPage }],
   nav: [
     {
       section: "settings",
       labelKey: "messageReview.title",
-      path: "/reglages/revision-messagerie",
+      path: "/settings/message-review",
       order: 10,
     },
   ],

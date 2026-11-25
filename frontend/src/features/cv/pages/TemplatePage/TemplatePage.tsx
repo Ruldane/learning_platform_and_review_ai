@@ -11,7 +11,7 @@ import { useTemplate } from "../../hooks/useTemplates";
 import { cvKeys } from "../../queryKeys";
 import { TemplateBody } from "./TemplateBody";
 
-const LIST_PATH = "/carriere/cv";
+const LIST_PATH = "/career/cv";
 
 interface TemplatePageProps {
   pollMs?: number;
@@ -20,7 +20,7 @@ interface TemplatePageProps {
 }
 
 /**
- * Un modèle de CV (`/carriere/cv/modeles/:templateId`) : le fil du Maquettiste, la comparaison avec
+ * Un modèle de CV (`/career/cv/templates/:templateId`) : le fil du Maquettiste, la comparaison avec
  * le CV d'origine, les polices remplacées et la question « Valider / Ajuster ».
  */
 export function TemplatePage({ pollMs = POLL_MS, createSocket }: TemplatePageProps) {

@@ -10,10 +10,10 @@ function setup(lesson: Record<string, unknown> = lessonOut()) {
   server.use(http.get(`${API}/lessons/l1`, () => HttpResponse.json(lesson)));
   return renderRoutes(
     [
-      { path: "/apprendre/lecons/:lessonId", element: <LessonPage /> },
-      { path: "/apprendre/lecons", element: <h1>Toutes les leçons</h1> },
+      { path: "/learn/lessons/:lessonId", element: <LessonPage /> },
+      { path: "/learn/lessons", element: <h1>Toutes les leçons</h1> },
     ],
-    "/apprendre/lecons/l1",
+    "/learn/lessons/l1",
   );
 }
 
@@ -24,11 +24,11 @@ describe("LessonPage", () => {
       await screen.findByRole("heading", { name: "Les variables et les types", level: 1 }),
     ).toBeInTheDocument();
     expect(screen.getByText("Une variable nomme une valeur.")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Télécharger le PDF" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Download PDF" })).toHaveAttribute(
       "href",
       expect.stringMatching(/\/lessons\/l1\/pdf$/),
     );
-    const list = screen.getByRole("list", { name: "Ressources" });
+    const list = screen.getByRole("list", { name: "Resources" });
     expect(
       within(list).getByRole("link", { name: /Documentation officielle de Python/ }),
     ).toBeInTheDocument();
@@ -45,13 +45,13 @@ describe("LessonPage", () => {
         }),
       );
       renderRoutes(
-        [{ path: "/apprendre/lecons/:lessonId", element: <LessonPage /> }],
-        "/apprendre/lecons/l1",
+        [{ path: "/learn/lessons/:lessonId", element: <LessonPage /> }],
+        "/learn/lessons/l1",
       );
       expect(await screen.findByText("Une variable nomme une valeur.")).toBeInTheDocument();
-      expect(screen.queryByRole("link", { name: "Télécharger le PDF" })).toBeNull();
+      expect(screen.queryByRole("link", { name: "Download PDF" })).toBeNull();
       await act(() => vi.advanceTimersByTimeAsync(5000));
-      expect(await screen.findByRole("link", { name: "Télécharger le PDF" })).toBeInTheDocument();
+      expect(await screen.findByRole("link", { name: "Download PDF" })).toBeInTheDocument();
       await act(() => vi.advanceTimersByTimeAsync(60_000));
       expect(reads).toBe(2);
     } finally {
@@ -62,9 +62,9 @@ describe("LessonPage", () => {
   it("keeps the published chapter and its PDF visible during verification", async () => {
     setup(lessonOut({ verification_session_id: "verification-1" }));
 
-    expect(await screen.findByRole("status", { name: "À vérifier" })).toBeInTheDocument();
+    expect(await screen.findByRole("status", { name: "To verify" })).toBeInTheDocument();
     expect(screen.getByText("Une variable nomme une valeur.")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Télécharger le PDF" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Download PDF" })).toBeInTheDocument();
   });
 
   it("shows the verification of a new draft instead of the reader", async () => {
@@ -77,9 +77,9 @@ describe("LessonPage", () => {
       }),
     );
 
-    expect(await screen.findByRole("status", { name: "À vérifier" })).toBeInTheDocument();
-    expect(screen.queryByText(/Le Rédacteur écrit la leçon/)).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Télécharger le PDF" })).not.toBeInTheDocument();
+    expect(await screen.findByRole("status", { name: "To verify" })).toBeInTheDocument();
+    expect(screen.queryByText(/The Writer is writing the lesson/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Download PDF" })).not.toBeInTheDocument();
   });
 
   it("shows why a revision failed next to the previously published text", async () => {
@@ -100,7 +100,7 @@ describe("LessonPage", () => {
     );
     await user.click(
       await screen.findByRole("button", {
-        name: "Marquer « Documentation officielle de Python » comme lue",
+        name: "Mark “Documentation officielle de Python” as read",
       }),
     );
     await waitFor(() => expect(body).toEqual({ status: "read" }));
@@ -108,17 +108,17 @@ describe("LessonPage", () => {
 
   it("says a lesson is being prepared, not the empty reader", async () => {
     setup(lessonOut({ status: "generating", markdown: "", word_count: 0, pdf_available: false }));
-    expect(await screen.findByText("Leçon en préparation")).toBeInTheDocument();
-    expect(screen.getByText(/Le Rédacteur écrit la leçon/)).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Télécharger le PDF" })).toBeNull();
-    expect(screen.queryByRole("list", { name: "Ressources" })).toBeNull();
+    expect(await screen.findByText("Lesson being prepared")).toBeInTheDocument();
+    expect(screen.getByText(/The Writer is writing the lesson/)).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Download PDF" })).toBeNull();
+    expect(screen.queryByRole("list", { name: "Resources" })).toBeNull();
   });
 
   it("says when a pending lesson will start", async () => {
     setup(lessonOut({ status: "pending", week_rank: 3, markdown: "", word_count: 0 }));
-    expect(await screen.findByText("Leçon en préparation")).toBeInTheDocument();
+    expect(await screen.findByText("Lesson being prepared")).toBeInTheDocument();
     expect(
-      screen.getByText("Cette leçon sera préparée 7 jours avant le début de la semaine 3."),
+      screen.getByText("This lesson will be prepared 7 days before week 3 starts."),
     ).toBeInTheDocument();
   });
 
@@ -131,24 +131,24 @@ describe("LessonPage", () => {
         markdown: "",
       }),
     );
-    expect(await screen.findByText("La préparation de la leçon a échoué")).toBeInTheDocument();
+    expect(await screen.findByText("Lesson preparation failed")).toBeInTheDocument();
     expect(
       screen.getByText(
         "La production de la leçon s'est arrêtée avant la fin : elle sera relancée.",
       ),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Une nouvelle tentative aura lieu automatiquement (3 essais au plus)."),
+      screen.getByText("A new attempt will happen automatically (3 tries max)."),
     ).toBeInTheDocument();
   });
 
   it("goes back to the lessons", async () => {
     const { router, user } = setup();
-    await user.click(await screen.findByRole("link", { name: "Toutes les leçons" }));
-    expect(router.state.location.pathname).toBe("/apprendre/lecons");
+    await user.click(await screen.findByRole("link", { name: "All lessons" }));
+    expect(router.state.location.pathname).toBe("/learn/lessons");
   });
 
-  it("offers « Réessayer » when the lesson cannot be read", async () => {
+  it("offers Retry when the lesson cannot be read", async () => {
     let calls = 0;
     server.use(
       http.get(`${API}/lessons/l1`, () => {
@@ -159,10 +159,10 @@ describe("LessonPage", () => {
       }),
     );
     const { user } = renderRoutes(
-      [{ path: "/apprendre/lecons/:lessonId", element: <LessonPage /> }],
-      "/apprendre/lecons/l1",
+      [{ path: "/learn/lessons/:lessonId", element: <LessonPage /> }],
+      "/learn/lessons/l1",
     );
-    await user.click(await screen.findByRole("button", { name: "Réessayer" }));
+    await user.click(await screen.findByRole("button", { name: "Retry" }));
     expect(
       await screen.findByRole("heading", { name: "Les variables et les types" }),
     ).toBeInTheDocument();

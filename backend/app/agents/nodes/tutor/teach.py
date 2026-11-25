@@ -1,12 +1,12 @@
-"""Le Tuteur enseigne (D102) : contexte de la séance, ouverture, une section à la fois (selon le
-mode), l'exercice de la leçon, les trois questions finales, et le passage à la suite.
+"""The Tutor teaches (D102): session context, opening, one section at a time (according to the
+mode), the lesson's exercise, the three final questions, and the move to the next.
 
-Aucun de ces nœuds n'écrit dans un port : rejoués après un arrêt, ils redemandent au modèle et
-republient leurs messages sous le même id (le front remplace la bulle, D57). Le tableau n'a
-aucune ligne `boards` (il n'est lié à aucun objectif) : seulement des `board.update`.
-Modèle muet ou trop lent (`fallback`, D115) : section présentée telle qu'écrite, questions
-finales tirées de la leçon, message de January laissé sans réponse ; la séance continue.
-Journaux : identifiants et nombres seulement (SPEC 17.2)."""
+None of these nodes writes to a port: replayed after a stop, they ask the model again and
+republish their messages under the same id (the front end replaces the bubble, D57). The board
+has no `boards` row (it is tied to no goal): only `board.update`s.
+Silent or too slow model (`fallback`, D115): section presented as written, final questions
+taken from the lesson, January's message left unanswered; the session continues.
+Logs: identifiers and numbers only (SPEC 17.2)."""
 
 import logging
 import re
@@ -51,16 +51,16 @@ from app.core.errors import AppError
 
 FINAL_COUNT = 3
 MAX_MERMAID_CHARS = 2000
-NO_MEMORY_CONTEXT = "Mémoire indisponible pour cette séance."
-TEACH_REQUEST = "Prépare la section."
-REPLY_REQUEST = "Réponds à January."
-FINAL_REQUEST = "Écris les questions finales."
-FINAL_INTRO = "Trois questions pour finir : elles reprennent toute la leçon."
+NO_MEMORY_CONTEXT = "Memory is unavailable for this session."
+TEACH_REQUEST = "Prepare the section."
+REPLY_REQUEST = "Reply to January."
+FINAL_REQUEST = "Write the final questions."
+FINAL_INTRO = "Three final questions cover the whole lesson."
 _FENCE = re.compile(r"^```[a-z]*\s*\n|\n?```\s*$")
 _MODES = {
-    "socratic": "je te guide par des questions : c'est toi qui trouves.",
-    "feynman": "tu m'expliques chaque section avec tes mots, je cherche les trous.",
-    "direct": "je t'explique chaque section, puis je te pose une question.",
+    "socratic": "I’ll guide you with questions so you can find the answers.",
+    "feynman": "Explain each section in your own words and I’ll look for gaps.",
+    "direct": "I’ll explain each section and then ask you a question.",
 }
 
 logger = logging.getLogger(__name__)
@@ -73,8 +73,8 @@ def first_position(context: StudyContext) -> tuple[str, int]:
 
 
 def next_position(context: StudyContext, phase: str, index: int) -> tuple[str, int]:
-    """Section suivante, puis l'exercice (s'il y en a un), puis les questions finales, puis la
-    fin (`done`)."""
+    """Next section, then the exercise (if there is one), then the final questions, then the
+    end (`done`)."""
     if phase == "section" and index + 1 < len(context.sections):
         return "section", index + 1
     if phase == "section" and context.exercise.strip():
@@ -93,7 +93,7 @@ def route_position(state: StudySessionState) -> str:
 
 
 def advance(state: StudySessionState) -> StudySessionState:
-    """Question réglée : la suivante (pur, aucun appel)."""
+    """Question settled: the next one (pure, no call)."""
     phase, index = next_position(context_of(state), state["phase"], state.get("index", 0))
     return {"phase": phase, "index": index, "hints": 0, "given_hints": [], "reply": None}
 
@@ -101,16 +101,14 @@ def advance(state: StudySessionState) -> StudySessionState:
 def make_context(deps: GraphDeps) -> Node:
     @node_timeout()
     async def context(state: StudySessionState) -> StudySessionState:
-        """La séance (port), puis le contexte mémoire proche du module (F24). Une mémoire
-        indisponible n'arrête pas la séance : le Tuteur fait sans."""
+        """The session (port), then the memory context close to the module (F24). Unavailable
+        memory does not stop the session: the Tutor does without."""
         found = await deps.ports.study.context(deps.user_id, state["study_session_id"])
         try:
             memory = await load_memory_context(deps, objective=found.module_title, agent=AGENT)
             memory_text = memory.as_prompt()
         except AppError as exc:
-            logger.warning(
-                "Contexte mémoire indisponible : session %s (%s)", deps.session_id, exc.code
-            )
+            logger.warning("Memory context unavailable: session %s (%s)", deps.session_id, exc.code)
             memory_text = NO_MEMORY_CONTEXT
         phase, index = first_position(found)
         return {
@@ -132,19 +130,19 @@ def make_context(deps: GraphDeps) -> Node:
 def _opening(context: StudyContext) -> str:
     objectives = "\n".join(f"- {objective}" for objective in context.objectives)
     return (
-        f"On travaille « {context.module_title} ».\n"
-        + (f"Objectifs de la séance :\n{objectives}\n" if objectives else "")
-        + f"Mode {_mode_name(context.mode)} : {_MODES[context.mode]}\n"
-        "« Je bloque » te donne jusqu'à trois indices, « Passer » saute une question."
+        f"We’ll study “{context.module_title}”.\n"
+        + (f"Session objectives\n{objectives}\n" if objectives else "")
+        + f"{_mode_name(context.mode)} mode. {_MODES[context.mode]}\n"
+        "Choose ‘I’m stuck’ for up to three hints. Choose ‘Skip’ to move to the next question."
     )
 
 
 def _mode_name(mode: str) -> str:
-    return {"socratic": "socratique", "feynman": "Feynman", "direct": "direct"}[mode]
+    return {"socratic": "Socratic", "feynman": "Feynman", "direct": "Direct"}[mode]
 
 
 async def _reply(deps: GraphDeps, state: StudySessionState, notes: list[str], key: str) -> None:
-    """Le Tuteur répond d'abord à ce que January a écrit (question d'ouverture, messages)."""
+    """The Tutor first answers what January wrote (opening question, messages)."""
     prompt = tutor_prompt(
         state,
         "reply",
@@ -153,7 +151,7 @@ async def _reply(deps: GraphDeps, state: StudySessionState, notes: list[str], ke
         notes=notes_prompt(notes),
     )
     reply = await try_tutor(
-        deps, TutorReply, prompt, REPLY_REQUEST, step=f"reponse-{key}", intent="je te réponds"
+        deps, TutorReply, prompt, REPLY_REQUEST, step=f"reponse-{key}", intent="I’m replying"
     )
     say(state, reply.message if reply else NO_REPLY, f"{AGENT}-reponse-{key}")
 
@@ -161,7 +159,7 @@ async def _reply(deps: GraphDeps, state: StudySessionState, notes: list[str], ke
 def make_open(deps: GraphDeps) -> Node:
     @node_timeout()
     async def open_session(state: StudySessionState) -> StudySessionState:
-        """Objectif de la séance ; la question posée à l'ouverture reçoit sa réponse d'abord."""
+        """Goal of the session; the question asked at the opening gets its answer first."""
         context = context_of(state)
         say(state, _opening(context), f"{AGENT}-objectif")
         if context.question and context.question.strip():
@@ -172,17 +170,17 @@ def make_open(deps: GraphDeps) -> Node:
 
 
 def draw_board(state: StudySessionState, code: str | None, title: str, *, session: str) -> int:
-    """Publie le schéma s'il est valable (réémis, jamais le brut du modèle) ; trop long ou
-    invalide, il est retiré, jamais un échec. Rend le dernier numéro d'étape du tableau."""
+    """Publishes the diagram if it is valid (re-emitted, never the model's raw output); too long
+    or invalid, it is removed, never a failure. Returns the board's last step number."""
     step = state.get("board_step", 0)
     if not code or not code.strip():
         return step
     cleaned = _FENCE.sub("", code.strip()).strip()
     too_long = len(cleaned) > MAX_MERMAID_CHARS
-    problems = ["trop long"] if too_long else mermaid_problems(cleaned)
+    problems = ["too long"] if too_long else mermaid_problems(cleaned)
     if problems:
         logger.info(
-            "Schéma du Tuteur retiré : session %s, étape %d, %d problème(s), %d caractères",
+            "Tutor diagram removed: session %s, step %d, %d problem(s), %d characters",
             session,
             step + 1,
             len(problems),
@@ -204,7 +202,7 @@ async def _teach_section(
         "teach",
         memory=True,
         section=lesson_prompt(section_text(section)),
-        position=f"section {index + 1} sur {len(context.sections)}",
+        position=f"section {index + 1} of {len(context.sections)}",
         notes=notes_prompt(notes),
         max_lines=MAX_MERMAID_LINES,
         max_nodes=MAX_NODES,
@@ -217,9 +215,9 @@ async def _teach_section(
         prompt,
         TEACH_REQUEST,
         step=f"section-{index + 1}",
-        intent="je prépare la section",
+        intent="I’m preparing the section",
     )
-    if turn is None:  # la section telle qu'écrite dans la leçon, sans schéma (D115)
+    if turn is None:  # the section as written in the lesson, without a diagram (D115)
         message, question, expected = teach_section_as_written(state)
         say(state, message, f"{AGENT}-section-{index + 1}")
         return {"question": question, "expected": expected}
@@ -229,22 +227,22 @@ async def _teach_section(
 
 
 def _pose_from_lesson(state: StudySessionState) -> StudySessionState:
-    """Exercice : l'énoncé de la leçon, son corrigé pour réponse attendue (jamais écrit par le
-    modèle). Question finale : celle de `final_intro`."""
+    """Exercise: the lesson's statement, its solution as the expected answer (never written by
+    the model). Final question: the one from `final_intro`."""
     context, index = context_of(state), state["index"]
     if state["phase"] == "exercise":
-        text = "Place à l'exercice de la leçon : prends ton temps, puis donne ta solution."
+        text = "Try the lesson exercise. Take your time and share your solution when ready."
         say(state, text, f"{AGENT}-exercice")
         return {"question": context.exercise.strip(), "expected": context.solution.strip()}
     final = state["finals"][index]
-    say(state, f"Question finale {index + 1} sur {FINAL_COUNT}.", f"{AGENT}-finale-{index + 1}")
+    say(state, f"Final question {index + 1} of {FINAL_COUNT}.", f"{AGENT}-finale-{index + 1}")
     return {"question": final["question"], "expected": final["expected"]}
 
 
 def make_teach(deps: GraphDeps) -> Node:
     @node_timeout()
     async def teach(state: StudySessionState) -> StudySessionState:
-        """Les messages de January sont lus d'abord ; puis la question de la position."""
+        """January's messages are read first; then the question of the position."""
         last = state.get("last_input_seq", 0)
         inputs = await deps.user_inputs_since(last)
         notes = [text for said in inputs if (text := said.text.strip())]
@@ -266,7 +264,7 @@ def make_teach(deps: GraphDeps) -> Node:
 def make_final_intro(deps: GraphDeps) -> Node:
     @node_timeout()
     async def final_intro(state: StudySessionState) -> StudySessionState:
-        """Les trois questions finales, écrites en une fois (rejoué : redemandées, rien d'écrit)."""
+        """The three final questions, written at once (replayed: asked again, nothing written)."""
         prompt = tutor_prompt(
             state,
             "final",
@@ -280,9 +278,9 @@ def make_final_intro(deps: GraphDeps) -> Node:
             prompt,
             FINAL_REQUEST,
             step="questions-finales",
-            intent="je prépare les trois questions finales",
+            intent="I’m preparing the three final questions",
         )
-        if found is None:  # tirées des objectifs et des sections de la leçon (D115)
+        if found is None:  # taken from the lesson's objectives and sections (D115)
             say(state, FALLBACK_FINAL_INTRO, f"{AGENT}-final")
             return {"finals": final_questions_from_lesson(context_of(state), FINAL_COUNT)}
         finals = [{"question": q.question.strip(), "expected": q.expected} for q in found.questions]

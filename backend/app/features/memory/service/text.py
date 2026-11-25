@@ -1,19 +1,19 @@
-"""Nettoyage, découpage et empreintes du texte de la mémoire (fonctions pures, sans base)."""
+"""Cleaning, chunking and hashing of memory text (pure functions, no database)."""
 
 import hashlib
 import re
 import unicodedata
 from dataclasses import dataclass
 
-from app.db.models.memory import MemoryKind
+from app.db.models.memory import PREVIOUS_MEMORY_KINDS, MemoryKind
 
 CHUNK_TOKENS = 500
 CHUNK_OVERLAP = 60
-# Approximation des tokens : un mot ou un signe de ponctuation (D64). Pas de tokenizer bge-m3
-# en dépendance ; l'écart avec le vrai décompte est sans conséquence sur la qualité de la recherche.
+# Token approximation: one word or one punctuation mark (D64). No bge-m3 tokenizer as a
+# dependency; the gap with the real count has no impact on search quality.
 TOKEN_RE = re.compile(r"\w+|[^\w\s]")
 
-DEFAULT_DOCUMENT_NAME = "Document sans nom"
+DEFAULT_DOCUMENT_NAME = "Untitled document"
 DISPLAY_NAME_MAX = 200
 
 _NO_BREAK_SPACES = {ord(c): " " for c in "   "}
@@ -24,7 +24,7 @@ _BLANK_LINES = re.compile(r"\n{3,}")
 
 @dataclass(frozen=True)
 class ChunkDraft:
-    """Un fragment avant son enregistrement."""
+    """A chunk before it is stored."""
 
     ordinal: int
     text: str
@@ -36,8 +36,8 @@ def _drop_controls(text: str, keep: str = "") -> str:
 
 
 def clean_text(text: str) -> str:
-    """NFC, `\\n` pour tout saut de ligne, espaces insécables → espace, caractères de contrôle
-    retirés (sauf `\\n` et `\\t`), espaces de fin de ligne retirés, au plus une ligne vide."""
+    """NFC, `\\n` for every line break, non-breaking spaces → space, control characters removed
+    (except `\\n` and `\\t`), trailing spaces removed, at most one blank line."""
     text = unicodedata.normalize("NFC", text)
     text = text.replace("\r\n", "\n").replace("\r", "\n").translate(_NO_BREAK_SPACES)
     text = _drop_controls(text, keep="\n\t")
@@ -52,11 +52,11 @@ def count_tokens(text: str) -> int:
 def chunk_text(
     text: str, *, size: int = CHUNK_TOKENS, overlap: int = CHUNK_OVERLAP
 ) -> list[ChunkDraft]:
-    """Fenêtres de `size` tokens, avancées de `size - overlap` ; on s'arrête quand la fenêtre
-    atteint la fin. Le texte d'un fragment est la tranche du texte d'origine qui va du début
-    de son premier token à la fin de son dernier (retours à la ligne conservés)."""
+    """Windows of `size` tokens, advanced by `size - overlap`; stops when the window reaches
+    the end. A chunk's text is the slice of the original text from the start of its first
+    token to the end of its last (line breaks kept)."""
     if size <= 0 or not 0 <= overlap < size:
-        raise ValueError("size doit être positif et overlap compris entre 0 et size - 1")
+        raise ValueError("size must be positive and overlap between 0 and size - 1")
     tokens = list(TOKEN_RE.finditer(text))
     chunks: list[ChunkDraft] = []
     start = 0
@@ -71,11 +71,12 @@ def chunk_text(
 
 
 def content_hash(kind: MemoryKind, title: str, text: str, *, document_id: str | None = None) -> str:
-    """Empreinte anti doublon d'un élément : un acquis se reconnaît à son titre, les autres
-    types à leur texte ; casse et espaces ne comptent pas."""
-    basis = title if kind == "acquis" else text
+    """Deduplicate skills by title and other items by text, ignoring case and spaces."""
+    basis = title if kind == "skill" else text
     normalized = _SPACES.sub(" ", basis.casefold()).strip()
-    scope = kind if document_id is None else f"{kind}:{document_id}"
+    # Keep the hash compatible with stored items indexed before the kind migration.
+    hash_kind = PREVIOUS_MEMORY_KINDS.get(kind, kind)
+    scope = hash_kind if document_id is None else f"{hash_kind}:{document_id}"
     return hashlib.sha256(f"{scope}\n{normalized}".encode()).hexdigest()
 
 
@@ -83,10 +84,10 @@ def source_hash(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-# Catégories invisibles retirées d'un nom affiché : contrôles (Cc), formats (Cf : forçages et
-# isolats bidirectionnels U+202A-202E et U+2066-2069, espaces de largeur nulle), séparateurs de
-# ligne (Zl) et de paragraphe (Zp). « facture<U+202E>fdp.exe » ne peut plus se faire passer pour
-# « factureexe.pdf ».
+# Invisible categories removed from a displayed name: controls (Cc), formats (Cf: bidirectional
+# overrides and isolates U+202A-202E and U+2066-2069, zero-width spaces), line (Zl) and
+# paragraph (Zp) separators. "invoice<U+202E>fdp.exe" can no longer pass itself off as
+# "invoiceexe.pdf".
 _HIDDEN_CATEGORIES = frozenset({"Cc", "Cf", "Zl", "Zp"})
 
 
@@ -96,14 +97,13 @@ def _visible(text: str) -> str:
 
 
 def clean_display(text: str | None) -> str:
-    """Texte affiché sur une ligne (nom de document, titre saisi ou reçu d'un site) : NFC,
-    caractères invisibles retirés (Cc, Cf, Zl, Zp), espaces regroupés, 200 caractères au plus.
-    Peut rendre une chaîne vide."""
+    """Text displayed on one line (document name, title entered or received from a site): NFC,
+    invisible characters removed (Cc, Cf, Zl, Zp), spaces collapsed, 200 characters at most.
+    May return an empty string."""
     return " ".join(_visible(text or "").split())[:DISPLAY_NAME_MAX].strip()
 
 
 def display_name(raw: str | None) -> str:
-    """Nom d'affichage d'un document : dernier segment d'un chemin (`/` ou `\`), nettoyé par
-    `clean_display`. Jamais utilisé comme chemin."""
+    """Clean the last path segment for display using `clean_display`."""
     segments = [clean_display(s) for s in _PATH_SEPARATORS.split(_visible(raw or ""))]
     return next((s for s in reversed(segments) if s), "") or DEFAULT_DOCUMENT_NAME

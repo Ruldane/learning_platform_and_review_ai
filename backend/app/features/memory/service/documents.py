@@ -1,7 +1,7 @@
-"""Import des documents (14.2) : un fichier, un lien ou un texte collé devient une ligne
-`documents` en file, que le worker ingère. Le nom reçu n'est qu'un nom d'affichage nettoyé ; le
-fichier est enregistré sous une clé générée (`<user_id>/documents/<uuid4><suffixe canonique>`).
-Ni les messages ni les journaux ne citent un nom de fichier, un lien ou un contenu."""
+"""Document import (14.2): a file, a link or a pasted text becomes a queued `documents` row,
+which the worker ingests. The received name is only a cleaned display name; the file is stored
+under a generated key (`<user_id>/documents/<uuid4><canonical suffix>`). Neither messages nor
+logs quote a file name, a link or a content."""
 
 import builtins
 import logging
@@ -48,8 +48,8 @@ LEARNED_GRAPH = "learned_document"
 
 @dataclass(frozen=True)
 class _Incoming:
-    """Document à créer, avant son insertion. `data` : octets à enregistrer (fichier ou texte
-    collé), `None` pour un lien."""
+    """Document to create, before its insertion. `data`: bytes to store (file or pasted
+    text), `None` for a link."""
 
     kind: DocumentSourceKind
     name: str
@@ -61,13 +61,11 @@ class _Incoming:
 
 
 def default_paste_title() -> str:
-    return f"Texte collé du {date.today():%d/%m/%Y}"
+    return f"Pasted text from {date.today():%d/%m/%Y}"
 
 
 def invalid_source() -> AppError:
-    return AppError(
-        "invalid_document_source", "Fournis un fichier, un lien ou un texte (un seul).", 422
-    )
+    return AppError("invalid_document_source", "Provide one file, link, or text entry.", 422)
 
 
 def to_document_out(doc: Document) -> DocumentOut:
@@ -90,7 +88,7 @@ def to_document_out(doc: Document) -> DocumentOut:
 
 
 async def read_upload(file: UploadFile) -> bytes:
-    """Lecture par blocs ; au-delà de `MAX_UPLOAD_BYTES`, 413 (exactement 20 Mo passe)."""
+    """Chunked read; above `MAX_UPLOAD_BYTES`, 413 (exactly 20 MB goes through)."""
     blocks: list[bytes] = []
     size = 0
     while block := await file.read(READ_BLOCK):
@@ -105,13 +103,13 @@ def _from_url(raw: str) -> _Incoming:
     url = normalize_url(raw)
     kind = classify_url(url)
     video = youtube_video_id(url)
-    name = f"Vidéo YouTube {video}" if video else (urlsplit(url).hostname or "")
+    name = f"YouTube video {video}" if video else (urlsplit(url).hostname or "")
     return _Incoming(kind, display_name(name), source_hash(f"url:{url}".encode()), url=url)
 
 
 def _from_text(text: str, title: str | None) -> _Incoming:
     if len(text) > MAX_PASTE_CHARS:
-        raise AppError("paste_too_long", "Texte trop long : 500 000 caractères au maximum.", 422)
+        raise AppError("paste_too_long", "Text can contain up to 500,000 characters.", 422)
     cleaned = clean_text(text)
     name = clean_display(title) or default_paste_title()
     data = cleaned.encode("utf-8")
@@ -135,10 +133,11 @@ class DocumentService:
         title: str | None,
         tags: Sequence[str] = (),
     ) -> tuple[DocumentOut, bool]:
-        """(document, nouveau ?). Exactement une source. Même contenu déjà importé : l'existant,
-        sauf s'il est en erreur ou bloqué, auquel cas il repart en file (`_again`). Le commit
-        précède la mise en file du worker (qui doit voir la ligne). `tags` : étiquettes posées
-        par une feature (`cv`, `linkedin`, D124), ajoutées à celles d'un document existant."""
+        """(document, new?). Exactly one source. Same content already imported: the existing
+        one, unless it is in error or blocked, in which case it goes back in the queue
+        (`_again`). The commit precedes queueing for the worker (which must see the row). `tags`:
+        labels set by a feature (`cv`, `linkedin`, D124), added to those of an existing
+        document."""
         url = url.strip() if url and url.strip() else None
         text = text if text and text.strip() else None
         if [file is not None, url is not None, text is not None].count(True) != 1:
@@ -149,7 +148,7 @@ class DocumentService:
             await self._tag(existing, incoming.tags)
             return await self._again(existing, incoming)
         doc, created = await self._insert(incoming)
-        if not created:  # course perdue : un import identique a gagné
+        if not created:  # race lost: an identical import won
             return to_document_out(doc), False
         self._runtime.jobs.enqueue_ingest(self._user_id, doc.id)
         logger.info("Document %s en file (%s)", doc.id, doc.source_kind)
@@ -176,16 +175,16 @@ class DocumentService:
         return replace(incoming, tags=tuple(tags))
 
     async def _tag(self, doc: Document, tags: tuple[str, ...]) -> None:
-        """Étiquettes ajoutées à un document déjà importé (validées aussitôt)."""
+        """Labels added to an already imported document (validated at once)."""
         merged = list(dict.fromkeys([*map(str, doc.tags), *tags]))
         if merged != list(doc.tags):
             doc.tags = merged
             await self._db.commit()
 
     async def _again(self, existing: Document, incoming: _Incoming) -> tuple[DocumentOut, bool]:
-        """Doublon rendu tel quel, sauf s'il est en erreur, ou en file ou en cours sans job prévu
-        dans ce processus (statut final perdu) : il repart alors en file, erreur effacée, avec
-        le fichier qu'on vient de recevoir (l'ancien est supprimé après le commit)."""
+        """Duplicate returned as is, unless it is in error, or queued or running with no job
+        planned in this process (final status lost): it then goes back in the queue, error
+        cleared, with the file just received (the old one is deleted after the commit)."""
         stuck = existing.status in ("queued", "processing")
         stuck = stuck and not self._runtime.jobs.is_scheduled(existing.id)
         if existing.status != "error" and not stuck:
@@ -206,7 +205,7 @@ class DocumentService:
         return await storage.save(self._user_id, STORAGE_CATEGORY, incoming.data, incoming.suffix)
 
     async def _commit_files(self, new_key: str | None, old_key: str | None) -> None:
-        """Commit ; s'il échoue, le nouveau fichier est supprimé, sinon l'ancien."""
+        """Commit; if it fails, the new file is deleted, otherwise the old one."""
         storage = self._runtime.providers.storage
         try:
             await self._db.commit()
@@ -218,9 +217,9 @@ class DocumentService:
             await storage.delete(self._user_id, old_key)
 
     async def _insert(self, incoming: _Incoming) -> tuple[Document, bool]:
-        """Fichier enregistré puis ligne insérée et validée ; tout échec supprime le fichier.
-        Course sur le hash (unicité) : la transaction est annulée (elle ne contient que cette
-        insertion, d'où aucun SAVEPOINT, D65 c) et le gagnant est rendu, `False`."""
+        """File stored then row inserted and committed; any failure deletes the file. Race on
+        the hash (uniqueness): the transaction is rolled back (it contains only this insertion,
+        hence no SAVEPOINT, D65 c) and the winner is returned, `False`."""
         storage = self._runtime.providers.storage
         key = await self._save(incoming)
         committed = False
@@ -249,21 +248,21 @@ class DocumentService:
                 await storage.delete(self._user_id, key)
 
     async def mark_learned(self, document_id: str, runner: SessionRunner) -> str:
-        """« Déjà appris » (D68, D71) : lance le parcours `learned_document` sur un document
-        indexé et pose `learned`. Idempotent tant qu'une session de ce document est ouverte : elle
-        est rendue au lieu d'en lancer une seconde (double clic) ; une session finie ne compte plus
-        (« Relancer »). Le verrou de l'utilisateur ne couvre que « session ouverte ? sinon
-        lancer » ; la requête n'y entre avec aucune écriture en attente (sinon l'autoflush de la
-        lecture tiendrait le verrou d'écriture de SQLite pendant que le runner écrit la session
-        avec sa propre connexion). Le drapeau est écrit après, hors du verrou ; un refus de
-        lancement le laisse intact."""
+        """ "Already learned" (D68, D71): launches the `learned_document` flow on an indexed
+        document and sets `learned`. Idempotent as long as a session of this document is open:
+        it is returned instead of launching a second one (double click); a finished session no
+        longer counts ("Relaunch"). The user lock only covers "session open? otherwise
+        launch"; the request enters it with no pending write (otherwise the read's autoflush
+        would hold SQLite's write lock while the runner writes the session with its own
+        connection). The flag is written afterwards, outside the lock; a refused launch leaves
+        it untouched."""
         doc = await self._docs.get(document_id)
         if doc is None:
-            raise AppError("document_not_found", "Document introuvable.", 404)
+            raise AppError("document_not_found", "Document not found.", 404)
         if doc.status != "indexed":
             raise AppError(
                 "document_not_ready",
-                "Le document doit être indexé avant d'être marqué déjà appris.",
+                "You can mark this document as already learned after indexing completes.",
                 409,
             )
         async with self._runtime.learn_lock(self._user_id):
@@ -280,16 +279,16 @@ class DocumentService:
                 )
         doc.learned = True
         await self._db.flush()
-        logger.info("Document %s marqué déjà appris (session %s)", doc.id, session_id)
+        logger.info("Document %s marked already learned (session %s)", doc.id, session_id)
         return session_id
 
     async def list(self) -> list[DocumentOut]:
         return [to_document_out(doc) for doc in await self._docs.list_recent(LIST_LIMIT)]
 
     async def remove_for_item(self, item: MemoryItem) -> builtins.list[str]:
-        """Suppression d'un élément `document` (appelée par `MemoryService.delete`, qui a vérifié
-        que l'élément est à l'utilisateur) : ses lignes `documents` sont supprimées et les clés
-        de leurs fichiers rendues, à supprimer après le commit."""
+        """Deleting a `document` item (called by `MemoryService.delete`, which checked that the
+        item is the user's): its `documents` rows are deleted and the keys of their files
+        returned, to delete after the commit."""
         docs = {doc.id: doc for doc in await self._docs.for_item(item.id)}
         if item.source_id is not None and item.source_id not in docs:
             linked = await self._docs.get(item.source_id)

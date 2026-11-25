@@ -1,4 +1,4 @@
-"""Ouverture du tableau, remise de la version sélectionnée et critique durable."""
+"""Open the board, submit the selected version and store the review."""
 
 from typing import Any
 
@@ -23,24 +23,22 @@ from app.features.applications.service.runtime import ApplicationsRuntime
 from app.features.learning.service.design_boards import create_design_board, read_design_board
 from app.features.skills.service import SkillsService
 
-SKILL = "Conception de systèmes"
+SKILL = "System design"
+LEGACY_SKILL = "Conception de systèmes"  # the French name stored before the switch to English
 SUBJECT_CARD = DesignSubject(
-    title="Concevoir un service de rappels",
-    situation=(
-        "Des équipes programment des rappels qui sont ensuite distribués à leurs membres. "
-        "Le trafic connaît un pic au début de la journée."
-    ),
+    title="Design a reminder service",
+    situation="Teams schedule reminders for their members. Traffic peaks at the start of the day.",
     requirements=(
-        "Accepter et annuler un rappel avant sa distribution.",
-        "Absorber 10 000 rappels à remettre dans une même minute.",
-        "Reprendre les envois après une panne et limiter les doublons.",
-        "Expliquer le compromis retenu entre coût, délai et fiabilité.",
+        "Schedule and cancel reminders before delivery.",
+        "Handle 10,000 reminders due within the same minute.",
+        "Resume deliveries after an outage and limit duplicates.",
+        "Explain the trade-off between cost, latency and reliability.",
     ),
 )
 
 
 def _missing() -> AppError:
-    return AppError("design_not_found", "Entretien d’architecture introuvable.", 404)
+    return AppError("design_not_found", "System design interview not found.", 404)
 
 
 async def _row(db: AsyncSession, user_id: str, interview_id: str) -> Interview:
@@ -67,7 +65,7 @@ async def start(rt: ApplicationsRuntime, user_id: str) -> InterviewStartOut:
                 role=SUBJECT_CARD.title,
                 mode="case",
                 duration_min=30,
-                language="fr",
+                language="en",
                 status="running",
                 system_design={"subject": SUBJECT_CARD.model_dump(mode="json")},
             )
@@ -135,7 +133,7 @@ async def freeze(
     async with interview_lock(rt, user_id), rt.session_factory() as db:
         row = await _session_row(db, user_id, interview_id, session_id)
         if row.status != "running":
-            raise AppError("design_closed", "Cet entretien d’architecture est terminé.", 409)
+            raise AppError("design_closed", "This system design interview has ended.", 409)
         data: dict[str, Any] = dict(row.system_design or {})
         version_id = data.get("version_id") or str(submission.board_id)
         defense = data.get("defense") or submission.defense
@@ -150,6 +148,15 @@ async def freeze(
         )
 
 
+async def _record_proof(db: AsyncSession, rt: ApplicationsRuntime, row: Interview) -> None:
+    skills = SkillsService(db, row.user_id)
+    name = SKILL
+    if await skills.skill_id_for(SKILL) is None and await skills.skill_id_for(LEGACY_SKILL):
+        name = LEGACY_SKILL
+    proof = evidence("system_design", row.id, "Passed system design interview", rt.now())
+    await skills.raise_levels([name], "in_progress", proof)
+
+
 async def save_review(
     rt: ApplicationsRuntime,
     user_id: str,
@@ -158,8 +165,8 @@ async def save_review(
     review: SystemDesignReview,
 ) -> None:
     async with interview_lock(rt, user_id), rt.session_factory() as db:
-        # Réserver l’écriture SQLite avant de lire l’entretien. Une annulation déjà
-        # validée empêche de ranger le verdict et sa preuve dans cette transaction.
+        # Acquire the SQLite write lock before reading the interview so cancellation
+        # can prevent the review and its evidence from being stored.
         if not await SessionRepository(db, user_id).transition(
             session_id, from_={"running"}, to="running"
         ):
@@ -169,11 +176,10 @@ async def save_review(
             return
         data = row.system_design or {}
         if "version_id" not in data:
-            raise AppError("design_missing_submission", "La version remise est introuvable.", 409)
+            raise AppError("design_missing_submission", "Submitted diagram version not found.", 409)
         proof_saved = review.earns_proof
         if proof_saved:
-            proof = evidence("system_design", row.id, "Entretien d’architecture réussi", rt.now())
-            await SkillsService(db, user_id).raise_levels([SKILL], "en_cours", proof)
+            await _record_proof(db, rt, row)
         row.status = "done"
         row.system_design = {
             **data,

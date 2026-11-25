@@ -1,4 +1,4 @@
-const locale = "fr-FR";
+const locale = "en-GB";
 const dates = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
 const measurements = new Intl.NumberFormat(locale, { maximumFractionDigits: 4 });
 
@@ -12,7 +12,7 @@ export function normalizeMeasure(value: string) {
   return value.trim().replace(",", ".");
 }
 
-export const commitmentsPath = "/etudier/engagements";
+export const commitmentsPath = "/study/commitments";
 
 export function commitmentPath(id: string) {
   return `${commitmentsPath}/${encodeURIComponent(id)}`;

@@ -1,5 +1,5 @@
-"""Schémas de l'écart (SPEC F8, D122) : tableau recalculé à chaque lecture, compétences qui
-manquent le plus souvent et « Ajouter au planning » (D123)."""
+"""Gap schemas (SPEC F8, D122): table recomputed on every read, most often missing skills and
+"Add to the plan" (D123)."""
 
 from typing import Annotated, Literal
 
@@ -14,12 +14,12 @@ class GapRowOut(BaseModel):
     required: bool
     level: SkillLevel | None
     action: GapAction
-    week: int | None  # semaine du programme validé (`in_program`)
-    source: GapSource  # `cv_review` : relevé par la revue du CV (G3), hors du score
+    week: int | None  # week of the validated program (`in_program`)
+    source: GapSource  # `cv_review`: spotted by the CV review (G3), outside the score
 
 
 class GapOut(BaseModel):
-    """`pending` tant que l'analyse tourne ; `failed` : offre refusée ou analyse arrêtée."""
+    """`pending` while the analysis runs; `failed`: posting refused or analysis stopped."""
 
     posting_id: str
     status: Literal["pending", "ready", "failed"]
@@ -30,7 +30,7 @@ class GapOut(BaseModel):
 
 class TopMissingOut(BaseModel):
     skill: str
-    postings: int  # offres qui la demandent
+    postings: int  # postings that ask for it
     required_in: int  # dont obligatoire
 
 
@@ -41,18 +41,18 @@ class GapSkillsIn(BaseModel):
 
 
 class PlanGapIn(GapSkillsIn):
-    """Lignes « À ajouter » ou « Hors périmètre » et programme validé choisi."""
+    """ "To add" or "Out of scope" lines and the chosen validated program."""
 
     program_id: Annotated[str, Field(min_length=36, max_length=36)] | None = None
 
 
 class PlanGapStarted(BaseModel):
-    session_id: str  # la replanification `replan` (déclencheur `gap`) à suivre et à valider
+    session_id: str  # the `replan` replanning (`gap` trigger) to follow and validate
 
 
 class ValidateGapStarted(BaseModel):
-    """« Je les maîtrise déjà » : le module de validation ajouté et son quiz en préparation."""
+    """ "I already master them": the validation module added and its quiz being prepared."""
 
     module_id: str
     quiz_id: str
-    session_id: str | None  # la session de l'Examinateur à suivre
+    session_id: str | None  # the Examiner session to follow

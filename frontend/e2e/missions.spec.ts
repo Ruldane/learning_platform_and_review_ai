@@ -19,7 +19,7 @@ test("crée la mission depuis l’offre et retrouve sa mesure et sa preuve aprè
   const posting = offers.find((row) => row.title === "Ingénierie des données");
   if (!posting) throw new Error("Offre de recette absente.");
 
-  await page.goto(`/carriere/offres/${posting.id}`);
+  await page.goto(`/career/postings/${posting.id}`);
   await page.getByRole("link", { name: "Ouvrir Mission 48 h" }).press("Enter");
   await page.getByRole("checkbox", { name: REQUIREMENT }).check();
   await page.getByRole("button", { name: "Créer la mission" }).press("Enter");

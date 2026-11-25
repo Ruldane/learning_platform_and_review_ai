@@ -36,7 +36,7 @@ const setup = (api: Parameters<typeof renderCouncil>[1] = {}) => {
   return { fakeSockets, user };
 };
 
-const SEND = "Envoyer mes modifications aux agents";
+const SEND = "Send my changes to the agents";
 
 /** Le canevas sort de la lecture seule une fois les ajustements d'Excalidraw passés. */
 const editable = () =>
@@ -72,7 +72,7 @@ describe("CouncilPage : tableau", () => {
       http.post(`${API}/boards/b1/edits`, async ({ request }) => {
         edits.push(await request.json());
         return HttpResponse.json(
-          boardOut("b2", { author: "user", parent_id: "b1", title: "Ma version", step: 2 }),
+          boardOut("b2", { author: "user", parent_id: "b1", title: "My version", step: 2 }),
           { status: 201 },
         );
       }),
@@ -91,10 +91,10 @@ describe("CouncilPage : tableau", () => {
     await user.click(send);
     await waitFor(() =>
       expect(edits).toEqual([
-        { scene: { type: "excalidraw", elements: [] }, note: "Ajouté : « Docker »" },
+        { scene: { type: "excalidraw", elements: [] }, note: "Added: « Docker »" },
       ]),
     );
-    expect(await screen.findByRole("button", { name: /Ma version/ })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /My version/ })).toBeInTheDocument();
   });
 
   it("says so when the edits could not be sent, and keeps the button", async () => {
@@ -130,25 +130,25 @@ describe("CouncilPage : tableau", () => {
     const socket = await openCouncil(fakeSockets);
     socket.push(e.boardUpdate("b1", 1), e.boardUpdate("b1", 1));
     await screen.findByTestId("excalidraw");
-    expect(screen.getAllByRole("button", { name: /Carte du domaine/ })).toHaveLength(1);
-    socket.push(e.boardUpdate("b2", 2, { kind: "prerequisites", title: "Prérequis" }));
-    expect(await screen.findByRole("button", { name: /Prérequis/ })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /Domain map/ })).toHaveLength(1);
+    socket.push(e.boardUpdate("b2", 2, { kind: "prerequisites", title: "Prerequisite" }));
+    expect(await screen.findByRole("button", { name: /Prerequisite/ })).toBeInTheDocument();
   });
 
   it("shows a proposal on the board from its card", async () => {
     const { fakeSockets, user } = setup({
       boards: [
         boardOut("b1"),
-        boardOut("b3", { kind: "comparison", title: "Comparaison", step: 3 }),
+        boardOut("b3", { kind: "comparison", title: "Comparison", step: 3 }),
       ],
       proposals: [proposalOut("p1", 1, { board_id: "b3" }), proposalOut("p2", 2)],
       status: "waiting_user",
     });
     await openCouncil(fakeSockets);
-    await user.click(await screen.findByRole("tab", { name: "Propositions" }));
-    await user.click(await screen.findByRole("button", { name: "Voir « Parcours 1 » au tableau" }));
-    expect(screen.getByRole("tab", { name: "Tableau", selected: true })).toBeInTheDocument();
-    expect(await screen.findByRole("button", { name: /Comparaison/ })).toHaveAttribute(
+    await user.click(await screen.findByRole("tab", { name: "Proposals" }));
+    await user.click(await screen.findByRole("button", { name: "Show “Parcours 1” on the board" }));
+    expect(screen.getByRole("tab", { name: "Board", selected: true })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /Comparison/ })).toHaveAttribute(
       "aria-current",
       "true",
     );

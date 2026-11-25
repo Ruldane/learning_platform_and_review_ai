@@ -7,8 +7,8 @@ from app.db.base import Base, UserScopedMixin
 
 # Types partagés avec `app.agents`, qui ne peut pas importer une feature (contrat 6).
 LessonStatus = Literal["pending", "generating", "ready", "failed"]
-ResourceType = Literal["documentation", "cours", "video", "article", "depot", "papier"]
-ResourceLevel = Literal["debutant", "intermediaire", "avance"]
+ResourceType = Literal["documentation", "course", "video", "article", "repository", "paper"]
+ResourceLevel = Literal["beginner", "intermediate", "advanced"]
 ResourceStatus = Literal["to_read", "read"]
 # Essais de production d'une leçon (le premier et deux relances) : relu par la production et par
 # le schéma de l'API (`LessonSummaryOut.attempts`).

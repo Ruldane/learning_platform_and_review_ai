@@ -19,14 +19,15 @@ def one(text: str, allowed: list[str] | None = None):  # type: ignore[no-untyped
 def test_absent_employer_is_flagged_to_check() -> None:
     change = one("Mets en avant ton expérience chez Capgemini dans la section Expériences.")
     assert change.needs_skill and change.terms == ["Capgemini"]
-    assert change.text.startswith("À vérifier : ton profil ne dit pas Capgemini.")
-    assert "Ne l'écris pas dans ton CV" in change.text and "Mets en avant" not in change.text
+    assert change.text.startswith("To check · Verify Capgemini")
+    assert "before adding these details to your CV" in change.text
+    assert "Mets en avant" not in change.text
 
 
 def test_absent_school_is_flagged_to_check() -> None:
     change = one("Ajoute ton diplôme de l'École Polytechnique en tête de la section Formation.")
     assert change.needs_skill and "Polytechnique" in " ".join(change.terms)
-    assert change.text.startswith("À vérifier : ton profil ne dit pas")
+    assert change.text.startswith("To check · Verify")
     assert "Ajoute" not in change.text
 
 
@@ -52,7 +53,7 @@ def test_company_of_the_posting_and_profile_names_stay_free() -> None:
 
 def test_skill_terms_keep_the_acquire_template() -> None:
     change = one("Ajoute Kubernetes chez Capgemini dans la section Compétences.")
-    assert change.text.startswith("À acquérir : Kubernetes.")
+    assert change.text.startswith("Build evidence for Kubernetes")
     assert change.needs_skill and change.terms == ["Kubernetes"]
 
 

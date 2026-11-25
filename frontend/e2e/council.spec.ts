@@ -23,10 +23,10 @@ function debateTurns(page: Page): Locator {
 
 /** Objectif saisi, cadrage répondu, un message envoyé pendant le tour 1. */
 async function openCouncil(page: Page): Promise<void> {
-  await page.goto("/apprendre/objectifs");
+  await page.goto("/learn/goals");
   await page.getByRole("textbox", { name: "Ce que tu veux apprendre ou atteindre" }).fill(GOAL);
   await page.getByRole("button", { name: "Convoquer le Conseil" }).click();
-  await expect(page).toHaveURL(/\/apprendre\/objectifs\/[^/]+\/conseil$/);
+  await expect(page).toHaveURL(/\/learn\/goals\/[^/]+\/council$/);
 
   const framing = page.getByRole("region", { name: /Réponds aux questions de cadrage/ });
   await framing.getByRole("textbox").first().fill(FRAMING_ANSWER);
@@ -73,7 +73,7 @@ async function checkBoardAndChoose(page: Page): Promise<void> {
   await expect(proposals).toHaveCount(2);
   await page.getByRole("button", { name: /^Choisir « / }).first().click();
   await page.getByRole("link", { name: /^Voir le programme/ }).first().click();
-  await expect(page).toHaveURL(/\/apprendre\/programme\/[^/]+$/);
+  await expect(page).toHaveURL(/\/learn\/programs\/[^/]+$/);
 }
 
 /** Une tâche déplacée au clavier vers le mercredi (deuxième jour proposé : lundi est plein). */
@@ -115,7 +115,7 @@ async function checkWeeklyLoad(page: Page): Promise<void> {
 
 /** Les leçons des deux semaines deviennent prêtes ; leur lien PDF répond 200. */
 async function checkLessons(page: Page, request: APIRequestContext): Promise<void> {
-  await page.goto("/apprendre/lecons");
+  await page.goto("/learn/lessons");
   await expect(async () => {
     await page.reload();
     await expect(page.getByText("Prête", { exact: true })).toHaveCount(2, { timeout: 2_000 });
@@ -137,7 +137,7 @@ async function checkLessons(page: Page, request: APIRequestContext): Promise<voi
   }
 }
 
-// Le premier lancement est fait avant la première page (la porte mène sinon à /bienvenue).
+// Le premier lancement est fait avant la première page (la porte mène sinon à /welcome).
 test.beforeEach(({ request }) => finishFirstLaunch(request));
 
 test("un objectif mène à un programme validé avec ses leçons", async ({ page, request }) => {

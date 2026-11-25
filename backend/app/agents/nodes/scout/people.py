@@ -1,11 +1,11 @@
-"""L'Éclaireur repère des praticiens (SPEC 10.3, D84) : de vraies personnes qui publient sur le
-sujet, 10 au plus, avec leur nom, leur rôle et où elles publient. Informations professionnelles
-publiques seulement.
+"""The Scout spots practitioners (SPEC 10.3, D84): real people who publish on the topic, 10 at
+most, with their name, their role and where they publish. Public professional information
+only.
 
-Le modèle ne voit que les pages retenues (titre, auteur, adresse, encadrés comme non fiables).
-Une personne n'est gardée que si au moins une de ses adresses est une page lue ou un résultat de
-la session : l'adresse enregistrée est alors celle de la session, jamais celle que le modèle a
-écrite. Une personne sans adresse connue est écartée : jamais inventée."""
+The model only sees the selected pages (title, author, address, wrapped as untrusted). A person
+is kept only if at least one of their addresses is a page read or a result of the session: the
+recorded address is then the session's, never the one the model wrote. A person without a known
+address is discarded: never invented."""
 
 import logging
 from typing import Any, Protocol
@@ -47,8 +47,8 @@ class PeopleFound(BaseModel):
 
 
 def _url_key(url: str) -> str | None:
-    """Clé tolérante d'une adresse : schéma et hôte en minuscules, sans `/` final ni fragment ;
-    chemin et requête gardent leur casse. `None` pour une adresse mal formée (`http://[abc`)."""
+    """Tolerant key of an address: scheme and host in lowercase, no trailing `/` or fragment;
+    path and query keep their case. `None` for a malformed address (`http://[abc`)."""
     try:
         parts = urlsplit(url.strip())
     except ValueError:
@@ -58,7 +58,7 @@ def _url_key(url: str) -> str | None:
 
 
 def _known_urls(state: CouncilState) -> dict[str, str]:
-    """Adresses de la session (pages lues, puis résultats), par clé tolérante."""
+    """Addresses of the session (pages read, then results), by tolerant key."""
     known: dict[str, str] = {}
     for url in [p["url"] for p in state.get("pages", [])] + [
         h["url"] for h in state.get("hits", [])
@@ -69,7 +69,7 @@ def _known_urls(state: CouncilState) -> dict[str, str]:
 
 
 def _kept_pages(state: CouncilState) -> list[dict[str, Any]]:
-    """Pages retenues, avec l'auteur lu sur la page."""
+    """Selected pages, with the author read on the page."""
     pages = {p["source_id"]: p for p in state.get("pages", []) if p.get("source_id")}
     kept = []
     for verdict in state.get("verdicts", []):
@@ -84,9 +84,9 @@ def _pages_prompt(pages: list[dict[str, Any]]) -> str:
     for page in pages:
         meta = "\n".join(
             [
-                f"Titre : {page_title(page)}",
-                f"Auteur : {page.get('author') or 'inconnu'}",
-                f"Adresse : {page['url']}",
+                f"Title: {page_title(page)}",
+                f"Author: {page.get('author') or 'unknown'}",
+                f"URL: {page['url']}",
             ]
         )
         blocks.append(untrusted(meta, f"page {page['source_id']}"))
@@ -94,8 +94,8 @@ def _pages_prompt(pages: list[dict[str, Any]]) -> str:
 
 
 def _vetted(found: PeopleFound, known: dict[str, str]) -> list[PersonFound]:
-    """Personnes dont au moins une adresse est connue de la session, sans doublon de nom. Une
-    adresse mal formée est ignorée : sans autre adresse connue, la personne est écartée."""
+    """People with at least one address known to the session, no duplicate names. A malformed
+    address is ignored: without another known address, the person is discarded."""
     people: list[PersonFound] = []
     names: set[str] = set()
     for person in found.people:
@@ -122,10 +122,10 @@ async def _ask(deps: GraphDeps, state: CouncilState, pages: list[dict[str, Any]]
     return await structured_call(
         model,
         PeopleFound,
-        [SystemMessage(prompt), HumanMessage("Repère les praticiens.")],
+        [SystemMessage(prompt), HumanMessage("Find practitioners.")],
         agent=AGENT,
         step="praticiens",
-        intent="je repère des praticiens",
+        intent="looking for practitioners",
     )
 
 
@@ -151,7 +151,7 @@ def _emit_person(person: PersonFound, source_id: str) -> None:
 
 
 def _kept(person: PersonFound, source_id: str) -> dict[str, Any]:
-    """Praticien gardé : signalé (`source.found`) et rendu pour l'état."""
+    """Practitioner kept: reported (`source.found`) and returned for the state."""
     _emit_person(person, source_id)
     return {
         "source_id": source_id,
@@ -165,12 +165,12 @@ def _kept(person: PersonFound, source_id: str) -> dict[str, Any]:
 def make_spot_people(deps: GraphDeps) -> Node:
     @node_timeout()
     async def spot_people(state: CouncilState) -> CouncilState:
-        """Rejoué après un arrêt (D84) : les praticiens déjà enregistrés pour la session sont
-        réémis tels quels, sans appel au modèle ni ligne de plus (10 au plus en tout). Sans page
-        retenue : aucun appel au modèle. Une sortie du modèle invalide après les essais laisse
-        le Conseil continuer sans praticien (la recherche, elle, a abouti)."""
+        """Replayed after a stop (D84): the practitioners already recorded for the session are
+        re-emitted as is, without a model call or an extra row (10 at most in all). Without a
+        selected page: no model call. An invalid model output after the retries lets the
+        Council continue without a practitioner (the search itself succeeded)."""
         known = await deps.web.people(deps.user_id, deps.session_id)
-        if known:  # nœud rejoué : les praticiens déjà enregistrés, sans rappeler le modèle
+        if known:  # node replayed: the practitioners already recorded, without calling the model
             return {"people": [_kept(person, sid) for sid, person in known[:MAX_PEOPLE]]}
         pages = _kept_pages(state)
         if not pages:
@@ -180,7 +180,7 @@ def make_spot_people(deps: GraphDeps) -> Node:
         except AppError as exc:
             if exc.code != INVALID_OUTPUT_CODE:
                 raise
-            logger.warning("Praticiens non repérés (%s) : session %s", exc.code, deps.session_id)
+            logger.warning("Practitioners not spotted (%s): session %s", exc.code, deps.session_id)
             return {"people": []}
         people: list[dict[str, Any]] = []
         for person in _vetted(found, _known_urls(state)):

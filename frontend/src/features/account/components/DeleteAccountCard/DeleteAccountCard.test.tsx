@@ -3,8 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { DeleteAccountCard } from "./DeleteAccountCard";
 
-const word = () => screen.getByLabelText("Tape SUPPRIMER pour confirmer");
-const button = () => screen.getByRole("button", { name: "Tout supprimer" });
+const word = () => screen.getByLabelText("Type SUPPRIMER to confirm");
+const button = () => screen.getByRole("button", { name: "Delete everything" });
 
 describe("DeleteAccountCard", () => {
   it("delete disabled until exact word", async () => {
@@ -30,25 +30,27 @@ describe("DeleteAccountCard", () => {
     render(
       <DeleteAccountCard pending={false} failure={null} onDelete={vi.fn()} onEdit={vi.fn()} />,
     );
-    const card = screen.getByRole("region", { name: "Tout supprimer" });
-    expect(card).toHaveTextContent("irréversible");
-    expect(card).toHaveTextContent("fichier .env ne sont pas touchées");
+    const card = screen.getByRole("region", { name: "Delete everything" });
+    expect(card).toHaveTextContent("This cannot be undone.");
+    expect(card).toHaveTextContent("API keys written in the .env file are not affected.");
   });
 
   it("links the warnings to the field, with the failure when there is one", () => {
     const { rerender } = render(
       <DeleteAccountCard pending={false} failure={null} onDelete={vi.fn()} onEdit={vi.fn()} />,
     );
-    expect(word()).toHaveAccessibleDescription(/irréversible.*fichier .env ne sont pas touchées/);
+    expect(word()).toHaveAccessibleDescription(
+      /This cannot be undone.*API keys written in the \.env file are not affected/,
+    );
     rerender(
       <DeleteAccountCard
         pending={false}
-        failure={{ message: "La mémoire ne répond pas.", field: false }}
+        failure={{ message: "The vector memory isn't responding.", field: false }}
         onDelete={vi.fn()}
         onEdit={vi.fn()}
       />,
     );
-    expect(word()).toHaveAccessibleDescription(/irréversible.*La mémoire ne répond pas./);
+    expect(word()).toHaveAccessibleDescription(/This cannot be undone.*memory isn't responding/);
   });
 
   it("is busy and refuses a second click while the call runs", async () => {
@@ -56,7 +58,7 @@ describe("DeleteAccountCard", () => {
     const onDelete = vi.fn();
     render(<DeleteAccountCard pending failure={null} onDelete={onDelete} onEdit={vi.fn()} />);
     await user.type(word(), "SUPPRIMER");
-    const busy = screen.getByRole("button", { name: "Suppression en cours…" });
+    const busy = screen.getByRole("button", { name: "Deleting…" });
     expect(busy).toHaveAttribute("aria-busy", "true");
     expect(busy).toHaveAttribute("aria-disabled", "true");
     await user.click(busy);
@@ -67,13 +69,13 @@ describe("DeleteAccountCard", () => {
     render(
       <DeleteAccountCard
         pending={false}
-        failure={{ message: "Le mot de confirmation n'est pas bon.", field: true }}
+        failure={{ message: "The confirmation word is wrong.", field: true }}
         onDelete={vi.fn()}
         onEdit={vi.fn()}
       />,
     );
     expect(word()).toHaveAttribute("aria-invalid", "true");
-    expect(word()).toHaveAccessibleDescription(/Le mot de confirmation n'est pas bon.$/);
+    expect(word()).toHaveAccessibleDescription(/The confirmation word is wrong\.$/);
   });
 
   it("focus moves to result message", () => {
@@ -83,7 +85,7 @@ describe("DeleteAccountCard", () => {
     rerender(
       <DeleteAccountCard
         pending={false}
-        failure={{ message: "La mémoire ne répond pas.", field: false }}
+        failure={{ message: "The vector memory isn't responding.", field: false }}
         onDelete={vi.fn()}
         onEdit={vi.fn()}
       />,

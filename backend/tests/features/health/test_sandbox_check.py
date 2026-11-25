@@ -25,7 +25,7 @@ async def test_degraded_when_the_heartbeat_is_old_or_absent(tmp_path: Path) -> N
     old = time.time() - 60
     os.utime(tmp_path / "heartbeat", (old, old))
     status = await check.check()
-    assert status.ok is False and "Bac à sable" in status.detail
+    assert status.ok is False and "Sandbox" in status.detail
 
 
 async def test_a_dead_sandbox_degrades_the_report_but_never_downs_it() -> None:

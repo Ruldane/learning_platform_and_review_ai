@@ -34,10 +34,10 @@ function loginUrl(email?: string): string {
   return `${API}/auth/google/login${email ? `?login_hint=${encodeURIComponent(email)}` : ""}`;
 }
 
-/** Quitte l'application par le menu du compte : la porte mène à `/connexion`. */
+/** Quitte l'application par le menu du compte : la porte mène à `/login`. */
 async function logOut(page: Page): Promise<void> {
   await page.getByRole("button", { name: "Se déconnecter" }).click();
-  await expect(page).toHaveURL(/\/connexion$/);
+  await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByRole("link", { name: "Se connecter avec Google" })).toBeVisible();
 }
 
@@ -56,7 +56,7 @@ async function walkThroughWelcome(page: Page): Promise<void> {
 
 /** Réglages > Style : un texte enregistré, annoncé. */
 async function saveStyle(page: Page): Promise<void> {
-  await page.goto("/reglages/style");
+  await page.goto("/settings/style");
   const field = page.getByLabel("Guide de style personnel");
   await expect(field).toHaveValue("");
   await field.fill(STYLE);
@@ -66,9 +66,9 @@ async function saveStyle(page: Page): Promise<void> {
 
 /** Camille retrouve ses données : la note de l'espace local et son style. */
 async function expectCamilleData(page: Page): Promise<void> {
-  await page.goto("/etudier/journal");
+  await page.goto("/study/journal");
   await expect(page.getByText(LOCAL_NOTE)).toBeVisible();
-  await page.goto("/reglages/style");
+  await page.goto("/settings/style");
   await expect(page.getByLabel("Guide de style personnel")).toHaveValue(STYLE);
 }
 
@@ -104,21 +104,21 @@ test("Camille reprend l'espace local, Dominique repart de zéro et supprime tout
 }) => {
   // (1) Sans session, l'application mène à la connexion ; le faux fournisseur connecte Camille.
   await page.goto("/");
-  await expect(page).toHaveURL(/\/connexion$/);
+  await expect(page).toHaveURL(/\/login$/);
   await page.getByRole("link", { name: "Se connecter avec Google" }).click();
 
   // La première connexion d'un compte nommé propose l'espace local ; Camille le reprend.
-  await expect(page).toHaveURL(/\/connexion\/reprise$/);
+  await expect(page).toHaveURL(/\/login\/claim$/);
   await expect(page.getByRole("heading", { name: "Reprendre tes données ?" })).toBeVisible();
   await page.getByRole("button", { name: "Reprendre les données de cet ordinateur" }).click();
 
   // Le premier lancement est à faire (le compte repris n'a jamais fini l'accueil).
-  await expect(page).toHaveURL(/\/bienvenue$/);
+  await expect(page).toHaveURL(/\/welcome$/);
   await walkThroughWelcome(page);
   expect(await signedInAs(page)).toBe(CAMILLE);
 
   // La capture de l'espace local est au journal ; un texte de style est enregistré.
-  await page.goto("/etudier/journal");
+  await page.goto("/study/journal");
   await expect(page.getByText(LOCAL_NOTE)).toBeVisible();
   await saveStyle(page);
 
@@ -126,24 +126,24 @@ test("Camille reprend l'espace local, Dominique repart de zéro et supprime tout
   await page.goto("/");
   await logOut(page);
   await page.goto(loginUrl(DOMINIQUE));
-  await expect(page).toHaveURL(/\/bienvenue$/);
+  await expect(page).toHaveURL(/\/welcome$/);
   await expect(page.getByRole("heading", { name: "Reprendre tes données ?" })).toHaveCount(0);
   expect(await signedInAs(page)).toBe(DOMINIQUE);
 
   // Son espace est vide : ni la note de Camille, ni son style.
   await page.getByRole("button", { name: "Passer l'accueil" }).click();
   await expect(page).toHaveURL(/localhost:\d+\/$/);
-  await page.goto("/etudier/journal");
+  await page.goto("/study/journal");
   await expect(page.getByText("Ton journal est vide")).toBeVisible();
   await expect(page.getByText(LOCAL_NOTE)).toHaveCount(0);
-  await page.goto("/reglages/style");
+  await page.goto("/settings/style");
   await expect(page.getByLabel("Guide de style personnel")).toHaveValue("");
 
   // (4) Mes données : l'export, puis « Tout supprimer » ramène à la connexion.
-  await page.goto("/reglages/donnees");
+  await page.goto("/settings/data");
   await exportData(page);
   await deleteEverything(page);
-  await expect(page).toHaveURL(/\/connexion$/);
+  await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByRole("link", { name: "Se connecter avec Google" })).toBeVisible();
   expect(await signedInAs(page)).toBeNull();
 
@@ -160,10 +160,10 @@ test("« Tout supprimer » n'efface pas le compte d'un autre onglet", async ({ c
   const other = await context.newPage();
   // Onglet A : Dominique (un compte neuf : son premier lancement est passé) sur Mes données.
   await page.goto(loginUrl(DOMINIQUE));
-  await expect(page).toHaveURL(/\/bienvenue$/);
+  await expect(page).toHaveURL(/\/welcome$/);
   await page.getByRole("button", { name: "Passer l'accueil" }).click();
   await expect(page).toHaveURL(/localhost:\d+\/$/);
-  await page.goto("/reglages/donnees");
+  await page.goto("/settings/data");
   await expect(page.getByRole("heading", { name: "Tout supprimer" })).toBeVisible();
   await expect(page.getByText(`Compte à effacer : ${DOMINIQUE}`)).toBeVisible();
 

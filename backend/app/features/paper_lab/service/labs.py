@@ -1,4 +1,4 @@
-"""Lancer la Fabrique depuis un article et relire les résultats."""
+"""Start the Factory from a paper and review the results."""
 
 from uuid import uuid4
 

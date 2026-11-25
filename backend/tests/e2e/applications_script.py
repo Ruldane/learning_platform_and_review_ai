@@ -41,7 +41,7 @@ PAGE_TEXT = f"{POSTING_TEXT}\n{REFERENCE} (page du lien).\n"
 ANALYSIS_TITLE = "Ingénieure IA appliquée"
 LONG = 12  # lectures prévues : une par phrase, plus les nouvelles demandes de `structured_call`
 
-_YESTERDAY = re.compile(r"^- hier : [^\n(]*\((\d{4}-\d{2}-\d{2})\)", re.MULTILINE)
+_YESTERDAY = re.compile(r"^- yesterday: [^\n(]*\((\d{4}-\d{2}-\d{2})\)", re.MULTILINE)
 
 
 def yesterday(prompt: str) -> str:
@@ -49,7 +49,7 @@ def yesterday(prompt: str) -> str:
     found = _YESTERDAY.search(prompt)
     if found is None:
         raise RuntimeError(
-            "Réponse scriptée : le prompt de l'Assistant de suivi n'a pas de « hier »."
+            "Scripted response: the tracking assistant prompt is missing yesterday's date."
         )
     return found.group(1)
 

@@ -15,8 +15,8 @@ describe("StudyTopbarSlot", () => {
       ),
     );
     render(<StudyTopbarSlot />, { wrapper: createQueryWrapper() });
-    expect(await screen.findByText("Série : 5 jours")).toBeInTheDocument();
-    expect(screen.getByText("Cette semaine : 3 h 30")).toBeInTheDocument();
+    expect(await screen.findByText("Streak: 5 days")).toBeInTheDocument();
+    expect(screen.getByText("This week: 3 h 30")).toBeInTheDocument();
   });
 
   it("says in one line that the figures are unavailable", async () => {
@@ -29,6 +29,6 @@ describe("StudyTopbarSlot", () => {
       ),
     );
     render(<StudyTopbarSlot />, { wrapper: createQueryWrapper() });
-    expect(await screen.findByText("Rythme d'étude indisponible")).toBeInTheDocument();
+    expect(await screen.findByText("Study pace unavailable")).toBeInTheDocument();
   });
 });

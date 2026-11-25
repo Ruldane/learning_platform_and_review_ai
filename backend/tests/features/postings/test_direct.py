@@ -35,7 +35,7 @@ def body(**over: Any) -> dict[str, Any]:
 async def items(app: FastAPI) -> list[MemoryItem]:
     async with app.state.session_factory() as db:
         return list(
-            (await db.execute(select(MemoryItem).where(MemoryItem.kind == "offre"))).scalars()
+            (await db.execute(select(MemoryItem).where(MemoryItem.kind == "posting"))).scalars()
         )
 
 
@@ -44,7 +44,7 @@ async def test_write_posting_is_ready_with_memory_and_no_agent(
     app: FastAPI,
     launcher_spy: RecordingLauncher,
 ) -> None:
-    r = await client.post(f"{API}/postings/direct", json=body())
+    r = await client.post(f"{API}/postings/direct", json=body(level="mid_level"))
 
     assert r.status_code == 201, r.text
     created = r.json()
@@ -56,7 +56,8 @@ async def test_write_posting_is_ready_with_memory_and_no_agent(
         "AI Product Engineer",
     )
     assert posting["company"] == "Société Fictive" and posting["text"] == POSTING_TEXT.strip()
-    assert posting["analysis"]["level"] == "confirme" and len(posting["analysis"]["keywords"]) == 4
+    assert posting["analysis"]["level"] == "mid_level"
+    assert len(posting["analysis"]["keywords"]) == 4
     assert posting["gap_session_id"] is None and posting["score"] is None
     assert (await client.get(f"{API}/postings/{posting['id']}")).json()["title"] == posting["title"]
     [item] = await items(app)  # l'élément `offre`, écrit par January et indexé
@@ -65,6 +66,7 @@ async def test_write_posting_is_ready_with_memory_and_no_agent(
     async with app.state.session_factory() as db:
         row = (await db.execute(select(JobPosting))).scalar_one()
     assert row.memory_item_id == item.id and row.company_norm == "societe fictive"
+    assert row.analysis is not None and row.analysis["level"] == "mid_level"
     assert launcher_spy.started == []  # aucun graphe lancé
     await assert_no_agent(app)
 
@@ -124,7 +126,8 @@ async def test_patch_posting_updates_analysis_and_memory_title(
     assert r.status_code == 200, r.text
     patched = r.json()
     assert (patched["title"], patched["company"]) == ("Ingénieur IA", "Autre Société")
-    assert patched["analysis"]["location"] == "Paris" and patched["analysis"]["level"] == "confirme"
+    assert patched["analysis"]["location"] == "Paris"
+    assert patched["analysis"]["level"] == "mid_level"
     assert patched["text"] == posting["text"] and patched["status"] == "ready"
     [item] = await items(app)  # mis à jour, pas dupliqué
     assert item.title == "Ingénieur IA — Autre Société"

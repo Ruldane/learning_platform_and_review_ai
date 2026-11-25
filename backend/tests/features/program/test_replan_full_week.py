@@ -32,7 +32,7 @@ async def _full_week(rt: ProgramRuntime) -> tuple[str, str]:
             program_id=saved.program_id,
             rank=len(program.tasks),
             title="Pratiquer un exercice supplémentaire",
-            type="pratiquer",
+            type="practice",
             minutes=45,
             done_criterion="Écrire la solution",
             planned_date=MONDAY + timedelta(days=5),

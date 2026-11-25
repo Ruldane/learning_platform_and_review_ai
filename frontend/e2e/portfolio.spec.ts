@@ -17,7 +17,7 @@ test("sélectionne les faits, confirme l’adresse exacte et retire le site", as
     },
   });
   expect(profile.ok()).toBe(true);
-  await page.goto("/carriere/site-portfolio");
+  await page.goto("/career/portfolio-site");
   await page.getByRole("checkbox", { name: "Nom affiché" }).check();
   await expect(page.getByRole("checkbox", { name: "Présentation", exact: true })).not.toBeChecked();
   await page.getByRole("button", { name: "Préparer l’aperçu" }).press("Enter");

@@ -64,23 +64,23 @@ describe("JournalPage", () => {
     ]);
     const weeks = await screen.findAllByRole("heading", { level: 2 });
     expect(weeks.map((week) => week.textContent)).toEqual([
-      "Semaine du lundi 23 novembre",
-      "Semaine du lundi 16 novembre",
+      "Week of Monday 23 November",
+      "Week of Monday 16 November",
     ]);
     const first = within(weeks[0]!.closest("section")!).getAllByRole("listitem");
-    expect(within(first[0]!).getByText("Bilan hebdomadaire")).toBeInTheDocument();
+    expect(within(first[0]!).getByText("Weekly review")).toBeInTheDocument();
     expect(within(first[1]!).getByText("Note de mardi")).toBeInTheDocument();
     const second = within(weeks[1]!.closest("section")!);
-    expect(second.getByRole("link", { name: "Voir la session" })).toHaveAttribute(
+    expect(second.getByRole("link", { name: "View session" })).toHaveAttribute(
       "href",
-      "/etudier/session/st1",
+      "/study/session/st1",
     );
   });
 
   it("filters by type and reads the journal again for that type", async () => {
     const { queries, user } = setup([{ entries: [entryOut("e1")], next_before: null }]);
     await screen.findByText("Entrée e1");
-    await user.selectOptions(screen.getByLabelText("Type d'entrée"), "quiz");
+    await user.selectOptions(screen.getByLabelText("Entry type"), "quiz");
     await waitFor(() => expect(queries.some((query) => query.get("kind") === "quiz")).toBe(true));
   });
 
@@ -102,9 +102,9 @@ describe("JournalPage", () => {
         next_before: null,
       },
     ]);
-    expect(await screen.findByRole("link", { name: "Voir la session" })).toHaveAttribute(
+    expect(await screen.findByRole("link", { name: "View session" })).toHaveAttribute(
       "href",
-      "/etudier/training/training-1",
+      "/study/training/training-1",
     );
   });
 
@@ -128,8 +128,8 @@ describe("JournalPage", () => {
       },
     ]);
     expect(
-      await screen.findByRole("link", { name: "Courir contre cette tentative" }),
-    ).toHaveAttribute("href", "/code/session-1?fantome=run-1");
+      await screen.findByRole("link", { name: "Race against this attempt" }),
+    ).toHaveAttribute("href", "/code/session-1?ghost=run-1");
   });
 
   it("keeps the filter and its focus while the new type loads (revue finale 5, C-m2)", async () => {
@@ -138,11 +138,11 @@ describe("JournalPage", () => {
       { entries: [entryOut("e2", { kind: "quiz", text: "Quiz réussi" })], next_before: null },
     ]);
     await screen.findByText("Entrée e1");
-    const filter = screen.getByLabelText("Type d'entrée");
+    const filter = screen.getByLabelText("Entry type");
     filter.focus();
     await user.selectOptions(filter, "quiz");
     // Pendant la lecture du nouveau type, la liste n'est pas démontée : le focus reste au filtre.
-    expect(screen.getByLabelText("Type d'entrée")).toBe(filter);
+    expect(screen.getByLabelText("Entry type")).toBe(filter);
     expect(filter).toHaveFocus();
     expect(await screen.findByText("Quiz réussi")).toBeInTheDocument();
     expect(filter).toHaveFocus();
@@ -157,16 +157,16 @@ describe("JournalPage", () => {
       },
     ]);
     await screen.findByText("Entrée e1");
-    await user.click(screen.getByRole("button", { name: "Voir les entrées plus anciennes" }));
+    await user.click(screen.getByRole("button", { name: "Show older entries" }));
     expect(await screen.findByText("Plus ancienne")).toBeInTheDocument();
     expect(queries[1]?.get("before")).toBe("e1");
-    expect(screen.queryByRole("button", { name: "Voir les entrées plus anciennes" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Show older entries" })).toBeNull();
   });
 
   it("shows an empty state that opens the capture", async () => {
     const { user } = setup([{ entries: [], next_before: null }]);
-    expect(await screen.findByText("Ton journal est vide")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Capturer une note" }));
+    expect(await screen.findByText("Your journal is empty")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Capture a note" }));
     expect(useCaptureDialog.getState().open).toBe(true);
   });
 
@@ -177,10 +177,10 @@ describe("JournalPage", () => {
         ? HttpResponse.json(apiError("internal_error", "Panne du serveur."), { status: 500 })
         : HttpResponse.json({ entries: [entryOut("e1")], next_before: null }),
     );
-    expect(screen.getByText("Chargement du journal…")).toBeInTheDocument();
+    expect(screen.getByText("Loading journal…")).toBeInTheDocument();
     expect(await screen.findByText("Panne du serveur.")).toBeInTheDocument();
     failing = false;
-    await user.click(screen.getByRole("button", { name: "Réessayer" }));
+    await user.click(screen.getByRole("button", { name: "Retry" }));
     expect(await screen.findByText("Entrée e1")).toBeInTheDocument();
   });
 });

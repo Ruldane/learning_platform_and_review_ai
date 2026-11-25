@@ -51,23 +51,21 @@ async def test_feed_merges_sources_by_time(env: Env) -> None:
     assert page.latest_at == hours(6)
     by_kind = {(item.kind, item.at): item for item in page.items}
     lesson_fail = by_kind["lesson", hours(6)]
-    assert lesson_fail.title == "Leçon en échec : Leçon Module Projet"
-    assert lesson_fail.link == f"/apprendre/lecons/{failed}"
+    assert lesson_fail.title == "Lesson failed: Leçon Module Projet"
+    assert lesson_fail.link == f"/learn/lessons/{failed}"
     assert lesson_fail.id == f"lesson:{failed}:failed"
-    assert by_kind["lesson", hours(1)].title == "Leçon prête : Leçon Module Bases"
+    assert by_kind["lesson", hours(1)].title == "Lesson ready: Leçon Module Bases"
     assert by_kind["lesson", hours(1)].id == f"lesson:{ready}:ready"
     radar = by_kind["radar", hours(4)]
-    assert radar.title == "Relevé du radar : 47 offres lues, 6 bloquées"
-    assert radar.link == f"/carriere/radar/{radar.id.split(':')[1]}"
+    assert radar.title == "Radar scan: 47 offers read, 6 blocked"
+    assert radar.link == f"/career/radar/{radar.id.split(':')[1]}"
     brief = by_kind["brief", hours(5)]
-    assert brief.title == "Brief du jour prêt" and brief.link == "/"
+    assert brief.title == "Daily brief ready" and brief.link == "/"
     memory = by_kind["memory", hours(3)]
-    assert memory.title == "L'Analyste a écrit en mémoire : Élément secret"
+    assert memory.title == "Analyst wrote to memory: Élément secret"
     assert memory.detail == "Le niveau a changé."
     job = by_kind["job_failed", hours(2)]
-    assert job.title == (
-        "Un passage planifié a échoué (radar du marché) : nouvel essai au prochain passage."
-    )
+    assert job.title == ("Scheduled run failed (market radar). Will retry on the next run.")
     assert len({item.id for item in page.items}) == 6
     assert len(ACTIVITY_SOURCES) == 7  # leçons, radar, brief, projets, code, mémoire, passages
 
@@ -103,9 +101,7 @@ async def test_user_writes_excluded(env: Env) -> None:
     await add_write(env, hours(2), author="scribe", action="delete", title="Supprimé")
     await add_write(env, hours(3), author="mystery_agent", title="Écrit par un agent", reason=None)
     page = await _page(env)
-    assert [item.title for item in page.items] == [
-        "Un agent a écrit en mémoire : Écrit par un agent"
-    ]
+    assert [item.title for item in page.items] == ["An agent wrote to memory: Écrit par un agent"]
     assert page.items[0].detail is None
 
 
@@ -119,9 +115,9 @@ async def test_job_failure_item_has_no_error_text(env: Env) -> None:
     assert "secret_error_code" not in dumped and "error" not in dumped.replace("job_failed", "")
     assert all(item.detail is None and item.link is None for item in page.items)
     assert page.items[0].title == (
-        "Un passage planifié a échoué (tâche de fond) : nouvel essai au prochain passage."
+        "Scheduled run failed (background job). Will retry on the next run."
     )
-    assert page.items[1].title.startswith("Un passage planifié a échoué (brief du matin)")
+    assert page.items[1].title.startswith("Scheduled run failed (morning brief).")
 
 
 async def test_limit_capped_at_50(env: Env) -> None:

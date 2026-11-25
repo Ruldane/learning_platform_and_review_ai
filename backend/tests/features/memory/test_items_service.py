@@ -40,7 +40,7 @@ async def test_write_creates_item_chunks_vectors_and_journal(
     service: MemoryService, db: AsyncSession, runtime: MemoryRuntime
 ) -> None:
     out = await service.write(
-        draft(kind="lecon", author="writer", reason="Leçon 1 publiée.", session_id="s1")
+        draft(kind="lesson", author="writer", reason="Leçon 1 publiée.", session_id="s1")
     )
     assert out.created and out.item.indexed_at is not None and out.item.status == "active"
     writes = await _writes(db)
@@ -65,9 +65,9 @@ async def test_agent_write_is_idempotent_on_same_content(
 
 
 async def test_acquis_is_deduplicated_by_title(service: MemoryService, db: AsyncSession) -> None:
-    first = await service.write(draft(kind="acquis", author="archivist", title="Python"))
+    first = await service.write(draft(kind="skill", author="archivist", title="Python"))
     again = await service.write(
-        draft(kind="acquis", author="archivist", title=" python ", text="Autre texte.")
+        draft(kind="skill", author="archivist", title=" python ", text="Autre texte.")
     )
     assert not again.created and again.item.id == first.item.id
     assert await _count(db, MemoryItem) == 1
@@ -154,7 +154,7 @@ async def test_write_keeps_item_when_embeddings_down(
     detail = await service_down.detail(out.item.id)
     assert detail.indexed is False and detail.neighbors == []
     created = await service_down.create_by_user(
-        MemoryItemCreate(kind="offre", title="Offre", text="Poste de développeur.")
+        MemoryItemCreate(kind="posting", title="Offre", text="Poste de développeur.")
     )
     assert created.indexed is False
 
@@ -199,13 +199,15 @@ async def test_update_to_existing_content_conflicts(
 async def test_update_level_only_for_an_acquis(service: MemoryService, db: AsyncSession) -> None:
     lecon = await service.write(draft(author="writer"))
     with pytest.raises(AppError) as raised:
-        await service.update(lecon.item.id, MemoryItemPatch(level="en_cours"))
+        await service.update(lecon.item.id, MemoryItemPatch(level="in_progress"))
     assert raised.value.code == "memory_level_forbidden"
     acquis = await service.create_by_user(
-        MemoryItemCreate(kind="acquis", title="SQL", text="Jointures et index.")
+        MemoryItemCreate(kind="skill", title="SQL", text="Jointures et index.")
     )
-    assert acquis.level == "declare"
-    assert (await service.update(acquis.id, MemoryItemPatch(level="en_cours"))).level == "en_cours"
+    assert acquis.level == "declared"
+    assert (
+        await service.update(acquis.id, MemoryItemPatch(level="in_progress"))
+    ).level == "in_progress"
     assert [w.action for w in await _writes(db)][-1] == "update"
 
 
@@ -252,11 +254,13 @@ async def test_items_are_isolated_between_users(
 
 
 async def test_list_items_filters_and_pages(service: MemoryService) -> None:
-    await service.write(draft(kind="acquis", author="archivist", title="Python", tags=("python",)))
-    await service.write(draft(kind="lecon", author="writer", title="Leçon", tags=("python", "web")))
-    await service.create_by_user(MemoryItemCreate(kind="offre", title="Offre", text="Poste."))
+    await service.write(draft(kind="skill", author="archivist", title="Python", tags=("python",)))
+    await service.write(
+        draft(kind="lesson", author="writer", title="Leçon", tags=("python", "web"))
+    )
+    await service.create_by_user(MemoryItemCreate(kind="posting", title="Offre", text="Poste."))
     assert (await service.list_items(ALL, limit=50, offset=0)).total == 3
-    by_kind = await service.list_items(ItemFilter(kind="acquis"), limit=50, offset=0)
+    by_kind = await service.list_items(ItemFilter(kind="skill"), limit=50, offset=0)
     assert [i.title for i in by_kind.items] == ["Python"]
     assert (await service.list_items(ItemFilter(tag="python"), limit=50, offset=0)).total == 2
     assert (await service.list_items(ItemFilter(author="user"), limit=50, offset=0)).total == 1

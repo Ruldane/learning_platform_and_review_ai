@@ -17,7 +17,7 @@ describe("annotationNote", () => {
 
   it("lists added texts and moved elements", () => {
     const after = [box("a"), text("a-t", "MLOps", "a"), box("b", 60, 10), text("t1", "Docker")];
-    expect(annotationNote(before, after)).toBe("Ajouté : « Docker » ; 1 élément(s) déplacé(s)");
+    expect(annotationNote(before, after)).toBe("Added: « Docker »; 1 item(s) moved");
   });
 
   it("lists changed and removed texts", () => {
@@ -26,9 +26,9 @@ describe("annotationNote", () => {
       text("a-t", "MLOps avancé", "a"),
       { ...box("b", 10, 10), isDeleted: true },
     ];
-    expect(annotationNote(before, after)).toBe("Modifié : « MLOps avancé »");
+    expect(annotationNote(before, after)).toBe("Changed: « MLOps avancé »");
     const gone = [box("a"), box("b", 10, 10)];
-    expect(annotationNote(before, gone)).toBe("Supprimé : « MLOps »");
+    expect(annotationNote(before, gone)).toBe("Removed: « MLOps »");
   });
 
   it("returns an empty string when nothing changed", () => {
@@ -43,12 +43,12 @@ describe("annotationNote", () => {
       box("b", 10, 10),
       { ...arrow, x: 5 },
     ];
-    expect(annotationNote([...before, arrow], after)).toBe("1 élément(s) déplacé(s)");
+    expect(annotationNote([...before, arrow], after)).toBe("1 item(s) moved");
   });
 
   it("flattens line breaks and caps long lists", () => {
     const added = Array.from({ length: 7 }, (_, i) => text(`n${i}`, `Idée\n${i}`));
     const note = annotationNote(before, [...before, ...added]);
-    expect(note).toBe("Ajouté : « Idée 0 », « Idée 1 », « Idée 2 », « Idée 3 », « Idée 4 », …");
+    expect(note).toBe("Added: « Idée 0 », « Idée 1 », « Idée 2 », « Idée 3 », « Idée 4 », …");
   });
 });

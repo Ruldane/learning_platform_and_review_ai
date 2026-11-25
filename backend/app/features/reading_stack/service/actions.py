@@ -1,4 +1,4 @@
-"""Les actions explicites sur une lecture réutilisent les services propriétaires."""
+"""Explicit actions on a reading reuse the owning services."""
 
 from dataclasses import dataclass
 
@@ -35,27 +35,29 @@ async def keep_memory(actions: ReadingActions, db: AsyncSession, row: ReadingIte
         kind="document",
         title=row.title,
         text=text,
-        tags=["pile de lecture"],
+        tags=["reading stack"],
         author=author_of(ACTIVE.get() is not None),
-        reason="Lecture gardée en mémoire.",
+        reason="Reading kept in memory.",
     )
 
 
 def _passage_front(row: ReadingItem, passage: str) -> str:
     cue = " ".join(passage.split()[:6])
-    return f"Que retenir du passage « {cue}… » dans « {row.title} » ?"
+    return f"What should you remember from the passage “{cue}…” in “{row.title}”?"
 
 
 async def make_card(db: AsyncSession, row: ReadingItem, *, passage: str | None = None) -> int:
     normalized = (row.text or "").replace("\r\n", "\n").replace("\r", "\n")
     if passage is not None and passage not in normalized:
-        raise AppError("reading_passage_missing", "Ce passage ne figure plus dans la lecture.", 409)
+        raise AppError("reading_passage_missing", "This passage is no longer in the reading.", 409)
     content = passage or (row.summary.strip() or row.text.strip())[:1650]
     if not content:
-        raise AppError("reading_content_missing", "Cette lecture ne contient pas de résumé.", 409)
+        raise AppError("reading_content_missing", "This reading has no summary.", 409)
     settings = await SettingsService(db, row.user_id).get()
     card = NewCard(
-        front=_passage_front(row, passage) if passage else f"Que retenir de « {row.title} » ?",
+        front=_passage_front(row, passage)
+        if passage
+        else f"What should you remember from “{row.title}”?",
         back=f"{content}\n\n{row.url}",
         skill=None,
         module_id=None,
@@ -71,7 +73,9 @@ async def propose_reading(actions: ReadingActions, row: ReadingItem, program_id:
 
 async def keep_offer(actions: ReadingActions, row: ReadingItem, body: ReadingApplicationIn) -> str:
     if row.kind != "offer":
-        raise AppError("reading_offer_required", "Choisis une offre de la pile de lecture.", 409)
+        raise AppError(
+            "reading_offer_required", "Choose a job posting from the reading stack.", 409
+        )
     created = await create_application(
         actions.applications,
         row.user_id,

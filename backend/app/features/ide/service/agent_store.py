@@ -1,8 +1,8 @@
-"""Le port de l'IDE vu par les agents (10.A3, `IdeStore`) : ce que le professeur lit et écrit, et la
-vérification des exercices générés dans le bac à sable. Chaque appel ouvre sa propre session de base
-de données (les nœuds tournent hors requête) ; le professeur écrit par `IdeService` sous l'appelant
-interne « professor » : mêmes validations et même table de notes que Claude (P8). Rien de ce que
-le code d'une utilisatrice contient n'est journalisé."""
+"""The IDE port as seen by the agents (10.A3, `IdeStore`): what the professor reads and writes,
+and the verification of the exercises generated in the sandbox. Each call opens its own database
+session (the nodes run outside a request); the professor writes through `IdeService` under the
+internal caller "professor": same validations and same notes table as Claude (P8). Nothing the
+user's code contains is logged."""
 
 import asyncio
 import logging
@@ -31,9 +31,9 @@ from app.providers.sandbox.base import CodeSandbox, SandboxJob, UnknownRun
 
 logger = logging.getLogger(__name__)
 
-NOTES_SEEN = 30  # les notes relues (les 12 derniers messages en sont tirés, renvois exclus)
-VERIFY_TIMEOUT_S = 15  # durée réelle demandée au bac pour les tests d'un exercice
-VERIFY_WAIT_S = 40.0  # attente totale du résultat (file d'attente comprise)
+NOTES_SEEN = 30  # the notes re-read (the last 12 messages are drawn from them, references excluded)
+VERIFY_TIMEOUT_S = 15  # real duration requested from the sandbox for an exercise's tests
+VERIFY_WAIT_S = 40.0  # total wait for the result (queue included)
 POLL_S = 0.3
 STALE_CODES = frozenset({"note_stale", "note_invalid"})
 
@@ -52,7 +52,7 @@ def _view(note: IdeNote) -> NoteView:
 
 
 class AgentIdeStore:
-    """`providers` : lu à chaque appel (le bac à sable est posé par la composition, ou par un
+    """`providers`: read on each call (the sandbox is set by the composition, or by a
     test)."""
 
     def __init__(
@@ -70,7 +70,7 @@ class AgentIdeStore:
         async with self._factory() as db:
             session = await sessions.get(self._ctx(db, user_id), ide_session_id)
             statement = None
-            if session.exercise_id is not None:  # supprimé depuis : la séance garde son titre
+            if session.exercise_id is not None:  # deleted since: the session keeps its title
                 exercise = await ExerciseRepository(db, user_id).get(session.exercise_id)
                 statement = exercise.statement if exercise is not None else None
             runs = RunRepository(db, user_id)
@@ -108,8 +108,8 @@ class AgentIdeStore:
         base_hash: str | None,
         error_key: str | None,
     ) -> str | None:
-        """Range la note ; `None` si le code a changé depuis la lecture (proposition périmée) ou si
-        la note n'est plus valable : rien n'est rangé."""
+        """Stores the note; `None` if the code has changed since the read (stale proposal) or if
+        the note is no longer valid: nothing is stored."""
         async with self._factory() as db:
             service = IdeService(db, user_id, None, PROFESSOR)
             try:
@@ -126,23 +126,21 @@ class AgentIdeStore:
                     ide_session_id, data, error_key=error_key, level=note.level
                 )
             except ValidationError:
-                logger.info(
-                    "Note du professeur refusée : séance %s, champs invalides", ide_session_id
-                )
+                logger.info("Professor note refused: session %s, invalid fields", ide_session_id)
                 return None
             except AppError as exc:
                 if exc.code not in STALE_CODES:
                     raise
-                logger.info("Note du professeur périmée : séance %s, %s", ide_session_id, exc.code)
+                logger.info("Professor note stale: session %s, %s", ide_session_id, exc.code)
                 await db.rollback()
                 return None
             await db.commit()
             return saved.id
 
     async def verify(self, user_id: str, draft: ExerciseDraft) -> Verification:
-        """Les tests de l'exercice sur sa solution, dans le bac à sable (jamais ici). Les fichiers
-        de test de l'exercice sont remis par-dessus la solution : elle ne peut pas les changer.
-        Des fichiers ou des noms refusés comptent comme un échec lisible."""
+        """The exercise's tests on its solution, in the sandbox (never here). The exercise's test
+        files are put back over the solution: it cannot change them. Refused files or names
+        count as a readable failure."""
         try:
             ExerciseIn(
                 title=draft.title,
@@ -151,7 +149,7 @@ class AgentIdeStore:
                 entry=draft.entry,
             )
         except ValidationError:
-            return Verification(False, "refused", "Les fichiers de l'exercice sont refusés.")
+            return Verification(False, "refused", "The exercise files are refused.")
         tests = {name: text for name, text in draft.files.items() if _is_test(name)}
         job = SandboxJob(
             run_id=uuid4().hex,
@@ -162,21 +160,19 @@ class AgentIdeStore:
         )
         sandbox = self._providers.sandbox
         if sandbox is None:
-            raise AppError("sandbox_unavailable", "Le bac à sable n'est pas disponible.", 503)
+            raise AppError("sandbox_unavailable", "The code sandbox is unavailable.", 503)
         try:
             await sandbox.submit(job)
         except ValueError:
-            return Verification(False, "refused", "La solution dépasse les limites du bac.")
+            return Verification(False, "refused", "The solution exceeds the sandbox limits.")
         except OSError:
-            raise AppError(
-                "sandbox_unavailable", "Le bac à sable n'est pas disponible.", 503
-            ) from None
+            raise AppError("sandbox_unavailable", "The code sandbox is unavailable.", 503) from None
         return await _result(sandbox, job.run_id)
 
     async def save_exercise(
         self, user_id: str, agent_session_id: str, draft: ExerciseDraft, topic: str
     ) -> str:
-        """Range l'exercice vérifié (origine `generated`) ; la solution n'est jamais rangée."""
+        """Stores the verified exercise (origin `generated`); the solution is never stored."""
         async with self._factory() as db:
             data = ExerciseIn(
                 title=draft.title,
@@ -196,17 +192,15 @@ def _is_test(name: str) -> bool:
 
 
 async def _result(box: CodeSandbox, run_id: str) -> Verification:
-    """Interroge le bac jusqu'à la fin du travail (au plus `VERIFY_WAIT_S`)."""
+    """Polls the sandbox until the job is done (at most `VERIFY_WAIT_S`)."""
     started = monotonic()
     while True:
         try:
             progress = await box.poll(run_id, 0)
         except UnknownRun:
-            return Verification(False, "error", "Le bac n'a pas rendu de résultat.")
+            return Verification(False, "error", "The sandbox returned no result.")
         except OSError:
-            raise AppError(
-                "sandbox_unavailable", "Le bac à sable n'est pas disponible.", 503
-            ) from None
+            raise AppError("sandbox_unavailable", "The code sandbox is unavailable.", 503) from None
         if progress.result is not None:
             ok = progress.result.status == "done" and progress.result.exit_code == 0
             return Verification(ok, progress.result.status, progress.output)

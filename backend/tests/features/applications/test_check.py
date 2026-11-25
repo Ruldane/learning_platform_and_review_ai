@@ -23,7 +23,7 @@ async def test_check_by_posting_returns_own_and_alerts(
     assert body["own"] is None and body["info"] == []
     [alert] = body["alerts"]
     assert (alert["level"], alert["application_id"]) == ("probable", own)
-    assert "le 3 novembre" in alert["message"] and "Postulée" in alert["message"]
+    assert "on 3 November (Applied)" in alert["message"]
     r = await _check(client, posting_id=mine)  # sa propre fiche n'est pas un doublon
     assert r.json()["alerts"] == []
     assert r.json()["own"] == {

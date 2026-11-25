@@ -1,6 +1,6 @@
-"""Le fichier d'un document importé, relu pour une autre feature (contrat 2) : le profil maître
-relit le PDF du CV par son fichier, pas par les fragments indexés (preflight G6, D124). Rien
-n'est journalisé du fichier ni de son nom."""
+"""The file of an imported document, read back for another feature (contract 2): the master
+profile rereads the CV PDF from its file, not from the indexed chunks (preflight G6, D124).
+Nothing about the file or its name is logged."""
 
 from dataclasses import dataclass
 
@@ -21,8 +21,8 @@ class StoredFile:
 async def document_file(
     runtime: MemoryRuntime, user_id: str, document_id: str
 ) -> StoredFile | None:
-    """Le fichier du document de l'utilisateur ; `None` s'il est absent, d'un autre ou sans
-    fichier (lien)."""
+    """The file of the user's document; `None` if missing, someone else's or without
+    a file (link)."""
     async with runtime.session_factory() as db:
         doc = await DocumentRepository(db, user_id).get(document_id)
         if doc is None or doc.storage_key is None:
@@ -33,7 +33,7 @@ async def document_file(
 
 
 async def document_tags(db: AsyncSession, user_id: str, document_id: str) -> tuple[str, ...] | None:
-    """Les étiquettes du document de l'utilisateur ; `None` s'il est absent ou d'un autre."""
+    """The tags of the user's document; `None` if missing or someone else's."""
     doc = await DocumentRepository(db, user_id).get(document_id)
     return None if doc is None else tuple(map(str, doc.tags))
 

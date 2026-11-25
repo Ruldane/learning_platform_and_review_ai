@@ -15,7 +15,7 @@ import { ReplanRun } from "./ReplanRun";
 import { ReplanStart } from "./ReplanStart";
 
 /**
- * Replanification d'un programme (`/apprendre/programme/:programId/replanification`). Sans
+ * Replanification d'un programme (`/learn/programs/:programId/replan`). Sans
  * replanification en cours : le formulaire (heures disponibles, message). Avec une : la
  * proposition (changements, charge avant et après, plafond), le fil du Stratège et la carte pour
  * accepter ou refuser. Une replanification qui attend déjà une réponse est rejointe d'office, et

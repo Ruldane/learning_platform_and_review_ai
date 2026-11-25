@@ -24,7 +24,7 @@ _STEPS = TypeAdapter(list[MeetingStudyStep])
 async def require(repo: MeetingModules, module_id: str) -> MeetingModule:
     row = await repo.get(module_id)
     if row is None:
-        raise AppError("meeting_module_not_found", "Module introuvable.", 404)
+        raise AppError("meeting_module_not_found", "Module not found.", 404)
     return row
 
 
@@ -72,7 +72,7 @@ async def prepare(db: AsyncSession, user_id: str, body: MeetingModuleIn) -> Meet
     repo = MeetingModules(db, user_id)
     excerpts = extract(body.transcript)
     if not excerpts:
-        raise AppError("meeting_transcript_empty", "Ajoute un extrait de réunion exploitable.", 422)
+        raise AppError("meeting_transcript_empty", "Add a usable meeting excerpt.", 422)
     row = await repo.add(
         title=body.title,
         transcript=body.transcript,
@@ -89,10 +89,10 @@ async def choose(
     await repo.begin_write()
     row = await require(repo, module_id)
     if row.published_at is not None:
-        raise AppError("meeting_module_published", "Ce module est déjà rangé.", 409)
+        raise AppError("meeting_module_published", "This module is already filed.", 409)
     available = {item["line"] for item in row.excerpts}
     if not set(request.lines) <= available:
-        raise AppError("meeting_excerpt_unknown", "Une ligne sélectionnée est introuvable.", 422)
+        raise AppError("meeting_excerpt_unknown", "A selected line was not found.", 422)
     row.selection = list(request.lines)
     return view(row)
 
@@ -105,12 +105,12 @@ async def publish(
     row = await require(repo, module_id)
     if approved.lines != row.selection:
         raise AppError(
-            "meeting_selection_changed", "La sélection a changé. Relis la séquence.", 409
+            "meeting_selection_changed", "The selection has changed. Reread the sequence.", 409
         )
     if row.published_at is not None:
         return view(row)
     if not row.selection:
-        raise AppError("meeting_selection_required", "Choisis au moins un extrait.", 409)
+        raise AppError("meeting_selection_required", "Choose at least one excerpt.", 409)
     row.module_steps = _STEPS.dump_python(
         study_steps(_EXCERPTS.validate_python(row.excerpts), row.selection)
     )

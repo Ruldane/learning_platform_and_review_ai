@@ -1,6 +1,6 @@
 /** Types de vue des composants des quiz et des révisions : indépendants du contrat d'API (D34). */
 
-export type QuestionTypeView = "qcm" | "short" | "code" | "explain";
+export type QuestionTypeView = "mcq" | "short" | "code" | "explain";
 
 export interface QuestionView {
   id: string;

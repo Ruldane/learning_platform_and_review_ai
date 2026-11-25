@@ -30,11 +30,11 @@ _TOKEN = re.compile(r"trmentor_([a-zA-Z0-9_-]{1,36})\.[a-zA-Z0-9_-]{43}")
 
 
 def _unavailable() -> AppError:
-    return AppError("mentor_link_unavailable", "Lien de relecture indisponible.", 404)
+    return AppError("mentor_link_unavailable", "Review link unavailable.", 404)
 
 
 def _not_found() -> AppError:
-    return AppError("mentor_share_not_found", "Partage de mentor introuvable.", 404)
+    return AppError("mentor_share_not_found", "Mentor share not found.", 404)
 
 
 def _hash(token: str) -> str:
@@ -77,7 +77,9 @@ async def create(db: AsyncSession, user_id: str, approval: MentorShareCreate) ->
     packet_id = str(approval.packet_id)
     packet = await packets.read(db, user_id, packet_id)
     if not compare_digest(packet.digest, approval.expected_digest):
-        raise AppError("mentor_copy_changed", "La copie a changé. Relis-la avant le partage.", 409)
+        raise AppError(
+            "mentor_copy_changed", "The copy has changed. Reread it before sharing.", 409
+        )
     payload = await packets.export(db, user_id, packet_id)
     token = f"trmentor_{user_id}.{token_urlsafe(32)}"
     KnownSecrets.add(token)
@@ -116,7 +118,7 @@ async def mark_comment(
 ) -> MentorOwnedComment:
     row = await MentorComments(db, user_id).get(comment_id)
     if row is None or row.share_id != share_id:
-        raise AppError("mentor_comment_not_found", "Commentaire de mentor introuvable.", 404)
+        raise AppError("mentor_comment_not_found", "Mentor comment not found.", 404)
     row.reviewed = reviewed
     return MentorOwnedComment.model_validate(row, from_attributes=True)
 
@@ -136,12 +138,12 @@ async def read_shared(db: AsyncSession, token: str) -> MentorSharedWork:
 
 async def comment(db: AsyncSession, token: str, body: MentorCommentCreate) -> MentorCommentOut:
     user_id, digest = _scope(token)
-    # La réservation et l’ajout partagent la transaction. Le retrait prend le même verrou SQLite.
+    # The reservation and the insert share the transaction. Revocation takes the same SQLite lock.
     row = await MentorShares(db, user_id).claim_for_comment(digest, utcnow())
     if row is None or row.expires_at <= utcnow():
         raise _unavailable()
     if not any(proof.proof_id == body.proof_id for proof in _manifest(row).proofs):
-        raise AppError("mentor_proof_not_shared", "Ce rendu ne figure pas dans la copie.", 422)
+        raise AppError("mentor_proof_not_shared", "This submission is not in the copy.", 422)
     created = await MentorComments(db, user_id).add(
         share_id=row.id, proof_id=str(body.proof_id), text=body.text
     )

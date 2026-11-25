@@ -97,12 +97,12 @@ async def test_known_skills_merge_user_skills_and_memory(
         skill = Skill(user_id=ME, name="Pandas", norm_name="pandas", synonyms=[])
         db.add(skill)
         await db.flush()
-        db.add(UserSkill(user_id=ME, skill_id=skill.id, level="declare", evidence=[]))
-        for title, level in (("pandas", "valide"), ("SQL avancé", "en_cours")):
+        db.add(UserSkill(user_id=ME, skill_id=skill.id, level="declared", evidence=[]))
+        for title, level in (("pandas", "validated"), ("SQL avancé", "in_progress")):
             db.add(
                 MemoryItem(
                     user_id=ME,
-                    kind="acquis",
+                    kind="skill",
                     title=title,
                     text=f"Acquis {title}",
                     created_by="archivist",
@@ -113,18 +113,18 @@ async def test_known_skills_merge_user_skills_and_memory(
         db.add(
             MemoryItem(
                 user_id=OTHER,
-                kind="acquis",
+                kind="skill",
                 title="Rust",
                 text="Acquis Rust",
                 created_by="user",
                 content_hash="h-rust",
-                meta={"level": "prouve"},
+                meta={"level": "proven"},
             )
         )
         await db.commit()
     ctx = await store.context(ME, rows.goal_id, [rows.proposal_id], None)
-    assert dict(ctx.known_skills) == {"pandas": "valide", "sql avance": "en_cours"}
-    assert ctx.budget.cap_minutes == 714 and ctx.language == "fr"
+    assert dict(ctx.known_skills) == {"pandas": "validated", "sql avance": "in_progress"}
+    assert ctx.budget.cap_minutes == 714 and ctx.language == "en"
     assert [p.name for p in ctx.proposals] == ["Parcours données"]
     assert ctx.current_plan is None
 
@@ -136,8 +136,8 @@ async def test_context_with_program_reads_current_plan(
     program_id, _ = await _save(store, rows.goal_id, sample_plan())
     ctx = await store.context(ME, rows.goal_id, [rows.proposal_id], program_id)
     assert ctx.current_plan is not None
-    assert "Semaine 1 (du 16/11) : Bases" in ctx.current_plan
-    assert "17/11 : Lire le chapitre 1 (lire, 120 min)" in ctx.current_plan
+    assert "Week 1 (from 16/11): Bases" in ctx.current_plan
+    assert "17/11 : Lire le chapitre 1 (read, 120 min)" in ctx.current_plan
 
 
 async def test_goal_weekly_minutes_scale_the_budget(
@@ -147,7 +147,7 @@ async def test_goal_weekly_minutes_scale_the_budget(
     ctx = await store.context(ME, rows.goal_id, [rows.proposal_id], None)
     assert (ctx.budget.weekday_minutes, ctx.budget.weekend_minutes) == (60, 120)
     problems = await store.check_draft(ME, rows.goal_id, sample_plan())
-    assert any("au plus" in problem for problem in problems)
+    assert any("The limit is" in problem for problem in problems)
 
 
 async def test_everything_known_is_nothing_to_plan(
@@ -159,7 +159,7 @@ async def test_everything_known_is_nothing_to_plan(
             skill = Skill(user_id=ME, name=name, norm_name=name, synonyms=[])
             db.add(skill)
             await db.flush()
-            db.add(UserSkill(user_id=ME, skill_id=skill.id, level="prouve", evidence=[]))
+            db.add(UserSkill(user_id=ME, skill_id=skill.id, level="proven", evidence=[]))
         await db.commit()
     with pytest.raises(AppError) as caught:
         await _save(store, rows.goal_id, sample_plan())

@@ -1,11 +1,11 @@
-"""Le Scribe (SPEC 3.3, 9.1, D85) : dessine au tableau en Mermaid `flowchart` (jamais de
-coordonnées) et tient le compte rendu. Il ne prend pas position.
+"""The Scribe (SPEC 3.3, 9.1, D85): draws on the board in Mermaid `flowchart` (never any
+coordinates) and keeps the minutes. It takes no position.
 
-Le Mermaid est analysé par une grammaire stricte puis réémis (`mermaid_rules`) : refusé, une
-nouvelle demande ; encore refusé (ou sortie invalide), aucun tableau, le Conseil continue
-(journal : identifiants). Seule la version réémise est enregistrée et publiée. Chaque
-tableau a son numéro d'étape, tiré de `board_step` de l'état d'entrée : un nœud rejoué réécrit les
-mêmes étapes, que le port enregistre une seule fois (idempotent par session et étape)."""
+The Mermaid is parsed by a strict grammar then re-emitted (`mermaid_rules`): refused, a new
+request; still refused (or invalid output), no board, the Council continues (log:
+identifiers). Only the re-emitted version is recorded and published. Each board has its step
+number, taken from `board_step` of the input state: a replayed node rewrites the same steps,
+which the port records only once (idempotent per session and step)."""
 
 import json
 import logging
@@ -43,7 +43,7 @@ from app.core.errors import AppError
 
 AGENT = "scribe"
 INVALID_OUTPUT_CODE = "structured_output_invalid"
-BOARDS_TIMEOUT_S = 300  # une frise par proposition et une comparaison, deux essais chacune
+BOARDS_TIMEOUT_S = 300  # a timeline per proposal and one comparison, two tries each
 _FENCE = re.compile(r"^```[a-z]*\s*\n|\n?```\s*$")
 
 logger = logging.getLogger(__name__)
@@ -59,12 +59,12 @@ class BoardDraft(BaseModel):
 
 def _title_problems(title: str) -> list[str]:
     if len(title) < MIN_TITLE_CHARS:
-        return [f"Titre trop court : {MIN_TITLE_CHARS} caractères au moins."]
+        return [f"Use a title with at least {MIN_TITLE_CHARS} characters."]
     return []
 
 
 def _clean(code: str) -> str:
-    """Retire une éventuelle balise de code autour du schéma."""
+    """Removes a possible code fence around the diagram."""
     return _FENCE.sub("", code.strip()).strip()
 
 
@@ -84,8 +84,8 @@ def _board_prompt(state: CouncilState, kind: BoardKind, brief: str) -> str:
 async def _valid_draft(
     deps: GraphDeps, messages: list[BaseMessage], step: int
 ) -> BoardDraft | None:
-    """Un schéma qui passe la grammaire, en deux demandes au plus, rendu **normalisé** (réémis
-    par `normalize_mermaid` : le Mermaid brut du modèle ne sort jamais) ; sinon `None`."""
+    """A diagram that passes the grammar, in two requests at most, returned **normalized**
+    (re-emitted by `normalize_mermaid`: the model's raw Mermaid never comes out); else `None`."""
     model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
     for attempt in range(2):
         try:
@@ -95,14 +95,14 @@ async def _valid_draft(
                 messages,
                 agent=AGENT,
                 step=f"tableau-{step}",
-                intent="je dessine au tableau",
+                intent="drawing on the board",
             )
         except AppError as exc:
             if exc.code != INVALID_OUTPUT_CODE:
                 raise
             return None
-        # Nettoyé, le brouillon n'est pas revalidé (une `ValidationError` sortirait du nœud et
-        # ferait échouer le Conseil) : ses défauts sont des refus, donc une nouvelle demande.
+        # Once cleaned, the draft is not validated again (a `ValidationError` would leave the node
+        # and make the Council fail): its defects are refusals, hence a new request.
         title, code = " ".join(draft.title.split()), _clean(draft.mermaid)
         problems = _title_problems(title) + mermaid_problems(code)
         if not problems:
@@ -113,7 +113,9 @@ async def _valid_draft(
             messages = [
                 *messages,
                 AIMessage(json.dumps(shown, ensure_ascii=False)),
-                HumanMessage(f"Schéma refusé :\n{refused}\nRedessine-le en respectant les règles."),
+                HumanMessage(
+                    f"Diagram rejected:\n{refused}\nRedraw it using the supported syntax."
+                ),
             ]
     return None
 
@@ -121,17 +123,15 @@ async def _valid_draft(
 async def draw(
     deps: GraphDeps, state: CouncilState, *, kind: BoardKind, step: int, brief: str
 ) -> str | None:
-    """Dessine un tableau, l'enregistre (idempotent) puis publie `board.update` ; rend son id, ou
-    `None` si aucun schéma valable n'a été obtenu."""
+    """Draws a board, records it (idempotent) then publishes `board.update`; returns its id, or
+    `None` if no valid diagram was obtained."""
     messages: list[BaseMessage] = [
         SystemMessage(_board_prompt(state, kind, brief)),
-        HumanMessage("Dessine le tableau."),
+        HumanMessage("Draw the board."),
     ]
     draft = await _valid_draft(deps, messages, step)
     if draft is None:
-        logger.warning(
-            "Tableau non dessiné (%s) : session %s, étape %d", kind, deps.session_id, step
-        )
+        logger.warning("Board not drawn (%s): session %s, step %d", kind, deps.session_id, step)
         return None
     board_id = await deps.ports.council.save_board(
         deps.user_id,
@@ -159,7 +159,7 @@ async def draw(
 def make_domain_map(deps: GraphDeps) -> Node:
     @node_timeout()
     async def domain_map(state: CouncilState) -> CouncilState:
-        """Carte du domaine, d'après les positions du tour 1."""
+        """Domain map, based on the round 1 positions."""
         step = state.get("board_step", 0) + 1
         positions = [t for t in state.get("turns", []) if t["round"] == 1]
         await draw(deps, state, kind="domain_map", step=step, brief=transcript_prompt(positions))
@@ -171,7 +171,7 @@ def make_domain_map(deps: GraphDeps) -> Node:
 def make_prerequisites(deps: GraphDeps) -> Node:
     @node_timeout()
     async def prerequisites(state: CouncilState) -> CouncilState:
-        """Graphe des prérequis, d'après tout le débat."""
+        """Prerequisites graph, based on the whole debate."""
         step = state.get("board_step", 0) + 1
         brief = transcript_prompt(state.get("turns", []))
         await draw(deps, state, kind="prerequisites", step=step, brief=brief)
@@ -183,7 +183,7 @@ def make_prerequisites(deps: GraphDeps) -> Node:
 def make_minutes(deps: GraphDeps) -> Node:
     @node_timeout()
     async def minutes(state: CouncilState) -> CouncilState:
-        """Compte rendu (200 mots au plus, cité), gardé sur l'objectif pour le Stratège."""
+        """Minutes (200 words at most, cited), kept on the goal for the Strategist."""
         prompt = render_prompt(
             AGENT,
             mode="minutes",
@@ -195,10 +195,10 @@ def make_minutes(deps: GraphDeps) -> Node:
         model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
         spoken = await speak(
             model,
-            [SystemMessage(prompt), HumanMessage("Rédige le compte rendu.")],
+            [SystemMessage(prompt), HumanMessage("Write the minutes.")],
             agent=AGENT,
             step=f"compte-rendu-{state.get('round', 1)}",
-            intent="je rédige le compte rendu",
+            intent="writing the minutes",
             catalog=citation_entries(state),
             max_words=MINUTES_WORDS,
         )
@@ -211,25 +211,25 @@ def make_minutes(deps: GraphDeps) -> Node:
 def _proposal_lines(proposal: dict[str, Any]) -> str:
     return "\n".join(
         [
-            f"Nom : {proposal['name']}",
-            f"Promesse : {proposal.get('promise', '')}",
-            f"Durée : {proposal.get('duration_weeks', '?')} semaines, "
-            f"{proposal.get('weekly_hours', '?')} h par semaine",
-            f"Compétences : {', '.join(proposal.get('skills', []))}",
-            f"Projet final : {proposal.get('final_project', '')}",
-            f"Compromis : {' ; '.join(proposal.get('tradeoffs', []))}",
+            f"Name: {proposal['name']}",
+            f"Promise: {proposal.get('promise', '')}",
+            f"Duration: {proposal.get('duration_weeks', '?')} weeks, "
+            f"{proposal.get('weekly_hours', '?')} h per week",
+            f"Skills: {', '.join(proposal.get('skills', []))}",
+            f"Final project: {proposal.get('final_project', '')}",
+            f"Trade-offs: {' ; '.join(proposal.get('tradeoffs', []))}",
         ]
     )
 
 
 def _proposal_brief(proposal: dict[str, Any]) -> str:
-    return untrusted(_proposal_lines(proposal), f"proposition {proposal['rank']}")
+    return untrusted(_proposal_lines(proposal), f"proposal {proposal['rank']}")
 
 
 def make_proposal_boards(deps: GraphDeps) -> Node:
     @node_timeout(BOARDS_TIMEOUT_S)
     async def proposal_boards(state: CouncilState) -> CouncilState:
-        """Une frise par proposition (rattachée à elle), puis la comparaison du lot."""
+        """A timeline per proposal (attached to it), then the comparison of the batch."""
         proposals = state.get("proposals", [])
         step = state.get("board_step", 0)
         for proposal in proposals:

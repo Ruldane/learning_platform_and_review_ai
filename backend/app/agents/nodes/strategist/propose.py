@@ -1,10 +1,10 @@
-"""Le Stratège propose 2 à 3 parcours (SPEC 3.1, étape 5, D85), par lot : un nouveau tour de
-débat demandé au moment du choix donne un nouveau lot. Il part du compte rendu du Scribe (sortie
-d'agent, encadrée), des messages de January, de l'objectif et du cadrage.
+"""The Strategist proposes 2 to 3 paths (SPEC 3.1, step 5, D85), per batch: a new round of
+debate requested at the time of the choice gives a new batch. It starts from the Scribe's minutes
+(agent output, wrapped), January's messages, the goal and the framing.
 
-Rejoué après un arrêt, le nœud relit d'abord le lot déjà enregistré (`saved_proposals`) et le
-réémet tel quel, noms et détails ensemble, sans rappeler le modèle (D85) ; l'écriture reste
-idempotente par `(session, lot)`, jamais un second lot."""
+Replayed after a stop, the node first rereads the batch already recorded (`saved_proposals`) and
+re-emits it as is, names and details together, without calling the model again (D85); the write
+stays idempotent per `(session, batch)`, never a second batch."""
 
 from typing import Any
 
@@ -31,12 +31,12 @@ class ProposalSet(BaseModel):
 
 
 def _prompt(state: CouncilState) -> str:
-    minutes = state.get("minutes") or "Pas de compte rendu."
+    minutes = state.get("minutes") or "No minutes."
     return render_prompt(
         AGENT,
         mode="propose",
         **goal_vars(state),
-        minutes=untrusted(minutes, "compte rendu du Scribe"),
+        minutes=untrusted(minutes, "Scribe's minutes"),
         notes=notes_prompt(state.get("notes", [])),
         min_proposals=MIN_PROPOSALS,
         max_proposals=MAX_PROPOSALS,
@@ -54,15 +54,15 @@ def _entry(saved: SavedProposal) -> dict[str, Any]:
 
 
 async def _draft(deps: GraphDeps, state: CouncilState, batch: int) -> list[SavedProposal]:
-    """Nouveau lot : le Stratège rédige, le port enregistre (ids, rangs, noms)."""
+    """New batch: the Strategist writes, the port records (ids, ranks, names)."""
     model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
     found = await structured_call(
         model,
         ProposalSet,
-        [SystemMessage(_prompt(state)), HumanMessage("Propose les parcours.")],
+        [SystemMessage(_prompt(state)), HumanMessage("Propose the paths.")],
         agent=AGENT,
         step=f"propositions-{batch}",
-        intent="je propose des parcours",
+        intent="suggesting learning paths",
     )
     refs = await deps.ports.council.save_proposals(
         deps.user_id, deps.session_id, state["goal_id"], batch=batch, proposals=found.proposals

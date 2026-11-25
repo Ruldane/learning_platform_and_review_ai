@@ -19,13 +19,13 @@ function readState(state: unknown): { lessonId: string | null; question: string 
 
 /**
  * La leçon choisie hors du bloc du jour : l'état de navigation `{ lessonId, question }` (bouton
- * « Demander au tuteur » d'une leçon) ou `?lecon={id}` (sans question). `null` : le bloc du jour.
+ * « Demander au tuteur » d'une leçon) ou `?lesson={id}` (sans question). `null` : le bloc du jour.
  */
 export function useChosenLesson(): ChosenLesson | null {
   const location = useLocation();
   const [params] = useSearchParams();
   const fromState = readState(location.state);
-  const lessonId = fromState.lessonId ?? params.get("lecon");
+  const lessonId = fromState.lessonId ?? params.get("lesson") ?? params.get("lecon");
   if (lessonId === null || lessonId === "") return null;
   return { lessonId, question: fromState.lessonId === null ? null : fromState.question };
 }

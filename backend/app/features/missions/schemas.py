@@ -21,7 +21,7 @@ class MissionCreate(BaseModel):
     @model_validator(mode="after")
     def unique_requirements(self) -> Self:
         if len(set(self.requirement_indices)) != len(self.requirement_indices):
-            raise ValueError("Choisis des exigences distinctes.")
+            raise ValueError("Choose distinct requirements.")
         return self
 
 

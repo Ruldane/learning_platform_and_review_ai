@@ -1,4 +1,4 @@
-"""Réserver une étape à la fois et reprendre au dernier résultat rangé."""
+"""Reserve one step at a time and resume from the last stored result."""
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -80,9 +80,9 @@ async def submit(
         steps = stored_steps(row)
         current = active(steps)
         if current is None or current.kind != kind:
-            raise AppError("recruitment_wrong_step", "Termine d’abord l’étape ouverte.", 409)
+            raise AppError("recruitment_wrong_step", "Finish the open step first.", 409)
         if await _state(db, user_id, current) == "evaluating":
-            raise AppError("recruitment_busy", "Cette étape est déjà en évaluation.", 409)
+            raise AppError("recruitment_busy", "This step is already being evaluated.", 409)
         current.answer = answer
         current.session_id = session_id
         row.steps = [step.model_dump(mode="json") for step in steps]

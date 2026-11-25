@@ -18,41 +18,41 @@ const ITEMS: ReminderItemView[] = [
 describe("RemindersCard", () => {
   it("lists the company, the position and the due date of each reminder", () => {
     render(<RemindersCard due={2} items={ITEMS} onOpen={vi.fn()} />);
-    const list = screen.getByRole("list", { name: "Relances à faire" });
-    expect(list).toHaveTextContent("Société Fictive, poste Data engineer");
-    expect(list).toHaveTextContent("à faire le lun. 16 nov.");
-    expect(list).toHaveTextContent("Autre SA, poste Analyste");
+    const list = screen.getByRole("list", { name: "Follow-ups to do" });
+    expect(list).toHaveTextContent("Société Fictive, Data engineer role");
+    expect(list).toHaveTextContent("due on Mon 16 Nov");
+    expect(list).toHaveTextContent("Autre SA, Analyste role");
   });
 
   it("opens the application of the reminder that is clicked", async () => {
     const user = userEvent.setup();
     const onOpen = vi.fn();
     render(<RemindersCard due={2} items={ITEMS} onOpen={onOpen} />);
-    await user.click(screen.getByRole("button", { name: "Autre SA, poste Analyste" }));
+    await user.click(screen.getByRole("button", { name: "Autre SA, Analyste role" }));
     expect(onOpen).toHaveBeenCalledWith("a2");
   });
 
   it("says how many more reminders are due beyond the ones shown", () => {
     render(<RemindersCard due={7} items={ITEMS} onOpen={vi.fn()} />);
-    expect(screen.getByText("5 autres relances dues.")).toBeInTheDocument();
+    expect(screen.getByText("5 more follow-ups due.")).toBeInTheDocument();
   });
 
   it("gives the count, without an empty list, when reminders are due but none is listed", () => {
     render(<RemindersCard due={3} items={[]} onOpen={vi.fn()} />);
-    expect(screen.getByText("3 relances dues.")).toBeInTheDocument();
+    expect(screen.getByText("3 follow-ups due.")).toBeInTheDocument();
     expect(screen.queryByRole("list")).toBeNull();
-    expect(screen.queryByText(/autres relances/)).toBeNull();
+    expect(screen.queryByText(/more follow-ups/)).toBeNull();
   });
 
   it("says there is nothing due", () => {
     render(<RemindersCard due={0} items={[]} onOpen={vi.fn()} />);
-    expect(screen.getByText("Aucune relance due.")).toBeInTheDocument();
+    expect(screen.getByText("No follow-ups due.")).toBeInTheDocument();
     expect(screen.queryByRole("list")).toBeNull();
   });
 
   it("says the rubric is unavailable instead of a false zero when its source failed", () => {
     render(<RemindersCard due={0} items={[]} unavailable onOpen={vi.fn()} />);
-    expect(screen.getByText("Rubrique indisponible ce matin.")).toBeInTheDocument();
-    expect(screen.queryByText("Aucune relance due.")).toBeNull();
+    expect(screen.getByText("Section unavailable this morning.")).toBeInTheDocument();
+    expect(screen.queryByText("No follow-ups due.")).toBeNull();
   });
 });

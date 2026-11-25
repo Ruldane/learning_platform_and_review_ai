@@ -1,10 +1,11 @@
-"""Ce que les personas du comité lisent (D147) : le CV et l'offre (toujours encadrés par
-`untrusted`, 17.4), le dossier de l'entreprise à partir du débat, les termes de l'offre vus dans
-le CV (Lecteur ATS) et tout ce que les autres ont dit (sortie d'un agent : encadrée aussi). Un
-morceau absent est dit absent, jamais inventé.
+"""What the committee personas read (D147): the CV and the posting (always wrapped by
+`untrusted`, 17.4), the company dossier from the debate on, the posting terms seen in the CV
+(ATS Reader) and everything the others said (agent output: wrapped too). A missing piece is
+said to be missing, never invented.
 
-À la première impression, une persona ne voit que le CV et l'offre (SPEC F19) : le dossier n'entre
-qu'ensuite ; la taille de l'entreprise, elle, règle le ton dès le début (`_shared/committee.md`)."""
+At the first impression, a persona only sees the CV and the posting (SPEC F19): the dossier only
+comes in afterwards; the company size, however, sets the tone from the start
+(`_shared/committee.md`)."""
 
 from collections.abc import Sequence
 from typing import Any
@@ -15,31 +16,31 @@ from app.agents.prompts.loader import untrusted
 from app.agents.tools.committee_schema import LABELS, MAX_WORDS, CommitteeContext, Persona
 
 MAX_POSTING_CHARS = 12_000
-NO_DOSSIER = "Aucun dossier sur l'entreprise."
-NO_SPEECH = "Personne n'a encore parlé."
-STEP_LABELS = {0: "première impression", 1: "tour 1", 2: "tour 2"}
+NO_DOSSIER = "No company dossier is available."
+NO_SPEECH = "The discussion has yet to start."
+STEP_LABELS = {0: "first impression", 1: "round 1", 2: "round 2"}
 
 
 def dossier_block(ctx: CommitteeContext) -> str:
     if ctx.dossier is None:
         return NO_DOSSIER
-    return untrusted("\n".join(dossier_lines(ctx.dossier)), "dossier de l'entreprise")
+    return untrusted("\n".join(dossier_lines(ctx.dossier)), "company dossier")
 
 
 def ats_terms_block(ctx: CommitteeContext) -> str:
-    """Les termes de l'offre que le CV écrit ou n'écrit pas (ils viennent de l'offre : encadrés)."""
-    found = ", ".join(ctx.ats_terms.found) or "aucun"
-    missing = ", ".join(ctx.ats_terms.missing) or "aucun"
-    lines = [f"Termes de l'offre écrits dans le CV : {found}", f"Absents du CV : {missing}"]
-    return untrusted("\n".join(lines), "offre:termes")
+    """The posting terms the CV does or does not write (they come from the posting: wrapped)."""
+    found = ", ".join(ctx.ats_terms.found) or "none"
+    missing = ", ".join(ctx.ats_terms.missing) or "none"
+    lines = [f"Posting terms found in the CV: {found}", f"Missing from the CV: {missing}"]
+    return untrusted("\n".join(lines), "posting terms")
 
 
 def transcript_text(spoken: Sequence[dict[str, Any]]) -> str:
-    """Tout ce qui s'est dit, dans l'ordre : chaque parole encadrée (sortie d'un autre agent)."""
+    """Everything that was said, in order: each speech wrapped (output of another agent)."""
     if not spoken:
         return NO_SPEECH
     return "\n\n".join(
-        f"{LABELS[item['persona']]}, {STEP_LABELS[item['round']]} :\n"
+        f"{LABELS[item['persona']]}, {STEP_LABELS[item['round']]}:\n"
         + untrusted(item["text"], f"{item['persona']} {STEP_LABELS[item['round']]}")
         for item in spoken
     )
@@ -53,7 +54,7 @@ def persona_vars(
     round_number: int = 0,
     addressee: Persona | None = None,
 ) -> dict[str, Any]:
-    """Les variables du prompt d'une persona (mode `committee`) pour l'étape `step`."""
+    """The prompt variables of a persona (`committee` mode) for step `step`."""
     return {
         "mode": "committee",
         "persona": persona,
@@ -61,8 +62,8 @@ def persona_vars(
         "persona_name": LABELS[persona],
         "size": ctx.size,
         "cv": untrusted(ctx.cv_text, "cv"),
-        "posting": untrusted(ctx.posting_text[:MAX_POSTING_CHARS], "offre"),
-        "analysis": untrusted(analysis_text(ctx.analysis), "offre:analyse"),
+        "posting": untrusted(ctx.posting_text[:MAX_POSTING_CHARS], "job posting"),
+        "analysis": untrusted(analysis_text(ctx.analysis), "posting analysis"),
         "dossier": "" if step == "impression" else dossier_block(ctx),
         "ats_terms": ats_terms_block(ctx),
         "transcript": transcript_text(spoken),

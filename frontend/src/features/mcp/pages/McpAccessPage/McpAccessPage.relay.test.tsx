@@ -8,7 +8,7 @@ import { McpAccessPage } from "./McpAccessPage";
 
 const root = "*/api/v1/mcp/relay";
 
-it("remet le code seulement au relais local et affiche son nouvel état", async () => {
+it("passes the pairing code to the local relay and shows its new state", async () => {
   const code = `trp_${"A".repeat(43)}`;
   const fetchSpy = vi.spyOn(globalThis, "fetch");
   const received: unknown[] = [];
@@ -25,13 +25,13 @@ it("remet le code seulement au relais local et affiche son nouvel état", async 
     }),
     ...mcpApi().handlers,
   );
-  const routes = [{ path: "/reglages/mcp", element: <McpAccessPage /> }];
-  const { user } = renderRoutes(routes, "/reglages/mcp");
+  const routes = [{ path: "/settings/mcp", element: <McpAccessPage /> }];
+  const { user } = renderRoutes(routes, "/settings/mcp");
 
-  expect(await screen.findByText("Périmètre incomplet")).toBeInTheDocument();
-  expect(screen.getByText(/Portées manquantes.*lessons/)).toBeInTheDocument();
-  await user.click(screen.getByRole("button", { name: "Renouveler l’appairage" }));
-  expect(await screen.findByText("Relais connecté")).toBeInTheDocument();
+  expect(await screen.findByText("Incomplete scope")).toBeInTheDocument();
+  expect(screen.getByText(/Missing scopes.*lessons/)).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Renew pairing" }));
+  expect(await screen.findByText("Relay connected")).toBeInTheDocument();
   expect(received).toEqual([{ code }]);
   expect(fetchSpy).toHaveBeenCalledWith(
     "http://127.0.0.1:8770/pair",

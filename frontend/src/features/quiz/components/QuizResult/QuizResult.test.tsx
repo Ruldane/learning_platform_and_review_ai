@@ -54,7 +54,7 @@ const FAILED: AttemptResultView = {
 };
 
 const detailItems = () =>
-  within(screen.getByRole("list", { name: "Détail par question" })).getAllByRole("listitem");
+  within(screen.getByRole("list", { name: "Breakdown by question" })).getAllByRole("listitem");
 
 function detail(rank: number): HTMLElement {
   const item = detailItems()[rank - 1];
@@ -65,33 +65,33 @@ function detail(rank: number): HTMLElement {
 describe("QuizResult", () => {
   it("validates the skill at 80 percent", () => {
     render(<QuizResult result={{ ...PASSED, score: 80 }} />);
-    expect(screen.getByText("80 %")).toBeInTheDocument();
-    expect(screen.getByText("Acquis validé")).toBeInTheDocument();
-    expect(screen.queryByText(/pas encore validé/)).not.toBeInTheDocument();
+    expect(screen.getByText("80%")).toBeInTheDocument();
+    expect(screen.getByText("Skill validated")).toBeInTheDocument();
+    expect(screen.queryByText(/not validated yet/)).not.toBeInTheDocument();
   });
 
   it("says what is missing below 80 percent", () => {
     render(<QuizResult result={FAILED} />);
-    expect(screen.getByText("50 %")).toBeInTheDocument();
-    expect(screen.queryByText("Acquis validé")).not.toBeInTheDocument();
-    expect(screen.getByText(/pas encore validé : il faut 80 %/)).toBeInTheDocument();
+    expect(screen.getByText("50%")).toBeInTheDocument();
+    expect(screen.queryByText("Skill validated")).not.toBeInTheDocument();
+    expect(screen.getByText(/you need 80% to validate it/)).toBeInTheDocument();
   });
 
   it("totals the points", () => {
     render(<QuizResult result={FAILED} />);
-    expect(screen.getByText("Points : 1,5 sur 3")).toBeInTheDocument();
+    expect(screen.getByText("Points: 1.5 of 3")).toBeInTheDocument();
   });
 
   it("shows explanation for each error", () => {
     render(<QuizResult result={FAILED} />);
     expect(detailItems()).toHaveLength(3);
-    expect(detail(2)).toHaveTextContent("En partie juste");
-    expect(detail(2)).toHaveTextContent("0,5 point");
+    expect(detail(2)).toHaveTextContent("Partly correct");
+    expect(detail(2)).toHaveTextContent("0.5 pt");
     expect(detail(2)).toHaveTextContent("Il montre le plan d'exécution.");
     expect(detail(2)).toHaveTextContent("EXPLAIN décrit le plan choisi");
     expect(detail(2)).toHaveTextContent("Tu as vu le plan mais pas qu'il n'exécute rien.");
-    expect(detail(3)).toHaveTextContent("Faux");
-    expect(detail(3)).toHaveTextContent("0 point");
+    expect(detail(3)).toHaveTextContent("Wrong");
+    expect(detail(3)).toHaveTextContent("0 pt");
     expect(detail(3)).toHaveTextContent("Une jointure relie des lignes de deux tables.");
     expect(detail(3)).toHaveTextContent("Elle associe les lignes selon une condition commune.");
     expect(detail(3)).toHaveTextContent("Tu parles de tri, pas de liaison entre tables.");
@@ -101,7 +101,7 @@ describe("QuizResult", () => {
   it("keeps the details of a right answer one click away", () => {
     render(<QuizResult result={FAILED} />);
     const first = detail(1);
-    expect(first).toHaveTextContent("Juste");
+    expect(first).toHaveTextContent("Correct");
     const details = first.querySelector("details");
     expect(details).not.toBeNull();
     expect(details).not.toHaveAttribute("open");
@@ -111,19 +111,19 @@ describe("QuizResult", () => {
 
   it("omits the empty feedback of a multiple choice question", () => {
     render(<QuizResult result={FAILED} />);
-    expect(detail(1)).not.toHaveTextContent("Retour sur ta réponse");
+    expect(detail(1)).not.toHaveTextContent("Feedback on your answer");
   });
 
   it("shows retry date and unplaced warning", () => {
     render(<QuizResult result={{ ...FAILED, followup: { ...FOLLOWUP, unplaced: 1 } }} />);
     expect(
-      screen.getByRole("list", { name: "Révisions ajoutées à ton planning" }),
+      screen.getByRole("list", { name: "Reviews added to your schedule" }),
     ).toHaveTextContent("Réviser : SQL");
     expect(
-      screen.getByText("Nouvel essai possible à partir du mardi 17 novembre."),
+      screen.getByText("You can try again from Tuesday 17 November."),
     ).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent(
-      "1 révision n'a pas trouvé de place dans ton budget",
+      "1 review didn’t fit in your budget",
     );
   });
 
@@ -131,16 +131,16 @@ describe("QuizResult", () => {
     const { rerender } = render(
       <QuizResult result={{ ...FAILED, followup: { ...FOLLOWUP, unplaced: 2 } }} />,
     );
-    expect(screen.getByRole("status")).toHaveTextContent("2 révisions n'ont pas trouvé de place");
+    expect(screen.getByRole("status")).toHaveTextContent("2 reviews didn’t fit in your budget");
     rerender(<QuizResult result={FAILED} />);
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
   it("shows no follow-up after a pass", () => {
     render(<QuizResult result={PASSED} />);
-    expect(screen.queryByText(/Nouvel essai/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/You can try again/)).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("list", { name: "Révisions ajoutées à ton planning" }),
+      screen.queryByRole("list", { name: "Reviews added to your schedule" }),
     ).not.toBeInTheDocument();
   });
 });

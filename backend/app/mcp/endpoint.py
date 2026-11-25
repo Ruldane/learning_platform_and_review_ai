@@ -58,7 +58,7 @@ def _as_int(text: str) -> int:
 
 async def _read_body(request: Request, limit: int) -> bytes:
     """Le corps, lu par morceaux et abandonné au dépassement de `limit` octets (413)."""
-    too_large = AppError("body_too_large", "Corps trop volumineux : 1 Mo au maximum.", 413)
+    too_large = AppError("body_too_large", "Body too large: 1 MB at most.", 413)
     declared = request.headers.get("content-length", "")
     if declared.isascii() and declared.isdecimal() and _as_int(declared) > limit:
         raise too_large
@@ -73,7 +73,7 @@ async def _read_body(request: Request, limit: int) -> bytes:
 
 
 def _reject_constant(name: str) -> Any:
-    raise ValueError(f"constante JSON refusée : {name}")
+    raise ValueError(f"JSON constant refused: {name}")
 
 
 def _parse(body: bytes) -> Any:
@@ -90,15 +90,11 @@ def _check_headers(request: Request, payload: dict[str, Any]) -> JSONResponse | 
     version = request.headers.get("mcp-protocol-version")
     if version is not None and method != "initialize" and version not in SUPPORTED_VERSIONS:
         data = {"supported": list(SUPPORTED_VERSIONS), "requested": version[:40]}
-        message = rpc_error(
-            None, UNSUPPORTED_VERSION, "Version du protocole non prise en charge.", data
-        )
+        message = rpc_error(None, UNSUPPORTED_VERSION, "Protocol version not supported.", data)
         return _rpc_response(message, 400)
     declared = request.headers.get("mcp-method")
     if declared is not None and declared != method:
-        message = rpc_error(
-            None, HEADER_MISMATCH, "L'en-tête Mcp-Method ne correspond pas au corps."
-        )
+        message = rpc_error(None, HEADER_MISMATCH, "The Mcp-Method header does not match the body.")
         return _rpc_response(message, 400)
     return None
 
@@ -106,7 +102,7 @@ def _check_headers(request: Request, payload: dict[str, Any]) -> JSONResponse | 
 async def _serve_post(request: Request) -> Response:
     gate: McpGate | None = getattr(request.app.state, "mcp_gate", None)
     if gate is None:
-        raise AppError("mcp_unavailable", "Le serveur MCP n'est pas prêt.", 503)
+        raise AppError("mcp_unavailable", "The MCP server is not ready.", 503)
     try:
         async with request.app.state.session_factory() as db:
             identity = await authenticate(request, db)
@@ -117,7 +113,9 @@ async def _serve_post(request: Request) -> Response:
     body = await _read_body(request, request.app.state.settings.mcp_body_limit)
     payload = _parse(body)
     if not isinstance(payload, dict):
-        message = rpc_error(None, PARSE_ERROR, "JSON illisible, ou message qui n'est pas un objet.")
+        message = rpc_error(
+            None, PARSE_ERROR, "Unreadable JSON, or a message that is not an object."
+        )
         return _rpc_response(message, 400)
     if (refused := _check_headers(request, payload)) is not None:
         return refused
@@ -139,7 +137,7 @@ async def mcp_endpoint(request: Request) -> Response:
     """`POST /mcp`. Toute autre méthode : 405."""
     if request.method != "POST":
         return JSONResponse(
-            {"error": {"code": "http_error", "message": "Méthode non autorisée.", "details": None}},
+            {"error": {"code": "http_error", "message": "Method not allowed.", "details": None}},
             status_code=405,
             headers={"Allow": "POST", **_NO_STORE},
         )

@@ -12,7 +12,7 @@ import { useReminders } from "../../hooks/useReminders";
 import { BOARD_PATH } from "../../urls";
 
 /**
- * Les relances dues (`/candidatures/relances`) : qui contacter, le brouillon à copier, puis Fait,
+ * Les relances dues (`/applications/reminders`) : qui contacter, le brouillon à copier, puis Fait,
  * Reporter de 3 jours ou Ignorer (« Classer en Sans réponse » pour la dernière relance). Rien n'est
  * envoyé par l'application. Une relance traitée disparaît de la liste, annoncée dans une zone
  * vocale ; le focus revient alors sur le titre de la page, au-dessus de la liste.

@@ -1,18 +1,19 @@
-"""Contrat du radar du marché (SPEC 14.2, P10, D160). Le poste et la zone sont des données
-personnelles : une 422 nomme les champs, sans jamais les recopier (route à `FieldPathsRoute`)."""
+"""Market radar contract (SPEC 14.2, P10, D160). The role and the zone are personal data: a
+422 names the fields, never copying them back (route with `FieldPathsRoute`)."""
 
 from datetime import datetime
 from typing import Annotated
 
 from pydantic import BaseModel, StringConstraints
 
+from app.agents.tools.posting_schema import PostingLevel
 from app.db.models.daily import RadarStatus, RadarTrigger
 
 Label = Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=120)]
 
 
 class RadarRunIn(BaseModel):
-    """Poste et zone du relevé ; absents : ceux des réglages, puis du dernier objectif."""
+    """Role and zone of the run; when absent: those of the settings, then of the last goal."""
 
     role: Label | None = None
     zone: Label | None = None
@@ -34,8 +35,8 @@ class DomainCount(BaseModel):
 
 
 class TrendOut(BaseModel):
-    """Une compétence du classement. `delta_share` : points de pourcentage depuis le relevé
-    précédent ; `delta_rank` : rangs gagnés (positif) ou perdus ; `None` sans relevé précédent."""
+    """A skill of the ranking. `delta_share`: percentage points since the previous run;
+    `delta_rank`: ranks gained (positive) or lost; `None` without a previous run."""
 
     skill: str
     count: int
@@ -56,7 +57,7 @@ class OfferOut(BaseModel):
     url: str
     title: str | None
     company: str | None
-    level: str
+    level: PostingLevel
     remote: str | None
     salary: str | None
     score: int
@@ -79,10 +80,10 @@ class RadarRunSummary(BaseModel):
 
 
 class RadarRunOut(RadarRunSummary):
-    """Un relevé, avec les nombres réels. `read_count` : pages lisibles ; `not_postings` : celles
-    qui n'étaient pas des offres ; `analyzed` : offres analysées ; `not_analyzed` : offres lues
-    mais pas analysées (extraction en échec, ou au-delà des 50 lues d'un relevé) : l'écart ne se
-    cache jamais (« 55 lues, 50 analysées »)."""
+    """A run, with the real numbers. `read_count`: readable pages; `not_postings`: those that
+    were not postings; `analyzed`: postings analyzed; `not_analyzed`: postings read but not
+    analyzed (extraction failed, or beyond the 50 read in a run): the gap is never hidden
+    ("55 read, 50 analyzed")."""
 
     not_analyzed: int
     blocked_domains: list[DomainCount]

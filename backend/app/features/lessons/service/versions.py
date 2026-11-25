@@ -1,4 +1,4 @@
-"""Lecture des versions publiées et garde de révision pour la veille."""
+"""Reading published versions and the revision guard for the watch."""
 
 from dataclasses import dataclass
 from hashlib import sha256
@@ -40,7 +40,7 @@ class RevisionGuard:
     def check(self, row: Lesson) -> None:
         if fingerprint(row.title, row.markdown) != self.digest:
             raise AppError(
-                "lesson_update_stale", "La leçon publiée a changé depuis cette proposition.", 409
+                "lesson_update_stale", "The published lesson has changed since this proposal.", 409
             )
 
 
@@ -49,7 +49,7 @@ async def published_version(db: AsyncSession, user_id: str, lesson_id: str) -> P
     if row is None:
         raise lesson_not_found()
     if row.status != "ready":
-        raise AppError("lesson_not_ready", "Cette leçon n'est pas encore prête.", 409)
+        raise AppError("lesson_not_ready", "This lesson is not ready yet.", 409)
     return PublishedVersion.of(row)
 
 

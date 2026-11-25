@@ -1,1 +1,1 @@
-"""Synchronisation locale des documents Cerveau."""
+"""Local sync of Brain documents."""

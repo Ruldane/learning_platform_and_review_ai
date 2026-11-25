@@ -1,10 +1,10 @@
-"""Schémas de l'API de la recherche web : compteur Brave du mois et sources d'une session."""
+"""Web research API schemas: the month's Brave counter and a session's sources."""
 
 from pydantic import BaseModel, ConfigDict
 
 from app.db.models.research import PageStatus, SourceKind, SourceVerdict
 
-# Les types littéraux sont réexportés : un router n'importe pas `app.db` (contrat 1b).
+# The literal types are re-exported: a router does not import `app.db` (contract 1b).
 __all__ = [
     "BraveUsageOut",
     "PageStatus",
@@ -16,7 +16,7 @@ __all__ = [
 
 
 class BraveUsageOut(BaseModel):
-    """Requêtes Brave du mois civil UTC (`month` : « AAAA-MM ») pour la clé en vigueur."""
+    """Brave requests of the UTC calendar month (`month`: "YYYY-MM") for the current key."""
 
     has_key: bool
     used: int
@@ -41,4 +41,4 @@ class SourceOut(BaseModel):
     verdict: SourceVerdict
     score: int | None
     reason: str | None
-    kind: SourceKind  # `person` : praticien repéré par l'Éclaireur (phase 4, D82)
+    kind: SourceKind  # `person`: practitioner spotted by the Scout (phase 4, D82)

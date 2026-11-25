@@ -10,8 +10,8 @@ from app.db.repository import UserScopedRepository
 
 
 class LessonRepository(UserScopedRepository[Lesson]):
-    """Leçons d'un utilisateur, une par module. Lectures fraîches (`populate_existing`) : sous le
-    verrou des leçons d'un programme, une requête voit ce que la précédente a commité."""
+    """A user's lessons, one per module. Fresh reads (`populate_existing`): under a program's
+    lessons lock, a query sees what the previous one committed."""
 
     model = Lesson
 
@@ -23,7 +23,7 @@ class LessonRepository(UserScopedRepository[Lesson]):
         *,
         followed_only: bool = False,
     ) -> builtins.list[Lesson]:
-        """Leçons publiées des programmes de ce compte, d’abord par correspondance textuelle."""
+        """Published lessons of this account's programs, text matches first."""
         score: ColumnElement[int] = literal(0)
         for term in terms:
             score = (
@@ -87,9 +87,9 @@ class LessonRepository(UserScopedRepository[Lesson]):
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def set_pdf_key(self, lesson_id: str, key: str, session_id: str | None = None) -> bool:
-        """Range le PDF si la leçon n'en a pas encore ; `False` sinon (déjà rangé, ou leçon
-        disparue). Une écriture technique : `updated_at` garde l'instant où la leçon est devenue
-        prête, que le fil d'activité date (D173)."""
+        """Stores the PDF if the lesson has none yet; `False` otherwise (already stored, or lesson
+        gone). A technical write: `updated_at` keeps the moment the lesson became ready, which the
+        activity feed uses as its date (D173)."""
         scope = [Lesson.id == lesson_id, Lesson.user_id == self.user_id, Lesson.pdf_key.is_(None)]
         if session_id is not None:
             scope.append(Lesson.session_id == session_id)
@@ -98,7 +98,7 @@ class LessonRepository(UserScopedRepository[Lesson]):
         return isinstance(result, CursorResult) and result.rowcount == 1
 
     async def claim_published(self, lesson_id: str, session_id: str) -> bool:
-        """Autorise la suite d'une publication tant que la même version reste publiée."""
+        """Allows a publication's follow-ups as long as the same version stays published."""
         stmt = (
             update(Lesson)
             .where(
@@ -115,10 +115,10 @@ class LessonRepository(UserScopedRepository[Lesson]):
     async def claim_verification(
         self, module_id: str, session_id: str, *, replay: bool = False
     ) -> Lesson | None:
-        """Prend le verrou d'écriture SQLite avant de lire le brouillon à publier ou refuser.
+        """Takes the SQLite write lock before reading the draft to publish or reject.
 
-        L'annulation MCP et l'annulation moteur prennent ce même verrou. Si elles passent
-        d'abord, la session n'a plus l'autorisation de publier, même avec un checkpoint.
+        MCP cancellation and engine cancellation take this same lock. If they go first, the
+        session is no longer allowed to publish, even with a checkpoint.
         """
         eligible = Lesson.verification_session_id == session_id
         if replay:
@@ -173,8 +173,8 @@ class LessonRepository(UserScopedRepository[Lesson]):
     async def recent_settled(
         self, after: datetime | None, before: datetime | None, limit: int
     ) -> builtins.list[Lesson]:
-        """Les leçons prêtes ou en échec dont le dernier changement est dans `[after, before]`
-        (bornes incluses), plus récentes d'abord (fil d'activité)."""
+        """Ready or failed lessons whose last change is within `[after, before]` (bounds
+        included), most recent first (activity feed)."""
         stmt = select(Lesson).where(
             Lesson.user_id == self.user_id, Lesson.status.in_(("ready", "failed"))
         )

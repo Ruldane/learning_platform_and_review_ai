@@ -32,7 +32,7 @@ class Transfers(UserScopedRepository[SkillTransfer]):
     async def get_owned(self, transfer_id: str) -> SkillTransfer:
         found = await self.get(transfer_id)
         if found is None:
-            raise AppError("skill_transfer_not_found", "Contrôle de transfert introuvable.", 404)
+            raise AppError("skill_transfer_not_found", "Skill transfer check not found.", 404)
         return found
 
     async def history(self, skill_id: str | None) -> list[SkillTransfer]:

@@ -53,7 +53,7 @@ class _NoDebate:
     async def draft(
         self, user_id: str, session_id: str, thread_id: str, turn_id: str
     ) -> ExpertDraft:
-        raise AppError("debate_unavailable", "Le débat d’experts est indisponible.", 503)
+        raise AppError("debate_unavailable", "The expert debate is unavailable.", 503)
 
     async def publish(
         self,
@@ -63,7 +63,7 @@ class _NoDebate:
         turn_id: str,
         speeches: Sequence[ExpertSpeech],
     ) -> None:
-        raise AppError("debate_unavailable", "Le débat d’experts est indisponible.", 503)
+        raise AppError("debate_unavailable", "The expert debate is unavailable.", 503)
 
 
 NO_EXPERT_DEBATE: ExpertDebateStore = _NoDebate()

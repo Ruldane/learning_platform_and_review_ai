@@ -74,7 +74,7 @@ async function expectAdvice(page: Page): Promise<void> {
   await expect(page.getByText("Le conseil se réunit…")).toHaveCount(0);
 }
 
-// Le premier lancement est fait avant la première page (la porte mène sinon à /bienvenue).
+// Le premier lancement est fait avant la première page (la porte mène sinon à /welcome).
 test.beforeEach(({ request }) => finishFirstLaunch(request));
 
 test("le brief du jour existe à l'ouverture, sept rubriques et un seul conseil", async ({
@@ -113,13 +113,13 @@ test("le brief du jour existe à l'ouverture, sept rubriques et un seul conseil"
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await quick.getByRole("button", { name: "Réviser" }).click();
-  await expect(page).toHaveURL(/\/etudier\/revisions$/);
+  await expect(page).toHaveURL(/\/study\/reviews$/);
 });
 
 test("un relevé du radar lit huit offres, en compte trois bloquées et paraît à l'accueil", async ({
   page,
 }) => {
-  await page.goto("/carriere/radar");
+  await page.goto("/career/radar");
   await page.getByLabel("Poste visé").fill(ROLE);
   await page.getByLabel("Zone", { exact: true }).fill(ZONE);
   await page.getByRole("button", { name: "Lancer un relevé" }).click();

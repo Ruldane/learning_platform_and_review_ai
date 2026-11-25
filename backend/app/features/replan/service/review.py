@@ -1,7 +1,7 @@
-"""Bilan hebdomadaire (SPEC F13, D99) : règles pures, sans base ni modèle.
+"""Weekly review (SPEC F13, D99): pure rules, with no database or model.
 
-Le bilan classe la semaine écoulée : en retard deux semaines de suite (plus de 30 %), en
-retard, en avance ou dans les temps. Seuls les deux cas extrêmes proposent des options à January.
+The review classifies the past week: late two weeks in a row (more than 30 %), late, ahead or
+on track. Only the two extreme cases offer options to January.
 """
 
 from dataclasses import dataclass
@@ -10,35 +10,35 @@ from math import floor
 
 from app.agents.tools.study_schema import ReplanOption, ReviewState
 
-LATE_THRESHOLD = 0.30  # part du temps prévu restée en retard ; « plus de », jamais « au moins »
+LATE_THRESHOLD = 0.30  # share of planned time left late; "more than", never "at least"
 
 
 @dataclass(frozen=True)
 class WeekFacts:
-    """Ce qui s'est passé pendant la semaine qui commence le lundi `week_start`."""
+    """What happened during the week starting on Monday `week_start`."""
 
     week_start: date
     planned_minutes: int
     done_minutes: int
     tasks_planned: int
     tasks_done: int
-    late_minutes: int  # minutes prévues cette semaine et restées à faire
+    late_minutes: int  # minutes planned this week and still to do
     quiz_scores: list[int]
-    done_ahead: int  # tâches de la semaine suivante déjà faites
+    done_ahead: int  # tasks of the following week already done
     study_minutes: int
     captures: int
 
 
 def late_ratio(facts: WeekFacts) -> float:
-    """La part du temps prévu restée en retard ; rien de prévu : 0."""
+    """The share of planned time left late; nothing planned: 0."""
     if facts.planned_minutes <= 0:
         return 0.0
     return facts.late_minutes / facts.planned_minutes
 
 
 def classify(facts: WeekFacts, previous_ratio: float | None) -> ReviewState:
-    """`late_twice` : plus de 30 % de retard et la semaine d'avant aussi ; `late` : un retard ;
-    `ahead` : aucun retard et de l'avance prise ; sinon `on_track`."""
+    """`late_twice`: more than 30 % late and the week before too; `late`: some delay;
+    `ahead`: no delay and progress made ahead; otherwise `on_track`."""
     ratio = late_ratio(facts)
     if ratio > LATE_THRESHOLD and previous_ratio is not None and previous_ratio > LATE_THRESHOLD:
         return "late_twice"
@@ -48,8 +48,8 @@ def classify(facts: WeekFacts, previous_ratio: float | None) -> ReviewState:
 
 
 def options_for(state: ReviewState) -> tuple[ReplanOption, ...]:
-    """Les choix offerts à January : réduire ou repousser s'il est très en retard, avancer ou
-    approfondir s'il est en avance ; sinon rien à décider."""
+    """The choices offered to January: reduce or push back when far behind, advance or deepen
+    when ahead; otherwise nothing to decide."""
     if state == "late_twice":
         return ("reduce_scope", "push_deadline")
     if state == "ahead":
@@ -71,19 +71,20 @@ def _count(n: int, noun: str) -> str:
 
 def _quiz(scores: list[int]) -> str:
     if not scores:
-        return "aucun quiz"
+        return "no quiz"
     return f"quiz {floor(sum(scores) / len(scores) + 0.5)} %"
 
 
 def review_text(facts: WeekFacts) -> str:
-    """La ligne du bilan, sans modèle : « Semaine du 09/11 : 6 h 30 prévues, 3 h 15 faites,
-    4 tâches sur 9, quiz 85 %, 2 h 10 d'étude, 3 captures. »"""
+    """The review line, with no model: "Week of 09/11: 6 h 30 planned, 3 h 15 done,
+    4 tasks of 9, quiz 85 %, 2 h 10 of study, 3 captures."
+    """
     parts = [
-        f"{_duration(facts.planned_minutes)} prévues",
-        f"{_duration(facts.done_minutes)} faites",
-        f"{_count(facts.tasks_done, 'tâche')} sur {facts.tasks_planned}",
+        f"{_duration(facts.planned_minutes)} planned",
+        f"{_duration(facts.done_minutes)} done",
+        f"{_count(facts.tasks_done, 'task')} of {facts.tasks_planned}",
         _quiz(facts.quiz_scores),
-        f"{_duration(facts.study_minutes)} d'étude",
+        f"{_duration(facts.study_minutes)} of study",
         _count(facts.captures, "capture"),
     ]
-    return f"Semaine du {facts.week_start:%d/%m} : {', '.join(parts)}."
+    return f"Week of {facts.week_start:%d/%m}: {', '.join(parts)}."

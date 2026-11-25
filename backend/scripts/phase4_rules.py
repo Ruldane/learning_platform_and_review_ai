@@ -66,7 +66,7 @@ def week_problems(week: dict[str, Any], cap: int) -> list[str]:
     problems: list[str] = []
     if week["load_minutes"] > cap:
         problems.append(f"semaine {rank} : {week['load_minutes']} min pour {cap} au plus")
-    if not any(task["type"] == "pratiquer" for task in tasks):
+    if not any(task["type"] == "practice" for task in tasks):
         problems.append(f"semaine {rank} sans pratique")
     last_day = max((task["planned_date"] for task in tasks), default=None)
     if not any(t["type"] == "quiz" and t["planned_date"] == last_day for t in tasks):

@@ -1,17 +1,17 @@
-"""Téléchargement sûr d'une URL fournie par l'utilisateur (garde SSRF, spec 17.4).
+"""Safe download of a URL supplied by the user (SSRF guard, spec 17.4).
 
-Algorithme, sous un délai unique de `FETCH_TIMEOUT_S` pour l'ensemble (redirections comprises) :
-1. schéma http/https, hôte présent, aucun identifiant (`user:pass@`), sinon `UrlForbidden` ;
-2. toutes les adresses résolues de l'hôte publiques, sinon `UrlForbidden` ;
-3. requête en flux sans suivi automatique ; une 3xx revient en 1 avec `Location` résolue
-   (5 redirections au plus) ; avec `GuardedTransport` (`transport.py`, branché par
-   `bootstrap`), la connexion elle-même résout, revérifie et se fait sur l'adresse validée :
-   un DNS qui change entre 2 et la connexion (rebinding) ne reçoit aucune requête ;
-4. défense en profondeur : adresse réellement connectée
-   (`network_stream.get_extra_info("server_addr")`, httpcore) publique ;
-5. `Content-Type` sur liste blanche, taille plafonnée en flux (déclarée puis lue, décompression
-   comprise).
-Les erreurs sont levées `from None` : la chaîne d'exceptions citerait l'URL dans un journal."""
+Algorithm, under a single `FETCH_TIMEOUT_S` timeout for the whole (redirects included):
+1. http/https scheme, host present, no credentials (`user:pass@`), otherwise `UrlForbidden`;
+2. all the resolved addresses of the host public, otherwise `UrlForbidden`;
+3. streamed request without automatic following; a 3xx goes back to 1 with `Location` resolved
+   (5 redirects at most); with `GuardedTransport` (`transport.py`, wired by
+   `bootstrap`), the connection itself resolves, checks again and is made on the validated address:
+   a DNS that changes between 2 and the connection (rebinding) receives no request;
+4. defence in depth: the address actually connected
+   (`network_stream.get_extra_info("server_addr")`, httpcore) is public;
+5. `Content-Type` on a whitelist, size capped in the stream (declared then read, decompression
+   included).
+Errors are raised `from None`: the exception chain would quote the URL in a log."""
 
 import asyncio
 import ipaddress
@@ -46,19 +46,19 @@ _HEADERS = {
     "accept-encoding": ACCEPT_ENCODING,
     "user-agent": "Mozilla/5.0 (compatible; TremplinReader/1.0)",
 }
-# En-têtes qu'un appel ne remplace jamais : l'encodage borne la décompression (`_body`), l'hôte
-# est celui de l'URL validée, aucun cookie n'est envoyé (client partagé, D63), pas de corps.
+# Headers that a call never replaces: the encoding bounds decompression (`_body`), the host
+# is that of the validated URL, no cookie is sent (shared client, D63), no body.
 _LOCKED_HEADERS = frozenset({"accept-encoding", "host", "cookie", "content-length"})
 _NAT64 = ipaddress.ip_network("64:ff9b::/96")
 _IPV6_GLOBAL_UNICAST = ipaddress.ip_network("2000::/3")
 
 
 class AddressRefused(httpcore.ConnectError):
-    """Levée par `GuardedBackend` (adresse non publique à la connexion) ; `SafeHttpFetcher` la
-    rend en `UrlForbidden`. Message fixe, sans l'hôte."""
+    """Raised by `GuardedBackend` (non-public address at connection); `SafeHttpFetcher` turns
+    it into `UrlForbidden`. Fixed message, without the host."""
 
     def __init__(self) -> None:
-        super().__init__("adresse refusée")
+        super().__init__("address refused")
 
 
 async def system_resolve(host: str, port: int) -> list[str]:
@@ -67,10 +67,10 @@ async def system_resolve(host: str, port: int) -> list[str]:
 
 
 def is_public_address(ip: str) -> bool:
-    """Adresse joignable publiquement (`is_global`, pas multicast). Une IPv6 qui porte une IPv4
-    (mappée, NAT64 `64:ff9b::/96`, 6to4) est jugée sur cette IPv4 ; toute autre IPv6 doit être
-    unicast globale (`2000::/3`) : site-local, traduite `::ffff:0:0/96`, compatible `::/96`,
-    NAT64 local et Teredo sont refusées."""
+    """Publicly reachable address (`is_global`, not multicast). An IPv6 that carries an IPv4
+    (mapped, NAT64 `64:ff9b::/96`, 6to4) is judged on that IPv4; any other IPv6 must be
+    global unicast (`2000::/3`): site-local, translated `::ffff:0:0/96`, compatible `::/96`,
+    local NAT64 and Teredo are refused."""
     try:
         address = ipaddress.ip_address(ip)
     except ValueError:
@@ -97,7 +97,7 @@ class _RefuseAllCookies(DefaultCookiePolicy):
 
 
 def refuse_all_cookies() -> CookieJar:
-    """Jar du client du lecteur : partagé entre utilisateurs, il ne doit rien retenir."""
+    """Jar of the reader's client: shared between users, it must keep nothing."""
     return CookieJar(policy=_RefuseAllCookies())
 
 
@@ -120,8 +120,8 @@ def _checked_url(url: str | httpx.URL) -> httpx.URL:
 
 
 def _check_peer(response: httpx.Response) -> None:
-    """Sans `network_stream` ou `server_addr` (transport non httpcore), rien à vérifier : risque
-    résiduel accepté (D63)."""
+    """Without `network_stream` or `server_addr` (non-httpcore transport), nothing to check:
+    residual risk accepted (D63)."""
     stream = response.extensions.get("network_stream")
     peer = stream.get_extra_info("server_addr") if stream is not None else None
     if peer is None:
@@ -147,12 +147,12 @@ def _request_headers(extra: Mapping[str, str] | None) -> dict[str, str]:
 
 
 class SafeHttpFetcher:
-    """`http` doit être créé avec `follow_redirects=False` et `trust_env=False` (aucun proxy de
-    l'environnement : l'adresse connectée serait celle du proxy) ; voir `bootstrap`.
-    `throttle` (D74) est attendu avant chaque saut, redirections comprises, une fois l'URL et
-    ses adresses validées : une adresse refusée ne consomme aucun créneau. L'attente compte
-    dans les 15 s, ramenées à l'échéance de la lecture en cours (`READ_DEADLINE`) ; un créneau
-    au-delà échoue tout de suite en « délai dépassé » sans être réservé."""
+    """`http` must be created with `follow_redirects=False` and `trust_env=False` (no proxy from
+    the environment: the connected address would be the proxy's); see `bootstrap`.
+    `throttle` (D74) is awaited before each hop, redirects included, once the URL and
+    its addresses are validated: a refused address consumes no slot. The wait counts
+    in the 15 s, brought down to the deadline of the read in progress (`READ_DEADLINE`); a slot
+    beyond it fails right away as "timed out" without being reserved."""
 
     def __init__(
         self,
@@ -222,8 +222,8 @@ class SafeHttpFetcher:
         return _checked_url(target)
 
     async def _check_host(self, url: httpx.URL) -> None:
-        """Une adresse littérale est jugée telle quelle ; un nom (y compris les formes numériques
-        que `getaddrinfo` interprète, `0x7f.1`, `2130706433`) l'est sur toutes ses résolutions."""
+        """A literal address is judged as is; a name (including the numeric forms
+        that `getaddrinfo` interprets, `0x7f.1`, `2130706433`) is judged on all its resolutions."""
         try:
             host = url.raw_host.decode("ascii")
         except UnicodeDecodeError:
@@ -234,7 +234,7 @@ class SafeHttpFetcher:
             port = url.port or (443 if url.scheme == "https" else 80)
             try:
                 addresses = await self._resolve(host, port)
-            except UnicodeError:  # nom refusé par le codec IDNA (`a..b`, label > 63)
+            except UnicodeError:  # name refused by the IDNA codec (`a..b`, label > 63)
                 raise UrlForbidden() from None
             except OSError:
                 raise UrlUnreadable() from None

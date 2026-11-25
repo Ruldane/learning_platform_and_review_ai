@@ -85,7 +85,7 @@ def dossier_data(**over: Any) -> dict[str, Any]:
         "interview_process": "Trois entretiens, dont un technique [1].",
         "questions": QUESTIONS,
         "watch_points": ["Rythme soutenu [1]"],
-        "size": "pme",
+        "size": "sme",
     }
     return data | over
 

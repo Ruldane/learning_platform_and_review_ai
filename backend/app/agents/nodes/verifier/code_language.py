@@ -1,4 +1,4 @@
-"""Contrôle lexical des exemples Python, sans interpréter le code ni ses littéraux."""
+"""Check the language of Python examples without evaluating code or its literals."""
 
 import keyword
 import re
@@ -99,7 +99,7 @@ def _words(text: str) -> set[str]:
 
 
 def python_language_problems(code: str, first_line: int, *, show_input: bool = True) -> list[str]:
-    """Retourne les écarts reconnaissables à la ligne du chapitre, sans copier les commentaires."""
+    """Report recognizable French identifiers and comments with their chapter line numbers."""
     problems: list[str] = []
     seen: set[str] = set()
     try:
@@ -109,11 +109,11 @@ def python_language_problems(code: str, first_line: int, *, show_input: bool = T
             if token.type == NAME and value not in seen and not keyword.iskeyword(value):
                 seen.add(value)
                 if _words(value) & _IDENTIFIERS:
-                    identifier = f"l’identifiant « {value} »" if show_input else "l’identifiant"
-                    problems.append(f"Écris {identifier} en anglais (ligne {row}).")
+                    identifier = f'identifier "{value}"' if show_input else "identifier"
+                    problems.append(f"Write the {identifier} in English (line {row}).")
             if token.type == COMMENT and len(_words(value) & _COMMENT_WORDS) >= 2:
-                problems.append(f"Écris le commentaire Python en anglais (ligne {row}).")
+                problems.append(f"Write the Python comment in English (line {row}).")
     except (TokenError, IndentationError):
-        # Un extrait peut omettre une partie du code pour illustrer une seule étape.
+        # A snippet can omit parts of the code to illustrate one step.
         pass
     return problems

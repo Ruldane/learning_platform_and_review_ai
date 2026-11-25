@@ -4,11 +4,11 @@ from app.features.lessons.service.sections import lesson_parts, lesson_sources
 from tests.support.lessons import URL_ONE, URL_TWO, lesson_markdown
 
 TAUGHT = [
-    "L'essentiel en 5 lignes",
-    "Explication",
-    "Schémas",
-    "Exemple travaillé",
-    "Erreurs fréquentes",
+    "Key points in 5 lines",
+    "Explanation",
+    "Diagrams",
+    "Worked example",
+    "Common mistakes",
 ]
 
 
@@ -21,9 +21,9 @@ def test_lesson_parts_finds_structure() -> None:
     ]
     assert parts.exercise == "Calculer les poids d'attention d'une séquence de trois mots."
     assert parts.solution.startswith("Les poids valent une distribution")
-    schemas = dict(parts.sections)["Schémas"]
+    schemas = dict(parts.sections)["Diagrams"]
     assert schemas.startswith("```mermaid") and schemas.endswith("```")
-    essential = dict(parts.sections)["L'essentiel en 5 lignes"]
+    essential = dict(parts.sections)["Key points in 5 lines"]
     assert essential.count("\n- ") == 4 and "## " not in essential
 
 
@@ -39,6 +39,12 @@ def test_titles_ignore_case_accents_and_curly_apostrophe() -> None:
         "ERREURS FREQUENTES",
     ]  # ordre de la séance, pas celui du document
     assert (parts.exercise, parts.solution) == ("Fais-le.", "Voilà.")
+
+
+def test_english_explanation_and_solution_are_separate() -> None:
+    parts = lesson_parts("## Explanation\n\nA concept.\n\n## Solution\n\nAn answer.")
+    assert parts.sections == [("Explanation", "A concept.")]
+    assert parts.exercise == "" and parts.solution == "An answer."
 
 
 def test_heading_inside_code_does_not_split() -> None:

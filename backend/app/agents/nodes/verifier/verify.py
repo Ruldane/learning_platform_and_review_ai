@@ -1,14 +1,13 @@
-"""Le Vérificateur contrôle la leçon du Rédacteur (SPEC 3.5, 9.1, D90) : les contrôles
-déterministes (`check_lesson` : structure, longueur, liens, recopie), puis un contrôle des faits
-par le modèle (`FactReport`) : chaque affirmation sur le domaine doit s'appuyer sur une source
-numérotée. La leçon et les sources sont des données encadrées, jamais des consignes.
+"""Check the Writer's lesson (SPEC 3.5, 9.1, D90).
 
-Seules les sections de faits sont jugées : une affirmation située ailleurs (objectif, exercice,
-auto-évaluation…) est écartée (`in_scope`). Après la dernière révision, s'il ne reste que des
-affirmations non sourcées, le code retire les phrases qui les portent (`prune`), puis rejoue
-les contrôles et note la version élaguée (D97 n° 11, D225).
+`check_lesson` validates structure, length, links, and copied passages. The model then
+checks whether claims in sections that present facts are backed by numbered sources. The
+lesson and source text are supplied as untrusted data.
 
-Rien n'est écrit : un nœud rejoué refait le contrôle, sans effet de bord."""
+After the last revision, if unsupported claims are the only remaining issue, `prune`
+removes their sentences and verification runs again (D97 item 11, D225). Replaying the
+node reruns the checks without writing to storage.
+"""
 
 import logging
 from typing import cast
@@ -38,11 +37,12 @@ from app.agents.state.lesson_factory import LessonFactoryState
 from app.agents.tools.lesson_port import ModuleBrief
 
 AGENT = "verifier"
-MAX_REVISIONS = 2  # révisions demandées au Rédacteur au plus : trois écritures en tout
+MAX_REVISIONS = 2  # At most three drafts including the initial one.
 VERIFY_TIMEOUT_S = 240
 MAX_CLAIM_CHARS = 300
 MAX_PROBLEMS_SHOWN = 6
-REVERTED = "Cette révision est moins bonne que la précédente : je repars de la meilleure version."
+REVERTED = "I kept the earlier draft because it scored better."
+PRUNING_CATEGORY = "Removal of unsupported claims"
 
 logger = logging.getLogger(__name__)
 
@@ -70,50 +70,48 @@ async def _facts(
 ) -> FactReport:
     prompt = render_prompt(
         AGENT,
-        title=untrusted(brief.title, "titre de la leçon"),
+        title=untrusted(brief.title, "lesson title"),
         module=module_prompt(brief),
         sources=sources_prompt(sources),
-        lesson=untrusted(draft, "leçon"),
+        lesson=untrusted(draft, "lesson"),
         min_grade=MIN_GRADE,
     )
     model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
     return await structured_call(
         refresh_updated_brief(model),
         FactReport,
-        [SystemMessage(prompt), HumanMessage("Contrôle les faits de cette leçon.")],
+        [SystemMessage(prompt), HumanMessage("Check the facts in this lesson.")],
         agent=AGENT,
         step=step,
-        intent="je contrôle les faits de la leçon",
+        intent="checking the facts in the lesson",
     )
 
 
 def _converge(
     draft: str, title: str, sources: list[LessonSource], unsupported: list[str]
 ) -> tuple[LessonFactoryState, int]:
-    """Dernière révision passée, seuls des faits non sourcés restent : leurs phrases sont retirées
-    si toutes sont situées et si la leçon tient encore les contrôles ; sinon, la raison de
-    l'échec. Rend la mise à jour de l'état et le nombre de phrases retirées."""
+    """Remove unsupported claims when all can be located and the result still passes checks."""
     pruned = prune(draft, unsupported)
     if pruned.unlocated:
         problem = (
-            f"Retrait impossible : {pruned.unlocated} affirmation(s) non sourcée(s) introuvable(s) "
-            "dans les sections de faits (citation absente, ambiguë ou trop courte)."
+            f"Could not locate unsupported claims in factual sections ({pruned.unlocated}). "
+            "The quoted text was missing, ambiguous, or too short."
         )
         return {
             "problems": [problem],
-            "check_categories": ["Retrait des affirmations non sourcées"],
+            "check_categories": [PRUNING_CATEGORY],
         }, 0
     if left := still_cited(pruned.markdown, unsupported):
-        problem = f"Retrait incomplet : {left} affirmation(s) non sourcée(s) encore dans la leçon."
+        problem = f"Unsupported claims remain in the lesson after removal ({left})."
         return {
             "problems": [problem],
-            "check_categories": ["Retrait des affirmations non sourcées"],
+            "check_categories": [PRUNING_CATEGORY],
         }, 0
     check = check_lesson(pruned.markdown, title=title, sources=_numbered(sources))
     if check.problems:
-        lead = f"Retrait de {pruned.removed} phrase(s) non sourcée(s) impossible"
+        lead = f"Removing unsupported sentences ({pruned.removed}) made the lesson invalid."
         return {
-            "problems": [f"{lead} : {p}" for p in check.problems],
+            "problems": [f"{lead} {p}" for p in check.problems],
             "check_categories": list(check.categories),
         }, 0
     update: LessonFactoryState = {"draft": pruned.markdown, "words": check.words, "unsupported": []}
@@ -142,31 +140,27 @@ def _verdict_text(result: LessonFactoryState, removed: int, *, show_details: boo
     scores = result["scores"]
     grades = [f"- {label} — {scores[name]}/100" for name, label in CRITERIA.items()]
     if not problems and not unsupported:
-        after = f" après retrait de {removed} phrase(s) non sourcée(s)" if removed else ""
-        return "\n".join([f"Leçon conforme{after} ({words} mots).", *grades])
-    lines = [f"Leçon à corriger ({words} mots) :"]
+        after = f" after removing unsupported sentences ({removed})" if removed else ""
+        return "\n".join([f"Lesson passed{after} ({words:,} words).", *grades])
+    lines = [f"Lesson needs revision ({words:,} words)."]
     if show_details:
         lines += [f"- {p}" for p in problems[:MAX_PROBLEMS_SHOWN]]
     else:
         lines += [f"- {category}" for category in result.get("check_categories", [])]
     if show_details and len(problems) > MAX_PROBLEMS_SHOWN:
-        lines.append(f"- … et {len(problems) - MAX_PROBLEMS_SHOWN} autres problèmes.")
+        lines.append(f"- Additional problems: {len(problems) - MAX_PROBLEMS_SHOWN}.")
     if unsupported:
-        lines.append(f"- {len(unsupported)} affirmation(s) non sourcée(s).")
+        lines.append(f"- Unsupported claims: {len(unsupported)}.")
     return "\n".join([*lines, *grades])
 
 
 def draft_rank(*, problems: list[str], unsupported: list[str], scores: dict[str, int]) -> list[int]:
-    """Rang d'une version, plus petit = meilleure (D305) : les problèmes de contrôle d'abord
-    (les affirmations non sourcées peuvent encore être retirées), puis ces affirmations, puis la
-    plus basse des notes."""
+    """Rank drafts by fewest problems, fewest unsupported claims, then highest minimum grade."""
     return [len(problems), len(unsupported), -min(scores.values(), default=0)]
 
 
 def _keep_best(state: LessonFactoryState, result: LessonFactoryState) -> bool:
-    """Garde la meilleure version contrôlée dans `best` ; si la nouvelle est moins bonne, l'état
-    revient à la meilleure (brouillon, contrôles, notes) et la révision suivante en part. Rend
-    `True` dans ce cas."""
+    """Keep the best draft, checks, and grades for the next revision. Return whether it reverted."""
     rank = draft_rank(
         problems=result["problems"], unsupported=result["unsupported"], scores=result["scores"]
     )
@@ -179,17 +173,24 @@ def _keep_best(state: LessonFactoryState, result: LessonFactoryState) -> bool:
 
 
 async def _check(
-    deps: GraphDeps, brief: ModuleBrief, draft: str, sources: list[LessonSource]
+    deps: GraphDeps,
+    brief: ModuleBrief,
+    draft: str,
+    sources: list[LessonSource],
+    *,
+    allow_legacy: bool,
 ) -> LessonFactoryState:
-    """Contrôles déterministes et contrôle des faits d'une version, journalisés en nombres."""
-    check = check_lesson(draft, title=brief.title, sources=_numbered(sources))
+    """Run deterministic checks and fact-checking, logging counts and identifiers."""
+    check = check_lesson(
+        draft, title=brief.title, sources=_numbered(sources), allow_legacy=allow_legacy
+    )
     report = await _facts(deps, brief, draft, sources)
     claims = report.claims()
     unsupported = in_scope(draft, claims)
     problems = [*check.problems, *report.grades.problems()]
     logger.info(
-        "Leçon contrôlée : session %s, module %s, %d mots, %d problème(s), "
-        "%d non sourcée(s), %d hors périmètre",
+        "Lesson checked: session %s, module %s, %d words, %d problems, "
+        "%d unsupported claims, %d out of scope",
         deps.session_id,
         brief.module_id,
         check.words,
@@ -213,7 +214,9 @@ def make_verify(deps: GraphDeps) -> Node:
         draft = state["draft"]
         sources = lesson_sources(state)
         revisions = state.get("revisions", 0)
-        result = await _check(deps, brief, draft, sources)
+        result = await _check(
+            deps, brief, draft, sources, allow_legacy=state.get("verification", False)
+        )
         removed = 0
         reverted = _keep_best(state, result)
         draft, unsupported = result.get("draft", draft), result["unsupported"]
@@ -221,7 +224,7 @@ def make_verify(deps: GraphDeps) -> Node:
             update, removed = await _review_after_pruning(deps, brief, draft, sources, unsupported)
             result.update(update)
             logger.info(
-                "Leçon élaguée : session %s, module %s, %d phrase(s) retirée(s), %d problème(s)",
+                "Lesson pruned: session %s, module %s, %d sentences removed, %d problems",
                 deps.session_id,
                 brief.module_id,
                 removed,
@@ -241,7 +244,7 @@ def make_verify(deps: GraphDeps) -> Node:
 
 
 def route_verify(state: LessonFactoryState) -> str:
-    """Rien à corriger : publier. Sinon une révision du Rédacteur, deux au plus, puis l'échec."""
+    """Publish a passing draft or ask the Writer to revise within the revision limit."""
     if not state.get("problems") and not state.get("unsupported"):
         return "publish"
     return "write" if state.get("revisions", 0) < MAX_REVISIONS else "fail_lesson"

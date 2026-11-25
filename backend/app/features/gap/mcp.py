@@ -9,36 +9,35 @@ MCP = FeatureMcp(
             "GET /postings/{posting_id}/gap",
             1,
             "gap_get_gap",
-            "Le tableau d'écart d'une offre (recalculé à chaque lecture).",
+            "A posting's gap table (recomputed on every read).",
         ),
         McpAction(
             "POST /postings/{posting_id}/gap/plan",
             2,
             "gap_plan_missing_skills",
-            "Propose d'ajouter des lignes « À ajouter » ou « Hors périmètre » cochées (`skills`) "
-            "au programme validé choisi (`program_id`, le plus récent par défaut). "
-            "January valide la proposition avant toute écriture au calendrier.",
+            "Proposes adding checked 'To add' or 'Out of scope' rows (`skills`) to the chosen "
+            "validated program (`program_id`, the most recent by default). "
+            "January validates the proposal before anything is written to the calendar.",
         ),
         McpAction(
             "POST /postings/{posting_id}/gap/validate",
             2,
             "gap_validate_skills",
-            "« Je les maîtrise déjà » : ajoute un module « Valider mes acquis » (`skills`) "
-            "et lance "
-            "son quiz ; January le passe pour faire valider ces compétences.",
+            "'I already master them': adds a 'Validate my skills' module (`skills`) and "
+            "launches its quiz; January takes it to get these skills validated.",
         ),
         McpAction(
             "GET /gap/top-missing",
             1,
             "gap_list_top_missing",
-            "Les 10 compétences absentes demandées par le plus d'offres.",
+            "The 10 missing skills requested by the most postings.",
         ),
     ),
     graphs=(
         McpGraph(
             "gap_analysis",
             follow_only=True,
-            summary="Analyse l'écart entre une offre (`posting_id`) et le profil de January.",
+            summary="Analyzes the gap between a posting (`posting_id`) and January's profile.",
         ),
     ),
 )

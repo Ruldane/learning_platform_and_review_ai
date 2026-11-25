@@ -28,21 +28,21 @@ function setup(props: Partial<Parameters<typeof CompareTargetPicker>[0]> = {}) {
 describe("CompareTargetPicker", () => {
   it("offers the goal and a posting, the goal being checked", () => {
     setup();
-    expect(screen.getByRole("radio", { name: "Mon poste cible" })).toBeChecked();
-    expect(screen.getByRole("radio", { name: "Une offre" })).not.toBeChecked();
+    expect(screen.getByRole("radio", { name: "My target role" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "A posting" })).not.toBeChecked();
     expect(screen.queryByRole("combobox")).toBeNull();
   });
 
   it("switches to a posting with the keyboard", async () => {
     const { onTarget } = setup();
-    screen.getByRole("radio", { name: "Mon poste cible" }).focus();
+    screen.getByRole("radio", { name: "My target role" }).focus();
     await userEvent.keyboard("{ArrowDown}");
     expect(onTarget).toHaveBeenCalledWith("posting");
   });
 
   it("lists the analysed postings and reports the choice", async () => {
     const { onPosting } = setup({ target: "posting" });
-    const select = screen.getByRole("combobox", { name: "Offre" });
+    const select = screen.getByRole("combobox", { name: "Posting" });
     expect(
       screen.getByRole("option", { name: "Ingénieure données (Société Fictive)" }),
     ).toBeVisible();

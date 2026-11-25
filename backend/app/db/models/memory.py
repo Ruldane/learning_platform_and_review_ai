@@ -5,17 +5,28 @@ from sqlalchemy import ForeignKey, Index, Integer, String, Text, UniqueConstrain
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, UserScopedMixin, UTCDateTime
+from app.db.models.skills import LEVEL_ORDER, SkillLevel
 
 # Types partagés avec `app.agents`, qui ne peut pas importer une feature (contrat 6).
-MemoryKind = Literal["document", "acquis", "lecon", "source", "offre", "decision"]
+MemoryKind = Literal["document", "skill", "lesson", "source", "posting", "decision"]
 MEMORY_KINDS: tuple[MemoryKind, ...] = get_args(MemoryKind)
-MasteryLevel = Literal["declare", "en_cours", "valide", "prouve"]
-MASTERY_ORDER: dict[MasteryLevel, int] = {"declare": 0, "en_cours": 1, "valide": 2, "prouve": 3}
+PREVIOUS_MEMORY_KINDS: dict[MemoryKind, str] = {
+    "skill": "acquis",
+    "lesson": "lecon",
+    "posting": "offre",
+}
+_CURRENT_MEMORY_KINDS = {old: kind for kind, old in PREVIOUS_MEMORY_KINDS.items()}
+MasteryLevel = SkillLevel
+MASTERY_ORDER: dict[MasteryLevel, int] = {level: rank for rank, level in enumerate(LEVEL_ORDER)}
 ItemStatus = Literal["active", "pending"]
 DocumentSourceKind = Literal["pdf", "docx", "markdown", "text", "url", "youtube", "paste"]
 DocumentStatus = Literal["queued", "processing", "indexed", "error"]
 WriteAction = Literal["create", "update", "delete", "confirm", "reject", "merge"]
 USER_AUTHOR = "user"
+
+
+def current_memory_kind(kind: str) -> str:
+    return _CURRENT_MEMORY_KINDS.get(kind, kind)
 
 
 class Document(UserScopedMixin, Base):

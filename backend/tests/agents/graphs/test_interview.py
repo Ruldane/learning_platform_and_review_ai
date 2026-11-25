@@ -34,8 +34,8 @@ async def test_fifteen_minutes_asks_four_questions_and_debriefs(
     first = await run.question()
     assert first["question"] == question_text(1)
     assert [o["value"] for o in first["options"]] == ["stop"]
-    assert first["options"][0]["label"] == "Terminer l'entretien"
-    assert [f["id"] for f in first["fields"]] == ["answer"]
+    assert first["options"][0]["label"] == "End the interview"
+    assert [(f["id"], f["label"]) for f in first["fields"]] == [("answer", "Your answer")]
     await run.answer(answer())
     asked = [first["question"], *(await run.answer_all(3))]
     await run.wait_status("completed")
@@ -47,16 +47,16 @@ async def test_fifteen_minutes_asks_four_questions_and_debriefs(
     assert [e.index for e in saved.exchanges] == [0, 1, 2, 3]
     assert saved.debrief is not None
     assert set(saved.debrief.scores) == {
-        "clarte",
+        "clarity",
         "structure",
-        "profondeur_technique",
-        "adequation",
+        "technical_depth",
+        "role_fit",
     }
     assert len(saved.debrief.strengths) == 3 and len(saved.debrief.fixes) == 3
     assert len(prompts(run.models, TURN_REQUEST)) == 4
     assert len(prompts(run.models, DEBRIEF_REQUEST)) == 1
     [done] = await run.events("run.completed")
-    assert "4 question(s) notée(s)" in done["summary"]
+    assert "4 questions scored" in done["summary"]
 
 
 async def test_forty_five_minutes_plan_has_ten_questions(
@@ -65,7 +65,7 @@ async def test_forty_five_minutes_plan_has_ten_questions(
     interview_store.update(duration_min=45)
     run = await interview_runner(interviewer(plans=[plan_json(10)]))
     assert (await run.question())["question"] == question_text(1)
-    assert "Exactement 10 questions" in prompts(run.models, PLAN_REQUEST)[0]
+    assert "Exactly 10 questions" in prompts(run.models, PLAN_REQUEST)[0]
 
 
 async def test_plan_with_the_wrong_count_is_asked_again(interview_runner: MakeInterview) -> None:
@@ -100,8 +100,8 @@ async def test_follow_up_answer_prompt_forbids_another_follow_up(
     await run.answer_all(2)
     await run.question()  # la question suivante : les deux réponses sont lues
     first, second = prompts(run.models, TURN_REQUEST)
-    assert "Il n'y a plus de relance possible" not in first
-    assert "Il n'y a plus de relance possible" in second
+    assert "No further follow-up is possible" not in first
+    assert "No further follow-up is possible" in second
     assert in_untrusted(second, "Ma réponse détaillée.")
 
 
@@ -143,7 +143,7 @@ async def test_stop_before_any_answer_saves_stopped(
     assert (saved.exchanges, saved.debrief, saved.flags, saved.cards) == ([], None, [], [])
     assert prompts(run.models, TURN_REQUEST) == [] and prompts(run.models, DEBRIEF_REQUEST) == []
     [done] = await run.events("run.completed")
-    assert "rien à noter" in done["summary"]
+    assert "No answers to score" in done["summary"]
 
 
 async def test_english_mode_prompt(
@@ -153,13 +153,13 @@ async def test_english_mode_prompt(
     run = await interview_runner()
     await run.question()
     [plan_prompt] = prompts(run.models, PLAN_REQUEST)
-    assert "anglais (English)" in plan_prompt and "Mode technique" in plan_prompt
+    assert "Always write in\nEnglish." in plan_prompt and "Technical mode" in plan_prompt
     assert in_untrusted(plan_prompt, TITLE)
 
 
 @pytest.mark.parametrize(
     ("mode", "marker"),
-    [("behavioral", "Mode comportemental"), ("case", "Mode étude de cas"), ("mixed", "Mode mixte")],
+    [("behavioral", "Behavioral mode"), ("case", "Case study mode"), ("mixed", "Mixed mode")],
 )
 async def test_each_mode_has_its_guide(
     interview_runner: MakeInterview, interview_store: FakeInterviewStore, mode: str, marker: str
@@ -226,7 +226,7 @@ async def test_missed_questions_become_cards(
         (question_text(3), "- Point clé 2 a\n- Point clé 2 b"),
     ]
     [done] = await run.events("run.completed")
-    assert "2 fiche(s) de révision" in done["summary"]
+    assert "2 review cards created" in done["summary"]
 
 
 async def test_debrief_without_points_for_a_missed_question_is_asked_again(

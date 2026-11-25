@@ -8,11 +8,11 @@ import { server } from "./server";
 
 /** Les pages où les liens de l'accueil mènent : des repères, pour vérifier qu'on y arrive. */
 const LANDINGS = [
-  { path: "/etudier/session", element: <p>{"Page de la session d'étude"}</p> },
-  { path: "/etudier/revisions", element: <p>Page des révisions</p> },
-  { path: "/carriere/offres", element: <p>Page des offres</p> },
-  { path: "/apprendre/objectifs", element: <p>Page des objectifs</p> },
-  { path: "/candidatures/:applicationId", element: <p>Page de la fiche</p> },
+  { path: "/study/session", element: <p>{"Page de la session d'étude"}</p> },
+  { path: "/study/reviews", element: <p>Page des révisions</p> },
+  { path: "/career/postings", element: <p>Page des offres</p> },
+  { path: "/learn/goals", element: <p>Page des objectifs</p> },
+  { path: "/applications/:applicationId", element: <p>Page de la fiche</p> },
 ];
 
 /**

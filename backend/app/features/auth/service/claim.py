@@ -1,20 +1,20 @@
-"""Reprise de l'espace local (P9, 17.1) : le tout premier compte Google peut reprendre l'espace créé
-en mode local ou repartir d'un espace vide.
+"""Taking over the local space (P9, 17.1): the very first Google account can take over the space
+created in local mode or start from an empty space.
 
-- Proposée **seulement** quand aucun compte Google n'existe encore ET que l'utilisateur `local`
-  existe (`claim_offered`) ET que `ALLOWED_EMAILS` est une liste explicite qui nomme l'adresse
-  (jamais avec `*` : la première personne venue prendrait des données qui ne sont pas les siennes) :
-  un second compte ne la voit jamais, ni après un premier choix.
-- « Reprendre » (`take_local`) **attache l'identité à la ligne `local`** : même `id`, donc aucune
-  donnée déplacée (base, index, fichiers, points de reprise). Un seul UPDATE conditionnel décide
-  qui est propriétaire : le perdant d'une course reçoit 409 `local_already_claimed`.
-- « Espace vide » (`fresh`) crée un utilisateur neuf ; l'espace local reste intact. Un `fresh`
-  rejoué (double clic) ou perdu dans une course trouve le compte déjà créé : 409 `claim_expired`
-  (se reconnecter règle tout), jamais un second compte ni `local_already_claimed`.
-- Le choix se fait avec le témoin `tremplin_claim` (`{sub, email, name}` chiffré, 10 minutes,
-  posé par le callback) : absent, trafiqué ou trop vieux = 409 `claim_expired`.
+- Offered **only** when no Google account exists yet AND the `local` user exists
+  (`claim_offered`) AND `ALLOWED_EMAILS` is an explicit list that names the address (never with
+  `*`: the first person to come along would take data that is not theirs): a second account
+  never sees it, nor after a first choice.
+- "Take over" (`take_local`) **attaches the identity to the `local` row**: same `id`, so no data
+  moved (database, index, files, checkpoints). A single conditional UPDATE decides who is the
+  owner: the loser of a race gets 409 `local_already_claimed`.
+- "Empty space" (`fresh`) creates a new user; the local space stays intact. A replayed `fresh`
+  (double click) or one lost in a race finds the account already created: 409 `claim_expired`
+  (signing in again settles everything), never a second account nor `local_already_claimed`.
+- The choice is made with the `tremplin_claim` cookie (`{sub, email, name}` encrypted,
+  10 minutes, set by the callback): missing, tampered with or too old = 409 `claim_expired`.
 
-Ni e-mail, ni nom, ni `sub`, ni contenu du témoin n'est journalisé : des identifiants seulement."""
+No e-mail, name, `sub` or cookie content is logged: ids only."""
 
 import json
 import logging
@@ -39,7 +39,7 @@ Choice = Literal["take_local", "fresh"]
 
 @dataclass(frozen=True)
 class ClaimIdentity:
-    """L'identité Google contrôlée par le callback, gardée dans le témoin `tremplin_claim`."""
+    """The Google identity checked by the callback, kept in the `tremplin_claim` cookie."""
 
     sub: str
     email: str
@@ -47,26 +47,26 @@ class ClaimIdentity:
 
 
 def _expired() -> AppError:
-    return AppError("claim_expired", "Le choix a expiré : reconnecte-toi avec Google.", 409)
+    return AppError("claim_expired", "This choice expired. Sign in with Google again.", 409)
 
 
 def _taken() -> AppError:
-    return AppError("local_already_claimed", "L'espace local a déjà un propriétaire.", 409)
+    return AppError("local_already_claimed", "The local workspace already has an owner.", 409)
 
 
 def seal_identity(cipher: Cipher, identity: ClaimIdentity) -> str:
-    """La valeur du témoin `tremplin_claim`."""
+    """The value of the `tremplin_claim` cookie."""
     payload = {"sub": identity.sub, "email": identity.email, "name": identity.name}
     return cipher.encrypt(json.dumps(payload))
 
 
 def open_identity(cipher: Cipher, raw: str | None) -> ClaimIdentity | None:
-    """L'identité du témoin, `None` s'il manque, est trafiqué ou a plus de 10 minutes."""
+    """The cookie's identity, `None` if it is missing, tampered with or older than 10 minutes."""
     if not raw:
         return None
     try:
         data = json.loads(cipher.decrypt(raw, ttl=OAUTH_COOKIE_SECONDS))
-    except (AppError, ValueError):  # illisible ou périmé (`SecretUnreadable`), ou pas du JSON
+    except (AppError, ValueError):  # unreadable or expired (`SecretUnreadable`), or not JSON
         return None
     if not isinstance(data, dict) or not all(
         isinstance(data.get(key), str) for key in ("sub", "email", "name")
@@ -76,8 +76,8 @@ def open_identity(cipher: Cipher, raw: str | None) -> ClaimIdentity | None:
 
 
 async def claim_offered(db: AsyncSession) -> bool:
-    """Vrai si la reprise doit être proposée : aucun compte Google, et l'utilisateur `local`
-    est là (jamais repris : une fois repris il porte un e-mail, `get_local` ne le rend plus)."""
+    """True if the takeover must be offered: no Google account, and the `local` user is there
+    (never taken over: once taken over it carries an e-mail, `get_local` no longer returns it)."""
     users = UserRepository(db)
     if await users.any_google_user():
         return False
@@ -86,10 +86,10 @@ async def claim_offered(db: AsyncSession) -> bool:
 
 
 async def close_claim(db: AsyncSession, users: UserRepository) -> None:
-    """Dès qu'un premier compte Google naît (« Espace vide » ou connexion sans offre ; une reprise
-    consomme la ligne `local` elle-même), la reprise est close pour toujours : le fait est gardé
-    dans les réglages de la ligne `local`, que « Tout supprimer » d'un compte Google n'efface
-    jamais (revue 9.R, B-I1)."""
+    """As soon as a first Google account is born ("Empty space" or sign-in without an offer; a
+    takeover consumes the `local` row itself), the takeover is closed for good: the fact is kept
+    in the settings of the `local` row, which a Google account's "Delete everything" never
+    erases (review 9.R, B-I1)."""
     local = await users.get_local()
     if local is not None:
         await SettingsService(db, local.id).close_local_claim()
@@ -103,27 +103,27 @@ async def claim(
     *,
     allowed_emails: str | None,
 ) -> User:
-    """Applique le choix du tout premier compte Google et rend son utilisateur (la session est
-    ouverte par l'appelant, dans la même transaction). 409 `claim_expired` : témoin absent,
-    trafiqué ou vieux, ou adresse plus nommée dans `ALLOWED_EMAILS` (retirée, ou liste devenue
-    `*`) ; 409 `local_already_claimed` : l'espace local est déjà repris, ou un compte Google
-    existe déjà (autre onglet, autre compte, premier choix « espace vide »). Un témoin rejoué
-    avec `fresh` (compte déjà créé, double clic) : 409 `claim_expired`, jamais « déjà un
-    propriétaire »."""
+    """Applies the choice of the very first Google account and returns its user (the session is
+    opened by the caller, in the same transaction). 409 `claim_expired`: cookie missing,
+    tampered with or old, or address no longer named in `ALLOWED_EMAILS` (removed, or list
+    become `*`); 409 `local_already_claimed`: the local space is already taken over, or a Google
+    account already exists (another tab, another account, first choice "empty space"). A cookie
+    replayed with `fresh` (account already created, double click): 409 `claim_expired`, never
+    "already an owner"."""
     identity = open_identity(cipher, claim_cookie)
     if identity is None or not explicitly_allowed(identity.email, allowed_emails):
         raise _expired()
     users = UserRepository(db)
     if await users.get_by_google_sub(identity.sub) is not None:
-        # Témoin rejoué : ce compte existe déjà, la connexion normale suffit. `fresh` (double clic
-        # sur « Espace vide ») : le choix est fait, pas de propriétaire de l'espace local en jeu.
+        # Cookie replayed: this account already exists, the normal sign-in is enough. `fresh`
+        # (double click on "Empty space"): the choice is made, no local-space owner at stake.
         raise _expired() if choice == "fresh" else _taken()
     if choice == "take_local":
         user = await _take_local(users, identity)
-        logger.info("espace local repris par l'utilisateur %s", user.id)
+        logger.info("local space taken over by user %s", user.id)
     else:
         user = await _fresh(db, users, identity)
-        logger.info("espace vide créé pour l'utilisateur %s", user.id)
+        logger.info("empty space created for user %s", user.id)
     return user
 
 
@@ -135,7 +135,7 @@ async def _take_local(users: UserRepository, identity: ClaimIdentity) -> User:
         attached = await users.attach_identity(
             local.id, identity.sub, identity.email, identity.name
         )
-    except IntegrityError as exc:  # adresse déjà portée : le callback aurait dû la refuser
+    except IntegrityError as exc:  # address already used: the callback should have refused it
         raise _expired() from exc
     if not attached:
         raise _taken()
@@ -143,15 +143,15 @@ async def _take_local(users: UserRepository, identity: ClaimIdentity) -> User:
 
 
 async def _fresh(db: AsyncSession, users: UserRepository, identity: ClaimIdentity) -> User:
-    # Avant le point de sauvegarde : la transaction commence par une écriture, jamais par une
-    # lecture suivie d'une écriture (SQLite rendrait « database is locked » à une course).
+    # Before the savepoint: the transaction starts with a write, never with a read followed by
+    # a write (SQLite would answer "database is locked" to a race).
     await close_claim(db, users)
     try:
-        async with db.begin_nested():  # un doublon (deux onglets) ne défait pas la transaction
+        async with db.begin_nested():  # a duplicate (two tabs) does not undo the transaction
             return await users.add_google(
                 sub=identity.sub, email=identity.email, name=identity.name
             )
     except IntegrityError as exc:
-        # Même `sub` créé entre-temps par l'autre onglet (le choix est déjà fait) ou adresse prise
-        # par un autre compte : dans les deux cas, reconnexion.
+        # Same `sub` created meanwhile by the other tab (the choice is already made) or address
+        # taken by another account: in both cases, sign in again.
         raise _expired() from exc

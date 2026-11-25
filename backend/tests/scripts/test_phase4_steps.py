@@ -41,8 +41,8 @@ async def test_program_keeps_every_module_of_weeks_one_and_two() -> None:
         (program(week(2), week(3)), "moins de 2 semaines"),
         (program(week(1), week(2), status="validated"), "sans brouillon"),
         (program(week(1), week(2, load=500)), "semaine 2 : 500 min pour 400"),
-        (program(week(1, practice="lire"), week(2)), "semaine 1 sans pratique"),
-        (program(week(1), week(2, quiz="lire")), "semaine 2 ne finit pas par un quiz"),
+        (program(week(1, practice="read"), week(2)), "semaine 1 sans pratique"),
+        (program(week(1), week(2, quiz="read")), "semaine 2 ne finit pas par un quiz"),
     ],
 )
 async def test_program_fails_when_a_rule_is_broken(found: dict[str, object], message: str) -> None:

@@ -64,7 +64,7 @@ describe("useBoards", () => {
     await waitFor(() => expect(result.current.data).toHaveLength(2));
     expect(result.current.data?.[0]).toMatchObject({
       id: "b1",
-      title: "Carte du domaine",
+      title: "Domain map",
       scene: null,
     });
     expect(result.current.data?.[1]).toMatchObject({

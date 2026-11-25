@@ -8,7 +8,7 @@ describe("FreeTextAnswer", () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn();
     render(<FreeTextAnswer disabled={false} onSubmit={onSubmit} />);
-    expect(screen.getByRole("textbox", { name: "Ta réponse" })).toHaveFocus();
+    expect(screen.getByRole("textbox", { name: "Your answer" })).toHaveFocus();
     await user.keyboard("  Pense aux débutants {Enter}");
     expect(onSubmit).toHaveBeenCalledWith("Pense aux débutants");
   });
@@ -19,7 +19,7 @@ describe("FreeTextAnswer", () => {
     render(<FreeTextAnswer disabled={false} onSubmit={onSubmit} />);
     await user.keyboard("   {Enter}");
     expect(onSubmit).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: "Répondre" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Answer" })).toBeDisabled();
   });
 
   it("is locked when disabled", () => {
@@ -33,7 +33,7 @@ describe("FreeTextAnswer, long answer", () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn();
     render(<FreeTextAnswer disabled={false} multiline onSubmit={onSubmit} />);
-    const field = screen.getByRole("textbox", { name: "Ta réponse" });
+    const field = screen.getByRole("textbox", { name: "Your answer" });
     expect(field.tagName).toBe("TEXTAREA");
     await user.type(field, "Première ligne{Enter}Seconde ligne");
     expect(onSubmit).not.toHaveBeenCalled();
@@ -47,11 +47,11 @@ describe("FreeTextAnswer, long answer", () => {
         disabled={false}
         multiline
         maxLength={50}
-        label="Ta réponse écrite"
+        label="Your written answer"
         onSubmit={vi.fn()}
       />,
     );
-    const field = screen.getByRole("textbox", { name: "Ta réponse écrite" });
+    const field = screen.getByRole("textbox", { name: "Your written answer" });
     expect(field).toHaveAttribute("maxlength", "50");
   });
 });

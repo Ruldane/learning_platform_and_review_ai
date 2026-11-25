@@ -10,7 +10,7 @@ from app.db.models.agents import SessionStatus
 MAX_QUESTION = 2_000
 MAX_PASSAGE = 1_000
 MAX_TITLE = 120
-ChatScope = Literal["brain", "training"]
+ChatScope = Literal["brain", "training", "offers"]
 
 
 class ConversationSummary(BaseModel):
@@ -38,7 +38,7 @@ class ConversationQuestionIn(BaseModel):
     def normalize_question(self) -> Self:
         self.question = self.question.strip()
         if not self.question:
-            raise ValueError("La question doit contenir du texte.")
+            raise ValueError("The question must contain text.")
         return self
 
 
@@ -51,9 +51,9 @@ class ConversationMessageIn(ConversationQuestionIn):
         if self.passage is not None:
             self.passage = " ".join(self.passage.split())
         if self.passage == "":
-            raise ValueError("Le passage doit contenir du texte.")
+            raise ValueError("The passage must contain text.")
         if self.passage_occurrence is not None and self.passage is None:
-            raise ValueError("Une occurrence doit désigner un passage.")
+            raise ValueError("An occurrence must refer to a passage.")
         return self
 
 

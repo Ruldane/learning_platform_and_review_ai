@@ -75,7 +75,7 @@ def posting(number: int, score: int | None, **over: Any) -> dict[str, Any]:
         "read": "ok",
         "title": f"Poste {number}",
         "company": "Société Fictive",
-        "level": "confirme",
+        "level": "mid_level",
         "skills": [],
         "tools": [],
     }

@@ -1,4 +1,4 @@
-"""Créer le notebook et la leçon dans la même transaction."""
+"""Create the notebook and the lesson in the same transaction."""
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -14,7 +14,7 @@ from app.features.paper_lab.service.notebooks import notebook_files
 async def _assigned(db: AsyncSession, user_id: str, lab_id: str, session_id: str) -> PaperLab:
     row = await PaperLabRepository(db, user_id).require(lab_id)
     if row.session_id != session_id:
-        raise AppError("paper_lab_changed", "La session de préparation a changé.", 409)
+        raise AppError("paper_lab_changed", "The preparation session has changed.", 409)
     return row
 
 

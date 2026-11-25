@@ -197,4 +197,4 @@ async def test_linking_applied_card_says_linked_not_sent(
     await client.get(API)  # la liste adopte les versions prêtes
     detail = (await client.get(f"{API}/{manual}")).json()
     [event] = [e for e in detail["events"] if e["kind"] == "version"]
-    assert (event["ref_id"], event["text"]) == (version, "Version 2 du CV liée à la fiche.")
+    assert (event["ref_id"], event["text"]) == (version, "CV version 2 linked to the record.")

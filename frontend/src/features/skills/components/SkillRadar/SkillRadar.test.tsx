@@ -20,12 +20,12 @@ describe("SkillRadar", () => {
 
   it("gives the same scores as text", () => {
     render(<SkillRadar domains={domains} />);
-    const list = screen.getByRole("list", { name: "Score par domaine" });
+    const list = screen.getByRole("list", { name: "Score by domain" });
     const items = within(list).getAllByRole("listitem");
     expect(items.map((item) => item.textContent)).toEqual([
-      "Web : 72 sur 100",
-      "Données : 35 sur 100",
-      "Cloud : 0 sur 100",
+      "Web: 72 out of 100",
+      "Données: 35 out of 100",
+      "Cloud: 0 out of 100",
     ]);
   });
 
@@ -39,11 +39,11 @@ describe("SkillRadar", () => {
 
   it("names the chart for assistive technologies", () => {
     render(<SkillRadar domains={domains} />);
-    expect(screen.getByRole("img", { name: "Radar par domaine" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Radar by domain" })).toBeInTheDocument();
   });
 
   it("says when there is no domain", () => {
     render(<SkillRadar domains={[]} />);
-    expect(screen.getByText("Aucun domaine à afficher")).toBeInTheDocument();
+    expect(screen.getByText("No domains to show")).toBeInTheDocument();
   });
 });

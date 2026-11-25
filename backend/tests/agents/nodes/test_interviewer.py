@@ -45,16 +45,22 @@ def exchange(index: int, note: int, **over: Any) -> Exchange:
     fields: dict[str, Any] = {
         "index": index,
         "question": f"Question {index} sur le poste ?",
-        "criterion": "clarte",
-        "source": "offre",
+        "criterion": "clarity",
+        "source": "posting",
         "answer": "Une réponse.",
         "note": note,
     }
     return Exchange(**(fields | over))
 
 
+def test_exchange_reads_the_codes_from_an_old_checkpoint() -> None:
+    previous = exchange(0, 4, criterion="clarte", source="offre")
+    assert (previous.criterion, previous.source) == ("clarity", "posting")
+    assert previous.answer == "Une réponse."
+
+
 def test_registries() -> None:
-    assert AGENTS["interviewer"].tier == "fort"
+    assert AGENTS["interviewer"].tier == "strong"
     assert GRAPHS["interview"].input_model is InterviewInput
     assert ROUTE_ONLY["interview"] == "POST /applications/{id}/interviews"
     assert NO_PORTS.interviews is NO_INTERVIEWS
@@ -113,7 +119,7 @@ def test_cards_cover_the_missed_questions_that_have_points() -> None:
 
 
 def _plan(*texts: str) -> str:
-    questions = [{"text": text, "criterion": "clarte", "source": "cv"} for text in texts]
+    questions = [{"text": text, "criterion": "clarity", "source": "cv"} for text in texts]
     return json.dumps({"questions": questions})
 
 
@@ -121,7 +127,7 @@ def test_plan_is_exactly_n_distinct_questions() -> None:
     assert len(plan_schema(4).model_validate_json(plan_json(4)).questions) == 4
     with pytest.raises(ValidationError):
         plan_schema(4).model_validate_json(plan_json(5))
-    with pytest.raises(ValidationError, match="identiques"):
+    with pytest.raises(ValidationError, match="identical"):
         plan_schema(2).model_validate_json(_plan("La même ?", "la  même ?"))
 
 
@@ -141,8 +147,8 @@ def test_turn_decision_bounds() -> None:
 @pytest.mark.parametrize(
     "over",
     [
-        {"scores": {"clarte": 4, "structure": 3, "adequation": 4}},  # un critère manque
-        {"scores": {"clarte": 4, "structure": 3, "profondeur_technique": 6, "adequation": 4}},
+        {"scores": {"clarity": 4, "structure": 3, "role_fit": 4}},  # One score is missing.
+        {"scores": {"clarity": 4, "structure": 3, "technical_depth": 6, "role_fit": 4}},
         {"strengths": ["a", "b"]},
         {"fixes": ["a", "b", "c", "d"]},
     ],
@@ -155,7 +161,7 @@ def test_debrief_needs_four_scores_three_strengths_three_fixes(over: dict[str, A
 def test_debrief_must_cover_the_missed_questions() -> None:
     schema = debrief_schema([1, 2])
     schema.model_validate_json(debrief_json(expected=expected(1, 2)))
-    with pytest.raises(ValidationError, match="questions ratées"):
+    with pytest.raises(ValidationError, match="missed questions"):
         schema.model_validate_json(debrief_json(expected=expected(1)))
     debrief_schema([]).model_validate_json(debrief_json())
 
@@ -164,12 +170,12 @@ def test_prompt_blocks_say_what_is_missing() -> None:
     free = default_context(posting_text=None, analysis=None, dossier=None)
     assert posting_block(free) == NO_POSTING and dossier_block(free) == NO_DOSSIER
     summary = posting_block(default_context(posting_text=None))
-    assert TITLE in summary and "<<<CONTENU_NON_FIABLE" in summary
+    assert TITLE in summary and "<<<UNTRUSTED_CONTENT" in summary
 
 
 def test_exchange_text_shows_follow_up_and_unanswered_follow_up() -> None:
     text = exchange_text(exchange(2, 3, follow_up="Et ensuite ?"), with_note=False)
-    assert "[index 2]" in text and "Et ensuite ?" in text and "(pas de réponse)" in text
+    assert "[index 2]" in text and "Et ensuite ?" in text and "(no answer)" in text
     assert "Note interne" not in text
 
 
@@ -177,10 +183,10 @@ def test_pending_follow_up_hides_the_unanswered_line() -> None:
     text = exchange_text(
         exchange(1, 3, follow_up="Et ensuite ?"), with_note=False, pending_follow_up=True
     )
-    assert "Relance : Et ensuite ?" in text and "(pas de réponse)" not in text
+    assert "Follow-up: Et ensuite ?" in text and "(no answer)" not in text
 
 
 def test_unrated_exchange_is_never_the_weakest_when_a_rated_one_exists() -> None:
     exchanges = [exchange(0, 3, unrated=True), exchange(1, 4)]
     assert weakest_index(exchanges) == 1
-    assert "non notée" in exchange_text(exchanges[0])
+    assert "unscored" in exchange_text(exchanges[0])

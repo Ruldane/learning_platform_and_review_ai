@@ -73,11 +73,11 @@ def check_local_origin(request: Request) -> None:
     hosts = request.headers.getlist("host")
     if len(hosts) != 1 or not _LOCAL_HOST.fullmatch(hosts[0]):
         raise McpRefusal(
-            "host_not_allowed", "Le serveur MCP n'est joignable que depuis ce poste.", 403
+            "host_not_allowed", "The MCP server can only be reached from this machine.", 403
         )
     origins = request.headers.getlist("origin")
     if len(origins) > 1 or (origins and not _LOCAL_ORIGIN.fullmatch(origins[0])):
-        raise McpRefusal("origin_not_allowed", "Origine refusée : le MCP est local seulement.", 403)
+        raise McpRefusal("origin_not_allowed", "Origin refused: the MCP server is local only.", 403)
 
 
 async def guard_interface_request(request: Request) -> None:
@@ -90,7 +90,7 @@ async def guard_interface_request(request: Request) -> None:
         if match is not None and match.group(1).startswith(TOKEN_PREFIX):
             raise AppError(
                 "mcp_token_on_api",
-                "Un jeton MCP n'ouvre que le serveur MCP : ces réglages sont ceux de l'interface.",
+                "An MCP token only opens the MCP server: these settings belong to the interface.",
                 403,
             )
     if request.app.state.settings.auth_mode == "local":
@@ -104,7 +104,7 @@ def _bearer(request: Request) -> str:
     if match is None or not _TOKEN.fullmatch(match.group(1)):
         raise McpRefusal(
             "mcp_token_invalid",
-            "Jeton MCP manquant ou invalide : envoie « Authorization: Bearer tmcp_… ».",
+            'MCP token missing or invalid: send "Authorization: Bearer tmcp_…".',
             401,
         )
     return match.group(1)
@@ -116,7 +116,7 @@ async def _find(db: AsyncSession, plain: str) -> McpToken:
     digest = hash_token(plain)
     row = (await db.execute(select(McpToken).where(McpToken.hash == digest))).scalar_one_or_none()
     if row is None:
-        raise McpRefusal("mcp_token_invalid", "Jeton MCP inconnu.", 401)
+        raise McpRefusal("mcp_token_invalid", "Unknown MCP token.", 401)
     return row
 
 
@@ -134,10 +134,10 @@ def _refuse(
 
 def _check_validity(token: McpToken, now: datetime) -> None:
     if token.revoked_at is not None:
-        raise _refuse(token, "mcp_token_revoked", "Ce jeton MCP a été révoqué.", 401)
+        raise _refuse(token, "mcp_token_revoked", "This MCP token has been revoked.", 401)
     if token.expires_at <= now:
         raise _refuse(
-            token, "mcp_token_expired", "Ce jeton MCP a expiré : crées-en un nouveau.", 401
+            token, "mcp_token_expired", "This MCP token has expired: create a new one.", 401
         )
 
 
@@ -153,7 +153,7 @@ async def authenticate(request: Request, db: AsyncSession) -> McpIdentity:
     check_local_origin(request)
     gate: McpGate | None = getattr(request.app.state, "mcp_gate", None)
     if gate is None:
-        raise AppError("mcp_unavailable", "Le serveur MCP n'est pas prêt.", 503)
+        raise AppError("mcp_unavailable", "The MCP server is not ready.", 503)
     plain = _bearer(request)
     token = await _find(db, plain)
     KnownSecrets.add(
@@ -166,12 +166,14 @@ async def authenticate(request: Request, db: AsyncSession) -> McpIdentity:
     except AppError as exc:
         raise _refuse(token, exc.code, exc.message, exc.status_code, exc.details) from exc
     if not await gate.user_allowed(db, token.user_id):
-        raise _refuse(token, "mcp_token_invalid", "Ce compte n'a plus accès à l'application.", 401)
+        raise _refuse(
+            token, "mcp_token_invalid", "This account no longer has access to the app.", 401
+        )
     if not await _is_enabled(db, token.user_id):
         raise _refuse(
             token,
             "mcp_disabled",
-            "L'accès MCP est coupé : rallume-le dans les réglages de Tremplin.",
+            "MCP access is turned off: turn it back on in Tremplin's settings.",
             403,
         )
     if token.last_used_at is None or now - token.last_used_at >= _LAST_USED_EVERY:

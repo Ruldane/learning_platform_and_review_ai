@@ -1,4 +1,4 @@
-const DAY = new Intl.DateTimeFormat("fr-FR", { dateStyle: "short" });
+const DAY = new Intl.DateTimeFormat("en-GB", { dateStyle: "short" });
 
 /** « 03/11/2026 » : le jour d'un instant ISO ; une date illisible est rendue telle quelle. */
 export function formatDay(iso: string): string {

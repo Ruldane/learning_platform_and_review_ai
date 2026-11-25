@@ -1,4 +1,4 @@
-"""Contrat des lectures d’article et de leur expérience."""
+"""Contract for paper readings and their experiment."""
 
 from typing import Literal
 
@@ -12,7 +12,7 @@ class PaperLabCreate(BaseModel):
     @classmethod
     def public_address(cls, url: HttpUrl) -> HttpUrl:
         if url.username or url.password:
-            raise ValueError("Utilise une adresse publique sans identifiants.")
+            raise ValueError("Use a public address without credentials.")
         return url
 
 

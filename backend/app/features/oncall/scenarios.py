@@ -1,4 +1,4 @@
-"""Service Python et métriques fictives, entièrement reproductibles par graine."""
+"""Python service and fictitious metrics, fully reproducible from a seed."""
 
 from dataclasses import dataclass
 from typing import Literal
@@ -7,7 +7,7 @@ ScenarioKind = Literal["latency", "queue", "quota", "fidelity"]
 KINDS: tuple[ScenarioKind, ...] = ("latency", "queue", "quota", "fidelity")
 MAX_MINUTE = 12
 SIZES = (3, 7, 11)
-REFERENCE = "routine fictive disponible"
+REFERENCE = "fictitious routine available"
 SOURCE = "service.py"
 
 
@@ -20,10 +20,10 @@ class Fixture:
 
 
 FIXTURES: dict[ScenarioKind, Fixture] = {
-    "latency": Fixture("Temps de réponse", "LATENCY_MS", 880, 180),
-    "queue": Fixture("File de traitement", "QUEUE_CAPACITY", 2, 0),
-    "quota": Fixture("Quota de traitement", "DAILY_LIMIT", 2, 0),
-    "fidelity": Fixture("Fidélité d’une réponse", "USE_REFERENCE", False, 0),
+    "latency": Fixture("Response time", "LATENCY_MS", 880, 180),
+    "queue": Fixture("Processing queue", "QUEUE_CAPACITY", 2, 0),
+    "quota": Fixture("Processing quota", "DAILY_LIMIT", 2, 0),
+    "fidelity": Fixture("Response fidelity", "USE_REFERENCE", False, 0),
 }
 _HEALTHY: dict[str, int | bool] = {
     "LATENCY_MS": 180,
@@ -41,7 +41,7 @@ def project_files(kind: ScenarioKind) -> dict[str, str]:
 
 
 def serve(requests, *, incident_active=False):
-    """Traite des données générées pour l'exercice."""
+    """Processes data generated for the exercise."""
     latency = LATENCY_MS if incident_active else {_HEALTHY["LATENCY_MS"]!r}
     capacity = QUEUE_CAPACITY if incident_active else {_HEALTHY["QUEUE_CAPACITY"]!r}
     limit = DAILY_LIMIT if incident_active else {_HEALTHY["DAILY_LIMIT"]!r}
@@ -50,7 +50,7 @@ def serve(requests, *, incident_active=False):
         "latency_ms": latency,
         "pending": max(0, requests - capacity),
         "accepted": min(requests, limit),
-        "note": {REFERENCE!r} if use_reference else "information non vérifiée",
+        "note": {REFERENCE!r} if use_reference else "unverified information",
     }}
 
 
@@ -58,10 +58,10 @@ if __name__ == "__main__":
     print(serve(7, incident_active=True))
 '''
     instructions = (
-        "# Service d’entraînement\n\nCorrige `service.py` après avoir consulté le journal "
-        "d’astreinte. Conserve `serve(requests, *, incident_active=False)` et la forme de sa "
-        "réponse. Le drapeau `incident_active` rejoue les conditions de l’alerte. "
-        "Le diagnostic compare la latence, la file, le quota et la fidélité au jeu de données.\n"
+        "# Training service\n\nFix `service.py` after reading the on-call log. "
+        "Keep `serve(requests, *, incident_active=False)` and the shape of its "
+        "response. The `incident_active` flag replays the alert conditions. "
+        "The diagnostic compares latency, queue, quota and fidelity against the dataset.\n"
     )
     return {SOURCE: body, "README.md": instructions}
 

@@ -1,5 +1,5 @@
-"""API du programme (SPEC 3.4, 14.2 ; D88) : liste, vue complète, modifications de January
-(tâches déplacées, ajoutées, supprimées, date de début), validation, exports `.ics` et PDF (D89)."""
+"""Program API (SPEC 3.4, 14.2; D88): list, full view, January's edits (tasks moved, added,
+removed, start date), validation, `.ics` and PDF exports (D89)."""
 
 from typing import Annotated
 
@@ -35,7 +35,7 @@ PDF_MEDIA_TYPE = "application/pdf"
 
 
 def get_program_runtime(conn: HTTPConnection) -> ProgramRuntime:
-    """Le programme ouvert par le lifespan (`app.state.program`)."""
+    """The program opened by the lifespan (`app.state.program`)."""
     runtime: ProgramRuntime = conn.app.state.program
     return runtime
 
@@ -55,11 +55,11 @@ async def list_programs(current: CurrentUserDep, db: Db) -> list[ProgramSummaryO
     responses={
         404: {"description": "`goal_not_found`"},
         409: {"description": "`program_exists`"},
-        422: {"description": "`invalid_start_date`, `planning_impossible` ou `plan_invalid`"},
+        422: {"description": "`invalid_start_date`, `planning_impossible` or `plan_invalid`"},
     },
 )
 async def write_program(body: ProgramWrite, current: CurrentUserDep, rt: ProgramDep) -> ProgramOut:
-    """Écrit un programme complet (semaines, modules, tâches) en brouillon à valider, sans agent."""
+    """Writes a complete program (weeks, modules, tasks) as a draft to validate, no agent."""
     return await direct.write_program(rt, current.id, body)
 
 
@@ -87,7 +87,7 @@ async def patch_program(
 async def add_week(
     program_id: str, body: WeekCreate, current: CurrentUserDep, rt: ProgramDep
 ) -> WeekOut:
-    """Ajoute une semaine (sans module) à la fin du programme, sans agent."""
+    """Adds a week (without a module) at the end of the program, without an agent."""
     return await structure.add_week(rt, current.id, program_id, body)
 
 
@@ -99,7 +99,7 @@ async def add_week(
 async def patch_week(
     week_id: str, body: WeekPatch, current: CurrentUserDep, rt: ProgramDep
 ) -> WeekOut:
-    """Retouche le thème, l'objectif ou le livrable d'une semaine, sans agent."""
+    """Edits the theme, goal or deliverable of a week, without an agent."""
     return await structure.patch_week(rt, current.id, week_id, body)
 
 
@@ -108,14 +108,14 @@ async def patch_week(
     response_model=ModuleOut,
     status_code=http.HTTP_201_CREATED,
     responses={
-        404: {"description": "`program_not_found` ou `week_not_found`"},
+        404: {"description": "`program_not_found` or `week_not_found`"},
         409: {"description": "`week_full`"},
     },
 )
 async def add_module(
     program_id: str, body: ModuleCreate, current: CurrentUserDep, rt: ProgramDep
 ) -> ModuleOut:
-    """Ajoute un module (sans tâche) à une semaine du programme, sans agent."""
+    """Adds a module (without a task) to a week of the program, without an agent."""
     return await structure.add_module(rt, current.id, program_id, body)
 
 
@@ -127,7 +127,7 @@ async def add_module(
 async def patch_module(
     module_id: str, body: ModulePatch, current: CurrentUserDep, rt: ProgramDep
 ) -> ModuleOut:
-    """Retouche le titre, les compétences ou les prérequis d'un module, sans agent."""
+    """Edits the title, skills or prerequisites of a module, without an agent."""
     return await structure.patch_module(rt, current.id, module_id, body)
 
 
@@ -159,7 +159,7 @@ async def export_ics(program_id: str, current: CurrentUserDep, db: Db) -> Respon
     return Response(
         content=body,
         media_type=f"{ICS_MEDIA_TYPE}; charset=utf-8",
-        headers={"Content-Disposition": 'attachment; filename="programme.ics"'},
+        headers={"Content-Disposition": 'attachment; filename="program.ics"'},
     )
 
 
@@ -173,10 +173,10 @@ async def export_ics(program_id: str, current: CurrentUserDep, db: Db) -> Respon
 async def export_pdf(
     program_id: str, current: CurrentUserDep, db: Db, publishing: PublishingDep
 ) -> Response:
-    """PDF A4 du programme (Gotenberg, sans script) ; 502 `render_failed` si le rendu échoue."""
+    """A4 PDF of the program (Gotenberg, no script); 502 `render_failed` if rendering fails."""
     body = await export_program_pdf(db, publishing.html_pdf, current.id, program_id)
     return Response(
         content=body,
         media_type=PDF_MEDIA_TYPE,
-        headers={"Content-Disposition": 'attachment; filename="programme.pdf"'},
+        headers={"Content-Disposition": 'attachment; filename="program.pdf"'},
     )

@@ -9,7 +9,7 @@ from app.features.memory.service.sources.base import (
 
 
 class PdfSource:
-    """Texte des pages (pdfplumber, plafonné par le fournisseur) ; titre : nom sans extension."""
+    """Page text (pdfplumber, capped by the provider); title: name without extension."""
 
     kind: DocumentSourceKind = "pdf"
 

@@ -17,6 +17,7 @@ const features: FeatureManifest[] = [
     id: "public",
     routes: [],
     publicRoutes: [{ path: "/ouverte", element: <h1>Page ouverte</h1> }],
+    legacyPublicRoutes: { "/ancienne": "/ouverte" },
   },
 ];
 
@@ -30,28 +31,39 @@ function renderAt(path: string, me: typeof camille | null = camille) {
   );
   const router = createMemoryRouter(buildRoutes(features), { initialEntries: [path] });
   render(<RouterProvider router={router} />, { wrapper: createQueryWrapper() });
-  return { auth };
+  return { auth, router };
 }
 
 describe("buildRoutes", () => {
-  it("monte les routes des manifestes dans AppLayout", async () => {
+  it("mounts manifest routes in AppLayout", async () => {
     renderAt("/demo");
     expect(await screen.findByRole("heading", { name: "Démo" })).toBeInTheDocument();
-    expect(screen.getByRole("navigation", { name: "Navigation principale" })).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "Main navigation" })).toBeInTheDocument();
   });
 
-  it("termine par la page introuvable", async () => {
+  it("ends with the not-found page", async () => {
     renderAt("/nimporte-quoi");
-    expect(await screen.findByRole("heading", { name: "Page introuvable" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Page not found" })).toBeInTheDocument();
   });
 
   it("public routes render without layout or gates", async () => {
-    // Sans session : la porte renverrait vers `/connexion`, mais une route publique ne la traverse
+    // Sans session : la porte renverrait vers `/login`, mais une route publique ne la traverse
     // pas.
     const { auth } = renderAt("/ouverte", null);
     expect(await screen.findByRole("heading", { name: "Page ouverte" })).toBeInTheDocument();
     expect(screen.queryByRole("navigation")).toBeNull();
     expect(screen.queryByRole("banner")).toBeNull();
+    expect(auth.meCalls).toBe(0);
+  });
+
+  it("redirects previous public routes and preserves the query and fragment", async () => {
+    const { auth, router } = renderAt("/ancienne?error=expired#continue", null);
+    expect(await screen.findByRole("heading", { name: "Page ouverte" })).toBeInTheDocument();
+    expect(router.state.location).toMatchObject({
+      pathname: "/ouverte",
+      search: "?error=expired",
+      hash: "#continue",
+    });
     expect(auth.meCalls).toBe(0);
   });
 });

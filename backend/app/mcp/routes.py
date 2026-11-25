@@ -52,4 +52,4 @@ class RouteIndex:
     def _ensure(self, method: str, path: str, template: str) -> None:
         found = self.resolve(method, path)
         if found is not None and found != template:
-            raise ArgumentError("Argument invalide : cet identifiant désigne une autre route.")
+            raise ArgumentError("Invalid argument: this identifier points to another route.")

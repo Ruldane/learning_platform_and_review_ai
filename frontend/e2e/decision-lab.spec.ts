@@ -5,7 +5,7 @@ test.skip(process.env.E2E_DECISION_LAB !== "1", "Requiert la pile synthétique d
 
 test("compare deux architectures et retrouve un scénario sauvegardé", async ({ page, request }) => {
   await finishFirstLaunch(request);
-  await page.goto("/apprendre/decisions");
+  await page.goto("/learn/decisions");
   const rate = page.getByLabel("Charge (requêtes par seconde)");
   await expect(page.getByRole("heading", { name: "Laboratoire de décisions" })).toBeVisible();
   await rate.fill("150");

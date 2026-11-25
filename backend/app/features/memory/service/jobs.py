@@ -1,12 +1,12 @@
-"""Worker de la mémoire : une seule tâche asyncio par processus, une file en mémoire, des jobs
-exécutés un par un (D66) : imports de documents et réindexations (D67). Au démarrage, les
-documents `queued` et `processing` (import coupé par un arrêt) sont remis en file. Une exception
-ne tue jamais la boucle ; chaque job a un délai.
+"""Memory worker: a single asyncio task per process, an in-memory queue, jobs run one by one
+(D66): document imports and reindexings (D67). At startup, `queued` and `processing` documents
+(import cut by a stop) are put back in the queue. An exception never kills the loop; each job
+has a timeout.
 
-La file n'est pas persistée : c'est l'état des documents en base qui fait foi, relu au démarrage.
-L'état d'une réindexation vit en mémoire et se perd au redémarrage ; c'est sans danger, les
-éléments qu'elle n'a pas traités gardent `indexed_at` nul et la suivante les rattrape.
-Les journaux ne citent que des identifiants et des types d'exception."""
+The queue is not persisted: the state of the documents in the database is authoritative, re-read
+at startup. The state of a reindexing lives in memory and is lost on restart; this is harmless,
+the items it did not process keep a null `indexed_at` and the next one catches them up.
+Logs only quote ids and exception types."""
 
 import asyncio
 import logging
@@ -23,25 +23,25 @@ from app.features.memory.service.runtime import MemoryRuntime
 logger = logging.getLogger(__name__)
 
 JOB_TIMEOUT_S: float = 300
-TIMEOUT_ERROR = {"code": "ingestion_timeout", "message": "L'import a dépassé 5 minutes."}
+TIMEOUT_ERROR = {"code": "ingestion_timeout", "message": "The import took longer than 5 minutes."}
 REINDEX_TIMEOUT_S: float = 3600
-REINDEX_TIMEOUT = "La réindexation a dépassé une heure."
-REINDEX_FAILED = "La réindexation a échoué de façon inattendue."
+REINDEX_TIMEOUT = "Reindexing took longer than an hour."
+REINDEX_FAILED = "Reindexing failed unexpectedly."
 IDLE = ReindexState(status="idle", done=0, total=0, error=None)
 
 
 class MemoryJobs:
     def __init__(self, runtime_factory: Callable[[], MemoryRuntime]) -> None:
-        # Fabrique : le runtime contient ce worker, il n'existe donc qu'après lui.
+        # Factory: the runtime contains this worker, so it only exists after it.
         self._runtime_factory = runtime_factory
-        # (utilisateur, document) ; document `None` : réindexation de l'utilisateur.
+        # (user, document); document `None`: reindexing of the user.
         self._queue: asyncio.Queue[tuple[str, str | None]] = asyncio.Queue()
         self._worker: asyncio.Task[None] | None = None
-        self._scheduled: Counter[str] = Counter()  # documents en file ou en cours
+        self._scheduled: Counter[str] = Counter()  # documents queued or running
         self._reindex: dict[str, ReindexState] = {}
 
     async def start(self) -> None:
-        """Relit les documents à reprendre, les met en file et lance UNE tâche worker."""
+        """Re-reads the documents to resume, queues them and starts ONE worker task."""
         if self._worker is not None:
             return
         runtime = self._runtime_factory()
@@ -50,18 +50,18 @@ class MemoryJobs:
         for user_id, document_id in pending:
             self.enqueue_ingest(user_id, document_id)
         if pending:
-            logger.info("%d document(s) remis en file au démarrage", len(pending))
+            logger.info("%d document(s) put back in the queue at startup", len(pending))
         self._worker = asyncio.create_task(self._loop(), name="memory-jobs")
 
     def enqueue_ingest(self, user_id: str, document_id: str) -> None:
-        """Après le commit du document. Mettre deux fois le même document en file est sans
-        effet : le second passage le trouve déjà `indexed` ou `error`."""
+        """After the document's commit. Queueing the same document twice has no effect: the
+        second pass finds it already `indexed` or `error`."""
         self._scheduled[document_id] += 1
         self._queue.put_nowait((user_id, document_id))
 
     def enqueue_reindex(self, user_id: str) -> ReindexState:
-        """Met la réindexation de l'utilisateur en file. Déjà en file ou en cours : rend l'état
-        courant, sans second job (un double clic ne lance jamais deux réindexations)."""
+        """Queues the user's reindexing. Already queued or running: returns the current state,
+        without a second job (a double click never launches two reindexings)."""
         current = self.reindex_state(user_id)
         if current.status in ("queued", "running"):
             return current
@@ -71,21 +71,21 @@ class MemoryJobs:
         return queued
 
     def reindex_state(self, user_id: str) -> ReindexState:
-        """État de la dernière réindexation de l'utilisateur ; `idle` s'il n'y en a pas eu
-        depuis le démarrage."""
+        """State of the user's last reindexing; `idle` if there has been none since
+        startup."""
         return self._reindex.get(user_id, IDLE)
 
     def is_scheduled(self, document_id: str) -> bool:
-        """Vrai si le document attend dans la file ou est en cours de traitement."""
+        """True if the document is waiting in the queue or being processed."""
         return self._scheduled[document_id] > 0
 
     async def join(self) -> None:
-        """Pour les tests : attend que la file soit vide et le worker au repos."""
+        """For tests: waits for the queue to be empty and the worker idle."""
         await self._queue.join()
 
     async def aclose(self) -> None:
-        """Annule le worker et attend sa fin. Le document en cours reste `processing` : il
-        repartira au prochain démarrage. Idempotent."""
+        """Cancels the worker and waits for it to end. The document in progress stays
+        `processing`: it will restart at the next startup. Idempotent."""
         worker, self._worker = self._worker, None
         if worker is None:
             return
@@ -106,7 +106,7 @@ class MemoryJobs:
                 else:
                     await self._execute(user_id, document_id)
             except Exception as exc:
-                logger.error("Job de %s abandonné (%s)", document_id or user_id, type(exc).__name__)
+                logger.error("Job of %s abandoned (%s)", document_id or user_id, type(exc).__name__)
             finally:
                 if document_id is not None:
                     self._scheduled[document_id] -= 1
@@ -115,8 +115,8 @@ class MemoryJobs:
                 self._queue.task_done()
 
     async def _reindex_job(self, user_id: str) -> None:
-        """Réindexation : `running`, puis `done` ou `failed` avec un message lisible (celui du
-        port pour une panne d'Ollama ou de Qdrant, jamais le texte d'une autre exception)."""
+        """Reindexing: `running`, then `done` or `failed` with a readable message (the port's for
+        an Ollama or Qdrant outage, never the text of another exception)."""
 
         def report(state: ReindexState) -> None:
             self._reindex[user_id] = state
@@ -133,7 +133,7 @@ class MemoryJobs:
         except Exception as exc:
             error, cause = REINDEX_FAILED, type(exc).__name__
         state = self.reindex_state(user_id)
-        logger.warning("Réindexation de %s en échec (%s)", user_id, cause)
+        logger.warning("Reindexing of %s failed (%s)", user_id, cause)
         report(state.model_copy(update={"status": "failed", "error": error}))
 
     async def _execute(self, user_id: str, document_id: str) -> None:
@@ -143,9 +143,9 @@ class MemoryJobs:
                 await ingest(runtime, user_id, document_id)
             return
         except TimeoutError:
-            logger.warning("Import du document %s : délai dépassé", document_id)
+            logger.warning("Import of document %s: timed out", document_id)
             error = TIMEOUT_ERROR
         except Exception as exc:
-            logger.warning("Import du document %s en échec (%s)", document_id, type(exc).__name__)
+            logger.warning("Import of document %s failed (%s)", document_id, type(exc).__name__)
             error = FAILED
         await mark_error(runtime, user_id, document_id, error)

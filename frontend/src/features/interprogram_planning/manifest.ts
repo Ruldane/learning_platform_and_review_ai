@@ -3,12 +3,12 @@ import { SharedPlanningPage } from "./pages/SharedPlanningPage";
 
 export const interprogramPlanningManifest: FeatureManifest = {
   id: "interprogram_planning",
-  routes: [{ path: "etudier/planning-commun", Component: SharedPlanningPage }],
+  routes: [{ path: "study/shared-planning", Component: SharedPlanningPage }],
   nav: [
     {
       section: "study",
       labelKey: "interprogramPlanning.title",
-      path: "/etudier/planning-commun",
+      path: "/study/shared-planning",
       order: 3.8,
     },
   ],

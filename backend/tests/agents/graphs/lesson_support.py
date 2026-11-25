@@ -39,10 +39,10 @@ from tests.support.lessons import (
 )
 
 PATIENCE_S = 60
-RESOURCES_MARKER = "Tâche : choisir les ressources d'apprentissage"
+RESOURCES_MARKER = "Task: choose the learning resources"
 NO_CLAIM = verifier_reply()
 GOOD_LESSON = lesson_markdown(1500, urls=(URLS[0], URLS[1]))
-_SOURCE_ID = re.compile(r"source_id : (\S+) \(note")
+_SOURCE_ID = re.compile(r"source_id: (\S+) \(score")
 
 type Picker = Callable[[list[str]], list[dict[str, Any]]]
 
@@ -52,7 +52,7 @@ def pick(source_id: str, kind: str = "article") -> dict[str, Any]:
         "source_id": source_id,
         "type": kind,
         "duration_minutes": 30,
-        "level": "debutant",
+        "level": "beginner",
         "reason": "Explique bien le sujet du module.",
     }
 
@@ -184,7 +184,7 @@ async def make_lesson_runner(make_web_runner: MakeWeb, user_id: str) -> AsyncIte
         module_id: str = MODULE_ID,
     ) -> Lesson:
         models = LessonModels(picker=picker)
-        models.when("scout", "Note cette source.", *(scores or []), *[SCORE_82] * 20)
+        models.when("scout", "Score this source.", *(scores or []), *[SCORE_82] * 20)
         models.when("writer", "", *(writer or []), *[GOOD_LESSON] * 20)
         models.when("verifier", "", *(verifier or []), *[NO_CLAIM] * 20)
         web = await make_web_runner([], models=models, lessons=store)

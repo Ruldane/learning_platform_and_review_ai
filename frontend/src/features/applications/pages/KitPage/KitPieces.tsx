@@ -10,7 +10,7 @@ interface KitPiecesProps {
   onSave: (kind: KitKindView, content: string) => Promise<KitSaveResult>;
 }
 
-/** Les sept pièces dans l'ordre du serveur ; avant tout lancement, une seule phrase au lieu de sept cases vides. */
+/** Show the pieces in server order, with a single empty state before the first run. */
 export function KitPieces({ pieces, running, onSave }: KitPiecesProps) {
   const arrived = useArrivedCount(pieces, running);
   if (!running && pieces.every((piece) => piece.status === "pending")) {

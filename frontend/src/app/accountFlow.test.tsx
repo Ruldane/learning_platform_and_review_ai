@@ -12,20 +12,20 @@ import { authApi, camille } from "@/test/authApi";
 import { createQueryWrapper } from "@/test/queryWrapper";
 import { server } from "@/test/server";
 
-describe("« Tout supprimer » avec la porte de connexion", () => {
+describe("« Delete everything » avec la porte de connexion", () => {
   it("shares the identity query key with the auth feature", () => {
     expect(accountKeys.me).toEqual(authKeys.me);
     expect(AUTH_SCOPE).toBe(authKeys.me[0]);
   });
 
-  it("a 401 during the deletion leads once to /connexion, through the gate", async () => {
+  it("a 401 during the deletion leads once to /login, through the gate", async () => {
     server.use(...accountApi({ delete: "expired" }).handlers, ...authApi({ me: camille }).handlers);
     const client = new QueryClient({
       defaultOptions: { queries: { retry: false, staleTime: 15_000 } },
     });
     const router = createMemoryRouter(
       [
-        { path: "/connexion", element: <p>Connexion</p> },
+        { path: "/login", element: <p>Sign in</p> },
         {
           path: "/",
           element: (
@@ -33,10 +33,10 @@ describe("« Tout supprimer » avec la porte de connexion", () => {
               <Outlet />
             </SessionGate>
           ),
-          children: [{ path: "reglages/donnees", element: <DataPage /> }],
+          children: [{ path: "settings/data", element: <DataPage /> }],
         },
       ],
-      { initialEntries: ["/reglages/donnees"] },
+      { initialEntries: ["/settings/data"] },
     );
     const Wrapper = createQueryWrapper(client);
     render(
@@ -45,9 +45,9 @@ describe("« Tout supprimer » avec la porte de connexion", () => {
       </Wrapper>,
     );
     const user = userEvent.setup();
-    await user.type(await screen.findByLabelText("Tape SUPPRIMER pour confirmer"), "SUPPRIMER");
-    await user.click(screen.getByRole("button", { name: "Tout supprimer" }));
-    expect(await screen.findByText("Connexion")).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe("/connexion");
+    await user.type(await screen.findByLabelText("Type SUPPRIMER to confirm"), "SUPPRIMER");
+    await user.click(screen.getByRole("button", { name: "Delete everything" }));
+    expect(await screen.findByText("Sign in")).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/login");
   });
 });

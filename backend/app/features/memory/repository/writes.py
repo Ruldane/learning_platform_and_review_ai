@@ -10,7 +10,7 @@ REASON_MAX = 300
 
 
 class WriteRepository(UserScopedRepository[MemoryWrite]):
-    """Journal des écritures de la mémoire (agents et utilisateur)."""
+    """Write log of the memory (agents and user)."""
 
     model = MemoryWrite
 
@@ -23,8 +23,8 @@ class WriteRepository(UserScopedRepository[MemoryWrite]):
         session_id: str | None,
         reason: str | None,
     ) -> MemoryWrite:
-        """Note une écriture ; le titre et le type de l'élément sont copiés pour que la ligne
-        survive à sa suppression."""
+        """Records a write; the item's title and kind are copied so the row survives its
+        deletion."""
         return await self.add(
             item_id=item.id,
             item_title=item.title,
@@ -58,18 +58,18 @@ class WriteRepository(UserScopedRepository[MemoryWrite]):
         before: datetime | None,
         limit: int,
         *,
-        skip: tuple[str, str, str],
+        skip: tuple[str, tuple[str, ...], tuple[str, ...]],
     ) -> builtins.list[MemoryWrite]:
-        """Les écritures des agents (auteur autre que l'utilisatrice, hors suppressions) dans
-        `[after, before]` (bornes incluses), la plus récente d'abord (fil d'activité). `skip` =
-        (auteur, raison exacte, début de raison) : les écritures de cet auteur qui portent l'une
-        de ces raisons sont celles d'une action de l'utilisatrice (sa capture), écartées."""
-        author, reason, prefix = skip
+        """Agent writes (author other than the user, deletions excluded) within `[after, before]`
+        (inclusive bounds), most recent first. Exclude the given author's writes when their
+        reason matches a capture reason or prefix in `skip`."""
+        author, reasons, prefixes = skip
         why = func.coalesce(MemoryWrite.reason, "")
+        capture_reason = or_(why.in_(reasons), *(why.startswith(prefix) for prefix in prefixes))
         stmt = self._ordered().where(
             MemoryWrite.author != USER_AUTHOR,
             MemoryWrite.action != "delete",
-            not_(and_(MemoryWrite.author == author, or_(why == reason, why.startswith(prefix)))),
+            not_(and_(MemoryWrite.author == author, capture_reason)),
         )
         if after is not None:
             stmt = stmt.where(MemoryWrite.created_at >= after)

@@ -27,7 +27,7 @@ export function ReadingActions({ article }: { article: ReadingDetail }) {
       {memory.data ? (
         <Link
           className="self-start text-sm underline"
-          to={`/memoire?item=${memory.data.memory_item_id}`}
+          to={`/memory?item=${memory.data.memory_item_id}`}
         >
           {t("reading.actions.openMemory")}
         </Link>

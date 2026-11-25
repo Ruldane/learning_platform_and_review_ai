@@ -7,7 +7,7 @@ from tests.agents.graphs.kit_support import MakeKit, dossier, dossier_data, prom
 from tests.agents.graphs.review_support import FakeWeb
 from tests.support.kit import COMPANY, FakeKitStore
 
-NO_SOURCE = "Aucune source lisible : dossier non produit."
+NO_SOURCE = "The dossier needs at least one readable source."
 
 
 def fresh_dossier(**over: object) -> CompanyDossier:
@@ -57,7 +57,7 @@ async def test_reused_dossier_with_emptied_sections_stays_to_check(
     row = kit_store.piece("company_brief")
     assert row.status == "to_check"
     assert row.meta == {"sources": 1, "reused": True, "emptied": 1, "dropped": 1}
-    assert "Non trouvé dans les sources lues." in row.content
+    assert "No evidence found in the sources read." in row.content
     assert "Vieille actualité" not in row.content
 
 
@@ -69,9 +69,14 @@ async def test_dossier_researched_and_rendered_with_sources(
     assert len(kit_web.searches) == 2 and len(kit_web.reads) == 4  # quatre lectures au plus
     row = kit_store.piece("company_brief")
     assert row.status == "ready" and row.meta == {"sources": 4, "emptied": 0, "dropped": 0}
-    for heading in ("# Dossier : Société Fictive", "## Activité", "## Actualité", "## Sources"):
+    for heading in (
+        "# Company dossier for Société Fictive",
+        "## Business",
+        "## News",
+        "## Sources",
+    ):
         assert heading in row.content
-    assert "2026-10-01 : Levée de fonds annoncée [2]" in row.content
+    assert "2026-10-01 · Levée de fonds annoncée [2]" in row.content
     assert "1. Question a sur l'équipe ?" in row.content
     [(company, saved, sources)] = kit_store.dossiers
     assert (
@@ -108,9 +113,9 @@ async def test_dossier_citation_without_source_removed(
     assert "Éditeur de logiciels [1]" in row.content and "- Python [1]" in row.content
     assert "Rust" not in row.content and "Rumeur" not in row.content
     assert "Ancienne levée" not in row.content and "sans date" not in row.content
-    assert "non lue" not in row.content and "2026-11-02 : Nouveau bureau ouvert [3]" in row.content
+    assert "non lue" not in row.content and "2026-11-02 · Nouveau bureau ouvert [3]" in row.content
     assert "Des produits variés" not in row.content  # aucune affirmation sans source lue
-    assert "## Produit\nNon trouvé dans les sources lues." in row.content
+    assert "## Product\nNo evidence found in the sources read." in row.content
     assert row.status == "to_check" and row.meta["emptied"] == 1 and row.meta["dropped"] == 5
 
 
@@ -161,7 +166,7 @@ async def test_unknown_company_skips_the_dossier(
     run = await kit_runner()
     await run.wait_status("completed")
     row = kit_store.piece("company_brief")
-    assert row.status == "to_check" and "Entreprise inconnue" in row.content
+    assert row.status == "to_check" and "company is required" in row.content
     assert kit_web.searches == []
 
 

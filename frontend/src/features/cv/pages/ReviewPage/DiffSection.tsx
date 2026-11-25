@@ -54,7 +54,7 @@ export function DiffSection({ review, locked }: { review: CvReviewOut; locked: b
       />
       {bulk.error ? <InlineError message={bulk.error} /> : null}
       {decide.code === PENDING_DRAFT ? (
-        <Link to="/carriere/profil" className="text-sm font-medium underline underline-offset-4">
+        <Link to="/career/profile" className="text-sm font-medium underline underline-offset-4">
           {t("cv.reviewPage.draftLink")}
         </Link>
       ) : null}

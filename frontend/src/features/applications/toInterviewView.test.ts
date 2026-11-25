@@ -8,12 +8,12 @@ const view = (scores: Record<string, number>) =>
 
 describe("toInterviewView", () => {
   it("keeps a score the model did not give as unknown, never as a real 0", () => {
-    const scores = view({ clarte: 4, structure: 3, adequation: 5 }).debrief?.scores;
+    const scores = view({ clarity: 4, structure: 3, role_fit: 5 }).debrief?.scores;
     expect(scores).toEqual([
-      { key: "clarte", value: 4 },
+      { key: "clarity", value: 4 },
       { key: "structure", value: 3 },
-      { key: "profondeur_technique", value: null },
-      { key: "adequation", value: 5 },
+      { key: "technical_depth", value: null },
+      { key: "role_fit", value: 5 },
     ]);
   });
 });

@@ -15,41 +15,41 @@ import { RemindersPage } from "./pages/RemindersPage";
  * Les candidatures (SPEC 6, section « Candidatures » de la navigation) : le suivi (tableau de suivi
  * ou tableau) avec la fiche en tiroir par-dessus, les relances (pastille = relances dues), la
  * nouvelle fiche (à la main ou en une phrase), le kit d'une candidature (7.14), l'entretien blanc (7.15,
- * depuis une fiche ou libre). Le comité de recrutement simulé (7.16) est sous `/candidatures/:applicationId/comite`.
+ * depuis une fiche ou libre). Le comité simulé est sous `/applications/:applicationId/committee`.
  */
 export const applicationsManifest: FeatureManifest = {
   id: "applications",
   routes: [
     {
-      path: "candidatures",
+      path: "applications",
       Component: BoardPage,
       // Huit colonnes de cartes : la page prend toute la largeur.
       handle: { wide: true },
       children: [{ path: ":applicationId", Component: ApplicationDrawer }],
     },
-    { path: "candidatures/relances", Component: RemindersPage },
-    { path: "candidatures/nouvelle", Component: NewApplicationPage },
-    { path: "candidatures/entretien", Component: FreeInterviewPage },
+    { path: "applications/reminders", Component: RemindersPage },
+    { path: "applications/new", Component: NewApplicationPage },
+    { path: "applications/interview", Component: FreeInterviewPage },
     {
-      path: "candidatures/system-design/:interviewId?",
+      path: "applications/system-design/:interviewId?",
       Component: SystemDesignPage,
       handle: { wide: true },
     },
-    { path: "candidatures/:applicationId/kit", Component: KitPage },
-    { path: "candidatures/:applicationId/entretien", Component: InterviewPage },
-    { path: "candidatures/:applicationId/comite", Component: CommitteePage },
+    { path: "applications/:applicationId/kit", Component: KitPage },
+    { path: "applications/:applicationId/interview", Component: InterviewPage },
+    { path: "applications/:applicationId/committee", Component: CommitteePage },
   ],
   nav: [
     {
       section: "applications",
       labelKey: "applications.nav.board",
-      path: "/candidatures",
+      path: "/applications",
       order: 1,
     },
     {
       section: "applications",
       labelKey: "applications.nav.reminders",
-      path: "/candidatures/relances",
+      path: "/applications/reminders",
       order: 2,
       useBadge: useDueCount,
       badgeLabel: (count) =>
@@ -58,7 +58,7 @@ export const applicationsManifest: FeatureManifest = {
     {
       section: "applications",
       labelKey: "applications.nav.interview",
-      path: "/candidatures/entretien",
+      path: "/applications/interview",
       order: 3,
     },
   ],

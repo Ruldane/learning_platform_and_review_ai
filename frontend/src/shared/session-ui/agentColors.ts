@@ -37,6 +37,11 @@ export const AGENT_COLORS = {
   code_prosecutor: "#882a34",
   code_defender: "#24526a",
   oncall_reviewer: "#6d3971",
+  lesson_professor: "#4c4831",
+  training_tutor: "#265e51",
+  brain_librarian: "#775338",
+  podcast_host: "#5e5088",
+  offers_adviser: "#315c79",
 } as const;
 
 export type AgentSlug = keyof typeof AGENT_COLORS;
@@ -52,7 +57,7 @@ export interface AgentIdentity {
 
 const isKnownAgent = (slug: string): slug is AgentSlug => Object.hasOwn(AGENT_COLORS, slug);
 
-/** Nom, rôle (via `fr.ts`) et couleur d'un agent ; un slug inconnu devient un gris neutre nommé par son slug. */
+/** A display name, role, and color. Unknown agents show their slug with a neutral color. */
 export function agentIdentity(slug: string): AgentIdentity {
   if (!isKnownAgent(slug)) return { name: slug, role: "", color: UNKNOWN_AGENT_COLOR };
   return {

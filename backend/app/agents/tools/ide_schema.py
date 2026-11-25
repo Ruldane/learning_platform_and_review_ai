@@ -1,6 +1,6 @@
-"""Sorties structurées des agents de l'IDE (phase 10, 10.A3) : la note du professeur et l'exercice
-du rédacteur d'exercices. Ce sont des sorties de modèle : le nœud les revérifie (le code décide du
-type de note, de la plage et de l'empreinte, jamais le modèle)."""
+"""Structured outputs of the IDE agents (phase 10, 10.A3): the teacher's note and the exercise
+of the exercise writer. They are model outputs: the node re-checks them (the code decides the
+note type, the range and the fingerprint, never the model)."""
 
 from typing import Literal
 
@@ -15,9 +15,9 @@ Level = Literal["beginner", "intermediate", "advanced"]
 
 
 class TeacherNote(BaseModel):
-    """Ce que le professeur rend : un indice, une explication, une annotation en marge ou (en
-    binôme seulement) une proposition de correction (`replacement` remplace les lignes
-    `start_line` à `end_line` de `path`)."""
+    """What the teacher returns: a hint, an explanation, a margin annotation or (in pair
+    mode only) a correction proposal (`replacement` replaces the lines `start_line` to
+    `end_line` of `path`)."""
 
     kind: TeacherKind
     level: int | None = Field(default=None, ge=1, le=3)
@@ -29,10 +29,10 @@ class TeacherNote(BaseModel):
 
 
 class ExerciseDraft(BaseModel):
-    """Un exercice écrit par le modèle : l'énoncé, les fichiers de départ (avec les tests) et une
-    solution de référence que le code fait passer dans le bac à sable avant de ranger l'exercice.
-    `solution` donne les fichiers corrigés (chemin -> contenu) ; elle n'est jamais rangée. Les
-    tests de `files` s'imposent à la vérification : la solution ne peut pas les changer."""
+    """An exercise written by the model: the statement, the starter files (with the tests) and a
+    reference solution that the code runs in the sandbox before storing the exercise.
+    `solution` gives the corrected files (path -> content); it is never stored. The tests of
+    `files` prevail at verification: the solution cannot change them."""
 
     title: str = Field(min_length=3, max_length=120)
     statement: str = Field(min_length=20, max_length=4_000)
@@ -43,7 +43,7 @@ class ExerciseDraft(BaseModel):
     @model_validator(mode="after")
     def _tests_and_entry(self) -> "ExerciseDraft":
         if not any(name.rsplit("/", 1)[-1].startswith("test_") for name in self.files):
-            raise ValueError("l'exercice demande un fichier de tests (test_*.py)")
+            raise ValueError("the exercise needs a test file (test_*.py)")
         if self.entry not in self.files or self.entry not in self.solution:
-            raise ValueError("le fichier d'entrée doit être dans les fichiers et la solution")
+            raise ValueError("the entry file must be among the files and the solution")
         return self

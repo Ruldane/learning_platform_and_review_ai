@@ -19,7 +19,7 @@ function startLabel(pending: boolean, produced: boolean): string {
   return t(produced ? "applications.kitPage.relaunch" : "applications.kitPage.generate");
 }
 
-/** Générer (ou relancer) le kit et télécharger l'archive ; les raisons d'un refus sont dites en toutes lettres. */
+/** Start the kit, explain refusals, and offer the archive when pieces are available. */
 export function KitControls({ applicationId, pieces, running, start, onStart }: KitControlsProps) {
   const produced = pieces.some((piece) => piece.status !== "pending");
   const archivable = pieces.some(

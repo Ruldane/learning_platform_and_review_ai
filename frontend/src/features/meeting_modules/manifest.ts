@@ -4,13 +4,13 @@ export const meetingModulesManifest: FeatureManifest = {
   id: "meeting_modules",
   routes: [
     {
-      path: "etudier/modules-reunion",
+      path: "study/meeting-modules",
       lazy: async () => ({
         Component: (await import("./pages/MeetingPages")).MeetingLibrary,
       }),
     },
     {
-      path: "etudier/modules-reunion/:moduleId",
+      path: "study/meeting-modules/:moduleId",
       lazy: async () => ({
         Component: (await import("./pages/MeetingPages")).MeetingDetail,
       }),
@@ -20,7 +20,7 @@ export const meetingModulesManifest: FeatureManifest = {
     {
       section: "study",
       labelKey: "meetingModules.title",
-      path: "/etudier/modules-reunion",
+      path: "/study/meeting-modules",
       order: 7.9,
     },
   ],

@@ -1,17 +1,19 @@
-"""La question posée à January et la lecture de sa réponse (SPEC F10, 9.4, D145).
+"""The question asked to January and the reading of her answer (SPEC F10, 9.4, D145).
 
-`ask` ne fait qu'`interrupt()` puis relit la réponse (pur, sans port ni modèle) : seul dans son
-nœud, rejoué depuis son début à la reprise, il repose la même question, celle de l'état.
+`ask` only does `interrupt()` then rereads the answer (pure, no port or model): alone in its
+node, replayed from its beginning on resume, it asks the same question again, the one in the
+state.
 
-Question (`kind = "interview_answer"`) : `question` est le texte posé (la question principale, ou
-sa relance) ; `fields` un champ texte `answer` (4 000 caractères) ; `options` une seule, `stop`
-(« Terminer l'entretien »). Réponse : `{"answers": {"answer": texte}}`, ou `"stop"` (ou
-`{"action": "stop"}`). Une réponse illisible (texte vide, forme inconnue) repose la même question.
+Question (`kind = "interview_answer"`): `question` is the text asked (the main question, or its
+follow-up); `fields` a single text field `answer` (4,000 characters); `options` a single one,
+`stop` ("End the interview"). Answer: `{"answers": {"answer": text}}`, or `"stop"` (or
+`{"action": "stop"}`). An unreadable answer (empty text, unknown shape) asks the same question
+again.
 
-`turn` lit la réponse (dans `untrusted`) : une note interne de 1 à 5 et, au plus une fois par
-question, une relance qui repasse par `ask`. Un modèle muet ou trop lent (`RECOVERABLE_CODES`) ne
-fait pas échouer l'entretien : note neutre, pas de relance. Les échanges restent dans l'état
-jusqu'à `save`."""
+`turn` reads the answer (inside `untrusted`): an internal score from 1 to 5 and, at most once
+per question, a follow-up that goes back through `ask`. A silent or too slow model
+(`RECOVERABLE_CODES`) does not make the interview fail: neutral score, no follow-up. The
+exchanges stay in the state until `save`."""
 
 import asyncio
 import logging
@@ -45,17 +47,17 @@ from app.core.errors import AppError
 
 KIND = "interview_answer"
 STOP = "stop"
-STOP_LABEL = "Terminer l'entretien"
-ANSWER_FIELD = {"id": "answer", "label": "Ta réponse", "required": True, "max_length": 4000}
+STOP_LABEL = "End the interview"
+ANSWER_FIELD = {"id": "answer", "label": "Your answer", "required": True, "max_length": 4000}
 MAX_ANSWER_CHARS = 4000
-TURN_REQUEST = "Lis la réponse et note-la."
-TURN_CALL_TIMEOUT_S = 105.0  # plus court que le plafond d'un nœud (120 s) : le repli s'écrit
+TURN_REQUEST = "Read and score the answer."
+TURN_CALL_TIMEOUT_S = 105.0  # shorter than a node's cap (120 s): the fallback gets written
 NEUTRAL_NOTE = 3
 CRITERION_LABELS = {
-    "clarte": "clarté",
+    "clarity": "clarity",
     "structure": "structure",
-    "profondeur": "profondeur technique",
-    "adequation": "adéquation au poste",
+    "technical_depth": "technical depth",
+    "role_fit": "fit for the role",
 }
 
 logger = logging.getLogger(__name__)
@@ -71,7 +73,7 @@ def question_payload(state: InterviewState) -> dict[str, Any]:
 
 
 def parse_reply(value: Any) -> dict[str, Any] | None:
-    """`{"action": "answer", "text"}`, `{"action": "stop"}` ou `None` (la question est reposée)."""
+    """`{"action": "answer", "text"}`, `{"action": "stop"}` or `None` (asked again)."""
     if value == STOP or (isinstance(value, dict) and value.get("action") == STOP):
         return {"action": STOP}
     answers = value.get("answers") if isinstance(value, dict) else None
@@ -82,7 +84,7 @@ def parse_reply(value: Any) -> dict[str, Any] | None:
 
 
 def ask(state: InterviewState) -> InterviewState:
-    """Point d'arrêt : la question en cours. Rien avant `interrupt()`."""
+    """Stop point: the current question. Nothing before `interrupt()`."""
     return {"reply": parse_reply(interrupt(question_payload(state)))}
 
 
@@ -94,15 +96,15 @@ def route_ask(state: InterviewState) -> str:
 
 
 def route_turn(state: InterviewState) -> str:
-    """Une question reste à poser (la relance, ou la suivante), sinon le débrief."""
+    """A question remains to be asked (the follow-up, or the next one), otherwise the debrief."""
     return "debrief" if state["position"] >= len(state["plan"]) else "ask"
 
 
 def _previous(state: InterviewState) -> str:
-    """L'échange de la question en cours jusqu'à sa relance (celle-ci attend sa note)."""
+    """The exchange of the current question up to its follow-up (which awaits its score)."""
     last = Exchange.model_validate(state["exchanges"][-1])
     return untrusted(
-        exchange_text(last, with_note=False, pending_follow_up=True), "échange précédent"
+        exchange_text(last, with_note=False, pending_follow_up=True), "previous exchange"
     )
 
 
@@ -115,8 +117,8 @@ def turn_vars(
         "mode": "turn",
         "final": final,
         "criterion_label": CRITERION_LABELS[planned.criterion],
-        "question": untrusted(planned.text, "question de l'entretien"),
-        "answer": untrusted(text, "réponse de January"),
+        "question": untrusted(planned.text, "interview question"),
+        "answer": untrusted(text, "January's answer"),
         "before": _previous(state) if final else "",
     }
 
@@ -124,8 +126,8 @@ def turn_vars(
 async def _decide(
     deps: GraphDeps, state: InterviewState, planned: PlannedQuestion, text: str
 ) -> tuple[TurnDecision, bool]:
-    """La décision du modèle, et si c'est un repli ; sans réponse lisible à temps : note neutre,
-    pas de relance."""
+    """The model's decision, and whether it is a fallback; without a readable answer in time:
+    neutral score, no follow-up."""
     step = f"tour-{state['position'] + 1}" + ("-relance" if state["follow_up_open"] else "")
     prompt = render_prompt(AGENT, **turn_vars(context_of(state), planned, state, text))
     try:
@@ -139,7 +141,7 @@ async def _decide(
                 [SystemMessage(prompt), HumanMessage(TURN_REQUEST)],
                 agent=AGENT,
                 step=step,
-                intent="je lis ta réponse",
+                intent="Reading your answer.",
             )
             return decision, False
     except (AppError, TimeoutError) as exc:
@@ -147,7 +149,7 @@ async def _decide(
         if code != "timeout" and code not in RECOVERABLE_CODES:
             raise
         logger.warning(
-            "Intervieweur sans réponse du modèle (%s), note neutre : session %s, %s",
+            "Interviewer without a model answer (%s), neutral score: session %s, %s",
             code,
             deps.session_id,
             step,
@@ -162,9 +164,9 @@ def _answered(
     decision: TurnDecision,
     fallback: bool,
 ) -> list[dict[str, Any]]:
-    """Les échanges avec cette réponse : la relance répondue complète le dernier échange (en repli,
-    la note de la première réponse reste) ; sinon un nouvel échange (la relance, s'il y en a une,
-    attend sa réponse)."""
+    """The exchanges with this answer: the answered follow-up completes the last exchange (as a
+    fallback, the first answer's score stays); otherwise a new exchange (the follow-up, if
+    there is one, awaits its answer)."""
     exchanges = list(state["exchanges"])
     if state["follow_up_open"]:
         last = {**exchanges[-1], "follow_up_answer": text}
@@ -188,10 +190,10 @@ def _answered(
 def make_turn(deps: GraphDeps) -> Node:
     @node_timeout()
     async def turn(state: InterviewState) -> InterviewState:
-        """Note la réponse ; une relance au plus par question, sinon la question suivante."""
+        """Scores the answer; one follow-up at most per question, otherwise the next question."""
         reply = state["reply"]
-        if reply is None or reply["action"] != "answer":  # `route_ask` ne l'envoie pas ici
-            raise RuntimeError("`turn` demande une réponse lue par `ask`")
+        if reply is None or reply["action"] != "answer":  # `route_ask` does not send it here
+            raise RuntimeError("`turn` expects an answer read by `ask`")
         planned = PlannedQuestion.model_validate(state["plan"][state["position"]])
         decision, fallback = await _decide(deps, state, planned, reply["text"])
         context = context_of(state)
@@ -200,7 +202,7 @@ def make_turn(deps: GraphDeps) -> Node:
             decision = decision.model_copy(update={"follow_up": None})
         exchanges = _answered(state, planned, reply["text"], decision, fallback)
         position = state["position"]
-        logger.info("Réponse notée : session %s, question %d", deps.session_id, position + 1)
+        logger.info("Answer scored: session %s, question %d", deps.session_id, position + 1)
         if not state["follow_up_open"] and decision.follow_up:
             say_question(position + 1, decision.follow_up, follow_up=True)
             return {"exchanges": exchanges, "current": decision.follow_up, "follow_up_open": True}

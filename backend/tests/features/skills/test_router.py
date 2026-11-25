@@ -30,33 +30,33 @@ async def test_graph_reflects_level_change_immediately(
     app: FastAPI, client: httpx.AsyncClient, db_session_factory: Factory
 ) -> None:
     me = _me(app)
-    skill_id = await add_skill(db_session_factory, me, "Pandas", "Données", "declare")
+    skill_id = await add_skill(db_session_factory, me, "Pandas", "Données", "declared")
     first = await client.get(f"{API}/skills/graph")
     assert first.status_code == 200, first.text
     assert first.headers["cache-control"] == "no-store"
     assert [(n["id"], n["level"], n["evidence_count"]) for n in first.json()["nodes"]] == [
-        (skill_id, "declare", 0)
+        (skill_id, "declared", 0)
     ]
     async with db_session_factory() as db:
         proof = evidence("quiz", "q1", "Quiz « Bases » : 85 %", NOW)
-        await SkillsService(db, me).raise_levels(["pandas"], "valide", proof)
+        await SkillsService(db, me).raise_levels(["pandas"], "validated", proof)
         await db.commit()
     body = (await client.get(f"{API}/skills/graph")).json()
-    assert [(n["level"], n["evidence_count"]) for n in body["nodes"]] == [("valide", 1)]
+    assert [(n["level"], n["evidence_count"]) for n in body["nodes"]] == [("validated", 1)]
     assert body["domains"] == [{"domain": "Données", "score": 75}]
     detail = (await client.get(f"{API}/skills/{skill_id}")).json()
-    assert detail["level"] == "valide"
+    assert detail["level"] == "validated"
     assert detail["evidence"] == [
         {
             "kind": "quiz",
             "label": "Quiz « Bases » : 85 %",
             "at": "2026-11-17T10:00:00Z",
-            "url": "/etudier/quiz/q1",
+            "url": "/study/quiz/q1",
         }
     ]
     assert detail["next_action"] == {
         "kind": "project",
-        "label": "Projet preuve (bientôt)",
+        "label": "Evidence project (coming soon)",
         "url": None,
     }
 
@@ -82,21 +82,21 @@ async def test_history_route_uses_clock(
 ) -> None:
     app.dependency_overrides[clock] = lambda: NOW
     me = _me(app)
-    skill_id = await add_skill(db_session_factory, me, "Pandas", None, "en_cours")
+    skill_id = await add_skill(db_session_factory, me, "Pandas", None, "in_progress")
     # Relevé écrit au début de la semaine du 16/11 : état de fin de la semaine du 9/11 (5.10 m7).
-    await add_snapshot(db_session_factory, me, WEEK, {skill_id: "declare"})
+    await add_snapshot(db_session_factory, me, WEEK, {skill_id: "declared"})
     r = await client.get(f"{API}/skills/history")
     assert r.status_code == 200 and r.headers["cache-control"] == "no-store"
     assert r.json() == {
         "points": [
             {
                 "week_start": "2026-11-09",
-                "counts": {"declare": 1, "en_cours": 0, "valide": 0, "prouve": 0},
+                "counts": {"declared": 1, "in_progress": 0, "validated": 0, "proven": 0},
                 "score": 25,
             },
             {
                 "week_start": "2026-11-16",
-                "counts": {"declare": 0, "en_cours": 1, "valide": 0, "prouve": 0},
+                "counts": {"declared": 0, "in_progress": 1, "validated": 0, "proven": 0},
                 "score": 50,
             },
         ]
@@ -107,10 +107,10 @@ async def test_skills_routes_isolate_users(
     app: FastAPI, client: httpx.AsyncClient, db_session_factory: Factory
 ) -> None:
     app.dependency_overrides[clock] = lambda: NOW
-    a = await add_skill(db_session_factory, OTHER, "Pandas", "Données", "prouve", ["Programme"])
-    b = await add_skill(db_session_factory, OTHER, "NumPy", "Données", "valide")
+    a = await add_skill(db_session_factory, OTHER, "Pandas", "Données", "proven", ["Programme"])
+    b = await add_skill(db_session_factory, OTHER, "NumPy", "Données", "validated")
     await add_edge(db_session_factory, OTHER, b, a)
-    await add_snapshot(db_session_factory, OTHER, WEEK.replace(day=9), {a: "valide"})
+    await add_snapshot(db_session_factory, OTHER, WEEK.replace(day=9), {a: "validated"})
     goal = await add_goal(db_session_factory, OTHER, target_role="Data engineer")
     await add_program(db_session_factory, OTHER, goal, [("Bases", ["pandas", "numpy"])])
 
@@ -126,11 +126,11 @@ async def test_skills_routes_isolate_users(
     assert history["points"] == [
         {
             "week_start": "2026-11-16",
-            "counts": {"declare": 0, "en_cours": 0, "valide": 0, "prouve": 0},
+            "counts": {"declared": 0, "in_progress": 0, "validated": 0, "proven": 0},
             "score": 0,
         }
     ]
     # Ma propre compétence, au même nom, reste à moi seule.
-    mine = await add_skill(db_session_factory, _me(app), "Pandas", "Données", "declare")
+    mine = await add_skill(db_session_factory, _me(app), "Pandas", "Données", "declared")
     nodes = (await client.get(f"{API}/skills/graph")).json()["nodes"]
-    assert [(n["id"], n["level"]) for n in nodes] == [(mine, "declare")]
+    assert [(n["id"], n["level"]) for n in nodes] == [(mine, "declared")]

@@ -33,8 +33,8 @@ _URL_LIKE = re.compile(r"://|\b[\w-]+(?:\.[\w-]+)+/|www\.", re.IGNORECASE)
 def fact_not_found() -> AppError:
     return AppError(
         "fact_not_found",
-        "Le fait visé n'est plus dans ton profil maître : modifie ton profil puis relance "
-        "une revue.",
+        "This fact is no longer in your master profile. "
+        "Update your profile and start a new review.",
         409,
     )
 
@@ -42,7 +42,7 @@ def fact_not_found() -> AppError:
 def profile_draft_pending() -> AppError:
     return AppError(
         "profile_draft_pending",
-        "Un brouillon de ton profil attend ta validation : valide-le avant de confirmer ce fait.",
+        "Approve the pending profile draft before confirming this fact.",
         409,
     )
 
@@ -50,7 +50,7 @@ def profile_draft_pending() -> AppError:
 def invalid_after() -> AppError:
     return AppError(
         "validation_error",
-        "Requête invalide : vérifie les champs signalés.",
+        "Invalid request. Check the highlighted fields.",
         422,
         {"fields": ["after"]},
     )
@@ -59,7 +59,8 @@ def invalid_after() -> AppError:
 def ambiguous_separator() -> AppError:
     return AppError(
         "ambiguous_separator",
-        "Pour changer d'entreprise ou d'école, écris « Intitulé — Entreprise » avec un tiret long.",
+        "Use an em dash in “Role — Employer” or “Degree — School” "
+        "to change the employer or school.",
         422,
         {"fields": ["after"]},
     )

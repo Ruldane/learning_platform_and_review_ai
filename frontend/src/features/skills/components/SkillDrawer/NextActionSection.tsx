@@ -11,7 +11,7 @@ export function NextActionSection({ detail }: { detail: SkillDetailView }) {
       <NextActionBlock action={detail.nextAction} />
       {detail.evidence.length > 0 && (
         <Button asChild variant="outline" size="sm">
-          <Link to={`/competences/transfert?competence=${encodeURIComponent(detail.id)}`}>
+          <Link to={`/skills/transfer?skill=${encodeURIComponent(detail.id)}`}>
             {t("skillTransfer.drawer")}
           </Link>
         </Button>

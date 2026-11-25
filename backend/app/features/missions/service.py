@@ -75,7 +75,7 @@ def _view(mission: Mission, now: datetime) -> MissionOut:
 async def _owned(db: AsyncSession, user_id: str, mission_id: str) -> Mission:
     mission = await repository.by_id(db, user_id, mission_id)
     if mission is None:
-        raise AppError("mission_not_found", "Mission introuvable.", 404)
+        raise AppError("mission_not_found", "Mission not found.", 404)
     return mission
 
 
@@ -103,12 +103,10 @@ async def _snapshot(
 ) -> Mission:
     posting = await read_posting(db, user_id, str(action.posting_id))
     if posting.status != "ready" or posting.analysis is None:
-        raise AppError("posting_not_ready", "L'analyse de l'offre doit être terminée.", 409)
+        raise AppError("posting_not_ready", "The offer analysis must be finished.", 409)
     requirements = posting.analysis.requirements
     if max(action.requirement_indices) >= len(requirements):
-        raise AppError(
-            "mission_requirement_unknown", "Une exigence sélectionnée est introuvable.", 422
-        )
+        raise AppError("mission_requirement_unknown", "A selected requirement was not found.", 422)
     criteria = [
         Criterion(
             index=index,
@@ -142,7 +140,7 @@ async def start_mission(rt: MissionRuntime, user_id: str, action: MissionCreate)
             if [criterion.index for criterion in _criteria(mission)] != sorted(
                 action.requirement_indices
             ):
-                raise AppError("mission_exists", "Une mission existe déjà pour cette offre.", 409)
+                raise AppError("mission_exists", "A mission already exists for this offer.", 409)
             return _view(mission, now)
         mission = await _snapshot(db, user_id, action, now)
         db.add(mission)
@@ -153,12 +151,14 @@ async def start_mission(rt: MissionRuntime, user_id: str, action: MissionCreate)
 def _ensure_writable(mission: Mission, revision: int, now: datetime) -> None:
     status = _status(mission, now)
     if status == "completed":
-        raise AppError("mission_completed", "Le rendu de cette mission est déjà enregistré.", 409)
+        raise AppError(
+            "mission_completed", "The submission for this mission is already saved.", 409
+        )
     if status == "expired":
-        raise AppError("mission_expired", "Les 48 heures de cette mission sont écoulées.", 409)
+        raise AppError("mission_expired", "The 48 hours of this mission have elapsed.", 409)
     if mission.revision != revision:
         raise AppError(
-            "mission_changed", "La mission a changé. Recharge-la avant de continuer.", 409
+            "mission_changed", "The mission has changed. Reload it before continuing.", 409
         )
 
 
@@ -171,9 +171,7 @@ async def update_criterion(
         criteria = _criteria(mission)
         selected = next((criterion for criterion in criteria if criterion.index == index), None)
         if selected is None:
-            raise AppError(
-                "mission_criterion_unknown", "Critère introuvable dans cette mission.", 404
-            )
+            raise AppError("mission_criterion_unknown", "Criterion not found in this mission.", 404)
         note = (action.note or None) if "note" in action.model_fields_set else selected.note
         if selected.observed == action.observed and selected.note == note:
             return _view(mission, now)
@@ -197,7 +195,7 @@ async def submit_mission(
         _ensure_writable(mission, action.revision, now)
         if any(criterion.observed != TARGET for criterion in _criteria(mission)):
             raise AppError(
-                "mission_incomplete", "Termine les mesures avant d'enregistrer le rendu.", 409
+                "mission_incomplete", "Finish the measurements before saving the submission.", 409
             )
         submission = MissionSubmissionOut(
             proof_id=new_id(), artifact=action.artifact, recorded_at=now

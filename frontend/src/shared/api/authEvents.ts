@@ -1,7 +1,7 @@
 /**
  * Événement « connexion requise » : le client API l'émet quand n'importe quel appel reçoit un 401
  * `auth_required` ; la porte de la coquille l'écoute (une seule fois montée) et mène à
- * `/connexion`. `shared/` n'importe aucune feature : le lien entre les deux passe par cet
+ * `/login`. `shared/` n'importe aucune feature : le lien entre les deux passe par cet
  * événement.
  */
 type Listener = () => void;

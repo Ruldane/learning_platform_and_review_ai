@@ -2,5 +2,7 @@
 
 ## Claude Code
 
-- Le dossier `.superpowers/` (ignoré par git) sert de bac de travail aux plans d'exécution et aux brouillons : n'y écrire que pour un flux en cours, ne jamais le committer.
-- Lire un plan ou un bilan de `docs/superpowers/` par extraits (`Grep`, puis `Read` avec `offset`) : ils dépassent souvent 300 lignes.
+- Use the Git-ignored `.superpowers/` folder for execution plans and drafts for active work.
+  Keep it out of commits.
+- Read plans and reports under `docs/superpowers/` in excerpts. Find the section with `Grep`,
+  then use `Read` with an offset. These files often exceed 300 lines.

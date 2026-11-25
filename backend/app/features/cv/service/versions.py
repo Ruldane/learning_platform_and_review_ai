@@ -18,11 +18,11 @@ from app.features.cv.service.runtime import CvRuntime
 
 
 def version_not_ready() -> AppError:
-    return AppError("version_not_ready", "Ce PDF n'est pas prêt.", 404)
+    return AppError("version_not_ready", "The PDF is not ready yet.", 404)
 
 
 def page_not_found() -> AppError:
-    return AppError("version_page_not_found", "Page du CV introuvable.", 404)
+    return AppError("version_page_not_found", "CV page not found.", 404)
 
 
 async def list_versions(rt: CvRuntime, user_id: str, posting_id: str | None) -> list[VersionOut]:

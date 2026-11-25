@@ -1,4 +1,4 @@
-"""Un tour de parole du débat de démonstration, commun au Défenseur et au Critique."""
+"""One speaking turn of the demo debate, shared by the Proponent and the Critic."""
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
@@ -8,14 +8,14 @@ from app.agents.runtime.deps import GraphDeps
 from app.agents.runtime.invoke import invoke_agent, message_text
 from app.agents.state.demo_debate import DemoDebateState
 
-TRIGGER = "À toi de parler."
+TRIGGER = "Your turn to speak."
 
 
 async def play_turn(
     deps: GraphDeps, state: DemoDebateState, *, agent: str, previous: str, intent: str
 ) -> DemoDebateState:
-    """Lit d'abord les messages de l'utilisatrice arrivés depuis le dernier agent (D4), les
-    injecte dans le prompt, appelle le modèle, puis renvoie la mise à jour de l'état."""
+    """First reads the user's messages received since the last agent (D4), injects them into
+    the prompt, calls the model, then returns the state update."""
     fresh = await deps.user_messages_since(state.get("last_message_seq", 0))
     notes = [*state.get("user_notes", []), *(text for _, text in fresh)]
     round_ = state.get("round", 0) + 1

@@ -1,4 +1,4 @@
-"""Le Recruteur réordonne et reformule les éléments déjà vérifiés."""
+"""Reorganize and rephrase verified facts for a LinkedIn profile."""
 
 import json
 from dataclasses import asdict
@@ -45,7 +45,7 @@ def build(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
             ],
             agent=AGENT,
             step="linkedin_draft",
-            intent="je formule le profil à partir des faits confirmés",
+            intent="drafting the profile from confirmed facts",
             retries=1,
         )
         await store.propose(deps.user_id, deps.session_id, draft_id, text)

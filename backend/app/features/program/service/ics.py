@@ -8,25 +8,25 @@ from icalendar import Calendar, Event
 
 from app.features.program.schemas import ModuleOut, ProgramOut, TaskOut
 
-PRODID = "-//Tremplin//Programme//FR"
-_TYPES = {
-    "lire": "Lire",
-    "regarder": "Regarder",
-    "pratiquer": "Pratiquer",
+PRODID = "-//Tremplin//Program//EN"
+TASK_TYPE_LABELS = {
+    "read": "Read",
+    "watch": "Watch",
+    "practice": "Practice",
     "quiz": "Quiz",
-    "projet": "Projet",
+    "project": "Project",
 }
 
 
 def _description(task: TaskOut, module: ModuleOut) -> str:
     lines = [
-        f"Type : {_TYPES.get(task.type, task.type)}",
-        f"Durée : {task.minutes} min",
-        f"Critère de fin : {task.done_criterion}",
-        f"Module : {module.title}",
+        f"Type: {TASK_TYPE_LABELS[task.type]}",
+        f"Duration: {task.minutes} min",
+        f"Completion criterion: {task.done_criterion}",
+        f"Module: {module.title}",
     ]
     if task.already_known:
-        lines.append("Déjà acquis : révision")
+        lines.append("Review (already known)")
     return "\n".join(lines)
 
 

@@ -42,7 +42,7 @@ export function ActiveHunt({ huntId }: { huntId: string }) {
       {data.stage === "failed" ? <p role="alert">{t("lessonHunt.failed")}</p> : null}
       {data.stage === "failed" && !data.exercise ? (
         <Link
-          to={"/apprendre/lecons/" + encodeURIComponent(data.lesson_id) + "/erreurs"}
+          to={`/learn/lessons/${encodeURIComponent(data.lesson_id)}/errors`}
           className="underline"
         >
           {t("lessonHunt.retry")}

@@ -1,15 +1,30 @@
-const LONG_DAY = new Intl.DateTimeFormat("fr-FR", {
+const LONG_DAY = new Intl.DateTimeFormat("en-GB", {
   weekday: "long",
   day: "numeric",
   month: "long",
   timeZone: "UTC",
 });
-const SHORT_DAY = new Intl.DateTimeFormat("fr-FR", {
+const SHORT_DAY = new Intl.DateTimeFormat("en-GB", {
   weekday: "short",
   day: "numeric",
   month: "short",
   timeZone: "UTC",
 });
+
+const USD = { style: "currency", currency: "USD", currencyDisplay: "narrowSymbol" } as const;
+const DOLLARS_AND_CENTS = new Intl.NumberFormat("en-GB", USD);
+const DOLLARS_AND_MILLS = new Intl.NumberFormat("en-GB", {
+  ...USD,
+  minimumFractionDigits: 3,
+  maximumFractionDigits: 3,
+});
+
+/** Keeps small positive costs visible below one cent. */
+export function formatUsd(usd: number): string {
+  if (usd > 0 && usd < 0.001) return `< ${DOLLARS_AND_MILLS.format(0.001)}`;
+  const format = usd > 0 && usd < 0.01 ? DOLLARS_AND_MILLS : DOLLARS_AND_CENTS;
+  return format.format(usd);
+}
 
 /** Un jour `AAAA-MM-JJ` lu comme minuit UTC : le fuseau du poste ne décale jamais le jour. */
 export function parseDay(iso: string): Date {

@@ -8,6 +8,7 @@ from app.agents.tools.conversation_port import (
     BRAIN_LIBRARIAN,
     CLASSROOM_SCOPE,
     LESSON_PROFESSOR,
+    OFFERS_ADVISER,
     TRAINING_TUTOR,
     ClassmateReply,
     ConversationContext,
@@ -34,6 +35,8 @@ from app.features.conversations.lesson_context import (
     ready_lesson,
     require_current_version,
 )
+from app.features.conversations.offers import OFFERS_SCOPE
+from app.features.conversations.offers_context import offers_references
 from app.features.conversations.repository import ConversationRepository, TurnRepository
 from app.features.conversations.service import BRAIN_SCOPE, LESSON_SCOPE, TRAINING_SCOPE
 from app.features.conversations.training_context import selected_refs
@@ -55,7 +58,7 @@ async def _owned_turn(
         or turn.thread_id != thread_id
         or turn.session_id != session_id
     ):
-        raise AppError("conversation_turn_not_found", "Tour de conversation introuvable.", 404)
+        raise AppError("conversation_turn_not_found", "Conversation turn not found.", 404)
     return thread, turn
 
 
@@ -116,7 +119,7 @@ async def _published_refs(
 async def _brain_context(
     db: AsyncSession, turn: ConversationTurn, history: list[ConversationTurn]
 ) -> tuple[list[ConversationTurn], list[ConversationReference], dict[str, str]]:
-    """Un échange dépend de chaque note fournie à son modèle, même en l'absence de citation."""
+    """An exchange depends on every note given to its model, even without a citation."""
     prior_ids = {item_id for past in history for item_id in past.context_notes or {}}
     live = await active_note_versions(db, turn.user_id, prior_ids)
     safe = [
@@ -167,7 +170,7 @@ class AgentConversationStore:
             if turn.answer is not None:
                 return None
             if thread.scope not in FEYNMAN_SCOPES or turn.feynman is None:
-                raise AppError("feynman_not_found", "Explication introuvable.", 404)
+                raise AppError("feynman_not_found", "Explanation not found.", 404)
             data = FeynmanData.model_validate(turn.feynman)
             text = await material(db, user_id, data.source, turn.lesson_version)
             title = data.source.path or data.source.title
@@ -223,9 +226,11 @@ class AgentConversationStore:
             elif thread.scope == BRAIN_SCOPE:
                 agent = BRAIN_LIBRARIAN
                 history, refs, notes = await _brain_context(db, turn, history)
+            elif thread.scope == OFFERS_SCOPE:
+                agent, refs = OFFERS_ADVISER, await offers_references(db, turn, history)
             else:
                 raise AppError(
-                    "conversation_scope_unknown", "Ce type de fil est indisponible.", 409
+                    "conversation_scope_unknown", "This thread type is unavailable.", 409
                 )
             used = await repo.used_tokens(session_id)
         exchanges = [_exchange(row) for row in history if row.answer is not None]
@@ -270,7 +275,7 @@ class AgentConversationStore:
             ):
                 raise AppError(
                     "brain_sources_changed",
-                    "Des notes ont changé pendant la réponse. Tu peux reposer ta question.",
+                    "Some notes changed during the reply. You can ask your question again.",
                     409,
                 )
             recorder = (

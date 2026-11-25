@@ -1,15 +1,11 @@
-"""Honnêteté des pièces du kit (SPEC 1, 18.3, F16, D142) : du code, jamais l'agent. Une pièce écrite
-au nom de January ne dit que ce que dit son profil :
+"""Check facts, length, and screening answers in kit pieces (SPEC 1, 18.3, F16, D142).
 
-- `flagged_terms` : les chiffres, outils, titres et noms propres que le profil ne dit pas
-  (`text_claims`). `allowed` ne contient que des expressions entières : l'entreprise, l'intitulé
-  exact de l'offre et le nom du contact, jamais un outil ni un chiffre de l'offre ;
-- `length_problems` : les mots comptés par le code contre les bornes de chaque pièce ;
-- `fix_answers` : une réponse de formulaire à une question salariale est vidée (la prétention
-  engage January, aucun fait ne la dit), de même qu'une réponse qu'aucun fait du profil n'appuie.
+Facts must come from the profile. The full company name, job title, and contact name
+are allowed verbatim. Each section follows its own word limits. Salary expectations
+and answers without supporting facts are left blank.
 
-Les problèmes d'un premier essai repartent au modèle une seule fois (`retry_message`) ; ce qui
-reste après l'essai rend la pièce « à vérifier »."""
+The model gets one retry with details. The user reviews any issues that remain.
+"""
 
 from dataclasses import dataclass
 
@@ -18,19 +14,19 @@ from app.agents.tools.salary import is_salary_question
 from app.agents.tools.text_claims import text_claims
 
 RETRY = (
-    "N'écris rien qui ne soit pas dans le profil : {terms}. Ces éléments ne figurent pas dans le "
-    "profil de January. Réécris la pièce sans eux, avec ce que dit son profil seulement."
+    "Remove terms unsupported by the profile: {terms}. Rewrite the piece using only "
+    "facts from January's profile."
 )
-LENGTH_RETRY = "Respecte les longueurs : {problems}"
+LENGTH_RETRY = "Follow the word limits. {problems}"
 
 
 def allowed_phrases(ctx: KitContext) -> list[str]:
-    """Les expressions entières que le texte peut écrire : entreprise, intitulé, contact."""
+    """Return the full company name, title, and contact name the draft may cite."""
     return [phrase for phrase in (ctx.company, ctx.title, ctx.contact) if phrase]
 
 
 def flagged_terms(draft: Draft, ctx: KitContext) -> list[str]:
-    """Les termes que le profil ne dit pas, sans doublon, dans l'ordre des parties du texte."""
+    """List each unsupported term once, in order of appearance."""
     allowed = allowed_phrases(ctx)
     terms: list[str] = []
     for text in draft.parts().values():
@@ -41,13 +37,13 @@ def flagged_terms(draft: Draft, ctx: KitContext) -> list[str]:
 
 
 def word_counts(draft: Draft) -> dict[str, int]:
-    """Les mots de chaque partie qui a une borne (comptés aux blancs)."""
+    """Count whitespace-separated words in each part that has a limit."""
     parts = draft.parts()
     return {name: len(parts[name].split()) for name in draft.limits}
 
 
 def meta_words(draft: Draft) -> int | dict[str, int] | None:
-    """`meta.words` : le compte d'une pièce à une seule partie bornée, sinon un par partie."""
+    """Return a total for one bounded part or individual counts for multiple parts."""
     counts = word_counts(draft)
     if not counts:
         return None
@@ -55,13 +51,13 @@ def meta_words(draft: Draft) -> int | dict[str, int] | None:
 
 
 def _bounds(low: int, high: int) -> str:
-    return f"de {low} à {high} mots" if low > 1 else f"{high} mots au plus"
+    return f"{low} to {high} words" if low > 1 else f"at most {high} words"
 
 
 def length_problems(draft: Draft) -> list[str]:
     counts = word_counts(draft)
     return [
-        f"le champ `{name}` fait {counts[name]} mots, il doit en faire {_bounds(low, high)}."
+        f"The `{name}` field has {counts[name]} words. Use {_bounds(low, high)}."
         for name, (low, high) in draft.limits.items()
         if not low <= counts[name] <= high
     ]
@@ -69,8 +65,8 @@ def length_problems(draft: Draft) -> list[str]:
 
 @dataclass(frozen=True)
 class Review:
-    terms: list[str]  # ce que le profil ne dit pas
-    problems: list[str]  # longueurs hors bornes
+    terms: list[str]
+    problems: list[str]
 
     def __bool__(self) -> bool:
         return bool(self.terms or self.problems)
@@ -81,7 +77,7 @@ def review(draft: Draft, ctx: KitContext) -> Review:
 
 
 def retry_message(found: Review) -> str:
-    """Le message du nouvel essai : les termes nommés, les longueurs hors bornes."""
+    """Report unsupported terms and out-of-range word counts for the retry."""
     parts = []
     if found.terms:
         parts.append(RETRY.format(terms=", ".join(found.terms)))
@@ -91,8 +87,7 @@ def retry_message(found: Review) -> str:
 
 
 def fix_answers(draft: FormAnswers, fact_ids: set[str]) -> FormAnswers:
-    """Les réponses vérifiées par le code : salariale ou sans fait valide, la réponse est vidée ;
-    sinon seuls les faits valides restent cités."""
+    """Clear salary answers and unsupported answers and retain only valid fact IDs."""
     items = []
     for item in draft.items:
         valid = [fact for fact in dict.fromkeys(item.fact_ids) if fact in fact_ids]

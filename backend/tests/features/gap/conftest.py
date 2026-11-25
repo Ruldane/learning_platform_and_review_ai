@@ -50,7 +50,7 @@ async def add_program(
             db.add(
                 Task(
                     user_id=user_id, module_id=module.id, program_id=program.id, rank=0,
-                    title="Lire", type="lire", minutes=30, done_criterion="c", planned_date=day,
+                    title="Lire", type="read", minutes=30, done_criterion="c", planned_date=day,
                 )
             )  # fmt: skip
         await db.commit()

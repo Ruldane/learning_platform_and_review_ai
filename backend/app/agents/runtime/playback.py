@@ -25,12 +25,12 @@ def models_for(row: AgentSession, usual: ChatModelSource) -> ChatModelSource:
     fabrique, ou rien (réglages)."""
     if row.played_by is not None:
         if as_client(row.played_by) is None:
-            raise AppError("unknown_play_client", "Client MCP inconnu.", 409)
+            raise AppError("unknown_play_client", "Unknown MCP client.", 409)
         PLAY_CONTEXT.set(PlayContext(row.user_id, cast(PlayClient, row.played_by)))
         return PlayedModels(row.played_by)
     provider = as_provider(row.model_provider)
     if row.model_provider is not None and provider is None:
-        raise AppError("unknown_model_provider", "Fournisseur du parcours inconnu.", 409)
+        raise AppError("unknown_model_provider", "Unknown provider for this workflow.", 409)
     # Toujours posé : le menu d'une requête plus tardive (réponse, reprise) ne change pas la
     # source d'un parcours déjà lancé.
     PLAY_CONTEXT.set(PlayContext(row.user_id, None, provider=provider))
@@ -56,15 +56,13 @@ def restore_delivery(items: Sequence[Interrupt], saved: dict[str, Any]) -> Comma
 def submission_problem(brief: dict[str, Any], response: str) -> str:
     ref = brief.get("schema_ref")
     if not ref:
-        return "" if response.strip() else "La réponse est vide."
+        return "" if response.strip() else "The reply is empty."
     # Les schémas qui dépendent de l'état (entretien, candidature) sont recréés par le nœud.
     if "<locals>" in ref[1]:
-        return "" if extract_json_object(response) is not None else "Aucun objet JSON trouvé."
+        return "" if extract_json_object(response) is not None else "No JSON object found."
     schema = getattr(sys.modules.get(ref[0]), ref[1], None)
     if not isinstance(schema, type) or not issubclass(schema, BaseModel):
-        raise AppError(
-            "played_schema_unavailable", "Le schéma de cette étape est indisponible.", 409
-        )
+        raise AppError("played_schema_unavailable", "The schema for this step is unavailable.", 409)
     _, problem = parse_reply(schema, AIMessage(content=response))
     return problem
 

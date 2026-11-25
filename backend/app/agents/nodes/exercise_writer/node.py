@@ -1,9 +1,9 @@
-"""Le rédacteur d'exercices (10.A3) : un exercice avec ses tests et une solution de référence, que
-le bac à sable fait passer avant que l'exercice soit rangé. Une solution qui échoue à ses propres
-tests est redemandée une fois (avec la fin de la sortie des tests), puis le parcours échoue avec un
-message lisible (`exercise_unverified`) : un exercice jamais vérifié n'est jamais rangé. Les tests
-de l'exercice s'imposent à la solution (le port les remet par-dessus). La solution n'est jamais
-rangée. Journaux : identifiants, nombres et codes."""
+"""The exercise writer (10.A3): an exercise with its tests and a reference solution, which the
+sandbox runs before the exercise is filed. A solution that fails its own tests is requested again
+once (with the end of the test output), then the flow fails with a readable message
+(`exercise_unverified`): a never-verified exercise is never filed. The exercise's tests are
+imposed on the solution (the port puts them back on top). The solution is never filed. Logs:
+identifiers, numbers and codes."""
 
 import logging
 
@@ -21,23 +21,22 @@ from app.core.errors import AppError
 __all__ = ["AGENT", "ATTEMPTS", "make_write", "summary_of"]
 
 AGENT = "exercise_writer"
-ASK = "Écris l'exercice."
-ATTEMPTS = 2  # la première écriture, puis une seule redemande
-LEVELS = {"beginner": "débutante", "intermediate": "intermédiaire", "advanced": "avancée"}
+ASK = "Write the exercise."
+ATTEMPTS = 2  # the first writing, then a single re-request
+LEVELS = {"beginner": "beginner", "intermediate": "intermediate", "advanced": "advanced"}
 FEEDBACK_MAX = 1_500
 
 logger = logging.getLogger(__name__)
 
 
 def summary_of(title: str) -> str:
-    return f"Exercice prêt : {title}"
+    return f"Exercise ready: {title}"
 
 
 def unverified() -> AppError:
     return AppError(
         "exercise_unverified",
-        "L'exercice généré n'a pas passé ses propres tests dans le bac à sable : "
-        "relance la génération.",
+        "The generated exercise failed its sandbox tests. Generate it again.",
         502,
     )
 
@@ -45,9 +44,9 @@ def unverified() -> AppError:
 def _prompt(state: IdeExerciseState, previous: str | None) -> list[BaseMessage]:
     text = render_prompt(
         AGENT,
-        topic=untrusted(state["topic"], "sujet demandé"),
+        topic=untrusted(state["topic"], "requested topic"),
         level=LEVELS.get(state.get("level", "beginner"), LEVELS["beginner"]),
-        previous=untrusted(previous, "sortie des tests") if previous else "",
+        previous=untrusted(previous, "test output") if previous else "",
     )
     return [SystemMessage(text), HumanMessage(ASK)]
 
@@ -66,15 +65,15 @@ def make_write(deps: GraphDeps) -> Node:
                 _prompt(state, previous),
                 agent=AGENT,
                 step="exercice",
-                intent="j'écris l'exercice et ses tests",
+                intent="writing the exercise and its tests",
             )
             verdict = await ports.verify(deps.user_id, draft)
             logger.info(
-                "Exercice : session %s, essai %d/%d, tests %s (%s)",
+                "Exercise: session %s, attempt %d/%d, tests %s (%s)",
                 deps.session_id,
                 attempt,
                 ATTEMPTS,
-                "réussis" if verdict.passed else "échoués",
+                "passed" if verdict.passed else "failed",
                 verdict.status,
             )
             if verdict.passed:

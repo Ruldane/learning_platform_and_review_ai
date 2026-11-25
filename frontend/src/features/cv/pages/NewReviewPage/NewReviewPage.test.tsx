@@ -7,8 +7,8 @@ import { NewReviewPage } from "./NewReviewPage";
 
 function setup(api: Parameters<typeof renderCv>[3] = {}, runSource?: string) {
   return renderCv(
-    "/carriere/cv/revue/nouvelle/:postingId",
-    { pathname: "/carriere/cv/revue/nouvelle/p1", state: { runSource } },
+    "/career/cv/reviews/new/:postingId",
+    { pathname: "/career/cv/reviews/new/p1", state: { runSource } },
     () => <NewReviewPage />,
     api,
   );
@@ -35,8 +35,8 @@ describe("NewReviewPage", () => {
     const { user } = setup({
       startReview: () => refusal(409, "profile_required", "Aucun profil validé."),
     });
-    expect(await screen.findByText("Valide ton profil d'abord")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Valider mon profil" }));
+    expect(await screen.findByText("Approve your profile first")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Approve my profile" }));
     expect(await screen.findByText("Page du profil")).toBeInTheDocument();
   });
 
@@ -44,8 +44,8 @@ describe("NewReviewPage", () => {
     const { user } = setup({
       startReview: () => refusal(409, "template_required", "Aucun modèle actif."),
     });
-    expect(await screen.findByText("Crée ton modèle de CV d'abord")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Créer mon modèle" }));
+    expect(await screen.findByText("Create your CV template first")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Create my template" }));
     expect(await screen.findByText("Page des modèles")).toBeInTheDocument();
   });
 
@@ -53,8 +53,8 @@ describe("NewReviewPage", () => {
     const { user } = setup({
       startReview: () => refusal(409, "posting_not_ready", "Offre pas prête."),
     });
-    expect(await screen.findByText("L'offre n'est pas encore analysée")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Voir l'offre" }));
+    expect(await screen.findByText("The posting hasn't been analyzed yet")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "View posting" }));
     expect(await screen.findByText("Page de l'offre")).toBeInTheDocument();
   });
 
@@ -66,7 +66,7 @@ describe("NewReviewPage", () => {
     expect(await screen.findByText("Page de la revue")).toBeInTheDocument();
   });
 
-  it("shows an error with « Réessayer » and starts again", async () => {
+  it("shows an error with « Retry » and starts again", async () => {
     let failing = true;
     const { user, state } = setup({
       startReview: () =>
@@ -76,11 +76,11 @@ describe("NewReviewPage", () => {
     });
     expect(
       await screen.findByText(
-        "Le moteur d'agents n'est pas disponible : réessaie dans un instant.",
+        "The agent engine isn't available: try again in a moment.",
       ),
     ).toBeInTheDocument();
     failing = false;
-    await user.click(screen.getByRole("button", { name: "Réessayer" }));
+    await user.click(screen.getByRole("button", { name: "Retry" }));
     expect(await screen.findByText("Page de la revue")).toBeInTheDocument();
     expect(state.starts).toBe(2);
   });

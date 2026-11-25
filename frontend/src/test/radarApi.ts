@@ -21,7 +21,7 @@ export const offerOut = (url: string, over: Over = {}) => ({
   url,
   title: "Data engineer",
   company: "Exemple Tech",
-  level: "confirme",
+  level: "mid_level",
   remote: null,
   salary: null,
   score: 78,

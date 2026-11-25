@@ -1,4 +1,4 @@
-"""Publier le script et le quiz indépendamment de la disponibilité de l’audio."""
+"""Publish the script and the quiz regardless of whether the audio is available."""
 
 import logging
 
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 def episode_not_found() -> AppError:
-    return AppError("podcast_not_found", "Épisode introuvable.", 404)
+    return AppError("podcast_not_found", "Episode not found.", 404)
 
 
 async def get_episode(db: AsyncSession, user_id: str, episode_id: str) -> PodcastEpisode:
@@ -42,7 +42,9 @@ class AgentPodcastStore:
                 return PodcastContext(row.title, "", (), (), True)
             markdown = await ready_markdown(db, user_id, row.module_id)
             if not markdown:
-                raise AppError("podcast_source_unavailable", "Ce chapitre n’est plus publié.", 409)
+                raise AppError(
+                    "podcast_source_unavailable", "This chapter is no longer published.", 409
+                )
             reviews = await self._review_facts(db, user_id, row)
             notes = await matching_notes(db, user_id, (row.title,))
             excerpts = tuple(note.material for note in notes[:3])
@@ -78,7 +80,7 @@ class AgentPodcastStore:
                 audio = await synthesize(rt.speech, user_id, script.lines)
                 if not 600 <= audio.duration_seconds <= 900:
                     raise AppError(
-                        "podcast_audio_duration", "La synthèse doit durer de 10 à 15 minutes.", 422
+                        "podcast_audio_duration", "The audio must last 10 to 15 minutes.", 422
                     )
                 key = await rt.storage.save(user_id, CATEGORY, audio.data, ".wav")
             except (AppError, OSError) as exc:
@@ -91,7 +93,7 @@ class AgentPodcastStore:
             await EpisodeRepository(db, user_id).update(episode_id, status="transcript")
             await db.commit()
         code = exc.code if isinstance(exc, AppError) else type(exc).__name__
-        logger.info("Podcast disponible sans audio, épisode %s, code %s", episode_id, code)
+        logger.info("Podcast available without audio, episode %s, code %s", episode_id, code)
 
     async def _publish(self, user_id: str, episode_id: str, key: str, duration: int) -> None:
         async with self._runtime.session_factory() as db:

@@ -26,13 +26,13 @@ describe("ProgramList", () => {
     const [first, second] = screen.getAllByRole("listitem") as [HTMLElement, HTMLElement];
     expect(within(first).getByRole("link", { name: "Bases du ML" })).toHaveAttribute(
       "href",
-      "/apprendre/programme/new",
+      "/learn/programs/new",
     );
-    expect(within(first).getByText("Brouillon")).toBeInTheDocument();
-    expect(within(first).getByText("12 semaines")).toBeInTheDocument();
-    expect(within(second).getByText("Validé")).toBeInTheDocument();
-    expect(within(second).getByText("1 semaine")).toBeInTheDocument();
+    expect(within(first).getByText("Draft")).toBeInTheDocument();
+    expect(within(first).getByText("12 weeks")).toBeInTheDocument();
+    expect(within(second).getByText("Validated")).toBeInTheDocument();
+    expect(within(second).getByText("1 week")).toBeInTheDocument();
     expect(within(second).getByRole("progressbar")).toHaveAttribute("aria-valuenow", "25");
-    expect(within(second).getByText("25 %")).toBeInTheDocument();
+    expect(within(second).getByText("25%")).toBeInTheDocument();
   });
 });

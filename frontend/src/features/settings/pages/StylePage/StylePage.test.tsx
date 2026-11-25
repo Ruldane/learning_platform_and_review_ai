@@ -13,33 +13,31 @@ function setup(put?: Parameters<typeof settingsApi>[0]["put"], gate?: Promise<vo
   const api = settingsApi({ settings: stored, put, gate });
   server.use(...api.handlers);
   const view = renderRoutes(
-    [{ path: "/reglages/style", element: <StylePage /> }],
-    "/reglages/style",
+    [{ path: "/settings/style", element: <StylePage /> }],
+    "/settings/style",
   );
   return { ...api, ...view };
 }
 
-const guide = () => screen.getByLabelText("Guide de style personnel");
+const guide = () => screen.getByLabelText("Personal style guide");
+const save = () => screen.getByRole("button", { name: "Save" });
 
 describe("StylePage", () => {
   it("style guide saves", async () => {
     const { puts, user } = setup();
     await screen.findByRole("heading", { level: 1, name: "Style" });
     expect(guide()).toHaveValue("Phrases courtes.");
-    expect(screen.getByText("16 caractères")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Enregistrer" })).toHaveAttribute(
-      "aria-disabled",
-      "true",
-    );
+    expect(screen.getByText("16 characters")).toBeInTheDocument();
+    expect(save()).toHaveAttribute("aria-disabled", "true");
 
     await user.clear(guide());
     await user.type(guide(), "Tutoiement, pas de jargon.");
-    expect(screen.getByText("26 caractères")).toBeInTheDocument();
-    expect(screen.getByText("Modifications non enregistrées.")).toBeInTheDocument();
+    expect(screen.getByText("26 characters")).toBeInTheDocument();
+    expect(screen.getByText("Unsaved changes.")).toBeInTheDocument();
     expect(puts).toEqual([]);
-    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+    await user.click(save());
 
-    expect(await screen.findByText("Guide de style enregistré.")).toBeInTheDocument();
+    expect(await screen.findByText("Style guide saved.")).toBeInTheDocument();
     expect(puts).toHaveLength(1);
     expect(puts[0]).toMatchObject({
       style_guide: "Tutoiement, pas de jargon.",
@@ -57,41 +55,40 @@ describe("StylePage", () => {
     await screen.findByRole("heading", { level: 1, name: "Style" });
     await user.clear(guide());
     await user.type(guide(), "Version A");
-    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+    await user.click(save());
     await waitFor(() => expect(puts).toHaveLength(1)); // l'envoi est en cours, tenu par la porte
     await user.type(guide(), " et B"); // pendant l'envoi
     held.open();
     expect(puts[0]).toMatchObject({ style_guide: "Version A" });
-    await screen.findByText("Modifications non enregistrées.");
+    await screen.findByText("Unsaved changes.");
     expect(guide()).toHaveValue("Version A et B");
   });
 
   it("keeps the focus on the save button, says why it is blocked, counts thousands", async () => {
     const { user } = setup();
-    const button = () => screen.getByRole("button", { name: "Enregistrer" });
     await screen.findByRole("heading", { level: 1, name: "Style" });
-    await user.click(button()); // bloqué : rien à envoyer, le focus reste sur le bouton
-    expect(button()).toHaveFocus();
-    expect(button()).toHaveAccessibleDescription("Rien à enregistrer.");
+    await user.click(save());
+    expect(save()).toHaveFocus();
+    expect(save()).toHaveAccessibleDescription("Nothing to save.");
     await user.clear(guide());
     await user.click(guide());
     await user.paste("x".repeat(12000));
-    expect(screen.getByText("12 000 caractères")).toBeInTheDocument();
-    await user.click(button());
-    await screen.findByText("Guide de style enregistré.");
-    expect(button()).toHaveFocus();
+    expect(screen.getByText("12,000 characters")).toBeInTheDocument();
+    await user.click(save());
+    await screen.findByText("Style guide saved.");
+    expect(save()).toHaveFocus();
   });
 
   it("counts one character in the singular and an empty guide as zero", async () => {
     const api = settingsApi({ settings: { ...stored, style_guide: "a" } });
     server.use(...api.handlers);
     const { user } = renderRoutes(
-      [{ path: "/reglages/style", element: <StylePage /> }],
-      "/reglages/style",
+      [{ path: "/settings/style", element: <StylePage /> }],
+      "/settings/style",
     );
-    expect(await screen.findByText("1 caractère")).toBeInTheDocument();
+    expect(await screen.findByText("1 character")).toBeInTheDocument();
     await user.clear(guide());
-    expect(screen.getByText("0 caractères")).toBeInTheDocument();
+    expect(screen.getByText("0 characters")).toBeInTheDocument();
   });
 
   it("flags the field, without echoing the text, when the server refuses it", async () => {
@@ -99,12 +96,12 @@ describe("StylePage", () => {
     await screen.findByRole("heading", { level: 1, name: "Style" });
     await user.clear(guide());
     await user.type(guide(), "Texte secret");
-    await user.click(screen.getByRole("button", { name: "Enregistrer" }));
+    await user.click(save());
     await screen.findByRole("alert");
     expect(guide()).toHaveAttribute("aria-invalid", "true");
     expect(guide()).toHaveValue("Texte secret");
     expect(
-      screen.getByText("Erreur : Le serveur a refusé cette valeur : vérifie-la."),
+      screen.getByText("Error: The server refused this value: check it."),
     ).toBeInTheDocument();
     // ni le message ni l'indication ne citent le texte refusé
     expect(screen.getByRole("alert")).not.toHaveTextContent("Texte secret");

@@ -12,7 +12,7 @@ import { server } from "@/test/server";
 import { applicationsManifest } from "../../manifest";
 import { KitPage } from "./KitPage";
 
-const KIT_ROUTE = "candidatures/:applicationId/kit";
+const KIT_ROUTE = "applications/:applicationId/kit";
 
 function setup(options: KitApiOptions = {}) {
   const sockets = createFakeSocketServer();
@@ -23,7 +23,7 @@ function setup(options: KitApiOptions = {}) {
       ? { path: route.path, element: <KitPage createSocket={sockets.factory} /> }
       : route,
   );
-  const view = renderApplications(routes, "/candidatures/a1/kit", {
+  const view = renderApplications(routes, "/applications/a1/kit", {
     applications: [applicationOut({ id: "a1", company: "Acme", title: "Data engineer" })],
   });
   return { ...view, sockets, kit };
@@ -31,7 +31,7 @@ function setup(options: KitApiOptions = {}) {
 
 const piece = (title: string) => screen.findByRole("region", { name: title });
 
-describe("KitPage, suivre un kit déjà ouvert", () => {
+describe("KitPage, following a running kit", () => {
   beforeEach(() => useSessionStore.getState().reset("k1"));
 
   it("follows a kit that is already running when the page opens, without starting another", async () => {
@@ -42,12 +42,12 @@ describe("KitPage, suivre un kit déjà ouvert", () => {
     });
     await openStream(sockets, "k9");
     expect(kit.state.starts).toBe(0);
-    expect(await screen.findByText(/Le kit se prépare/)).toBeVisible();
-    expect((await piece("CV ciblé")).textContent).toContain("Prête");
-    expect((await piece("Lettre de motivation")).textContent).toContain("En préparation");
+    expect(await screen.findByText(/The kit is being prepared/)).toBeVisible();
+    expect((await piece("Tailored résumé")).textContent).toContain("Ready");
+    expect((await piece("Cover letter")).textContent).toContain("Preparing");
   });
 
-  /** Le kit s'ouvre ailleurs (session `k7`) entre la lecture et le clic : le serveur dit 409, puis rend « en cours ». */
+  /** A kit starts elsewhere between loading the page and clicking Generate. */
   function openedElsewhere() {
     const box: { kit?: ReturnType<typeof setup>["kit"] } = {};
     const start = () => {
@@ -56,7 +56,7 @@ describe("KitPage, suivre un kit déjà ouvert", () => {
         box.kit.state.sessionId = "k7";
       }
       return HttpResponse.json(
-        apiError("kit_in_progress", "Un kit est déjà en cours.", { session_id: "k7" }),
+        apiError("kit_in_progress", "A kit is already in progress.", { session_id: "k7" }),
         { status: 409 },
       );
     };
@@ -65,26 +65,26 @@ describe("KitPage, suivre un kit déjà ouvert", () => {
     return view;
   }
 
-  it("drops the « tu le suis ici » note once the followed kit has ended", async () => {
+  it("removes the note about following a kit after the run ends", async () => {
     const { user, sockets, kit } = openedElsewhere();
-    await user.click(await screen.findByRole("button", { name: "Générer le kit" }));
+    await user.click(await screen.findByRole("button", { name: "Generate the kit" }));
     const stream = await openStream(sockets, "k7");
     expect(
-      await screen.findByText(/Un kit est déjà en cours pour cette candidature/),
+      await screen.findByText(/A kit is already in progress for this application/),
     ).toBeVisible();
     kit.arrive("cv", { content: "CV ciblé" });
     kit.finish();
     stream.push(councilEvents("k7").completed());
-    expect(await screen.findByText(/Le kit est terminé/)).toBeVisible();
-    expect(screen.queryByText(/Un kit est déjà en cours pour cette candidature/)).toBeNull();
+    expect(await screen.findByText(/The kit is done/)).toBeVisible();
+    expect(screen.queryByText(/A kit is already in progress for this application/)).toBeNull();
   });
 
   it("follows the session that is already open on a 409 kit_in_progress", async () => {
     const { user, sockets } = openedElsewhere();
-    await user.click(await screen.findByRole("button", { name: "Générer le kit" }));
+    await user.click(await screen.findByRole("button", { name: "Generate the kit" }));
     await openStream(sockets, "k7");
     expect(
-      await screen.findByText(/Un kit est déjà en cours pour cette candidature/),
+      await screen.findByText(/A kit is already in progress for this application/),
     ).toBeVisible();
   });
 });

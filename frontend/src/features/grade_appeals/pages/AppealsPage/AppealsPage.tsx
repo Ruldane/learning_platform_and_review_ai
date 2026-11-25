@@ -21,7 +21,7 @@ export function AppealsPage() {
         <ul className="grid gap-3">
           {rows.data.map((row) => (
             <li key={row.id} className="grid gap-2 rounded-xl border bg-card p-4">
-              <Link className="font-medium underline" to={`/competences/contestations/${row.id}`}>
+              <Link className="font-medium underline" to={`/skills/appeals/${row.id}`}>
                 {row.source.project.title} · {row.source.criterion.criterion}
               </Link>
               <p className="text-sm">{t(`gradeAppeals.status.${row.state}`)}</p>

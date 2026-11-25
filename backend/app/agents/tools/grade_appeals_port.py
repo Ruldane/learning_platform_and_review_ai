@@ -1,4 +1,4 @@
-"""Le second lecteur ne reçoit que la remise et le critère contesté."""
+"""The second reader only receives the submission and the contested criterion."""
 
 from dataclasses import dataclass
 from typing import Annotated, Protocol
@@ -31,12 +31,12 @@ class GradeAppealsStore(Protocol):
 
 class _MissingAppeals:
     async def context(self, user_id: str, appeal_id: str, session_id: str) -> AppealContext:
-        raise RuntimeError("La seconde lecture n’est pas branchée.")
+        raise RuntimeError("The second reading is not wired.")
 
     async def save(
         self, user_id: str, appeal_id: str, session_id: str, reading: AppealReading
     ) -> None:
-        raise RuntimeError("La seconde lecture n’est pas branchée.")
+        raise RuntimeError("The second reading is not wired.")
 
 
 NO_APPEALS: GradeAppealsStore = _MissingAppeals()

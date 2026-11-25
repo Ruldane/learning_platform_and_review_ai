@@ -15,9 +15,9 @@ MIN_QUESTIONS, MAX_QUESTIONS = 8, 12
 MIN_TYPES = 3
 PASS_SCORE = 80
 RETRY_DAYS = 2
-READING_TYPES = ("lire", "regarder")
+READING_TYPES = ("read", "watch")
 # Libellés de l'option « Je bloque » : le back compte les indices (F15).
-STUCK_LABELS = ("Je bloque (1/3)", "Je bloque (2/3)", "Je bloque (3/3)", "Voir la solution")
+STUCK_LABELS = ("I’m stuck (1/3)", "I’m stuck (2/3)", "I’m stuck (3/3)", "Show the solution")
 STUDY_DEAD = ("interrupted", "cancelled")
 
 
@@ -44,11 +44,11 @@ def check_quiz(quiz: dict[str, Any]) -> None:
         raise CheckFailed("quiz", f"{len(types)} type(s) de questions : 3 au moins.")
     for question in questions:
         choices = len(question["choices"])
-        if question["type"] == "qcm" and not 3 <= choices <= 5:
+        if question["type"] == "mcq" and not 3 <= choices <= 5:
             raise CheckFailed(
                 "quiz", f"QCM n° {question['rank']} : {choices} choix, 3 à 5 attendus."
             )
-        if question["type"] != "qcm" and choices:
+        if question["type"] != "mcq" and choices:
             raise CheckFailed("quiz", f"Question n° {question['rank']} : des choix hors QCM.")
         if question["type"] == "code" and not (question.get("code") or "").strip():
             raise CheckFailed(

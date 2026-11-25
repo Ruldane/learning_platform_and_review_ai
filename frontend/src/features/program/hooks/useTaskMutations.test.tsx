@@ -94,7 +94,7 @@ describe("useTaskMutations", () => {
     const { hook } = setup();
     const input = {
       title: "Écrire un test",
-      type: "pratiquer" as const,
+      type: "practice" as const,
       minutes: 30,
       doneCriterion: "Le test passe.",
       plannedDate: "2026-11-25",
@@ -113,7 +113,7 @@ describe("useTaskMutations", () => {
         {
           module_id: "m2",
           title: "Écrire un test",
-          type: "pratiquer",
+          type: "practice",
           minutes: 30,
           done_criterion: "Le test passe.",
           planned_date: "2026-11-25",

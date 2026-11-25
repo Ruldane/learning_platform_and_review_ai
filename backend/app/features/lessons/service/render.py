@@ -1,11 +1,11 @@
-"""Leçon en PDF A4 (SPEC 3.5, 17.4, D89) : gabarit unique `lesson/lesson.html.j2` (échappement
-automatique), sommaire, encadrés, schémas Mermaid en SVG, numéros de page, thème clair.
+"""Lesson as an A4 PDF (SPEC 3.5, 17.4, D89): single `lesson/lesson.html.j2` template
+(autoescaping), table of contents, callouts, Mermaid diagrams as SVG, page numbers, light theme.
 
-Les seuls scripts de la page sont nos fichiers figés (`mermaid.min.js` à empreinte vérifiée,
-`render.js`), et seulement si la leçon a au moins un schéma accepté ; Gotenberg attend alors
-`window.__lessonReady === true`. Si ce rendu échoue (`RenderFailed`), second essai sans aucun
-script : les schémas s'affichent en code (la version réémise par le back, jamais l'originale).
-Une politique de sécurité du contenu (`<meta>`) interdit en plus toute requête et toute image."""
+The page's only scripts are our frozen files (`mermaid.min.js` with a verified hash,
+`render.js`), and only if the lesson has at least one accepted diagram; Gotenberg then waits for
+`window.__lessonReady === true`. If that rendering fails (`RenderFailed`), a second attempt runs
+without any script: diagrams are shown as code (the version re-emitted by the back end, never the
+original). A content security policy (`<meta>`) also forbids any request and any image."""
 
 import logging
 import re
@@ -20,8 +20,8 @@ from app.templates.assets import asset, template_file
 logger = logging.getLogger(__name__)
 
 LESSON_READY = "window.__lessonReady === true"
-# Rien hors de nos fichiers joints : ni requête, ni image, ni cadre, ni formulaire. Le style
-# en ligne reste permis (Mermaid en met dans le SVG qu'il produit).
+# Nothing outside our attached files: no request, image, frame or form. Inline style stays
+# allowed (Mermaid puts some in the SVG it produces).
 CSP_WITH_SCRIPTS = (
     "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
     "img-src data:; font-src 'self'; base-uri 'none'; form-action 'none'"
@@ -29,22 +29,18 @@ CSP_WITH_SCRIPTS = (
 CSP_WITHOUT_SCRIPTS = (
     "default-src 'none'; style-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'"
 )
-_LABELS = {
-    "fr": {"kicker": "Leçon", "toc": "Sommaire"},
-    "en": {"kicker": "Lesson", "toc": "Contents"},
-}
 _LANGUAGE = re.compile(r"[a-z]{2}")
 
 
 def _language(language: str) -> str:
     code = language.strip().lower()[:2]
-    return code if _LANGUAGE.fullmatch(code) else "fr"
+    return code if _LANGUAGE.fullmatch(code) else "en"
 
 
 def lesson_document(
     *, title: str, body: str, toc: list[tuple[str, str]], language: str, scripts: bool
 ) -> HtmlDocument:
-    """Page de la leçon ; `body` est du HTML déjà nettoyé (`markdown_to_html`)."""
+    """The lesson page; `body` is already sanitized HTML (`markdown_to_html`)."""
     code = _language(language)
     if not scripts:
         body = body.replace(MERMAID_BLOCK, '<pre class="mermaid-source">')
@@ -53,9 +49,8 @@ def lesson_document(
         language=code,
         csp=CSP_WITH_SCRIPTS if scripts else CSP_WITHOUT_SCRIPTS,
         title=title,
-        labels=_LABELS.get(code, _LABELS["fr"]),
         toc=toc,
-        body=Markup(body),  # noqa: S704  (nettoyé par nh3, liste blanche)
+        body=Markup(body),  # noqa: S704  (sanitized by nh3, allow-list)
         scripts=scripts,
     )
     assets = {"lesson.css": template_file("lesson/lesson.css").encode()}
@@ -72,7 +67,7 @@ def lesson_document(
 async def render_lesson_pdf(
     renderer: HtmlPdfRenderer, *, title: str, markdown: str, language: str
 ) -> bytes:
-    content = markdown_to_html(markdown, drop_title=True)  # le titre est déjà en couverture
+    content = markdown_to_html(markdown, drop_title=True)  # the title is already on the cover
 
     def page(scripts: bool) -> HtmlDocument:
         return lesson_document(
@@ -84,6 +79,8 @@ async def render_lesson_pdf(
     try:
         return await renderer.html_to_pdf(page(scripts=True))
     except RenderFailed:
-        # Nombre seulement : ni titre ni contenu dans un journal (17.2).
-        logger.info("Leçon : schémas non rendus (%d), second essai sans script", content.diagrams)
+        # Count only: no title or content in a log (17.2).
+        logger.info(
+            "Lesson: diagrams not rendered (%d), second attempt without script", content.diagrams
+        )
     return await renderer.html_to_pdf(page(scripts=False))

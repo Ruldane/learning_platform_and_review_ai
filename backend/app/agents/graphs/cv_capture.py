@@ -1,17 +1,17 @@
-"""Parcours `cv_capture` (SPEC 5.1, 5.2 ; D124, D125) : capture d'un CV, en deux modes, aiguillés
-par `mode` dès `START`.
+"""`cv_capture` graph (SPEC 5.1, 5.2; D124, D125): capture of a CV, in two modes, routed by
+`mode` right from `START`.
 
-Mode `profile` (6.8) : l'Archiviste tire le profil maître du CV, du profil LinkedIn et de la note
-de January ; le code retire ce qui n'est dans aucun document, pose les sources de chaque fait et
-range un brouillon que January relira.
+`profile` mode (6.8): the Archivist draws the master profile from the CV, the LinkedIn profile
+and January's note; the code removes whatever is in no document, sets the sources of each fact
+and stores a draft that January will review.
 
 START -> load_sources -> extract -> check -> save_draft -> announce -> END
 
-Mode `design` (Maquettiste, 6.9) : le design du CV d'un gabarit, en trois passes automatiques au
-plus, puis la question `cv_template` (voir `cv_capture_design`).
+`design` mode (Designer, 6.9): the design of a template's CV, in at most three automatic
+passes, then the `cv_template` question (see `cv_capture_design`).
 
-Lancé seulement par ses routes (`POST /profile/import`, `POST /cv/templates`, `ROUTE_ONLY`).
-Chaque écriture d'un port est idempotente (SPEC 9.4)."""
+Launched only by its routes (`POST /profile/import`, `POST /cv/templates`, `ROUTE_ONLY`).
+Every port write is idempotent (SPEC 9.4)."""
 
 from typing import Any, Literal, Self
 
@@ -45,12 +45,12 @@ class CvCaptureInput(BaseModel):
 
     @model_validator(mode="after")
     def _ready(self) -> Self:
-        """Le profil part d'au moins un document ; le design, d'un gabarit."""
+        """The profile starts from at least one document; the design, from a template."""
         if self.mode == "design":
             if self.template_id is None:
-                raise ValueError("La capture du design part d'un gabarit.")
+                raise ValueError("The design capture starts from a template.")
         elif not self.document_ids:
-            raise ValueError("Le profil maître part d'au moins un document.")
+            raise ValueError("The master profile starts from at least one document.")
         return self
 
 

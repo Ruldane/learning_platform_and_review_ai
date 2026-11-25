@@ -65,6 +65,6 @@ async def seed_rehearsal(app: FastAPI, user_id: str) -> tuple[str, str]:
     )
     async with factory() as db:
         skills = SkillsService(db, user_id)
-        await skills.raise_levels(["Python"], "prouve", evidence("project", project, PROJECT, now))
+        await skills.raise_levels(["Python"], "proven", evidence("project", project, PROJECT, now))
         await db.commit()
     return posting, project

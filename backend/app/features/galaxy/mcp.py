@@ -7,7 +7,7 @@ MCP = FeatureMcp(
             "GET /galaxy",
             1,
             "galaxy_read_graph",
-            "Lit les compétences, les écarts et les notes actives de la Galaxie.",
+            "Reads the Galaxy's skills, gaps and active notes.",
             untrusted=("target_label", "nodes[].title", "nodes[].domain", "nodes[].action.ref"),
         ),
     ),

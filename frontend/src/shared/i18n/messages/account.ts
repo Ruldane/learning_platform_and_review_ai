@@ -1,47 +1,45 @@
 /** Textes de la page « Mes données » : export et suppression de tout le compte (SPEC 17.3). */
 export const account = {
-  nav: { data: "Mes données" },
-  title: "Mes données",
-  intro: "Ce que Tremplin garde dans ton espace : tu peux l'emporter, ou tout effacer.",
+  nav: { data: "My data" },
+  title: "My data",
+  intro: "What Tremplin keeps in your space: you can take it with you, or erase it all.",
   export: {
-    title: "Exporter",
+    title: "Export",
     description:
-      "Une archive zip avec tout ce que ton espace contient : tes réglages, ton profil et ton " +
-      "CV, tes objectifs et ton programme, tes leçons et tes révisions, ta mémoire, tes " +
-      "candidatures et le journal des appels aux modèles, plus les fichiers que tu as importés. " +
-      "Elle ne contient jamais tes clés d'API, ni les vecteurs de la mémoire, que Tremplin " +
-      "recalcule.",
-    link: "Exporter toutes mes données",
-    help:
-      "Le téléchargement s'ouvre dans un nouvel onglet ; si la session a expiré, reconnecte-toi " +
-      "puis réessaie.",
+      "A zip archive with everything your space holds: your settings, your profile and " +
+      "résumé, your goals and program, your lessons and reviews, your memory, your " +
+      "applications and the log of model calls, plus the files you imported. " +
+      "It never contains your API keys, nor the memory vectors, which Tremplin " +
+      "recomputes.",
+    link: "Export all my data",
+    help: "The download opens in a new tab; if your session has expired, sign in again and retry.",
   },
   delete: {
-    title: "Tout supprimer",
-    identity: "Compte à effacer : {account}",
-    localIdentity: "espace local de cet ordinateur",
-    warning: "Cette action est irréversible.",
+    title: "Delete everything",
+    identity: "Account to erase: {account}",
+    localIdentity: "local space on this computer",
+    warning: "This cannot be undone.",
     scope:
-      "Elle efface tout ce que Tremplin garde pour toi : réglages, clés saisies dans " +
-      "l'interface, profil, CV, programme, leçons, mémoire, candidatures, journal des appels et " +
-      "fichiers importés. Exporte d'abord si tu veux en garder une copie.",
-    keep: "Les clés d'API écrites dans le fichier .env ne sont pas touchées.",
+      "It erases everything Tremplin keeps for you: settings, keys entered in " +
+      "the interface, profile, résumé, program, lessons, memory, applications, call log and " +
+      "imported files. Export first if you want to keep a copy.",
+    keep: "API keys written in the .env file are not affected.",
     after:
-      "Avec un compte Google, ton compte Tremplin disparaît aussi et tu reviens à la page de " +
-      "connexion. La purge des vecteurs peut se terminer en arrière-plan. En mode local, tu " +
-      "reviens au premier lancement.",
+      "With a Google account, your Tremplin account is removed too and you return to the " +
+      "sign-in page. Purging the vectors may finish in the background. In local mode, you " +
+      "return to the first launch.",
     word: "SUPPRIMER",
-    label: "Tape SUPPRIMER pour confirmer",
-    submit: "Tout supprimer",
-    pending: "Suppression en cours…",
-    confirmationRequired: "Le mot de confirmation n'est pas bon : tape SUPPRIMER, en majuscules.",
-    retry: "Tu peux réessayer : la suppression reprend là où elle s'est arrêtée.",
+    label: "Type SUPPRIMER to confirm",
+    submit: "Delete everything",
+    pending: "Deleting…",
+    confirmationRequired: "The confirmation word is wrong: type SUPPRIMER, in capitals.",
+    retry: "You can retry: deletion resumes where it stopped.",
     accountChanged:
-      "Le compte connecté a changé dans un autre onglet. Rien n'a été supprimé. " +
-      "Vérifie le compte affiché avant de recommencer.",
-    notStarted: "Rien n'a été supprimé : tu peux réessayer sans risque.",
+      "The signed-in account changed in another tab. Nothing was deleted. " +
+      "Check the account shown before trying again.",
+    notStarted: "Nothing was deleted: you can safely retry.",
     rowsUntouched:
-      "La mémoire vectorielle ne répond pas. Rien n'a été supprimé en base. Tu peux réessayer.",
-    waiting: "Suppression en cours… ne ferme pas cette page.",
+      "The vector memory isn't responding. Nothing was deleted from the database. You can retry.",
+    waiting: "Deleting… don't close this page.",
   },
 } as const;

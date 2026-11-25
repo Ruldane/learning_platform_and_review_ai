@@ -16,7 +16,7 @@ function renderGate(status: GateStatus, onRetry = vi.fn(), message?: string) {
           </AuthGate>
         ),
       },
-      { path: "/connexion", element: <p>Page de connexion</p> },
+      { path: "/login", element: <p>Page de connexion</p> },
     ],
     { initialEntries: ["/"] },
   );
@@ -31,7 +31,7 @@ describe("AuthGate", () => {
     expect(screen.queryByRole("status")).toBeNull();
   });
 
-  it("replaces the page by /connexion when there is no session", () => {
+  it("replaces the page by /login when there is no session", () => {
     const { router } = renderGate("signedOut");
     expect(screen.getByText("Page de connexion")).toBeInTheDocument();
     expect(screen.queryByText("Contenu protégé")).toBeNull();
@@ -41,7 +41,7 @@ describe("AuthGate", () => {
 
   it("announces the check while loading, without the children", () => {
     renderGate("loading");
-    expect(screen.getByRole("status")).toHaveTextContent("Vérification de ta connexion");
+    expect(screen.getByRole("status")).toHaveTextContent("Checking your sign-in…");
     expect(screen.queryByText("Contenu protégé")).toBeNull();
   });
 
@@ -49,7 +49,7 @@ describe("AuthGate", () => {
     const user = userEvent.setup();
     const { onRetry } = renderGate("error", vi.fn(), "Impossible de joindre le serveur.");
     expect(screen.getByRole("alert")).toHaveTextContent("Impossible de joindre le serveur.");
-    const retry = screen.getByRole("button", { name: "Réessayer" });
+    const retry = screen.getByRole("button", { name: "Retry" });
     retry.focus();
     await user.keyboard("{Enter}");
     expect(onRetry).toHaveBeenCalledTimes(1);
@@ -70,7 +70,7 @@ describe("AuthGate", () => {
       );
     }
     render(<RouterProvider router={createMemoryRouter([{ path: "/", element: <Harness /> }])} />);
-    await user.click(screen.getByRole("button", { name: "Réessayer" }));
+    await user.click(screen.getByRole("button", { name: "Retry" }));
     expect(await screen.findByText("Contenu protégé")).toHaveFocus();
   });
 

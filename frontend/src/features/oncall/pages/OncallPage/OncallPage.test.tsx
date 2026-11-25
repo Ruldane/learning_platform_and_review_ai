@@ -11,7 +11,7 @@ const observed: string[] = [];
 const exercise = {
   id: "incident-fictif",
   kind: "queue",
-  title: "File de traitement",
+  title: "Processing queue",
   seed: 303,
   minute: 1,
   alerted: false,
@@ -39,19 +39,19 @@ it("déclenche l’alerte au pas virtuel et ouvre le journal et le projet de ré
       return HttpResponse.json(current);
     }),
   );
-  const routes = [{ path: "/astreinte/:incidentId", element: <OncallPage /> }];
-  const { user } = renderRoutes(routes, `/astreinte/${exercise.id}`);
+  const routes = [{ path: "/on-call/:incidentId", element: <OncallPage /> }];
+  const { user } = renderRoutes(routes, `/on-call/${exercise.id}`);
 
-  expect(await screen.findByText("En attente d’alerte")).toBeInTheDocument();
-  await user.click(screen.getByRole("button", { name: "Avancer d’une minute" }));
-  expect(await screen.findByRole("alert")).toHaveTextContent("Alerte simulée");
-  expect(screen.getByRole("link", { name: "Ouvrir le projet Python" })).toHaveAttribute(
+  expect(await screen.findByText("Waiting for an alert")).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Advance one minute" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("Simulated alert");
+  expect(screen.getByRole("link", { name: "Open the Python project" })).toHaveAttribute(
     "href",
     "/code/projet-fictif",
   );
-  const observation = screen.getByRole("button", { name: "Consulter l’événement 2" });
+  const observation = screen.getByRole("button", { name: "View event 2" });
   await user.click(observation);
-  expect(await screen.findByRole("button", { name: "Événement 2 consulté" })).toHaveAttribute(
+  expect(await screen.findByRole("button", { name: "Event 2 viewed" })).toHaveAttribute(
     "aria-pressed",
     "true",
   );

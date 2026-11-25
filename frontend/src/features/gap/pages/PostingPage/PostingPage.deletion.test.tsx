@@ -16,63 +16,67 @@ function setup(api: Parameters<typeof postingsApi>[0] = {}) {
   return renderPosting((createSocket) => <PostingPage createSocket={createSocket} />, api);
 }
 
+const REMOVE = "Delete posting";
+const CONFIRM = "Yes, delete";
+const OPEN_REVIEW = "Open CV review";
+
 describe("PostingPage deletion", () => {
   beforeEach(() => useSessionStore.getState().reset("a1"));
   afterEach(() => useSessionStore.getState().reset("a1"));
 
   it("says that CV reviews and generated PDFs go too when the posting has a review", async () => {
     const { user } = setup({ postings: [postingOut({ has_review: true })] });
-    await user.click(await screen.findByRole("button", { name: "Supprimer l'offre" }));
+    await user.click(await screen.findByRole("button", { name: REMOVE }));
     expect(
-      screen.getByText(/ainsi que ses revues de CV et les PDF générés pour cette offre/),
+      screen.getByText(/along with its CV reviews and the PDFs generated for it/),
     ).toBeVisible();
   });
 
   it("keeps the short sentence when the posting has no review", async () => {
     const { user } = setup();
-    await user.click(await screen.findByRole("button", { name: "Supprimer l'offre" }));
-    expect(screen.getByText("L'offre et son analyse seront effacées.")).toBeVisible();
-    expect(screen.queryByText(/revues de CV/)).toBeNull();
+    await user.click(await screen.findByRole("button", { name: REMOVE }));
+    expect(screen.getByText("The posting and its analysis will be erased.")).toBeVisible();
+    expect(screen.queryByText(/CV reviews/)).toBeNull();
   });
 
   it("asks to finish the review first and links to it (409 review_in_progress)", async () => {
     const { user } = setup({
       postings: [postingOut({ has_review: true })],
-      remove: () => refusal(409, "review_in_progress", "Message du serveur."),
+      remove: () => refusal(409, "review_in_progress", "Server message."),
     });
-    await user.click(await screen.findByRole("button", { name: "Supprimer l'offre" }));
-    await user.click(screen.getByRole("button", { name: "Oui, supprimer" }));
+    await user.click(await screen.findByRole("button", { name: REMOVE }));
+    await user.click(screen.getByRole("button", { name: CONFIRM }));
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Termine d'abord la revue de CV de cette offre.",
+      "First finish the CV review for this posting.",
     );
-    expect(screen.getByRole("link", { name: "Ouvrir la revue de CV" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: OPEN_REVIEW })).toHaveAttribute(
       "href",
-      "/carriere/cv/revue/nouvelle/p1",
+      "/career/cv/reviews/new/p1",
     );
   });
 
   it("asks to retry in a moment while an analysis is open (409 analysis_in_progress)", async () => {
     const { user } = setup({
-      remove: () => refusal(409, "analysis_in_progress", "Message du serveur."),
+      remove: () => refusal(409, "analysis_in_progress", "Server message."),
     });
-    await user.click(await screen.findByRole("button", { name: "Supprimer l'offre" }));
-    await user.click(screen.getByRole("button", { name: "Oui, supprimer" }));
+    await user.click(await screen.findByRole("button", { name: REMOVE }));
+    await user.click(screen.getByRole("button", { name: CONFIRM }));
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Une analyse de cette offre est en cours : réessaie dans un instant.",
+      "This posting is being analyzed: try again in a moment.",
     );
-    expect(screen.queryByRole("link", { name: "Ouvrir la revue de CV" })).toBeNull();
+    expect(screen.queryByRole("link", { name: OPEN_REVIEW })).toBeNull();
   });
 
   it("says a committee or interview is running, with no review link (409 posting_has_running_work)", async () => {
     const { user } = setup({
-      remove: () => refusal(409, "posting_has_running_work", "Message du serveur."),
+      remove: () => refusal(409, "posting_has_running_work", "Server message."),
     });
-    await user.click(await screen.findByRole("button", { name: "Supprimer l'offre" }));
-    await user.click(screen.getByRole("button", { name: "Oui, supprimer" }));
+    await user.click(await screen.findByRole("button", { name: REMOVE }));
+    await user.click(screen.getByRole("button", { name: CONFIRM }));
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Un comité ou un entretien est en cours sur cette offre : réessaie quand il sera fini.",
+      "A committee or interview is in progress for this posting: try again once it's done.",
     );
-    expect(screen.queryByRole("link", { name: "Ouvrir la revue de CV" })).toBeNull();
+    expect(screen.queryByRole("link", { name: OPEN_REVIEW })).toBeNull();
   });
 
   it("starts clean on the duplicate opened from the page (no leftover deletion prompt)", async () => {
@@ -96,8 +100,8 @@ describe("PostingPage deletion", () => {
     });
     client.setQueryData(gapKeys.posting("p7"), posting7);
     const router = createMemoryRouter(
-      [{ path: "/carriere/offres/:postingId", element: <PostingPage /> }],
-      { initialEntries: ["/carriere/offres/p1"] },
+      [{ path: "/career/postings/:postingId", element: <PostingPage /> }],
+      { initialEntries: ["/career/postings/p1"] },
     );
     render(
       <QueryClientProvider client={client}>
@@ -105,13 +109,13 @@ describe("PostingPage deletion", () => {
       </QueryClientProvider>,
     );
     const user = userEvent.setup();
-    await user.click(await screen.findByRole("button", { name: "Supprimer l'offre" }));
-    expect(screen.getByRole("group", { name: "Supprimer cette offre ?" })).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "Ouvrir" }));
+    await user.click(await screen.findByRole("button", { name: REMOVE }));
+    expect(screen.getByRole("group", { name: "Delete this posting?" })).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Open" }));
     expect(
       await screen.findByRole("heading", { level: 1, name: "Ingénieur données" }),
     ).toBeInTheDocument();
-    expect(screen.queryByRole("group", { name: "Supprimer cette offre ?" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Supprimer l'offre" })).toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "Delete this posting?" })).toBeNull();
+    expect(screen.getByRole("button", { name: REMOVE })).toBeInTheDocument();
   });
 });

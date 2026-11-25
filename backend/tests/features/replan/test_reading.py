@@ -75,5 +75,5 @@ async def test_reading_becomes_one_task_only_after_acceptance(
     await wait_status(client, sid, "completed")
     tasks = await tasks_of(factory, program_id, user)
     (task,) = [task for task in tasks if task.title == f"Lire : {TITLE}"]
-    assert task.type == "lire"
+    assert task.type == "read"
     assert ADDRESS in task.done_criterion

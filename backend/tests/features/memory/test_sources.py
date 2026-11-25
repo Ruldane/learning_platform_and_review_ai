@@ -117,7 +117,7 @@ async def test_paste_title_is_the_document_name(memory_providers: MemoryProvider
 
 
 def test_default_paste_title_is_dated() -> None:
-    assert default_paste_title() == f"Texte collé du {date.today():%d/%m/%Y}"
+    assert default_paste_title() == f"Pasted text from {date.today():%d/%m/%Y}"
 
 
 async def test_url_title_from_page_else_host(memory_providers: MemoryProviders) -> None:
@@ -149,7 +149,7 @@ async def test_youtube_title_from_video_else_id(memory_providers: MemoryProvider
     got = await get_source("youtube").extract(src, tools)
     assert (got.title, got.text) == ("Ma vidéo", "La transcription.")
     youtube.videos[VIDEO] = Transcript("dQw4w9WgXcQ", None, "La transcription.", True)
-    assert (await get_source("youtube").extract(src, tools)).title == "Vidéo YouTube dQw4w9WgXcQ"
+    assert (await get_source("youtube").extract(src, tools)).title == "YouTube video dQw4w9WgXcQ"
 
 
 async def test_file_source_reads_only_the_owner_storage(

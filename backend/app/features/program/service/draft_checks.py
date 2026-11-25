@@ -18,21 +18,21 @@ def check_draft(draft: PlanDraft, budget: Budget) -> list[str]:
     cap, longest = budget.cap_minutes, budget.longest_day_minutes
     floor = floor_minutes(cap)
     for rank, week in enumerate(draft.weeks, start=1):
-        label = f"Semaine {rank}"
+        label = f"Week {rank}"
         tasks = [task for module in week.modules for task in module.tasks]
         pairs = [(task.minutes, task.type) for task in tasks]
         total = sum(minutes for minutes, _ in pairs)
         for index, task in enumerate(tasks, start=1):
             if task.minutes > longest:
                 impossible.append(
-                    f"{label}, tâche {index} : {task.minutes} minutes, alors que le plus grand "
-                    f"créneau est de {longest} minutes. Scinde cette tâche en étapes plus courtes."
+                    f"{label}, task {index}: {task.minutes} min, but the longest slot is "
+                    f"{longest} min. Split the task into shorter steps."
                 )
         problems += [describe(rule, label, total, cap) for rule in week_breaks(pairs, cap)]
         if rank < len(draft.weeks) and total < floor:
             problems.append(describe_underload(label, total, floor))
         problems.extend(
-            f"{label} : le titre « {task.title} » ne commence pas par un verbe d'action."
+            f'{label}: start the task title "{task.title}" with an action verb.'
             for task in tasks
             if not has_action_verb(task.title)
         )

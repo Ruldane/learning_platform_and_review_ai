@@ -196,10 +196,10 @@ def test_anything_outside_the_grammar_is_refused(code: str) -> None:
 def test_refusals_name_the_line_and_the_forbidden_instruction() -> None:
     problems = mermaid_problems("flowchart TD\nA --> B\nclick A call alert()")
     assert problems == [
-        "ligne 3 : instruction `click` interdite : seulement des nœuds, des arêtes, `subgraph`, "
-        "`end` et `direction`"
+        "Line 3: The `click` instruction is forbidden. Use nodes, edges, `subgraph`, "
+        "`end`, and `direction`"
     ]
-    assert mermaid_problems('flowchart TD\nA --> B"')[0].startswith("ligne 2 : ")
+    assert mermaid_problems('flowchart TD\nA --> B"')[0].startswith("Line 2: ")
 
 
 def test_comments_are_dropped() -> None:
@@ -215,14 +215,14 @@ def test_last_label_and_shape_of_a_node_win() -> None:
 
 def test_size_limits() -> None:
     nodes = "\n".join(f"N{i} --> N{i + 1}" for i in range(MAX_NODES))
-    assert any("nœuds" in p for p in mermaid_problems(f"flowchart TD\n{nodes}"))
+    assert any("nodes" in p for p in mermaid_problems(f"flowchart TD\n{nodes}"))
     lines = "\n".join("A --> B" for _ in range(MAX_MERMAID_LINES))
-    assert any("lignes" in p for p in mermaid_problems(f"flowchart TD\n{lines}"))
+    assert any("lines" in p for p in mermaid_problems(f"flowchart TD\n{lines}"))
     statements = ("A-->B;" * 40 + "\n") * 2
-    assert any("lignes" in p for p in mermaid_problems("flowchart TD\n" + statements))
-    assert any("caractères" in p for p in mermaid_problems("flowchart TD\n" + "A-->B;" * 80))
+    assert any("lines" in p for p in mermaid_problems("flowchart TD\n" + statements))
+    assert any("characters" in p for p in mermaid_problems("flowchart TD\n" + "A-->B;" * 80))
     label = "x" * (MAX_LABEL_CHARS + 1)
-    assert any("libellé" in p for p in mermaid_problems(f'flowchart TD\nA["{label}"] --> B'))
+    assert any("label" in p for p in mermaid_problems(f'flowchart TD\nA["{label}"] --> B'))
     assert mermaid_problems(f'flowchart TD\nA["{"x" * MAX_LABEL_CHARS}"] --> B') == []
 
 

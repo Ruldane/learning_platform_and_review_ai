@@ -35,8 +35,8 @@ describe("ReadingPage", () => {
       }),
     );
     const { user } = renderRoutes(
-      [{ path: "/memoire/lecture/:itemId?", element: <ReadingPage /> }],
-      "/memoire/lecture/article",
+      [{ path: "/memory/reading/:itemId?", element: <ReadingPage /> }],
+      "/memory/reading/article",
     );
     const readable = await screen.findByText(text);
     const select = (end: number) => {
@@ -48,16 +48,16 @@ describe("ReadingPage", () => {
       selection.addRange(range);
       fireEvent(document, new Event("selectionchange"));
     };
-    const button = screen.getByRole("button", { name: "Créer une fiche de ce passage" });
+    const button = screen.getByRole("button", { name: "Create a flashcard from this passage" });
     select(text.length);
-    expect(screen.getByText(/1\s?200 caractères/)).toBeVisible();
+    expect(screen.getByText(/1,200 characters/)).toBeVisible();
     expect(button).toBeDisabled();
     expect(calls).toEqual([]);
 
     select(valid.length);
     expect(button).toBeEnabled();
     await user.click(button);
-    expect(await screen.findByText("La fiche est prête à réviser.")).toBeVisible();
+    expect(await screen.findByText("The flashcard is ready to review.")).toBeVisible();
     expect(calls).toEqual([{ passage: valid }]);
   });
   it("opens an article and reflects the saved read state", async () => {
@@ -79,12 +79,12 @@ describe("ReadingPage", () => {
       }),
     );
     const { user } = renderRoutes(
-      [{ path: "/memoire/lecture/:itemId?", element: <ReadingPage /> }],
-      "/memoire/lecture",
+      [{ path: "/memory/reading/:itemId?", element: <ReadingPage /> }],
+      "/memory/reading",
     );
     await user.click(await screen.findByRole("link", { name: article.title }));
     expect(await screen.findByText(article.text)).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "Marquer comme lu" }));
-    expect(await screen.findByRole("button", { name: "Marquer comme non lu" })).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: "Mark as read" }));
+    expect(await screen.findByRole("button", { name: "Mark as unread" })).toBeEnabled();
   });
 });

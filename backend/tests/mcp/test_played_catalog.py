@@ -1,5 +1,3 @@
-from fastapi import FastAPI
-
 from app.agents.graphs.registry import GRAPHS
 from app.features.registry import MCP_FEATURES
 from tests.mcp.adapter_support import call
@@ -16,9 +14,7 @@ async def test_play_catalog_lists_only_launches_in_token_scope(claude: Mcp) -> N
     assert "session_id" in catalog["ide_teach_session"]["input_schema"]["properties"]
 
 
-async def test_all_graphs_have_a_played_launch(claude: Mcp, app: FastAPI) -> None:
-    # La session issue d'un choix dans le Conseil hérite du client. Pour sa relance
-    # explicite, graph_program_builder passe aussi par le registre.
+async def test_play_catalog_matches_declared_launches(claude: Mcp) -> None:
     features = tuple(
         feature.feature
         for feature in MCP_FEATURES
@@ -27,4 +23,19 @@ async def test_all_graphs_have_a_played_launch(claude: Mcp, app: FastAPI) -> Non
     token = await claude.token(features, "read")
     result, failed = await call(claude, token, "agents_play_list")
     assert not failed, result
-    assert {item["graph"] for item in result["data"]} == set(GRAPHS)
+    direct = {
+        graph.graph for feature in MCP_FEATURES for graph in feature.graphs if not graph.follow_only
+    }
+    via_routes = {
+        action.launches
+        for feature in MCP_FEATURES
+        for action in (*feature.actions, *feature.play_actions)
+        if action.level == 2 and action.launches is not None
+    }
+    followed = {
+        graph.graph for feature in MCP_FEATURES for graph in feature.graphs if graph.follow_only
+    }
+    expected = direct | via_routes
+    assert {item["graph"] for item in result["data"]} == expected
+    # A graph can be followed without exposing a level 2 launch.
+    assert expected | followed == set(GRAPHS)

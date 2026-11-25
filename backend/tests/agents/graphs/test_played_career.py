@@ -126,7 +126,7 @@ async def test_played_committee(committee_runner: MakeCommittee, user_id: str) -
     roles = await play(run)
     assert roles == [*PERSONAS, *speaking_order(1), *speaking_order(2), *PERSONAS, "moderator"]
     assert [v.persona for v in run.store.only.votes] == list(PERSONAS)
-    assert run.store.only.synthesis.verdict == "oui"
+    assert run.store.only.synthesis.verdict == "yes"
 
 
 async def test_played_radar(radar_runner: MakeRadar, user_id: str) -> None:

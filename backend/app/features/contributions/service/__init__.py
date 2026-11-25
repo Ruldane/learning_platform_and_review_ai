@@ -1,1 +1,1 @@
-"""Préparation et vérification des contributions ouvertes."""
+"""Preparation and verification of open-source contributions."""

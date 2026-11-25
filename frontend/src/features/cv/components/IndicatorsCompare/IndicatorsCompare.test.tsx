@@ -26,10 +26,10 @@ const AFTER: IndicatorsView = {
 describe("IndicatorsCompare", () => {
   it("compares the coverage and each check before and after", () => {
     render(<IndicatorsCompare before={BEFORE} after={AFTER} />);
-    expect(screen.getByText("Couverture des exigences : 58 % → 83 %")).toBeInTheDocument();
-    const row = screen.getByRole("row", { name: /Titres de sections standard/ });
+    expect(screen.getByText("Requirement coverage: 58% → 83%")).toBeInTheDocument();
+    const row = screen.getByRole("row", { name: /Standard section headings/ });
     const cells = within(row).getAllByRole("cell");
-    expect(cells.map((cell) => cell.textContent)).toEqual(["À revoir", "Réussi"]);
+    expect(cells.map((cell) => cell.textContent)).toEqual(["To review", "Passed"]);
   });
 
   it("lists what is still missing after the generation", () => {
@@ -40,20 +40,20 @@ describe("IndicatorsCompare", () => {
 
   it("shows the starting point only while there is no generated CV", () => {
     render(<IndicatorsCompare before={BEFORE} after={null} />);
-    expect(screen.getByText("Couverture des exigences : 58 %")).toBeInTheDocument();
+    expect(screen.getByText("Requirement coverage: 58%")).toBeInTheDocument();
     expect(screen.getByText("Docker")).toBeInTheDocument();
-    expect(screen.getAllByText("Pas encore")).toHaveLength(2);
+    expect(screen.getAllByText("Not yet")).toHaveLength(2);
   });
 
   it("says when every mandatory requirement is covered", () => {
     render(<IndicatorsCompare before={BEFORE} after={{ ...AFTER, missing: [] }} />);
     expect(
-      screen.getByText("Toutes les exigences obligatoires sont couvertes."),
+      screen.getByText("All required skills are covered."),
     ).toBeInTheDocument();
   });
 
   it("keeps the fixed guarantee mention", () => {
     render(<IndicatorsCompare before={BEFORE} after={AFTER} />);
-    expect(screen.getByText(/Aucun outil ne garantit/)).toBeInTheDocument();
+    expect(screen.getByText(/No tool can guarantee/)).toBeInTheDocument();
   });
 });

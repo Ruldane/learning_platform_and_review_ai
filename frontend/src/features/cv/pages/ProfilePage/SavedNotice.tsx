@@ -7,7 +7,7 @@ export function SavedNotice({ version }: { version: number | null }) {
   return (
     <p role="status" className="text-sm font-medium">
       {t("cv.profilePage.saved", { version })}{" "}
-      <Link to="/carriere/cv" className="underline underline-offset-4">
+      <Link to="/career/cv" className="underline underline-offset-4">
         {t("cv.profilePage.toCv")}
       </Link>
     </p>

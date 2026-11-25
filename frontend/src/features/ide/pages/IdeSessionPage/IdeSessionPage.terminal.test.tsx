@@ -36,11 +36,11 @@ it("affiche la sortie du terminal et transmet l’entrée et l’interruption", 
     ],
   });
 
-  await user.click(await screen.findByRole("button", { name: "Ouvrir le terminal" }));
+  await user.click(await screen.findByRole("button", { name: "Open terminal" }));
   await waitFor(() =>
-    expect(screen.getByRole("log", { name: "Sortie du terminal" })).toHaveTextContent("Bac prêt"),
+    expect(screen.getByRole("log", { name: "Terminal output" })).toHaveTextContent("Bac prêt"),
   );
-  await user.type(screen.getByRole("textbox", { name: "Entrée du terminal" }), "afficher{Enter}");
-  await user.click(screen.getByRole("button", { name: "Interrompre le terminal" }));
+  await user.type(screen.getByRole("textbox", { name: "Terminal input" }), "afficher{Enter}");
+  await user.click(screen.getByRole("button", { name: "Interrupt terminal" }));
   await waitFor(() => expect(actions).toEqual([{ data: "afficher\n" }, "interrompu"]));
 });

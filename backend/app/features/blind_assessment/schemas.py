@@ -1,4 +1,4 @@
-"""Entrées de l’épreuve et projection publique après verdict."""
+"""Assessment inputs and public projection after the verdict."""
 
 from datetime import datetime
 from typing import Literal, Self
@@ -43,7 +43,7 @@ class BlindCreate(BaseModel):
     @model_validator(mode="after")
     def distinct_versions(self) -> Self:
         if self.first_version_id == self.second_version_id:
-            raise ValueError("Choisis deux versions différentes.")
+            raise ValueError("Choose two different versions.")
         return self
 
 

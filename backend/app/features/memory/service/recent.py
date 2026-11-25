@@ -1,5 +1,5 @@
-"""Les écritures récentes des agents en mémoire, pour le fil d'activité (8.7). Lecture pour les
-autres features (contrat 2) : le journal d'écriture, jamais le texte de l'élément."""
+"""Recent agent writes to memory, for the activity feed (8.7). Read access for other
+features (contract 2): the write log, never the item's text."""
 
 from dataclasses import dataclass
 from datetime import datetime
@@ -20,7 +20,7 @@ class AgentWrite:
     item_id: str
     item_title: str
     action: str
-    author: str  # le nom de l'agent (jamais `user`)
+    author: str  # the agent's name (never `user`)
     reason: str | None
     at: datetime
 
@@ -28,11 +28,15 @@ class AgentWrite:
 async def recent_agent_writes(
     db: AsyncSession, user_id: str, after: datetime | None, before: datetime | None, limit: int
 ) -> list[AgentWrite]:
-    """Les écritures des agents dans `[after, before]` (bornes incluses, hors suppressions), la
-    plus récente d'abord. N'y sont jamais : les écritures de l'utilisatrice, ni celles de sa propre
-    capture rapide (l'Archiviste les écrit sur sa demande : raison `CAPTURE_REASON`, ou acquis
-    reflétés par la capture), reconnues à leur auteur et à leur raison."""
-    skip = (CAPTURE_AUTHOR, CAPTURE_REASON, CAPTURE_REFLECT_PREFIX)
+    """Agent writes within `[after, before]` (inclusive bounds, deletions excluded), most
+    recent first. Never included: the user's own writes, nor those of her quick capture (the
+    Archivist writes them at her request: reason `CAPTURE_REASON`, or skills reflected by the
+    capture), recognised by their author and reason."""
+    skip = (
+        CAPTURE_AUTHOR,
+        (CAPTURE_REASON, "Capture rapide de January."),
+        (CAPTURE_REFLECT_PREFIX, "Capture « "),
+    )
     rows = await WriteRepository(db, user_id).by_agents_between(after, before, limit, skip=skip)
     return [
         AgentWrite(

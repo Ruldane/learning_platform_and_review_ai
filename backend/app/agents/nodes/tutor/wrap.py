@@ -1,10 +1,10 @@
-"""Fin de séance (D102) : la question « Terminer la session » (point d'arrêt), le bilan du Tuteur
-(aucune écriture), puis le rangement par le port et le message de fin.
+"""End of session (D102): the "Finish the session" question (stop point), the Tutor's review
+(no write), then the filing through the port and the closing message.
 
-La séance ne se termine que par cette question ou par « Terminer » (réponse `finish` à n'importe
-quelle question, 5.6) : le temps vient du minuteur, la feature le compte. `wrap_up` est la seule
-écriture du parcours, idempotente (session d'étude déjà `finished` : relue) ; le message de fin
-vient après. Journaux : identifiants et nombres seulement (SPEC 17.2)."""
+The session only ends through this question or through "Finish" (`finish` answer to any
+question, 5.6): the time comes from the timer, the feature counts it. `wrap_up` is the only
+write of the flow, idempotent (study session already `finished`: reread); the closing message
+comes after. Logs: identifiers and numbers only (SPEC 17.2)."""
 
 import asyncio
 import logging
@@ -31,20 +31,25 @@ from app.agents.state.study_session import StudySessionState
 from app.agents.tools.study_port import Outcome, StudyFinished, StudyOutcome, exercise_done
 from app.core.errors import AppError
 
-FINISH_QUESTION = "La séance est finie. Termine-la pour enregistrer ton temps et tes acquis."
-FINISH_OPTION = {"value": "finish", "label": "Terminer la session"}
-SUMMARY_REQUEST = "Rédige le bilan."
-# Plus court que le plafond du nœud (120 s) : au-delà, le bilan chiffré, jamais `node_timeout`.
+FINISH_QUESTION = "Finish the session to save your study time and skill progress."
+FINISH_OPTION = {"value": "finish", "label": "Finish the session"}
+SUMMARY_REQUEST = "Write the session review."
+# Shorter than the node cap (120 s): beyond it, the numeric review, never `node_timeout`.
 SUMMARY_TIMEOUT_S = 90.0
-LEVEL_NAMES = {"declare": "Déclaré", "en_cours": "En cours", "valide": "Validé", "prouve": "Prouvé"}
-SAVE_TIMEOUT_S = 300  # la feature range le temps, les tâches, les fiches, les acquis, le journal
+LEVEL_NAMES = {
+    "declared": "Declared",
+    "in_progress": "In progress",
+    "validated": "Validated",
+    "proven": "Proven",
+}
+SAVE_TIMEOUT_S = 300  # the feature files time, tasks, cards, acquired skills and the journal
 
 logger = logging.getLogger(__name__)
 
 
 def ask_finish(state: StudySessionState) -> StudySessionState:
-    """Point d'arrêt de fin. Rien avant `interrupt()` ; toute autre réponse que `finish` repose
-    la question."""
+    """End stop point. Nothing before `interrupt()`; any answer other than `finish` asks
+    the question again."""
     value = interrupt(
         {"kind": FINISH_SESSION, "question": FINISH_QUESTION, "options": [FINISH_OPTION]}
     )
@@ -58,7 +63,7 @@ def route_finish(state: StudySessionState) -> str:
 
 
 def outcomes_of(state: StudySessionState) -> list[Outcome]:
-    """Les résultats du port ; la marque `unchecked` de l'état n'y entre pas (D115 n° 17)."""
+    """The port's results; the state's `unchecked` mark does not enter them (D115 no. 17)."""
     return [
         Outcome(**{k: v for k, v in o.items() if k != "unchecked"})
         for o in state.get("outcomes", [])
@@ -67,17 +72,17 @@ def outcomes_of(state: StudySessionState) -> list[Outcome]:
 
 def _fallback_summary(state: StudySessionState, outcomes: list[Outcome]) -> str:
     good = sum(1 for o in outcomes if o.verdict == "correct")
-    text = f"Séance terminée : {good} réponse(s) juste(s) sur {len(outcomes)} question(s)."
+    text = f"Study session complete. You answered {good} of {len(outcomes)} questions correctly."
     unchecked = sum(1 for o in state.get("outcomes", []) if o.get("unchecked"))
-    return text + (f" {unchecked} réponse(s) non corrigée(s)." if unchecked else "")
+    return text + (f" I couldn’t check {unchecked} of your answers." if unchecked else "")
 
 
 def make_summarize(deps: GraphDeps) -> Node:
     @node_timeout()
     async def summarize(state: StudySessionState) -> StudySessionState:
-        """Le bilan du Tuteur. Illisible après ses nouveaux essais, erreur du fournisseur ou délai
-        dépassé : un bilan chiffré à la place (la séance n'échoue pas à la dernière marche ; revue
-        finale de la phase 5, A-m1)."""
+        """The Tutor's review. Unreadable after its retries, provider error or timeout exceeded:
+        a numeric review instead (the session does not fail on the last step; final review of
+        phase 5, A-m1)."""
         outcomes = outcomes_of(state)
         prompt = tutor_prompt(
             state,
@@ -94,12 +99,12 @@ def make_summarize(deps: GraphDeps) -> Node:
                     prompt,
                     SUMMARY_REQUEST,
                     step="bilan",
-                    intent="je fais le bilan de la séance",
+                    intent="I’m reviewing the session",
                 )
         except (AppError, TimeoutError) as exc:
             code = exc.code if isinstance(exc, AppError) else "timeout"
             logger.warning(
-                "Bilan indisponible (%s), bilan chiffré : session %s", code, deps.session_id
+                "Review unavailable (%s), numeric review: session %s", code, deps.session_id
             )
             return {"session_summary": _fallback_summary(state, outcomes)}
         return {"session_summary": found.summary}
@@ -108,17 +113,17 @@ def make_summarize(deps: GraphDeps) -> Node:
 
 
 def _closing(summary: str, done: StudyFinished) -> str:
-    tasks = ", ".join(f"« {title} »" for title in done.tasks_done) or "aucune"
+    tasks = ", ".join(f"“{title}”" for title in done.tasks_done) or "none"
     skills = ", ".join(f"{name} ({LEVEL_NAMES.get(level, level)})" for name, level in done.skills)
     lines = [
         summary,
         "",
-        f"Temps enregistré : {done.minutes} min.",
-        f"Tâches cochées : {tasks}.",
-        f"Fiches créées depuis tes erreurs : {done.flashcards_created}.",
+        f"Recorded {done.minutes} min of study time.",
+        f"Tasks completed\n{tasks}.",
+        f"Review cards created from your mistakes\n{done.flashcards_created}.",
     ]
     if skills:
-        lines.append(f"Acquis mis à jour : {skills}.")
+        lines.append(f"Skills updated\n{skills}.")
     return "\n".join(lines)
 
 
@@ -134,7 +139,7 @@ def _finished_state(done: StudyFinished) -> dict[str, Any]:
 def make_wrap_up(deps: GraphDeps) -> Node:
     @node_timeout(SAVE_TIMEOUT_S)
     async def wrap_up(state: StudySessionState) -> StudySessionState:
-        """La fin rangée par le port (idempotent), puis le message de fin."""
+        """The end filed by the port (idempotent), then the closing message."""
         outcomes = outcomes_of(state)
         result = StudyOutcome(
             outcomes=outcomes,
@@ -145,8 +150,8 @@ def make_wrap_up(deps: GraphDeps) -> Node:
         study_id = state["study_session_id"]
         done = await deps.ports.study.finish(deps.user_id, deps.session_id, study_id, result)
         logger.info(
-            "Session d'étude rangée : session %s, étude %s, %d question(s), %d min, "
-            "%d tâche(s), %d fiche(s)",
+            "Study session filed: session %s, study %s, %d question(s), %d min, "
+            "%d task(s), %d card(s)",
             deps.session_id,
             study_id,
             len(outcomes),
@@ -158,7 +163,7 @@ def make_wrap_up(deps: GraphDeps) -> Node:
         title = context_of(state).module_title
         return {
             "finished": _finished_state(done),
-            "summary": f"Session d'étude terminée : « {title} », {done.minutes} min.",
+            "summary": f"Study session complete for “{title}” ({done.minutes} min).",
         }
 
     return wrap_up

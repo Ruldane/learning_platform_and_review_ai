@@ -2,7 +2,7 @@ import { t } from "@/shared/i18n/t";
 import { cn } from "@/shared/lib/utils";
 import { MAX_TEXT } from "../source";
 
-const COUNT = new Intl.NumberFormat("fr-FR");
+const COUNT = new Intl.NumberFormat("en-GB");
 
 interface FieldNotesProps {
   /** L'identifiant du champ : les notes portent `{id}-hint` et `{id}-count`. */

@@ -1,18 +1,18 @@
-"""Port de l'entretien blanc (`InterviewStore`, D145, D146) sur la feature `applications` :
-implémentation branchée par `bootstrap_agents.agent_ports(..., interviews=...)`. Chaque appel ouvre
-sa propre session de base, courte.
+"""Mock interview port (`InterviewStore`, D145, D146) on the `applications` feature:
+implementation wired by `bootstrap_agents.agent_ports(..., interviews=...)`. Each call opens its
+own short database session.
 
-- `context` : lecture seule (`interview_context`). 404 `interview_not_found` (l'entretien n'est pas
-  à l'utilisatrice), 409 `profile_required`.
-- `save_result` : **idempotent par session**, sous le verrou des entretiens : un entretien qui n'est
-  plus `running` (rejeu après un arrêt, SPEC 9.4) n'est jamais réécrit. `debrief=None` sans
-  échange : `stopped` (rien d'autre) ; `debrief=None` avec des échanges : `debrief_failed`
-  (réponses gardées, ni débrief, ni fiche, ni événement) ; sinon `done` : échanges, débrief (avec
-  `flags` et `cards_created`, rangés avec lui), fiches de révision (`quiz.service.cards.add_cards`,
-  source `interview`, dues demain, jamais de compétence : le texte vient du modèle) et, si
-  l'entretien a une fiche, l'événement `interview` du fil, dans la même transaction.
+- `context`: read-only (`interview_context`). 404 `interview_not_found` (the interview is not
+  the user's), 409 `profile_required`.
+- `save_result`: **idempotent per session**, under the interviews lock: an interview that is no
+  longer `running` (replay after a stop, SPEC 9.4) is never rewritten. `debrief=None` without
+  any exchange: `stopped` (nothing else); `debrief=None` with exchanges: `debrief_failed`
+  (answers kept, no debrief, no cards, no event); otherwise `done`: exchanges, debrief (with
+  `flags` and `cards_created`, stored with it), review cards (`quiz.service.cards.add_cards`,
+  source `interview`, due tomorrow, never a skill: the text comes from the model) and, if the
+  interview has a record, the `interview` event of the timeline, in the same transaction.
 
-Journaux : identifiants, statuts et nombres seulement (17.2)."""
+Logs: ids, statuses and numbers only (17.2)."""
 
 import logging
 
@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 MODE_LABELS = {
     "behavioral": "comportemental",
     "technical": "technique",
-    "case": "étude de cas",
+    "case": "case study",
     "mixed": "mixte",
 }
 
@@ -48,8 +48,8 @@ MODE_LABELS = {
 def timeline_text(row: Interview, cards: int) -> str:
     label = MODE_LABELS.get(row.mode, row.mode)
     return (
-        f"Entretien blanc ({label}, {row.duration_min} min) terminé : débrief disponible, "
-        f"{cards} fiche(s) de révision créée(s)."
+        f"Mock interview ({label}, {row.duration_min} min) finished: debrief available, "
+        f"{cards} review card(s) created."
     )
 
 
@@ -86,7 +86,7 @@ class AgentInterviewStore:
         async with interview_lock(rt, user_id), rt.session_factory() as db:
             row = await interview_row(db, user_id, interview_id)
             if row.status != "running":
-                return  # rejeu : l'issue de la session est déjà rangée
+                return  # replay: the outcome of the session is already stored
             row.exchanges = [item.model_dump(mode="json") for item in exchanges]
             created = 0
             if debrief is None:
@@ -96,8 +96,8 @@ class AgentInterviewStore:
             await db.commit()
             status = row.status
         logger.info(
-            "Entretien rangé : utilisateur %s, entretien %s, session %s, statut %s, "
-            "%d échange(s), %d fiche(s)",
+            "Interview stored: user %s, interview %s, session %s, status %s, "
+            "%d exchange(s), %d card(s)",
             user_id,
             interview_id,
             session_id,
@@ -115,7 +115,7 @@ class AgentInterviewStore:
         flags: list[str],
         cards: list[CardDraft],
     ) -> int:
-        """Débrief, fiches de révision et événement du fil ; rend le nombre de fiches créées."""
+        """Debrief, review cards and timeline event; returns the number of cards created."""
         rt = self._rt
         today = local_today(await zone_of(db, user_id), rt.now())
         new = [NewCard(c.front, c.back, None, None, "interview", row.id) for c in cards]

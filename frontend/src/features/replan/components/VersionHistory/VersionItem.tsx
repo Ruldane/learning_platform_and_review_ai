@@ -1,7 +1,7 @@
 import { t } from "@/shared/i18n/t";
 import type { VersionView } from "../viewTypes";
 
-const DAY = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long" });
+const DAY = new Intl.DateTimeFormat("en-GB", { dateStyle: "long" });
 
 interface VersionItemProps {
   version: VersionView;

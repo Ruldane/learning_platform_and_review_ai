@@ -12,7 +12,7 @@ export interface TimerState {
   running: boolean;
 }
 
-export type BlockTaskType = "lire" | "regarder" | "pratiquer" | "quiz" | "projet";
+export type BlockTaskType = "read" | "watch" | "practice" | "quiz" | "project";
 
 export interface BlockTaskView {
   id: string;
@@ -28,7 +28,7 @@ export interface BlockView {
   tasks: BlockTaskView[];
 }
 
-export type SkillLevelView = "declare" | "en_cours" | "valide" | "prouve";
+export type SkillLevelView = "declared" | "in_progress" | "validated" | "proven";
 
 export interface SkillGainView {
   name: string;

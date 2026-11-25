@@ -78,7 +78,7 @@ describe("boardsFromEvents", () => {
       ],
     );
     expect(result.map((s) => s.step)).toEqual([1, 2]);
-    expect(result[0]?.title).toBe("Carte du domaine");
+    expect(result[0]?.title).toBe("Domain map");
   });
 
   it("ignores events that are not board updates", () => {

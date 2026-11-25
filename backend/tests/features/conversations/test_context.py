@@ -53,13 +53,13 @@ async def test_follow_up_remembers_history_and_resolves_owned_memory_item(
         app.state.local_user_id,
         "script",
         "archivist",
-        AgentWrite("acquis", "Note vérifiée", "On garde les détails.", "Vu."),
+        AgentWrite("skill", "Note vérifiée", "On garde les détails.", "Vu."),
     )
     await memory.write(
         "autre-compte",
         "script",
         "archivist",
-        AgentWrite("acquis", "Note étrangère", "Rien à montrer.", "Vu."),
+        AgentWrite("skill", "Note étrangère", "Rien à montrer.", "Vu."),
     )
     path = f"{API}/lessons/{lesson.lesson_id}/conversation"
     first = await client.post(f"{path}/messages", json=question("Première question."))
@@ -80,7 +80,7 @@ async def test_follow_up_remembers_history_and_resolves_owned_memory_item(
             "excerpt": "On garde les détails.",
         },
     ]
-    assert [model for model, _ in professor_models.built] == ["rapide", "fort"]
+    assert [model for model, _ in professor_models.built] == ["fast", "strong"]
     second_prompt = str(professor_models.received[1][-1].content)
     assert "Première question." in second_prompt and "Premier éclairage" in second_prompt
     assert "Note vérifiée" in second_prompt and "Note étrangère" not in second_prompt

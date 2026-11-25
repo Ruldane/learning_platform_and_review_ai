@@ -7,7 +7,7 @@ from app.features.memory.service.runtime import MemoryRuntime
 
 
 def get_memory_runtime(conn: HTTPConnection) -> MemoryRuntime:
-    """La mémoire ouverte par le lifespan (`app.state.memory`)."""
+    """The memory opened by the lifespan (`app.state.memory`)."""
     runtime: MemoryRuntime = conn.app.state.memory
     return runtime
 

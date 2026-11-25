@@ -9,16 +9,17 @@ import { usePrograms } from "../../hooks/usePrograms";
 import { LessonsBody } from "./LessonsBody";
 
 /**
- * Leçons (`/apprendre/lecons`) : les leçons d'un programme, par semaine, avec leur état (à venir,
+ * Leçons (`/learn/lessons`) : les leçons d'un programme, par semaine, avec leur état (à venir,
  * en préparation, prête, nouvelle tentative prévue) et leur avancement. Le plus récent par défaut ;
- * avec plusieurs programmes, une liste déroulante choisit (`?programme=<id>`).
+ * avec plusieurs programmes, une liste déroulante choisit (`?program=<id>`).
  */
 export function LessonsPage() {
   const navigate = useNavigate();
   const programs = usePrograms();
   const [params, setParams] = useSearchParams();
   const list = programs.data ?? [];
-  const chosen = list.find((program) => program.id === params.get("programme")) ?? list[0];
+  const selectedId = params.get("program") ?? params.get("programme");
+  const chosen = list.find((program) => program.id === selectedId) ?? list[0];
 
   let body;
   if (programs.isPending) {
@@ -36,7 +37,7 @@ export function LessonsPage() {
         description={t("lessons.list.noProgramDescription")}
         action={{
           label: t("lessons.list.noProgramAction"),
-          onClick: () => void navigate("/apprendre/conseil"),
+          onClick: () => void navigate("/learn/council"),
         }}
       />
     );
@@ -53,7 +54,7 @@ export function LessonsPage() {
           <ProgramPicker
             programs={list.map(({ id, title }) => ({ id, title }))}
             value={chosen.id}
-            onChange={(programme) => setParams({ programme }, { replace: true })}
+            onChange={(program) => setParams({ program }, { replace: true })}
           />
         ) : null}
       </header>

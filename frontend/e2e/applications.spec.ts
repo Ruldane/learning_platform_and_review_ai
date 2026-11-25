@@ -54,11 +54,11 @@ function candidacy(page: Page): Locator {
 
 /** 1. Offre collée en texte, analysée ; fiche créée depuis la page de l'offre. */
 async function createFromPosting(page: Page): Promise<void> {
-  await page.goto("/carriere/offres");
+  await page.goto("/career/postings");
   await page.getByRole("tab", { name: "Texte" }).click();
   await page.getByRole("textbox", { name: "Texte de l'offre" }).fill(PASTED_POSTING);
   await page.getByRole("button", { name: "Analyser l'offre" }).click();
-  await expect(page).toHaveURL(/\/carriere\/offres\/[^/]+$/);
+  await expect(page).toHaveURL(/\/career\/postings\/[^/]+$/);
 
   // Après le parcours n° 2, la fiche de son offre (même entreprise, texte voisin) est un doublon
   // « possible » : le serveur l'alerte, et January confirme que c'est un autre poste.
@@ -66,7 +66,7 @@ async function createFromPosting(page: Page): Promise<void> {
   const distinct = candidacy(page).getByRole("button", { name: "C'est un autre poste" });
   await expect(create.or(distinct)).toBeVisible({ timeout: 90_000 });
   await ((await distinct.count()) > 0 ? distinct : create).click();
-  await expect(page).toHaveURL(/\/candidatures\/[^/]+$/);
+  await expect(page).toHaveURL(/\/applications\/[^/]+$/);
   const drawer = page.getByRole("dialog");
   await expect(drawer.getByLabel("Entreprise")).toHaveValue(COMPANY);
   await expect(drawer.getByLabel("Poste")).toHaveValue(POSTING_TITLE);
@@ -85,11 +85,11 @@ async function markApplied(page: Page): Promise<void> {
 
 /** 3. La même offre, par son lien : sa page porte l'alerte « tu as déjà postulé … ». */
 async function pasteSameLink(page: Page): Promise<void> {
-  await page.goto("/carriere/offres");
+  await page.goto("/career/postings");
   await page.getByRole("tab", { name: "Lien" }).click();
   await page.getByRole("textbox", { name: "Lien de l'offre" }).fill(POSTING_URL);
   await page.getByRole("button", { name: "Analyser l'offre" }).click();
-  await expect(page).toHaveURL(/\/carriere\/offres\/[^/]+$/);
+  await expect(page).toHaveURL(/\/career\/postings\/[^/]+$/);
 
   const alert = candidacy(page).getByRole("alert");
   await expect(alert).toBeVisible({ timeout: 90_000 });
@@ -106,12 +106,12 @@ async function pasteSameLink(page: Page): Promise<void> {
 
 /** 4. La fiche faite à la main, que la phrase de l'étape suivante rappellera. */
 async function createManualApplication(page: Page): Promise<void> {
-  await page.goto("/candidatures/nouvelle");
+  await page.goto("/applications/new");
   const manual = page.getByRole("region", { name: "À la main" });
   await manual.getByLabel("Entreprise").fill(COMPANY);
   await manual.getByLabel("Poste").fill(MANUAL_TITLE);
   await manual.getByRole("button", { name: "Créer la fiche" }).click();
-  await expect(page).toHaveURL(/\/candidatures\/[^/]+$/);
+  await expect(page).toHaveURL(/\/applications\/[^/]+$/);
   const drawer = page.getByRole("dialog");
   await expect(drawer.getByLabel("Poste")).toHaveValue(MANUAL_TITLE);
   await drawer.getByRole("button", { name: "Fermer la fiche" }).click();
@@ -120,7 +120,7 @@ async function createManualApplication(page: Page): Promise<void> {
 
 /** 5. La phrase : la carte de confirmation montre l'alerte ; « Annuler » ne crée rien. */
 async function sayItAndCancel(page: Page): Promise<void> {
-  await page.goto("/candidatures/nouvelle");
+  await page.goto("/applications/new");
   await page.getByRole("textbox", { name: "Ta phrase" }).fill(SENTENCE);
   await page.getByRole("button", { name: "Préparer la fiche" }).click();
 
@@ -140,7 +140,7 @@ async function sayItAndCancel(page: Page): Promise<void> {
   await card.getByRole("button", { name: "Annuler" }).click();
   await expect(page.getByText("Rien n'a été créé.")).toBeVisible({ timeout: 30_000 });
 
-  await page.goto("/candidatures");
+  await page.goto("/applications");
   const todo = page.getByRole("group", { name: /^À postuler, / });
   await expect(todo.getByText(MANUAL_TITLE)).toBeVisible();
   await expect(page.getByText("Développeuse IA", { exact: true })).toHaveCount(0);
@@ -151,7 +151,7 @@ async function reminderIsDue(page: Page): Promise<Locator> {
   const menu = page.getByRole("navigation", { name: "Navigation principale" });
   await menu.getByRole("link", { name: "Carrière, 1 relance due" }).click();
   await page.getByRole("link", { name: "Ouvrir Relances", exact: true }).click();
-  await expect(page).toHaveURL(/\/candidatures\/relances$/);
+  await expect(page).toHaveURL(/\/applications\/reminders$/);
 
   const list = page.getByRole("list", { name: "Relances à traiter" });
   const reminder = list.getByRole("listitem").first();
@@ -178,7 +178,7 @@ async function copyAndDone(page: Page, reminder: Locator): Promise<void> {
 
 /** 8. La fiche passe Relancée, et son fil montre la relance. */
 async function followedUp(page: Page): Promise<void> {
-  await page.goto("/candidatures");
+  await page.goto("/applications");
   const column = page.getByRole("group", { name: /^Relancée, 1/ });
   const open = column.getByRole("button", { name: new RegExp(`^Ouvrir la fiche de ${COMPANY}`) });
   await expect(open).toBeVisible();
@@ -219,7 +219,7 @@ async function grab(page: Page, announcer: Locator, from: string): Promise<void>
  * annoncé et enregistré ; puis le même geste en sens inverse la ramène en « Relancée ».
  */
 async function keyboardDrag(page: Page): Promise<void> {
-  await page.goto("/candidatures");
+  await page.goto("/applications");
   const announcer = page.locator('[id^="DndLiveRegion"]');
   const followedUpColumn = page.getByRole("group", { name: /^Relancée, / });
   const interviewColumn = page.getByRole("group", { name: /^Entretien, / });
@@ -251,7 +251,7 @@ async function keyboardDrag(page: Page): Promise<void> {
   await expect(interviewColumn.getByRole("listitem")).toHaveCount(0);
 }
 
-// Le premier lancement est fait avant la première page (la porte mène sinon à /bienvenue).
+// Le premier lancement est fait avant la première page (la porte mène sinon à /welcome).
 test.beforeEach(({ request }) => finishFirstLaunch(request));
 
 test("une candidature suit son cycle, du doublon à la relance", async ({ page, context }) => {

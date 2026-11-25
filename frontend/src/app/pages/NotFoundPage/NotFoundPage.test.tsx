@@ -4,13 +4,13 @@ import { describe, expect, it } from "vitest";
 import { NotFoundPage } from "./NotFoundPage";
 
 describe("NotFoundPage", () => {
-  it("affiche le titre et un lien de retour vers l'accueil", () => {
+  it("shows the heading and a link back to home", () => {
     render(
       <MemoryRouter>
         <NotFoundPage />
       </MemoryRouter>,
     );
-    expect(screen.getByRole("heading", { name: "Page introuvable" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Retour à l'accueil" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("heading", { name: "Page not found" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Back to home" })).toHaveAttribute("href", "/");
   });
 });

@@ -16,6 +16,7 @@ from app.agents.tools.cv_schema import (
     MasterProfileData,
     SectionKey,
 )
+from app.agents.tools.template_grids import zone_code
 from app.agents.tools.template_similarity import Similarity, ZoneDiff, ZoneMatch
 from app.core.errors import AppError
 from app.providers.fonts.catalog import choose_font
@@ -26,7 +27,7 @@ MAX_BLOCK_CHARS = 200
 
 
 def template_not_found() -> AppError:
-    return AppError("template_not_found", "Modèle de CV introuvable.", 404)
+    return AppError("template_not_found", "CV template not found.", 404)
 
 
 def _visible(page: PageLayout) -> list[TextBlock]:
@@ -67,7 +68,7 @@ def _line(block: TextBlock) -> str:
         str(round(v)) for v in (block.x0, block.top, block.x1 - block.x0, block.bottom - block.top)
     )
     family = choose_font(block.font).family
-    bold = "oui" if block.bold else "non"
+    bold = "yes" if block.bold else "no"
     text = " ".join(block.text.split())[:MAX_BLOCK_CHARS]
     return f"{box} | {family} | {block.size:g} | {block.color} | {bold} | {text}"
 
@@ -96,9 +97,15 @@ def similarity_from_json(data: dict[str, Any]) -> Similarity:
     return Similarity(
         **{
             **data,
-            "zones": [ZoneDiff(**zone) for zone in data.get("zones", [])],
-            "matches": [ZoneMatch(**match) for match in data.get("matches", [])],
-            "shifts": dict(data.get("shifts", {})),
+            "zones": [
+                ZoneDiff(**{**entry, "zone": zone_code(entry["zone"])})
+                for entry in data.get("zones", [])
+            ],
+            "matches": [
+                ZoneMatch(**{**entry, "zone": zone_code(entry["zone"])})
+                for entry in data.get("matches", [])
+            ],
+            "shifts": {zone_code(zone): shift for zone, shift in data.get("shifts", {}).items()},
         }
     )
 
@@ -115,7 +122,7 @@ def _sections(profile: MasterProfileData) -> list[CvSection]:
     sections: list[CvSection] = []
     if profile.summary is not None:
         sections.append(
-            CvSection(key="summary", title="Profil", items=_lines([profile.summary.text]))
+            CvSection(key="summary", title="Profile", items=_lines([profile.summary.text]))
         )
     experiences = [
         CvEntry(
@@ -139,10 +146,10 @@ def _sections(profile: MasterProfileData) -> list[CvSection]:
         [" ".join(filter(None, (lang.name, lang.level))) for lang in profile.languages]
     )
     groups: list[tuple[SectionKey, str, list[CvEntry], list[CvLine]]] = [
-        ("experience", "Expériences", experiences, []),
-        ("education", "Formation", education, []),
-        ("skills", "Compétences", [], skills),
-        ("languages", "Langues", [], languages),
+        ("experience", "Experience", experiences, []),
+        ("education", "Education", education, []),
+        ("skills", "Skills", [], skills),
+        ("languages", "Languages", [], languages),
     ]
     for key, title, entries, items in groups:
         if entries or items:

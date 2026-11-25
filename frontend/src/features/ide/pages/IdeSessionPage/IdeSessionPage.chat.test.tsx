@@ -4,7 +4,7 @@ import { councilEvents } from "@/test/councilEvents";
 import { noteOut } from "@/test/ideApi";
 import { findEditor, refresh, renderSession } from "../../ideTestkit";
 
-const THREAD = { name: "Conversation avec le professeur" };
+const THREAD = { name: "Conversation with the professor" };
 const ask = (content: string, id = "q1", at = "2026-11-17T10:05:00Z") =>
   noteOut({ id, kind: "question", author: "user", author_label: null, content, created_at: at });
 const answer = (content: string, id = "a1", at = "2026-11-17T10:06:00Z") =>
@@ -37,9 +37,9 @@ describe("IdeSessionPage, the teacher chat", () => {
     ]);
     expect(messages[0]).toHaveAttribute("data-author", "user");
     expect(messages[0]?.closest("li")?.className).toContain("justify-end");
-    expect(within(messages[0] as HTMLElement).getByText("Toi")).toBeVisible();
+    expect(within(messages[0] as HTMLElement).getByText("You")).toBeVisible();
     expect(messages[1]?.closest("li")?.className).toContain("justify-start");
-    expect(within(messages[1] as HTMLElement).getByText("Le professeur")).toBeVisible();
+    expect(within(messages[1] as HTMLElement).getByText("The professor")).toBeVisible();
   });
 
   it("tags a note nobody asked for, not an answer", async () => {
@@ -53,14 +53,14 @@ describe("IdeSessionPage, the teacher chat", () => {
     await findEditor();
     const thread = await screen.findByRole("log", THREAD);
     const [first, , reply] = await within(thread).findAllByRole("article");
-    expect(first).toHaveAccessibleName("Le professeur · après une exécution");
-    expect(reply).toHaveAccessibleName("Le professeur");
+    expect(first).toHaveAccessibleName("The professor · after a run");
+    expect(reply).toHaveAccessibleName("The professor");
   });
 
   it("Enter sends the question, Shift+Enter makes a new line", async () => {
     const { user, calls } = renderSession();
     await findEditor();
-    const field = screen.getByRole("textbox", { name: "Ta question" });
+    const field = screen.getByRole("textbox", { name: "Your question" });
     await user.type(field, "ligne un{Shift>}{Enter}{/Shift}ligne deux");
     expect(field).toHaveValue("ligne un\nligne deux");
     expect(calls.teach).toHaveLength(0);
@@ -76,28 +76,28 @@ describe("IdeSessionPage, the teacher chat", () => {
   it("shows her question at once, the teacher writing, and holds Envoyer meanwhile", async () => {
     const { user, sockets } = renderSession({ teach: { session_id: "t1" } });
     await findEditor();
-    const field = screen.getByRole("textbox", { name: "Ta question" });
+    const field = screen.getByRole("textbox", { name: "Your question" });
     await user.type(field, "Pourquoi ?{Enter}");
     const thread = await screen.findByRole("log", THREAD);
     expect(await within(thread).findByText("Pourquoi ?")).toBeVisible();
-    expect(await screen.findByText("Le professeur écrit…")).toBeVisible();
+    expect(await screen.findByText("The professor is writing…")).toBeVisible();
     await user.type(field, "encore");
-    expect(screen.getByRole("button", { name: "Envoyer" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Send" })).toBeDisabled();
     await waitFor(() => expect(sockets.sockets.length).toBeGreaterThan(0));
     const stream = sockets.sockets.find((s) => s.url.includes("/sessions/t1/stream"));
     act(() => {
       stream?.open().push(councilEvents("t1").completed());
     });
-    await waitFor(() => expect(screen.queryByText("Le professeur écrit…")).toBeNull());
-    expect(screen.getByRole("button", { name: "Envoyer" })).toBeEnabled();
+    await waitFor(() => expect(screen.queryByText("The professor is writing…")).toBeNull());
+    expect(screen.getByRole("button", { name: "Send" })).toBeEnabled();
   });
 
   it("keeps the typed text and says why when the teacher cannot take the question", async () => {
     const { user } = renderSession({ teach: { skipped: "busy" } });
     await findEditor();
-    const field = screen.getByRole("textbox", { name: "Ta question" });
+    const field = screen.getByRole("textbox", { name: "Your question" });
     await user.type(field, "Ma question{Enter}");
-    expect(await screen.findByText(/Le professeur travaille déjà/)).toBeVisible();
+    expect(await screen.findByText(/The professor is already working/)).toBeVisible();
     expect(field).toHaveValue("Ma question");
     expect(within(screen.getByRole("log", THREAD)).queryByText("Ma question")).toBeNull();
   });
@@ -113,11 +113,11 @@ describe("IdeSessionPage, the teacher chat", () => {
     options.notes = [ask("Première ?"), answer("Voici.")];
     await refresh();
     await within(thread).findByText("Voici.");
-    const more = await screen.findByRole("button", { name: "Nouveaux messages ↓" });
+    const more = await screen.findByRole("button", { name: "New messages ↓" });
     expect(geometry.top()).toBe(0);
     await user.click(more);
     expect(geometry.top()).toBe(500);
-    expect(screen.queryByRole("button", { name: "Nouveaux messages ↓" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "New messages ↓" })).toBeNull();
   });
 
   it("follows the last message when she is at the bottom", async () => {
@@ -131,7 +131,7 @@ describe("IdeSessionPage, the teacher chat", () => {
     await refresh();
     await within(thread).findByText("Voici.");
     expect(geometry.top()).toBe(500);
-    expect(screen.queryByRole("button", { name: "Nouveaux messages ↓" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "New messages ↓" })).toBeNull();
   });
 
   it("renders the teacher's Markdown and never raw HTML", async () => {
@@ -185,8 +185,8 @@ describe("IdeSessionPage, the teacher chat", () => {
     });
     await findEditor();
     const thread = await screen.findByRole("log", THREAD);
-    const card = await within(thread).findByRole("article", { name: /^Proposition/ });
-    await user.click(within(card).getByRole("button", { name: "Accepter" }));
+    const card = await within(thread).findByRole("article", { name: /^Suggestion from/ });
+    await user.click(within(card).getByRole("button", { name: "Accept" }));
     await waitFor(() => expect(calls.accepts).toEqual(["p1"]));
   });
 });

@@ -4,8 +4,8 @@ import { ExpertDebatesPage } from "./pages/ExpertDebatesPage";
 export const expertDebatesManifest: FeatureManifest = {
   id: "expert_debates",
   routes: [
-    { path: "etudier/debats", Component: ExpertDebatesPage },
-    { path: "etudier/debats/:debateId", Component: ExpertDebatesPage },
+    { path: "study/debates", Component: ExpertDebatesPage },
+    { path: "study/debates/:debateId", Component: ExpertDebatesPage },
   ],
-  nav: [{ section: "study", labelKey: "expertDebates.nav", path: "/etudier/debats", order: 1.8 }],
+  nav: [{ section: "study", labelKey: "expertDebates.nav", path: "/study/debates", order: 1.8 }],
 };

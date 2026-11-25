@@ -14,24 +14,24 @@ from tests.support.committee import COMPANY, default_context
 async def test_votes_are_announced_in_the_live_feed(committee_runner: MakeCommittee) -> None:
     """Chaque persona annonce son vote (`agent.message`, id `<persona>-vote`) avec son objection ;
     le Modérateur publie la synthèse puis la clôture (« simulation, pas une prédiction »)."""
-    run = await committee_runner(committee(votes={"manager": "non", "colleague": "peut_etre"}))
+    run = await committee_runner(committee(votes={"manager": "no", "colleague": "maybe"}))
     await run.wait_status("completed")
     events = await run.events("agent.message")
     ids = {e["message_id"] for e in events}
     assert {f"{persona}-vote" for persona in PERSONAS} <= ids
     wording = {
-        "ats_reader": "oui, je donnerais un entretien",
-        "recruiter": "oui, je donnerais un entretien",
-        "manager": "non, je n'irais pas plus loin",
-        "colleague": "peut-être, je veux en savoir plus",
+        "ats_reader": "yes, I'd offer an interview",
+        "recruiter": "yes, I'd offer an interview",
+        "manager": "no, I wouldn't move forward",
+        "colleague": "maybe, I'd like to know more",
     }
     for persona in PERSONAS:
-        [text] = [m for m in await run.messages(persona) if m.startswith("Mon vote")]
+        [text] = [m for m in await run.messages(persona) if m.startswith("I vote")]
         assert wording[persona] in text and OBJECTIONS[persona] in text
     assert {"moderator-synthese", "moderator-fin"} <= ids
     synthesis, closing = await run.messages("moderator")
-    assert synthesis.startswith("Verdict du comité : peut-être.")
-    assert "simulation, pas une prédiction" in closing
+    assert synthesis.startswith("The committee voted maybe.")
+    assert "The simulated hiring committee voted maybe" in closing
 
 
 async def test_impressions_come_first_in_the_feed(committee_runner: MakeCommittee) -> None:

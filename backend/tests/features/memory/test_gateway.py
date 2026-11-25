@@ -23,7 +23,7 @@ def gateway(runtime: MemoryRuntime) -> AgentMemoryGateway:
 
 
 def _acquis(title: str, **fields: object) -> AgentWrite:
-    values = {"kind": "acquis", "title": title, "text": f"{title} : notions.", "reason": "Vu."}
+    values = {"kind": "skill", "title": title, "text": f"{title} : notions.", "reason": "Vu."}
     return AgentWrite(**{**values, **fields})  # type: ignore[arg-type]
 
 
@@ -37,7 +37,7 @@ async def test_gateway_write_uses_agent_as_author_and_session(
         _acquis("Attention", tags=("nlp",), evidence=("d1",), source_id="d1"),
     )
     assert (done.kind, done.title, done.status, done.created) == (
-        "acquis",
+        "skill",
         "Attention",
         "active",
         True,
@@ -47,7 +47,7 @@ async def test_gateway_write_uses_agent_as_author_and_session(
         writes = await WriteRepository(db, "u1").for_item(done.item_id)
     assert item is not None and item.created_by == "archivist" and item.session_id == "s1"
     assert item.indexed_at is not None and item.source_id == "d1" and item.tags == ["nlp"]
-    assert item.meta == {"level": "declare", "evidence": ["d1"], "reason": "Vu."}
+    assert item.meta == {"level": "declared", "evidence": ["d1"], "reason": "Vu."}
     assert [(w.author, w.session_id, w.reason, w.action) for w in writes] == [
         ("archivist", "s1", "Vu.", "create")
     ]
@@ -97,14 +97,14 @@ async def test_gateway_skills_reads_acquis_levels(
 ) -> None:
     await gateway.write("u1", "s1", "archivist", _acquis("Python"))
     await gateway.write("u1", "s1", "archivist", _acquis("Rust"))
-    await gateway.write("u1", "s1", "archivist", _acquis("SQL", level="en_cours"))
-    await gateway.write("u1", "s1", "archivist", AgentWrite("lecon", "Autre", "x", "Cours."))
+    await gateway.write("u1", "s1", "archivist", _acquis("SQL", level="in_progress"))
+    await gateway.write("u1", "s1", "archivist", AgentWrite("lesson", "Autre", "x", "Cours."))
     await gateway.write("u2", "s2", "archivist", _acquis("Go"))
     summary = await gateway.skills("u1")
-    assert summary.total == 3 and summary.by_level == {"declare": 2, "en_cours": 1}
+    assert summary.total == 3 and summary.by_level == {"declared": 2, "in_progress": 1}
     assert sorted(s.title for s in summary.skills) == ["Python", "Rust", "SQL"]
-    assert {s.title: s.level for s in summary.skills}["SQL"] == "en_cours"
-    assert (await gateway.skills("nobody")).as_text() == "Aucun acquis en mémoire."
+    assert {s.title: s.level for s in summary.skills}["SQL"] == "in_progress"
+    assert (await gateway.skills("nobody")).as_text() == "No skills in memory."
 
 
 async def test_document_text_returns_first_chunks(
@@ -145,9 +145,9 @@ async def test_gateway_search_returns_views_and_wrapped_agent_text(
     gateway: AgentMemoryGateway,
 ) -> None:
     await gateway.write("u1", "s1", "archivist", _acquis("Attention"))
-    found = await gateway.search("u1", "Attention : notions", kinds=["acquis"], k=8)
+    found = await gateway.search("u1", "Attention : notions", kinds=["skill"], k=8)
     assert [(h.kind, h.title, h.created_by) for h in found.hits] == [
-        ("acquis", "Attention", "archivist")
+        ("skill", "Attention", "archivist")
     ]
-    assert "<<<CONTENU_NON_FIABLE" in found.agent_text
+    assert "<<<UNTRUSTED_CONTENT" in found.agent_text
     assert (await gateway.search("u2", "Attention", kinds=None, k=8)).hits == []

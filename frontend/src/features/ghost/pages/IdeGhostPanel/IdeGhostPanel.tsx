@@ -23,7 +23,7 @@ function metrics(current: IdeGhostProps["current"]): Metrics | null {
 
 export function IdeGhostPanel({ sessionId, current }: IdeGhostProps) {
   const [params, setParams] = useSearchParams();
-  const selectedId = params.get("fantome");
+  const selectedId = params.get("ghost") ?? params.get("fantome");
   const completed = current && current.status !== "running" ? current.id : null;
   const query = useQuery({
     queryKey: ["ghost", "ide", sessionId, selectedId, completed],

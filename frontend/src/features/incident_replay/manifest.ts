@@ -4,13 +4,13 @@ export const incidentReplayManifest: FeatureManifest = {
   id: "incident_replay",
   routes: [
     {
-      path: "etudier/replay-incident",
+      path: "study/incident-replay",
       lazy: async () => ({
         Component: (await import("./pages/ReplayPage")).ReplayPage,
       }),
     },
     {
-      path: "etudier/replay-incident/:replayId",
+      path: "study/incident-replay/:replayId",
       lazy: async () => ({
         Component: (await import("./pages/ReplayPage")).ReplayDetailPage,
       }),
@@ -20,7 +20,7 @@ export const incidentReplayManifest: FeatureManifest = {
     {
       section: "study",
       labelKey: "incidentReplay.title",
-      path: "/etudier/replay-incident",
+      path: "/study/incident-replay",
       order: 7.6,
     },
   ],

@@ -106,7 +106,7 @@ async def _material(
             module_id=module.id,
             rank=rank,
             title="Projet",
-            type="pratiquer",
+            type="practice",
             minutes=minutes,
             done_criterion="Résultat vérifié",
             planned_date=TODAY,
@@ -150,7 +150,7 @@ async def seed(app: FastAPI, user_id: str) -> DataRefs:
             ]
         )
         await db.flush()
-        db.add(UserSkill(user_id=user_id, skill_id=python.id, level="valide"))
+        db.add(UserSkill(user_id=user_id, skill_id=python.id, level="validated"))
         db.add_all(
             [
                 StudySession(

@@ -1,20 +1,14 @@
-"""La confirmation de la fiche (SPEC 6.3, 9.4, D141) : « Je crée cette fiche ? ».
+"""Confirm the drafted application (SPEC 6.3, 9.4, D141).
 
-`ask_confirm` ne fait qu'`interrupt()` puis relit la réponse (pur) : aucune écriture, aucun appel
-payant ni lecture de port avant l'arrêt, le nœud est rejoué depuis son début à la reprise. La
-question ne dépend que de l'état (le brouillon et les alertes lus avant) : rejouée, elle est la
-même.
+`ask_confirm` interrupts and validates the reply. Replay reconstructs the same question from the
+draft and the strongest duplicate alert in state. The node performs no writes or provider calls.
 
-Question (`kind = "application_confirm"`) : `question` « Je crée cette fiche ? » suivie du message
-de l'alerte la plus forte s'il y en a une ; `fields` pré remplis (`value`) : `company`, `title`,
-`status`, `applied_on` (AAAA-MM-JJ), `channel`, `contact_name`, `contact_role`, `notes` ;
-`options` : sans alerte `create` et `cancel` ; avec une alerte `distinct` (« C'est un autre
-poste »), `open` (« Ouvrir la fiche existante », la plus forte) et `cancel` (comme la route, une
-fiche qui ressemble ne se crée jamais sans « autre poste »).
+The form includes the draft's fields and offers `create` and `cancel` when there are no alerts.
+With an alert, the choices are `distinct`, `open`, and `cancel`.
 
-Réponse : `{"choice": <option>, "fields": {id: texte}}` (`fields` facultatif : le brouillon sert) ou
-l'option seule (`"cancel"`). Une réponse invalide (option absente de la question, champ rejeté,
-date dans le futur) repose la même question sans rien écrire."""
+The reply can be a choice or an object with `choice` and optional `fields`. An invalid choice,
+field, or future application date causes the graph to ask the same question again.
+"""
 
 from typing import Any
 
@@ -31,23 +25,23 @@ from app.agents.tools.applications_port import (
 )
 
 KIND = "application_confirm"
-QUESTION = "Je crée cette fiche ?"
+QUESTION = "Create this application?"
 CREATE, DISTINCT, OPEN, CANCEL = "create", "distinct", "open", "cancel"
 LABELS = {
-    CREATE: "Créer la fiche",
-    DISTINCT: "C'est un autre poste",
-    OPEN: "Ouvrir la fiche existante",
-    CANCEL: "Annuler",
+    CREATE: "Create application",
+    DISTINCT: "It's a different role",
+    OPEN: "Open the existing application",
+    CANCEL: "Cancel",
 }
-# (identifiant, libellé, obligatoire, longueur maximale) : l'ordre du formulaire.
+# Field ID, display label, required flag, and maximum length in form order.
 FIELDS: list[tuple[str, str, bool, int]] = [
-    ("company", "Entreprise", True, COMPANY_MAX),
-    ("title", "Poste", True, TITLE_MAX),
-    ("status", "Statut", True, 16),
-    ("applied_on", "Date de candidature (AAAA-MM-JJ)", False, 10),
-    ("channel", "Canal", False, 16),
+    ("company", "Company", True, COMPANY_MAX),
+    ("title", "Role", True, TITLE_MAX),
+    ("status", "Status", True, 16),
+    ("applied_on", "Application date (YYYY-MM-DD)", False, 10),
+    ("channel", "Channel", False, 16),
     ("contact_name", "Contact", False, CONTACT_MAX),
-    ("contact_role", "Rôle du contact", False, CONTACT_MAX),
+    ("contact_role", "Contact role", False, CONTACT_MAX),
     ("notes", "Notes", False, NOTES_MAX),
 ]
 FIELD_IDS = [name for name, *_ in FIELDS]
@@ -62,7 +56,7 @@ def options_for(alerts: list[dict[str, Any]]) -> list[str]:
 
 
 def question(state: ApplicationIntakeState) -> dict[str, Any]:
-    """La question de la confirmation (voir le module) : ne dépend que de l'état."""
+    """The confirmation question (see the module): only depends on the state."""
     alerts = state.get("alerts", [])
     text = f"{QUESTION} {alerts[0]['message']}" if alerts else QUESTION
     values = _values(state["draft"])
@@ -79,7 +73,7 @@ def question(state: ApplicationIntakeState) -> dict[str, Any]:
 
 
 def _choice_and_fields(value: Any) -> tuple[str, dict[str, str]] | None:
-    """`(option, champs envoyés)` d'une réponse bien formée, sinon `None`."""
+    """`(option, fields sent)` of a well-formed answer, otherwise `None`."""
     if isinstance(value, str):
         return value, {}
     if not isinstance(value, dict) or not isinstance(value.get("choice"), str):
@@ -94,8 +88,8 @@ def _choice_and_fields(value: Any) -> tuple[str, dict[str, str]] | None:
 
 
 def _confirmed(state: ApplicationIntakeState, fields: dict[str, str]) -> IntakeDraft | None:
-    """Le brouillon relu : celui de l'état, les champs envoyés par-dessus, revalidé. Une date
-    dans le futur (jour de January) est refusée comme à la lecture de la phrase."""
+    """The draft reread: the state's, the fields sent on top, revalidated. A date in the future
+    (January's day) is refused as when reading the sentence."""
     try:
         draft = IntakeDraft.model_validate({**state["draft"], **fields})
     except ValidationError:
@@ -107,7 +101,7 @@ def _confirmed(state: ApplicationIntakeState, fields: dict[str, str]) -> IntakeD
 
 
 def parse_answer(value: Any, state: ApplicationIntakeState) -> dict[str, Any] | None:
-    """`{"choice", "draft"}` ou `None` (la question est reposée). Pur : aucun port."""
+    """`{"choice", "draft"}` or `None` (the question is asked again). Pure: no port."""
     parsed = _choice_and_fields(value)
     if parsed is None or parsed[0] not in options_for(state.get("alerts", [])):
         return None
@@ -119,7 +113,7 @@ def parse_answer(value: Any, state: ApplicationIntakeState) -> dict[str, Any] | 
 
 
 def ask_confirm(state: ApplicationIntakeState) -> ApplicationIntakeState:
-    """`interrupt()` seul : rien avant lui ; la réponse est relue sans aucun port."""
+    """`interrupt()` alone: nothing before it; the answer is reread without any port."""
     return {"answer": parse_answer(interrupt(question(state)), state)}
 
 

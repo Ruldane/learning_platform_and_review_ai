@@ -15,7 +15,7 @@ test("relie deux corrections à un prérequis et retrouve l’exercice choisi", 
   request,
 }) => {
   await finishFirstLaunch(request);
-  await page.goto("/etudier/atlas-erreurs");
+  await page.goto("/study/error-atlas");
   await expect(page.getByRole("heading", { name: "Atlas des erreurs" })).toBeVisible();
 
   const evidence = page.getByLabel("Erreur observée");

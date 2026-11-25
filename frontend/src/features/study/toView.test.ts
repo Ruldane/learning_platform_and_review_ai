@@ -16,7 +16,7 @@ const session: StudySessionOut = {
   summary: null,
   tasks_done: ["Lire la leçon"],
   flashcards_created: 3,
-  skills: [{ name: "REST", level: "en_cours" }],
+  skills: [{ name: "REST", level: "in_progress" }],
 };
 
 describe("toView", () => {
@@ -26,12 +26,12 @@ describe("toView", () => {
         lesson_id: "l1",
         lesson_title: "Les API REST",
         module_title: "Web",
-        tasks: [{ id: "t1", title: "Lire", minutes: 30, type: "lire" }],
+        tasks: [{ id: "t1", title: "Lire", minutes: 30, type: "read" }],
       }),
     ).toEqual({
       lessonTitle: "Les API REST",
       moduleTitle: "Web",
-      tasks: [{ id: "t1", title: "Lire", minutes: 30, type: "lire" }],
+      tasks: [{ id: "t1", title: "Lire", minutes: 30, type: "read" }],
     });
   });
 
@@ -43,7 +43,7 @@ describe("toView", () => {
       summary: "",
       tasksDone: ["Lire la leçon"],
       flashcardsCreated: 3,
-      skills: [{ name: "REST", level: "en_cours" }],
+      skills: [{ name: "REST", level: "in_progress" }],
     });
   });
 

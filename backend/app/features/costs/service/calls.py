@@ -1,6 +1,5 @@
-"""Le journal des agents : les appels journalisés d'une utilisatrice, du plus récent au plus
-ancien, par pages. Le curseur `before` est opaque : l'instant et l'identifiant du dernier appel
-de la page, en base64 sans remplissage (`iso|id`)."""
+"""The agent log: a user's logged calls, newest first, by pages. The `before` cursor is
+opaque: the instant and identifier of the page's last call, in unpadded base64 (`iso|id`)."""
 
 import base64
 import binascii
@@ -14,29 +13,29 @@ from app.core.errors import AppError
 from app.features.costs.repository import LlmCallRepository
 from app.features.costs.schemas import AgentCallOut, AgentCallPage
 
-_MAX_ID_LENGTH = 36  # `UserScopedMixin.id` : un UUID
+_MAX_ID_LENGTH = 36  # `UserScopedMixin.id`: a UUID
 
 
 def encode_cursor(at: datetime, call_id: str) -> str:
-    """Le curseur qui désigne l'appel `call_id` fait à l'instant `at` (rendu en UTC)."""
+    """The cursor pointing at the call `call_id` made at instant `at` (rendered in UTC)."""
     raw = f"{at.astimezone(UTC).isoformat()}|{call_id}".encode()
     return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
 
 
 def _bad_cursor() -> AppError:
-    # Ni le curseur reçu ni la cause ne sont recopiés : `details.fields` nomme le champ seul.
+    # Neither the received cursor nor the cause is echoed: `details.fields` names the field only.
     return AppError(
         "validation_error",
-        "Requête invalide : vérifie les champs signalés.",
+        "Invalid request: check the reported fields.",
         422,
         {"fields": ["before"]},
     )
 
 
 def decode_cursor(raw: str) -> tuple[datetime, str]:
-    """L'instant (UTC, avec fuseau) et l'identifiant d'un curseur ; 422 `before` s'il est
-    illisible : base64 invalide, texte qui n'est pas de l'UTF-8, date sans fuseau, identifiant
-    vide ou trop long."""
+    """The instant (UTC, with time zone) and identifier of a cursor; 422 `before` if it is
+    unreadable: invalid base64, text that is not UTF-8, date without time zone, empty or too
+    long identifier."""
     try:
         padded = raw + "=" * (-len(raw) % 4)
         text = base64.b64decode(padded, altchars=b"-_", validate=True).decode("utf-8")
@@ -44,7 +43,7 @@ def decode_cursor(raw: str) -> tuple[datetime, str]:
         at = datetime.fromisoformat(stamp)
         if not separator or at.tzinfo is None or not 0 < len(call_id) <= _MAX_ID_LENGTH:
             raise _bad_cursor()
-        # Une date qui décode mais sort de la plage une fois en UTC lève `OverflowError`.
+        # A date that decodes but falls out of range once in UTC raises `OverflowError`.
         return at.astimezone(UTC), call_id
     except (binascii.Error, ValueError, OverflowError):  # `UnicodeDecodeError` : `ValueError`
         raise _bad_cursor() from None
@@ -76,9 +75,9 @@ async def list_calls(
     agent: str | None,
     graph: str | None,
 ) -> AgentCallPage:
-    """Une page de `limit` appels au plus ; `next_before` n'existe que s'il en reste après."""
+    """A page of at most `limit` calls; `next_before` exists only if more remain."""
     cursor = decode_cursor(before) if before is not None else None
-    # Un appel de plus que demandé : sa seule présence dit qu'il y a une page suivante.
+    # One call more than requested: its mere presence says there is a next page.
     rows = await LlmCallRepository(db, user_id).page(
         before=cursor, limit=limit + 1, agent=agent, graph=graph
     )

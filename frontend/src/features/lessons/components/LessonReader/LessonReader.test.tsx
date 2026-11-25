@@ -81,12 +81,12 @@ describe("LessonReader", () => {
   it("does not load remote images, it shows their description", () => {
     render(<LessonReader lesson={lesson("![schéma de la boucle](https://exemple.org/a.png)")} />);
     expect(document.querySelector("img")).toBeNull();
-    expect(screen.getByText("Image non affichée : schéma de la boucle")).toBeInTheDocument();
+    expect(screen.getByText("Image not shown: schéma de la boucle")).toBeInTheDocument();
   });
 
   it("builds a table of contents from sections", () => {
     render(<LessonReader lesson={LESSON} />);
-    const toc = screen.getByRole("navigation", { name: "Sommaire" });
+    const toc = screen.getByRole("navigation", { name: "Contents" });
     const links = within(toc).getAllByRole("link");
     expect(links.map((link) => link.textContent)).toEqual([
       "Objectifs",
@@ -121,13 +121,13 @@ describe("LessonReader", () => {
 
   it("offers the PDF only when there is one", () => {
     const { unmount } = render(<LessonReader lesson={LESSON} />);
-    expect(screen.getByRole("link", { name: "Télécharger le PDF" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Download PDF" })).toHaveAttribute(
       "href",
       "/api/lessons/l1/pdf",
     );
     unmount();
     render(<LessonReader lesson={lesson("## A", { pdfUrl: null })} />);
-    expect(screen.queryByRole("link", { name: "Télécharger le PDF" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Download PDF" })).toBeNull();
   });
 
   it("shows the title, the word count, the reading time and a progress bar", () => {
@@ -135,10 +135,10 @@ describe("LessonReader", () => {
     expect(
       screen.getByRole("heading", { level: 1, name: "Les boucles en Python" }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/1\s840 mots/)).toBeInTheDocument();
-    expect(screen.getByText(/environ 10 min de lecture/)).toBeInTheDocument();
+    expect(screen.getByText(/1,840 words/)).toBeInTheDocument();
+    expect(screen.getByText(/about 10 min read/)).toBeInTheDocument();
     expect(
-      screen.getByRole("progressbar", { name: "Progression de la lecture" }),
+      screen.getByRole("progressbar", { name: "Reading progress" }),
     ).toBeInTheDocument();
   });
 

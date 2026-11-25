@@ -8,7 +8,7 @@ import { PostingBody } from "./PostingBody";
 import { PostingHeader } from "./PostingHeader";
 import { PostingUnavailable } from "./PostingUnavailable";
 
-const LIST_PATH = "/carriere/offres";
+const LIST_PATH = "/career/postings";
 
 interface PostingViewProps {
   postingId: string;
@@ -45,7 +45,7 @@ export function PostingView({
       {posting.analysis ? (
         <Link
           className="self-start underline"
-          to={`/carriere/missions?offre=${encodeURIComponent(posting.id)}`}
+          to={`/career/missions?posting=${encodeURIComponent(posting.id)}`}
         >
           {t("missions.openFromOffer")}
         </Link>

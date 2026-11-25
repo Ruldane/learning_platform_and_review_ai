@@ -60,7 +60,9 @@ class ProfileStore(Protocol):
 
 
 def profile_unavailable() -> AppError:
-    return AppError("profile_unavailable", "Le profil maître n'est pas branché sur ce moteur.", 503)
+    return AppError(
+        "profile_unavailable", "The master profile is unavailable in this runtime.", 503
+    )
 
 
 class _NoProfile:

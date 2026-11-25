@@ -46,14 +46,14 @@ _OUT_FIELDS = (
 
 
 def not_found() -> AppError:
-    return AppError("application_not_found", "Candidature introuvable.", 404)
+    return AppError("application_not_found", "Application not found.", 404)
 
 
 def invalid(*fields: str) -> AppError:
     """Une 422 qui nomme les champs, sans jamais citer leur valeur."""
     return AppError(
         "validation_error",
-        "Requête invalide : vérifie les champs signalés.",
+        "Invalid request. Check the highlighted fields.",
         422,
         {"fields": list(fields)},
     )

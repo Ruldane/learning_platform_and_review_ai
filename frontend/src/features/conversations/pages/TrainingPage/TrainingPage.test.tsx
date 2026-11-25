@@ -36,8 +36,8 @@ const training = {
 
 function setup() {
   return renderRoutes(
-    [{ path: "/etudier/training/:studyId?", element: <TrainingPage /> }],
-    "/etudier/training",
+    [{ path: "/study/training/:studyId?", element: <TrainingPage /> }],
+    "/study/training",
   );
 }
 
@@ -69,20 +69,20 @@ describe("TrainingPage", () => {
     );
 
     const { user, router } = setup();
-    await user.click(await screen.findByRole("button", { name: "Commencer le training" }));
+    await user.click(await screen.findByRole("button", { name: "Start training" }));
     expect(await screen.findByText(greeting)).toBeVisible();
-    const modeField = screen.getByRole("combobox", { name: "Mode d’apprentissage" });
+    const modeField = screen.getByRole("combobox", { name: "Learning mode" });
     await user.selectOptions(modeField, "feynman");
     await waitFor(() => expect(modeField).toHaveValue("feynman"));
     expect(changes).toHaveLength(1);
-    expect(router.state.location.pathname).toBe(`/etudier/training/${STUDY_ID}`);
+    expect(router.state.location.pathname).toBe(`/study/training/${STUDY_ID}`);
     expect(screen.getByText(greeting)).toBeVisible();
 
-    await user.click(screen.getByRole("button", { name: "Terminer le training" }));
+    await user.click(screen.getByRole("button", { name: "Finish training" }));
     expect(await screen.findByText("Tu as travaillé les chaînes.")).toBeVisible();
-    expect(screen.getByRole("heading", { name: "Bilan du training" })).toHaveFocus();
+    expect(screen.getByRole("heading", { name: "Training review" })).toHaveFocus();
     expect(screen.getByText(/12 min/)).toBeVisible();
-    expect(screen.getByText(/2 fiches/)).toBeVisible();
+    expect(screen.getByText("2 cards created")).toBeVisible();
   });
 
   it("reopens the existing training", async () => {
@@ -92,8 +92,8 @@ describe("TrainingPage", () => {
     );
     setup();
     expect(await screen.findByText(greeting)).toBeVisible();
-    expect(screen.getByRole("combobox", { name: "Mode d’apprentissage" })).toHaveValue("direct");
-    expect(screen.queryByRole("button", { name: "Commencer le training" })).toBeNull();
+    expect(screen.getByRole("combobox", { name: "Learning mode" })).toHaveValue("direct");
+    expect(screen.queryByRole("button", { name: "Start training" })).toBeNull();
   });
   it("starts an independent conversation from the sidebar while an older one stays open", async () => {
     const nextId = "20ccb9f9-40e1-4243-8dd5-78189a93278f";
@@ -123,18 +123,18 @@ describe("TrainingPage", () => {
     );
     const { user, router } = setup();
     expect(await screen.findByText(greeting)).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "Nouvelle conversation" }));
-    await user.click(await screen.findByRole("button", { name: "Commencer le training" }));
+    await user.click(screen.getByRole("button", { name: "New conversation" }));
+    await user.click(await screen.findByRole("button", { name: "Start training" }));
     await waitFor(() => expect(router.state.location.pathname).toContain(nextId));
-    await user.click(await screen.findByRole("button", { name: "Ouvrir Chaînes et modèles" }));
+    await user.click(await screen.findByRole("button", { name: "Open Chaînes et modèles" }));
     await waitFor(() =>
-      expect(screen.getByRole("combobox", { name: "Mode d’apprentissage" })).toHaveValue("direct"),
+      expect(screen.getByRole("combobox", { name: "Learning mode" })).toHaveValue("direct"),
     );
     expect(router.state.location.pathname).toContain(STUDY_ID);
   });
 });
 
-it("utilise la recherche du serveur tout en gardant le fil actif", async () => {
+it("uses server-side search while keeping the current conversation open", async () => {
   const current = { id: STUDY_ID, title: "Chaînes et modèles", updated_at: training.started_at };
   const queries: string[] = [];
   server.use(
@@ -147,13 +147,13 @@ it("utilise la recherche du serveur tout en gardant le fil actif", async () => {
     }),
   );
   const { user, router } = setup();
-  expect(await screen.findByRole("button", { name: "Ouvrir Chaînes et modèles" })).toBeVisible();
-  const field = screen.getByRole("searchbox", { name: "Rechercher un titre" });
+  expect(await screen.findByRole("button", { name: "Open Chaînes et modèles" })).toBeVisible();
+  const field = screen.getByRole("searchbox", { name: "Search titles" });
   await user.type(field, "autre");
   await waitFor(() => expect(queries).toContain("autre"));
-  expect(await screen.findByText("Aucun titre ne correspond.")).toBeVisible();
-  expect(screen.getByRole("button", { name: "Vider la conversation" })).toBeVisible();
+  expect(await screen.findByText("No titles match.")).toBeVisible();
+  expect(screen.getByRole("button", { name: "Clear conversation" })).toBeVisible();
   expect(router.state.location.pathname).toContain(STUDY_ID);
   await user.clear(field);
-  expect(await screen.findByRole("button", { name: "Ouvrir Chaînes et modèles" })).toBeVisible();
+  expect(await screen.findByRole("button", { name: "Open Chaînes et modèles" })).toBeVisible();
 });

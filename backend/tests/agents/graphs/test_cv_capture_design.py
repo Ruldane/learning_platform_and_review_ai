@@ -31,21 +31,21 @@ async def test_design_capture_reaches_target_in_two_passes(
     run = await design_runner()
     question = await run.question()
     assert design_store.rendered == [1, 2] and question["kind"] == "cv_template"
-    assert question["question"] == "Le modèle ressemble à ton CV à 88 %. Tu valides ?"
+    assert question["question"] == "The template matches your CV at 88%. Do you approve it?"
     assert values(question) == OPTIONS
     assert question["fields"] == [
         {
             "id": "instruction",
-            "label": "Ce qu'il faut changer",
+            "label": "What to change",
             "required": False,
             "max_length": 500,
         }
     ]
     [fix] = run.prompts(FIX_REQUEST)
-    assert "Passe 1 : ressemblance de 72 %." in fix and "Écarts mesurés" in fix
+    assert "Pass 1: similarity of 72 %." in fix and "Gaps measured by the code" in fix
     assert await run.said() == [
-        "Passe 1 : le rendu ressemble à ton CV à 72 %.",
-        "Passe 2 : le rendu ressemble à ton CV à 88 %.",
+        "Pass 1: the render looks 72% like your CV.",
+        "Pass 2: the render looks 88% like your CV.",
     ]
 
 
@@ -56,7 +56,7 @@ async def test_three_passes_at_most(
     run = await design_runner()
     question = await run.question()
     assert design_store.rendered == [1, 2, 3] and len(run.prompts(FIX_REQUEST)) == 2
-    assert question["question"].startswith("Le modèle ressemble à ton CV à 70 %.")
+    assert question["question"].startswith("The template matches your CV at 70%.")
     assert design_store.finished == {}  # jamais d'échec silencieux : la question est posée
 
 
@@ -69,15 +69,15 @@ async def test_best_pass_is_kept_and_its_score_shown(
     run = await design_runner()
     question = await run.question()
     assert design_store.rendered == [1, 2, 3] and design_store.kept == 2
-    assert question["question"].startswith("Le modèle ressemble à ton CV à 78 %.")
+    assert question["question"].startswith("The template matches your CV at 78%.")
     assert (await run.said())[
         -1
-    ] == "Passe 3 : le rendu ressemble à ton CV à 69 %. Je garde la passe 2 (78 %)."
+    ] == "Pass 3: the render looks 69% like your CV. I'm keeping pass 2 (78%)."
     await run.answer("validate")
     await run.wait_status("completed")
     assert design_store.finished_pass == {"t1": 2}
     [done] = await run.events("run.completed")
-    assert done["summary"] == "Modèle de CV prêt : il ressemble à ton CV à 78 %."
+    assert done["summary"] == "CV template ready with a 78% match to your original CV."
 
 
 async def test_tie_keeps_the_later_pass(
@@ -87,7 +87,7 @@ async def test_tie_keeps_the_later_pass(
     run = await design_runner()
     question = await run.question()
     assert design_store.kept == 2
-    assert question["question"].startswith("Le modèle ressemble à ton CV à 70 %.")
+    assert question["question"].startswith("The template matches your CV at 70%.")
 
 
 async def test_replay_between_passes_renders_once(
@@ -97,7 +97,7 @@ async def test_replay_between_passes_renders_once(
     G34 : on compte les appels au port, pas les rendus du faux)."""
     design_store.scores = [60, 70, 90]
     models = designer()
-    models.block = lambda agent, prompt: FIX_REQUEST in prompt and "Passe 2 :" in prompt
+    models.block = lambda agent, prompt: FIX_REQUEST in prompt and "Pass 2:" in prompt
     first = await design_runner(models)
     await wait_until(lambda: models.blocked == 1)
     assert design_store.render_calls == {1: 1, 2: 1}
@@ -107,7 +107,7 @@ async def test_replay_between_passes_renders_once(
     assert await second.runner.recover_on_startup() == [first.sid]
     question = await second.question()
     assert design_store.render_calls == {1: 1, 2: 1, 3: 1}
-    assert question["question"].startswith("Le modèle ressemble à ton CV à 90 %.")
+    assert question["question"].startswith("The template matches your CV at 90%.")
 
 
 async def test_sample_lines_are_verbatim(
@@ -119,12 +119,12 @@ async def test_sample_lines_are_verbatim(
     reply = sample_reply(sections=sections)
     run = await design_runner(designer(sample=[reply, reply]))
     await run.question()
-    first, second = run.prompts("Recopie le contenu")[:2]
-    assert "ne figurent pas tels quels" in second and invented in second
-    framed = second.split('<<<CONTENU_NON_FIABLE source="cv:textes à recopier">>>')[1]
-    assert invented in framed.split("<<<FIN_CONTENU_NON_FIABLE>>>")[0]  # encadré (revue BA-M3)
-    assert "Recopie chaque texte mot pour mot" in framed.split("<<<FIN_CONTENU_NON_FIABLE>>>")[1]
-    assert "ne figurent pas tels quels" not in first
+    first, second = run.prompts("Transcribe the contents")[:2]
+    assert "do not appear as is in the CV" in second and invented in second
+    framed = second.split('<<<UNTRUSTED_CONTENT source="cv:texts to copy">>>')[1]
+    assert invented in framed.split("<<<END_UNTRUSTED_CONTENT>>>")[0]  # encadré (revue BA-M3)
+    assert "Copy each text word for word" in framed.split("<<<END_UNTRUSTED_CONTENT>>>")[1]
+    assert "do not appear as is in the CV" not in first
     _, content, _ = design_store.passes[1]
     lines = [line.text for line in content.sections[1].entries[0].lines]
     assert invented not in lines and len(lines) == 2
@@ -137,7 +137,7 @@ async def test_scanned_cv_uses_profile_content(
     design_store.selectable, design_store.profile_content = False, profile_sample()
     run = await design_runner()
     await run.question()
-    assert run.prompts("Recopie le contenu") == []
+    assert run.prompts("Transcribe the contents") == []
     _, content, _ = design_store.passes[1]
     assert content == profile_sample()
 
@@ -160,7 +160,7 @@ async def test_spec_with_unknown_font_is_reasked(
     run = await design_runner(designer(draft=[bad_font_spec()]))
     await run.question()
     first, second = run.prompts(DRAFT_REQUEST)[:2]
-    assert "n'est pas disponible" in second and "n'est pas disponible" not in first
+    assert "is not available" in second and "is not available" not in first
     assert design_store.spec_of(1).fonts.body == "Lato"
 
 
@@ -182,8 +182,8 @@ async def test_fix_without_valid_spec_keeps_current_and_asks(
     run = await design_runner(designer(fix=[bad_font_spec()] * 3))
     question = await run.question()
     assert design_store.rendered == [1] and len(run.prompts(FIX_REQUEST)) == 3
-    assert question["question"].startswith("Le modèle ressemble à ton CV à 60 %.")
-    assert "Je n'ai pas su corriger la description" in (await run.said())[-1]
+    assert question["question"].startswith("The template matches your CV at 60%.")
+    assert "The description could not be adjusted" in (await run.said())[-1]
 
 
 async def test_images_are_sent_as_image_blocks(

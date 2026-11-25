@@ -26,35 +26,35 @@ function setup(
   });
   server.use(...api.handlers);
   const view = renderRoutes(
-    [{ path: "/reglages/modeles", element: <ModelsAndKeysPage /> }],
-    "/reglages/modeles",
+    [{ path: "/settings/models", element: <ModelsAndKeysPage /> }],
+    "/settings/models",
   );
   return { ...api, ...view };
 }
 
 const showAdvanced = async (user: ReturnType<typeof setup>["user"]) => {
-  await screen.findByRole("heading", { level: 1, name: "Modèles et clés" });
-  await user.click(screen.getByRole("button", { name: "Afficher le mode avancé" }));
-  return screen.findByRole("table", { name: "Modèle par agent" });
+  await screen.findByRole("heading", { level: 1, name: "Models and keys" });
+  await user.click(screen.getByRole("button", { name: "Show advanced mode" }));
+  return screen.findByRole("table", { name: "Model per agent" });
 };
-const provider = (agent: string) => screen.getByLabelText(`Fournisseur (${agent})`);
-const model = (agent: string) => screen.getByLabelText(`Modèle (${agent})`);
+const provider = (agent: string) => screen.getByLabelText(`Provider (${agent})`);
+const model = (agent: string) => screen.getByLabelText(`Model (${agent})`);
 
 describe("advanced mode of the models page", () => {
   it("stays folded, and reads nothing, until it is opened", async () => {
     const { counts, user } = setup();
-    await screen.findByRole("heading", { level: 1, name: "Modèles et clés" });
-    const toggle = screen.getByRole("button", { name: "Afficher le mode avancé" });
-    expect(screen.getByRole("heading", { name: "Mode avancé" })).toBeInTheDocument();
+    await screen.findByRole("heading", { level: 1, name: "Models and keys" });
+    const toggle = screen.getByRole("button", { name: "Show advanced mode" });
+    expect(screen.getByRole("heading", { name: "Advanced mode" })).toBeInTheDocument();
     expect(toggle).toHaveAttribute("aria-expanded", "false");
-    expect(screen.queryByRole("table", { name: "Modèle par agent" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("table", { name: "Model per agent" })).not.toBeInTheDocument();
     expect(counts.agents).toBe(0);
 
     await user.click(toggle);
-    await screen.findByRole("table", { name: "Modèle par agent" });
+    await screen.findByRole("table", { name: "Model per agent" });
     expect(counts.agents).toBe(1);
-    await user.click(screen.getByRole("button", { name: "Masquer le mode avancé" }));
-    expect(screen.queryByRole("table", { name: "Modèle par agent" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Hide advanced mode" }));
+    expect(screen.queryByRole("table", { name: "Model per agent" })).not.toBeInTheDocument();
   });
 
   it("advanced mode lists agents and saves an override", async () => {
@@ -62,21 +62,21 @@ describe("advanced mode of the models page", () => {
     const table = await showAdvanced(user);
     const rows = within(table).getAllByRole("row").slice(1);
     expect(rows.map((row) => within(row).getAllByRole("rowheader")[0]?.textContent)).toEqual([
-      expect.stringContaining("Éclaireur"),
-      expect.stringContaining("Stratège"),
-      expect.stringContaining("Tuteur"),
-      expect.stringContaining("Maquettiste"),
+      expect.stringContaining("Scout"),
+      expect.stringContaining("Strategist"),
+      expect.stringContaining("Tutor"),
+      expect.stringContaining("Layout designer"),
     ]); // l'ordre du registre
     // le niveau de chaque agent et le modèle de ce niveau sont écrits
-    expect(within(rows[1]!).getByText("Fort")).toBeInTheDocument();
-    expect(within(rows[1]!).getByText("anthropic : claude-haiku-5-5")).toBeInTheDocument();
-    expect(provider("Tuteur")).toHaveValue("");
+    expect(within(rows[1]!).getByText("Strong")).toBeInTheDocument();
+    expect(within(rows[1]!).getByText("anthropic: claude-haiku-5-5")).toBeInTheDocument();
+    expect(provider("Tutor")).toHaveValue("");
     expect(
-      within(provider("Tuteur")).getByRole("option", { name: "Niveau par défaut (Standard)" }),
+      within(provider("Tutor")).getByRole("option", { name: "Default tier (Standard)" }),
     ).toBeInTheDocument();
-    expect(screen.queryByLabelText("Modèle (Tuteur)")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Model (Tutor)")).not.toBeInTheDocument();
 
-    await user.selectOptions(provider("Tuteur"), "openai");
+    await user.selectOptions(provider("Tutor"), "openai");
     await screen.findByDisplayValue("gpt-6-luna");
     expect(puts).toHaveLength(1);
     expect(puts[0]).toMatchObject({
@@ -87,7 +87,7 @@ describe("advanced mode of the models page", () => {
     });
     expect(puts[0]).not.toHaveProperty("vision_enabled");
 
-    await user.selectOptions(model("Tuteur"), "gpt-6.1-sol");
+    await user.selectOptions(model("Tutor"), "gpt-6.1-sol");
     await screen.findByDisplayValue("gpt-6.1-sol");
     expect(puts[1]).toMatchObject({
       agent_overrides: { tutor: { provider: "openai", model: "gpt-6.1-sol" } },
@@ -98,26 +98,26 @@ describe("advanced mode of the models page", () => {
     const held = closedGate();
     const { puts, user } = setup({}, undefined, agentsFixture, held.promise);
     await showAdvanced(user);
-    await user.selectOptions(provider("Tuteur"), "openai");
+    await user.selectOptions(provider("Tutor"), "openai");
     await waitFor(() => expect(puts).toHaveLength(1)); // le premier envoi est parti, porte fermée
     // sans attendre la réponse : le modèle suivant, puis un autre agent
-    expect(provider("Tuteur")).toHaveValue("openai"); // pas de retour arrière pendant l'envoi
-    await user.selectOptions(model("Tuteur"), "gpt-6.1-sol");
-    await user.selectOptions(provider("Stratège"), "openai");
-    expect(model("Tuteur")).toHaveValue("gpt-6.1-sol");
-    expect(screen.queryByText("Modèles enregistrés.")).not.toBeInTheDocument();
+    expect(provider("Tutor")).toHaveValue("openai"); // pas de retour arrière pendant l'envoi
+    await user.selectOptions(model("Tutor"), "gpt-6.1-sol");
+    await user.selectOptions(provider("Strategist"), "openai");
+    expect(model("Tutor")).toHaveValue("gpt-6.1-sol");
+    expect(screen.queryByText("Models saved.")).not.toBeInTheDocument();
     expect(puts).toHaveLength(1); // un seul envoi à la fois : les deux autres choix attendent
 
     held.open();
-    await screen.findByText("Modèles enregistrés.");
+    await screen.findByText("Models saved.");
     expect(puts).toHaveLength(2); // le premier choix, puis les deux suivants d'un coup
     expect(puts[0]!.agent_overrides).toEqual({ tutor: openai });
     expect(puts[1]!.agent_overrides).toEqual({
       tutor: { provider: "openai", model: "gpt-6.1-sol" },
       strategist: openai,
     });
-    expect(provider("Tuteur")).toHaveValue("openai");
-    expect(model("Tuteur")).toHaveValue("gpt-6.1-sol");
+    expect(provider("Tutor")).toHaveValue("openai");
+    expect(model("Tutor")).toHaveValue("gpt-6.1-sol");
   });
 
   it("falls back to what the server holds when a replayed change is refused", async () => {
@@ -130,34 +130,34 @@ describe("advanced mode of the models page", () => {
       held.promise,
     );
     await showAdvanced(user);
-    await user.selectOptions(provider("Tuteur"), "openai");
-    await user.selectOptions(model("Tuteur"), "gpt-6.1-sol");
+    await user.selectOptions(provider("Tutor"), "openai");
+    await user.selectOptions(model("Tutor"), "gpt-6.1-sol");
     held.open();
-    expect(await screen.findByRole("alert")).toHaveTextContent("n'existe plus");
-    await waitFor(() => expect(model("Tuteur")).toHaveValue("gpt-6-luna"));
-    expect(screen.queryByText("Modèles enregistrés.")).not.toBeInTheDocument();
+    expect(await screen.findByRole("alert")).toHaveTextContent("no longer exists");
+    await waitFor(() => expect(model("Tutor")).toHaveValue("gpt-6-luna"));
+    expect(screen.queryByText("Models saved.")).not.toBeInTheDocument();
   });
 
   it("removing an override returns to tier", async () => {
     const { puts, user } = setup({ agent_overrides: { tutor: openai, scout: openai } });
     await showAdvanced(user);
-    expect(provider("Tuteur")).toHaveValue("openai");
-    expect(model("Tuteur")).toHaveValue("gpt-6-luna");
+    expect(provider("Tutor")).toHaveValue("openai");
+    expect(model("Tutor")).toHaveValue("gpt-6-luna");
 
-    await user.selectOptions(provider("Tuteur"), "Niveau par défaut (Standard)");
+    await user.selectOptions(provider("Tutor"), "Default tier (Standard)");
     expect(puts).toHaveLength(1);
     expect(puts[0]!.agent_overrides).toEqual({ scout: openai }); // seule celle du tuteur part
-    expect(await screen.findByLabelText("Fournisseur (Tuteur)")).toHaveValue("");
-    expect(screen.queryByLabelText("Modèle (Tuteur)")).not.toBeInTheDocument();
-    expect(provider("Éclaireur")).toHaveValue("openai");
+    expect(await screen.findByLabelText("Provider (Tutor)")).toHaveValue("");
+    expect(screen.queryByLabelText("Model (Tutor)")).not.toBeInTheDocument();
+    expect(provider("Scout")).toHaveValue("openai");
   });
 
   it("waits for the model of a provider without a list before saving anything", async () => {
     const { puts, user } = setup();
     await showAdvanced(user);
-    await user.selectOptions(provider("Stratège"), "glm");
+    await user.selectOptions(provider("Strategist"), "glm");
     expect(puts).toEqual([]);
-    const field = model("Stratège");
+    const field = model("Strategist");
     expect(field).toHaveValue("");
     await user.type(field, "glm-5.3{Enter}");
     await screen.findByDisplayValue("glm-5.3");
@@ -168,20 +168,20 @@ describe("advanced mode of the models page", () => {
   it("says an agent no longer exists when the server refuses its override, no echo", async () => {
     const { user } = setup({}, () => refusedFieldsResponse("agent_overrides"));
     await showAdvanced(user);
-    await user.selectOptions(provider("Tuteur"), "openai");
+    await user.selectOptions(provider("Tutor"), "openai");
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Un des agents choisis n'existe plus : recharge la page, puis réessaie.",
+      "One of the chosen agents no longer exists: reload the page, then try again.",
     );
-    expect(provider("Tuteur")).toHaveValue(""); // rien n'est affiché qui n'ait été enregistré
+    expect(provider("Tutor")).toHaveValue(""); // rien n'est affiché qui n'ait été enregistré
   });
 
   it("keeps an override of an agent the server no longer knows, so it can be removed", async () => {
     const { puts, user } = setup({ agent_overrides: { ghost_agent: openai } });
     await showAdvanced(user);
-    expect(screen.getByText("Agent inconnu : rends-le au niveau par défaut.")).toBeInTheDocument();
-    await user.selectOptions(provider("ghost_agent"), "Niveau par défaut");
+    expect(screen.getByText("Unknown agent: set it back to the default tier.")).toBeInTheDocument();
+    await user.selectOptions(provider("ghost_agent"), "Default tier");
     // une fois retirée, la ligne de l'agent inconnu disparaît
-    await waitFor(() => expect(screen.queryByLabelText("Fournisseur (ghost_agent)")).toBeNull());
+    await waitFor(() => expect(screen.queryByLabelText("Provider (ghost_agent)")).toBeNull());
     expect(puts[0]!.agent_overrides).toEqual({});
   });
 
@@ -198,11 +198,11 @@ describe("advanced mode of the models page", () => {
           : HttpResponse.json(agentsFixture),
       ),
     );
-    await screen.findByRole("heading", { level: 1, name: "Modèles et clés" });
-    await user.click(screen.getByRole("button", { name: "Afficher le mode avancé" }));
+    await screen.findByRole("heading", { level: 1, name: "Models and keys" });
+    await user.click(screen.getByRole("button", { name: "Show advanced mode" }));
     expect(await screen.findByText("Panne des agents.")).toBeInTheDocument();
     fails = false;
-    await user.click(screen.getByRole("button", { name: "Réessayer" }));
-    await screen.findByRole("table", { name: "Modèle par agent" });
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+    await screen.findByRole("table", { name: "Model per agent" });
   });
 });

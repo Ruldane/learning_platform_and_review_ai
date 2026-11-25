@@ -1,14 +1,14 @@
-"""Les relances (SPEC 6.2, D140) : la liste (synchronisée d'abord), les trois actions de January
-(Fait, Reporter de 3 jours, Ignorer) et le passage de la tâche planifiée. L'application n'envoie
-jamais rien : le brouillon se copie. Sous le verrou des candidatures.
+"""Reminders (SPEC 6.2, D140): the list (synchronised first), January's three actions
+(Done, Postpone by 3 days, Ignore) and the scheduled task's pass. The application never sends
+anything: the draft is copied. Under the applications lock.
 
-- `done` : relance faite, événement `reminder` ; la relance de 7 ou 14 jours d'une fiche
-  « Postulée » la passe en « Relancée » ; la proposition de 21 jours la passe en « Sans réponse ».
-- `postpone` : l'échéance devient le plus tardif de l'échéance et d'aujourd'hui, plus 3 jours ; la
-  relance reste en attente.
-- `ignore` : relance ignorée, événement `reminder`.
-Une relance déjà faite ou ignorée : 409 `reminder_closed`. Journaux : identifiants et codes
-seulement, jamais un brouillon, un contact, une entreprise ni un intitulé."""
+- `done`: reminder done, `reminder` event; the 7 or 14-day reminder of an "Applied" record
+  moves it to "Followed up"; the 21-day proposal moves it to "No response".
+- `postpone`: the due date becomes the later of the due date and today, plus 3 days; the
+  reminder stays pending.
+- `ignore`: reminder ignored, `reminder` event.
+An already done or ignored reminder: 409 `reminder_closed`. Logs: ids and codes only, never a
+draft, a contact, a company or a title."""
 
 import logging
 from datetime import date, datetime, timedelta
@@ -34,24 +34,24 @@ logger = logging.getLogger(__name__)
 
 POSTPONE_DAYS = 3
 LABELS: dict[ReminderKind, str] = {
-    "linkedin_7": "message LinkedIn",
-    "email_14": "email de relance",
-    "close_21": "classement sans réponse",
-    "thanks": "remerciement",
-    "news_7": "demande de nouvelles",
+    "linkedin_7": "LinkedIn follow-up",
+    "email_14": "Email follow-up",
+    "close_21": "No answer reminder",
+    "thanks": "Interview thank-you",
+    "news_7": "Interview follow-up",
 }
 
 
 def not_found() -> AppError:
-    return AppError("reminder_not_found", "Relance introuvable.", 404)
+    return AppError("reminder_not_found", "Reminder not found.", 404)
 
 
 def closed() -> AppError:
-    return AppError("reminder_closed", "Cette relance est déjà faite ou ignorée.", 409)
+    return AppError("reminder_closed", "This reminder was already completed or ignored.", 409)
 
 
 async def list_reminders(rt: ApplicationsRuntime, user_id: str, *, due: bool) -> list[ReminderOut]:
-    """Synchronise, puis rend les relances en attente dues aujourd'hui (`due`), ou toutes."""
+    """Synchronises, then returns the pending reminders due today (`due`), or all of them."""
     async with rt.lock(user_id), rt.session_factory() as db:
         today = local_today(await zone_of(db, user_id), rt.now())
         await sync_user(db, user_id, today)
@@ -67,7 +67,7 @@ async def _effect(
     kind: ReminderKind,
     when: tuple[date, datetime, ZoneInfo],
 ) -> None:
-    """Ce que « Fait » change au statut de la fiche."""
+    """What "Done" changes in the record's status."""
     new: str | None = None
     if kind in ("linkedin_7", "email_14") and app.status == "applied":
         new = "followed_up"
@@ -82,7 +82,7 @@ async def _effect(
 async def act_on_reminder(
     rt: ApplicationsRuntime, user_id: str, reminder_id: str, action: ReminderActionName
 ) -> ReminderOut:
-    """Applique l'action (voir le module). 404 `reminder_not_found` ; 409 `reminder_closed`."""
+    """Applies the action (see the module). 404 `reminder_not_found`; 409 `reminder_closed`."""
     async with rt.lock(user_id), rt.session_factory() as db:
         row = await ReminderRepository(db, user_id).get_fresh(reminder_id)
         if row is None:
@@ -101,12 +101,12 @@ async def act_on_reminder(
             if action == "done":
                 row.done_at = now
             label = LABELS[row.kind]  # type: ignore[index]  # un texte, valeurs de ReminderKind
-            verb = "faite" if action == "done" else "ignorée"
+            outcome = "completed" if action == "done" else "ignored"
             await EventRepository(db, user_id).add(
                 application_id=app.id,
                 kind="reminder",
                 at=now,
-                text=f"Relance {verb} : {label}.",
+                text=f"{label} {outcome}.",
                 ref_id=row.id,
             )
             if action == "done":
@@ -120,9 +120,9 @@ async def act_on_reminder(
 
 
 async def run_reminders(rt: ApplicationsRuntime, now: datetime) -> None:
-    """Un passage de la tâche planifiée, compte par compte : adopte les versions de CV (les
-    fiches des offres prêtes), puis synchronise les relances. Une panne chez l'un n'arrête pas
-    les autres."""
+    """One pass of the scheduled task, account by account: adopts the CV versions (the records
+    of ready postings), then synchronises the reminders. A failure on one does not stop the
+    others."""
     async with rt.session_factory() as db:
         users = await user_ids(db)
     failed = 0
@@ -134,6 +134,6 @@ async def run_reminders(rt: ApplicationsRuntime, now: datetime) -> None:
                 await db.commit()
         except Exception as exc:
             failed += 1
-            logger.warning("Relances : utilisateur %s non traité (%s)", user_id, type(exc).__name__)
+            logger.warning("Reminders: user %s not processed (%s)", user_id, type(exc).__name__)
     level = logging.WARNING if failed else logging.DEBUG
-    logger.log(level, "Relances : %d compte(s), %d en échec", len(users), failed)
+    logger.log(level, "Reminders: %d account(s), %d failed", len(users), failed)

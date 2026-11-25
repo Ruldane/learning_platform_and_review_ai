@@ -1,9 +1,9 @@
-"""Connexion Google, du départ au retour (P5, P6, P10) : le témoin `tremplin_oauth` garde `state`,
-vérificateur PKCE et `nonce` (chiffrés, 10 minutes) ; au retour, rien n'est créé tant que tout
-n'est pas contrôlé. Chaque échec devient un code (`/connexion?erreur=<code>`).
+"""Google sign-in, from start to return (P5, P6, P10): the `tremplin_oauth` cookie keeps the
+`state`, PKCE verifier and `nonce` (encrypted, 10 minutes); on return, nothing is created until
+everything is checked. Each failure becomes a code (`/login?error=<code>`).
 
-Ni code d'autorisation, ni `state`, ni vérificateur, ni jeton, ni e-mail, ni `sub`, ni `login_hint`
-ne sont journalisés : seuls des identifiants et des codes d'erreur le sont (SPEC 17.2)."""
+No authorization code, `state`, verifier, token, e-mail, `sub` or `login_hint` is logged: only
+ids and error codes are (SPEC 17.2)."""
 
 import json
 import logging
@@ -29,8 +29,8 @@ from app.providers.auth.base import OidcError, OidcIdentity, OidcProvider
 
 logger = logging.getLogger(__name__)
 
-# Longueurs maximales des paramètres du retour : contrôlées ici, pas par la route (une 422 JSON
-# n'a pas sa place au retour de Google, qui finit toujours par une redirection).
+# Maximum lengths of the return parameters: checked here, not by the route (a JSON 422 has no
+# place on the return from Google, which always ends with a redirect).
 MAX_CODE = 2048
 MAX_STATE = 2048
 MAX_ERROR = 256
@@ -48,19 +48,19 @@ class CallbackOutcome:
 
 
 def _failed(code: str) -> CallbackOutcome:
-    logger.info("connexion Google refusée : %s", code)
+    logger.info("Google sign-in refused: %s", code)
     return CallbackOutcome(kind="error", error=code)
 
 
 def _valid_hint(login_hint: str | None) -> str | None:
-    """Une adresse e-mail plausible de 320 caractères au plus, sinon on l'ignore."""
+    """A plausible e-mail address of at most 320 characters, otherwise it is ignored."""
     if login_hint and len(login_hint) <= MAX_EMAIL and _EMAIL.fullmatch(login_hint):
         return login_hint
     return None
 
 
 def start_login(oidc: OidcProvider, cipher: Cipher, login_hint: str | None) -> tuple[str, str]:
-    """(adresse Google où envoyer le navigateur, valeur du témoin `tremplin_oauth`)."""
+    """(Google address to send the browser to, value of the `tremplin_oauth` cookie)."""
     state = secrets.token_urlsafe(32)
     nonce = secrets.token_urlsafe(32)
     verifier = pkce.new_verifier()
@@ -75,13 +75,13 @@ def start_login(oidc: OidcProvider, cipher: Cipher, login_hint: str | None) -> t
 
 
 def _read_pending(cipher: Cipher, raw: str | None) -> dict[str, str] | None:
-    """Le contenu du témoin `tremplin_oauth`, `None` s'il manque, est trafiqué ou a plus de
-    10 minutes."""
+    """The content of the `tremplin_oauth` cookie, `None` if it is missing, tampered with or
+    older than 10 minutes."""
     if not raw:
         return None
     try:
         pending = json.loads(cipher.decrypt(raw, ttl=OAUTH_COOKIE_SECONDS))
-    except (AppError, ValueError):  # illisible ou périmé (`SecretUnreadable`), ou pas du JSON
+    except (AppError, ValueError):  # unreadable or expired (`SecretUnreadable`), or not JSON
         return None
     if not isinstance(pending, dict) or not all(
         isinstance(pending.get(key), str) for key in ("state", "verifier", "nonce")
@@ -108,10 +108,10 @@ async def finish_login(
     oauth_cookie: str | None,
     now: datetime,
 ) -> CallbackOutcome:
-    """Le retour de Google. Rien n'est écrit tant que le `state`, le jeton d'identité, l'adresse
-    vérifiée et `ALLOWED_EMAILS` ne sont pas tous passés. Une exception inattendue (course sur
-    une contrainte d'unicité, oubli futur) ne devient jamais une 500 : elle est journalisée par
-    sa classe, la transaction est défaite et la personne revient à `/connexion`."""
+    """The return from Google. Nothing is written until the `state`, the identity token, the
+    verified address and `ALLOWED_EMAILS` have all passed. An unexpected exception (race on a
+    uniqueness constraint, future oversight) never becomes a 500: it is logged by its class,
+    the transaction is rolled back and the person returns to `/login`."""
     if _too_long(code, state, error):
         return _failed("state_invalid")
     if error:
@@ -127,7 +127,7 @@ async def finish_login(
         return await _sign_in(db, oidc, cipher, settings, code=code, pending=pending, now=now)
     except Exception as exc:
         await db.rollback()
-        logger.warning("connexion Google : erreur inattendue (%s)", type(exc).__name__)
+        logger.warning("Google sign-in: unexpected error (%s)", type(exc).__name__)
         return _failed("token_invalid")
 
 
@@ -141,7 +141,7 @@ async def _sign_in(
     pending: dict[str, str],
     now: datetime,
 ) -> CallbackOutcome:
-    """L'échange du code, les contrôles de l'identité, puis l'utilisateur et sa session."""
+    """The code exchange, the identity checks, then the user and their session."""
     try:
         identity = await oidc.exchange(
             code=code, code_verifier=pending["verifier"], nonce=pending["nonce"]
@@ -150,7 +150,7 @@ async def _sign_in(
         return _failed(exc.code)
     if not identity.email_verified:
         return _failed("email_unverified")
-    if len(identity.email.strip()) > MAX_EMAIL:  # jamais tronquée en silence
+    if len(identity.email.strip()) > MAX_EMAIL:  # never silently truncated
         return _failed("token_invalid")
     if not allowed(identity.email, settings.allowed_emails):
         return _failed("email_not_allowed")
@@ -160,9 +160,9 @@ async def _sign_in(
         and explicitly_allowed(identity.email, settings.allowed_emails)
         and await claim_offered(db)
     ):
-        # Tout premier compte Google, nommé dans la liste, espace local présent : rien n'est créé
+        # Very first Google account, named in the list, local space present: nothing is created
         # avant son choix (P9).
-        logger.info("reprise de l'espace local proposée")
+        logger.info("takeover of the local space offered")
         clean = ClaimIdentity(
             identity.sub, identity.email.strip().lower(), identity.name[:MAX_NAME]
         )
@@ -171,17 +171,16 @@ async def _sign_in(
     if user is None:
         return _failed("token_invalid")
     token = await sessions.open_session(db, user.id, now=now, days=settings.session_days)
-    logger.info("connexion Google réussie pour l'utilisateur %s", user.id)
+    logger.info("Google sign-in succeeded for user %s", user.id)
     return CallbackOutcome(kind="signed_in", token=token)
 
 
 async def _find_or_create(
     db: AsyncSession, users: UserRepository, identity: OidcIdentity
 ) -> User | None:
-    """L'utilisateur de cette identité Google (retrouvé par `sub` : e-mail et nom sont remis à
-    jour), sinon un nouveau. `None`, rien d'écrit, si l'adresse appartient déjà à un autre compte
-    (jamais deux comptes fusionnés, ni une erreur de base, ni une adresse contrôlée qui n'est pas
-    celle que l'on garde)."""
+    """The user of this Google identity (found by `sub`: e-mail and name are refreshed), otherwise
+    a new one. `None`, nothing written, if the address already belongs to another account (never
+    two accounts merged, nor a database error, nor a checked address that is not the one kept)."""
     email = identity.email.strip().lower()
     name = identity.name[:MAX_NAME]
     holder = await users.get_by_email(email)
@@ -190,7 +189,7 @@ async def _find_or_create(
         return None
     if user is None:
         if not await users.any_google_user():
-            await close_claim(db, users)  # le premier compte Google ferme la reprise
+            await close_claim(db, users)  # the first Google account closes the takeover
         return await users.add_google(sub=identity.sub, email=email, name=name)
     await users.update_identity(user, email=email, name=name)
     return user

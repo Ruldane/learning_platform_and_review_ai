@@ -19,7 +19,7 @@ function Landing() {
     <p>
       {openedInfo(location.state)
         .map((alert) => alert.message)
-        .join("|") || "fiche ouverte"}
+        .join("|") || "application opened"}
     </p>
   );
 }
@@ -33,12 +33,12 @@ async function setup(stayMounted = false) {
     <IntakeRun sessionId="i1" createSocket={sockets.factory} onLeave={() => undefined} />
   );
   const router = createMemoryRouter(
-    // `stayMounted` : la saisie reste montée après l'ouverture de la fiche, pour voir ses effets se répéter.
+    // Keep the entry mounted after navigation to check that it handles the event once.
     stayMounted
       ? [{ path: "*", element: intake }]
       : [
           { path: "/", element: intake },
-          { path: "/candidatures/:applicationId", element: <Landing /> },
+          { path: "/applications/:applicationId", element: <Landing /> },
         ],
     { initialEntries: ["/"] },
   );
@@ -50,17 +50,17 @@ async function setup(stayMounted = false) {
 describe("IntakeRun", () => {
   beforeEach(() => useSessionStore.getState().reset("i1"));
 
-  it("makes the applications read again when the session announces the fiche", async () => {
+  it("refreshes the application list when the session announces the application", async () => {
     const { client, router, stream, e } = await setup();
-    stream.push(e.artifactReady("application", "a1", "/candidatures/a1"));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/candidatures/a1"));
+    stream.push(e.artifactReady("application", "a1", "/applications/a1"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/applications/a1"));
     expect(client.getQueryState(["applications", "list"])?.isInvalidated).toBe(true);
-    expect(await screen.findByText("fiche ouverte")).toBeVisible();
+    expect(await screen.findByText("application opened")).toBeVisible();
   });
 
-  it("hands the « même entreprise » information of the session to the opened fiche", async () => {
+  it("passes other applications at the same company to the open application", async () => {
     const { router, stream, e } = await setup();
-    const ready = e.artifactReady("application", "a1", "/candidatures/a1");
+    const ready = e.artifactReady("application", "a1", "/applications/a1");
     stream.push({
       ...ready,
       payload: {
@@ -72,24 +72,24 @@ describe("IntakeRun", () => {
             title: "Autre poste",
             status: "applied",
             message:
-              "Pour info : tu as postulé chez Acme il y a 3 jours, pour le poste Autre poste.",
+              "For reference, you applied for the Autre poste role at Acme 3 days ago.",
           },
         ],
       },
     } as typeof ready);
-    await waitFor(() => expect(router.state.location.pathname).toBe("/candidatures/a1"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/applications/a1"));
     expect(
-      await screen.findByText(/Pour info : tu as postulé chez Acme il y a 3 jours/),
+      await screen.findByText(/you applied for the Autre poste role at Acme 3 days ago/),
     ).toBeVisible();
   });
 
   it("reads the applications once per announcing event, however many events follow", async () => {
     const { client, router, stream, e } = await setup(true);
     const invalidate = vi.spyOn(client, "invalidateQueries");
-    stream.push(e.artifactReady("application", "a1", "/candidatures/a1"));
-    await waitFor(() => expect(router.state.location.pathname).toBe("/candidatures/a1"));
+    stream.push(e.artifactReady("application", "a1", "/applications/a1"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/applications/a1"));
     expect(invalidate).toHaveBeenCalledTimes(1);
-    // D'autres événements arrivent (le coût, la fin) : la fiche annoncée est la même.
+    // Later session events still refer to the same announced application.
     stream.push(e.cost());
     stream.push(e.completed());
     await waitFor(() => expect(useSessionStore.getState().events["i1"]).toHaveLength(3));

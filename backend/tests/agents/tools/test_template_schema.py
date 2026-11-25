@@ -88,16 +88,16 @@ def test_template_problems(bad: str, count: int) -> None:
     assert len(template_problems(specs[bad], FONTS)) == count
 
 
-def test_problems_are_french_sentences() -> None:
+def test_problems_are_english_sentences() -> None:
     assert template_problems(specs["widths_99"], FONTS) == [
-        "Les largeurs des colonnes font 99 % au total : elles doivent faire 100 %."
+        "The column widths total 99%: they must total 100%."
     ]
     assert template_problems(specs["unknown_font"], FONTS) == [
-        "La police « Garamond » n'est pas disponible : choisis parmi Carlito, Lato."
+        "The font “Garamond” is not available: choose among Carlito, Lato."
     ]
     assert len(template_problems(specs["color_rgb_name"], FONTS)) == 2
-    assert "« skills » figure 2 fois" in template_problems(specs["section_twice"], FONTS)[0]
-    assert "« identity »" in template_problems(specs["no_identity"], FONTS)[0]
+    assert "“skills” appears 2 times" in template_problems(specs["section_twice"], FONTS)[0]
+    assert "“identity”" in template_problems(specs["no_identity"], FONTS)[0]
 
 
 @pytest.mark.parametrize(

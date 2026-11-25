@@ -1,4 +1,4 @@
-"""Le défi d'un programme est ouvert et remis depuis l'interface."""
+"""A program's challenge is opened and submitted from the interface."""
 
 from typing import Annotated
 

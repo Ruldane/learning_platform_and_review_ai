@@ -111,7 +111,7 @@ async def test_projects_never_logged(
         env.at(moment)
         await ensure_project_briefs(env.rt, moment)
     text = "\n".join(record.getMessage() for record in caplog.records)
-    assert "Évaluation rangée" in text  # les journaux existent : ils ne disent que les nombres
+    assert "Evaluation stored" in text  # les journaux existent : ils ne disent que les nombres
     for secret in SECRETS:
         assert secret.lower() not in text.lower(), secret
     assert "example.org" not in text

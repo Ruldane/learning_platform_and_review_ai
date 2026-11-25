@@ -4,15 +4,15 @@ DELETE_CONFIRMATION = "SUPPRIMER"
 
 
 class DeleteAccountIn(BaseModel):
-    """La confirmation de « Tout supprimer » : `confirm` doit être exactement `SUPPRIMER`."""
+    """The "Delete everything" confirmation: `confirm` must be exactly `SUPPRIMER`."""
 
-    # Contrôlé dans le code de la route (422 `confirmation_required`, sans écho), pas par le
-    # schéma : une longueur maximale rendrait une autre 422, qui ne dit pas quoi faire.
+    # Checked in the route code (422 `confirmation_required`, without echo), not by the schema:
+    # a maximum length would return another 422 that does not say what to do.
     confirm: str
     expected_user_id: str | None = Field(
         default=None,
         description=(
-            "Identifiant du compte affiché, obligatoire en mode Google pour un appel direct. "
-            "Dans une demande MCP confirmée, l'identité vient du jeton."
+            "Id of the displayed account, required in Google mode for a direct call. "
+            "In a confirmed MCP request, the identity comes from the token."
         ),
     )

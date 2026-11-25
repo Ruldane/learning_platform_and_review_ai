@@ -58,7 +58,7 @@ def exchange(index: int = 0, note: int = 2, **over: Any) -> Exchange:
     fields: dict[str, Any] = {
         "index": index,
         "question": f"Question {index} sur ton dernier projet ?",
-        "criterion": "clarte",
+        "criterion": "clarity",
         "source": "general",
         "answer": f"Ma réponse numéro {index}.",
         "note": note,
@@ -69,7 +69,7 @@ def exchange(index: int = 0, note: int = 2, **over: Any) -> Exchange:
 def debrief(missed: list[int] | None = None, **over: Any) -> Debrief:
     missed = [0] if missed is None else missed
     fields: dict[str, Any] = {
-        "scores": {"clarte": 3, "structure": 2, "profondeur_technique": 4, "adequation": 3},
+        "scores": {"clarity": 3, "structure": 2, "technical_depth": 4, "role_fit": 3},
         "strengths": ["Exemples concrets.", "Ton posé.", "Bonne écoute."],
         "fixes": ["Annoncer le plan.", "Chiffrer l'impact.", "Conclure plus net."],
         "weakest_index": 0,

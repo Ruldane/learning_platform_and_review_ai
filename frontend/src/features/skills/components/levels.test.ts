@@ -21,7 +21,7 @@ const BACKGROUND = "#fafaf7";
 describe("LEVEL_COLORS", () => {
   it("has a color for each level and for absent skills", () => {
     expect(Object.keys(LEVEL_COLORS).sort()).toEqual(
-      ["absent", "declare", "en_cours", "prouve", "valide"].sort(),
+      ["absent", "declared", "in_progress", "proven", "validated"].sort(),
     );
   });
 

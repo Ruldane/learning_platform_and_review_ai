@@ -29,7 +29,11 @@ API = "/api/v1/grade-appeals"
 
 def second_reader(messages: Sequence[BaseMessage]) -> str:
     payload = extract_json_object(str(messages[1].content))
-    assert payload == {"critere": CRITERION, "remise_figee": DESCRIPTION, "motif": REASON}
+    assert payload == {
+        "criterion": CRITERION,
+        "frozen_submission": DESCRIPTION,
+        "appeal_reason": REASON,
+    }
     return json.dumps({"met": True, "comment": SECOND})
 
 

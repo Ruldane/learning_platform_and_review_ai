@@ -1,7 +1,7 @@
-"""API des candidatures (SPEC 6, D139) : fiches (liste, création à la main ou depuis une offre,
-détail, retouche), fil (changement de statut, note), contrôle des doublons à l'entrée d'une offre
-et indicateurs. Toutes au nom de l'utilisatrice courante ; une 422 nomme les champs, sans valeur ;
-une 409 de doublon rend les fiches existantes."""
+"""Applications API (SPEC 6, D139): records (list, creation by hand or from a posting, detail,
+edit), timeline (status change, note), duplicate check when a posting comes in, and indicators.
+All on behalf of the current user; a 422 names the fields, without values; a duplicate 409
+returns the existing records."""
 
 from typing import Annotated, Any
 
@@ -42,7 +42,7 @@ _NOT_FOUND: dict[int | str, dict[str, Any]] = {404: {"description": "`applicatio
 
 
 def get_applications_runtime(conn: HTTPConnection) -> ApplicationsRuntime:
-    """Les candidatures ouvertes par le lifespan (`app.state.career.applications`)."""
+    """The applications runtime opened by the lifespan (`app.state.career.applications`)."""
     runtime: ApplicationsRuntime = conn.app.state.career.applications
     return runtime
 
@@ -58,7 +58,7 @@ async def get_applications(
     status: Annotated[ApplicationStatus | None, Query()] = None,
     posting_id: Annotated[str | None, Query(min_length=1, max_length=36)] = None,
 ) -> list[ApplicationOut]:
-    """Les fiches, la plus récente d'abord ; adopte d'abord les versions de CV prêtes."""
+    """The records, most recent first; adopts ready CV versions first."""
     return await list_applications(rt, db, current.id, status=status, posting_id=posting_id)
 
 
@@ -70,9 +70,9 @@ async def get_applications(
         404: {"description": "`posting_not_found`"},
         409: {
             "description": (
-                "`application_duplicate` (`details.alerts` : les fiches existantes qui "
-                "ressemblent à l'offre), `application_exists` (`details.application_id` : "
-                "une fiche existe déjà pour cette offre)"
+                "`application_duplicate` (`details.alerts`: the existing records that "
+                "look like the posting), `application_exists` (`details.application_id`: "
+                "a record already exists for this posting)"
             )
         },
     },
@@ -80,7 +80,7 @@ async def get_applications(
 async def post_application(
     body: ApplicationIn, current: CurrentUserDep, rt: ApplicationsDep
 ) -> CreatedOut:
-    """Crée la fiche ; `info` : une autre fiche chez la même entreprise dans les 30 jours."""
+    """Creates the record; `info`: another record at the same company within 30 days."""
     return await create_application(rt, current.id, body)
 
 
@@ -91,8 +91,8 @@ async def post_application(
     responses={409: {"description": "`intake_in_progress` (`details.session_id`)"}},
 )
 async def post_intake(body: IntakeIn, current: CurrentUserDep, rt: ApplicationsDep) -> IntakeOut:
-    """Lance l'Assistant de suivi sur une phrase : la fiche en préparation est confirmée par
-    January (question `application_confirm`) avant d'être créée."""
+    """Starts the Tracking Assistant on a sentence: the record being prepared is confirmed by
+    January (question `application_confirm`) before it is created."""
     return IntakeOut(session_id=await start_intake(rt, current.id, body.text))
 
 
@@ -104,14 +104,14 @@ async def get_check(
     posting_id: Annotated[str | None, Query(min_length=1, max_length=36)] = None,
     url: Annotated[str | None, Query(min_length=1, max_length=2000)] = None,
 ) -> CheckOut:
-    """Contrôle d'une offre qui entre : par `posting_id` (la fiche de l'offre, les alertes) ou par
-    `url` (avant l'analyse : « certain » seulement). Exactement une des deux entrées."""
+    """Checks an incoming posting: by `posting_id` (the posting's record, the alerts) or by `url`
+    (before analysis: "certain" only). Exactly one of the two inputs."""
     return await check_posting(db, current.id, rt.now(), posting_id, url)
 
 
 @router.get("/stats", response_model=ApplicationStatsOut)
 async def get_stats(current: CurrentUserDep, db: Db, rt: ApplicationsDep) -> ApplicationStatsOut:
-    """Fiches par statut, taux et délai moyen de réponse, relances dues."""
+    """Records by status, response rate and average response time, due follow-ups."""
     return await read_stats(rt, db, current.id)
 
 
@@ -126,8 +126,8 @@ async def get_one_application(
 async def patch_application(
     application_id: Id, body: ApplicationPatch, current: CurrentUserDep, rt: ApplicationsDep
 ) -> ApplicationDetail:
-    """Retouche les champs envoyés ; `contacts` remplace la liste. Le statut ne se change que par
-    `POST /applications/{id}/events` : l'envoyer ici est une 422."""
+    """Edits the fields sent; `contacts` replaces the list. The status only changes through
+    `POST /applications/{id}/events`: sending it here is a 422."""
     return await update_locked(rt, current.id, application_id, body)
 
 
@@ -135,5 +135,5 @@ async def patch_application(
 async def post_event(
     application_id: Id, body: EventIn, current: CurrentUserDep, rt: ApplicationsDep
 ) -> ApplicationDetail:
-    """Un changement de statut ou une note, daté (aujourd'hui par défaut)."""
+    """A status change or a note, dated (today by default)."""
     return await add_event(rt, current.id, application_id, body)

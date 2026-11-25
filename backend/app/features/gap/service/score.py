@@ -11,10 +11,10 @@ from app.db.models.skills import SkillLevel
 REQUIRED_WEIGHT = 2
 PREFERRED_WEIGHT = 1
 LEVEL_VALUE: dict[SkillLevel | None, float] = {
-    "valide": 1.0,
-    "prouve": 1.0,
-    "declare": 0.6,
-    "en_cours": 0.3,
+    "validated": 1.0,
+    "proven": 1.0,
+    "declared": 0.6,
+    "in_progress": 0.3,
     None: 0.0,
 }
 # Les mêmes valeurs en dixièmes : le score se calcule en entiers.

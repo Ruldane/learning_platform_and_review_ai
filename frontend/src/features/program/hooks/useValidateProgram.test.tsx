@@ -58,7 +58,8 @@ describe("useValidateProgram", () => {
     await act(async () => result.current.validate());
     expect(result.current.error).toBeNull();
     expect(result.current.notice).toBe(
-      "Le programme n'attend pas de validation pour l'instant (session : En pause). L'état a été relu.",
+      "The program isn’t waiting for validation right now (session: Paused). " +
+        "The state was reloaded.",
     );
   });
 });
@@ -99,7 +100,7 @@ describe("useReviseProgram", () => {
       await result.current.revise({ sessionId: "s1", interruptId: "i1", note: "x" });
     });
     expect(result.current.notice).toBe(
-      "Cette question a déjà reçu une réponse. L'état a été relu.",
+      "This question has already been answered. The state was reloaded.",
     );
   });
 });

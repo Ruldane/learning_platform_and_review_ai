@@ -35,8 +35,8 @@ class Line(BaseModel):
 
 
 class SourcedLine(Line):
-    """Le titre ou le résumé du profil : un fait à part entière, avec ses sources (un résumé tiré
-    de LinkedIn seul n'est pas « dans le CV »)."""
+    """The profile headline or summary: a fact in its own right, with its sources (a summary
+    drawn only from LinkedIn is not "in the CV")."""
 
     sources: list[FactSource] = _sources()
 

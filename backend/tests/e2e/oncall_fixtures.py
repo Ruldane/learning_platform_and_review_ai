@@ -49,7 +49,7 @@ class _OncallSandbox(FakeSandbox):
                             "latency_ms": 180,
                             "pending": 0,
                             "accepted": size,
-                            "note": "routine fictive disponible",
+                            "note": "fictitious routine available",
                         }
                         for size in (3, 7, 11)
                     ]

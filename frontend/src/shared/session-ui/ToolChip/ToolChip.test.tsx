@@ -17,7 +17,7 @@ describe("ToolChip", () => {
     render(<ToolChip call={done} />);
     const details = screen.getByText("search").closest("details");
     expect(details).not.toHaveAttribute("open");
-    expect(screen.getByText("Terminé")).toBeInTheDocument();
+    expect(screen.getByText("Done")).toBeInTheDocument();
   });
 
   it("is reachable with the keyboard and reveals arguments and summary once opened", async () => {
@@ -35,11 +35,11 @@ describe("ToolChip", () => {
 
   it("flags a failed call with text, not only a colour", () => {
     render(<ToolChip call={{ callId: "c2", tool: "fetch", args: {}, ok: false }} />);
-    expect(screen.getByText("Échec")).toBeInTheDocument();
+    expect(screen.getByText("Failed")).toBeInTheDocument();
   });
 
   it("shows a running call as in progress", () => {
     render(<ToolChip call={{ callId: "c3", tool: "fetch", args: {} }} />);
-    expect(screen.getByText("En cours")).toBeInTheDocument();
+    expect(screen.getByText("Running")).toBeInTheDocument();
   });
 });

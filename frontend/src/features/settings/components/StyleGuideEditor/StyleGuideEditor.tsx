@@ -35,7 +35,7 @@ export function StyleGuideEditor({ value, refused = false, onChange }: StyleGuid
         </span>
         <span>
           {t(count === 1 ? "settings.style.countOne" : "settings.style.count", {
-            count: count.toLocaleString("fr-FR"),
+            count: count.toLocaleString("en-GB"),
           })}
         </span>
       </p>

@@ -50,7 +50,7 @@ describe("InterruptCard", () => {
     const user = userEvent.setup();
     const onAnswer = vi.fn();
     render(<InterruptCard interrupt={freeText} answered={false} onAnswer={onAnswer} />);
-    const field = screen.getByRole("textbox", { name: "Ta réponse" });
+    const field = screen.getByRole("textbox", { name: "Your answer" });
     expect(field).toHaveFocus();
     await user.type(field, "Pense aux débutants{Enter}");
     expect(onAnswer).toHaveBeenCalledWith("Pense aux débutants");
@@ -62,13 +62,13 @@ describe("InterruptCard", () => {
     render(<InterruptCard interrupt={freeText} answered={false} onAnswer={onAnswer} />);
     await user.type(screen.getByRole("textbox"), "  {Enter}");
     expect(onAnswer).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: "Répondre" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Answer" })).toBeDisabled();
   });
 
   it("folds into the question and a receipt once answered", () => {
     render(<InterruptCard interrupt={withOptions} answered onAnswer={vi.fn()} />);
     expect(screen.getByText("Quelle suite donner ?")).toBeInTheDocument();
-    expect(screen.getByText("Réponse envoyée")).toBeInTheDocument();
+    expect(screen.getByText("Answer sent")).toBeInTheDocument();
     expect(screen.queryByRole("button")).toBeNull();
   });
 
@@ -76,7 +76,7 @@ describe("InterruptCard", () => {
     render(<InterruptCard interrupt={freeText} answered onAnswer={vi.fn()} />);
     expect(screen.queryByRole("textbox")).toBeNull();
     expect(screen.queryByRole("button")).toBeNull();
-    expect(screen.getByText("Réponse envoyée")).toBeInTheDocument();
+    expect(screen.getByText("Answer sent")).toBeInTheDocument();
   });
 
   it("disables the options while an answer is being sent", () => {
@@ -92,7 +92,7 @@ describe("InterruptCard", () => {
       screen.getByRole("textbox", { name: "Quel type d'entreprise vises-tu ?" }),
       "Startup",
     );
-    await user.click(screen.getByRole("button", { name: "Répondre" }));
+    await user.click(screen.getByRole("button", { name: "Answer" }));
     expect(onAnswer).toHaveBeenCalledWith({ answers: { q1: "Startup" } });
   });
 
@@ -102,7 +102,7 @@ describe("InterruptCard", () => {
     render(<InterruptCard interrupt={framing} answered={false} onAnswer={onAnswer} />);
     await user.type(screen.getByLabelText("Quel type d'entreprise vises-tu ?"), "   ");
     await user.type(screen.getByLabelText("Quand veux-tu changer de poste ?"), " Dans 6 mois ");
-    await user.click(screen.getByRole("button", { name: "Répondre" }));
+    await user.click(screen.getByRole("button", { name: "Answer" }));
     expect(onAnswer).toHaveBeenCalledWith({ answers: { q2: "Dans 6 mois" } });
   });
 
@@ -110,7 +110,7 @@ describe("InterruptCard", () => {
     const user = userEvent.setup();
     const onAnswer = vi.fn();
     render(<InterruptCard interrupt={framing} answered={false} onAnswer={onAnswer} />);
-    expect(screen.getByRole("button", { name: "Répondre" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Answer" })).toBeDisabled();
     await user.click(screen.getByRole("button", { name: "Lancer la recherche" }));
     expect(onAnswer).toHaveBeenCalledWith("go");
   });
@@ -135,9 +135,9 @@ describe("InterruptCard", () => {
     const field = screen.getByLabelText("Ton objectif ?");
     expect(field).toBeRequired();
     expect(field).toHaveAttribute("maxlength", "100");
-    expect(screen.getByRole("button", { name: "Répondre" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Answer" })).toBeDisabled();
     await user.type(field, "Devenir tech lead");
-    expect(screen.getByRole("button", { name: "Répondre" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Answer" })).toBeEnabled();
   });
 
   it("hides the framing fields once answered", async () => {
@@ -149,7 +149,7 @@ describe("InterruptCard", () => {
     rerender(<InterruptCard interrupt={framing} answered onAnswer={vi.fn()} />);
     expect(screen.queryByRole("textbox")).toBeNull();
     expect(screen.queryByRole("button")).toBeNull();
-    expect(screen.getByText("Réponse envoyée")).toBeInTheDocument();
+    expect(screen.getByText("Answer sent")).toBeInTheDocument();
     // Les réponses saisies dans cet onglet restent lisibles, sans champ ; le champ vide est omis.
     expect(screen.getByText("Quand veux-tu changer de poste ?")).toBeInTheDocument();
     expect(screen.getByText("Dans 6 mois")).toBeInTheDocument();
@@ -159,7 +159,7 @@ describe("InterruptCard", () => {
   it("shows only the question and the receipt when the answer was typed elsewhere", () => {
     render(<InterruptCard interrupt={framing} answered onAnswer={vi.fn()} />);
     expect(screen.getByText("Réponds aux questions de cadrage.")).toBeInTheDocument();
-    expect(screen.getByText("Réponse envoyée")).toBeInTheDocument();
+    expect(screen.getByText("Answer sent")).toBeInTheDocument();
     expect(screen.queryByText("Quel type d'entreprise vises-tu ?")).toBeNull();
   });
 

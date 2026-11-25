@@ -1,1 +1,1 @@
-"""Sources d'ingestion : une source = un module + une ligne dans `registry.INGESTION_SOURCES`."""
+"""Ingestion sources: one source = one module + one line in `registry.INGESTION_SOURCES`."""

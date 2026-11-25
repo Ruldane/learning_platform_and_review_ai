@@ -73,7 +73,7 @@ async def test_radar_never_logs_urls_or_text(
     run = await radar_runner(analyst(batch(5), batch(2)), sources=sources)
     await run.wait_status("completed")
     logged = "\n".join(r.getMessage() for r in caplog.records if r.name.startswith("app"))
-    assert "Lot extrait" in logged and "Lecture" in logged  # les journaux existent
+    assert "Batch extracted" in logged and "Reading" in logged  # les journaux existent
     for secret in (
         "example.org",
         "https://",

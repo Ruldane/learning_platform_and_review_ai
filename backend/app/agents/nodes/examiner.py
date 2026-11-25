@@ -1,18 +1,18 @@
-"""L'Examinateur (SPEC 9.1, F9, D100) écrit le quiz d'un module et note les réponses ouvertes
-d'une tentative.
+"""The Examiner (SPEC 9.1, F9, D100) writes a module's quiz and grades the open answers of an
+attempt.
 
-`write` demande un `QuizDraft` et le fait vérifier par `quiz_problems` : les problèmes repartent
-au modèle, deux fois au plus (`MAX_QUIZ_ASKS` = une demande et deux re-demandes) ; ensuite le
-quiz est déclaré invalide (`failure`) et le parcours le range en échec.
+`write` asks for a `QuizDraft` and has it checked by `quiz_problems`: the problems go back to the
+model, twice at most (`MAX_QUIZ_ASKS` = one request and two re-requests); after that the quiz is
+declared invalid (`failure`) and the flow files it as failed.
 
-`grade_open` fait une seule demande pour toutes les réponses ouvertes (aucune : pas d'appel).
-Chaque réponse est encadrée comme non fiable (`untrusted`, SPEC 17.4), la leçon aussi ; les QCM,
-notés par le code, ne sont jamais envoyés au modèle. Une référence inconnue est ignorée ; si des
-questions restent sans note (oubliées ou renumérotées), une seule nouvelle demande les nomme
-(revue finale de la phase 5, A-I1) ; ensuite, une question sans note vaut 0 avec
-`MISSING_FEEDBACK`. Une note hors de {0 ; 0,5 ; 1} est refusée par le schéma et redemandée.
+`grade_open` makes a single request for all the open answers (none: no call). Each answer is
+wrapped as untrusted (`untrusted`, SPEC 17.4), the lesson too; the multiple-choice questions,
+graded by the code, are never sent to the model. An unknown reference is ignored; if some
+questions remain ungraded (forgotten or renumbered), a single new request names them (final
+review of phase 5, A-I1); after that, an ungraded question is worth 0 with `MISSING_FEEDBACK`.
+A grade outside {0; 0.5; 1} is refused by the schema and requested again.
 
-Aucun de ces nœuds ne touche un port : rejoués, ils redemandent au modèle sans rien écrire."""
+None of these nodes touches a port: replayed, they ask the model again without writing anything."""
 
 import logging
 from typing import Any
@@ -36,42 +36,42 @@ from app.agents.tools.quiz_port import (
     quiz_problems,
 )
 
-MAX_QUIZ_ASKS = 3  # une demande + deux re-demandes avec les problèmes de `quiz_problems`
-MAX_GRADE_ASKS = 2  # une demande + une re-demande si des questions restent sans note
-MISSING_FEEDBACK = "Réponse non évaluée : relis la correction."
-WRITE_REQUEST = "Écris le quiz du module."
-GRADE_REQUEST = "Note les réponses ouvertes."
-LESSON_CHARS = 20_000  # une leçon de 2 500 mots tient en entier
+MAX_QUIZ_ASKS = 3  # one request + two re-requests with the problems from `quiz_problems`
+MAX_GRADE_ASKS = 2  # one request + one re-request if some questions remain ungraded
+MISSING_FEEDBACK = "This answer wasn't graded. Review the explanation."
+WRITE_REQUEST = "Write the module quiz."
+GRADE_REQUEST = "Grade the free-text answers."
+LESSON_CHARS = 20_000  # a 2,500-word lesson fits entirely
 MAX_REASON_CHARS = 300  # `quizzes.failure_reason`
-WRITE_TIMEOUT_S = 600  # trois demandes d'un quiz complet, avec leurs nouveaux essais
+WRITE_TIMEOUT_S = 600  # three requests of a full quiz, with their retries
 GRADE_TIMEOUT_S = 300
 
 logger = logging.getLogger(__name__)
 
 
 def _module_prompt(material: ModuleMaterial) -> str:
-    """Titre et compétences viennent du programme (sortie d'agent) : donnée encadrée."""
+    """Title and skills come from the program (agent output): wrapped data."""
     lines = [
-        f"Titre : {material.module_title}",
-        f"Compétences : {', '.join(material.skills) or 'aucune précisée'}",
+        f"Title: {material.module_title}",
+        f"Skills: {', '.join(material.skills) or 'none specified'}",
     ]
     return untrusted("\n".join(lines), "module")
 
 
 def _lesson(markdown: str) -> str:
-    return untrusted(markdown[:LESSON_CHARS], "leçon")
+    return untrusted(markdown[:LESSON_CHARS], "lesson")
 
 
 def _problems_text(problems: list[str]) -> str:
     return (
-        "Ton quiz ne respecte pas les règles :\n"
+        "Your quiz does not follow the rules:\n"
         + "\n".join(f"- {problem}" for problem in problems)
-        + "\nCorrige-le et rends de nouveau le quiz complet."
+        + "\nFix it and return the complete quiz again."
     )
 
 
 async def _ask_quiz(deps: GraphDeps, prompt: str) -> tuple[QuizDraft, list[str]]:
-    """Une demande, puis deux re-demandes au plus ; rend le dernier brouillon et ses problèmes."""
+    """One request, then two re-requests at most; returns the last draft and its problems."""
     model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
     messages: list[BaseMessage] = [SystemMessage(prompt), HumanMessage(WRITE_REQUEST)]
     found: QuizDraft | None = None
@@ -85,7 +85,7 @@ async def _ask_quiz(deps: GraphDeps, prompt: str) -> tuple[QuizDraft, list[str]]
             messages,
             agent=AGENT,
             step=f"quiz-{ask}",
-            intent="j'écris le quiz du module" if ask == 1 else "je corrige le quiz",
+            intent="writing the module quiz" if ask == 1 else "revising the quiz",
         )
         problems = quiz_problems(found)
         if not problems:
@@ -113,13 +113,13 @@ def make_write(deps: GraphDeps) -> Node:
         if not problems:
             return {"draft": draft.model_dump(mode="json")}
         logger.info(
-            "Quiz invalide : session %s, quiz %s, %d problème(s) après %d essais",
+            "Invalid quiz: session %s, quiz %s, %d problem(s) after %d attempts",
             deps.session_id,
             material.quiz_id,
             len(problems),
             MAX_QUIZ_ASKS,
         )
-        reason = f"Quiz invalide après {MAX_QUIZ_ASKS} essais : " + " ; ".join(problems)
+        reason = f"Quiz still invalid after {MAX_QUIZ_ASKS} attempts. " + ". ".join(problems)
         return {"draft": None, "failure": reason[:MAX_REASON_CHARS]}
 
     return write
@@ -130,26 +130,26 @@ def route_write(state: QuizState) -> str:
 
 
 def _item_prompt(item: GradingItem) -> str:
-    """Une question (donnée écrite par l'Examinateur à partir d'une leçon non fiable) et la
-    réponse de January, chacune dans son encadré."""
-    lines = [f"Énoncé : {item.prompt}"]
+    """One question (data written by the Examiner from an untrusted lesson) and January's
+    answer, each in its own wrapper."""
+    lines = [f"Prompt: {item.prompt}"]
     if item.code:
         lines.append(f"Code :\n{item.code}")
-    lines.append(f"Réponse attendue : {item.expected}")
-    lines.append("Grille :\n" + "\n".join(f"- {criterion}" for criterion in item.rubric))
+    lines.append(f"Expected answer: {item.expected}")
+    lines.append("Rubric:\n" + "\n".join(f"- {criterion}" for criterion in item.rubric))
     return (
         f"### {item.ref} ({item.type})\n"
         + untrusted("\n".join(lines), f"question {item.ref}")
-        + f"\nRéponse de January à {item.ref} :\n"
-        + untrusted(item.answer, "réponse de January")
+        + f"\nJanuary's answer to {item.ref}:\n"
+        + untrusted(item.answer, "January's answer")
     )
 
 
 def _grades_by_ref(
     found: list[GradeDraft], items: list[GradingItem]
 ) -> tuple[dict[str, list[Any]], list[str]]:
-    """Note de chaque question ouverte (la première donnée pour une référence) ; sans note : 0 et
-    `MISSING_FEEDBACK`. Rend aussi les références restées sans note, dans l'ordre du quiz."""
+    """Grade of each open question (the first one given for a reference); ungraded: 0 and
+    `MISSING_FEEDBACK`. Also returns the references left ungraded, in quiz order."""
     refs = {item.ref for item in items}
     given: dict[str, GradeDraft] = {}
     for draft in found:
@@ -164,18 +164,19 @@ def _grades_by_ref(
 
 def _missing_text(missing: list[str]) -> str:
     return (
-        "Ta notation oublie ces questions : "
+        "Your grading forgets these questions: "
         + ", ".join(missing)
-        + ". Reprends exactement la référence de chaque question (celle de son titre « ### qN ») "
-        "et rends la notation complète de toutes les questions."
+        + ". Reuse exactly the reference of each question (the one in its heading "
+        '"### qN") and return the complete grading of all the questions.'
     )
 
 
 async def _ask_grades(
     deps: GraphDeps, prompt: str, items: list[GradingItem]
 ) -> tuple[list[GradeDraft], list[str]]:
-    """Une demande ; si des questions restent sans note, une seule nouvelle demande qui les nomme.
-    Rend toutes les notes reçues (la première d'une référence gagne) et les références sans note."""
+    """One request; if some questions remain ungraded, a single new request that names them.
+    Returns all the grades received (the first for a reference wins) and the ungraded
+    references."""
     model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
     messages: list[BaseMessage] = [SystemMessage(prompt), HumanMessage(GRADE_REQUEST)]
     received: list[GradeDraft] = []
@@ -187,7 +188,7 @@ async def _ask_grades(
             messages,
             agent=AGENT,
             step=f"notation-{ask}",
-            intent="je note tes réponses ouvertes" if ask == 1 else "je complète la notation",
+            intent="grading your free-text answers" if ask == 1 else "completing the grading",
         )
         received += found.items
         missing = _grades_by_ref(received, items)[1]
@@ -202,14 +203,14 @@ def make_grade_open(deps: GraphDeps) -> Node:
     async def grade_open(state: QuizState) -> QuizState:
         attempt = attempt_of(state)
         grades: dict[str, list[Any]] = {ref: [p, ""] for ref, p in attempt.qcm_points.items()}
-        # Défensif : un QCM n'est jamais montré au modèle, même si le port en glissait un.
-        items = [item for item in attempt.open_items if item.type != "qcm"]
+        # Multiple-choice questions are scored locally even if the port passes one here.
+        items = [item for item in attempt.open_items if item.type != "mcq"]
         if not items:
             return {"grades": grades}
         prompt = render_prompt(
             AGENT,
             mode="grade",
-            module=untrusted(f"Titre : {attempt.module_title}", "module"),
+            module=untrusted(f"Title: {attempt.module_title}", "module"),
             lesson=_lesson(attempt.lesson_markdown),
             items="\n\n".join(_item_prompt(item) for item in items),
         )
@@ -217,8 +218,7 @@ def make_grade_open(deps: GraphDeps) -> Node:
         open_grades, _ = _grades_by_ref(received, items)
         unknown = sum(1 for grade in received if grade.ref not in open_grades)
         logger.info(
-            "Réponses notées : session %s, tentative %s, %d ouverte(s), %d sans note, "
-            "%d référence(s) inconnue(s)",
+            "Answers graded: session %s, attempt %s, %d open, %d ungraded, %d unknown reference(s)",
             deps.session_id,
             attempt.attempt_id,
             len(items),

@@ -29,7 +29,7 @@ def make_item(db: AsyncSession) -> MakeItem:
     async def make(user_id: str = "u1", **fields: Any) -> MemoryItem:
         title = str(fields.pop("title", "Titre"))
         values: dict[str, Any] = {
-            "kind": "lecon",
+            "kind": "lesson",
             "title": title,
             "text": f"texte de {title}",
             "created_by": "user",

@@ -14,15 +14,15 @@ import { VersionsPage } from "./pages/VersionsPage";
 export const cvManifest: FeatureManifest = {
   id: "cv",
   routes: [
-    { path: "carriere/profil", Component: ProfilePage },
-    { path: "carriere/cv", Component: TemplatesPage },
-    { path: "carriere/cv/modeles/:templateId", Component: TemplatePage },
-    { path: "carriere/cv/revue/nouvelle/:postingId", Component: NewReviewPage },
-    { path: "carriere/cv/revues/:reviewId", Component: ReviewPage },
-    { path: "carriere/cv/versions", Component: VersionsPage },
+    { path: "career/profile", Component: ProfilePage },
+    { path: "career/cv", Component: TemplatesPage },
+    { path: "career/cv/templates/:templateId", Component: TemplatePage },
+    { path: "career/cv/reviews/new/:postingId", Component: NewReviewPage },
+    { path: "career/cv/reviews/:reviewId", Component: ReviewPage },
+    { path: "career/cv/versions", Component: VersionsPage },
   ],
   nav: [
-    { section: "career", labelKey: "cv.nav.profile", path: "/carriere/profil", order: 1 },
-    { section: "career", labelKey: "cv.nav.cv", path: "/carriere/cv", order: 2 },
+    { section: "career", labelKey: "cv.nav.profile", path: "/career/profile", order: 1 },
+    { section: "career", labelKey: "cv.nav.cv", path: "/career/cv", order: 2 },
   ],
 };

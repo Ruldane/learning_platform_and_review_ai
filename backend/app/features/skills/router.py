@@ -1,7 +1,7 @@
-"""API de la carte de compétences (SPEC F15, 14.2 ; D107). Les routes fixes (`graph`, `compare`,
-`history`) sont déclarées avant `/skills/{skill_id}`. Tout est filtré par utilisateur : la
-compétence ou l'objectif d'un autre donne 404. Lectures sans cache (`Cache-Control: no-store`) :
-un changement de niveau se voit à la relecture suivante du front (toutes les 30 s)."""
+"""Skills map API (SPEC F15, 14.2; D107). The fixed routes (`graph`, `compare`, `history`) are
+declared before `/skills/{skill_id}`. Everything is filtered by user: another user's skill or goal
+gives 404. Reads without cache (`Cache-Control: no-store`): a level change shows on the front
+end's next re-read (every 30 s)."""
 
 from datetime import UTC, datetime
 from typing import Annotated
@@ -27,7 +27,7 @@ router = APIRouter(prefix="/skills", tags=["skills"])
 
 
 def clock() -> datetime:
-    """Maintenant (UTC) ; remplacé par les tests (`app.dependency_overrides`)."""
+    """Now (UTC); replaced by the tests (`app.dependency_overrides`)."""
     return datetime.now(UTC)
 
 
@@ -40,7 +40,7 @@ def _no_store(response: Response) -> None:
 
 @router.post("", response_model=SkillCreated, status_code=201)
 async def create_skill(body: SkillCreate, current: CurrentUserDep, db: Db) -> SkillCreated:
-    """Ajoute une compétence au référentiel. Son niveau sera établi par ses preuves."""
+    """Adds a skill to the reference list. Its level will be established by its evidence."""
     skill_id = await SkillsService(db, current.id).create(body)
     await db.commit()
     return SkillCreated(id=skill_id)
@@ -48,8 +48,8 @@ async def create_skill(body: SkillCreate, current: CurrentUserDep, db: Db) -> Sk
 
 @router.get("/graph", response_model=SkillGraphOut)
 async def get_graph(current: CurrentUserDep, db: Db, response: Response) -> SkillGraphOut:
-    """Compétences (nœuds), prérequis (liens) et radar par domaine. `demand` vaut `null`
-    jusqu'au Radar du marché (phase 8)."""
+    """Skills (nodes), prerequisites (links) and radar per domain. `demand` is `null` until
+    the market Radar (phase 8)."""
     _no_store(response)
     return await skill_graph(db, current.id)
 
@@ -63,10 +63,10 @@ async def get_compare(
     goal_id: Annotated[str | None, Query(max_length=64)] = None,
     posting_id: Annotated[str | None, Query(max_length=64)] = None,
 ) -> CompareOut:
-    """Moi face au poste cible (`goal` : les compétences du programme de l'objectif `goal_id`,
-    sinon du plus récent qui a un programme) ou face à une offre (`posting` : ses compétences
-    apprenables, `posting_id` obligatoire, 422 `posting_id_required` sinon), attendues
-    `valide`. 404 `goal_not_found`, `posting_not_found` ou `no_compare_target`."""
+    """Me against the target job (`goal`: the skills of the program of goal `goal_id`, otherwise
+    of the most recent one that has a program) or against a posting (`posting`: its learnable
+    skills, `posting_id` required, otherwise 422 `posting_id_required`), expected at
+    `validated`. 404 `goal_not_found`, `posting_not_found` or `no_compare_target`."""
     _no_store(response)
     return await compare_with(db, current.id, target, goal_id=goal_id, posting_id=posting_id)
 
@@ -79,7 +79,7 @@ async def get_history(
     now: NowDep,
     weeks: Annotated[int, Query(ge=1, le=MAX_WEEKS)] = DEFAULT_WEEKS,
 ) -> HistoryOut:
-    """Relevés hebdomadaires des `weeks` dernières semaines, plus la semaine en cours en direct."""
+    """Weekly snapshots of the last `weeks` weeks, plus the current week live."""
     _no_store(response)
     return await skill_history(db, current.id, weeks, now)
 
@@ -88,7 +88,7 @@ async def get_history(
 async def get_skill(
     skill_id: str, current: CurrentUserDep, db: Db, response: Response, now: NowDep
 ) -> SkillDetailOut:
-    """Détail d'une compétence : preuves, offres prêtes qui la citent (10 au plus), prochaine
-    action. 404 `skill_not_found`."""
+    """Detail of a skill: evidence, ready postings that cite it (10 at most), next action.
+    404 `skill_not_found`."""
     _no_store(response)
     return await skill_detail(db, current.id, skill_id, now)

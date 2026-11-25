@@ -7,7 +7,7 @@ describe("WeekHeader", () => {
   it("shows the theme, objective and deliverable", () => {
     render(<WeekHeader week={makeWeek()} />);
     expect(
-      screen.getByRole("heading", { name: "Semaine 1 : Premiers pas en Python" }),
+      screen.getByRole("heading", { name: "Week 1: Premiers pas en Python" }),
     ).toBeInTheDocument();
     expect(screen.getByText("Écrire un script de 50 lignes sans aide.")).toBeInTheDocument();
     expect(screen.getByText("Un script qui trie un fichier CSV.")).toBeInTheDocument();
@@ -17,21 +17,21 @@ describe("WeekHeader", () => {
     render(
       <WeekHeader
         week={makeWeek({
-          stage: "pratique",
+          stage: "practice",
           rationale: "Les outils viennent après les messages.",
         })}
       />,
     );
-    expect(screen.getByText("Étape")).toBeInTheDocument();
-    expect(screen.getByText("Pratique courante")).toBeInTheDocument();
+    expect(screen.getByText("Stage")).toBeInTheDocument();
+    expect(screen.getByText("Everyday practice")).toBeInTheDocument();
     expect(
-      screen.getByText("Pourquoi maintenant : Les outils viennent après les messages."),
+      screen.getByText("Why now: Les outils viennent après les messages."),
     ).toBeInTheDocument();
   });
 
   it.each([
-    ["fondations", "Fondations"],
-    ["avance", "Avancé"],
+    ["foundations", "Foundations"],
+    ["advanced", "Advanced"],
   ] as const)("names the %s stage", (stage, label) => {
     render(<WeekHeader week={makeWeek({ stage })} />);
     expect(screen.getByText(label)).toBeInTheDocument();
@@ -39,19 +39,19 @@ describe("WeekHeader", () => {
 
   it("shows neither stage nor reason when the program has none", () => {
     render(<WeekHeader week={makeWeek()} />);
-    expect(screen.queryByText("Étape")).not.toBeInTheDocument();
-    expect(screen.queryByText(/Pourquoi maintenant/)).not.toBeInTheDocument();
+    expect(screen.queryByText("Stage")).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Why now:/)).not.toBeInTheDocument();
   });
 
-  it("shows the load against 85 %", () => {
+  it("shows the load against 85%", () => {
     render(<WeekHeader week={makeWeek()} />);
     expect(screen.getByText(/11 h 54/)).toBeInTheDocument();
-    expect(screen.getByText("11 h 30 / 11 h 54 (85 %)")).toBeInTheDocument();
-    expect(screen.getByText("Dans le plafond de la semaine.")).toBeInTheDocument();
+    expect(screen.getByText("11 h 30 / 11 h 54 (85%)")).toBeInTheDocument();
+    expect(screen.getByText("Within the week’s cap.")).toBeInTheDocument();
   });
 
   it("says in text when the load passes the cap", () => {
     render(<WeekHeader week={makeWeek({ loadMinutes: 800 })} />);
-    expect(screen.getByText("Au-delà du plafond de la semaine.")).toBeInTheDocument();
+    expect(screen.getByText("Over the week’s cap.")).toBeInTheDocument();
   });
 });

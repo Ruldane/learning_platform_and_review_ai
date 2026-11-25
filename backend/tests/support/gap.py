@@ -59,12 +59,12 @@ MATCHES: dict[str, str | None] = {
 # Le référentiel de January et ses niveaux : 5 obligatoires acquises, Docker déclaré, 4 absentes
 # (2 obligatoires) → 100 × (5 × 2 × 1 + 0,6) / 17 = 62,35 → 62.
 LEVELS: dict[str, SkillLevel | None] = {
-    "Python": "valide",
-    "Génération augmentée par recherche": "valide",
-    "Recherche vectorielle": "prouve",
-    "Agents LLM": "valide",
-    "Développement logiciel": "valide",
-    "Docker": "declare",
+    "Python": "validated",
+    "Génération augmentée par recherche": "validated",
+    "Recherche vectorielle": "proven",
+    "Agents LLM": "validated",
+    "Développement logiciel": "validated",
+    "Docker": "declared",
     "Kubernetes": None,
 }
 
@@ -78,7 +78,7 @@ def analysis_data(**over: Any) -> dict[str, Any]:
         "is_job_posting": True,
         "title": "AI Product Engineer",
         "company": "Société Fictive",
-        "level": "confirme",
+        "level": "mid_level",
         "location": "Lyon",
         "remote": "partiel",
         "language": "fr",
@@ -118,7 +118,7 @@ def not_a_posting_reply() -> str:
         is_job_posting=False,
         title="Sans titre",
         company=None,
-        level="inconnu",
+        level="unknown",
         requirements=[],
         keywords=[],
         eliminatory=[],

@@ -116,4 +116,4 @@ async def test_too_many_blocks_is_unreadable(extractor: PdfLayoutExtractor) -> N
     )
     with pytest.raises(PdfUnreadable) as caught:
         await extractor.extract_layout(_pdf(letters))
-    assert caught.value.message == "PDF illisible (protégé par mot de passe ou endommagé)."
+    assert caught.value.message == "The PDF is unreadable (password-protected or damaged)."

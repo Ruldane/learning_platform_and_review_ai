@@ -3,7 +3,7 @@ import { cn } from "@/shared/lib/utils";
 import { ProposalActions, type ProposalActionsProps } from "./ProposalActions";
 import { ProposalSection } from "./ProposalSection";
 
-const HOURS = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 });
+const HOURS = new Intl.NumberFormat("en-GB", { maximumFractionDigits: 1 });
 
 /**
  * Une proposition de parcours. Ses six rubriques (en-tête, durée et charge, compétences, projet

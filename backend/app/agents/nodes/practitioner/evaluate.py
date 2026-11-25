@@ -1,17 +1,17 @@
-"""Le Praticien évalue le rendu d'un mini projet (P2, P3, D165) : `load`, `read_repo`, puis `skip`
-(rien à lire) ou `evaluate`.
+"""The Practitioner evaluates the submission of a mini project (P2, P3, D165): `load`, `read_repo`,
+then `skip` (nothing to read) or `evaluate`.
 
-- `read_repo` : un lien de dépôt → `repo_text` (une page), coupé à 8 000 caractères ; une page
-  qui ne se lit pas, une panne ou un texte vide : `unreadable` (la classe de l'exception seule est
-  journalisée). Sans lien : `none`.
-- Sans description **ni** dépôt lisible, rien n'est évalué : `skip` range « à reprendre » sans appel
-  au modèle (jamais « validé » sur rien).
-- `evaluate` : un appel standard ; l'énoncé et les critères numérotés sont du code de Tremplin, la
-  description de January et le README sont encadrés par `untrusted` (17.4) ; les captures ne sont
-  pas envoyées (P2) et le prompt le dit. **Le verdict est calculé par le code** (`verdict`), jamais
-  par le modèle.
+- `read_repo`: a repository link -> `repo_text` (one page), cut at 8,000 characters; a page that
+  cannot be read, a failure or an empty text: `unreadable` (only the exception's class is
+  logged). Without a link: `none`.
+- Without a description **or** a readable repository, nothing is evaluated: `skip` stores "to
+  redo" without calling the model (never "validated" on nothing).
+- `evaluate`: a standard call; the statement and the numbered criteria are Tremplin code,
+  January's description and the README are wrapped by `untrusted` (17.4); the screenshots are
+  not sent (P2) and the prompt says so. **The verdict is computed by the code** (`verdict`),
+  never by the model.
 
-Journaux : identifiants, nombres et codes, jamais un texte du projet (17.2)."""
+Logs: identifiers, numbers and codes, never a project text (17.2)."""
 
 import logging
 from typing import Any, Literal
@@ -46,15 +46,15 @@ __all__ = [
 ]
 
 AGENT = "practitioner"
-ASK = "Évalue le rendu du projet."
+ASK = "Evaluate the project submission."
 README_MAX = 8_000
-NO_REPO_FEEDBACK = "Je n'ai pas pu lire ton dépôt : ajoute une description de ce que tu as fait."
-NONE = "(aucun)"
-LANGUAGES = {"fr": "français", "en": "anglais"}
+NO_REPO_FEEDBACK = "I couldn't read the repository. Add a description of your work."
+NONE = "(none)"
+LANGUAGES = {"fr": "French", "en": "English"}
 REPO_NOTES = {
-    "read": "Le README du dépôt de January a été lu : il figure ci-dessus.",
-    "unreadable": "Le dépôt de January n'a pas pu être lu : n'évalue que sur sa description.",
-    "none": "January n'a donné aucun dépôt : n'évalue que sur sa description.",
+    "read": "The repository README is included above.",
+    "unreadable": "The repository could not be read. Assess the work from the description.",
+    "none": "January supplied no repository. Assess the work from the description.",
 }
 
 logger = logging.getLogger(__name__)
@@ -67,20 +67,19 @@ def _lines(items: list[str], *, numbered: bool = False) -> str:
 
 
 def statement_text(brief: ProjectBrief) -> str:
-    """L'énoncé (écrit par un modèle d'après une leçon) encadré comme contenu non fiable ; les
-    critères restent numérotés, un par ligne."""
+    """Wrap the project brief as untrusted data and number its criteria."""
     text = "\n".join(
         [
-            f"Énoncé : {brief.title}",
-            f"Contexte : {brief.context}",
-            f"Objectif : {brief.objective}",
-            "Contraintes :",
+            f"Brief: {brief.title}",
+            f"Context: {brief.context}",
+            f"Objective: {brief.objective}",
+            "Constraints:",
             _lines(brief.constraints),
-            "Critères :",
+            "Criteria:",
             _lines(brief.criteria, numbered=True),
         ]
     )
-    return untrusted(text, "énoncé du projet")
+    return untrusted(text, "project brief")
 
 
 def prompt_of(
@@ -90,16 +89,16 @@ def prompt_of(
     notes = [REPO_NOTES[repo_status]]
     if inputs.screenshots:
         notes.append(
-            f"January a joint {inputs.screenshots} capture(s) d'écran : tu ne les vois pas, ne les "
-            "compte ni pour ni contre."
+            f"January attached screenshots ({inputs.screenshots}) that are unavailable here. "
+            "Evaluate only the evidence you can read."
         )
     return render_prompt(
         AGENT,
         mode="project_review",
         statement=statement_text(brief),
         count=len(brief.criteria),
-        description=untrusted(inputs.description or NONE, "description de January"),
-        readme=untrusted(repo_text, "README du dépôt") if repo_text else "README : non lu.",
+        description=untrusted(inputs.description or NONE, "January's description"),
+        readme=untrusted(repo_text, "repository README") if repo_text else "README unavailable.",
         notes="\n".join(notes),
         language=LANGUAGES[inputs.language],
     )
@@ -110,7 +109,7 @@ def make_load(deps: GraphDeps) -> Node:
     async def load(state: ProjectReviewState) -> ProjectReviewState:
         inputs = await deps.ports.projects.review_inputs(deps.user_id, state["project_id"])
         logger.info(
-            "Rendu lu : session %s, projet %s, %d critère(s), dépôt %s, description %s, "
+            "Submission read: session %s, project %s, %d criteria, repository %s, description %s, "
             "%d capture(s)",
             deps.session_id,
             state["project_id"],
@@ -136,9 +135,9 @@ def make_read_repo(deps: GraphDeps) -> Node:
                 text = await deps.ports.projects.repo_text(
                     deps.user_id, deps.session_id, inputs.repo_url
                 )
-            except Exception as exc:  # un dépôt illisible n'arrête pas l'évaluation
+            except Exception as exc:  # an unreadable repository does not stop the evaluation
                 logger.info(
-                    "Dépôt illisible : session %s, projet %s, cause %s",
+                    "Repository unreadable: session %s, project %s, cause %s",
                     deps.session_id,
                     project_id,
                     type(exc).__name__,
@@ -146,7 +145,7 @@ def make_read_repo(deps: GraphDeps) -> Node:
             text = (text or "").strip()[:README_MAX] or None
             status = "read" if text else "unreadable"
         logger.info(
-            "Dépôt lu : session %s, projet %s, état %s, %d caractère(s)",
+            "Repository read: session %s, project %s, state %s, %d character(s)",
             deps.session_id,
             project_id,
             status,
@@ -186,9 +185,11 @@ def _outcome(
 def make_skip(deps: GraphDeps) -> Node:
     @node_timeout()
     async def skip(state: ProjectReviewState) -> ProjectReviewState:
-        """Ni description ni dépôt lisible : « à reprendre », sans appel au modèle."""
+        """No description and no readable repository: "to redo", without calling the model."""
         inputs = await deps.ports.projects.review_inputs(deps.user_id, state["project_id"])
-        logger.info("Rien à évaluer : session %s, projet %s", deps.session_id, state["project_id"])
+        logger.info(
+            "Nothing to evaluate: session %s, project %s", deps.session_id, state["project_id"]
+        )
         return {"outcome": _outcome(inputs, None, state.get("repo_status", "none"))}
 
     return skip
@@ -209,11 +210,11 @@ def make_evaluate(deps: GraphDeps) -> Node:
             messages,
             agent=AGENT,
             step="evaluation",
-            intent="j'évalue le rendu du projet",
+            intent="evaluating the project submission",
         )
         outcome = _outcome(inputs, evaluation, status)
         logger.info(
-            "Rendu évalué : session %s, projet %s, %d résultat(s) rendu(s), verdict %s",
+            "Submission evaluated: session %s, project %s, %d result(s) returned, verdict %s",
             deps.session_id,
             project_id,
             len(evaluation.results),

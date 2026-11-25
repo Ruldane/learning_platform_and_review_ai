@@ -19,33 +19,33 @@ const capturing = { draft: null, validated: null, session_id: "s1", source_docum
 
 function setup(api: Parameters<typeof renderCv>[3] = {}) {
   return renderCv(
-    "/carriere/profil",
-    "/carriere/profil",
+    "/career/profile",
+    "/career/profile",
     (createSocket) => <ProfilePage pollMs={40} createSocket={createSocket} />,
     api,
   );
 }
 
-const validate = () => screen.findByRole("button", { name: "Valider mon profil" });
+const validate = () => screen.findByRole("button", { name: "Validate my profile" });
 
 describe("ProfilePage", () => {
   beforeEach(() => useSessionStore.getState().reset("s1"));
 
   it("asks for the documents when there is no profile, then follows the reading", async () => {
     const { user, sockets, state } = setup({ profiles: [emptyProfile, capturing] });
-    const cv = await screen.findByLabelText(/Ton CV \(PDF\)/);
+    const cv = await screen.findByLabelText(/Your CV \(PDF\)/);
     await user.upload(cv, new File(["%PDF-1.4"], "cv.pdf", { type: "application/pdf" }));
-    await user.click(screen.getByRole("button", { name: "Créer mon profil maître" }));
+    await user.click(screen.getByRole("button", { name: "Create my master profile" }));
     const stream = await openStream(sockets, "s1");
-    stream.push(councilEvents("s1").message("m1", "Je lis ton CV.", "archivist"));
-    expect(await screen.findByText("Je lis ton CV.")).toBeInTheDocument();
+    stream.push(councilEvents("s1").message("m1", "Reading your CV.", "archivist"));
+    expect(await screen.findByText("Reading your CV.")).toBeInTheDocument();
     expect(state.imports).toHaveLength(1);
     expect(state.imports[0]).toMatch(/^multipart\/form-data; boundary=/);
   });
 
   it("shows the draft, then validates it with the version that was read", async () => {
     const { user, state } = setup({ profiles: [draftState] });
-    expect(await screen.findByRole("heading", { name: "Brouillon à relire" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Draft to review" })).toBeInTheDocument();
     await user.click(await validate());
     await waitFor(() => expect(state.puts).toHaveLength(1));
     const body = state.puts[0] as {
@@ -53,38 +53,38 @@ describe("ProfilePage", () => {
       data: { title: { id: string; sources: string[] }; summary: { sources: string[] } };
     };
     expect(body.base_version).toBe(2);
-    // Le titre et le résumé gardent leurs sources.
+    // Keep the imported profile text and its sources.
     expect(body.data.title).toEqual({ id: "t1", text: "Ingénieure données", sources: ["cv"] });
     expect(body.data.summary.sources).toEqual(["cv", "linkedin"]);
-    expect(await screen.findByText(/Profil validé : version 3/)).toBeInTheDocument();
+    expect(await screen.findByText(/Profile approved: version 3/)).toBeInTheDocument();
   });
 
   it("says the profile changed on a 409 and reloads it on demand", async () => {
     const { user, state } = setup({
       profiles: [draftState],
-      putProfile: () => refusal(409, "profile_conflict", "Conflit."),
+      putProfile: () => refusal(409, "profile_conflict", "Your profile has changed."),
     });
     await user.click(await validate());
     expect(
-      await screen.findByText("Le profil a changé : recharge pour voir sa dernière version."),
+      await screen.findByText("Your profile has changed: reload to see its latest version."),
     ).toBeInTheDocument();
     const reads = state.reads.profile;
-    await user.click(screen.getByRole("button", { name: "Recharger le profil" }));
+    await user.click(screen.getByRole("button", { name: "Reload profile" }));
     await waitFor(() => expect(state.reads.profile).toBeGreaterThan(reads));
-    expect(screen.queryByText(/Le profil a changé/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Your profile has changed/)).not.toBeInTheDocument();
   });
 
   it("points at the fields a 422 names, without any value", async () => {
     const { user } = setup({
       profiles: [draftState],
       putProfile: () =>
-        refusal(422, "validation_error", "Certains champs sont invalides.", {
+        refusal(422, "validation_error", "Invalid request. Check the highlighted fields.", {
           fields: ["identity.name"],
         }),
     });
     await user.click(await validate());
-    expect(await screen.findByText("Certains champs sont à corriger.")).toBeInTheDocument();
-    expect(screen.getAllByText("Ce champ est à corriger.").length).toBeGreaterThan(0);
+    expect(await screen.findByText("Some fields need fixing.")).toBeInTheDocument();
+    expect(screen.getAllByText("This field needs fixing.").length).toBeGreaterThan(0);
   });
 
   it("edits a validated profile and lists its versions", async () => {
@@ -103,9 +103,9 @@ describe("ProfilePage", () => {
       ],
     });
     expect(
-      await screen.findByRole("heading", { name: "Profil validé : version 4" }),
+      await screen.findByRole("heading", { name: "Profile approved: version 4" }),
     ).toBeInTheDocument();
-    const list = await screen.findByRole("list", { name: "Versions du profil maître" });
+    const list = await screen.findByRole("list", { name: "Master profile versions" });
     expect(within(list).getAllByRole("listitem")).toHaveLength(2);
     await user.click(await validate());
     await waitFor(() => expect(state.puts).toHaveLength(1));
@@ -115,18 +115,18 @@ describe("ProfilePage", () => {
   it("offers to start the import again when the reading stops", async () => {
     const { sockets, user, state } = setup({ profiles: [capturing] });
     const stream = await openStream(sockets, "s1");
-    stream.push(councilEvents("s1").failed("Le modèle ne répond pas."));
-    expect(await screen.findByText("Le modèle ne répond pas.")).toBeInTheDocument();
+    stream.push(councilEvents("s1").failed("The model isn't responding."));
+    expect(await screen.findByText("The model isn't responding.")).toBeInTheDocument();
     const reads = state.reads.profile;
-    await user.click(screen.getByRole("button", { name: "Recommencer l'import" }));
+    await user.click(screen.getByRole("button", { name: "Restart import" }));
     await waitFor(() => expect(state.reads.profile).toBeGreaterThan(reads));
   });
 
-  it("shows a loading state, then an error with « Réessayer »", async () => {
+  it("shows a retryable error when the profile can't load", async () => {
     const { user } = setup({ profile: () => HttpResponse.json({}, { status: 500 }) });
     expect(await screen.findByRole("alert")).toBeInTheDocument();
     server.use(http.get(`${API}/profile`, () => HttpResponse.json(draftState)));
-    await user.click(screen.getByRole("button", { name: "Réessayer" }));
-    expect(await screen.findByRole("heading", { name: "Brouillon à relire" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+    expect(await screen.findByRole("heading", { name: "Draft to review" })).toBeInTheDocument();
   });
 });

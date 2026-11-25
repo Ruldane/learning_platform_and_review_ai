@@ -1,4 +1,4 @@
-"""Préparation d’un brouillon ciblé par le Vérificateur."""
+"""The Verifier prepares a targeted draft."""
 
 from typing import Annotated, Protocol
 
@@ -35,12 +35,12 @@ class _Unavailable:
     async def context(
         self, user_id: str, session_id: str, proposal_id: str
     ) -> dict[str, object] | None:
-        raise AppError("lesson_update_unavailable", "La veille de leçons est indisponible.", 503)
+        raise AppError("lesson_update_unavailable", "Lesson watch is unavailable.", 503)
 
     async def prepare(
         self, user_id: str, session_id: str, proposal_id: str, revision: SuggestedRevision
     ) -> None:
-        raise AppError("lesson_update_unavailable", "La veille de leçons est indisponible.", 503)
+        raise AppError("lesson_update_unavailable", "Lesson watch is unavailable.", 503)
 
 
 NO_LESSON_UPDATE: LessonUpdatePort = _Unavailable()

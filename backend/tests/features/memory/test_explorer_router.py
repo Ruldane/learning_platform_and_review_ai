@@ -18,7 +18,7 @@ ITEMS = "/api/v1/memory/items"
 MAP = "/api/v1/memory/map"
 STATS = "/api/v1/memory/stats"
 EXPORT = "/api/v1/memory/export"
-KINDS = {"document", "acquis", "lecon", "source", "offre", "decision"}
+KINDS = {"document", "skill", "lesson", "source", "posting", "decision"}
 
 
 async def _create(client: httpx.AsyncClient, kind: str, title: str, text: str) -> str:
@@ -40,8 +40,8 @@ async def _agent_decision(app: FastAPI) -> None:
 
 async def _three_items(client: httpx.AsyncClient) -> list[str]:
     return [
-        await _create(client, "acquis", "Python", "Je sais écrire des scripts Python."),
-        await _create(client, "offre", "Offre", "Poste de développeur à Lyon."),
+        await _create(client, "skill", "Python", "Je sais écrire des scripts Python."),
+        await _create(client, "posting", "Offre", "Poste de développeur à Lyon."),
         await _create(client, "decision", "Choix", "Apprendre le Rust cette année."),
     ]
 
@@ -57,7 +57,7 @@ async def test_map_returns_one_point_per_active_item(
     assert body["method"] == "pca" and body["truncated"] is False
     points = {p["item_id"]: p for p in body["points"]}
     assert set(points) == set(ids)
-    assert [points[i]["kind"] for i in ids] == ["acquis", "offre", "decision"]
+    assert [points[i]["kind"] for i in ids] == ["skill", "posting", "decision"]
     assert points[ids[0]]["title"] == "Python"
     for p in points.values():
         assert -1.0 <= p["x"] <= 1.0 and -1.0 <= p["y"] <= 1.0
@@ -92,7 +92,7 @@ async def test_stats_counts_and_vectorize_share(
     assert r.status_code == 200, r.text
     s = r.json()
     assert set(s["by_kind"]) == KINDS
-    assert s["by_kind"]["acquis"] == 1 and s["by_kind"]["lecon"] == 0
+    assert s["by_kind"]["skill"] == 1 and s["by_kind"]["lesson"] == 0
     assert s["total_items"] == 3 and s["total_chunks"] == 3 and s["unindexed_items"] == 0
     assert s["dimension"] == 1024 and s["vectorize_limit"] == 5_000_000
     assert s["vectorize_share"] == pytest.approx(s["total_chunks"] * 1024 / 5_000_000)
@@ -112,7 +112,7 @@ async def test_export_contains_items_documents_writes_without_vectors(
     r = await client.get(EXPORT)
     assert r.status_code == 200, r.text
     assert re.fullmatch(
-        r'attachment; filename="tremplin-memoire-\d{4}-\d{2}-\d{2}\.json"',
+        r'attachment; filename="tremplin-memory-\d{4}-\d{2}-\d{2}\.json"',
         r.headers["content-disposition"],
     )
     body: dict[str, Any] = r.json()

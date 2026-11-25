@@ -1,8 +1,8 @@
-"""Lecture du brief du jour (14.2, D162) : le brief rendu par l'API, avec le statut du conseil à
-jour. Un conseil `pending` dont la session n'est plus ouverte (échec, annulation, redémarrage sans
-reprise, session perdue) passe en `failed` à la lecture : le statut suit la session, comme le relevé
-du radar. `failed` et `unavailable` sont définitifs pour la journée (le port ignore toute écriture
-ultérieure) : le front n'a aucun « Réessayer » à offrir. Journaux : identifiants seulement."""
+"""Reading the daily brief (14.2, D162): the brief returned by the API, with an up-to-date advice
+status. A `pending` advice whose session is no longer open (failure, cancellation, restart without
+resume, lost session) becomes `failed` on read: the status follows the session, like the radar
+run. `failed` and `unavailable` are final for the day (the port ignores any later write): the
+front end has no "Retry" to offer. Logs: ids only."""
 
 import logging
 from dataclasses import dataclass
@@ -21,18 +21,18 @@ from app.features.sessions.service import list_open_sessions_by_subject
 
 logger = logging.getLogger(__name__)
 
-# Le temps de lancer la session après la création : sans session au-delà, le lancement a été
-# interrompu (arrêt du processus) et le conseil ne viendra pas.
+# Time allowed to launch the session after creation: with no session beyond it, the launch was
+# interrupted (process stopped) and the advice will not come.
 LAUNCH_GRACE = timedelta(minutes=5)
 
 
 def brief_not_found() -> AppError:
-    return AppError("brief_not_found", "Brief introuvable.", 404)
+    return AppError("brief_not_found", "Brief not found.", 404)
 
 
 def out_of(row: Brief) -> BriefOut:
-    """Le brief rendu : `resource` rangée vide (`{}`) ou absente = `None`, le conseil est la liste
-    de ses deux phrases. Les détails internes des rubriques (`key`, `best_quiz`) sont ignorés."""
+    """The returned brief: `resource` stored empty (`{}`) or absent = `None`, the advice is the list
+    of its two sentences. Internal section details (`key`, `best_quiz`) are ignored."""
     sections: dict[str, Any] = row.sections
     advice = (row.advice or {}).get("sentences")
     return BriefOut.model_validate(
@@ -63,14 +63,14 @@ async def _session_is_dead(rt: BriefRuntime, db: AsyncSession, user_id: str, row
 
 
 async def settle(rt: BriefRuntime, db: AsyncSession, user_id: str, row: Brief) -> None:
-    """Un conseil `pending` sans session ouverte passe en `failed`. La session est lue AVANT
-    l'écriture, qui ne change que ce qui est encore `pending` : un conseil rangé entre-temps reste
+    """A `pending` advice without an open session becomes `failed`. The session is read BEFORE
+    the write, which only changes what is still `pending`: an advice stored in the meantime stays
     `ready`."""
     if row.advice_status != "pending" or not await _session_is_dead(rt, db, user_id, row):
         return
     if await BriefRepository(db, user_id).close_advice(row.id, "failed"):
         await db.commit()
-        logger.info("Brief sans session : utilisateur %s, brief %s", user_id, row.id)
+        logger.info("Brief without a session: user %s, brief %s", user_id, row.id)
 
 
 async def brief_out(rt: BriefRuntime, db: AsyncSession, user_id: str, brief_id: str) -> BriefOut:
@@ -93,6 +93,6 @@ class RecentBrief:
 async def recent_briefs(
     db: AsyncSession, user_id: str, after: datetime | None, before: datetime | None, limit: int
 ) -> list[RecentBrief]:
-    """Les briefs créés dans `[after, before]`, le plus récent d'abord (fil d'activité, 8.7)."""
+    """Briefs created within `[after, before]`, most recent first (activity feed, 8.7)."""
     rows = await BriefRepository(db, user_id).created_between(after, before, limit)
     return [RecentBrief(id=row.id, at=row.created_at) for row in rows]

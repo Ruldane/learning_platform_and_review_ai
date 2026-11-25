@@ -13,7 +13,7 @@ class StudyReturnReminder(BaseModel):
 class StudyReturnSkill(BaseModel):
     id: str
     name: str
-    level: Literal["valide", "prouve"]
+    level: Literal["validated", "proven"]
 
 
 class StudyReturnCard(BaseModel):

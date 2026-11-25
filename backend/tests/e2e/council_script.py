@@ -87,14 +87,14 @@ def _speech(agent: str) -> Reply:
             lines.append("Objection : dix heures par semaine, c'est serré pour tout couvrir.")
         return "\n".join(lines)
 
-    return expect("À toi de parler.", speak)
+    return expect("Your turn to speak.", speak)
 
 
 def _board(title: str, nodes: list[str]) -> Reply:
     lines = ["flowchart TD"]
     lines += [f'    N{i}["{label}"]' for i, label in enumerate(nodes)]
     lines += [f"    N{i} --> N{i + 1}" for i in range(len(nodes) - 1)]
-    return expect("Dessine le tableau.", json.dumps({"title": title, "mermaid": "\n".join(lines)}))
+    return expect("Draw the board.", json.dumps({"title": title, "mermaid": "\n".join(lines)}))
 
 
 def _proposal(name: str, weeks: int, project: str) -> dict[str, Any]:
@@ -114,14 +114,16 @@ def _json(marker: str, value: Any) -> Reply:
 
 
 def _moderator() -> list[Reply]:
-    order = _json("Fixe l'ordre de parole du tour.", {"order": list(DEBATERS), "intent": "Socle."})
+    order = _json(
+        "Set the speaking order for the round.", {"order": list(DEBATERS), "intent": "Socle."}
+    )
     questions = [
         {"question": "Combien d'heures par semaine peux-tu y consacrer ?"},
         {"question": "As-tu déjà écrit du code Python ?"},
     ]
-    review = "Fais le point du tour."
+    review = "Review the round."
     return [
-        _json("Prépare les questions de cadrage.", {"questions": questions}),
+        _json("Prepare the framing questions.", {"questions": questions}),
         order,
         order,
         _json(review, {"stable": False, "summary": "Les positions bougent encore."}),
@@ -133,9 +135,9 @@ def _moderator() -> list[Reply]:
 def _lesson_scout() -> list[Reply]:
     plan = {"queries": [{"text": QUERY, "lang": "fr"}]}
     return [
-        _json("Prépare les requêtes de recherche.", plan),
-        *[expect("Note cette source.", _score) for _ in range(PAGES)],
-        expect("Choisis les ressources.", pick_resources),
+        _json("Prepare the search queries.", plan),
+        *[expect("Score this source.", _score) for _ in range(PAGES)],
+        expect("Choose the resources.", pick_resources),
     ]
 
 
@@ -147,7 +149,7 @@ def _scout() -> list[Reply]:
     research = _lesson_scout()[:-1]  # plan et notes, comme pour une leçon
     return [
         *research,
-        _json("Repère les praticiens.", {"people": people}),
+        _json("Find practitioners.", {"people": people}),
         *[_speech("scout") for _ in range(ROUNDS)],
         *_lesson_scout(),
         *_lesson_scout(),
@@ -159,7 +161,7 @@ def _scribe() -> list[Reply]:
     return [
         _board("Carte du domaine", ["AI product engineer", "API de LLM", "Évaluation"]),
         _board("Prérequis", ["Python", "API de LLM", "Évaluation de LLM"]),
-        expect("Rédige le compte rendu.", minutes),
+        expect("Write the minutes.", minutes),
         _board("Frise du parcours pratique", ["Semaine 1 : API", "Semaine 2 : évaluation"]),
         _board("Frise du parcours socle", ["Bases", "API", "Évaluation", "Projet"]),
         _board("Comparaison des parcours", ["Pratique : 2 semaines", "Socle : 4 semaines"]),
@@ -177,12 +179,12 @@ def council_scripts() -> dict[str, list[Reply]]:
         "scout": _scout(),
         "strategist": [
             *[_speech("strategist") for _ in range(ROUNDS)],
-            _json("Propose les parcours.", {"proposals": proposals}),
+            _json("Propose the paths.", {"proposals": proposals}),
             expect("Écris le programme semaine par semaine.", program_plan()),
         ],
         "practitioner": [_speech("practitioner") for _ in range(ROUNDS)],
         "skeptic": [_speech("skeptic") for _ in range(ROUNDS)],
         "scribe": _scribe(),
-        "writer": [expect("Écris la leçon.", write_lesson) for _ in range(2)],
-        "verifier": [expect("Contrôle les faits de cette leçon.", NO_CLAIM) for _ in range(2)],
+        "writer": [expect("Write the lesson.", write_lesson) for _ in range(2)],
+        "verifier": [expect("Check the facts in this lesson.", NO_CLAIM) for _ in range(2)],
     }

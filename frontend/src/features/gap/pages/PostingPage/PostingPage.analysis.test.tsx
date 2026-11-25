@@ -33,18 +33,18 @@ describe("PostingPage while the posting is analysed", () => {
     const { sockets, state } = setup({
       postings: [analyzing(), analyzing(), postingOut({ duplicates: [duplicate] })],
     });
-    expect(await screen.findByText("Analyse en cours…")).toBeInTheDocument();
+    expect(await screen.findByText("Analyzing…")).toBeInTheDocument();
     const stream = await openAnalysisStream(sockets);
-    stream.push(councilEvents("a1").message("m1", "Je lis l'offre.", "analyst"));
-    expect(await screen.findByText("Je lis l'offre.")).toBeInTheDocument();
+    stream.push(councilEvents("a1").message("m1", "I am reading the posting.", "analyst"));
+    expect(await screen.findByText("I am reading the posting.")).toBeInTheDocument();
     await act(() => vi.advanceTimersByTimeAsync(3100));
-    expect(screen.getByText("Analyse en cours…")).toBeInTheDocument();
+    expect(screen.getByText("Analyzing…")).toBeInTheDocument();
     await act(() => vi.advanceTimersByTimeAsync(3100));
     expect(
       await screen.findByRole("heading", { level: 1, name: "Ingénieure données" }),
     ).toBeInTheDocument();
     expect(
-      await screen.findByText("Cette offre ressemble à une offre déjà ajoutée."),
+      await screen.findByText("This posting looks like one you've already added."),
     ).toBeVisible();
     expect(await screen.findByText("62/100")).toBeInTheDocument();
     const reads = state.reads.posting;
@@ -54,13 +54,15 @@ describe("PostingPage while the posting is analysed", () => {
 
   it("stops after forty rereads, says so, and goes on when asked", async () => {
     const { user, state } = setup({ postings: [analyzing()] });
-    expect(await screen.findByText("Analyse en cours…")).toBeInTheDocument();
+    expect(await screen.findByText("Analyzing…")).toBeInTheDocument();
     for (let poll = 0; poll < 45; poll += 1) {
       await act(() => vi.advanceTimersByTimeAsync(3000));
     }
-    expect(await screen.findByText("L'analyse prend plus de temps que prévu.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("The analysis is taking longer than expected."),
+    ).toBeInTheDocument();
     expect(state.reads.posting).toBe(40);
-    await user.click(screen.getByRole("button", { name: "Continuer à attendre" }));
+    await user.click(screen.getByRole("button", { name: "Keep waiting" }));
     await act(() => vi.advanceTimersByTimeAsync(3100));
     expect(state.reads.posting).toBeGreaterThan(40);
   });
@@ -69,7 +71,7 @@ describe("PostingPage while the posting is analysed", () => {
     setup({
       gaps: [gapOut({ status: "pending", score: null, rows: [], session_id: null }), gapOut()],
     });
-    expect(await screen.findByText("Calcul de l'écart en cours…")).toBeInTheDocument();
+    expect(await screen.findByText("Calculating the gap…")).toBeInTheDocument();
     await act(() => vi.advanceTimersByTimeAsync(3100));
     expect(await screen.findByText("62/100")).toBeInTheDocument();
   });

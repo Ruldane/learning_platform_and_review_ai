@@ -46,7 +46,7 @@ export function ConversationHeader({ id, lessonId, excerpt, onClose }: Conversat
         </blockquote>
       ) : null}
       <Link
-        to={`/etudier/session?lecon=${encodeURIComponent(lessonId)}`}
+        to={`/study/session?lesson=${encodeURIComponent(lessonId)}`}
         className="mx-4 my-2 self-start text-sm underline"
         state={excerpt ? { lessonId, question: excerpt } : undefined}
       >

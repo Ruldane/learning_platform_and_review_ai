@@ -12,7 +12,7 @@ export function FeynmanFileLink({ sessionId, path, save }: Props) {
   const navigate = useNavigate();
   const open = async () => {
     if (await save()) {
-      await navigate(`/code/${encodeURIComponent(sessionId)}/explique-moi`, { state: { path } });
+      await navigate(`/code/${encodeURIComponent(sessionId)}/explain`, { state: { path } });
     }
   };
   return (

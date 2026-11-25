@@ -18,7 +18,7 @@ const proposal = (over: Record<string, unknown> = {}) =>
     ...over,
   });
 
-const card = async () => screen.findByRole("article", { name: "Proposition de Claude" });
+const card = async () => screen.findByRole("article", { name: "Suggestion from Claude" });
 
 describe("IdeSessionPage, proposals", () => {
   it("shows the passage before and after the proposal", async () => {
@@ -35,12 +35,12 @@ describe("IdeSessionPage, proposals", () => {
       acceptedFiles: { "main.py": "print('texte du serveur')\n" },
     });
     const editor = await findEditor();
-    await user.click(within(await card()).getByRole("button", { name: "Accepter" }));
+    await user.click(within(await card()).getByRole("button", { name: "Accept" }));
     await waitFor(() => expect(calls.accepts).toEqual(["p1"]));
     // Le front n'écrit jamais le fichier lui-même : c'est celui que le serveur a rendu.
     await waitFor(() => expect(editor).toHaveValue("print('texte du serveur')\n"));
     await waitFor(() =>
-      expect(screen.getByRole("heading", { level: 2, name: "Professeur" })).toHaveFocus(),
+      expect(screen.getByRole("heading", { level: 2, name: "Professor" })).toHaveFocus(),
     );
     expect(document.body).not.toHaveFocus();
   });
@@ -49,7 +49,7 @@ describe("IdeSessionPage, proposals", () => {
     const { user, calls } = renderSession({ notes: [proposal()] });
     const editor = await findEditor();
     await user.type(editor, "x");
-    await user.click(within(await card()).getByRole("button", { name: "Accepter" }));
+    await user.click(within(await card()).getByRole("button", { name: "Accept" }));
     await waitFor(() => expect(calls.accepts).toEqual(["p1"]));
     expect(calls.puts).toHaveLength(1);
   });
@@ -57,7 +57,7 @@ describe("IdeSessionPage, proposals", () => {
   it("a stale refusal is shown and the file stays as it was", async () => {
     const { user } = renderSession({ notes: [proposal()], accept: "stale" });
     const editor = await findEditor();
-    await user.click(within(await card()).getByRole("button", { name: "Accepter" }));
+    await user.click(within(await card()).getByRole("button", { name: "Accept" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Le code a changé depuis.");
     expect(editor).toHaveValue("print('bonjour')\n");
   });
@@ -66,14 +66,14 @@ describe("IdeSessionPage, proposals", () => {
     renderSession({ notes: [proposal({ status: "stale" })] });
     await findEditor();
     const view = await card();
-    expect(within(view).getByText("Le code a changé depuis")).toBeInTheDocument();
-    expect(within(view).getByRole("button", { name: "Accepter" })).toBeDisabled();
+    expect(within(view).getByText("The code has changed since")).toBeInTheDocument();
+    expect(within(view).getByRole("button", { name: "Accept" })).toBeDisabled();
   });
 
   it("rejecting asks the server and leaves the code alone", async () => {
     const { user, calls } = renderSession({ notes: [proposal()] });
     const editor = await findEditor();
-    await user.click(within(await card()).getByRole("button", { name: "Refuser" }));
+    await user.click(within(await card()).getByRole("button", { name: "Reject" }));
     await waitFor(() => expect(calls.rejects).toEqual(["p1"]));
     expect(calls.accepts).toEqual([]);
     expect(editor).toHaveValue("print('bonjour')\n");

@@ -1,9 +1,4 @@
-"""Contrôles déterministes d'une leçon (SPEC 3.5, D90) : structure en 11 sections, nombres
-d'éléments, schéma Mermaid, longueur, liens et marqueurs `[n]` connus des sources lues, absence
-de recopie. Le Vérificateur y ajoute le contrôle des faits (`verify`).
-
-Les titres de section sont toujours ceux de `SECTIONS`, en français, quelle que soit la langue de
-la leçon : le rendu HTML/PDF (D89) reconnaît ses encadrés sur ces titres."""
+"""Check new lessons against the English section structure and source rules (SPEC 3.5, D90)."""
 
 import re
 from collections.abc import Sequence
@@ -21,28 +16,22 @@ from app.agents.nodes.verifier.overlap import (
     copied_from,
     split_quotes,
 )
-
-SECTIONS = (
-    "Objectifs",
-    "Prérequis",
-    "L'essentiel en 5 lignes",
-    "Explication",
-    "Schémas",
-    "Exemple travaillé",
-    "Erreurs fréquentes",
-    "Exercice",
-    "Corrigé de l'exercice",
-    "Sources",
-    "Auto-évaluation",
+from app.core.lesson_structure import (
+    DIAGRAMS,
+    KEY_POINTS,
+    LEGACY_SECTIONS,
+    OBJECTIVES,
+    SELF_ASSESSMENT,
 )
+from app.core.lesson_structure import SECTIONS as SECTIONS
+
 MIN_WORDS = 1200
 MAX_WORDS = 2500
 MAX_OBJECTIVES = 3
 ESSENTIAL_LINES = 5
 SELF_TEST_QUESTIONS = 5
 
-# Le parseur du rendu (`lessons.service.markdown`, `html: True`) : le Vérificateur voit la leçon
-# comme le PDF la verra, HTML brut compris (D97).
+# Match the rendering parser (D97), including raw HTML, so validation sees what the PDF sees.
 _MD = MarkdownIt("commonmark", {"html": True}).enable("table")
 _RAW_HTML_SHOWN = 40
 _BARE_URL = re.compile(r"https?://[^\s<>\"')\]]+")
@@ -59,20 +48,25 @@ class LessonCheck:
 
 @dataclass
 class _Parsed:
-    """Ce que les contrôles lisent dans le Markdown, en un seul parcours des jetons."""
+    """The Markdown fields collected for validation in a single pass over the tokens."""
 
     h1: list[str]
     h2: list[str]
-    items: dict[str, int]  # éléments de liste de premier niveau, par section (clé repliée)
+    items: dict[str, int]  # Top-level list item counts by normalized section heading.
     mermaid: list[tuple[str, str]]
-    texts: list[str]  # texte courant de chaque bloc (code exclu)
+    texts: list[str]  # Prose from each block, excluding code blocks.
     links: list[str]
-    raw_html: list[str]  # HTML brut hors des blocs de code (`html_block`, `html_inline`)
+    raw_html: list[str]  # Raw HTML outside code, from block and inline tokens.
     code_problems: list[str]
 
 
 def _key(text: str) -> str:
     return " ".join(text.replace("’", "'").split()).rstrip(":").casefold()
+
+
+_LEGACY_HEADINGS = {
+    _key(old): new for old, new in zip(LEGACY_SECTIONS, SECTIONS, strict=True) if old != new
+}
 
 
 def _inline_text(token: Token) -> str:
@@ -92,13 +86,15 @@ def _inline_links(token: Token) -> list[str]:
     return links
 
 
-def _parse(markdown: str, *, show_input: bool = True) -> _Parsed:
+def _parse(markdown: str, *, show_input: bool = True, allow_legacy: bool = False) -> _Parsed:
     parsed = _Parsed([], [], {}, [], [], [], [], [])
     section = ""
     tokens = _MD.parse(markdown)
     for index, token in enumerate(tokens):
         if token.type == "heading_open" and token.level == 0 and token.tag in ("h1", "h2"):
             title = " ".join(_inline_text(tokens[index + 1]).split())
+            if token.tag == "h2" and allow_legacy:
+                title = _LEGACY_HEADINGS.get(_key(title), title)
             (parsed.h1 if token.tag == "h1" else parsed.h2).append(title)
             if token.tag == "h2":
                 section = _key(title)
@@ -125,78 +121,74 @@ def _parse(markdown: str, *, show_input: bool = True) -> _Parsed:
 def _structure(parsed: _Parsed, title: str, *, show_input: bool) -> list[str]:
     problems: list[str] = []
     if not parsed.h1 or _key(parsed.h1[0]) != _key(title):
-        label = f"Titre « # {title} »" if show_input else "Titre principal attendu"
-        problems.append(f"{label} absent : la leçon commence par ce titre exact.")
+        label = f'"# {title}"' if show_input else "the expected main heading"
+        problems.append(f"Start the lesson with {label}.")
     expected = [_key(s) for s in SECTIONS]
     found = [_key(h) for h in parsed.h2]
     for name, key in zip(SECTIONS, expected, strict=True):
         if key not in found:
-            problems.append(f"Section manquante : « ## {name} ».")
+            problems.append(f'Missing section "## {name}".')
     extra = [h for h, key in zip(parsed.h2, found, strict=True) if key not in expected]
     if show_input:
-        problems += [f"Section en trop : « ## {h} » (la structure est fixe)." for h in extra]
+        problems += [f'Unexpected section "## {h}". Use the prescribed headings.' for h in extra]
     elif extra:
-        problems.append(f"{len(extra)} section(s) en trop : la structure est fixe.")
+        problems.append(f"Unexpected sections: {len(extra)}. Use the prescribed headings.")
     present = [key for key in found if key in expected]
     if present != [key for key in expected if key in present]:
-        problems.append("Sections dans le désordre : respecte l'ordre de la structure fixe.")
+        problems.append("The sections are out of order. Follow the prescribed order.")
     return problems
 
 
 def _counts(parsed: _Parsed) -> list[str]:
     problems: list[str] = []
-    objectives = parsed.items.get(_key("Objectifs"), 0)
+    objectives = parsed.items.get(_key(OBJECTIVES), 0)
     if objectives > MAX_OBJECTIVES:
-        problems.append(f"{objectives} objectifs : {MAX_OBJECTIVES} objectifs au plus.")
-    essential = parsed.items.get(_key("L'essentiel en 5 lignes"), 0)
+        problems.append(f"The lesson has {objectives} objectives. Use at most {MAX_OBJECTIVES}.")
+    essential = parsed.items.get(_key(KEY_POINTS), 0)
     if essential != ESSENTIAL_LINES:
-        problems.append(
-            f"« L'essentiel en 5 lignes » compte {essential} puce(s) : il en faut exactement "
-            f"{ESSENTIAL_LINES}."
-        )
-    questions = parsed.items.get(_key("Auto-évaluation"), 0)
+        problems.append(f'"{KEY_POINTS}" has {essential} bullets. Use exactly {ESSENTIAL_LINES}.')
+    questions = parsed.items.get(_key(SELF_ASSESSMENT), 0)
     if questions != SELF_TEST_QUESTIONS:
         problems.append(
-            f"L'auto-évaluation compte {questions} question(s) : il en faut exactement "
-            f"{SELF_TEST_QUESTIONS}."
+            f"Self-assessment has {questions} questions. Use exactly {SELF_TEST_QUESTIONS}."
         )
     return problems
 
 
 def _diagrams(parsed: _Parsed, *, show_input: bool) -> list[str]:
-    if not any(section == _key("Schémas") for section, _ in parsed.mermaid):
-        return ["Aucun schéma : au moins un bloc ```mermaid (flowchart) dans « Schémas »."]
+    if not any(section == _key(DIAGRAMS) for section, _ in parsed.mermaid):
+        return [f'Add at least one Mermaid flowchart in "{DIAGRAMS}".']
     problems: list[str] = []
     for number, (_, code) in enumerate(parsed.mermaid, start=1):
         try:
             normalize_mermaid(code)
         except ValueError:
-            first = (
-                (mermaid_problems(code) or ["forme non admise"])[0]
-                if show_input
-                else ("utilise un schéma `flowchart` conforme.")
-            )
-            problems.append(f"Schéma Mermaid {number} refusé : {first}")
+            first = "Use a valid `flowchart`."
+            if show_input:
+                first = (mermaid_problems(code) or ["Unsupported diagram syntax."])[0]
+            problems.append(f"Mermaid diagram {number} is invalid. {first}")
     return problems
 
 
 def _raw_html(parsed: _Parsed, *, show_input: bool) -> list[str]:
-    """Le rendu retire une balise en ligne et montre un bloc HTML en texte brut (D97) : la leçon
-    n'en contient donc aucun hors du code."""
+    """Keep HTML inside code because the renderer strips inline tags and escapes blocks (D97)."""
     if not parsed.raw_html:
         return []
     sample = " ".join(parsed.raw_html[0].split())[:_RAW_HTML_SHOWN]
-    first = f", dont « {sample} »" if show_input else ""
+    first = f', including "{sample}"' if show_input else ""
     return [
-        f"HTML brut hors d'un bloc de code ({len(parsed.raw_html)} fois{first}) : "
-        "mets toute balise entre accents graves, par exemple `<pre>`, ou dans un bloc de code."
+        f"Raw HTML outside code ({len(parsed.raw_html)} occurrences{first}). "
+        "Put each tag in backticks, such as `<pre>`, or place it in a code block."
     ]
 
 
 def _length(words: int) -> list[str]:
     if MIN_WORDS <= words <= MAX_WORDS:
         return []
-    return [f"La leçon fait {words} mots : il en faut entre 1 200 et 2 500 (blocs de code exclus)."]
+    return [
+        f"The lesson has {words:,} words. Use {MIN_WORDS:,} to {MAX_WORDS:,} words "
+        "excluding code blocks."
+    ]
 
 
 def _references(parsed: _Parsed, sources: Sequence[tuple[int, str, str]]) -> list[str]:
@@ -204,12 +196,12 @@ def _references(parsed: _Parsed, sources: Sequence[tuple[int, str, str]]) -> lis
     known_urls = {k for _n, url, _t in sources if (k := source_url_key(url)) is not None}
     for link in dict.fromkeys(parsed.links):
         if source_url_key(link) not in known_urls:
-            problems.append(f"Lien absent des sources lues : {link}")
+            problems.append(f"The link does not appear in the sources: {link}")
     numbers = {number for number, _url, _text in sources}
     unknown = sorted(
         {int(m.group(1)) for text in parsed.texts for m in _MARKER.finditer(text)} - numbers
     )
-    problems += [f"Marqueur [{n}] inconnu : aucune source n'a ce numéro." for n in unknown]
+    problems += [f"No source matches citation [{n}]." for n in unknown]
     return problems
 
 
@@ -220,28 +212,32 @@ def _quotes_and_copies(parsed: _Parsed, sources: Sequence[tuple[int, str, str]])
         parts, quotes = split_quotes(text)
         outside += parts
         problems += [
-            f"Citation de plus de {MAX_QUOTE_WORDS} mots : une citation est courte."
+            f"A quotation exceeds {MAX_QUOTE_WORDS} words. Shorten it."
             for quote in quotes
             if len(quote.split()) > MAX_QUOTE_WORDS
         ]
     for number in sorted(copied_from(outside, build_index(sources))):
         problems.append(
-            f"Passage de plus de {MAX_QUOTE_WORDS} mots recopié de la source [{number}] : "
-            f"reformule-le, ou cite-le court entre « » suivi de [{number}]."
+            f"A passage of more than {MAX_QUOTE_WORDS} words was copied from source [{number}]. "
+            f"Paraphrase it or use a short quotation between « and » followed by [{number}]."
         )
     return list(dict.fromkeys(problems))
 
 
 def check_lesson(
-    markdown: str, *, title: str, sources: Sequence[tuple[int, str, str]]
+    markdown: str,
+    *,
+    title: str,
+    sources: Sequence[tuple[int, str, str]],
+    allow_legacy: bool = False,
 ) -> LessonCheck:
-    """`sources` : `(numéro, adresse, texte lu)` des seules sources admises dans la leçon."""
-    parsed = _parse(markdown)
+    """`sources` contains `(number, URL, text)` for the sources allowed in the lesson."""
+    parsed = _parse(markdown, allow_legacy=allow_legacy)
     words, groups = _offline_checks(parsed, title, show_input=True)
     groups.extend(
         (
-            ("Références aux sources", _references(parsed, sources)),
-            ("Citations et reformulation", _quotes_and_copies(parsed, sources)),
+            ("Source references", _references(parsed, sources)),
+            ("Quotations and paraphrasing", _quotes_and_copies(parsed, sources)),
         )
     )
     return LessonCheck(
@@ -259,25 +255,31 @@ def _offline_checks(
 ) -> tuple[int, list[tuple[str, list[str]]]]:
     words = sum(len(text.split()) for text in parsed.texts)
     return words, [
-        ("Structure du chapitre", _structure(parsed, title, show_input=show_input)),
-        ("HTML dans le texte", _raw_html(parsed, show_input=show_input)),
-        ("Listes d’objectifs et de questions", _counts(parsed)),
-        ("Schémas Mermaid", _diagrams(parsed, show_input=show_input)),
-        ("Anglais dans les exemples Python", parsed.code_problems),
-        ("Longueur du chapitre", _length(words)),
+        ("Chapter structure", _structure(parsed, title, show_input=show_input)),
+        ("HTML in prose", _raw_html(parsed, show_input=show_input)),
+        ("Lists of objectives and questions", _counts(parsed)),
+        ("Mermaid diagrams", _diagrams(parsed, show_input=show_input)),
+        ("English in Python examples", parsed.code_problems),
+        ("Chapter length", _length(words)),
     ]
 
 
-def check_submission(markdown: str, *, title: str) -> tuple[list[str], list[str]]:
-    """Contrôles possibles avant la lecture des sources, sans citer l'entrée dans les refus."""
-    parsed = _parse(markdown, show_input=False)
+def check_submission(
+    markdown: str, *, title: str, allow_legacy: bool = False
+) -> tuple[list[str], list[str]]:
+    """Run checks that need no source text and keep submitted text out of refusals."""
+    parsed = _parse(markdown, show_input=False, allow_legacy=allow_legacy)
     _, groups = _offline_checks(parsed, title, show_input=False)
     problems = [problem for _, messages in groups for problem in messages]
     return [*problems, *_quotes_and_copies(parsed, ())], list(dict.fromkeys(parsed.links))
 
 
+def has_legacy_headings(markdown: str) -> bool:
+    return any(_key(title) in _LEGACY_HEADINGS for title in _parse(markdown).h2)
+
+
 def change_heading(markdown: str, title: str) -> str:
-    """Réécrit l'en-tête du chapitre quand seul le titre est retouché."""
+    """Update the chapter heading when editing its title."""
     for token in _MD.parse(markdown):
         if token.type == "heading_open" and token.tag == "h1" and token.level == 0 and token.map:
             start, end = token.map

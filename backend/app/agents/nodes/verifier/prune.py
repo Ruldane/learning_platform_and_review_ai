@@ -1,18 +1,18 @@
-"""Périmètre du contrôle des faits et retrait déterministe des phrases non sourcées (D97 n° 11).
+"""Scope of the fact check and deterministic removal of unsourced sentences (D97 no. 11).
 
-Le Vérificateur cite chaque affirmation non sourcée entre « » (coupes par « ... »). Le plus long
-fragment cité, normalisé (casse, espaces, ponctuation, mise en forme), situe la phrase dans un
-paragraphe de la leçon, donc dans sa section. Il ne la situe que s'il n'apparaît que dans une
-seule phrase, et, s'il est court, s'il en couvre l'essentiel : sinon il est introuvable.
-- `in_scope` écarte une affirmation qui n'est située que hors des sections de faits (objectifs,
-  prérequis, exercice, corrigé, sources, auto-évaluation) : ce ne sont pas des faits sourçables ;
-- `prune` retire les phrases qui portent les affirmations (l'élément de liste entier, sous-liste
-  comprise, s'il n'en reste rien), sans appel au modèle : aucun fait nouveau ne peut entrer. Les
-  titres, les blocs de code et les tableaux ne sont jamais touchés ; une affirmation qui n'y est
-  pas située, ou dont le retrait toucherait du code, est comptée introuvable ;
-- `still_cited` compte les affirmations dont le fragment reste dans le texte après le retrait.
+The Verifier quotes each unsourced claim between « » (cuts marked by « ... »). The longest
+quoted fragment, normalized (case, spaces, punctuation, formatting), locates the sentence in a
+paragraph of the lesson, hence in its section. It only locates it if it appears in a single
+sentence and, if it is short, if it covers most of it: otherwise it is not found.
+- `in_scope` discards a claim that is only located outside the fact sections (objectives,
+  prerequisites, exercise, solution, sources, self-assessment): these are not sourceable facts;
+- `prune` removes the sentences that carry the claims (the whole list item, sub-list included,
+  if nothing remains of it), without a model call: no new fact can come in. Headings, code blocks
+  and tables are never touched; a claim that is not located there, or whose removal would touch
+  code, is counted as not found;
+- `still_cited` counts the claims whose fragment remains in the text after the removal.
 
-Pur : aucune écriture, aucun journal (le contenu de la leçon n'en sort jamais)."""
+Pure: no write, no log (the lesson content never leaves it)."""
 
 import re
 from collections import Counter
@@ -22,18 +22,29 @@ from dataclasses import dataclass
 from markdown_it import MarkdownIt
 from markdown_it.token import Token
 
-IN_SCOPE = ("L'essentiel en 5 lignes", "Explication", "Exemple travaillé", "Erreurs fréquentes")
-MIN_FRAGMENT_WORDS = 3  # en deçà, un fragment cité est trop ambigu pour situer une phrase
-SHORT_FRAGMENT_WORDS = 6  # en deçà, le fragment doit couvrir l'essentiel de sa phrase
+from app.core.lesson_structure import (
+    COMMON_MISTAKES,
+    EXPLANATION,
+    KEY_POINTS,
+    WORKED_EXAMPLE,
+    reading_section,
+)
+
+IN_SCOPE = (KEY_POINTS, EXPLANATION, WORKED_EXAMPLE, COMMON_MISTAKES)
+_SCOPE = set(IN_SCOPE)
+MIN_FRAGMENT_WORDS = 3  # below this, a quoted fragment is too ambiguous to locate a sentence
+SHORT_FRAGMENT_WORDS = 6  # below this, the fragment must cover most of its sentence
 MIN_COVERAGE = 0.6
 
-_MD = MarkdownIt("commonmark", {"html": True}).enable("table")  # le parseur du rendu (D97)
+_MD = MarkdownIt("commonmark", {"html": True}).enable("table")  # the renderer's parser (D97)
 _QUOTED = re.compile(r"«([^»]*)»|“([^”]*)”|\"([^\"]*)\"")
 _CUT = re.compile(r"\[?(?:\.\.\.|…)\]?")
 _LINK_TARGET = re.compile(r"\]\([^)]*\)")
 _WORD = re.compile(r"\w+")
-# Fin de phrase : ponctuation, fermeture de mise en forme, puis les marqueurs `[n]` qui la suivent.
+# End of sentence: punctuation, closing formatting, then the `[n]` markers that follow it.
 _SENTENCE_END = re.compile(r"[.!?…][*_»\"')]*(?:\s*\[\d+\])*(?=\s)")
+# Abbreviations: English ones (e.g., i.e., etc., vs.) and French ones (p. ex., c.-à-d.), the latter
+# kept on purpose for lessons written before the switch to English.
 _ABBREVIATION = re.compile(
     r"(?:^|[\s(«\"'])(?:p\.\s?ex|etc|cf|env|m|e\.\s?g|i\.\s?e|c\.-à-d|ex|vs)\.$", re.IGNORECASE
 )
@@ -42,42 +53,35 @@ _ITEM_PREFIX = re.compile(r"^\s*(?:>\s?)*(?:[-*+]|\d+[.)])\s+")
 _LINE_PREFIX = re.compile(r"^\s*(?:>\s?)*")
 
 type Span = tuple[int, int]
-type Hit = tuple[int, frozenset[int]]  # (paragraphe, rangs des phrases)
+type Hit = tuple[int, frozenset[int]]  # (paragraph, sentence ranks)
 
 
 @dataclass(frozen=True)
 class Pruned:
     markdown: str
-    removed: int  # phrases retirées
-    unlocated: int  # affirmations introuvables, ambiguës ou non retirables
+    removed: int  # sentences removed
+    unlocated: int  # claims not found, ambiguous or not removable
 
 
 @dataclass(frozen=True)
 class _Block:
-    """Un paragraphe de la leçon, découpé en phrases."""
+    """A paragraph of the lesson, split into sentences."""
 
-    section: str  # clé repliée de la section `##` qui le contient
-    lines: Span  # ses lignes `[début, fin)`
-    item: Span | None  # l'élément de liste dont il est le premier bloc
-    prefix: str  # marque de liste ou de citation de sa première ligne
+    section: str  # folded key of the `##` section that contains it
+    lines: Span  # its lines `[start, end)`
+    item: Span | None  # the list item of which it is the first block
+    prefix: str  # list or quote marker of its first line
     sentences: list[str]
-    words: list[tuple[str, int]]  # (mot normalisé, rang de sa phrase)
-
-
-def _key(text: str) -> str:
-    return " ".join(text.replace("’", "'").split()).rstrip(":").casefold()
-
-
-_SCOPE = {_key(name) for name in IN_SCOPE}
+    words: list[tuple[str, int]]  # (normalized word, rank of its sentence)
 
 
 def _words(text: str) -> list[str]:
-    """Mots sans casse, ponctuation, adresses de liens ni mise en forme Markdown."""
+    """Words without case, punctuation, link addresses or Markdown formatting."""
     return _WORD.findall(_LINK_TARGET.sub("]", text).casefold())
 
 
 def _ends_sentence(text: str, match: re.Match[str]) -> bool:
-    """Pas de coupe après une abréviation (« p. ex. », « etc. »…) ni devant une minuscule."""
+    """No cut after an abbreviation ("e.g.", "etc.", "p. ex."...) or before a lowercase letter."""
     if text[match.start()] == "." and _ABBREVIATION.search(text[: match.start() + 1]):
         return False
     following = _NEXT_LETTER.match(text, match.end())
@@ -111,7 +115,7 @@ def _span(token: Token) -> Span | None:
 
 
 def _parse(markdown: str) -> tuple[list[_Block], list[Span]]:
-    """Les paragraphes de la leçon, et les lignes de ses blocs de code."""
+    """The paragraphs of the lesson, and the lines of its code blocks."""
     lines = markdown.split("\n")
     tokens = _MD.parse(markdown)
     blocks: list[_Block] = []
@@ -120,7 +124,7 @@ def _parse(markdown: str) -> tuple[list[_Block], list[Span]]:
     for index, token in enumerate(tokens):
         span = _span(token)
         if token.type == "heading_open" and token.tag == "h2" and token.level == 0:
-            section = _key(tokens[index + 1].content)
+            section = reading_section(tokens[index + 1].content) or ""
         elif token.type in ("fence", "code_block") and span is not None:
             code.append(span)
         elif token.type == "paragraph_open" and span is not None:
@@ -131,7 +135,7 @@ def _parse(markdown: str) -> tuple[list[_Block], list[Span]]:
 
 
 def fragment(claim: str) -> list[str] | None:
-    """Mots du plus long fragment de la première citation de l'affirmation, ou `None`."""
+    """Words of the longest fragment of the claim's first quotation, or `None`."""
     match = _QUOTED.search(claim)
     if match is None:
         return None
@@ -146,8 +150,8 @@ def _occurs(found: list[str], words: list[str]) -> list[int]:
 
 
 def _locate(blocks: list[_Block], claim: str) -> Hit | None:
-    """La seule phrase (ou suite de phrases) qui porte le fragment cité ; `None` s'il est absent,
-    présent dans plusieurs phrases, ou trop court pour l'essentiel de la sienne."""
+    """The single sentence (or run of sentences) that carries the quoted fragment; `None` if it is
+    absent, present in several sentences, or too short for the bulk of its own."""
     words = fragment(claim)
     if words is None:
         return None
@@ -166,8 +170,8 @@ def _locate(blocks: list[_Block], claim: str) -> Hit | None:
 
 
 def in_scope(markdown: str, claims: Sequence[str]) -> list[str]:
-    """Les affirmations à juger : situées dans une section de faits, ou introuvables (le
-    Rédacteur peut encore les corriger). Une affirmation située ailleurs seulement est écartée."""
+    """The claims to judge: located in a fact section, or not found (the Writer can still fix
+    them). A claim located elsewhere only is discarded."""
     blocks, _code = _parse(markdown)
     kept: list[str] = []
     for claim in claims:
@@ -180,7 +184,7 @@ def in_scope(markdown: str, claims: Sequence[str]) -> list[str]:
 def _edit(
     block: _Block, ranks: set[int], lines: list[str], code: list[Span]
 ) -> tuple[int, int, list[str]] | None:
-    """Le remplacement des lignes du paragraphe ; `None` s'il emporterait du code."""
+    """The replacement of the paragraph's lines; `None` if it would take code away."""
     kept = [s for rank, s in enumerate(block.sentences) if rank not in ranks]
     if kept:
         return (*block.lines, [block.prefix + " ".join(kept)])
@@ -188,21 +192,21 @@ def _edit(
         return (*block.lines, [])
     start, end = block.item
     while end > start + 1 and not lines[end - 1].strip():
-        end -= 1  # la ligne vide qui suit l'élément reste : rien ne se recolle
+        end -= 1  # the blank line that follows the item stays: nothing gets glued back
     if any(start <= a and b <= end for a, b in code):
-        return None  # un bloc de code n'est jamais retiré
-    return (start, end, [])  # l'élément entier, sous-liste comprise
+        return None  # a code block is never removed
+    return (start, end, [])  # the whole item, sub-list included
 
 
 def _apply(lines: list[str], edits: list[tuple[int, int, list[str]]]) -> str:
-    """Applique les remplacements ; un remplacement contenu dans un autre (sous-élément d'un
-    élément retiré) est déjà emporté. Deux remplacements qui se chevauchent sont une erreur."""
+    """Applies the replacements; a replacement contained in another (sub-item of a removed item)
+    is already carried away. Two overlapping replacements are an error."""
     outer: list[tuple[int, int, list[str]]] = []
     for edit in sorted(edits, key=lambda e: (e[0], -e[1])):
         if outer and edit[1] <= outer[-1][1]:
             continue
         if outer and edit[0] < outer[-1][1]:
-            raise ValueError("Retraits qui se chevauchent dans la leçon.")
+            raise ValueError("Overlapping removals in the lesson.")
         outer.append(edit)
     for start, end, new in reversed(outer):
         lines[start:end] = new
@@ -210,7 +214,7 @@ def _apply(lines: list[str], edits: list[tuple[int, int, list[str]]]) -> str:
 
 
 def prune(markdown: str, claims: Sequence[str]) -> Pruned:
-    """La leçon sans les phrases qui portent `claims` (dans les sections de faits seulement)."""
+    """The lesson without the sentences that carry `claims` (in the fact sections only)."""
     blocks, code = _parse(markdown)
     doomed: dict[int, set[int]] = {}
     owners: Counter[int] = Counter()
@@ -236,8 +240,8 @@ def prune(markdown: str, claims: Sequence[str]) -> Pruned:
 
 
 def still_cited(markdown: str, claims: Sequence[str]) -> int:
-    """Affirmations dont le fragment cité figure encore dans le texte (paragraphes, tableaux,
-    titres ; hors code) : contrôle après retrait."""
+    """Claims whose quoted fragment still appears in the text (paragraphs, tables, headings;
+    outside code): check after the removal."""
     texts = [_words(t.content) for t in _MD.parse(markdown) if t.type == "inline"]
     count = 0
     for claim in claims:

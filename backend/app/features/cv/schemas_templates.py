@@ -1,28 +1,30 @@
-"""Schémas des gabarits de CV (SPEC 5.2, 14.2 ; D126). Un gabarit = un CV d'origine (rangé dans
-la mémoire), ses images, la description du Maquettiste, le HTML et le CSS écrits par le code, son
-score et ses passes ; un seul actif. Aucun nom de police lu dans le PDF n'est rendu : `fonts`
-donne les familles libres employées, `font_gaps` dit chaque écart en phrase."""
+"""API views of captured CV templates (SPEC 5.2, 14.2, D126).
+
+Each template has a source CV, render images, comparison scores, and render passes.
+Only one can be active per user. The font fields describe the free families used
+for rendering and their differences from the original.
+"""
 
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
+from app.agents.tools.template_grids import zone_code
 from app.db.models.career import TemplateStatus
 
 PageKind = Literal["original", "render"]
 
 
 class TemplateCreated(BaseModel):
-    """Capture du design lancée : le gabarit (`capturing`) et sa session `cv_capture`."""
+    """The newly created template and its capture session."""
 
     template_id: str
     session_id: str
 
 
 class TemplateSummaryOut(BaseModel):
-    """`score` : ressemblance de la passe courante (0 à 100), `None` avant la première passe ;
-    `passes` : passes rendues."""
+    """The current pass's similarity score and the number of completed passes."""
 
     id: str
     name: str
@@ -35,7 +37,7 @@ class TemplateSummaryOut(BaseModel):
 
 
 class FontUseOut(BaseModel):
-    """Police libre employée pour un rôle ; `substitute` : elle remplace celle du PDF."""
+    """The free font used for a role and whether it replaced the original font."""
 
     role: Literal["body", "heading"]
     family: str
@@ -43,17 +45,20 @@ class FontUseOut(BaseModel):
 
 
 class ZoneDiffOut(BaseModel):
-    """Part d'encre (0 à 1) d'une zone de la page (`haut`, `milieu`, `bas`, `gauche`, `droite`)
-    dans l'original et dans le rendu de la passe courante."""
+    """The original and rendered ink coverage in one page region, from 0 to 1."""
 
     zone: str
     original: float
     render: float
 
+    @field_validator("zone")
+    @classmethod
+    def _read_zone(cls, value: str) -> str:
+        return zone_code(value)
+
 
 class TemplateOut(TemplateSummaryOut):
-    """`selectable` : faux pour un CV scanné ; `session_id` : la capture du design ;
-    `failure_reason` : phrase française d'un échec (sans donnée du CV)."""
+    """Template details, capture session, and any failure reason without CV content."""
 
     selectable: bool
     fonts: list[FontUseOut]

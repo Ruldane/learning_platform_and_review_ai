@@ -1,4 +1,4 @@
-"""Échange local d'un code à usage unique et état réservé à l'interface."""
+"""Local exchange of a one-time code and state reserved for the interface."""
 
 from fastapi import APIRouter, Depends, Request, Response
 
@@ -21,7 +21,7 @@ def _service(request: Request, db: Db) -> RelayPairingService:
 async def start_pairing(
     request: Request, response: Response, db: Db, current: InterfaceUserDep
 ) -> RelayCode:
-    """Démarre l'appairage du relais du compte connecté."""
+    """Starts the pairing of the signed-in account's relay."""
     code = await _service(request, db).start(current.id)
     response.headers["Cache-Control"] = "no-store"
     return RelayCode(code=code)
@@ -29,14 +29,14 @@ async def start_pairing(
 
 @interface.delete("/pairing", status_code=204, response_class=Response)
 async def revoke_pairing(request: Request, db: Db, current: InterfaceUserDep) -> Response:
-    """Annule un code en attente et révoque le jeton dédié du relais."""
+    """Cancels a pending code and revokes the relay's dedicated token."""
     await _service(request, db).revoke(current.id)
     return Response(status_code=204)
 
 
 @interface.get("/status")
 async def pairing_status(request: Request, db: Db, current: InterfaceUserDep) -> RelayStatus:
-    """État de l'appairage et portées manquantes du compte connecté."""
+    """Pairing state and missing scopes of the signed-in account."""
     return await _service(request, db).status(current.id)
 
 
@@ -44,10 +44,10 @@ async def pairing_status(request: Request, db: Db, current: InterfaceUserDep) ->
 async def exchange_pairing(
     code: RelayCode, request: Request, response: Response, db: Db
 ) -> RelayToken:
-    """Échange par le relais local. Le code désigne le compte, indépendamment des cookies."""
+    """Exchange by the local relay. The code designates the account, independently of cookies."""
     check_local_origin(request)
     if "origin" in request.headers or MCP_IDENTITY.get() is not None:
-        raise AppError("relay_only", "Échange réservé au relais local de Tremplin.", 403)
+        raise AppError("relay_only", "Only the local Tremplin relay can pair here.", 403)
     allowed = request.app.state.mcp_gate.user_allowed
     token = await _service(request, db).exchange(code.code, allowed)
     response.headers["Cache-Control"] = "no-store"

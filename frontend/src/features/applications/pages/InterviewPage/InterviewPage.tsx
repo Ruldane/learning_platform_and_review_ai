@@ -10,7 +10,7 @@ import { InterviewHub } from "../InterviewHub";
 const isMissing = (error: unknown) => error instanceof ApiError && error.status === 404;
 
 /**
- * L'entretien blanc d'une candidature (`/candidatures/:applicationId/entretien`) : les réglages, puis
+ * L'entretien blanc (`/applications/:applicationId/interview`) : les réglages, puis
  * un échange écrit, une question à la fois, et le débrief ; les entretiens passés de la fiche en dessous.
  * `createSocket` ne sert qu'aux tests.
  */

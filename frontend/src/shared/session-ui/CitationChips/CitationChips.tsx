@@ -15,7 +15,7 @@ function targetOf(citation: Citation): string | null {
   const address = citation.url === null ? null : webUrl(citation.url);
   if (address) return address.href;
   if (citation.memory_item_id) {
-    return `/memoire?item=${encodeURIComponent(citation.memory_item_id)}`;
+    return `/memory?item=${encodeURIComponent(citation.memory_item_id)}`;
   }
   return null;
 }

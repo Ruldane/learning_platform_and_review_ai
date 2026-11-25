@@ -11,7 +11,7 @@ def test_get_graph_unknown_raises_app_error() -> None:
     with pytest.raises(AppError) as e:
         get_graph("nope")
     assert e.value.code == "unknown_graph" and e.value.status_code == 404
-    assert e.value.message == "Parcours inconnu : nope"
+    assert e.value.message == "Unknown workflow: nope"
 
 
 def test_get_agent_unknown_raises_app_error() -> None:
@@ -24,7 +24,7 @@ def test_registries_return_registered_entries(monkeypatch: pytest.MonkeyPatch) -
     class Input(BaseModel):
         topic: str
 
-    agent = AgentSpec(name="demo", tier="rapide")
+    agent = AgentSpec(name="demo", tier="fast")
     graph = GraphSpec(name="g", input_model=Input, build=lambda deps: None)  # type: ignore[arg-type, return-value]
     monkeypatch.setitem(AGENTS, "demo", agent)
     monkeypatch.setitem(GRAPHS, "g", graph)

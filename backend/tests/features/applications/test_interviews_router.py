@@ -56,7 +56,7 @@ async def test_launch_from_application(client: httpx.AsyncClient, app: FastAPI) 
     assert row.role == "Développeuse IA" and row.session_id == started["session_id"]
 
 
-async def test_language_defaults_to_french(client: httpx.AsyncClient, app: FastAPI) -> None:
+async def test_language_defaults_to_english(client: httpx.AsyncClient, app: FastAPI) -> None:
     spy(app)
     application_id = await ready_application(client, app)
     r = await client.post(
@@ -65,7 +65,7 @@ async def test_language_defaults_to_french(client: httpx.AsyncClient, app: FastA
     )
     assert r.status_code == 202
     got = (await client.get(f"{ROOT}/interviews/{r.json()['interview_id']}")).json()
-    assert (got["mode"], got["duration_min"], got["language"]) == ("case", 15, "fr")
+    assert (got["mode"], got["duration_min"], got["language"]) == ("case", 15, "en")
 
 
 async def test_free_interview_on_role(client: httpx.AsyncClient, app: FastAPI) -> None:
@@ -226,8 +226,8 @@ async def test_finished_interview_keeps_its_status(client: httpx.AsyncClient, ap
     assert [e["index"] for e in got["exchanges"]] == [0, 1]
     assert got["debrief"]["missed"] == [0] and got["cards_created"] == 1 and got["flags"] == []
     assert set(got["debrief"]["scores"]) == {
-        "clarte",
+        "clarity",
         "structure",
-        "profondeur_technique",
-        "adequation",
+        "technical_depth",
+        "role_fit",
     }

@@ -90,7 +90,7 @@ def check_question(step: str, question: dict[str, Any], company: str, yesterday:
     if wrong:
         raise CheckFailed(step, f"Champ(s) de la fiche montrée faux : {', '.join(wrong)}.")
     options = [option["value"] for option in question["options"]]
-    if options != ["create", "cancel"] or question["question"] != "Je crée cette fiche ?":
+    if options != ["create", "cancel"] or question["question"] != "Create this application?":
         raise CheckFailed(step, f"Question ou options inattendues ({', '.join(options)}).")
 
 

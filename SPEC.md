@@ -1,697 +1,841 @@
-# Spec : plateforme d'apprentissage et de carrière multi agents
+# Tremplin specification
 
 Nov 11, 2026 · @January
 
-## 1. Vision et décisions validées
+## 1. Vision and approved decisions
 
-La plateforme réunit dans une seule application locale l'apprentissage guidé par des agents IA et la recherche d'emploi, reliés par une mémoire commune de ce que January sait déjà. Cette spec est écrite pour être donnée telle quelle à Claude Code.
+Tremplin combines AI-guided learning and job search in one local app. Both use a shared memory
+of what January already knows. Claude Code can use this specification directly.
 
-**Principes produit**
+**Product principles**
 
-- **Vivant.** Toute action longue montre les agents au travail en temps réel : débat, recherche, dessin au tableau.
-- **Humain dans la boucle.** Aucun programme, CV ou message n'est finalisé sans validation explicite.
-- **Mémoire unique.** Ce qui est appris, importé ou décidé alimente la même base, lue par tous les agents.
-- **Honnêteté.** Les agents reformulent et ciblent. Ils n'inventent ni expérience, ni diplôme, ni chiffre. Toute affirmation tirée du web porte sa source.
-- **Zéro coût hors LLM.** Tout sauf les appels OpenAI, Anthropic et GLM tourne en open source dans Docker.
-- **Code découpé.** Un dossier `frontend`, un dossier `backend`, aucun fichier au delà de 300 lignes.
+- **Live progress.** Long actions show agents debating, researching, or drawing in real time.
+- **Human approval.** January expressly approves programs, CVs, and messages before finalization.
+- **Shared memory.** Learning, imports, and decisions feed one store that every agent can read.
+- **Accuracy.** Agents rephrase and tailor content without inventing experience, degrees, or
+  figures. They cite the source of every claim drawn from the web.
+- **Costs limited to models.** The rest runs on open-source software in Docker.
+- **Code organization.** The `frontend` and `backend` directories hold files of up to 300 lines.
 
-**Décisions validées**
+**Approved decisions**
 
-| Sujet | Décision |
+| Topic | Decision |
 | --- | --- |
-| Usage | Local sous Docker pour commencer, Cloudflare plus tard |
-| Back end | Python, FastAPI, LangChain et LangGraph |
-| Fournisseurs LLM | Anthropic, OpenAI, GLM, choisis dans l'interface. Haiku par défaut |
-| Connexion | Google OAuth spécifié, désactivé par défaut en local |
-| Recherche web | Gratuite et auto hébergée (section 10) |
-| Base vectorielle | Open source dans Docker, équivalent natif sur Cloudflare (section 4) |
-| Embeddings | Modèle local servi par Ollama |
-| CV | Le PDF est la seule source. Le design est recréé une fois en template, puis réutilisé |
-| LinkedIn | Export PDF du profil ou copier coller, pas de lecture automatique |
-| Temps d'étude | 10 à 15 heures par semaine : 2 heures du lundi au vendredi, plus un bloc le week end |
-| Interface | Thème clair uniquement |
-| Périmètre | Les 19 features de la section 2, toutes dans le MVP |
-| Configuration manuelle | Uniquement les clés API des fournisseurs LLM |
+| Deployment | Local Docker first, Cloudflare later |
+| Backend | Python, FastAPI, LangChain, and LangGraph |
+| LLM providers | Anthropic, OpenAI, and GLM, selected in the UI. Haiku by default |
+| Sign-in | Google OAuth, disabled by default locally |
+| Web search | Free and self-hosted (section 10) |
+| Vector database | Open source in Docker, native equivalent on Cloudflare (section 4) |
+| Embeddings | Local model served by Ollama |
+| CV | PDF as the only source. Recreate the design once as a reusable template |
+| LinkedIn | Profile PDF export or pasted text only. No automated access |
+| Study time | 10 to 15 hours weekly, with 2 hours each weekday and a weekend block |
+| Interface | Light theme only |
+| Scope | All 19 features in section 2 are in the MVP |
+| Manual configuration | LLM provider API keys only |
 
-**Hypothèses prises sans validation**
+**Initial assumptions**
 
-- « Echo la main » dans la dictée est compris comme **Ollama**.
-- Leçons rédigées en français, termes techniques laissés en anglais. Les sources peuvent être dans n'importe quelle langue.
-- Interface en français, textes centralisés pour ajouter l'anglais ensuite.
-- Nom de code du dépôt : `tremplin`. Le nom public reste à choisir.
+- The dictated phrase “Echo la main” refers to **Ollama**.
+- D312 sets English for the interface and newly generated lessons. Sources can use any language.
+- UI strings are centralized. Existing lessons and other stored prose retain their language.
+- The repository codename is `tremplin`. The public name was open in the original proposal.
 
-## 2. Périmètre du MVP
+## 2. MVP scope
 
-Le MVP contient 19 features : 7 de socle, les 6 validées lors de la discussion et 6 nouvelles.
+The MVP covers 19 features. Seven are core, six were approved in discussion, and six were added.
 
-| N° | Feature | En une phrase | Section |
+| No. | Feature | Description | Section |
 | --- | --- | --- | --- |
-| F1 | Conseil d'apprentissage | Quatre agents débattent en direct de la meilleure façon d'atteindre un objectif, avec recherche web et tableau animé | 3 |
-| F2 | Programme détaillé | Planning semaine par semaine, to do, leçons PDF et ressources téléchargeables | 3 |
-| F3 | Mémoire vectorielle | Documents importés et acquis, lus et écrits par les agents, avec un explorateur visuel | 4 |
-| F4 | CV Review | Deux agents ciblent le CV sur une offre, puis régénèrent le PDF dans le même design | 5 |
-| F5 | Suivi de candidatures | Pipeline, relances suggérées et alerte doublon | 6 |
-| F6 | Configuration des modèles | Choix du fournisseur et du modèle par rôle, gestion des clés API | 11 |
-| F7 | Connexion Google | Espace par utilisateur, optionnel en local | 17 |
-| F8 | Analyse d'écart | Chaque offre est comparée aux acquis, les manques entrent dans le planning | 7 |
-| F9 | Validation des acquis | Quiz et révisions espacées avant de marquer un sujet appris | 7 |
-| F10 | Simulateur d'entretien | Entretien blanc technique et comportemental basé sur l'offre | 7 |
-| F11 | Projets preuves | Un mini projet par module, converti en ligne de CV et en brouillon de post | 7 |
-| F12 | Radar du marché | Analyse d'offres du poste visé pour prioriser les compétences | 7 |
-| F13 | Replanification adaptative | Bilan hebdomadaire et planning recalculé | 7 |
-| F14 | Session d'étude guidée | Un tuteur accompagne chaque bloc d'étude en direct | 8 |
-| F15 | Carte de compétences vivante | Graphe des compétences maîtrisées, en cours et manquantes, avec leurs preuves | 8 |
-| F16 | Kit de candidature | CV ciblé, lettre, messages et dossier entreprise en un clic | 8 |
-| F17 | Brief du matin | Page d'accueil vivante : bloc du jour, révisions, relances, nouvelles offres | 8 |
-| F18 | Capture rapide | Un lien, un PDF ou une note deviennent résumé, fiches et mémoire | 8 |
-| F19 | Comité de recrutement simulé | Quatre personas recruteurs débattent du CV face à l'offre | 8 |
+| F1 | Learning Council | Four agents debate the goal live with web research and a whiteboard | 3 |
+| F2 | Program | Weekly schedule, task list, lesson PDFs, and downloadable resources | 3 |
+| F3 | Vector memory | Agents read and write imports and skills in an explorable store | 4 |
+| F4 | CV Review | Two agents tailor the CV to a posting and render it in the same design | 5 |
+| F5 | Application tracking | Pipeline, suggested follow-ups, and duplicate alerts | 6 |
+| F6 | Model settings | Provider and model per role, plus API key management | 11 |
+| F7 | Google sign-in | A space for each user, optional locally | 17 |
+| F8 | Skill gap assessment | Compare postings with skills and add gaps to the plan | 7 |
+| F9 | Skill validation | Quizzes and spaced reviews before marking a topic as learned | 7 |
+| F10 | Mock interview | Posting-based technical and behavioral interview | 7 |
+| F11 | Proof projects | A small project per module yields a CV line and draft post | 7 |
+| F12 | Market radar | Analyze postings for the target role to prioritize skills | 7 |
+| F13 | Adaptive replanning | Weekly review and revised schedule | 7 |
+| F14 | Guided study | A tutor supports each study block in real time | 8 |
+| F15 | Skill map | Graph of mastered, ongoing, and missing skills with evidence | 8 |
+| F16 | Application kit | Tailored CV, letter, messages, and company dossier in one click | 8 |
+| F17 | Morning brief | Live home page with study, reviews, follow-ups, and new postings | 8 |
+| F18 | Quick capture | Turn a link, PDF, or note into a summary, flashcards, and memory | 8 |
+| F19 | Hiring panel | Four recruiter personas discuss the CV against the job posting | 8 |
 
-**Hors périmètre du MVP** : application mobile, envoi automatique de candidatures ou de messages, lecture automatique de LinkedIn, mode vocal, paiement.
+The MVP excludes a mobile app, automated submissions or messages, automated LinkedIn access,
+voice mode, and payments.
 
-## 3. Parcours d'apprentissage (F1 et F2)
+## 3. Learning workflow (F1 and F2)
 
-January saisit un objectif, quatre agents en débattent en direct, elle choisit une orientation, puis le système produit un programme complet avec leçons et ressources.
+January enters a goal and four agents debate it live. She selects a learning path and Tremplin
+produces a full program with lessons and resources.
 
-### 3.1 Déroulé d'une session
+### 3.1 Session flow
 
-1. **Cadrage.** January saisit l'objectif en texte libre (exemple : devenir AI product engineer), une échéance optionnelle et son budget temps. Le Modérateur lit la mémoire, puis pose 5 questions de cadrage au maximum.
-2. **Recherche.** L'Éclaireur lance les recherches web (section 10). Chaque source retenue apparaît en direct dans le panneau Sources, avec auteur, date et langue.
-3. **Débat, tour 1.** Chaque agent publie sa position en 150 mots au maximum. Le Scribe dessine la carte du domaine au tableau.
-4. **Débat, tours suivants.** Les agents se répondent, se contredisent et convergent. Trois tours par défaut, réglable de 1 à 5.
-5. **Propositions.** Le conseil présente 2 à 3 parcours. Chacun a un nom, une promesse, une durée en semaines, une charge hebdomadaire, les compétences couvertes, un projet final, ses compromis et son schéma au tableau.
-6. **Choix.** January choisit un parcours, en mélange deux, ou demande un nouveau tour. Dans ce dernier cas, retour à l'étape 4.
-7. **Programme.** Le Stratège génère le plan semaine par semaine. January peut déplacer, supprimer ou ajouter des éléments, puis elle valide.
-8. **Production.** Les leçons et ressources sont générées en tâche de fond. Semaines 1 et 2 tout de suite, les suivantes 7 jours avant leur début, pour tenir compte des replanifications.
+1. **Goal.** January enters a free-text goal such as becoming an AI product engineer, an
+   optional deadline, and her time budget. The Moderator reads memory and asks up to five
+   clarifying questions.
+2. **Research.** The Scout searches the web (section 10). Each selected source appears live
+   in the Sources panel with its author, date, and language.
+3. **Opening round.** Each agent posts a position in up to 150 words. The Scribe draws a domain
+   map on the whiteboard.
+4. **Later rounds.** Agents respond to and challenge each other before converging. The default
+   is three rounds, configurable from one to five.
+5. **Proposals.** The Council presents two or three paths. Each has a name, expected outcome,
+   duration in weeks, weekly workload, skills, final project, tradeoffs, and whiteboard diagram.
+6. **Choice.** January chooses one path, combines two, or asks for another round. For another
+   round, return to step 4.
+7. **Program.** The Strategist makes a weekly plan. January can move, remove, or add items
+   before approving it.
+8. **Production.** Lessons and resources are produced in the background. Weeks one and two
+   are produced immediately. Later weeks are produced seven days in advance to allow replanning.
 
-### 3.2 Place de January dans la boucle
+### 3.2 January's role
 
-- Le champ de message reste actif pendant tout le débat. Un message est injecté au tour suivant et les agents doivent y répondre nommément.
-- Boutons permanents : Pause, Relancer un tour, Passer aux propositions, Plus concret, Plus court.
-- Trois points d'arrêt obligatoires, où rien n'avance sans elle : fin du cadrage, choix du parcours, validation du programme.
-- Une session interrompue reprend exactement où elle s'est arrêtée, même après un redémarrage de Docker.
+- The message field stays available throughout the debate. The next round includes the message,
+  and the agents must address it explicitly.
+- Controls remain visible for pausing, starting another round, moving to proposals, asking for
+  more concrete details, and asking for shorter replies.
+- The session waits for January after the goal questions, at path selection, and at program
+  approval.
+- An interrupted session resumes at the same point, including after a Docker restart.
 
-### 3.3 Tableau animé
+### 3.3 Animated whiteboard
 
-- Le tableau est un canevas Excalidraw au rendu dessiné à la main, comme un tableau de classe.
-- Le Scribe n'émet pas de coordonnées. Il émet du Mermaid (`flowchart`), que le front convertit en éléments Excalidraw avec `@excalidraw/mermaid-to-excalidraw`.
-- Les éléments apparaissent un par un, dans l'ordre du raisonnement, avec un délai de 150 à 300 ms entre deux.
-- Quatre types de schémas : carte du domaine, graphe de prérequis, frise du parcours, comparaison des propositions.
-- January peut déplacer, annoter et corriger le tableau. Ses modifications sont renvoyées aux agents comme un message.
-- Chaque état du tableau est enregistré. Export en PNG, SVG et fichier `.excalidraw`.
-- Repli si la conversion Mermaid échoue : le schéma est affiché en SVG Mermaid simple, et l'erreur est journalisée.
+- The whiteboard is an Excalidraw canvas with a hand-drawn classroom style.
+- The Scribe emits a Mermaid `flowchart`. The frontend converts it to Excalidraw elements
+  with `@excalidraw/mermaid-to-excalidraw`.
+- Elements appear in reasoning order with 150 to 300 ms between them.
+- Diagrams include domain maps, prerequisite graphs, path timelines, and proposal comparisons.
+- January can move, annotate, and correct the board. Agents receive her edits as a message.
+- Every board state is saved. Exports are available as PNG, SVG, and `.excalidraw`.
+- If conversion fails, the frontend displays Mermaid's SVG and logs the error.
 
-### 3.4 Programme (F2)
+### 3.4 Program (F2)
 
-La hiérarchie est Programme, Semaine, Module, Tâche.
+A program contains weeks, weeks contain modules, and modules contain tasks.
 
-| Niveau | Champs obligatoires |
+| Level | Required fields |
 | --- | --- |
-| Semaine | Thème, objectif mesurable, charge en heures, livrable de fin de semaine |
-| Module | Titre, compétences visées, prérequis, leçon liée, ressources liées |
-| Tâche | Titre avec verbe d'action, type (lire, regarder, pratiquer, quiz, projet), durée de 15 à 120 minutes, critère de fin, jour planifié |
+| Week | Theme, measurable goal, hours, end-of-week deliverable |
+| Module | Title, target skills, prerequisites, linked lesson and resources |
+| Task | Action title, type, 15 to 120 minute duration, completion criterion, scheduled day |
 
-**Règles de planification**
+Task types are `read`, `watch`, `practice`, `quiz`, and `project`.
 
-- Disponibilité par défaut : 2 heures par jour du lundi au vendredi, un bloc de 3 à 4 heures le week end. Modifiable dans les réglages.
-- La charge planifiée ne dépasse jamais 85 % du budget, pour garder une marge.
-- Un sujet déjà acquis selon la mémoire est sauté, ou réduit à une révision de 20 minutes étiquetée « déjà acquis ».
-- Chaque semaine contient au moins une tâche de pratique et se termine par un quiz (F9).
-- Vues : semaine en calendrier, liste complète, avancement global. Export du programme en PDF et en `.ics`.
+**Scheduling rules**
 
-### 3.5 Leçons
+- The default is two hours each weekday and one three- to four-hour weekend block. January
+  can change availability in Settings.
+- Planned work uses at most 85% of the budget to leave room for interruptions.
+- Skip a topic memory already knows, or make it a 20-minute review labeled **Already known**.
+- Each week includes at least one practice task and ends with a quiz (F9).
+- Views include a weekly calendar, full list, and overall progress. Export to PDF or `.ics`.
 
-- Une leçon par module, stockée en Markdown, lisible dans l'application et téléchargeable en PDF.
-- Longueur : 1 200 à 2 500 mots.
-- Structure fixe : objectifs (3 au maximum), prérequis, l'essentiel en 5 lignes, explication, schémas, exemple travaillé, erreurs fréquentes, exercice avec corrigé séparé, sources, auto évaluation de 5 questions.
-- Le Rédacteur écrit, le Vérificateur relit. Le Vérificateur contrôle que chaque fait vient d'une source récupérée, que chaque lien répond, et que rien n'est recopié : le contenu est reformulé, les citations sont courtes et attribuées.
-- PDF en A4 avec un gabarit HTML et CSS unique : sommaire, encadrés, schémas Mermaid rendus en SVG, numéros de page, thème clair.
+### 3.5 Lessons
 
-### 3.6 Ressources
+- Each module has one lesson stored as Markdown, readable in the app and downloadable as a PDF.
+- Lessons are 1,200 to 2,500 words.
+- Each lesson includes up to three objectives, prerequisites, a five-line summary, explanation,
+  diagrams, a worked example, common mistakes, an exercise and separate answer, sources, and
+  a five-question self-assessment.
+- The Writer drafts the lesson. The Checker verifies facts against retrieved sources and
+  checks links. The lesson paraphrases the sources and uses short, attributed quotes.
+- A shared A4 HTML and CSS template provides a contents list, callouts, Mermaid diagrams as
+  SVG, page numbers, and a light theme.
 
-- 3 à 6 ressources par module, pas plus.
-- Chaque ressource porte : type (documentation officielle, cours, vidéo, article, dépôt, papier), langue, durée, niveau, auteur, date, et la raison du choix en une phrase.
-- Quand un PDF est librement téléchargeable (papier, documentation), il est enregistré en local. Sinon, seul le lien et une fiche de lecture sont conservés.
-- Un écran Bibliothèque liste toutes les ressources, filtrables par programme, type, langue et statut (à lire, lue).
+### 3.6 Resources
 
-## 4. Mémoire vectorielle (F3)
+- Each module has three to six resources.
+- Each has a type (official documentation, course, video, article, repository, or paper),
+  language, duration, level, author, date, and a one-sentence reason for choosing it.
+- Freely downloadable PDF papers and docs are saved locally. For other resources, keep the
+  link and its reading entry.
+- Library lists resources with filters for program, type, language, and read status.
 
-La mémoire est une base Qdrant locale où January et les agents lisent et écrivent. Le texte source reste dans la base relationnelle : les vecteurs sont un index que l'on peut reconstruire à tout moment.
+## 4. Vector memory (F3)
 
-### 4.1 Choix techniques
+January and the agents read and write memory through a local vector database. The relational
+database retains the source text so the vector index can be rebuilt at any time. [Qdrant]
 
-| Élément | En local sous Docker | Sur Cloudflare plus tard |
+### 4.1 Technology
+
+| Component | Local Docker | Future Cloudflare deployment |
 | --- | --- | --- |
-| Base vectorielle | [Qdrant](https://github.com/qdrant/qdrant), open source (Apache 2.0), image `qdrant/qdrant` | Vectorize |
-| Modèle d'embedding | `bge-m3` servi par Ollama, 1 024 dimensions, multilingue | `@cf/baai/bge-m3` sur Workers AI |
-| Accès depuis le code | Interface `MemoryRepository`, implémentée avec le `VectorStore` LangChain | Même interface, autre implémentation |
+| Vector store | `qdrant/qdrant` Docker image, under Apache 2.0 | Vectorize |
+| Embeddings | Multilingual `bge-m3` on Ollama, 1,024 dimensions | `@cf/baai/bge-m3` on Workers AI |
+| Code interface | `MemoryRepository` backed by LangChain's `VectorStore` | `MemoryRepository` |
 
-**Pourquoi ce couple.** Le même modèle existe des deux côtés, donc la dimension et le comportement de recherche ne changent pas à la migration. `bge-m3` couvre plus de 100 langues, ce qui convient à des sources en français et en anglais.
+The same embedding model keeps the dimensions and search behavior consistent when migrating.
+`bge-m3` supports over 100 languages, including French and English.
 
-**Point d'honnêteté.** Aucune base vectorielle open source ne tourne nativement et gratuitement sur Cloudflare. La portabilité vient de l'interface commune, pas d'un même logiciel des deux côtés. Le plan gratuit de Vectorize stocke 5 millions de dimensions ([tarifs](https://developers.cloudflare.com/vectorize/platform/pricing/)), soit environ 4 880 fragments à 1 024 dimensions. Au delà, il faudra le plan payant ou un modèle plus compact, d'où la commande de réindexation en 4.6.
+A shared interface makes the implementations portable. The original plan estimated that the
+free Vectorize allowance of five million dimensions would fit about 4,880 chunks at 1,024
+dimensions each. Beyond that, the design calls for a paid plan or a smaller model and the
+reindex operation in section 4.6. [Vectorize pricing][vectorize-pricing]
 
-### 4.2 Organisation
+[Qdrant]: https://github.com/qdrant/qdrant
+[vectorize-pricing]: https://developers.cloudflare.com/vectorize/platform/pricing/
 
-Une seule collection Qdrant `memory`, filtrée par `user_id` et par `kind`.
+### 4.2 Organization
 
-| `kind` | Contenu | Écrit par |
+Qdrant uses one `memory` collection, filtered by `user_id` and `kind`.
+
+| `kind` | Content | Writers |
 | --- | --- | --- |
-| `document` | Fragments des fichiers importés : CV, export LinkedIn, notes, PDF, pages capturées | January |
-| `acquis` | Un point par concept ou compétence, avec son niveau de maîtrise et ses preuves | January, agents, quiz |
-| `lecon` | Fragments des leçons générées | Agents |
-| `source` | Résumé des sources web retenues, pour ne pas les rechercher deux fois | Agents |
-| `offre` | Offres d'emploi et dossiers entreprise | January, agents |
-| `decision` | Préférences et décisions de January (exemple : préfère la pratique aux vidéos) | January, agents |
+| `document` | Chunks from CVs, LinkedIn exports, notes, PDFs, and saved web pages | January |
+| `skill` | One point per concept or skill with mastery and evidence | January, agents, quizzes |
+| `lesson` | Chunks of generated lessons | Agents |
+| `source` | Summaries of web sources for reuse | Agents |
+| `posting` | Job postings and company dossiers | January, agents |
+| `decision` | Preferences and decisions, such as favoring practice over videos | January, agents |
 
-Champs communs du payload : `user_id`, `kind`, `source_id`, `title`, `text`, `lang`, `tags`, `created_by`, `created_at`, `session_id`.
+Common payload fields are `user_id`, `kind`, `source_id`, `title`, `text`, `lang`, `tags`,
+`created_by`, `created_at`, and `session_id`.
 
-**Niveaux de maîtrise d'un acquis**
+**Skill mastery levels**
 
-| Niveau | Condition |
+| Level | Condition |
 | --- | --- |
-| `declare` | January l'affirme, ou il est extrait d'un document importé |
-| `en_cours` | Un module du programme en cours le couvre |
-| `valide` | Quiz réussi à 80 % ou plus (F9) |
-| `prouve` | Un projet preuve terminé l'utilise (F11) |
+| `declared` | January reports the skill or it is extracted from an imported document |
+| `in_progress` | A module in the current program covers the skill |
+| `validated` | January passes a quiz with 80% or higher (F9) |
+| `proven` | A completed project uses the skill (F11) |
 
 ### 4.3 Ingestion
 
-- Formats acceptés : PDF, DOCX, Markdown, texte, URL, lien YouTube (transcription), texte collé.
-- Chaîne : extraction, nettoyage, découpage en fragments d'environ 500 tokens avec recouvrement de 60, embedding, enregistrement.
-- Un hash du contenu empêche d'indexer deux fois le même document.
-- Statut visible pour chaque document : en file, en cours, indexé, erreur.
-- January peut marquer un document « déjà appris ». L'Archiviste en extrait alors les concepts et crée des acquis au niveau `declare`.
+- Accept PDF, DOCX, Markdown, text, URLs, YouTube transcripts, and pasted text.
+- Extract and clean text, split it into roughly 500-token chunks with a 60-token overlap, embed
+  the chunks, and save them.
+- A content hash prevents duplicate indexing.
+- Each document shows its processing status as queued, in progress, indexed, or failed.
+- January can mark a document as already learned. The Archivist extracts its concepts as
+  `declared` skills.
 
-### 4.4 Lecture par les agents
+### 4.4 Agent reads
 
-- Outil `memory_search(query, kinds, k)` : recherche dense avec filtre sur `kind`, 8 résultats par défaut.
-- Outil `memory_get_skills()` : résumé de la carte de compétences (F15).
-- Chaque graphe d'agents commence par un nœud qui charge le contexte mémoire utile : acquis, décisions, documents liés à l'objectif.
+- `memory_search(query, kinds, k)` performs dense search filtered by `kind`, with eight results
+  by default.
+- `memory_get_skills()` summarizes the skill map (F15).
+- Each agent graph starts by loading relevant skills, decisions, and documents for the goal.
 
-### 4.5 Écriture par les agents
+### 4.5 Agent writes
 
-- Outil `memory_write(kind, title, text, tags, evidence)`.
-- Les agents écrivent directement les `source` et les `lecon`.
-- Un acquis écrit par un agent entre au niveau `declare` ou `en_cours`. Seuls un quiz ou un projet le font monter.
-- Une `decision` proposée par un agent passe par une boîte « À confirmer » avant d'être enregistrée.
-- Chaque écriture est journalisée : agent, date, session, raison en une phrase.
+- Agents write through `memory_write(kind, title, text, tags, evidence)`.
+- Agents can write `source` and `lesson` entries directly.
+- Agent-written skills start at `declared` or `in_progress`. A quiz or project can raise the level.
+- A proposed `decision` waits under **To confirm** before being saved.
+- Each write records the agent, date, session, and a one-sentence reason.
 
-### 4.6 Explorateur de mémoire
+### 4.6 Memory explorer
 
-L'écran Mémoire répond à la question « que savent les agents sur moi ? ».
+The Memory page shows what agents know about January.
 
-- **Liste** filtrable par type, tag, auteur et date, avec édition, suppression et fusion de doublons.
-- **Recherche sémantique** avec les scores affichés.
-- **Détail** d'un élément : texte, fragments, métadonnées, voisins les plus proches, journal des écritures.
-- **Carte 2D** des vecteurs, projetée côté back end (PCA par défaut), colorée par type. Un clic ouvre l'élément.
-- **Banc d'essai** : une requête affiche exactement les fragments qu'un agent recevrait.
-- **Statistiques** : nombre d'éléments par type, dernière écriture, part du quota Vectorize que la base occuperait.
-- **Actions** : Réindexer (recalcule tous les vecteurs depuis le texte), Exporter en JSON, lien vers le tableau de bord natif de Qdrant sur `http://localhost:6333/dashboard`.
+- **List.** Filter by type, tag, author, and date. Edit, delete, and merge duplicates.
+- **Semantic search.** View matching results with their scores.
+- **Entry details.** Read the text, chunks, metadata, nearest neighbors, and write history.
+- **2D vector map.** The backend projects vectors with PCA by default. Colors identify types
+  and clicking a point opens its entry.
+- **Query preview.** See the exact chunks an agent would receive for a query.
+- **Statistics.** View totals by type, the last write, and estimated Vectorize quota usage.
+- **Actions.** Rebuild vectors from text, export JSON, or open the Qdrant dashboard at
+  `http://localhost:6333/dashboard`.
 
 ## 5. CV Review (F4)
 
-Deux agents relisent le CV face à une offre précise, proposent des modifications justifiées, puis régénèrent le PDF dans le design d'origine si January le demande.
+Two agents review a CV against a specific posting. They propose changes with reasons and
+regenerate the PDF in the original design at January's request.
 
-### 5.1 Profil maître (une seule fois)
+### 5.1 Master profile (one-time setup)
 
-- January importe son CV en PDF, l'export PDF de son profil LinkedIn (ou un copier coller), et un texte libre sur ce qu'elle sait faire et ce qu'elle vise.
-- L'Archiviste en tire un **profil maître** structuré en JSON : identité, titre, résumé, expériences avec réalisations, formation, compétences, projets, langues, liens.
-- January relit et corrige ce profil dans un formulaire.
-- Le profil maître est la seule source de faits. Tout CV ciblé en est un sous ensemble reformulé.
+- January imports her CV PDF, a LinkedIn profile PDF or pasted profile text, and a free-text
+  description of her skills and goals.
+- The Archivist creates a structured JSON **master profile** with identity, title, summary,
+  experience and achievements, education, skills, projects, languages, and links.
+- January reviews and edits the profile in a form.
+- Tailored CVs select and rephrase facts from the master profile as their sole factual source.
 
-### 5.2 Capture du design (une fois par design)
+### 5.2 Design capture (once per design)
 
-1. Le back end extrait du PDF les blocs de texte avec position, police, taille et couleur, ainsi qu'une image de chaque page.
-2. Le Maquettiste, un agent avec un modèle de vision, produit un template HTML et CSS qui reproduit la mise en page : colonnes, marges, couleurs, hiérarchie.
-3. Le template est rendu en PDF, puis comparé à l'original. L'écran montre les deux côte à côte avec un score de ressemblance. Trois passes de correction automatique au maximum.
-4. January valide, ou demande un ajustement en langage naturel (exemple : la colonne de gauche est trop large).
+1. The backend extracts text blocks with their position, font, size, and color, plus an image
+   of each page.
+2. The Layout Designer uses a vision model to make an HTML and CSS template with the same
+   columns, margins, colors, and hierarchy.
+3. Render the template to PDF and compare it with the original. The app shows them side by
+   side with a similarity score. Automatic corrections run for up to three passes.
+4. January approves the result or asks for an adjustment in natural language, such as
+   “The left column is too wide.”
 
-- **Polices.** Si la police d'origine est libre, elle est téléchargée dans le dossier du template. Sinon, la plus proche est utilisée et l'écart est signalé.
-- **Limite assumée.** Le rendu est fidèle, pas identique au pixel près.
+- **Fonts.** Save the original font in the template folder if it is freely available. Otherwise
+  use the closest substitute and report the change.
+- **Rendering.** The template aims for visual fidelity within rendering tolerances.
 
-### 5.3 Revue ciblée sur une offre
+### 5.3 Review against a posting
 
-L'entrée est un lien vers l'offre ou son texte collé. Si le lien ne peut pas être lu (connexion requise, page vide), l'application le dit tout de suite et demande le texte. Aucune analyse ne démarre sur une offre devinée.
+January enters a posting URL or pastes the text. If the link requires sign-in or the page is
+empty, the app immediately asks for the posting text before starting the analysis.
 
-1. **Analyse de l'offre.** Intitulé, niveau, exigences obligatoires et souhaitées, mots clés dans leur formulation exacte, critères éliminatoires (années d'expérience, lieu, langue), outils.
-2. **Recherche entreprise.** Produit, stack, actualité, valeurs, processus de recrutement, et logiciel de recrutement utilisé quand l'adresse de candidature le révèle.
-3. **Contrôle doublon.** Vérification dans le suivi de candidatures (section 6).
-4. **Lecture machine**, par le Lecteur ATS. Il extrait le texte du PDF comme le ferait un parseur, puis vérifie l'ordre de lecture, les intitulés de sections, la présence des mots clés et leurs variantes.
-5. **Lecture humaine**, par le Recruteur. Clarté du premier écran, adéquation du titre, réalisations chiffrées, ordre de pertinence, signaux d'alerte, longueur.
-6. **Confrontation.** Les deux agents arbitrent leurs désaccords en deux tours visibles au maximum (densité de mots clés contre lisibilité).
-7. **Propositions.** Chaque modification indique : section, avant, après, raison, type, et le fait du profil maître sur lequel elle s'appuie. January accepte ou refuse chacune, ou tout d'un coup.
-8. **Sortie au choix.** Soit un rapport « quoi modifier », soit le CV généré en PDF avec le template et les modifications acceptées.
-9. **Contrôle final.** Le PDF généré est relu par le Lecteur ATS. Le nombre de pages reste celui de l'original, sauf accord.
+1. **Posting analysis.** Extract title, seniority, required and preferred qualifications,
+   verbatim keywords, screening criteria such as experience, location, and language, and tools.
+2. **Company research.** Find the product, stack, news, values, hiring process, and the hiring
+   platform if the application URL identifies it.
+3. **Duplicate check.** Check application tracking (section 6).
+4. **Machine reading.** The ATS Reader extracts the PDF text as a parser would and checks
+   reading order, section headings, keywords, and their variants.
+5. **Human reading.** The Recruiter checks first-screen clarity, title fit, quantified
+   achievements, order of relevance, red flags, and length.
+6. **Debate.** The two agents resolve disagreements, such as keyword density and readability,
+   in up to two visible rounds.
+7. **Suggestions.** Each change names the section, before and after text, reason, type, and
+   supporting fact from the master profile. January can approve or refuse them singly or in bulk.
+8. **Output.** January can view a report on what to change or generate a CV PDF with the template
+   and approved changes.
+9. **Final check.** The ATS Reader reviews the generated PDF. Changes to the original page
+   count require approval.
 
-Le fichier est nommé `CV_<Nom>_<Entreprise>_<Poste>.pdf`, versionné, et lié à la candidature.
+The PDF uses `CV_<Name>_<Company>_<Role>.pdf`. Its version is saved and linked to the application.
 
-**Deux indicateurs affichés, avant et après**
+**Before and after indicators**
 
-| Indicateur | Calcul |
+| Indicator | Calculation |
 | --- | --- |
-| Couverture des exigences | Part des exigences obligatoires de l'offre couvertes par un fait réel du CV |
-| Lisibilité machine | Liste de contrôles réussis : texte sélectionnable, ordre de lecture, intitulés standards, coordonnées dans le corps, tailles de police |
+| Requirement coverage | Share of mandatory qualifications supported by a real CV fact |
+| Machine readability | Passed checks for text, reading order, headings, contacts, and fonts |
 
-Ces indicateurs sont internes à l'application. L'écran précise qu'il n'existe pas de score ATS universel.
+The checks cover selectable text, standard section headings, contact details in the body, and
+font sizes. The screen explains that the app's indicators do not represent a universal ATS score.
 
-### 5.4 Ce que les agents savent des logiciels de recrutement
+### 5.4 Applicant tracking system knowledge
 
-Les agents partent d'une base de connaissances datée, rafraîchie par une recherche web tous les 30 jours. Point de départ, tiré de l'[enquête de Huntr](https://huntr.co/blog/how-applicant-tracking-systems-work) :
+Agents use a dated knowledge base refreshed by web research every 30 days. The initial
+findings come from [Huntr's survey][huntr-ats].
 
-- Un ATS est surtout une base de candidatures avec un moteur de recherche. D'après cette enquête, aucun grand ATS ne rejette seul un CV sur son contenu.
-- Le vrai filtre automatique, ce sont les questions éliminatoires du formulaire. Le Kit de candidature (F16) les repère et prépare des réponses exactes.
-- Les mots clés servent à la recherche et au classement par les recruteurs. Certains ATS ajoutent un classement par IA.
-- Côté forme : coordonnées hors en tête et pied de page, polices standards de 10 points ou plus, fichier PDF ou Word.
+- An ATS primarily stores and searches applications. Huntr reported that none of the major
+  systems studied automatically rejected a CV based on its content alone.
+- Screening questions can filter applications automatically. The Application Kit (F16)
+  identifies them and drafts accurate answers.
+- Recruiters use keywords for search and ranking. Some systems include AI ranking.
+- Keep contact details in the body, use standard fonts of 10 points or larger, and use
+  a PDF or Word file.
 
-**Règles appliquées par les agents**
+**Agent rules**
 
-- Reprendre les termes exacts de l'offre partout où ils sont vrais pour January.
-- Intitulés de sections standards, ordre chronologique inversé, dates homogènes, aucun texte dans une image.
-- Jamais de texte caché ni de bourrage de mots clés.
-- Aucune garantie de passage n'est affichée, seulement les contrôles réussis.
+- Use the posting's exact words where they accurately describe January.
+- Use standard headings, reverse chronological order, and consistent dates. Keep text out of
+  images.
+- Avoid hidden text and keyword stuffing.
+- Report the checks the CV passes. The app makes no guarantee of passing a hiring screen.
 
-### 5.5 Garde fous
+### 5.5 Safeguards
 
-- Un nœud validateur compare chaque phrase proposée au profil maître. Tout outil, chiffre ou titre absent du profil bloque la modification, qui passe en « à confirmer ».
-- Si January confirme un fait nouveau, il est d'abord ajouté au profil maître.
-- Un mot clé de l'offre que January ne maîtrise pas n'entre pas dans le CV. Il part vers l'analyse d'écart (F8).
+- A validation node checks every proposed sentence against the master profile. A tool, figure,
+  or title missing from the profile sends the change to **To confirm**.
+- Once January confirms a new fact, it is added to the master profile first.
+- Send posting keywords for skills January lacks to skill gap assessment (F8).
 
-## 6. Suivi de candidatures (F5)
+## 6. Application tracking (F5)
 
-L'onglet Candidatures tient le registre de chaque offre, propose les relances au bon moment et bloque les doublons.
+Applications records each posting, suggests timely follow-ups, and prevents duplicates.
 
-### 6.1 Fiche candidature
+### 6.1 Application record
 
-- **Champs.** Entreprise, poste, lien de l'offre, copie figée du texte de l'offre, canal, date de candidature, statut, version du CV envoyé, lettre, contacts (nom, rôle, lien), notes, prochaine action et sa date.
-- **Statuts.** À postuler, Postulée, Relancée, Entretien, Offre, Refus, Sans réponse, Retirée.
-- **Vues.** Kanban par statut, tableau triable, et fil chronologique des événements sur chaque fiche.
-- La copie du texte de l'offre est prise à la création, car les annonces disparaissent.
+- **Fields.** Company, role, posting URL, posting text snapshot, channel, application date,
+  status, submitted CV version, letter, contacts (name, role, link), notes, and next action
+  with its date.
+- **Statuses.** To apply, Applied, Followed up, Interview, Offer, Rejected, No answer, Withdrawn.
+- **Views.** Kanban by status, sortable table, and an event timeline on each record.
+- Copy the posting text on creation to keep it available if the listing disappears.
 
-**Trois façons de créer une fiche**
+**Ways to create an application**
 
-1. Automatiquement, quand un CV est généré pour une offre. La fiche naît au statut À postuler, et le bouton « J'ai postulé » fixe la date.
-2. À la main, par un formulaire.
-3. En langage naturel : « j'ai postulé hier chez X pour le poste Y ». L'Assistant de suivi crée la fiche et la montre pour confirmation.
+1. Generating a CV for a posting creates an application in **To apply**. The **I applied**
+   button records the date.
+2. January can create a record through a form.
+3. The tracking assistant can create a record from a message such as “I applied to X yesterday
+   for role Y” and show it for confirmation.
 
-### 6.2 Relances
+### 6.2 Follow-ups
 
-| Déclencheur | Suggestion |
+| Trigger | Suggestion |
 | --- | --- |
-| 7 jours après la candidature, sans réponse | Message LinkedIn au recruteur ou au responsable du poste |
-| 14 jours, sans réponse | Relance par email |
-| 21 jours, sans réponse | Proposer de classer la fiche en Sans réponse |
-| Lendemain d'un entretien | Message de remerciement |
-| 7 jours après un entretien, sans réponse | Demande de nouvelles |
+| 7 days after applying, without a reply | LinkedIn message to the recruiter or hiring manager |
+| 14 days after applying, without a reply | Follow-up email |
+| 21 days after applying, without a reply | Move the record to No answer |
+| Day after an interview | Thank-you message |
+| 7 days after an interview, without a reply | Ask for an update |
 
-- Les délais sont modifiables dans les réglages.
-- Chaque relance affiche qui contacter, un brouillon prêt à copier, et trois boutons : Fait, Reporter de 3 jours, Ignorer.
-- Sans contact enregistré, la relance propose un lien de recherche LinkedIn pré rempli (entreprise et rôle).
-- L'application n'envoie jamais rien elle même. January copie et envoie.
-- Les relances dues remontent dans le Brief du matin (F17) et en pastille sur l'onglet.
+- January can change the delays in Settings.
+- Each follow-up shows who to contact and a draft to copy. January can mark it done, snooze
+  it for three days, or dismiss it.
+- With no saved contact, offer a LinkedIn search link prefilled with the company and role.
+- January copies and sends the draft herself.
+- Due follow-ups appear in the Morning Brief (F17) and in a badge on the tab.
 
-### 6.3 Alerte doublon
+### 6.3 Duplicate alerts
 
-Le contrôle se déclenche dès qu'une offre entre dans l'application, quel que soit l'écran.
+Adding a posting from any screen triggers the duplicate check.
 
-| Niveau | Condition |
+| Confidence | Condition |
 | --- | --- |
-| Certain | Même lien, après normalisation de l'adresse |
-| Probable | Même entreprise et intitulé similaire à 85 % ou plus |
-| Possible | Même entreprise et texte d'offre très proche selon la recherche vectorielle |
+| Certain | Same normalized URL |
+| Probable | Same company and title similarity of at least 85% |
+| Possible | Same company and high vector similarity of the posting text |
 
-- Message type : « Attention, tu as déjà postulé chez X pour le poste Y le 3 novembre (statut : Postulée). »
-- Choix proposés : ouvrir la fiche existante, confirmer que c'est un autre poste, annuler.
-- Une candidature chez la même entreprise pour un autre poste dans les 30 jours déclenche une simple information.
+- An alert can say “You applied to X for role Y on November 3 (Applied).”
+- January can open the existing record, confirm this is a different role, or cancel.
+- An application to the same company for a different role in the past 30 days shows a notice.
 
-### 6.4 Indicateurs
+### 6.4 Indicators
 
-L'onglet affiche le nombre de candidatures par statut, le taux de réponse, le délai moyen de réponse et le nombre de relances dues.
+The tab shows application counts by status, the response rate, average response time, and
+the number of follow-ups due.
 
-## 7. Les six features validées (F8 à F13)
+### 6.5 Chat about job postings
 
-Ces six features relient l'apprentissage et la recherche d'emploi : ce qui manque pour une offre devient du programme, et ce qui est appris devient une preuve sur le CV.
+**Ask about offers** opens a dialog from `/career/postings`. The old address
+`/carriere/offres` redirects there. January can create and revisit several saved chats. The
+assistant answers from her saved Tremplin postings, application history, contacts, and skill
+gaps. It can explain when an offer was added, whether she applied, whom she has saved as a
+contact, and what to learn to improve her fit. [Offers chat design][offers-chat-design]
 
-### F8. Analyse d'écart
+[offers-chat-design]: docs/superpowers/specs/2026-11-24-offers-chat-design.md
 
-- **Déclencheur.** Toute offre ajoutée, ou à la demande sur un poste cible.
-- **Fonctionnement.** L'Analyste extrait les compétences de l'offre, les rattache au référentiel de compétences, puis les compare aux acquis.
-- **Sortie.** Un tableau par compétence : exigée ou souhaitée, niveau actuel, action proposée (déjà au programme en semaine N, à ajouter, hors périmètre).
-- **Score de match** de 0 à 100. Une exigence obligatoire pèse 2, une souhaitée pèse 1. Un acquis `valide` ou `prouve` compte 1, `declare` 0,6, `en_cours` 0,3, absent 0.
-- Le bouton « Ajouter au planning » lance une replanification (F13), toujours soumise à validation.
-- Une vue agrégée montre les 10 compétences qui manquent le plus souvent sur l'ensemble des offres.
+## 7. Approved learning and career features (F8 to F13)
 
-### F9. Validation des acquis
+Skill gaps inform the learning plan, and completed work supplies evidence for the CV.
 
-- L'Examinateur génère un quiz par module : 8 à 12 questions qui mêlent QCM, réponse courte, lecture de code et « explique avec tes mots ».
-- Les réponses ouvertes sont notées avec une grille, et chaque erreur reçoit une explication.
-- À 80 % ou plus, l'acquis passe à `valide`. En dessous, des tâches de révision ciblées sont ajoutées, avec un nouvel essai 2 jours plus tard.
-- **Révisions espacées.** Des fiches sont créées depuis les leçons et les erreurs de quiz. Intervalles de 1, 3, 7, 16 puis 35 jours. Une erreur ramène la fiche à 1 jour.
-- La file de révision du jour est plafonnée à 15 minutes.
-- Un acquis `valide` dont les fiches échouent deux fois de suite redescend à `en_cours`.
+### F8. Skill gap assessment
 
-### F10. Simulateur d'entretien
+- **Trigger.** An added posting or a request to assess a target role.
+- **Analysis.** The Analyst extracts skills, maps them to the skill catalog, and compares
+  them with January's current skills.
+- **Result.** A table shows whether each skill is required or preferred, its current level,
+  and the proposed action. A skill may already be in a program week, be added, or be out of scope.
+- **Match score.** The score runs from 0 to 100. Required qualifications weigh 2 and preferred
+  ones weigh 1. A `validated` or `proven` skill counts as 1, `declared` as 0.6, `in_progress`
+  as 0.3, and a missing skill as 0.
+- Adding a skill to the schedule starts replanning (F13), which requires approval.
+- An overview shows the ten skills most often missing across postings.
 
-- Lancé depuis une candidature, ou librement sur un poste.
-- **Modes.** Comportemental, technique, étude de cas, mixte. Durée de 15, 30 ou 45 minutes. En français ou en anglais.
-- L'Intervieweur pose une question à la fois et relance selon les réponses. Il s'appuie sur l'offre, le dossier entreprise, la version du CV envoyée et les écarts connus.
-- Échange par écrit dans le MVP.
-- **Débrief.** Note par critère (clarté, structure, profondeur technique, adéquation au poste), 3 points forts, 3 points à corriger, et une version améliorée de la réponse la plus faible.
-- Les questions ratées deviennent des fiches de révision. Le débrief est rattaché à la candidature.
+### F9. Skill validation
 
-### F11. Projets preuves
+- The Examiner makes a quiz of 8 to 12 questions per module. It mixes multiple choice, short
+  answers, code reading, and explanations in January's own words.
+- Grade open answers with a rubric and explain each mistake.
+- A score of at least 80% moves the skill to `validated`. Lower scores add targeted review
+  tasks and a retake two days later.
+- **Spaced review.** Lessons and quiz mistakes supply flashcards. Intervals are 1, 3, 7, 16,
+  and 35 days. A mistake resets a card to one day.
+- The daily review queue is capped at 15 minutes.
+- A `validated` skill returns to `in_progress` after two consecutive failed flashcard reviews.
 
-- Chaque module se termine par un mini projet de 3 à 6 heures : contexte, objectif, contraintes, critères d'acceptation.
-- January soumet un lien de dépôt, ou une description avec captures.
-- Le Praticien évalue le rendu contre les critères et donne un retour écrit.
-- À la validation, l'acquis passe à `prouve` et quatre brouillons sont générés : une ligne de CV, une entrée de projet pour le profil maître, un post LinkedIn, un plan de README.
-- Rien n'entre dans le profil maître sans validation.
-- Un écran Portfolio liste les projets et leur statut.
+### F10. Mock interview
 
-### F12. Radar du marché
+- Start from an application or enter a role directly.
+- **Modes.** Behavioral, technical, case study, and mixed. Choose 15, 30, or 45 minutes.
+  Practice in English by default or choose French.
+- The Interviewer asks one question at a time and follows up on answers. It uses the posting,
+  company dossier, submitted CV version, and known gaps.
+- MVP interviews use text.
+- **Debrief.** Scores cover clarity, structure, technical depth, and role fit. Include three
+  strengths, three improvements, and a better version of the weakest answer.
+- Missed questions become flashcards. The debrief is linked to the application.
 
-- Chaque semaine, et à la demande, l'Éclaireur collecte 30 à 50 offres publiques pour le poste et la zone visés.
-- L'Analyste en extrait compétences, outils, niveau, télétravail, et salaire quand il est affiché.
-- **Sortie.** Classement des compétences par fréquence, évolution depuis le dernier relevé, et alertes du type « demandée dans 60 % des offres, absente de ton programme ».
-- Les offres dont le score de match atteint 70 remontent dans le Brief du matin.
-- Le rapport indique toujours combien d'offres ont réellement été lues. Les sites qui bloquent la lecture sont comptés à part.
+### F11. Proof projects
 
-### F13. Replanification adaptative
+- Each module ends with a three- to six-hour project with context, goal, constraints,
+  and acceptance criteria.
+- January submits a repository URL or a description with screenshots.
+- The Practitioner assesses the submission against the criteria and gives written feedback.
+- Approval moves the skill to `proven` and creates four drafts for a CV line, a master profile
+  project, a LinkedIn post, and a README outline.
+- January approves entries to the master profile.
+- Portfolio lists projects with their status.
 
-- **Bilan hebdomadaire** le dimanche à 18 h, heure réglable : heures prévues et faites, tâches terminées, résultats de quiz.
-- Le Stratège propose un nouveau plan. Les tâches en retard sont redistribuées sans jamais dépasser le budget hebdomadaire.
-- Plus de 30 % de retard deux semaines de suite : deux options sont présentées, réduire le périmètre ou repousser l'échéance.
-- En avance : avancer la suite, ou approfondir.
-- **Autres déclencheurs.** Ajout depuis l'analyse d'écart, ou message du type « cette semaine je n'ai que 5 heures ».
-- Chaque proposition montre l'avant et l'après, attend une validation, et l'historique des versions du plan est conservé.
+### F12. Market radar
 
-## 8. Six nouvelles features (F14 à F19)
+- Every week and on demand, the Scout gathers 30 to 50 public postings for the target role
+  and region.
+- The Analyst extracts skills, tools, seniority, remote options, and any listed salary.
+- **Result.** Rank skills by frequency, show changes since the last run, and flag gaps such
+  as “Requested in 60% of postings and missing from your program.”
+- Postings with a match score of at least 70 appear in the Morning Brief.
+- Report how many postings were read and count inaccessible sites separately.
 
-Ces six ajouts rendent la plateforme vivante au quotidien : un tuteur pendant l'étude, une page d'accueil qui bouge chaque matin, et un comité qui juge le CV avant les vrais recruteurs.
+### F13. Adaptive replanning
 
-### F14. Session d'étude guidée
+- **Weekly review.** Sunday at 6 p.m. by default, with a configurable time. It covers planned
+  and recorded hours, completed tasks, and quiz scores.
+- The Strategist proposes a new plan that redistributes overdue tasks within the weekly budget.
+- When progress is more than 30% behind for two weeks, suggest reducing scope or moving the
+  deadline.
+- When ahead of schedule, suggest bringing tasks forward or exploring a topic in more depth.
+- **Other triggers.** A skill gap added to the plan or a message such as “I only have five
+  hours this week.”
+- Each proposal shows the old and new plan, waits for approval, and keeps version history.
 
-- Le bouton « Commencer mon bloc » ouvre la session du jour avec un minuteur. Cycles de 50 minutes de travail et 10 de pause par défaut, réglables.
-- Le Tuteur mène le bloc : objectif, leçon section par section, une question de compréhension après chaque section, l'exercice, puis 3 questions finales.
-- **Trois modes.** Socratique (il questionne pour faire trouver), Feynman (January explique, il cherche les trous), Direct (il répond).
-- Le bouton « Je bloque » donne trois niveaux d'indices avant la solution.
-- Le Tuteur connaît la leçon, ses sources et la mémoire. Il peut dessiner au tableau.
-- **Fin de session.** Résumé, temps enregistré, tâches cochées, acquis mis à jour, fiches créées depuis les erreurs, une ligne dans le journal.
-- La série de jours consécutifs et les heures de la semaine sont visibles en permanence.
+## 8. Daily learning and career features (F14 to F19)
 
-### F15. Carte de compétences vivante
+These features support daily work with a tutor during study, a home page refreshed each morning,
+and a hiring panel that evaluates a CV before submission.
 
-- Un graphe où chaque nœud est une compétence et chaque lien un prérequis. La couleur indique le niveau de maîtrise, la taille la demande du marché (F12).
-- Le référentiel est créé par le Stratège à la création du programme, puis enrichi par les offres et le Radar.
-- Un clic sur un nœud montre les preuves (leçons, quiz, projets, lignes de CV), les offres qui l'exigent et la prochaine action.
-- **Trois vues.** Graphe, radar par domaine, courbe de progression avec un relevé par semaine.
-- **Comparaison.** Moi aujourd'hui, le poste cible, ou une offre précise.
-- C'est la référence unique lue par F4, F8, F12 et F13.
+### F14. Guided study session
 
-### F16. Kit de candidature
+- Start the day's block with a timer. The default is 50 minutes of work and 10 minutes of rest.
+  Both are configurable.
+- The Tutor leads January through the goal, lesson sections with a comprehension question
+  after each one, the exercise, and three final questions.
+- **Modes.** Socratic asks questions to guide discovery. In Feynman, January explains and
+  the Tutor looks for gaps. Direct gives answers.
+- The stuck control offers three levels of hints before revealing the solution.
+- The Tutor reads the lesson, sources, and memory and can draw on the whiteboard.
+- **End of session.** Summarize the block, log time, check off tasks, update skills, make
+  flashcards from mistakes, and add a journal entry.
+- The current streak and weekly hours stay visible.
 
-Pour une offre, un clic génère en parallèle sept pièces, chacune affichée dès qu'elle est prête.
+### F15. Skill map
 
-| Pièce | Détail |
+- Nodes represent skills and edges represent prerequisites. Color shows mastery and size
+  shows market demand (F12).
+- The Strategist creates the catalog with the program. Postings and Market Radar extend it.
+- Click a node to see lesson, quiz, project, and CV evidence, postings that require the skill,
+  and the next action.
+- **Views.** Prerequisite graph, radar chart by domain, and progress chart with weekly data.
+- **Comparison.** Current skills, a target role, or a specific posting.
+- F4, F8, F12, and F13 read the same catalog.
+
+### F16. Application kit
+
+For a posting, one click generates seven items in parallel and displays each as it is ready.
+
+| Item | Details |
 | --- | --- |
-| CV ciblé | Parcours de la section 5 |
-| Lettre de motivation | 250 à 350 mots, dans la langue de l'offre |
-| Messages LinkedIn | Une version courte pour l'invitation, une version longue pour le message |
-| Emails de relance | Brouillons pour 7 et 14 jours |
-| Réponses au formulaire | Questions éliminatoires repérées, réponses tirées du profil maître uniquement |
-| Dossier entreprise | Une page sourcée : activité, produit, stack, actualité des 6 derniers mois, culture, processus d'entretien, 5 questions à poser, points de vigilance |
-| Pitch de 60 secondes | « Parle moi de toi » adapté au poste |
+| Tailored CV | Section 5 workflow |
+| Cover letter | 250 to 350 words in the posting's language |
+| LinkedIn messages | Short invitation and longer message |
+| Follow-up emails | Drafts for days 7 and 14 |
+| Form answers | Flag screening questions and answer from the master profile only |
+| Company dossier | One page of cited research |
+| 60-second pitch | A role-specific answer to “Tell me about yourself” |
 
-- Tout est modifiable avant usage, enregistré sur la fiche candidature, et exportable en une archive.
-- Un **guide de style personnel**, saisi en texte libre dans les réglages, s'applique à tous les textes écrits au nom de January.
-- Les prétentions salariales ne sont jamais remplies par un agent.
+- The dossier covers business, product, stack, six months of news, culture, the interview
+  process, five questions to ask, and points to watch.
+- January can edit all items before use. The application record stores them and can export
+  them as one archive.
+- A free-text **personal style guide** in Settings informs drafts written on January's behalf.
+- January supplies salary expectations herself.
 
-### F17. Brief du matin
+### F17. Morning Brief
 
-- Généré chaque jour à 7 h, heure réglable, et à l'ouverture de l'application s'il date de la veille.
-- **Contenu.** Bloc d'étude du jour, fiches à réviser, relances dues, nouvelles offres du Radar, avancement de la semaine, une ressource ou actualité sourcée du domaine visé, et deux phrases du conseil sur la priorité du jour.
-- La page d'accueil est ce brief, avec quatre actions rapides : Commencer mon bloc, Réviser, Ajouter une offre, Capturer.
-- Un fil d'activité montre ce que les agents ont fait en tâche de fond : leçons générées, relevé du Radar, écritures en mémoire.
+- Generate it daily at 7 a.m. by default, and on app open if the brief is from yesterday.
+- **Contents.** Today's study block, due flashcards and follow-ups, new Radar postings, weekly
+  progress, one cited resource or news item, and two sentences from the Council on today's priority.
+- The brief is the home page, with quick actions to start studying, review, add a posting,
+  and capture an item.
+- The activity feed shows background work such as generated lessons, Radar updates, and
+  memory writes.
 
-### F18. Capture rapide
+### F18. Quick capture
 
-- Un champ global, ouvert par Ctrl K ou Cmd K, accepte un lien, un texte, un fichier ou une note du type « j'ai appris X aujourd'hui ».
-- L'Archiviste lit, résume en 5 lignes, extrait les concepts, les relie aux modules du programme, et range le tout en mémoire.
-- Si la capture couvre une tâche planifiée, il propose de la cocher. Il propose aussi des fiches de révision.
-- Si un lien ne peut pas être lu, l'application le dit tout de suite et demande le texte.
-- Le **journal d'apprentissage** réunit captures, sessions et quiz dans un fil chronologique consultable, avec un résumé hebdomadaire.
+- Open the global field with Ctrl+K or Cmd+K. Enter a link, text, file, or a note such as
+  “I learned X today.”
+- The Archivist reads it, summarizes it in five lines, extracts concepts, links them to program
+  modules, and stores the result in memory.
+- If the capture covers a planned task, suggest marking it done. Suggest flashcards as well.
+- If a link cannot be read, ask for the text immediately.
+- The **learning journal** lists captures, sessions, and quizzes chronologically with a
+  weekly summary.
 
-### F19. Comité de recrutement simulé
+### F19. Simulated hiring panel
 
-- **Entrée.** Une version du CV et une offre.
-- **Quatre personas.** Le filtre machine (quelles recherches de recruteur feraient remonter ce CV), la recruteuse RH, le manager du poste, le futur collègue.
-- Chacun donne sa première impression, puis le comité débat en direct pendant deux tours, puis vote : entretien oui, non ou peut être, avec son objection principale.
-- **Sortie.** Verdict, objections classées, et les 3 changements qui feraient basculer un vote.
-- Relancer le comité après correction montre l'avant et l'après.
-- Les personas s'adaptent à l'entreprise grâce au dossier entreprise (startup ou grand groupe).
-- L'écran précise qu'il s'agit d'une simulation et non d'une prédiction.
+- **Input.** A CV version and a posting.
+- **Roles.** An ATS reader checking what recruiter searches find the CV, an HR recruiter,
+  the hiring manager, and a prospective teammate.
+- Each gives a first impression. After two live debate rounds, each votes yes, no, or maybe
+  on an interview and names their main objection.
+- **Result.** Verdict, ranked objections, and three changes that could change a vote.
+- Running the panel again after changes shows both results.
+- The company dossier adapts the roles to the organization, such as a startup or large enterprise.
+- The screen labels the result as a simulation.
 
-## 9. Agents et orchestration
+## 9. Agents and orchestration
 
-Chaque parcours est un graphe LangGraph. Les agents en sont les nœuds, les validations de January sont des interruptions, et chaque événement est diffusé à l'interface puis enregistré.
+Each workflow is a LangGraph graph. Agents are nodes, January's approvals are interrupts,
+and each event is streamed to the interface and saved.
 
-### 9.1 Les 17 agents
+### 9.1 The 17 agents
 
-| Agent | Rôle | Features | Niveau de modèle |
+| Agent | Role | Features | Model tier |
 | --- | --- | --- | --- |
-| Modérateur | Ordonne les tours, pose les questions de cadrage, résume | F1, F19 | Rapide |
-| Stratège | Architecte du parcours, des prérequis et du planning | F1, F2, F13, F15 | Fort |
-| Praticien | Voix du terrain : ce qui sert vraiment dans le métier, projets | F1, F11 | Standard |
-| Éclaireur | Recherche web, tri des sources, repère de vrais praticiens | F1, F2, F12, F16, F17 | Rapide |
-| Sceptique | Conteste, vérifie la faisabilité face au budget temps, coupe le superflu | F1 | Standard |
-| Scribe | Dessine au tableau, tient le compte rendu | F1, F14 | Rapide |
-| Rédacteur | Écrit les leçons | F2 | Fort |
-| Vérificateur | Contrôle les faits, les liens et l'originalité | F2, F16 | Standard |
-| Archiviste | Ingestion, extraction de concepts, profil maître | F3, F4, F18 | Rapide |
-| Lecteur ATS | Lecture machine du CV | F4, F19 | Standard |
-| Recruteur | Lecture humaine du CV | F4, F19 | Standard |
-| Maquettiste | Reproduit le design du CV, nécessite la vision | F4 | Vision |
-| Analyste | Extraction de compétences, scores de match | F8, F12 | Rapide |
-| Examinateur | Quiz, notation, fiches de révision | F9 | Standard |
-| Intervieweur | Entretiens blancs et débriefs | F10 | Fort |
-| Tuteur | Accompagne les sessions d'étude | F14 | Standard |
-| Assistant de suivi | Fiches candidatures en langage naturel, brouillons de messages | F5, F16 | Rapide |
+| Moderator | Orders turns, asks clarifying questions, and summarizes | F1, F19 | Fast |
+| Strategist | Designs paths, prerequisites, and schedules | F1, F2, F13, F15 | Strong |
+| Practitioner | Brings practical experience and reviews projects | F1, F11 | Standard |
+| Scout | Finds web sources and working practitioners | F1, F2, F12, F16, F17 | Fast |
+| Skeptic | Challenges ideas, checks the time budget, and trims scope | F1 | Standard |
+| Scribe | Draws on the whiteboard and records the discussion | F1, F14 | Fast |
+| Writer | Writes lessons | F2 | Strong |
+| Checker | Checks facts, links, and originality | F2, F16 | Standard |
+| Archivist | Imports content and extracts concepts and master profiles | F3, F4, F18 | Fast |
+| ATS Reader | Checks machine readability of CVs | F4, F19 | Standard |
+| Recruiter | Reviews CVs as a human reader would | F4, F19 | Standard |
+| Layout Designer | Recreates the CV design using vision | F4 | Vision |
+| Analyst | Extracts skills and calculates match scores | F8, F12 | Fast |
+| Examiner | Creates quizzes, grades answers, and writes flashcards | F9 | Standard |
+| Interviewer | Runs mock interviews and debriefs | F10 | Strong |
+| Tutor | Guides study sessions | F14 | Standard |
+| Tracking Assistant | Creates applications from text and drafts messages | F5, F16 | Fast |
 
-Les quatre agents qui débattent dans le conseil d'apprentissage sont le Stratège, le Praticien, l'Éclaireur et le Sceptique. Le Modérateur et le Scribe les servent sans prendre position.
+The Strategist, Practitioner, Scout, and Skeptic debate in the Learning Council. The Moderator
+and Scribe support the discussion without taking a position.
 
-Le comité de recrutement (F19) réutilise le Lecteur ATS et le Recruteur, et ajoute deux personas, le Manager et le Futur collègue, définis comme des variantes de prompt du Recruteur.
+The hiring panel (F19) uses the ATS Reader and Recruiter. Two Recruiter prompt variants play
+the Hiring Manager and Prospective Teammate.
 
-### 9.2 Un graphe par parcours
+### 9.2 A graph per workflow
 
-Seize graphes, un module chacun : `learning_council`, `program_builder`, `lesson_factory`, `cv_capture`, `cv_review`, `application_kit`, `gap_analysis`, `quiz`, `interview`, `market_radar`, `replan`, `study_session`, `capture`, `hiring_committee`, `daily_brief`, `project_review`.
+The initial design has sixteen graphs in separate modules. These are `learning_council`,
+`program_builder`, `lesson_factory`, `cv_capture`, `cv_review`, `application_kit`,
+`gap_analysis`, `quiz`, `interview`, `market_radar`, `replan`, `study_session`, `capture`,
+`hiring_committee`, `daily_brief`, and `project_review`.
 
-Tous suivent le même squelette : charger le contexte mémoire, travailler, s'arrêter pour validation, finaliser, écrire en mémoire.
+They load memory context, do the work, pause for approval, finalize, and write to memory.
 
-### 9.3 Règles du débat
+### 9.3 Debate rules
 
-- Le Modérateur fixe l'ordre de parole. Chaque agent voit tous les tours précédents.
-- 150 mots au maximum par prise de parole.
-- Toute affirmation sur le domaine cite une source récupérée ou un élément de la mémoire.
-- À partir du tour 2, chaque agent répond nommément à au moins un autre.
-- Le Sceptique formule au moins une objection par tour.
-- Les messages de January sont traités en priorité au tour suivant.
-- Le Modérateur arrête le débat plus tôt si les positions ne bougent plus.
-- Un plafond de tokens par session est réglable, et le coût estimé s'affiche en direct.
+- The Moderator sets the speaking order. Each agent sees all previous rounds.
+- Each turn is at most 150 words.
+- Claims about the domain cite a retrieved source or a memory entry.
+- Starting in round two, each agent addresses at least one other by name.
+- The Skeptic raises at least one objection per round.
+- The next round addresses January's messages first.
+- The Moderator can end the debate early once positions stop changing.
+- Each session can set a token cap and shows estimated cost in real time.
 
-### 9.4 Humain dans la boucle
+### 9.4 Human approval
 
-- Les points d'arrêt utilisent `interrupt()` de LangGraph avec une charge JSON : type, question, options ([documentation](https://docs.langchain.com/oss/python/langgraph/interrupts)).
-- Il faut un checkpointer et un `thread_id`. Le `thread_id` est l'identifiant de session. La reprise se fait avec `Command(resume=valeur)`.
-- Checkpointer : SQLite asynchrone, dans un fichier `checkpoints.db` séparé de la base métier.
-- **Piège à respecter.** À la reprise, le nœud interrompu redémarre depuis son début. Aucun effet de bord (écriture en base, appel payant) ne doit précéder `interrupt()` dans le même nœud.
+- Pause with LangGraph `interrupt()` and a JSON payload with type, question, and options.
+  [LangGraph interrupts][langgraph-interrupts]
+- Use a checkpointer with the session ID as `thread_id`. Resume with `Command(resume=value)`.
+- The async SQLite checkpointer uses `checkpoints.db`, a separate database file.
+- Resuming starts the interrupted node again from the beginning. Keep database writes, paid
+  calls, and other side effects after `interrupt()` or in their own node.
 
-### 9.5 Événements temps réel
+[langgraph-interrupts]: https://docs.langchain.com/oss/python/langgraph/interrupts
 
-Chaque exécution publie des événements typés, enregistrés dans `session_events` puis poussés par WebSocket.
+### 9.5 Real-time events
 
-| Type | Contenu |
+Each run publishes typed events, stores them in `session_events`, and streams them by WebSocket.
+
+| Type | Payload |
 | --- | --- |
-| `agent.started` | Agent, étape, phrase d'intention (« je cherche des cursus reconnus ») |
-| `agent.token` | Fragment de texte en cours d'écriture |
-| `agent.message` | Message final de l'agent |
-| `tool.called`, `tool.result` | Outil, arguments, résumé du résultat |
-| `source.found` | Titre, lien, auteur, date, langue, score |
-| `board.update` | Code Mermaid et numéro d'étape |
-| `memory.written` | Élément écrit et raison |
-| `interrupt.requested` | Question et options pour January |
-| `proposal.ready`, `artifact.ready` | Proposition ou fichier prêt (PDF, plan) |
-| `cost.updated` | Tokens et coût estimé cumulés |
-| `run.completed`, `run.failed` | Fin, avec résumé ou erreur |
+| `agent.started` | Agent, step, and intent, such as “Looking for recognized courses” |
+| `agent.token` | Fragment of a message in progress |
+| `agent.message` | Agent's final message |
+| `tool.called`, `tool.result` | Tool, arguments, and result summary |
+| `source.found` | Title, link, author, date, language, and score |
+| `board.update` | Mermaid code and step number |
+| `memory.written` | Written entry and reason |
+| `interrupt.requested` | Question and options for January |
+| `proposal.ready`, `artifact.ready` | Available proposal or file such as a PDF or plan |
+| `cost.updated` | Cumulative tokens and estimated cost |
+| `run.completed`, `run.failed` | End of run with a summary or error |
 
-- Enveloppe commune : `id`, `session_id`, `seq`, `ts`, `type`, `agent`, `payload`.
-- À la reconnexion, le client envoie son dernier `seq` et le serveur rejoue la suite.
-- La « pensée » affichée est la phrase d'intention et les appels d'outils de chaque étape, pas un raisonnement brut.
+- All events have `id`, `session_id`, `seq`, `ts`, `type`, `agent`, and `payload`.
+- On reconnect, the client sends its last `seq` and the server replays subsequent events.
+- For each step, the UI shows the intent statement and tool calls.
 
-### 9.6 Fiabilité
+### 9.6 Reliability
 
-- Toute sortie structurée (propositions, plan, modifications de CV, quiz) passe par un schéma Pydantic. Deux nouveaux essais en cas d'échec de validation, puis un événement d'erreur lisible.
-- Délai maximal de 120 secondes par nœud, nouveaux essais avec attente croissante sur les erreurs du fournisseur.
-- Un prompt par agent, dans un fichier Markdown versionné, avec variables.
-- Chaque appel LLM est journalisé dans `llm_calls` : modèle, tokens, latence, coût estimé. Un écran Journal des agents les affiche.
-- Tâches planifiées par APScheduler dans le processus du back end : brief, radar, bilan hebdomadaire, relances, leçons à 7 jours, rafraîchissement des connaissances ATS.
+- Pydantic validates proposals, plans, CV changes, quizzes, and other structured outputs.
+  Retry twice on validation failure, then emit a readable error.
+- Allow up to 120 seconds per node and retry provider errors with increasing delays.
+- Store each agent's prompt and variables in a versioned Markdown file.
+- Record model, token counts, latency, and estimated cost in `llm_calls`. Display calls
+  in the agent log.
+- APScheduler runs the brief, radar, weekly review, follow-ups, lesson generation seven days
+  ahead, and ATS knowledge refresh in the backend process.
 
-## 10. Recherche web gratuite
+## 10. Web search
 
-La recherche passe par SearXNG, un métamoteur open source lancé dans Docker : gratuit, sans clé et sans quota. Brave Search n'a plus de plan gratuit sans carte bancaire, il reste donc une option de secours.
+SearXNG runs in Docker as the default open-source metasearch engine. It needs no API key.
+Brave Search is an optional fallback.
 
-### 10.1 Fournisseurs
+### 10.1 Providers
 
-| Fournisseur | Coût | Clé API | Rôle |
+| Provider | Cost in the original design | API key | Use |
 | --- | --- | --- | --- |
-| SearXNG, conteneur local | Gratuit, open source | Aucune | Par défaut |
-| Brave Search API | 5 $ de crédit par mois, soit environ 1 000 requêtes, carte bancaire exigée | Oui | Optionnel, activé seulement si une clé est saisie |
+| Local SearXNG | Free and open source | None | Default |
+| Brave Search API | $5 monthly credit, about 1,000 queries | Required | Optional fallback |
 
-- Le code dépend d'une interface `SearchProvider` : `search(query, lang, time_range, categories)` renvoie une liste de résultats (titre, lien, extrait, moteur, date).
-- L'ordre de repli est réglable. Par défaut : SearXNG, puis Brave si une clé existe.
-- SearXNG doit avoir le format JSON activé dans `settings.yml` (`search.formats: [html, json]`). Le fichier est fourni dans le dépôt.
-- Moteurs activés : généralistes, plus Wikipedia, GitHub, arXiv, Stack Overflow et YouTube.
-- **Risque connu.** Un moteur généraliste peut bloquer temporairement une instance SearXNG trop active. Parades : plusieurs moteurs en parallèle, cache, débit limité.
+- The Brave plan described in the original design required a credit card.
+- `SearchProvider.search(query, lang, time_range, categories)` returns results with title,
+  link, excerpt, engine, and date.
+- The fallback order is configurable. By default use SearXNG and then Brave if a key is set.
+- The repository's SearXNG `settings.yml` enables JSON with `search.formats: [html, json]`.
+- Enabled engines include general search, Wikipedia, GitHub, arXiv, Stack Overflow, and YouTube.
+- General search engines may temporarily throttle a busy SearXNG instance. Query multiple
+  engines, cache results, and rate-limit requests.
 
-### 10.2 Lecture des pages
+### 10.2 Reading pages
 
-| Type de contenu | Méthode gratuite |
+| Content | Method |
 | --- | --- |
-| Page web | Téléchargement avec `httpx`, extraction du texte principal avec `trafilatura` |
-| Page rendue en JavaScript | Repli : conversion de l'adresse en PDF par Gotenberg, puis extraction du texte |
-| PDF | Téléchargement et extraction de texte |
-| Vidéo YouTube | Transcription quand elle est disponible, sinon titre et description |
-| Dépôt GitHub | API publique, lecture du README |
-| Papier de recherche | API arXiv |
+| Web page | Fetch with `httpx` and extract the main text with `trafilatura` |
+| JavaScript-rendered page | Fall back to a Gotenberg PDF conversion, then extract text |
+| PDF | Download and extract text |
+| YouTube video | Transcript when available, otherwise title and description |
+| GitHub repository | Read the README through the public API |
+| Research paper | arXiv API |
 
-- L'outil `web_read(url)` renvoie texte, titre, auteur, date, langue, et un statut `ok` ou `unreadable`.
-- Une page `unreadable` n'est jamais citée. Aucun contournement de page protégée par connexion.
-- Chaque page lue est mise en cache 7 jours dans `web_cache`.
-- Délai maximal de 15 secondes par page, une requête par seconde et par domaine.
+- `web_read(url)` returns text, title, author, date, language, and an `ok` or `unreadable` status.
+- Cite successfully read pages only and respect sign-in requirements.
+- Store each read page for seven days in `web_cache`.
+- Allow up to 15 seconds per page and one request per second per domain.
 
-### 10.3 Qualité des sources
+### 10.3 Source quality
 
-L'Éclaireur note chaque source sur 100. Il faut 60 pour entrer dans une leçon.
+The Scout scores sources out of 100. A lesson can use sources scoring at least 60.
 
-| Critère | Points |
+| Criterion | Points |
 | --- | --- |
-| Autorité : documentation officielle, institution reconnue, praticien au rôle vérifiable | 30 |
-| Fraîcheur : date de publication, moins de 12 mois privilégié pour les sujets IA | 20 |
-| Profondeur du contenu | 20 |
-| Auteur réel et identifiable | 15 |
-| Qualité pédagogique | 15 |
+| Authority, such as official docs, a recognized institution, or a verified practitioner | 30 |
+| Publication date, with a preference for the last 12 months on AI topics | 20 |
+| Depth | 20 |
+| Identifiable author | 15 |
+| Teaching quality | 15 |
 
-- **Vraies personnes.** Pour chaque objectif, l'Éclaireur repère 5 à 10 praticiens (nom, rôle, où ils publient). Leurs articles et conférences sont prioritaires. Seules des informations professionnelles publiques sont conservées.
-- **Langues.** Requêtes en français et en anglais par défaut, autres langues activables. La leçon résume en français et cite la source dans sa langue.
-- Listes de domaines privilégiés et exclus, modifiables dans les réglages.
-- L'interface montre les requêtes lancées, les sources retenues et les sources écartées avec la raison.
+- **Practitioners.** The Scout finds five to ten people per goal by name, role, and publication
+  venue. Prioritize their articles and talks and retain public professional information only.
+- **Languages.** Search in French and English by default, with other languages configurable.
+  Lessons summarize in English and cite sources in their original language.
+- Settings lets January edit preferred and excluded domains.
+- The interface shows queries, chosen sources, rejected sources, and rejection reasons.
 
-### 10.4 Plafonds
+### 10.4 Limits
 
-- 12 requêtes et 30 pages lues par session, réglables.
-- Sur Cloudflare, SearXNG ne pourra pas tourner dans un Worker. Le choix se fera à la migration : crédit mensuel Brave, ou SearXNG hébergé ailleurs.
+- Default to 12 queries and 30 page reads per session, with configurable limits.
+- A Cloudflare deployment would use Brave or a separately hosted SearXNG instance.
 
-## 11. Configuration des modèles et des clés (F6)
+## 11. Model and API key settings (F6)
 
-L'écran Réglages permet de choisir le fournisseur et le modèle par niveau, et de saisir les clés API. Une seule clé LLM suffit pour faire tourner toute l'application.
+Settings lets January choose a provider and model for each tier and enter API keys.
+One LLM key is enough to run the application.
 
-### 11.1 Fournisseurs
+### 11.1 Providers
 
-| Fournisseur | Intégration | Variable | Remarque |
+| Provider | Integration | Variable | Role |
 | --- | --- | --- | --- |
-| Anthropic | `langchain-anthropic`, classe `ChatAnthropic` | `ANTHROPIC_API_KEY` | Fournisseur par défaut |
-| OpenAI | `langchain-openai`, classe `ChatOpenAI` | `OPENAI_API_KEY` |  |
-| GLM (Z.ai) | `ChatOpenAI` avec `base_url` | `ZAI_API_KEY` | API compatible OpenAI. Adresse par défaut `https://api.z.ai/api/paas/v4/`, modifiable car elle diffère selon l'offre souscrite |
+| Anthropic | `langchain-anthropic` and `ChatAnthropic` | `ANTHROPIC_API_KEY` | Default |
+| OpenAI | `langchain-openai` and `ChatOpenAI` | `OPENAI_API_KEY` |  |
+| GLM (Z.ai) | `ChatOpenAI` with `base_url` | `ZAI_API_KEY` | OpenAI-compatible |
 
-Une fabrique unique, `get_chat_model(tier)`, construit le bon client. Aucun agent n'instancie un modèle lui même.
+The default Z.ai URL is `https://api.z.ai/api/paas/v4/` and is configurable for other plans.
+Agents obtain all model clients through `get_chat_model(tier)`.
 
-### 11.2 Niveaux de modèle
+### 11.2 Model tiers
 
-Les agents ne nomment jamais un modèle. Ils demandent un niveau, et les réglages associent chaque niveau à un fournisseur et un modèle.
+Agents request a tier. Settings maps the tier to a provider and model.
 
-| Niveau | Usage | Défaut au premier lancement |
+| Tier | Use | Initial default |
 | --- | --- | --- |
-| `rapide` | Recherche, extraction, modération | Claude Haiku |
-| `standard` | Débat, relecture, quiz, tutorat | Claude Haiku |
-| `fort` | Planning, rédaction des leçons, entretiens | Claude Haiku |
-| `vision` | Capture du design du CV | Claude Haiku |
+| Fast | Research, extraction, moderation | Claude Haiku |
+| Standard | Debate, review, quiz, tutoring | Claude Haiku |
+| Strong | Planning, lesson writing, interviews | Claude Haiku |
+| Vision | CV design capture | Claude Haiku |
 
-- **Préréglages en un clic.** Tout Haiku, Haiku avec Sonnet pour le niveau fort, Tout GLM, Tout OpenAI, Personnalisé.
-- La liste des modèles disponibles est chargée depuis l'API de chaque fournisseur quand elle existe. Sinon, saisie libre de l'identifiant.
-- Identifiants par défaut regroupés dans un seul fichier `model_defaults.py` : `claude-haiku-5-5` et `claude-sonnet-5-5`, à revérifier dans la documentation Anthropic au moment de coder.
-- Mode avancé : surcharge du modèle agent par agent.
-- Si le niveau `vision` pointe vers un modèle sans vision, la capture du design est désactivée avec un message clair.
+- **Presets.** All Haiku, Haiku with Sonnet for Strong, All GLM, All OpenAI, and Custom.
+- Fetch available models from each provider's API when supported. Otherwise accept a model ID.
+- `model_defaults.py` holds default IDs such as `claude-haiku-5-5` and `claude-sonnet-5-5`.
+  Check the provider's documentation when changing them.
+- Advanced settings allow model overrides per agent.
+- If the vision tier uses a model without vision, disable design capture and explain why.
 
-### 11.3 Clés API
+### 11.3 API keys
 
-- Deux façons de les fournir : le fichier `.env` à la racine, ou l'écran Réglages.
-- Une clé saisie dans l'interface est chiffrée en base avec `APP_SECRET`, généré automatiquement au premier démarrage dans un volume Docker.
-- Une clé n'est jamais renvoyée au navigateur (seuls les 4 derniers caractères s'affichent) ni écrite dans les journaux.
-- Le bouton « Tester » fait un appel minimal et affiche le résultat.
-- Les embeddings et la recherche web ne demandent aucune clé.
-- La clé Brave est optionnelle. Si elle est saisie, l'application s'arrête à 900 requêtes par mois, car Brave facture au delà du crédit.
+- Add keys through the root `.env` file or Settings.
+- Encrypt keys added in the app with `APP_SECRET`, generated on first start in a Docker volume.
+- Return only the final four characters to the browser. Keep keys out of logs.
+- The test button makes a minimal call and shows the result.
+- Local embeddings and default web search need no key.
+- An optional Brave key enables up to 900 queries per month in the original design to stay
+  within the credit.
 
-### 11.4 Autres réglages
+### 11.4 Other settings
 
-| Réglage | Défaut |
+| Setting | Default |
 | --- | --- |
-| Disponibilité | 2 h du lundi au vendredi, 3 à 4 h le week end |
-| Langue des leçons | Français |
-| Langues de recherche | Français, anglais |
-| Tours de débat | 3 |
-| Plafond par session | 300 000 tokens |
-| Heure du brief | 7 h |
-| Bilan hebdomadaire | Dimanche 18 h |
-| Délais de relance | 7, 14 et 21 jours |
-| Guide de style personnel | Vide |
-| Domaines privilégiés et exclus | Liste de départ fournie |
+| Availability | 2 hours each weekday, 3 to 4 on the weekend |
+| Lesson language | English |
+| Search languages | French and English |
+| Debate rounds | 3 |
+| Session cap | 300,000 tokens |
+| Brief time | 7 a.m. |
+| Weekly review | Sunday at 6 p.m. |
+| Follow-up delays | 7, 14, and 21 days |
+| Personal style guide | Empty |
+| Preferred and excluded domains | Starter list |
 
-### 11.5 Suivi des coûts
+### 11.5 Cost tracking
 
-Un écran affiche les tokens et le coût estimé par jour, par feature, par agent et par modèle. Les prix viennent d'un fichier `model_prices.json` modifiable, car ils changent.
+A screen shows token counts and estimated costs by day, feature, agent, and model.
+Update prices in `model_prices.json`.
 
-## 12. Architecture technique et structure du code
+## 12. Architecture and source layout
 
-Six conteneurs Docker : le front, le back end, et quatre services open source que le back end appelle à travers des interfaces. Ces interfaces sont ce qui rendra la migration vers Cloudflare possible sans réécrire les features.
+The original design uses six Docker containers for the frontend, backend, and four open-source
+services. Provider interfaces let a future Cloudflare deployment reuse the features.
 
-&#91;embedded content: architecture · 6 conteneurs, 2 dépendances externes\]
-
-Seule la boîte Interfaces providers connaît les services. C'est elle que l'on réécrit pour passer sur Cloudflare.
+Only provider implementations know their services. A Cloudflare deployment would supply
+implementations for that platform.
 
 ### 12.1 Stack
 
-| Couche | Choix | Raison |
+| Layer | Choice | Purpose |
 | --- | --- | --- |
-| Back end | Python, FastAPI, Uvicorn | Asynchrone, WebSocket natif, FastAPI est supporté par Python Workers |
-| Agents | LangChain et LangGraph | Demande explicite, interruptions et reprises intégrées |
-| Schémas | Pydantic v2 | Sorties structurées et validation de l'API |
-| Base relationnelle | SQLite en mode WAL, SQLAlchemy 2 asynchrone, Alembic | Aucun conteneur en plus, schéma proche de Cloudflare D1 |
-| Base vectorielle | Qdrant | Section 4 |
-| Embeddings | Ollama avec `bge-m3` | Local, gratuit, multilingue |
-| Recherche web | SearXNG | Section 10 |
-| Génération de PDF | [Gotenberg](https://github.com/gotenberg/gotenberg) (Chromium) | HTML vers PDF fidèle au CSS, pour les leçons et les CV |
-| Lecture de PDF | `pdfplumber`, `pypdfium2` | Texte avec positions, images de pages |
-| Lecture du web | `httpx`, `trafilatura` | Extraction du contenu principal |
-| Tâches planifiées | APScheduler | Dans le processus, sans file externe |
-| Fichiers | Volume Docker derrière une interface `FileStorage` | Remplaçable par R2 |
-| Front end | React, TypeScript, Vite | Standard, rapide |
-| Interface | Tailwind CSS, shadcn/ui | Thème clair uniquement |
-| Données côté front | TanStack Query, Zustand | Cache serveur et état local |
-| Tableau | Excalidraw et `@excalidraw/mermaid-to-excalidraw` | Rendu dessiné à la main, éditable |
-| Carte de compétences | React Flow avec `elkjs` | Graphe structuré avec mise en page automatique |
-| Graphiques | Recharts | Radar, courbes, barres |
-| Tests | pytest, Vitest, Playwright | Unitaires, composants, 3 parcours de bout en bout |
-| Qualité | ruff, mypy, ESLint, Prettier | Contrôles avant chaque commit |
+| Backend | Python, FastAPI, Uvicorn | Async, WebSocket support, Python Workers target |
+| Agents | LangChain and LangGraph | Interrupts and resume |
+| Schemas | Pydantic v2 | Structured outputs and API validation |
+| Relational DB | SQLite WAL, async SQLAlchemy 2, Alembic | Embedded database, D1-like schema |
+| Vector DB | Qdrant | Section 4 |
+| Embeddings | Ollama with `bge-m3` | Local, free, multilingual |
+| Web search | SearXNG | Section 10 |
+| PDF rendering | [Gotenberg] with Chromium | HTML and CSS to PDF for lessons and CVs |
+| PDF reading | `pdfplumber`, `pypdfium2` | Positioned text and page images |
+| Web reading | `httpx`, `trafilatura` | Main content extraction |
+| Scheduled work | APScheduler | In-process scheduling |
+| Files | Docker volume behind `FileStorage` | Can use R2 later |
+| Frontend | React, TypeScript, Vite | UI and build tooling |
+| Interface | Tailwind CSS, shadcn/ui | Light theme |
+| Frontend data | TanStack Query, Zustand | Server cache and local state |
+| Whiteboard | Excalidraw, `@excalidraw/mermaid-to-excalidraw` | Editable hand-drawn style |
+| Skill map | React Flow with `elkjs` | Automatically laid-out graph |
+| Charts | Recharts | Radar, line, and bar charts |
+| Tests | pytest, Vitest, Playwright | Unit, component, and end-to-end checks |
+| Quality | ruff, mypy, ESLint, Prettier | Commit checks |
 
-Les versions sont les dernières stables au moment de coder, figées dans les fichiers de verrouillage.
+Use stable versions at implementation time and pin them with lockfiles.
 
-### 12.2 Règles de découpage
+[Gotenberg]: https://github.com/gotenberg/gotenberg
 
-- **300 lignes au maximum par fichier**, 50 par fonction. Contrôlé par ESLint (`max-lines`) côté front et par un script `scripts/check_file_length.py` côté back, tous deux bloquants en pre commit.
-- **Un dossier par feature**, des deux côtés, avec les mêmes noms.
-- **Trois couches côté back.** Le routeur reçoit et répond, le service porte la logique, le repository parle à la base. Un routeur n'appelle jamais la base.
-- **Tout service externe passe par une interface** dans `providers/` : LLM, recherche, embeddings, vecteurs, PDF, fichiers. Les features ne connaissent que l'interface.
-- **Un agent, deux fichiers** : son prompt en Markdown et son nœud en Python. Un graphe, un fichier.
-- Les types TypeScript de l'API sont générés depuis le schéma OpenAPI du back end, jamais écrits à la main.
+### 12.2 Source organization rules
 
-### 12.3 Arborescence du back end
+- Limit source files to **300 lines** and functions to 50. ESLint `max-lines` and backend
+  `scripts/check_file_length.py` enforce the limits at commit time.
+- Use matching feature directory names in the backend and frontend.
+- A router receives requests and returns responses. The service handles business logic.
+  The repository talks to the database.
+- Features use provider interfaces for external models, search, embeddings, vectors, PDFs,
+  and files.
+- Each agent has a Markdown prompt and Python node. Each graph has a module.
+- Generate TypeScript API types from the backend's OpenAPI schema.
+
+### 12.3 Backend source tree
 
 ```text
 backend/
@@ -700,10 +844,10 @@ backend/
   alembic/
   scripts/check_file_length.py
   app/
-    main.py              # création de l'app, montage des routeurs
-    config.py            # réglages lus depuis l'environnement
-    core/                # sécurité, chiffrement, erreurs, journalisation
-    db/                  # moteur, session, modèles (un fichier par groupe de tables)
+    main.py              # App construction and routers
+    config.py            # Settings read from the environment
+    core/                # Security, encryption, errors, and logging
+    db/                  # Engine, sessions, and models grouped by tables
     providers/
       llm/               # factory.py, anthropic.py, openai.py, glm.py
       search/            # base.py, searxng.py, brave.py
@@ -713,24 +857,24 @@ backend/
       storage/           # base.py, local.py
       web/               # reader.py, youtube.py, github.py, arxiv.py
     agents/
-      prompts/           # un fichier .md par agent (17)
-      nodes/             # un fichier .py par agent (17)
-      graphs/            # un fichier par graphe (16)
-      state/             # schéma d'état de chaque graphe
+      prompts/           # Markdown prompts by agent
+      nodes/             # Python nodes by agent
+      graphs/            # One module per graph
+      state/             # State schemas by graph
       tools/             # memory_tools.py, web_tools.py, board_tools.py
       runtime/           # runner.py, checkpointer.py, events.py, costs.py
-    features/            # chaque dossier : router, service, repository, schemas
+    features/            # Router, service, repository, and schemas per feature
       learning/  program/  lessons/  memory/  cv/  applications/
       gap/  quiz/  interview/  projects/  radar/  replan/
       study/  skills/  kit/  brief/  capture/  committee/
       settings/  auth/
     realtime/            # websocket.py, replay.py
-    scheduler/           # un fichier par tâche planifiée
-    templates/           # gabarits HTML et CSS : lesson, program, report, cv
+    scheduler/           # Modules for scheduled jobs
+    templates/           # HTML and CSS templates for lessons, programs, reports, and CVs
   tests/
 ```
 
-### 12.4 Arborescence du front end
+### 12.4 Frontend source tree
 
 ```text
 frontend/
@@ -741,421 +885,498 @@ frontend/
     main.tsx
     app/                 # routes, layout, providers
     shared/
-      api/               # client HTTP, types générés depuis OpenAPI
-      realtime/          # useSessionStream, rejeu des événements
-      ui/                # composants shadcn
-      i18n/              # fr.ts
+      api/               # HTTP client and generated OpenAPI types
+      realtime/          # useSessionStream and event replay
+      ui/                # shadcn components
+      i18n/              # en.ts and message catalogs
       lib/
-    features/            # chaque dossier : components, hooks, api.ts, types.ts
-      home/              # brief du matin
+    features/            # Components, hooks, api.ts, and types.ts per feature
+      home/              # Morning Brief
       learning/          # DebatePanel, AgentBubble, SourcesPanel, Board, ProposalCards
       program/           # WeekCalendar, TaskList, PlanDiff
       lessons/  study/  quiz/
-      memory/            # liste, carte 2D, banc d'essai
-      skills/            # carte de compétences
-      cv/                # profil maître, capture du design, revue, diff
-      applications/      # kanban, fiche, relances
+      memory/            # List, 2D map, and query preview
+      skills/            # Skill map
+      cv/                # Master profile, design capture, review, and diff
+      applications/      # Kanban, application records, and follow-ups
       kit/  committee/  interview/  radar/  projects/
       capture/  settings/  auth/
 ```
 
-## 13. Modèle de données
+## 13. Data model
 
-La base SQLite porte toutes les données métier et le texte source de la mémoire. Qdrant ne contient que les vecteurs et une copie du payload.
+SQLite holds application data and memory source text. Qdrant stores the vectors and a payload copy.
 
-### 13.1 Règles communes
+### 13.1 Shared rules
 
-- Chaque table a `id` (UUID en texte), `user_id`, `created_at`, `updated_at`. Dates en UTC au format ISO.
-- Toute requête d'un repository filtre par `user_id`, même en mode local à un seul utilisateur.
-- Types limités à ceux de SQLite, données souples en colonnes JSON, pour rester compatible avec D1.
-- Le schéma n'évolue que par migrations Alembic.
-- Les fichiers vivent dans `storage/<user_id>/<type>/`. La base ne stocke que leur chemin.
+- Each table has `id` as a text UUID, `user_id`, `created_at`, and `updated_at`. Store
+  timestamps as ISO dates in UTC.
+- Filter every repository query by `user_id`, including in local single-user mode.
+- Use SQLite types and JSON columns for flexible data to stay compatible with D1.
+- Change the schema through Alembic migrations.
+- Store files under `storage/<user_id>/<type>/` and save only their paths in the database.
 
-### 13.2 Comptes et agents
+### 13.2 Accounts and agents
 
-| Table | Contenu |
+| Table | Contents |
 | --- | --- |
-| `users` | Email, nom, identifiant Google, langue |
-| `user_settings` | Disponibilité, langues, niveaux de modèle, guide de style, horaires des tâches |
-| `api_keys` | Fournisseur, clé chiffrée, 4 derniers caractères, date du dernier test |
-| `sessions` | Graphe exécuté, statut (`running`, `waiting_user`, `completed`, `failed`), objet lié, tokens, coût |
-| `session_events` | Session, `seq`, type, agent, payload, horodatage |
-| `llm_calls` | Session, agent, fournisseur, modèle, tokens entrants et sortants, latence, coût |
-| `jobs` | Tâche planifiée, dernier passage, prochain passage, erreur |
+| `users` | Email, name, Google ID, language |
+| `user_settings` | Availability, languages, model tiers, style guide, scheduled times |
+| `api_keys` | Provider, encrypted key, last four characters, last test time |
+| `sessions` | Graph, status, linked object, tokens, cost |
+| `session_events` | Session, `seq`, type, agent, payload, timestamp |
+| `llm_calls` | Session, agent, provider, model, input and output tokens, latency, cost |
+| `jobs` | Scheduled job, last run, next run, error |
 
-### 13.3 Apprentissage
+Session statuses include `running`, `waiting_user`, `completed`, and `failed`.
 
-| Table | Contenu |
+### 13.3 Learning
+
+| Table | Contents |
 | --- | --- |
-| `goals` | Objectif, poste cible, échéance, statut |
-| `proposals` | Parcours proposés pour un objectif, celui qui a été choisi |
-| `boards` | États successifs du tableau : code Mermaid, scène Excalidraw |
-| `programs` | Objectif, version, statut, date de début, heures par semaine |
-| `weeks` | Rang, thème, objectif, charge, livrable |
-| `modules` | Semaine, titre, compétences visées, leçon liée |
-| `tasks` | Module, titre, type, durée, critère de fin, jour planifié, statut |
-| `lessons` | Module, Markdown, chemin du PDF, statut, nombre de mots |
-| `resources` | Module, type, titre, lien, auteur, date, langue, durée, niveau, raison, score, copie locale |
-| `sources` | Pages et personnes repérées : lien, auteur, langue, date, score, résumé |
-| `plan_versions` | Version du programme, diff, raison, date d'acceptation |
-| `study_sessions` | Début, fin, minutes, mode, résumé |
-| `quizzes`, `quiz_questions`, `quiz_attempts` | Quiz par module, questions, tentatives et notes |
-| `flashcards` | Recto, verso, compétence, intervalle, date d'échéance |
-| `projects` | Brief, lien du rendu, statut, évaluation, brouillons générés |
-| `journal_entries` | Type, texte, liens vers session, capture ou quiz |
+| `goals` | Goal, target role, deadline, status |
+| `proposals` | Proposed paths for a goal and the selected path |
+| `boards` | Mermaid and Excalidraw scene for each board state |
+| `programs` | Goal, version, status, start date, weekly hours |
+| `weeks` | Position, theme, goal, workload, deliverable |
+| `modules` | Week, title, target skills, linked lesson |
+| `tasks` | Module, title, type, duration, criterion, planned day, status |
+| `lessons` | Module, Markdown, PDF path, status, word count |
+| `resources` | Module, metadata, link, selection reason and score, local copy |
+| `sources` | Pages and people with URL, author, language, date, score, and summary |
+| `plan_versions` | Program version, diff, reason, approval date |
+| `study_sessions` | Start, end, minutes, mode, summary |
+| `quizzes`, `quiz_questions`, `quiz_attempts` | Module quizzes, questions, attempts, scores |
+| `flashcards` | Front, back, skill, interval, due date |
+| `projects` | Brief, submission URL, status, assessment, drafts |
+| `journal_entries` | Type, text, links to session, capture, or quiz |
 
-### 13.4 Compétences et mémoire
+Resource metadata includes type, title, author, date, language, duration, and level.
 
-| Table | Contenu |
+### 13.4 Skills and memory
+
+| Table | Contents |
 | --- | --- |
-| `skills` | Nom, domaine, synonymes |
-| `skill_edges` | Lien de prérequis entre deux compétences |
-| `user_skills` | Niveau de maîtrise et preuves, par compétence |
-| `skill_snapshots` | Relevé hebdomadaire des niveaux, pour la courbe de progression |
-| `documents` | Fichier importé : nom, type, chemin, statut, hash |
-| `memory_items` | Élément de mémoire : `kind`, titre, texte, tags, auteur, hash |
-| `memory_chunks` | Fragment d'un élément, avec l'identifiant du vecteur dans Qdrant |
-| `memory_writes` | Journal des écritures : agent, session, raison |
+| `skills` | Name, domain, synonyms |
+| `skill_edges` | Prerequisite relationship between skills |
+| `user_skills` | Mastery level and evidence per skill |
+| `skill_snapshots` | Weekly level snapshots for the progress chart |
+| `documents` | Imported file name, type, path, status, hash |
+| `memory_items` | Entry `kind`, title, text, tags, author, hash |
+| `memory_chunks` | Fragment of an entry with its Qdrant vector ID |
+| `memory_writes` | Write log with agent, session, and reason |
 
-### 13.5 Carrière
+### 13.5 Career
 
-| Table | Contenu |
+| Table | Contents |
 | --- | --- |
-| `master_profile` | Profil maître en JSON, versionné |
-| `cv_templates` | Template HTML et CSS, polices, score de ressemblance, statut |
-| `job_postings` | Lien, lien normalisé, entreprise, intitulé, texte figé, analyse structurée |
-| `companies` | Nom normalisé, dossier entreprise, sources, date de rafraîchissement |
-| `cv_reviews` | Offre, session, indicateurs avant et après |
-| `cv_modifications` | Section, avant, après, raison, type, faits du profil cités, statut |
-| `cv_versions` | Offre, template, contenu JSON, chemin du PDF |
-| `applications` | Offre, statut, date, canal, version du CV, prochaine action |
-| `application_events` | Historique daté d'une candidature |
-| `contacts` | Nom, rôle, lien, candidature liée |
-| `reminders` | Type, échéance, statut, brouillon |
-| `kit_items` | Pièce du kit : type, contenu, statut |
-| `interviews` | Mode, durée, échanges, débrief |
-| `committee_runs` | Version du CV, offre, votes, verdict |
-| `radar_runs` | Poste, zone, offres lues, offres bloquées, classement des compétences |
+| `master_profile` | Versioned master profile JSON |
+| `cv_templates` | HTML and CSS template, fonts, similarity score, status |
+| `job_postings` | URL, normalized URL, company, role, saved text, structured analysis |
+| `companies` | Normalized name, dossier, sources, refresh date |
+| `cv_reviews` | Posting, session, before and after indicators |
+| `cv_modifications` | Section, before and after, reason, type, cited profile facts, status |
+| `cv_versions` | Posting, template, JSON content, PDF path |
+| `applications` | Posting, status, date, channel, CV version, next action |
+| `application_events` | Timestamped application history |
+| `contacts` | Name, role, link, related application |
+| `reminders` | Type, due date, status, draft |
+| `kit_items` | Type, content, and status of each kit item |
+| `interviews` | Mode, duration, messages, debrief |
+| `committee_runs` | CV version, posting, votes, verdict |
+| `radar_runs` | Role, region, read and inaccessible postings, skill ranking |
 
-### 13.6 Système
+### 13.6 System
 
-| Table | Contenu |
+| Table | Contents |
 | --- | --- |
-| `briefs` | Brief du jour en JSON |
-| `web_cache` | Page lue : hash du lien, contenu, date |
+| `briefs` | Daily brief JSON |
+| `web_cache` | URL hash, content, and date for each fetched page |
 
-**Index à créer dès la première migration** : `session_events(session_id, seq)`, `tasks(planned_date)`, `flashcards(due_date)`, `job_postings(url_norm)`, `job_postings(company_norm, title)`, `reminders(due_at, status)`.
+The first migration calls for indexes on `session_events(session_id, seq)`,
+`tasks(planned_date)`, `flashcards(due_date)`, `job_postings(url_norm)`,
+`job_postings(company_norm, title)`, and `reminders(due_at, status)`.
 
 ## 14. API
 
-L'API REST vit sous `/api/v1`. Tout parcours long suit le même contrat : un POST crée une session, un WebSocket diffuse ses événements, un POST répond aux interruptions.
+The REST API lives under `/api/v1`. A POST starts a session, a WebSocket streams its
+events, and a POST answers an interrupt.
 
-### 14.1 Contrat des sessions d'agents
+### 14.1 Agent session contract
 
-| Méthode | Chemin | Rôle |
+| Method | Path | Purpose |
 | --- | --- | --- |
-| POST | `/sessions` | Lance un graphe : `{graph, input}`. Renvoie `session_id` en moins de 2 secondes |
-| GET | `/sessions/{id}` | État, dernier `seq`, interruption en attente |
-| WS | `/sessions/{id}/stream?after_seq=N` | Flux des événements de la section 9.5, avec rejeu |
-| POST | `/sessions/{id}/resume` | Répond à une interruption : `{interrupt_id, value}` |
-| POST | `/sessions/{id}/message` | Message de January pendant un débat |
-| POST | `/sessions/{id}/pause`, `/cancel` | Met en pause ou annule |
-| GET | `/sessions?graph=&status=` | Historique |
+| POST | `/sessions` | Start `{graph, input}` and return `session_id` within two seconds |
+| GET | `/sessions/{id}` | Status, latest `seq`, pending interrupt |
+| WS | `/sessions/{id}/stream?after_seq=N` | Stream and replay events from section 9.5 |
+| POST | `/sessions/{id}/resume` | Answer an interrupt with `{interrupt_id, value}` |
+| POST | `/sessions/{id}/message` | Send January's message during a debate |
+| POST | `/sessions/{id}/pause`, `/cancel` | Pause or cancel |
+| GET | `/sessions?graph=&status=` | Session history |
 
-Le WebSocket ne transporte que des événements du serveur vers le client. Toute action de January passe par REST, pour être journalisée.
+WebSockets carry server events to the client. January's actions use logged REST requests.
 
-### 14.2 Endpoints par domaine
+### 14.2 Endpoints by domain
 
-| Domaine | Endpoints |
-| --- | --- |
-| Objectifs et programme | `GET POST /goals`, `GET /goals/{id}/proposals`, `POST /proposals/{id}/choose`, `GET PATCH /programs/{id}`, `POST /programs/{id}/validate`, `GET /programs/{id}/export.pdf`, `GET /programs/{id}/export.ics`, `PATCH /tasks/{id}` |
-| Leçons et ressources | `GET /lessons/{id}`, `GET /lessons/{id}/pdf`, `GET /resources`, `PATCH /resources/{id}` |
-| Étude | `POST PATCH /study-sessions`, `GET /flashcards/due`, `POST /flashcards/{id}/review`, `GET /quizzes/{id}`, `POST /quizzes/{id}/attempts` |
-| Mémoire | `POST GET /documents`, `GET POST PATCH DELETE /memory/items`, `POST /memory/search`, `GET /memory/map`, `GET /memory/stats`, `POST /memory/reindex`, `GET /memory/export`, `POST /capture` |
-| Compétences | `GET /skills/graph`, `GET /skills/{id}`, `GET /skills/compare`, `GET /skills/history` |
-| Profil et CV | `GET PUT /profile`, `GET POST /cv/templates`, `POST /cv/reviews`, `PATCH /cv/modifications/{id}`, `POST /cv/reviews/{id}/generate`, `GET /cv/versions/{id}/pdf` |
-| Offres | `POST /postings` (lien ou texte, renvoie aussi le résultat du contrôle doublon), `GET /postings/{id}`, `GET /postings/{id}/gap` |
-| Candidatures | `GET POST PATCH /applications`, `POST /applications/{id}/events`, `GET /reminders`, `PATCH /reminders/{id}`, `POST GET /applications/{id}/kit`, `GET /applications/{id}/kit.zip`, `POST /applications/{id}/interviews`, `POST /committee` |
-| Radar et projets | `POST /radar/runs`, `GET /radar/latest`, `GET /projects`, `POST /projects/{id}/submit` |
-| Accueil | `GET /brief/today`, `GET /activity`, `GET /journal` |
-| Réglages | `GET PUT /settings`, `GET POST DELETE /settings/api-keys`, `POST /settings/api-keys/{provider}/test`, `GET /settings/models`, `GET /costs` |
-| Connexion | `GET /auth/google/login`, `GET /auth/google/callback`, `POST /auth/logout`, `GET /auth/me` |
-| Santé | `GET /health` : état de la base, de Qdrant, d'Ollama, de SearXNG, de Gotenberg et de chaque fournisseur LLM |
+The initial design groups routes by domain. See the generated contract for current paths and
+schemas. [OpenAPI contract](contracts/openapi.json)
+
+- **Goals and program.** `GET POST /goals`, `GET /goals/{id}/proposals`,
+  `POST /proposals/{id}/choose`, `GET PATCH /programs/{id}`, `POST /programs/{id}/validate`,
+  `GET /programs/{id}/export.pdf`, `GET /programs/{id}/export.ics`, `PATCH /tasks/{id}`.
+- **Lessons and resources.** `GET /lessons/{id}`, `GET /lessons/{id}/pdf`, `GET /resources`,
+  `PATCH /resources/{id}`.
+- **Study.** `POST PATCH /study-sessions`, `GET /flashcards/due`, `POST /flashcards/{id}/review`,
+  `GET /quizzes/{id}`, `POST /quizzes/{id}/attempts`.
+- **Memory.** `POST GET /documents`, `GET POST PATCH DELETE /memory/items`,
+  `POST /memory/search`, `GET /memory/map`, `GET /memory/stats`, `POST /memory/reindex`,
+  `GET /memory/export`, `POST /capture`.
+- **Skills.** `GET /skills/graph`, `GET /skills/{id}`, `GET /skills/compare`,
+  `GET /skills/history`.
+- **Profile and CV.** `GET PUT /profile`, `GET POST /cv/templates`, `POST /cv/reviews`,
+  `PATCH /cv/modifications/{id}`, `POST /cv/reviews/{id}/generate`,
+  `GET /cv/versions/{id}/pdf`.
+- **Postings.** `POST /postings` accepts a URL or text and returns a duplicate check result.
+  Use `GET /postings/{id}` and `GET /postings/{id}/gap` for details.
+- **Applications.** `GET POST PATCH /applications`, `POST /applications/{id}/events`,
+  `GET /reminders`, `PATCH /reminders/{id}`, `POST GET /applications/{id}/kit`,
+  `GET /applications/{id}/kit.zip`, `POST /applications/{id}/interviews`, `POST /committee`.
+- **Radar and projects.** `POST /radar/runs`, `GET /radar/latest`, `GET /projects`,
+  `POST /projects/{id}/submit`.
+- **Home.** `GET /brief/today`, `GET /activity`, `GET /journal`.
+- **Settings.** `GET PUT /settings`, `GET POST DELETE /settings/api-keys`,
+  `POST /settings/api-keys/{provider}/test`, `GET /settings/models`, `GET /costs`.
+- **Sign-in.** `GET /auth/google/login`, `GET /auth/google/callback`, `POST /auth/logout`,
+  `GET /auth/me`.
+- **Health.** `GET /health` checks the database, Qdrant, Ollama, SearXNG, Gotenberg, and model
+  providers.
 
 ### 14.3 Conventions
 
-- JSON en `snake_case`, documentation OpenAPI servie sur `/api/docs`.
-- Erreurs au format `{error: {code, message, details}}`, avec un message lisible en français.
-- Aucune requête HTTP n'attend la fin d'un travail d'agent. Elle renvoie un `session_id`.
-- `POST /postings` est idempotent sur le lien normalisé.
+- Use `snake_case` in JSON and serve OpenAPI documentation at `/api/docs`.
+- Return errors as `{error: {code, message, details}}` with a readable English message.
+- An HTTP request returns a `session_id` while the agent works in the background.
+- `POST /postings` is idempotent by normalized URL.
 
-## 15. Front end
+## 15. Frontend
 
-Une application d'une page en thème clair, avec une navigation latérale de 8 entrées et un champ de capture global.
+A light-theme single-page app with eight sidebar entries and a global capture field.
 
 ### 15.1 Navigation
 
-| Entrée | Écrans |
+| Entry | Screens |
 | --- | --- |
-| Accueil | Brief du matin, actions rapides, fil d'activité |
-| Apprendre | Objectifs, Conseil, Programme, Leçons, Bibliothèque |
-| Étudier | Session guidée, Révisions, Quiz |
-| Compétences | Carte, radar, progression, Portfolio |
-| Carrière | Profil maître, CV (templates, revues, versions), Offres et écarts, Radar |
-| Candidatures | Kanban, fiche, relances, kit, entretiens, comité |
-| Mémoire | Explorateur, carte 2D, banc d'essai, documents |
-| Réglages | Modèles et clés, disponibilité, style, coûts, journal des agents |
+| Home | Morning Brief, quick actions, activity feed |
+| Learn | Goals, Council, Program, Lessons, Library |
+| Study | Guided sessions, reviews, quizzes |
+| Skills | Map, radar chart, progress, Portfolio |
+| Career | Master profile, CV templates, reviews and versions, postings, gaps, Market Radar |
+| Applications | Kanban, record, follow-ups, kits, interviews, hiring panel |
+| Memory | Explorer, 2D map, query preview, documents |
+| Settings | Models and keys, availability, style, costs, agent log |
 
-### 15.2 Écran Conseil
+### 15.2 Council screen
 
-C'est l'écran vitrine. Il sert aussi au comité de recrutement (F19) avec les mêmes composants.
+The Council and hiring panel (F19) share the same components.
 
-- **Barre d'état en haut.** Étape en cours (Cadrage, Recherche, Débat, Propositions, Programme), tour en cours, tokens et coût estimé.
-- **Colonne gauche, 40 % de la largeur.** Le fil du débat. Une bulle par agent avec avatar, nom, rôle et couleur propre. Le texte s'écrit au fil de l'eau.
-- Chaque bulle montre l'activité de l'agent (réfléchit, cherche, écrit) et ses appels d'outils en pastilles dépliables.
-- Les citations sont des pastilles numérotées qui ouvrent la source.
-- **Zone droite, 60 %.** Trois onglets : Tableau, Sources, Propositions.
-- **Bas de page.** Champ de message et boutons Pause, Relancer un tour, Passer aux propositions.
-- Une interruption s'affiche comme une carte dans le fil, avec la question et ses options. Jamais de boîte de dialogue bloquante du navigateur.
-- Les propositions sont des cartes comparables côte à côte : Choisir, Mélanger, Demander un autre tour.
+- **Status bar.** Current stage (goal, research, debate, proposals, program), round, token
+  count, and estimated cost.
+- **Left column, 40%.** Live debate feed with one bubble per agent, its avatar, name, role,
+  and color.
+- Bubbles show agent activity and expandable tool calls.
+- Numbered citations open their sources.
+- **Right column, 60%.** Tabs for the Whiteboard, Sources, and Proposals.
+- **Footer.** Message field and controls to pause, start another round, or move to proposals.
+- An interrupt appears as an inline card with the question and options.
+- Proposal cards sit side by side. January can choose one, merge paths, or request another round.
 
-### 15.3 Composants clés par écran
+### 15.3 Key screen components
 
-| Écran | Composants |
+| Screen | Components |
 | --- | --- |
-| Programme | `WeekCalendar` avec glisser déposer entre les jours, `TaskList`, `PlanDiff` avant et après |
-| Leçon | Lecteur avec sommaire, progression, « Demander au tuteur » sur un passage sélectionné, téléchargement PDF |
-| CV | `MasterProfileForm`, `TemplateCompare` (original et rendu avec curseur), `ReviewDiff` (accepter ou refuser), jauges avant et après, aperçu PDF |
-| Candidatures | Kanban, tiroir de fiche, `ReminderCard` avec bouton Copier, `DuplicateAlert` |
-| Mémoire | Table filtrable, `VectorMap` (nuage de points zoomable), `SearchBench` |
-| Compétences | `SkillGraph`, `SkillRadar`, `ProgressChart` |
-| Partout | `CommandCapture` (Cmd K), `ActivityFeed`, pastille de coût, voyant de santé des services |
+| Program | Drag-and-drop `WeekCalendar`, `TaskList`, and before-and-after `PlanDiff` |
+| Lesson | Reader, contents, progress, passage questions for the Tutor, and PDF download |
+| CV | `MasterProfileForm`, `TemplateCompare`, `ReviewDiff`, indicators, and PDF preview |
+| Applications | Kanban, record drawer, copyable `ReminderCard`, and `DuplicateAlert` |
+| Memory | Filterable table, zoomable `VectorMap`, and `SearchBench` |
+| Skills | `SkillGraph`, `SkillRadar`, and `ProgressChart` |
+| Global | `CommandCapture` (Cmd+K), `ActivityFeed`, cost badge, and health indicator |
+
+The CV comparison slider shows the original and render. The review diff offers approval
+or refusal for each suggestion. Indicators compare the before and after versions.
 
 ### 15.4 Design
 
-- Thème clair uniquement : fond blanc cassé, texte anthracite, une couleur d'accent, pas de mode sombre.
-- Une couleur fixe par agent, reprise dans les bulles, les annotations du tableau et les journaux.
-- Colonne de lecture des leçons limitée à 72 caractères, corps de 18 px.
-- Animations de moins de 300 ms, désactivées si `prefers-reduced-motion` est actif.
-- Contraste AA, navigation au clavier, focus visible, zones de texte en cours d'écriture annoncées aux lecteurs d'écran.
-- Conçu pour un écran de 1 280 px et plus, utilisable à 1 024 px.
-- Chaque écran a un état vide avec une action proposée, un état de chargement et un état d'erreur avec nouvel essai.
-- Une notification discrète signale le travail de fond (« Leçon 3 prête »).
+- Use one light theme with an off-white background, charcoal text, and one accent color.
+- Give each agent a fixed color across bubbles, board annotations, and logs.
+- Keep lesson text at 18 px and its column to 72 characters.
+- Keep animations under 300 ms and disable them with `prefers-reduced-motion`.
+- Meet AA contrast, support keyboard navigation and visible focus, and announce streaming
+  text to screen readers.
+- Design for screens at least 1,280 px wide and keep the app usable at 1,024 px.
+- Each screen has an empty state with an action, a loading state, and an error state with retry.
+- Unobtrusive notifications announce background results, such as “Lesson 3 ready.”
 
-### 15.5 Premier lancement
+### 15.5 First launch
 
-1. Contrôle de santé des services, avec la progression du téléchargement du modèle d'embedding.
-2. Saisie et test d'une clé API.
-3. Import du CV et de l'export LinkedIn (peut être passé).
-4. Réglage de la disponibilité.
-5. Premier objectif, qui lance le Conseil.
+1. Check service health and show the embedding model download progress.
+2. Enter and test an API key.
+3. Import the CV and LinkedIn export, or skip this step.
+4. Set availability.
+5. Enter the first goal to start the Council.
 
-## 16. Docker en local, puis Cloudflare
+## 16. Local Docker and a future Cloudflare deployment
 
-Une commande, `docker compose up`, lance toute la plateforme. Chaque service local a un équivalent Cloudflare identifié, mais la migration comporte des points non vérifiés, listés en 16.4.
+Run `docker compose up` to start Tremplin. Section 16.3 maps local services to potential
+Cloudflare equivalents. Section 16.4 lists checks needed before a migration.
 
 ### 16.1 Services
 
-| Service | Image | Accès | Rôle |
+| Service | Image | Access | Role |
 | --- | --- | --- | --- |
-| `frontend` | Construite depuis `./frontend` | `http://localhost:5173` | Interface |
-| `backend` | Construite depuis `./backend` | `http://localhost:8000` | API, agents, tâches planifiées |
-| `qdrant` | `qdrant/qdrant` | `http://localhost:6333/dashboard` | Vecteurs et tableau de bord |
-| `ollama` | `ollama/ollama` | Réseau interne | Embeddings |
-| `ollama-init` | `ollama/ollama` | S'arrête après usage | Télécharge `bge-m3` au premier démarrage |
-| `searxng` | `searxng/searxng` | Réseau interne | Recherche web |
-| `gotenberg` | `gotenberg/gotenberg:8` | Réseau interne | HTML vers PDF |
+| `frontend` | Built from `./frontend` | `http://localhost:5173` | Interface |
+| `backend` | Built from `./backend` | `http://localhost:8000` | API, agents, scheduled jobs |
+| `qdrant` | `qdrant/qdrant` | `http://localhost:6333/dashboard` | Vectors and dashboard |
+| `ollama` | `ollama/ollama` | Internal network | Embeddings |
+| `ollama-init` | `ollama/ollama` | Exits after setup | Downloads `bge-m3` |
+| `searxng` | `searxng/searxng` | Internal network | Web search |
+| `gotenberg` | `gotenberg/gotenberg:8` | Internal network | HTML to PDF |
 
-- Volumes nommés : `app_data` (SQLite, checkpoints, fichiers, secret), `qdrant_data`, `ollama_data`.
-- Le back end attend que les quatre services répondent avant de se déclarer prêt. `GET /health` détaille l'état de chacun.
-- Un second fichier, `docker-compose.dev.yml`, ajoute le rechargement à chaud des deux côtés.
-- Sur macOS, Docker n'accède pas au GPU. La variable `OLLAMA_BASE_URL` permet de pointer vers un Ollama installé sur la machine.
+- Named volumes include `app_data` for SQLite, checkpoints, files, and the app secret,
+  `qdrant_data`, and `ollama_data`.
+- The backend reports readiness after the four services respond. `GET /health` shows their status.
+- `docker-compose.dev.yml` adds hot reloading for the frontend and backend.
+- On macOS, set `OLLAMA_BASE_URL` to a host Ollama instance to use the machine's GPU.
 
-### 16.2 Racine du dépôt et démarrage
+### 16.2 Repository root and startup
 
 ```text
 tremplin/
   frontend/
-  backend/             # contient aussi infra/searxng/settings.yml
+  backend/             # Includes infra/searxng/settings.yml
   docker-compose.yml
   docker-compose.dev.yml
   .env.example
   README.md
-  SPEC.md              # ce document
+  SPEC.md
 ```
 
 ```bash
-cp .env.example .env     # y coller au moins une clé LLM
+cp .env.example .env     # Add at least one LLM key
 docker compose up -d
-# ouvrir http://localhost:5173
+# Open http://localhost:5173
 ```
 
 ```bash
-# .env.example : seules les clés sont à remplir
+# Model keys are enough for local mode.
 ANTHROPIC_API_KEY=
 OPENAI_API_KEY=
 ZAI_API_KEY=
-BRAVE_API_KEY=            # optionnel
-AUTH_MODE=local           # local ou google
-GOOGLE_CLIENT_ID=         # requis seulement si AUTH_MODE=google
+BRAVE_API_KEY=            # Optional
+AUTH_MODE=local           # local or google
+GOOGLE_CLIENT_ID=         # Required for AUTH_MODE=google
 GOOGLE_CLIENT_SECRET=
 ```
 
-### 16.3 Correspondance avec Cloudflare
+### 16.3 Cloudflare equivalents
 
-| En local | Sur Cloudflare |
+| Local | Cloudflare |
 | --- | --- |
-| FastAPI dans Docker | [Python Workers](https://developers.cloudflare.com/workers/languages/python/), où FastAPI et LangChain figurent parmi les paquets supportés |
+| FastAPI in Docker | [Python Workers][python-workers] |
 | SQLite | D1 |
 | Qdrant | Vectorize |
-| Ollama avec `bge-m3` | Workers AI avec `@cf/baai/bge-m3` |
-| Volume de fichiers | R2 |
-| WebSocket et état des sessions | Durable Objects |
+| Ollama with `bge-m3` | Workers AI with `@cf/baai/bge-m3` |
+| File volume | R2 |
+| WebSockets and session state | Durable Objects |
 | APScheduler | Cron Triggers |
-| Gotenberg | Browser Rendering, ou génération du PDF dans le navigateur |
-| SearXNG | Crédit mensuel Brave, ou SearXNG hébergé ailleurs |
-| Front servi par le conteneur | Workers Static Assets |
+| Gotenberg | Browser Rendering or client-side PDF generation |
+| SearXNG | Brave monthly credit or a separately hosted SearXNG instance |
+| Frontend container | Workers Static Assets |
 
-Ce qui rend la migration abordable : les interfaces de `providers/`, un schéma limité aux types SQLite, le texte comme source de vérité de la mémoire, et le même modèle d'embedding des deux côtés.
+The initial design identifies Python Workers with FastAPI and LangChain as the backend target.
+Provider interfaces, a SQLite-compatible schema, source text for memory, and a shared embedding
+model make the migration manageable.
 
-### 16.4 Points à tester avant de migrer
+### 16.4 Checks before migrating
 
-Aucun de ces points n'a été vérifié. Ils sont à tester dans une phase dédiée, après le MVP local.
+After the local MVP, verify the following in a dedicated phase.
 
-1. LangGraph et son checkpointer sur Python Workers. Le code y tourne en WebAssembly, et un paquet qui dépend d'extensions natives peut ne pas s'installer.
-2. Le temps CPU par requête du plan gratuit, face au démarrage de Python et à l'import de LangChain.
-3. `pdfplumber`, `pypdfium2` et `trafilatura` en WebAssembly. Repli : déplacer la lecture de PDF dans le navigateur.
-4. La capacité gratuite de Vectorize, environ 4 880 fragments à 1 024 dimensions.
-5. Le quota gratuit quotidien de Workers AI pour les embeddings.
-6. La durée des graphes longs (leçons, radar) face aux limites d'une requête.
+1. LangGraph and its checkpointer on Python Workers. WebAssembly can limit native extensions.
+2. CPU time for Python startup and LangChain imports within free-plan request limits.
+3. `pdfplumber`, `pypdfium2`, and `trafilatura` in WebAssembly. PDF reading could move to the
+   browser if needed.
+4. The free Vectorize capacity, estimated at 4,880 chunks at 1,024 dimensions in the design.
+5. The daily Workers AI embedding quota.
+6. Long-running lesson and radar graphs within request duration limits.
 
-**Repli global** si Python Workers bloque : garder Cloudflare pour le front, D1, Vectorize et R2, et héberger le conteneur du back end ailleurs.
+If Python Workers cannot host the backend, keep the frontend, D1, Vectorize, and R2 on
+Cloudflare and host the backend container separately.
 
-## 17. Connexion Google, sécurité et confidentialité (F7)
+## 17. Google sign-in, security, and privacy (F7)
 
-En local, l'application démarre sans page de connexion, avec un utilisateur unique. La connexion Google s'active par une variable d'environnement, sans changement de code.
+Local mode starts with a single user and opens directly. An environment variable enables Google
+sign-in.
 
-### 17.1 Deux modes
+### 17.1 Authentication modes
 
-| Mode | Comportement |
+| Mode | Behavior |
 | --- | --- |
-| `AUTH_MODE=local` (défaut) | Un utilisateur `local` est créé au premier démarrage. Aucune connexion demandée |
-| `AUTH_MODE=google` | Connexion Google en OAuth 2.0 (code d'autorisation avec PKCE), portées `openid email profile`, un espace par utilisateur |
+| `AUTH_MODE=local` (default) | Creates one `local` user on first launch and opens the workspace |
+| `AUTH_MODE=google` | Gives each user a workspace after Google sign-in |
 
-- Session par cookie `HttpOnly` et `SameSite=Lax`, valable 30 jours.
-- Adresse de retour : `http://localhost:8000/api/v1/auth/google/callback`.
-- Au premier passage en mode Google, le compte qui se connecte peut reprendre les données de l'utilisateur `local`.
-- La variable `ALLOWED_EMAILS` limite les comptes autorisés : liste d'adresses séparées par des virgules (minuscules, espaces ignorés) ; `*` laisse entrer tous les comptes ; en mode Google, vide, le back refuse de démarrer. La reprise des données de l'utilisateur `local` n'est proposée qu'à une adresse nommée dans une liste explicite, jamais avec `*`.
-- Ce mode demande de créer un client OAuth dans la console Google. C'est la seule configuration au delà des clés API, d'où sa désactivation par défaut. Le README décrit les étapes.
+- Google sign-in uses OAuth 2.0 authorization code with PKCE and `openid email profile` scopes.
+- The session cookie uses `HttpOnly` and `SameSite=Lax` and lasts 30 days.
+- The callback is `http://localhost:8000/api/v1/auth/google/callback`.
+- An eligible account can claim the `local` user's data at the first switch to Google mode.
+- `ALLOWED_EMAILS` accepts comma-separated email addresses, lowercased and trimmed. A value
+  of `*` permits any account. An empty list prevents the backend from starting in Google mode.
+  Claiming local data requires an account named in an explicit list.
+- Google mode requires an OAuth client in the Google console. See the [setup guide](README.md).
 
-### 17.2 Isolation et secrets
+### 17.2 Isolation and secrets
 
-- `user_id` sur chaque ligne, filtre `user_id` dans Qdrant, dossier de fichiers par utilisateur.
-- Un test par routeur vérifie qu'un utilisateur ne lit jamais les données d'un autre.
-- Clés API chiffrées en base, jamais journalisées, jamais renvoyées au navigateur.
-- Les journaux citent des identifiants, pas le contenu des CV ni des documents.
+- Each row has `user_id`. Filter Qdrant by `user_id` and store files per user.
+- Test each router for cross-account isolation.
+- Encrypt API keys in the database. Keep the full key out of logs and browser responses.
+- Log IDs and omit CV and document content.
 
-### 17.3 Ce qui sort de la machine
+### 17.3 Data sent outside the computer
 
-| Donnée | Destination |
+| Data | Destination |
 | --- | --- |
-| Prompts, qui peuvent contenir le CV et le profil | Le fournisseur LLM choisi |
-| Requêtes de recherche | Les moteurs interrogés par SearXNG |
-| Tout le reste (base, vecteurs, fichiers, embeddings) | Reste en local |
+| Prompts, which can contain CV and profile content | Selected LLM provider |
+| Search queries | Search engines used by SearXNG |
+| Database, vectors, files, and embeddings | Local machine |
 
-- L'écran de premier lancement l'explique en clair.
-- L'outil de recherche retire nom, email et téléphone des requêtes avant envoi.
-- Les contacts enregistrés se limitent au nom, au rôle et à un lien public.
-- Deux boutons dans les réglages : Exporter toutes mes données, Tout supprimer.
+- First-run setup explains these destinations.
+- The search tool strips names, email addresses, and phone numbers before sending queries.
+- Saved contacts include only name, role, and a public link.
+- Settings provides data export and deletion controls.
 
-### 17.4 Sécurité applicative
+### 17.4 Application security
 
-- **Contenu non fiable.** Les pages web et les documents importés sont traités comme des données. Les prompts les encadrent par des délimiteurs et interdisent de suivre une instruction trouvée dedans.
-- Les agents n'ont que les outils de la section 9 : pas d'accès au système de fichiers ni à un terminal.
-- Le lecteur de pages refuse les adresses privées et tout protocole autre que HTTP et HTTPS.
-- Le HTML envoyé à Gotenberg est nettoyé de tout script.
-- Import de fichiers limité à 20 Mo, avec une liste de types autorisés.
-- CORS limité à l'origine du front.
-- L'application n'envoie jamais de candidature ni de message à la place de January.
+- **Untrusted content.** Prompts delimit web pages and imported documents and instruct agents
+  to treat the contents as data.
+- Agents use the tools in section 9. They have no general filesystem or terminal access.
+- The page reader allows HTTP and HTTPS public addresses only.
+- Remove scripts from HTML sent to Gotenberg.
+- Limit imports to 20 MB and allowlisted file types.
+- Restrict CORS to the frontend origin.
+- January sends her own applications and messages.
 
-## 18. Plan de construction et critères d'acceptation
+## 18. Implementation plan and acceptance criteria
 
-Les 19 features sont dans le MVP, construites en 10 phases. Chaque phase se termine par une application qui démarre et un contrôle précis.
+The MVP covers all 19 features in ten phases. Each phase ends with a working application
+and an acceptance check.
 
 ### 18.1 Phases
 
-| Phase | Contenu | Terminée quand |
-| --- | --- | --- |
-| 0. Socle | Dépôt, Docker Compose, santé des services, SQLite et Alembic, réglages, clés API, fabrique LLM pour les 3 fournisseurs, contrôles de qualité | `docker compose up` donne `/health` au vert, et le test de clé réussit depuis les Réglages |
-| 1. Moteur d'agents | Exécution LangGraph, checkpointer, bus d'événements, WebSocket avec rejeu, interruptions, journal des coûts, graphe de démonstration à 2 agents | Le débat de démonstration s'affiche en direct, s'arrête sur une question, et reprend après un redémarrage du back end |
-| 2. Mémoire (F3) | Embeddings, Qdrant, ingestion, outils mémoire, explorateur | Un PDF importé se retrouve par recherche, et une écriture d'agent s'affiche avec son auteur |
-| 3. Recherche web | SearXNG, lecteur de pages, cache, notation des sources | Une requête renvoie des sources notées et lues, et une page illisible est signalée |
-| 4. Conseil et programme (F1, F2) | Graphe du conseil, tableau, propositions, programme, calendrier, leçons, PDF, ressources | Un objectif mène à un programme validé avec les leçons PDF de 2 semaines |
-| 5. Étude (F9, F13, F14, F15, F18) | Quiz, fiches, session guidée, carte de compétences, replanification, capture, journal | Une session guidée complète met à jour la carte et le planning |
-| 6. CV (F4, F8) | Profil maître, capture du design, revue, génération, analyse d'écart | Une offre collée donne un CV ciblé en PDF dans le design d'origine |
-| 7. Candidatures (F5, F10, F16, F19) | Suivi, relances, alerte doublon, kit, comité, entretien | Le cycle complet d'une candidature fonctionne, alerte doublon comprise |
-| 8. Quotidien (F11, F12, F17) | Radar, brief, projets preuves, fil d'activité, tâches planifiées | Le brief du jour se génère seul et reprend toutes les rubriques |
-| 9. Finitions (F6 avancé, F7) | Connexion Google, export et suppression, premier lancement, tests de bout en bout, README | Les 3 parcours de bout en bout passent |
+- **Phase 0, Foundation.** Set up the repository, Compose, service health, SQLite and Alembic,
+  settings, API keys, the three-provider model factory, and quality checks. After
+  `docker compose up`, `/health` is healthy and the key test in Settings succeeds.
+- **Phase 1, Agent runtime.** Add LangGraph execution, checkpointing, events, WebSocket replay,
+  interrupts, cost logging, and a two-agent demo. The demo debate streams live, pauses for
+  a question, and resumes after a backend restart.
+- **Phase 2, Memory (F3).** Add embeddings, Qdrant, ingestion, memory tools, and exploration.
+  Search finds an imported PDF and the explorer displays an agent write with its author.
+- **Phase 3, Web search.** Add SearXNG, page extraction, caching, and source scoring.
+  A query returns scored sources that were read and identifies unreadable pages.
+- **Phase 4, Council and program (F1, F2).** Add the Council graph, whiteboard, proposals,
+  program, calendar, lessons, PDFs, and resources. A goal yields an approved program with
+  two weeks of lesson PDFs.
+- **Phase 5, Study (F9, F13, F14, F15, F18).** Add quizzes, flashcards, guided study, the skill
+  map, replanning, capture, and journal. A complete guided session updates skills and the plan.
+- **Phase 6, CV (F4, F8).** Add the master profile, capture, review, PDF generation, and skill
+  gap assessment. A pasted posting yields a tailored CV PDF with the original design.
+- **Phase 7, Applications (F5, F10, F16, F19).** Add tracking, follow-ups, duplicate alerts,
+  kits, panels, and interviews. The full application cycle works, including duplicate alerts.
+- **Phase 8, Daily workflow (F11, F12, F17).** Add Radar, the brief, projects, activity, and
+  scheduled jobs. Today's brief runs automatically and contains every section.
+- **Phase 9, Finishing (advanced F6, F7).** Add Google sign-in, export and deletion, onboarding,
+  end-to-end tests, and the README. The three original end-to-end flows pass.
 
-### 18.2 Consignes pour Claude Code
+### 18.2 Implementation instructions
 
-- Lire toute la spec avant de coder, puis avancer phase par phase. À la fin de chaque phase : tests, contrôle de la phase, commit.
-- Ne rien ajouter hors spec.
-- Si une bibliothèque se comporte autrement que décrit ici, suivre sa documentation officielle actuelle et noter l'écart dans `DECISIONS.md`.
-- À vérifier dans la documentation au moment de coder : identifiants de modèles, API de streaming de LangGraph, API des paquets Excalidraw, routes de Gotenberg, adresse de l'API Z.ai.
-- Respecter les règles de découpage de la section 12.2 dès le premier fichier.
-- Tests écrits avec chaque feature : unitaires sur les services, un test d'API par routeur, 3 parcours de bout en bout (conseil complet, revue de CV complète, cycle de candidature avec doublon et relance).
-- Dans les tests, les appels LLM passent par un faux fournisseur déterministe. Aucun test ne dépense de tokens.
+- Read the entire specification and work phase by phase. At each phase end, run tests,
+  check the acceptance criteria, and commit.
+- Keep changes within the specification.
+- If a library behaves differently from the design, follow its current official documentation
+  and record the change in `DECISIONS.md`.
+- At implementation time verify model IDs, LangGraph streaming, Excalidraw APIs, Gotenberg
+  routes, and the Z.ai API URL.
+- Follow the source organization rules in section 12.2 from the first file.
+- Add service unit tests and an API test per router. The three initial end-to-end flows cover
+  the Council, CV review, and application cycle with duplicate alerts and follow-ups.
+- Use a deterministic fake model provider in tests.
 
-### 18.3 Critères d'acceptation par feature
+### 18.3 Feature acceptance criteria
 
-| Feature | Acceptée quand |
-| --- | --- |
-| F1 | Un objectif produit un débat visible de 4 agents sur 3 tours, au moins 8 sources notées, un tableau qui se dessine, et 2 à 3 propositions. Un message envoyé pendant le débat est repris au tour suivant |
-| F2 | Chaque semaine a thème, objectif, livrable et tâches datées, sans dépasser 85 % du budget. Chaque module des 2 premières semaines a sa leçon PDF et 3 à 6 ressources dont les liens répondent |
-| F3 | Un PDF importé se retrouve par recherche sémantique. Une écriture d'agent apparaît avec auteur et raison. Un sujet acquis est sauté dans un nouveau programme |
-| F4 | Chaque modification a avant, après, raison et fait source. Aucune modification acceptée ne contient un fait absent du profil maître. Le PDF garde son nombre de pages et son texte est sélectionnable |
-| F5 | Ajouter une offre déjà postulée déclenche l'alerte avec la date. Une candidature de 7 jours sans réponse fait apparaître une relance avec brouillon |
-| F6 | Passer le niveau `fort` d'Anthropic à GLM change le modèle dès la session suivante, visible dans `llm_calls`. Une clé invalide est signalée par le test |
-| F7 | En mode Google, deux comptes ne voient jamais les données l'un de l'autre |
-| F8 | Une offre produit un score de match et un tableau d'écarts. « Ajouter au planning » crée une proposition de replanification |
-| F9 | Un quiz réussi à 80 % fait passer l'acquis à `valide`. Une fiche ratée revient le lendemain |
-| F10 | Un entretien de 15 minutes pose des questions liées à l'offre et produit un débrief noté |
-| F11 | Un projet validé génère les 4 brouillons et fait passer l'acquis à `prouve` |
-| F12 | Le relevé indique les offres lues et bloquées, et classe les compétences par fréquence |
-| F13 | Après une semaine à moitié faite, le bilan propose un plan qui respecte le budget, avec l'avant et l'après |
-| F14 | Une session guidée enregistre le temps, coche les tâches et crée des fiches depuis les erreurs |
-| F15 | La carte reflète un changement de niveau en moins d'une minute et montre les preuves au clic |
-| F16 | Le kit produit les 7 pièces, toutes modifiables, et l'archive se télécharge |
-| F17 | Le brief du jour existe à l'ouverture et liste bloc, révisions, relances et offres |
-| F18 | Un lien capturé devient un élément de mémoire résumé. Un lien illisible est signalé immédiatement |
-| F19 | Le comité rend 4 votes motivés et 3 changements prioritaires. Une seconde exécution après modification montre l'écart |
+- **F1.** A goal produces a visible three-round debate among four agents, at least eight
+  scored sources, an animated board, and two or three proposals. The next round addresses
+  messages sent during the debate.
+- **F2.** Each week has a theme, goal, deliverable, and dated tasks within 85% of the budget.
+  Each module in the first two weeks has a lesson PDF and three to six working resource links.
+- **F3.** Semantic search finds an imported PDF. Agent writes show author and reason. A new
+  program can skip a topic already learned.
+- **F4.** Each change has before and after text, a reason, and a master profile fact.
+  Accepted changes are grounded in the profile. The PDF preserves page count and selectable text.
+- **F5.** A previously applied-to posting triggers an alert with the date. A week without a
+  reply produces a follow-up draft.
+- **F6.** Switching Strong from Anthropic to GLM changes the next session's model in
+  `llm_calls`. A key test reports an invalid key.
+- **F7.** Google accounts see only their own data.
+- **F8.** A posting produces a match score and gap table. Adding a gap to the schedule
+  creates a replanning proposal.
+- **F9.** A quiz score of 80% moves the skill to `validated`. A missed flashcard returns
+  the following day.
+- **F10.** A 15-minute interview asks posting-related questions and yields a scored debrief.
+- **F11.** An approved project produces four drafts and moves the skill to `proven`.
+- **F12.** The report counts read and blocked postings and ranks skills by frequency.
+- **F13.** After a half-completed week, the review proposes a plan within the budget and
+  shows before and after.
+- **F14.** Guided study records time, checks off tasks, and creates flashcards from mistakes.
+- **F15.** The map reflects a level change within a minute. Clicking a skill shows its evidence.
+- **F16.** The kit produces seven editable items and a downloadable archive.
+- **F17.** Today's brief is available on open with the study block, reviews, follow-ups, and
+  postings.
+- **F18.** A captured URL becomes a summarized memory entry. The app immediately flags
+  unreadable URLs.
+- **F19.** The panel gives four votes with reasons and three priority changes. Running it
+  again after edits shows the difference.
 
-**Critères transverses**
+**Criteria across features**
 
-- Avec une seule clé LLM dans `.env`, `docker compose up` suffit. Aucune autre configuration.
-- Aucun fichier ne dépasse 300 lignes.
-- Une session en cours survit à `docker compose restart backend`.
-- Chaque appel LLM est journalisé avec son coût estimé.
-- Aucun texte généré au nom de January ne contient un fait absent du profil maître ou de la mémoire.
+- One model key in `.env` and `docker compose up` are enough to start locally.
+- Source files stay within 300 lines.
+- A running session survives `docker compose restart backend`.
+- Every LLM call is logged with its estimated cost.
+- Text written on January's behalf draws facts from the master profile or memory.
 
 ## 19. Sources
 
-Faits techniques relevés le 11 novembre 2026, à revérifier dans la documentation au moment de coder.
+The original design recorded these technical references on November 11, 2026.
+Check the docs at implementation time.
 
-**Pages consultées**
+**Pages consulted**
 
-- Tarifs et plan gratuit de Vectorize : [Cloudflare Docs, Vectorize pricing](https://developers.cloudflare.com/vectorize/platform/pricing/)
-- Python sur Workers, paquets FastAPI et LangChain : [Cloudflare Docs, Python Workers](https://developers.cloudflare.com/workers/languages/python/)
-- Interruptions, checkpointer et reprise dans LangGraph : [LangChain Docs, Interrupts](https://docs.langchain.com/oss/python/langgraph/interrupts)
-- SearXNG avec LangChain et activation du format JSON : [LangChain Docs, SearxNG](https://docs.langchain.com/oss/python/integrations/providers/searx)
-- Fin du plan gratuit de Brave Search API : [Implicator](https://www.implicator.ai/brave-drops-free-search-api-tier-puts-all-developers-on-metered-billing/)
-- Conversion de Mermaid en éléments Excalidraw : [Excalidraw Docs, mermaid to excalidraw](https://plus.excalidraw.com/docs/mermaid-to-excalidraw/api)
-- Fonctionnement réel des logiciels de recrutement : [Huntr](https://huntr.co/blog/how-applicant-tracking-systems-work)
+- Free allowance and paid plans. [Vectorize pricing][vectorize-pricing]
+- Python Workers and support for FastAPI and LangChain. [Cloudflare Python Workers][python-workers]
+- LangGraph interrupts, checkpointing, and resume. [LangGraph interrupts][langgraph-interrupts]
+- SearXNG with LangChain and JSON output. [LangChain SearXNG docs][langchain-searxng]
+- Changes to the Brave Search API free tier. [Implicator][brave-api-report]
+- Mermaid conversion to Excalidraw. [Excalidraw conversion API][excalidraw-conversion]
+- Applicant tracking system behavior. [Huntr survey][huntr-ats]
 
-**Repéré par recherche, sans ouvrir la page d'origine**
+**Findings from search results**
 
-- Licence Apache 2.0 et tableau de bord intégré de [Qdrant](https://github.com/qdrant/qdrant).
-- Routes Chromium de [Gotenberg](https://github.com/gotenberg/gotenberg) pour convertir du HTML en PDF.
-- Adresse de l'API Z.ai compatible OpenAI.
-- Caractéristiques de `bge-m3` : 1 024 dimensions, plus de 100 langues, disponible dans Ollama et Workers AI.
+- Apache 2.0 license and built-in dashboard. [Qdrant]
+- Chromium routes for HTML-to-PDF conversion. [Gotenberg]
+- Z.ai's OpenAI-compatible API URL.
+- `bge-m3` uses 1,024 dimensions and supports over 100 languages on Ollama and Workers AI.
+
+[python-workers]: https://developers.cloudflare.com/workers/languages/python/
+[langchain-searxng]: https://docs.langchain.com/oss/python/integrations/providers/searx
+[brave-api-report]:
+  https://www.implicator.ai/brave-drops-free-search-api-tier-puts-all-developers-on-metered-billing/
+[excalidraw-conversion]: https://plus.excalidraw.com/docs/mermaid-to-excalidraw/api
+[huntr-ats]: https://huntr.co/blog/how-applicant-tracking-systems-work

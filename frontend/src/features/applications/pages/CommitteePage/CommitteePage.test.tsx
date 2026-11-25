@@ -12,35 +12,35 @@ describe("CommitteePage", () => {
   it("introduces the committee with the application, the permanent simulation banner and the way back", async () => {
     setup();
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Comité de recrutement simulé" }),
+      await screen.findByRole("heading", { level: 1, name: "Simulated hiring committee" }),
     ).toBeVisible();
     expect(await screen.findByText("Acme, Data engineer")).toBeVisible();
-    expect(screen.getByRole("note")).toHaveTextContent("Simulation, pas une prédiction.");
-    expect(screen.getByRole("link", { name: "Retour à la fiche" })).toHaveAttribute(
+    expect(screen.getByRole("note")).toHaveTextContent("A simulation, not a prediction.");
+    expect(screen.getByRole("link", { name: "Back to the application" })).toHaveAttribute(
       "href",
-      "/candidatures/a1",
+      "/applications/a1",
     );
-    expect(await screen.findByText(/Aucun comité pour cette offre/)).toBeVisible();
-    expect(screen.getByRole("button", { name: "Lancer le comité" })).toBeEnabled();
+    expect(await screen.findByText(/No committee for this posting/)).toBeVisible();
+    expect(screen.getByRole("button", { name: "Run the committee" })).toBeEnabled();
   });
 
   it("keeps the banner on every state of the page, results included", async () => {
     setup({ runs: [committeeOut()] });
     await screen.findByRole("tab", { name: "Verdict" });
-    expect(screen.getByRole("note")).toHaveTextContent("Simulation, pas une prédiction.");
+    expect(screen.getByRole("note")).toHaveTextContent("A simulation, not a prediction.");
   });
 
   it("says a missing application in words, with a way back to the board", async () => {
-    setup({}, {}, "/candidatures/zz/comite");
-    expect(await screen.findByText("Cette candidature n'existe plus.")).toBeVisible();
-    expect(screen.getByRole("heading", { level: 1, name: "Fiche introuvable" })).toBeVisible();
+    setup({}, {}, "/applications/zz/committee");
+    expect(await screen.findByText("This application no longer exists.")).toBeVisible();
+    expect(screen.getByRole("heading", { level: 1, name: "Application not found" })).toBeVisible();
   });
 
   it("asks for an analysed offer when the application has none", async () => {
     setup({}, { posting_id: null });
-    expect(await screen.findByText(/n'est liée à aucune offre analysée/)).toBeVisible();
-    expect(screen.queryByRole("button", { name: /comité/ })).toBeNull();
-    expect(screen.getByRole("note")).toHaveTextContent("Simulation, pas une prédiction.");
+    expect(await screen.findByText(/isn't linked to an analyzed posting/)).toBeVisible();
+    expect(screen.queryByRole("button", { name: /committee/i })).toBeNull();
+    expect(screen.getByRole("note")).toHaveTextContent("A simulation, not a prediction.");
   });
 
   it("opens on the latest committee: its debate on the left, three tabs on the right, the verdict first", async () => {
@@ -51,25 +51,25 @@ describe("CommitteePage", () => {
       e.message("ats_reader-impression", "Le CV passe bien le tri.", "ats_reader"),
       e.message("moderator-synthese", "Voici la synthèse.", "moderator"),
     );
-    const feed = await screen.findByRole("region", { name: "Débat du comité" });
-    expect(await within(feed).findByRole("article", { name: "Lecteur ATS" })).toBeVisible();
-    expect(within(feed).getByRole("article", { name: "Modérateur" })).toBeVisible();
+    const feed = await screen.findByRole("region", { name: "Committee debate" });
+    expect(await within(feed).findByRole("article", { name: "ATS reader" })).toBeVisible();
+    expect(within(feed).getByRole("article", { name: "Moderator" })).toBeVisible();
 
     const tabs = await screen.findAllByRole("tab");
-    expect(tabs.map((tab) => tab.textContent)).toEqual(["Votes", "Verdict", "Avant / après"]);
+    expect(tabs.map((tab) => tab.textContent)).toEqual(["Votes", "Verdict", "Before / after"]);
     expect(screen.getByRole("tab", { name: "Verdict" })).toHaveAttribute("aria-selected", "true");
     const panel = screen.getByRole("tabpanel", { name: "Verdict" });
-    expect(within(panel).getByText("Le comité dit :")).toBeVisible();
-    expect(within(panel).getByText("Oui")).toBeVisible();
-    expect(within(panel).getByText("Les voix : 3 oui ; 1 non ; 0 peut-être.")).toBeVisible();
+    expect(within(panel).getByText("The committee says:")).toBeVisible();
+    expect(within(panel).getByText("Yes")).toBeVisible();
+    expect(within(panel).getByText("The votes were 3 yes, 1 no, and 0 maybe.")).toBeVisible();
   });
 
   it("nests its headings under the page title without skipping a level or doubling a region", async () => {
     setup({ runs: [committeeOut()] });
     await screen.findByRole("tab", { name: "Verdict" });
-    expect(screen.getByRole("heading", { level: 2, name: "Verdict du comité" })).toBeVisible();
+    expect(screen.getByRole("heading", { level: 2, name: "Committee verdict" })).toBeVisible();
     expect(screen.getByRole("heading", { level: 3, name: /Objections/ })).toBeVisible();
-    expect(screen.queryByRole("region", { name: "Verdict du comité" })).toBeNull();
+    expect(screen.queryByRole("region", { name: "Committee verdict" })).toBeNull();
     expect(screen.queryByRole("heading", { level: 4 })).toBeNull();
   });
 
@@ -83,7 +83,7 @@ describe("CommitteePage", () => {
     const items = within(panel).getAllByRole("listitem");
     expect(items).toHaveLength(4);
     expect(items[2]).toHaveTextContent("Manager");
-    expect(items[2]).toHaveTextContent("Non");
+    expect(items[2]).toHaveTextContent("No");
     expect(items[2]).toHaveTextContent("Objection de manager.");
     expect(items[2]).toHaveTextContent("Raison de manager.");
   });
@@ -97,20 +97,20 @@ describe("CommitteePage", () => {
     expect(objections).toHaveLength(2);
     expect(objections[0]).toHaveTextContent("Peu de résultats chiffrés.");
     const changes = within(
-      within(panel).getByRole("heading", { name: "Trois changements à faire" }).parentElement!,
+      within(panel).getByRole("heading", { name: "Three changes to make" }).parentElement!,
     ).getAllByRole("listitem");
     expect(changes).toHaveLength(3);
-    expect(within(changes[1]!).getByText("À acquérir")).toBeVisible();
-    expect(changes[1]).toHaveTextContent("ne l'écris pas dans ton CV");
-    expect(within(changes[0]!).queryByText("À acquérir")).toBeNull();
+    expect(within(changes[1]!).getByText("To acquire")).toBeVisible();
+    expect(changes[1]).toHaveTextContent("Skills involved: Kubernetes");
+    expect(within(changes[0]!).queryByText("To acquire")).toBeNull();
   });
 
   it("says the first committee has nothing to compare, then shows the before and after of the next", async () => {
     const first = setup({ runs: [committeeOut()] });
-    await first.user.click(await screen.findByRole("tab", { name: "Avant / après" }));
+    await first.user.click(await screen.findByRole("tab", { name: "Before / after" }));
     expect(
-      within(screen.getByRole("tabpanel", { name: "Avant / après" })).getByText(
-        /C'est le premier comité/,
+      within(screen.getByRole("tabpanel", { name: "Before / after" })).getByText(
+        /This is the first committee/,
       ),
     ).toBeVisible();
   });
@@ -119,11 +119,11 @@ describe("CommitteePage", () => {
     const { user } = setup({
       runs: [committeeOut({ id: "c2", previous: diffOut({ previous_id: "c1" }) }), committeeOut()],
     });
-    await user.click(await screen.findByRole("tab", { name: "Avant / après" }));
-    const panel = screen.getByRole("tabpanel", { name: "Avant / après" });
+    await user.click(await screen.findByRole("tab", { name: "Before / after" }));
+    const panel = screen.getByRole("tabpanel", { name: "Before / after" });
     const rows = within(within(panel).getByRole("table")).getAllByRole("row").slice(1);
-    expect(rows[0]).toHaveTextContent(/Lecteur ATS.*Non.*Oui.*Plus favorable/);
-    expect(rows[1]).toHaveTextContent(/Recruteur.*Oui.*Oui.*Inchangé/);
+    expect(rows[0]).toHaveTextContent(/ATS reader.*No.*Yes.*More favorable/);
+    expect(rows[1]).toHaveTextContent(/Recruiter.*Yes.*Yes.*Unchanged/);
     expect(within(panel).getByText("Mot clé Kubernetes absent.")).toBeVisible();
     expect(within(panel).getByText("Résumé trop long.")).toBeVisible();
   });
@@ -135,8 +135,8 @@ describe("CommitteePage", () => {
       ],
     });
     expect(
-      await screen.findByText(/Le comité s'est arrêté sans verdict\. Tu peux le relancer\./),
+      await screen.findByText(/The committee stopped without a verdict\. You can rerun it\./),
     ).toBeVisible();
-    expect(screen.getByRole("button", { name: "Relancer le comité" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Rerun the committee" })).toBeEnabled();
   });
 });

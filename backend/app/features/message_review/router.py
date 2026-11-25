@@ -28,7 +28,9 @@ router = APIRouter(prefix=ROOT, tags=["message_review"], route_class=FieldPathsR
 def _actor() -> McpIdentity:
     identity = MCP_IDENTITY.get()
     if identity is None:
-        raise AppError("telegram_nod_only", "Cette action est réservée au jeton Nod associé.", 403)
+        raise AppError(
+            "telegram_nod_only", "This action is reserved for the linked Nod token.", 403
+        )
     return identity
 
 

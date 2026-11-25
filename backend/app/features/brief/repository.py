@@ -1,7 +1,7 @@
-"""Briefs d'un utilisateur (13.6) et lectures des liens déjà connus. Les écritures disputées sont
-gardées en SQL (`INSERT … ON CONFLICT DO NOTHING`, `UPDATE … WHERE` sur l'état attendu) : deux
-requêtes ou deux tâches ne créent jamais deux briefs pour un jour, et la première écriture d'une
-rubrique gagne. Le commit appartient à l'appelant."""
+"""A user's briefs (13.6) and reads of already known links. Contended writes are guarded in
+SQL (`INSERT … ON CONFLICT DO NOTHING`, `UPDATE … WHERE` on the expected state): two requests
+or two jobs never create two briefs for one day, and the first write of a section wins. The
+caller owns the commit."""
 
 import builtins
 from datetime import date, datetime
@@ -40,7 +40,7 @@ class BriefRepository(UserScopedRepository[Brief]):
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def before(self, day: date, limit: int) -> builtins.list[Brief]:
-        """Les briefs des jours précédant `day`, le plus récent d'abord."""
+        """Briefs of the days before `day`, most recent first."""
         stmt = (
             select(Brief)
             .where(Brief.user_id == self.user_id, Brief.day < day)
@@ -58,8 +58,8 @@ class BriefRepository(UserScopedRepository[Brief]):
         offer_keys: builtins.list[str],
         now: datetime,
     ) -> str | None:
-        """Crée le brief du jour et rend son id ; `None` si ce jour a déjà son brief (rien n'est
-        changé). Seul celui qui reçoit un id lance la session du conseil."""
+        """Create the brief for the day and return its id; `None` if that day already has its brief
+        (nothing changes). Only the caller that receives an id launches the advice session."""
         stmt = (
             sqlite_insert(Brief)
             .values(
@@ -89,7 +89,7 @@ class BriefRepository(UserScopedRepository[Brief]):
         return await self._update_where(brief_id, Brief.session_id.is_(None), session_id=session_id)
 
     async def save_resource(self, brief_id: str, resource: dict[str, Any]) -> bool:
-        """Première écriture gagnante : `{}` est la rubrique vide (rangée, sans ressource)."""
+        """First write wins: `{}` is the empty section (stored, without a resource)."""
         return await self._update_where(brief_id, Brief.resource.is_(None), resource=resource)
 
     async def save_advice(self, brief_id: str, advice: dict[str, Any]) -> bool:
@@ -102,13 +102,13 @@ class BriefRepository(UserScopedRepository[Brief]):
         )
 
     async def close_advice(self, brief_id: str, status: str) -> bool:
-        """Le conseil `failed` ou `unavailable`, seulement s'il est encore `pending` : définitif."""
+        """Advice `failed` or `unavailable`, only if still `pending`: final."""
         return await self._update_where(
             brief_id, Brief.advice_status == "pending", advice_status=status
         )
 
     async def known_keys(self) -> builtins.set[str]:
-        """Les liens normalisés des offres et des fiches déjà saisies."""
+        """Normalised links of the postings and applications already entered."""
         keys: builtins.set[str] = set()
         for model in (JobPosting, Application):
             stmt = select(model.url_norm).where(
@@ -120,8 +120,8 @@ class BriefRepository(UserScopedRepository[Brief]):
     async def created_between(
         self, after: datetime | None, before: datetime | None, limit: int
     ) -> builtins.list[Brief]:
-        """Les briefs créés dans `[after, before]` (bornes incluses), le plus récent d'abord (fil
-        d'activité)."""
+        """Briefs created within `[after, before]` (bounds included), most recent first (activity
+        feed)."""
         stmt = select(Brief).where(Brief.user_id == self.user_id)
         if after is not None:
             stmt = stmt.where(Brief.created_at >= after)

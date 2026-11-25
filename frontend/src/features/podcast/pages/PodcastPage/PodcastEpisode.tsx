@@ -8,7 +8,7 @@ export function PodcastEpisode({ episode }: { episode: Episode }) {
   return (
     <section className="flex flex-col gap-4">
       <h2 className="text-xl font-semibold">{episode.title}</h2>
-      <Link className="self-start text-sm underline" to={`/apprendre/lecons/${episode.lesson_id}`}>
+      <Link className="self-start text-sm underline" to={`/learn/lessons/${episode.lesson_id}`}>
         {t("podcast.openLesson")}
       </Link>
       {episode.status === "ready" ? <PodcastAudio key={episode.id} id={episode.id} /> : null}

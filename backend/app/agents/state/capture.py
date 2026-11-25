@@ -1,6 +1,6 @@
-"""État du parcours `capture` (D108) : la source capturée, ce que l'Archiviste en a lu, l'instantané
-des liens vers le programme (références `m3`, `t12` et leurs ids, F7), le résumé, ce qui est rangé
-et les réponses de January."""
+"""State of the `capture` flow (D108): the captured source, what the Archivist read from it, the
+snapshot of links to the program (references `m3`, `t12` and their ids, F7), the digest, what was
+stored and January's answers."""
 
 from typing import Any, TypedDict
 
@@ -9,16 +9,16 @@ class CaptureState(TypedDict, total=False):
     url: str | None
     text: str | None
     document_id: str | None
-    source: str  # `url`, `text` ou `document` (la source d'origine)
-    pasted: bool  # le texte vient de la question posée après un lien illisible
-    unreadable: bool  # le lien n'a pas pu être lu : la question du texte suit
-    material: dict[str, Any]  # `CaptureMaterial` en JSON
-    links: dict[str, Any]  # `ProgramLinks` en JSON (dates ISO) : l'instantané des références
-    digest: dict[str, Any]  # `CaptureDigest` en JSON, références inconnues retirées
-    stored: dict[str, Any]  # `CaptureStored` en JSON
-    tick: bool  # January a dit oui à la tâche couverte
-    ticked: bool  # la tâche est cochée
-    want_cards: bool  # January a dit oui aux fiches
+    source: str  # `url`, `text` or `document` (the original source)
+    pasted: bool  # the text comes from the question asked after an unreadable link
+    unreadable: bool  # the link could not be read: the text question follows
+    material: dict[str, Any]  # `CaptureMaterial` as JSON
+    links: dict[str, Any]  # `ProgramLinks` as JSON (ISO dates): the reference snapshot
+    digest: dict[str, Any]  # `CaptureDigest` as JSON, unknown references removed
+    stored: dict[str, Any]  # `CaptureStored` as JSON
+    tick: bool  # January said yes to the covered task
+    ticked: bool  # the task is ticked
+    want_cards: bool  # January said yes to the cards
     cards_created: int
-    outcome: str  # `cancelled` : capture abandonnée ; sinon vide
+    outcome: str  # `cancelled`: capture abandoned; empty otherwise
     summary: str

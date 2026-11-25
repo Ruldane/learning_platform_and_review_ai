@@ -11,7 +11,7 @@ import { useGoals } from "../../hooks/useGoals";
 import { toGoalRow } from "../../toView";
 
 /**
- * Objectifs (`/apprendre/objectifs`) : saisir un objectif lance le Conseil et l'ouvre ; en dessous,
+ * Objectifs (`/learn/goals`) : saisir un objectif lance le Conseil et l'ouvre ; en dessous,
  * les objectifs déjà saisis avec leur statut et leurs liens (Conseil, programme).
  */
 export function GoalsPage() {

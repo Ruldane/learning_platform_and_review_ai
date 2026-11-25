@@ -105,7 +105,7 @@ class ProjectsApi(FakeApi):
         self.outcome, self.repo_status, self.review_polls = outcome, repo_status, review_polls
         self.profile_version = 3
         self.profile_projects: list[dict[str, Any]] = [{"name": "Ancien projet"}]
-        self.level = "prouve"
+        self.level = "proven"
         self.submit_form: bytes = b""
         self.submit_type = ""
         self.brief_posts: list[str] = []

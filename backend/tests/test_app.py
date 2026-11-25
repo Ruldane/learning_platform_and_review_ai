@@ -31,7 +31,7 @@ async def test_app_error_is_rendered(app: FastAPI, client: httpx.AsyncClient) ->
     }
 
 
-async def test_http_error_is_french_and_forwards_headers(
+async def test_http_error_is_english_and_forwards_headers(
     app: FastAPI, client: httpx.AsyncClient
 ) -> None:
     @app.get("/api/v1/_get_only")
@@ -41,7 +41,7 @@ async def test_http_error_is_french_and_forwards_headers(
     r = await client.post("/api/v1/_get_only")
     assert r.status_code == 405
     assert r.json()["error"]["code"] == "http_error"
-    assert r.json()["error"]["message"] == "Méthode non autorisée."
+    assert r.json()["error"]["message"] == "Method not allowed."
     assert "GET" in r.headers["allow"]
 
 
@@ -60,7 +60,7 @@ async def validation_client(validation_app: FastAPI) -> AsyncIterator[httpx.Asyn
         yield client
 
 
-async def test_validation_error_is_french(
+async def test_validation_error_is_english(
     validation_app: FastAPI, validation_client: httpx.AsyncClient
 ) -> None:
     app, client = validation_app, validation_client
@@ -72,7 +72,14 @@ async def test_validation_error_is_french(
     r = await client.get("/api/v1/_v?n=abc")
     assert r.status_code == 422
     assert r.json()["error"]["code"] == "validation_error"
-    assert r.json()["error"]["message"] == "Requête invalide."
+    assert r.json()["error"]["message"] == "Invalid request."
+    (error,) = r.json()["error"]["details"]["errors"]
+    assert error == {"loc": ["query", "n"], "msg": "Enter a whole number.", "type": "int_parsing"}
+
+    missing = await client.get("/api/v1/_v")
+    assert missing.status_code == 422
+    (error,) = missing.json()["error"]["details"]["errors"]
+    assert error == {"loc": ["query", "n"], "msg": "This field is required.", "type": "missing"}
 
 
 async def test_validation_error_never_echoes_the_input(
@@ -141,9 +148,13 @@ async def test_validation_paths_only_contain_declared_fields_and_list_indices(
             ["body", "scores"],
             ["body", "scores"],
         ]
-        assert details["errors"][0]["msg"] == "Valeur invalide."
+        assert [err["msg"] for err in details["errors"]] == [
+            "Invalid value.",
+            "This field is not allowed.",
+            "Enter a whole number.",
+            "Enter a whole number.",
+        ]
         assert details["errors"][0]["type"] == "value_error"
-        assert details["errors"][2]["msg"] == "Un entier est attendu."
 
 
 async def test_unhandled_error_is_500_without_trace(
@@ -172,7 +183,7 @@ async def test_unhandled_error_keeps_cors_headers(
     assert r.json()["error"]["code"] == "internal_error"
     assert "secret interne" not in r.text
     assert r.headers.get("access-control-allow-origin") == "http://localhost:5173"
-    assert any(rec.getMessage() == "Erreur non gérée" for rec in caplog.records)
+    assert any(rec.getMessage() == "Unhandled error" for rec in caplog.records)
 
 
 async def test_cors_allows_front_origin_only(client: httpx.AsyncClient) -> None:

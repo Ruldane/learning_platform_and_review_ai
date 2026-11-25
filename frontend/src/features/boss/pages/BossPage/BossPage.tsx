@@ -22,7 +22,7 @@ export function BossPage() {
     <div className="flex max-w-3xl flex-col items-start gap-5">
       <Link
         className="text-sm underline underline-offset-2"
-        to={`/apprendre/programme/${encodeURIComponent(programId)}`}
+        to={`/learn/programs/${encodeURIComponent(programId)}`}
       >
         {t("boss.back")}
       </Link>

@@ -39,7 +39,7 @@ router = APIRouter(prefix="/e2e/skill-transfer")
 async def ready(db: Db, user: CurrentUserDep) -> dict[str, str]:
     service = SkillsService(db, user.id)
     await service.raise_levels(
-        [SKILL], "prouve", evidence("project", "livraison-fictive", "Import sans doublons", NOW)
+        [SKILL], "proven", evidence("project", "livraison-fictive", "Import sans doublons", NOW)
     )
     skill_id = await service.skill_id_for(SKILL)
     assert skill_id is not None

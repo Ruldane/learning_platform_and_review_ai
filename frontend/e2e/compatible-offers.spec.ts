@@ -16,5 +16,5 @@ test("ouvre l’écart depuis le brief et propose la compétence cochée", async
   await expect(checkbox).toBeChecked();
   await page.getByRole("button", { name: "Proposer l’ajout au planning" }).press("Enter");
   await expect(page.getByRole("link", { name: "Ouvrir la proposition de replanification" }))
-    .toHaveAttribute("href", /\/apprendre\/programme\/[0-9a-f-]+\/replanification$/);
+    .toHaveAttribute("href", /\/learn\/programs\/[0-9a-f-]+\/replan$/);
 });

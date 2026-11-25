@@ -2,7 +2,7 @@ import { t } from "@/shared/i18n/t";
 import type { SourceView } from "../sourceTypes";
 import { webUrl } from "../webUrl";
 
-const DAY = new Intl.DateTimeFormat("fr-FR", { dateStyle: "long", timeZone: "UTC" });
+const DAY = new Intl.DateTimeFormat("en-GB", { dateStyle: "long", timeZone: "UTC" });
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}/;
 
 /** Date ISO → « 4 mars 2026 » ; tout autre texte est rendu tel quel. */

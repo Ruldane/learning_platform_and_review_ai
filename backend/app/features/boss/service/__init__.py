@@ -1,4 +1,4 @@
-"""Parcours du défi, horodaté côté serveur et au nom du compte courant."""
+"""Challenge flow, timestamped server-side and on behalf of the current account."""
 
 from collections.abc import Callable
 from datetime import datetime
@@ -81,9 +81,7 @@ class BossService:
         if existing is not None:
             return await self._view(existing)
         if not eligible(program):
-            raise AppError(
-                "boss_locked", "Termine les tâches du programme pour ouvrir le Boss.", 409
-            )
+            raise AppError("boss_locked", "Finish the program tasks to unlock the Boss.", 409)
         row, reserved = await self.repo.reserve(program_id, self.clock())
         if reserved:
             project = await self.ide.open_session(title=f"Boss · {TITLE}")

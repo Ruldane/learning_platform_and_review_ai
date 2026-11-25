@@ -7,5 +7,5 @@ import { ReplanPage } from "./pages/ReplanPage";
  */
 export const replanManifest: FeatureManifest = {
   id: "replan",
-  routes: [{ path: "apprendre/programme/:programId/replanification", Component: ReplanPage }],
+  routes: [{ path: "learn/programs/:programId/replan", Component: ReplanPage }],
 };

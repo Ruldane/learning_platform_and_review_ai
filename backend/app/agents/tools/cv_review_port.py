@@ -84,9 +84,9 @@ class VersionOutcome:
 
 
 class ReviewReport(BaseModel):
-    """Le rapport de la revue : ATS repéré et ses notes, résumé de la fiche entreprise, forces et
-    risques vus par le Recruteur, critères éliminatoires de l'offre. Aucune garantie de passage
-    d'un ATS n'y est promise."""
+    """The review report: detected ATS and its notes, company sheet summary, strengths and
+    risks seen by the Recruiter, and the posting's knockout criteria. It promises no
+    guarantee of passing an ATS."""
 
     ats: str | None = Field(default=None, max_length=40)
     ats_notes: list[Note] = Field(default_factory=list, max_length=6)
@@ -141,9 +141,7 @@ class CvReviewStore(Protocol):
 
 
 def cv_review_unavailable() -> AppError:
-    return AppError(
-        "cv_review_unavailable", "La revue de CV n'est pas branchée sur ce moteur.", 503
-    )
+    return AppError("cv_review_unavailable", "CV reviews are unavailable in this runtime.", 503)
 
 
 class _NoCvReview:

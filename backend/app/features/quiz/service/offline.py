@@ -19,7 +19,9 @@ async def review_offline(
                 or past.response is None
                 or (past.card_id, past.due_date, past.ok) != (card_id, receipt.due_date, ok)
             ):
-                raise AppError("card_receipt_changed", "Cette réponse a déjà été enregistrée.", 409)
+                raise AppError(
+                    "card_receipt_changed", "This answer has already been recorded.", 409
+                )
             return ReviewOut.model_validate(past.response)
         out = await review_in_session(rt, db, user_id, card_id, ok, expected_due=receipt.due_date)
         await repo.complete(new, out.model_dump(mode="json"))

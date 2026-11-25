@@ -9,19 +9,19 @@ import { server } from "./server";
 
 /** Les pages où les liens du CV mènent, pour vérifier qu'on y arrive. */
 const LANDINGS = [
-  { path: "/carriere/profil", element: <p>Page du profil</p> },
-  { path: "/carriere/cv", element: <p>Page des modèles</p> },
-  { path: "/carriere/cv/versions", element: <p>Page des versions</p> },
-  { path: "/carriere/cv/modeles/:templateId", element: <p>Page du modèle</p> },
-  { path: "/carriere/cv/revues/:reviewId", element: <p>Page de la revue</p> },
-  { path: "/carriere/offres", element: <p>Liste des offres</p> },
-  { path: "/carriere/offres/:postingId", element: <p>{"Page de l'offre"}</p> },
-  { path: "/reglages/modeles", element: <p>Réglages des modèles</p> },
+  { path: "/career/profile", element: <p>Page du profil</p> },
+  { path: "/career/cv", element: <p>Page des modèles</p> },
+  { path: "/career/cv/versions", element: <p>Page des versions</p> },
+  { path: "/career/cv/templates/:templateId", element: <p>Page du modèle</p> },
+  { path: "/career/cv/reviews/:reviewId", element: <p>Page de la revue</p> },
+  { path: "/career/postings", element: <p>Liste des offres</p> },
+  { path: "/career/postings/:postingId", element: <p>{"Page de l'offre"}</p> },
+  { path: "/settings/models", element: <p>Réglages des modèles</p> },
 ];
 
 /**
  * Monte une page du CV à `path` avec les routes de `cvApi` et des faux sockets ; les pages où ses
- * liens mènent sont des repères. `route` est le motif de la page (`/carriere/cv/revues/:reviewId`).
+ * liens mènent sont des repères. `route` est le motif de la page (`/career/cv/reviews/:reviewId`).
  */
 export function renderCv(
   route: string,

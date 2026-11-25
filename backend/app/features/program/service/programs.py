@@ -1,9 +1,9 @@
-"""Lecture d'un programme (SPEC 3.4, D88) : lignes relues ensemble (`Loaded`), vue de l'API
-(semaines, modules, tâches, avancement, dernière différence), lignes pour l'instantané d'une
-version et plan courant en texte pour une révision du Stratège.
+"""Reading a program (SPEC 3.4, D88): rows re-read together (`Loaded`), API view (weeks,
+modules, tasks, progress, last difference), rows for a version's snapshot and the current plan
+as text for a Strategist revision.
 
-La semaine d'une tâche est celle de son jour planifié (sept jours depuis le début de la
-semaine) : la charge et les règles d'une semaine se lisent sur le calendrier."""
+A task's week is that of its planned day (seven days from the start of the week): the load and
+rules of a week are read from the calendar."""
 
 import builtins
 from dataclasses import dataclass
@@ -41,18 +41,18 @@ DAYS_PER_WEEK = 7
 
 
 def program_not_found() -> AppError:
-    return AppError("program_not_found", "Programme introuvable.", 404)
+    return AppError("program_not_found", "Program not found.", 404)
 
 
 @dataclass
 class Loaded:
     program: Program
-    weeks: list[Week]  # par rang
-    modules: list[Module]  # par semaine puis rang
-    tasks: list[Task]  # par module puis rang
+    weeks: list[Week]  # by rank
+    modules: list[Module]  # by week then rank
+    tasks: list[Task]  # by module then rank
 
     def week_of(self, day: date) -> Week | None:
-        """La semaine dont les sept jours contiennent `day`, `None` hors du programme."""
+        """The week whose seven days contain `day`, `None` outside the program."""
         for week in self.weeks:
             if week.start_date <= day < week.start_date + timedelta(days=DAYS_PER_WEEK):
                 return week
@@ -66,7 +66,7 @@ class Loaded:
 
 
 async def load(db: AsyncSession, user_id: str, program_id: str) -> Loaded:
-    """Programme de l'utilisateur et ses lignes, relus ; 404 s'il n'est pas à lui."""
+    """The user's program and its rows, re-read; 404 if it is not theirs."""
     program = await ProgramRepository(db, user_id).get_fresh(program_id)
     if program is None:
         raise program_not_found()
@@ -94,7 +94,7 @@ def _task_row(t: Task) -> TaskRow:
 
 
 def rows_of(loaded: Loaded) -> ProgramRows:
-    """Le programme en lignes, pour l'instantané d'une version (`diff.snapshot`)."""
+    """The program as rows, for a version's snapshot (`diff.snapshot`)."""
     weeks = [
         WeekRow(
             rank=week.rank,
@@ -119,15 +119,15 @@ def rows_of(loaded: Loaded) -> ProgramRows:
 
 
 def plan_text(loaded: Loaded) -> str:
-    """Le plan courant en texte (modifications de January comprises), pour une révision."""
+    """The current plan as text (January's edits included), for a revision."""
     lines: list[str] = []
     for week in loaded.weeks:
-        lines.append(f"Semaine {week.rank} (du {week.start_date:%d/%m}) : {week.theme}")
+        lines.append(f"Week {week.rank} (from {week.start_date:%d/%m}): {week.theme}")
         for module in (m for m in loaded.modules if m.week_id == week.id):
             if module.skipped:
-                lines.append(f"  Module « {module.title} » : déjà acquis, sauté")
+                lines.append(f'  Module "{module.title}": already known, skipped')
                 continue
-            lines.append(f"  Module « {module.title} »")
+            lines.append(f'  Module "{module.title}"')
             lines += [
                 f"  - {t.planned_date:%d/%m} : {t.title} ({t.type}, {t.minutes} min"
                 + (", faite)" if t.status == "done" else ")")
@@ -151,7 +151,7 @@ def progress_of(tasks: builtins.list[Task]) -> ProgressOut:
 
 
 def _diff_out(version: PlanVersion | None) -> PlanDiffOut | None:
-    """La différence de la dernière version, `None` pour la première (tout y est ajouté)."""
+    """The difference of the last version, `None` for the first (everything is added in it)."""
     if version is None or version.version <= 1 or not version.diff:
         return None
     diff: dict[str, Any] = version.diff
@@ -166,7 +166,7 @@ def _diff_out(version: PlanVersion | None) -> PlanDiffOut | None:
 
 
 def day_budget(version: PlanVersion | None) -> tuple[int, int]:
-    """`(lundi à vendredi, samedi)` du budget de la version (minutes par jour)."""
+    """`(Monday to Friday, Saturday)` of the version's budget (minutes per day)."""
     budget = (version.snapshot if version is not None else {}).get("budget", {})
     return int(budget.get("weekday_minutes", 0)), int(budget.get("weekend_minutes", 0))
 
@@ -181,7 +181,7 @@ async def _modules_out(db: AsyncSession, user_id: str, loaded: Loaded) -> dict[s
         lambda found: [(row[1], row[2]) for row in found.values()],
     )
     counts = await extras.resource_counts(loaded.program.id)
-    # Leçon interrompue hors du port : montrée en échec, sans écriture (D91, ordre D97).
+    # Lesson interrupted outside the port: shown as failed, without a write (D91, order D97).
     lessons = {key: (row[0], shown(row[1], row[2], None, open_ids)[0]) for key, row in rows.items()}
     return {
         module.id: ModuleOut(
@@ -265,11 +265,11 @@ async def list_programs(db: AsyncSession, user_id: str) -> builtins.list[Program
 
 
 def module_not_found() -> AppError:
-    return AppError("module_not_found", "Module introuvable.", 404)
+    return AppError("module_not_found", "Module not found.", 404)
 
 
 async def program_of_module(db: AsyncSession, user_id: str, module_id: str) -> str:
-    """Le programme d'un module de l'utilisateur ; 404 `module_not_found` s'il n'est pas à lui."""
+    """The program of one of the user's modules; 404 `module_not_found` if it is not theirs."""
     module = await ModuleRepository(db, user_id).get(module_id)
     if module is None:
         raise module_not_found()
@@ -277,8 +277,8 @@ async def program_of_module(db: AsyncSession, user_id: str, module_id: str) -> s
 
 
 async def list_validated_programs(db: AsyncSession) -> builtins.list[tuple[str, str]]:
-    """`(utilisateur, programme)` des programmes validés des comptes dont le premier lancement est
-    fini (la règle de `GET /settings`, D183, D197) : lecture sans `user_id` réservée aux tâches
-    planifiées (leçons, énoncés, bilan hebdomadaire ; D91), identifiants seulement."""
+    """`(user, program)` of the validated programs of the accounts whose first launch is
+    finished (the rule of `GET /settings`, D183, D197): a read without `user_id` reserved for
+    scheduled tasks (lessons, statements, weekly review; D91), ids only."""
     onboarded = set(await scheduled_users(db))
     return [pair for pair in await validated_programs(db) if pair[0] in onboarded]

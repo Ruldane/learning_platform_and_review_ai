@@ -1,11 +1,11 @@
 import { ApiError, errorMessage } from "@/shared/api/errors";
-import { fr } from "@/shared/i18n/fr";
+import { en } from "@/shared/i18n/en";
 import { t } from "@/shared/i18n/t";
 import type { AlertOut } from "./types";
 
-type KnownCode = keyof typeof fr.applications.errors;
+type KnownCode = keyof typeof en.applications.errors;
 
-const isKnown = (code: string): code is KnownCode => Object.hasOwn(fr.applications.errors, code);
+const isKnown = (code: string): code is KnownCode => Object.hasOwn(en.applications.errors, code);
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -14,7 +14,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 export const errorCode = (error: unknown): string | null =>
   error instanceof ApiError ? error.code : null;
 
-/** Message français : le texte propre à un refus connu, sinon celui du back (ou le général). */
+/** Use the interface copy for known errors and the server's message or fallback for others. */
 export function applicationsErrorMessage(error: unknown): string {
   if (error instanceof ApiError && isKnown(error.code)) {
     return t(`applications.errors.${error.code}`);

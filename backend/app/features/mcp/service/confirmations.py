@@ -1,9 +1,8 @@
-"""Les demandes « À confirmer » (phase 10, P15) : un outil de niveau 3 ne s'exécute jamais de
-lui-même, il laisse une demande ici. January la confirme (la requête s'exécute **une seule fois**,
-sous l'identité enregistrée), la refuse, ou elle expire au bout de 24 h. Chaque passage d'état
-est un
-`UPDATE` conditionnel : deux clics en même temps, ou un clic sur une demande expirée ou refusée, ne
-font jamais tourner la requête deux fois ni après coup."""
+"""The "To confirm" requests (phase 10, P15): a level 3 tool never runs by itself, it leaves a
+request here. January confirms it (the request runs **only once**, under the recorded
+identity), refuses it, or it expires after 24 h. Each state transition is a conditional
+`UPDATE`: two clicks at the same time, or a click on an expired or refused request, never make
+the request run twice nor afterwards."""
 
 import logging
 import time
@@ -35,32 +34,36 @@ from app.mcp.tools import ToolResult
 logger = logging.getLogger(__name__)
 
 Executor = Callable[[McpIdentity, StoredRequest], Awaitable[ToolResult]]
-# Rejoue le contrôle préalable de l'outil (`None` : l'outil n'en a pas).
+# Replays the tool's prior check (`None`: the tool has none).
 Rechecker = Callable[[McpIdentity, StoredRequest], Awaitable[dict[str, Any] | None]]
 LIST_LIMIT = 100
 
 
 async def expire_due(session_factory: async_sessionmaker[AsyncSession], now: datetime) -> int:
-    """Les demandes en attente dont l'heure est passée deviennent « expirées » (tâche planifiée).
-    Rend leur nombre."""
+    """Pending requests whose time has passed become "expired" (scheduled task).
+    Returns their number."""
     async with session_factory() as db:
         count = await expire_pending(db, now)
         await db.commit()
     return count
 
 
-_REVOKED = "Le jeton qui a fait cette demande est révoqué : la demande est refusée."
-_EXPIRED = "Le jeton qui a fait cette demande a expiré : la demande est refusée."
+_REVOKED = "The token used for this request was revoked. The request was refused."
+_EXPIRED = "The token used for this request expired. The request was refused."
 
 
 def _closed(status: str) -> AppError:
-    names = {"confirmed": "déjà confirmée", "refused": "refusée", "expired": "expirée"}
-    state = names.get(status, "déjà traitée")
-    return AppError("confirmation_closed", f"Cette demande est {state} : rien à faire.", 409)
+    messages = {
+        "confirmed": "This request is already confirmed.",
+        "refused": "This request was refused.",
+        "expired": "This request has expired.",
+    }
+    message = messages.get(status, "This request has already been handled.")
+    return AppError("confirmation_closed", message, 409)
 
 
 def _not_found() -> AppError:
-    return AppError("confirmation_not_found", "Demande introuvable.", 404)
+    return AppError("confirmation_not_found", "Request not found.", 404)
 
 
 class _Claimed(NamedTuple):
@@ -71,8 +74,8 @@ class _Claimed(NamedTuple):
 
 
 class ConfirmationService:
-    """Les demandes d'un compte. `execute` : l'envoyeur qui rejoue la requête enregistrée (absent
-    pour la création, la liste et le refus)."""
+    """An account's requests. `execute`: the sender that replays the recorded request (absent
+    for creation, list and refusal)."""
 
     def __init__(
         self,
@@ -96,8 +99,8 @@ class ConfirmationService:
         summary: str,
         precheck: dict[str, Any] | None,
     ) -> McpConfirmationOut:
-        """Range la demande (24 h) ; 429 `too_many_pending` à 20 demandes en attente pour ce
-        jeton."""
+        """Stores the request (24 h); 429 `too_many_pending` at 20 pending requests for this
+        token."""
         now = datetime.now(UTC)
         async with self._factory() as db:
             repo = self._repo(db)
@@ -120,20 +123,20 @@ class ConfirmationService:
         if await repo.pending_count(identity.token_id, now) >= MAX_PENDING_PER_TOKEN:
             raise AppError(
                 "too_many_pending",
-                f"{MAX_PENDING_PER_TOKEN} demandes sont déjà en attente pour ce jeton : "
-                "January doit en confirmer ou en refuser avant d'en ajouter.",
+                f"This token has {MAX_PENDING_PER_TOKEN} pending requests. "
+                "Confirm or refuse one before adding more.",
                 429,
                 {"limit": MAX_PENDING_PER_TOKEN},
             )
 
     async def ensure_room(self, identity: McpIdentity) -> None:
-        """429 `too_many_pending` si le jeton a déjà 20 demandes en attente (avant le contrôle
-        préalable, qui peut coûter un appel au modèle)."""
+        """429 `too_many_pending` if the token already has 20 pending requests (before the prior
+        check, which may cost a model call)."""
         async with self._factory() as db:
             await self._room(self._repo(db), identity, datetime.now(UTC))
 
     async def list(self) -> list[McpConfirmationOut]:
-        """Mes demandes, les plus récentes d'abord (les périmées sont d'abord marquées)."""
+        """My requests, most recent first (stale ones are marked first)."""
         async with self._factory() as db:
             await expire_pending(db, datetime.now(UTC))
             rows = await self._repo(db).recent(LIST_LIMIT)
@@ -152,7 +155,7 @@ class ConfirmationService:
         return await expire_due(self._factory, datetime.now(UTC))
 
     async def refuse(self, confirmation_id: str) -> McpConfirmationOut:
-        """Refuse : elle ne s'exécutera jamais. 409 si elle est déjà décidée ou expirée."""
+        """Refuses: it will never run. 409 if it is already decided or expired."""
         now = datetime.now(UTC)
         async with self._factory() as db:
             repo = self._repo(db)
@@ -170,11 +173,11 @@ class ConfirmationService:
         return await self.get(confirmation_id)
 
     async def confirm(self, confirmation_id: str) -> ToolResult:
-        """Exécute la demande, une seule fois, sous l'identité enregistrée. 404 inconnue ; 409
-        expirée (elle ne tournera jamais), refusée, déjà traitée, jeton révoqué ou expiré,
-        interrupteur général coupé, ou contrôle préalable devenu différent depuis la demande."""
+        """Executes the request, once only, under the recorded identity. 404 unknown; 409
+        expired (it will never run), refused, already handled, token revoked or expired, master
+        switch off, or prior check that has become different since the request."""
         if self._execute is None:
-            raise RuntimeError("confirmation sans envoyeur")
+            raise RuntimeError("confirmation without a sender")
         now = datetime.now(UTC)
         async with self._factory() as db:
             claimed = await self._load(db, confirmation_id, now)
@@ -185,9 +188,9 @@ class ConfirmationService:
         started = time.monotonic()
         try:
             result = await self._execute(identity, claimed.stored)
-        except Exception as exc:  # la demande est prise : elle ne repart pas, elle échoue
-            logger.error("MCP : exécution d'une demande impossible (%s)", type(exc).__name__)
-            error = {"error": {"code": "execution_failed", "message": "L'exécution a échoué."}}
+        except Exception as exc:  # the request is taken: it does not restart, it fails
+            logger.error("MCP: executing a request is impossible (%s)", type(exc).__name__)
+            error = {"error": {"code": "execution_failed", "message": "The request failed to run."}}
             result = ToolResult(data=error, code=500)
         elapsed = round((time.monotonic() - started) * 1000)
         async with self._factory() as db:
@@ -208,8 +211,8 @@ class ConfirmationService:
         return result
 
     async def _load(self, db: AsyncSession, confirmation_id: str, now: datetime) -> _Claimed:
-        """Relit la demande et ce dont elle dépend : encore en attente, jeton valable (ni révoqué
-        ni expiré : sinon elle est refusée), interrupteur général allumé (sinon elle attend)."""
+        """Re-reads the request and what it depends on: still pending, token valid (neither
+        revoked nor expired: otherwise it is refused), master switch on (otherwise it waits)."""
         repo = self._repo(db)
         row = await repo.get(confirmation_id)
         if row is None:
@@ -229,7 +232,7 @@ class ConfirmationService:
         if prefs is None or not prefs.enabled:
             raise AppError(
                 "mcp_disabled",
-                "L'accès MCP est coupé : rallume-le dans les réglages, puis confirme à nouveau.",
+                "Enable MCP access in settings, then confirm the request again.",
                 409,
             )
         stored = StoredRequest.from_json(row.request)
@@ -245,9 +248,9 @@ class ConfirmationService:
     async def _recheck_verdict(
         self, confirmation_id: str, identity: McpIdentity, claimed: _Claimed
     ) -> None:
-        """Rejoue le contrôle préalable : le verdict de la demande peut dater d'un jour. S'il a
-        changé, la demande garde le nouveau verdict et attend (refus lisible, rien n'est exécuté) :
-        January le relit, puis confirme à nouveau."""
+        """Replays the prior check: the request's verdict may date from a day ago. If it has
+        changed, the request keeps the new verdict and waits (readable refusal, nothing runs):
+        January re-reads it, then confirms again."""
         if self._recheck is None:
             return
         fresh = await self._recheck(identity, claimed.stored)
@@ -258,13 +261,12 @@ class ConfirmationService:
             await db.commit()
         raise AppError(
             "precheck_changed",
-            "Le contrôle préalable a changé depuis la demande : relis le nouveau verdict, puis "
-            "confirme à nouveau.",
+            "The precheck result has changed. Review the new result and confirm again.",
             409,
         )
 
     async def _take(self, db: AsyncSession, confirmation_id: str, now: datetime) -> None:
-        """Prend la demande (passage atomique « en attente » -> « confirmée »), ou refuse."""
+        """Takes the request (atomic transition "pending" -> "confirmed"), or refuses."""
         if not await self._repo(db).transition(
             confirmation_id, "pending", "confirmed", now, live_only=True
         ):

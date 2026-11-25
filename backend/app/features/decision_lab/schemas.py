@@ -25,7 +25,7 @@ class DecisionAssumptions(BaseModel):
     @model_validator(mode="after")
     def _outage_fits_window(self) -> Self:
         if self.outage_minutes > self.duration_minutes:
-            raise ValueError("La durée de la panne doit tenir dans la durée de l’essai.")
+            raise ValueError("The outage duration must fit within the trial duration.")
         return self
 
 

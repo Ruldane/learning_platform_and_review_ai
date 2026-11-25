@@ -89,7 +89,7 @@ async def test_level2_call_without_history_says_so(
     amcp: Mcp, writer: str, db_session_factory: Factory, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     ordinary, _ = await call(amcp, writer, "applications_add", {"company": "A", "title": "B"})
-    assert "annul" not in ordinary["notice"]
+    assert "cannot be undone" not in ordinary["notice"]
 
     monkeypatch.setattr(recorder, "MAX_ROWS", 0)  # plus de lignes que le plafond : rien gardé
     envelope, is_error = await call(
@@ -97,7 +97,7 @@ async def test_level2_call_without_history_says_so(
     )
 
     assert not is_error and envelope["data"]["application"]["id"]
-    assert "ne pourra pas être annulé" in envelope["notice"]
+    assert "cannot be undone" in envelope["notice"]
     async with db_session_factory() as db:
         stmt = select(McpCall).where(McpCall.action == "applications_add")
         rows = list((await db.execute(stmt.order_by(McpCall.created_at))).scalars())
@@ -116,4 +116,4 @@ async def test_level2_call_whose_history_cannot_be_written_says_so(
         amcp, writer, "applications_add", {"company": "C", "title": "D"}
     )
 
-    assert not is_error and "ne pourra pas être annulé" in envelope["notice"]
+    assert not is_error and "cannot be undone" in envelope["notice"]

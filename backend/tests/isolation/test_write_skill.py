@@ -18,7 +18,7 @@ async def test_skill_catalog_creation_isolated(
     detail = (await client.get(f"{url}/{first}")).json()
     assert detail["level"] is None and detail["evidence"] == []
     assert (await client.post(url, json={**body, "name": "analyse sql"})).status_code == 409
-    assert (await client.post(url, json={**body, "level": "prouve"})).status_code == 422
+    assert (await client.post(url, json={**body, "level": "proven"})).status_code == 422
     act_as(app, other)
     assert (await client.get(f"{url}/{first}")).status_code == 404
     second = await client.post(url, json=body)

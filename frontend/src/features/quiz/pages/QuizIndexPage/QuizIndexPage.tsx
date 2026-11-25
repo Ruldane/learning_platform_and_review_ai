@@ -10,7 +10,7 @@ import { useLatestProgram, useQuizList } from "../../hooks/useQuizList";
 import { useStartQuiz } from "../../hooks/useStartQuiz";
 
 /**
- * Quiz (`/etudier/quiz`) : les modules du programme le plus récent, leur meilleur score et
+ * Quiz (`/study/quiz`) : les modules du programme le plus récent, leur meilleur score et
  * l'action du quiz (préparer, passer, refaire). « Préparer » ouvre la page du quiz, qui attend la
  * fin de la préparation. `pollMs` (relecture tant qu'un quiz se prépare) ne sert qu'aux tests.
  */
@@ -39,7 +39,7 @@ export function QuizIndexPage({ pollMs }: { pollMs?: number }) {
           description={t("quiz.index.noProgramDescription")}
           action={{
             label: t("quiz.index.noProgramAction"),
-            onClick: () => void navigate("/apprendre/conseil"),
+            onClick: () => void navigate("/learn/council"),
           }}
         />
       ) : null}
@@ -49,7 +49,7 @@ export function QuizIndexPage({ pollMs }: { pollMs?: number }) {
           items={quizzes.data}
           pendingModuleId={starter.pendingModuleId}
           onPrepare={(moduleId, source) => void starter.prepare(moduleId, source)}
-          onOpen={(quizId) => void navigate(`/etudier/quiz/${quizId}`)}
+          onOpen={(quizId) => void navigate(`/study/quiz/${quizId}`)}
         />
       ) : null}
     </div>

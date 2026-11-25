@@ -42,7 +42,7 @@ async def test_resume_twice_is_rejected(
     with pytest.raises(AppError) as e:
         await runner.resume(user_id, sid, iid, "oui")
     assert e.value.status_code == 409
-    assert e.value.message == "Cette question a déjà reçu une réponse."
+    assert e.value.message == "This question has already been answered."
     await wait_status(db_factory, user_id, sid, "completed")
     await wait_idle(runner, sid)
     assert probe.counter["after"] == 1

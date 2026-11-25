@@ -58,7 +58,7 @@ async def _levels(factory: Factory, user_id: str = ME) -> dict[str, str]:
 async def _acquis(factory: Factory, title: str, user_id: str = ME) -> MemoryItem:
     async with factory() as db:
         stmt = select(MemoryItem).where(
-            MemoryItem.user_id == user_id, MemoryItem.kind == "acquis", MemoryItem.title == title
+            MemoryItem.user_id == user_id, MemoryItem.kind == "skill", MemoryItem.title == title
         )
         return (await db.execute(stmt)).scalar_one()
 
@@ -69,8 +69,8 @@ async def test_validation_sets_skills_in_progress_and_reflects_memory(
     program_id = await _draft(store, db_session_factory)
     await store.validate(ME, "s1", program_id)
     levels = await _levels(db_session_factory)
-    assert levels["pandas"] == "en_cours" and levels["numpy"] == "en_cours"
-    assert (await _acquis(db_session_factory, "pandas")).meta["level"] == "en_cours"
+    assert levels["pandas"] == "in_progress" and levels["numpy"] == "in_progress"
+    assert (await _acquis(db_session_factory, "pandas")).meta["level"] == "in_progress"
     async with db_session_factory() as db:
         program = await db.get(Program, program_id)
         assert program is not None and program.status == "validated"
@@ -88,16 +88,18 @@ async def test_validation_never_lowers_a_level(
         skill = Skill(user_id=ME, name="pandas", norm_name="pandas", synonyms=[])
         db.add(skill)
         await db.flush()
-        db.add(UserSkill(user_id=ME, skill_id=skill.id, level="valide", evidence=["Quiz réussi"]))
+        db.add(
+            UserSkill(user_id=ME, skill_id=skill.id, level="validated", evidence=["Quiz réussi"])
+        )
         db.add(
             MemoryItem(
                 user_id=ME,
-                kind="acquis",
+                kind="skill",
                 title="pandas",
                 text="Pandas validé par un quiz.",
                 created_by="user",
                 content_hash="h-pandas",
-                meta={"level": "valide"},
+                meta={"level": "validated"},
             )
         )
         await db.commit()
@@ -106,10 +108,10 @@ async def test_validation_never_lowers_a_level(
     program_id = await _draft(store, db_session_factory, plan=plan)
     await validate_program(program_rt, ME, program_id, session_id=None)
     levels = await _levels(db_session_factory)
-    assert levels == {"pandas": "valide", "polars": "en_cours", "numpy": "en_cours"}
-    assert (await _acquis(db_session_factory, "pandas")).meta["level"] == "valide"
+    assert levels == {"pandas": "validated", "polars": "in_progress", "numpy": "in_progress"}
+    assert (await _acquis(db_session_factory, "pandas")).meta["level"] == "validated"
     polars = await _acquis(db_session_factory, "polars")
-    assert polars.meta["level"] == "en_cours" and polars.created_by == "user"
+    assert polars.meta["level"] == "in_progress" and polars.created_by == "user"
 
 
 async def test_validate_checks_ownership(
@@ -125,7 +127,7 @@ async def test_validate_checks_ownership(
 async def _acquis_count(factory: Factory) -> tuple[int, int]:
     async with factory() as db:
         items = await db.execute(
-            select(func.count()).select_from(MemoryItem).where(MemoryItem.kind == "acquis")
+            select(func.count()).select_from(MemoryItem).where(MemoryItem.kind == "skill")
         )
         writes = await db.execute(select(func.count()).select_from(MemoryWrite))
         return int(items.scalar_one()), int(writes.scalar_one())
@@ -148,11 +150,11 @@ async def test_missed_reflection_is_caught_up_by_the_next_call(
     monkeypatch.setattr(validation, "reflect_skill_levels", failing_once)
     program_id = await _draft(store, db_session_factory)
     await store.validate(ME, "s1", program_id)  # validé, reflet manqué
-    assert (await _levels(db_session_factory))["pandas"] == "en_cours"
+    assert (await _levels(db_session_factory))["pandas"] == "in_progress"
     assert await _acquis_count(db_session_factory) == (0, 0)
     await store.validate(ME, "s1", program_id)  # rejeu de `finalize` : rattrapé
-    assert (await _acquis(db_session_factory, "pandas")).meta["level"] == "en_cours"
-    assert (await _acquis(db_session_factory, "numpy")).meta["level"] == "en_cours"
+    assert (await _acquis(db_session_factory, "pandas")).meta["level"] == "in_progress"
+    assert (await _acquis(db_session_factory, "numpy")).meta["level"] == "in_progress"
     assert await _acquis_count(db_session_factory) == (2, 2)
     for _ in range(2):  # rejoué encore : aucun doublon, aucune écriture de plus
         await store.validate(ME, "s1", program_id)
@@ -179,5 +181,5 @@ async def test_second_validate_route_catches_up_a_missed_reflection(
     monkeypatch.setattr(validation, "reflect_skill_levels", real)
     assert (await client.post(url)).json()["status"] == "validated"
     user = draft_program.user_id
-    assert (await _acquis(factory, "pandas", user)).meta["level"] == "en_cours"
+    assert (await _acquis(factory, "pandas", user)).meta["level"] == "in_progress"
     assert (await _acquis_count(factory))[0] == 2

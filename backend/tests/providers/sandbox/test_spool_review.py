@@ -57,7 +57,7 @@ async def test_non_ascii_job_is_written_as_utf8_and_a_lone_surrogate_is_refused(
 async def test_a_duplicate_deposit_never_overwrites_the_first(spool: Path) -> None:
     sandbox = SpoolSandbox(spool)
     await sandbox.submit(job(code="print('premier')"))
-    with pytest.raises(ValueError, match="déjà déposé"):
+    with pytest.raises(ValueError, match="already submitted"):
         await sandbox.submit(job(code="print('second')"))
     assert "premier" in (spool / "jobs" / f"{R1}.json").read_text()
     assert sorted(p.name for p in (spool / "jobs").iterdir()) == [f"{R1}.json"]

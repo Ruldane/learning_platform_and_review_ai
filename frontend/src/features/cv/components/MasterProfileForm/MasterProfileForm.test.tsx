@@ -60,7 +60,7 @@ function setup(props: Props = {}) {
 }
 
 const open = (name: string) => userEvent.click(screen.getByRole("button", { name }));
-const save = () => userEvent.click(screen.getByRole("button", { name: "Valider mon profil" }));
+const save = () => userEvent.click(screen.getByRole("button", { name: "Validate my profile" }));
 const saved = (onSave: ReturnType<typeof vi.fn>): MasterProfileView =>
   onSave.mock.calls[0]?.[0] as MasterProfileView;
 
@@ -68,59 +68,59 @@ describe("MasterProfileForm", () => {
   it("has the nine collapsible sections, only the identity open", () => {
     setup();
     const titles = [
-      "Identité",
-      "Titre",
-      "Résumé",
-      "Expériences (1)",
-      "Formation (0)",
-      "Compétences (3)",
-      "Projets (0)",
-      "Langues (1)",
-      "Liens (0)",
+      "Identity",
+      "Title",
+      "Summary",
+      "Experience (1)",
+      "Education (0)",
+      "Skills (3)",
+      "Projects (0)",
+      "Languages (1)",
+      "Links (0)",
     ];
     for (const title of titles) {
-      const expanded = title === "Identité";
+      const expanded = title === "Identity";
       expect(screen.getByRole("button", { name: title })).toHaveAttribute(
         "aria-expanded",
         String(expanded),
       );
     }
-    expect(screen.getByRole("textbox", { name: "Nom" })).toHaveValue("Camille Exemple");
-    expect(screen.queryByRole("textbox", { name: /Poste/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Name" })).toHaveValue("Camille Exemple");
+    expect(screen.queryByRole("textbox", { name: /Role/ })).not.toBeInTheDocument();
   });
 
   it("opens and closes a section", async () => {
     setup();
-    await open("Expériences (1)");
-    expect(screen.getByRole("textbox", { name: "Poste (Expérience 1)" })).toHaveValue(
+    await open("Experience (1)");
+    expect(screen.getByRole("textbox", { name: "Role (Experience 1)" })).toHaveValue(
       "Développeuse",
     );
-    await open("Expériences (1)");
-    expect(screen.queryByRole("textbox", { name: /Poste/ })).not.toBeInTheDocument();
+    await open("Experience (1)");
+    expect(screen.queryByRole("textbox", { name: /Role/ })).not.toBeInTheDocument();
   });
 
   it("shows the sources of each fact as badges", async () => {
     setup();
-    await open("Expériences (1)");
-    await open("Compétences (3)");
-    const row = screen.getByRole("group", { name: /Expérience 1/ });
+    await open("Experience (1)");
+    await open("Skills (3)");
+    const row = screen.getByRole("group", { name: /Experience 1/ });
     expect(
       within(row)
         .getAllByRole("listitem")
         .map((item) => item.textContent)
         .filter((text) => text === "CV" || text === "LinkedIn"),
     ).toEqual(["CV", "LinkedIn"]);
-    expect(screen.getByRole("group", { name: /Compétence 2/ })).toHaveTextContent("Note");
+    expect(screen.getByRole("group", { name: /Skill 2/ })).toHaveTextContent("Note");
   });
 
   it("adds an achievement and returns the whole profile", async () => {
     const { onSave } = setup();
-    await open("Expériences (1)");
+    await open("Experience (1)");
     await userEvent.click(
-      screen.getByRole("button", { name: "Ajouter une réalisation à l'expérience 1" }),
+      screen.getByRole("button", { name: "Add an achievement to experience 1" }),
     );
     await userEvent.type(
-      screen.getByRole("textbox", { name: "Réalisation 2 (Expérience 1)" }),
+      screen.getByRole("textbox", { name: "Achievement 2 (Experience 1)" }),
       "Mise en place des tests",
     );
     await save();
@@ -139,24 +139,24 @@ describe("MasterProfileForm", () => {
 
   it("removes a skill", async () => {
     const { onSave } = setup();
-    await open("Compétences (3)");
-    await userEvent.click(screen.getByRole("button", { name: "Retirer la compétence 2" }));
-    expect(screen.getByRole("button", { name: "Compétences (2)" })).toBeInTheDocument();
+    await open("Skills (3)");
+    await userEvent.click(screen.getByRole("button", { name: "Remove skill 2" }));
+    expect(screen.getByRole("button", { name: "Skills (2)" })).toBeInTheDocument();
     await save();
     expect(saved(onSave).skills.map((skill) => skill.name)).toEqual(["React", "Git"]);
   });
 
-  it("adds an experience tagged with the source Toi and without id", async () => {
+  it("adds an experience tagged with the user's source and an empty ID", async () => {
     const { onSave } = setup();
-    await open("Expériences (1)");
-    await userEvent.click(screen.getByRole("button", { name: "Ajouter une expérience" }));
-    expect(screen.getByRole("group", { name: /Expérience 2/ })).toHaveTextContent("Toi");
+    await open("Experience (1)");
+    await userEvent.click(screen.getByRole("button", { name: "Add an experience" }));
+    expect(screen.getByRole("group", { name: /Experience 2/ })).toHaveTextContent("You");
     await userEvent.type(
-      screen.getByRole("textbox", { name: "Poste (Expérience 2)" }),
+      screen.getByRole("textbox", { name: "Role (Experience 2)" }),
       "Stagiaire",
     );
     await userEvent.type(
-      screen.getByRole("textbox", { name: "Entreprise (Expérience 2)" }),
+      screen.getByRole("textbox", { name: "Company (Experience 2)" }),
       "Acme",
     );
     await save();
@@ -171,10 +171,10 @@ describe("MasterProfileForm", () => {
 
   it("sends a blank optional field as null and drops a blank line", async () => {
     const { onSave } = setup();
-    await userEvent.clear(screen.getByRole("textbox", { name: "Lieu" }));
-    await open("Expériences (1)");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Location" }));
+    await open("Experience (1)");
     await userEvent.click(
-      screen.getByRole("button", { name: "Ajouter une réalisation à l'expérience 1" }),
+      screen.getByRole("button", { name: "Add an achievement to experience 1" }),
     );
     await save();
     const profile = saved(onSave);
@@ -185,19 +185,19 @@ describe("MasterProfileForm", () => {
   it("puts a server error under its field, found by its path", () => {
     setup({
       error: {
-        message: "Certains champs sont à corriger.",
-        fields: { "experiences.0.role": "Ce champ est obligatoire." },
+        message: "Some fields need fixing.",
+        fields: { "experiences.0.role": "This field is required." },
       },
     });
-    // La section de l'erreur s'ouvre d'elle-même.
-    const role = screen.getByRole("textbox", { name: "Poste (Expérience 1)" });
+    // The form opens the section containing the error.
+    const role = screen.getByRole("textbox", { name: "Role (Experience 1)" });
     expect(role).toHaveAttribute("aria-invalid", "true");
-    expect(role).toHaveAccessibleDescription("Ce champ est obligatoire.");
-    expect(screen.getByRole("textbox", { name: "Entreprise (Expérience 1)" })).not.toHaveAttribute(
+    expect(role).toHaveAccessibleDescription("This field is required.");
+    expect(screen.getByRole("textbox", { name: "Company (Experience 1)" })).not.toHaveAttribute(
       "aria-invalid",
     );
-    expect(screen.getByRole("alert")).toHaveTextContent("Certains champs sont à corriger.");
-    expect(screen.getByRole("button", { name: "Compétences (3)" })).toHaveAttribute(
+    expect(screen.getByRole("alert")).toHaveTextContent("Some fields need fixing.");
+    expect(screen.getByRole("button", { name: "Skills (3)" })).toHaveAttribute(
       "aria-expanded",
       "false",
     );
@@ -206,13 +206,13 @@ describe("MasterProfileForm", () => {
   it("places an error on a line of a nested list", async () => {
     setup({
       error: {
-        message: "À corriger.",
-        fields: { "experiences.0.achievements.0.text": "Trop long." },
+        message: "Check the highlighted fields.",
+        fields: { "experiences.0.achievements.0.text": "Too long." },
       },
     });
     expect(
-      screen.getByRole("textbox", { name: "Réalisation 1 (Expérience 1)" }),
-    ).toHaveAccessibleDescription("Trop long.");
+      screen.getByRole("textbox", { name: "Achievement 1 (Experience 1)" }),
+    ).toHaveAccessibleDescription("Too long.");
   });
 
   it("profile 422 index mapping after empty rows", () => {
@@ -231,31 +231,31 @@ describe("MasterProfileForm", () => {
         },
       ],
     };
-    // Le serveur a vu la liste nettoyée (sans la ligne vide) : sa ligne 1 est la 3e affichée.
+    // The server skips the blank line, so its second entry is the third one displayed.
     setup({
       profile,
       error: {
-        message: "À corriger.",
-        fields: { "experiences.0.achievements.1.text": "Trop long." },
+        message: "Check the highlighted fields.",
+        fields: { "experiences.0.achievements.1.text": "Too long." },
       },
     });
     expect(
-      screen.getByRole("textbox", { name: "Réalisation 3 (Expérience 1)" }),
-    ).toHaveAccessibleDescription("Trop long.");
+      screen.getByRole("textbox", { name: "Achievement 3 (Experience 1)" }),
+    ).toHaveAccessibleDescription("Too long.");
     expect(
-      screen.getByRole("textbox", { name: "Réalisation 2 (Expérience 1)" }),
+      screen.getByRole("textbox", { name: "Achievement 2 (Experience 1)" }),
     ).not.toHaveAttribute("aria-invalid");
   });
 
   it("announces the dropped lines", () => {
     const { rerender } = setup({ dropped: ["Augmenté les ventes de 400 %"] });
     expect(
-      screen.getByText("1 ligne retirée : chiffre introuvable dans tes documents."),
+      screen.getByText("1 line removed: figure not found in your documents."),
     ).toBeInTheDocument();
     expect(screen.getByText("Augmenté les ventes de 400 %")).toBeInTheDocument();
     rerender({ dropped: ["a", "b"] });
     expect(
-      screen.getByText("2 lignes retirées : chiffres introuvables dans tes documents."),
+      screen.getByText("2 lines removed: figures not found in your documents."),
     ).toBeInTheDocument();
   });
 
@@ -266,26 +266,26 @@ describe("MasterProfileForm", () => {
 
   it("locks everything while saving", () => {
     setup({ saving: true });
-    expect(screen.getByRole("button", { name: "Validation…" })).toBeDisabled();
-    expect(screen.getByRole("textbox", { name: "Nom" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Validating…" })).toBeDisabled();
+    expect(screen.getByRole("textbox", { name: "Name" })).toBeDisabled();
   });
 
   it("starts over from a new profile", () => {
     const { rerender } = setup();
     rerender({ profile: { ...PROFILE, identity: { ...PROFILE.identity, name: "Autre Nom" } } });
-    expect(screen.getByRole("textbox", { name: "Nom" })).toHaveValue("Autre Nom");
+    expect(screen.getByRole("textbox", { name: "Name" })).toHaveValue("Autre Nom");
   });
 
   it("can be used with the keyboard only", async () => {
     const { onSave } = setup();
-    const skills = screen.getByRole("button", { name: "Compétences (3)" });
+    const skills = screen.getByRole("button", { name: "Skills (3)" });
     skills.focus();
     await userEvent.keyboard("{Enter}");
     expect(skills).toHaveAttribute("aria-expanded", "true");
     await userEvent.tab();
-    expect(screen.getByRole("textbox", { name: "Compétence (Compétence 1)" })).toHaveFocus();
+    expect(screen.getByRole("textbox", { name: "Skill (Skill 1)" })).toHaveFocus();
     await userEvent.keyboard("{End} 2");
-    screen.getByRole("button", { name: "Valider mon profil" }).focus();
+    screen.getByRole("button", { name: "Validate my profile" }).focus();
     await userEvent.keyboard("{Enter}");
     expect(saved(onSave).skills[0]?.name).toBe("React 2");
   });

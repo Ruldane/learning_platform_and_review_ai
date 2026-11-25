@@ -21,14 +21,14 @@ const reset = () => {
   useSessionStore.getState().reset("s5");
 };
 
-const FIELD = "Un lien ou une note";
+const FIELD = "A link or a note";
 
 /** Revue finale 5 : brouillons gardés (C-m1) et limites visibles du champ (C-m6). */
 describe("capture dialog: drafts and limits", () => {
   beforeEach(reset);
   afterEach(reset);
 
-  it("keeps the typed note when the dialog closes (Escape, Fermer)", async () => {
+  it("keeps the typed note when the dialog closes with Escape or Close", async () => {
     const { user } = setup();
     await user.keyboard("{Control>}k{/Control}");
     await user.type(await screen.findByLabelText(FIELD), "Une note de dix lignes");
@@ -37,7 +37,7 @@ describe("capture dialog: drafts and limits", () => {
     await user.keyboard("{Control>}k{/Control}");
     expect(await screen.findByLabelText(FIELD)).toHaveValue("Une note de dix lignes");
     // Toute fermeture (Échap, clic à côté, « Fermer ») passe par `closeDialog` : la saisie reste.
-    await user.click(screen.getByRole("button", { name: "Fermer" }));
+    await user.click(screen.getByRole("button", { name: "Close" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     await user.keyboard("{Control>}k{/Control}");
     expect(await screen.findByLabelText(FIELD)).toHaveValue("Une note de dix lignes");
@@ -48,9 +48,9 @@ describe("capture dialog: drafts and limits", () => {
     const { user, fake } = setup();
     await user.keyboard("{Control>}k{/Control}");
     await user.type(await screen.findByLabelText(FIELD), "https://exemple.fr/a");
-    await user.click(screen.getByRole("button", { name: "Capturer" }));
+    await user.click(screen.getByRole("button", { name: "Capture" }));
     (await openCaptureStream(fake)).push(councilEvents("s5").completed());
-    await user.click(await screen.findByRole("button", { name: "Nouvelle capture" }));
+    await user.click(await screen.findByRole("button", { name: "New capture" }));
     expect(await screen.findByLabelText(FIELD)).toHaveValue("");
   });
 
@@ -59,7 +59,7 @@ describe("capture dialog: drafts and limits", () => {
     const { user, fake } = setup();
     await user.keyboard("{Control>}k{/Control}");
     await user.type(await screen.findByLabelText(FIELD), "https://ferme.fr/page");
-    await user.click(screen.getByRole("button", { name: "Capturer" }));
+    await user.click(screen.getByRole("button", { name: "Capture" }));
     (await openCaptureStream(fake)).push(
       councilEvents("s5").interrupt("capture_text", "i1", {
         question: "Colle le texte.",
@@ -74,23 +74,23 @@ describe("capture dialog: drafts and limits", () => {
     expect(await screen.findByLabelText("Le texte de la page")).toHaveValue("Le contenu collé.");
   });
 
-  it("shows the 20 000 character limit as a counter", async () => {
+  it("shows the 20,000 character limit as a counter", async () => {
     const { user } = setup();
     await user.keyboard("{Control>}k{/Control}");
     const field = await screen.findByLabelText(FIELD);
-    expect(field).toHaveAccessibleDescription(/0 \/ 20\s000 caractères/);
+    expect(field).toHaveAccessibleDescription(/0 \/ 20,000 characters/);
     await user.type(field, "Bonjour");
-    expect(screen.getByText(/^7 \/ 20\s000 caractères$/)).toBeInTheDocument();
+    expect(screen.getByText("7 / 20,000 characters")).toBeInTheDocument();
   });
 
-  it("says that a link is limited to 2 048 characters", async () => {
+  it("says that a link is limited to 2,048 characters", async () => {
     const { user } = setup();
     await user.keyboard("{Control>}k{/Control}");
     const field = await screen.findByLabelText(FIELD);
     await user.click(field);
     await user.paste(`https://exemple.fr/${"a".repeat(2100)}`);
-    expect(screen.getByText("2 048 caractères au plus pour un lien.")).toBeInTheDocument();
-    expect(screen.queryByText(/^20 000 caractères au plus/)).toBeNull();
-    expect(screen.getByRole("button", { name: "Capturer" })).toBeDisabled();
+    expect(screen.getByText("2,048 characters max for a link.")).toBeInTheDocument();
+    expect(screen.queryByText(/^20,000 characters max/)).toBeNull();
+    expect(screen.getByRole("button", { name: "Capture" })).toBeDisabled();
   });
 });

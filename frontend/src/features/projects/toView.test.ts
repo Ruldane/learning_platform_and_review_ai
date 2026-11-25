@@ -42,7 +42,7 @@ describe("groupByStatus", () => {
   });
 
   it("gives every card the address of its page", () => {
-    expect(card("p9", "todo").href).toBe("/competences/portfolio/p9");
+    expect(card("p9", "todo").href).toBe("/skills/portfolio/p9");
   });
 });
 

@@ -1,12 +1,12 @@
-"""Validation et rangement des propositions de la revue (SPEC 5.5, 18.3, D128, D129).
+"""Validation and filing of the review proposals (SPEC 5.5, 18.3, D128, D129).
 
-`validate` passe chaque proposition restée après la confrontation au validateur du code
-(`cv_validator.validate`, contre le profil maître figé dans la revue) : `ok` et `to_confirm`
-deviennent des modifications, `to_gap` est retirée et ses termes partent vers l'écart (un mot clé
-de l'offre que les faits cités ne portent pas n'entre jamais dans le CV). `save` range le tout
-avec le rapport (`save_proposals`, idempotent par `(revue, référence)`) puis l'annonce.
+`validate` runs each proposal left after the confrontation through the code validator
+(`cv_validator.validate`, against the master profile frozen in the review): `ok` and
+`to_confirm` become changes, `to_gap` is removed and its terms go to the gap (a posting keyword
+that the cited facts do not support never enters the CV). `save` files everything with the
+report (`save_proposals`, idempotent per `(review, reference)`) then announces it.
 
-Journaux : identifiants et nombres, jamais un texte du CV ni un terme de l'offre (17.2)."""
+Logs: identifiers and numbers, never a CV text or a posting term (17.2)."""
 
 import logging
 from typing import Protocol
@@ -23,7 +23,7 @@ from app.agents.tools.posting_schema import PostingAnalysis
 from app.agents.tools.review_notes import without_promises
 from app.agents.tools.review_schema import CompanyBrief, Proposal
 
-AGENT = "recruiter"  # la voix qui annonce le résultat de la revue
+AGENT = "recruiter"  # the voice that announces the result of the review
 SAVE_TIMEOUT_S = 300
 
 logger = logging.getLogger(__name__)
@@ -36,7 +36,7 @@ class Node(Protocol):
 def judge(
     proposals: list[Proposal], profile: MasterProfileData, analysis: PostingAnalysis
 ) -> tuple[list[tuple[Proposal, Verdict]], list[str]]:
-    """`(propositions gardées avec leur verdict, termes partis vers l'écart)`, ordre gardé."""
+    """`(kept proposals with their verdict, terms that went to the gap)`, order kept."""
     kept: list[tuple[Proposal, Verdict]] = []
     gap: dict[str, str] = {}
     for p in proposals:
@@ -56,8 +56,8 @@ def make_validate(deps: GraphDeps) -> Node:
         proposals = [Proposal.model_validate(p) for p in state.get("proposals", [])]
         kept, gap_terms = judge(proposals, ctx.profile, analysis)
         logger.info(
-            "Propositions validées : session %s, revue %s, %d gardée(s), %d à confirmer, "
-            "%d vers l'écart, %d terme(s)",
+            "Proposals validated: session %s, review %s, %d kept, %d to confirm, "
+            "%d to the gap, %d term(s)",
             deps.session_id,
             state["review_id"],
             len(kept),
@@ -92,19 +92,19 @@ def _plural(n: int, one: str, many: str) -> str:
 
 
 def saved_text(proposed: int, to_confirm: int, gap: int) -> str:
-    """« 9 modifications proposées, 2 à confirmer. 1 mot clé de l'offre part vers l'écart. »"""
-    text = f"{_plural(proposed, 'modification proposée', 'modifications proposées')}, "
-    text += f"{to_confirm} à confirmer."
+    """Example: 9 changes proposed, 2 to confirm. 1 posting keyword moves to the gap."""
+    text = f"{_plural(proposed, 'change', 'changes')} proposed, "
+    text += f"{to_confirm} to confirm."
     if gap:
-        moves = "part" if gap == 1 else "partent"
-        text += f" {_plural(gap, 'mot clé', 'mots clés')} de l'offre {moves} vers l'écart."
+        moves = "moves" if gap == 1 else "move"
+        text += f" {_plural(gap, 'posting keyword', 'posting keywords')} {moves} to the gap."
     return text
 
 
 def make_save(deps: GraphDeps) -> Node:
     @node_timeout(SAVE_TIMEOUT_S)
     async def save(state: CvReviewState) -> CvReviewState:
-        """Idempotent : rejoué, le port relit les modifications déjà rangées."""
+        """Idempotent: replayed, the port rereads the changes already filed."""
         analysis = PostingAnalysis.model_validate(state["analysis"])
         items = [
             (
@@ -124,7 +124,7 @@ def make_save(deps: GraphDeps) -> Node:
         )
         to_confirm = sum(v.status == "to_confirm" for _, v in items)
         logger.info(
-            "Revue rangée : session %s, revue %s, %d modification(s), %d à confirmer",
+            "Review stored: session %s, review %s, %d change(s), %d to confirm",
             deps.session_id,
             state["review_id"],
             saved,

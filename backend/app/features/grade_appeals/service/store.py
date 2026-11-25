@@ -12,7 +12,7 @@ from app.features.grade_appeals.schemas import GradeAppealSource
 async def _bound(db: AsyncSession, user_id: str, appeal_id: str, session_id: str) -> GradeAppeal:
     row = await GradeAppeals(db, user_id).require(appeal_id)
     if row.session_id != session_id:
-        raise AppError("grade_appeal_changed", "Cette relecture n’est plus active.", 409)
+        raise AppError("grade_appeal_changed", "This review is no longer active.", 409)
     return row
 
 
