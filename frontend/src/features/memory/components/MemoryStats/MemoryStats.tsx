@@ -12,12 +12,12 @@ import { StatsLinks } from "./StatsLinks";
 interface MemoryStatsProps {
   stats: MemoryStatsView;
   exportUrl: string;
-  /** Vrai pendant la demande de réindexation (avant que le serveur ne la rapporte). */
+  /** True during the reindex request (before the server reports it). */
   reindexPending: boolean;
   onReindex: () => void;
 }
 
-/** Statistiques de la mémoire : comptes, dernière écriture, quota Vectorize, réindexation, export. */
+/** Memory statistics: counts, last write, Vectorize quota, reindex, export. */
 export function MemoryStats({ stats, exportUrl, reindexPending, onReindex }: MemoryStatsProps) {
   const { last_write: lastWrite, unindexed_items: unindexed } = stats;
   return (

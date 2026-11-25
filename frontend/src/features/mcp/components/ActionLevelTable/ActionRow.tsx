@@ -1,7 +1,7 @@
 import { t } from "@/shared/i18n/t";
 import type { ActionView } from "../viewTypes";
 
-/** Un outil : nom, feature, niveau, type, rôle, et ce qui demande de la prudence. */
+/** A tool: name, feature, level, type, role, and what calls for caution. */
 export function ActionRow({ action }: { action: ActionView }) {
   return (
     <tr className="border-b border-border align-top last:border-0">

@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useRunningLearnings } from "./useRunningLearnings";
 
-/** Un marquage « déjà appris » lancé : la session de l'Archiviste à suivre pour ce document. */
+/** A started « déjà appris » marking: the Archivist session to follow for this document. */
 export interface Learning {
   documentId: string;
   sessionId: string;
@@ -9,10 +9,10 @@ export interface Learning {
 }
 
 /**
- * Les suivis de l'Archiviste de l'écran Documents : ceux lancés ici (`start`, `finish`) et ceux
- * encore en cours côté serveur (lus une fois au montage), qui reprennent le suivi après un
- * rechargement. Une entrée locale prime toujours sur celle du serveur ; un suivi repris qui se
- * termine devient une entrée locale terminée, que la relecture ne fait pas revenir.
+ * The Archivist tracking on the Documents screen: those started here (`start`, `finish`) and those
+ * still running on the server (read once on mount), which resume tracking after a
+ * reload. A local entry always wins over the server's; a resumed tracking that
+ * finishes becomes a finished local entry, which a re-read does not bring back.
  */
 export function useLearnings() {
   const [local, setLocal] = useState<Learning[]>([]);

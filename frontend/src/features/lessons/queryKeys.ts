@@ -1,6 +1,6 @@
 import type { LibraryFilterValue } from "./types";
 
-/** Clés TanStack Query de la feature : des identifiants et des filtres, jamais un titre. */
+/** TanStack Query keys of the feature: identifiers and filters, never a title. */
 export const lessonsKeys = {
   all: ["lessons"],
   programs: ["lessons", "programs"],

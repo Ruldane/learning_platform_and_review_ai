@@ -2,8 +2,8 @@ import { PendingBadge } from "./components/PendingBadge";
 import { usePendingCount } from "./hooks/usePendingCount";
 
 /**
- * Emplacement `topbar` de la feature : la pastille « À confirmer (n) », seulement quand il y a des
- * demandes ouvertes. Muette tant que le compte est inconnu ou en cas de panne.
+ * The feature's `topbar` slot: the « À confirmer (n) » badge, only when there are
+ * open requests. Silent while the account is unknown or on failure.
  */
 export function McpTopbarSlot() {
   const count = usePendingCount();

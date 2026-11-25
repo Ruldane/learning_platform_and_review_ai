@@ -9,13 +9,13 @@ import type { TaskDraft, TaskErrors } from "./parseTask";
 
 interface AddTaskFormProps {
   weeks: WeekView[];
-  /** Une `Promise` rejetée garde la saisie : l'erreur du serveur s'affiche par `error`. */
+  /** A rejected `Promise` keeps the input: the server error is shown via `error`. */
   onAdd: (input: NewTaskInput) => void | Promise<unknown>;
-  /** Refus venu du serveur (semaine au-delà de son plafond, par exemple). */
+  /** Refusal from the server (week over its cap, for example). */
   error?: string | null;
 }
 
-/** Formulaire d'ajout d'une tâche : titre, type, durée de 15 à 120 minutes, critère de fin, jour. */
+/** Add-task form: title, type, duration from 15 to 120 minutes, end criterion, day. */
 export function AddTaskForm({ weeks, onAdd, error }: AddTaskFormProps) {
   const [draft, setDraft] = useState<TaskDraft>(EMPTY_DRAFT);
   const [errors, setErrors] = useState<TaskErrors>({});
@@ -32,7 +32,7 @@ export function AddTaskForm({ weeks, onAdd, error }: AddTaskFormProps) {
       await onAdd(parsed.input);
       setDraft({ ...EMPTY_DRAFT, type: draft.type, plannedDate: draft.plannedDate });
     } catch {
-      // Le refus s'affiche par `error` ; la saisie reste en place pour être corrigée.
+      // The refusal is shown via `error`; the input stays in place to be corrected.
     } finally {
       setBusy(false);
     }

@@ -12,7 +12,7 @@ interface KindLevelFieldsProps {
 
 const LEVELS: readonly EditableLevel[] = ["declared", "in_progress"];
 
-/** Choix du type (création seulement) et du niveau (acquis déclaré ou en cours seulement). */
+/** Choice of type (on creation only) and level (declared or in progress only). */
 export function KindLevelFields({
   draft,
   chooseKind,

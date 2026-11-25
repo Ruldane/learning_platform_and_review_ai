@@ -19,8 +19,8 @@ const toggled = (list: string[], item: string) =>
   list.includes(item) ? list.filter((entry) => entry !== item) : [...list, item];
 
 /**
- * Crée un jeton : un nom, les features ouvertes, le mode (lecture seule d'office) et la durée
- * (30 jours d'office). Rien n'est coché au départ : on n'ouvre que ce qu'on choisit.
+ * Creates a token: a name, the features opened, the mode (read only by default) and the lifetime
+ * (30 days by default). Nothing is ticked at first: you open only what you choose.
  */
 export function TokenForm({ features, pending, onSubmit }: TokenFormProps) {
   const [label, setLabel] = useState("");

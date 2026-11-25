@@ -7,9 +7,9 @@ import { LessonsPage } from "./pages/LessonsPage";
 import { LibraryPage } from "./pages/LibraryPage";
 
 /**
- * Apprendre, 4e et 5e entrées : les leçons du programme (une par module, à lire ou en PDF) et la
- * bibliothèque de ressources (SPEC 3.5 et 3.6). Le lecteur occupe la largeur de la coquille : sa
- * colonne de lecture (72 caractères) et son sommaire tiennent côte à côte.
+ * Learn, 4th and 5th entries: the program's lessons (one per module, to read or as PDF) and the
+ * resource library (SPEC 3.5 and 3.6). The reader takes the width of the shell: its
+ * reading column (72 characters) and its table of contents sit side by side.
  */
 export function makeLessonsManifest(
   conversationPanel?: ComponentType<LessonConversationPanelProps>,

@@ -8,7 +8,7 @@ interface UrlTabProps {
   onSubmitUrl: (url: string) => void;
 }
 
-/** Import d'un lien (page web ou vidéo YouTube) ; le serveur valide l'adresse. */
+/** Import of a link (web page or YouTube video); the server validates the address. */
 export function UrlTab({ busy, onSubmitUrl }: UrlTabProps) {
   const [url, setUrl] = useState("");
   const trimmed = url.trim();

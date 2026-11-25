@@ -8,7 +8,7 @@ interface DurationSelectProps {
   onChange: (days: ExpiryDays) => void;
 }
 
-/** La durée de vie du jeton : 1, 7, 30 ou 90 jours (liste native). */
+/** The token lifetime: 1, 7, 30 or 90 days (native list). */
 export function DurationSelect({ value, onChange }: DurationSelectProps) {
   const id = useId();
   return (

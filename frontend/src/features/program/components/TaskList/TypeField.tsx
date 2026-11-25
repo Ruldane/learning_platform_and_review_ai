@@ -11,7 +11,7 @@ interface TypeFieldProps {
   onChange: (type: TaskType) => void;
 }
 
-/** Choix du type de tâche : lire, regarder, pratiquer, quiz ou projet. */
+/** Choice of task type: read, watch, practise, quiz or project. */
 export function TypeField({ value, disabled, onChange }: TypeFieldProps) {
   return (
     <TaskField label={t("program.add.type")} error={undefined}>

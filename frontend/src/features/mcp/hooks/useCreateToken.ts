@@ -3,8 +3,8 @@ import { createToken } from "../api";
 import { mcpKeys } from "../queryKeys";
 
 /**
- * Crée un jeton. Sa valeur ne vit que dans le résultat de la mutation (en mémoire, jamais dans le
- * cache des lectures ni dans le stockage du navigateur) : `reset` l'oublie une fois copiée.
+ * Creates a token. Its value lives only in the mutation result (in memory, never in the read
+ * cache nor in browser storage): `reset` forgets it once copied.
  */
 export function useCreateToken() {
   const queryClient = useQueryClient();

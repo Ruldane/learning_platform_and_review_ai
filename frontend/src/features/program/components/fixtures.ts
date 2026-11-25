@@ -26,7 +26,7 @@ const DATES = [
 ];
 const CAPACITIES = [120, 120, 120, 120, 120, 240, 180];
 
-/** Semaine type : le lundi porte 150 min pour 120 min de capacité. */
+/** Typical week: Monday carries 150 min for 120 min of capacity. */
 export function makeWeek(overrides: Partial<WeekView> = {}): WeekView {
   const tasksByDate: Record<string, TaskView[]> = {
     "2026-11-16": [

@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchSettings } from "../api";
 import { mcpKeys } from "../queryKeys";
 
-/** L'interrupteur général (`GET /mcp/settings`). */
+/** The master switch (`GET /mcp/settings`). */
 export function useMcpSettings() {
   return useQuery({
     queryKey: mcpKeys.settings,

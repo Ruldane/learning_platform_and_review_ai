@@ -13,15 +13,15 @@ import { ErrorState } from "@/shared/ui/states/ErrorState";
 import { InlineError } from "@/shared/ui/states/InlineError";
 import { LoadingState } from "@/shared/ui/states/LoadingState";
 
-/** Les demandes qui attendent d'abord, les autres (décidées, expirées) après, dans l'ordre reçu. */
+/** Requests waiting come first, then the others (decided, expired), in the order received. */
 function waitingFirst(views: ConfirmationView[]): ConfirmationView[] {
   const waiting = views.filter((view) => view.state === "pending");
   return [...waiting, ...views.filter((view) => view.state !== "pending")];
 }
 
 /**
- * « À confirmer » : les demandes de niveau 3. Confirmer ou refuser part une seule fois par
- * demande ; ensuite les boutons disparaissent et le focus passe au titre de la section.
+ * « À confirmer »: level 3 requests. Confirm or refuse fires only once per
+ * request; then the buttons disappear and focus moves to the section title.
  */
 export function ConfirmationsSection() {
   const headingRef = useRef<HTMLHeadingElement>(null);

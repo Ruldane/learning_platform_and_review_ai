@@ -19,7 +19,7 @@ export function CopyDraft({ allowed, read, label }: {
     setStatus(null);
     try {
       const content = read().then((text) => new Blob([text], { type: "text/plain" }));
-      // Une promesse différée garde l’écriture dans le geste utilisateur, y compris dans Safari.
+      // A deferred promise keeps the write inside the user gesture, including in Safari.
       void content.catch(() => undefined);
       const item = new ClipboardItem({ "text/plain": content });
       await Promise.all([navigator.clipboard.write([item]), content]);

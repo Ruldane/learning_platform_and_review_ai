@@ -2,20 +2,20 @@ import { t } from "@/shared/i18n/t";
 import { KIND_COLORS } from "../kindColors";
 import type { MapPointView } from "../viewTypes";
 
-/** Rayon d'un point, en unités de carte, au zoom 1 (il est divisé par le zoom : taille d'écran fixe). */
+/** Radius of a point, in map units, at zoom 1 (divided by the zoom: fixed screen size). */
 const POINT_RADIUS = 0.02;
 const STROKE = 0.006;
 
 interface MapPointDotProps {
   point: MapPointView;
   zoom: number;
-  /** Appelée au clic ; le parent ignore les clics qui terminent un glissement. */
+  /** Called on click; the parent ignores clicks that end a drag. */
   onClick: () => void;
   onActivate: () => void;
   onFocus: () => void;
 }
 
-/** Un élément sur la carte : cercle de la couleur de son type, atteignable et activable au clavier. */
+/** A map item: a circle in its type's colour, reachable and activatable by keyboard. */
 export function MapPointDot({ point, zoom, onClick, onActivate, onFocus }: MapPointDotProps) {
   const kind = t(`memory.kind.${point.kind}`);
   return (

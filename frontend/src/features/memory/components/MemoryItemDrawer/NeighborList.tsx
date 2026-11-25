@@ -8,7 +8,7 @@ interface NeighborListProps {
   onOpenItem: (id: string) => void;
 }
 
-/** Éléments voisins par similarité ; un clic ouvre le voisin dans le tiroir. */
+/** Neighbouring items by similarity; a click opens the neighbour in the drawer. */
 export function NeighborList({ neighbors, onOpenItem }: NeighborListProps) {
   if (neighbors.length === 0) return null;
   return (

@@ -11,7 +11,7 @@ interface TaskTextFieldProps {
   onChange: (value: string) => void;
 }
 
-/** Champ de saisie d'une ligne du formulaire d'ajout, avec son étiquette, son aide et son erreur. */
+/** Input field of one row of the add form, with its label, help and error. */
 export function TaskTextField({
   label,
   hint,

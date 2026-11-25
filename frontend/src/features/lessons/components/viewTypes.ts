@@ -1,11 +1,11 @@
-/** Types de vue des composants des leçons : indépendants du contrat d'API (D34). */
+/** View types of the lesson components: independent of the API contract (D34). */
 
-/** Type de vue du lecteur de leçon. */
+/** View type of the lesson reader. */
 export interface LessonView {
   title: string;
   markdown: string;
   wordCount: number;
-  /** Adresse du PDF, ou `null` tant qu'il n'est pas prêt. */
+  /** Address of the PDF, or `null` until it is ready. */
   pdfUrl: string | null;
 }
 
@@ -22,26 +22,26 @@ export type ResourceStatus = "to_read" | "read";
 export interface ResourceView {
   id: string;
   title: string;
-  /** Adresse web (http ou https seulement) ; `null` si l'adresse du serveur n'en est pas une. */
+  /** Web address (http or https only); `null` if the server address is not one. */
   url: string | null;
   type: ResourceType;
-  /** Code de langue (`fr`, `en`…). */
+  /** Language code (`fr`, `en`…). */
   lang: string | null;
   durationMinutes: number | null;
   level: ResourceLevel | null;
   author: string | null;
-  /** Date de publication, telle que la source la donne. */
+  /** Publication date, as the source gives it. */
   date: string | null;
-  /** La raison du choix, en une phrase. */
+  /** The reason for the choice, in one sentence. */
   reason: string;
-  /** Fiche de lecture (ressource sans copie locale). */
+  /** Reading sheet (resource without a local copy). */
   note: string | null;
-  /** Adresse de la copie locale (PDF), si elle existe. */
+  /** Address of the local copy (PDF), if there is one. */
   localCopyUrl: string | null;
   status: ResourceStatus;
 }
 
-/** Les filtres de la bibliothèque : `null` veut dire « tous ». */
+/** The library filters: `null` means "all". */
 export interface LibraryFilterValue {
   programId: string | null;
   type: ResourceType | null;

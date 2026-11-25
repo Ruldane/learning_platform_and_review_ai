@@ -5,12 +5,12 @@ interface TablePagerProps {
   total: number;
   offset: number;
   limit: number;
-  /** Nombre d'éléments affichés sur la page courante. */
+  /** Number of items shown on the current page. */
   shown: number;
   onPage: (offset: number) => void;
 }
 
-/** Pagination par décalage : plage affichée, précédent et suivant. */
+/** Offset pagination: displayed range, previous and next. */
 export function TablePager({ total, offset, limit, shown, onPage }: TablePagerProps) {
   const range = t("memory.table.range", { from: offset + 1, to: offset + shown, total });
   return (

@@ -9,12 +9,12 @@ import { TaskBadges } from "./TaskBadges";
 interface TaskCardProps {
   task: TaskView;
   editable: boolean;
-  /** Jours où la tâche peut aller (`AAAA-MM-JJ`). */
+  /** Days the task can move to (`YYYY-MM-DD`). */
   moveTargets: string[];
   onMove: (date: string) => void;
 }
 
-/** Carte d'une tâche dans le calendrier : poignée de glisser, détails et menu « Déplacer vers… ». */
+/** A task card in the calendar: drag handle, details and « Déplacer vers… » menu. */
 export function TaskCard({ task, editable, moveTargets, onMove }: TaskCardProps) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, isDragging } =
     useDraggable({

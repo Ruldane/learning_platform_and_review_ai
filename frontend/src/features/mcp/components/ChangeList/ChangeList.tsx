@@ -4,12 +4,12 @@ import { ChangeRow } from "./ChangeRow";
 
 interface ChangeListProps {
   changes: ChangeView[];
-  /** Appels dont l'annulation est en cours. */
+  /** Calls whose undo is in progress. */
   busyIds: readonly string[];
   onUndo: (callId: string) => void;
 }
 
-/** Les changements faits par Claude ; seul un changement pas encore annulé a son bouton. */
+/** The changes made by Claude; only a change not yet undone has its button. */
 export function ChangeList({ changes, busyIds, onUndo }: ChangeListProps) {
   if (changes.length === 0) {
     return <p className="text-muted-foreground">{t("mcp.history.changesEmpty")}</p>;

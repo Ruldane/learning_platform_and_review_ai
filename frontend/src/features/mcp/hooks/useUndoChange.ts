@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { undoChange } from "../api";
 import { useIdAction } from "./useIdAction";
 
-/** Annule les changements d'un appel ; les lignes remises en état peuvent s'afficher ailleurs. */
+/** Undoes the changes of a call; the restored rows may show up elsewhere. */
 export function useUndoChange() {
   const queryClient = useQueryClient();
   const mutation = useMutation({

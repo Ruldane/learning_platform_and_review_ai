@@ -6,12 +6,12 @@ import { DocumentListItem } from "./DocumentListItem";
 
 interface DocumentListProps {
   documents: DocumentRow[];
-  /** Documents dont le marquage « déjà appris » est en cours : leur bouton est désactivé. */
+  /** Documents whose « déjà appris » marking is in progress: their button is disabled. */
   learningIds: string[];
   onMarkLearned: (id: string, source?: RunSource) => void;
 }
 
-/** Documents importés : statut, message d'erreur du serveur, et marquage « déjà appris ». */
+/** Imported documents: status, server error message, and the « déjà appris » marking. */
 export function DocumentList({ documents, learningIds, onMarkLearned }: DocumentListProps) {
   if (documents.length === 0) return <EmptyState title={t("memory.documents.empty")} />;
   return (

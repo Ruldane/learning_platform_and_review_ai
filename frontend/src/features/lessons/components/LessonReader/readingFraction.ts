@@ -1,6 +1,6 @@
 /**
- * Part de l'article déjà parcourue, de 0 à 1 : `top` est le haut de l'article par rapport à la
- * fenêtre, `height` sa hauteur, `viewport` la hauteur visible. 1 quand le bas est en vue.
+ * Share of the article already read, from 0 to 1: `top` is the top of the article relative to the
+ * window, `height` its height, `viewport` the visible height. 1 when the bottom is in view.
  */
 export function readingFraction(rect: { top: number; height: number }, viewport: number): number {
   const scrollable = rect.height - viewport;

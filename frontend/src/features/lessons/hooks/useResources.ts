@@ -4,7 +4,7 @@ import { lessonsKeys } from "../queryKeys";
 import { toResourceView } from "../toView";
 import type { LibraryFilterValue } from "../types";
 
-/** La bibliothèque (`GET /resources`) selon les filtres ; l'ancienne liste reste affichée pendant le changement. */
+/** The library (`GET /resources`) for the filters; the old list stays shown while it changes. */
 export function useResources(filters: LibraryFilterValue) {
   return useQuery({
     queryKey: lessonsKeys.resources(filters),

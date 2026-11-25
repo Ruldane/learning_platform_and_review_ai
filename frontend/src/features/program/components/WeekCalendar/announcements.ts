@@ -3,7 +3,7 @@ import { t } from "@/shared/i18n/t";
 import { longDay } from "@/shared/lib/format";
 import type { WeekView } from "../viewTypes";
 
-/** Annonces du glisser-déposer pour les lecteurs d'écran, en français. */
+/** Drag-and-drop announcements for screen readers, in French. */
 export function makeAnnouncements(week: WeekView): Announcements {
   const tasks = week.days.flatMap((day) => day.tasks);
   const titleOf = (id: string | number) =>

@@ -11,7 +11,7 @@ interface DocumentsSectionProps {
   onMarkLearned: (id: string, source?: RunSource) => void;
 }
 
-/** Liste des documents : chargement, échec avec nouvel essai, ou liste (vide : message du composant). */
+/** Document list: loading, failure with a retry, or the list (empty: the component's message). */
 export function DocumentsSection({ documents, learningIds, onMarkLearned }: DocumentsSectionProps) {
   if (documents.isError) {
     return (

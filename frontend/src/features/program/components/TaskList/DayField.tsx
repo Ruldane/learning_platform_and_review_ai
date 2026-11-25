@@ -12,7 +12,7 @@ interface DayFieldProps {
   onChange: (date: string) => void;
 }
 
-/** Choix du jour de la tâche : les jours de chaque semaine, regroupés par semaine. */
+/** Choice of the task's day: the days of each week, grouped by week. */
 export function DayField({ weeks, value, error, disabled, onChange }: DayFieldProps) {
   return (
     <TaskField label={t("program.add.day")} error={error}>

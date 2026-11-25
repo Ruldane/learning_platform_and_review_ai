@@ -1,8 +1,8 @@
-/** Types de vue des composants du programme : indépendants du contrat d'API (D34). */
+/** View types of the program components: independent of the API contract (D34). */
 
 export type TaskType = "read" | "watch" | "practice" | "quiz" | "project";
 
-/** Durée d'une tâche, en minutes (SPEC 3.4) : de 15 à 120. */
+/** A task's duration, in minutes (SPEC 3.4): from 15 to 120. */
 export const TASK_MIN_MINUTES = 15;
 export const TASK_MAX_MINUTES = 120;
 
@@ -13,10 +13,10 @@ export interface TaskView {
   type: TaskType;
   minutes: number;
   doneCriterion: string;
-  /** Jour planifié, au format `AAAA-MM-JJ`. */
+  /** Planned day, in `YYYY-MM-DD` format. */
   plannedDate: string;
   done: boolean;
-  /** Sujet déjà acquis : la tâche est réduite à une révision. */
+  /** Subject already acquired: the task is cut down to a revision. */
   alreadyKnown: boolean;
 }
 
@@ -27,7 +27,7 @@ export interface DayView {
   tasks: TaskView[];
 }
 
-/** Étape du livre où se place une semaine. */
+/** Book stage where a week sits. */
 export type WeekStage = "foundations" | "practice" | "advanced";
 
 export interface WeekView {
@@ -35,20 +35,20 @@ export interface WeekView {
   theme: string;
   objective: string;
   deliverable: string;
-  /** Étape du livre, `null` si le programme ne la donne pas. */
+  /** Book stage, `null` if the program does not give it. */
   stage: WeekStage | null;
-  /** Pourquoi la semaine arrive à cette place, `null` si le programme ne la donne pas. */
+  /** Why the week falls at this place, `null` if the program does not give it. */
   rationale: string | null;
-  /** Lundi de la semaine, `AAAA-MM-JJ`. */
+  /** Monday of the week, `YYYY-MM-DD`. */
   startDate: string;
-  /** Charge planifiée, en minutes. */
+  /** Planned load, in minutes. */
   loadMinutes: number;
-  /** Plafond de la semaine (85 % du budget), en minutes. */
+  /** Week cap (85% of the budget), in minutes. */
   capMinutes: number;
   days: DayView[];
 }
 
-/** Saisie du formulaire d'ajout d'une tâche. */
+/** Input of the add-task form. */
 export interface NewTaskInput {
   title: string;
   type: TaskType;
@@ -64,14 +64,14 @@ export interface ProgressView {
   minutesPlanned: number;
 }
 
-/** Un programme dans la liste « Mes programmes ». */
+/** A program in the « Mes programmes » list. */
 export interface ProgramSummaryView {
   id: string;
   title: string;
   status: "draft" | "validated";
-  /** Début, au format `AAAA-MM-JJ`. */
+  /** Start, in `YYYY-MM-DD` format. */
   startDate: string;
   weeks: number;
-  /** Avancement en minutes faites, de 0 à 100. */
+  /** Progress in minutes done, from 0 to 100. */
   percent: number;
 }

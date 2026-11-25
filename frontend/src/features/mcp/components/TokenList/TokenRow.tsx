@@ -9,7 +9,7 @@ interface TokenRowProps {
   onRevoke: () => void;
 }
 
-/** La date qui compte pour l'état du jeton : sa révocation, son échéance. */
+/** The date that matters for the token state: its revocation, its expiry. */
 function dateLine(token: TokenView): string {
   if (token.status === "revoked" && token.revokedAt) {
     return t("mcp.tokens.revokedOn", { date: fullDateTime(token.revokedAt) });
@@ -18,7 +18,7 @@ function dateLine(token: TokenView): string {
   return t(key, { date: fullDateTime(token.expiresAt) });
 }
 
-/** Un jeton : nom, état, mode, features, échéance, dernier usage ; « Révoquer » s'il est actif. */
+/** A token: name, state, mode, features, expiry, last use; « Révoquer » if it is active. */
 export function TokenRow({ token, busy, onRevoke }: TokenRowProps) {
   const lastUsed = token.lastUsedAt
     ? t("mcp.tokens.lastUsed", { when: relativeTime(token.lastUsedAt) })

@@ -6,12 +6,12 @@ import { MoveMenuList } from "./MoveMenuList";
 
 interface MoveMenuProps {
   taskTitle: string;
-  /** Jours proposés (`AAAA-MM-JJ`), hors celui où se trouve déjà la tâche. */
+  /** Days offered (`YYYY-MM-DD`), except the one the task is already on. */
   dates: string[];
   onSelect: (date: string) => void;
 }
 
-/** Menu « Déplacer vers… » : l'équivalent au clavier du glisser-déposer. */
+/** « Déplacer vers… » menu: the keyboard equivalent of drag and drop. */
 export function MoveMenu({ taskTitle, dates, onSelect }: MoveMenuProps) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);

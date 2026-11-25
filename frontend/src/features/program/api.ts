@@ -4,24 +4,24 @@ import type { NewTaskInput, TaskPatch } from "./types";
 
 const programPath = (programId: string) => ({ params: { path: { program_id: programId } } });
 
-/** `GET /programs` : du plus récent au plus ancien. */
+/** `GET /programs`: from newest to oldest. */
 export async function fetchPrograms(signal?: AbortSignal) {
   return unwrap(await api.GET("/programs", { signal }));
 }
 
-/** `GET /programs/{id}` : semaines, modules, tâches, avancement et différence de version. */
+/** `GET /programs/{id}`: weeks, modules, tasks, progress and version diff. */
 export async function fetchProgram(programId: string, signal?: AbortSignal) {
   return unwrap(await api.GET("/programs/{program_id}", { ...programPath(programId), signal }));
 }
 
-/** `PATCH /tasks/{id}` : jour, durée, titre ou statut ; 422 si une règle de la semaine casse (D88). */
+/** `PATCH /tasks/{id}`: day, duration, title or status; 422 if a week rule breaks (D88). */
 export async function patchTask(taskId: string, body: TaskPatch) {
   return unwrap(
     await api.PATCH("/tasks/{task_id}", { params: { path: { task_id: taskId } }, body }),
   );
 }
 
-/** `PATCH /programs/{id}` : suppressions de tâches. */
+/** `PATCH /programs/{id}`: task deletions. */
 export async function deleteTasks(programId: string, taskIds: string[]) {
   return unwrap(
     await api.PATCH("/programs/{program_id}", {
@@ -31,7 +31,7 @@ export async function deleteTasks(programId: string, taskIds: string[]) {
   );
 }
 
-/** `PATCH /programs/{id}` : ajout d'une tâche dans un module. */
+/** `PATCH /programs/{id}`: adds a task to a module. */
 export async function addTask(programId: string, moduleId: string, input: NewTaskInput) {
   return unwrap(
     await api.PATCH("/programs/{program_id}", {
@@ -52,12 +52,12 @@ export async function addTask(programId: string, moduleId: string, input: NewTas
   );
 }
 
-/** `POST /programs/{id}/validate` : valide, ou reprend la session du Stratège (202). */
+/** `POST /programs/{id}/validate`: validates, or resumes the Strategist's session (202). */
 export async function validateProgram(programId: string) {
   return unwrap(await api.POST("/programs/{program_id}/validate", programPath(programId)));
 }
 
-/** Adresses des exports : de simples liens, le navigateur télécharge. */
+/** Export addresses: plain links, the browser downloads. */
 export const exportPdfUrl = (programId: string) =>
   `${apiBaseUrl}/api/v1/programs/${programId}/export.pdf`;
 export const exportIcsUrl = (programId: string) =>

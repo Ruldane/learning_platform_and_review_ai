@@ -9,14 +9,14 @@ import { TextFields } from "./TextFields";
 interface MemoryItemFormProps {
   initial: ItemEdit | null;
   chooseKind: boolean;
-  /** Faux : pas de zone de texte (document importé) ; le texte n'est ni validé ni envoyé. */
+  /** False: no text area (imported document); the text is neither validated nor sent. */
   withText?: boolean;
   disabled: boolean;
   onSubmit: (value: ItemPatch | NewItem) => void;
   onCancel: () => void;
 }
 
-/** Formulaire de création (type au choix) ou de modification d'un élément de mémoire. */
+/** Create form (type of your choice) or edit form for a memory item. */
 export function MemoryItemForm({
   initial,
   chooseKind,

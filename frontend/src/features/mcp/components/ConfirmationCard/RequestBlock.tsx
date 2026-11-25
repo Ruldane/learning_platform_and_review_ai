@@ -2,9 +2,9 @@ import { t } from "@/shared/i18n/t";
 import type { RequestView } from "../viewTypes";
 
 /**
- * Ce que la demande ferait, en entier : méthode, route, cible et chaque champ avec sa valeur. Tout
- * est du texte (React l'échappe) : un contenu venu du web ou de Claude ne devient jamais du balisage.
- * Un champ dont la valeur n'est pas montrée le dit.
+ * What the request would do, in full: method, route, target and each field with its value. All
+ * is text (React escapes it): content from the web or from Claude never becomes markup.
+ * A field whose value is not shown says so.
  */
 export function RequestBlock({ request }: { request: RequestView }) {
   const { method, route, targetLabel, fields, truncated } = request;

@@ -3,9 +3,9 @@ import { fetchRunningLearnings } from "../api";
 import { memoryKeys } from "../queryKeys";
 
 /**
- * Sessions de l'Archiviste encore en cours (`GET /sessions` filtré), lues une fois au montage de
- * l'écran Documents pour reprendre le suivi après un rechargement. Aucune interrogation
- * périodique : le flux de chaque session prend le relais.
+ * Archivist sessions still running (`GET /sessions`, filtered), read once when the
+ * Documents screen mounts, to resume tracking after a reload. No periodic polling:
+ * each session's stream takes over.
  */
 export function useRunningLearnings() {
   return useQuery({

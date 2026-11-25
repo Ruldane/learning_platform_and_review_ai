@@ -1,7 +1,7 @@
 import { t } from "@/shared/i18n/t";
 import { agentIdentity } from "@/shared/session-ui";
 
-/** Nom affiché d'un auteur d'écriture : `user` devient « Toi », un agent garde son nom. */
+/** Displayed name of a write author: `user` becomes « Toi », an agent keeps its name. */
 export function authorLabel(slug: string): string {
   return slug === "user" ? t("memory.author.user") : agentIdentity(slug).name;
 }

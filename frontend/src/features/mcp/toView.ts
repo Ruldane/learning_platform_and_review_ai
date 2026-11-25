@@ -21,7 +21,7 @@ import type {
 const isFeature = (key: string): key is keyof typeof mcp.features =>
   Object.hasOwn(mcp.features, key);
 
-/** Le nom d'une feature en français ; une feature inconnue garde son nom brut. */
+/** The name of a feature in French; an unknown feature keeps its raw name. */
 export const featureLabel = (key: string): string => (isFeature(key) ? mcp.features[key] : key);
 
 const passed = (iso: string, now: Date) => new Date(iso).getTime() <= now.getTime();
@@ -54,7 +54,7 @@ export function toFeatureOption(feature: McpFeatureOut): FeatureOption {
   };
 }
 
-/** Le verdict, lu sans rien supposer : un contrôle absent ou mal formé ne dit jamais « sans réserve ». */
+/** The verdict, read without assumptions: a missing or malformed check never says "no caveats". */
 export function toVerdict(precheck: McpConfirmationOut["precheck"]): VerdictView | null {
   if (!precheck || typeof precheck !== "object") return null;
   const reasons = Array.isArray(precheck.reasons)
@@ -96,7 +96,7 @@ export function toConfirmationView(
   };
 }
 
-/** Les demandes encore ouvertes : en attente et dont l'échéance n'est pas passée. */
+/** Requests still open: pending, and whose deadline has not passed. */
 export const isOpen = (confirmation: McpConfirmationOut, now: Date = new Date()) =>
   confirmation.status === "pending" && !passed(confirmation.expires_at, now);
 

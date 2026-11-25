@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import { t } from "@/shared/i18n/t";
 
-/** La pastille « À confirmer (n) » de la barre du haut : un lien vers la page des demandes. */
+/** The « À confirmer (n) » badge in the top bar: a link to the requests page. */
 export function PendingBadge({ count }: { count: number }) {
   return (
     <Link

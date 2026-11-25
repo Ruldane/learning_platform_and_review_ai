@@ -9,15 +9,15 @@ import { LibraryEmpty } from "./LibraryEmpty";
 
 interface LibraryResultsProps {
   filters: LibraryFilterValue;
-  /** Au moins un filtre est actif. */
+  /** At least one filter is active. */
   filtered: boolean;
-  /** Le programme le plus récent, vers lequel renvoie l'état vide. */
+  /** The newest program, which the empty state points to. */
   latestProgramId: string | null;
   onClearFilters: () => void;
   onToggleStatus: (resourceId: string, status: ResourceStatus) => void;
 }
 
-/** Le résultat de la bibliothèque : chargement, erreur, rien (avec une issue) ou la liste. */
+/** The library result: loading, error, nothing (with a reason) or the list. */
 export function LibraryResults({
   filters,
   filtered,

@@ -6,13 +6,13 @@ function parse(iso: string): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-/** Date lisible (« 11 nov. 2026 ») ; une date illisible est rendue telle quelle. */
+/** Readable date (« 11 nov. 2026 »); an unreadable date is shown as is. */
 export function formatDay(iso: string): string {
   const date = parse(iso);
   return date ? DAY.format(date) : iso;
 }
 
-/** Date et heure lisibles, pour le journal des écritures. */
+/** Readable date and time, for the write log. */
 export function formatDayTime(iso: string): string {
   const date = parse(iso);
   return date ? DAY_TIME.format(date) : iso;

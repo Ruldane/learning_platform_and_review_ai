@@ -13,19 +13,19 @@ import { useMemoryItems } from "../../hooks/useMemoryItems";
 
 const PAGE_SIZE = 25;
 
-/** Décalage de la dernière page non vide pour `total` éléments. */
+/** Offset of the last non-empty page for `total` items. */
 export function lastPageOffset(total: number, limit: number): number {
   return Math.max(0, Math.ceil(total / limit) - 1) * limit;
 }
 
-/** Liste filtrable et paginée des éléments, avec la fusion de la sélection ; vide : on propose l'import. */
+/** Filterable, paginated item list, with merge of the selection; empty: the import is offered. */
 export function ListSection({ onOpen }: { onOpen: (id: string) => void }) {
   const [filters, setFilters] = useState<ItemFilterValue>(NO_FILTERS);
   const [offset, setOffset] = useState(0);
   const [selected, setSelected] = useState<string[]>([]);
   const list = useMemoryItems({ filters, status: "active", offset, limit: PAGE_SIZE });
   const { merge } = useItemMutations();
-  // Une suppression ou une fusion peut vider la dernière page : on revient à la dernière page non vide.
+  // A deletion or a merge may empty the last page: we go back to the last non-empty page.
   if (list.data && list.data.items.length === 0 && offset > 0) {
     setOffset(lastPageOffset(list.data.total, PAGE_SIZE));
   }

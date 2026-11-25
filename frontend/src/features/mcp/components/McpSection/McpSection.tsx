@@ -3,12 +3,12 @@ import type { ReactNode, Ref } from "react";
 interface McpSectionProps {
   title: string;
   intro?: string;
-  /** Le titre prend le focus quand l'action qui vient de se faire a démonté le bouton cliqué. */
+  /** The title takes focus when the action just taken unmounted the clicked button. */
   headingRef?: Ref<HTMLHeadingElement>;
   children: ReactNode;
 }
 
-/** Un bloc titré de la page ; son titre peut recevoir le focus (`tabIndex={-1}`). */
+/** A titled block of the page; its title can receive focus (`tabIndex={-1}`). */
 export function McpSection({ title, intro, headingRef, children }: McpSectionProps) {
   return (
     <section className="flex flex-col gap-4">

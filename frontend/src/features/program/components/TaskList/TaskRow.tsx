@@ -12,7 +12,7 @@ interface TaskRowProps {
   onDelete: (taskId: string) => void;
 }
 
-/** Une tâche de la liste : case « faite », détails, critère de fin et suppression. */
+/** A task in the list: « done » checkbox, details, end criterion and deletion. */
 export function TaskRow({ task, editable, onToggleDone, onDelete }: TaskRowProps) {
   return (
     <li className="flex items-start gap-3 rounded-lg border bg-background p-3">

@@ -5,18 +5,18 @@ import { lessonsKeys } from "../queryKeys";
 import { lessonIsInProgress, lessonsRefetchInterval } from "./polling";
 
 /**
- * Les leçons d'un programme (`GET /programs/{id}/lessons`), dans l'ordre du programme ; relues
- * d'elles-mêmes tant qu'une leçon s'écrit ou attend (pour un temps borné, voir
+ * The lessons of a program (`GET /programs/{id}/lessons`), in program order; re-read
+ * on their own while a lesson is being written or waiting (for a bounded time, see
  * `lessonsRefetchInterval`).
  */
 export function useProgramLessons(programId: string | undefined) {
-  /** Numéro de lecture (`dataUpdateCount`) où une leçon s'écrivait encore. */
+  /** Read number (`dataUpdateCount`) at which a lesson was still being written. */
   const busyAt = useRef<number | null>(null);
   return useQuery({
     queryKey: lessonsKeys.ofProgram(programId ?? ""),
     queryFn: ({ signal }) => fetchProgramLessons(programId ?? "", signal),
     enabled: programId !== undefined,
-    // Une tâche cochée dans le programme change l'avancement d'une leçon : relire à l'ouverture.
+    // A task ticked in the program changes a lesson's progress: re-read on opening.
     refetchOnMount: "always",
     refetchInterval: (query) => {
       const lessons = query.state.data;

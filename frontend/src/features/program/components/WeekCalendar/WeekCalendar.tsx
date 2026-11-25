@@ -17,15 +17,15 @@ import { useFocusAfterMove } from "./useFocusAfterMove";
 
 interface WeekCalendarProps {
   week: WeekView;
-  /** Faux : lecture seule, ni poignée ni menu de déplacement. */
+  /** False: read-only, no handle or move menu. */
   editable: boolean;
   onMoveTask: (taskId: string, date: string) => void;
 }
 
 /**
- * Calendrier d'une semaine, un jour par colonne. Une tâche se déplace à la souris, au clavier
- * (espace, flèches) ou par le menu « Déplacer vers… » de sa carte. Un jour au-delà de sa capacité
- * est signalé, jamais refusé : seule la semaine est bornée (D88).
+ * One-week calendar, one day per column. A task is moved with the mouse, the keyboard
+ * (space, arrows) or via its card's « Déplacer vers… » menu. A day over its capacity
+ * is flagged, never refused: only the week is bounded (D88).
  */
 export function WeekCalendar({ week, editable, onMoveTask }: WeekCalendarProps) {
   const sensors = useSensors(

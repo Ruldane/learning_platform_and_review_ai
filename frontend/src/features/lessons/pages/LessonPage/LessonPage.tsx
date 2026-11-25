@@ -22,8 +22,8 @@ interface LessonPageProps {
 }
 
 /**
- * Leçon (`/learn/lessons/:lessonId`) : le lecteur, les ressources du module et le PDF quand la
- * leçon est prête ; sinon l'état de sa préparation, dit clairement.
+ * Lesson (`/learn/lessons/:lessonId`): the reader, the module's resources and the PDF when the
+ * lesson is ready; otherwise its preparation state, stated clearly.
  */
 export function LessonPage({ conversationPanel, updatesPanel: Updates }: LessonPageProps) {
   const { lessonId = "" } = useParams();

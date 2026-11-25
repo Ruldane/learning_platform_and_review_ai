@@ -8,7 +8,7 @@ import { useDocuments } from "../../hooks/useDocuments";
 import { DocumentsSection } from "./DocumentsSection";
 import { LearnedProgress } from "./LearnedProgress";
 
-/** Documents : import (fichier, lien, texte collé), liste avec statuts, et « Déjà appris ». */
+/** Documents: import (file, link, pasted text), list with statuses, and « Déjà appris ». */
 export function DocumentsPage({ createSocket }: { createSocket?: SocketFactory }) {
   const documents = useDocuments();
   const actions = useDocumentActions();

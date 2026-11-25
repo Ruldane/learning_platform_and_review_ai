@@ -22,7 +22,7 @@ const STATUSES: ResourceStatus[] = ["to_read", "read"];
 const labelled = (values: readonly string[], key: (value: string) => MessageKey) =>
   values.map((value) => ({ value, label: t(key(value)) }));
 
-/** Les filtres de la bibliothèque : programme, type, langue et statut de lecture. */
+/** The library filters: program, type, language and reading status. */
 export function LibraryFilters({ value, programs, onChange }: LibraryFiltersProps) {
   return (
     <div role="group" aria-label={t("lessons.filters.label")} className="flex flex-wrap gap-3">

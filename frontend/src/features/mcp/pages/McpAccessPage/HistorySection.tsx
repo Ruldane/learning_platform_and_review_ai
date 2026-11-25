@@ -11,9 +11,9 @@ import { useHistory } from "../../hooks/useHistory";
 import { useUndoChange } from "../../hooks/useUndoChange";
 
 /**
- * L'historique : d'abord les changements qu'on peut défaire (« Annuler » seulement s'ils ne l'ont
- * pas été), puis le journal des appels. Un refus d'annulation (la ligne a changé depuis) s'affiche
- * tel que le serveur le dit.
+ * History: first the changes that can be undone (« Annuler » only if they have not been),
+ * then the call log. An undo refusal (the row has changed since) appears
+ * as the server reports it.
  */
 export function HistorySection() {
   const headingRef = useRef<HTMLHeadingElement>(null);

@@ -10,7 +10,7 @@ interface ChangeRowProps {
   onUndo: () => void;
 }
 
-/** Un appel qui a changé des lignes : « Annuler » tant qu'il n'a pas été annulé. */
+/** A call that changed rows: « Annuler » until it has been undone. */
 export function ChangeRow({ change, busy, onUndo }: ChangeRowProps) {
   const actionId = useId();
   const rows = t(change.rows === 1 ? "mcp.history.changeRows.one" : "mcp.history.changeRows.many", {

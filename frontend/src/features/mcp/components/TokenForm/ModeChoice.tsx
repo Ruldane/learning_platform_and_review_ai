@@ -12,7 +12,7 @@ const MODES = [
   { mode: "write", label: "mcp.form.modeWrite", hint: "mcp.form.modeWriteHint" },
 ] as const;
 
-/** Lecture seule ou lecture et écriture : la lecture seule est choisie d'office. */
+/** Read only or read and write: read only is chosen by default. */
 export function ModeChoice({ value, onChange }: ModeChoiceProps) {
   const prefix = useId();
   return (

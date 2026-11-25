@@ -8,7 +8,7 @@ interface FileTabProps {
   onUploadFile: (file: File) => void;
 }
 
-/** Vérification de courtoisie côté client ; le serveur impose les mêmes limites. */
+/** Client-side courtesy check; the server enforces the same limits. */
 function problemWith(file: File): string | null {
   const name = file.name.toLowerCase();
   if (!UPLOAD_EXTENSIONS.some((extension) => name.endsWith(extension))) {
@@ -17,7 +17,7 @@ function problemWith(file: File): string | null {
   return file.size > MAX_UPLOAD_BYTES ? t("memory.upload.tooBig") : null;
 }
 
-/** Choix d'un fichier : refusé ici, sans appel, s'il dépasse 20 Mo ou n'est pas d'un type admis. */
+/** File choice: refused here, without a call, if it exceeds 20 MB or is not an allowed type. */
 export function FileTab({ busy, onUploadFile }: FileTabProps) {
   const [problem, setProblem] = useState<string | null>(null);
 
@@ -26,7 +26,7 @@ export function FileTab({ busy, onUploadFile }: FileTabProps) {
     if (!file) return;
     const refusal = problemWith(file);
     setProblem(refusal);
-    // Le champ est vidé : choisir à nouveau le même fichier déclenche bien un nouveau `change`.
+    // The field is emptied: choosing the same file again does fire a new `change`.
     event.target.value = "";
     if (!refusal) onUploadFile(file);
   };

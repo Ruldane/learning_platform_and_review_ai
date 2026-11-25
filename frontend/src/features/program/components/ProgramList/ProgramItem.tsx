@@ -4,7 +4,7 @@ import { longDay } from "@/shared/lib/format";
 import { ProgressBar } from "../ProgressOverview/ProgressBar";
 import type { ProgramSummaryView } from "../viewTypes";
 
-/** Une carte de la liste : titre (lien), état, début, nombre de semaines et barre d'avancement. */
+/** A list card: title (link), state, start, number of weeks and progress bar. */
 export function ProgramItem({ program }: { program: ProgramSummaryView }) {
   const weeksKey = program.weeks === 1 ? "program.page.weeksOne" : "program.page.weeksMany";
   return (

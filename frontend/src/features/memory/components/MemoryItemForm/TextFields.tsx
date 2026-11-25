@@ -12,7 +12,7 @@ interface TextFieldsProps {
 
 const labelClass = "flex flex-col gap-1 text-sm font-medium";
 
-/** Titre, texte et étiquettes (séparées par des virgules). */
+/** Title, text and labels (comma-separated). */
 export function TextFields({ draft, withText, disabled, onChange }: TextFieldsProps) {
   const tagsId = useId();
   const hintId = useId();

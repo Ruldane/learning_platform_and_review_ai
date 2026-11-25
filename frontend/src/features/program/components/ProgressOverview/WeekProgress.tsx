@@ -8,7 +8,7 @@ interface WeekProgressProps {
   week: WeekView;
 }
 
-/** Une barre par semaine : minutes des tâches faites sur minutes prévues. */
+/** One bar per week: minutes of tasks done out of minutes planned. */
 export function WeekProgress({ week }: WeekProgressProps) {
   const tasks = week.days.flatMap((day) => day.tasks);
   const planned = tasks.reduce((sum, task) => sum + task.minutes, 0);

@@ -6,7 +6,7 @@ import { exportUrl } from "../../api";
 import { MemoryStats } from "../../components/MemoryStats";
 import { useMemoryStats, useReindex } from "../../hooks/useMemoryStats";
 
-/** Statistiques de la mémoire, avec Réindexer (suivi toutes les 2 s) et l'export JSON. */
+/** Memory statistics, with Reindex (followed every 2 s) and the JSON export. */
 export function StatsSection() {
   const stats = useMemoryStats();
   const reindex = useReindex();

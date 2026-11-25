@@ -4,9 +4,9 @@ import { memoryKeys } from "../queryKeys";
 import type { ItemPatch, NewItem } from "../types";
 
 /**
- * Toute écriture change la liste, les statistiques et la carte (et un détail ouvert) : tout est
- * relu. Les éléments supprimés ou fondus (`gone`) ne sont pas relus : un détail resté ouvert ne
- * montre pas un 404 parasite avant la fermeture du tiroir.
+ * Any write changes the list, the statistics and the map (and an open detail): everything is
+ * re-read. Deleted or merged items (`gone`) are not re-read: a detail left open does not
+ * show a spurious 404 before the drawer closes.
  */
 export function invalidateMemory(queryClient: QueryClient, gone: string[] = []) {
   return queryClient.invalidateQueries({
@@ -15,7 +15,7 @@ export function invalidateMemory(queryClient: QueryClient, gone: string[] = []) 
   });
 }
 
-/** Une mutation d'écriture ; `gone` désigne les éléments qui n'existent plus après le succès. */
+/** A write mutation; `gone` names the items that no longer exist after success. */
 function useWrite<V, R>(run: (variables: V) => Promise<R>, gone?: (variables: V) => string[]) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -25,9 +25,9 @@ function useWrite<V, R>(run: (variables: V) => Promise<R>, gone?: (variables: V)
 }
 
 /**
- * Écritures de l'explorateur : créer, modifier, supprimer, confirmer ou refuser une décision en
- * attente (PATCH `status: "active"` / DELETE), fusionner. Chaque succès invalide `items`, `stats`,
- * `map` (et les documents, le détail ouvert).
+ * Explorer writes: create, edit, delete, confirm or refuse a pending decision
+ * (PATCH `status: "active"` / DELETE), merge. Each success invalidates `items`, `stats`,
+ * `map` (and the documents, and the open detail).
  */
 export function useItemMutations() {
   return {

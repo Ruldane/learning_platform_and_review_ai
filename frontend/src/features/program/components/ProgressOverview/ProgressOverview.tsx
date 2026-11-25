@@ -10,7 +10,7 @@ interface ProgressOverviewProps {
   weeks: WeekView[];
 }
 
-/** Avancement global (tâches et heures faites sur prévues) et une barre par semaine. */
+/** Overall progress (tasks and hours done out of planned) and one bar per week. */
 export function ProgressOverview({ progress, weeks }: ProgressOverviewProps) {
   if (progress.tasksPlanned === 0) {
     return <p className="text-sm text-muted-foreground">{t("program.progress.empty")}</p>;

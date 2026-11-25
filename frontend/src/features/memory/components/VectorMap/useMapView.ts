@@ -18,17 +18,17 @@ import {
   type MapView,
 } from "./mapView";
 
-/** En dessous de ce déplacement (pixels), un appui sur un point reste un clic, pas un glissement. */
+/** Below this movement (pixels), a press on a point stays a click, not a drag. */
 const DRAG_THRESHOLD = 4;
 
-/** Position du curseur dans la carte, de 0 à 1 (le centre si la carte n'a pas de taille). */
+/** Cursor position in the map, from 0 to 1 (the centre if the map has no size). */
 function focusOf(svg: SVGSVGElement, clientX: number, clientY: number) {
   const rect = svg.getBoundingClientRect();
   if (rect.width <= 0 || rect.height <= 0) return { x: 0.5, y: 0.5 };
   return { x: (clientX - rect.left) / rect.width, y: (clientY - rect.top) / rect.height };
 }
 
-/** Molette : zoom vers le curseur. */
+/** Wheel: zoom towards the cursor. */
 function useWheelZoom(
   svgRef: RefObject<SVGSVGElement | null>,
   setView: Dispatch<SetStateAction<MapView>>,
@@ -36,7 +36,7 @@ function useWheelZoom(
   useEffect(() => {
     const svg = svgRef.current;
     if (!svg) return;
-    // Écouteur natif : React attache `wheel` en mode passif, et la page défilerait en même temps.
+    // Native listener: React attaches `wheel` as passive, and the page would scroll at once.
     const onWheel = (event: WheelEvent) => {
       event.preventDefault();
       const focus = focusOf(svg, event.clientX, event.clientY);
@@ -47,7 +47,7 @@ function useWheelZoom(
   }, [svgRef, setView]);
 }
 
-/** Zoom (boutons, molette) et déplacement (glisser) de la carte, bornés à la carte entière. */
+/** Zoom (buttons, wheel) and pan (drag) of the map, bounded to the whole map. */
 export function useMapView(svgRef: RefObject<SVGSVGElement | null>) {
   const [view, setView] = useState<MapView>(INITIAL_VIEW);
   const drag = useRef<{ x: number; y: number; travelled: number } | null>(null);
@@ -82,7 +82,7 @@ export function useMapView(svgRef: RefObject<SVGSVGElement | null>) {
     zoomOut: () => setView((current) => zoomed(current, -1)),
     reset: () => setView(INITIAL_VIEW),
     reveal: useCallback((x: number, y: number) => setView((cur) => revealed(cur, x, y)), []),
-    /** Vrai si l'appui en cours est un glissement : le clic qui suit ne doit pas ouvrir un point. */
+    /** True if the current press is a drag: the click that follows must not open a point. */
     wasDragged: () => justDragged.current,
     handlers: {
       onPointerDown,

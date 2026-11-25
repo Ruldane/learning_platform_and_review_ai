@@ -3,11 +3,11 @@ import type { LessonSummaryOut } from "../types";
 const GENERATING_MS = 5000;
 const WAITING_MS = 15_000;
 const PDF_MS = 5000;
-/** Relectures au plus pour attendre le PDF d'une leçon prête (2 min) : son rendu peut échouer. */
+/** Max re-reads while waiting for the PDF of a ready lesson (2 min): its render may fail. */
 export const MAX_PDF_POLLS = 24;
 /**
- * Relectures au plus de la liste quand plus aucune leçon ne s'écrit (5 min) : une leçon des
- * semaines suivantes attend 7 jours avant le début de sa semaine, inutile de relire jusque-là.
+ * Max list re-reads when no lesson is being written anymore (5 min): a lesson of the
+ * following weeks waits 7 days before its week starts, no need to re-read until then.
  */
 export const MAX_IDLE_POLLS = 20;
 
@@ -18,10 +18,10 @@ export function lessonIsInProgress(lesson: LessonProgress): boolean {
 }
 
 /**
- * Quand relire une leçon : toutes les 5 s pendant qu'elle s'écrit, toutes les 15 s tant qu'elle
- * attend son tour ou sa nouvelle tentative (elle peut y rester longtemps). Prête, toutes les 5 s
- * tant que son PDF n'est pas là, `MAX_PDF_POLLS` fois au plus (`pdfPolls` : relectures déjà faites
- * depuis qu'elle est prête).
+ * When to re-read a lesson: every 5 s while it is being written, every 15 s while it
+ * waits for its turn or its new attempt (it may stay there a long time). Ready, every 5 s
+ * while its PDF is not there yet, at most `MAX_PDF_POLLS` times (`pdfPolls`: re-reads already done
+ * since it became ready).
  */
 export function lessonRefetchInterval(
   lesson: (LessonProgress & Pick<LessonSummaryOut, "pdf_available">) | undefined,
@@ -36,9 +36,9 @@ export function lessonRefetchInterval(
 }
 
 /**
- * Quand relire les leçons d'un programme : toutes les 5 s tant qu'une leçon s'écrit ; toutes les
- * 15 s tant qu'une leçon attend (`pending`, ou `failed` avant sa nouvelle tentative), au plus
- * `MAX_IDLE_POLLS` fois depuis la dernière leçon vue en écriture (`idlePolls`).
+ * When to re-read a program's lessons: every 5 s while a lesson is being written; every
+ * 15 s while a lesson waits (`pending`, or `failed` before its new attempt), at most
+ * `MAX_IDLE_POLLS` times since the last lesson seen being written (`idlePolls`).
  */
 export function lessonsRefetchInterval(
   lessons: readonly LessonProgress[] | undefined,

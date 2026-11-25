@@ -22,8 +22,8 @@ function selectedPassage(root: HTMLElement, selection: Selection): LessonPassage
 }
 
 /**
- * Le passage que la personne a sélectionné dans `target` (texte rogné), `null` quand rien n'est
- * sélectionné ou que la sélection sort du texte (sommaire, boutons…).
+ * The passage the person selected in `target` (trimmed text), `null` when nothing is
+ * selected or when the selection leaves the text (table of contents, buttons…).
  */
 export function useSelectedPassage(
   target: RefObject<HTMLElement | null>,

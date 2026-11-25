@@ -4,14 +4,14 @@ import { cn } from "@/shared/lib/utils";
 
 interface McpSwitchProps {
   enabled: boolean;
-  /** Une écriture est en cours : le bouton ne bouge plus avant la réponse. */
+  /** A write is in progress: the button does not move until the answer. */
   pending: boolean;
   onChange: (enabled: boolean) => void;
 }
 
 /**
- * L'interrupteur général : coupé, aucun jeton n'ouvre rien. Le texte dit clairement ce que chaque
- * état ouvre ou ferme ; l'état est écrit en toutes lettres, jamais porté par la seule couleur.
+ * The master switch: off, no token opens anything. The text says clearly what each
+ * state opens or closes; the state is written out in full, never carried by colour alone.
  */
 export function McpSwitch({ enabled, pending, onChange }: McpSwitchProps) {
   const textId = useId();

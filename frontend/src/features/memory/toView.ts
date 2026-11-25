@@ -16,7 +16,7 @@ import type {
   StatsOut,
 } from "./types";
 
-/** Ligne de la liste : pas de texte, il se lit dans le détail. */
+/** List row: no text, it is read in the detail. */
 export function toItemRow(item: MemoryItemOut): MemoryItemRow {
   return {
     id: item.id,
@@ -43,7 +43,7 @@ function toWrite(write: MemoryWriteOut) {
   };
 }
 
-/** Détail d'un élément : texte, preuves, fragments, voisins et journal des écritures. */
+/** Item detail: text, evidence, fragments, neighbours and write log. */
 export function toItemDetail(item: MemoryItemDetail): MemoryItemDetailView {
   return {
     ...toItemRow(item),
@@ -67,7 +67,7 @@ export function toItemDetail(item: MemoryItemDetail): MemoryItemDetailView {
   };
 }
 
-/** Le contrat type `by_kind` en dictionnaire ouvert : on le replie sur les six types connus. */
+/** The `by_kind` contract type as an open dictionary: it is folded onto the six known types. */
 function toByKind(raw: Record<string, number>): Record<MemoryKindView, number> {
   const counts = {} as Record<MemoryKindView, number>;
   for (const kind of MEMORY_KINDS) {
@@ -77,7 +77,7 @@ function toByKind(raw: Record<string, number>): Record<MemoryKindView, number> {
   return counts;
 }
 
-/** Statistiques : six types toujours présents (0 par défaut), sans les champs que l'écran n'affiche pas. */
+/** Statistics: the six types always present (0 by default); fields the screen hides are dropped. */
 export function toStats(stats: StatsOut): MemoryStatsView {
   return {
     by_kind: toByKind(stats.by_kind),
@@ -113,7 +113,7 @@ export function toMapPoints(map: MapResponse): MapPointView[] {
   return map.points.map(({ item_id, title, kind, x, y }) => ({ item_id, title, kind, x, y }));
 }
 
-/** Ligne de la liste des documents ; l'adresse d'un lien et la taille ne sortent pas du back. */
+/** Document list row; a link's address and the size do not come from the back end. */
 export function toDocumentRow(document: DocumentOut): DocumentRow {
   return {
     id: document.id,

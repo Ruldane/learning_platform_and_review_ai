@@ -4,8 +4,8 @@ import type { Decision } from "../types";
 import { useIdAction } from "./useIdAction";
 
 /**
- * Confirme ou refuse une demande, une seule fois par demande. Confirmer exécute l'action demandée,
- * qui peut toucher n'importe quelle feature : on relit alors toutes les lectures affichées.
+ * Confirms or refuses a request, once per request. Confirming runs the requested action,
+ * which may touch any feature: the displayed reads are then all re-read.
  */
 export function useDecideConfirmation() {
   const queryClient = useQueryClient();

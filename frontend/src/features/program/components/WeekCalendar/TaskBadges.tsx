@@ -4,7 +4,7 @@ import type { TaskView } from "../viewTypes";
 const BADGE = "rounded bg-muted px-1.5 py-0.5";
 const NOTE = "rounded bg-secondary px-1.5 py-0.5 text-secondary-foreground";
 
-/** Type, durée, « déjà acquis » et « Fait » d'une tâche, en étiquettes textuelles. */
+/** A task's type, duration, « déjà acquis » and « Fait » badges, as text labels. */
 export function TaskBadges({ task }: { task: TaskView }) {
   return (
     <ul className="flex flex-wrap gap-1">

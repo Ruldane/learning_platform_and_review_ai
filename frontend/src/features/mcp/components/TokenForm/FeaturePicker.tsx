@@ -10,7 +10,7 @@ interface FeaturePickerProps {
   onSelectAll: () => void;
 }
 
-/** Les features que le jeton peut voir : aucune de cochée au départ, on ouvre ce qu'on choisit. */
+/** The features the token can see: none ticked at first, you open what you choose. */
 export function FeaturePicker({ options, selected, onToggle, onSelectAll }: FeaturePickerProps) {
   const prefix = useId();
   return (

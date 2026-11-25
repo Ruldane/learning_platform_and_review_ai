@@ -4,7 +4,7 @@ import { mcpKeys } from "../queryKeys";
 import { isOpen } from "../toView";
 import type { McpConfirmationOut } from "../types";
 
-/** Une demande arrive quand Claude travaille : on relit le compte chaque minute. */
+/** A request arrives while Claude works: the count is re-read every minute. */
 const REFRESH_MS = 60_000;
 
 const countOpen = (confirmations: McpConfirmationOut[]) => {
@@ -13,8 +13,8 @@ const countOpen = (confirmations: McpConfirmationOut[]) => {
 };
 
 /**
- * Le nombre de demandes encore ouvertes, pour la barre du haut : la lecture des demandes, donc
- * partagée avec la page. `undefined` tant qu'il n'est pas connu (ou en cas de panne).
+ * The number of requests still open, for the top bar: reading the requests, so
+ * shared with the page. `undefined` until it is known (or on failure).
  */
 export function usePendingCount(): number | undefined {
   return useQuery({

@@ -6,12 +6,12 @@ import { Button } from "@/shared/ui/button";
 import { ErrorState } from "@/shared/ui/states/ErrorState";
 
 interface LearnedProgressProps {
-  /** Session `learned_document` lancée par « Déjà appris ». */
+  /** `learned_document` session started by « Déjà appris ». */
   sessionId: string;
   documentName: string;
-  /** Appelé une fois, quand la session est terminée (réussie ou non). */
+  /** Called once, when the session ends (successful or not). */
   onFinished: () => void;
-  /** Relance le parcours de l'Archiviste sur le document (échec ou annulation). */
+  /** Restarts the Archivist run on the document (failure or cancellation). */
   onRetry: () => void;
   createSocket?: SocketFactory;
 }
@@ -19,9 +19,9 @@ interface LearnedProgressProps {
 const FINISHED = ["completed", "failed", "cancelled", "expired"];
 
 /**
- * Avancement de l'Archiviste pour un document, lu dans le flux de la session : « extrait les
- * concepts » pendant l'exécution, puis le nombre d'acquis écrits (événements `memory.written`
- * confirmés) ou le message de l'échec.
+ * The Archivist's progress on a document, read from the session stream: « extracts the
+ * concepts » while running, then the number of acquired items written (confirmed
+ * `memory.written` events), or the failure message.
  */
 export function LearnedProgress({
   sessionId,
@@ -44,7 +44,7 @@ export function LearnedProgress({
   if (stream.connection === "failed") {
     return <ErrorState message={stream.error ?? t("errors.generic")} onRetry={stream.retry} />;
   }
-  // Une décision proposée (`status: "pending"`) attend l'accord de l'utilisateur : pas un acquis ajouté.
+  // A proposed decision (`status: "pending"`) waits for the user's agreement: not an added item.
   const written = events.filter(
     (event) => event.type === "memory.written" && event.payload.status !== "pending",
   ).length;

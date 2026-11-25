@@ -8,13 +8,13 @@ import { VerdictBlock } from "./VerdictBlock";
 
 interface ConfirmationCardProps {
   confirmation: ConfirmationView;
-  /** Une décision est en cours : les deux boutons attendent la réponse. */
+  /** A decision is in progress: both buttons wait for the answer. */
   busy: boolean;
   onConfirm: () => void;
   onRefuse: () => void;
 }
 
-/** La ligne de date qui convient à l'état : l'échéance tant que la demande attend. */
+/** The date line that fits the state: the deadline while the request waits. */
 function dateLine({ state, expiresAt, decidedAt }: ConfirmationView): string {
   if (state === "pending") return t("mcp.confirmations.expires", { date: fullDateTime(expiresAt) });
   if (state === "expired")
@@ -23,9 +23,9 @@ function dateLine({ state, expiresAt, decidedAt }: ConfirmationView): string {
 }
 
 /**
- * Une demande « À confirmer » : ce que Claude veut faire en résumé neutre, le verdict du contrôle
- * d'honnêteté, l'échéance. « Confirmer » et « Refuser » n'existent que tant qu'elle attend :
- * expirée, refusée ou déjà exécutée, elle ne se rejoue jamais.
+ * A « À confirmer » request: what Claude wants to do, in a neutral summary, the honesty check
+ * verdict, the deadline. « Confirmer » and « Refuser » exist only while it waits:
+ * expired, refused or already run, it is never replayed.
  */
 export function ConfirmationCard({
   confirmation,

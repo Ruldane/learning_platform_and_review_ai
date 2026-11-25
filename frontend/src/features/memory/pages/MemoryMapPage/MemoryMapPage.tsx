@@ -7,7 +7,7 @@ import { VectorMap } from "../../components/VectorMap";
 import { ImportEmptyState } from "../ImportEmptyState";
 import { useMemoryMap } from "../../hooks/useMemoryMap";
 
-/** Carte 2D de la mémoire : un clic sur un point ouvre l'élément dans l'explorateur. */
+/** 2D memory map: a click on a point opens the item in the explorer. */
 export function MemoryMapPage() {
   const navigate = useNavigate();
   const map = useMemoryMap();

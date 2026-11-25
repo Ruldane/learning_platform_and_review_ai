@@ -19,11 +19,11 @@ interface MemoryTableProps {
   onOpen: (id: string) => void;
   onMerge: (targetId: string, otherIds: string[]) => void;
   onPage: (offset: number) => void;
-  /** Fusion en cours : bouton et sélection verrouillés. */
+  /** Merge in progress: button and selection locked. */
   merging: boolean;
 }
 
-/** Liste des éléments de mémoire : filtres, sélection, fusion et pagination (présentationnel). */
+/** Memory item list: filters, selection, merge and pagination (presentational). */
 export function MemoryTable(props: MemoryTableProps) {
   const { items, total, offset, limit, selected, merging, onSelect } = props;
   const pager = (

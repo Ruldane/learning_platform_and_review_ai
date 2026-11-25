@@ -13,7 +13,7 @@ interface Run {
   k: number;
 }
 
-/** Banc d'essai : exactement les fragments (et le texte) qu'un agent recevrait pour une requête. */
+/** Test bench: exactly the fragments (and the text) an agent would receive for a query. */
 export function SearchBenchPage() {
   const search = useMemorySearch();
   const [last, setLast] = useState<Run | null>(null);

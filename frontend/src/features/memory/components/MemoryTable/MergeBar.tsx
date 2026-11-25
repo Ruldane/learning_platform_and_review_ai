@@ -12,11 +12,11 @@ interface MergeBarProps {
   onMerge: (targetId: string, otherIds: string[]) => void;
 }
 
-/** Bouton « Fusionner » : confirmation en ligne, puis verrouillé pendant l'appel. */
+/** « Fusionner » button: inline confirmation, then locked during the call. */
 export function MergeBar({ items, selected, merging, onMerge }: MergeBarProps) {
   const [confirming, setConfirming] = useState(false);
   const picked = selected.map((id) => items.find((item) => item.id === id));
-  // Un élément coché sur une autre page n'a pas de type connu ici : pas de fusion à l'aveugle.
+  // An item ticked on another page has no known type here: no blind merge.
   const mergeable =
     picked.every((item) => item !== undefined) && canMerge(picked as MemoryItemRow[]);
   const [target, ...others] = selected;

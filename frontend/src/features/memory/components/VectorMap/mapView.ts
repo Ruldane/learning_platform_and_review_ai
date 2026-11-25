@@ -1,9 +1,9 @@
-/** Demi-côté de la carte entière : les coordonnées de l'API tiennent dans [-1, 1], marge comprise. */
+/** Half-side of the whole map: the API coordinates fit within [-1, 1], margin included. */
 export const HALF = 1.1;
 export const MIN_ZOOM = 1;
 export const MAX_ZOOM = 8;
 
-/** Fenêtre sur la carte : un zoom (1 à 8) et le centre de ce qu'on voit. */
+/** Window on the map: a zoom (1 to 8) and the centre of what is seen. */
 export interface MapView {
   zoom: number;
   cx: number;
@@ -14,13 +14,13 @@ export const INITIAL_VIEW: MapView = { zoom: MIN_ZOOM, cx: 0, cy: 0 };
 
 const sizeOf = (zoom: number) => (2 * HALF) / zoom;
 
-/** Garde la fenêtre à l'intérieur de la carte. */
+/** Keeps the window inside the map. */
 function clampCenter(center: number, zoom: number): number {
   const limit = HALF - sizeOf(zoom) / 2;
   return Math.max(-limit, Math.min(limit, center));
 }
 
-/** Valeur de l'attribut `viewBox`, arrondie pour éviter les bruits de virgule flottante. */
+/** `viewBox` attribute value, rounded to avoid floating-point noise. */
 export function viewBoxOf({ zoom, cx, cy }: MapView): string {
   const size = sizeOf(zoom);
   const round = (value: number) => String(Number((value + 0).toFixed(4)));
@@ -28,8 +28,8 @@ export function viewBoxOf({ zoom, cx, cy }: MapView): string {
 }
 
 /**
- * Zoom d'un facteur 2 (`direction` 1 ou -1), borné de 1 à 8. `focus` (0 à 1 dans la fenêtre) est
- * le point qui reste sous le curseur ; sans lui, on zoome sur le centre.
+ * Zoom by 2x (`direction` 1 or -1), clamped to 1 to 8. `focus` (0 to 1 in the window) is
+ * the point that stays under the cursor; without it, we zoom on the centre.
  */
 export function zoomed(
   view: MapView,
@@ -49,7 +49,7 @@ export function zoomed(
   };
 }
 
-/** Déplace la fenêtre de `dx`, `dy` pixels d'écran, pour une carte affichée sur `width` pixels. */
+/** Moves the window by `dx`, `dy` screen pixels, for a map shown at `width` pixels. */
 export function panned(view: MapView, dx: number, dy: number, width: number): MapView {
   if (width <= 0) return view;
   const unit = sizeOf(view.zoom) / width;
@@ -60,7 +60,7 @@ export function panned(view: MapView, dx: number, dy: number, width: number): Ma
   };
 }
 
-/** Recentre la fenêtre sur un point s'il en sort (un point atteint au clavier doit se voir). */
+/** Recentres the window on a point that leaves it (a keyboard-reached point must stay visible). */
 export function revealed(view: MapView, x: number, y: number): MapView {
   const reach = sizeOf(view.zoom) / 2;
   const inside = Math.abs(x - view.cx) <= reach && Math.abs(y - view.cy) <= reach;

@@ -17,7 +17,7 @@ function byModule(week: WeekView): [string, TaskView[]][] {
   return [...groups];
 }
 
-/** Les tâches d'une semaine, regroupées par module. */
+/** The tasks of a week, grouped by module. */
 export function WeekSection({ week, editable, onToggleDone, onDelete }: WeekSectionProps) {
   return (
     <section className="flex flex-col gap-3">

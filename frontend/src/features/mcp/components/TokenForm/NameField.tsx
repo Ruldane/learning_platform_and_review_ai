@@ -7,7 +7,7 @@ interface NameFieldProps {
   onChange: (value: string) => void;
 }
 
-/** Le nom du jeton : de quoi le reconnaître dans la liste (60 caractères au plus). */
+/** The token name: enough to recognise it in the list (60 characters at most). */
 export function NameField({ value, onChange }: NameFieldProps) {
   const id = useId();
   return (

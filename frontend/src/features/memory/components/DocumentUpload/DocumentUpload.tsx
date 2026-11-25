@@ -7,21 +7,21 @@ import { UploadTabs, type UploadTab } from "./UploadTabs";
 import { UrlTab } from "./UrlTab";
 
 interface DocumentUploadProps {
-  /** Vrai pendant l'envoi : les champs et les boutons sont désactivés. */
+  /** True while sending: the fields and buttons are disabled. */
   busy: boolean;
-  /** Erreur de l'envoi précédent, rendue par le parent (message du serveur). */
+  /** Error from the previous send, rendered by the parent (server message). */
   error: string | null;
   onUploadFile: (file: File) => void;
   onSubmitUrl: (url: string) => void;
   onSubmitText: (title: string, text: string) => void;
   /**
-   * Change après un envoi réussi : les formulaires du lien et du texte collé sont remontés, donc
-   * vidés (un échec garde la saisie). L'onglet courant, lui, ne change pas.
+   * Changes after a successful send: the link and pasted text forms are remounted, so
+   * emptied (a failure keeps the input). The current tab does not change.
    */
   resetKey?: number;
 }
 
-/** Import d'un document : fichier (20 Mo, PDF, DOCX, Markdown, texte), lien ou texte collé. */
+/** Importing a document: file (20 MB, PDF, DOCX, Markdown, text), link or pasted text. */
 export function DocumentUpload(props: DocumentUploadProps) {
   const { busy, error, onUploadFile, onSubmitUrl, onSubmitText, resetKey = 0 } = props;
   const [tab, setTab] = useState<UploadTab>("file");
@@ -35,7 +35,7 @@ export function DocumentUpload(props: DocumentUploadProps) {
         aria-labelledby={`upload-tab-${tab}`}
         className="flex flex-col gap-3"
       >
-        {/* `key` : changer d'onglet repart d'un formulaire neuf (message de taille compris). */}
+        {/* `key`: switching tab starts again with a new form (size message included). */}
         {tab === "file" ? <FileTab key="file" busy={busy} onUploadFile={onUploadFile} /> : null}
         {tab === "url" ? (
           <UrlTab key={`url-${resetKey}`} busy={busy} onSubmitUrl={onSubmitUrl} />

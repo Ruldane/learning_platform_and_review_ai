@@ -1,4 +1,4 @@
-/** Colonne de lecture : 72 caractères au plus, corps de 18 px. */
+/** Reading column: 72 characters at most, 18 px body. */
 export const BODY_CLASS = [
   "max-w-[72ch] text-[18px] leading-8",
   "[&_p]:my-4 [&_strong]:font-semibold",

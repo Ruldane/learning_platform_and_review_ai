@@ -4,7 +4,7 @@ import type { CallView } from "../viewTypes";
 
 const COLUMNS = ["at", "action", "token", "level", "code", "duration"] as const;
 
-/** Le journal des appels : l'outil, le niveau, le code et la durée, jamais le contenu. */
+/** The call log: the tool, the level, the code and the duration, never the content. */
 export function CallLog({ calls }: { calls: CallView[] }) {
   if (calls.length === 0) {
     return <p className="text-muted-foreground">{t("mcp.history.callsEmpty")}</p>;

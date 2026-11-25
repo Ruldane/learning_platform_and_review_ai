@@ -7,14 +7,14 @@ import { SearchHitList } from "../SearchHitList";
 import type { MemoryKindView, SearchHitView } from "../viewTypes";
 
 interface SemanticSearchProps {
-  /** `null` : aucune recherche lancée pour l'instant. */
+  /** `null`: no search run yet. */
   hits: SearchHitView[] | null;
   pending: boolean;
   onSearch: (query: string, kinds: MemoryKindView[]) => void;
   onOpen: (itemId: string) => void;
 }
 
-/** Recherche sémantique : requête, types facultatifs, résultats avec leurs scores. */
+/** Semantic search: query, optional types, results with their scores. */
 export function SemanticSearch({ hits, pending, onSearch, onOpen }: SemanticSearchProps) {
   const [query, setQuery] = useState("");
   const [kinds, setKinds] = useState<MemoryKindView[]>([]);

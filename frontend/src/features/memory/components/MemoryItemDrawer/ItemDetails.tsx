@@ -6,7 +6,7 @@ import type { MemoryItemDetailView } from "../viewTypes";
 
 const headingClass = "text-sm font-semibold";
 
-/** Métadonnées, texte, étiquettes et preuves d'un élément. */
+/** An item's metadata, text, labels and evidence. */
 export function ItemDetails({ item }: { item: MemoryItemDetailView }) {
   return (
     <>

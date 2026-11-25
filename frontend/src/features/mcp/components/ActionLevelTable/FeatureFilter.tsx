@@ -3,13 +3,13 @@ import { t } from "@/shared/i18n/t";
 import { fieldClass } from "@/shared/ui/fieldClass";
 
 interface FeatureFilterProps {
-  /** `""` : toutes. */
+  /** `""`: all. */
   value: string;
   options: { value: string; label: string }[];
   onChange: (feature: string) => void;
 }
 
-/** Le filtre par feature : une liste native, « Toutes » en tête. */
+/** The feature filter: a native list, « Toutes » first. */
 export function FeatureFilter({ value, options, onChange }: FeatureFilterProps) {
   const id = useId();
   return (

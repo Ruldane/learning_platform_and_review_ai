@@ -2,7 +2,7 @@ import { t } from "@/shared/i18n/t";
 import { KIND_COLORS } from "../kindColors";
 import type { MemoryKindView } from "../viewTypes";
 
-/** Pastille de type : un point coloré et le nom du type, écrit, jamais la couleur seule. */
+/** Type badge: a coloured dot and the type name, written out, never colour alone. */
 export function KindBadge({ kind }: { kind: MemoryKindView }) {
   return (
     <span

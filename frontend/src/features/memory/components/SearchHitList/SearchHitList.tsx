@@ -6,11 +6,11 @@ import type { SearchHitView } from "../viewTypes";
 
 interface SearchHitListProps {
   hits: SearchHitView[];
-  /** Absent (banc d'essai) : le titre reste un simple texte. */
+  /** Absent (test bench): the title stays plain text. */
   onOpen?: (itemId: string) => void;
 }
 
-/** Fragments trouvés, avec le type, l'auteur, un extrait et le score de similarité. */
+/** Fragments found, with the type, author, an excerpt and the similarity score. */
 export function SearchHitList({ hits, onOpen }: SearchHitListProps) {
   if (hits.length === 0) {
     return <p className="text-sm text-muted-foreground">{t("memory.search.noResults")}</p>;

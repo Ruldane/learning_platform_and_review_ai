@@ -6,8 +6,8 @@ import { lessonsKeys } from "../queryKeys";
 import type { ResourceStatus } from "../types";
 
 /**
- * « Lue » / « À lire » (`PATCH /resources/{id}`). Les leçons et la bibliothèque sont relues après
- * chaque changement ; un échec se dit dans `error`.
+ * « Lue » / « À lire » (`PATCH /resources/{id}`). Lessons and the library are re-read after
+ * each change; a failure is reported in `error`.
  */
 export function useResourceStatus() {
   const client = useQueryClient();

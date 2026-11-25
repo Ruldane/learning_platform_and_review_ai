@@ -6,7 +6,7 @@ import type { MemoryKindView, SearchResponse } from "../types";
 interface SearchVariables {
   query: string;
   kinds: MemoryKindView[];
-  /** Absent : 8 résultats. */
+  /** Absent: 8 results. */
   k?: number;
 }
 
@@ -15,8 +15,8 @@ function toResult(response: SearchResponse) {
 }
 
 /**
- * Recherche sémantique (`POST /memory/search`). Une mutation et non une requête : la requête de
- * l'utilisateur n'entre ni dans une clé ni dans le cache, et chaque lancement refait l'appel.
+ * Semantic search (`POST /memory/search`). A mutation rather than a query: the user's query
+ * enters neither a key nor the cache, and each run makes the call again.
  */
 export function useMemorySearch() {
   return useMutation({

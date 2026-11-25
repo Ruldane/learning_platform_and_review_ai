@@ -14,7 +14,7 @@ interface MemoryTableRowProps {
 
 const cellClass = "px-3 py-2 align-top";
 
-/** Une ligne de la liste : case, titre (ouvre le détail), type, auteur, niveau et date. */
+/** A list row: checkbox, title (opens the detail), type, author, level and date. */
 export function MemoryTableRow({ item, checked, locked, onToggle, onOpen }: MemoryTableRowProps) {
   return (
     <tr className="border-t border-border">

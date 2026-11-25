@@ -2,8 +2,8 @@ import type { ItemFilterValue } from "./components/viewTypes";
 import type { ItemStatus } from "./types";
 
 /**
- * Clés TanStack Query de la feature. Jamais de contenu : ni texte de document, ni requête de
- * recherche (la recherche est une mutation), seulement des filtres et des identifiants.
+ * TanStack Query keys of the feature. Never content: no document text, no search
+ * query (search is a mutation), only filters and identifiers.
  */
 export const memoryKeys = {
   all: ["memory"],

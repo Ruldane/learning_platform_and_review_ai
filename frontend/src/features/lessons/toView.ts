@@ -15,7 +15,7 @@ export function toResourceView(resource: ResourceOut): ResourceView {
   return {
     id: resource.id,
     title: resource.title,
-    // Le filtre d'adresses commun (http et https seulement), l'adresse gardée telle quelle.
+    // The shared address filter (http and https only), the address kept as is.
     url: webUrl(resource.url) ? resource.url : null,
     type: resource.type,
     lang: resource.lang,

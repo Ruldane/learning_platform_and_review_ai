@@ -8,7 +8,7 @@ interface StatsLinksProps {
   dashboardUrl: string;
 }
 
-/** Export JSON de la mémoire et lien vers le tableau de bord Qdrant (onglet à part, adresse http). */
+/** Memory JSON export and link to the Qdrant dashboard (separate tab, http address). */
 export function StatsLinks({ exportUrl, dashboardUrl }: StatsLinksProps) {
   return (
     <div className="flex flex-wrap gap-2">

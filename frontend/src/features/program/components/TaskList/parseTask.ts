@@ -22,7 +22,7 @@ export const EMPTY_DRAFT: TaskDraft = {
   plannedDate: "",
 };
 
-/** Valide la saisie du formulaire d'ajout : titre, durée entière de 15 à 120, critère, jour. */
+/** Validates the add-form input: title, whole duration from 15 to 120, criterion, day. */
 export function parseTask(draft: TaskDraft): { input?: NewTaskInput; errors: TaskErrors } {
   const errors: TaskErrors = {};
   const title = draft.title.trim();

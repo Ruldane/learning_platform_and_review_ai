@@ -9,9 +9,9 @@ import { SearchSection } from "./SearchSection";
 import { StatsSection } from "./StatsSection";
 
 /**
- * Explorateur de la mémoire : statistiques, « À confirmer », recherche, liste et tiroir. L'élément
- * ouvert est dans l'adresse (`?item=<id>`) : la carte et la recherche y mènent, et un rechargement
- * le retrouve.
+ * Memory explorer: statistics, « À confirmer », search, list and drawer. The open item
+ * is in the address (`?item=<id>`): the map and search lead there, and a reload
+ * finds it again.
  */
 export function MemoryExplorerPage() {
   const [params, setParams] = useSearchParams();
@@ -42,7 +42,7 @@ export function MemoryExplorerPage() {
       <section aria-label={t("memory.page.listTitle")}>
         <ListSection onOpen={openItem} />
       </section>
-      {/* Une clé par élément : les erreurs d'écriture ne passent pas d'un élément à l'autre. */}
+      {/* One key per item: write errors do not carry over from one item to another. */}
       <ItemPanel
         key={creating ? "new" : (itemId ?? "none")}
         itemId={itemId}

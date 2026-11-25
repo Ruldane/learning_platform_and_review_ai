@@ -4,7 +4,7 @@ import { MemoryExplorerPage } from "./pages/MemoryExplorerPage";
 import { MemoryMapPage } from "./pages/MemoryMapPage";
 import { SearchBenchPage } from "./pages/SearchBenchPage";
 
-/** Mémoire (F3) : explorateur, carte 2D, banc d'essai et documents, section « Mémoire » (15.1). */
+/** Memory (F3): explorer, 2D map, test bench and documents, « Memory » section (15.1). */
 export const memoryManifest: FeatureManifest = {
   id: "memory",
   routes: [

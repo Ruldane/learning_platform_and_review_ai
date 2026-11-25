@@ -4,7 +4,7 @@ import { memoryKeys } from "../queryKeys";
 import { toMapPoints } from "../toView";
 import type { MapResponse } from "../types";
 
-/** Carte 2D (`GET /memory/map`) : les points et si l'API n'a gardé que les plus récents. */
+/** 2D map (`GET /memory/map`): the points, and whether the API kept only the newest. */
 export function useMemoryMap() {
   return useQuery({
     queryKey: memoryKeys.map,

@@ -8,7 +8,7 @@ interface KindPickerProps {
   onChange: (kinds: MemoryKindView[]) => void;
 }
 
-/** Cases à cocher des six types, pour restreindre une recherche (aucune case = tous les types). */
+/** Checkboxes for the six types, to narrow a search (no box ticked means all types). */
 export function KindPicker({ value, onChange }: KindPickerProps) {
   const legendId = useId();
   const toggle = (kind: MemoryKindView) =>

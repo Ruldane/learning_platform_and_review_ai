@@ -10,13 +10,13 @@ import { TaskCard } from "./TaskCard";
 interface DayColumnProps {
   day: DayView;
   editable: boolean;
-  /** Tous les jours de la semaine (`AAAA-MM-JJ`) : une tâche peut aller sur chacun d'eux. */
+  /** All the days of the week (`YYYY-MM-DD`): a task can go on any of them. */
   dates: string[];
-  /** Déplacement choisi dans le menu « Déplacer vers… » d'une carte. */
+  /** Move chosen from a card's « Déplacer vers… » menu. */
   onMoveTask: (taskId: string, date: string) => void;
 }
 
-/** Un jour du calendrier : charge face à la capacité (dépassement dit en toutes lettres) et tâches. */
+/** A calendar day: load against capacity (overrun stated in full) and tasks. */
 export function DayColumn({ day, editable, dates, onMoveTask }: DayColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: day.date, disabled: !editable });
   const load = dayLoad(day.tasks);

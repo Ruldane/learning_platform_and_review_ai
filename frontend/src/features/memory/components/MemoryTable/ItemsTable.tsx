@@ -5,7 +5,7 @@ import { MemoryTableRow } from "./MemoryTableRow";
 interface ItemsTableProps {
   items: MemoryItemRow[];
   selected: string[];
-  /** Sélection verrouillée (fusion en cours). */
+  /** Selection locked (merge in progress). */
   locked: boolean;
   onToggle: (id: string) => void;
   onOpen: (id: string) => void;
@@ -14,7 +14,7 @@ interface ItemsTableProps {
 const headClass = "px-3 py-2 text-left font-medium text-muted-foreground";
 const COLUMNS = ["title", "kind", "author", "level", "date"] as const;
 
-/** Tableau des éléments : une ligne par élément, une case de sélection en tête. */
+/** Items table: one row per item, a selection checkbox first. */
 export function ItemsTable({ items, selected, locked, onToggle, onOpen }: ItemsTableProps) {
   return (
     <div className="overflow-x-auto rounded-xl border border-border bg-card">

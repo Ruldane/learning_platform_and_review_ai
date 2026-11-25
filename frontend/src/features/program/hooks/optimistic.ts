@@ -1,8 +1,8 @@
 import type { ProgramOut, TaskPatch } from "../types";
 
 /**
- * Le programme avec la retouche d'une tâche déjà appliquée (jour ou statut) : montrée tout de suite,
- * en attendant le serveur, qui garde le dernier mot (refus 422 : l'état d'avant est remis).
+ * The program with a task's already-applied edit (day or status): shown at once,
+ * while waiting for the server, which has the last word (on a 422 refusal, the old state returns).
  */
 export function withTaskPatch(program: ProgramOut, taskId: string, patch: TaskPatch): ProgramOut {
   return {

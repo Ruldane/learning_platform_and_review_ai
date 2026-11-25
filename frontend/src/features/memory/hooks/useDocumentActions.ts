@@ -9,11 +9,11 @@ import { useLearnings } from "./useLearnings";
 export type { Learning } from "./useLearnings";
 
 /**
- * Actions de l'écran Documents : importer (fichier, lien, texte collé) et « déjà appris ».
- * `sent` croît à chaque import réussi, doublon compris : l'écran s'en sert comme `key` pour
- * remettre à zéro les formulaires du lien et du texte collé (un échec garde la saisie).
- * Les sessions de l'Archiviste encore en cours côté serveur (lues une fois au montage) complètent
- * `learnings` après un rechargement, sans jamais écraser une entrée locale.
+ * Actions of the Documents screen: import (file, link, pasted text) and « déjà appris ».
+ * `sent` grows with each successful import, duplicates included: the screen uses it as a `key` to
+ * reset the link and pasted-text forms (a failure keeps the input).
+ * The Archivist sessions still running on the server (read once on mount) complete
+ * `learnings` after a reload, never overwriting a local entry.
  */
 export function useDocumentActions() {
   const queryClient = useQueryClient();
@@ -34,7 +34,7 @@ export function useDocumentActions() {
     onSuccess: ({ session_id: sessionId }, { documentId }) => start(documentId, sessionId),
   });
 
-  /** L'Archiviste a fini : les acquis, les statistiques, la carte et les documents sont relus. */
+  /** The Archivist is done: the acquired items, statistics, map and documents are re-read. */
   const finishLearning = useCallback(
     (documentId: string) => {
       finish(documentId);

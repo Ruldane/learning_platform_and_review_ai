@@ -4,11 +4,11 @@ import { buttonVariants } from "@/shared/ui/button";
 
 interface LessonNavProps {
   lessonId: string;
-  /** Une leçon prête peut être étudiée avec le tuteur. */
+  /** A ready lesson can be studied with the tutor. */
   ready: boolean;
 }
 
-/** Retour à la liste des leçons, et « Étudier cette leçon » (session guidée sur cette leçon). */
+/** Back to the lesson list, and « Étudier cette leçon » (guided session on this lesson). */
 export function LessonNav({ lessonId, ready }: LessonNavProps) {
   return (
     <nav className="flex flex-wrap items-center justify-between gap-3">

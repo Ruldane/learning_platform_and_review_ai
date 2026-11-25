@@ -9,7 +9,7 @@ interface CopyButtonProps {
 
 type CopyState = "idle" | "copied" | "failed";
 
-/** Copie `text` dans le presse-papiers ; le résultat est annoncé, un échec se dit en français. */
+/** Copies `text` to the clipboard; the result is announced, a failure is announced in French. */
 export function CopyButton({ text, label }: CopyButtonProps) {
   const [state, setState] = useState<CopyState>("idle");
   async function copy() {

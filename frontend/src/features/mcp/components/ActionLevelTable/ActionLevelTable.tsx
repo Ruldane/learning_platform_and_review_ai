@@ -7,8 +7,8 @@ import { FeatureFilter } from "./FeatureFilter";
 const COLUMNS = ["name", "feature", "level", "kind", "summary"] as const;
 
 /**
- * La table, en lecture seule, des outils exposés et de leur niveau, filtrable par feature. Le
- * niveau 4 n'a pas de ligne : il n'est jamais exposé, et la page le dit en dessous.
+ * The read-only table of exposed tools and their level, filterable by feature. Level
+ * 4 has no row: it is never exposed, and the page says so below.
  */
 export function ActionLevelTable({ actions }: { actions: ActionView[] }) {
   const [feature, setFeature] = useState("");

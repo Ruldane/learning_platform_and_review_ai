@@ -4,7 +4,7 @@ import { authorLabel } from "../authorLabel";
 import { formatDayTime } from "../formatDate";
 import type { MemoryWriteView } from "../viewTypes";
 
-/** Journal des écritures : action, auteur, date et raison en une phrase (SPEC 4.5). */
+/** Write log: action, author, date and reason in one sentence (SPEC 4.5). */
 export function WriteJournal({ writes }: { writes: MemoryWriteView[] }) {
   const headingId = useId();
   return (

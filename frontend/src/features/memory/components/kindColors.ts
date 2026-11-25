@@ -1,10 +1,10 @@
 import type { MemoryKindView } from "./viewTypes";
 
 /**
- * Une couleur fixe par type d'élément de mémoire (liste, détail, résultats de recherche, et la
- * carte de l'écran Carte). Chacune atteint un contraste d'au moins 4,5:1 sur le fond blanc cassé
- * (#FAFAF7), vérifié par `kindColors.test.ts` ; la couleur n'est jamais le seul signal : le nom du
- * type est toujours écrit à côté.
+ * One fixed colour per memory item type (list, detail, search results, and the
+ * map on the Map screen). Each reaches a contrast of at least 4.5:1 on the off-white background
+ * (#FAFAF7), checked by `kindColors.test.ts`; colour is never the only signal: the name of the
+ * type is always written next to it.
  */
 export const KIND_COLORS: Record<MemoryKindView, string> = {
   document: "#3d5a99",
@@ -15,5 +15,5 @@ export const KIND_COLORS: Record<MemoryKindView, string> = {
   decision: "#8a2ea8",
 };
 
-/** Les six types, dans l'ordre d'affichage des filtres et des sélecteurs. */
+/** The six types, in the order shown in the filters and selectors. */
 export const MEMORY_KINDS = Object.keys(KIND_COLORS) as MemoryKindView[];

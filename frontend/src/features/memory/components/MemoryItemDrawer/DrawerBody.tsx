@@ -17,16 +17,16 @@ interface DrawerBodyProps {
   onOpenItem: (id: string) => void;
 }
 
-/** Seuls les niveaux « déclaré » et « en cours » se modifient à la main (SPEC 4.2). */
+/** Only the « déclaré » and « en cours » levels are edited by hand (SPEC 4.2). */
 function toEdit(item: MemoryItemDetailView): ItemEdit {
   const level = item.level === "declared" || item.level === "in_progress" ? item.level : null;
   return { title: item.title, text: item.text, tags: item.tags, level };
 }
 
-/** Contenu du tiroir : formulaire de création, lecture du détail ou formulaire de modification. */
+/** Drawer content: create form, detail view, or edit form. */
 export function DrawerBody({ item, busy, onClose, onSave, onDelete, onOpenItem }: DrawerBodyProps) {
-  // On retient l'objet en cours de modification : une fois le détail relu après l'enregistrement,
-  // c'est un nouvel objet et la lecture reprend seule ; une sauvegarde en erreur garde le formulaire.
+  // We keep the item being edited: once the detail is re-read after saving,
+  // it is a new object and reading resumes on its own; a save in error keeps the form.
   const [editedItem, setEditedItem] = useState<MemoryItemDetailView | null>(null);
 
   if (item === null) {
@@ -45,7 +45,7 @@ export function DrawerBody({ item, busy, onClose, onSave, onDelete, onOpenItem }
       <MemoryItemForm
         initial={toEdit(item)}
         chooseKind={false}
-        // Le texte d'un document est le texte extrait entier : on ne le modifie pas ici.
+        // A document's text is the full extracted text: we do not edit it here.
         withText={item.kind !== "document"}
         disabled={busy}
         onSubmit={onSave}

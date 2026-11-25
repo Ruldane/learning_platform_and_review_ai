@@ -10,7 +10,7 @@ import type {
   StatsOut,
 } from "./types";
 
-/** Données de test de la feature (réponses typiques du back) ; jamais importées par le code de l'application. */
+/** Test data for the feature (typical back-end responses); never imported by application code. */
 export const API = `${apiBaseUrl}/api/v1`;
 const NOW = "2026-11-11T10:00:00Z";
 
@@ -101,7 +101,7 @@ export function documentOut(overrides: Partial<DocumentOut> = {}): DocumentOut {
   };
 }
 
-/** Une session de l'Archiviste en cours, telle que `GET /sessions` la renvoie. */
+/** An ongoing Archivist session, as `GET /sessions` returns it. */
 export function sessionOut(overrides: Partial<SessionView> = {}): SessionView {
   return {
     id: "s1",
@@ -145,16 +145,16 @@ export const searchOut: SearchResponse = {
   ],
 };
 
-/** Faux back en mémoire : les lectures reflètent les écritures ; `requests` garde chaque appel. */
+/** In-memory fake back end: reads reflect writes; `requests` keeps each call. */
 export interface MemoryBackend {
   items: MemoryItemOut[];
   stats: StatsOut;
   map: MapResponse;
   documents: DocumentOut[];
-  /** Sessions renvoyées par `GET /sessions` (déjà filtrées : le faux back ne lit pas les paramètres). */
+  /** Sessions returned by `GET /sessions` (already filtered: the fake back end ignores params). */
   sessions: SessionView[];
   requests: { method: string; url: URL }[];
-  /** Écritures reçues, dans l'ordre (le corps JSON, ou `null`). */
+  /** Writes received, in order (the JSON body, or `null`). */
   writes: { method: string; path: string; body: unknown }[];
 }
 
@@ -174,7 +174,7 @@ export function memoryBackend(init: Partial<MemoryBackend> = {}): MemoryBackend 
   };
 }
 
-/** Lectures du faux back (liste filtrée par statut et type, détail, statistiques, carte, documents). */
+/** Reads of the fake back end (list filtered by status and type, detail, stats, map, documents). */
 export function readHandlers(b: MemoryBackend) {
   const seen = (request: Request) => {
     b.requests.push({ method: request.method, url: new URL(request.url) });
@@ -220,11 +220,11 @@ export function readHandlers(b: MemoryBackend) {
   ];
 }
 
-/** Réponse d'erreur au format du back. */
+/** Error response in the back-end format. */
 export const apiError = (code: string, message: string, status = 400) =>
   HttpResponse.json({ error: { code, message, details: null } }, { status });
 
-/** Écritures du faux back : elles sont notées dans `writes` et modifient `items` comme le vrai back. */
+/** Fake back-end writes: noted in `writes` and applied to `items`, as the real back end does. */
 export function writeHandlers(b: MemoryBackend) {
   const note = async (request: Request) => {
     const text = await request.text();

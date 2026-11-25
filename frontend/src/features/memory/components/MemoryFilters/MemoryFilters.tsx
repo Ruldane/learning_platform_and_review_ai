@@ -11,7 +11,7 @@ interface MemoryFiltersProps {
 
 const labelClass = "flex flex-col gap-1 text-sm font-medium";
 
-/** Filtres de la liste : type, étiquette, auteur et bornes de date. */
+/** List filters: type, label, author and date bounds. */
 export function MemoryFilters({ value, authors, onChange }: MemoryFiltersProps) {
   const set = (patch: Partial<ItemFilterValue>) => onChange({ ...value, ...patch });
   return (

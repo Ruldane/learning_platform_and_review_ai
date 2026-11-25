@@ -9,7 +9,7 @@ interface MergeConfirmProps {
   onCancel: () => void;
 }
 
-/** Confirmation de fusion en ligne (jamais `window.confirm`) : la fusion supprime les autres éléments. */
+/** Inline merge confirmation (never `window.confirm`): the merge deletes the other items. */
 export function MergeConfirm({ count, targetTitle, onConfirm, onCancel }: MergeConfirmProps) {
   const questionId = useId();
   return (

@@ -5,11 +5,11 @@ import { lessonsKeys } from "../queryKeys";
 import { lessonIsInProgress, lessonRefetchInterval } from "./polling";
 
 /**
- * Une leçon (`GET /lessons/{id}`), relue d'elle-même tant qu'elle n'est pas prête, puis tant que
- * son PDF n'est pas arrivé (pour un temps borné, voir `lessonRefetchInterval`).
+ * A lesson (`GET /lessons/{id}`), re-read on its own while it is not ready, then while
+ * its PDF has not arrived (for a bounded time, see `lessonRefetchInterval`).
  */
 export function useLesson(lessonId: string) {
-  /** Numéro de lecture (`dataUpdateCount`) où la leçon a été vue prête pour la première fois. */
+  /** Read number (`dataUpdateCount`) at which the lesson was first seen ready. */
   const readyAt = useRef<number | null>(null);
   return useQuery({
     queryKey: lessonsKeys.lesson(lessonId),

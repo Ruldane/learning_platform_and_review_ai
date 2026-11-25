@@ -6,7 +6,7 @@ interface WeekHeaderProps {
   week: WeekView;
 }
 
-/** Entête d'une semaine : thème, objectif, livrable, étape, justification et charge face au plafond de 85 %. */
+/** Week header: theme, goal, deliverable, stage, rationale and load against the 85% cap. */
 export function WeekHeader({ week }: WeekHeaderProps) {
   const over = week.loadMinutes > week.capMinutes;
   return (

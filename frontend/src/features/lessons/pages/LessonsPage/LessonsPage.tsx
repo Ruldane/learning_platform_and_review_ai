@@ -9,9 +9,9 @@ import { usePrograms } from "../../hooks/usePrograms";
 import { LessonsBody } from "./LessonsBody";
 
 /**
- * Leçons (`/learn/lessons`) : les leçons d'un programme, par semaine, avec leur état (à venir,
- * en préparation, prête, nouvelle tentative prévue) et leur avancement. Le plus récent par défaut ;
- * avec plusieurs programmes, une liste déroulante choisit (`?program=<id>`).
+ * Lessons (`/learn/lessons`): a program's lessons, by week, with their state (upcoming,
+ * being prepared, ready, new attempt planned) and their progress. The newest by default;
+ * with several programs, a dropdown picks one (`?program=<id>`).
  */
 export function LessonsPage() {
   const navigate = useNavigate();

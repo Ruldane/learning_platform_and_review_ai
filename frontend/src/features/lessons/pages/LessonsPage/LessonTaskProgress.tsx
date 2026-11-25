@@ -2,7 +2,7 @@ import { CircleCheck } from "lucide-react";
 import { t } from "@/shared/i18n/t";
 import type { LessonSummaryOut } from "../../types";
 
-/** Avancement d’une leçon dans le programme : « Terminée », « n / m tâches faites » ou rien. */
+/** A lesson's progress in the program: « Terminée », « n / m tâches faites » or nothing. */
 export function LessonTaskProgress({ lesson }: { lesson: LessonSummaryOut }) {
   if (lesson.completed) {
     return (

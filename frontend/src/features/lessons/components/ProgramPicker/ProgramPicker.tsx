@@ -8,7 +8,7 @@ interface ProgramPickerProps {
   onChange: (programId: string) => void;
 }
 
-/** Choix du programme dont on lit les leçons (liste déroulante, du plus récent au plus ancien). */
+/** Picks the program whose lessons are read (dropdown, newest first). */
 export function ProgramPicker({ programs, value, onChange }: ProgramPickerProps) {
   return (
     <label className="flex max-w-md flex-col gap-1 text-sm font-medium">

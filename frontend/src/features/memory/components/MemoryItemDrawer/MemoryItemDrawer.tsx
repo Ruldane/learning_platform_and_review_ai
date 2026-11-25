@@ -7,7 +7,7 @@ import { DrawerBody } from "./DrawerBody";
 
 interface MemoryItemDrawerProps {
   open: boolean;
-  /** `null` : création d'un nouvel élément. */
+  /** `null`: creating a new item. */
   item: MemoryItemDetailView | null;
   busy: boolean;
   error: string | null;
@@ -18,9 +18,9 @@ interface MemoryItemDrawerProps {
 }
 
 /**
- * Tiroir de détail, à droite de la liste. Un `role="dialog"` volontairement non modal : la liste
- * derrière reste lisible et utilisable. Le focus arrive sur le titre (à chaque élément ouvert) et
- * Échap ferme le tiroir.
+ * Detail drawer, to the right of the list. A deliberately non-modal `role="dialog"`: the list
+ * behind stays readable and usable. Focus lands on the title (for each item opened) and
+ * Escape closes the drawer.
  */
 export function MemoryItemDrawer({
   open,

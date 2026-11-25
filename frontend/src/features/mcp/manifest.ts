@@ -3,8 +3,8 @@ import { McpTopbarSlot } from "./McpTopbarSlot";
 import { McpAccessPage } from "./pages/McpAccessPage";
 
 /**
- * L'accès MCP (phase 10) : la page des jetons, des demandes « À confirmer », de l'historique et
- * des niveaux (Réglages, après les données du compte) ; la barre du haut signale les demandes en
+ * MCP access (phase 10): the tokens page, « À confirmer » requests, history and
+ * levels (Settings, after the account data); the top bar flags the requests waiting.
  * attente.
  */
 export const mcpManifest: FeatureManifest = {

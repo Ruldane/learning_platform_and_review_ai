@@ -5,16 +5,16 @@ import { WeekSection } from "./WeekSection";
 
 interface TaskListProps {
   weeks: WeekView[];
-  /** Faux : lecture seule, ni case active, ni suppression, ni formulaire d'ajout. */
+  /** False: read-only, no active checkbox, no delete, no add form. */
   editable: boolean;
   onToggleDone: (taskId: string, done: boolean) => void;
   onDelete: (taskId: string) => void;
   onAdd: (input: NewTaskInput) => void | Promise<unknown>;
-  /** Refus du serveur à l'ajout, affiché sous le formulaire. */
+  /** Server refusal on add, shown under the form. */
   addError?: string | null;
 }
 
-/** Liste complète des tâches, par semaine puis par module, avec le formulaire d'ajout. */
+/** Full list of tasks, by week then by module, with the add form. */
 export function TaskList({
   weeks,
   editable,

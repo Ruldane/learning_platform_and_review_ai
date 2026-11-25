@@ -3,7 +3,7 @@ import { revokeToken } from "../api";
 import { mcpKeys } from "../queryKeys";
 import { useIdAction } from "./useIdAction";
 
-/** Révoque un jeton ; ses lignes d'historique restent. */
+/** Revokes a token; its history rows stay. */
 export function useRevokeToken() {
   const queryClient = useQueryClient();
   const mutation = useMutation({

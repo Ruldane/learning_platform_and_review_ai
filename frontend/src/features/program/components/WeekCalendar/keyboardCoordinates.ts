@@ -3,8 +3,8 @@ import type { KeyboardCoordinateGetter } from "@dnd-kit/core";
 const STEP: Record<string, 1 | -1> = { ArrowRight: 1, ArrowLeft: -1 };
 
 /**
- * Clavier du glisser-déposer : une flèche gauche ou droite amène la tâche au centre du jour voisin
- * (le défaut de dnd-kit avance de quelques pixels). Les flèches haut et bas sont ignorées.
+ * Drag-and-drop keyboard: left or right arrow moves the task to the centre of the adjacent day
+ * (dnd-kit's default moves a few pixels). Up and down arrows are ignored.
  */
 export const columnKeyboardCoordinates: KeyboardCoordinateGetter = (
   event,

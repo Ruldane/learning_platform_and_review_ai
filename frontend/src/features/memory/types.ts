@@ -39,10 +39,10 @@ export type SearchHitOut = Schemas["SearchHitOut"];
 export type SearchResponse = Schemas["SearchResponse"];
 export type StatsOut = Schemas["StatsOut"];
 
-/** Statut d'un élément : `pending` = décision proposée par un agent, en attente d'accord. */
+/** Item status: `pending` = decision proposed by an agent, awaiting agreement. */
 export type ItemStatus = "active" | "pending";
 
-/** Une page de la liste : filtres de l'écran, statut, position et taille de la page. */
+/** A page of the list: screen filters, status, position and page size. */
 export interface ItemsQuery {
   filters: ItemFilterValue;
   status: ItemStatus;
@@ -50,7 +50,7 @@ export interface ItemsQuery {
   limit: number;
 }
 
-/** Ce que l'utilisateur envoie à `POST /documents` ou `POST /documents/text`. */
+/** What the user sends to `POST /documents` or `POST /documents/text`. */
 export type UploadInput =
   | { kind: "file"; file: File }
   | { kind: "url"; url: string }
@@ -58,7 +58,7 @@ export type UploadInput =
 
 type Assert<T extends true> = T;
 
-/** Vérifié à la compilation : les types générés satisfont les types de vue des composants. */
+/** Checked at compile time: the generated types satisfy the components' view types. */
 export type ViewTypesMatchContract = [
   Assert<
     MemoryItemOut extends Pick<MemoryItemRow, "id" | "kind" | "title" | "tags"> ? true : false

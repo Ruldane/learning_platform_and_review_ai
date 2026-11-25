@@ -7,7 +7,7 @@ interface BenchResultProps {
   agentText: string;
 }
 
-/** Fragments retenus (avec scores), puis le texte exact remis à l'agent, tel quel. */
+/** Fragments kept (with scores), then the exact text handed to the agent, as is. */
 export function BenchResult({ hits, agentText }: BenchResultProps) {
   return (
     <>

@@ -5,7 +5,7 @@ import { longDay } from "@/shared/lib/format";
 interface MoveMenuListProps {
   dates: string[];
   onSelect: (date: string) => void;
-  /** Ferme le menu ; `refocus` rend le focus au bouton qui l'a ouvert. */
+  /** Closes the menu; `refocus` returns focus to the button that opened it. */
   onClose: (refocus: boolean) => void;
 }
 
@@ -19,7 +19,7 @@ function target(key: string, at: number, count: number): number | null {
   return moves[key] ?? null;
 }
 
-/** Liste des jours du menu « Déplacer vers… » : flèches, début, fin, Échap et Tab au clavier. */
+/** Days in the « Déplacer vers… » menu: arrows, home, end, Escape and Tab keys. */
 export function MoveMenuList({ dates, onSelect, onClose }: MoveMenuListProps) {
   function onKeyDown(event: KeyboardEvent<HTMLUListElement>) {
     if (event.key === "Escape") {

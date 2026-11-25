@@ -3,7 +3,7 @@ import { fetchItem } from "../api";
 import { memoryKeys } from "../queryKeys";
 import { toItemDetail } from "../toView";
 
-/** Détail d'un élément (`GET /memory/items/{id}`) ; sans identifiant, aucun appel. */
+/** Detail of an item (`GET /memory/items/{id}`); without an id, no call. */
 export function useMemoryItem(id: string | null) {
   return useQuery({
     queryKey: memoryKeys.item(id ?? ""),

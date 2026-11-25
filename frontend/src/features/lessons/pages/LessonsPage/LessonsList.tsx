@@ -2,7 +2,7 @@ import { t } from "@/shared/i18n/t";
 import type { LessonSummaryOut } from "../../types";
 import { LessonRow } from "./LessonRow";
 
-/** Les leçons d'un programme groupées par semaine, dans l'ordre du programme. */
+/** A program's lessons grouped by week, in program order. */
 export function LessonsList({ lessons }: { lessons: LessonSummaryOut[] }) {
   const ranks = [...new Set(lessons.map((lesson) => lesson.week_rank))];
   return (

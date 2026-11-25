@@ -2,10 +2,10 @@ import { useCallback, useRef, useState } from "react";
 import { errorMessage } from "@/shared/api/errors";
 
 /**
- * Lance une action sur un élément (jeton, demande, changement) en refusant de la lancer deux fois
- * avant la réponse : un double clic n'envoie qu'une requête, même avant le prochain rendu. Garde
- * les éléments en cours (`busyIds`) et le dernier message d'erreur, en français. `run` rend vrai si
- * l'action a réussi.
+ * Runs an action on an item (token, request, change), refusing to run it twice
+ * before the answer: a double click sends only one request, even before the next render. Keeps
+ * the items in progress (`busyIds`) and the last error message, in French. `run` returns true if
+ * the action succeeded.
  */
 export function useIdAction<Args extends unknown[]>(
   action: (id: string, ...args: Args) => Promise<unknown>,

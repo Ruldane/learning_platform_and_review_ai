@@ -7,7 +7,7 @@ import { LoadingState } from "@/shared/ui/states/LoadingState";
 import { useProgramLessons } from "../../hooks/useProgramLessons";
 import { LessonsList } from "./LessonsList";
 
-/** Les leçons du programme `programId` : chargement, erreur, rien encore (avec une issue) ou la liste. */
+/** The lessons of program `programId`: loading, error, nothing yet (with a reason) or the list. */
 export function LessonsBody({ programId }: { programId: string }) {
   const navigate = useNavigate();
   const lessons = useProgramLessons(programId);

@@ -9,7 +9,7 @@ interface UploadTabsProps {
   onChange: (tab: UploadTab) => void;
 }
 
-/** Les trois onglets d'import ; flèches gauche et droite : onglet voisin, focus suivi (WAI-ARIA). */
+/** The three import tabs; left and right arrows: neighbouring tab, focus follows (WAI-ARIA). */
 export function UploadTabs({ tab, onChange }: UploadTabsProps) {
   const refs = useRef<Partial<Record<UploadTab, HTMLButtonElement | null>>>({});
 

@@ -3,7 +3,7 @@ import { InlineError } from "@/shared/ui/states/InlineError";
 import { McpSwitch } from "../../components/McpSwitch";
 import { useSetMcpEnabled } from "../../hooks/useSetMcpEnabled";
 
-/** L'interrupteur général ; une écriture ratée se dit sous l'interrupteur, qui reste où il était. */
+/** The master switch; a failed write is announced under the switch, which stays where it was. */
 export function SwitchSection({ enabled }: { enabled: boolean }) {
   const setEnabled = useSetMcpEnabled();
   return (

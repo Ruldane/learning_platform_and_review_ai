@@ -5,8 +5,8 @@ import type { LessonSummaryOut } from "../../types";
 import { LessonTaskProgress } from "./LessonTaskProgress";
 
 /**
- * Une leçon de la liste : son titre (lien vers le lecteur), son état, sa longueur et son
- * avancement dans le programme (« Terminée » quand toutes les tâches du module sont faites).
+ * A lesson in the list: its title (link to the reader), its state, its length and its
+ * progress in the program (« Terminée » when all the module's tasks are done).
  */
 export function LessonRow({ lesson }: { lesson: LessonSummaryOut }) {
   const ready = lesson.status === "ready";

@@ -6,9 +6,9 @@ import { programKeys } from "../queryKeys";
 const POLL_MS = 2000;
 
 /**
- * La session du Stratège d'un brouillon (`GET /sessions/{id}`) : en attente de la validation, ou en
- * train de réviser / valider (relue toutes les 2 s tant qu'elle tourne). Quand son statut change,
- * le programme est relu : une révision a écrit une version, une validation a abouti.
+ * The Strategist's session for a draft (`GET /sessions/{id}`): waiting for validation, or
+ * revising or validating (re-read every 2 s while it runs). When its status changes,
+ * the program is re-read: a revision wrote a version, a validation succeeded.
  */
 export function useProgramSession(sessionId: string | null, enabled: boolean, programId: string) {
   const client = useQueryClient();

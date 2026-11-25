@@ -4,7 +4,7 @@ import { InlineError } from "@/shared/ui/states/InlineError";
 import { SemanticSearch } from "../../components/SemanticSearch";
 import { useMemorySearch } from "../../hooks/useMemorySearch";
 
-/** Recherche sémantique : requête, types, résultats avec leurs scores ; un clic ouvre l'élément. */
+/** Semantic search: query, types, results with their scores; a click opens the item. */
 export function SearchSection({ onOpen }: { onOpen: (itemId: string) => void }) {
   const search = useMemorySearch();
   return (

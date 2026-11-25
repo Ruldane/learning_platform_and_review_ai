@@ -3,8 +3,8 @@ import { t } from "@/shared/i18n/t";
 import type { LessonOut } from "../../types";
 
 /**
- * Une leçon qui n'est pas lisible : pas encore lancée, en cours d'écriture (elle peut y rester
- * longtemps : la page se relit toute seule) ou en échec avec sa raison et la nouvelle tentative.
+ * A lesson that cannot be read yet: not started, being written (it may stay there
+ * a long time: the page re-reads itself) or failed, with its reason and the new attempt.
  */
 export function LessonPreparing({ lesson }: { lesson: LessonOut }) {
   if (lesson.status === "failed") {

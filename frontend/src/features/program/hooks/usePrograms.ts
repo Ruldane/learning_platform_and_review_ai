@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchPrograms } from "../api";
 import { programKeys } from "../queryKeys";
 
-/** Les programmes (`GET /programs`), du plus récent au plus ancien : le premier est « le programme ». */
+/** The programs (`GET /programs`), newest first: the first one is « le programme ». */
 export function usePrograms() {
   return useQuery({
     queryKey: programKeys.list,

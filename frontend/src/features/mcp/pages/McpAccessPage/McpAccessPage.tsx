@@ -11,9 +11,9 @@ import { SwitchSection } from "./SwitchSection";
 import { TokensSection } from "./TokensSection";
 
 /**
- * Réglages > Accès MCP : l'interrupteur général, les jetons, les demandes « À confirmer »,
- * l'historique de ce que Claude a fait (avec « Annuler ») et la table des niveaux. L'interrupteur
- * coupé ne referme pas la lecture : on voit toujours ce qui a eu lieu, on ne crée plus de jeton.
+ * Settings > MCP access: the master switch, tokens, « À confirmer » requests,
+ * the history of what Claude did (with « Annuler ») and the levels table. The master switch
+ * off does not close reading: we still see what happened, but no token is created.
  */
 export function McpAccessPage() {
   const settings = useMcpSettings();

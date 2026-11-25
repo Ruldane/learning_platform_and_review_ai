@@ -7,12 +7,12 @@ import { MapCanvas } from "./MapCanvas";
 
 interface VectorMapProps {
   points: MapPointView[];
-  /** Vrai si l'API n'a rendu que les éléments les plus récents. */
+  /** True if the API only returned the newest items. */
   truncated: boolean;
   onOpen: (itemId: string) => void;
 }
 
-/** Carte 2D des éléments (SVG fait main) : zoom de 1 à 8, points au clavier, légende des types. */
+/** 2D map of the items (hand-made SVG): zoom from 1 to 8, keyboard points, type legend. */
 export function VectorMap({ points, truncated, onOpen }: VectorMapProps) {
   if (points.length === 0) return <EmptyState title={t("memory.map.empty")} />;
   return (

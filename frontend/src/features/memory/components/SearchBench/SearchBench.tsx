@@ -6,7 +6,7 @@ import { KindPicker } from "../KindPicker";
 import { BenchResult } from "./BenchResult";
 import type { MemoryKindView, SearchHitView } from "../viewTypes";
 
-/** Nombre de résultats par défaut d'`memory_search` (SPEC 4.4) et bornes acceptées. */
+/** Default result count of `memory_search` (SPEC 4.4) and accepted bounds. */
 const DEFAULT_K = 8;
 const MIN_K = 1;
 const MAX_K = 50;
@@ -23,7 +23,7 @@ interface SearchBenchProps {
   onRun: (query: string, kinds: MemoryKindView[], k: number) => void;
 }
 
-/** Banc d'essai : ce qu'un agent recevrait pour une requête, texte exact et fragments avec scores. */
+/** Test bench: what an agent would receive for a query, exact text and fragments with scores. */
 export function SearchBench({ result, pending, onRun }: SearchBenchProps) {
   const kId = useId();
   const [query, setQuery] = useState("");

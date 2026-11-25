@@ -8,7 +8,7 @@ import { useMemoryItems } from "../../hooks/useMemoryItems";
 
 const QUERY = { filters: PENDING_FILTERS, status: "pending", offset: 0, limit: 50 } as const;
 
-/** « À confirmer » : les décisions proposées par les agents ; la boîte disparaît quand elle est vide. */
+/** « À confirmer »: decisions proposed by the agents; the box disappears when empty. */
 export function PendingSection() {
   const pending = useMemoryItems(QUERY);
   const { confirm, reject } = useItemMutations();

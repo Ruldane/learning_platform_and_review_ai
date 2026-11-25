@@ -7,15 +7,15 @@ import type { StatsOut } from "../types";
 
 const POLL_MS = 2000;
 
-/** Réindexation en cours (en file ou en route) : l'écran interroge le serveur toutes les 2 s. */
+/** Reindex in progress (queued or running): the screen polls the server every 2 s. */
 export function isReindexActive(stats: Pick<StatsOut, "reindex"> | undefined): boolean {
   const status = stats?.reindex.status;
   return status === "queued" || status === "running";
 }
 
 /**
- * Statistiques de la mémoire. Tant qu'une réindexation est en file ou en cours, relecture toutes
- * les 2 s ; quand elle se termine, la liste et la carte sont relues (indicateurs « indexé »).
+ * Memory statistics. While a reindex is queued or running, re-read every
+ * 2 s; when it ends, the list and the map are re-read (« indexed » flags).
  */
 export function useMemoryStats() {
   const queryClient = useQueryClient();
@@ -40,7 +40,7 @@ export function useMemoryStats() {
   return query;
 }
 
-/** Demande la réindexation (`POST /memory/reindex`) puis relit les statistiques pour la suivre. */
+/** Requests the reindex (`POST /memory/reindex`), then re-reads the statistics to follow it. */
 export function useReindex() {
   const queryClient = useQueryClient();
   return useMutation({

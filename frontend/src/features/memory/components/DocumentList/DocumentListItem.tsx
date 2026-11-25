@@ -14,18 +14,18 @@ interface DocumentListItemProps {
 
 type KnownSource = keyof typeof memory.documents.sourceKind;
 
-/** Nom lisible du type de source ; une valeur inconnue du front est affichée telle quelle. */
+/** Readable name of the source type; a value unknown to the front end is shown as is. */
 function sourceLabel(kind: string): string {
   return kind in memory.documents.sourceKind
     ? t(`memory.documents.sourceKind.${kind as KnownSource}`)
     : kind;
 }
 
-/** Une ligne de la liste : nom, type de source, date, statut, erreur et action « déjà appris ». */
+/** A list row: name, source type, date, status, error and the « déjà appris » action. */
 export function DocumentListItem({ document, learning, onMarkLearned }: DocumentListItemProps) {
-  // Le back pose `learned` dès le lancement : un échec ou une page rechargée ne laissent que ce
-  // drapeau. Tant que rien ne tourne, un document appris reste donc relançable (sans danger : les
-  // acquis déjà écrits sont reconnus).
+  // The back end sets `learned` as soon as it starts: a failure or a reloaded page leaves only that
+  // flag. While nothing runs, a learned document can be run again (harmless: the
+  // acquired items already written are recognised).
   const provider = useLaunchSource();
   const canMark = document.status === "indexed";
   const relaunch = document.learned && !learning;

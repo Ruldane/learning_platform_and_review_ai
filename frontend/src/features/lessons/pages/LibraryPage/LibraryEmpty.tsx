@@ -3,13 +3,13 @@ import { t } from "@/shared/i18n/t";
 import { EmptyState } from "@/shared/ui/states/EmptyState";
 
 interface LibraryEmptyProps {
-  /** Au moins un filtre est actif : aucune ressource ne correspond. */
+  /** At least one filter is active: no resource matches. */
   filtered: boolean;
   latestProgramId: string | null;
   onClearFilters: () => void;
 }
 
-/** Bibliothèque vide : filtres à effacer, ou lien vers le programme dont viendront les ressources. */
+/** Empty library: filters to clear, or a link to the program the resources will come from. */
 export function LibraryEmpty({ filtered, latestProgramId, onClearFilters }: LibraryEmptyProps) {
   const navigate = useNavigate();
   if (filtered) {

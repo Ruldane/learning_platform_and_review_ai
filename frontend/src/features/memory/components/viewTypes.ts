@@ -1,6 +1,6 @@
 /**
- * Types de vue des composants de l'explorateur de mémoire : miroir structurel des schémas de
- * l'API, mais locaux (les composants présentationnels n'importent jamais `shared/api`).
+ * View types of the memory explorer components: a structural mirror of the schemas of
+ * the API, but local (presentational components never import `shared/api`).
  */
 export type MemoryKindView = "document" | "skill" | "lesson" | "source" | "posting" | "decision";
 export type MasteryLevelView = "declared" | "in_progress" | "validated" | "proven";
@@ -63,7 +63,7 @@ export interface ItemEdit {
   level: "declared" | "in_progress" | null;
 }
 
-/** Modification : seuls les champs changés sont envoyés (un champ absent ne change rien). */
+/** Edit: only the changed fields are sent (a missing field changes nothing). */
 export type ItemPatch = Partial<ItemEdit>;
 
 export interface NewItem extends ItemEdit {

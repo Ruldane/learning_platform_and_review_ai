@@ -1,4 +1,4 @@
-/** Clés TanStack Query de la feature : des noms de lectures, jamais une valeur de jeton. */
+/** TanStack Query keys of the feature: read names, never a token value. */
 export const mcpKeys = {
   settings: ["mcp", "settings"] as const,
   features: ["mcp", "features"] as const,

@@ -9,7 +9,7 @@ interface LessonResourcesProps {
   status: ReturnType<typeof useResourceStatus>;
 }
 
-/** Les ressources du module : « Lue » ou « À lire » se bascule ici. */
+/** The module's resources: « Lue » or « À lire » is toggled here. */
 export function LessonResources({ resources, status }: LessonResourcesProps) {
   return (
     <section aria-labelledby="lesson-resources-title" className="flex flex-col gap-3">

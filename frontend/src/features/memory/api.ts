@@ -3,10 +3,10 @@ import { unwrap } from "@/shared/api/errors";
 import { runSourceHeaders, type RunSource } from "@/shared/lib/runSource";
 import type { ItemPatch, ItemsQuery, MemoryKindView, NewItem, UploadInput } from "./types";
 
-/** Lien direct vers l'export JSON : le navigateur le télécharge, aucun appel de l'application. */
+/** Direct link to the JSON export: the browser downloads it, no app call. */
 export const exportUrl = `${apiBaseUrl}/api/v1/memory/export`;
 
-/** Jour saisi (`2026-11-11`) → instant UTC du début ou de la fin de ce jour, à l'heure locale. */
+/** Entered day (`2026-11-11`) → UTC instant of the start or end of that day, in local time. */
 function dayBound(day: string, end: boolean): string | undefined {
   if (day === "") return undefined;
   const date = new Date(`${day}T${end ? "23:59:59.999" : "00:00:00"}`);
@@ -32,31 +32,31 @@ export async function fetchItems(query: ItemsQuery, signal?: AbortSignal) {
   return unwrap(await api.GET("/memory/items", { params: { query: itemParams(query) }, signal }));
 }
 
-/** `GET /memory/items/{id}` : détail, fragments, voisins et journal. */
+/** `GET /memory/items/{id}`: detail, fragments, neighbours and log. */
 export async function fetchItem(id: string, signal?: AbortSignal) {
   return unwrap(
     await api.GET("/memory/items/{item_id}", { params: { path: { item_id: id } }, signal }),
   );
 }
 
-/** `POST /memory/items` : élément créé à la main. */
+/** `POST /memory/items`: item created by hand. */
 export async function createItem(value: NewItem) {
   return unwrap(await api.POST("/memory/items", { body: value }));
 }
 
-/** `PATCH /memory/items/{id}` : modifier (`ItemPatch`, champs changés seuls) ou confirmer une décision (`status`). */
+/** `PATCH /memory/items/{id}`: edit (`ItemPatch`, changed fields) or confirm a decision. */
 export async function patchItem(id: string, value: ItemPatch | { status: "active" }) {
   return unwrap(
     await api.PATCH("/memory/items/{item_id}", { params: { path: { item_id: id } }, body: value }),
   );
 }
 
-/** `DELETE /memory/items/{id}` : supprimer, ou refuser une décision en attente. */
+/** `DELETE /memory/items/{id}`: delete, or refuse a pending decision. */
 export async function deleteItem(id: string) {
   unwrap(await api.DELETE("/memory/items/{item_id}", { params: { path: { item_id: id } } }));
 }
 
-/** `POST /memory/items/{id}/merge` : fond `otherIds` dans l'élément `id`. */
+/** `POST /memory/items/{id}/merge`: merges `otherIds` into item `id`. */
 export async function mergeItems(id: string, otherIds: string[]) {
   return unwrap(
     await api.POST("/memory/items/{item_id}/merge", {
@@ -66,7 +66,7 @@ export async function mergeItems(id: string, otherIds: string[]) {
   );
 }
 
-/** Nombre de résultats par défaut de `memory_search` (SPEC 4.4). */
+/** Default result count of `memory_search` (SPEC 4.4). */
 export const DEFAULT_K = 8;
 
 /** `POST /memory/search`. */
@@ -88,7 +88,7 @@ export async function fetchStats(signal?: AbortSignal) {
   return unwrap(await api.GET("/memory/stats", { signal }));
 }
 
-/** `POST /memory/reindex` (202) : met la réindexation en file et renvoie son état. */
+/** `POST /memory/reindex` (202): queues the reindex and returns its state. */
 export async function postReindex() {
   return unwrap(await api.POST("/memory/reindex"));
 }
@@ -99,9 +99,9 @@ export async function fetchDocuments(signal?: AbortSignal) {
 }
 
 /**
- * Import d'un document. Fichier et lien : `POST /documents` en multipart (`FormData`, le
- * navigateur pose le `Content-Type` et sa frontière). Texte collé : `POST /documents/text` en
- * JSON (500 000 caractères au plus, `paste_too_long` sinon).
+ * Document import. File and link: `POST /documents` as multipart (`FormData`, the
+ * browser sets the `Content-Type` and its boundary). Pasted text: `POST /documents/text` as
+ * JSON (500,000 characters at most, `paste_too_long` otherwise).
  */
 export async function uploadDocument(input: UploadInput) {
   if (input.kind === "text") {
@@ -118,7 +118,7 @@ export async function uploadDocument(input: UploadInput) {
   return unwrap(await api.POST("/documents", { body: {}, bodySerializer: () => form }));
 }
 
-/** `POST /documents/{id}/learned` (202) : lance l'Archiviste, renvoie l'identifiant de session. */
+/** `POST /documents/{id}/learned` (202): starts the Archivist and returns the session id. */
 export async function markLearned(documentId: string, source?: RunSource) {
   return unwrap(
     await api.POST("/documents/{document_id}/learned", {
@@ -129,9 +129,9 @@ export async function markLearned(documentId: string, source?: RunSource) {
 }
 
 /**
- * `GET /sessions?graph=learned_document&status=running` : les parcours de l'Archiviste encore en
- * cours, repris après un rechargement. Seules comptent les sessions dont l'objet suivi est un
- * document (`subject_type` « document », `subject_id` non nul).
+ * `GET /sessions?graph=learned_document&status=running`: the Archivist's runs still
+ * in progress, resumed after a reload. Only sessions whose tracked object is a
+ * document (`subject_type` « document », `subject_id` non-null).
  */
 export async function fetchRunningLearnings(
   signal?: AbortSignal,

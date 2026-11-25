@@ -4,12 +4,12 @@ import { TokenRow } from "./TokenRow";
 
 interface TokenListProps {
   tokens: TokenView[];
-  /** Jetons dont la révocation est en cours. */
+  /** Tokens whose revocation is in progress. */
   busyIds: readonly string[];
   onRevoke: (tokenId: string) => void;
 }
 
-/** Les jetons, sans jamais leur valeur ; ceux qui ne servent plus restent visibles, étiquetés. */
+/** The tokens, never their value; those no longer in use stay visible, labelled. */
 export function TokenList({ tokens, busyIds, onRevoke }: TokenListProps) {
   if (tokens.length === 0) {
     return <p className="text-muted-foreground">{t("mcp.tokens.empty")}</p>;

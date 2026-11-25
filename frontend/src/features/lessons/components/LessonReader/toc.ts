@@ -1,14 +1,14 @@
 export interface TocHeading {
-  /** 2 ou 3 : les titres de section et de sous-section. */
+  /** 2 or 3: the section and subsection headings. */
   level: 2 | 3;
   text: string;
-  /** Ancre unique dans la leçon. */
+  /** Unique anchor in the lesson. */
   id: string;
-  /** Ligne du titre dans le Markdown (à partir de 1) : relie le sommaire au rendu. */
+  /** Line of the heading in the Markdown (from 1): links the contents to the rendering. */
   line: number;
 }
 
-/** Ancre d'un titre : minuscules, sans accents, tirets entre les mots. */
+/** Anchor of a heading: lowercase, no accents, dashes between words. */
 export function slugify(text: string): string {
   const slug = text
     .normalize("NFD")
@@ -29,7 +29,7 @@ function plainText(markdown: string): string {
 const HEADING = /^(#{2,3})[ \t]+(.*?)(?:[ \t]+#+)?[ \t]*$/;
 const FENCE = /^ {0,3}(```|~~~)/;
 
-/** Titres de niveau 2 et 3 d'un Markdown, hors blocs de code, avec des ancres uniques. */
+/** Level 2 and 3 headings of a Markdown, outside code blocks, with unique anchors. */
 export function extractHeadings(markdown: string): TocHeading[] {
   const seen = new Map<string, number>();
   const headings: TocHeading[] = [];

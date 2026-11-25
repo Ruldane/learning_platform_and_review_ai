@@ -11,11 +11,11 @@ interface TaskFieldProps {
   label: string;
   hint?: string;
   error: string | undefined;
-  /** Rend le champ de saisie : il reçoit son `id` et ses attributs d'accessibilité. */
+  /** Renders the input field: it receives its `id` and its accessibility attributes. */
   children: (props: ControlProps) => ReactNode;
 }
 
-/** Étiquette, champ, aide et message d'erreur en ligne d'un champ du formulaire d'ajout. */
+/** Label, field, help and inline error message of a field in the add form. */
 export function TaskField({ label, hint, error, children }: TaskFieldProps) {
   const id = useId();
   const hintId = useId();

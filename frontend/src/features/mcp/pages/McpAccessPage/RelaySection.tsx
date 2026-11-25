@@ -15,7 +15,7 @@ export function RelaySection({ enabled }: { enabled: boolean }) {
 
   function revoke() {
     if (action.isPending) return;
-    // Le bouton disparaît à la révocation, le titre garde le focus.
+    // The button disappears on revocation; the title keeps focus.
     action.mutate("revoke", { onSuccess: () => heading.current?.focus() });
   }
 

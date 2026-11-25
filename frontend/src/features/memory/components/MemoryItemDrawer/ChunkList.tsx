@@ -1,7 +1,7 @@
 import { t } from "@/shared/i18n/t";
 import type { MemoryItemDetailView } from "../viewTypes";
 
-/** Fragments indexés d'un élément (rien à afficher tant qu'il n'est pas indexé). */
+/** An item's indexed fragments (nothing to show until it is indexed). */
 export function ChunkList({ chunks }: { chunks: MemoryItemDetailView["chunks"] }) {
   if (chunks.length === 0) return null;
   return (

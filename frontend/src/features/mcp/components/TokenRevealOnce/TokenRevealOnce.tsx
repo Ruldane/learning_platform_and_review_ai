@@ -5,16 +5,16 @@ import { Button } from "@/shared/ui/button";
 import { CopyButton } from "../CopyButton";
 import type { RevealedToken } from "../viewTypes";
 
-/** L'adresse locale du serveur MCP (réseau local seulement : l'accès distant viendra plus tard). */
+/** The local address of the MCP server (local network only: remote access will come later). */
 const MCP_URL = "http://127.0.0.1:8000/mcp";
 
-/** La ligne à coller dans un terminal pour brancher Claude Code sur Tremplin. */
+/** The line to paste in a terminal to connect Claude Code to Tremplin. */
 export function addCommand(token: string): string {
   return `claude mcp add --transport http tremplin ${MCP_URL} --header "Authorization: Bearer ${token}"`;
 }
 
-/** Les lignes pour Codex : le jeton dans `TREMPLIN_MCP_TOKEN` (lue aussi par le relais), puis le
- * serveur déclaré avec cette variable (le jeton n'est pas écrit dans la configuration). */
+/** The lines for Codex: the token in `TREMPLIN_MCP_TOKEN` (also read by the relay), then the
+ * server declared with this variable (the token is not written into the configuration). */
 export function codexCommand(token: string): string {
   return [
     `setx TREMPLIN_MCP_TOKEN "${token}"`,
@@ -28,9 +28,9 @@ interface TokenRevealOnceProps {
 }
 
 /**
- * Le jeton, montré une seule fois, avec la commande toute prête. Il n'existe que dans cet
- * affichage : fermé, il est perdu, et la liste des jetons ne le rend jamais. Le titre prend le
- * focus à l'apparition (le bouton du formulaire ne change pas, rien n'annoncerait le jeton sinon).
+ * The token, shown only once, with the ready command. It exists only in this display:
+ * closed, it is lost, and the token list never shows it. The title takes focus on appearance
+ * (the form button does not change, nothing would announce the token otherwise).
  */
 export function TokenRevealOnce({ token, onDone }: TokenRevealOnceProps) {
   const headingId = useId();

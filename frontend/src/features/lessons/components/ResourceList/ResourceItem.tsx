@@ -31,7 +31,7 @@ function facts(resource: ResourceView): string[] {
   ].filter((fact): fact is string => fact !== null && fact !== "");
 }
 
-/** Une ressource : titre, type, langue, durée, niveau, auteur, date, raison, copie locale et statut. */
+/** A resource: title, type, language, duration, level, author, date, reason, copy and status. */
 export function ResourceItem({ resource, onToggleStatus }: ResourceItemProps) {
   const read = resource.status === "read";
   return (

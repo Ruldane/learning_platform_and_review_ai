@@ -8,15 +8,15 @@ import { useItemMutations } from "../../hooks/useItemMutations";
 import { useMemoryItem } from "../../hooks/useMemoryItem";
 
 interface ItemPanelProps {
-  /** Élément ouvert (`?item=`) ; `null` : aucun. */
+  /** Open item (`?item=`); `null`: none. */
   itemId: string | null;
-  /** Tiroir en création (bouton « Ajouter »). */
+  /** Drawer in creation (« Ajouter » button). */
   creating: boolean;
   onClose: () => void;
   onOpenItem: (id: string) => void;
 }
 
-/** Tiroir de détail, de modification et de création ; chargement et échec du détail en place. */
+/** Detail, edit and create drawer; loading and detail failure in place. */
 export function ItemPanel({ itemId, creating, onClose, onOpenItem }: ItemPanelProps) {
   const detail = useMemoryItem(creating ? null : itemId);
   const { create, update, remove } = useItemMutations();

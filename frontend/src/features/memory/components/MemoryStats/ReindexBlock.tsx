@@ -9,7 +9,7 @@ interface ReindexBlockProps {
   onReindex: () => void;
 }
 
-/** Bouton Réindexer, avancement de la réindexation en cours et son échec éventuel. */
+/** Reindex button, progress of the reindex in progress and its possible failure. */
 export function ReindexBlock({ reindex, pending, onReindex }: ReindexBlockProps) {
   const active = reindex.status === "queued" || reindex.status === "running";
   return (

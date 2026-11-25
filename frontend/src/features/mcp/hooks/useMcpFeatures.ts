@@ -5,7 +5,7 @@ import type { FeatureOption } from "../components/viewTypes";
 import { mcpKeys } from "../queryKeys";
 import { toFeatureOption } from "../toView";
 
-/** Les features qui déclarent des outils MCP (`GET /mcp/features`), à cocher pour un jeton. */
+/** The features that declare MCP tools (`GET /mcp/features`), to tick for a token. */
 export function useMcpFeatures() {
   const query = useQuery({
     queryKey: mcpKeys.features,

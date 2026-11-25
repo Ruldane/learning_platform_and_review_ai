@@ -8,7 +8,7 @@ interface TextTabProps {
   onSubmitText: (title: string, text: string) => void;
 }
 
-/** Import d'un texte collé : titre facultatif, texte requis. */
+/** Import of pasted text: optional title, required text. */
 export function TextTab({ busy, onSubmitText }: TextTabProps) {
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");

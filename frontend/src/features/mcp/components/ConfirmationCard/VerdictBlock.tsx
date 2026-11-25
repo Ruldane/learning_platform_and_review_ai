@@ -3,8 +3,8 @@ import { t } from "@/shared/i18n/t";
 import type { VerdictView } from "../viewTypes";
 
 /**
- * Le verdict du contrôle d'honnêteté, en toutes lettres (jamais la seule couleur). Sans contrôle,
- * la carte le dit : l'absence de verdict n'est pas un « tout va bien ».
+ * The honesty check verdict, spelled out (never colour alone). Without a check,
+ * the card says so: no verdict is not an "all good".
  */
 export function VerdictBlock({ verdict }: { verdict: VerdictView | null }) {
   if (!verdict) {

@@ -8,7 +8,7 @@ interface FilterSelectProps {
   onChange: (value: string | null) => void;
 }
 
-/** Une liste déroulante de filtre, avec « Tous » en première option. */
+/** A filter dropdown, with « Tous » as the first option. */
 export function FilterSelect({ label, value, allLabel, options, onChange }: FilterSelectProps) {
   return (
     <label className="flex min-w-40 flex-1 flex-col gap-1 text-sm font-medium">

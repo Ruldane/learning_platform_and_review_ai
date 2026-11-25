@@ -9,9 +9,9 @@ import { useCreateToken } from "../../hooks/useCreateToken";
 import { useMcpFeatures } from "../../hooks/useMcpFeatures";
 
 /**
- * Le formulaire de création et, juste après, le jeton montré une seule fois. La valeur reste dans
- * la mutation, en mémoire : « J'ai copié le jeton » l'oublie, un rechargement aussi. Le formulaire
- * repart vide après chaque création (nouvelle `key`).
+ * The creation form and, right after, the token shown only once. The value stays in
+ * the mutation, in memory: « J'ai copié le jeton » forgets it, and so does a reload. The form
+ * starts empty after each creation (new `key`).
  */
 export function TokenCreator({ onClosed }: { onClosed: () => void }) {
   const { query, options } = useMcpFeatures();
@@ -27,7 +27,7 @@ export function TokenCreator({ onClosed }: { onClosed: () => void }) {
       });
       setFormKey((key) => key + 1);
     } catch {
-      // L'erreur est affichée sous le formulaire (`create.error`), la saisie reste.
+      // The error is shown under the form (`create.error`); the input stays.
     }
   }
   function done() {

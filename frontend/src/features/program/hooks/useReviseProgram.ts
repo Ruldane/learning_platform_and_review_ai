@@ -13,9 +13,9 @@ interface Revision {
 }
 
 /**
- * « Demander une révision » : reprise du point d'arrêt de validation avec
- * `{ action: "revise", note }` (`POST /sessions/{id}/resume`). Le Stratège écrit une nouvelle
- * version ; la page suit la session (`useProgramSession`) puis relit le programme.
+ * « Request a revision »: resumes from the validation stop point with
+ * `{ action: "revise", note }` (`POST /sessions/{id}/resume`). The Strategist writes a new
+ * version; the page follows the session (`useProgramSession`), then re-reads the program.
  */
 export function useReviseProgram(programId: string) {
   const client = useQueryClient();
@@ -26,7 +26,7 @@ export function useReviseProgram(programId: string) {
       postResume(sessionId, interruptId, { action: "revise", note }),
   });
 
-  /** `true` si la demande est partie. */
+  /** `true` if the request was sent. */
   const revise = useCallback(
     async (revision: Revision): Promise<boolean> => {
       setNotice(null);

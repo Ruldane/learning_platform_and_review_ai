@@ -6,13 +6,13 @@ import type { MemoryItemRow } from "../viewTypes";
 
 interface PendingDecisionsProps {
   items: MemoryItemRow[];
-  /** Décision dont la confirmation ou le refus est en cours : ses boutons sont verrouillés. */
+  /** Decision whose confirmation or refusal is in progress: its buttons are locked. */
   busyId: string | null;
   onConfirm: (id: string) => void;
   onReject: (id: string) => void;
 }
 
-/** Boîte « À confirmer » : les décisions proposées par les agents, jamais écrites sans accord (SPEC 4.5). */
+/** « À confirmer » box: agent-proposed decisions, never saved without agreement (SPEC 4.5). */
 export function PendingDecisions({ items, busyId, onConfirm, onReject }: PendingDecisionsProps) {
   const headingId = useId();
   return (

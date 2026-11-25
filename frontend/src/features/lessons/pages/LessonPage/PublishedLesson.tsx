@@ -28,7 +28,7 @@ export function PublishedLesson({
   const openButton = useRef<HTMLButtonElement>(null);
   const close = () => {
     setDiscussion(null);
-    // Le clic dans le panneau peut faire disparaître la sélection et son bouton.
+    // Clicking in the panel may remove the selection and its button.
     openButton.current?.focus({ preventScroll: true });
   };
   return (

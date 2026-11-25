@@ -6,12 +6,12 @@ import type { DocumentOut } from "../types";
 
 const POLL_MS = 2000;
 
-/** Un document attend ou est en cours d'indexation : l'écran interroge le serveur toutes les 2 s. */
+/** A document is waiting or being indexed: the screen polls the server every 2 s. */
 export function hasDocumentInFlight(documents: Pick<DocumentOut, "status">[] | undefined): boolean {
   return (documents ?? []).some((d) => d.status === "queued" || d.status === "processing");
 }
 
-/** Documents importés (`GET /documents`), relus toutes les 2 s tant que l'un est en file ou en cours. */
+/** Imported documents (`GET /documents`), re-read every 2 s while one is queued or in progress. */
 export function useDocuments() {
   return useQuery({
     queryKey: memoryKeys.documents,

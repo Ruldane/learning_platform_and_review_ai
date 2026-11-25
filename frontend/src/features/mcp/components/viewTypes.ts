@@ -2,7 +2,7 @@ export type TokenStatus = "active" | "expired" | "revoked";
 export type TokenMode = "read" | "write";
 export type ExpiryDays = 1 | 7 | 30 | 90;
 export type ToolLevel = 1 | 2 | 3;
-/** Un appel du journal ; 0 : refusé avant même de trouver l'outil. */
+/** A log call; 0: refused before even finding the tool. */
 export type CallLevel = 0 | ToolLevel;
 
 export const EXPIRY_CHOICES: readonly ExpiryDays[] = [1, 7, 30, 90];
@@ -10,7 +10,7 @@ export const EXPIRY_CHOICES: readonly ExpiryDays[] = [1, 7, 30, 90];
 export interface TokenView {
   id: string;
   label: string;
-  /** Les features ouvertes, en français (un nom inconnu reste brut). */
+  /** The open features, in French (an unknown name stays raw). */
   features: string[];
   mode: TokenMode;
   status: TokenStatus;
@@ -19,7 +19,7 @@ export interface TokenView {
   lastUsedAt: string | null;
 }
 
-/** Ce que la création renvoie, et qu'on ne montre qu'une fois. */
+/** What creation returns, shown only once. */
 export interface RevealedToken {
   token: string;
   label: string;
@@ -33,7 +33,7 @@ export interface FeatureOption {
   confirm: number;
 }
 
-/** Ce que le formulaire envoie. */
+/** What the form sends. */
 export interface TokenDraft {
   label: string;
   features: string[];
@@ -43,24 +43,24 @@ export interface TokenDraft {
 
 export type ConfirmationState = "pending" | "confirmed" | "refused" | "expired" | "failed";
 
-/** Le verdict du contrôle préalable ; `ok` n'est vrai que si le contrôle l'a dit en toutes lettres. */
+/** The pre-check verdict; `ok` is true only if the check said so in full. */
 export interface VerdictView {
   ok: boolean;
   reasons: string[];
   summary: string | null;
 }
 
-/** Un champ de la requête à confirmer ; `value` nul : la valeur n'est pas montrée (aperçu coupé). */
+/** A field of the request to confirm; `value` null: the value is not shown (cut preview). */
 export interface RequestFieldView {
   name: string;
   value: string | null;
 }
 
-/** La requête qui partira à la confirmation, lue en entier. Les textes sont affichés comme texte. */
+/** The request that will run on confirmation, read in full. Texts are shown as text. */
 export interface RequestView {
   method: string;
   route: string;
-  /** Libellé de la cible ; un texte venu du web y est entouré de `<donnee_non_fiable>`. */
+  /** Label of the target; a text from the web is wrapped in `<donnee_non_fiable>`. */
   targetLabel: string | null;
   fields: RequestFieldView[];
   truncated: boolean;
@@ -71,7 +71,7 @@ export interface ConfirmationView {
   summary: string;
   action: string;
   tokenLabel: string | null;
-  /** `expired` aussi quand l'échéance est passée sans que le serveur l'ait encore noté. */
+  /** `expired` also when the deadline has passed without the server having noted it yet. */
   state: ConfirmationState;
   expiresAt: string;
   decidedAt: string | null;
@@ -83,7 +83,7 @@ export interface CallView {
   id: string;
   at: string;
   action: string;
-  /** Le nom du jeton ; `null` : le jeton présenté n'existe pas. */
+  /** The token name; `null`: the presented token does not exist. */
   tokenLabel: string | null;
   level: CallLevel;
   code: number;
@@ -106,8 +106,8 @@ export interface ActionView {
   kind: "route" | "graph";
   level: ToolLevel;
   summary: string | null;
-  /** Touche autre chose que la base : toujours à confirmer. */
+  /** Touches something other than the database: always to confirm. */
   external: boolean;
-  /** Une partie de la réponse vient du web : rendue comme donnée. */
+  /** Part of the answer comes from the web: rendered as data. */
   untrusted: boolean;
 }

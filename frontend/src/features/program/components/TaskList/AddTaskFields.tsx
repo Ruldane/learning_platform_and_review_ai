@@ -13,7 +13,7 @@ interface AddTaskFieldsProps {
   onChange: (patch: Partial<TaskDraft>) => void;
 }
 
-/** Les cinq champs du formulaire d'ajout : titre, type, durée, jour et critère de fin. */
+/** The five fields of the add form: title, type, duration, day and end criterion. */
 export function AddTaskFields({ draft, errors, weeks, disabled, onChange }: AddTaskFieldsProps) {
   return (
     <div className="grid gap-3 sm:grid-cols-2">

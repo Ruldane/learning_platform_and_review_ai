@@ -8,7 +8,7 @@ import type {
   SearchHitView,
 } from "./viewTypes";
 
-/** Données de test des composants de l'explorateur (jamais importées par le code de production). */
+/** Test data for the explorer components (never imported by production code). */
 export const NO_FILTERS: ItemFilterValue = { kind: "", tag: "", author: "", since: "", until: "" };
 
 export function row(overrides: Partial<MemoryItemRow> = {}): MemoryItemRow {

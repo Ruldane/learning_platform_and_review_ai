@@ -1,9 +1,9 @@
 import { useEffect, useRef } from "react";
 
 /**
- * Après un déplacement par le menu, la carte change de colonne (nouveau nœud) et le focus serait
- * perdu : on le rend au bouton « Déplacer » de la carte dès qu'elle s'affiche dans son nouveau jour.
- * `moved(taskId)` se déclare avant d'envoyer le déplacement ; `version` change avec la semaine.
+ * After a move from the menu, the card changes column (new node) and focus would be
+ * lost: we return it to the card's « Déplacer » button as soon as it shows on its new day.
+ * `moved(taskId)` is declared before sending the move; `version` changes with the week.
  */
 export function useFocusAfterMove(version: unknown) {
   const gridRef = useRef<HTMLDivElement>(null);

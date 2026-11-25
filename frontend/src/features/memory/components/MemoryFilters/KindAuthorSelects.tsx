@@ -12,7 +12,7 @@ interface KindAuthorSelectsProps {
 
 const labelClass = "flex flex-col gap-1 text-sm font-medium";
 
-/** Listes déroulantes du type et de l'auteur. */
+/** Dropdowns for the type and the author. */
 export function KindAuthorSelects({ value, authors, onChange }: KindAuthorSelectsProps) {
   const set = onChange;
   return (

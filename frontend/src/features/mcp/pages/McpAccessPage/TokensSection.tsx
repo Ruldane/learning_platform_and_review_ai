@@ -11,8 +11,8 @@ import { useTokens } from "../../hooks/useTokens";
 import { TokenCreator } from "./TokenCreator";
 
 /**
- * Les jetons : la liste (jamais leur valeur), la révocation, et, tant que l'accès est allumé, la
- * création. Après une révocation ou la fermeture du jeton montré, le focus revient au titre.
+ * Tokens: the list (never their value), revocation and, while access is on, the
+ * creation. After a revocation or closing the shown token, focus goes back to the title.
  */
 export function TokensSection({ enabled }: { enabled: boolean }) {
   const headingRef = useRef<HTMLHeadingElement>(null);

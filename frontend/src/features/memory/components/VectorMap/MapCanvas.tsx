@@ -11,7 +11,7 @@ interface MapCanvasProps {
   onOpen: (itemId: string) => void;
 }
 
-/** Commandes de zoom et surface SVG de la carte (la fenêtre vit ici, tant qu'il y a des points). */
+/** Zoom controls and the SVG surface of the map (the window lives here, while there are points). */
 export function MapCanvas({ points, onOpen }: MapCanvasProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const map = useMapView(svgRef);
