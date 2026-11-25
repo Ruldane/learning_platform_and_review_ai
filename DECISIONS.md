@@ -10715,383 +10715,1911 @@ pagination by `before = next_before`, 50 entries per page.
 
 ## D188
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 9, tâche 9.C3 : écrans « Coûts » et « Journal des agents » (P15, P16, P22)
-- **Décision** :
-  1. **Routes et navigation** : feature `costs/` (une ligne de plus dans `FEATURES`, après `settings`). `/reglages/couts` (« Coûts », ordre 6) et `/reglages/journal` (« Journal des agents », ordre 7) dans la section Réglages (15.1) ; l'ordre 5 reste libre (style, 9.C4).
-  2. **Fenêtre** : 7, 30 ou 90 jours (défaut 30), trois boutons `aria-pressed` dans un groupe « Période ». Une clé de lecture par fenêtre, aucune donnée gardée d'une fenêtre à l'autre (pas de chiffres d'une autre période sous un titre qui dit la nouvelle) ; le sélecteur et le titre restent montés pendant la lecture, donc le focus reste sur le bouton choisi. Fenêtre sans appel (`total.calls == 0`) : état vide « Aucun appel sur les N derniers jours », sans graphique ni tableau.
-  3. **Total** : appels, jetons entrants et sortants, coût (« 0,42 $ » ; trois décimales sous le centime pour ne jamais écrire « 0,00 $ » pour un coût non nul, comme `CostBadge`) ; « dont 3 estimés » (« dont 1 estimé ») sous le nombre d'appels, seulement s'il y en a.
-  4. **Graphique** : barres Recharts du coût par jour (aucune dépendance nouvelle), non animées. Le dessin est une image nommée (« Coût par jour, du … au … : X $ au total ») ; le **tableau équivalent** (jour, appels, jetons, coût, estimés, un jour par ligne, jours à zéro compris) est dans la page, masqué à l'œil (`sr-only`) et lu à la place du dessin.
-  5. **Répartitions** : trois tableaux (feature, agent, modèle) à colonnes communes (appels, jetons entrants, sortants, coût, estimés). Libellés : graphe connu en français (`messages/costs.ts` reprend `GRAPHS`), clé vide « Hors session », **graphe inconnu : nom brut** ; agent par `agentIdentity` (inconnu : son nom brut, gris), clé vide « Sans agent » ; modèle tel que rendu (`fournisseur:modèle`). Un test de `registry.test.ts` vérifie que chaque écran de parcours cité plus bas existe dans `FEATURES`.
-  6. **Journal** : tableau daté (instant à l'heure du poste, agent, parcours, modèle, jetons entrants et sortants, durée « 340 ms » / « 1,8 s », coût, balise « estimé »), 50 appels par page (`limit=50`), « Voir plus » par `next_before` (`useInfiniteQuery`, curseur jamais interprété). Filtres agent et parcours (listes natives, « Tous » en tête) dans la clé de lecture : **en changer repart de la première page sans `before`** ; les filtres restent montés pendant la lecture (focus gardé). Le nombre d'appels affichés est annoncé (`role="status"`) ; le bouton « Voir plus » passe en `aria-disabled` pendant la lecture (jamais `disabled`) ; à la dernière page atteinte par un clic, le focus passe à la phrase de fin (le bouton disparaît), jamais au simple chargement.
-  7. **Lien vers la session (écart au brief, à relire)** : **aucune page du front n'ouvre une session d'agent par son identifiant** (les écrans prennent l'identifiant de leur objet : objectif, programme, relevé…, jamais celui de la session). Un appel avec session montre donc la **référence courte** (8 premiers caractères, identifiant complet en infobulle) et, quand le parcours a un écran connu, un lien « Voir l'écran » (nom accessible « Voir l'écran : <parcours> ») vers la page de la feature (`GRAPH_SCREENS`, adresses de navigation seulement, aucun import d'une autre feature). Parcours inconnu ou sans écran : référence seule.
-  8. **Découpage** : `components/` présentationnel (`CostTotalsCard`, `CostByDayChart`, `CostTable`, `WindowPicker`, `AgentCallList`, `CallFilters`, chacun son dossier, un composant par fichier), `toView.ts` et les hooks `useCosts` / `useAgentCalls` à la racine.
-- **Raison** : P15, P16, P22 ; SPEC 11.5 et 15.1 ; le coût ne doit jamais s'écrire « 0,00 $ » quand il n'est pas nul ; un graphique seul n'est pas accessible (tableau équivalent) ; un nom inconnu (parcours ou agent ajouté demain) reste lisible sans changer le front ; le focus ne doit jamais tomber sur `body` après un filtre, un changement de fenêtre ou la fin du journal.
+- **Date** 2026-11-17
+- **Subject** Phase 9, task 9.C3: “Costs” and “Agent log” screens (P15, P16, P22)
+- **Decision**
+  1. **Routes and navigation**: `costs/` feature (one more line in `FEATURES`, after `settings`).
+     `/reglages/couts` (“Costs”, order 6) and `/reglages/journal` (“Agent log”, order 7) in
+     the Settings section (15.1); order 5 stays free (style, 9.C4).
+  2. **Window**: 7, 30, or 90 days (default 30), three `aria-pressed` buttons in a “Period”
+     group. One read key per window, no data kept from one window to another (no figures from
+     another period under a title that says the new one); the selector and the title stay mounted
+     during the read, so focus stays on the chosen button. Window with no call (`total.calls == 0`):
+     empty state “No calls in the last N days”, with no chart or table.
+  3. **Total**: calls, input and output tokens, cost (“$0.42”; three decimals below one cent so
+     as never to write “$0.00” for a non-zero cost, like `CostBadge`); “including 3
+     estimated” (“including 1 estimated”) under the number of calls, only if there are any.
+  4. **Chart**: Recharts bars of the cost per day (no new dependency), not animated. The drawing is
+     a named image (“Cost per day, from … to …: $X in total”); the **equivalent table**
+     (day, calls, tokens, cost, estimated, one day per row, zero days included) is in the page,
+     hidden to the eye (`sr-only`) and read in place of the drawing.
+  5. **Breakdowns**: three tables (feature, agent, model) with common columns (calls, input tokens,
+     output, cost, estimated). Labels: known graph in French (`messages/costs.ts` takes up
+     `GRAPHS`), empty key “No session”, **unknown graph: raw name**; agent through
+     `agentIdentity` (unknown: its raw name, grey), empty key “No agent”; model as returned
+     (`provider:model`). A test in `registry.test.ts` checks that each flow screen cited below
+     exists in `FEATURES`.
+  6. **Log**: dated table (instant at the machine's time, agent, flow, model, input and output
+     tokens, duration “340 ms” / “1.8 s”, cost, “estimated” tag), 50 calls per page
+     (`limit=50`), “Show more” through `next_before` (`useInfiniteQuery`, cursor never
+     interpreted). Agent and flow filters (native lists, “All” first) in the read key:
+     **changing one restarts from the first page without `before`**; the filters stay mounted during
+     the read (focus kept). The number of calls shown is announced (`role="status"`); the “Show
+     more” button goes `aria-disabled` during the read (never `disabled`); at the last page
+     reached by a click, focus goes to the closing sentence (the button disappears), never on simple
+     loading.
+  7. **Link to the session (deviation from the brief, to be reread)**: **no front-end page opens an
+     agent session by its identifier** (the screens take the identifier of their object: goal,
+     program, scan…, never the session's). A call with a session therefore shows the **short
+     reference** (first 8 characters, full identifier in a tooltip) and, when the flow has a known
+     screen, a “See the screen” link (accessible name “See the screen: <flow>”) to the
+     feature's page (`GRAPH_SCREENS`, navigation addresses only, no import of another feature).
+     Unknown flow or one with no screen: reference only.
+  8. **Split**: presentational `components/` (`CostTotalsCard`, `CostByDayChart`, `CostTable`,
+     `WindowPicker`, `AgentCallList`, `CallFilters`, each its own folder, one component per file),
+     `toView.ts` and the hooks `useCosts` / `useAgentCalls` at the root.
+- **Reason** P15, P16, P22; SPEC 11.5 and 15.1; the cost must never be written “$0.00” when it
+  is not zero; a chart alone is not accessible (equivalent table); an unknown name (flow or agent
+  added tomorrow) stays readable without changing the front end; focus must never fall on `body`
+  after a filter, a window change, or the end of the log.
 
 ## D189
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 9, tâche 9.C4 : disponibilité et rythme, style, surcharge du modèle par agent (P17, P20, P22) ; suites de la revue de 9.C3
-- **Décision** :
-  1. **Routes et navigation** : `/reglages/disponibilite` (« Disponibilité et rythme », ordre 3) et `/reglages/style` (« Style », ordre 5) dans la section Réglages (15.1) ; les ordres 4 (étude) et 6 à 7 (coûts, journal) restent ceux de D188. La surcharge par agent est une section « Mode avancé » de Modèles et clés (SPEC 11.2), pas une page.
-  2. **Un `PUT /settings` ne perd rien (focus n° 5)** : `buildUserSettings` recopie `onboarding_done` et `agent_overrides` (champ par champ, jamais `...settings`), et **tout** constructeur de corps (`withSearchSettings`, `withStudySettings`, `withAvailabilitySettings`, `withStyleGuide`, `withAgentOverride`) passe par lui. Le front ne force jamais `onboarding_done` : il le renvoie tel que lu, et le back ne le remet jamais à faux. Tests : `buildUserSettings keeps onboarding_done and agent_overrides` (et les quatre autres constructeurs).
-  3. **Disponibilité** : minutes en semaine, bloc du week-end (minimum et maximum, de 0 à 1 440, le minimum ne dépasse pas le maximum), heure du brief, délais de relance (trois jours **strictement croissants**, de 1 à 90), tours de débat (1 à 5), plafond par session (au moins 10 000 jetons), langue des leçons (les six langues de la recherche ; une langue enregistrée hors liste reste proposée, jamais perdue). Les nombres restent du texte pendant la saisie ; rien ne part tant qu'un champ est hors bornes (bouton bloqué, champ `aria-invalid`, bornes dites sous le champ en rouge). **Budget hebdomadaire** calculé en direct comme le back (cinq jours de semaine plus le bloc de week-end le plus long, « 14 h »), jamais envoyé (`weekly_budget_minutes` est en lecture seule) ; « corrige les durées ci-dessus » tant qu'une durée est invalide.
-  4. **422 sans écho** : la 422 d'un `PUT /settings` nomme des champs (`details.fields`, chemins comme `availability.weekday_minutes`). `refusedFields` ne lit que ces chemins (chaînes, statut 422) ; le champ concerné passe en `aria-invalid` avec « Le serveur a refusé cette valeur : vérifie-la. », **jamais la valeur** (ni dans l'indication, ni dans le message). Le refus disparaît dès qu'on modifie le formulaire (`reset`) ; la saisie reste en cas d'échec. Une 422 qui nomme `agent_overrides` (agent inconnu, P17) montre « Un des agents choisis n'existe plus : recharge la page, puis réessaie. » ; ce qui s'affiche reste ce que le back a enregistré (le choix refusé ne s'affiche pas).
-  5. **Style** : un texte libre (`textarea`) et un compteur de caractères (comptés par point de code, « 1 caractère » au singulier) ; aucun plafond (le contrat n'en a pas). Enregistrement par bouton, comme l'étude.
-  6. **Surcharge par agent** : « Mode avancé » replié par défaut (bouton `aria-expanded`) ; le contenu n'est monté, donc `GET /settings/agents` n'est lu, qu'à l'ouverture. Un tableau, un agent par ligne **dans l'ordre du serveur** (celui de `AGENTS`, hors `demo_*`) : nom et rôle (`agentIdentity`), niveau et modèle de ce niveau (« anthropic : claude-haiku-5-5 »), puis un fournisseur dont le premier choix est « Niveau par défaut (Standard) » (la valeur vide), puis `ModelField`. Un choix écrit au clic (premier modèle de la liste du fournisseur) ; un fournisseur sans liste attend le modèle saisi (aucun `PUT` avant, comme les niveaux) ; « Niveau par défaut » retire **cette seule** surcharge (`withAgentOverride(…, null)`) et ne fait aucun `PUT` si l'agent suit déjà son niveau. Un seul `PUT` complet à la fois, sans jamais jeter un choix (voir n° 9 : le dernier choix de chaque agent est rejoué à la fin de l'envoi) ; les listes ne sont **pas** désactivées pendant l'envoi (un champ désactivé perd le focus), le tableau passe en `aria-busy`. Une surcharge d'un agent que le serveur ne liste plus reste une ligne « Agent inconnu » (nom brut, sans niveau) qui ne propose que de la retirer : sans elle, le `PUT` serait refusé pour toujours (P17) sans moyen de la défaire.
-  7. **Découpage** : `components/` présentationnel (un dossier chacun) : `NumberField`, `AvailabilityFields`, `DelaysField`, `StyleGuideEditor`, `AgentModelChoice`, `AgentOverridesTable` (sous-pièces `AgentLine`, `AgentName`), `AdvancedSection`, `SaveBar` ; `ProviderSelect` gagne `emptyLabel` (premier choix « aucun », facultatif, sans effet sur ses usages). La logique pure est à la racine de la feature (`availabilitySettings.ts`, `refusedFields.ts`, `userSettings.ts`), l'état du formulaire dans un hook (`useAvailabilityForm`). Le bouton « Enregistrer » (`SaveBar`) se bloque par `aria-disabled`, jamais `disabled` : le focus reste sur lui une fois l'enregistrement fini (le formulaire ignore l'envoi bloqué). Faux serveur de test `test/settingsApi.ts` (réglages en mémoire, une écriture se relit).
-  8. **Suites de la revue de 9.C3** (commit `fix(phase-9): suites de la revue des coûts (9.C3)`) : (a) I1 : un coût non nul sous 0,001 $ s'écrit « < 0,001 $ », jamais « 0,000 $ » ; espace insécable avant « $ ». (b) I2 : `gcTime: 0` sur la requête du journal (revenir à un filtre déjà vu repart de la première page, le focus reste sur le filtre) ; le test tourne avec le `gcTime` par défaut. (c) M1 : la zone `status` de « Régénérer les brouillons » reste dans l'arbre d'accessibilité (`empty:sr-only`, plus de `display: none`). (d) M3 : l'année s'écrit dans les dates du journal quand elle diffère de l'année en cours ; « Aucune session » (lecture d'écran) dans la cellule d'un appel sans session. (e) M4 : les zones de défilement des tableaux ont `role="region"`, un nom et `tabIndex=0`. Laissé de côté : M2 (motif de toute la base). Pas de porte de premier lancement ajoutée par cette tâche (9.C6) : le point du focus après « Réessayer » (si une porte suit `AuthGate` et montre un état seul, `#contenu` n'existe pas) est à vérifier là. L'ordre 3 de « Disponibilité et rythme » était partagé avec l'essai de la recherche (`research.nav.bench`) : arbitré en 9.C5 (D190 n° 1), l'essai passe à 2,5.
-  9. **Suites de la revue de 9.C4** (commit `fix(phase-9): suites de la revue des réglages (9.C4)`) : (a) **I1, l'état invalide ne tient plus à la couleur seule** (la phrase de la « Raison » ci-dessous n'était pas vraie avant) : `fieldClass` gagne la variante `aria-invalid` (cadre et anneau `destructive`, pour tous les champs de la base), l'aide d'un champ en erreur commence par « Erreur : » (`errorHint`), et le message `weekendOrder` (maintenant « Le minimum du week-end doit rester inférieur ou égal à son maximum. », il disait le contraire) est relié par `aria-describedby` aux deux champs du bloc, en plus de leur aide. (b) **I2, aucun choix d'agent jeté** : `useAgentOverrideActions` file les choix faits pendant un envoi (un seul `PUT` à la fois) et, à la fin, rejoue **le dernier choix de chaque agent d'un coup** (`withAgentOverrides`) à partir des réglages que le serveur vient de renvoyer ; les listes montrent le choix demandé tout de suite (pas de retour arrière) ; si un envoi échoue, elles retombent sur ce que le serveur a et les choix en attente sont abandonnés ; « Modèles enregistrés. » est annoncé (`role="status"`, toujours dans l'arbre d'accessibilité). (c) **M1** : une frappe faite pendant l'envoi n'est jamais perdue (`setDraft` ne vide que si le brouillon n'a pas changé depuis l'envoi ; `reset` de l'envoi est sans effet tant qu'il court, sinon un second envoi devenait possible), pages Disponibilité et Style. (d) **M2** : le bouton « Enregistrer » bloqué dit pourquoi dans un texte relié (`aria-describedby`) : « Rien à enregistrer. » ou « Corrige les champs signalés avant d'enregistrer. » ; le focus reste sur lui (testé après enregistrement, après un envoi bloqué). (e) **M5** : aide « Saisis le modèle, puis Entrée. » pour un fournisseur sans liste, compteur du style formaté (« 12 000 caractères »). (f) **M6** : `buildUserSettings` se termine par `satisfies EveryField<UserSettings>` : un champ du contrat oublié ne compile plus (vérifié en retirant `weekly_review`). (g) **M7** : graduations de l'axe des coûts à décimales adaptées (`formatUsdTick`, jusqu'à six), `CostBadge` écrit « < 0,001 » sous le millième. (h) **M8** : `Section` dans `components/Section` (plus d'import d'une page par une autre), commentaires à 100 colonnes, faux `PUT` qui recalcule `weekly_budget_minutes`, bornes (`MINUTES_RANGE`, `DELAY_RANGE`) dans `components/ranges.ts`, partagées par les champs et la validation. **Laissés** : M3 (doublon `NumberField` / `DurationField`, deux comportements de bouton dans la section : dette) et M4 (surface morte `disabled` et `enabled`).
-- **Raison** : P17, P20, P22 ; SPEC 11.2 (mode avancé), 11.4 (autres réglages), 15.1 ; focus n° 5 (« les surcharges ne se perdent pas, le premier lancement ne revient jamais ») ; 17.2 (une 422 ne renvoie jamais l'entrée) ; accessibilité (aucune erreur par la couleur seule, champs nommés, focus jamais perdu sur un `PUT`).
+- **Date** 2026-11-17
+- **Subject** Phase 9, task 9.C4: availability and pace, style, per-agent model override (P17, P20,
+  P22); follow-ups from the review of 9.C3
+- **Decision**
+  1. **Routes and navigation**: `/reglages/disponibilite` (“Availability and pace”, order 3) and
+     `/reglages/style` (“Style”, order 5) in the Settings section (15.1); orders 4 (study) and 6
+     to 7 (costs, log) stay those of D188. The per-agent override is an “Advanced mode” section
+     of Models and keys (SPEC 11.2), not a page.
+  2. **A `PUT /settings` loses nothing (focus no. 5)**: `buildUserSettings` copies `onboarding_done`
+     and `agent_overrides` (field by field, never `...settings`), and **every** body builder
+     (`withSearchSettings`, `withStudySettings`, `withAvailabilitySettings`, `withStyleGuide`,
+     `withAgentOverride`) goes through it. The front end never forces `onboarding_done`: it sends it
+     back as read, and the back end never sets it back to false. Tests: `buildUserSettings keeps
+     onboarding_done and agent_overrides` (and the four other builders).
+  3. **Availability**: minutes on weekdays, weekend block (minimum and maximum, from 0 to 1,440, the
+     minimum not exceeding the maximum), brief time, follow-up delays (three **strictly increasing**
+     days, from 1 to 90), debate rounds (1 to 5), per-session cap (at least 10,000 tokens), lesson
+     language (the six languages of the search; a saved language outside the list stays offered,
+     never lost). Numbers stay text during input; nothing goes out while a field is out of bounds
+     (button blocked, field `aria-invalid`, bounds stated under the field in red). **Weekly budget**
+     computed live like the back end (five weekdays plus the longest weekend block, “14 h”),
+     never sent (`weekly_budget_minutes` is read-only); “fix the durations above” while a
+     duration is invalid.
+  4. **422 with no echo**: the 422 of a `PUT /settings` names fields (`details.fields`, paths like
+     `availability.weekday_minutes`). `refusedFields` only reads these paths (strings, status 422);
+     the field concerned goes `aria-invalid` with “The server refused this value: check it.”,
+     **never the value** (neither in the hint nor in the message). The refusal disappears as soon as
+     the form is modified (`reset`); the input stays on failure. A 422 that names `agent_overrides`
+     (unknown agent, P17) shows “One of the chosen agents no longer exists: reload the page, then
+     try again.”; what is displayed stays what the back end stored (the refused choice is not
+     displayed).
+  5. **Style**: a free text (`textarea`) and a character counter (counted by code point, “1
+     character” in the singular); no cap (the contract has none). Saved by a button, like study.
+  6. **Per-agent override**: “Advanced mode” collapsed by default (button `aria-expanded`); the
+     content is only mounted, and so `GET /settings/agents` is only read, when it is opened. A
+     table, one agent per row **in the server's order** (that of `AGENTS`, except `demo_*`): name
+     and role (`agentIdentity`), tier and model of that tier (“anthropic: claude-haiku-5-5”),
+     then a provider whose first choice is “Default tier (Standard)” (the empty value), then
+     `ModelField`. A choice written at the click (first model of the provider's list); a provider
+     with no list waits for the typed model (no `PUT` before, like the tiers); “Default tier”
+     removes **that single** override (`withAgentOverride(…, null)`) and makes no `PUT` if the
+     agent already follows its tier. A single full `PUT` at a time, never dropping a choice (see no.
+     9: the last choice of each agent is replayed at the end of the sending); the lists are **not**
+     disabled during the sending (a disabled field loses focus), the table goes `aria-busy`. An
+     override of an agent the server no longer lists stays an “Unknown agent” row (raw name, no
+     tier) that only offers to remove it: without it, the `PUT` would be refused forever (P17) with
+     no way to undo it.
+  7. **Split**: presentational `components/` (one folder each): `NumberField`, `AvailabilityFields`,
+     `DelaysField`, `StyleGuideEditor`, `AgentModelChoice`, `AgentOverridesTable` (sub-pieces
+     `AgentLine`, `AgentName`), `AdvancedSection`, `SaveBar`; `ProviderSelect` gains `emptyLabel`
+     (first “none” choice, optional, with no effect on its uses). The pure logic is at the root
+     of the feature (`availabilitySettings.ts`, `refusedFields.ts`, `userSettings.ts`), the form
+     state in a hook (`useAvailabilityForm`). The “Save” button (`SaveBar`) blocks through
+     `aria-disabled`, never `disabled`: focus stays on it once saving is done (the form ignores the
+     blocked submit). Test fake server `test/settingsApi.ts` (settings in memory, a write is
+     reread).
+  8. **Follow-ups from the review of 9.C3** (commit `fix(phase-9): suites de la revue des coûts
+     (9.C3)`): (a) I1: a non-zero cost under $0.001 is written “< $0.001”, never “$0.000”;
+     non-breaking space before “$”. (b) I2: `gcTime: 0` on the log's query (going back to a
+     filter already seen restarts from the first page, focus stays on the filter); the test runs
+     with the default `gcTime`. (c) M1: the `status` zone of “Regenerate the drafts” stays in
+     the accessibility tree (`empty:sr-only`, no more `display: none`). (d) M3: the year is written
+     in the log's dates when it differs from the current year; “No session” (screen reader) in
+     the cell of a call with no session. (e) M4: the scroll areas of the tables have
+     `role="region"`, a name, and `tabIndex=0`. Left aside: M2 (pattern of the whole codebase). No
+     first-launch gate added by this task (9.C6): the focus point after “Retry” (if a gate
+     follows `AuthGate` and shows a state alone, `#contenu` does not exist) is to be checked there.
+     Order 3 of “Availability and pace” was shared with the search trial (`research.nav.bench`):
+     arbitrated in 9.C5 (D190 no. 1), the trial goes to 2.5.
+  9. **Follow-ups from the review of 9.C4** (commit `fix(phase-9): suites de la revue des réglages
+     (9.C4)`): (a) **I1, the invalid state no longer relies on color alone** (the sentence of the
+     “Reason” below was not true before): `fieldClass` gains the `aria-invalid` variant
+     (`destructive` frame and ring, for all the base fields), the help text of a field in error
+     starts with “Error: ” (`errorHint`), and the `weekendOrder` message (now “The weekend
+     minimum must stay less than or equal to its maximum.”, it said the opposite) is linked by
+     `aria-describedby` to the two fields of the block, in addition to their help. (b) **I2, no
+     agent choice dropped**: `useAgentOverrideActions` queues the choices made during a sending (a
+     single `PUT` at a time) and, at the end, replays **the last choice of each agent at once**
+     (`withAgentOverrides`) from the settings the server has just returned; the lists show the
+     requested choice right away (no step back); if a sending fails, they fall back to what the
+     server has and the pending choices are abandoned; “Models saved.” is announced
+     (`role="status"`, always in the accessibility tree). (c) **M1**: a keystroke made during
+     sending is never lost (`setDraft` only empties if the draft has not changed since sending; the
+     sending's `reset` has no effect while it runs, otherwise a second sending became possible),
+     Availability and Style pages. (d) **M2**: the blocked “Save” button says why in a linked
+     text (`aria-describedby`): “Nothing to save.” or “Fix the flagged fields before
+     saving.”; focus stays on it (tested after saving, after a blocked sending). (e) **M5**: help
+     “Enter the model, then press Enter.” for a provider with no list, formatted style counter
+     (“12,000 characters”). (f) **M6**: `buildUserSettings` ends with
+     `satisfies EveryField<UserSettings>`: a contract field left out no longer compiles (checked by
+     removing `weekly_review`). (g) **M7**: cost axis ticks with adapted decimals (`formatUsdTick`,
+     up to six), `CostBadge` writes “< 0.001” under a thousandth. (h) **M8**: `Section` in
+     `components/Section` (no more import of one page by another), comments at 100 columns, fake
+     `PUT` that recomputes `weekly_budget_minutes`, bounds (`MINUTES_RANGE`, `DELAY_RANGE`) in
+     `components/ranges.ts`, shared by the fields and the validation. **Left**: M3 (duplicate
+     `NumberField` / `DurationField`, two button behaviors in the section: debt) and M4 (dead
+     surface `disabled` and `enabled`).
+- **Reason** P17, P20, P22; SPEC 11.2 (advanced mode), 11.4 (other settings), 15.1; focus no. 5
+  (“overrides are not lost, the first launch never comes back”); 17.2 (a 422 never returns the
+  input); accessibility (no error by color alone, named fields, focus never lost on a `PUT`).
 
 ## D190
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 9, tâche 9.C5 : page « Mes données », export et suppression de tout le compte (P18, P19, P22, SPEC 17.3)
-- **Décision** :
-  1. **Route et navigation** : feature `account/` (une ligne de plus dans `FEATURES`, après `costs`) ; `/reglages/donnees` (« Mes données », **ordre 8**) clôt la section Réglages (15.1). **Arbitrage de l'ordre 3** (D189 n° 8) : « Disponibilité et rythme » et l'essai de la recherche étaient à égalité ; `research.nav.bench` passe à l'ordre **2,5**, donc « Essayer la recherche » suit de nouveau « Recherche web », puis vient « Disponibilité et rythme ». Plus aucune égalité dans la section : 1, 2, 2,5, 3, 4, 5, 6, 7, 8.
-  2. **Export** : un **lien plein** (`<a href>`) vers `${apiBaseUrl}/api/v1/account/export`, jamais un `fetch` : le navigateur télécharge le zip en flux avec le cookie de session (`SameSite=Lax`, navigation de premier niveau) et prend le nom dans `Content-Disposition` (le contrat de B le déclare : `tremplin-export-AAAAMMJJ.zip`). Le front ne lit donc aucun en-tête et n'invente aucun nom de repli. Le texte dit ce que contient l'archive (réglages, profil et CV, objectifs et programme, leçons et révisions, mémoire, candidatures, journal des appels, fichiers importés) et que **les clés d'API n'y sont jamais**, ni les vecteurs (recalculés).
-  3. **Suppression** : explication (irréversible ; ce qui part, y compris les clés saisies dans l'interface ; **les clés de `.env` ne sont pas touchées** ; où l'on revient ensuite), champ « Tape SUPPRIMER pour confirmer », bouton « Tout supprimer » **actif seulement sur le mot exact** (`SUPPRIMER`, sans rognage ni changement de casse : un espace de trop le garde bloqué). Pendant l'appel le bouton passe en `aria-disabled` et `aria-busy` (jamais `disabled` : le focus y est) et le second clic est ignoré ; sinon `disabled` natif (le focus est dans le champ). Corps envoyé : `{confirm: "SUPPRIMER"}`.
-  4. **Après la suppression** : le mode est lu **avant** l'appel (`GET /auth/me`, clé `["auth","me"]` partagée avec la porte de connexion : une feature n'en importe pas une autre, la clé est redite dans `queryKeys.ts`), car en mode Google la session est close ensuite et relire `me` donnerait 401. 204 puis : toutes les requêtes hors `auth` sont retirées du cache (rien de l'espace effacé ne reste affiché) ; **mode local** : l'identité reste (même utilisateur) et la page mène à `/bienvenue` (`replace`), réglages relus à neuf, donc `onboarding_done` repart à faux ; **mode Google** : `me` passe à `null`, comme le 401 de 9.C2, et la porte de la coquille mène à `/connexion` ; la page n'ordonne aucune navigation elle-même. Si `GET /auth/me` échoue avant l'envoi, rien n'est supprimé et l'erreur s'affiche.
-  5. **Erreurs** : une 422 `confirmation_required` (ou une 422 dont `details.fields` nomme `confirm`) montre **le texte du front** (« Le mot de confirmation n'est pas bon : tape SUPPRIMER, en majuscules. ») et passe le champ en `aria-invalid` ; le texte du serveur n'est pas repris et la saisie n'est jamais recopiée (17.2). Toute autre erreur montre le message du back suivi de « Tu peux réessayer : la suppression reprend là où elle s'est arrêtée » (P19, rejouable), le champ n'est pas marqué invalide. Le message est un `role="alert"` lié au champ (`aria-describedby`) et **reçoit le focus** à chaque échec, même répété (l'objet d'échec est neuf à chaque erreur) ; la saisie reste pour réessayer.
-  6. **Découpage** : `components/ExportCard`, `components/DeleteAccountCard` (sous-pièces `ConfirmForm`, `DeleteExplanation`, `useFocusOnFailure`, pour tenir 50 lignes par fonction), `pages/DataPage`, `hooks/useDeleteAccount`, `api.ts` (`exportUrl`, `postDeleteAccount`, `fetchMe`), `messages/account.ts`. Faux serveur de test `test/accountApi.ts` (suppression : 204, 422 `confirmation_required`, 422 d'un autre code, 500 ; garde les corps reçus). Le contrat n'a pas changé : le `schema.d.ts` de cet arbre ne porte pas encore `Content-Disposition` ni la 422 contrôlée dans le code (9.I régénère) ; aucun type du front n'en dépend.
-  7. **Suites de la revue de 9.C5** (commit `fix(phase-9): suites de la revue de Mes données (9.C5)`) : (a) **I1, l'export** reste un lien plein (jamais un `fetch` : le zip peut être gros) mais s'ouvre dans **un nouvel onglet** (`target="_blank"`, `rel="noopener noreferrer"` : la règle ESLint `react/jsx-no-target-blank` refuse `noopener` seul, `noreferrer` est sans effet ici) avec `download` et une phrase reliée au lien (« Le téléchargement s'ouvre dans un nouvel onglet ; si la session a expiré, reconnecte-toi puis réessaie. ») : une erreur du back (session expirée, 500) n'écrase plus l'application. Le test fige `target`, `rel`, `download` et la phrase. (b) **I2, chemins d'échec testés** : lecture de `me` en échec (rien n'est envoyé, « Rien n'a été supprimé »), 503 `vector_store_unavailable`, panne réseau (saisie gardée, focus sur l'alerte), 401 par la vraie porte `SessionGate` (un test de `app/`, qui peut importer les deux features : `/connexion`), double validation dans le même instant (deux `submit` dans un seul `act`, une seule suppression), et **l'ordre des appels** : `me` avant le `POST` (un test qui échoue si le `POST` part avant). (c) **M1** : l'échec affiché disparaît dès que la saisie change (`reset` de la mutation, sans effet pendant l'envoi) ; **M2** : l'attente est annoncée (zone `role="status"` toujours dans la page, son texte seul change : « Suppression en cours… ne ferme pas cette page. ») et, en mode local, `/bienvenue` reçoit `state.deleted` et écrit « Tes données ont été supprimées : Tremplin repart de zéro. » (en mode Google la porte mène à `/connexion` sans message : la porte est celle de 9.C2, laissé) ; **M3** : « Rien n'a été supprimé : tu peux réessayer sans risque. » quand la lecture de `me` a échoué ou que le serveur a répondu 503 `vector_store_unavailable` (avant toute suppression, P19), « la suppression reprend là où elle s'est arrêtée » pour tout le reste ; **M4** : `shared/lib/localReset.ts` (`onLocalReset`, `resetLocalState`) : chaque module inscrit la remise à zéro de ce qu'il garde hors de TanStack (`useSessionStore`, brouillon et session de `useCaptureDialog`, `sessionStorage` du minuteur d'étude, seulement les clés `study-timer:`), « Tout supprimer » les appelle toutes **dans les deux modes** (un autre compte Google qui se connecte ensuite ne doit rien retrouver), sans qu'une feature en importe une autre ; **M5** : un test de `app/` tient la clé `["auth","me"]` redite (`accountKeys.me` = `authKeys.me`) ; **M6** : la garde de double validation est une ref (`submit` du hook), plus l'état de rendu ; **M7** : les avertissements forment un bloc nommé cité par `aria-describedby` du champ (avant le message d'échec). (d) **M8** : commentaires recoupés à 100 colonnes (`ranges.ts`, `messages/costs.ts`, `research/manifest.ts`), classe de l'alerte dans une constante ; **M9** : l'aide d'un champ du week-end n'écrit « Erreur : » que si sa valeur est hors bornes ou refusée (marqué pour l'ordre seul, il garde « Entre 0 et 1440. » et le message de l'ordre porte l'erreur, `hintError` de `NumberField`), `CostBadge` écrit « < 0,001 $ » sans « ≈ » devant ; **M10** : `waitFor` sur le premier `PUT` avant d'enchaîner les choix dans `AdvancedMode.test.tsx`. Sous-pièces ajoutées pour tenir 50 lignes par fonction : `FormFeedback`, `WordField`.
-- **Raison** : P18, P19, P22 ; SPEC 17.1 (reprise de l'espace local, session close), 17.2 (une 422 ne renvoie jamais l'entrée), 17.3 (« Exporter toutes mes données », « Tout supprimer ») ; un téléchargement de zip se fait par navigation, pas par `fetch` (flux, nom de fichier, mémoire) ; une action irréversible demande un mot exact et ne perd jamais le focus.
+- **Date** 2026-11-17
+- **Subject** Phase 9, task 9.C5: “My data” page, export and deletion of the whole account (P18,
+  P19, P22, SPEC 17.3)
+- **Decision**
+  1. **Route and navigation**: `account/` feature (one more line in `FEATURES`, after `costs`);
+     `/reglages/donnees` (“My data”, **order 8**) closes the Settings section (15.1).
+     **Arbitration of order 3** (D189 no. 8): “Availability and pace” and the search trial were
+     tied; `research.nav.bench` goes to order **2.5**, so “Try the search” follows “Web
+     search” again, then comes “Availability and pace”. No more ties in the section: 1, 2,
+     2.5, 3, 4, 5, 6, 7, 8.
+  2. **Export**: a **plain link** (`<a href>`) to `${apiBaseUrl}/api/v1/account/export`, never a
+     `fetch`: the browser downloads the zip as a stream with the session cookie (`SameSite=Lax`,
+     top-level navigation) and takes the name from `Content-Disposition` (B's contract declares it:
+     `tremplin-export-YYYYMMDD.zip`). The front end therefore reads no header and invents no
+     fallback name. The text says what the archive contains (settings, profile and résumé, goals
+     and program, lessons and reviews, memory, applications, call log, imported files) and that
+     **API keys are never in it**, nor the vectors (recomputed).
+  3. **Deletion**: explanation (irreversible; what goes, including keys entered in the interface;
+     **the `.env` keys are not touched**; where one returns afterwards), field “Type SUPPRIMER to
+     confirm”, “Delete everything” button **active only on the exact word** (`SUPPRIMER`, with
+     no trimming or case change: an extra space keeps it blocked). During the call the button goes
+     `aria-disabled` and `aria-busy` (never `disabled`: the focus is on it) and the second click is
+     ignored; otherwise native `disabled` (the focus is in the field). Body sent:
+     `{confirm: "SUPPRIMER"}`.
+  4. **After the deletion**: the mode is read **before** the call (`GET /auth/me`, key
+     `["auth","me"]` shared with the sign-in gate: a feature does not import another, the key is
+     restated in `queryKeys.ts`), because in Google mode the session is closed afterwards and
+     rereading `me` would give 401. 204 then: all requests outside `auth` are removed from the cache
+     (nothing of the erased space stays displayed); **local mode**: the identity stays (same user)
+     and the page leads to `/bienvenue` (`replace`), settings reread afresh, so `onboarding_done`
+     goes back to false; **Google mode**: `me` goes to `null`, like the 401 of 9.C2, and the shell's
+     gate leads to `/connexion`; the page orders no navigation itself. If `GET /auth/me` fails
+     before sending, nothing is deleted and the error is displayed.
+  5. **Errors**: a 422 `confirmation_required` (or a 422 whose `details.fields` names `confirm`)
+     shows **the front end's text** (“The confirmation word is wrong: type SUPPRIMER, in
+     capitals.”) and puts the field `aria-invalid`; the server's text is not reused and the input
+     is never copied (17.2). Any other error shows the back end's message followed by “You can
+     retry: deletion resumes where it stopped.” (P19, replayable), the field is not marked
+     invalid. The message is a `role="alert"` linked to the field (`aria-describedby`) and
+     **receives focus** at each failure, even repeated (the failure object is new at each error);
+     the input stays for retrying.
+  6. **Split**: `components/ExportCard`, `components/DeleteAccountCard` (sub-pieces `ConfirmForm`,
+     `DeleteExplanation`, `useFocusOnFailure`, to hold 50 lines per function), `pages/DataPage`,
+     `hooks/useDeleteAccount`, `api.ts` (`exportUrl`, `postDeleteAccount`, `fetchMe`),
+     `messages/account.ts`. Test fake server `test/accountApi.ts` (deletion: 204, 422
+     `confirmation_required`, 422 of another code, 500; keeps the bodies received). The contract has
+     not changed: this tree's `schema.d.ts` does not yet carry `Content-Disposition` or the 422
+     checked in the code (9.I regenerates); no front-end type depends on it.
+  7. **Follow-ups from the review of 9.C5** (commit `fix(phase-9): suites
+     de la revue de Mes données (9.C5)`): (a) **I1, the export** stays a plain link (never a
+     `fetch`: the zip may be large) but opens in **a new tab** (`target="_blank"`,
+     `rel="noopener noreferrer"`: the ESLint rule `react/jsx-no-target-blank` refuses `noopener`
+     alone, `noreferrer` has no effect here) with `download` and a sentence linked to the link
+     (“The download opens in a new tab; if your session has expired, sign in again and retry.”):
+     a back-end error (expired session, 500) no longer overwrites the application. The test pins
+     `target`, `rel`, `download`, and the sentence. (b) **I2, failure paths tested**: failed read of
+     `me` (nothing is sent, “Nothing was deleted”), 503 `vector_store_unavailable`, network
+     failure (input kept, focus on the alert), 401 through the real `SessionGate` gate (an `app/`
+     test, which can import both features: `/connexion`), double validation in the same instant (two
+     `submit` in a single `act`, a single deletion), and **the order of calls**: `me` before the
+     `POST` (a test that fails if the `POST` goes out first). (c) **M1**: the failure displayed
+     disappears as soon as the input changes (`reset` of the mutation, with no effect during
+     sending); **M2**: the wait is announced (a `role="status"` zone always in the page, only its
+     text changes: “Deleting… don't close this page.”) and, in local mode, `/bienvenue`
+     receives `state.deleted` and writes “Your data has been deleted: Tremplin is starting from
+     scratch.” (in Google mode the gate leads to `/connexion` with no message: the gate is that of
+     9.C2, left); **M3**: “Nothing was deleted: you can safely retry.” when the read of `me`
+     failed or the server answered 503 `vector_store_unavailable` (before any deletion, P19),
+     “deletion resumes where it stopped” for everything else; **M4**: `shared/lib/localReset.ts`
+     (`onLocalReset`, `resetLocalState`): each module registers the reset of what it keeps outside
+     TanStack (`useSessionStore`, draft and session of `useCaptureDialog`, `sessionStorage` of the
+     study timer, only the `study-timer:` keys), “Delete everything” calls them all **in both
+     modes** (another Google account signing in afterwards must find nothing), without a feature
+     importing another; **M5**: an `app/` test holds the restated key `["auth","me"]`
+     (`accountKeys.me` = `authKeys.me`); **M6**: the double validation guard is a ref (`submit` of
+     the hook), no longer the render state; **M7**: the warnings form a named block cited by the
+     field's `aria-describedby` (before the failure message). (d) **M8**: comments rewrapped at 100
+     columns (`ranges.ts`, `messages/costs.ts`, `research/manifest.ts`), the alert's class in a
+     constant; **M9**: a weekend field's help only writes “Error: ” if its value is out of
+     bounds or refused (marked for the order alone, it keeps “Between 0 and 1440.” and the order
+     message carries the error, `hintError` of `NumberField`), `CostBadge` writes “< $0.001”
+     without a “≈” in front; **M10**: `waitFor` on the first `PUT` before chaining the choices
+     in `AdvancedMode.test.tsx`. Sub-pieces added to hold 50 lines per function: `FormFeedback`,
+     `WordField`.
+- **Reason** P18, P19, P22; SPEC 17.1 (takeover of the local space, closed session), 17.2 (a 422
+  never returns the input), 17.3 (“Export all my data”, “Delete everything”); a zip download
+  is done by navigation, not by `fetch` (stream, file name, memory); an irreversible action asks for
+  an exact word and never loses focus.
 
 ## D191
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 9, tâche 9.C6 : premier lancement en cinq étapes, page `/bienvenue` et porte d'onboarding (P20, P21, P22, SPEC 15.5 et 17.3)
-- **Décision** :
-  1. **Route et porte** : `/bienvenue` est une **route** de la feature `settings` (dans la mise en page, derrière la porte de connexion, donc un 401 reste traité par `SessionGate`), sans entrée de navigation (`manifest.test` le fige). `OnboardingGate` (`shell.gate` de `settings`, après `auth` dans `FEATURES`) lit `GET /settings` avant la mise en page : `onboarding_done` faux et page autre que `/bienvenue` mène à `/bienvenue` par `<Navigate replace>` (jamais d'empilement). **La porte ne renvoie jamais un compte hors de `/bienvenue`** : elle n'y envoie que les comptes dont l'accueil n'est pas fini, et un compte déjà fini qui ouvre `/bienvenue` à la main y voit l'assistant (« Terminer » rejoue le même `PUT`, sans effet de plus). Il n'y a pas de renvoi à craindre pendant l'accueil : le back décide `onboarding_done` **une fois, au premier `GET /settings`** d'un compte sans ligne de réglages (vrai s'il a déjà une clé ou un objectif, D183) et ne le refait jamais ; enregistrer une clé à l'étape 3 ne le bascule donc pas, et seul « Terminer » ou « Passer l'accueil » (un `PUT`, monotone) le fait passer à vrai. Réglages en chargement ou en erreur : un état seul, sans la mise en page ; **une relecture ratée alors que les réglages sont déjà là ne ferme jamais l'application** (la porte lit `data` d'abord).
-  2. **Focus (D189)** : « Réessayer » de la porte garde le focus sur le conteneur (le bouton disparaît avec l'erreur), puis, si la lecture réussit, passe à `#contenu` ; si elle mène à `/bienvenue`, la porte ne touche à rien et le titre de l'étape (qui prend le focus à chaque étape) le garde. Même règle pour `WelcomePage` seule (réglages illisibles : le titre prend le focus à l'arrivée des réglages) et pour l'étape 3 (`useFocusAfterRecovery` : quand la lecture des clés réussit après un échec, le focus va au choix du fournisseur). Un test pour chacune. Les étapes 1 et 4 n'ont pas de « Réessayer » (la santé se relit seule ; un import refusé garde ses fichiers).
-  3. **Cinq étapes** (`OnboardingSteps`, « Étape 2 sur 5 », titre `h1` qui prend le focus à chaque étape, « Précédent » sauf à la première, « Passer l'accueil » partout ; boutons bloqués par `aria-disabled`, jamais `disabled`) : **1** `ServiceChecklist` (`GET /health` relu toutes les 5 s, un état écrit par service, la clé de modèle absente dite « à configurer à l'étape 3 » plutôt que « ne répond pas ») et `EmbeddingProgressBar` (`GET /health/embedding` relu toutes les 3 s **tant que `present` est faux**, « bge-m3 : 42 % », barre sans valeur si la taille est inconnue, détail du serveur) ; **2** `PrivacyNotice` (tableau de 17.3, retrait du nom, de l'e-mail et du téléphone des requêtes, contacts limités au nom, au rôle et à un lien public, renvoi vers Mes données) **avant** la clé, parce que la clé envoie les prompts chez le fournisseur (P20) ; **3** choix du fournisseur et `ApiKeyCard` (`ApiKeyForm`, « Tester », réutilisés), une clé de `.env` dite en toutes lettres, bouton « Plus tard » tant qu'aucune clé n'existe, « Suivant » sinon (la page lit la liste des clés dès son ouverture, l'étape 3 la partage) ; **4** `CvImportStep` (CV PDF, profil LinkedIn PDF facultatif, 10 Mo au plus, `POST /profile/import` en multipart : le brief disait `/cv/profile/import`, la route du contrat est `/profile/import`), « Passer » tant que rien n'est envoyé. **Sans clé d'API, l'import n'est pas ouvert** : le back répond 202 sans regarder les clés, mais la lecture n'aurait aucun modèle à appeler, donc l'étape ne promet pas une lecture en arrière-plan ; elle dit qu'il faut d'abord une clé et ramène à l'étape 3 (bouton). La raison du bouton bloqué (clé ou CV manquant) est dite et reliée au bouton, un LinkedIn refusé est dit (le CV partirait seul), et les deux PDF sont gardés par la page : ils survivent au changement d'étape (« Fichier retenu : … », « Rien n'est envoyé tant que tu n'as pas cliqué sur Importer ») ; **5** `AvailabilityFields` (les trois durées, mêmes bornes que Réglages, budget en direct), « Terminer » bloqué avec sa raison reliée tant qu'une durée est hors bornes.
-  4. **Terminer et passer** : un seul `PUT /settings` complet (`withOnboardingDone`, qui passe par `buildUserSettings` : aucune surcharge ni aucun réglage perdu, `onboarding_done: true`), puis `/` en remplacement. « Terminer » envoie les trois durées affichées (celles des réglages, ou les défauts du back pour un espace sans réglage, comme après « Tout supprimer » en mode local) ; « Passer l'accueil » envoie **la disponibilité lue**, jamais celle qu'on a commencé à saisir. Une seule écriture à la fois, même si deux activations arrivent dans le même instant (une `ref`, pas l'état de rendu) ; l'échec affiché disparaît au changement d'étape ; un échec reste affiché et la page reste (une 422 marque les champs nommés sans citer la valeur).
-  5. **Clés et santé** : lues à leur propre clé (`["onboarding", …]`), jamais en même temps que le voyant de la barre (30 s). Aucune clé saisie n'est dans le DOM, une clé non testée n'est jamais présentée comme valide.
-  6. **Découpage** : `components/{OnboardingSteps (StepButtons), ServiceChecklist, EmbeddingProgressBar, PrivacyNotice, CvImportStep (PdfPicker)}` présentationnels ; `pages/WelcomePage/{WelcomePage, WelcomeSteps, StepBody, HealthStep, KeyStep, KeyChoice}` ; hooks `useServiceHealth`, `useEmbeddingProgress`, `useImportProfile`, `useCvDocuments`, `useFinishOnboarding`, `useOnboardingAvailability`, `useFocusAfterRecovery` ; logique pure `onboarding.ts`. Le sélecteur de fichier PDF de `cv` est redit (une feature n'en importe pas une autre). Faux serveur de test `test/onboardingApi.ts`. Les tests de `app/` (coquille) servent maintenant les réglages à la porte.
-  7. **Lecteurs d'écran** : le compteur « Étape N sur 5 » est relié au titre par `aria-describedby` (lu avec lui quand il prend le focus) ; les zones `status` sont dans la page avant d'être remplies (santé : un texte seulement aux moments utiles, lecture impossible, service revenu ; modèle : « prêt » ; accueil après « Tout supprimer » : texte posé sur le nœud par un effet) ; le message d'échec de « Tout supprimer » reçoit le focus et n'est plus aussi une alerte (lu une fois, pas deux).
-- **Raison** : P20, P21, P22 ; SPEC 15.5 (premier lancement), 17.3 (ce qui sort de la machine, dit avant la clé) ; focus n° 5 (le premier lancement ne revient jamais une fois fini) ; D183 (la décision `onboarding_done` d'un compte sans ligne de réglages est figée par le back au premier `GET`) ; le focus ne tombe jamais sur `body` après un « Réessayer ».
+- **Date** 2026-11-17
+- **Subject** Phase 9, task 9.C6: first launch in five steps, `/bienvenue` page and onboarding gate
+  (P20, P21, P22, SPEC 15.5 and 17.3)
+- **Decision**
+  1. **Route and gate**: `/bienvenue` is a **route** of the `settings` feature (inside the layout,
+     behind the sign-in gate, so a 401 is still handled by `SessionGate`), with no navigation entry
+     (`manifest.test` pins it). `OnboardingGate` (`shell.gate` of `settings`, after `auth` in
+     `FEATURES`) reads `GET /settings` before the layout: `onboarding_done` false and a page other
+     than `/bienvenue` leads to `/bienvenue` through `<Navigate replace>` (never stacking). **The
+     gate never sends an account away from `/bienvenue`**: it only sends there the accounts whose
+     welcome is not finished, and an account already finished that opens `/bienvenue` by hand sees
+     the wizard there (“Finish” replays the same `PUT`, with no further effect). There is no
+     send-away to fear during the welcome: the back end decides `onboarding_done` **once, at the
+     first `GET /settings`** of an account with no settings row (true if it already has a key or a
+     goal, D183) and never redoes it; saving a key at step 3 therefore does not flip it, and only
+     “Finish” or “Skip the welcome” (a `PUT`, monotonic) makes it true. Settings loading or
+     in error: a state alone, without the layout; **a failed reread while the settings are already
+     there never closes the application** (the gate reads `data` first).
+  2. **Focus (D189)**: the gate's “Retry” keeps focus on the container (the button disappears
+     with the error), then, if the read succeeds, moves to `#contenu`; if it leads to `/bienvenue`,
+     the gate touches nothing and the step's title (which takes focus at each step) keeps it. Same
+     rule for `WelcomePage` alone (unreadable settings: the title takes focus when the settings
+     arrive) and for step 3 (`useFocusAfterRecovery`: when the keys read succeeds after a failure,
+     focus goes to the provider choice). A test for each. Steps 1 and 4 have no “Retry” (health
+     rereads itself; a refused import keeps its files).
+  3. **Five steps** (`OnboardingSteps`, “Step 2 of 5”, `h1` title that takes focus at each step,
+     “Previous” except on the first, “Skip the welcome” everywhere; buttons blocked by
+     `aria-disabled`, never `disabled`): **1** `ServiceChecklist` (`GET /health` reread every 5 s, a
+     written state per service, the missing model key said “to set up in step 3” rather than
+     “not responding”) and `EmbeddingProgressBar` (`GET /health/embedding` reread every 3 s **as
+     long as `present` is false**, “bge-m3: 42%”, a bar with no value if the size is unknown,
+     the server's detail); **2** `PrivacyNotice` (the table of 17.3, removal of name, email, and
+     phone from the queries, contacts limited to name, role, and a public link, pointer to My data)
+     **before** the key, because the key sends the prompts to the provider (P20); **3** provider
+     choice and `ApiKeyCard` (`ApiKeyForm`, “Test”, reused), a `.env` key stated in full,
+     “Later” button as long as no key exists, “Next” otherwise (the page reads the list of
+     keys as soon as it opens, step 3 shares it); **4** `CvImportStep` (PDF résumé, optional PDF
+     LinkedIn profile, 10 MB at most, `POST /profile/import` in multipart: the brief said
+     `/cv/profile/import`, the contract's route is `/profile/import`), “Skip” while nothing is
+     sent. **With no API key, the import is not opened**: the back end answers 202 without looking
+     at the keys, but the reading would have no model to call, so the step does not promise a
+     background reading; it says a key is needed first and leads back to step 3 (button). The reason
+     for the blocked button (key or résumé missing) is stated and linked to the button, a refused
+     LinkedIn is stated (the résumé would go alone), and the two PDFs are held by the page: they
+     survive the change of step (“File kept: …”, “Nothing is sent until you click “Import
+     my documents””); **5** `AvailabilityFields` (the three durations, same bounds as Settings,
+     live budget), “Finish” blocked with its linked reason while a duration is out of bounds.
+  4. **Finish and skip**: a single full `PUT /settings` (`withOnboardingDone`, which goes through
+     `buildUserSettings`: no override or setting lost, `onboarding_done: true`), then `/` as a
+     replacement. “Finish” sends the three durations displayed (those of the settings, or the
+     back end's defaults for a space with no settings, as after “Delete everything” in local
+     mode); “Skip the welcome” sends **the availability read**, never the one being typed. A
+     single write at a time, even if two activations arrive in the same instant (a `ref`, not the
+     render state); the failure displayed disappears at the change of step; a failure stays
+     displayed and the page stays (a 422 marks the named fields without quoting the value).
+  5. **Keys and health**: read under their own key (`["onboarding", …]`), never at the same time
+     as the bar's indicator (30 s). No typed key is in the DOM, an untested key is never presented
+     as valid.
+  6. **Split**: presentational `components/{OnboardingSteps (StepButtons), ServiceChecklist,
+     EmbeddingProgressBar, PrivacyNotice, CvImportStep (PdfPicker)}`;
+     `pages/WelcomePage/{WelcomePage, WelcomeSteps, StepBody, HealthStep, KeyStep, KeyChoice}`;
+     hooks `useServiceHealth`, `useEmbeddingProgress`, `useImportProfile`, `useCvDocuments`,
+     `useFinishOnboarding`, `useOnboardingAvailability`, `useFocusAfterRecovery`; pure logic
+     `onboarding.ts`. The PDF file picker of `cv` is restated (a feature does not import another).
+     Test fake server `test/onboardingApi.ts`. The `app/` tests (shell) now serve the settings to
+     the gate.
+  7. **Screen readers**: the counter “Step N of 5” is linked to the title by `aria-describedby`
+     (read with it when it takes focus); the `status` zones are in the page before being filled
+     (health: a text only at useful moments, reading impossible, service back; model: “ready”;
+     welcome after “Delete everything”: text set on the node by an effect); the failure message
+     of “Delete everything” receives focus and is no longer also an alert (read once, not
+     twice).
+- **Reason** P20, P21, P22; SPEC 15.5 (first launch), 17.3 (what leaves the machine, said before the
+  key); focus no. 5 (the first launch never comes back once finished); D183 (the `onboarding_done`
+  decision of an account with no settings row is fixed by the back end at the first `GET`); focus
+  never falls on `body` after a “Retry”.
 
 ## D192
 
-- **Date** : 2026-11-17
-- **Sujet** : Intégration des trois flux de la phase 9 (9.I).
-- **Décision** :
-  1. Fusion sur `dev` : `phase9/a` (3548753), `phase9/b` (47287ad), `phase9/c` (74c313c). Seul conflit : `backend/tests/test_phase9_contract.py` (ensembles `LIVE`/`FILLED`), unifié : plus aucun bouchon 501, chaque route nouvelle est vivante.
-  2. Contrat régénéré après chaque fusion (`export_openapi`, `openapi-typescript`) : aucun écart avec la fusion automatique. Écarts au contrat de 9.P, tous voulus et déjà décidés : `maxLength` retirés des paramètres de connexion (9.A2), `Content-Disposition` de l'export (9.B4), 503 `vector_store_unavailable` et confirmation contrôlée dans le code pour la suppression (9.B5), descriptions du 409 de la reprise et de `/health/embedding` (9.A4, 9.A5). `alembic heads` : une tête, `0015`.
-  3. `EXPECTED_FROM_B` vidé (`cases_b.py` fusionné) ; les tests Google du compte reçoivent `ALLOWED_EMAILS=*` (règle du flux A) ; nouveau `tests/isolation/test_google_delete.py` : l'ancien témoin rend 401 après « Tout supprimer » en mode Google, l'autre compte reste connecté (revue 9.B5, M2).
-  4. Décisions D176 à D191 recopiées depuis les fragments des flux, fragments retirés.
-  5. Suites complètes sur 74c313c : back 5 749 passés (41 min), front 2 652 passés (449 fichiers), lint et typecheck propres. Parcours e2e n° 1 à 4 : les cinq tests échouent tous sur la porte du premier lancement (base de test neuve, `onboarding_done` figé à faux) ; correctif d'amorçage en 9.E.
-  6. Trailer des commits des flux : `Co-Authored-By: Claude Sonnet 5.5` (attribution de l'environnement des sous-agents, qui les ont écrits) ; laissé tel quel.
-- **Raison** : P1 à P4 du plan de la phase 9 ; un seul écrivain par arbre ; la porte du premier lancement est une nouveauté voulue, les parcours anciens doivent l'amorcer plutôt que la contourner dans le code.
+- **Date** 2026-11-17
+- **Subject** Integration of the three phase 9 streams (9.I).
+- **Decision**
+  1. Merge on `dev`: `phase9/a` (3548753), `phase9/b` (47287ad), `phase9/c` (74c313c). Only
+     conflict: `backend/tests/test_phase9_contract.py` (sets `LIVE`/`FILLED`), unified: no 501 stub
+     any more, each new route is live.
+  2. Contract regenerated after each merge (`export_openapi`, `openapi-typescript`): no gap from the
+     automatic merge. Deviations from the 9.P contract, all intended and already decided:
+     `maxLength` removed from the sign-in parameters (9.A2), `Content-Disposition` of the export
+     (9.B4), 503 `vector_store_unavailable` and confirmation checked in the code for deletion
+     (9.B5), descriptions of the takeover's 409 and of `/health/embedding` (9.A4, 9.A5).
+     `alembic heads`: one head, `0015`.
+  3. `EXPECTED_FROM_B` emptied (`cases_b.py` merged); the account's Google tests receive
+     `ALLOWED_EMAILS=*` (stream A's rule); new `tests/isolation/test_google_delete.py`: the old
+     cookie returns 401 after “Delete everything” in Google mode, the other account stays signed
+     in (review 9.B5, M2).
+  4. Decisions D176 to D191 copied from the streams' fragments, fragments removed.
+  5. Full suites on 74c313c: back 5,749 passed (41 min), front 2,652 passed (449 files), lint and
+     typecheck clean. End-to-end flows no. 1 to 4: all five tests fail on the first-launch gate (new
+     test database, `onboarding_done` frozen at false); seeding fix in 9.E.
+  6. Trailer of the streams' commits: `Co-Authored-By: Claude Sonnet 5.5` (attribution of the
+     sub-agents' environment, which wrote them); left as is.
+- **Reason** P1 to P4 of the phase 9 plan; a single writer per tree; the first-launch gate is an
+  intended novelty, the old flows must seed it rather than bypass it in the code.
 
 ## D193
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 9, tâche 9.E : amorçage du premier lancement pour les parcours n° 1 à 4, parcours de bout en bout n° 5 (connexion, reprise, isolation, données) (P23)
-- **Décision** :
-  1. **Amorçage partagé, sans contourner l'application** : `frontend/e2e/support/firstLaunch.ts` (`finishFirstLaunch`) lit `GET /settings` (le premier `GET` crée la ligne, `onboarding_done` faux sur base neuve) puis renvoie l'objet complet avec `onboarding_done: true` (`PUT /settings` remplace tout) ; sans effet si c'est déjà fait. Chacun des quatre fichiers de parcours l'appelle dans un `test.beforeEach`, donc avant le premier `page.goto`. `OnboardingGate` n'est pas touchée : le premier lancement lui-même est joué par le parcours n° 5.
-  2. **Deux configurations Playwright** : `playwright.config.ts` (n° 1 à 4, API 8765, front 5180) ignore `account.spec.ts` ; `playwright.auth.config.ts` (n° 5, API 8766, front 5181, mêmes gardes : API sur la boucle locale seulement, Vite toujours relancé) ne lance que `account.spec.ts`, avec ses rapports et traces dans le dossier temporaire du système. `dockerBackend.ts` lance le serveur du n° 5 avec `E2E_DOCKER_AUTH=1` (nom de conteneur, ports et options du mode Google).
-  3. **Serveur de bout en bout** (`tests/e2e/server.py`) : `--allowed-emails` (défaut `*`) ; `--seed-local` crée l'espace `local` et une ligne de journal (`LOCAL_CAPTURE_TEXT`), de quoi reprendre ; `--in-container` autorise `--host 0.0.0.0` en mode Google. **Écart assumé à la garde de bouclage** : Docker ne publie un port que si le serveur écoute sur 0.0.0.0 dans le conteneur, donc sans cette option le n° 5 ne peut pas tourner sur ce poste (Python ne tourne que dans Docker). L'option est explicite, jamais implicite ; l'appelant s'engage à publier le port sur `127.0.0.1` de l'hôte seulement (`-p 127.0.0.1:8766:8766`, ce que fait `dockerBackend.ts`). Sans l'option, 0.0.0.0 reste refusé (tests).
-  4. **Parcours n° 5** (`e2e/account.spec.ts`, deux tests en série, faux fournisseur, aucune identité Google) : `ALLOWED_EMAILS` **explicite** (Camille et Dominique : avec `*` la reprise n'est jamais proposée). (1) `/` mène à `/connexion`, « Se connecter avec Google » (Camille par défaut) mène à `/connexion/reprise`, « Reprendre les données de cet ordinateur » mène à `/bienvenue` ; cinq étapes (clé : « Plus tard », CV : « Passer », « Terminer ») jusqu'à l'accueil ; la note de l'espace local est au journal ; un texte de style est enregistré. (2) Déconnexion, puis Dominique (`login_hint`) : jamais la page de reprise, `/bienvenue`, journal et style vides. (3) Mes données : lien d'export (`target="_blank"`, téléchargement `tremplin-export-AAAAMMJJ.zip`, zip commençant par `PK`), « Tout supprimer » (`SUPPRIMER`) mène à `/connexion`, session close. (4) Camille se reconnecte : note et style intacts.
-  5. **Scénario de la revue finale** (changement de compte dans un autre onglet, puis « Tout supprimer ») : écrit, mais **`test.fixme`**. Aujourd'hui l'onglet A (Dominique) envoie `POST /account/delete` avec le cookie de l'onglet B (Camille) : le back supprime le compte de Camille (journal du back : `Tout supprimer : user=<id de Camille>`), sa session est close, `GET /auth/me` rend 401. Le test ne tombe que sur ce défaut (le reste du scénario s'exécute jusqu'à l'assertion) ; il est à réactiver (`test.fixme` devient `test`) à la fusion du correctif du front. Non vérifié vert à ce jour.
-  6. **Résultats sur Edge** (config temporaire, retirée) : n° 1 à 4 : 5 tests verts en 2 min 41 s ; n° 5 : 1 vert, 1 `fixme`, en 50 s.
-- **Raison** : P23 ; la porte du premier lancement (D191) est voulue, les anciens parcours l'amorcent comme le fait « Terminer » au lieu de la contourner ; un seul chemin de vérité pour l'amorçage ; le serveur de test ne doit jamais être joignable depuis le réseau.
+- **Date** 2026-11-17
+- **Subject** Phase 9, task 9.E: seeding the first launch for flows no. 1 to 4, end-to-end flow no.
+  5 (sign-in, takeover, isolation, data) (P23)
+- **Decision**
+  1. **Shared seeding, without bypassing the application**: `frontend/e2e/support/firstLaunch.ts`
+     (`finishFirstLaunch`) reads `GET /settings` (the first `GET` creates the row, `onboarding_done`
+     false on a new database) then sends back the full object with `onboarding_done: true`
+     (`PUT /settings` replaces everything); with no effect if it is already done. Each of the four
+     flow files calls it in a `test.beforeEach`, so before the first `page.goto`. `OnboardingGate`
+     is not touched: the first launch itself is played by flow no. 5.
+  2. **Two Playwright configurations**: `playwright.config.ts` (no. 1 to 4, API 8765, front end
+     5180) ignores `account.spec.ts`; `playwright.auth.config.ts` (no. 5, API 8766, front end 5181,
+     same guards: API on local loopback only, Vite always relaunched) only runs `account.spec.ts`,
+     with its reports and traces in the system's temporary folder. `dockerBackend.ts` launches no.
+     5's server with `E2E_DOCKER_AUTH=1` (container name, ports, and options of Google mode).
+  3. **End-to-end server** (`tests/e2e/server.py`): `--allowed-emails` (default `*`); `--seed-local`
+     creates the `local` space and a journal row (`LOCAL_CAPTURE_TEXT`), enough to take over;
+     `--in-container` allows `--host 0.0.0.0` in Google mode. **Accepted deviation from the loopback
+     guard**: Docker only publishes a port if the server listens on 0.0.0.0 inside the container, so
+     without this option no. 5 cannot run on this machine (Python only runs in Docker). The option
+     is explicit, never implicit; the caller commits to publishing the port on the host's
+     `127.0.0.1` only (`-p 127.0.0.1:8766:8766`, which `dockerBackend.ts` does). Without the option,
+     0.0.0.0 stays refused (tests).
+  4. **Flow no. 5** (`e2e/account.spec.ts`, two tests in series, fake provider, no Google identity):
+     **explicit** `ALLOWED_EMAILS` (Camille and Dominique: with `*` the takeover is never offered).
+     (1) `/` leads to `/connexion`, “Sign in with Google” (Camille by default) leads to
+     `/connexion/reprise`, “Take over this computer's data” leads to `/bienvenue`; five steps
+     (key: “Later”, résumé: “Skip”, “Finish”) up to the home; the local space's note
+     is in the journal; a style text is saved. (2) Sign-out, then Dominique (`login_hint`): never
+     the takeover page, `/bienvenue`, empty journal and style. (3) My data: export link
+     (`target="_blank"`, download `tremplin-export-YYYYMMDD.zip`, zip starting with `PK`), “Delete
+     everything” (`SUPPRIMER`) leads to `/connexion`, session closed. (4) Camille signs in again:
+     note and style intact.
+  5. **Final review scenario** (account change in another tab, then “Delete everything”):
+     written, but **`test.fixme`**. Today tab A (Dominique) sends `POST /account/delete` with tab
+     B's (Camille's) cookie: the back end deletes Camille's account (back-end log:
+     `Tout supprimer : user=<Camille's id>`), her session is closed, `GET /auth/me` returns 401. The
+     test only fails on this defect (the rest of the scenario runs up to the assertion); it is to be
+     reactivated (`test.fixme` becomes `test`) when the front-end fix is merged. Not verified green
+     to date.
+  6. **Results on Edge** (temporary config, removed): no. 1 to 4: 5 tests green in 2 min 41 s; no.
+     5: 1 green, 1 `fixme`, in 50 s.
+- **Reason** P23; the first-launch gate (D191) is intended, the old flows seed it as “Finish”
+  does instead of bypassing it; a single path of truth for seeding; the test server must never be
+  reachable from the network.
 
 ## D194
 
-- **Date** : 2026-11-17
-- **Sujet** : Revue finale de la phase 9 : correctifs back (zones A et B)
-- **Décision** :
-  1. **Reprise sans retour (A-I1)** : en mode local, si la ligne `local` n'existe plus (reprise par un compte Google) et que `users` ne contient **qu'un seul** compte, `ensure_local_user` le reprend comme utilisateur unique (son e-mail est ignoré par `LocalAuthenticator`) : repasser en local rend les données. Avec plusieurs comptes, un espace neuf et vide est créé (journal : « espace local repris par un compte Google : nouvel espace local », sans identifiant personnel) ; le README le dit et conseille de rester en mode Google pour retrouver les données reprises.
-  2. **Reprise close pour toujours (B-I1)** : « reprise close » est mémorisée dans les **réglages de l'utilisateur `local`** (clé réservée `local_claim_closed`, `app.db.models.accounts.LOCAL_CLAIM_CLOSED`), ligne qu'aucune suppression d'un compte Google n'efface, sans migration. Posée dès qu'un premier compte Google naît sans consommer la ligne `local` : « Espace vide » (`_fresh`) et connexion sans offre (`_find_or_create`, par exemple `ALLOWED_EMAILS=*`) ; « Reprendre » consomme la ligne elle-même (plus de ligne `local` ensuite, donc plus d'offre). `claim_offered` la lit ; `attach_identity` la teste dans son `UPDATE` conditionnel (même sans compte Google restant). `SettingsService.close_local_claim` crée au besoin la ligne de réglages avec le `onboarding_done` d'un premier accès (D183) ; `save_data` conserve la clé à tout remplacement ; l'API des réglages l'ignore (clé inconnue). Elle est posée **avant** le point de sauvegarde de `_fresh` : une transaction qui commence par une lecture puis écrit rend « database is locked » à une course sous SQLite. Un compte déjà supprimé avant ce correctif n'est pas rattrapé.
-  3. **Vecteurs après les lignes (B-I2)** : `delete_account` rappelle `_delete_vectors` après `_delete_rows` (idempotent) : un `indexer.push` en vol pendant la suppression ne laisse rien dans l'index (l'élément a disparu, `drop_orphan_vectors` retire déjà le reste). Un échec du second passage est un 503 `vector_store_unavailable`, rejouable.
-  4. **Mineurs** : 5ᵉ tour d'annulation sans y arriver : 503 `account_busy` avant toute écriture en base (m1) ; `SessionRunner.start` revérifie la garde après son commit, annule la ligne née et refuse en 409 `account_deleting` (m2) ; `has_prior_data` regarde aussi `llm_calls` (m4) ; `SECRET_NAME` gagne `authoriz`, `totp`, `mfa` et `pin` en mot entier (m5) ; un `OSError` du stockage (fichier ouvert ailleurs sous Windows) est un 503 `storage_unavailable` « réessaie » sans chemin ni message système, avant toute écriture en base (m6) ; docstring d'`allowlist.py` (effet au redémarrage) ; `ollama_pull._present` : `TypeError`, `RecursionError` ou liste inattendue donnent « Ollama ne répond pas. » ; README : avertissement près de `ALLOWED_EMAILS=*` (tout compte Google utilise les clés du `.env`), cookies de `localhost` partagés entre ports.
-  5. **Laissé au bilan** : A-M2 (`take_local` rejoué), A-M6 (un seul témoin `tremplin_oauth`), A-M7 (commit du callback), garde structurel des dépôts, doublon de nodeid de l'isolation, B-m3 (écritures hors session pendant la suppression), B-m7 (arrondi du total).
-- **Raison** : revue finale de la phase 9 (zones A et B) : « Reprendre » ne doit pas faire croire à une perte, une reprise ne se propose jamais deux fois ni à un autre compte, « Tout supprimer » ne laisse aucun texte dans l'index. SPEC 17.1, P9, P19, P20 ; D176 à D187.
+- **Date** 2026-11-17
+- **Subject** Final review of phase 9: back-end fixes (areas A and B)
+- **Decision**
+  1. **Takeover with no way back (A-I1)**: in local mode, if the `local` row no longer exists
+     (takeover by a Google account) and `users` contains **only one** account, `ensure_local_user`
+     takes it over as the single user (its email is ignored by `LocalAuthenticator`): going back to
+     local gives the data back. With several accounts, a new empty space is created (log: “espace
+     local repris par un compte Google : nouvel espace local” (“local space taken over by a
+     Google account: new local space”), with no personal identifier); the README says so and
+     advises staying in Google mode to find the data taken over.
+  2. **Takeover closed forever (B-I1)**: “takeover closed” is stored in the **`local` user's
+     settings** (reserved key `local_claim_closed`, `app.db.models.accounts.LOCAL_CLAIM_CLOSED`), a
+     row that no deletion of a Google account erases, with no migration. Set as soon as a first
+     Google account is born without consuming the `local` row: “Empty space” (`_fresh`) and
+     sign-in with no offer (`_find_or_create`, for example `ALLOWED_EMAILS=*`); “Take over”
+     consumes the row itself (no `local` row afterwards, so no more offer). `claim_offered` reads
+     it; `attach_identity` tests it in its conditional `UPDATE` (even with no Google account left).
+     `SettingsService.close_local_claim` creates the settings row if needed with the
+     `onboarding_done` of a first access (D183); `save_data` keeps the key at any replacement; the
+     settings API ignores it (unknown key). It is set **before** `_fresh`'s savepoint: a transaction
+     that starts with a read then writes returns “database is locked” in a race under SQLite. An
+     account already deleted before this fix is not caught up.
+  3. **Vectors after the rows (B-I2)**: `delete_account` calls `_delete_vectors` again after
+     `_delete_rows` (idempotent): an `indexer.push` in flight during the deletion leaves nothing in
+     the index (the item has disappeared, `drop_orphan_vectors` already removes the rest). A failure
+     of the second pass is a 503 `vector_store_unavailable`, replayable.
+  4. **Minor points**: 5th cancellation round without success: 503 `account_busy` before any
+     database write (m1); `SessionRunner.start` rechecks the guard after its commit, cancels the row
+     just born and refuses with 409 `account_deleting` (m2); `has_prior_data` also looks at
+     `llm_calls` (m4); `SECRET_NAME` gains `authoriz`, `totp`, `mfa`, and `pin` as whole words (m5);
+     a storage `OSError` (file open elsewhere under Windows) is a 503 `storage_unavailable`
+     “retry” with no path or system message, before any database write (m6); docstring of
+     `allowlist.py` (effect at restart); `ollama_pull._present`: `TypeError`, `RecursionError`, or
+     an unexpected list give “Ollama ne répond pas.” (“Ollama is not responding.”); README:
+     warning near `ALLOWED_EMAILS=*` (any Google account uses the `.env` keys), `localhost` cookies
+     shared between ports.
+  5. **Left for the report**: A-M2 (`take_local` replayed), A-M6 (a single `tremplin_oauth` cookie),
+     A-M7 (callback commit), structural guard of the repositories, duplicate nodeid of the
+     isolation, B-m3 (writes outside the session during deletion), B-m7 (rounding of the total).
+- **Reason** Final review of phase 9 (areas A and B): “Take over” must not suggest a loss, a
+  takeover is never offered twice or to another account, “Delete everything” leaves no text in
+  the index. SPEC 17.1, P9, P19, P20; D176 to D187.
 
 ## D195
 
-- **Date** : 2026-11-17
-- **Sujet** : Revue finale de la phase 9 : correctifs front (zone C, plus un point de la zone A)
-- **Décision** :
-  1. **Premier lancement, la clé (C-I1)** : `planKeys` (`features/settings/keyPlan.ts`) décide de ce que valent les clés lues. Seuls les fournisseurs de `GET /settings/models` sont proposés à l'étape 3 (Brave, que `GET /settings/api-keys` liste aussi, n'en est pas un) ; une clé ne compte (`hasKey`, bouton « Plus tard », import du CV) que si elle est celle du fournisseur des niveaux de modèles (tous les niveaux : le back n'a aucun repli, `llm_key_missing`). Si les niveaux n'ont pas de clé mais qu'un autre fournisseur de modèles en a une, le préréglage de ce fournisseur (tous les niveaux chez lui, parmi ceux de `GET /settings/models`) est annoncé à l'étape 3 (« Tes modèles passeront sur … ») et écrit par un `PUT /settings` complet (`buildUserSettings`, `onboarding_done` inchangé) **en quittant l'étape 3**, et non à « Terminer » : l'import du CV de l'étape 4 lit avec les modèles déjà enregistrés, il aurait échoué. Un échec de cet envoi reste affiché et laisse sur l'étape. Aucun préréglage pour ce fournisseur : la page le dit (réglage à faire dans Modèles et clés), l'import reste fermé. Le texte « Une seule clé suffit pour faire tourner toute l'application » disparaît.
-  2. **Un autre compte dans un autre onglet (C-I2)** : le cookie de session est commun à tous les onglets, le back ne peut pas distinguer. Juste avant l'envoi, « Tout supprimer » relit `GET /auth/me` **sans cache** (`fetchQuery`, `staleTime: 0`) et compare l'`id` à celui affiché ; en cas d'écart (ou de session close), rien n'est envoyé, `forgetAccount` vide les requêtes et ce que les features gardent hors du cache, `me` est celui du compte actuel, et la page dit « Rien n'a été supprimé ». En plus, `SessionGate` relit `me` quand l'onglet redevient visible : si l'`id` change ou si la session est close, même oubli (la porte mène à `/connexion` sans session). Pas de rechargement de la page : le cache seul fait foi, c'est plus simple et testable. Une relecture ratée garde ce qui est affiché.
-  3. **Un seul oubli (C-m1)** : `forgetAccount(queryClient)` (`shared/lib/forgetAccount.ts` : requêtes hors `auth`, puis `resetLocalState`) sert la déconnexion, le 401 `auth_required`, « Tout supprimer » et le changement de compte. Les minuteurs du `sessionStorage` ne survivent plus à une déconnexion.
-  4. **Journal des agents (C-m5)** : « Réessayer » relit la page suivante si c'est elle qui a échoué (`isFetchNextPageError`), sinon les pages affichées (`refetch`).
-  5. **Page nue (C6 M8 b, C-m2, C-m3)** : une route peut déclarer `handle: { bare: true }` ; `AppLayout` masque alors la navigation latérale et le voyant de santé (la barre du haut reste : le compte et la déconnexion y restent atteignables). `bienvenue` est nue : un clic de navigation ne fait plus démonter l'accueil (étape, durées, PDF, import perdus), et `/health` n'est plus lu par deux lecteurs en parallèle.
-  6. **Reprise rejouée (zone A, M2)** : `useClaim` relit `GET /auth/me` sur `local_already_claimed` ; si la session est ouverte, la personne entre (le choix a déjà réussi, par un double envoi ou un autre onglet), sinon le refus mène à `/connexion` comme avant.
-  7. **Laissé au bilan** : focus après « Réessayer » à traiter une fois pour toutes dans `ErrorState` (C3 M2) ; doublons `NumberField` / `DurationField` et passage d'Étude sur `SaveBar` / `useSaveSettings` (C4 M3, Étude garde `disabled={blocked}`, focus sur `body`) ; surface morte `AgentOverridesTable.disabled` et `useAgents(enabled)` (C4 M4) ; `CostsPage` : relecture ratée avec données (m4, `InlineError`) ; `useDeleteAccount` : plus de seconde source de vérité pour `me` en pratique (m6, relue à neuf) ; un compte d'avant la phase 9 envoyé à l'accueil par une clé `.env` seule (m7, zone B) ; inscription de `localReset` par effet de bord à l'importation (champ `localReset` du manifeste, plus tard).
-- **Raison** : revue finale de la phase 9, zone C (`final-review-C.md` I1, I2, m1, m3, m5, C6 M8 b) et zone A (`final-review-A.md` M2). Une clé qui ne sert à aucun agent est un faux succès ; effacer un compte autre que celui qu'on voit est la pire erreur possible de « Tout supprimer ». SPEC 15.5, 17.3 ; D178, D183, D186 à D190.
+- **Date** 2026-11-17
+- **Subject** Final review of phase 9: front-end fixes (area C, plus one point of area A)
+- **Decision**
+  1. **First launch, the key (C-I1)**: `planKeys` (`features/settings/keyPlan.ts`) decides what the
+     keys read are worth. Only the providers of `GET /settings/models` are offered at step 3 (Brave,
+     which `GET /settings/api-keys` also lists, is not one); a key only counts (`hasKey`,
+     “Later” button, résumé import) if it is that of the model tiers' provider (all the tiers:
+     the back end has no fallback, `llm_key_missing`). If the tiers have no key but another model
+     provider has one, that provider's preset (all tiers with it, among those of
+     `GET /settings/models`) is announced at step 3 (“Your models will switch to …”) and
+     written by a full `PUT /settings` (`buildUserSettings`, `onboarding_done` unchanged) **when
+     leaving step 3**, not at “Finish”: the résumé import of step 4 reads with the models
+     already stored, it would have failed. A failure of this sending stays displayed and leaves on
+     the step. No preset for this provider: the page says so (setting to make in Models and keys),
+     the import stays closed. The text “A single key is enough to run the whole application”
+     disappears.
+  2. **Another account in another tab (C-I2)**: the session cookie is shared by all tabs, the back
+     end cannot tell them apart. Just before sending, “Delete everything” rereads `GET /auth/me`
+     **without cache** (`fetchQuery`, `staleTime: 0`) and compares the `id` with the one displayed;
+     on a mismatch (or a closed session), nothing is sent, `forgetAccount` empties the queries and
+     what the features keep outside the cache, `me` is that of the current account, and the page
+     says “Nothing was deleted”. In addition, `SessionGate` rereads `me` when the tab becomes
+     visible again: if the `id` changes or the session is closed, same forgetting (the gate leads to
+     `/connexion` with no session). No page reload: the cache alone is authoritative, it is simpler
+     and testable. A failed reread keeps what is displayed.
+  3. **A single forgetting (C-m1)**: `forgetAccount(queryClient)` (`shared/lib/forgetAccount.ts`:
+     queries outside `auth`, then `resetLocalState`) serves sign-out, the 401 `auth_required`,
+     “Delete everything”, and the account change. The `sessionStorage` timers no longer survive
+     a sign-out.
+  4. **Agent log (C-m5)**: “Retry” rereads the next page if that is the one that failed
+     (`isFetchNextPageError`), otherwise the pages displayed (`refetch`).
+  5. **Bare page (C6 M8 b, C-m2, C-m3)**: a route can declare `handle: { bare: true }`; `AppLayout`
+     then hides the side navigation and the health indicator (the top bar stays: the account and
+     sign-out stay reachable there). `bienvenue` is bare: a navigation click no longer unmounts the
+     welcome (step, durations, PDFs, import lost), and `/health` is no longer read by two readers in
+     parallel.
+  6. **Takeover replayed (area A, M2)**: `useClaim` rereads `GET /auth/me` on
+     `local_already_claimed`; if the session is open, the person gets in (the choice has already
+     succeeded, by a double sending or another tab), otherwise the refusal leads to `/connexion` as
+     before.
+  7. **Left for the report**: focus after “Retry” to be handled once and for all in `ErrorState`
+     (C3 M2); duplicates `NumberField` / `DurationField` and moving Study onto `SaveBar` /
+     `useSaveSettings` (C4 M3, Study keeps `disabled={blocked}`, focus on `body`); dead surface
+     `AgentOverridesTable.disabled` and `useAgents(enabled)` (C4 M4); `CostsPage`: failed reread
+     with data (m4, `InlineError`); `useDeleteAccount`: no second source of truth for `me` in
+     practice (m6, reread afresh); an account from before phase 9 sent to the home by a `.env` key
+     alone (m7, area B); registration of `localReset` by side effect at import (`localReset` field
+     of the manifest, later).
+- **Reason** Final review of phase 9, area C (`final-review-C.md` I1, I2, m1, m3, m5, C6 M8 b) and
+  area A (`final-review-A.md` M2). A key that serves no agent is a false success; erasing an account
+  other than the one you see is the worst possible error of “Delete everything”. SPEC 15.5,
+  17.3; D178, D183, D186 to D190.
 
 ## D196
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 9, tâches 9.S et 9.Q : essai réel de fin de phase sur une pile jetable, passage rapide des écrans (recette : `docs/superpowers/recette/phase-9.md`)
-- **Décision** :
-  1. **Recette (pas de script)** : même méthode que D174 n° 5 et 6, jouée à la main et à la demande de l'utilisatrice, pour qu'aucun essai ne touche son vrai compte. Pile `learning_career_platform-check9-*` : volumes copiés (`app_data` 80 Mo, `qdrant_data` 763 Mo, copie à chaud), un fichier d'override **hors dépôt** (ports 8110 et 5190, noms de volumes explicites, Qdrant non publié, Ollama sur un volume vide), images `learning_career_platform-check9-backend` et `-frontend` construites depuis le HEAD. Le faux fournisseur (`backend/scripts/fake_oidc.py`) tourne dans l'espace réseau du back (`--network container:`, `--entrypoint python`, scripts montés en lecture seule) : le point `token` doit être en boucle locale (D177 n° 7) et le navigateur joint le point `authorize` par un port publié du conteneur du back. Tout est retiré à la fin (conteneurs, réseau, trois volumes, deux images) ; les vrais volumes et conteneurs sont contrôlés intacts.
-  2. **Résultats** (17/11, 21 min de pile) : les neuf points du brief jouent (voir la recette pour les nombres) : porte du premier lancement (reste sur l'accueil, `onboarding_done = true`) ; coûts (623 appels, 1,658955 $ au rapport, somme des lignes de `/costs/calls` 1,65895475, écran « 1,66 $ » et « 0,003 $ » du jour) ; modèle par agent (surcharge lue : quatre modèles GLM hors forfait donnent `llm_credit_exhausted`, et une surcharge `archivist` sur `glm-5.3-flash` réussit alors que le niveau `rapide` est sur un modèle en échec ; réglages remis à l'identique) ; export (84 fichiers, 0 clé, 0 secret, fausse clé de contrôle absente, `last4` seul) ; `pull` réel de `bge-m3` (5 à 100 % en 112 s, croissant) ; mode Google (reprise proposée aux seules adresses nommées, double reprise 409 `local_already_claimed`, isolation sur 17 routes, WebSocket hors navigateur : sans cookie 401, cookie sans `Origin` 403, cookie et `Origin` du front accepté, `Origin` étrangère 403, autre compte 4404) ; « Tout supprimer » (204 en mode Google : cookie effacé, Qdrant 213 → 0 point, fichiers → 0 ; 204 en mode local, rejoué sur une seconde copie planificateur coupé : même `id`, espace vide et utilisable, réglages aux défauts) ; journaux relus (0 e-mail, 0 lien, 0 texte de note, 0 motif de clé ; 9 WARNING `search_unavailable`, 0 ERROR) ; neuf écrans à 1 024 px au clavier (0 défilement horizontal, 0 message de console, focus jamais sur `body`, français). Dépense : GLM 0,0029 $ (2 appels de capture), Anthropic 0,0188 $ (voir n° 3).
-  3. **Constat important (I1)** : le planificateur lance, au démarrage du back, un brief du matin et sa recherche web pour **tout compte sans réglage**, avec les niveaux par défaut (Anthropic Haiku 5.5) sur la clé du `.env` : trois comptes neufs, 25 appels, 78 941 jetons entrants, 0,0188 $, en moins de 40 s, dont un compte Google à `onboarding_done = false`. Aucun correctif dans cette tâche (l'essai ne modifie pas le code) ; à arbitrer au bilan : ne rien planifier tant que le premier lancement n'est pas fini (ou qu'un modèle n'est pas choisi). Cette dépense chez Anthropic est de mon fait (back recréé sans couper le planificateur) et dépasse l'autorisation « GLM seul » de l'essai ; elle a été arrêtée à la vue, le rejeu en mode local a tourné avec `SCHEDULER_ENABLED=false`.
-  4. **Limites** : surcharge vers un modèle d'un autre fournisseur non jouée (action refusée, non contournée) ; journaux du premier conteneur perdus (recréé au passage en mode Google, journaux non sauvés ; les suivants le sont, le point 8 de la recette dit lesquels) ; écran de reprise de Google non rejoué (parcours n° 5, commit 2d53752) ; WebSocket testé hors navigateur seulement ; un navigateur (Edge) et une largeur (1 024 px) ; copie à chaud.
-  5. **Mineurs** (recette M1 à M4) : erreur générique `http_error` sur un corps non UTF-8 ; réglages remis aux défauts (Anthropic) après « Tout supprimer » en mode local ; modèles GLM proposés mais hors forfait ; `percent = null` des premières secondes du téléchargement.
-- **Raison** : SPEC 18.1 et 18.3 (essai réel en fin de phase sur des données réelles), 17.1 à 17.3 (connexion, isolation, export, « Tout supprimer »), 11.5 (coûts) ; D174 n° 5 et 6 (même forme de recette sur pile jetable) ; D175 à D195 (ce que la phase 9 a livré). Un essai ne doit laisser aucune donnée personnelle dans la sortie ni dans les journaux.
+- **Date** 2026-11-17
+- **Subject** Phase 9, tasks 9.S and 9.Q: real end-of-phase trial on a disposable stack, quick pass
+  over the screens (acceptance test: `docs/superpowers/recette/phase-9.md`)
+- **Decision**
+  1. **Acceptance test (no script)**: same method as D174 no. 5 and 6, played by hand and at the
+     user's request, so that no trial touches her real account. Stack
+     `learning_career_platform-check9-*`: volumes copied (`app_data` 80 MB, `qdrant_data` 763 MB,
+     hot copy), an override file **outside the repository** (ports 8110 and 5190, explicit volume
+     names, Qdrant not published, Ollama on an empty volume), images
+     `learning_career_platform-check9-backend` and `-frontend` built from HEAD. The fake provider
+     (`backend/scripts/fake_oidc.py`) runs in the back end's network namespace
+     (`--network container:`, `--entrypoint python`, scripts mounted read-only): the `token`
+     endpoint must be on local loopback (D177 no. 7) and the browser reaches the `authorize`
+     endpoint through a published port of the back end's container. Everything is removed at the end
+     (containers, network, three volumes, two images); the real volumes and containers are checked
+     intact.
+  2. **Results** (17/11, 21 min of stack): the nine points of the brief play (see the acceptance
+     test for the numbers): first-launch gate (stays on the home, `onboarding_done = true`); costs
+     (623 calls, $1.658955 in the report, sum of the rows of `/costs/calls` 1.65895475, screen
+     “$1.66” and “$0.003” for the day); model per agent (override read: four GLM models
+     outside the plan give `llm_credit_exhausted`, and an `archivist` override on `glm-5.3-flash`
+     succeeds while the `rapide` tier is on a failing model; settings restored identically); export
+     (84 files, 0 key, 0 secret, fake control key absent, `last4` alone); real `pull` of `bge-m3` (5
+     to 100% in 112 s, increasing); Google mode (takeover offered only to the named addresses,
+     double takeover 409 `local_already_claimed`, isolation on 17 routes, WebSocket outside a
+     browser: without cookie 401, cookie without `Origin` 403, cookie and the front end's `Origin`
+     accepted, foreign `Origin` 403, another account 4404); “Delete everything” (204 in Google
+     mode: cookie cleared, Qdrant 213 → 0 points, files → 0; 204 in local mode, replayed on a
+     second copy with the scheduler off: same `id`, empty and usable space, settings at defaults);
+     logs reread (0 email, 0 link, 0 note text, 0 key pattern; 9 WARNING `search_unavailable`, 0
+     ERROR); nine screens at 1,024 px by keyboard (0 horizontal scroll, 0 console message, focus
+     never on `body`, French). Spending: GLM $0.0029 (2 capture calls), Anthropic $0.0188 (see no.
+     3).
+  3. **Important finding (I1)**: at the back end's startup, the scheduler launches a morning brief
+     and its web search for **any account with no settings**, with the default tiers (Anthropic
+     Haiku 5.5) on the `.env` key: three new accounts, 25 calls, 78,941 input tokens, $0.0188, in
+     under 40 s, including a Google account at `onboarding_done = false`. No fix in this task (the
+     trial does not change the code); to be arbitrated in the report: schedule nothing until the
+     first launch is finished (or a model is chosen). This spending at Anthropic is my doing (back
+     end recreated without turning off the scheduler) and exceeds the trial's “GLM only”
+     authorization; it was stopped on sight, the replay in local mode ran with
+     `SCHEDULER_ENABLED=false`.
+  4. **Limits**: override to a model of another provider not played (action refused, not worked
+     around); logs of the first container lost (recreated when switching to Google mode, logs not
+     saved; the following ones are, point 8 of the acceptance test says which); Google's takeover
+     screen not replayed (flow no. 5, commit 2d53752); WebSocket tested outside a browser only; one
+     browser (Edge) and one width (1,024 px); hot copy.
+  5. **Minor points** (acceptance test M1 to M4): generic `http_error` on a non-UTF-8 body; settings
+     put back to defaults (Anthropic) after “Delete everything” in local mode; GLM models
+     offered but outside the plan; `percent = null` in the first seconds of the download.
+- **Reason** SPEC 18.1 and 18.3 (real trial at the end of the phase on real data), 17.1 to 17.3
+  (sign-in, isolation, export, “Delete everything”), 11.5 (costs); D174 no. 5 and 6 (same shape
+  of acceptance test on a disposable stack); D175 to D195 (what phase 9 delivered). A trial must
+  leave no personal data in the output or in the logs.
 
 ## D197
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 9, correctif 9.S I1 : le planificateur ne travaille que pour les comptes dont le premier lancement est fini
-- **Décision** :
-  1. **Constat** (recette D196 n° 3) : au démarrage, les tâches planifiées lançaient le brief du matin et sa recherche web pour tout compte, avec les niveaux par défaut et la clé du `.env`, avant la fin du premier lancement (3 comptes neufs, 25 appels, 0,0188 $).
-  2. **Règle** : une tâche planifiée qui peut appeler un modèle ou le web ne traite que les comptes dont `onboarding_done` est vrai **au sens de `GET /settings`** (D183) : avec une ligne de réglages, sa clé `onboarding_done` vaut vrai (une ligne sans la clé vaut faux, comme la route ; la migration 0015 a posé vrai sur toutes les lignes existantes, donc un vrai compte d'avant la phase 9 reste traité) ; sans ligne, le compte est « fait » s'il a une clé, un objectif ou un appel de modèle. Un compte sauté ne prend **aucun** passage du registre `jobs` (il est traité au premier passage qui suit la fin de son premier lancement) ; rien n'est journalisé au-dessus de DEBUG pour lui.
-  3. **Source de vérité** : `onboarded_user_ids` (`app/features/settings/repository.py`, filtre en SQL, partage `_prior_data` avec `has_prior_data` de la route), exposée par `settings.service.scheduled_users`. Elle vit dans la feature `settings` et non dans `ledger/repository.py` : un dépôt ne peut pas importer une autre feature (contrat 2 d'import-linter). `ledger.service.scheduled_user_ids` (qui remplace `user_ids` ; `all_user_ids` disparaît) en est l'enveloppe documentée pour le brief, le radar et le rafraîchissement ATS ; `program.service.list_validated_programs` filtre par la même lecture, ce qui couvre les énoncés des projets, le bilan hebdomadaire et les leçons J-7. Seule lecture sans `user_id` des réglages (comme D18, D91), identifiants seulement.
-  4. **Tâches concernées** : `daily_brief`, `market_radar`, `ats_refresh`, `project_briefs`, `weekly_review`, `lessons_due`. Non concernées : `reminders_due` et `skill_snapshots` (aucun appel de modèle ni du web).
-  5. **Après « Tout supprimer »** (mode local) : les réglages reviennent aux défauts avec `onboarding_done` faux, le compte n'est donc plus planifié avant un nouveau premier lancement (test de `test_local_mode_usable_after_delete`).
-- **Raison** : recette de la phase 9 (D196 n° 3, I1) ; P20, D183 (une seule règle pour la porte et le planificateur) ; SPEC 17.3 (rien ne sort de la machine avant que l'utilisatrice l'ait vu).
+- **Date** 2026-11-17
+- **Subject** Phase 9, fix 9.S I1: the scheduler only works for accounts whose first launch is
+  finished
+- **Decision**
+  1. **Finding** (acceptance test D196 no. 3): at startup, the scheduled tasks launched the morning
+     brief and its web search for any account, with the default tiers and the `.env` key, before the
+     end of the first launch (3 new accounts, 25 calls, $0.0188).
+  2. **Rule**: a scheduled task that can call a model or the web only processes the accounts whose
+     `onboarding_done` is true **in the sense of `GET /settings`** (D183): with a settings row, its
+     `onboarding_done` key is true (a row without the key is false, like the route; migration 0015
+     set true on all the existing rows, so a real account from before phase 9 stays processed); with
+     no row, the account is “done” if it has a key, a goal, or a model call. A skipped account
+     takes **no** run from the `jobs` registry (it is processed at the first pass after the end of
+     its first launch); nothing is logged above DEBUG for it.
+  3. **Source of truth**: `onboarded_user_ids` (`app/features/settings/repository.py`, filter in
+     SQL, shares `_prior_data` with the route's `has_prior_data`), exposed by
+     `settings.service.scheduled_users`. It lives in the `settings` feature and not in
+     `ledger/repository.py`: a repository cannot import another feature (import-linter contract 2).
+     `ledger.service.scheduled_user_ids` (which replaces `user_ids`; `all_user_ids` disappears) is
+     its documented wrapper for the brief, the radar, and the ATS refresh;
+     `program.service.list_validated_programs` filters by the same read, which covers the project
+     statements, the weekly review, and the D-7 lessons. The only read of the settings without
+     `user_id` (like D18, D91), identifiers only.
+  4. **Tasks concerned**: `daily_brief`, `market_radar`, `ats_refresh`, `project_briefs`,
+     `weekly_review`, `lessons_due`. Not concerned: `reminders_due` and `skill_snapshots` (no model
+     or web call).
+  5. **After “Delete everything”** (local mode): the settings go back to defaults with
+     `onboarding_done` false, so the account is no longer scheduled before a new first launch (test
+     `test_local_mode_usable_after_delete`).
+- **Reason** Acceptance test of phase 9 (D196 no. 3, I1); P20, D183 (a single rule for the gate and
+  the scheduler); SPEC 17.3 (nothing leaves the machine before the user has seen it).
 
 ## D200
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 10, tâche 10.P : socle commun et contrat de l'IDE Python (avec professeur) et du serveur MCP, posés avant la fourche en quatre flux
-- **Décision** :
-  1. **Contrat d'abord (P1)** : les 31 routes de `ide` (18) et de `mcp` (13) sont posées en bouchons 501 `not_implemented` (`app/core/stubs.py`), avec leurs schémas définitifs (`features/ide/schemas.py`, `features/mcp/schemas.py`) ; `contracts/openapi.json` et `frontend/src/shared/api/schema.d.ts` sont régénérés ici. Le test de contrat (`tests/test_phase10_contract.py`) liste les bouchons ; l'ensemble `LIVE` est vidé à l'intégration (10.I). Les deux routeurs sont derrière `get_current_user` (401 sans connexion une fois remplis) ; le jeton MCP n'ouvre jamais `/api/v1` (B1).
-  2. **Migration unique `0016_ide_mcp` (P3)** (`down_revision = "0015"`, écrite par autogénération puis relue) : `ide_exercises`, `ide_sessions`, `ide_runs`, `ide_notes`, `ide_preferences`, `mcp_tokens`, `mcp_prefs`, `mcp_calls`, `mcp_changes`, `mcp_confirmations`. Toutes ont `user_id` (index) ; aucune clé étrangère (comme le quotidien : le journal et l'historique survivent à la révocation d'un jeton, une séance à son exercice). Aucun flux n'écrit de migration. Colonnes ajoutées au-delà du plan, pour ne pas rouvrir la migration : `ide_notes.author_label`, `error_key` (anti-répétition du professeur), `ide_sessions.teacher_tokens` (consommation de séance), `ide_runs.requested_by`, `mcp_confirmations.result_code`.
-  3. **Export (P3)** : `mcp_tokens.hash` porte `info={"export": False}` (comme `api_keys.encrypted_key`) ; la garde des colonnes « secrètes » exige une décision pour les noms qui évoquent un secret : `ide_notes.base_hash`, `ide_notes.error_key`, `ide_sessions.teacher_tokens`, `mcp_calls.token_id`, `mcp_confirmations.token_id` sont déclarées relues, pas des secrets (empreinte de fichier, empreinte d'erreur, compteur, identifiant du jeton, jamais sa valeur). « Tout supprimer » les vide (toute table à `user_id`).
-  4. **Port du bac à sable (P5 à P7)** : `app/providers/sandbox/base.py` (`SandboxJob`, `SandboxResult`, `SandboxProgress`, `CodeSandbox`, plafonds `MAX_FILES, MAX_TOTAL_BYTES, MAX_TIMEOUT_S, MAX_OUTPUT_BYTES = 20, 200_000, 15, 65_536`) ; en plus du plan : `check_job_limits(job)` (partagé par la double et par `spool`, refuse en `ValueError` trop de fichiers, trop d'octets, durée hors 1 à 15 s, chemin absolu ou remontant, entrée absente) et `UnknownRun` (`poll` d'un travail inconnu). Les décalages de `poll` sont des **octets** du journal UTF-8. `FakeSandbox(scripted)` : clé = `run_id` ; une `str` = sortie d'un travail `done` code 0, un `SandboxResult` = fin sans sortie ; la clé `"*"` répond à tout travail non scripté (les services créent leurs identifiants eux-mêmes) ; fin dès le dépôt, `cancel` donne `killed`. Contrat d'import 3 : `app.providers.sandbox.spool` est interdit aux features, agents, temps réel et planificateur.
-  5. **Appelant (P12, P8)** : `app/core/caller.py` : `McpIdentity`, `MCP_IDENTITY` (`ContextVar`, écrite par le seul envoyeur MCP), `Caller`, `current_caller()` (« app » si vide), `CallerDep`. `get_current_user` ne la lit pas encore (10.B1).
-  6. **Déclarations MCP (P11)** : `app/mcp/base.py` : `McpAction`, `McpGraph`, `FeatureMcp`, `NEVER_EXPOSED_FEATURES`, `Level`, plus `PrecheckInput` et `Verdict` (types du contrôle préalable, que le plan nomme sans les définir : utilisateur, méthode, chemin, paramètres, corps ; verdict `ok`, raisons, résumé). Le registre `MCP_FEATURES: list[FeatureMcp]` est dans `features/registry.py`, vide jusqu'à 10.D1. Nouveau contrat d'import 9 : `app.mcp` n'importe aucune feature ni `app.agents`. Le contrat 5 (composition isolée) couvre `app.bootstrap_ide` et `app.bootstrap_mcp`.
-  7. **Composition** : `bootstrap_ide.compose_ide(app)` et `bootstrap_mcp.compose_mcp(app)` sont des fonctions vides, appelées par `bootstrap.compose_phase10(app)`, elle-même appelée par `app.main._compose_features` (une ligne ; `app.main` reste sous 300 lignes). Réglages : `SANDBOX_SPOOL_DIR=/spool` (`sandbox_spool_dir`), `MCP_BODY_LIMIT=1_000_000` (`mcp_body_limit`, au moins 1 000).
-  8. **Écarts au plan** : (a) le type de réponse de `POST /ide/exercises/generate` s'appelle `IdeSessionStarted`, pas `SessionStarted` : `projects` porte déjà une classe `SessionStarted`, et deux classes de même nom feraient renommer les deux en `app__features__…` dans le contrat (et casseraient le front de `projects`) ; (b) tous les schémas de `mcp` sont préfixés `Mcp` (`ChangeOut` et `SettingsOut` existent déjà ailleurs, même raison) ; (c) `EvidenceKind` gagne `"ide"` (`core/skills.py`, P20), le contrat en tient compte ; (d) `app/core/stubs.py` est neuf (une fonction) ; (e) le garde d'isolation des routeurs reçoit un ensemble provisoire `EXPECTED_PHASE10` (`ide`, `mcp`), à vider en 10.I quand 10.A2 et 10.B2 livrent leurs cas.
-  9. **À savoir pour les flux** : l'enregistreur de changements (B2) ne doit jamais copier les colonnes `info={"export": False}` ni `api_keys` dans `mcp_changes.before/after` (un secret ne se range pas dans un journal d'annulation) ; la suppression d'un jeton passe par `revoked_at`, jamais par un effacement (le journal garde son `token_id`).
-  10. **Dépendances du front (P2)** : `monaco-editor` `^0.57.0` et `@monaco-editor/react` `^4.7.0` ajoutés à `package.json` et `pnpm-lock.yaml`. `pnpm.exe` est bloqué et le paquet pnpm 12 de corepack ne livre pas de `pnpm.cjs` (un wrapper `.mjs` qui lance le binaire natif, donc bloqué aussi) ; retenu : `docker run --rm node:22.22.3-alpine3.24` sur une **copie** de `package.json` et `pnpm-lock.yaml`, `corepack enable && pnpm add monaco-editor @monaco-editor/react --lockfile-only` (même version de pnpm, 12.18.0, que `packageManager`), seuls ces deux fichiers sont rapportés. Le `node_modules` partagé n'est pas mis à jour (copie manuelle refusée par le poste) : tant que `pnpm install` n'a pas tourné quelque part, l'import réel de `monaco-editor` échoue sous Vitest (« Failed to resolve import ») ; le flux C doit soit installer, soit aliaser le module sur un faux dans la configuration de test.
-  11. **Correctifs de la relecture** (0016 modifiée en place : elle n'a jamais tourné sur une vraie base) : (a) `check` lance les tests de l'exercice par `python -m pytest -q` dans le bac (code 0 = réussi), `run` exécute `entry` ; (b) `TeachTrigger = run_error | run_ok | question | hint | idle`, question vide ou blanche = 422, `SkipReason` sans `empty_question` ; (c) état durable : `ide_sessions.passed_at`, `SessionSummary` et `IdeSessionOut` (ex-`SessionOut`, nom du plan) portent `passed` et `passed_at`, `ide_runs.error_signature` (40 signes, interne, jamais en sortie ni dans l'export : relue dans la garde des colonnes) ; (d) grammaire `untrusted` : chemins pointés dans `data` de la réponse, `[]` pour chaque élément d'une liste, `[].champ` si la racine est une liste (`untrusted_paths_valid`, vérifiée à la construction ; l'enveloppement est le travail de B2) ; (e) `McpAction.body_fields` (liste blanche des champs du corps) et `merge_from` (route GET servant de base ; exige `body_fields`) expriment `settings_update_preferences` ; un graphe exclu a pour clé `"graph:<nom>"` ; une route déclarée avec `body_fields` est permise même si sa feature a des champs sensibles ; (f) journal des refus : `mcp_calls.level` accepte 0 (refusé avant la résolution de l'outil), `mcp_calls.token_id` est nullable (jeton non reconnu), `McpCallOut.level` `0..3`, `token_id` nullable ; (g) mineurs : un effet `external` de niveau 2 est refusé à la construction, `check_job_limits` refuse chemins `.`, vide, `..`, absolus, segments vides, nul, et un `run_id` qui n'est pas un uuid (hex 32 ou uuid4 texte) ; `entry` à 200 signes partout ; `base_hash` = sha256 hexadécimal du contenu UTF-8 du fichier ; `FakeSandbox.cancel` laisse un travail fini fini, et un script en tuple de morceaux donne un état « en cours » ; garde : seul `app/mcp/` écrit `MCP_IDENTITY` ; contrats d'import : `app.mcp` couvert par 3 et 5, `app.providers.sandbox.fake` interdit aux features. Tests déplacés dans `tests/test_phase10_sandbox_contract.py` et `tests/test_phase10_mcp_contract.py` (le fichier de contrat dépassait 300 lignes).
-- **Raison** : plan de la phase 10, P1 à P3, P5 à P8, P11, P12, P16, P20 ; exigence du 2026-11-17 (le MCP fait chaque action de l'application, sous les mêmes règles que l'interface). Poser toute la surface une fois évite que quatre flux en parallèle changent le contrat, la base ou l'export chacun de son côté.
+- **Date** 2026-11-17
+- **Subject** Phase 10, task 10.P: common foundation and contract of the Python IDE (with teacher)
+  and of the MCP server, laid down before the fork into four streams
+- **Decision**
+  1. **Contract first (P1)**: the 31 routes of `ide` (18) and `mcp` (13) are laid down as 501
+     `not_implemented` stubs (`app/core/stubs.py`), with their final schemas
+     (`features/ide/schemas.py`, `features/mcp/schemas.py`); `contracts/openapi.json` and
+     `frontend/src/shared/api/schema.d.ts` are regenerated here. The contract test
+     (`tests/test_phase10_contract.py`) lists the stubs; the `LIVE` set is emptied at integration
+     (10.I). Both routers are behind `get_current_user` (401 without sign-in once filled in); the
+     MCP token never opens `/api/v1` (B1).
+  2. **Single migration `0016_ide_mcp` (P3)** (`down_revision = "0015"`, written by autogeneration
+     then reread): `ide_exercises`, `ide_sessions`, `ide_runs`, `ide_notes`, `ide_preferences`,
+     `mcp_tokens`, `mcp_prefs`, `mcp_calls`, `mcp_changes`, `mcp_confirmations`. All have `user_id`
+     (index); no foreign key (like the daily tables: the journal and the history survive the
+     revocation of a token, a session its exercise). No stream writes a migration. Columns added
+     beyond the plan, so as not to reopen the migration: `ide_notes.author_label`, `error_key` (the
+     teacher's anti-repetition), `ide_sessions.teacher_tokens` (session consumption),
+     `ide_runs.requested_by`, `mcp_confirmations.result_code`.
+  3. **Export (P3)**: `mcp_tokens.hash` carries `info={"export": False}` (like
+     `api_keys.encrypted_key`); the “secret” columns guard demands a decision for names that
+     evoke a secret: `ide_notes.base_hash`, `ide_notes.error_key`, `ide_sessions.teacher_tokens`,
+     `mcp_calls.token_id`, `mcp_confirmations.token_id` are declared reviewed, not secrets (file
+     fingerprint, error fingerprint, counter, token identifier, never its value). “Delete
+     everything” empties them (any table with `user_id`).
+  4. **Sandbox port (P5 to P7)**: `app/providers/sandbox/base.py` (`SandboxJob`, `SandboxResult`,
+     `SandboxProgress`, `CodeSandbox`, caps `MAX_FILES, MAX_TOTAL_BYTES,
+     MAX_TIMEOUT_S, MAX_OUTPUT_BYTES = 20, 200_000, 15, 65_536`); in addition to the plan:
+     `check_job_limits(job)` (shared by the fake and by `spool`, refuses with `ValueError` too many
+     files, too many bytes, duration outside 1 to 15 s, absolute or climbing path, missing entry)
+     and `UnknownRun` (`poll` of an unknown job). The `poll` offsets are **bytes** of the UTF-8
+     journal. `FakeSandbox(scripted)`: key = `run_id`; a `str` = output of a `done` job with code 0,
+     a `SandboxResult` = end with no output; the key `"*"` answers any unscripted job (the services
+     create their identifiers themselves); end as soon as submitted, `cancel` gives `killed`. Import
+     contract 3: `app.providers.sandbox.spool` is forbidden to features, agents, real time, and the
+     scheduler.
+  5. **Caller (P12, P8)**: `app/core/caller.py`: `McpIdentity`, `MCP_IDENTITY` (`ContextVar`,
+     written by the MCP dispatcher alone), `Caller`, `current_caller()` (“app” if empty),
+     `CallerDep`. `get_current_user` does not read it yet (10.B1).
+  6. **MCP declarations (P11)**: `app/mcp/base.py`: `McpAction`, `McpGraph`, `FeatureMcp`,
+     `NEVER_EXPOSED_FEATURES`, `Level`, plus `PrecheckInput` and `Verdict` (types of the preliminary
+     check, which the plan names without defining: user, method, path, parameters, body; verdict
+     `ok`, reasons, summary). The `MCP_FEATURES: list[FeatureMcp]` registry is in
+     `features/registry.py`, empty until 10.D1. New import contract 9: `app.mcp` imports no feature
+     or `app.agents`. Contract 5 (isolated composition) covers `app.bootstrap_ide` and
+     `app.bootstrap_mcp`.
+  7. **Composition**: `bootstrap_ide.compose_ide(app)` and `bootstrap_mcp.compose_mcp(app)` are
+     empty functions, called by `bootstrap.compose_phase10(app)`, itself called by
+     `app.main._compose_features` (one line; `app.main` stays under 300 lines). Settings:
+     `SANDBOX_SPOOL_DIR=/spool` (`sandbox_spool_dir`), `MCP_BODY_LIMIT=1_000_000` (`mcp_body_limit`,
+     at least 1,000).
+  8. **Deviations from the plan**: (a) the response type of `POST /ide/exercises/generate` is called
+     `IdeSessionStarted`, not `SessionStarted`: `projects` already carries a `SessionStarted` class,
+     and two classes with the same name would make both be renamed `app__features__…` in the
+     contract (and break `projects`' front end); (b) all the `mcp` schemas are prefixed `Mcp`
+     (`ChangeOut` and `SettingsOut` already exist elsewhere, same reason); (c) `EvidenceKind` gains
+     `"ide"` (`core/skills.py`, P20), the contract takes it into account; (d) `app/core/stubs.py` is
+     new (one function); (e) the routers' isolation guard receives a provisional set
+     `EXPECTED_PHASE10` (`ide`, `mcp`), to be emptied in 10.I when 10.A2 and 10.B2 deliver their
+     cases.
+  9. **To know for the streams**: the change recorder (B2) must never copy the columns with
+     `info={"export": False}` nor `api_keys` into `mcp_changes.before/after` (a secret is not stored
+     in an undo journal); deleting a token goes through `revoked_at`, never through an erasure (the
+     journal keeps its `token_id`).
+  10. **Front-end dependencies (P2)**: `monaco-editor` `^0.57.0` and `@monaco-editor/react` `^4.7.0`
+     added to `package.json` and `pnpm-lock.yaml`. `pnpm.exe` is blocked and corepack's pnpm 12
+     package ships no `pnpm.cjs` (a `.mjs` wrapper that launches the native binary, so blocked too);
+     chosen: `docker run --rm node:22.22.3-alpine3.24` on a **copy** of `package.json` and
+     `pnpm-lock.yaml`, `corepack enable && pnpm add monaco-editor @monaco-editor/react
+     --lockfile-only` (same pnpm version, 12.18.0, as `packageManager`), only these two files are
+     brought back. The shared `node_modules` is not updated (manual copy refused by the machine):
+     until `pnpm install` has run somewhere, the real import of `monaco-editor` fails under Vitest
+     (“Failed to resolve import”); stream C must either install, or alias the module to a fake
+     in the test configuration.
+  11. **Fixes from the reread** (0016 modified in place: it has never run on a real database): (a)
+     `check` runs the exercise's tests with `python -m pytest -q` in the sandbox (code 0 = passed),
+     `run` executes `entry`; (b) `TeachTrigger = run_error | run_ok | question | hint | idle`, empty
+     or blank question = 422, `SkipReason` without `empty_question`; (c) durable state:
+     `ide_sessions.passed_at`, `SessionSummary` and `IdeSessionOut` (formerly `SessionOut`, the
+     plan's name) carry `passed` and `passed_at`, `ide_runs.error_signature` (40 characters,
+     internal, never in output or in the export: reread in the columns guard); (d) `untrusted`
+     grammar: dotted paths in the response's `data`, `[]` for each element of a list, `[].field` if
+     the root is a list (`untrusted_paths_valid`, checked at construction; the wrapping is B2's
+     job); (e) `McpAction.body_fields` (whitelist of body fields) and `merge_from` (GET route
+     serving as base; requires `body_fields`) express `settings_update_preferences`; an excluded
+     graph has the key `"graph:<name>"`; a route declared with `body_fields` is allowed even if its
+     feature has sensitive fields; (f) refusal journal: `mcp_calls.level` accepts 0 (refused before
+     the tool's resolution), `mcp_calls.token_id` is nullable (unrecognized token),
+     `McpCallOut.level` `0..3`, `token_id` nullable; (g) minor points: an `external` effect of level
+     2 is refused at construction, `check_job_limits` refuses paths `.`, empty, `..`, absolute,
+     empty segments, null, and a `run_id` that is not a uuid (32-character hex or textual uuid4);
+     `entry` at 200 characters everywhere; `base_hash` = hexadecimal sha256 of the file's UTF-8
+     content; `FakeSandbox.cancel` leaves a finished job finished, and a script as a tuple of chunks
+     gives a “running” state; guard: only `app/mcp/` writes `MCP_IDENTITY`; import contracts:
+     `app.mcp` covered by 3 and 5, `app.providers.sandbox.fake` forbidden to features. Tests moved
+     to `tests/test_phase10_sandbox_contract.py` and `tests/test_phase10_mcp_contract.py` (the
+     contract file exceeded 300 lines).
+- **Reason** Plan of phase 10, P1 to P3, P5 to P8, P11, P12, P16, P20; requirement of 2026-11-17
+  (the MCP does every action of the application, under the same rules as the interface). Laying down
+  the whole surface once prevents four parallel streams from each changing the contract, the
+  database, or the export on their own.
 
 ## D201
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 10, tâche 10.A1 : bac à sable d'exécution de code Python, sans socket ni réseau
-- **Décision** :
-  1. **Architecture (P5, P6)** : un service Compose `sandbox` (image `learning_career_platform-sandbox:latest`, construite à la main : `docker build -t learning_career_platform-sandbox:latest sandbox`, jamais `docker compose build`), sans réseau (`network_mode: none`), sans socket Docker, sans dossier de l'hôte, sans port, sans `env_file` ni variable d'environnement. Seul canal : le volume nommé `sandbox_spool` monté sur `/spool` (`2770 root:12345`), partagé avec le back par `group_add: ["12345"]`. Le service `backend` en dépend (`depends_on: sandbox: service_healthy`).
-  2. **Valeurs du plan, reprises telles quelles** : `user: "0:12345"`, `read_only: true`, `cap_drop: [ALL]`, `cap_add: [CHOWN, SETUID, SETGID, KILL]`, `security_opt: [no-new-privileges:true]`, `mem_limit` et `memswap_limit: 512m`, `cpus: 1.0`, `pids_limit: 128`, tmpfs `/work` (64 Mo) et `/tmp` (16 Mo) en `noexec,nosuid,nodev`, healthcheck sur l'âge de `/spool/heartbeat` (moins de 5 s). **Ajouts (constatés nécessaires, voir 6)** : `nr_inodes=4096` sur `/work`, `nr_inodes=2048` sur `/tmp`, et `/dev/shm` redéclaré (`size=64m,noexec,nosuid,nodev,nr_inodes=2048`).
-  3. **Lanceur** (`sandbox/runner.py`, `runner_job.py`, `runner_exec.py`, `runner_proc.py` ; stdlib seule ; le plan nommait deux fichiers, le découpage en quatre tient la limite de 300 lignes) : scrutation toutes les 100 ms de `/spool/jobs/<id>.json`, une exécution à la fois ; le code tourne en uid/gid 20000 (`setgroups([])`, `setgid`, `setuid` dans `preexec`), nouvelle session (`setsid`), **environnement vide** (`PATH`, `HOME=/work/<id>`, `PYTHONDONTWRITEBYTECODE=1` ; Python y ajoute `LC_CTYPE`), `python -X utf8 -u -s <entrée>`. Plafonds **constants**, jamais lus dans le travail (le travail ne peut que demander une durée plus courte : bornée à 1 à 15 s) : CPU 10 s, mémoire 256 Mio (`RLIMIT_AS` et somme des RSS de tous les processus du code, surveillée toutes les 100 ms : le dépassement donne `killed`), 32 processus, fichier de 8 Mio (`RLIMIT_FSIZE`), 256 descripteurs, `RLIMIT_CORE=0` (le `core_pattern` est celui de l'hôte), `oom_score_adj=1000` (le noyau tue le code avant le lanceur), `nice 5`. Sortie : tube lu en continu, journal `out/<id>.log` borné à 64 Kio (coupé sur une frontière de caractère, `truncated`), le reste jeté. Fin : `killpg`, puis balayage des processus d'uid 20000 jusqu'à zéro, puis nettoyage. `kind="check"` lance `python -m pytest -q -p no:cacheprovider --rootdir=. -c /dev/null` sur les fichiers `test_*.py` ou `*_test.py` du travail (arbitrage du contrôleur, relecture 10.P) ; `kind="run"` exécute `entry`.
-  4. **Nettoyage sous l'identité du code** : le lanceur n'a ni `DAC_OVERRIDE` ni `FOWNER` : il ne peut ni entrer dans un dossier du code (`chmod 000`), ni effacer ses fichiers d'un dossier collant (`/tmp`). Le nettoyage (`/work`, `/tmp`, `/dev/shm`, `/dev/mqueue`, objets IPC System V) est donc fait par un **processus fils qui prend l'uid 20000** (parcours sans récursion, par descripteurs de dossier, aucun lien suivi) ; le lanceur ne retire que le dossier de travail devenu vide. Au démarrage : droits de `/spool` réaffirmés (`chown root:12345`, `chmod 2770`, ne pas se fier au seul copy-up), `/work` en 0755 (le code n'écrit que dans son dossier), journaux orphelins d'un lanceur arrêté en route clos en `error`, restes de `/work` effacés. Conservation du volume d'échange : 30 minutes (fichiers temporaires : 1 minute), par travail (journal et fin partent ensemble).
-  5. **Protocole (côté back, `providers/sandbox/spool.py`)** : `SpoolSandbox(spool_dir)` ; le travail est écrit en `.tmp` puis `rename` (`0660` forcé par `fchmod` : le `umask` du back retirerait l'écriture au groupe) ; `poll` lit la fin **avant** le journal (une fin vue = journal complet), rend les octets depuis le décalage, retient un caractère UTF-8 coupé tant que le travail court ; `UnknownRun` pour un identifiant jamais déposé ou nettoyé ; un travail resté en file plus de 60 s alors que le lanceur ne bat plus rend `error` (pas d'attente sans fin) ; `cancel` dépose `cancel/<id>` (sans effet si le travail est fini ou inconnu), le lanceur tue le groupe (`killed`) ou ne lance jamais un travail annulé avant son départ ; `healthy()` = battement de moins de 5 s. Bac arrêté : `submit` lève une `OSError` (à convertir en 503 par `ide`). Les identifiants et les chemins sont validés **deux fois** (`check_job_limits` du port, puis le lanceur, qui ne croit pas le dépôt).
-  6. **Constaté avec les tests d'évasion (pile jetable)** : (a) **une boucle de `open()` tuait tout le conteneur, lanceur compris** : les inodes de tmpfs sont de la mémoire du noyau hors des 64 Mo, le noyau a déclenché le tueur de mémoire du groupe de contrôle. Corrigé par `nr_inodes` (la boucle s'arrête sur `ENOSPC` après 2 047 fichiers dans `/tmp`) ; test `test_inode_flood_limited_and_the_runner_survives`. (b) Un remplissage de mémoire partagée System V (64 Mo touchés par segment) est tué en moins d'une seconde (`killed`) ; les segments sont retirés par le nettoyage (`test_shared_memory_flood_is_killed_and_freed`) ; `State.OOMKilled` reste vrai dans `docker inspect` alors que le conteneur continue : c'est le code qui a été tué, pas le lanceur. (c) `/dev/shm` (monté par Docker) reste inscriptible par le code : exception connue, bornée (64 Mo, 2 048 inodes), vidée après chaque exécution ; elle sert à `multiprocessing`. (d) Un code qui fait `kill -STOP` sur lui-même, ignore `SIGTERM`/`SIGHUP`, se démonise en double fourche ou ouvre 200 fils finit par la durée réelle (`timeout`), sans reste.
-  7. **Docker Desktop (hôte Windows, WSL2, noyau 6.6.87, cgroup v2, profil seccomp par défaut)** — *permis* : `network_mode: none` (seule l'interface `lo`, aucune route), `read_only`, `cap_drop`/`cap_add`, `no-new-privileges`, `mem_limit`, **`memswap_limit: 512m` honoré** (`memory.swap.max = 0` dans le groupe de contrôle), `cpus`, `pids_limit`, tmpfs avec `noexec,nosuid,nodev`, seccomp actif pour le code (`Seccomp: 2`, `NoNewPrivs: 1`), **copy-up des droits du volume nommé : conforme** (le volume neuf reprend `2770 root:12345` de l'image ; le lanceur les réaffirme de toute façon). `CapBnd` du code reste `0xe1` (les quatre capacités du conteneur) : sans capacité permise ni effective, elles ne servent à rien, et `no-new-privileges` interdit d'en gagner par `exec`. *Non fait / hors de portée* : le noyau est partagé avec les autres conteneurs de la machine virtuelle (pas de gVisor ni Kata) ; aucun montage de dossier Windows (le volume d'échange est nommé) ; le plafond global de mémoire vient de `.wslconfig` (512 Mo du bac + tmpfs à y faire tenir). Ces tests ne prouvent rien sur un autre hôte : à refaire à tout changement d'hébergement (P5, point 6).
-  8. **Tests** : unitaires du lanceur (`sandbox/tests/test_runner_unit.py`, 27 : à lancer dans le conteneur de test du back, `cd backend && uv run pytest -c pyproject.toml ../sandbox/tests`), du client (`tests/providers/sandbox/test_spool.py`), de Compose (`tests/infra/test_compose_sandbox.py`), de la santé et de la composition ; **24 tests d'évasion** (`tests/sandbox_live/`, marque `sandbox_live` ajoutée à `pyproject.toml` et exclue des `addopts` : lancer `pytest -m sandbox_live tests/sandbox_live` en utilisateur 10001 avec `--group-add 12345` et le volume d'échange monté sur `/spool`, contre une pile jetable). Les tests d'évasion ont été **mutés** : réseau ouvert, racine en écriture, `/var/run/docker.sock` monté, toutes capacités et seccomp coupé font chacun échouer le test qui leur correspond.
-  9. **Composition** : `Providers.sandbox` (`CodeSandbox | None`, nouveau champ) ; `bootstrap_ide.compose_ide` y pose `SpoolSandbox(settings.sandbox_spool_dir)` (un bac déjà posé par un test est gardé) et ajoute le contrôle `sandbox` (« Bac à sable ») à `health_checks` : un bac à l'arrêt rend la santé `degraded`, jamais `down`. Écart de test : `test_real_wiring_reports_the_six_checks` devient `..._seven_checks` (battement simulé).
-  10. **Relecture de sécurité (corrections)** : **I1** le nettoyage System V retire tout objet dont `uid` **ou `cuid`** vaut 20000 (le propriétaire peut transférer l'objet par `IPC_SET` sans capacité ; le créateur le retire quand même). **I2** `parse_status` lit `/proc/<pid>/status` en binaire, coupe sur le saut de ligne seul, ignore la première ligne (`Name:`, fixé par le code par `prctl(PR_SET_NAME)`) et garde la première occurrence de chaque clé : jamais d'exception ; chaque tour de `serve()` est dans un `try/except` (incident noté par type et identifiant, travail clos en `error`, le lanceur continue) ; `next_job` utilise `lstat` (lien pendant toléré) ; `restart: on-failure` sur le service. **I3** `claim` crée le journal (vide) **avant** de retirer `jobs/<id>.json` (`poll` et `cancel` voient toujours l'un ou l'autre) ; un travail pris puis interrompu est clos en `error` au redémarrage sans être rejoué. **M1** `kill_user_processes`, `purge_user_files` et `rmdir` du dossier de travail sont vérifiés : un échec lève `Unsafe` (hors de `Exception`), le lanceur écrit une fin `error` puis sort en code 70 et Compose le relance neuf ; `_wipe_dir` ne tente plus le `rmdir` refusé d'un enfant direct de `/work` (code de retour de nouveau exploitable). **M3** `proc.wait` borné à 5 s, puis `Unsafe`. **M5** lecture du journal bornée à `MAX_OUTPUT_BYTES + 4` octets côté back ; dépôt en UTF-8 sans échappement ASCII, substitution orpheline refusée en `ValueError`, limite de travail du lanceur portée à 1 500 000 octets (200 000 caractères de contrôle font 1,2 Mo en JSON) ; le NUL est retiré de la sortie côté IDE (10.A2). **M6** dépôt par `os.link` d'un fichier temporaire propre à chaque dépôt (un doublon lève `ValueError`, rien n'est écrasé). Tests : 12 unitaires du lanceur (`test_runner_review.py`), 5 du client (`test_spool_review.py`), 2 d'évasion (`test_escape_review.py`, 26 au total verts contre une pile jetable `learning_career_platform-check10-a`, retirée) ; mutation vérifiée (I1 : le test d'évasion échoue sans `cuid`). **Restent notés pour l'essai réel (10.S)** : **M2** (liens symboliques suivis par le lanceur dans des dossiers où seul le back écrit : `O_NOFOLLOW` du battement et du `.done.tmp`, `chown`/`chmod` sans suivre) ; **M4** (le code de sortie 0 d'un `check` se falsifie : `os._exit(0)` à l'import ; hors périmètre, la preuve de 10.A2 est plafonnée à « en cours ») ; **M7** (sondes `io_uring_setup`, `clone(CLONE_NEWUSER)`/`clone3`, `chmod 000` dans `/dev/shm`, `mq_open`).
-  11. **Mineurs de la revérification** (`task-10.A1-rereview.md`) : **M3** la borne est dans la boucle de `supervise` : `WAIT_S` après le verdict forcé, un processus principal encore vivant lève `Unsafe` (le conteneur ne reste plus « sain » en étant bloqué). **N2** les écritures du gestionnaire `Unsafe` de `process` (`refuse`, `write_done`) sont protégées : une panne du volume ne remplace jamais `Unsafe`. **M1** `kill_user_processes` et `purge_user_files` passent par `_verified` : une `OSError` (`fork` refusé…) vaut « pas propre », donc `Unsafe`, et non « travail illisible » suivi d'un lanceur qui continue. **N1** `SpoolSandbox._queued` relit une fois le journal avant de lever `UnknownRun` (course de prise). Tests : `sandbox/tests/test_runner_minor.py` (4), `test_spool_review.py` (2), vus rouges d'abord ; les tests d'évasion sont rejoués à l'essai réel (10.S).
-- **Raison** : plan de la phase 10, P5 à P7 et « Bac à sable » (code arbitraire, point le plus dangereux). Pas de socket Docker donné au back : le socket est root sur la machine virtuelle de Docker ; un canal par fichiers n'expose rien à atteindre depuis le code. Chaque propriété d'isolation a son test d'évasion contre le conteneur vivant.
+- **Date** 2026-11-17
+- **Subject** Phase 10, task 10.A1: Python code execution sandbox, with no socket or network
+- **Decision**
+  1. **Architecture (P5, P6)**: a Compose service `sandbox` (image
+     `learning_career_platform-sandbox:latest`, built by hand:
+     `docker build -t learning_career_platform-sandbox:latest sandbox`, never
+     `docker compose build`), with no network (`network_mode: none`), no Docker socket, no host
+     folder, no port, no `env_file` or environment variable. The only channel: the named volume
+     `sandbox_spool` mounted on `/spool` (`2770 root:12345`), shared with the back end through
+     `group_add: ["12345"]`. The `backend` service depends on it (`depends_on: sandbox:
+     service_healthy`).
+  2. **Values from the plan, taken as is**: `user: "0:12345"`, `read_only: true`, `cap_drop: [ALL]`,
+     `cap_add: [CHOWN, SETUID, SETGID, KILL]`, `security_opt: [no-new-privileges:true]`, `mem_limit`
+     and `memswap_limit: 512m`, `cpus: 1.0`, `pids_limit: 128`, tmpfs `/work` (64 MB) and `/tmp` (16
+     MB) in `noexec,nosuid,nodev`, healthcheck on the age of `/spool/heartbeat` (under 5 s).
+     **Additions (found necessary, see 6)**: `nr_inodes=4096` on `/work`, `nr_inodes=2048` on
+     `/tmp`, and `/dev/shm` redeclared (`size=64m,noexec,nosuid,nodev,nr_inodes=2048`).
+  3. **Runner** (`sandbox/runner.py`, `runner_job.py`, `runner_exec.py`, `runner_proc.py`; stdlib
+     only; the plan named two files, the split into four holds the 300-line limit): polling every
+     100 ms of `/spool/jobs/<id>.json`, one execution at a time; the code runs as uid/gid 20000
+     (`setgroups([])`, `setgid`, `setuid` in `preexec`), new session (`setsid`), **empty
+     environment** (`PATH`, `HOME=/work/<id>`, `PYTHONDONTWRITEBYTECODE=1`; Python adds `LC_CTYPE`),
+     `python -X utf8 -u -s <entry>`. **Constant** caps, never read from the job (the job can only
+     ask for a shorter duration: bounded to 1 to 15 s): CPU 10 s, memory 256 MiB (`RLIMIT_AS` and
+     sum of the RSS of all the code's processes, watched every 100 ms: exceeding gives `killed`), 32
+     processes, 8 MiB file (`RLIMIT_FSIZE`), 256 descriptors, `RLIMIT_CORE=0` (the `core_pattern` is
+     the host's), `oom_score_adj=1000` (the kernel kills the code before the runner), `nice 5`.
+     Output: pipe read continuously, journal `out/<id>.log` bounded to 64 KiB (cut on a character
+     boundary, `truncated`), the rest thrown away. End: `killpg`, then sweep of the uid 20000
+     processes down to zero, then cleanup. `kind="check"` runs `python -m pytest -q -p
+     no:cacheprovider --rootdir=. -c /dev/null` on the job's `test_*.py` or `*_test.py` files
+     (controller's arbitration, reread 10.P); `kind="run"` executes `entry`.
+  4. **Cleanup under the code's identity**: the runner has neither `DAC_OVERRIDE` nor `FOWNER`: it
+     can neither enter a folder of the code (`chmod 000`), nor erase its files from a sticky folder
+     (`/tmp`). Cleanup (`/work`, `/tmp`, `/dev/shm`, `/dev/mqueue`, System V IPC objects) is
+     therefore done by a **child process that takes uid 20000** (traversal with no recursion,
+     through folder descriptors, no link followed); the runner only removes the work folder that has
+     become empty. At startup: rights of `/spool` reasserted (`chown root:12345`, `chmod 2770`, not
+     relying on copy-up alone), `/work` at 0755 (the code only writes in its own folder), orphan
+     journals of a runner stopped on the way closed as `error`, leftovers of `/work` erased.
+     Retention on the exchange volume: 30 minutes (temporary files: 1 minute), per job (journal and
+     end go together).
+  5. **Protocol (back-end side, `providers/sandbox/spool.py`)**: `SpoolSandbox(spool_dir)`; the job
+     is written as `.tmp` then `rename` (`0660` forced by `fchmod`: the back end's `umask` would
+     remove write from the group); `poll` reads the end **before** the journal (an end seen =
+     complete journal), returns the bytes since the offset, holds back a cut UTF-8 character while
+     the job runs; `UnknownRun` for an identifier never submitted or cleaned up; a job left in the
+     queue for more than 60 s while the runner no longer beats returns `error` (no endless wait);
+     `cancel` drops `cancel/<id>` (no effect if the job is finished or unknown), the runner kills
+     the group (`killed`) or never launches a job cancelled before its start; `healthy()` =
+     heartbeat under 5 s. Sandbox stopped: `submit` raises an `OSError` (to be converted into 503 by
+     `ide`). Identifiers and paths are validated **twice** (`check_job_limits` of the port, then the
+     runner, which does not believe the repository).
+  6. **Found with the escape tests (disposable stack)**: (a) **a loop of `open()` killed the whole
+     container, runner included**: tmpfs inodes are kernel memory outside the 64 MB, the kernel
+     triggered the control group's out-of-memory killer. Fixed by `nr_inodes` (the loop stops on
+     `ENOSPC` after 2,047 files in `/tmp`); test `test_inode_flood_limited_and_the_runner_survives`.
+     (b) A System V shared-memory fill (64 MB touched per segment) is killed in under a second
+     (`killed`); the segments are removed by the cleanup
+     (`test_shared_memory_flood_is_killed_and_freed`); `State.OOMKilled` stays true in
+     `docker inspect` while the container goes on: it is the code that was killed, not the runner.
+     (c) `/dev/shm` (mounted by Docker) stays writable by the code: a known, bounded exception (64
+     MB, 2,048 inodes), emptied after each execution; it serves `multiprocessing`. (d) A code that
+     does `kill -STOP` on itself, ignores `SIGTERM`/`SIGHUP`, daemonizes by double fork, or opens
+     200 threads ends by the real duration (`timeout`), with no leftover.
+  7. **Docker Desktop (Windows host, WSL2, kernel 6.6.87, cgroup v2, default seccomp profile)** —
+     *allowed*: `network_mode: none` (only the `lo` interface, no route), `read_only`,
+     `cap_drop`/`cap_add`, `no-new-privileges`, `mem_limit`, **`memswap_limit: 512m` honored**
+     (`memory.swap.max = 0` in the control group), `cpus`, `pids_limit`, tmpfs with
+     `noexec,nosuid,nodev`, seccomp active for the code (`Seccomp: 2`, `NoNewPrivs: 1`), **copy-up
+     of the named volume's rights: compliant** (the new volume takes `2770 root:12345` from the
+     image; the runner reasserts them anyway). The code's `CapBnd` stays `0xe1` (the container's
+     four capabilities): with no capability permitted or effective, they are useless, and
+     `no-new-privileges` forbids gaining any through `exec`. *Not done / out of reach*: the kernel
+     is shared with the other containers of the virtual machine (no gVisor or Kata); no Windows
+     folder mount (the exchange volume is named); the global memory cap comes from `.wslconfig` (512
+     MB of the sandbox + tmpfs to fit in it). These tests prove nothing about another host: to be
+     redone at any change of hosting (P5, point 6).
+  8. **Tests**: runner unit tests (`sandbox/tests/test_runner_unit.py`, 27: to run in the back end's
+     test container, `cd backend && uv run pytest -c pyproject.toml ../sandbox/tests`), client
+     (`tests/providers/sandbox/test_spool.py`), Compose (`tests/infra/test_compose_sandbox.py`),
+     health and composition; **24 escape tests** (`tests/sandbox_live/`, mark `sandbox_live` added
+     to `pyproject.toml` and excluded from `addopts`: run `pytest -m sandbox_live
+     tests/sandbox_live` as user 10001 with `--group-add 12345` and the exchange volume mounted on
+     `/spool`, against a disposable stack). The escape tests were **mutated**: network open, root
+     writable, `/var/run/docker.sock` mounted, all capabilities and seccomp off each make the
+     corresponding test fail.
+  9. **Composition**: `Providers.sandbox` (`CodeSandbox | None`, new field);
+     `bootstrap_ide.compose_ide` sets `SpoolSandbox(settings.sandbox_spool_dir)` there (a sandbox
+     already set by a test is kept) and adds the `sandbox` check (“Bac à sable”, “Sandbox”)
+     to `health_checks`: a stopped sandbox makes health `degraded`, never `down`. Test deviation:
+     `test_real_wiring_reports_the_six_checks` becomes `..._seven_checks` (simulated heartbeat).
+  10. **Security review (corrections)**: **I1** the System V cleanup removes any object whose `uid`
+     **or `cuid`** is 20000 (the owner can transfer the object by `IPC_SET` without a capability;
+     the creator removes it anyway). **I2** `parse_status` reads `/proc/<pid>/status` in binary,
+     cuts on the line feed alone, ignores the first line (`Name:`, set by the code through
+     `prctl(PR_SET_NAME)`), and keeps the first occurrence of each key: never an exception; each
+     round of `serve()` is in a `try/except` (incident noted by type and identifier, job closed as
+     `error`, the runner continues); `next_job` uses `lstat` (dangling link tolerated);
+     `restart: on-failure` on the service. **I3** `claim` creates the (empty) journal **before**
+     removing `jobs/<id>.json` (`poll` and `cancel` always see one or the other); a job taken then
+     interrupted is closed as `error` at restart without being replayed. **M1**
+     `kill_user_processes`, `purge_user_files`, and `rmdir` of the work folder are verified: a
+     failure raises `Unsafe` (outside `Exception`), the runner writes an `error` end then exits with
+     code 70 and Compose relaunches it clean; `_wipe_dir` no longer attempts the refused `rmdir` of
+     a direct child of `/work` (return code usable again). **M3** `proc.wait` bounded to 5 s, then
+     `Unsafe`. **M5** journal read bounded to `MAX_OUTPUT_BYTES + 4` bytes on the back-end side;
+     submission in UTF-8 with no ASCII escaping, orphan surrogate refused as `ValueError`, runner's
+     job limit raised to 1,500,000 bytes (200,000 control characters make 1.2 MB in JSON); NUL is
+     removed from the output on the IDE side (10.A2). **M6** submission by `os.link` of a temporary
+     file of its own for each submission (a duplicate raises `ValueError`, nothing is overwritten).
+     Tests: 12 runner unit tests (`test_runner_review.py`), 5 client (`test_spool_review.py`), 2
+     escape (`test_escape_review.py`, 26 in total green against a disposable stack
+     `learning_career_platform-check10-a`, removed); mutation verified (I1: the escape test fails
+     without `cuid`). **Still noted for the real trial (10.S)**: **M2** (symbolic links followed by
+     the runner in folders where only the back end writes: `O_NOFOLLOW` for the heartbeat and the
+     `.done.tmp`, `chown`/`chmod` without following); **M4** (the exit code 0 of a `check` can be
+     faked: `os._exit(0)` at import; out of scope, 10.A2's proof is capped at “in progress”);
+     **M7** (probes `io_uring_setup`, `clone(CLONE_NEWUSER)`/`clone3`, `chmod 000` in `/dev/shm`,
+     `mq_open`).
+  11. **Minor points of the recheck** (`task-10.A1-rereview.md`): **M3** the bound is in
+     `supervise`'s loop: `WAIT_S` after the forced verdict, a main process still alive raises
+     `Unsafe` (the container no longer stays “healthy” while blocked). **N2** the writes of
+     `process`'s `Unsafe` handler (`refuse`, `write_done`) are protected: a volume failure never
+     replaces `Unsafe`. **M1** `kill_user_processes` and `purge_user_files` go through `_verified`:
+     an `OSError` (`fork` refused…) means “not clean”, so `Unsafe`, and not “unreadable
+     job” followed by a runner that continues. **N1** `SpoolSandbox._queued` rereads the journal
+     once before raising `UnknownRun` (pickup race). Tests: `sandbox/tests/test_runner_minor.py`
+     (4), `test_spool_review.py` (2), seen red first; the escape tests are replayed at the real
+     trial (10.S).
+- **Reason** Plan of phase 10, P5 to P7 and “Sandbox” (arbitrary code, the most dangerous
+  point). No Docker socket given to the back end: the socket is root on Docker's virtual machine; a
+  file channel exposes nothing to reach from the code. Each isolation property has its escape test
+  against the live container.
 
 ## D202
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 10, tâche 10.A2 : IDE back (exercices, séances, exécutions, notes), preuve « ide » et fil d'activité
-- **Décision** :
-  1. **Périmètre** : 13 des 18 routes `ide` sont remplies (exercices : liste, création, suppression ; séances : liste, ouverture, lecture, `PUT files` ; exécutions : dépôt, lecture ; notes : liste, ajout, `accept`, `reject`). `exercises/generate`, `teach`, `preferences` (2) et `usage` restent des bouchons 501 pour 10.A3 (le plan les lui donne). `IdeService(db, user_id, sandbox, caller)` (`features/ide/service/`, un module par sujet : `exercises`, `sessions`, `runs`, `notes`, `signature`, plus `context` et `errors`) ; le routeur tire le bac de `app.state.providers.sandbox` (`None` avant la composition : 503 `sandbox_unavailable`). `tests/test_phase10_contract.py` : les 13 routes sont ajoutées à `LIVE` (10.I le vide).
-  2. **Auteur et origine suivent l'appelant** (P8) : `author_of(caller)` : un appel MCP est `claude` (étiquette du jeton), l'interface est `user`, l'appelant interne d'étiquette `professor` (`PROFESSOR_LABEL`, 10.A3) est `professor` ; le corps n'a pas de champ `author` (un champ en trop est ignoré). `create_exercise` : `claude` ou `user` ; 10.A3 passe `origin="generated"`, `topic` et `agent_session_id` par les arguments nommés (jamais par la requête). `add_note` accepte de même `reference_note_id` et `error_key` (renvoi et anti-répétition du professeur) en arguments nommés.
-  3. **Exécutions** : une seule à la fois par utilisatrice (409 `run_in_progress`, `details.run_id`) ; avant de refuser, les exécutions « en cours » en base sont interrogées et figées si le bac les a finies ou ne les connaît plus (`UnknownRun` après 30 minutes : fin `error`), donc une ligne restée « en cours » ne bloque jamais la suite. `GET /ide/runs/{id}?after=` : tant que le bac travaille, `poll(after)` ; à la première lecture qui voit la fin, la sortie complète est relue (`poll(0)`) et **figée** (statut, code, durée, sortie, `error_signature`) ; ensuite tout vient de la base (décalages en octets UTF-8). `OSError` du bac : 503 `sandbox_unavailable` (la ligne de l'exécution n'est pas gardée si le dépôt échoue) ; `ValueError` : 422 `run_refused`. La sortie n'est jamais journalisée (on journalise l'identifiant et le statut). Le NUL est remplacé par `?` (un octet, pour que les décalages du bac restent valables ; relecture de 10.A1, M5).
-  4. **Signature d'erreur** (`error_signature`) : sha1 de `type|fichier:ligne` du dernier cadre du code de l'utilisatrice de la dernière trace (le dossier de travail du bac est ignoré : `/work/<id>/main.py` et `main.py` se valent), ou, à défaut, de la dernière ligne `fichier.py:12: TypeAssertion` de pytest ; `None` sans trace ni cadre dans ses fichiers. Elle reste en base (`ide_runs.error_signature`), jamais dans une réponse.
-  5. **Preuve et réussite** : un `check` fini `done` avec le code 0 pose `passed_at` (une fois) et ajoute une preuve `ide` (une par séance, dédoublonnée par `ref_id` = l'identifiant de la séance) à la compétence **du même nom** que le sujet (`topic`) puis le titre de l'exercice, puis le titre de la séance (nom normalisé, `SkillsService.skill_id_for`) ; aucune compétence n'est créée (pas de correspondance = pas de preuve, la séance est quand même réussie). `SkillsService.add_proof` ne dépasse jamais `en_cours` : `declare` passe à `en_cours`, `en_cours`, `valide` et `prouve` gardent leur niveau (relecture 10.A1, M4 : le code de sortie 0 d'un `check` se falsifie, d'où le plafond). **Limite connue** : un exercice écrit à la main n'a pas de sujet ; le lien repose sur le titre (ou celui de la séance). Un champ `skill` de l'exercice demanderait un changement de contrat (10b).
-  6. **Fil d'activité** : `ide_source` (une source de plus, `sources.py`) rend « Exercice de code réussi : {titre} », `id` `ide:{séance}:passed`, lien `/code/{séance}`. **Écart** : genre `project` (icône de preuve) plutôt qu'un genre `ide` : un nouveau genre change `ActivityKind` (contrat) et trois fichiers de l'accueil (`viewTypes.ts`, `KindIcon.tsx`, messages), hors du périmètre de 10.A2 ; à décider en 10.I. `test_feed` : 6 sources devient 7.
-  7. **Notes et propositions** (P9) : une proposition exige fichier, plage de lignes (dans le fichier lu), remplacement (peut être vide : supprime les lignes) et `base_hash` (sha256 hexadécimal minuscule du contenu UTF-8 du fichier, 64 signes) ; sans `base_hash` valide : 422 `note_invalid` avec `details.file_hash` (l'empreinte actuelle : un modèle de langage ne sait pas calculer un sha256, il la relit et recommence) ; empreinte périmée à la création : 409 `note_stale` (même `details`). Une note qui n'est pas une proposition ne porte ni remplacement ni empreinte. `accept` n'applique que si l'empreinte du fichier est inchangée ; sinon la note passe à `stale` **et ce changement est enregistré avant l'erreur 409** (un `commit` dans le service : sans lui, la transaction de la requête serait défaite), les autres propositions ouvertes du même fichier deviennent `stale` après une acceptation, et toute sauvegarde de fichiers (`PUT files`) passe à `stale` les propositions dont le fichier a changé. Remplacer des lignes : le retour à la ligne final du remplacement n'ajoute pas de ligne vide ; un résultat de plus de 200 000 octets est refusé (422 `files_too_large`). `reject` : proposition ouverte ou périmée ; une proposition déjà traitée : 409 `note_closed` ; une note qui n'en est pas une : 409 `not_a_proposal`.
-  8. **Fichiers** : mêmes plafonds que le bac (20 fichiers, 200 000 octets, noms relatifs) vérifiés par le schéma (422 `validation_error`) et par le service (`entry_missing`, `entry_invalid`, `files_too_large`) ; une séance libre s'ouvre sur un `main.py` vide ; un exercice sans fichiers donne une séance avec son fichier d'entrée vide.
-  9. **Contrat** : `contracts/openapi.json` et `frontend/src/shared/api/schema.d.ts` régénérés (descriptions des réponses d'erreur seulement ; aucun schéma ni route changé).
-- **Raison** : plan de la phase 10, 10.A2, P8, P9, P20 ; relecture de 10.A1 (M4, M5) ; principe « tout ce que fait l'IA interne se fait par Claude, et inversement » : un seul service d'écriture des notes.
+- **Date** 2026-11-17
+- **Subject** Phase 10, task 10.A2: IDE back end (exercises, sessions, runs, notes), “ide”
+  proof, and activity feed
+- **Decision**
+  1. **Scope**: 13 of the 18 `ide` routes are filled in (exercises: list, creation, deletion;
+     sessions: list, opening, read, `PUT files`; runs: submission, read; notes: list, add, `accept`,
+     `reject`). `exercises/generate`, `teach`, `preferences` (2), and `usage` stay 501 stubs for
+     10.A3 (the plan gives them to it). `IdeService(db, user_id, sandbox, caller)`
+     (`features/ide/service/`, one module per subject: `exercises`, `sessions`, `runs`, `notes`,
+     `signature`, plus `context` and `errors`); the router takes the sandbox from
+     `app.state.providers.sandbox` (`None` before composition: 503 `sandbox_unavailable`).
+     `tests/test_phase10_contract.py`: the 13 routes are added to `LIVE` (10.I empties it).
+  2. **Author and origin follow the caller** (P8): `author_of(caller)`: an MCP call is `claude` (the
+     token's label), the interface is `user`, the internal caller with label `professor`
+     (`PROFESSOR_LABEL`, 10.A3) is `professor`; the body has no `author` field (an extra field is
+     ignored). `create_exercise`: `claude` or `user`; 10.A3 passes `origin="generated"`, `topic`,
+     and `agent_session_id` through named arguments (never through the request). `add_note` likewise
+     accepts `reference_note_id` and `error_key` (the teacher's reference and anti-repetition) as
+     named arguments.
+  3. **Runs**: only one at a time per user (409 `run_in_progress`, `details.run_id`); before
+     refusing, the “in progress” runs in the database are queried and frozen if the sandbox has
+     finished them or no longer knows them (`UnknownRun` after 30 minutes: `error` end), so a row
+     left “in progress” never blocks what follows. `GET /ide/runs/{id}?after=`: while the
+     sandbox works, `poll(after)`; at the first read that sees the end, the complete output is
+     reread (`poll(0)`) and **frozen** (status, code, duration, output, `error_signature`);
+     afterwards everything comes from the database (offsets in UTF-8 bytes). Sandbox `OSError`: 503
+     `sandbox_unavailable` (the run's row is not kept if the submission fails); `ValueError`: 422
+     `run_refused`. The output is never logged (the identifier and status are logged). NUL is
+     replaced by `?` (one byte, so that the sandbox's offsets stay valid; reread of 10.A1, M5).
+  4. **Error signature** (`error_signature`): sha1 of `type|file:line` of the last frame of the
+     user's code in the last trace (the sandbox's work folder is ignored: `/work/<id>/main.py` and
+     `main.py` are equal), or, failing that, of pytest's last line `file.py:12: TypeAssertion`;
+     `None` with no trace or frame in her files. It stays in the database
+     (`ide_runs.error_signature`), never in a response.
+  5. **Proof and success**: a `check` finished `done` with code 0 sets `passed_at` (once) and adds
+     an `ide` proof (one per session, deduplicated by `ref_id` = the session's identifier) to the
+     skill **with the same name** as the topic (`topic`) then the exercise's title, then the
+     session's title (normalized name, `SkillsService.skill_id_for`); no skill is created (no match
+     = no proof, the session is still passed). `SkillsService.add_proof` never exceeds `en_cours`
+     (“in progress”): `declare` goes to `en_cours`, `en_cours`, `valide`, and `prouve` keep
+     their level (reread 10.A1, M4: the exit code 0 of a `check` can be faked, hence the cap).
+     **Known limit**: a hand-written exercise has no topic; the link relies on the title (or the
+     session's). A `skill` field on the exercise would require a contract change (10b).
+  6. **Activity feed**: `ide_source` (one more source, `sources.py`) returns “Exercice de code
+     réussi : {titre}” (“Code exercise passed: {title}”), `id` `ide:{session}:passed`, link
+     `/code/{session}`. **Deviation**: kind `project` (proof icon) rather than an `ide` kind: a new
+     kind changes `ActivityKind` (contract) and three files of the home (`viewTypes.ts`,
+     `KindIcon.tsx`, messages), outside the scope of 10.A2; to be decided in 10.I. `test_feed`: 6
+     sources becomes 7.
+  7. **Notes and proposals** (P9): a proposal requires a file, a range of lines (inside the file
+     read), a replacement (may be empty: deletes the lines), and `base_hash` (lowercase hexadecimal
+     sha256 of the file's UTF-8 content, 64 characters); without a valid `base_hash`: 422
+     `note_invalid` with `details.file_hash` (the current fingerprint: a language model cannot
+     compute a sha256, it rereads it and starts again); fingerprint out of date at creation: 409
+     `note_stale` (same `details`). A note that is not a proposal carries neither a replacement nor
+     a fingerprint. `accept` only applies if the file's fingerprint is unchanged; otherwise the note
+     goes to `stale` **and this change is stored before the 409 error** (a `commit` in the service:
+     without it, the request's transaction would be undone), the other open proposals on the same
+     file become `stale` after an acceptance, and any saving of files (`PUT files`) sets to `stale`
+     the proposals whose file has changed. Replacing lines: the replacement's final line break does
+     not add an empty line; a result of more than 200,000 bytes is refused (422 `files_too_large`).
+     `reject`: open or stale proposal; an already handled proposal: 409 `note_closed`; a note that
+     is not one: 409 `not_a_proposal`.
+  8. **Files**: same caps as the sandbox (20 files, 200,000 bytes, relative names) checked by the
+     schema (422 `validation_error`) and by the service (`entry_missing`, `entry_invalid`,
+     `files_too_large`); a free session opens on an empty `main.py`; an exercise with no files gives
+     a session with its empty entry file.
+  9. **Contract**: `contracts/openapi.json` and `frontend/src/shared/api/schema.d.ts` regenerated
+     (descriptions of the error responses only; no schema or route changed).
+- **Reason** Plan of phase 10, 10.A2, P8, P9, P20; reread of 10.A1 (M4, M5); principle “everything
+  the internal AI does is done by Claude, and conversely”: a single service for writing notes.
 
 ## D203
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 10, tâche 10.A3 : professeur en temps réel (`ide_teacher`), exercices générés (`ide_exercise`), coûts, plafonds, anti-répétition
-- **Décision** :
-  1. **Barrière de coût (`TeachGate`, `features/ide/service/teaching.py`)** : seule `POST /ide/sessions/{id}/teach` lance le professeur (parcours en `ROUTE_ONLY`) ; la sauvegarde des fichiers, les notes, les exécutions ne l'appellent jamais. Ordre des contrôles pour un déclencheur **automatique** (`run_error`, `idle`) : (a) même erreur au même endroit (note du professeur de même `error_key`) : renvoi, **aucun appel** ; (b) un appel à la fois par séance (une session `ide_teacher` ouverte sur la séance, sous un verrou par séance : `busy`) ; (c) mode « sur demande » ou minuterie sans option : `on_demand` ; minuterie moins de 30 s après la dernière note du professeur : `busy` ; (d) plafond de séance ou du jour atteint : `cap_reached`. Une **question** et un **indice demandé** sont explicites : traités même après un plafond ou en mode sur demande (seul « un appel à la fois » les arrête). `run_ok` ne lance jamais le modèle : séance non réussie, `skipped: on_demand` ; séance réussie, **un seul compliment** (note `explanation` écrite sans appel, `error_key` `compliment`) dont l'identifiant revient dans `reference_note_id`. Question vide : 422 (schéma, D200 n° 11).
-  2. **Clé d'erreur** : la signature de la dernière exécution (`error_signature`, type d'erreur et dernier cadre du code), sinon `sha1(statut|entrée)` pour `run_error`, sinon l'endroit (`fichier:ligne`), sinon la séance ; `idle` : l'endroit seul. Stockée dans `ide_notes.error_key` (empreinte de 40 signes, jamais un texte). Le renvoi écrit **une** note `reference` par note citée (dix répétitions = un seul renvoi).
-  3. **Gradation des indices** : niveau = 1 + indices déjà donnés (`kind = hint`) pour la même clé, plafonné à 3 ; le niveau 3 décrit la démarche et le code retire tout bloc de code de la note. Niveau réel rangé dans `ide_notes.level` (`NoteOut.level`).
-  4. **Niveau de modèle choisi par le code avant l'appel** (`plan_of`) : `hint` : indice, léger (`rapide`) ; `run_error` et `idle` : indice en mode guide, annotation de marge en binôme, léger ; `question` : explication, **fort** (en binôme, une proposition de correction est aussi permise). Un agent a un niveau par défaut au registre (`professor` rapide, `exercise_writer` standard) ; le nœud passe le niveau voulu à `get_chat_model` (la surcharge d'un agent par January, si elle existe, remplace les deux niveaux : c'est son choix explicite).
-  5. **Contexte borné par le code** (`build_context`, constantes nommées) : un seul fichier (celui que January montre, sinon le dernier cadre de l'erreur, sinon le fichier d'entrée), ±30 lignes (lignes coupées à 200 signes), les 40 dernières lignes de la sortie d'erreur et 2 000 signes au plus (la fin est gardée), les 4 dernières notes qui ne sont pas des renvois (400 signes chacune). « Échanges » = ces notes : la question de January n'est pas rangée (aucune colonne ; la réponse l'est). Code, sortie et question sont encadrés comme contenu non fiable (17.4).
-  6. **Cache** : le prompt est en deux messages ; le premier (consignes, style, énoncé) ne dépend que de l'exercice et du style, donc identique octet pour octet pendant une séance, marqué par `additional_kwargs[CACHE_PREFIX_KEY]` (`providers/llm/base.py`) ; `AnthropicProvider` construit un `ChatAnthropic` dont `_get_request_payload` transforme ce message en bloc texte portant `cache_control: ephemeral` (les autres fournisseurs ignorent la marque). Tout ce qui varie est dans le second message.
-  7. **Règles de note imposées par le code** (`rules.finish`, sans nouvel appel) : le type permis vient du plan ; mode **guide** : jamais de `replacement`, aucun bloc de code de plus de 3 lignes (balisé ou indenté) ; **binôme** : une proposition porte la plage (dans le fichier montré, jamais un autre fichier) et le `replacement` ; `base_hash` est le sha256 du fichier que le modèle a vu (calculé par le code) ; plage invalide ou autre fichier : la proposition devient une explication. Si le code a changé pendant la réponse, `add_note` refuse (409 `note_stale`) : le port range `None`, le parcours finit « Le code a changé pendant la réponse » et rien de périmé n'est écrit.
-  8. **Consommation** : lue dans le journal des appels (`llm_calls`, graphe `ide_teacher`), jamais un compteur : la séance de code = les appels des sessions d'agents dont le sujet est `ide_session` / l'identifiant de la séance ; le jour = depuis minuit dans le fuseau de January (D98). Les nouvelles tentatives et les appels coupés sont comptés. La colonne `ide_sessions.teacher_tokens` (D200 n° 2) reste inutilisée (réservée). Journal d'un appel du professeur : séance de code, modèle, jetons, rien d'autre (testé sur tous les journaux `app.*`). Les générations d'exercices ne comptent pas dans les plafonds du professeur.
-  9. **Exercices générés** : `POST /ide/exercises/generate` lance `ide_exercise` (sujet encadré comme non fiable). Le rédacteur écrit énoncé, fichiers de départ avec tests, et une solution ; le port `verify` fait passer **`check` (pytest) dans le bac à sable** sur la solution, les fichiers de test de l'exercice remis par-dessus (la solution ne peut pas les changer) ; échec : une seule redemande avec la fin de la sortie, puis le parcours échoue avec `exercise_unverified` (502, message lisible). Seul un exercice vérifié est rangé (origine `generated`, sujet, session d'agents) ; la solution n'est jamais rangée.
-  10. **Port et composition** : `agents/tools/ide_port.py` (`IdeStore`, `NO_IDE`) ; `AgentPorts.ide` ; `features/ide/service/agent_store.py` (`AgentIdeStore`, qui écrit par `IdeService` sous `Caller("app", "professor")` : même service que Claude, seul l'auteur change) ; `bootstrap_ide.compose_ide` le pose dans `app.state.ide_store`, `app.main` le passe à `agent_ports` (une ligne), `bootstrap_agents.agent_ports` (un paramètre). Fichiers hors tableau touchés, une ligne chacun : `agents/runtime/ports.py`, `agents/runtime/repositories.py` (lecture des jetons d'une session), `features/sessions/service.py` (`ROUTE_ONLY`), `providers/llm/base.py` (la constante de marque), `bootstrap_agents.py`, `main.py`.
-  11. **Contrat (arbitrage du contrôleur)** : `NoteOut.level: int | None` ; `PreferencesIn/Out.teacher_style: "guide" | "pair"` (défaut `guide`). Colonnes `ide_notes.level` et `ide_preferences.teacher_style` ajoutées à `0016_ide_mcp` en place (jamais jouée sur une vraie base) et à `db/models/ide.py`. `contracts/openapi.json` et `schema.d.ts` régénérés. Aucune autre route ni schéma ne change ; `teach` reste 202 pour toutes ses réponses.
-  12. **D197** : aucune tâche planifiée n'est ajoutée (le professeur et les exercices ne partent que d'une action de January) ; rien à compter au premier lancement.
-- **Raison** : plan de la phase 10, 10.A3 et « Coût du professeur » (2026-11-14) ; P8 (un seul service de notes) ; revue n° 2 (« professeur qui coûte ou qui répète »).
+- **Date** 2026-11-17
+- **Subject** Phase 10, task 10.A3: real-time teacher (`ide_teacher`), generated exercises
+  (`ide_exercise`), costs, caps, anti-repetition
+- **Decision**
+  1. **Cost barrier (`TeachGate`, `features/ide/service/teaching.py`)**: only
+     `POST /ide/sessions/{id}/teach` launches the teacher (flow in `ROUTE_ONLY`); saving files,
+     notes, runs never call it. Order of the checks for an **automatic** trigger (`run_error`,
+     `idle`): (a) same error in the same place (teacher's note with the same `error_key`): a
+     reference, **no call**; (b) one call at a time per session (an `ide_teacher` session open on
+     the session, under a per-session lock: `busy`); (c) “on request” mode or timer with no
+     option: `on_demand`; timer less than 30 s after the teacher's last note: `busy`; (d) session or
+     day cap reached: `cap_reached`. A **question** and a **requested hint** are explicit: handled
+     even after a cap or in on-request mode (only “one call at a time” stops them). `run_ok`
+     never launches the model: session not passed, `skipped: on_demand`; session passed, **a single
+     compliment** (an `explanation` note written with no call, `error_key` `compliment`) whose
+     identifier comes back in `reference_note_id`. Empty question: 422 (schema, D200 no. 11).
+  2. **Error key**: the signature of the last run (`error_signature`, error type and last frame of
+     the code), otherwise `sha1(status|entry)` for `run_error`, otherwise the place (`file:line`),
+     otherwise the session; `idle`: the place alone. Stored in `ide_notes.error_key` (40-character
+     fingerprint, never a text). The reference writes **one** `reference` note per note cited (ten
+     repetitions = a single reference).
+  3. **Hint gradation**: level = 1 + hints already given (`kind = hint`) for the same key, capped at
+     3; level 3 describes the approach and the code removes any code block from the note. Actual
+     level stored in `ide_notes.level` (`NoteOut.level`).
+  4. **Model tier chosen by the code before the call** (`plan_of`): `hint`: hint, light (`rapide`,
+     “fast”); `run_error` and `idle`: hint in guide mode, margin annotation in pair mode, light;
+     `question`: explanation, **strong** (in pair mode, a correction proposal is also allowed). An
+     agent has a default tier in the registry (`professor` fast, `exercise_writer` standard); the
+     node passes the wanted tier to `get_chat_model` (January's override of an agent, if it exists,
+     replaces both tiers: it is her explicit choice).
+  5. **Context bounded by the code** (`build_context`, named constants): a single file (the one
+     January shows, otherwise the last frame of the error, otherwise the entry file), ±30 lines
+     (lines cut at 200 characters), the last 40 lines of the error output and 2,000 characters at
+     most (the end is kept), the last 4 notes that are not references (400 characters each).
+     “Exchanges” = these notes: January's question is not stored (no column; the answer is).
+     Code, output, and question are fenced as untrusted content (17.4).
+  6. **Cache**: the prompt is in two messages; the first (instructions, style, statement) only
+     depends on the exercise and the style, so is byte-for-byte identical during a session, marked
+     by `additional_kwargs[CACHE_PREFIX_KEY]` (`providers/llm/base.py`); `AnthropicProvider` builds
+     a `ChatAnthropic` whose `_get_request_payload` turns this message into a text block carrying
+     `cache_control: ephemeral` (the other providers ignore the mark). Everything that varies is in
+     the second message.
+  7. **Note rules imposed by the code** (`rules.finish`, with no new call): the permitted type comes
+     from the plan; **guide** mode: never a `replacement`, no code block of more than 3 lines
+     (fenced or indented); **pair** mode: a proposal carries the range (inside the file shown, never
+     another file) and the `replacement`; `base_hash` is the sha256 of the file the model saw
+     (computed by the code); invalid range or other file: the proposal becomes an explanation. If
+     the code changed during the answer, `add_note` refuses (409 `note_stale`): the port stores
+     `None`, the flow ends “Le code a changé pendant la réponse” (“The code changed during
+     the answer”) and nothing out of date is written.
+  8. **Consumption**: read from the call journal (`llm_calls`, graph `ide_teacher`), never a
+     counter: the code session = the calls of the agent sessions whose subject is `ide_session` /
+     the session's identifier; the day = since midnight in January's time zone (D98). Retries and
+     cut calls are counted. The column `ide_sessions.teacher_tokens` (D200 no. 2) stays unused
+     (reserved). Journal of a teacher call: code session, model, tokens, nothing else (tested on all
+     `app.*` logs). Exercise generations do not count in the teacher's caps.
+  9. **Generated exercises**: `POST /ide/exercises/generate` launches `ide_exercise` (topic fenced
+     as untrusted). The writer writes the statement, starting files with tests, and a solution; the
+     `verify` port runs **`check` (pytest) in the sandbox** on the solution, with the exercise's
+     test files put back on top (the solution cannot change them); failure: a single new request
+     with the end of the output, then the flow fails with `exercise_unverified` (502, readable
+     message). Only a verified exercise is stored (origin `generated`, topic, agent session); the
+     solution is never stored.
+  10. **Port and composition**: `agents/tools/ide_port.py` (`IdeStore`, `NO_IDE`); `AgentPorts.ide`;
+     `features/ide/service/agent_store.py` (`AgentIdeStore`, which writes through `IdeService` under
+     `Caller("app", "professor")`: same service as Claude, only the author changes);
+     `bootstrap_ide.compose_ide` sets it in `app.state.ide_store`, `app.main` passes it to
+     `agent_ports` (one line), `bootstrap_agents.agent_ports` (one parameter). Files outside the
+     table touched, one line each: `agents/runtime/ports.py`, `agents/runtime/repositories.py`
+     (reading a session's tokens), `features/sessions/service.py` (`ROUTE_ONLY`),
+     `providers/llm/base.py` (the mark's constant), `bootstrap_agents.py`, `main.py`.
+  11. **Contract (controller's arbitration)**: `NoteOut.level: int | None`;
+     `PreferencesIn/Out.teacher_style: "guide" | "pair"` (default `guide`). Columns
+     `ide_notes.level` and `ide_preferences.teacher_style` added to `0016_ide_mcp` in place (never
+     played on a real database) and to `db/models/ide.py`. `contracts/openapi.json` and
+     `schema.d.ts` regenerated. No other route or schema changes; `teach` stays 202 for all its
+     responses.
+  12. **D197**: no scheduled task is added (the teacher and the exercises only start from an action
+     of January); nothing to count at the first launch.
+- **Reason** Plan of phase 10, 10.A3 and “Teacher's cost” (2026-11-14); P8 (a single notes
+  service); review no. 2 (“a teacher that costs or repeats”).
 
 ## D204
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 10, tâche 10.B1 : la porte du serveur MCP (jeton, protocole JSON-RPC, limites, journal des appels et des refus)
-- **Décision** :
-  1. **Vérification du transport (context7, spécifications 2025-11-25 et 2026-07-28)**. Confirmé : un message client est un `POST` ; une notification ou une réponse du client rend 202 sans corps ; une requête rend du JSON (`application/json`) ou un flux ; sans flux serveur, `GET` rend 405 ; `Origin` présent et invalide : 403 ; `MCP-Protocol-Version` inconnue : 400 ; un serveur sans état peut ne jamais émettre `Mcp-Session-Id`. **Écart avec le plan** (qui ne connaissait que la poignée de main) : la révision **2026-07-28** supprime `initialize` et les sessions, ajoute `server/discover` (résultat `resultType: "complete"`, `supportedVersions`, `ttlMs`, `cacheScope`), l'en-tête `Mcp-Method` à comparer au corps (400 `-32020`), et une version non prise en charge rend 400 `-32022` avec la liste des versions (repli prévu par la spécification). Retenu : le serveur est **sans état** (aucune session), parle les révisions **2025-11-25, 2025-06-18, 2025-03-26 et 2024-11-05** avec la poignée de main (`initialize` renvoie la version demandée si connue, sinon la plus récente), répond aussi à `server/discover` (pour qu'un client récent retombe sur 2025-11-25), vérifie `Mcp-Method` quand il est présent, et **n'annonce pas 2026-07-28** : un client qui la demande par en-tête reçoit 400 `-32022` et ses versions, ce que la spécification prévoit. Non faits (à reprendre si Claude Code passe à 2026-07-28 seule) : `Mcp-Name`, `subscriptions/listen`, flux SSE. `GET` (plan P10) et `DELETE` (pas de session) : 405 avec `Allow: POST`.
-  2. **Un seul chemin d'authentification** (`app/mcp/auth.py`) : l'en-tête `Authorization: Bearer tmcp_…` (un seul en-tête, forme exacte `tmcp_` + 43 caractères), jamais le cookie, jamais la chaîne de requête. Le jeton n'ouvre que `/mcp` : l'authentificateur de l'application ne lit que le cookie, donc `Bearer` sur `/api/v1` est ignoré (401 en mode Google). Seul le SHA-256 est gardé (`mcp_tokens.hash`), la valeur n'est rendue qu'à la création (`Cache-Control: no-store`), puis plus jamais (ni liste, ni journal, ni message). Le clair est ajouté à `KnownSecrets` (masqué par le filtre des journaux) à la création et à chaque présentation valide (donc aussi après un redémarrage). Ordre des refus : `Host` puis `Origin` locaux (`localhost`, `127.0.0.1`, port libre ; sinon 403 `host_not_allowed` ou `origin_not_allowed`), jeton (401 `mcp_token_invalid`, `mcp_token_expired`, `mcp_token_revoked`), compte retiré de `ALLOWED_EMAILS` en mode Google (401), interrupteur général coupé (403 `mcp_disabled`, coupé par défaut) ; seulement alors `last_used_at`. La porte relit tout à chaque appel : révocation et interrupteur sont immédiats. Un 401 porte `WWW-Authenticate: Bearer realm="tremplin-mcp"`.
-  3. **L'identité ne se forge pas** : `get_current_user` lit `MCP_IDENTITY` en premier (propriétaire du jeton, quel que soit le mode de connexion) ; la variable n'est écrite que par l'envoyeur de B2, jamais depuis un en-tête ou un cookie (test avec en-têtes et cookies falsifiés : 401). En plus, `get_interface_user` (nouveau, `core/deps.py`) refuse (403 `interface_only`) un appel porté par une identité MCP : toutes les routes de `features/mcp` (jetons, interrupteur, journal ; B2 : confirmations, annulations) l'utilisent, car un jeton ne se gère jamais lui-même, même si B2 se trompait de liste blanche.
-  4. **Protocole** (`app/mcp/protocol.py`, écrit à la main) : `initialize`, `ping`, `tools/list`, `tools/call`, `server/discover` ; toute notification (message sans `id`) rend 202 et **n'est jamais exécutée**, y compris un `tools/call` sans `id` ; corps ≤ `MCP_BODY_LIMIT` (1 Mo, lu par morceaux, 413 `body_too_large`) ; imbrication de plus de 24 niveaux, JSON illisible, `NaN`, lot, `id` de mauvais type : 400 JSON-RPC (`-32700` ou `-32600`), jamais 500 ; paramètres mal formés : `-32602` (200) ; outil inconnu : `-32602` lisible (« Outil inconnu … tools/list ») ; l'erreur d'un outil est un résultat `isError` ; une exception inattendue de l'envoyeur est une erreur `-32603` générique (le type seul est journalisé, jamais le contenu). `tools/list` ne montre que les outils de la feature du jeton, en lecture seule les seuls niveaux 1 ; `tools/call` hors périmètre : 403 `feature_not_allowed` ; jeton `read` sur un outil de niveau 2 ou 3 : 403 `write_not_allowed` (le niveau 3 exige aussi `write` : il écrit une demande). Résultat plafonné à 200 000 caractères.
-  5. **Contrat avec B2** (définis ici, `app/mcp/protocol.py`) : `ToolSpec(name, feature, level, description, input_schema, untrusted, bucket)`, `ToolResult(data, code, ids)`, `ToolRegistry.list_for(identity)` **et `ToolRegistry.get(name)`** (nom exact, hors périmètre compris, indispensable pour rendre 403 plutôt que « inconnu » : ajout à ce que le plan nommait), `Dispatcher.call(identity, tool, arguments)`. `install_gate(app, tools, dispatcher, limits=None)` (`bootstrap_mcp.py`) pose `app.state.mcp_gate` en enveloppant l'envoyeur de B2 dans `GuardedDispatcher` (limites, puis journal) : B2 n'a qu'à l'appeler avec son registre et son envoyeur. `compose_mcp` l'appelle avec des objets vides (aucun outil) et monte `POST|GET|DELETE /mcp` (`app.add_route`, hors contrat OpenAPI, donc `contracts/openapi.json` et `schema.d.ts` inchangés). Le point d'entrée n'ouvre qu'une courte session pour la porte et la valide avant tout travail : un appel long ne tient jamais de transaction (SQLite).
-  6. **Limites par jeton** (`app/mcp/limits.py`, valeurs de P17, mémoire du processus) : 60 appels et 10 écritures (niveaux 2 et 3) par minute, 1 000 appels et 100 écritures par jour, 20 demandes de niveau 3 par jour, 2 exécutions de code par minute (compteur `bucket="code_run"` de l'outil, `ToolSpec.bucket`). Seuls les `tools/call` comptent ; un appel refusé n'est pas compté. 429 `rate_limited` avec `details.retry_after` (secondes), en-tête `Retry-After` et un message en français (« … Réessaie dans 12 s / 3 min / 5 h »). Les compteurs repartent de zéro au redémarrage du processus (aucun droit de plus que le jeton n'en avait ; l'interrupteur et la révocation, eux, sont en base).
-  7. **Enveloppe (P18)** (`app/mcp/envelope.py`) : `{ok, data, notice}` ; les champs `untrusted` (chemins `a.b`, `items[].t`, `[].t`, `tags[]`) entourés de `<donnee_non_fiable>…</donnee_non_fiable>` ; toute balise de ce nom déjà dans le texte est retirée d'abord (un texte piégé ne ferme pas l'enclos) ; en plus de P18 : tout motif de clé d'API (`sk-…`, `tmcp_…`, `Bearer …`, `AIza…`, `ghp_…`, `xox…`) et toute valeur de `KnownSecrets` sont masqués dans toutes les chaînes d'une réponse.
-  8. **Journal (P19, arbitrage du contrôleur du 2026-11-17)** : `mcp_calls` : chaque appel d'outil (outil, niveau, code, durée, identifiants), **jamais le contenu** ; les identifiants sont filtrés (`clean_ids` : entiers ou textes courts `[A-Za-z0-9_-]`, 10 au plus : un texte libre n'entre jamais). Chaque **refus de la porte** laisse une ligne de niveau 0 (`refused:<code>`) : jeton inconnu, expiré, révoqué, origine, interrupteur coupé ; les refus d'autorisation (périmètre, lecture seule) et la limite (429) portent le niveau de l'outil. Sans jeton connu, la ligne va à l'utilisatrice du mode local (aucune en mode Google : un jeton inconnu n'appartient à personne). Au plus 30 refus par minute et par jeton sont écrits (un flot de faux jetons ne remplit pas la base). Une panne du journal est signalée (type seul) sans annuler l'appel.
-  9. **Routes remplies** : `GET|PUT /mcp/settings`, `POST|GET /mcp/tokens`, `DELETE /mcp/tokens/{id}` (révocation par `revoked_at`, idempotente, 404 si le jeton n'est pas à moi), `GET /mcp/calls`. Création : étiquette non vide, 1 à 40 features de la forme `[a-z][a-z0-9_]{0,39}`, doublons retirés, `auth`, `account` et `mcp` refusés (422 `feature_never_exposed`), nom inconnu refusé (422) dès qu'au moins une feature déclare des outils (`known_features`, vide avant 10.D1 : rien à comparer). `tests/test_phase10_contract.py` : `LIVE` reçoit ces six routes. Restent en 501 pour B2 : `features`, `actions`, `confirmations` (3), `changes` (2).
-  10. **Correctifs de la relecture de sécurité** (commit séparé). (a) **Limite assumée en mode local** : l'API n'y a aucune authentification, donc un programme local qui a un shell (dont Claude Code) peut appeler `/api/v1/mcp/confirmations/{id}/confirm` ; la garantie « rien sans January » repose alors sur les permissions de son client (Claude Code demande avant un `curl`). Le MCP protège contre l'erreur et l'injection indirecte, pas contre un agent qui a un shell. Une protection par code PIN ou le mode Google est notée pour la 10b. Durcissement posé : `guard_interface_request` (dépendance du routeur `mcp`) refuse (403 `mcp_token_on_api`) tout `Authorization: Bearer tmcp_…` sur `/api/v1/mcp/*`, et, en mode local seulement, exige `Host` et `Origin` locaux (403 `host_not_allowed` / `origin_not_allowed` : plus de DNS rebinding). (b) **Journal** : un appel refusé par une limite (429) passe par le budget des refus (30 lignes par minute, seau par jeton et par motif : un flot de faux jetons n'éteint plus l'alerte d'un refus d'hôte) ; plafond grossier de 600 requêtes par minute et par jeton (`Limits.requests_per_minute`, toute méthode, 429 sans écriture) avant `last_used_at`, écrit au plus une fois par minute ; rétention de `mcp_calls` à 30 jours (`purge_old_calls`, tâche planifiée posée par 10.B2). (c) Motifs de clés : `sk-…` ancré en début de mot et `Bearer` exigeant un caractère de jeton (`risk-assessment-framework` reste intact), `tmcp_…` ajouté au filtre des journaux, secrets triés une fois par réponse, `fullmatch`, `Host` unique, `Content-Length` illisible jamais une 500. (d) Notes : conformité de transport à vérifier à l'essai réel 10.F (403 de portée hors JSON-RPC, pas de `resource_metadata`, lots refusés) ; compteurs de limites par processus (plusieurs workers uvicorn multiplieraient les plafonds).
-- **Raison** : plan de la phase 10, P10, P16 à P19 ; relecture sécurité de 10.B1 (un chemin d'authentification contourné ? un secret journalisé ? une 500 possible ?). Le jeton est la seule clé d'une porte qui exécute les actions de l'application : tout se refuse par défaut (interrupteur coupé, lecture seule, feature à déclarer), tout refus se lit et se journalise, rien du contenu ni du jeton ne se garde.
+- **Date** 2026-11-17
+- **Subject** Phase 10, task 10.B1: the MCP server's gate (token, JSON-RPC protocol, limits, journal
+  of calls and refusals)
+- **Decision**
+  1. **Transport check (context7, specifications 2025-11-25 and 2026-07-28)**. Confirmed: a client
+     message is a `POST`; a notification or a response from the client returns 202 with no body; a
+     request returns JSON (`application/json`) or a stream; without a server stream, `GET` returns
+     405; `Origin` present and invalid: 403; unknown `MCP-Protocol-Version`: 400; a stateless server
+     may never emit `Mcp-Session-Id`. **Deviation from the plan** (which only knew the handshake):
+     revision **2026-07-28** removes `initialize` and sessions, adds `server/discover` (result
+     `resultType: "complete"`, `supportedVersions`, `ttlMs`, `cacheScope`), the `Mcp-Method` header
+     to compare with the body (400 `-32020`), and an unsupported version returns 400 `-32022` with
+     the list of versions (fallback provided by the specification). Chosen: the server is
+     **stateless** (no session), speaks revisions **2025-11-25, 2025-06-18, 2025-03-26, and
+     2024-11-05** with the handshake (`initialize` returns the requested version if known, otherwise
+     the most recent), also answers `server/discover` (so that a recent client falls back to
+     2025-11-25), checks `Mcp-Method` when present, and **does not advertise 2026-07-28**: a client
+     that asks for it by header receives 400 `-32022` and its versions, which the specification
+     provides. Not done (to be taken up if Claude Code moves to 2026-07-28 alone): `Mcp-Name`,
+     `subscriptions/listen`, SSE streams. `GET` (plan P10) and `DELETE` (no session): 405 with
+     `Allow: POST`.
+  2. **A single authentication path** (`app/mcp/auth.py`): the `Authorization: Bearer tmcp_…`
+     header (a single header, exact form `tmcp_` + 43 characters), never the cookie, never the query
+     string. The token only opens `/mcp`: the application's authenticator only reads the cookie, so
+     `Bearer` on `/api/v1` is ignored (401 in Google mode). Only the SHA-256 is kept
+     (`mcp_tokens.hash`), the value is only returned at creation (`Cache-Control: no-store`), then
+     never again (neither list, nor journal, nor message). The plaintext is added to `KnownSecrets`
+     (masked by the log filter) at creation and at each valid presentation (so also after a
+     restart). Order of refusals: local `Host` then `Origin` (`localhost`, `127.0.0.1`, free port;
+     otherwise 403 `host_not_allowed` or `origin_not_allowed`), token (401 `mcp_token_invalid`,
+     `mcp_token_expired`, `mcp_token_revoked`), account removed from `ALLOWED_EMAILS` in Google mode
+     (401), master switch off (403 `mcp_disabled`, off by default); only then `last_used_at`. The
+     gate rereads everything at each call: revocation and the switch are immediate. A 401 carries
+     `WWW-Authenticate: Bearer realm="tremplin-mcp"`.
+  3. **Identity cannot be forged**: `get_current_user` reads `MCP_IDENTITY` first (the token's
+     owner, whatever the sign-in mode); the variable is only written by B2's dispatcher, never from
+     a header or a cookie (test with forged headers and cookies: 401). In addition,
+     `get_interface_user` (new, `core/deps.py`) refuses (403 `interface_only`) a call carried by an
+     MCP identity: all routes of `features/mcp` (tokens, switch, journal; B2: confirmations, undos)
+     use it, because a token never manages itself, even if B2 got a whitelist wrong.
+  4. **Protocol** (`app/mcp/protocol.py`, written by hand): `initialize`, `ping`, `tools/list`,
+     `tools/call`, `server/discover`; any notification (message with no `id`) returns 202 and **is
+     never executed**, including a `tools/call` with no `id`; body ≤ `MCP_BODY_LIMIT` (1 MB, read
+     in chunks, 413 `body_too_large`); nesting of more than 24 levels, unreadable JSON, `NaN`,
+     batch, `id` of the wrong type: 400 JSON-RPC (`-32700` or `-32600`), never 500; malformed
+     parameters: `-32602` (200); unknown tool: readable `-32602` (“Outil inconnu …
+     tools/list”, “Unknown tool … tools/list”); a tool's error is an `isError` result; an
+     unexpected exception of the dispatcher is a generic `-32603` error (the type alone is logged,
+     never the content). `tools/list` only shows the tools of the token's feature, in read-only only
+     level 1; `tools/call` out of scope: 403 `feature_not_allowed`; `read` token on a level 2 or 3
+     tool: 403 `write_not_allowed` (level 3 also requires `write`: it writes a request). Result
+     capped at 200,000 characters.
+  5. **Contract with B2** (defined here, `app/mcp/protocol.py`): `ToolSpec(name, feature,
+     level, description, input_schema, untrusted, bucket)`, `ToolResult(data, code, ids)`,
+     `ToolRegistry.list_for(identity)` **and `ToolRegistry.get(name)`** (exact name, out-of-scope
+     included, indispensable for returning 403 rather than “unknown”: an addition to what the
+     plan named), `Dispatcher.call(identity, tool, arguments)`. `install_gate(app, tools,
+     dispatcher, limits=None)` (`bootstrap_mcp.py`) sets `app.state.mcp_gate` by wrapping B2's
+     dispatcher in `GuardedDispatcher` (limits, then journal): B2 only has to call it with its
+     registry and its dispatcher. `compose_mcp` calls it with empty objects (no tool) and mounts
+     `POST|GET|DELETE /mcp` (`app.add_route`, outside the OpenAPI contract, so
+     `contracts/openapi.json` and `schema.d.ts` unchanged). The entry point only opens a short
+     session for the gate and validates it before any work: a long call never holds a transaction
+     (SQLite).
+  6. **Per-token limits** (`app/mcp/limits.py`, values of P17, process memory): 60 calls and 10
+     writes (levels 2 and 3) per minute, 1,000 calls and 100 writes per day, 20 level 3 requests per
+     day, 2 code runs per minute (counter `bucket="code_run"` of the tool, `ToolSpec.bucket`). Only
+     `tools/call` counts; a refused call is not counted. 429 `rate_limited` with
+     `details.retry_after` (seconds), `Retry-After` header, and a message in French (“…
+     Réessaie dans 12 s / 3 min / 5 h”, “… Try again in 12 s / 3 min / 5 h”). The counters
+     start again from zero at the process's restart (no more right than the token had; the switch
+     and revocation, on the other hand, are in the database).
+  7. **Envelope (P18)** (`app/mcp/envelope.py`): `{ok, data, notice}`; the `untrusted` fields (paths
+     `a.b`, `items[].t`, `[].t`, `tags[]`) are wrapped in
+     `<donnee_non_fiable>…</donnee_non_fiable>`; any tag of that name already in the text is
+     removed first (a booby-trapped text does not close the enclosure); in addition to P18: any API
+     key pattern (`sk-…`, `tmcp_…`, `Bearer …`, `AIza…`, `ghp_…`, `xox…`) and any value
+     of `KnownSecrets` are masked in all the strings of a response.
+  8. **Journal (P19, controller's arbitration of 2026-11-17)**: `mcp_calls`: each tool call (tool,
+     level, code, duration, identifiers), **never the content**; identifiers are filtered
+     (`clean_ids`: integers or short texts `[A-Za-z0-9_-]`, 10 at most: a free text never enters).
+     Each **refusal by the gate** leaves a level 0 row (`refused:<code>`): unknown, expired, or
+     revoked token, origin, switch off; authorization refusals (scope, read-only) and the limit
+     (429) carry the tool's level. With no known token, the row goes to the local-mode user (none in
+     Google mode: an unknown token belongs to no one). At most 30 refusals per minute and per token
+     are written (a flood of fake tokens does not fill the database). A journal failure is reported
+     (type alone) without cancelling the call.
+  9. **Routes filled in**: `GET|PUT /mcp/settings`, `POST|GET /mcp/tokens`,
+     `DELETE /mcp/tokens/{id}` (revocation by `revoked_at`, idempotent, 404 if the token is not
+     mine), `GET /mcp/calls`. Creation: non-empty label, 1 to 40 features of the form
+     `[a-z][a-z0-9_]{0,39}`, duplicates removed, `auth`, `account`, and `mcp` refused (422
+     `feature_never_exposed`), unknown name refused (422) as soon as at least one feature declares
+     tools (`known_features`, empty before 10.D1: nothing to compare).
+     `tests/test_phase10_contract.py`: `LIVE` receives these six routes. Still 501 for B2:
+     `features`, `actions`, `confirmations` (3), `changes` (2).
+  10. **Fixes from the security reread** (separate commit). (a) **Accepted limit in local mode**:
+     the API has no authentication there, so a local program that has a shell (Claude Code included)
+     can call `/api/v1/mcp/confirmations/{id}/confirm`; the guarantee “nothing without January”
+     then rests on her client's permissions (Claude Code asks before a `curl`). The MCP protects
+     against error and indirect injection, not against an agent that has a shell. Protection by PIN
+     code or Google mode is noted for 10b. Hardening set: `guard_interface_request` (dependency of
+     the `mcp` router) refuses (403 `mcp_token_on_api`) any `Authorization: Bearer tmcp_…` on
+     `/api/v1/mcp/*`, and, in local mode only, requires local `Host` and `Origin` (403
+     `host_not_allowed` / `origin_not_allowed`: no more DNS rebinding). (b) **Journal**: a call
+     refused by a limit (429) goes through the refusal budget (30 rows per minute, bucket per token
+     and per reason: a flood of fake tokens no longer silences the alert of a host refusal); rough
+     cap of 600 requests per minute and per token (`Limits.requests_per_minute`, any method, 429
+     with no write) before `last_used_at`, written at most once a minute; retention of `mcp_calls`
+     at 30 days (`purge_old_calls`, scheduled task set by 10.B2). (c) Key patterns: `sk-…`
+     anchored at the start of a word and `Bearer` requiring a token character
+     (`risk-assessment-framework` stays intact), `tmcp_…` added to the log filter, secrets sorted
+     once per response, `fullmatch`, single `Host`, an unreadable `Content-Length` never a 500. (d)
+     Notes: transport conformance to be checked at the real trial 10.F (403 of scope outside
+     JSON-RPC, no `resource_metadata`, batches refused); limit counters per process (several uvicorn
+     workers would multiply the caps).
+- **Reason** Plan of phase 10, P10, P16 to P19; security reread of 10.B1 (an authentication path
+  bypassed? a secret logged? a possible 500?). The token is the only key of a gate that executes the
+  application's actions: everything is refused by default (switch off, read-only, feature to
+  declare), every refusal is readable and logged, nothing of the content or the token is kept.
 
 ## D205
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 10, tâche 10.B2 : l'adaptateur du MCP (registre des outils, envoi interne, historique et annulation, demandes « À confirmer »)
-- **Décision** :
-  1. **Registre** (`app/mcp/registry.py`, `schema.py`) : `build_registry(features, app, graphs)` lit `app.openapi()` et fait **échouer le démarrage** (`McpConfigError`) pour : route absente ; route de niveau 4 (`/auth`, `/account`, `/mcp`, `/settings/api-keys`, `/settings/models`, `/settings/agents`, quelle que soit la feature) ; feature `auth`, `account` ou `mcp` avec des outils ; niveau 1 sur une route qui n'est pas un `GET` ; effet externe sous le niveau 3 (déjà refusé à la construction de `McpAction`) ; `GET /settings` sans `response_fields` ; autre route de `/settings` sans `body_fields` ; champ de `body_fields` absent du corps ; `merge_from` qui n'est pas un `GET` de mêmes paramètres ; route de fichier (corps `multipart` sans `encoding="form"`, ou champ fichier obligatoire) ; nom d'outil hors `[a-z0-9_]{1,64}` ou en double ; graphe inconnu de l'application. Schéma d'un outil (P13) : chemin, requête et corps en un objet plat, collision de nom = préfixe `body_`, `$ref` des composants recopiés en `$defs` locaux, `additionalProperties: false` ; description = résumé de la déclaration (sinon première ligne de la docstring de la route) + niveau + champs non fiables. Les graphes (`graph_<nom>`) prennent les champs de leur `input_model` (passé par la composition : `app.mcp` n'importe pas `app.agents`). Écarts à `ToolSpec` (B1) : champs ajoutés `summary`, `route`, `graph`, `side_effects`, `precheck`, `plan`, `response_fields` (tous avec valeur par défaut, les tests de B1 n'ont pas changé) ; `ToolResult` gagne `call_id`.
-  2. **Envoi interne** (`app/mcp/dispatch.py`, P12) : `internal_request` pose `MCP_IDENTITY` (set puis reset dans un `finally`, **seul écrivain**), envoie la vraie requête par `httpx.ASGITransport`, sans cookie ni en-tête d'authentification, avec un délai de 90 s ; refus d'une route de niveau 4, d'un chemin avec `..`, `?`, `#`, `%`, `\`. Arguments : inconnus ou manquants refusés (`invalid_arguments`, noms seulement) ; un paramètre de chemin est un identifiant sans `/ \ ? # %` ni `.` `..` (`test_path_arguments_cannot_escape`). Une 422 de la route (`details.errors` ou `details.fields`) est rendue avec les **noms d'arguments de l'outil** et sans jamais la valeur reçue. `response_fields` (arbitrage 10.D1 n° 1) : seules ces clés de l'objet racine (de chaque objet d'une liste) sortent ; `encoding="form"` (n° 2) : champs texte en `multipart/form-data`, un champ fichier facultatif est ignoré ; `untrusted` des graphes (n° 3) : le `result` (et ses sous-champs texte) de toute session d'un graphe déclaré avec `untrusted` est entouré quand Claude suit la session, par n'importe quel outil dont la réponse porte `graph`. Ajouts à `app/mcp/base.py` (propriétaire 10.P, à la demande du contrôleur) : `McpAction.response_fields` et `encoding`.
-  3. **Niveau 2 : historique et annulation** (`app/mcp/recorder.py`, P14) : `ChangeRecorder` écoute `before_flush`/`after_flush` (une fois, sans effet hors d'un appel : variable de contexte `ACTIVE`, désactivée à la fin de l'appel) ; il lit dans la base l'état avant et après de chaque ligne ajoutée, modifiée ou supprimée, fusionne les passages successifs, et **n'écrit `mcp_changes` qu'après une réponse réussie**, sous l'identifiant de l'appel (= `mcp_calls.id`, imposé à la ligne du journal). `undo` : dans une transaction, 404 si l'appel n'a rien changé chez cette utilisatrice, 409 `already_undone`, 409 `undo_refused` (sans citer le contenu) si une ligne n'est plus dans l'état « après » ; sinon supprime les ajouts, restaure les modifications, ré-insère les suppressions. **Jamais copiées** : tables à colonne `info={"export": False}`, `api_keys`, `mcp_*` (D200 n° 9). **Limites assumées** : une écriture en masse hors ORM (`update(...)`, `delete(...)` directs) n'est pas vue (D1 a donc déclaré les suppressions au niveau 3) ; au-delà de 500 lignes, l'appel n'est pas annulable (rien n'est gardé plutôt qu'une annulation partielle) ; entre la vérification et l'écriture de l'annulation, un autre écrivain peut s'intercaler (une seule utilisatrice, SQLite). Un lancement de graphe est de niveau 2 **sans historique** (les agents écrivent en tâche de fond) : il « s'annule » en annulant la session.
-  4. **Niveau 3** (`app/mcp/confirm.py`, `features/mcp/service/confirmations.py`, P15) : l'envoyeur ne fait **rien partir** ; il lance le contrôle préalable (60 s au plus ; une panne devient un verdict « non » lisible, jamais un blocage silencieux), range la requête complète, l'identité (étiquette, features, mode) et un résumé neutre (outil, route, nom et court aperçu de 6 arguments au plus, clés masquées) dans `mcp_confirmations` (24 h, **20 en attente au plus par jeton**, 429 `too_many_pending`) et répond `{status: "pending_confirmation", confirmation_id, expires_at}`. Chaque passage d'état est un `UPDATE` conditionnel (état attendu et heure dans le `WHERE`) : `confirm` prend la demande avant d'exécuter (deux clics : un seul passe, l'autre 409), une demande expirée ou refusée ne tourne jamais, un jeton **révoqué depuis** refuse la demande (409 `token_revoked`), l'exécution rejoue la requête sous l'identité enregistrée par le même envoyeur (jamais d'historique), `failed` si la route répond 4xx ou 5xx ; l'exécution laisse une ligne `<outil>:confirm` au journal. `GET /mcp/confirmations` marque d'abord les périmées. `expire_due` et la purge du journal (30 jours) sont la tâche planifiée `mcp_housekeeping` (toutes les 10 minutes et au démarrage, sans appel au modèle).
-  5. **Composition** (`bootstrap_mcp.install_adapter`) : registre, envoyeur, service des demandes (`app.state.mcp_registry`, `app.state.mcp_confirmations`) puis `install_gate`. Routes remplies : `GET /mcp/features`, `GET /mcp/actions`, `GET /mcp/confirmations`, `POST …/confirm`, `POST …/refuse`, `GET /mcp/changes`, `POST /mcp/changes/{call_id}/undo` (toutes derrière `get_interface_user` et la porte locale de D204 n° 10). Contrat OpenAPI et `schema.d.ts` inchangés.
-  6. **À savoir pour 10.D1 et 10.I** : (a) `POST /sessions` refuse (409 `graph_has_route`, avec la route à utiliser) les parcours de `ROUTE_ONLY` (`cv_review`, `application_kit`, `hiring_committee`, `gap_analysis`, `market_radar`, `project_review`, `quiz`, `study_session`, `interview`, `replan`, `capture`…) : un `McpGraph` pour l'un d'eux se lance en 409 lisible ; il faut déclarer **la route** qui les lance (`POST /cv/reviews`, `POST /applications/{id}/kit`…) comme action de niveau 2 ; seuls les graphes hors `ROUTE_ONLY` (`learning_council`, `web_research`, `lesson_factory`…) se lancent par `graph_<nom>` ; (b) la défense en profondeur de la relecture (M9) : `get_current_user` refuse (403) toute route de niveau 4 quand `MCP_IDENTITY` est posée, en plus du refus de `internal_request` et du registre.
-  7. **Correctifs de la relecture de sécurité de 10.B2** (commit séparé). **I1, confirmer en voyant** : `McpConfirmationOut` gagne `request: McpRequestPreview` (`method`, `route` = le gabarit, `target_label`, `fields: [{name, value_preview}]`, `truncated`) : **tous** les champs du corps et des paramètres, chaque valeur en texte (objets et listes en JSON compact), clés d'API masquées **avant** la coupe, 500 caractères par champ et 4 000 en tout (un champ au-delà du total garde son nom et un aperçu vide). `target_label` (« Société — Titre ») est lu à la création par la route GET de la même ressource, ou de sa ressource mère (`POST /applications/{id}/events` lit `GET /applications/{id}`) quand elle est déclarée, sous l'identité du jeton ; il n'est montré qu'à January (la réponse à Claude reste `pending_confirmation`) ; les champs que la lecture déclare `untrusted` sont entourés de `<donnee_non_fiable>`, et les valeurs de champs, écrites par Claude, sont montrées telles quelles (texte, jamais interprété). Contrat régénéré (`contracts/openapi.json`, `schema.d.ts`) : le front suivra en 10.I. **I2, annulation et lignes liées** : avant de supprimer une ligne ajoutée, `undo` parcourt les clés étrangères de `Base.metadata` qui visent sa table et refuse en 409 `undo_has_dependents` (nom de la table seulement) si des lignes la référencent qui ne sont pas des ajouts du même appel ; la vérification a lieu avant celle de l'état « après ». **Mineurs** : (M1) `clean_ids` aussi dans le journal de confirmation ; (M2) `recordable` respecte `table.info["export"] is False` et exclut `auth_sessions` ; (M3) le registre refuse au démarrage un `DELETE` sous le niveau 3, un `POST /sessions` brut (les parcours passent par `McpGraph`), un `precheck` hors niveau 3, et toute route de `/settings/…` sans `response_fields` ou `body_fields` ; (M4) `RouteIndex` (`app/mcp/routes.py`, routes de l'OpenAPI dans l'ordre du routeur) refuse un paramètre de chemin qui tomberait sur une route sœur statique (`/applications/stats`) et les accolades dans un identifiant ; la substitution du gabarit se fait en une seule passe ; (M5) un compteur par jeton, par sorte **et par fenêtre**, qui ne garde que les instants de sa fenêtre (plus de balayage d'un jour d'événements) ; (M6) à la confirmation, la demande est relue : jeton révoqué ou expiré = demande refusée (409 `token_revoked` ou `token_expired`) ; interrupteur général coupé = 409 `mcp_disabled`, la demande **reste en attente** (January peut le rallumer) ; le contrôle préalable est **rejoué** (hors de toute transaction), et s'il rend un autre verdict que celui de la demande (`ok` ou raisons), la demande garde le nouveau verdict, reste en attente et la confirmation répond 409 `precheck_changed` (January relit, puis confirme) ; les 20 demandes en attente sont contrôlées **avant** le contrôle préalable ; (M8) la tâche `mcp_housekeeping` purge aussi `mcp_changes` et les `mcp_confirmations` closes de plus de 30 jours (une demande en attente reste) ; (M9) l'annulation prend d'abord les lignes par `UPDATE … WHERE undone_at IS NULL` (deux clics : un seul passe, l'autre `already_undone`) et une `IntegrityError` est un 409 `undo_refused`, la transaction entière annulée ; (M7) un appel de niveau 2 réussi dont rien n'a été gardé (plus de 500 lignes, panne de l'historique, aucune ligne enregistrée) le dit à Claude (`ToolResult.notice`, ajouté à la note de l'enveloppe : « … ne pourra pas être annulé depuis l'application ») et au journal (`ids.history = "none"`). **M9 de 10.B1** : `tests/mcp/test_review_registry.py` échoue si une route sous `/settings`, `/auth`, `/account` ou `/mcp` n'est ni bloquée sous identité MCP (`never_reachable`) ni l'une des deux routes de préférences (`GET` et `PUT /settings`) déclarées avec `response_fields` ou `body_fields`. **Notés, non faits** : (M10 a) une réponse en erreur n'est pas entourée : sûr tant qu'aucun message d'erreur de route ne cite du texte du web (règle de 10.B1) ; (M10 b) le garde de couverture de 10.D1 doit exiger un `McpGraph(untrusted=…)` (ou une exclusion motivée) pour chaque graphe qui lit le web, y compris ceux lancés par une route, et 10.E le vérifier de bout en bout ; (M11) un lancement de graphe n'a pas de plafond de coût propre (10 écritures par minute, 100 par jour) : un compteur `graph_launch` (par exemple 5 par heure, 20 par jour, indiqué sur la page « Accès MCP ») est à poser avant l'essai réel de 10.F ; l'annulation d'une suppression de niveau 2 ne rétablit pas les lignes supprimées en cascade par la base : le registre n'en laisse plus passer (`DELETE` au niveau 3 au moins) ; en mode local, un agent qui a un shell et passe `Host: localhost` reste la limite de D204 n° 10 (à répéter dans les consignes d'installation).
-- **Raison** : plan de la phase 10, P11 à P15, P18 ; exigence « le MCP fait chaque action de l'application, sous les mêmes règles que l'interface » ; relecture de sécurité à venir (l'identité peut-elle fuir ou être forgée ? un niveau 3 peut-il s'exécuter sans clic ? l'annulation touche-t-elle une autre utilisatrice ?). Le MCP appelle la vraie route : un seul jeu de règles, et le garde « route déclarée » reste trivial.
+- **Date** 2026-11-17
+- **Subject** Phase 10, task 10.B2: the MCP adapter (tool registry, internal dispatch, history and
+  undo, “To confirm” requests)
+- **Decision**
+  1. **Registry** (`app/mcp/registry.py`, `schema.py`): `build_registry(features, app, graphs)`
+     reads `app.openapi()` and makes startup **fail** (`McpConfigError`) for: missing route; level 4
+     route (`/auth`, `/account`, `/mcp`, `/settings/api-keys`, `/settings/models`,
+     `/settings/agents`, whatever the feature); feature `auth`, `account`, or `mcp` with tools;
+     level 1 on a route that is not a `GET`; external effect below level 3 (already refused at the
+     construction of `McpAction`); `GET /settings` without `response_fields`; another route of
+     `/settings` without `body_fields`; `body_fields` field absent from the body; `merge_from` that
+     is not a `GET` with the same parameters; file route (`multipart` body without
+     `encoding="form"`, or a required file field); tool name outside `[a-z0-9_]{1,64}` or
+     duplicated; graph unknown to the application. A tool's schema (P13): path, query, and body in a
+     flat object, name collision = prefix `body_`, `$ref` of the components copied into local
+     `$defs`, `additionalProperties: false`; description = summary of the declaration (otherwise
+     first line of the route's docstring) + level + untrusted fields. The graphs (`graph_<name>`)
+     take the fields of their `input_model` (passed by the composition: `app.mcp` does not import
+     `app.agents`). Deviations from `ToolSpec` (B1): fields added `summary`, `route`, `graph`,
+     `side_effects`, `precheck`, `plan`, `response_fields` (all with a default value, B1's tests did
+     not change); `ToolResult` gains `call_id`.
+  2. **Internal dispatch** (`app/mcp/dispatch.py`, P12): `internal_request` sets `MCP_IDENTITY` (set
+     then reset in a `finally`, **sole writer**), sends the real request through
+     `httpx.ASGITransport`, with no cookie or authentication header, with a 90 s timeout; refusal of
+     a level 4 route, of a path with `..`, `?`, `#`, `%`, `\`. Arguments: unknown or missing ones
+     refused (`invalid_arguments`, names only); a path parameter is an identifier with no
+     `/ \ ? # %` nor `.` `..` (`test_path_arguments_cannot_escape`). A 422 from the route
+     (`details.errors` or `details.fields`) is returned with the **tool's argument names** and never
+     the value received. `response_fields` (10.D1 arbitration no. 1): only these keys of the root
+     object (of each object of a list) come out; `encoding="form"` (no. 2): text fields in
+     `multipart/form-data`, an optional file field is ignored; graphs' `untrusted` (no. 3): the
+     `result` (and its text subfields) of any session of a graph declared with `untrusted` is
+     wrapped when Claude follows the session, through any tool whose response carries `graph`.
+     Additions to `app/mcp/base.py` (owner 10.P, at the controller's request):
+     `McpAction.response_fields` and `encoding`.
+  3. **Level 2: history and undo** (`app/mcp/recorder.py`, P14): `ChangeRecorder` listens to
+     `before_flush`/`after_flush` (once, with no effect outside a call: context variable `ACTIVE`,
+     disabled at the end of the call); it reads in the database the before and after state of each
+     row added, modified, or deleted, merges the successive passes, and **only writes `mcp_changes`
+     after a successful response**, under the call's identifier (= `mcp_calls.id`, imposed on the
+     journal row). `undo`: in a transaction, 404 if the call changed nothing for this user, 409
+     `already_undone`, 409 `undo_refused` (without quoting the content) if a row is no longer in the
+     “after” state; otherwise deletes the additions, restores the modifications, reinserts the
+     deletions. **Never copied**: tables with a column `info={"export": False}`, `api_keys`, `mcp_*`
+     (D200 no. 9). **Accepted limits**: a mass write outside the ORM (direct `update(...)`,
+     `delete(...)`) is not seen (D1 therefore declared deletions at level 3); beyond 500 rows, the
+     call is not undoable (nothing is kept rather than a partial undo); between the check and the
+     writing of the undo, another writer can slip in (a single user, SQLite). A graph launch is
+     level 2 **with no history** (the agents write in the background): it “undoes” by cancelling
+     the session.
+  4. **Level 3** (`app/mcp/confirm.py`, `features/mcp/service/confirmations.py`, P15): the
+     dispatcher **sends nothing out**; it runs the preliminary check (60 s at most; a failure
+     becomes a readable “no” verdict, never a silent block), stores the complete request, the
+     identity (label, features, mode), and a neutral summary (tool, route, name and short preview of
+     6 arguments at most, keys masked) in `mcp_confirmations` (24 h, **20 pending at most per
+     token**, 429 `too_many_pending`) and answers `{status: "pending_confirmation",
+     confirmation_id, expires_at}`. Each change of state is a conditional `UPDATE` (expected state
+     and time in the `WHERE`): `confirm` takes the request before executing (two clicks: only one
+     goes through, the other 409), an expired or refused request never runs, a token **revoked
+     since** refuses the request (409 `token_revoked`), execution replays the request under the
+     stored identity through the same dispatcher (never history), `failed` if the route answers 4xx
+     or 5xx; execution leaves a `<tool>:confirm` row in the journal. `GET /mcp/confirmations` first
+     marks the out-of-date ones. `expire_due` and the journal's purge (30 days) are the scheduled
+     task `mcp_housekeeping` (every 10 minutes and at startup, with no model call).
+  5. **Composition** (`bootstrap_mcp.install_adapter`): registry, dispatcher, requests service
+     (`app.state.mcp_registry`, `app.state.mcp_confirmations`) then `install_gate`. Routes filled
+     in: `GET /mcp/features`, `GET /mcp/actions`, `GET /mcp/confirmations`, `POST …/confirm`,
+     `POST …/refuse`, `GET /mcp/changes`, `POST /mcp/changes/{call_id}/undo` (all behind
+     `get_interface_user` and D204 no. 10's local gate). OpenAPI contract and `schema.d.ts`
+     unchanged.
+  6. **To know for 10.D1 and 10.I**: (a) `POST /sessions` refuses (409 `graph_has_route`, with the
+     route to use) the flows of `ROUTE_ONLY` (`cv_review`, `application_kit`, `hiring_committee`,
+     `gap_analysis`, `market_radar`, `project_review`, `quiz`, `study_session`, `interview`,
+     `replan`, `capture`…): an `McpGraph` for one of them launches as a readable 409; **the
+     route** that launches them (`POST /cv/reviews`, `POST /applications/{id}/kit`…) must be
+     declared as a level 2 action; only the graphs outside `ROUTE_ONLY` (`learning_council`,
+     `web_research`, `lesson_factory`…) launch through `graph_<name>`; (b) the reread's defense in
+     depth (M9): `get_current_user` refuses (403) any level 4 route when `MCP_IDENTITY` is set, in
+     addition to the refusal of `internal_request` and of the registry.
+  7. **Fixes from 10.B2's security reread** (separate commit). **I1, confirming while seeing**:
+     `McpConfirmationOut` gains `request: McpRequestPreview` (`method`, `route` = the template,
+     `target_label`, `fields: [{name, value_preview}]`, `truncated`): **all** the body and parameter
+     fields, each value as text (objects and lists in compact JSON), API keys masked **before** the
+     cut, 500 characters per field and 4,000 in total (a field beyond the total keeps its name and
+     an empty preview). `target_label` (“Company — Title”) is read at creation by the GET
+     route of the same resource, or of its parent resource (`POST /applications/{id}/events` reads
+     `GET /applications/{id}`) when declared, under the token's identity; it is only shown to
+     January (the answer to Claude stays `pending_confirmation`); the fields that the read declares
+     `untrusted` are wrapped in `<donnee_non_fiable>`, and the field values, written by Claude, are
+     shown as is (text, never interpreted). Contract regenerated (`contracts/openapi.json`,
+     `schema.d.ts`): the front end will follow in 10.I. **I2, undo and linked rows**: before
+     deleting an added row, `undo` walks through the foreign keys of `Base.metadata` that target its
+     table and refuses with 409 `undo_has_dependents` (table name only) if rows reference it that
+     are not additions of the same call; the check comes before that of the “after” state.
+     **Minor points**: (M1) `clean_ids` also in the confirmation journal; (M2) `recordable` respects
+     `table.info["export"] is False` and excludes `auth_sessions`; (M3) the registry refuses at
+     startup a `DELETE` below level 3, a raw `POST /sessions` (flows go through `McpGraph`), a
+     `precheck` outside level 3, and any `/settings/…` route without `response_fields` or
+     `body_fields`; (M4) `RouteIndex` (`app/mcp/routes.py`, OpenAPI routes in the router's order)
+     refuses a path parameter that would land on a static sibling route (`/applications/stats`) and
+     braces in an identifier; template substitution is done in a single pass; (M5) a counter per
+     token, per kind, **and per window**, which only keeps the instants of its window (no more
+     sweeping a day of events); (M6) at confirmation, the request is reread: token revoked or
+     expired = request refused (409 `token_revoked` or `token_expired`); master switch off = 409
+     `mcp_disabled`, the request **stays pending** (January can turn it back on); the preliminary
+     check is **replayed** (outside any transaction), and if it returns a verdict other than the
+     request's (`ok` or reasons), the request keeps the new verdict, stays pending, and the
+     confirmation answers 409 `precheck_changed` (January rereads, then confirms); the 20 pending
+     requests are checked **before** the preliminary check; (M8) the `mcp_housekeeping` task also
+     purges `mcp_changes` and the closed `mcp_confirmations` older than 30 days (a pending request
+     stays); (M9) the undo first takes the rows through `UPDATE … WHERE undone_at IS NULL` (two
+     clicks: only one goes through, the other `already_undone`) and an `IntegrityError` is a 409
+     `undo_refused`, the whole transaction cancelled; (M7) a successful level 2 call of which
+     nothing was kept (more than 500 rows, history failure, no row recorded) says so to Claude
+     (`ToolResult.notice`, added to the envelope's note: “… cannot be undone from the
+     application”) and to the journal (`ids.history = "none"`). **M9 of 10.B1**:
+     `tests/mcp/test_review_registry.py` fails if a route under `/settings`, `/auth`, `/account`, or
+     `/mcp` is neither blocked under MCP identity (`never_reachable`) nor one of the two preference
+     routes (`GET` and `PUT /settings`) declared with `response_fields` or `body_fields`. **Noted,
+     not done**: (M10 a) an error response is not wrapped: safe as long as no route error message
+     quotes text from the web (rule of 10.B1); (M10 b) 10.D1's coverage guard must require an
+     `McpGraph(untrusted=…)` (or a justified exclusion) for each graph that reads the web,
+     including those launched by a route, and 10.E check it end to end; (M11) a graph launch has no
+     cost cap of its own (10 writes per minute, 100 per day): a `graph_launch` counter (for example
+     5 per hour, 20 per day, shown on the “MCP access” page) is to be set before the real trial
+     of 10.F; the undo of a level 2 deletion does not restore the rows deleted by cascade by the
+     database: the registry no longer lets any through (`DELETE` at level 3 at least); in local
+     mode, an agent that has a shell and passes `Host: localhost` remains the limit of D204 no. 10
+     (to be repeated in the installation instructions).
+- **Reason** Plan of phase 10, P11 to P15, P18; requirement “the MCP does every action of the
+  application, under the same rules as the interface”; upcoming security reread (can the identity
+  leak or be forged? can a level 3 run without a click? does the undo touch another user?). The MCP
+  calls the real route: a single set of rules, and the “declared route” guard stays trivial.
 
 ## D206
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 10, tâche 10.C1 : IDE du front (`frontend/src/features/ide/`) : éditeur Monaco, sortie, professeur, notes et propositions
-- **Décision** :
-  1. **Monaco en local, isolé dans un seul composant** : `components/CodeEditor/` est le seul endroit qui importe `@monaco-editor/react` et `monaco-editor` (un test lit toutes les sources pour le vérifier). `monacoSetup.ts` branche le paquet sur le chargeur (`loader.config({ monaco })`, ce qui coupe le chargement par adresse distante de `@monaco-editor/react`) et fournit le worker de l'éditeur par `?worker` (Vite le sert depuis le même site). Monaco 0.57 a de nouveaux points d'entrée (réorganisation de la 0.56) : `monaco-editor/editor` (l'API), `monaco-editor/features/register.all` (les contributions : recherche, repli, bascule de la touche Tab avec Ctrl+M, aide d'accessibilité), `monaco-editor/languages/definitions/python/register` (la coloration de Python seule, sans les 70 autres langages) et `monaco-editor/editor/editor.worker?worker` ; les chemins `monaco-editor/esm/vs/...` de la doc plus ancienne ne se résolvent plus. Python n'a pas de service de langage : seul le worker de l'éditeur est embarqué (304 Ko). Thème clair (`vs`), `accessibilitySupport: "on"`, étiquette d'éditeur lue par les lecteurs d'écran, marge des annotations (`glyphMargin`) en losange plein (la forme, pas la couleur seule, et le même texte est dans la liste « Dans la marge » du professeur). La chaîne d'adresse du CDN reste dans le paquet du chargeur (`@monaco-editor/loader`) comme valeur par défaut, jamais utilisée une fois `monaco` donné ; le test « monaco is never loaded from a CDN » vérifie nos sources, pas ce paquet. Le paquet principal reste à 1,8 Mo : la page de séance (qui tire Monaco, 3,9 Mo) est chargée à l'ouverture de la route (`lazy`, comme la carte des compétences).
-  2. **Sous Vitest, des faux par alias** (`vitest.config.ts`) : `@monaco-editor/react` devient `src/test/fakeMonacoReact.tsx` (une zone de texte nommée comme l'éditeur réel ; `fakeEditor` pilote le curseur, Ctrl+Entrée et lit les décorations de la marge), `monaco-editor` et ses sous-chemins deviennent `src/test/fakeMonacoEditor.ts`. Aucun test n'a besoin d'un `vi.mock`. Faux serveur : `src/test/ideApi.ts` (les 16 routes utilisées de l'IDE, corps et appels gardés).
-  3. **Le professeur ne part que sur un geste** (jamais à la frappe ni à l'enregistrement) : fin d'une exécution **en échec** (code ≠ 0, temps dépassé, arrêt, erreur du bac), une seule fois par exécution, déclencheur `run_error` ; boutons « Indice » (`hint`), « Pourquoi cette erreur ? » (`question` avec ce texte et l'identifiant de l'exécution, actif seulement après un échec) ; champ de question (`question`, jamais vide) ; minuterie de 30 s (`idle`) seulement si l'option est cochée, une fois par arrêt, rearmée par un déplacement du curseur ou une frappe. Un succès (`run_ok`) n'appelle rien. Les appels automatiques (`run_error`, `idle`) exigent que les préférences et la consommation soient lues, le mode « automatique » et `mode_on_demand` faux : plafond atteint, choix « sur demande » ou lecture pas encore faite, rien ne part tout seul ; les gestes (boutons, question) restent permis. Chaque appel joint le fichier et la ligne du curseur. La réponse `202` se lit : `session_id` (le graphe travaille, suivi par `useRun` ; les notes et la consommation sont relues à chaque changement d'état), `reference_note_id` (même erreur au même endroit : texte), `skipped` (la raison en français).
-  4. **Enregistrement** : les retouches vivent côté page (`useFilesDraft`) ; `PUT /files` part 1,5 s après la dernière frappe, et toujours **avant** une exécution et avant d'accepter une proposition (le serveur compare l'empreinte du fichier enregistré). Si l'enregistrement échoue, l'exécution ne part pas et le message est dit. Une retouche faite pendant un envoi est gardée.
-  5. **Sortie** : interrogée toutes les 300 ms par décalage (`after` = `next_offset` reçu), arrêtée à la première fin, cinq échecs de lecture de suite l'arrêtent avec un message. Région « Sortie » (`tabIndex=-1`) qui **prend le focus au départ d'une exécution** ; journal en lecture seule (`role="log"`, `aria-live="off"`, pas de champ : Q4), état en toutes lettres (en cours, terminé avec code et durée, temps dépassé, arrêté, vérification réussie ou échouée). Une exécution à la fois ; Ctrl+Entrée pendant une exécution ne fait rien.
-  6. **Propositions** : « Accepter » demande au serveur (`POST /notes/{id}/accept`) et le front **prend la séance rendue** (fichiers du serveur) : il ne réécrit jamais le texte lui-même. Les retouches locales sont alors jetées. « Avant » est lu dans le fichier ouvert (lignes visées), « Après » est `replacement`. Une proposition périmée (statut `stale`, ou 409 `note_stale` au clic, après quoi les notes sont relues) est grisée avec « Le code a changé depuis », sans bouton « Refuser » ; une note quelconque périmée est grisée de même, et une annotation périmée quitte la marge. Après une décision, le focus va au titre « Professeur ».
-  7. **Focus** : un bouton « occupé » (exécution en cours, appel au professeur, décision, enregistrement d'un réglage) porte `aria-disabled` et ignore le clic au lieu de recevoir `disabled` : un bouton qui vient d'être activé ne retire pas le focus à la personne (il tomberait sur `body`). `disabled` ne sert qu'aux états durables (formulaire incomplet, proposition périmée, rien à expliquer).
-  8. **Écarts au brief** : (a) **le contrat n'a pas de niveau d'indice** : `NoteOut` ne porte pas `level` (le plan le met dans `TeacherNote`) ; « Indice 1, 2, 3 » est le rang de l'indice parmi les indices de la séance, dans l'ordre d'écriture, donc faux si le back gradue par signature d'erreur (un nouvel indice sur une autre erreur repart à 1 côté back, à 4 ici) : si 10.A3 veut l'exactitude, il ajoute `level` à `NoteOut` ; (b) **le contrat n'a pas de choix guide / binôme** : `PreferencesIn` ne porte que `teacher_mode` (`auto` | `on_demand`), la minuterie et les plafonds ; `ModeSwitch` règle donc « automatique / sur demande » et la minuterie des 30 s, et ne règle pas guide ou binôme ; les plafonds ne se règlent pas dans l'écran (ils sont renvoyés tels que lus à chaque écriture) ; (c) composants en plus de la liste du brief : `TeacherAsk` (boutons et champ de question), `QuestionForm`, `ProposalActions`, `CodeBlock`, et `TextField`, `ManualExerciseForm`, `GenerateExerciseForm` (sous `ExerciseForm`) ; hooks en plus : `useSessions`, `useFilesDraft`, `useRunner`, `useCoach`, `useIdleTeach`, `useProposals`, `useWorkspace`, `useHomeActions` ; (d) aucun changement de contrat (`contracts/openapi.json` et `schema.d.ts` intacts) ; (e) `src/app/registry.test.ts` gagne `"/code"` (liste de la navigation).
-- **Raison** : plan de la phase 10 (10.C1) : Monaco chargé en local, un professeur à coût maîtrisé (jamais à la frappe, un seul appel par échec, plafond respecté, minuterie en option), propositions appliquées par le serveur seulement ; conventions du front (dossier par composant, `components/` présentationnel, textes dans `fr.ts`, focus jamais laissé sur `body`).
+- **Date** 2026-11-17
+- **Subject** Phase 10, task 10.C1: front-end IDE (`frontend/src/features/ide/`): Monaco editor,
+  output, professor, notes, and proposals
+- **Decision**
+  1. **Monaco local, isolated in a single component**: `components/CodeEditor/` is the only place
+     that imports `@monaco-editor/react` and `monaco-editor` (a test reads all the sources to check
+     it). `monacoSetup.ts` plugs the package into the loader (`loader.config({ monaco })`, which
+     cuts `@monaco-editor/react`'s loading from a remote address) and provides the editor's worker
+     through `?worker` (Vite serves it from the same site). Monaco 0.57 has new entry points
+     (reorganization of 0.56): `monaco-editor/editor` (the API),
+     `monaco-editor/features/register.all` (the contributions: search, folding, Tab-key toggle with
+     Ctrl+M, accessibility help), `monaco-editor/languages/definitions/python/register` (Python
+     highlighting alone, without the 70 other languages), and
+     `monaco-editor/editor/editor.worker?worker`; the paths `monaco-editor/esm/vs/...` of the older
+     documentation no longer resolve. Python has no language service: only the editor's worker is
+     bundled (304 KB). Light theme (`vs`), `accessibilitySupport: "on"`, editor label read by screen
+     readers, annotation margin (`glyphMargin`) in a filled diamond (the shape, not color alone, and
+     the same text is in the professor's “In the margin” list). The CDN address string stays in
+     the loader package (`@monaco-editor/loader`) as a default value, never used once `monaco` is
+     given; the test “monaco is never loaded from a CDN” checks our sources, not that package.
+     The main bundle stays at 1.8 MB: the session page (which pulls in Monaco, 3.9 MB) is loaded
+     when the route opens (`lazy`, like the skills map).
+  2. **Under Vitest, fakes by alias** (`vitest.config.ts`): `@monaco-editor/react` becomes
+     `src/test/fakeMonacoReact.tsx` (a text area named like the real editor; `fakeEditor` drives the
+     cursor, Ctrl+Enter, and reads the margin decorations), `monaco-editor` and its subpaths become
+     `src/test/fakeMonacoEditor.ts`. No test needs a `vi.mock`. Fake server: `src/test/ideApi.ts`
+     (the 16 IDE routes used, bodies and calls kept).
+  3. **The professor only starts on a gesture** (never on typing or saving): end of a **failed** run
+     (code ≠ 0, time exceeded, stop, sandbox error), once per run, trigger `run_error`; buttons
+     “Hint” (`hint`), “Why this error?” (`question` with this text and the run's identifier,
+     active only after a failure); question field (`question`, never empty); 30 s timer (`idle`)
+     only if the option is checked, once per stop, re-armed by a cursor move or a keystroke. A
+     success (`run_ok`) calls nothing. The automatic calls (`run_error`, `idle`) require that the
+     preferences and the consumption have been read, “automatic” mode, and `mode_on_demand`
+     false: cap reached, “on request” choice, or read not yet done, nothing goes out on its own;
+     the gestures (buttons, question) stay allowed. Each call attaches the file and the cursor's
+     line. The `202` response is read: `session_id` (the graph is working, followed by `useRun`; the
+     notes and the consumption are reread at each state change), `reference_note_id` (same error in
+     the same place: text), `skipped` (the reason in French).
+  4. **Saving**: the edits live on the page side (`useFilesDraft`); `PUT /files` goes out 1.5 s
+     after the last keystroke, and always **before** a run and before accepting a proposal (the
+     server compares the saved file's fingerprint). If saving fails, the run does not go out and the
+     message is stated. An edit made during a sending is kept.
+  5. **Output**: polled every 300 ms by offset (`after` = `next_offset` received), stopped at the
+     first end, five failed reads in a row stop it with a message. “Output” region
+     (`tabIndex=-1`) that **takes focus at the start of a run**; read-only journal (`role="log"`,
+     `aria-live="off"`, no field: Q4), state spelled out (running, finished with code and duration,
+     time exceeded, stopped, check passed or failed). One run at a time; Ctrl+Enter during a run
+     does nothing.
+  6. **Proposals**: “Accept” asks the server (`POST /notes/{id}/accept`) and the front end
+     **takes the session returned** (the server's files): it never rewrites the text itself. The
+     local edits are then thrown away. “Before” is read from the open file (lines targeted),
+     “After” is `replacement`. An out-of-date proposal (status `stale`, or 409 `note_stale` at
+     the click, after which the notes are reread) is greyed out with “The code has changed
+     since”, with no “Reject” button; any out-of-date note is greyed out likewise, and an
+     out-of-date annotation leaves the margin. After a decision, focus goes to the “Professor”
+     title.
+  7. **Focus**: a “busy” button (run in progress, call to the professor, decision, saving a
+     setting) carries `aria-disabled` and ignores the click instead of receiving `disabled`: a
+     button that has just been activated does not take focus away from the person (it would fall on
+     `body`). `disabled` only serves lasting states (incomplete form, out-of-date proposal, nothing
+     to explain).
+  8. **Deviations from the brief**: (a) **the contract has no hint level**: `NoteOut` does not carry
+     `level` (the plan puts it in `TeacherNote`); “Hint 1, 2, 3” is the hint's rank among the
+     session's hints, in writing order, so wrong if the back end grades by error signature (a new
+     hint on another error restarts at 1 on the back-end side, at 4 here): if 10.A3 wants exactness,
+     it adds `level` to `NoteOut`; (b) **the contract has no guide / pair choice**: `PreferencesIn`
+     only carries `teacher_mode` (`auto` | `on_demand`), the timer, and the caps; `ModeSwitch`
+     therefore sets “automatic / on request” and the 30 s timer, and does not set guide or pair;
+     the caps are not set in the screen (they are sent back as read at each write); (c) components
+     beyond the brief's list: `TeacherAsk` (buttons and question field), `QuestionForm`,
+     `ProposalActions`, `CodeBlock`, and `TextField`, `ManualExerciseForm`, `GenerateExerciseForm`
+     (under `ExerciseForm`); hooks beyond: `useSessions`, `useFilesDraft`, `useRunner`, `useCoach`,
+     `useIdleTeach`, `useProposals`, `useWorkspace`, `useHomeActions`; (d) no contract change
+     (`contracts/openapi.json` and `schema.d.ts` intact); (e) `src/app/registry.test.ts` gains
+     `"/code"` (navigation list).
+- **Reason** Plan of phase 10 (10.C1): Monaco loaded locally, a professor with controlled cost
+  (never on typing, a single call per failure, cap respected, timer optional), proposals applied by
+  the server only; front-end conventions (one folder per component, presentational `components/`,
+  texts in `fr.ts`, focus never left on `body`).
 
 ## D207
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 10, tâche 10.C2 : écran « Accès MCP » du front (`frontend/src/features/mcp/`)
-- **Décision** :
-  1. **Une page, cinq blocs** : `reglages/mcp` (Réglages, ordre 9, après « Mes données »). Interrupteur général, Jetons, À confirmer, Historique, Niveaux, chacun lu par sa propre requête (une panne d'un bloc n'efface pas les autres). Interrupteur coupé : la création de jeton disparaît (le texte dit « aucun jeton n'ouvre rien »), mais la liste, les demandes, l'historique et les niveaux restent lisibles et les jetons actifs restent révocables.
-  2. **Jeton montré une fois** : la valeur ne vit que dans le résultat de la mutation de création (mémoire du composant), jamais dans le cache des lectures, `localStorage` ni `sessionStorage`. « J'ai copié le jeton » appelle `reset()` ; un rechargement ne la retrouve pas (`GET /mcp/tokens` ne la rend de toute façon pas). Le titre du jeton prend le focus à l'apparition ; fermé, le focus revient au titre « Jetons ». La commande affichée est `claude mcp add --transport http tremplin http://127.0.0.1:8000/mcp --header "Authorization: Bearer <jeton>"`. Lecture seule et 30 jours sont choisis d'office ; aucune feature n'est cochée au départ (on n'ouvre que ce qu'on choisit) et le bouton reste désactivé sans nom ni feature.
-  3. **Demandes « À confirmer »** : un verdict n'est « sans réserve » que si le contrôle a dit `ok: true` en toutes lettres (un champ absent ou mal formé donne des réserves, une demande sans contrôle le dit). Les boutons n'existent que pour l'état `pending` ; une demande en attente dont l'échéance est passée s'affiche « Expirée » sans bouton, même si le serveur ne l'a pas encore notée. Un double clic n'envoie qu'une requête (`useIdAction` : garde par identifiant avant le prochain rendu, en plus du bouton désactivé). Confirmer exécute une action arbitraire : toutes les lectures affichées sont relues ensuite (`invalidateQueries()`), de même après une annulation. L'erreur du serveur (par exemple 409 demande expirée) s'affiche telle quelle sous la liste ; les boutons restent.
-  4. **Historique** : changements annulables (bouton « Annuler » seulement s'il n'y a pas de `undone_at`) puis journal des appels (outil, jeton, niveau, code, durée, jamais le contenu). Un refus d'annulation (la ligne a changé depuis) se lit dans le message du serveur. Niveau 0 du journal : « Refusé » ; jeton absent ou inconnu : « jeton inconnu » (arbitrage du contrôleur sur la relecture de 10.P : `McpCallOut.level` devient `0 | 1 | 2 | 3`, `token_id` peut être nul).
-  5. **Niveaux** : table lecture seule de `GET /mcp/actions`, filtre par feature (liste native), mention des actions « hors base » (toujours à confirmer) et des textes venus du web ; le niveau 4 n'a pas de ligne, un paragraphe dit qu'il n'est jamais ouvert.
-  6. **Barre du haut** : pastille « À confirmer (n) » (lien vers la page), seulement si n > 0, relue chaque minute sur la même clé que la page ; muette en cas de panne. Compte = demandes `pending` dont l'échéance n'est pas passée.
-  7. **Noms de features** : table `mcp.features` dans `messages/mcp.ts`, repli sur le nom brut pour une feature inconnue (D1 peut en déclarer d'autres sans casser l'écran).
-  8. **Écarts au brief** : aucun changement de contrat. Composants en plus de la liste du brief, tous présentationnels : `McpSection`, `CopyButton`, `PendingBadge`, et les sous-parties de `TokenForm`, `TokenList`, `ChangeList`, `ActionLevelTable`, `ConfirmationCard`. Aide de test `src/test/mcpApi.ts` (faux serveur MSW à état). Les tests de la phase 10 n'ont pas besoin de Monaco.
-- **Raison** : exigences MCP du plan de la phase 10 (jeton unique, niveau 3 sans exécution avant clic, une exécution par demande, annulation visible, interrupteur général) ; conventions du front (dossier par composant, `components/` présentationnel, textes dans `fr.ts`, focus jamais laissé sur `body`).
+- **Date** 2026-11-17
+- **Subject** Phase 10, task 10.C2: front-end “MCP access” screen (`frontend/src/features/mcp/`)
+- **Decision**
+  1. **One page, five blocks**: `reglages/mcp` (Settings, order 9, after “My data”). Master
+     switch, Tokens, To confirm, History, Levels, each read by its own query (a failure of one block
+     does not erase the others). Switch off: token creation disappears (the text says “no token
+     opens anything”), but the list, the requests, the history, and the levels stay readable and
+     the active tokens stay revocable.
+  2. **Token shown once**: the value only lives in the result of the creation mutation (component
+     memory), never in the reads' cache, `localStorage`, or `sessionStorage`. “I copied the
+     token” calls `reset()`; a reload does not find it again (`GET /mcp/tokens` does not return it
+     anyway). The token's title takes focus when it appears; once closed, focus returns to the
+     “Tokens” title. The command displayed is `claude mcp add --transport
+     http tremplin http://127.0.0.1:8000/mcp --header "Authorization: Bearer <token>"`. Read-only
+     and 30 days are chosen by default; no feature is checked at the start (only what is chosen is
+     opened) and the button stays disabled without a name or a feature.
+  3. **“To confirm” requests**: a verdict is only “without reservation” if the check said
+     `ok: true` in so many words (a missing or malformed field gives reservations, a request with no
+     check says so). The buttons only exist for the `pending` state; a pending request whose
+     deadline has passed is displayed “Expired” with no button, even if the server has not yet
+     noted it. A double click only sends one request (`useIdAction`: guard by identifier before the
+     next render, in addition to the disabled button). Confirming executes an arbitrary action: all
+     the reads displayed are reread afterwards (`invalidateQueries()`), likewise after an undo. The
+     server's error (for example 409 request expired) is displayed as is under the list; the buttons
+     stay.
+  4. **History**: undoable changes (“Undo” button only if there is no `undone_at`) then the call
+     journal (tool, token, level, code, duration, never the content). A refusal to undo (the row has
+     changed since) is read in the server's message. Journal level 0: “Denied”; token absent or
+     unknown: “unknown token” (controller's arbitration on the reread of 10.P:
+     `McpCallOut.level` becomes `0 | 1 | 2 | 3`, `token_id` may be null).
+  5. **Levels**: read-only table of `GET /mcp/actions`, filter by feature (native list), mention of
+     the “off-database” actions (always to confirm) and of texts coming from the web; level 4
+     has no row, a paragraph says it is never opened.
+  6. **Top bar**: “To confirm (n)” badge (link to the page), only if n > 0, reread every minute
+     on the same key as the page; mute on failure. Count = `pending` requests whose deadline has not
+     passed.
+  7. **Feature names**: table `mcp.features` in `messages/mcp.ts`, falling back on the raw name for
+     an unknown feature (D1 can declare others without breaking the screen).
+  8. **Deviations from the brief**: no contract change. Components beyond the brief's list, all
+     presentational: `McpSection`, `CopyButton`, `PendingBadge`, and the sub-parts of `TokenForm`,
+     `TokenList`, `ChangeList`, `ActionLevelTable`, `ConfirmationCard`. Test helper
+     `src/test/mcpApi.ts` (stateful MSW fake server). Phase 10's tests do not need Monaco.
+- **Reason** MCP requirements of the phase 10 plan (single token, level 3 with no execution before
+  the click, one execution per request, visible undo, master switch); front-end conventions (one
+  folder per component, presentational `components/`, texts in `fr.ts`, focus never left on `body`).
 
 ## D208
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 10, tâche 10.D1 : déclarations MCP de toutes les features et garde de couverture
-- **Décision** :
-  1. **Couverture totale (exigence du 2026-11-17)** : les 179 routes de `FEATURE_ROUTERS` (178 HTTP et le WebSocket des sessions) sont chacune **déclarée** (132 `McpAction`, dont 73 de niveau 1, 43 de niveau 2 et 16 de niveau 3 ; 26 manifestes `features/<f>/mcp.py`, une ligne par feature dans `MCP_FEATURES`) ou **exclue avec un motif** (47 exclusions, `FeatureMcp.excluded`, clé `"METHODE /chemin"` du code réel, `"WS /chemin"` pour le WebSocket). Les 21 graphes de `GRAPHS` : 20 déclarés (`McpGraph`), `demo_debate` exclu par la clé `"graph:<nom>"` (et `ide_teacher`, `ide_exercise` d'avance). Le garde est `tests/mcp/test_coverage_guard.py` ; les routes sont énumérées par `scripts/mcp_levels.py::iter_routes` (parcours récursif des sous-routeurs), jamais d'une liste écrite. La table des niveaux s'imprime par `python -m scripts.mcp_levels` (outils, graphes, exclusions, triés par feature), jointe au rapport pour la relecture de January.
-  2. **Règle de niveau** : GET 1 ; ajout ou modification réversible en base 2 ; suppression, envoi, écriture au profil maître, effet hors base (vecteurs Qdrant, fichiers) 3 ; dans le doute 3. Un effet hors base est déclaré `side_effects="external"` (donc niveau 3) : écrire, modifier, supprimer, fusionner, réindexer la mémoire ; coller un texte (`POST /documents/text`) ; supprimer une offre (élément de mémoire, PDF, images) ; valider un programme (acquis en mémoire, leçons) ; écrire le profil maître ; générer un PDF de CV ; ajouter un projet au profil. Un lancement de graphe (202) reste de niveau 2 (P14 : il s'annule en annulant la session). Seul POST en lecture : `POST /memory/search`, niveau 1 (sinon un jeton en lecture seule ne chercherait pas dans la mémoire) ; le garde le nomme (`READ_ONLY_POSTS`).
-  3. **Décisions de January, niveau 3 même sans effet externe** : `POST /proposals/{id}/choose` (choix du parcours), `POST /sessions/{id}/resume` (réponse à la question en attente d'une session : valider un programme, accepter un replan, confirmer une fiche), `DELETE` (offre, exercice, mémoire, gabarit archivé). Sans cela, `resume` contournerait le niveau 3 de `program_validate_program`. `POST /sessions/{id}/message`, `pause` et `cancel` restent de niveau 2.
-  4. **Profil maître (niveau 3 + `precheck`)** : `PUT /profile`, `POST /projects/{id}/profile-entry` et `PATCH /cv/modifications/{id}` (elle écrit au profil quand `confirm` est vrai ; un niveau se fixe par route, donc toutes les décisions individuelles sur une modification de CV sont à confirmer, les décisions en groupe `PATCH /cv/reviews/{id}/modifications` restent de niveau 2, les « à confirmer » n'y étant jamais acceptées). `PrecheckInput` ne porte ni session ni profil : les contrôles sont **sans état** et ne recopient jamais le contenu : `cv.mcp.profile_precheck` compte les faits sans source de document (source « january » seule), `modification_precheck` avertit quand `confirm` est vrai, `projects.mcp.profile_entry_precheck` signale les chiffres des réalisations que la description ne dit pas. Un contrôle contre le profil stocké demanderait que `PrecheckInput` porte une session : à rouvrir en 10b si January le veut.
-  5. **Réglages** : `GET /settings` est déclaré (`settings_get_preferences`, niveau 1 ; la réponse nomme les niveaux de modèles, sans clé : à trancher par le contrôleur si même cela doit disparaître). `PUT /settings` n'est déclaré que par `settings_update_preferences` (niveau 2, `body_fields=PREFERENCE_FIELDS`, `merge_from="GET /settings"`). `PREFERENCE_FIELDS` et `PROTECTED_FIELDS` (`tiers`, `agent_overrides`) partitionnent exactement `UserSettings` : un champ de plus oblige à décider s'il est sensible (garde). Clés d'API (`/settings/api-keys*`), `/settings/models` et `/settings/agents` : exclus, niveau 4.
-  6. **Exclusions** : `auth`, `account`, `mcp` (20 routes, niveau 4, aucune action) ; téléversements (`POST /documents`, `/profile/import`, `/cv/templates`, `/projects/{id}/submit`) ; réponses non JSON (PDF, images, ICS, ZIP) ; WebSocket ; `POST /sessions` brut (remplacé par un outil par graphe) ; IDE : `PUT /sessions/{id}/files`, `accept`, `reject` (geste de January), `teach` et `exercises/generate` (coût d'API), `PUT /ide/preferences` (budget du professeur). Les variantes texte sont déclarées à la place : `POST /documents/text`, `POST /capture` (texte, lien ou document déjà importé) ; le CV se capture en collant son texte puis en lançant le graphe `cv_capture`.
-  7. **Graphes** : un `McpGraph` par graphe sauf `demo_debate` (démo interne, exclu dans `sessions`), `ide_teacher` et `ide_exercise` (exclus dans `ide` : ils ne sont lancés que par `teach` et `generate`, exclus ; ils n'existent pas encore, l'ensemble `PENDING_GRAPHS` du garde les tolère et `test_pending_graphs_are_removed_once_they_exist` échoue à l'intégration pour rappeler de le vider). Les graphes qui lisent le web déclarent `untrusted=("result",)` (chemin du résultat de session, à fixer par le moteur).
-  8. **`untrusted`** (chemins pointés dans `data`, `[]` par élément de liste, `"[].titre"` pour une racine en liste) déclaré sur toute action qui renvoie du texte venu du web : offres (texte, titre, entreprise, analyse), sources de recherche, ressources, relevés du radar, éléments et documents de la mémoire, texte d'offre d'une fiche, brief (ressource, offres). Le garde vérifie la syntaxe (`untrusted_paths_valid`) et une liste de routes qui doivent en porter.
-  9. **Noms d'outils** : `<feature>_<verbe>_<objet>`, `[a-z0-9_]`, 64 au plus, uniques (garde). Tout résumé fait au moins 20 caractères ; un niveau 3 le dit (« demande à confirmer »).
-  10. **Écarts à connaître** : (a) `POST /projects/{id}/submit` (rendre un projet, que le brief nomme « ajout d'un projet ») est en multipart avec captures facultatives et sans variante JSON : exclu ; pour l'ouvrir au MCP il faut soit une variante JSON (`repo_url`, `description`) côté `projects`, soit un envoi interne qui sache poster un formulaire sans fichier ; (b) le garde des graphes exclus accepte une route **exclue** comme motif (`teach`, `generate`), pas seulement une route déclarée ; (c) `tests/test_phase10_contract.py` : l'assertion `MCP_FEATURES == []` devient `assert MCP_FEATURES` ; (d) `tests/mcp/test_profile_prechecks.py` s'ajoute au garde.
-- **Raison** : plan de la phase 10, P11, P14, P15, P18, 10.D1 ; exigence du 2026-11-17 (le MCP fait chaque action de l'application, sauf le niveau 4). Une liste blanche vérifiée par un garde de test rend l'oubli d'une route impossible sans que le test échoue, et chaque exclusion dit pourquoi.
+- **Date** 2026-11-17
+- **Subject** Phase 10, task 10.D1: MCP declarations of all the features and coverage guard
+- **Decision**
+  1. **Total coverage (requirement of 2026-11-17)**: the 179 routes of `FEATURE_ROUTERS` (178 HTTP
+     and the sessions' WebSocket) are each **declared** (132 `McpAction`, of which 73 at level 1, 43
+     at level 2, and 16 at level 3; 26 manifests `features/<f>/mcp.py`, one line per feature in
+     `MCP_FEATURES`) or **excluded with a reason** (47 exclusions, `FeatureMcp.excluded`, key
+     `"METHOD /path"` of the real code, `"WS /path"` for the WebSocket). The 21 graphs of `GRAPHS`:
+     20 declared (`McpGraph`), `demo_debate` excluded by the key `"graph:<name>"` (and
+     `ide_teacher`, `ide_exercise` in advance). The guard is `tests/mcp/test_coverage_guard.py`; the
+     routes are enumerated by `scripts/mcp_levels.py::iter_routes` (recursive walk of the
+     sub-routers), never from a written list. The table of levels is printed by
+     `python -m scripts.mcp_levels` (tools, graphs, exclusions, sorted by feature), attached to the
+     report for January's reread.
+  2. **Level rule**: GET 1; reversible addition or modification in the database 2; deletion,
+     sending, writing to the master profile, effect outside the database (Qdrant vectors, files) 3;
+     when in doubt 3. An effect outside the database is declared `side_effects="external"` (so level
+     3): writing, modifying, deleting, merging, reindexing memory; pasting a text
+     (`POST /documents/text`); deleting a posting (memory item, PDF, images); validating a program
+     (learnings in memory, lessons); writing the master profile; generating a résumé PDF; adding a
+     project to the profile. A graph launch (202) stays level 2 (P14: it is undone by cancelling the
+     session). Only POST that reads: `POST /memory/search`, level 1 (otherwise a read-only token
+     could not search memory); the guard names it (`READ_ONLY_POSTS`).
+  3. **January's decisions, level 3 even without an external effect**: `POST /proposals/{id}/choose`
+     (choice of the path), `POST /sessions/{id}/resume` (answer to a session's pending question:
+     validate a program, accept a replan, confirm a record), `DELETE` (posting, exercise, memory,
+     archived template). Without this, `resume` would bypass level 3 of `program_validate_program`.
+     `POST /sessions/{id}/message`, `pause`, and `cancel` stay level 2.
+  4. **Master profile (level 3 + `precheck`)**: `PUT /profile`, `POST /projects/{id}/profile-entry`,
+     and `PATCH /cv/modifications/{id}` (it writes to the profile when `confirm` is true; a level is
+     set per route, so all the individual decisions on a résumé modification are to be confirmed,
+     the group decisions `PATCH /cv/reviews/{id}/modifications` stay level 2, the “to confirm”
+     ones never being accepted there). `PrecheckInput` carries neither session nor profile: the
+     checks are **stateless** and never copy the content: `cv.mcp.profile_precheck` counts the facts
+     with no document source (source “january” alone), `modification_precheck` warns when
+     `confirm` is true, `projects.mcp.profile_entry_precheck` flags the figures in the achievements
+     that the description does not state. A check against the stored profile would require
+     `PrecheckInput` to carry a session: to reopen in 10b if January wants it.
+  5. **Settings**: `GET /settings` is declared (`settings_get_preferences`, level 1; the response
+     names the model tiers, with no key: to be settled by the controller if even that should
+     disappear). `PUT /settings` is only declared by `settings_update_preferences` (level 2,
+     `body_fields=PREFERENCE_FIELDS`, `merge_from="GET /settings"`). `PREFERENCE_FIELDS` and
+     `PROTECTED_FIELDS` (`tiers`, `agent_overrides`) exactly partition `UserSettings`: one more
+     field forces a decision on whether it is sensitive (guard). API keys (`/settings/api-keys*`),
+     `/settings/models`, and `/settings/agents`: excluded, level 4.
+  6. **Exclusions**: `auth`, `account`, `mcp` (20 routes, level 4, no action); uploads
+     (`POST /documents`, `/profile/import`, `/cv/templates`, `/projects/{id}/submit`); non-JSON
+     responses (PDF, images, ICS, ZIP); WebSocket; raw `POST /sessions` (replaced by one tool per
+     graph); IDE: `PUT /sessions/{id}/files`, `accept`, `reject` (January's gesture), `teach` and
+     `exercises/generate` (API cost), `PUT /ide/preferences` (the professor's budget). The text
+     variants are declared instead: `POST /documents/text`, `POST /capture` (text, link, or document
+     already imported); the résumé is captured by pasting its text then launching the graph
+     `cv_capture`.
+  7. **Graphs**: one `McpGraph` per graph except `demo_debate` (internal demo, excluded in
+     `sessions`), `ide_teacher`, and `ide_exercise` (excluded in `ide`: they are only launched by
+     `teach` and `generate`, excluded; they do not exist yet, the guard's `PENDING_GRAPHS` set
+     tolerates them and `test_pending_graphs_are_removed_once_they_exist` fails at integration as a
+     reminder to empty it). The graphs that read the web declare `untrusted=("result",)` (path of
+     the session's result, to be fixed by the engine).
+  8. **`untrusted`** (dotted paths in `data`, `[]` per list element, `"[].title"` for a list root)
+     declared on any action that returns text coming from the web: postings (text, title, company,
+     analysis), search sources, resources, radar scans, memory items and documents, a record's
+     posting text, brief (resource, postings). The guard checks the syntax (`untrusted_paths_valid`)
+     and a list of routes that must carry it.
+  9. **Tool names**: `<feature>_<verb>_<object>`, `[a-z0-9_]`, 64 at most, unique (guard). Every
+     summary is at least 20 characters; a level 3 says so (“demande à confirmer”, “request to
+     confirm”).
+  10. **Deviations to know**: (a) `POST /projects/{id}/submit` (submitting a project, which the
+     brief calls “adding a project”) is multipart with optional screenshots and has no JSON
+     variant: excluded; to open it to the MCP, either a JSON variant (`repo_url`, `description`) on
+     the `projects` side, or an internal dispatch that knows how to post a form without a file, is
+     needed; (b) the guard for excluded graphs accepts an **excluded** route as a reason (`teach`,
+     `generate`), not only a declared route; (c) `tests/test_phase10_contract.py`: the assertion
+     `MCP_FEATURES == []` becomes `assert MCP_FEATURES`; (d) `tests/mcp/test_profile_prechecks.py`
+     joins the guard.
+- **Reason** Plan of phase 10, P11, P14, P15, P18, 10.D1; requirement of 2026-11-17 (the MCP does
+  every action of the application, except level 4). A whitelist checked by a test guard makes
+  forgetting a route impossible without the test failing, and each exclusion says why.
 
 ## D209
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 10, tâche 10.I : intégration des quatre flux (IDE, serveur MCP, IDE front, déclarations), recollages et arbitrages
-- **Décision** :
-  1. **Fusions** `--no-ff` dans `dev`, dans l'ordre : `phase10/a` (44bbd9a), `phase10/d` (232c7ec), `phase10/c` (f87a7db), puis `phase10/b` (d6a88a6). Un seul conflit, dans `tests/test_phase10_contract.py` (ensembles `LIVE`) : les 31 routes de la phase sont remplies, le test des bouchons 501 devient un test qui exige qu'il n'y en ait plus. `contracts/openapi.json` et `schema.d.ts` ont fusionné sans régénération (`export_openapi --check` et `check-api-types` OK).
-  2. **Garde et isolation** : `PENDING_GRAPHS` et `EXPECTED_PHASE10` disparaissent ; `ide` et `mcp` ont leur cas d'isolation (`cases_a.py`). `ide_teacher` et `ide_exercise` restent exclus, motif : Claude fait ce travail lui-même par les notes (`POST /ide/sessions/{session_id}/notes`) ; `teach` et `generate` coûtent l'API de January (arbitrage du contrôleur).
-  3. **Déclarations recollées** : `settings_get_preferences` et `settings_update_preferences` portent `response_fields = PREFERENCE_FIELDS` (jamais `tiers` ni `agent_overrides` ; un garde l'exige de toute action sous `/settings`) ; `POST /projects/{id}/submit` est déclarée de niveau 2 sous le nom `projects_submit_project`, `encoding="form"` (lien et description, aucune capture) ; `POST /memory/search` reste de niveau 1 par `READ_ONLY_POSTS` (`app/mcp/base.py`, lu par le registre et le garde) ; `install_gate` reçoit les features déclarées (les « features connues » d'un jeton ne viennent plus de la seule liste globale). Correctif de B : un fichier facultatif (`anyOf: [fichier, null]`) n'était pas reconnu comme fichier par `schema._is_file` et fuyait dans le schéma d'un outil de formulaire.
-  4. **Parcours à route propre (`ROUTE_ONLY`)** : leur outil `graph_<nom>` aurait toujours été refusé (409 `graph_has_route`). Leur `McpGraph` porte `follow_only=True` : pas d'outil de lancement, seulement les champs non fiables du résultat quand Claude suit la session ; la route de lancement est l'action (`McpAction.launches` nomme le parcours). Un test exige que `follow_only` soit vrai exactement pour les parcours de `ROUTE_ONLY`, et que chacun ait une route déclarée (sauf `daily_brief`, une lecture, et `cv_capture`, dont les deux routes sont des fichiers, exclues ; le motif de l'import du CV ne promet plus un lancement du graphe). `scripts.mcp_levels` dit pour chaque graphe « outil graph_<nom> » ou « suivi seulement, lancé par <route> ».
-  5. **Relecture de B2 (R1 à R3, M7)** : libellé de la cible masqué avant d'être coupé (R1) ; garde qui échoue si une route de l'application a `include_in_schema=False` (R2) ; les lectures qui nomment une cible déclarent `untrusted` les champs venus du web (R3 : `GET /applications/{id}` ajoute `company` et `title`, un garde le vérifie pour offres et candidatures) ; un délai dépassé (504) sur une écriture rend à Claude une note « la route a pu écrire, vérifie avant de relancer » et le journal garde `outcome: timeout` (M7).
-  6. **M11, plafond de lancements de graphes (compté à la source)** : au plus 30 lancements de parcours par utilisatrice et sur 24 h glissantes. Le compte ne passe ni par les déclarations ni par le journal : `SessionRunner.start`, par où passent tous les lancements (`launcher.start`, le service des sessions, « déjà appris »), réserve une place dans `LaunchQuota` (`app/core/launch_quota.py`) quand l'appel vient d'une identité MCP (`MCP_IDENTITY`). Au-delà : refus `mcp_graph_quota` (429, en français, sans contenu, résultat d'outil en erreur ; le journal garde le 429 au niveau de l'outil), rien n'est lancé. La place est réservée avant l'insertion de la session et rendue si rien n'a démarré (entrée invalide, erreur) ; un lancement parti puis coupé par le délai de 90 s reste compté. Compteur en mémoire, sans `await` entre le contrôle et l'inscription : des appels simultanés ne dépassent pas ; un redémarrage le remet à zéro (comme les limites par minute, D204). L'interface de January n'est jamais limitée. `McpAction.launches` ne sert plus qu'à l'affichage de la table des niveaux (accepté pour tout graphe de `GRAPHS`) ; `GET /brief/today`, quand il lance le brief du jour sous une identité MCP, est compté comme tout lancement réel.
-  7. **Front** : indices affichés au niveau réel (`NoteOut.level`, repli sur le rang) ; choix guide/binôme (`teacher_style`) dans `ModeSwitch` ; `professor` et `exercise_writer` réservés dans `agentColors.ts` ; la carte « À confirmer » montre la requête entière (méthode, route, cible, champs, aperçu coupé), tout en texte, un champ sans valeur montrée affiché « (non montré) ».
-  8. **Guides pour les agents** : `docs/mcp/AGENTS.md` (lu par Codex : branchement, jeton, niveaux, données non fiables, limites, parcours, IDE, règles de conduite) et `docs/mcp/CLAUDE.md` (`@AGENTS.md`) ; le serveur rend ses règles courtes (`app/mcp/instructions.py`, source unique recopiée mot pour mot dans le guide, testée) dans `instructions` de `initialize` et `server/discover` ; paragraphe du README. À la racine, `AGENTS.md` et `CLAUDE.md` guident les agents qui développent le dépôt et renvoient vers `docs/mcp/`. L'avertissement d'import-linter (motif `keys_service.**` sans module) est retiré.
-  9. **Relecture du recollage** (`task-10.I-glue-review.md`) : I1 (plafond contournable par des routes sans `launches`) corrigé par le compte à la source (n° 6) ; I2 (`PUT /settings` rendait les modèles) corrigé par `response_fields` sur l'écriture et un garde sur toute action sous `/settings`. Mineurs : M1 (lancement en 504) et M2 (contrôle puis écriture non atomiques) réglés par le compte à la source ; M3 : le test R2 parcourt les sous-routeurs et les montages (il ne voyait aucune route auparavant, `include_router` produit des `_IncludedRouter`) et exige de voir plus de 150 routes. Laissés : M4 (au-delà de dix rendus de projet les plus anciens et leurs captures sont retirés, les fichiers ne reviennent pas à l'annulation de `projects_submit_project` ; cas limite, Claude n'envoie pas de capture) ; M5 (`known_features = … or None` lève le contrôle des features d'un jeton si la liste déclarée est vide ; sans effet en production, `MCP_FEATURES` n'est pas vide).
-  10. **Contrôles** : dossiers touchés et contrats de la phase (back : 2 028 passés, 4 désélectionnés, puis les trois échecs trouvés corrigés et rejoués : cas d'isolation de `mcp` sous `tests/mcp/`, formulaire sans fichier admis par le garde, nom d'outil à trois mots), front complet (476 fichiers, 2 801 tests), ruff, mypy, longueur, import-linter, contrat OpenAPI, lint, typecheck. La suite back complète n'est pas lancée ici : une seule fois, après la fusion de 10.W (écriture directe par MCP).
-- **Raison** : plan de la phase 10 (P11, P14 à P19, « Fichiers partagés et leur propriétaire »), D200 à D208 ; relectures de 10.B1 et 10.B2 (R1 à R6) ; SPEC 17.3 (rien ne sort ni ne s'écrit sans que January le voie).
+- **Date** 2026-11-17
+- **Subject** Phase 10, task 10.I: integration of the four streams (IDE, MCP server, front-end IDE,
+  declarations), gluing and arbitrations
+- **Decision**
+  1. **Merges** `--no-ff` into `dev`, in order: `phase10/a` (44bbd9a), `phase10/d` (232c7ec),
+     `phase10/c` (f87a7db), then `phase10/b` (d6a88a6). A single conflict, in
+     `tests/test_phase10_contract.py` (`LIVE` sets): the 31 routes of the phase are filled in, the
+     test of the 501 stubs becomes a test that requires there be none left. `contracts/openapi.json`
+     and `schema.d.ts` merged without regeneration (`export_openapi --check` and `check-api-types`
+     OK).
+  2. **Guard and isolation**: `PENDING_GRAPHS` and `EXPECTED_PHASE10` disappear; `ide` and `mcp`
+     have their isolation case (`cases_a.py`). `ide_teacher` and `ide_exercise` stay excluded,
+     reason: Claude does this work itself through the notes
+     (`POST /ide/sessions/{session_id}/notes`); `teach` and `generate` cost January's API
+     (controller's arbitration).
+  3. **Declarations glued together**: `settings_get_preferences` and `settings_update_preferences`
+     carry `response_fields = PREFERENCE_FIELDS` (never `tiers` or `agent_overrides`; a guard
+     requires it of any action under `/settings`); `POST /projects/{id}/submit` is declared level 2
+     under the name `projects_submit_project`, `encoding="form"` (link and description, no
+     screenshot); `POST /memory/search` stays level 1 through `READ_ONLY_POSTS` (`app/mcp/base.py`,
+     read by the registry and the guard); `install_gate` receives the declared features (a token's
+     “known features” no longer come from the global list alone). Fix from B: an optional file
+     (`anyOf: [file, null]`) was not recognized as a file by `schema._is_file` and leaked into the
+     schema of a form tool.
+  4. **Flows with their own route (`ROUTE_ONLY`)**: their `graph_<name>` tool would always have been
+     refused (409 `graph_has_route`). Their `McpGraph` carries `follow_only=True`: no launch tool,
+     only the untrusted fields of the result when Claude follows the session; the launch route is
+     the action (`McpAction.launches` names the flow). A test requires that `follow_only` be true
+     exactly for the flows of `ROUTE_ONLY`, and that each have a declared route (except
+     `daily_brief`, a read, and `cv_capture`, whose two routes are files, excluded; the reason of
+     the résumé import no longer promises a launch of the graph). `scripts.mcp_levels` says for
+     each graph “tool graph_<name>” or “follow only, launched by <route>”.
+  5. **Reread of B2 (R1 to R3, M7)**: target label masked before being cut (R1); guard that fails if
+     a route of the application has `include_in_schema=False` (R2); the reads that name a target
+     declare `untrusted` the fields coming from the web (R3: `GET /applications/{id}` adds `company`
+     and `title`, a guard checks it for postings and applications); a timeout (504) on a write
+     returns to Claude a note “the route may have written, check before relaunching” and the
+     journal keeps `outcome: timeout` (M7).
+  6. **M11, graph launch cap (counted at the source)**: at most 30 flow launches per user over a
+     sliding 24 h. The count goes through neither the declarations nor the journal:
+     `SessionRunner.start`, through which all launches pass (`launcher.start`, the sessions service,
+     “already learned”), reserves a place in `LaunchQuota` (`app/core/launch_quota.py`) when the
+     call comes from an MCP identity (`MCP_IDENTITY`). Beyond: refusal `mcp_graph_quota` (429, in
+     French, no content, tool result in error; the journal keeps the 429 at the tool's level),
+     nothing is launched. The place is reserved before the session's insertion and returned if
+     nothing started (invalid input, error); a launch that went out then was cut by the 90 s timeout
+     stays counted. In-memory counter, with no `await` between the check and the registration:
+     simultaneous calls do not exceed; a restart resets it to zero (like the per-minute limits,
+     D204). January's interface is never limited. `McpAction.launches` now only serves the display
+     of the levels table (accepted for any graph of `GRAPHS`); `GET /brief/today`, when it launches
+     the day's brief under an MCP identity, is counted like any real launch.
+  7. **Front end**: hints displayed at the real level (`NoteOut.level`, falling back on the rank);
+     guide/pair choice (`teacher_style`) in `ModeSwitch`; `professor` and `exercise_writer` reserved
+     in `agentColors.ts`; the “To confirm” card shows the whole request (method, route, target,
+     fields, cut preview), all as text, a field with no value shown displayed “(not shown)”.
+  8. **Guides for the agents**: `docs/mcp/AGENTS.md` (read by Codex: wiring, token, levels,
+     untrusted data, limits, flows, IDE, rules of conduct) and `docs/mcp/CLAUDE.md` (`@AGENTS.md`);
+     the server returns its short rules (`app/mcp/instructions.py`, single source copied word for
+     word into the guide, tested) in `instructions` of `initialize` and `server/discover`; README
+     paragraph. At the root, `AGENTS.md` and `CLAUDE.md` guide the agents that develop the
+     repository and point to `docs/mcp/`. The import-linter warning (pattern `keys_service.**` with
+     no module) is removed.
+  9. **Reread of the gluing** (`task-10.I-glue-review.md`): I1 (cap bypassable through routes with
+     no `launches`) fixed by the count at the source (no. 6); I2 (`PUT /settings` returned the
+     models) fixed by `response_fields` on the write and a guard on any action under `/settings`.
+     Minor points: M1 (launch in 504) and M2 (non-atomic check then write) settled by the count at
+     the source; M3: the R2 test walks through the sub-routers and mounts (it saw no route before,
+     `include_router` produces `_IncludedRouter` objects) and requires seeing more than 150 routes.
+     Left: M4 (beyond ten project submissions the oldest and their screenshots are removed, the
+     files do not come back on the undo of `projects_submit_project`; edge case, Claude sends no
+     screenshot); M5 (`known_features = … or None` lifts the check of a token's features if the
+     declared list is empty; no effect in production, `MCP_FEATURES` is not empty).
+  10. **Checks**: touched folders and the phase's contracts (back: 2,028 passed, 4 deselected, then
+     the three failures found fixed and replayed: `mcp` isolation case under `tests/mcp/`, form with
+     no file admitted by the guard, tool name with three words), full front end (476 files, 2,801
+     tests), ruff, mypy, length, import-linter, OpenAPI contract, lint, typecheck. The full back-end
+     suite is not run here: only once, after the merge of 10.W (direct writing through MCP).
+- **Reason** Plan of phase 10 (P11, P14 to P19, “Shared files and their owner”), D200 to D208;
+  rereads of 10.B1 and 10.B2 (R1 to R6); SPEC 17.3 (nothing leaves or is written without January
+  seeing it).
 
 ## D210
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 10, tâche 10.W : écriture directe par le MCP, sans agent (leçons, programme, projets, offres, quiz, exercices d'IDE)
-- **Décision** :
-  1. **Exigence** : Claude Code ou Codex, branchés sur le MCP, ajoutent et modifient du contenu en base sans déclencher aucun agent de l'application (aucun appel au modèle, aucun graphe, aucune session). Claude écrit lui-même ; l'application valide (Pydantic, bornes, 422 sans écho), enregistre comme le font les ports des agents, journalise et permet d'annuler. Ce sont des routes normales de `/api/v1` (authentifiées, limitées à l'utilisatrice) : January s'en sert aussi, et le MCP les appelle sous les règles de l'interface.
-  2. **Routes ajoutées (15)**, toutes déclarées **niveau 2, sans `launches`**, résumé « Écriture directe, aucun agent : … » :
-     - `lessons` : `POST /modules/{module_id}/lesson` (`lessons_write_lesson` ; 201, Markdown de 300 caractères au moins (plancher : le Vérificateur des agents exige 1 200 mots et 11 sections, pas l'écriture directe), remplit la leçon posée par la production si elle est en attente ou en échec, 409 `lesson_exists` / `lesson_generating` / `module_skipped`), `PATCH /lessons/{lesson_id}` (`lessons_update_lesson` ; leçon prête seulement, 409 `lesson_not_ready`).
-     - `program` : `POST /programs/{program_id}/weeks` (`program_add_week`, à la fin, début = lundi suivant, 52 au plus), `PATCH /weeks/{week_id}` (`program_update_week`), `POST /programs/{program_id}/modules` (`program_add_module`, 4 au plus par semaine, sans tâche : elles s'ajoutent par `PATCH /programs/{id}`, qui garde la règle des 85 %), `PATCH /modules/{module_id}` (`program_update_module`). Raison : `PATCH /programs/{id}` ne couvrait que les tâches et la date de début.
-     - `projects` : `POST /projects` (`projects_write_project` ; un projet par module, énoncé complet aux bornes de `ProjectBrief`, statut « à faire », 409 `project_exists`), `PATCH /projects/{project_id}` (`projects_update_project` ; tant qu'il n'y a pas de rendu, sinon 409 `project_not_editable`).
-     - `postings` : `POST /postings/direct` (`postings_write_posting` ; texte et analyse donnés, offre « prête » aussitôt ; mêmes règles de doublon que `POST /postings` : même lien, ou sans lien même texte, rend l'offre existante en 200 ; doublons probables et possibles calculés et rangés des deux côtés ; le lien n'est jamais lu), `PATCH /postings/{posting_id}` (`postings_update_posting`). Les mots clés doivent figurer dans le texte et les exigences obligatoires nommer des compétences de `skills` (422 `posting_analysis_invalid`, qui nomme le champ), comme pour l'Analyste.
-     - `quiz` : `POST /quizzes` (`quiz_write_quiz` ; 1 à 12 questions, prêt aussitôt, la leçon du module n'a pas à l'être), `PATCH /quizzes/{quiz_id}` (`quiz_update_quiz`, titre), `POST /quizzes/{quiz_id}/questions` (`quiz_add_question`), `PATCH /quizzes/{quiz_id}/questions/{question_id}` (`quiz_update_question`). Questions aux bornes de l'Examinateur (QCM de 3 à 5 choix distincts avec `correct_index`, question ouverte avec réponse attendue et grille, énoncé de 10 caractères au moins, constantes lues dans `agents/tools/quiz_port.py`). **Un quiz écrit à la main reste « en préparation »** (`generating`, sans session, raison `DRAFT_REASON`) tant qu'il n'a pas 8 questions, 3 types différents et des énoncés d'au moins 10 caractères : il se complète par `POST /quizzes/{id}/questions`, passe à « prêt » aux bornes, et toute tentative avant donne 409 `quiz_incomplete` (une réussite à 80 % valide les compétences du module : jamais avec un quiz d'une question) ; `POST /modules/{id}/quiz` (l'agent) donne 409 `quiz_draft` sur un brouillon. Une fois une tentative faite : 409 `quiz_has_attempts`.
-     - `ide` : `PATCH /ide/exercises/{exercise_id}` (`ide_update_exercise` : énoncé, fichiers de départ et de test pytest, fichier d'entrée ; mêmes limites que `check_job_limits` : 20 fichiers, 200 000 octets, chemins relatifs, et le fichier d'entrée est l'un des fichiers quand il y en a, à la création comme à la retouche ; une retouche par le MCP met l'origine à `claude`, le texte n'étant plus celui que le bac avait vérifié). `POST /ide/exercises` existait déjà (10.A2) ; aucune exécution à la création ni à la retouche.
-  3. **Aucun agent, vérifié** : chaque test d'écriture assert qu'aucune `AgentSession` ni aucun `LlmCall` n'existe après l'appel (`tests/support/direct.py::assert_no_agent`) ; pour `postings`, le lanceur est un espion qui n'a rien reçu ; pour `ide`, le bac factice n'a rien exécuté et les faux modèles n'ont pas été demandés.
-  4. **Origine** : aucune colonne nouvelle, aucune migration. `ide_exercises.origin` valait déjà `claude` (MCP) / `user` (interface) : une retouche par le MCP la met à `claude`. Les éléments de mémoire écrits avec une leçon ou une offre portent `created_by` = `claude` quand l'appel vient du MCP (`app/core/caller.py`), `user` sinon. Les autres modèles (leçon, projet, offre, quiz, semaine, module) n'ont pas de champ d'origine : l'historique du MCP (`mcp_calls`, `mcp_changes`) dit qui a écrit quoi.
-  5. **Annulation** : toutes les lignes sont écrites par l'ORM (jamais par `UPDATE`/`INSERT … ON CONFLICT` en masse, que le `ChangeRecorder` ne voit pas) : d'où `ProjectRepository.add` plutôt que `insert_if_absent`, un `JobPosting` écrit d'un coup avec son analyse plutôt que `claim_analysis`, `Lesson.status` posé par attribut. Tables touchées : `lessons`, `weeks`, `modules`, `projects`, `job_postings`, `quizzes`, `quiz_questions`, `ide_exercises`, `memory_items`, `memory_chunks`, `memory_writes` : toutes enregistrables. Tests : annulation d'une leçon, d'une retouche de leçon (retour au texte d'avant, y compris l'élément de mémoire), d'une chaîne semaine, module, quiz, projet, d'une retouche d'exercice, d'une offre (son élément de mémoire et le doublon réciproque disparaissent).
-  6. **Mémoire : l'appel n'indexe pas.** La leçon et l'offre écrivent leur élément de mémoire (`lecon`, `offre`) dans la transaction de la ligne, avec `indexed_at` vide (`app/features/memory/service/direct.py`, `write_direct` : tout ou rien, une panne de la mémoire est une erreur explicite et défait l'écriture entière). L'indexation (fragments, embeddings, Qdrant) suit **hors de l'appel** : `schedule_indexing` lance `index_pending` en tâche asynchrone après la réponse (contexte vide : ni l'historique du MCP ni l'identité ne la voient) ; l'annulation (`POST /mcp/changes/{id}/undo`) la relance ; et la tâche d'entretien `mcp_housekeeping` appelle `index_pending_all` (20 comptes, 16 éléments chacun par passage, seulement les embeddings, aucun appel au modèle) pour rattraper un redémarrage avant la tâche. Il n'existait pas de boucle de rattrapage (la réindexation de la mémoire est une reconstruction complète lancée à la main) : celle-ci en tient lieu, sans nouvelle tâche ni changement de `JobContext` (la mémoire est lue par `ctx.daily.projects.memory`). Les doublons « possibles » d'une offre restent calculés dans l'appel : ils cherchent parmi les autres offres, déjà indexées. L'auteur du journal de mémoire est `claude` (MCP) ou `user`, pour la création comme pour la retouche.
-  7. **Annulation, y compris de la mémoire.** Deux tolérances dans `app/mcp/undo.py`, déclarées sur les modèles : `memory_items.indexed_at` (`info={"undo_volatile": True}`) n'est pas comparée à l'état « après » et est remise à vide à la restauration ; `memory_chunks` (`undo_derived`) ne compte pas comme dépendant d'un élément annulé (ils partent avec lui par la cascade). Une retouche ne supprime donc aucun fragment dans l'appel ; son annulation rétablit le texte et remet l'élément à réindexer, ce que l'indexation lancée par l'annulation fait (tests : texte, fragments après passage, recherche retrouvent l'ancien état, même si l'indexation est passée entre la retouche et l'annulation). Un élément créé puis annulé disparaît avec ses fragments ; son vecteur de Qdrant reste jusqu'à la prochaine réindexation, la recherche l'écarte (test). **Niveau 2 : exception assumée à D208 n° 2** (« effet hors base : niveau 3 ») : choix de January (niveau 2, annulable, journalisé). Pour que `side_effects="db"` dise vrai, l'appel n'a plus aucun effet hors base : l'indexation est un traitement de fond distinct, et l'annulation la défait.
-  8. **Non couvert, et pourquoi** : (a) PDF de la leçon et copies locales des ressources : fichiers hors base (Gotenberg, stockage), que l'annulation ne reprendrait pas ; la leçon se lit dans l'application (`pdf_available` faux) ; (b) ressources d'une leçon (`resources`) : une ressource vient d'une source lue et notée par la recherche web ; `PATCH /resources/{id}` (statut de lecture) existe déjà ; (c) fiches de révision (`flashcards`) : leur écriture est un `INSERT … ON CONFLICT` en masse que l'historique ne verrait pas ; (d) tâches d'un module : `PATCH /programs/{id}` (`add_tasks`) existait ; (e) écart de compétences d'une offre : c'est un agent, `POST /postings/{id}/gap` reste le chemin ; (f) rendu d'un projet et son évaluation : agent, inchangés ; (g) `DELETE` : aucun (l'annulation MCP retire ce que Claude a créé, la suppression reste de niveau 3) ; (h) projet créé hors calendrier : `POST /projects` n'applique ni le début de la semaine du module ni la condition « programme validé » de la tâche des énoncés (`week_started`) : un projet « à faire » d'une semaine à venir apparaît tout de suite au Portfolio ; une semaine ajoutée sans tâche que `validate` refusera tant qu'elle n'a pas pratique et quiz ; (i) suppression d'une semaine, d'un module, d'une question : aucune, pour la même raison ; (j) captures (`capture`) : parcours d'un agent, hors de la demande.
-  9. **Sécurité** : 422 de toutes les routes sans écho de la saisie (messages de bornes seulement, `details.fields` pour les routes à données personnelles) ; un contenu d'une autre utilisatrice rend 404 (`module_not_found`, `lesson_not_found`, `program_not_found`, `week_not_found`, `project_not_found`, `posting_not_found`, `quiz_not_found`, `exercise_not_found`) ; les réponses d'offre restent `untrusted` côté MCP (le texte d'une offre peut venir du web) ; un jeton en lecture seule est refusé (`write_not_allowed`).
-- **Raison** : demande de January du 2026-11-17 (Claude écrit le contenu, l'application valide, enregistre, journalise et permet d'annuler, sans coût d'API). Une route normale plutôt qu'un outil spécial : un seul jeu de règles pour l'interface et le MCP, et le registre vérifie la déclaration contre l'OpenAPI.
+- **Date** 2026-11-17
+- **Subject** Phase 10, task 10.W: direct writing through the MCP, with no agent (lessons, program,
+  projects, postings, quizzes, IDE exercises)
+- **Decision**
+  1. **Requirement**: Claude Code or Codex, connected to the MCP, add and modify content in the
+     database without triggering any agent of the application (no model call, no graph, no session).
+     Claude writes itself; the application validates (Pydantic, bounds, 422 with no echo), stores as
+     the agents' ports do, logs, and allows undoing. These are normal `/api/v1` routes
+     (authenticated, limited to the user): January uses them too, and the MCP calls them under the
+     interface's rules.
+  2. **Routes added (15)**, all declared **level 2, with no `launches`**, summary “Écriture
+     directe, aucun agent : …” (“Direct write, no agent: …”):
+     - `lessons`: `POST /modules/{module_id}/lesson` (`lessons_write_lesson`; 201, Markdown of at
+       least 300 characters (floor: the agents' Verifier requires 1,200 words and 11 sections, not
+       direct writing), fills in the lesson set by production if it is pending or failed, 409
+       `lesson_exists` / `lesson_generating` / `module_skipped`), `PATCH /lessons/{lesson_id}`
+       (`lessons_update_lesson`; ready lesson only, 409 `lesson_not_ready`).
+     - `program`: `POST /programs/{program_id}/weeks` (`program_add_week`, at the end, start = next
+       Monday, 52 at most), `PATCH /weeks/{week_id}` (`program_update_week`),
+       `POST /programs/{program_id}/modules` (`program_add_module`, 4 at most per week, with no
+       task: they are added through `PATCH /programs/{id}`, which keeps the 85% rule),
+       `PATCH /modules/{module_id}` (`program_update_module`). Reason: `PATCH /programs/{id}` only
+       covered the tasks and the start date.
+     - `projects`: `POST /projects` (`projects_write_project`; one project per module, complete
+       statement within the bounds of `ProjectBrief`, status “to do”, 409 `project_exists`),
+       `PATCH /projects/{project_id}` (`projects_update_project`; as long as there is no submission,
+       otherwise 409 `project_not_editable`).
+     - `postings`: `POST /postings/direct` (`postings_write_posting`; text and analysis given,
+       posting “ready” at once; same duplicate rules as `POST /postings`: same link, or with no
+       link the same text, returns the existing posting in 200; probable and possible duplicates
+       computed and stored on both sides; the link is never read), `PATCH /postings/{posting_id}`
+       (`postings_update_posting`). The keywords must appear in the text and the mandatory
+       requirements must name skills of `skills` (422 `posting_analysis_invalid`, which names the
+       field), as for the Analyst.
+     - `quiz`: `POST /quizzes` (`quiz_write_quiz`; 1 to 12 questions, ready at once, the module's
+       lesson need not be), `PATCH /quizzes/{quiz_id}` (`quiz_update_quiz`, title),
+       `POST /quizzes/{quiz_id}/questions` (`quiz_add_question`),
+       `PATCH /quizzes/{quiz_id}/questions/{question_id}` (`quiz_update_question`). Questions within
+       the Examiner's bounds (multiple choice of 3 to 5 distinct choices with `correct_index`, open
+       question with expected answer and grid, statement of at least 10 characters, constants read
+       in `agents/tools/quiz_port.py`). **A hand-written quiz stays “in preparation”**
+       (`generating`, no session, reason `DRAFT_REASON`) until it has 8 questions, 3 different
+       types, and statements of at least 10 characters: it is completed through
+       `POST /quizzes/{id}/questions`, goes to “ready” at the bounds, and any attempt before
+       that gives 409 `quiz_incomplete` (a pass at 80% validates the module's skills: never with a
+       one-question quiz); `POST /modules/{id}/quiz` (the agent) gives 409 `quiz_draft` on a draft.
+       Once an attempt is made: 409 `quiz_has_attempts`.
+     - `ide`: `PATCH /ide/exercises/{exercise_id}` (`ide_update_exercise`: statement, starting and
+       pytest test files, entry file; same limits as `check_job_limits`: 20 files, 200,000 bytes,
+       relative paths, and the entry file is one of the files when there are any, at creation as at
+       touch-up; a touch-up through the MCP sets the origin to `claude`, the text no longer being
+       the one the sandbox had verified). `POST /ide/exercises` already existed (10.A2); no run at
+       creation or touch-up.
+  3. **No agent, verified**: each write test asserts that no `AgentSession` and no `LlmCall` exists
+     after the call (`tests/support/direct.py::assert_no_agent`); for `postings`, the launcher is a
+     spy that received nothing; for `ide`, the fake sandbox executed nothing and the fake models
+     were not requested.
+  4. **Origin**: no new column, no migration. `ide_exercises.origin` was already `claude` (MCP) /
+     `user` (interface): a touch-up through the MCP sets it to `claude`. The memory items written
+     with a lesson or a posting carry `created_by` = `claude` when the call comes from the MCP
+     (`app/core/caller.py`), `user` otherwise. The other models (lesson, project, posting, quiz,
+     week, module) have no origin field: the MCP's history (`mcp_calls`, `mcp_changes`) says who
+     wrote what.
+  5. **Undo**: all rows are written by the ORM (never by mass `UPDATE`/`INSERT … ON CONFLICT`,
+     which the `ChangeRecorder` does not see): hence `ProjectRepository.add` rather than
+     `insert_if_absent`, a `JobPosting` written at once with its analysis rather than
+     `claim_analysis`, `Lesson.status` set by attribute. Tables touched: `lessons`, `weeks`,
+     `modules`, `projects`, `job_postings`, `quizzes`, `quiz_questions`, `ide_exercises`,
+     `memory_items`, `memory_chunks`, `memory_writes`: all recordable. Tests: undo of a lesson, of a
+     lesson touch-up (back to the earlier text, including the memory item), of a week, module, quiz,
+     project chain, of an exercise touch-up, of a posting (its memory item and the reciprocal
+     duplicate disappear).
+  6. **Memory: the call does not index.** The lesson and the posting write their memory item
+     (`lecon`, `offre`) in the row's transaction, with `indexed_at` empty
+     (`app/features/memory/service/direct.py`, `write_direct`: all or nothing, a memory failure is
+     an explicit error and undoes the whole write). Indexing (chunks, embeddings, Qdrant) follows
+     **outside the call**: `schedule_indexing` launches `index_pending` as an asynchronous task
+     after the response (empty context: neither the MCP's history nor the identity sees it); the
+     undo (`POST /mcp/changes/{id}/undo`) relaunches it; and the housekeeping task
+     `mcp_housekeeping` calls `index_pending_all` (20 accounts, 16 items each per pass, embeddings
+     only, no model call) to catch up after a restart before the task. There was no catch-up loop
+     (memory reindexing is a full rebuild launched by hand): this one stands in, with no new task or
+     change to `JobContext` (memory is read through `ctx.daily.projects.memory`). A posting's
+     “possible” duplicates stay computed in the call: they search among the other postings,
+     already indexed. The memory journal's author is `claude` (MCP) or `user`, for creation as for
+     touch-up.
+  7. **Undo, memory included.** Two tolerances in `app/mcp/undo.py`, declared on the models:
+     `memory_items.indexed_at` (`info={"undo_volatile": True}`) is not compared with the “after”
+     state and is reset to empty on restoration; `memory_chunks` (`undo_derived`) does not count as
+     a dependent of an undone item (they go with it by cascade). A touch-up therefore deletes no
+     chunk in the call; its undo restores the text and marks the item for reindexing, which the
+     indexing launched by the undo does (tests: text, chunks after the pass, search find the old
+     state again, even if indexing ran between the touch-up and the undo). An item created then
+     undone disappears with its chunks; its Qdrant vector stays until the next reindexing, the
+     search discards it (test). **Level 2: accepted exception to D208 no. 2** (“effect outside the
+     database: level 3”): January's choice (level 2, undoable, logged). For `side_effects="db"` to
+     be true, the call has no effect outside the database any more: indexing is a separate
+     background process, and the undo undoes it.
+  8. **Not covered, and why**: (a) the lesson's PDF and local copies of the resources: files outside
+     the database (Gotenberg, storage), which the undo would not take back; the lesson is read in
+     the application (`pdf_available` false); (b) a lesson's resources (`resources`): a resource
+     comes from a source read and rated by the web search; `PATCH /resources/{id}` (reading status)
+     already exists; (c) review cards (`flashcards`): their writing is a mass
+     `INSERT … ON CONFLICT` that the history would not see; (d) a module's tasks:
+     `PATCH /programs/{id}` (`add_tasks`) existed; (e) a posting's skills gap: it is an agent,
+     `POST /postings/{id}/gap` remains the path; (f) a project's submission and its evaluation:
+     agent, unchanged; (g) `DELETE`: none (the MCP undo removes what Claude created, deletion stays
+     level 3); (h) project created outside the calendar: `POST /projects` applies neither the start
+     of the module's week nor the “validated program” condition of the statements task
+     (`week_started`): a “to do” project of an upcoming week appears in the Portfolio right
+     away; a week added with no task that `validate` will refuse as long as it has no practice and
+     quiz; (i) deletion of a week, a module, a question: none, for the same reason; (j) captures
+     (`capture`): an agent's flow, outside the request.
+  9. **Security**: 422 of all routes with no echo of the input (bounds messages only,
+     `details.fields` for routes with personal data); another user's content returns 404
+     (`module_not_found`, `lesson_not_found`, `program_not_found`, `week_not_found`,
+     `project_not_found`, `posting_not_found`, `quiz_not_found`, `exercise_not_found`); posting
+     responses stay `untrusted` on the MCP side (a posting's text may come from the web); a
+     read-only token is refused (`write_not_allowed`).
+- **Reason** January's request of 2026-11-17 (Claude writes the content, the application validates,
+  stores, logs, and allows undoing, with no API cost). A normal route rather than a special tool: a
+  single set of rules for the interface and the MCP, and the registry checks the declaration against
+  the OpenAPI.
 
 ## D211
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 10, tâche 10.X : Claude dans l'IDE en direct (MCP) : affichage en direct, écriture des fichiers sous interrupteur
-- **Décision** :
-  1. **Origine des gestes** : `ide_runs.origin` et `ide_notes.origin` (`app` | `mcp`, tirée de `Caller.kind`, jamais du corps d'une requête), ajoutées à `0016_ide_mcp` en place (jamais jouée sur une vraie base) ; exposées dans `RunOut` et `NoteOut`. Le professeur interne et January sont `app`.
-  2. **Liste des exécutions** : `GET /ide/sessions/{session_id}/runs` (20 dernières, la plus récente d'abord, `RunOut`), niveau 1, outil `ide_list_runs`. 404 pour la séance d'une autre.
-  3. **Interrupteur** : `mcp_can_write_files: bool = False` dans `ide_preferences` (migration en place), `PreferencesIn/Out`. Réglé seulement dans l'interface (« Claude peut écrire dans mes fichiers », `ModeSwitch`). `PUT /ide/preferences` reste exclu du MCP et refuse en plus tout appelant `mcp` (403 `mcp_prefs_forbidden`, défense en profondeur). `GET /ide/preferences` reste lisible : Claude sait s'il peut écrire. Un `PUT` qui omet le champ le remet à faux (défaut sûr).
-  4. **Écriture par Claude** : `PUT /ide/sessions/{session_id}/files` passe des exclusions à l'action de niveau 2 `ide_write_file` (`body_fields` : `files`, `base_hash` ; pas `entry`). Sous identité MCP : (a) séance introuvable : 404 ; (b) interrupteur éteint : 403 `mcp_ide_write_off` (message sans contenu, journalisé par identifiant de séance seulement) ; (c) un seul fichier dans `files` (422 `mcp_write_one_file`), les autres fichiers sont gardés (l'interface, elle, remplace tout, comme avant) ; (d) `base_hash` obligatoire, sha256 hexadécimal minuscule (422 `base_hash_required`), empreinte du texte vide pour un nouveau fichier ; (e) empreinte différente de celle du fichier : 409 `stale_base`, **sans** donner la nouvelle empreinte (Claude relit la séance) ; (f) mêmes plafonds de taille que l'interface. Les propositions ouvertes du fichier deviennent `stale`. Annulable : `ide_sessions` est enregistrable par le `ChangeRecorder` (clé simple, aucun secret) ; l'annulation est refusée (409) si January a écrit depuis. L'empreinte se lit dans `IdeSessionOut.file_hashes` (champ calculé : un modèle ne sait pas calculer un sha256).
-  5. **Contrat** : `RunOut.origin`, `NoteOut.origin`, `PreferencesIn/Out.mcp_can_write_files`, `FilesPutIn.base_hash`, `IdeSessionOut.file_hashes`, route `GET .../runs` ; `contracts/openapi.json` et `schema.d.ts` régénérés. `app/features/ide/hashing.py` (empreinte et sa validation) évite un import circulaire entre schémas et services.
-  6. **Direct (front)** : la séance, les notes et la liste des exécutions sont relues toutes les 3 s tant que l'onglet est visible (TanStack `refetchInterval`, `refetchIntervalInBackground: false`) ; une relecture qui échoue garde la page et les retouches. Une exécution d'origine `mcp` apparue après l'ouverture (ou encore en cours à l'ouverture) entre dans le panneau de sortie, marquée « Lancée par Claude », **sans prendre le focus** ; elle n'appelle jamais le professeur (coût). Une note d'origine `mcp` est nommée « Claude » (avec l'étiquette du jeton si elle ne contient pas déjà « Claude »).
-  7. **Fichier changé par Claude (front)** : calculé à l'affichage (aucun effet) : un fichier est « changé par Claude » si le serveur n'a ni la version reconnue par la page ni un texte qu'elle a elle-même enregistré. Sans retouche non enregistrée : l'éditeur charge la version, message « Claude a modifié ce fichier » (« Compris », ou en tapant). Avec retouches : les siennes restent, rien n'est envoyé pour ce fichier (les autres s'enregistrent), `save` rend faux (l'exécution et « Accepter » sont refusées), et une carte propose « Voir la version de Claude » (lecture seule), « Garder la mienne » (sa version remplacera l'autre à l'enregistrement) ou « Prendre celle de Claude ». Rien ne se perd sans geste.
-  8. **Enregistrement de l'interface protégé** (correctif demandé par le contrôleur) : `PUT files` accepte `base_hashes` (facultatif pour l'API, toujours envoyé par la page) : le sha256 de la version de chaque fichier envoyé, tel que la dernière lecture de la séance l'a donné (`file_hashes`). Le serveur compare fichier par fichier ; un fichier dont la version a changé depuis (écriture de Claude) et que l'envoi changerait donne 409 `stale_base` avec `details.files` (les noms seulement) et **rien n'est écrit** ; envoyer le texte actuel d'un fichier n'est pas un conflit. Côté page : le refus relit la séance (pas de message d'erreur d'enregistrement), les fichiers concernés passent au choix existant (« Voir la version de Claude », « Garder la mienne », « Prendre celle de Claude ») ou, sans retouche de sa part, au message « Claude a modifié ce fichier » ; la séance relue relance l'enregistrement automatique, qui repart avec les empreintes à jour (donc « Garder la mienne » renvoie la version de January). Sans `base_hashes` (anciens clients), le remplacement total reste tel quel.
-  9. **Relecture (10.X)** : (I1) l'enregistrement de l'interface avec `base_hashes` refuse aussi (409 `stale_base`, noms seulement) tout fichier présent sur le serveur mais absent de l'envoi et de `base_hashes` : un fichier que Claude vient de créer n'est jamais effacé par un ancien instantané. (I2) Comparaison atomique : `ide_sessions.files_version` (entier, 0 par défaut, dans `0016` en place) ; chaque écriture de fichiers (interface, `ide_write_file`, proposition acceptée) la réserve d'abord par `UPDATE … WHERE id = :id AND files_version = :lu` et vérifie `rowcount` ; 0 : 409 `stale_base` (interface : noms des fichiers envoyés ; MCP : sans empreinte ; proposition : `note_stale`), rien n'est écrit. La réservation est un `UPDATE` Core minimal ; l'écriture des fichiers reste par l'ORM, donc vue par le `ChangeRecorder` et annulable. (I3) **Une exécution d'origine `mcp` ne fait jamais passer la séance en réussie ni ne crée de preuve de compétence** ; seule une vérification lancée par January (origine `app`) compte. La sortie d'une vérification de Claude qui passe dit « Tests réussis (exécution de Claude, non comptée) ». (M1) l'enregistrement annule d'abord les relectures de la séance en vol. (M2) les réglages ne sont plus renvoyés depuis le cache : la page relit les préférences du serveur et n'y change que le réglage touché (un second onglet ne rallume pas l'interrupteur). (M3) `accept` et `reject` refusent tout appelant `mcp` (403 `mcp_gesture_forbidden`), en plus de l'exclusion. (M4) `note_stale` et `note_invalid` ne rendent plus l'empreinte : Claude relit `file_hashes`. (M5) la lecture à 300 ms d'une exécution attend quand l'onglet est caché. (M6) « Prendre celle de Claude » demande confirmation (« Jeter mes retouches » / « Annuler »).
-  10. **Écart d'environnement** : l'arbre de 10.X a été créé avant l'intégration 10.I, l'application ne démarrait plus sans les correctifs du contrôleur (`READ_ONLY_POSTS` dans `app/mcp`) ; ils ont été appliqués en local pour les essais et ne sont pas dans les commits de 10.X.
-- **Raison** : demande de January (17/11) : travailler avec Claude dans l'IDE pendant qu'elle code, sans jamais perdre sa frappe ; P11, P14 (annulation), P15 ; l'écriture directe reste un droit qu'elle accorde et retire seule.
+- **Date** 2026-11-17
+- **Subject** Phase 10, task 10.X: Claude live in the IDE (MCP): live display, file writing under a
+  switch
+- **Decision**
+  1. **Origin of the gestures**: `ide_runs.origin` and `ide_notes.origin` (`app` | `mcp`, taken from
+     `Caller.kind`, never from a request body), added to `0016_ide_mcp` in place (never played on a
+     real database); exposed in `RunOut` and `NoteOut`. The internal professor and January are
+     `app`.
+  2. **List of runs**: `GET /ide/sessions/{session_id}/runs` (last 20, most recent first, `RunOut`),
+     level 1, tool `ide_list_runs`. 404 for another user's session.
+  3. **Switch**: `mcp_can_write_files: bool = False` in `ide_preferences` (migration in place),
+     `PreferencesIn/Out`. Set only in the interface (“Claude can write in my files”,
+     `ModeSwitch`). `PUT /ide/preferences` stays excluded from the MCP and also refuses any `mcp`
+     caller (403 `mcp_prefs_forbidden`, defense in depth). `GET /ide/preferences` stays readable:
+     Claude knows whether it can write. A `PUT` that omits the field sets it back to false (safe
+     default).
+  4. **Writing by Claude**: `PUT /ide/sessions/{session_id}/files` moves from the exclusions to the
+     level 2 action `ide_write_file` (`body_fields`: `files`, `base_hash`; not `entry`). Under MCP
+     identity: (a) session not found: 404; (b) switch off: 403 `mcp_ide_write_off` (message with no
+     content, logged by session identifier only); (c) a single file in `files` (422
+     `mcp_write_one_file`), the other files are kept (the interface, for its part, replaces
+     everything, as before); (d) `base_hash` required, lowercase hexadecimal sha256 (422
+     `base_hash_required`), the empty text's fingerprint for a new file; (e) fingerprint different
+     from the file's: 409 `stale_base`, **without** giving the new fingerprint (Claude rereads the
+     session); (f) same size caps as the interface. The file's open proposals become `stale`.
+     Undoable: `ide_sessions` is recordable by the `ChangeRecorder` (simple key, no secret); the
+     undo is refused (409) if January has written since. The fingerprint is read in
+     `IdeSessionOut.file_hashes` (computed field: a model cannot compute a sha256).
+  5. **Contract**: `RunOut.origin`, `NoteOut.origin`, `PreferencesIn/Out.mcp_can_write_files`,
+     `FilesPutIn.base_hash`, `IdeSessionOut.file_hashes`, route `GET .../runs`;
+     `contracts/openapi.json` and `schema.d.ts` regenerated. `app/features/ide/hashing.py`
+     (fingerprint and its validation) avoids a circular import between schemas and services.
+  6. **Live (front end)**: the session, the notes, and the list of runs are reread every 3 s as long
+     as the tab is visible (TanStack `refetchInterval`, `refetchIntervalInBackground: false`); a
+     failed reread keeps the page and the edits. A run of origin `mcp` that appeared after opening
+     (or still running at opening) enters the output panel, marked “Run by Claude”, **without
+     taking focus**; it never calls the professor (cost). A note of origin `mcp` is named
+     “Claude” (with the token's label if it does not already contain “Claude”).
+  7. **File changed by Claude (front end)**: computed at display (no effect): a file is “changed
+     by Claude” if the server has neither the version recognized by the page nor a text that it
+     saved itself. With no unsaved edit: the editor loads the version, message “Claude modified
+     this file” (“Understood”, or by typing). With edits: hers stay, nothing is sent for this
+     file (the others are saved), `save` returns false (the run and “Accept” are refused), and a
+     card offers “See Claude's version” (read-only), “Keep mine” (her version will replace
+     the other at saving) or “Take Claude's”. Nothing is lost without a gesture.
+  8. **Interface saving protected** (fix requested by the controller): `PUT files` accepts
+     `base_hashes` (optional for the API, always sent by the page): the sha256 of each file sent's
+     version, as the last read of the session gave it (`file_hashes`). The server compares file by
+     file; a file whose version has changed since (Claude's write) and that the sending would change
+     gives 409 `stale_base` with `details.files` (names only) and **nothing is written**; sending a
+     file's current text is not a conflict. On the page side: the refusal rereads the session (no
+     saving error message), the files concerned go to the existing choice (“See Claude's
+     version”, “Keep mine”, “Take Claude's”) or, with no edit of hers, to the message
+     “Claude modified this file”; the reread session restarts the automatic saving, which
+     restarts with the up-to-date fingerprints (so “Keep mine” sends January's version back).
+     Without `base_hashes` (old clients), the total replacement stays as is.
+  9. **Reread (10.X)**: (I1) the interface saving with `base_hashes` also refuses (409 `stale_base`,
+     names only) any file present on the server but absent from the sending and from `base_hashes`:
+     a file Claude has just created is never erased by an old snapshot. (I2) Atomic comparison:
+     `ide_sessions.files_version` (integer, 0 by default, in `0016` in place); each write of files
+     (interface, `ide_write_file`, accepted proposal) first reserves it through
+     `UPDATE … WHERE id = :id AND files_version = :read` and checks `rowcount`; 0: 409
+     `stale_base` (interface: names of the files sent; MCP: no fingerprint; proposal: `note_stale`),
+     nothing is written. The reservation is a minimal Core `UPDATE`; the writing of the files stays
+     through the ORM, so seen by the `ChangeRecorder` and undoable. (I3) **A run of origin `mcp`
+     never makes the session pass nor creates a skill proof**; only a check launched by January
+     (origin `app`) counts. The output of a passing check by Claude says “Tests passed (Claude's
+     run, not counted)”. (M1) saving first cancels the session's in-flight rereads. (M2) the
+     settings are no longer sent back from the cache: the page rereads the server's preferences and
+     only changes the touched setting (a second tab does not turn the switch back on). (M3) `accept`
+     and `reject` refuse any `mcp` caller (403 `mcp_gesture_forbidden`), in addition to the
+     exclusion. (M4) `note_stale` and `note_invalid` no longer return the fingerprint: Claude
+     rereads `file_hashes`. (M5) the 300 ms read of a run waits when the tab is hidden. (M6) “Take
+     Claude's” asks for confirmation (“Discard my edits” / “Cancel”).
+  10. **Environment deviation**: 10.X's tree was created before integration 10.I, the application no
+     longer started without the controller's fixes (`READ_ONLY_POSTS` in `app/mcp`); they were
+     applied locally for the trials and are not in 10.X's commits.
+- **Reason** January's request (17/11): to work with Claude in the IDE while she codes, without ever
+  losing her typing; P11, P14 (undo), P15; direct writing stays a right she grants and withdraws
+  alone.
 
 ## D212
 
-- **Date** : 2026-11-17
-- **Sujet** : Phase 10, revue finale (10.R) : gestes de January, verrou d'écriture pendant la recherche de doublons, tests de l'exercice, mineurs
-- **Décision** :
-  1. **Constats de la revue finale** (`final-review.md`, 0 Critical, 2 Important) : I1 (Claude pouvait passer un quiz à la place de January : `quiz_submit_attempt`, niveau 2, la notation faisait passer les compétences du module à `valide` avec une preuve `quiz`, et l'annulation était impossible ; même levier avec `quiz_review_card` et `projects_submit_project`) ; I2 (l'écriture directe d'une offre cherchait les doublons possibles, donc un embedding Ollama et une recherche Qdrant, après un `flush` : le verrou d'écriture de SQLite était tenu pendant l'appel, au-delà de `BUSY_TIMEOUT_MS` les autres écrivains échouaient).
-  2. **I1 : trois gestes de January.** `quiz_submit_attempt` (`POST /quizzes/{id}/attempts`), `quiz_review_card` (`POST /flashcards/{id}/review`) et `projects_submit_project` (`POST /projects/{id}/submit`) sont retirés des actions MCP et placés dans `excluded` (« geste de January : ses réponses / son rendu, jamais fait à sa place »). Les routes refusent en plus tout appelant MCP (403 `mcp_gesture_forbidden`, même code que `notes.accept`), par la dépendance `january_only` (`app/core/caller.py`), avant toute lecture du corps ou écriture : un registre mal déclaré n'ouvre pas le geste. Claude écrit le quiz (`quiz_write_quiz`), l'énoncé du projet, les brouillons, et lit les résultats. Le contrat OpenAPI n'a pas changé pour ces trois routes (la dépendance n'a pas de paramètre ; le 403 n'est pas documenté dans `responses`). `docs/mcp/AGENTS.md` et `app/mcp/instructions.py` (recopie vérifiée par test) disent les gestes de January ; une section « Les gestes de January » les détaille. Reste de niveau 2 : tout ce qui écrit du contenu que Claude peut produire sans toucher aux acquis de January.
-  3. **Fichiers de test de l'exercice.** `ide_write_file` refuse (403 `mcp_ide_test_file`) un chemin qui est un fichier que pytest collecte (`test_*.py`, `*_test.py`) ou qui le configure (`conftest.py`), dans une séance reliée à un exercice (`exercise_id` non vide, même si l'exercice a été supprimé depuis) ; une séance libre n'a pas de tests d'exercice à protéger. Le contrôle suit celui de l'interrupteur et du « un seul fichier », avant le `base_hash` ; rien n'est écrit, aucun contenu dans le message ni le journal. La vérification de January n'en est plus à la merci de Claude. Limite connue : un fichier de test au nom que pytest ne collecte pas (`tests.py`) n'est pas reconnu ; il ne tourne pas non plus.
-  4. **I2 : la recherche avant l'écriture.** `postings/service/direct.py` calcule la recherche des offres proches (`prefetch_scores` dans `duplicates.py` : embedding et Qdrant) **avant** tout `INSERT` ou `UPDATE` de la transaction, puis écrit l'offre, son élément de mémoire et les doublons dans une transaction courte ; `find_duplicates` reçoit ces scores (`scores=`) et ne cherche plus lui-même dans ce cas (l'appel de l'agent Analyste, `AgentGapStore.save_analysis`, garde son comportement : `scores=None`). La recherche n'a lieu que s'il existe une autre offre de la même entreprise, indexée, dont le titre n'est pas déjà « probable » ; la requête ne dépend que du titre, de l'entreprise et du texte. Test : un faux de `AgentMemoryGateway.search` qui note si une écriture non validée est ouverte sur une connexion de la base (écoute des événements du moteur) ; il doit voir `False` à l'écriture comme à la retouche.
-  5. **Mineurs repris.** (M2) L'annulation d'une modification fait **avancer** `ide_sessions.files_version` au lieu de le ramener à sa valeur d'avant (colonne marquée `info={"undo_counter": True}`, `counter_columns` dans `app/mcp/rowstate.py`, `UPDATE … SET col = col + 1` dans `undo._apply`) : une écriture lue avant l'annulation reste en conflit, jamais de retour à une valeur déjà vue. (M3) La description de `quiz_write_quiz` dit « reste en préparation tant qu'il n'a pas 8 questions, 3 types différents et des énoncés d'au moins 10 caractères » (elle promettait « prêt aussitôt »). (M6) Le registre exige `response_fields` pour **toute** méthode sous `/settings` (écriture comprise : elle rend l'objet entier) et refuse un `response_fields` qui contient `tiers` ou `agent_overrides` (`SETTINGS_LEVEL_4_FIELDS`, comparé à `PROTECTED_FIELDS` de `settings` par un test). (L62 M1) La description de `postings_write_posting` dit le minimum du texte : 300 caractères et 50 mots.
-  6. **Parqué, sans code.** (a) M1 : annulation d'une retouche de mémoire pendant son indexation (`mark_indexed` ne compare pas `content_hash` : l'élément peut rester indexé avec les fragments du texte annulé) ; (b) M4 : annulation d'un appel de niveau 2 qui a lancé un parcours (la ligne `agent_sessions` peut disparaître pendant que l'agent tourne) ; (c) M7 : `memory/service/direct.py` appelle `MemoryService._edit` et importe `_content`, privés (à exposer en méthode publique `retouch`) ; (d) M8 : `_LOCAL_ORIGIN` (`mcp/auth.py`) accepte tout port de localhost pour `/api/v1/mcp/*` (impact faible, les identifiants sont des UUID) ; (e) le jeton et l'interrupteur ne sont pas revérifiés après le `precheck` rejoué (fenêtre de 60 s au plus) ; (f) le quota de lancements en mémoire, les captures au-delà de dix, `install_gate`, `isError` et les lignes `ZAI_*` restent parqués comme au bilan de la phase.
-  7. **Limite du mode local (D204 n° 10), à dire à January : bloquante avant tout hébergement ou le mode Google (10b).** En mode local sans authentification, tout processus local agit comme January : un agent avec un terminal peut confirmer seul une demande « À confirmer » (il lui suffit d'appeler l'API de l'interface sans identité MCP). Le niveau 3 protège contre les erreurs de Claude, pas contre un processus qui contourne le serveur MCP. Avant d'héberger l'application ou de brancher le mode Google, il faut une authentification (PIN ou connexion) sur les gestes de January.
-  8. **Essai réel encore à faire.** Un vrai client (Claude Code ou Codex) branché sur le serveur, et l'écran « Accès MCP », ne sont pas encore essayés ; la phase n'est pas annoncée terminée avant.
-- **Raison** : revue finale de la phase 10 ; le principe du niveau 2 (« annulable ») ne tient pas pour un geste dont l'effet est une notation ou une évaluation lancée hors de l'appel ; D66 (aucun verrou d'écriture pendant un appel à Ollama) ; P14 (annulation) ; P11.
+- **Date** 2026-11-17
+- **Subject** Phase 10, final review (10.R): January's gestures, write lock during the duplicate
+  search, exercise tests, minor points
+- **Decision**
+  1. **Findings of the final review** (`final-review.md`, 0 Critical, 2 Important): I1 (Claude could
+     take a quiz in place of January: `quiz_submit_attempt`, level 2, grading made the module's
+     skills go to `valide` with a `quiz` proof, and undo was impossible; same lever with
+     `quiz_review_card` and `projects_submit_project`); I2 (the direct writing of a posting searched
+     for possible duplicates, hence an Ollama embedding and a Qdrant search, after a `flush`:
+     SQLite's write lock was held during the call, beyond `BUSY_TIMEOUT_MS` the other writers
+     failed).
+  2. **I1: three of January's gestures.** `quiz_submit_attempt` (`POST /quizzes/{id}/attempts`),
+     `quiz_review_card` (`POST /flashcards/{id}/review`), and `projects_submit_project`
+     (`POST /projects/{id}/submit`) are removed from the MCP actions and placed in `excluded`
+     (“geste de January : ses réponses / son rendu, jamais fait à sa place”, “January's
+     gesture: her answers / her submission, never done in her place”). The routes also refuse any
+     MCP caller (403 `mcp_gesture_forbidden`, same code as `notes.accept`), through the dependency
+     `january_only` (`app/core/caller.py`), before any reading of the body or write: a badly
+     declared registry does not open the gesture. Claude writes the quiz (`quiz_write_quiz`), the
+     project's statement, the drafts, and reads the results. The OpenAPI contract did not change for
+     these three routes (the dependency has no parameter; the 403 is not documented in `responses`).
+     `docs/mcp/AGENTS.md` and `app/mcp/instructions.py` (copy checked by test) state January's
+     gestures; a section “January's gestures” details them. Level 2 stays for everything that
+     writes content that Claude can produce without touching January's learnings.
+  3. **The exercise's test files.** `ide_write_file` refuses (403 `mcp_ide_test_file`) a path that
+     is a file pytest collects (`test_*.py`, `*_test.py`) or that configures it (`conftest.py`), in
+     a session linked to an exercise (`exercise_id` non-empty, even if the exercise has since been
+     deleted); a free session has no exercise tests to protect. The check follows that of the switch
+     and of “a single file”, before `base_hash`; nothing is written, no content in the message
+     or the journal. January's check is no longer at Claude's mercy. Known limit: a test file with a
+     name pytest does not collect (`tests.py`) is not recognized; it does not run either.
+  4. **I2: the search before the write.** `postings/service/direct.py` computes the search of nearby
+     postings (`prefetch_scores` in `duplicates.py`: embedding and Qdrant) **before** any `INSERT`
+     or `UPDATE` of the transaction, then writes the posting, its memory item, and the duplicates in
+     a short transaction; `find_duplicates` receives these scores (`scores=`) and no longer searches
+     itself in that case (the call of the Analyst agent, `AgentGapStore.save_analysis`, keeps its
+     behavior: `scores=None`). The search only takes place if there is another posting of the same
+     company, indexed, whose title is not already “probable”; the query only depends on the
+     title, the company, and the text. Test: a fake of `AgentMemoryGateway.search` that notes
+     whether an uncommitted write is open on a database connection (listening to the engine's
+     events); it must see `False` at the write as at the touch-up.
+  5. **Minor points taken up.** (M2) The undo of a modification makes `ide_sessions.files_version`
+     **advance** instead of bringing it back to its earlier value (column marked
+     `info={"undo_counter": True}`, `counter_columns` in `app/mcp/rowstate.py`,
+     `UPDATE … SET col = col + 1` in `undo._apply`): a write read before the undo stays in
+     conflict, never a return to a value already seen. (M3) The description of `quiz_write_quiz`
+     says “stays in preparation until it has 8 questions, 3 different types, and statements of at
+     least 10 characters” (it promised “ready at once”). (M6) The registry requires
+     `response_fields` for **any** method under `/settings` (write included: it returns the whole
+     object) and refuses a `response_fields` that contains `tiers` or `agent_overrides`
+     (`SETTINGS_LEVEL_4_FIELDS`, compared with `settings`' `PROTECTED_FIELDS` by a test). (L62 M1)
+     The description of `postings_write_posting` states the text's minimum: 300 characters and 50
+     words.
+  6. **Parked, with no code.** (a) M1: undo of a memory touch-up during its indexing (`mark_indexed`
+     does not compare `content_hash`: the item may stay indexed with the chunks of the undone text);
+     (b) M4: undo of a level 2 call that launched a flow (the `agent_sessions` row may disappear
+     while the agent runs); (c) M7: `memory/service/direct.py` calls `MemoryService._edit` and
+     imports `_content`, private (to expose as a public method `retouch`); (d) M8: `_LOCAL_ORIGIN`
+     (`mcp/auth.py`) accepts any localhost port for `/api/v1/mcp/*` (low impact, the identifiers are
+     UUIDs); (e) the token and the switch are not rechecked after the replayed `precheck` (window of
+     60 s at most); (f) the in-memory launch quota, the captures beyond ten, `install_gate`,
+     `isError`, and the `ZAI_*` lines stay parked as in the phase's report.
+  7. **Limit of local mode (D204 no. 10), to be told to January: blocking before any hosting or
+     Google mode (10b).** In local mode with no authentication, any local process acts as January:
+     an agent with a terminal can confirm a “To confirm” request alone (it only has to call the
+     interface's API without an MCP identity). Level 3 protects against Claude's errors, not against
+     a process that bypasses the MCP server. Before hosting the application or turning on Google
+     mode, an authentication (PIN or sign-in) is needed on January's gestures.
+  8. **Real trial still to do.** A real client (Claude Code or Codex) connected to the server, and
+     the “MCP access” screen, have not yet been tried; the phase is not announced finished
+     before.
+- **Reason** Final review of phase 10; the principle of level 2 (“undoable”) does not hold for a
+  gesture whose effect is a grading or an evaluation launched outside the call; D66 (no write lock
+  during a call to Ollama); P14 (undo); P11.
 
 ## D213
 
-- **Date** : 2026-11-18
-- **Sujet** : Phase 10 : objectif et programme complets écrits en direct par le MCP, sans agent
-- **Décision** :
-  1. **Constat** : Claude Code, branché sur le MCP, ne pouvait pas bâtir un programme (« les bases du ML pour l'ingénierie IA », 7 h par semaine, échéance 14/02/2027) : aucun outil ne créait un programme (10.W n'ajoutait que des semaines, modules et tâches à un programme existant) et `POST /goals` lance d'office le Conseil, un agent qui coûte l'API de January.
-  2. **`POST /goals/direct`** (outil `learning_write_goal`, niveau 2, sans `launches`) : mêmes champs et mêmes bornes que `POST /goals` (`GoalCreate`, réponse `GoalOut`, 201). Aucun graphe, aucune session. L'objectif naît « chosen » (aucun parcours à choisir) : le Conseil ne s'y relance pas (`council_not_failed`). Aucune migration.
-  3. **`POST /programs/direct`** (outil `program_write_program`, niveau 2, sans `launches`, 201 `ProgramOut`) : `goal_id` (obligatoire : `programs.goal_id` n'est pas nul), `title` (3 à 200), `start_date` (facultative : un lundi, aujourd'hui ou plus tard, sinon 422 `invalid_start_date` ; lundi suivant par défaut), `weeks` (1 à 52) → `modules` (1 à 4) → `tasks` (1 à 12), avec les champs et les bornes du Stratège (`PlanDraft` : titres 3 à 120, objectif et livrable 3 à 300, 1 à 8 compétences et prérequis de 2 à 120 caractères, tâche de 15 à 120 min avec `type` et `done_criterion` de 3 à 200). Référentiel facultatif (`skills` jusqu'à 60 avec domaine, `edges` jusqu'à 120) ; sans lui, celui des compétences des modules (domaine « Autres »). Pas de jour dans la tâche : l'application range le calendrier.
-  4. **Mêmes règles que l'agent, un seul jeu** : `check_draft` (85 % du budget par semaine, pratique et quiz chaque semaine, 60 % au moins sauf la dernière, verbe d'action en tête de titre) refuse le brouillon par un 422 `plan_invalid` dont `details.problems` liste les phrases françaises (Claude les corrige et renvoie) ; `schedule` range ensuite les jours (acquis sautés ou réduits à une révision, tâches reportées, semaines « Suite »), puis les lignes sont écrites par les fonctions du port du Stratège (`write_rows`, `plan_snapshot`, rendues publiques dans `drafting.py`). Budget : celui de l'objectif (`weekly_hours`) sinon les disponibilités de January ; budget trop faible : 422 `planning_impossible`.
-  5. **Même état qu'un programme proposé par l'agent** : programme « draft », sans session (`session_id` nul), une version `plan_versions` « en attente » (le référentiel dedans), objectif 404 `goal_not_found` s'il est à une autre. Un objectif n'a qu'un programme : 409 `program_exists` (le retoucher par les outils de 10.W ; annuler l'écriture libère l'objectif). Sous le verrou du programme (clé : l'objectif). La validation reste `POST /programs/{id}/validate` (`program_validate_program`, niveau 3, January confirme) : sans session de Stratège, elle se fait en ligne, accepte la version écrite, monte les compétences à « en cours » et lance les leçons manquantes des semaines 1 et 2 (c'est ce qui coûte l'API).
-  6. **Annulation** : tout passe par l'ORM dans une seule transaction (programme, semaines, modules, tâches, version) : l'annulation de l'appel retire tout ; celle de l'objectif ensuite retire l'objectif. Au-delà de 500 lignes dans un appel (`MAX_ROWS`), l'historique ne garde rien et l'appel n'est pas annulable (un programme de 12 semaines en compte environ 200).
-  7. **Les outils de 10.W suffisent à le remplir** (vérifié par un test sur l'application réelle et par le MCP) : leçon d'un module `lessons_write_lesson`, quiz `quiz_write_quiz` / `quiz_add_question`, tâches `program_update_program` / `program_update_task`, semaines et modules `program_*_week` / `program_*_module`. Rien n'est ajouté : les ressources d'un module (`resources`) viennent de la recherche, un programme sans ressource se lit et se suit comme les autres.
-  8. **Aucun agent, vérifié** : les tests assertent qu'aucune `AgentSession` ni aucun `LlmCall` n'existe après l'appel et que `launcher.start` n'est pas appelé. Contrat : deux routes, `contracts/openapi.json` et `schema.d.ts` régénérés. Consigne ajoutée à `app/mcp/instructions.py` et section « Bâtir un programme sans agent » dans `docs/mcp/AGENTS.md` (ordre des appels, ce qui coûte l'API : `POST /goals` lance le Conseil, la validation lance les leçons ; préférer les outils directs quand January le demande).
-- **Raison** : demande de January (18/11) : que Claude écrive lui-même un programme complet, avec ses cours, leçons et quiz, sans aucun agent de l'application ni coût d'API ; D210 (modèle d'écriture directe), P14 (annulation), P11 (niveaux).
+- **Date** 2026-11-18
+- **Subject** Phase 10: complete goal and program written directly through the MCP, with no agent
+- **Decision**
+  1. **Finding**: Claude Code, connected to the MCP, could not build a program (“the basics of ML
+     for AI engineering”, 7 h per week, deadline 14/02/2027): no tool created a program (10.W only
+     added weeks, modules, and tasks to an existing program) and `POST /goals` automatically
+     launches the Council, an agent that costs January's API.
+  2. **`POST /goals/direct`** (tool `learning_write_goal`, level 2, no `launches`): same fields and
+     same bounds as `POST /goals` (`GoalCreate`, response `GoalOut`, 201). No graph, no session. The
+     goal is born “chosen” (no path to choose): the Council is not relaunched on it
+     (`council_not_failed`). No migration.
+  3. **`POST /programs/direct`** (tool `program_write_program`, level 2, no `launches`, 201
+     `ProgramOut`): `goal_id` (required: `programs.goal_id` is not null), `title` (3 to 200),
+     `start_date` (optional: a Monday, today or later, otherwise 422 `invalid_start_date`; next
+     Monday by default), `weeks` (1 to 52) → `modules` (1 to 4) → `tasks` (1 to 12), with the
+     Strategist's fields and bounds (`PlanDraft`: titles 3 to 120, goal and deliverable 3 to 300, 1
+     to 8 skills and prerequisites of 2 to 120 characters, task of 15 to 120 min with `type` and
+     `done_criterion` of 3 to 200). Optional framework (`skills` up to 60 with domain, `edges` up to
+     120); without it, the one from the modules' skills (domain “Autres”, “Others”). No day
+     in the task: the application files the calendar.
+  4. **Same rules as the agent, a single set**: `check_draft` (85% of the budget per week, practice
+     and quiz each week, at least 60% except the last, action verb at the head of the title) refuses
+     the draft with a 422 `plan_invalid` whose `details.problems` lists the sentences in French
+     (Claude fixes them and sends again); `schedule` then files the days (learnings skipped or
+     reduced to a review, tasks postponed, “Suite” (“Continued”) weeks), then the rows are
+     written by the functions of the Strategist's port (`write_rows`, `plan_snapshot`, made public
+     in `drafting.py`). Budget: the goal's (`weekly_hours`) otherwise January's availability; budget
+     too low: 422 `planning_impossible`.
+  5. **Same state as a program proposed by the agent**: “draft” program, no session
+     (`session_id` null), a `plan_versions` “pending” version (the framework inside it), goal
+     404 `goal_not_found` if it belongs to another user. A goal has only one program: 409
+     `program_exists` (touch it up with 10.W's tools; undoing the write frees the goal). Under the
+     program's lock (key: the goal). Validation stays `POST /programs/{id}/validate`
+     (`program_validate_program`, level 3, January confirms): with no Strategist session, it is done
+     inline, accepts the version written, raises the skills to “in progress”, and launches the
+     missing lessons of weeks 1 and 2 (this is what costs the API).
+  6. **Undo**: everything goes through the ORM in a single transaction (program, weeks, modules,
+     tasks, version): undoing the call removes everything; undoing the goal afterwards removes the
+     goal. Beyond 500 rows in one call (`MAX_ROWS`), the history keeps nothing and the call is not
+     undoable (a 12-week program has about 200).
+  7. **10.W's tools are enough to fill it** (checked by a test on the real application and through
+     the MCP): a module's lesson `lessons_write_lesson`, quiz `quiz_write_quiz` /
+     `quiz_add_question`, tasks `program_update_program` / `program_update_task`, weeks and modules
+     `program_*_week` / `program_*_module`. Nothing is added: a module's resources (`resources`)
+     come from the search, a program with no resource is read and followed like the others.
+  8. **No agent, verified**: the tests assert that no `AgentSession` and no `LlmCall` exists after
+     the call and that `launcher.start` is not called. Contract: two routes,
+     `contracts/openapi.json` and `schema.d.ts` regenerated. Instruction added to
+     `app/mcp/instructions.py` and section “Build a program with no agent” in
+     `docs/mcp/AGENTS.md` (order of calls, what costs the API: `POST /goals` launches the Council,
+     validation launches the lessons; prefer the direct tools when January asks).
+- **Reason** January's request (18/11): that Claude write a complete program itself, with its
+  courses, lessons, and quizzes, with no application agent or API cost; D210 (direct-writing model),
+  P14 (undo), P11 (levels).
 
 ## D214
 
-- **Date** : 2026-11-18
-- **Sujet** : Phase 10b, preuve d’un fournisseur qui appelle `interrupt()` dans les graphes actuels.
-- **Décision** :
-  1. Suspendre l’intégration de ce fournisseur. Sur `learning_council`, deux réponses valides et distinctes conduisent à l’enregistrement de la première sur la deuxième source. Étendre ce mécanisme aux autres parcours propagerait une erreur silencieuse.
-  2. Conserver le contre-exemple dans `backend/tests/agents/graphs/test_played_proof.py`. Le test utilise le runner, le point de reprise SQLite et la passerelle de recherche du Conseil, avec deux pages et deux réponses identifiables parmi les données de test. Le même fichier vérifie le cas favorable du Constructeur : texte du premier prompt identique au témoin, rejet d’un JSON incomplet, nouvelle demande du nœud, un brouillon, validation humaine et coût nul.
-  3. Pour une nouvelle preuve, essayer une étape de graphe par source, avec son identifiant et son verdict dans le point de reprise. Le test doit vérifier les deux verdicts en base, y compris après un redémarrage. Un identifiant contrôlé uniquement à l’entrée MCP laisserait subsister le décalage au rejeu du nœud. Des ports de rendu spécifiques à chaque rôle risqueraient de dupliquer les règles de validation. Aucune de ces alternatives n’a été validée par cet essai.
-- **Raison** : à chaque reprise, le nœud `judge` de l’Éclaireur relit les verdicts persistés et saute les sources déjà notées (`scout/assess.py`, `_known`). LangGraph rejoue les réponses aux interruptions selon leur ordre dans le nœud. À la deuxième reprise, le premier appel au modèle concerne désormais la deuxième source et reçoit la première réponse. Ce mécanisme ne conserve donc pas l’association entre le brief et son rendu.
+- **Date** 2026-11-18
+- **Subject** Phase 10b, proof of a provider that calls `interrupt()` in the current graphs.
+- **Decision**
+  1. Suspend the integration of this provider. On `learning_council`, two valid and distinct answers
+     lead to the first being recorded on the second source. Extending this mechanism to the other
+     flows would spread a silent error.
+  2. Keep the counterexample in `backend/tests/agents/graphs/test_played_proof.py`. The test uses
+     the runner, the SQLite checkpoint, and the Council's search gateway, with two pages and two
+     identifiable answers among the test data. The same file checks the favorable case of the
+     Program Builder: text of the first prompt identical to the witness, rejection of an incomplete
+     JSON, new request from the node, one draft, human validation, and zero cost.
+  3. For a new proof, try one graph step per source, with its identifier and its verdict in the
+     checkpoint. The test must check both verdicts in the database, including after a restart. An
+     identifier checked only at the MCP entry would leave the offset at the node's replay. Rendering
+     ports specific to each role would risk duplicating the validation rules. None of these
+     alternatives was validated by this trial.
+- **Reason** At each resumption, the Scout's `judge` node rereads the persisted verdicts and skips
+  the sources already rated (`scout/assess.py`, `_known`). LangGraph replays the answers to
+  interruptions according to their order in the node. At the second resumption, the first model call
+  now concerns the second source and receives the first answer. This mechanism therefore does not
+  preserve the association between the brief and its rendering.
 
 ## D215
 
