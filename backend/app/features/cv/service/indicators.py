@@ -1,7 +1,6 @@
-"""Les deux indicateurs d'un CV contre une offre (SPEC 5.3) : couverture des exigences
-obligatoires et contrôles de lisibilité par un ATS. Le code vit dans `app.agents.tools` (le
-parcours `cv_review` les lit et le moteur n'importe aucune feature, contrat 6) ; réexportés ici
-pour la feature."""
+"""The two indicators of a CV against an offer (SPEC 5.3): coverage of the mandatory requirements
+and readability checks by an ATS. The code lives in `app.agents.tools` (the `cv_review` flow
+reads it and the engine imports no feature, contract 6); re-exported here for the feature."""
 
 from app.agents.tools.cv_indicators import AtsCheck as AtsCheck
 from app.agents.tools.cv_indicators import AtsCheckId as AtsCheckId

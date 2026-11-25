@@ -1,1 +1,1 @@
-"""Écart de compétences entre January et ses offres : score de match, manques (SPEC F8)."""
+"""Skills gap between January and their offers: match score, gaps (SPEC F8)."""

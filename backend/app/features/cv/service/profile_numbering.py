@@ -1,6 +1,6 @@
-"""Numérotation des faits du profil maître (D118, D124) : `keep_known` pour la version de
-January (ids déjà attribués gardés, les autres effacés), `number_new` pour tout id neuf, numéroté
-au-dessus de tout numéro déjà pris par une version passée. Utilisé par `profile_merge`."""
+"""Numbering of the master profile's facts (D118, D124): `keep_known` for January's version
+(ids already assigned kept, the others cleared), `number_new` for any new id, numbered above
+every number already taken by a past version. Used by `profile_merge`."""
 
 import re
 from collections.abc import Collection, Iterable, Sequence
@@ -19,7 +19,7 @@ class _Fact(Protocol):
 
 
 def children(profile: MasterProfileData) -> list[Line]:
-    """Les réalisations et détails du profil."""
+    """The profile's achievements and details."""
     lines = [line for x in profile.experiences for line in x.achievements]
     lines += [line for x in profile.education for line in x.details]
     return lines + [line for x in profile.projects for line in x.achievements]
@@ -32,8 +32,8 @@ def _keep(items: Iterable[HasId], taken: Collection[str]) -> None:
 
 
 def keep_known(profile: MasterProfileData, taken: Collection[str]) -> MasterProfileData:
-    """La version de January numérotée : un id déjà attribué reste (le fait a pu changer de
-    texte), un id inconnu est effacé ; un fait sans source reçoit `january`."""
+    """January's version, numbered: an id already assigned stays (the fact may have changed
+    text), an unknown id is cleared; a fact without a source gets `january`."""
     out = profile.model_copy(deep=True)
     heads = [line for line in (out.title, out.summary) if line is not None]
     facts: list[_Fact] = [
@@ -53,8 +53,8 @@ def keep_known(profile: MasterProfileData, taken: Collection[str]) -> MasterProf
 
 
 def _number(items: Sequence[HasId], prefix: str, taken: Collection[str]) -> None:
-    """Garde les ids `<prefix><n>` bien formés et uniques ; numérote les autres au-dessus du plus
-    grand numéro pris par `taken` ou par ces éléments."""
+    """Keeps the well-formed, unique `<prefix><n>` ids; numbers the others above the highest
+    number taken by `taken` or by these elements."""
     pattern = re.compile(rf"^{re.escape(prefix)}([1-9]\d*)$")
     numbers = [m.group(1) for i in [*taken, *(x.id for x in items)] if (m := pattern.match(i))]
     top = max(map(int, numbers), default=0)
@@ -71,7 +71,7 @@ def _number(items: Sequence[HasId], prefix: str, taken: Collection[str]) -> None
 
 
 def number_new(profile: MasterProfileData, taken: Collection[str]) -> MasterProfileData:
-    """Ids neufs au-dessus de tout numéro déjà pris (parents d'abord, puis leurs enfants)."""
+    """New ids above every number already taken (parents first, then their children)."""
     out = profile.model_copy(deep=True)
     _number([x for x in (out.title,) if x], "t", taken)
     _number([x for x in (out.summary,) if x], "s", taken)
@@ -87,4 +87,4 @@ def number_new(profile: MasterProfileData, taken: Collection[str]) -> MasterProf
         _number(project.achievements, f"{project.id}a", taken)
     _number(out.languages, "l", taken)
     _number(out.links, "k", taken)
-    return assign_fact_ids(out)  # filet : tout id est déjà bien formé et unique
+    return assign_fact_ids(out)  # safety net: every id is already well-formed and unique

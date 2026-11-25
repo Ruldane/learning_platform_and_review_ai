@@ -1,8 +1,8 @@
-"""Déclaration MCP de `ide` : exercices, séances, exécutions et notes. Claude lit, lance le code et
-écrit des notes. Il n'écrit dans les fichiers de January que si elle a allumé l'interrupteur
-(`mcp_can_write_files`, réglé dans l'interface seulement, `ide_write_file`, annulable) ; sinon une
-correction est une proposition qu'elle accepte dans l'interface. Il ne déclenche pas le professeur
-interne (coût d'API : Claude écrit lui-même ses notes et ses exercices)."""
+"""MCP declaration for `ide`: exercises, sessions, runs and notes. Claude reads, runs the code
+and writes notes. It writes to January's files only if January has turned on the switch
+(`mcp_can_write_files`, set in the interface only, `ide_write_file`, undoable); otherwise a fix
+is a proposal that January accepts in the interface. It does not trigger the internal teacher
+(API cost: Claude writes its own notes and exercises)."""
 
 from app.mcp.base import FeatureMcp, McpAction, McpExclusion, McpGraph
 

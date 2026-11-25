@@ -1,1 +1,1 @@
-"""Fil d'activité des agents en tâche de fond (phase 8, P15) : aucune table, des sources."""
+"""Activity feed for background agent tasks (phase 8, P15): no table, only sources."""

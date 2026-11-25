@@ -1,5 +1,5 @@
-"""Les candidatures dans la vie de l'application (D139) : base, lanceur de sessions (lié au moteur
-ensuite, pour l'Assistant de suivi, 7.4) et verrous. Créé par le lifespan
+"""Applications in the life of the application (D139): database, session launcher (linked to
+the engine later, for the tracking Assistant, 7.4) and locks. Created by the lifespan
 (`app.state.career.applications`)."""
 
 import asyncio
@@ -21,13 +21,13 @@ class ApplicationsRuntime:
     session_factory: async_sessionmaker[AsyncSession]
     launcher: Launcher
     now: Callable[[], datetime] = utc_now
-    # Création, événements et adoption des versions : un verrou par utilisatrice (le contrôle des
-    # doublons et l'écriture de la fiche ne se croisent pas).
+    # Creation, events and version adoption: one lock per user (the duplicate check
+    # and the write of the record never overlap).
     locks: KeyLocks = field(default_factory=KeyLocks, repr=False, compare=False)
-    # Création de la fiche entreprise : le même `KeyLocks` que celui des revues de CV (M7).
+    # Company record creation: the same `KeyLocks` as the CV reviews (M7).
     company_locks: KeyLocks = field(default_factory=KeyLocks, repr=False, compare=False)
     portfolio_origin: Callable[[], str | None] = no_origin
 
     def lock(self, user_id: str) -> asyncio.Lock:
-        """Le verrou des candidatures de l'utilisatrice."""
+        """The applications lock of the user."""
         return self.locks.get(user_id, LOCK_KEY)

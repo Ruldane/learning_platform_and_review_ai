@@ -20,7 +20,7 @@ _RECRUITER = re.compile(r"\b(recrut\w*|recruit\w*|talent|rh|hr)\b", re.IGNORECAS
 
 
 def pick_contact(contacts: Sequence[Contact]) -> Contact | None:
-    """Le contact à écrire : un rôle de recrutement d'abord, sinon le premier donné."""
+    """The contact to write to: a recruiting role first, otherwise the first one given."""
     for contact in contacts:
         if contact.role and _RECRUITER.search(contact.role):
             return contact
@@ -28,9 +28,8 @@ def pick_contact(contacts: Sequence[Contact]) -> Contact | None:
 
 
 def channel_of(kind: str, contact: Contact | None) -> ReminderChannel:
-    """LinkedIn pour la relance de 7 jours, email pour celle de 14 jours, rien pour la
-    proposition de classer ; après un entretien : LinkedIn si le contact a un lien LinkedIn,
-    sinon email."""
+    """LinkedIn for the 7-day reminder, email for the 14-day one, nothing for the ranking
+    proposal; after an interview: LinkedIn if the contact has a LinkedIn link, otherwise email."""
     if kind == "linkedin_7":
         return "linkedin"
     if kind == "close_21":
@@ -50,7 +49,7 @@ def reminder_out(
     contact = pick_contact(contacts)
     kind: str = row.kind
     draft = draft_for(
-        row.kind,  # type: ignore[arg-type]  # la colonne est un texte, les valeurs sont ReminderKind
+        row.kind,  # type: ignore[arg-type]  # text column; values: ReminderKind
         company=app.company,
         title=app.title,
         contact_name=contact.name if contact else None,
@@ -85,7 +84,7 @@ def reminder_out(
 async def reminder_outs(
     db: AsyncSession, user_id: str, rows: Sequence[Reminder]
 ) -> list[ReminderOut]:
-    """Les relances pour l'API, dans l'ordre donné."""
+    """The reminders for the API, in the order given."""
     ids = list({row.application_id for row in rows})
     if not ids:
         return []

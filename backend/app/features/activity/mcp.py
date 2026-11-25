@@ -1,4 +1,4 @@
-"""Déclaration MCP de `activity` : le fil d'activité (lecture seule)."""
+"""MCP declaration for `activity`: the activity feed (read only)."""
 
 from app.mcp.base import FeatureMcp, McpAction
 

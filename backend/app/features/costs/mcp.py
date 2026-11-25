@@ -1,4 +1,4 @@
-"""Déclaration MCP de `costs` : coûts de l'IA et journal des appels (lecture seule)."""
+"""MCP declaration for `costs`: AI costs and call journal (read only)."""
 
 from app.mcp.base import FeatureMcp, McpAction
 

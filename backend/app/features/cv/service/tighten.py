@@ -1,10 +1,10 @@
-"""Resserrement du gabarit quand le CV généré a plus de pages que l'original (SPEC 5.3, étape 9 ;
-D120) : trois paliers, à appliquer l'un après l'autre (chacun part du spec du palier précédent),
-avec un nouveau rendu après chacun. Jamais les marges ni les couleurs ; une valeur n'augmente
-jamais.
+"""Tightening the template when the generated CV has more pages than the original (SPEC 5.3,
+step 9; D120): three levels, applied one after the other (each starts from the spec of the
+previous level), with a new render after each. Never the margins or the colors; a value never
+increases.
 
-Le second argument est le plancher du corps de texte (preflight G20) : `MIN_BODY_PT` si le
-contrôle `font_sizes` de l'original était réussi, sinon 8."""
+The second argument is the floor of the body text (preflight G20): `MIN_BODY_PT` if the
+original's `font_sizes` check passed, otherwise 8."""
 
 from collections.abc import Callable
 
@@ -24,19 +24,19 @@ def _fonts(spec: TemplateSpec, **changes: float) -> TemplateSpec:
 
 
 def tighten_gap(spec: TemplateSpec, min_body_pt: float) -> TemplateSpec:
-    """Palier 1 : espace entre les blocs × 0,6."""
+    """Level 1: space between blocks × 0.6."""
     return spec.model_copy(update={"gap_mm": round(spec.gap_mm * GAP_FACTOR, 2)})
 
 
 def tighten_line_height(spec: TemplateSpec, min_body_pt: float) -> TemplateSpec:
-    """Palier 2 : interligne − 0,1, pas sous 1,1 (ni au-dessus de sa valeur)."""
+    """Level 2: line spacing − 0.1, not below 1.1 (nor above its value)."""
     current = spec.fonts.line_height
     lowered = max(MIN_LINE_HEIGHT, round(current - LINE_HEIGHT_STEP, 2))
     return _fonts(spec, line_height=min(current, lowered))
 
 
 def tighten_body(spec: TemplateSpec, min_body_pt: float) -> TemplateSpec:
-    """Palier 3 : corps du texte − 0,5 pt, pas sous `min_body_pt` (ni au-dessus de sa valeur)."""
+    """Level 3: body text − 0.5 pt, not below `min_body_pt` (nor above its value)."""
     current = spec.fonts.body_pt
     lowered = max(min_body_pt, round(current - BODY_STEP_PT, 2))
     return _fonts(spec, body_pt=min(current, lowered))

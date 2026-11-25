@@ -1,4 +1,4 @@
-"""Déclaration MCP de `auth` : niveau 4, rien n'est exposé (connexion et session de January)."""
+"""MCP declaration for `auth`: level 4, nothing is exposed (January's sign-in and session)."""
 
 from app.mcp.base import FeatureMcp, McpExclusion
 

@@ -1,9 +1,9 @@
-"""Déclaration MCP de `cv` : profil maître, gabarits, revues de CV et versions.
+"""MCP declaration for `cv`: master profile, templates, CV reviews and versions.
 
-Le profil maître ne s'écrit jamais sans January : `PUT /profile` et la confirmation d'un fait
-(`PATCH /cv/modifications/{id}`) sont de niveau 3 et portent un contrôle préalable
-(`precheck`), dont le verdict est montré sur la carte « À confirmer ». Les PDF et images, et les
-téléversements de PDF, sont exclus (pas du JSON)."""
+The master profile is never written without January: `PUT /profile` and the confirmation of a
+fact (`PATCH /cv/modifications/{id}`) are level 3 and carry a prior check (`precheck`), whose
+verdict is shown on the "To confirm" card. PDFs and images, and PDF uploads, are excluded
+(not JSON)."""
 
 from pydantic import ValidationError
 
@@ -11,8 +11,8 @@ from app.agents.tools.cv_schema import MasterProfileData
 from app.features.cv.schemas_profile import ProfilePutIn
 from app.mcp.base import FeatureMcp, McpAction, McpGraph, PrecheckInput, Verdict
 
-# Les sources qui viennent d'un document de January ; « january » : écrit à la main (ou par
-# Claude), sans document derrière.
+# Sources that come from a January document; "january": written by hand (or by
+# Claude), with no document behind it.
 DOCUMENT_SOURCES = frozenset({"cv", "linkedin", "note"})
 
 _SECTIONS = (
@@ -26,8 +26,8 @@ _SECTIONS = (
 
 
 def unsourced_counts(data: MasterProfileData) -> dict[str, int]:
-    """Par section, les faits qu'aucun document de January n'appuie (source « january » seule,
-    ou aucune) : ce que le profil doit à une écriture à la main. Jamais le texte des faits."""
+    """Per section, the facts that no January document backs (source "january" only, or none):
+    what the profile owes to a hand-written entry. Never the text of the facts."""
     counts: dict[str, int] = {}
     for line_name, label in (("title", "title"), ("summary", "summary")):
         line = getattr(data, line_name)
@@ -43,8 +43,8 @@ def unsourced_counts(data: MasterProfileData) -> dict[str, int]:
 
 
 async def profile_precheck(request: PrecheckInput) -> Verdict:
-    """Contrôle d'honnêteté d'une nouvelle version du profil maître : chaque fait sans source de
-    document est signalé (sans le recopier). Le contrôle ne bloque rien : January décide."""
+    """Honesty check of a new version of the master profile: each fact without a document
+    source is flagged (without copying it). The check blocks nothing: January decides."""
     try:
         body = ProfilePutIn.model_validate(request.body)
     except ValidationError:
@@ -62,8 +62,8 @@ async def profile_precheck(request: PrecheckInput) -> Verdict:
 
 
 async def modification_precheck(request: PrecheckInput) -> Verdict:
-    """Une décision sur une modification de CV n'écrit au profil que si `confirm` est vrai : le
-    fait « à confirmer » (chiffre, outil ou titre que le profil ne dit pas) y entre alors."""
+    """A decision on a CV modification only writes to the profile if `confirm` is true: the
+    "to confirm" fact (number, tool or title the profile does not state) then enters it."""
     body = request.body if isinstance(request.body, dict) else {}
     if body.get("confirm") is True:
         return Verdict(

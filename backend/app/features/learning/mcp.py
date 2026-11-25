@@ -1,4 +1,4 @@
-"""Déclaration MCP de `learning` : objectifs, propositions du Conseil et états du tableau."""
+"""MCP declaration for `learning`: goals, Council proposals and board states."""
 
 from app.mcp.base import FeatureMcp, McpAction, McpGraph
 

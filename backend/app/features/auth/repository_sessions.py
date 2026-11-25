@@ -7,11 +7,11 @@ from app.db.models.accounts import AuthSession
 
 
 class AuthSessionRepository:
-    """Accès à la table `auth_sessions`.
+    """Access to the `auth_sessions` table.
 
-    Exception documentée au filtrage par `user_id` (DECISIONS D23) : on retrouve une session par
-    le SHA-256 de son jeton (`token_hash`), car la requête ne sait pas encore qui elle est ; c'est
-    justement la session qui le dit. Le jeton lui-même n'est jamais gardé.
+    Documented exception to filtering by `user_id` (DECISIONS D23): a session is looked up by
+    the SHA-256 of its token (`token_hash`), because the query does not yet know who the user
+    is; the session itself says so. The token itself is never kept.
     """
 
     def __init__(self, session: AsyncSession) -> None:
@@ -24,7 +24,7 @@ class AuthSessionRepository:
         return row
 
     async def get_valid(self, token_hash: str, now: datetime) -> AuthSession | None:
-        """La session de ce jeton si elle n'est pas expirée (comparaison faite ici, en UTC)."""
+        """The session for this token if it has not expired (comparison done here, in UTC)."""
         stmt = select(AuthSession).where(AuthSession.token_hash == token_hash)
         row = (await self._session.execute(stmt)).scalar_one_or_none()
         return row if row is not None and row.expires_at > now else None
@@ -33,7 +33,7 @@ class AuthSessionRepository:
         await self._session.execute(delete(AuthSession).where(AuthSession.token_hash == token_hash))
 
     async def purge_expired(self, user_id: str, now: datetime) -> None:
-        """Retire les sessions expirées de cette utilisatrice (celles des autres ne bougent pas)."""
+        """Removes this user's expired sessions (the others' are left alone)."""
         stmt = delete(AuthSession).where(
             AuthSession.user_id == user_id, AuthSession.expires_at <= now
         )

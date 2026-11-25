@@ -1,6 +1,6 @@
-"""Les fiches vues par le service et par les routes (D139) : `ApplicationView` pour les règles
-(doublons, indicateurs, 7.1), `ApplicationOut` et `ApplicationDetail` pour l'API, `AlertOut` pour
-l'alerte doublon. Les jours se comptent dans le fuseau de January."""
+"""Records as seen by the service and the routes (D139): `ApplicationView` for the rules
+(duplicates, indicators, 7.1), `ApplicationOut` and `ApplicationDetail` for the API,
+`AlertOut` for the duplicate alert. Days are counted in January's time zone."""
 
 from collections.abc import Iterable, Sequence
 from datetime import date
@@ -50,7 +50,7 @@ def not_found() -> AppError:
 
 
 def invalid(*fields: str) -> AppError:
-    """Une 422 qui nomme les champs, sans jamais citer leur valeur."""
+    """A 422 that names the fields, without ever quoting their value."""
     return AppError(
         "validation_error",
         "Invalid request. Check the highlighted fields.",
@@ -66,7 +66,7 @@ def created_on(row: Application, zone: ZoneInfo) -> date:
 def view_of(row: Application, zone: ZoneInfo) -> ApplicationView:
     return ApplicationView(
         id=row.id,
-        status=row.status,  # type: ignore[arg-type]  # la colonne est un texte, les valeurs sont ApplicationStatus
+        status=row.status,  # type: ignore[arg-type]  # text column; values: ApplicationStatus
         company_norm=row.company_norm,
         title=row.title,
         url_norm=row.url_norm,
@@ -82,14 +82,14 @@ def view_of(row: Application, zone: ZoneInfo) -> ApplicationView:
 async def views_of(
     db: AsyncSession, user_id: str, zone: ZoneInfo, rows: Sequence[Application] | None = None
 ) -> list[ApplicationView]:
-    """Les fiches de January pour les règles (doublons, indicateurs)."""
+    """January's records for the rules (duplicates, indicators)."""
     found = rows if rows is not None else await ApplicationRepository(db, user_id).recent()
     return [view_of(row, zone) for row in found]
 
 
 def alert_out(row: Application, level: str, zone: ZoneInfo, today: date) -> AlertOut:
-    """L'alerte d'une fiche existante, avec son message (date de candidature ou de création, et
-    statut)."""
+    """The alert for an existing record, with its message (application or creation date, and
+    status)."""
     created = created_on(row, zone)
     return AlertOut.model_validate(
         {
@@ -115,7 +115,7 @@ def alert_out(row: Application, level: str, zone: ZoneInfo, today: date) -> Aler
 async def alerts_out(
     db: AsyncSession, user_id: str, hits: Iterable[Hit], zone: ZoneInfo, today: date
 ) -> list[AlertOut]:
-    """Les alertes des fiches trouvées, dans l'ordre des `hits`."""
+    """The alerts for the records found, in the order of the `hits`."""
     found = list(hits)
     rows = await ApplicationRepository(db, user_id).by_ids([hit.application_id for hit in found])
     return [alert_out(rows[hit.application_id], hit.level, zone, today) for hit in found]
@@ -131,7 +131,7 @@ def _application_out(row: Application, number: int | None, due: int) -> Applicat
 async def application_outs(
     db: AsyncSession, user_id: str, rows: Sequence[Application], today: date
 ) -> list[ApplicationOut]:
-    """Les fiches pour l'API : numéro de la version de CV et relances dues, lus en une fois."""
+    """The records for the API: CV version number and reminders due, read in one go."""
     numbers = await version_numbers(db, user_id, {r.cv_version_id for r in rows if r.cv_version_id})
     due = await ApplicationRepository(db, user_id).due_counts(today)
     return [
@@ -161,7 +161,7 @@ def _event_out(row: ApplicationEvent) -> EventOut:
 async def detail_out(
     db: AsyncSession, user_id: str, row: Application, today: date
 ) -> ApplicationDetail:
-    """La fiche complète : contacts, fil chronologique et relances."""
+    """The full record: contacts, chronological thread and reminders."""
     [base] = await application_outs(db, user_id, [row], today)
     contacts = await ContactRepository(db, user_id).of_application(row.id)
     events = await EventRepository(db, user_id).of_application(row.id)
@@ -178,7 +178,7 @@ async def detail_out(
 
 
 async def get_application(db: AsyncSession, user_id: str, application_id: str) -> Application:
-    """La fiche de January, relue ; 404 `application_not_found` sinon."""
+    """January's record, re-read; 404 `application_not_found` otherwise."""
     row = await ApplicationRepository(db, user_id).get_fresh(application_id)
     if row is None:
         raise not_found()

@@ -52,9 +52,9 @@ def _hello(contact_name: str | None) -> str:
 
 
 def kit_followup(content: str, kind: ReminderKind) -> str | None:
-    """Le texte de la pièce « relances » du kit pour cette relance : le courriel de 7 jours est
-    avant la première ligne `---`, celui de 14 jours après (`split_followups`, la règle du graphe) ;
-    `None` s'il manque."""
+    """The text of the "reminders" piece of the kit for this reminder: the 7-day email comes
+    before the first `---` line, the 14-day one after (`split_followups`, the graph rule);
+    `None` if missing."""
     index = _KIT_INDEX.get(kind)
     if index is None:
         return None
@@ -62,7 +62,7 @@ def kit_followup(content: str, kind: ReminderKind) -> str | None:
 
 
 def linkedin_search_url(company: str, title: str) -> str:
-    """La recherche de personnes LinkedIn « entreprise + poste visé » ; jamais journalisée."""
+    """The LinkedIn people search "company + target role"; never logged."""
     return LINKEDIN_SEARCH + quote(f"{company} {title}", safe="")
 
 

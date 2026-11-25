@@ -64,12 +64,12 @@ def review_not_waiting() -> AppError:
 def as_proposal(row: CvModification) -> Proposal:
     return Proposal(
         ref=row.ref,
-        section=row.section,  # type: ignore[arg-type]  # colonne texte, valeurs de SectionKey
-        action=row.action,  # type: ignore[arg-type]  # valeurs de ModificationAction
+        section=row.section,  # type: ignore[arg-type]  # text column; values of SectionKey
+        action=row.action,  # type: ignore[arg-type]  # values of ModificationAction
         target=row.target,
         after=row.after,
         reason=row.reason,
-        type=row.type,  # type: ignore[arg-type]  # valeurs de ModificationType
+        type=row.type,  # type: ignore[arg-type]  # values of ModificationType
         fact_ids=list(row.fact_ids),
     )
 

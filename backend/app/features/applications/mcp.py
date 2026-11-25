@@ -1,6 +1,6 @@
-"""Déclaration MCP de `applications` (six routeurs : fiches, kit, entretiens blancs, comité,
-relances) : le suivi des candidatures. Rien n'est envoyé par l'application : « envoyer » une
-candidature est un geste de January hors de l'application, le MCP note seulement l'événement."""
+"""MCP declaration for `applications` (six routers: records, kit, mock interviews, committee,
+reminders): application tracking. Nothing is sent by the application: "sending" an application
+is an action January takes outside the app; the MCP only records the event."""
 
 from app.mcp.base import FeatureMcp, McpAction, McpGraph
 

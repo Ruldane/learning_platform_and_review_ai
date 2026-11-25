@@ -1,8 +1,7 @@
-"""Liens d'une capture vers le programme (D108, F7) : les modules non sautés des programmes validés
-de January (`m1…`, dans l'ordre des programmes, du plus récent au plus ancien, puis du
-programme) et ses tâches à faire datées à ± 7 jours de son jour (`t1…`, par jour puis par ordre
-du programme). Les références sont stables dans un instantané ; les ids ne vont jamais au
-modèle."""
+"""Links from a capture to the program (D108, F7): the modules not skipped in January's
+validated programs (`m1…`, in program order, newest first, then by position in the program)
+and their dated to-do tasks within ±7 days of January's day (`t1…`, by day, then by program
+order). The references are stable within a snapshot; the ids never go to the model."""
 
 from datetime import date, timedelta
 
@@ -13,7 +12,7 @@ from app.agents.tools.replan_port import ModuleRef, TaskRef
 from app.features.program.service.programs import Loaded, list_programs, load
 
 WINDOW_DAYS = 7
-MAX_TASKS = 60  # au-delà, le prompt s'allonge sans aider l'Archiviste
+MAX_TASKS = 60  # beyond this, the prompt grows without helping the Archivist
 
 
 async def _validated(db: AsyncSession, user_id: str) -> list[Loaded]:
@@ -41,7 +40,7 @@ def _refs(loaded: list[Loaded], today: date) -> ProgramLinks:
             TaskRef(
                 f"t{n}",
                 t.title,
-                t.type,  # type: ignore[arg-type]  # colonne texte, valeurs de TaskType
+                t.type,  # type: ignore[arg-type]  # text column; values of TaskType
                 t.minutes,
                 t.planned_date,
                 refs[t.module_id],

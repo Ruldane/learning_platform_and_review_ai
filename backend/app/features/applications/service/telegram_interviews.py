@@ -1,4 +1,4 @@
-"""Réserve l’entretien technique et sa session dans la transaction du lancement."""
+"""Reserves the technical interview and its session in the launch transaction."""
 
 from collections.abc import Awaitable, Callable
 

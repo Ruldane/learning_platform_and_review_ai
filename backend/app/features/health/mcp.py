@@ -1,4 +1,4 @@
-"""Déclaration MCP de `health` : état des services (lecture seule)."""
+"""MCP declaration for `health`: service status (read only)."""
 
 from app.mcp.base import FeatureMcp, McpAction
 

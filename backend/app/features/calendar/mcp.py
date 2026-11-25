@@ -1,4 +1,4 @@
-"""Le MCP relit le prochain créneau et prépare une proposition sur consentement."""
+"""The MCP re-reads the next slot and prepares a proposal on consent."""
 
 from app.mcp.base import FeatureMcp, McpAction, McpExclusion
 

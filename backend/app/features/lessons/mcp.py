@@ -1,4 +1,4 @@
-"""Déclaration MCP de `lessons` : leçons et Bibliothèque de ressources."""
+"""MCP declaration for `lessons`: lessons and the Resource Library."""
 
 from app.mcp.base import FeatureMcp, McpAction, McpGraph
 

@@ -1,4 +1,4 @@
-"""Les compétences apprenables qui manquent le plus souvent dans les offres (F8, D122)."""
+"""The learnable skills that are most often missing from offers (F8, D122)."""
 
 from dataclasses import replace
 

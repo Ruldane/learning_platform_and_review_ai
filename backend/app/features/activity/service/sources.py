@@ -1,11 +1,9 @@
-"""Les sources du fil d'activité (P15, D163) : une source = une fonction qui lit le service d'une
-feature, une ligne dans `ACTIVITY_SOURCES`. Chaque source rend au plus `limit` événements dans
-`[after, before]` (bornes incluses : le fil écarte lui-même les ex æquo du curseur), sans ordre
-imposé ; la fusion est dans `feed`. Les textes sont écrits ici, par
-le code : un titre de leçon ou d'élément est une donnée de l'utilisatrice, jamais un texte de
-modèle. Un passage en échec ne porte jamais son code d'erreur. Un projet validé ou à reprendre
-(`project`, 8.10) ne cite que son titre, jamais le rendu.
-"""
+"""The activity feed sources (P15, D163): one source is a function that reads a feature's
+service, one line in `ACTIVITY_SOURCES`. Each source returns at most `limit` events in
+`[after, before]` (bounds included: the feed drops the cursor ties itself), in no required
+order; the merge is in `feed`. The texts are written here, by the code: a lesson or item title
+is user data, never model text. A failed step never carries its error code. A project that is
+validated or to resume (`project`, 8.10) only quotes its title, never the render."""
 
 from collections.abc import Awaitable, Callable
 from datetime import datetime
@@ -150,9 +148,9 @@ async def project_source(
 async def ide_source(
     db: AsyncSession, user_id: str, after: datetime | None, before: datetime | None, limit: int
 ) -> list[ActivityItem]:
-    """Une séance de code réussie (première vérification) ; genre `project` : l'icône d'une preuve
-    (un genre propre à l'IDE changerait le contrat et l'accueil, 10.I). Titre : celui de la séance
-    (donnée de l'utilisatrice, jamais un texte de modèle)."""
+    """A successful code session (first check); kind `project`: the icon of a proof (a kind
+    specific to the IDE would change the contract and the home page, 10.I). Title: that of
+    the session (user data, never model text)."""
     return [
         ActivityItem(
             id=f"ide:{item.id}:passed",
@@ -205,7 +203,7 @@ async def job_failures_source(
     ]
 
 
-# Une source de plus = une ligne ici (les phases suivantes ajoutent la leur).
+# Each new source is one line here (the next phases add their own).
 ACTIVITY_SOURCES: tuple[ActivitySource, ...] = (
     lessons_source,
     radar_source,

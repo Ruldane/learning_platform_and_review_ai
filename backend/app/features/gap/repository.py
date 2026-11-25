@@ -1,6 +1,5 @@
-"""Lectures de l'écart (F8, D122) : les offres dont le rattachement est rangé et les mots clés
-que les revues de CV ont envoyés vers l'écart (preflight G3). Chaque requête filtre par
-`user_id`."""
+"""Gap reads (F8, D122): the offers whose attachment is stored, and the keywords that the CV
+reviews sent to the gap (preflight G3). Every query filters by `user_id`."""
 
 import builtins
 from collections import defaultdict
@@ -19,7 +18,7 @@ class GapRepository:
         self.user_id = user_id
 
     async def with_gap(self) -> builtins.list[JobPosting]:
-        """Les offres analysées dont le rattachement est rangé (refusées exclues)."""
+        """The analysed offers whose attachment is stored (rejected ones excluded)."""
         stmt = (
             select(JobPosting)
             .where(
@@ -33,7 +32,7 @@ class GapRepository:
         return builtins.list((await self.session.execute(stmt)).scalars().all())
 
     async def ready_recent(self) -> builtins.list[JobPosting]:
-        """Les offres prêtes (analysées), les plus récentes d'abord."""
+        """The ready offers (analysed), most recent first."""
         stmt = (
             select(JobPosting)
             .where(
@@ -46,7 +45,7 @@ class GapRepository:
         return builtins.list((await self.session.execute(stmt)).scalars().all())
 
     async def review_terms(self, posting_ids: Collection[str]) -> dict[str, list[str]]:
-        """`offre → termes` des revues de CV de ces offres, dans l'ordre des revues."""
+        """`offer → terms` of the CV reviews of these offers, in review order."""
         if not posting_ids:
             return {}
         stmt = (
@@ -64,7 +63,7 @@ class GapRepository:
 
 
 def _term(item: object) -> str:
-    """Un mot clé rangé par la revue : le terme seul, ou `{"term": …}` (forme de 6.14)."""
+    """A keyword stored by the review: the term alone, or `{"term": …}` (6.14 shape)."""
     if isinstance(item, str):
         return item.strip()
     if isinstance(item, dict):

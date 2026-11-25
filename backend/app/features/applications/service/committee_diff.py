@@ -1,6 +1,6 @@
-"""L'avant et l'après du comité (SPEC F19, D147) : pur, sans base ni modèle. Les votes sont
-comparés persona par persona ; les objections après normalisation (casse, accents, ponctuation) :
-deux objections dont la ressemblance atteint 0,85 sont la même (`SIMILAR`)."""
+"""Before and after the committee (SPEC F19, D147): pure, with no database or model. Votes are
+compared persona by persona; objections after normalization (case, accents, punctuation): two
+objections whose similarity reaches 0.85 are the same (`SIMILAR`)."""
 
 from collections.abc import Sequence
 from difflib import SequenceMatcher
@@ -13,7 +13,7 @@ SIMILAR = 0.85
 
 
 def same_objection(first: str, second: str) -> bool:
-    """Même objection : texte normalisé identique, ou ressemblance d'au moins `SIMILAR`."""
+    """Same objection: identical normalized text, or similarity of at least `SIMILAR`."""
     one, two = normalize_term(first), normalize_term(second)
     return one == two or SequenceMatcher(None, one, two).ratio() >= SIMILAR
 
@@ -29,8 +29,8 @@ def committee_diff(
     objections_before: Sequence[str],
     objections_after: Sequence[str],
 ) -> CommitteeDiff:
-    """Ce qui a changé de l'exécution `previous_id` (avant) à celle-ci (après) : le vote de chaque
-    persona présente dans les deux, les objections qui ont disparu et celles qui sont nouvelles."""
+    """What changed from the `previous_id` run (before) to this one (after): the vote of each
+    persona present in both, and the objections that disappeared or are new."""
     old = {vote.persona: vote.vote for vote in before}
     new = {vote.persona: vote.vote for vote in after}
     return CommitteeDiff(

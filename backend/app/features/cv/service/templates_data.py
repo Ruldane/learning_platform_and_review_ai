@@ -1,8 +1,8 @@
-"""Ce qu'un gabarit garde de son CV d'origine et de ses passes (D126), sous une forme relisible
-sans nouvelle extraction : géométrie des pages (cadres des blocs visibles, pour `similarity`),
-blocs résumés pour le Maquettiste (familles libres, jamais le nom de police lu dans le PDF),
-texte visible dans l'ordre du flux, ressemblance d'une passe. Et le contenu de démonstration tiré
-du profil maître validé (CV scanné). Module pur : ni base, ni stockage."""
+"""What a template keeps from its original CV and its passes (D126), in a form that can be
+reread without new extraction: page geometry (frames of the visible blocks, for `similarity`),
+blocks summarized for the layout designer (free families, never the font name read from the
+PDF), visible text in flow order, similarity of a pass. And the demo content taken from the
+validated master profile (scanned CV). Pure module: no database, no storage."""
 
 from collections.abc import Sequence
 from dataclasses import asdict
@@ -35,7 +35,7 @@ def _visible(page: PageLayout) -> list[TextBlock]:
 
 
 def geometry(layout: PdfLayout) -> list[dict[str, Any]]:
-    """Par page : taille et cadres `[x0, top, x1, bottom]` des blocs visibles (sans texte)."""
+    """Per page: size and frames `[x0, top, x1, bottom]` of the visible blocks (no text)."""
     return [
         {
             "width_pt": page.width_pt,
@@ -47,7 +47,7 @@ def geometry(layout: PdfLayout) -> list[dict[str, Any]]:
 
 
 def original_pages(pages: Sequence[dict[str, Any]], images: Sequence[bytes]) -> list[PageLayout]:
-    """Les pages d'origine telles que `similarity` les lit : cadres visibles et image."""
+    """The original pages as `similarity` reads them: visible frames and image."""
     return [
         PageLayout(
             width_pt=float(page["width_pt"]),
@@ -74,8 +74,8 @@ def _line(block: TextBlock) -> str:
 
 
 def blocks_summary(layout: PdfLayout) -> str:
-    """« x,y,l,h | police | taille | couleur | gras | texte » par bloc visible ; la police est la
-    famille libre retenue ; une ligne « Page n » sépare les pages ; `MAX_SUMMARY_LINES` au plus."""
+    """One line per visible block: "x,y,w,h | font | size | color | bold | text". The font is the
+    free family kept; a "Page n" line separates the pages; at most `MAX_SUMMARY_LINES` lines."""
     lines: list[str] = []
     for number, page in enumerate(layout.pages, start=1):
         if len(layout.pages) > 1:
@@ -85,7 +85,7 @@ def blocks_summary(layout: PdfLayout) -> str:
 
 
 def visible_text(layout: PdfLayout) -> str:
-    """Texte visible, blocs dans l'ordre du flux, une page par paragraphe."""
+    """Visible text, blocks in flow order, one page per paragraph."""
     return "\n\n".join("\n".join(b.text for b in _visible(page)) for page in layout.pages)
 
 
@@ -158,8 +158,8 @@ def _sections(profile: MasterProfileData) -> list[CvSection]:
 
 
 def profile_content(profile: MasterProfileData) -> CvContent:
-    """Contenu de démonstration d'un CV scanné : le profil validé, sans `fact_ids` (une
-    démonstration ne s'adosse à aucun fait)."""
+    """Demo content of a scanned CV: the validated profile, without `fact_ids` (a demo relies on
+    no fact)."""
     identity = profile.identity
     contact = [v for v in (identity.email, identity.phone, identity.location) if v]
     headline = profile.title.text if profile.title is not None else identity.headline

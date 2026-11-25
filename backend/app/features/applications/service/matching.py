@@ -1,6 +1,6 @@
-"""Doublons des candidatures (SPEC 6.3, D138) : une offre qui entre dans l'application est
-comparée aux fiches existantes, quel que soit l'écran. Fonctions pures : le service (7.2)
-construit les `ApplicationView` et l'`Incoming`, la route renvoie les fiches trouvées."""
+"""Duplicate applications (SPEC 6.3, D138): an incoming offer is compared with the existing
+records, whatever the screen. Pure functions: the service (7.2) builds the `ApplicationView`
+and the `Incoming`, the route returns the records found."""
 
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -14,15 +14,15 @@ from app.features.postings.service.rules import PROBABLE_TITLE, title_similarity
 
 DuplicateLevel = Literal["certain", "probable", "possible"]
 HitLevel = DuplicateLevel | Literal["info"]
-INFO_DAYS = 30  # une autre fiche chez la même entreprise, dans les 30 derniers jours
+INFO_DAYS = 30  # another record at the same company, within the last 30 days
 _RANK: dict[HitLevel, int] = {"certain": 0, "probable": 1, "possible": 2, "info": 3}
 
 
 @dataclass(frozen=True)
 class Incoming:
-    """L'offre qui entre : son lien normalisé, son entreprise normalisée, son intitulé, son
-    identifiant d'offre (s'il existe), ses offres « possibles » (D121), et les identifiants
-    (fiches ou offres) que January a déjà confirmés « autre poste » pour elle."""
+    """The incoming offer: its normalized link, normalized company, title, posting identifier
+    (if any), its "possible" offers (D121), and the identifiers (records or offers) that January
+    has already confirmed as "other role" for it."""
 
     url_norm: str | None
     company_norm: str
@@ -43,7 +43,7 @@ def _reference_day(app: ApplicationView) -> date:
 
 
 def _is_distinct(incoming: Incoming, app: ApplicationView) -> bool:
-    """January a confirmé « autre poste » pour ce couple, dans un sens ou dans l'autre."""
+    """January confirmed "other role" for this pair, in either direction."""
     if incoming.posting_id is not None and incoming.posting_id in app.distinct_from:
         return True
     return app.id in incoming.distinct_from or (
@@ -55,7 +55,7 @@ def _level(incoming: Incoming, app: ApplicationView, today: date) -> HitLevel | 
     if incoming.url_norm is not None and incoming.url_norm == app.url_norm:
         return "certain"
     if not incoming.company_norm or app.company_norm != incoming.company_norm:
-        return None  # une clé vide (nom sans lettre latine) ne désigne aucune entreprise
+        return None  # an empty key (a name with no Latin letter) designates no company
     if title_similarity(incoming.title, app.title) >= PROBABLE_TITLE:
         return "probable"
     if app.posting_id is not None and app.posting_id in incoming.possible_posting_ids:
@@ -64,11 +64,12 @@ def _level(incoming: Incoming, app: ApplicationView, today: date) -> HitLevel | 
 
 
 def match(incoming: Incoming, apps: Sequence[ApplicationView], today: date) -> list[Hit]:
-    """Les fiches qui ressemblent à l'offre entrante, un seul niveau par fiche (le plus fort) :
-    même lien : certain ; même entreprise (clé non vide) et intitulé à 85 % : probable ; même
-    entreprise et offre « possible » : possible ; même entreprise dans les 30 derniers jours : info.
-    La fiche de la même offre (même `posting_id`) n'est jamais un doublon, ni une fiche confirmée
-    « autre poste ». Tri : niveau, puis date de candidature (ou de création) décroissante."""
+    """The records that resemble the incoming offer, one level per record (the strongest):
+    same link: certain; same company (non-empty key) and title at 85%: probable; same company
+    and "possible" offer: possible; same company within the last 30 days: info.
+    The record for the same offer (same `posting_id`) is never a duplicate, nor is a record
+    confirmed as "other role". Sorted by level, then by application date (or creation date),
+    newest first."""
     found: list[tuple[HitLevel, ApplicationView]] = []
     for app in apps:
         if incoming.posting_id is not None and incoming.posting_id == app.posting_id:

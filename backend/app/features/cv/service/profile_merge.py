@@ -1,16 +1,16 @@
-"""Identifiants des faits d'une nouvelle version du profil maître (D118, D124). Les modifications
-des revues de CV citent ces ids : un fait inchangé garde le sien, un fait neuf reçoit un numéro
-jamais pris par aucune version passée (`taken`), même si le fait qui le portait a disparu.
+"""Identifiers of the facts in a new version of the master profile (D118, D124). CV review
+modifications cite these ids: an unchanged fact keeps its own, and a new fact receives a number
+never taken by any past version (`taken`), even if the fact that carried it has gone.
 
-- brouillon de l'Archiviste : `merge_draft` reprend l'id d'un fait de la dernière version validée
-  au même texte normalisé (rôle et entreprise, diplôme et école, nom, lien, texte d'une ligne ; une
-  réalisation ou un détail sous le même parent), reporte les faits de January (`sources` contient
-  `january` : saisis ou confirmés en revue) que le brouillon ne reprend pas, avec leur id, puis
-  numérote le reste ; un fait de January réécrit en revue n'a plus le texte du CV : il remplace
-  son équivalent du brouillon, trouvé à une clé lâche (entreprise, école, nom, libellé, premier
-  mot d'une compétence), au lieu de s'y ajouter (D124) ;
-- version de January : `keep_known` garde les ids déjà attribués (un fait modifié garde son id),
-  efface les autres, puis numérote le reste ; un fait sans source vient d'elle (`january`)."""
+- Archivist's draft: `merge_draft` takes the id of a fact of the last validated version with the
+  same normalized text (role and company, degree and school, name, link, one-line text; an
+  achievement or detail under the same parent), carries over January's facts (`sources`
+  contains `january`: entered or confirmed in review) that the draft does not take, with their
+  id, then numbers the rest; a fact of January rewritten in review no longer has the CV text:
+  it replaces its counterpart in the draft, found on a loose key (company, school, name, label,
+  first word of a skill), instead of being added next to it (D124);
+- January's version: `keep_known` keeps the ids already assigned (a modified fact keeps its id),
+  clears the others, then numbers the rest; a fact without a source comes from it (`january`)."""
 
 from collections.abc import Callable, Collection, Iterable, Sequence
 from typing import Any, Protocol, Self
@@ -42,7 +42,7 @@ class _Copyable(_Fact, Protocol):
 
 
 def all_ids(profiles: Iterable[MasterProfileData]) -> set[str]:
-    """Tous les ids attribués par ces versions."""
+    """All the ids assigned by these versions."""
     taken: set[str] = set()
     for profile in profiles:
         taken |= set(facts_of(profile))
@@ -52,8 +52,8 @@ def all_ids(profiles: Iterable[MasterProfileData]) -> set[str]:
 def _reuse[T: HasId](
     items: Sequence[T], before: Sequence[T], key: Callable[[T], str]
 ) -> list[tuple[T, T]]:
-    """Pose sur chaque élément l'id de l'ancien élément de même clé (chacun servi une fois), ""
-    sinon ; rend les paires appariées."""
+    """Sets on each element the id of the old element with the same key (each one used once),
+    otherwise; returns the matched pairs."""
     pool: dict[str, list[T]] = {}
     for old in before:
         pool.setdefault(key(old), []).append(old)
@@ -74,7 +74,7 @@ def _line_key(line: Line) -> str:
 
 
 def _reuse_lines(pairs: Iterable[tuple[object, object]], field: str) -> None:
-    """Réalisations ou détails : ids repris sous un même parent apparié."""
+    """Achievements or details: ids carried over under the same matched parent."""
     for item, old in pairs:
         _reuse(getattr(item, field), getattr(old, field), _line_key)
 
@@ -89,8 +89,8 @@ def _first_word(skill: SkillFact) -> str:
 
 
 def _text_in(small: str, big: str) -> bool:
-    """Tous les mots significatifs de `small` sont dans `big` (« Python » dans « Python (expert) »),
-    et il y en a au moins un."""
+    """All the significant words of `small` are in `big` ("Python" in "Python (expert)"), and
+    there is at least one."""
     words = significant_words(small)
     return bool(words) and words <= significant_words(big)
 
@@ -104,13 +104,13 @@ def _carried[T: _Copyable](
     field: str | None = None,
     plain_fields: tuple[str, ...] = (),
 ) -> None:
-    """Les faits de January de `old` que le brouillon n'a pas repris (aucun apparié). Un fait dont
-    le brouillon n'a qu'un équivalent (même clé lâche, non apparié, tous ses mots dans le texte de
-    January : « Python » / « Python (expert) ») le remplace, avec les lignes du brouillon qu'il n'a
-    pas, ses sources et ceux de ses champs non textuels (`plain_fields` : dates, lieu, URL) qu'il
-    renseigne (I-D : le nouveau CV dit où l'expérience finit) ; un champ que le brouillon ne dit
-    pas garde la valeur de January. Sinon les deux sont gardés (un doublon que January efface vaut
-    mieux qu'un fait du nouveau CV perdu). Les ids de `old` sont gardés."""
+    """January's facts from `old` that the draft did not take (no match). A fact for which the
+    draft has only a counterpart (same loose key, unmatched, all its words in January's text:
+    "Python" / "Python (expert)") replaces it, with the draft lines it does not have, its sources
+    and those of its non-text fields (`plain_fields`: dates, place, URL) that it fills in (I-D:
+    the new CV says where the experience ends); a field the draft does not state keeps January's
+    value. Otherwise both are kept (a duplicate that January deletes is better than a fact of
+    the new CV lost). The ids of `old` are kept."""
     used = {id(previous) for _, previous in pairs}
     for fact in old:
         if id(fact) in used or "january" not in fact.sources:
@@ -137,10 +137,10 @@ def _carried[T: _Copyable](
 
 
 def _carry_lines(pairs: Iterable[tuple[Any, Any]], field: str) -> None:
-    """Sous un parent apparié de January, les lignes de l'ancienne version absentes du brouillon
-    (un fait confirmé en revue est une ligne dont le parent porte `january`) ; le parent du
-    brouillon le devient aussi. Elle ramène aussi une ligne que January avait retirée de son CV
-    (le brouillon ne la porte plus, la version validée la portait encore : D124)."""
+    """Under a matched parent of January, the lines of the old version absent from the draft (a
+    fact confirmed in review is a line whose parent carries `january`); the draft's parent
+    becomes so too. It also brings back a line that January had removed from their CV (the draft
+    no longer carries it, the validated version still did: D124)."""
     for item, previous in pairs:
         if "january" not in previous.sources:
             continue
@@ -158,8 +158,8 @@ def _carry_lines(pairs: Iterable[tuple[Any, Any]], field: str) -> None:
 
 
 def _keep_levels(pairs: Iterable[tuple[Language, Language]]) -> None:
-    """Une langue appariée par son nom garde le niveau de January quand le nouveau CV n'en dit pas ;
-    un niveau écrit par le CV l'emporte (le niveau d'avant la confirmation n'est pas conservé)."""
+    """A language matched by its name keeps January's level when the new CV does not state one;
+    a level written by the CV wins (the level from before the confirmation is not kept)."""
     for language, previous in pairs:
         if "january" in previous.sources and language.level is None:
             language.level = previous.level
@@ -167,7 +167,7 @@ def _keep_levels(pairs: Iterable[tuple[Language, Language]]) -> None:
 
 
 def _carry_heads(out: MasterProfileData, old: MasterProfileData) -> None:
-    """Le titre et le résumé de January, si le brouillon n'en a pas."""
+    """January's title and summary, if the draft has none."""
     for name in ("title", "summary"):
         previous: _Copyable | None = getattr(old, name)
         if getattr(out, name) is None and previous is not None and "january" in previous.sources:
@@ -175,9 +175,9 @@ def _carry_heads(out: MasterProfileData, old: MasterProfileData) -> None:
 
 
 def _carry_facts(out: MasterProfileData, old: MasterProfileData, pairs: tuple[Any, ...]) -> None:
-    """Reporte les faits de January que le brouillon n'a pas repris, sorte par sorte (`_carried`) ;
-    `pairs` : les paires appariées de `_reuse` dans l'ordre expériences, formations, compétences,
-    projets, langues, liens."""
+    """Carries over January's facts that the draft did not take, kind by kind (`_carried`);
+    `pairs`: the matched pairs of `_reuse` in the order experiences, education, skills,
+    projects, languages, links."""
     jobs, schools, skills, projects, languages, links = pairs
     name: Callable[[Any], str] = lambda x: x.name  # noqa: E731
     _carried(
@@ -209,8 +209,8 @@ def _carry_facts(out: MasterProfileData, old: MasterProfileData, pairs: tuple[An
 def merge_draft(
     draft: MasterProfileData, previous: MasterProfileData | None, taken: Collection[str]
 ) -> MasterProfileData:
-    """Le brouillon de l'Archiviste numéroté : ids de `previous` repris, les faits de January que
-    le brouillon ne reprend pas reportés avec leur id, les autres ids neufs."""
+    """The numbered Archivist draft: ids of `previous` taken over, January's facts that the draft
+    does not take carried over with their id, the other ids new."""
     out = draft.model_copy(deep=True)
     _clear_children(out)
     old = previous or MasterProfileData(identity=Identity(name="-"))

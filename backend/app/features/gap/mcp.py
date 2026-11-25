@@ -1,4 +1,4 @@
-"""Déclaration MCP de `gap` : l'écart entre le profil de January et une offre."""
+"""MCP declaration for `gap`: the gap between January's profile and an offer."""
 
 from app.mcp.base import FeatureMcp, McpAction, McpGraph
 

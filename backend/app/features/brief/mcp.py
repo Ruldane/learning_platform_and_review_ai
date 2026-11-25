@@ -1,4 +1,4 @@
-"""Déclaration MCP de `brief` : le brief du matin."""
+"""MCP declaration for `brief`: the morning brief."""
 
 from app.mcp.base import FeatureMcp, McpAction, McpGraph
 

@@ -1,15 +1,15 @@
-"""`ALLOWED_EMAILS` (P8, arbitrage de la phase 9) : qui a le droit d'entrer en mode Google.
+"""`ALLOWED_EMAILS` (P8, arbitration of phase 9): who may enter in Google mode.
 
-Liste séparée par des virgules, comparée en minuscules sans espaces ; `*` laisse entrer tous les
-comptes Google. Vide ou absente : personne n'entre (et le démarrage est refusé, voir `startup`).
-Contrôlée à la connexion et à chaque requête, mais lue **au démarrage** (`Settings`) : retirer une
-adresse du `.env` coupe l'accès de ce compte au redémarrage du back, pas avant."""
+Comma-separated list, compared in lowercase without spaces; `*` lets in all Google accounts.
+Empty or absent: nobody gets in (and startup is refused, see `startup`). Checked at sign-in and
+on each request, but read **at startup** (`Settings`): removing an address from the `.env` cuts
+that account's access at the back-end restart, not before."""
 
 ALL_ACCOUNTS = "*"
 
 
 def entries(raw: str | None) -> frozenset[str]:
-    """Les adresses de la liste, en minuscules, sans espaces ni éléments vides."""
+    """The addresses in the list, in lowercase, without spaces or empty items."""
     if raw is None:
         return frozenset()
     return frozenset(part.strip().lower() for part in raw.split(",") if part.strip())
@@ -21,8 +21,7 @@ def allowed(email: str, raw: str | None) -> bool:
 
 
 def explicitly_allowed(email: str, raw: str | None) -> bool:
-    """Vrai si l'adresse est **nommée** dans une liste sans `*` : seule une personne nommée peut
-    se voir proposer l'espace local (avec `*`, la première venue pourrait prendre des données qui
-    ne sont pas les siennes)."""
+    """True if the address is **named** in a list without `*`: only a named person can be
+    offered the local space (with `*`, any passer-by could take data that is not theirs)."""
     listed = entries(raw)
     return ALL_ACCOUNTS not in listed and email.strip().lower() in listed

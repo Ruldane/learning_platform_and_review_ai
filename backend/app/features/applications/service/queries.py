@@ -1,6 +1,6 @@
-"""Lectures des candidatures (SPEC 6.1, 6.4, D139) : liste (création décroissante), fiche
-complète, indicateurs. La liste et les indicateurs adoptent d'abord les versions de CV prêtes
-(`adopt`, SPEC 6.1 n° 1)."""
+"""Application reads (SPEC 6.1, 6.4, D139): list (newest creation first), full record,
+indicators. The list and the indicators first adopt the CV versions that are ready
+(`adopt`, SPEC 6.1 no. 1)."""
 
 from datetime import date, datetime
 
@@ -22,7 +22,7 @@ from app.features.postings.service.duplicates import zone_of
 
 
 async def today_of(db: AsyncSession, user_id: str, now: datetime) -> date:
-    """Le jour de January à l'instant `now` (son fuseau)."""
+    """January's day at the instant `now` (their time zone)."""
     return local_today(await zone_of(db, user_id), now)
 
 
@@ -34,7 +34,7 @@ async def list_applications(
     status: str | None = None,
     posting_id: str | None = None,
 ) -> list[ApplicationOut]:
-    """Les fiches, la plus récente d'abord ; adopte d'abord les versions prêtes."""
+    """The records, most recent first; the ready versions are adopted first."""
     await adopt(rt, user_id)
     today = local_today(await zone_of(db, user_id), rt.now())
     rows = await ApplicationRepository(db, user_id).recent(status=status, posting_id=posting_id)
@@ -51,7 +51,7 @@ async def read_application(
 async def read_stats(
     rt: ApplicationsRuntime, db: AsyncSession, user_id: str
 ) -> ApplicationStatsOut:
-    """Fiches par statut, taux et délai moyen de réponse, relances dues (SPEC 6.4)."""
+    """Records by status, rate and average response delay, reminders due (SPEC 6.4)."""
     await adopt(rt, user_id)
     zone = await zone_of(db, user_id)
     repo = ApplicationRepository(db, user_id)

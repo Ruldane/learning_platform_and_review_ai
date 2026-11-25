@@ -1,7 +1,7 @@
-"""Un fait confirmé par January entre au profil maître (SPEC 1, 5.5 ; D130 n° 3) : quand elle
-confirme une modification « à confirmer » (chiffre, outil, titre absent du profil), le fait visé
-par la modification est réécrit avec son texte dans une **nouvelle version validée** (source
-`january`, ids gardés, compétences déclarées : `save_profile`). Jamais journalisé."""
+"""A fact confirmed by January enters the master profile (SPEC 1, 5.5; D130 no. 3): when
+January confirms a "to confirm" modification (number, tool, title absent from the profile), the
+fact targeted by the modification is rewritten with its text in a **new validated version**
+(source `january`, ids kept, declared skills: `save_profile`). Never logged."""
 
 import re
 from collections.abc import Callable
@@ -18,11 +18,11 @@ from app.features.cv.schemas_profile import ProfilePutIn
 from app.features.cv.service.profile import save_profile
 from app.features.cv.service.runtime import CvRuntime
 
-SEP = " — "  # séparateur des faits composés (« Rôle — Entreprise », `facts_of`)
+SEP = " — "  # separator of compound facts ("Role — Company", `facts_of`)
 _MAX_SOURCES = 4
-# Séparateurs (D137) : « — » coupe toujours ; « – » et « - » entourés d'espaces ne coupent qu'à
-# des conditions (une entreprise ou une école inchangée, une URL) ; un trait d'union collé aux mots
-# n'en est jamais un. « — » aussi quand la fin a été rognée.
+# Separators (D137): "—" always cuts; "–" and "-" surrounded by spaces only cut when what
+# follows is an unchanged company or school, or a URL; a hyphen stuck to words is never one.
+# "—" also cuts when the end was trimmed.
 _EM_SEP = re.compile(r"\s+—(?:\s+|$)")
 _SEP = re.compile(r"\s+[–-](?:\s+|$)")
 _LANG_SEP = re.compile(r"\s+[—–-](?:\s+|$)|\s*:\s*")  # « Anglais — C1 », « - C1 », « : C1 »
@@ -67,7 +67,7 @@ def ambiguous_separator() -> AppError:
 
 
 def _valid_url(url: str) -> bool:
-    """Une URL http(s) avec un hôte, sans espace (jamais de `javascript:` dans le profil)."""
+    """An http(s) URL with a host, without spaces (never `javascript:` in the profile)."""
     try:
         parts = urlsplit(url)
     except ValueError:  # « http://[::1 »
@@ -80,10 +80,10 @@ def _valid_url(url: str) -> bool:
 
 
 def _write_language(item: Any, text: str) -> None:
-    """« Nom — niveau » (aussi « - », « : » et « Nom (niveau) ») écrit le nom et le niveau ; la
-    parenthèse passe avant le deux-points quand le nom, devant elle, n'a pas de séparateur
-    (« Anglais (TOEIC: 950) ») ; sans séparateur le texte entier est le nom et le niveau est
-    effacé : jamais l'ancien niveau à côté d'un texte neuf."""
+    """Writes the name and the level from "Name — level" (also "-", ":" and "Name (level)"); the
+    parenthesis comes before the colon when the name in front of it has no separator
+    («Anglais (TOEIC: 950)»); without a separator the whole text is the name and the level is
+    cleared: never the old level next to new text."""
     paren = _LANG_PAREN.match(text)
     if paren and not _LANG_SEP.search(paren.group(1)):
         parts = [paren.group(1), paren.group(2)]
@@ -94,17 +94,17 @@ def _write_language(item: Any, text: str) -> None:
 
 
 def _split_at(pattern: re.Pattern[str], text: str) -> tuple[str, str] | None:
-    """Coupe `text` au dernier séparateur de `pattern` ; `None` s'il n'y en a pas."""
+    """Cuts `text` at the last separator of `pattern`; `None` if there is none."""
     found = list(pattern.finditer(text))
     return (text[: found[-1].start()], text[found[-1].end() :]) if found else None
 
 
 def _split_company(text: str, current: str) -> tuple[str, str]:
-    """« Rôle — Entreprise » → (rôle, entreprise) ; le texte qui finit par l'entreprise connue la
-    garde ; un texte sans séparateur ne change que le rôle (l'entreprise reste). Le dernier « — »
-    coupe toujours ; un « – » ou « - » espacé ne coupe que si ce qui le suit est l'entreprise
-    (ou l'école) actuelle (seul l'intitulé change), sinon 422 `ambiguous_separator` : une
-    confirmation ne réécrit jamais une entreprise d'après une lecture devinée (D137 n° 2)."""
+    """Splits "Role — Company" into (role, company). Text that ends with the known company keeps
+    it; text without a separator only changes the role (the company stays). The last "—"
+    always cuts; a spaced "–" or "-" only cuts if what follows is the current company or school
+    (only the title changes), otherwise 422 `ambiguous_separator`: a confirmation never rewrites
+    a company from a guessed reading (D137 no. 2)."""
     suffix = f"{SEP}{current}"
     if text.endswith(suffix):
         return text[: -len(suffix)].strip(), current
@@ -118,9 +118,9 @@ def _split_company(text: str, current: str) -> tuple[str, str]:
 
 
 def _write_link(item: Any, text: str) -> None:
-    """« Libellé — URL » écrit le libellé et l'URL (http ou https, sinon 422) ; « Libellé - URL »
-    (« – » ou « - » espacé) aussi quand ce qui suit ressemble à une URL ; une URL seule remplace
-    l'URL ; un texte sans URL ne change que le libellé (« Portfolio - Design » est un libellé)."""
+    """Writes the label and the URL from "Label — URL" (http or https, otherwise 422); a spaced
+    "Label - URL" (with "–" or "-") too when what follows looks like a URL; a URL alone replaces
+    the URL; text without a URL only changes the label ("Portfolio - Design" is a label)."""
     cut = _split_at(_EM_SEP, text)
     if cut is None and (spaced := _split_at(_SEP, text)) and _URL_LIKE.search(spaced[1]):
         cut = spaced
@@ -150,7 +150,7 @@ def _write_lines(lines: list[Any], target: str, text: str) -> bool:
 
 
 def _entries(data: MasterProfileData, target: str, text: str) -> bool:
-    """Expériences, formations, projets : l'intitulé ou une de leurs lignes."""
+    """Experiences, education, projects: the title or one of their lines."""
     for x in data.experiences:
         if x.id == target:
             x.role, x.company = _split_company(text, x.company)
@@ -173,7 +173,7 @@ def _entries(data: MasterProfileData, target: str, text: str) -> bool:
 
 
 def _flat(data: MasterProfileData, target: str, text: str) -> bool:
-    """Titre, résumé, compétences, langues, liens."""
+    """Title, summary, skills, languages, links."""
     heads = [line for line in (data.title, data.summary) if line is not None]
     writers: list[tuple[list[Any], Callable[[Any], None]]] = [
         (heads, lambda item: setattr(item, "text", text)),
@@ -191,8 +191,8 @@ def _flat(data: MasterProfileData, target: str, text: str) -> bool:
 
 
 def with_fact(profile: MasterProfileData, target: str, text: str) -> MasterProfileData:
-    """Le profil où le fait `target` dit `text` ; 409 `fact_not_found`, 422 si le texte ne
-    tient pas dans le champ du fait."""
+    """The profile where the fact `target` says `text`; 409 `fact_not_found`, 422 if the text
+    does not fit in the fact's field."""
     data = profile.model_copy(deep=True)
     if not (_flat(data, target, text) or _entries(data, target, text)):
         raise fact_not_found()
@@ -203,16 +203,16 @@ def with_fact(profile: MasterProfileData, target: str, text: str) -> MasterProfi
 
 
 async def confirm_fact(rt: CvRuntime, user_id: str, target: str | None, text: str) -> int:
-    """Nouvelle version validée du profil avec le fait confirmé ; rend son numéro. 409
-    `profile_draft_pending` quand un brouillon plus récent que la version validée attend January :
-    la nouvelle version passerait au-dessus de lui et l'enterrerait (revue 6.14, I-1)."""
+    """New validated version of the profile with the confirmed fact; returns its number. 409
+    `profile_draft_pending` when a draft more recent than the validated version is waiting for
+    January: the new version would go above it and bury it (review 6.14, I-1)."""
     async with rt.session_factory() as db:
         repo = ProfileRepository(db, user_id)
         latest = await repo.latest("validated")
         top = await repo.top_version()
     if latest is None or not target:
         raise fact_not_found()
-    if top > latest.version:  # une version plus récente que la validée est un brouillon
+    if top > latest.version:  # a version newer than the validated one is a draft
         raise profile_draft_pending()
     data = with_fact(MasterProfileData.model_validate(latest.data), target, text)
     saved = await save_profile(rt, user_id, ProfilePutIn(data=data, base_version=top or None))

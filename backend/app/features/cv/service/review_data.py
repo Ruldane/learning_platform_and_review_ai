@@ -1,6 +1,6 @@
-"""Ce que les revues de CV partagent (D130) : erreurs lisibles, indicateurs rangés en JSON et
-relus, ordre des sections du gabarit, texte visé d'une modification, titre de l'offre pour le
-nom du fichier, vues rendues par l'API. Aucun texte du CV n'est journalisé ici."""
+"""What CV reviews share (D130): readable errors, indicators stored as JSON and reread, order of
+template sections, targeted text of a modification, offer title for the file name, views
+rendered by the API. No CV text is logged here."""
 
 import dataclasses
 import re
@@ -21,7 +21,7 @@ from app.features.cv.schemas_reviews import (
 
 CANONICAL_ORDER: list[SectionKey] = list(get_args(SectionKey))
 VERSION_CATEGORY = "cv_versions"
-# « (H/F) », « (F/H) », « (H/F/X) », « (m/w/d) » : marques de genre retirées du nom de fichier.
+# "(H/F)", "(F/H)", "(H/F/X)", "(m/w/d)": gender markers removed from the file name.
 _GENDER = re.compile(r"\(\s*[a-z](\s*/\s*[a-z]){1,2}\s*\)", re.IGNORECASE)
 
 
@@ -87,8 +87,8 @@ def before_out(data: dict[str, Any] | None) -> IndicatorsOut | None:
 
 
 def template_order(spec: dict[str, Any] | None) -> list[SectionKey]:
-    """L'ordre des sections du gabarit (colonne 1 puis 2, sans l'identité) ; l'ordre habituel
-    sans description."""
+    """The order of the template's sections (column 1 then 2, without the identity); the usual
+    order without description."""
     if spec is None:
         return list(CANONICAL_ORDER)
     parsed = TemplateSpec.model_validate(spec)
@@ -97,7 +97,7 @@ def template_order(spec: dict[str, Any] | None) -> list[SectionKey]:
 
 
 def content_lines(content: CvContent) -> list[CvLine]:
-    """Toutes les lignes d'un CV : éléments des sections puis lignes des entrées."""
+    """All the lines of a CV: items of the sections, then lines of the entries."""
     lines: list[CvLine] = []
     for section in content.sections:
         lines += section.items
@@ -107,8 +107,8 @@ def content_lines(content: CvContent) -> list[CvLine]:
 
 
 def target_text(base: CvContent, profile: MasterProfileData, target: str | None) -> str:
-    """Le texte du CV d'origine que vise une modification (titre, intitulé d'entrée, ligne) ;
-    vide si la cible n'y est pas (ajout)."""
+    """The original CV text that a modification targets (title, entry heading, line); empty if
+    the target is not there (addition)."""
     if not target:
         return ""
     if profile.title is not None and profile.title.id == target and base.headline:
@@ -124,7 +124,7 @@ def target_text(base: CvContent, profile: MasterProfileData, target: str | None)
 
 
 def posting_title(title: str | None) -> str | None:
-    """Le titre de l'offre pour le nom du fichier, sans la marque de genre (« (H/F) »)."""
+    """The offer title for the file name, without the gender marker ("(H/F)")."""
     if not title:
         return None
     return " ".join(_GENDER.sub(" ", title).split()) or None

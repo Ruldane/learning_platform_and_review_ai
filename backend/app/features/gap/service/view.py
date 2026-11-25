@@ -1,5 +1,5 @@
-"""L'écart d'une offre tel qu'il est montré (`GET /postings/{id}/gap`, D122) : statut d'après la
-session rangée (`gap_status`), lignes et score recalculés quand il est prêt."""
+"""The gap of an offer as it is shown (`GET /postings/{id}/gap`, D122): status from the stored
+session (`gap_status`), rows and score recalculated when it is ready."""
 
 from dataclasses import asdict
 
@@ -14,7 +14,7 @@ from app.features.postings.service.status import gap_status, read_with_sessions
 
 
 async def posting_gap(db: AsyncSession, user_id: str, posting_id: str) -> GapOut:
-    """Offre d'une autre ou absente : 404 `posting_not_found`."""
+    """Another user's offer or a missing one: 404 `posting_not_found`."""
 
     async def read() -> JobPosting:
         return await get_posting(db, user_id, posting_id)

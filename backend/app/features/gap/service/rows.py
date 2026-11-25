@@ -1,17 +1,16 @@
-"""Lignes de l'écart d'une offre (F8, D122), recalculées à chaque lecture : un niveau qui monte, un
-programme validé ou une revue de CV change le tableau sans rien réécrire.
+"""Gap rows of an offer (F8, D122), recalculated on each read: a level that rises, a validated
+program or a CV review changes the table without rewriting anything.
 
-Pour chaque compétence de l'analyse, le rattachement rangé (`job_postings.gap`) donne le nom du
-référentiel ; le niveau est celui de `user_skills` pour ce nom, sinon pour le nom du besoin
-lui-même (un besoin sans rattachement entre au référentiel à `save_gap` : s'il est acquis plus
-tard, la ligne le montre). Ensuite :
-- `learnable` faux → `out_of_scope`, sauf ajout accepté dans « Compétences des offres » ;
-- un module non sauté d'un programme validé vise le nom → `in_program`, avec la semaine de sa
-  1re tâche ;
-- sinon → `to_add`.
-Les mots clés envoyés vers l'écart par une revue de CV (G3) suivent, `source="cv_review"`,
-action `to_add` (ou `in_program`, même règle), sauf s'ils sont déjà une ligne ; `match_score`
-les ignore."""
+For each skill of the analysis, the stored attachment (`job_postings.gap`) gives the name in the
+reference list; the level is that of `user_skills` for this name, otherwise for the name of the
+need itself (a need without an attachment enters the reference list at `save_gap`: if it is
+acquired later, the row shows it). Then:
+- `learnable` false → `out_of_scope`, unless added and accepted in "Offer skills";
+- a non-skipped module of a validated program targets the name → `in_program`, with the week of
+  its first task;
+- otherwise → `to_add`.
+Keywords sent to the gap by a CV review (G3) follow, `source="cv_review"`, action `to_add` (or
+`in_program`, same rule), unless they are already a row; `match_score` ignores them."""
 
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -32,11 +31,11 @@ SKILL_MAX = 120
 
 @dataclass(frozen=True)
 class GapContext:
-    """Ce que les lignes lisent de January, chargé une fois pour plusieurs offres."""
+    """What the rows read of January, loaded once for several offers."""
 
-    levels: dict[str, SkillLevel]  # nom normalisé → niveau
-    weeks: dict[str, int]  # nom normalisé → semaine du programme validé
-    offer_weeks: dict[str, int]  # couverture des modules « Compétences des offres »
+    levels: dict[str, SkillLevel]  # normalized name → level
+    weeks: dict[str, int]  # normalized name → week of the validated program
+    offer_weeks: dict[str, int]  # coverage of the "Offer skills" modules
 
 
 async def load_context(db: AsyncSession, user_id: str) -> GapContext:
@@ -54,7 +53,7 @@ def _first[T](values: dict[str, T], names: Sequence[str]) -> T | None:
 
 
 def posting_rows(analysis: PostingAnalysis, gap: GapResult, ctx: GapContext) -> list[GapRow]:
-    """Une ligne par compétence de l'analyse, dans son ordre."""
+    """One row per skill of the analysis, in its order."""
     known = {normalize_skill_name(m["need"]): m["known"] for m in gap["matches"]}
     rows: list[GapRow] = []
     for need in analysis.skills:
@@ -72,9 +71,9 @@ def posting_rows(analysis: PostingAnalysis, gap: GapResult, ctx: GapContext) -> 
 def review_rows(
     terms: Sequence[str], rows: Sequence[GapRow], gap: GapResult, ctx: GapContext
 ) -> list[GapRow]:
-    """Les mots clés des revues de CV qui ne sont pas déjà une ligne (nom du besoin ou du
-    référentiel rattaché), une fois chacun ; `in_program` dès qu'un module d'un programme
-    validé les vise (« Ajouter au planning » accepté, D123), sinon `to_add`."""
+    """The keywords from CV reviews that are not already a row (need name or matched reference
+    name), once each; `in_program` as soon as a module of a validated program targets them ("Add
+    to schedule" accepted, D123), otherwise `to_add`."""
     seen = {normalize_skill_name(row.skill) for row in rows}
     seen |= {normalize_skill_name(m["known"]) for m in gap["matches"] if m["known"]}
     added: list[GapRow] = []
@@ -90,7 +89,7 @@ def review_rows(
 
 
 def rows_for(posting: JobPosting, ctx: GapContext, terms: Sequence[str]) -> list[GapRow]:
-    """Les lignes d'une offre analysée dont le rattachement est rangé ; sinon aucune."""
+    """The rows of an analysed offer whose attachment is stored; otherwise none."""
     if posting.analysis is None or posting.gap is None:
         return []
     analysis = PostingAnalysis.model_validate(posting.analysis)
@@ -100,7 +99,7 @@ def rows_for(posting: JobPosting, ctx: GapContext, terms: Sequence[str]) -> list
 
 
 async def gap_rows(db: AsyncSession, user_id: str, posting: JobPosting) -> list[GapRow]:
-    """Les lignes de l'écart de l'offre, recalculées (voir le module)."""
+    """The gap rows of the offer, recalculated (see the module)."""
     if posting.analysis is None or posting.gap is None:
         return []
     ctx = await load_context(db, user_id)
@@ -111,8 +110,8 @@ async def gap_rows(db: AsyncSession, user_id: str, posting: JobPosting) -> list[
 async def rows_by_posting(
     db: AsyncSession, user_id: str, postings: Sequence[JobPosting]
 ) -> dict[str, list[GapRow]]:
-    """Les lignes de plusieurs offres (liste des offres), contexte chargé une seule fois ; une
-    offre sans écart rangé n'y figure pas."""
+    """The rows of several offers (list of offers), context loaded once; an offer with no stored
+    gap is not listed."""
     ready = [p for p in postings if p.analysis is not None and p.gap is not None]
     if not ready:
         return {}

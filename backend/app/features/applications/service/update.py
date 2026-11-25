@@ -1,7 +1,7 @@
-"""Retouche d'une fiche (SPEC 6.1, D139) : les champs envoyés changent (`null` efface un champ
-facultatif), les contacts sont remplacés s'ils sont fournis. Le statut n'est pas un champ de la
-retouche (voir `events`). `update_locked` : sous le verrou des candidatures, dans sa propre
-transaction (la synchronisation des relances qui suit l'exige)."""
+"""Editing a record (SPEC 6.1, D139): the fields sent change (`null` clears an optional field),
+the contacts are replaced if provided. The status is not a field of the edit (see `events`).
+`update_locked`: under the applications lock, in its own transaction (the reminder sync that
+follows requires it)."""
 
 from datetime import date
 
@@ -19,11 +19,11 @@ from app.features.applications.service.views import detail_out, get_application,
 from app.features.postings.service.rules import company_key
 
 _PLAIN = ("channel", "applied_on", "interview_on", "next_action_on")
-_TEXTS = ("letter", "notes", "next_action", "posting_text")  # un texte vide efface le champ
+_TEXTS = ("letter", "notes", "next_action", "posting_text")  # an empty text clears the field
 
 
 def _required(body: ApplicationPatch, row: Application) -> None:
-    """Entreprise et intitulé : jamais vides ; l'entreprise refait sa clé de comparaison."""
+    """Company and title: never empty; the company rebuilds its comparison key."""
     for name in ("company", "title"):
         if name not in body.model_fields_set:
             continue
@@ -52,8 +52,8 @@ def _apply(body: ApplicationPatch, row: Application) -> None:
 async def update_application(
     db: AsyncSession, user_id: str, application_id: str, body: ApplicationPatch, today: date
 ) -> ApplicationDetail:
-    """Applique la retouche. 404 `application_not_found` ; 422 `company`, `title`, `url` ou
-    `contacts` (vide ou refusé), sans écho."""
+    """Applies the edit. 404 `application_not_found`; 422 `company`, `title`, `url` or
+    `contacts` (empty or refused), without echo."""
     row = await get_application(db, user_id, application_id)
     sent = body.model_fields_set
     if "contacts" in sent and body.contacts is None:
@@ -75,7 +75,7 @@ async def update_application(
 async def update_locked(
     rt: ApplicationsRuntime, user_id: str, application_id: str, body: ApplicationPatch
 ) -> ApplicationDetail:
-    """`update_application` sous le verrou des candidatures, validé avant de le rendre."""
+    """`update_application` under the applications lock, validated before it is returned."""
     async with rt.lock(user_id), rt.session_factory() as db:
         today = await today_of(db, user_id, rt.now())
         detail = await update_application(db, user_id, application_id, body, today)

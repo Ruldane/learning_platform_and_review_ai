@@ -1,6 +1,6 @@
-"""Journal (SPEC F18) : les écritures passent par `INSERT … ON CONFLICT DO NOTHING`, pour qu'un
-rejeu (ou deux requêtes simultanées) de la même `ref_key` ne lève jamais d'erreur d'unicité. La
-lecture va de la plus récente à la plus ancienne (`created_at`, puis ordre d'insertion)."""
+"""Journal (SPEC F18): writes go through `INSERT … ON CONFLICT DO NOTHING`, so that a replay
+(or two simultaneous requests) of the same `ref_key` never raises a uniqueness error. Reads go
+from newest to oldest (`created_at`, then insertion order)."""
 
 import builtins
 from typing import Any
@@ -16,9 +16,9 @@ class JournalRepository(UserScopedRepository[JournalEntry]):
     model = JournalEntry
 
     async def insert_once(self, ref_key: str | None, **fields: Any) -> str:
-        """Écrit la ligne et rend son id ; si `ref_key` existe déjà pour cet utilisateur, rend
-        l'id de la ligne existante sans rien changer. Sans `ref_key`, la ligne est toujours
-        neuve."""
+        """Writes the row and returns its id; if `ref_key` already exists for this user, returns
+        the id of the existing row without changing anything. Without `ref_key`, the row is
+        always new."""
         stmt = (
             sqlite_insert(JournalEntry)
             .values(user_id=self.user_id, ref_key=ref_key, **fields)
@@ -42,8 +42,8 @@ class JournalRepository(UserScopedRepository[JournalEntry]):
     async def page(
         self, kind: str | None, before: str | None, limit: int
     ) -> builtins.list[JournalEntry] | None:
-        """Jusqu'à `limit` lignes, les plus récentes d'abord, plus anciennes que la ligne
-        `before` (curseur) ; `None` si ce curseur n'est pas une ligne de l'utilisateur."""
+        """Up to `limit` rows, most recent first, older than the `before` row (cursor); `None`
+        if this cursor is not a row of the user."""
         rowid: ColumnElement[int] = literal_column("rowid")
         stmt = select(JournalEntry).where(JournalEntry.user_id == self.user_id)
         if kind is not None:

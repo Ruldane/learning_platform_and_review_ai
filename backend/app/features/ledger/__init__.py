@@ -1,1 +1,1 @@
-"""Registre persistant des passages planifiés (phase 8, P13)."""
+"""Persistent ledger of scheduled runs (phase 8, P13)."""

@@ -1,7 +1,7 @@
-"""La capture rapide dans la vie de l'application (D108) : ce que la route `POST /capture` et le
-port de l'Archiviste (`AgentCaptureStore`) partagent : base, lanceur de sessions (lié au moteur
-ensuite), programme (verrou, tâches cochées), mémoire (élément rangé, reflet des acquis) et
-horloge. Créé par le lifespan avant le moteur d'agents (`app.state.capture`)."""
+"""Quick capture in the life of the application (D108): what the `POST /capture` route and the
+Archivist's port (`AgentCaptureStore`) share: database, session launcher (linked to the engine
+later), program (lock, checked tasks), memory (stored item, reflection of acquired skills) and
+clock. Created by the lifespan before the agent engine (`app.state.capture`)."""
 
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -28,9 +28,9 @@ class CaptureRuntime:
     launcher: Launcher
     program: ProgramRuntime
     memory: MemoryRuntime
-    now: Callable[[], datetime] = utc_now  # remplacée par les tests (heure figée)
+    now: Callable[[], datetime] = utc_now  # replaced by the tests (frozen clock)
 
     async def today(self, db: AsyncSession, user_id: str) -> date:
-        """Le jour de January dans son fuseau (D98)."""
+        """January's day in their time zone (D98)."""
         zone = user_zone((await SettingsService(db, user_id).get()).timezone)
         return local_today(zone, self.now())

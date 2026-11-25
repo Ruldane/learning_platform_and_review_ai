@@ -1,9 +1,9 @@
-"""Registre persistant des passages planifiés (P13) : une ligne par `(user_id, name, period)`.
+"""Persistent ledger of scheduled runs (P13): one row per `(user_id, name, period)`.
 
-Les écritures disputées sont gardées en SQL, pour que deux processus ou deux tâches ne gagnent
-jamais le même passage : `INSERT … ON CONFLICT DO NOTHING`, puis `UPDATE … WHERE` sur l'état
-attendu (statut, nombre d'essais). Le commit appartient à l'appelant. Aucune lecture
-sans `user_id` ici : les comptes que traitent les tâches planifiées viennent des réglages (D197)."""
+Contested writes are guarded in SQL, so that two processes or two tasks never win the same run:
+`INSERT … ON CONFLICT DO NOTHING`, then `UPDATE … WHERE` on the expected state (status, number
+of attempts). The commit belongs to the caller. No read without `user_id` here: the accounts
+that the scheduled tasks process come from the settings (D197)."""
 
 from datetime import datetime
 from typing import Any
@@ -23,8 +23,8 @@ class JobRunRepository(UserScopedRepository[JobRun]):
     model = JobRun
 
     async def insert_running(self, name: str, period: str, now: datetime) -> str | None:
-        """Crée le passage `running` (essai 1) et rend son id ; `None` si la période a déjà sa
-        ligne (rien n'est changé)."""
+        """Creates the `running` run (attempt 1) and returns its id; `None` if the period already
+        has its row (nothing is changed)."""
         stmt = (
             sqlite_insert(JobRun)
             .values(
@@ -44,8 +44,8 @@ class JobRunRepository(UserScopedRepository[JobRun]):
         return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def reclaim(self, run_id: str, old_attempts: int, now: datetime) -> bool:
-        """Reprend un passage `failed` ou `running` : essai suivant, seulement si personne ne l'a
-        déjà repris (`attempts` inchangé) ni terminé."""
+        """Resumes a `failed` or `running` run: next attempt, only if nobody has already resumed
+        it (`attempts` unchanged) nor finished it."""
         stmt = (
             update(JobRun)
             .where(
@@ -66,9 +66,8 @@ class JobRunRepository(UserScopedRepository[JobRun]):
         return _changed(await self.session.execute(stmt))
 
     async def close_running(self, run_id: str, attempt: int, now: datetime, **values: Any) -> bool:
-        """Termine l'essai `attempt` d'un passage encore `running` (jamais un passage déjà fini,
-        ni d'un autre, ni un essai repris depuis : un ouvrier périmé ne ferme pas l'essai
-        suivant)."""
+        """Ends the `attempt` of a run still `running` (never a run already finished, nor another
+        one, nor an attempt resumed since: a stale worker does not close the next attempt)."""
         stmt = (
             update(JobRun)
             .where(
@@ -82,10 +81,9 @@ class JobRunRepository(UserScopedRepository[JobRun]):
         return _changed(await self.session.execute(stmt))
 
     async def reopen_done(self, run_id: str, attempt: int, now: datetime, code: str) -> bool:
-        """Un passage `done` dont le travail lancé a échoué repasse en `failed` (essai
-        `attempt` seulement) : `claim` peut le reprendre, dans la limite des essais.
-        `finished_at` passe à `now` : le fil d'activité date l'échec de sa réouverture, pas du
-        lancement."""
+        """A `done` run whose launched work failed goes back to `failed` (attempt `attempt`
+        only): `claim` can resume it, within the limit of attempts. `finished_at` moves to `now`:
+        the activity feed dates the failure from its reopening, not from the launch."""
         stmt = (
             update(JobRun)
             .where(
@@ -99,8 +97,8 @@ class JobRunRepository(UserScopedRepository[JobRun]):
         return _changed(await self.session.execute(stmt))
 
     async def abandon(self, run_id: str, old_attempts: int, now: datetime) -> bool:
-        """Un passage `running` périmé, sans essai restant : il passe en `failed`
-        (`abandoned`), pour apparaître au fil au lieu de rester « en cours »."""
+        """A stale `running` run with no attempt left goes to `failed` (`abandoned`), to appear in
+        the feed instead of staying "in progress"."""
         stmt = (
             update(JobRun)
             .where(
@@ -130,8 +128,8 @@ class JobRunRepository(UserScopedRepository[JobRun]):
     async def failures(
         self, after: datetime | None, before: datetime | None, limit: int
     ) -> list[JobRun]:
-        """Les passages en échec finis dans `[after, before]` (bornes incluses : le fil rend les
-        ex æquo, il en écarte lui-même), le plus récent d'abord."""
+        """The failed runs finished within `[after, before]` (bounds included: the feed handles the
+        ties itself), most recent first."""
         stmt = select(JobRun).where(JobRun.user_id == self.user_id, JobRun.status == "failed")
         if after is not None:
             stmt = stmt.where(JobRun.finished_at >= after)

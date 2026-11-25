@@ -1,5 +1,5 @@
-"""Déclaration MCP de `capture` : la capture rapide (lien, texte ou document déjà importé) et le
-journal."""
+"""MCP declaration for `capture`: quick capture (link, text or document already imported) and
+the journal."""
 
 from app.mcp.base import FeatureMcp, McpAction, McpGraph
 

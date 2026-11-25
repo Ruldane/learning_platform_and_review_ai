@@ -1,8 +1,8 @@
-"""Le CV dans la vie de l'application (D124, D126) : ce que les routes du profil maître et des
-gabarits partagent avec les ports de l'Archiviste (`AgentProfileStore`) et du Maquettiste
-(`AgentCvTemplateStore`) : base, mémoire (documents rangés, fichiers relus, stockage des images et
-des polices), lanceur de sessions (lié au moteur ensuite), mise en page des PDF, rendu de nos
-gabarits HTML, polices libres et verrous. Créé par le lifespan avant le moteur d'agents
+"""The CV in the life of the application (D124, D126): what the master profile and template
+routes share with the ports of the Archivist (`AgentProfileStore`) and of the Layout designer
+(`AgentCvTemplateStore`): database, memory (stored documents, re-read files, storage of images
+and fonts), session launcher (linked to the engine later), PDF layout, rendering of our HTML
+templates, free fonts and locks. Created by the lifespan before the agent engine
 (`app.state.career.cv`)."""
 
 import asyncio
@@ -34,8 +34,8 @@ def utc_now() -> datetime:
 
 
 class Resumer(Protocol):
-    """Reprise d'une question en attente (`SessionLauncher.resume`, D130) : « Générer le PDF »
-    répond à la question de sortie de la revue."""
+    """Resumes a pending question (`SessionLauncher.resume`, D130): "Generate the PDF" answers the
+    review's exit question."""
 
     async def resume(
         self, user_id: str, session_id: str, interrupt_id: str, value: Any
@@ -43,7 +43,7 @@ class Resumer(Protocol):
 
 
 class _NoResumer:
-    """Valeur par défaut (tests du port, démarrages sans moteur) : moteur indisponible."""
+    """Default value (port tests, startups without an engine): engine unavailable."""
 
     async def resume(self, user_id: str, session_id: str, interrupt_id: str, value: Any) -> None:
         raise AppError("engine_unavailable", "The agent service isn't ready yet.", 503)
@@ -63,32 +63,32 @@ class CvRuntime:
     _imports: dict[str, asyncio.Lock] = field(default_factory=dict, repr=False, compare=False)
     _templates: dict[str, asyncio.Lock] = field(default_factory=dict, repr=False, compare=False)
     _reviews: dict[str, asyncio.Lock] = field(default_factory=dict, repr=False, compare=False)
-    # Création de la fiche entreprise : le même `KeyLocks` que celui des candidatures (M7).
+    # Company record creation: the same `KeyLocks` as the applications (M7).
     company_locks: KeyLocks = field(default_factory=KeyLocks, repr=False, compare=False)
     portfolio_origin: Callable[[], str | None] = no_origin
 
     @property
     def storage(self) -> FileStorage:
-        """Le stockage de la mémoire : images des pages et polices des gabarits (D119)."""
+        """Memory storage: page images and template fonts (D119)."""
         return self.memory.providers.storage
 
     def version_lock(self, user_id: str) -> asyncio.Lock:
-        """Une nouvelle version du profil à la fois par utilisateur (brouillon de l'Archiviste,
-        version de January) : numéros sans course. Propre à ce processus (un seul worker) ; l'index
-        unique `(user_id, version)` reste le dernier rempart."""
+        """One new profile version at a time per user (Archivist draft, January's version): numbers
+        without a race. Specific to this process (a single worker); the unique index
+        `(user_id, version)` remains the last line of defense."""
         return self._versions.setdefault(user_id, asyncio.Lock())
 
     def import_lock(self, user_id: str) -> asyncio.Lock:
-        """« Capture ouverte ? sinon lancer » : un double envoi ne lance qu'une capture."""
+        """Starts a capture unless one is already open: a double send starts only one capture."""
         return self._imports.setdefault(user_id, asyncio.Lock())
 
     def template_lock(self, user_id: str) -> asyncio.Lock:
-        """Gabarits de l'utilisateur : création et lancement de la capture, statut rapproché de
-        la session, gabarit actif (un seul, index unique partiel) ; jamais pendant un rendu."""
+        """Templates of the user: creation and launch of the capture, status reconciled with the
+        session, active template (only one, partial unique index); never during a render."""
         return self._templates.setdefault(user_id, asyncio.Lock())
 
     def review_lock(self, user_id: str) -> asyncio.Lock:
-        """Revues de l'utilisateur (D130) : lancement, statut rapproché de la session, décisions,
-        clic sur « Générer » (décisions figées, une version en rendu à la fois) ; jamais pendant
-        le rendu lui-même, que le parcours fait hors de ce verrou."""
+        """Reviews of the user (D130): launch, status reconciled with the session, decisions,
+        click on "Generate" (decisions frozen, one version rendering at a time); never during the
+        render itself, which the flow does outside this lock."""
         return self._reviews.setdefault(user_id, asyncio.Lock())
