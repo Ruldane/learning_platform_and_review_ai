@@ -12623,669 +12623,661 @@ pagination by `before = next_before`, 50 entries per page.
 
 ## D215
 
-- **Date** : 2026-11-18
-- **Sujet** : Reprise du Conseil entre deux sources.
-- **Décision** :
-  1. Dans le nœud `judge`, confier chaque page à une tâche LangGraph durable. Le nœud soumet toujours les pages dans l’ordre du point de reprise, y compris lorsque la base connaît déjà un verdict. LangGraph restitue le résultat des tâches terminées et reprend celle qui attend le client.
-  2. La tâche enregistre le verdict par la passerelle existante et rend au nœud le résultat de cette page ou les informations de son erreur. Le nœud conserve la règle d’échec si toutes les notations échouent. Le Conseil, la recherche web et la Fabrique de leçons partagent ce nœud.
-  3. Le test coupe le premier runner après le brief de la deuxième source, rouvre le même point de reprise SQLite et rend un verdict distinct. Il relit les deux verdicts en base, mène le Conseil jusqu’au choix humain et vérifie un seul démarrage du programme sur le port de test. Un second test du Constructeur vérifie le prompt, la correction du JSON, l’écriture du brouillon, la validation et le coût nul.
-- **Raison** : D214 a montré que la position d’une réponse dans une boucle ne suffit pas quand les écritures précédentes modifient les appels restants. La tâche par source conserve la progression au niveau où les effets se produisent.
+- **Date** 2026-11-18
+- **Subject** Resuming the Council between two sources.
+- **Decision**
+  1. In the `judge` node, entrust each page to a durable LangGraph task. The node always submits the
+     pages in the checkpoint's order, including when the database already knows a verdict. LangGraph
+     returns the result of the finished tasks and resumes the one waiting for the client.
+  2. The task records the verdict through the existing gateway and returns to the node the result of
+     that page or the information on its error. The node keeps the failure rule if all the ratings
+     fail. The Council, the web search, and the Lesson Factory share this node.
+  3. The test cuts the first runner after the second source's brief, reopens the same SQLite
+     checkpoint, and returns a distinct verdict. It rereads the two verdicts in the database, leads
+     the Council up to the human choice, and checks a single start of the program on the test port.
+     A second test of the Program Builder checks the prompt, the correction of the JSON, the writing
+     of the draft, the validation, and the zero cost.
+- **Reason** D214 showed that the position of an answer in a loop is not enough when the previous
+  writes modify the remaining calls. The per-source task keeps progress at the level where the
+  effects occur.
 
 ## D216
 
-- **Date** : 2026-11-18
-- **Sujet** : Sessions jouées par Claude Code ou Codex via MCP.
-- **Décision** :
-  1. Réutiliser les routes métiers et les graphes. Un lancement joué choisit le client avant la
-     création de la session. Le runner retrouve ce choix en base, y compris après un redémarrage.
-     Le nombre de rendus vient du journal des appels au fournisseur `mcp`, avec un coût LLM nul.
-  2. Le client découvre les entrées via `agents_play_list` (niveau 1). Les entrées réservées
-     au mode joué sont déclarées dans la feature et ouvertes par `agents_play_start` (niveau 2).
-     Les droits du jeton sont vérifiés sur la feature de la route et celle du graphe. Une route
-     soumise à confirmation garde son niveau.
-  3. Réserver une réponse par étape en base avant de reprendre le graphe. La comparaison de
-     l'empreinte du brief protège l'association avec la réponse. Une décision humaine suit son
-     entrée existante. Le brief non rendu expire au bout de 24 heures.
-  4. Garder les messages utilisateur et les résultats web déjà lus au point de reprise.
-     Les messages arrivés pendant une réponse du Conseil sont lus au nœud suivant. Les prises
-     de parole indépendantes et les votes du comité suivent l'ordre des personas en mode joué.
-  5. Pour la recherche jouée, l'Éclaireur demande au client les résultats et le texte des pages
-     publiques. Le service conserve le nettoyage des requêtes, les plafonds et les filtres.
-     Les résultats et pages du client ont leur propre cache. Le Maquettiste reçoit les pages
-     du PDF en blocs image MCP. Les schémas Pydantic construits dans un nœud sont vérifiés
-     par ce nœud à la reprise, avec ses tentatives habituelles.
-  6. Les leçons reprennent le client du programme lorsque leur production repart hors du
-     contexte de validation. La notation du quiz et l'évaluation d'un projet reprennent le
-     client de leur génération après le geste de January.
-- **Raison** : conserver la même validation métier et l'ordre des échanges, tout en laissant
-  le client utiliser sa connexion pour les appels de modèle du parcours.
+- **Date** 2026-11-18
+- **Subject** Sessions played by Claude Code or Codex through MCP.
+- **Decision**
+  1. Reuse the business routes and the graphs. A played launch chooses the client before the
+     session is created. The runner finds this choice in the database, including after a restart.
+     The number of answers rendered comes from the journal of calls to the `mcp` provider, with a
+     zero
+     LLM cost.
+  2. The client discovers the entries through `agents_play_list` (level 1). The entries reserved
+     for played mode are declared in the feature and opened by `agents_play_start` (level 2).
+     The token's rights are checked on the route's feature and on the graph's. A route subject to
+     confirmation keeps its level.
+  3. Reserve one answer per step in the database before resuming the graph. Comparing the brief's
+     fingerprint protects the association with the answer. A human decision follows its existing
+     entry. A brief whose answer is never rendered expires after 24 hours.
+  4. Keep the user messages and the web results already read at the checkpoint. The messages that
+     arrive during a Council answer are read at the next node. The independent speaking turns and
+     the committee's votes follow the personas' order in played mode.
+  5. For the played search, the Scout asks the client for the results and the text of the public
+     pages. The service keeps the cleaning of the queries, the caps, and the filters. The client's
+     results and pages have their own cache. The Layout designer receives the PDF's pages as MCP
+     image blocks. The Pydantic schemas built in a node are checked by that node at resumption,
+     with its usual attempts.
+  6. The lessons take up the program's client again when their production restarts outside the
+     validation context. Quiz grading and the evaluation of a project take up the client of their
+     generation again after January's gesture.
+- **Reason** Keeping the same business validation and the order of the exchanges, while letting
+  the client use its own connection for the flow's model calls.
 
 ## D217
 
-- **Date** : 2026-11-18
-- **Sujet** : Ajout d'une compétence au référentiel par MCP.
-- **Décision** : `skills_write_skill` ajoute un nom, un domaine facultatif et des synonymes
-  au référentiel du compte. Un nom normalisé déjà présent donne 409. L'ORM permet l'annulation
-  de niveau 2. Les preuves et niveaux suivent les gestes et validations qui les établissent.
-- **Raison** : préparer le référentiel via MCP et garder la progression liée aux preuves.
+- **Date** 2026-11-18
+- **Subject** Adding a skill to the framework through MCP.
+- **Decision** `skills_write_skill` adds a name, an optional domain, and synonyms to the account's
+  framework. A normalized name already present gives 409. The ORM allows the level 2 undo. The
+  proofs and levels follow the gestures and validations that establish them.
+- **Reason** Prepare the framework through MCP and keep progress tied to proofs.
 
 ## D218
 
-- **Date** : 2026-11-18
-- **Sujet** : Menu « Qui fait tourner les agents ».
-- **Décision** : un seul menu, dans le panneau de gauche et en tête de Réglages > Modèles, retenu
-  par le navigateur : « Selon mes réglages », Claude Code (MCP), Codex (MCP), API Claude, API GLM,
-  API OpenAI (grisée sans clé). Il part dans l'en-tête `X-Tremplin-Run` ; le back ne le lit qu'au
-  lancement d'un parcours et le garde sur la session (`played_by` ou `model_provider`, migration
-  0018). Les reprises, les sessions filles, refaire le programme et relancer les brouillons
-  gardent la source de la session d'origine ; une session en cours n'est jamais changée par le
-  menu d'une requête plus tardive. Un fournisseur forcé garde le modèle choisi s'il est chez lui,
-  sinon prend celui de son préréglage pour le niveau.
-- **Raison** : choisir à chaud entre l'abonnement d'un client MCP et une clé d'API, sans toucher
-  aux réglages des niveaux. Menu global plutôt qu'un menu par bouton : livré vite, à affiner en
-  phase 11 si besoin.
+- **Date** 2026-11-18
+- **Subject** “Who runs the agents” menu.
+- **Decision** A single menu, in the left panel and at the head of Settings > Models, remembered
+  by the browser: “Use my settings”, Claude Code (MCP), Codex (MCP), Claude API, GLM API, OpenAI API
+  (greyed out without a key). It goes out in the `X-Tremplin-Run` header; the back end only reads
+  it when a flow is launched and keeps it on the session (`played_by` or `model_provider`,
+  migration 0018). Resumptions, child sessions, redoing the program, and relaunching the drafts
+  keep the source of the original session; a session in progress is never changed by the menu of a
+  later request. A forced provider keeps the chosen model if it is one of its own, otherwise takes
+  that of its preset for the tier.
+- **Reason** Choosing on the fly between an MCP client's subscription and an API key, without
+  touching the tier settings. A global menu rather than a menu per button: delivered quickly, to be
+  refined in phase 11 if needed.
 
 ## D219
 
-- **Date** : 2026-11-18
-- **Sujet** : Taille du profil LinkedIn importé.
-- **Décision** : le PDF LinkedIn du profil maître est lu jusqu'à 40 pages (borne de sûreté) ;
-  le CV garde sa limite de 4 pages.
-- **Raison** : l'export LinkedIn dépasse souvent 4 pages ; son texte est de toute façon coupé à
-  `MAX_SOURCE_CHARS`.
+- **Date** 2026-11-18
+- **Subject** Size of the imported LinkedIn profile.
+- **Decision** The master profile's LinkedIn PDF is read up to 40 pages (safety bound); the résumé
+  keeps its limit of 4 pages.
+- **Reason** The LinkedIn export often exceeds 4 pages; its text is cut at `MAX_SOURCE_CHARS`
+  anyway.
 
 ## D220
 
-- **Date** : 2026-11-18
-- **Sujet** : « Je les maîtrise déjà » depuis l'écart d'une offre.
-- **Décision** : les compétences cochées reçoivent un module « Valider mes acquis »
-  (`modules.kind = "validation"`, migration 0019) dans le programme validé le plus récent : la
-  semaine en cours ou la prochaine qui a de la place. Le module n'a ni tâche ni leçon ; l'Examinateur
-  écrit son quiz d'après les compétences seules, et le réussir les passe à « validé ». La notation
-  est celle de tout quiz de module. Route `POST /postings/{id}/gap/validate`, niveau MCP 2.
-- **Raison** : January veut déclarer ce qu'elle maîtrise, mais « validé » ne s'obtient que par un
-  quiz ou une évaluation ; on réutilise donc le quiz de module au lieu d'un niveau déclaratif.
+- **Date** 2026-11-18
+- **Subject** “I already know these” from a posting's gap.
+- **Decision** The skills checked receive a “Valider mes acquis” (“Validate what I know”)
+  module
+  (`modules.kind = "validation"`, migration 0019) in the most recent validated program: the current
+  week or the next one that has room. The module has no task or lesson; the Examiner writes its quiz
+  from the skills alone, and passing it moves them to “validated”. The grading is that of any module
+  quiz. Route `POST /postings/{id}/gap/validate`, MCP level 2.
+- **Reason** January wants to declare what she knows, but “validated” can only be obtained
+  through a
+  quiz or an evaluation; the module quiz is therefore reused instead of a declarative level.
 
 ## D221
 
-- **Date** : 2026-11-19
-- **Sujet** : Ressources suivies pour les leçons écrites en direct.
-- **Décision** : les outils `lessons_write_lesson` et `lessons_update_lesson` acceptent jusqu'à
-  douze fiches par appel. Une fiche fournit le lien HTTP(S), le titre, le type et la raison de
-  lecture, avec métadonnées facultatives. Les liens sont enregistrés avec la leçon et dédoublonnés
-  par module et adresse normalisée. Les fiches existantes conservent leurs données et leur statut.
-  L'ajout seul préserve le texte, le PDF et le compteur de mots. Les nouvelles fiches commencent à
-  lire et suivent le même historique d'annulation que la leçon. Le serveur ne télécharge pas le lien.
-- **Raison** : January souhaite préparer les cours par MCP et suivre chaque lecture dans la même
-  bibliothèque que les cours issus de la Fabrique de leçons.
+- **Date** 2026-11-19
+- **Subject** Tracked resources for directly written lessons.
+- **Decision** The tools `lessons_write_lesson` and `lessons_update_lesson` accept up to twelve
+  cards per call. A card provides the HTTP(S) link, the title, the type, and the reason for reading,
+  with optional metadata. The links are stored with the lesson and deduplicated by module and
+  normalized address. Existing cards keep their data and status. Adding alone preserves the text,
+  the PDF, and the word counter. The new cards start at `to_read` (“To read”) and follow the same
+  undo history as the lesson. The server does not download the link.
+- **Reason** January wants to prepare the courses through MCP and follow each reading in the same
+  library as the courses coming from the Lesson Factory.
 
 ## D222
 
-- **Date** : 2026-11-22
-- **Sujet** : Fréquence d’interrogation du relais.
-- **Décision** : un seul tour normal toutes les deux minutes, y compris après une erreur
-  de communication. Le relais suit la durée indiquée par le serveur quand il reçoit une
-  429. La configuration manuelle accepte un jeton MCP dédié.
-- **Raison** : une journée au repos consomme au plus 720 appels sur 1 000. Ce réglage garde
-  le contrôle de quotas sur tous les appels et laisse 280 appels les jours d’activité.
+- **Date** 2026-11-22
+- **Subject** Polling frequency of the relay.
+- **Decision** A single normal round every two minutes, including after a communication error. The
+  relay follows the duration given by the server when it receives a 429. Manual configuration
+  accepts a dedicated MCP token.
+- **Reason** A day at rest consumes at most 720 calls out of 1,000. This setting keeps quota control
+  over all the calls and leaves 280 calls on days of activity.
 
 ## D223
 
-- **Date** : 2026-11-22
-- **Sujet** : Contrôles pédagogiques de la Fabrique de leçons.
-- **Décision** : le Vérificateur note cinq critères sur 100, avec une justification par
-  critère. Un critère sous 75 impose une révision dans la limite existante. Le rapport publié
-  conserve les notes. Le contrôle déterministe exige un schéma dans sa section et relève le
-  vocabulaire français courant dans les identifiants et commentaires Python balisés.
-- **Raison** : un seuil par critère évite qu’une moyenne masque une lacune. L’analyse lexicale
-  Python distingue le code et les commentaires des textes d’exemple.
+- **Date** 2026-11-22
+- **Subject** Pedagogical checks of the Lesson Factory.
+- **Decision** The Verifier grades five criteria out of 100, with one justification per criterion.
+  A criterion below 75 requires a revision within the existing limit. The published report keeps
+  the grades. The deterministic check requires a diagram in its section and flags common French
+  vocabulary in the identifiers and in the tagged Python comments.
+- **Reason** A threshold per criterion keeps an average from masking a gap. Python lexical analysis
+  tells the code and its comments apart from the example texts.
 
 ## D224
 
-- **Date** : 2026-11-22
-- **Sujet** : Ordre pédagogique des chapitres.
-- **Décision** : le Constructeur déclare les notions introduites et requises par chapitre.
-  Les définitions sont uniques et un prérequis doit être introduit plus tôt. L’instantané
-  du plan conserve la table des matières dans l’ordre du Stratège et associe au chapitre
-  les identifiants des modules de planning qui en découlent. Le brief présente le glossaire
-  utile, le résumé disponible du chapitre précédent et les notions prévues ensuite.
-  Les anciens instantanés restent lisibles avec un contexte de chapitre vide.
-- **Raison** : l’ordre du livre reste stable quand les tâches sont réparties sur le calendrier.
+- **Date** 2026-11-22
+- **Subject** Pedagogical order of the chapters.
+- **Decision** The Program Builder declares the notions introduced and required per chapter. The
+  definitions are unique and a prerequisite must be introduced earlier. The plan's snapshot keeps
+  the table of contents in the Strategist's order and associates with each chapter the identifiers
+  of the planning modules that follow from it. The brief presents the useful glossary, the
+  available summary of the previous chapter, and the notions planned next. The old snapshots stay
+  readable with an empty chapter context.
+- **Reason** The book's order stays stable when the tasks are spread over the calendar.
 
 ## D225
 
-- **Date** : 2026-11-22
-- **Sujet** : Dernière vérification après un retrait de texte.
-- **Décision** : si l’élagage déterministe de D97 réussit, le Vérificateur relit et note la
-  version élaguée une fois. Une lacune ou une affirmation encore non sourcée cause l’échec.
-- **Raison** : la note publiée doit correspondre au texte que January lira.
+- **Date** 2026-11-22
+- **Subject** Last check after a text removal.
+- **Decision** If D97's deterministic pruning succeeds, the Verifier rereads and grades the pruned
+  version once. A gap or a claim still without a source causes failure.
+- **Reason** The published grade must match the text January will read.
 
 ## D226
 
-- **Date** : 2026-11-22
-- **Sujet** : Reprise des briefs MCP modifiés pendant la phase 11.
-- **Décision** : le Rédacteur, le Vérificateur et le Constructeur republient le brief si
-  le point de reprise contient une réponse dont l’empreinte correspond à une ancienne version.
-  Le nouveau brief reçoit un nouvel identifiant. La réservation et les contrôles MCP restent
-  ceux des sessions jouées.
-- **Raison** : une mise à jour de la norme ou du schéma de réponse peut rendre un ancien rendu
-  inutilisable alors que la session doit encore être reprise.
+- **Date** 2026-11-22
+- **Subject** Resuming MCP briefs modified during phase 11.
+- **Decision** The Writer, the Verifier, and the Program Builder republish the brief if the
+  checkpoint contains an answer whose fingerprint matches an old version. The new brief receives a
+  new identifier. The MCP reservation and checks stay those of the played sessions.
+- **Reason** An update of the standard or of the answer schema can make an old rendering unusable
+  while the session must still be resumed.
 
 ## D227
 
-- **Date** : 2026-11-22
-- **Sujet** : Reconstruction des quatre programmes après les travaux du projet.
-- **Décision** : poursuivre les phases de développement avec les quatre programmes existants.
-  Après la phase 43 et les recettes, relire le pilote LangChain, chiffrer les nouveaux sommaires
-  et chapitres et obtenir l’accord sur le coût avant de tout reconstruire avec OpenAI.
-- **Raison** : January souhaite effectuer la réécriture des cours à la toute fin du projet.
+- **Date** 2026-11-22
+- **Subject** Rebuilding the four programs after the project's work.
+- **Decision** Carry on with the development phases using the four existing programs. After phase 43
+  and the acceptance tests, reread the LangChain pilot, estimate the cost of the new outlines and
+  chapters, and obtain agreement on the cost before rebuilding everything with OpenAI.
+- **Reason** January wants the rewriting of the courses to happen at the very end of the project.
 
 ## D228
 
-- **Date** : 2026-11-22
-- **Sujet** : Plans de développement par lots de cinq phases.
-- **Décision** : conserver le plan de la phase 11 et laisser la phase 12 de côté. De la phase 13
-  à la phase 43, préparer un plan par lot de cinq phases dans l’ordre de reprise. Chaque plan
-  détaille les dépendances et les vérifications par phase. Le dernier lot contient la phase 43.
-- **Raison** : réduire le temps de préparation, avancer en parallèle sur les tâches indépendantes
-  et mutualiser la recette Playwright d’un lot.
+- **Date** 2026-11-22
+- **Subject** Development plans in batches of five phases.
+- **Decision** Keep the phase 11 plan and set phase 12 aside. From phase 13 to phase 43, prepare one
+  plan per batch of five phases in the resumption order. Each plan details the dependencies and the
+  checks per phase. The last batch contains phase 43.
+- **Reason** Reduce preparation time, move forward in parallel on independent tasks, and share a
+  batch's Playwright acceptance test.
 
 ## D229
 
-- **Date** : 2026-11-22
-- **Sujet** : Vérification et annulation d’une soumission de leçon.
-- **Décision** : réserver le brouillon et sa session Fabrique dans la même transaction. La
-  session vérifie le texte fourni, le fait réviser si nécessaire et prépare le PDF avant de
-  publier. Le chapitre précédent reste disponible pendant cette opération. Une soumission
-  refusée garde un motif par catégorie de contrôle et ne redémarre qu’après une nouvelle
-  demande. Une écriture MCP conserve le même historique pendant et après la vérification.
-  L’annulation rétablit le texte, le lien PDF, les ressources et la mémoire de la version
-  précédente tant que l’historique est disponible et que les données n’ont pas changé.
-- **Raison** : la lecture et la reprise après une interruption doivent rester cohérentes,
-  et les ressources ajoutées avec une leçon gardent l’annulation prévue par D221.
+- **Date** 2026-11-22
+- **Subject** Checking and undoing a lesson submission.
+- **Decision** Reserve the draft and its Lesson Factory session in the same transaction. The session
+  checks the text provided, has it revised if needed, and prepares the PDF before publishing. The
+  previous chapter stays available during this operation. A refused submission keeps one reason per
+  check category and only restarts after a new request. An MCP write keeps the same history during
+  and after the check. The undo restores the text, the PDF link, the resources, and the memory of
+  the previous version as long as the history is available and the data has not changed.
+- **Reason** Reading and resuming after an interruption must stay consistent, and the resources
+  added with a lesson keep the undo provided by D221.
 
 ## D230
 
-- **Date** : 2026-11-22
-- **Sujet** : Passage cité et coût du Professeur dans une leçon.
-- **Décision** : un fil par compte et leçon, avec le rang du passage quand le texte se répète.
-  La session vérifie l’empreinte de la version publiée entre l’envoi et la réponse. Chaque
-  fil peut avoir au plus 100 tours et 100 000 jetons. Le total des conversations est limité
-  à 300 000 jetons par jour local. Le serveur réserve jusqu’à 12 000 jetons par tour, borne
-  le contexte et limite la sortie du fournisseur. Si une nouvelle question dépasserait la
-  limite, elle est refusée avant l’appel. Le modèle rapide répond par défaut et le modèle fort
-  est demandé pour un tour. Le client joué utilise le même fil et n’appelle aucun modèle d’API.
-- **Raison** : relire le passage réellement sélectionné et maîtriser le coût même après une
-  reprise ou lorsque plusieurs réponses sont en cours pour le même compte.
+- **Date** 2026-11-22
+- **Subject** Quoted passage and cost of the Lesson tutor in a lesson.
+- **Decision** One thread per account and lesson, with the rank of the passage when the text
+  repeats. The session checks the fingerprint of the published version between sending and answer.
+  Each thread can have at most 100 turns and 100,000 tokens. The total of the conversations is
+  limited to 300,000 tokens per local day. The server reserves up to 12,000 tokens per turn, bounds
+  the context, and limits the provider's output. If a new question would exceed the limit, it is
+  refused before the call. The fast model answers by default and the strong model is requested for a
+  turn. The played client uses the same thread and calls no API model.
+- **Reason** Reread the passage actually selected and control the cost even after a resumption or
+  when several answers are in progress for the same account.
 
 ## D231
 
-- **Date** : 2026-11-22
-- **Sujet** : Publication sur GitHub par tranches de vingt phases.
-- **Décision** : garder les commits intermédiaires en local. Pousser après vingt phases terminées
-  et testées à partir de la phase 11, sans compter la phase 12 écartée. Le premier jalon est la
-  phase 31. L’identité Git `Ruldane <l.nizzoli@gmail.com>` reste configurée au niveau du dépôt
-  Tremplin.
-- **Raison** : January souhaite publier le développement par tranches de vingt phases.
+- **Date** 2026-11-22
+- **Subject** Publishing on GitHub in batches of twenty phases.
+- **Decision** Keep the intermediate commits local. Push after twenty phases finished and tested
+  starting from phase 11, not counting the set-aside phase 12. The first milestone is phase 31. The
+  Git identity `Ruldane <l.nizzoli@gmail.com>` stays configured at the level of the Tremplin
+  repository.
+- **Reason** January wants to publish the development in batches of twenty phases.
 
 ## D232
 
-- **Date** : 2026-11-22
-- **Sujet** : Lots de dix phases et vérifications ciblées.
-- **Décision** : remplacer les lots de cinq de D228 par des lots de dix. D231 fixe le push
-  après deux lots complets.
-  Exécuter une revue par phase et une ou deux revues d’ensemble à la fin de chaque lot.
-  Garder les tests ciblés, les contrôles obligatoires et les parcours Playwright concernés.
-  Regrouper les vérifications communes au niveau du lot.
-- **Raison** : consacrer davantage de temps à l’implémentation et limiter les relances de suites.
+- **Date** 2026-11-22
+- **Subject** Batches of ten phases and targeted checks.
+- **Decision** Replace D228's batches of five with batches of ten. D231 sets the push after two
+  complete batches. Run one review per phase and one or two overall reviews at the end of each
+  batch. Keep the targeted tests, the mandatory checks, and the Playwright flows concerned. Group
+  the common checks at the batch level.
+- **Reason** Devote more time to implementation and limit reruns of the suites.
 
 ## D233
 
-- **Date** : 2026-11-22
-- **Sujet** : Suivi d’étude d’une séance training et retrait des sources de Cerveau.
-- **Décision** : partager le créneau ouvert du suivi d’étude entre séances guidées et training.
-  Le bilan training produit des fiches et preuves de pratique à partir des leçons citées
-  et inscrit son temps dans le journal. La clôture ne complète aucune tâche planifiée.
-  Une note synchronisée remplacée ou retirée cesse d’être recherchée. Le Bibliothécaire
-  omet du contexte de ses nouvelles réponses les tours qui ont utilisé cette version.
-- **Raison** : conserver un seul suivi d’étude et respecter les sources disponibles à chaque demande.
+- **Date** 2026-11-22
+- **Subject** Study tracking of a training session and removal of sources from the Brain.
+- **Decision** Share the open study-tracking slot between guided sessions and training. The training
+  review produces cards and practice proofs from the lessons cited and records its time in the
+  journal. Closing completes no scheduled task. A synchronized note that is replaced or removed
+  stops being searched. The Knowledge librarian leaves out of the context of its new answers the
+  turns that used that version.
+- **Reason** Keep a single study tracking and respect the sources available at each request.
 
 ## D234
 
-- **Date** : 2026-11-22
-- **Sujet** : Appairage du relais depuis Réglages.
-- **Décision** : le navigateur transmet au relais local un code à usage unique valable deux
-  minutes. Le relais vérifie l’origine et échange le code auprès de son API configurée.
-  Le jeton dédié est valable 30 jours. Un renouvellement révoque le jeton précédent. Les
-  réglages indiquent l’état de l’appairage et ses portées manquantes, sans afficher le jeton.
-- **Raison** : remplacer la copie manuelle des jetons et diagnostiquer les sessions ignorées.
+- **Date** 2026-11-22
+- **Subject** Pairing the relay from Settings.
+- **Decision** The browser passes to the local relay a single-use code valid for two minutes. The
+  relay checks the origin and exchanges the code with its configured API. The dedicated token is
+  valid for 30 days. A renewal revokes the previous token. The settings show the pairing's state and
+  its missing scopes, without displaying the token.
+- **Reason** Replace the manual copying of tokens and diagnose the ignored sessions.
 
 ## D235
 
-- **Date** : 2026-11-22
-- **Sujet** : Priorité de la source des agents et préservation des faits dans le CV.
-- **Décision** : un lancement peut choisir le fournisseur près du bouton. Il suit le choix
-  global du navigateur si ce menu est laissé par défaut. Une reprise ou un travail dérivé
-  conserve la source enregistrée par sa session d’origine. Dans le CV ciblé, une coupe qui
-  retirerait un lien ou une preuve forte est omise de la composition. Le gabarit répartit
-  les compétences sur deux ou trois colonnes si le bloc le permet.
-- **Raison** : reproduire le choix d’exécution et conserver les faits utiles du profil source.
+- **Date** 2026-11-22
+- **Subject** Priority of the agents' source and preservation of facts in the résumé.
+- **Decision** A launch can choose the provider next to the button. It follows the browser's global
+  choice if this menu is left at its default. A resumption or a derived job keeps the source stored
+  by its original session. In the targeted résumé, a cut that would remove a link or a strong
+  proof is left out of the composition. The template spreads the skills over two or three columns if
+  the block allows it.
+- **Reason** Reproduce the execution choice and keep the useful facts of the source profile.
 
 ## D236
 
-- **Date** : 2026-11-22
-- **Sujet** : Collecte quotidienne et actions de la pile de lecture.
-- **Décision** : collecter par compte après l’heure du brief, en partageant le registre
-  existant des tâches planifiées. Les sources explicites sont limitées à douze. La pile
-  déduplique les URL normalisées et conserve l’état de lecture. Le résumé reprend la notice
-  disponible ou un extrait du texte. La fiche de révision d’une lecture reprend ce résumé.
-  Une proposition pour un programme passe par la replanification et son acceptation.
-- **Raison** : reprendre après interruption et rendre chaque action explicite dans son outil
-  d’origine.
+- **Date** 2026-11-22
+- **Subject** Daily collection and actions of the reading stack.
+- **Decision** Collect per account after the brief's time, sharing the existing registry of
+  scheduled tasks. Explicit sources are limited to twelve. The stack deduplicates normalized URLs
+  and keeps the reading state. The summary reuses the available notice or an excerpt of the text. A
+  reading's review card reuses this summary. A proposal for a program goes through replanning and
+  its acceptance.
+- **Reason** Resume after an interruption and make each action explicit in its original tool.
 
 ## D237
 
-- **Date** : 2026-11-22
-- **Sujet** : Comparaison des rythmes dans « Ton futur toi ».
-- **Décision** : la projection lit le dernier relevé exploitable du poste et de la zone ainsi que
-  les niveaux actuels. Une offre compte si son score atteint le seuil du radar (70 %) et si
-  toutes ses compétences obligatoires sont acquises. Le rythme observé prend jusqu’à quatre
-  semaines locales complètes, jours sans étude compris. Deux semaines sont nécessaires pour
-  estimer ce rythme. Le calcul suppose que le travail restant d’un chapitre valide les
-  compétences qu’il vise. Les scénarios divisent sa charge par le rythme choisi et arrondissent
-  le délai au jour supérieur. Un relevé de moins de 30 offres exploitables rend l’estimation
-  indicative. La comparaison est en lecture seule, y compris par MCP. Le changement de rythme
-  planifié passe par la replanification et sa confirmation.
-- **Raison** : rapprocher les offres et le travail réellement accompli avec une règle reproductible.
+- **Date** 2026-11-22
+- **Subject** Comparing paces in “Your future self”.
+- **Decision** The projection reads the last usable scan of the role and zone as well as the current
+  levels. A posting counts if its score reaches the radar's threshold (70%) and if all its mandatory
+  skills are acquired. The observed pace takes up to four complete local weeks, days without study
+  included. Two weeks are needed to estimate this pace. The computation assumes that the remaining
+  work of a chapter validates the skills it targets. The scenarios divide its load by the chosen
+  pace and round the delay up to the next day. A scan with fewer than 30 usable postings makes the
+  estimate indicative. The comparison is read-only, including through MCP. The scheduled pace change
+  goes through replanning and its confirmation.
+- **Reason** Bring postings and the work actually done closer together with a reproducible rule.
 
 ## D238
 
-- **Date** : 2026-11-22
-- **Sujet** : Compilation et notes liées dans Ton livre.
-- **Décision** : lire l’ordre du sommaire, avec l’ordre des modules comme repli pour les plans
-  historiques. Inclure les chapitres publiés et les notes Markdown synchronisées du compte qui
-  portent le lien wiki `[[tremplin:lesson:<id-de-la-leçon>]]`. Le planificateur relit les sources
-  toutes les 30 secondes. Les deux fichiers sont remplacés ensemble après un rendu réussi.
-- **Raison** : reproduire la compilation et sélectionner les notes sur un lien explicite.
+- **Date** 2026-11-22
+- **Subject** Compilation and linked notes in Your book.
+- **Decision** Read the outline's order, with the order of the modules as a fallback for historical
+  plans. Include the published chapters and the account's synchronized Markdown notes that carry the
+  wiki link `[[tremplin:lesson:<lesson-id>]]`. The scheduler rereads the sources every 30 seconds.
+  The two files are replaced together after a successful rendering.
+- **Reason** Reproduce the compilation and select the notes on an explicit link.
 
 ## D239
 
-- **Date** : 2026-11-22
-- **Sujet** : Synthèse de voix et révisions du podcast.
-- **Décision** : publier le dialogue et les trois questions avant de lancer les voix. Utiliser deux
-  voix OpenAI Realtime en PCM mono 24 kHz, stockées dans le même WAV par compte. Si l’audio échoue,
-  afficher le dialogue et les questions. Collecter les erreurs de la veille dans le fuseau du
-  compte, les cartes dues et les notes actives pertinentes pour le chapitre publié.
-- **Raison** : garder l’épisode lisible et le quiz disponible quand la synthèse est indisponible.
+- **Date** 2026-11-22
+- **Subject** Voice synthesis and reviews of the podcast.
+- **Decision** Publish the dialogue and the three questions before launching the voices. Use two
+  OpenAI Realtime voices in 24 kHz mono PCM, stored in the same WAV per account. If the audio fails,
+  display the dialogue and the questions. Collect the previous day's errors in the account's time
+  zone, the due cards, and the active notes relevant to the published chapter.
+- **Reason** Keep the episode readable and the quiz available when synthesis is unavailable.
 
 ## D240
 
-- **Date** : 2026-11-22
-- **Sujet** : Issues et publication dans Contributrice open source.
-- **Décision** : chercher dans trois dépôts publics étudiés au plus. Après confirmation du texte
-  et des branches, ouvrir GitHub pour que l’utilisatrice y publie avec son compte. Un repère du
-  dossier et la comparaison du compte et des branches associent la pull request à la préparation.
-  Une fusion vérifiée entraîne une preuve et une proposition de ligne de CV.
-- **Raison** : laisser la publication à l’utilisatrice et relier la preuve au travail préparé.
+- **Date** 2026-11-22
+- **Subject** Issues and publication in Open source contributor.
+- **Decision** Search in three public repositories studied at most. After confirmation of the text
+  and the branches, open GitHub so that the user publishes there with her account. A marker in the
+  dossier and the comparison of the account and the branches associate the pull request with the
+  preparation. A verified merge brings a proof and a proposal for a résumé line.
+- **Reason** Leave the publication to the user and tie the proof to the prepared work.
 
 ## D241
 
-- **Date** : 2026-11-22
-- **Sujet** : Trois camarades pour une leçon dans la classe virtuelle.
-- **Décision** : créer un fil de classe par leçon prête et par compte. Le Tuteur répond en
-  débutant, pair puis avancé dans le budget d’un tour. Les trois rôles et la leçon source sont
-  conservés dans une même écriture après vérification de la version publiée.
-- **Raison** : exercer l’explication à trois niveaux et reprendre la discussion.
+- **Date** 2026-11-22
+- **Subject** Three classmates for a lesson in the virtual classroom.
+- **Decision** Create one classroom thread per ready lesson and per account. The Tutor answers as a
+  beginner, a peer, then an advanced learner within a turn's budget. The three roles and the source
+  lesson are kept in a single write after checking the published version.
+- **Reason** Practice explaining at three levels and resume the discussion.
 
 ## D242
 
-- **Date** : 2026-11-22
-- **Sujet** : Relevé de référence pour la négociation de salaire.
-- **Décision** : figer le dernier relevé terminé du poste et de la zone. Les salaires annuels
-  bruts explicitement publiés en euros définissent l’offre basse et la limite haute. Une demande
-  argumentée peut obtenir une concession plafonnée. Le bilan indique l’écart et le motif.
-- **Raison** : garder des montants reliés à une source et des règles de simulation vérifiables.
+- **Date** 2026-11-22
+- **Subject** Reference scan for salary negotiation.
+- **Decision** Freeze the last finished scan of the role and zone. The gross annual salaries
+  explicitly published in euros define the low offer and the high limit. A reasoned request can
+  obtain a capped concession. The review states the gap and the reason.
+- **Reason** Keep amounts tied to a source and verifiable simulation rules.
 
 ## D243
 
-- **Date** : 2026-11-22
-- **Sujet** : Séances Python, notebooks et passerelle modèle.
-- **Décision** : une séance contient les fichiers du projet et leurs onglets. Le terminal utilise
-  un pseudo-terminal Linux avec une interface texte et une saisie par ligne. Chaque exécution
-  de cellule ouvre un processus Python dans le bac. La réexécution des cellules précédentes
-  est proposée avec le notebook `.ipynb`. La passerelle OpenAI utilise le client Tremplin sur
-  socket local et réserve jusqu’à 10 000 jetons par compte et par jour, à raison de trois appels
-  par travail au plus. Le navigateur garde les brouillons de cellules par onglet et la version
-  de départ pour détecter un conflit lors de l’enregistrement.
-- **Raison** : retrouver le projet et les brouillons, maîtriser le coût et limiter les échanges
-  depuis le bac aux demandes du travail courant.
+- **Date** 2026-11-22
+- **Subject** Python sessions, notebooks, and the model gateway.
+- **Decision** A session contains the project's files and their tabs. The terminal uses a Linux
+  pseudo-terminal with a text interface and line-by-line input. Each cell execution opens a Python
+  process in the sandbox. Rerunning the previous cells is offered with the `.ipynb` notebook. The
+  OpenAI gateway uses the Tremplin client over a local socket and reserves up to 10,000 tokens per
+  account and per day, at most three calls per job. The browser keeps the cell drafts per tab and
+  the starting version to detect a conflict at saving.
+- **Reason** Find the project and the drafts again, control the cost, and limit the exchanges from
+  the sandbox to the current job's requests.
 
 ## D244
 
-- **Date** : 2026-11-22
-- **Sujet** : Horloge simulée et preuve de réparation dans Astreinte.
-- **Décision** : avancer par gestes jusqu’à douze minutes, avec une graine qui détermine l’alerte
-  et les métriques fictives. Le diagnostic rejoue le contexte d’alerte dans le bac du projet
-  Python. Le contrôleur lit les résultats du service dans un canal dédié. Les observations
-  suivantes repassent au niveau sain tant que le diagnostic correspond au projet sauvegardé.
-  Le rapport doit citer un journal consulté et reste lié à l’empreinte vérifiée au moment de
-  l’envoi. Son évaluation note quatre critères. La réparation confirmée et le rapport validé
-  ajoutent une seule preuve à la carte des compétences.
-  Un diagnostic au plus est réservé par compte, y compris entre incidents.
-- **Raison** : rendre chaque incident reproductible et rattacher la preuve au travail réparé.
+- **Date** 2026-11-22
+- **Subject** Simulated clock and repair proof in On-call.
+- **Decision** Advance by gestures up to twelve minutes, with a seed that determines the alert and
+  the fictitious metrics. The diagnosis replays the alert's context in the Python project's sandbox.
+  The controller reads the service's results in a dedicated channel. The following observations go
+  back to the healthy level as long as the diagnosis matches the saved project. The report must cite
+  a log consulted and stays tied to the fingerprint verified at the time of sending. Its evaluation
+  grades four criteria. The confirmed repair and the validated report add a single proof to the
+  skills map. At most one diagnosis is reserved per account, including between incidents.
+- **Reason** Make each incident reproducible and tie the proof to the repaired work.
 
 ## D245
 
-- **Date** : 2026-11-22
-- **Sujet** : Corrections de recette du livre, du podcast et des contributions.
-- **Décision** : rasteriser les diagrammes Mermaid avec le rendu du livre et joindre leur
-  description. Conserver une alternative textuelle si un schéma ne se rend pas. Pour le
-  podcast, accepter un dialogue de 1 550 à 1 850 mots et publier le WAV si sa durée se situe
-  entre dix et quinze minutes. La transcription et le quiz restent lisibles si la synthèse
-  échoue. Le lancement vocal et les écritures de contribution non annulables demandent la
-  confirmation MCP de niveau 3. Les textes et les liens GitHub sont balisés comme données.
-- **Raison** : garder les diagrammes lisibles dans les deux formats, contrôler la durée
-  réellement produite et adapter les niveaux MCP aux effets des actions.
+- **Date** 2026-11-22
+- **Subject** Acceptance-test fixes for the book, the podcast, and the contributions.
+- **Decision** Rasterize the Mermaid diagrams with the book's rendering and attach their
+  description. Keep a text alternative if a diagram does not render. For the podcast, accept a
+  dialogue of 1,550 to 1,850 words and publish the WAV if its duration is between ten and fifteen
+  minutes. The transcript and the quiz stay readable if the synthesis fails. The voice launch and
+  the non-undoable contribution writes ask for level 3 MCP confirmation. The GitHub texts and links
+  are tagged as data.
+- **Reason** Keep the diagrams readable in both formats, check the duration actually produced, and
+  adapt the MCP levels to the actions' effects.
 
 ## D246
 
-- **Date** : 2026-11-22
-- **Sujet** : Deux erreurs isolées dans une copie de la leçon.
-- **Décision** : figer le texte publié à l’ouverture de l’exercice et demander au Vérificateur
-  deux remplacements localisés. Vérifier par le code que chaque extrait apparaît une seule fois
-  et que les deux extraits sont disjoints. Après la remise des deux réponses, le Vérificateur
-  rend un bilan conservé avec les corrections. Le texte publié reste la source du chapitre.
-- **Raison** : exercer la lecture critique sur des passages précis en gardant la correction liée
-  à la version effectivement lue.
+- **Date** 2026-11-22
+- **Subject** Two isolated errors in a copy of the lesson.
+- **Decision** Freeze the text published when the exercise opens and ask the Verifier for two
+  localized replacements. Check in the code that each excerpt appears only once and that the two
+  excerpts are disjoint. After the two answers are handed in, the Verifier returns a review kept
+  with the corrections. The published text stays the chapter's source.
+- **Reason** Practice critical reading on precise passages while keeping the correction tied to the
+  version actually read.
 
 ## D247
 
-- **Date** : 2026-11-22
-- **Sujet** : Instantané et citations du procès du code.
-- **Décision** : conserver un procès par version enregistrée du projet Python et par compte.
-  Les rôles examinent des passages bornés de la même copie sur OpenAI. Le serveur rattache
-  leurs références aux lignes exactes du projet figé. Le verdict motivé est enregistré dans
-  l’interface et reste consultable par identifiant.
-- **Raison** : relire l’argumentation avec sa source après une modification du projet.
+- **Date** 2026-11-22
+- **Subject** Snapshot and citations of the code trial.
+- **Decision** Keep one trial per saved version of the Python project and per account. The roles
+  examine bounded passages of the same copy on OpenAI. The server attaches their references to the
+  exact lines of the frozen project. The reasoned verdict is stored in the interface and stays
+  consultable by identifier.
+- **Reason** Reread the argumentation with its source after a modification of the project.
 
 ## D248
 
-- **Date** : 2026-11-22
-- **Sujet** : Reproduction pédagogique à partir d’un article public.
-- **Décision** : préparer un mini-cours indépendant avec une citation du texte lu par Recherche.
-  Créer avec lui un projet IDE comprenant le notebook et le résultat attendu. L’expérience
-  travaille à petite échelle avec des données générées. Si le protocole disponible est
-  incomplet, le cours précise ce que l’expérience illustre. La préparation par MCP
-  demande confirmation.
-- **Raison** : garder la citation et l’exercice associés, puis comparer la mesure obtenue
-  au résultat annoncé dans le notebook.
+- **Date** 2026-11-22
+- **Subject** Pedagogical reproduction from a public paper.
+- **Decision** Prepare an independent mini-course with a quotation from the text read by Research.
+  Create with it an IDE project including the notebook and the expected result. The experiment works
+  at small scale with generated data. If the available protocol is incomplete, the course states
+  what the experiment illustrates. Preparation through MCP asks for confirmation.
+- **Reason** Keep the quotation and the exercise associated, then compare the measure obtained with
+  the result announced in the notebook.
 
 ## D249
 
-- **Date** : 2026-11-22
-- **Sujet** : Boss chronométré de fin de programme.
-- **Décision** : ouvrir une tentative par programme et par compte après les tâches requises.
-  Le serveur fixe trente minutes et révèle après dix minutes la nouvelle demande du client
-  simulé. La remise fige les fichiers sauvegardés. Le bac vérifie quatre cas sur ce projet
-  et compte pour dix points. Une évaluation OpenAI note la lisibilité et la maintenance
-  sur cinq points chacune. Le succès aux quatre cas et une note d’au moins 14/20 ajoutent
-  une preuve IDE de développement Python, au niveau en cours. Une reprise de l’évaluation
-  conserve la remise.
-- **Raison** : contrôler le fonctionnement et l’adaptation au besoin client sur une version datée.
+- **Date** 2026-11-22
+- **Subject** Timed end-of-program Boss.
+- **Decision** Open one attempt per program and per account after the required tasks. The server
+  sets thirty minutes and reveals after ten minutes the simulated client's new request. Handing in
+  freezes the saved files. The sandbox checks four cases on this project and counts for ten points.
+  An OpenAI evaluation grades readability and maintainability out of five points each. Success on
+  the four cases and a grade of at least 14/20 add an IDE proof of Python development, at the “in
+  progress” level. A resumption of the evaluation keeps the submission.
+- **Reason** Check the operation and the adaptation to the client's need on a dated version.
 
 ## D250
 
-- **Date** : 2026-11-22
-- **Sujet** : Révision Telegram en mode texte par Nod.
-- **Décision** : le compte associe le consentement à un chat privé, à un créneau local et
-  à l’identifiant d’un jeton limité à la révision par messagerie. Tremplin réserve une
-  carte due par date locale et conserve la réponse appliquée pour les rejeux. Nod assure
-  le transport. Le geste générique de révision conserve son accès réservé à l’interface.
-- **Raison** : utiliser le calendrier de révision du compte et reconnaître une réponse
-  au même défi sans corriger deux fois la fiche.
+- **Date** 2026-11-22
+- **Subject** Telegram review in text mode through Nod.
+- **Decision** The account associates the consent with a private chat, a local time slot, and the
+  identifier of a token limited to review by messaging. Tremplin reserves one due card per local
+  date and keeps the answer applied for replays. Nod provides the transport. The generic review
+  gesture keeps its access reserved to the interface.
+- **Reason** Use the account's review calendar and recognize an answer to the same challenge without
+  grading the card twice.
 
 ## D251
 
-- **Date** : 2026-11-22
-- **Sujet** : Détection et validation des retouches de bibliothèque.
-- **Décision** : relire les journaux de version de la pile de lecture. Les remplacements
-  explicitement nommés et employés dans un exemple Python publié forment une proposition
-  par compte, leçon, bibliothèque et version. Le Vérificateur prépare les seuls blocs
-  concernés. Après accord de l’utilisatrice et vérification de l’empreinte publiée, le
-  circuit de vérification et de publication de la leçon prend la retouche en charge.
-- **Raison** : retrouver la source de chaque suggestion et garder la leçon lisible pendant la vérification.
+- **Date** 2026-11-22
+- **Subject** Detection and validation of library touch-ups.
+- **Decision** Reread the version logs of the reading stack. The replacements explicitly named and
+  used in a published Python example form one proposal per account, lesson, library, and version.
+  The Verifier prepares only the blocks concerned. After the user's agreement and verification of
+  the published fingerprint, the lesson's verification and publication circuit takes the touch-up in
+  charge.
+- **Reason** Find the source of each suggestion and keep the lesson readable during the
+  verification.
 
 ## D252
 
-- **Date** : 2026-11-22
-- **Sujet** : Demande et simulation de la Bourse des compétences.
-- **Décision** : comparer deux relevés clos et filtrés sur le même poste et la même zone.
-  Le taux mesure la part des offres d’un relevé qui mentionnent la compétence, une fois
-  par offre. Avec moins de 30 offres dans l’un des relevés, la page indique que
-  l’échantillon est indicatif. La simulation applique 60 minutes au prochain chapitre
-  planifié qui vise cette compétence et estime la couverture des exigences obligatoires
-  dans le relevé courant si le chapitre est achevé.
-- **Raison** : rendre les dénominateurs et hypothèses visibles et préserver le planning.
+- **Date** 2026-11-22
+- **Subject** Demand and simulation for the Skill market.
+- **Decision** Compare two closed and filtered scans for the same role and the same area. The rate
+  measures the share of a scan's postings that mention the skill, counted once per posting. With
+  fewer than 30 postings in either scan, the page indicates that the sample is indicative only. The
+  simulation applies 60 minutes to the next scheduled chapter that targets this skill and estimates
+  the coverage of the mandatory requirements in the current scan if the chapter is completed.
+- **Reason** Make the denominators and assumptions visible and preserve the schedule.
 
 ## D253
 
-- **Date** : 2026-11-22
-- **Sujet** : Projection de la Galaxie du savoir.
-- **Décision** : relire les compétences et les documents actifs du Cerveau. Résoudre les
-  renvois dans leur dossier et rattacher les étiquettes aux noms normalisés des compétences.
-  Les écarts sont ceux du programme de l’objectif courant. La projection 3D Canvas et la
-  liste partagent la sélection. Celle-ci ouvre un chapitre publié lorsqu’il est lié ou propose
-  le sujet dans le training. Toute note active reste accessible dans la Mémoire.
-- **Raison** : rendre visibles les relations et écarts existants avec la même navigation au clavier.
+- **Date** 2026-11-22
+- **Subject** Projection of the Knowledge galaxy.
+- **Decision** Reread the skills and the active documents of the Brain. Resolve the references
+  within their folder and attach the labels to the normalized skill names. The gaps are those of the
+  current goal's program. The 3D Canvas projection and the list share the selection. The selection
+  opens a published chapter when it is linked, or suggests the topic in the training. Every active
+  note remains accessible in Memory.
+- **Reason** Make the existing relations and gaps visible with the same keyboard navigation.
 
 ## D254
 
-- **Date** : 2026-11-22
-- **Sujet** : Version et repères des défis personnels.
-- **Décision** : figer l’empreinte des questions ou de l’énoncé pour classer les tentatives
-  comparables. Le quiz enregistre la durée de jeu et la part des questions remplies. L’IDE
-  compare les durées et résultats des vérifications du bac, pour le même exercice. Le journal
-  ouvre aussi une tentative ancienne en dehors de la liste récente. Les anciens enregistrements
-  exposent les seuls repères disponibles et signalent une version inconnue.
-- **Raison** : comparer les mêmes consignes et ne révéler aucune réponse passée pendant le défi.
+- **Date** 2026-11-22
+- **Subject** Version and benchmarks of personal challenges.
+- **Decision** Freeze the fingerprint of the questions or of the statement in order to classify
+  comparable attempts. The quiz records the play time and the share of questions filled in. The IDE
+  compares the durations and results of the sandbox checks, for the same exercise. The journal also
+  opens an older attempt outside the recent list. The older records expose only the benchmarks
+  available and flag an unknown version.
+- **Reason** Compare the same instructions and reveal no past answer during the challenge.
 
 ## D255
 
-- **Date** : 2026-11-22
-- **Sujet** : Consentement et reprise d’un entretien surprise par messagerie.
-- **Décision** : l’entretien demande un consentement et un jeton Nod dédiés. La discussion
-  privée et son créneau proviennent de la phase 24. Un jour et un instant de la semaine
-  locale déterminent l’invitation unique. Le moteur existant réserve l’entretien à
-  l’acceptation et reçoit trois réponses techniques, liées à leurs interruptions et à
-  leurs identifiants de message.
-- **Raison** : permettre de reprendre la discussion et garder les deux autorisations Telegram distinctes.
+- **Date** 2026-11-22
+- **Subject** Consent and resumption of a surprise interview by messaging.
+- **Decision** The interview requires a dedicated consent and a dedicated Nod token. The private
+  discussion and its slot come from phase 24. A day and a moment of the local week determine the
+  single invitation. The existing engine reserves the interview for acceptance and receives three
+  technical answers, tied to their interruptions and to their message identifiers.
+- **Reason** Allow the discussion to be resumed and keep the two Telegram authorizations distinct.
 
 ## D256
 
-- **Date** : 2026-11-22
-- **Sujet** : Corrections et reprises repérées pendant la recette du lot 2.
-- **Décision** : vérifier la citation de l’article dans le texte lu avant publication.
-  Permettre une relance explicite de la proposition de mise à jour après un échec, en
-  contrôlant à nouveau l’empreinte. Garder le reçu technique de Nod dans le transport
-  afin qu’un rejeu puisse reprendre une réponse interrompue sans doublon. Lier chaque
-  vérification IDE terminée depuis l’interface à son repère dans le journal.
-- **Raison** : permettre de reprendre les parcours après un échec en conservant la provenance
-  de la citation, de la réponse Telegram et de la mesure de vérification.
+- **Date** 2026-11-22
+- **Subject** Fixes and resumptions spotted during the acceptance test of batch 2.
+- **Decision** Verify the article's citation in the text read before publication. Allow an explicit
+  retry of the update proposal after a failure, checking the fingerprint again. Keep Nod's technical
+  receipt in the transport so that a replay can resume an interrupted answer without a duplicate.
+  Link each IDE check completed from the interface to its marker in the journal.
+- **Reason** Allow the flows to be resumed after a failure while keeping the provenance of the
+  citation, of the Telegram answer and of the check measurement.
 
 ## D257
 
-- **Date** : 2026-11-22
-- **Sujet** : Débat d’experts sur une question.
-- **Décision** : le Chercheur, le Praticien et le Sceptique parlent successivement dans un
-  fil du compte. Les sources proviennent d’une recherche nettoyée suivie d’au plus quatre
-  lectures. Chaque prise de parole conserve uniquement les références qu’elle a citées et
-  qui figurent dans ce catalogue. Le jugement est saisi et enregistré après le débat.
-- **Raison** : permettre de vérifier les références de chaque position et de reprendre son jugement.
+- **Date** 2026-11-22
+- **Subject** Expert debate on a question.
+- **Decision** The Researcher, the Practitioner and the Skeptic speak in succession in a thread of
+  the account. The sources come from a cleaned search followed by at most four readings. Each turn
+  keeps only the references it cited and that appear in this catalogue. The judgment is entered and
+  recorded after the debate.
+- **Reason** Allow the references of each position to be verified and its judgment to be resumed.
 
 ## D258
 
-- **Date** : 2026-11-22
-- **Sujet** : Glossaire de la liseuse et fiches d’extraits.
-- **Décision** : utiliser les définitions des sommaires validés, avec priorité au programme
-  le plus récent en cas d’homonyme. Un terme ouvre la définition au survol ou au clavier,
-  avec un lien lorsque son chapitre est publié. Le serveur vérifie qu’un passage choisi
-  figure encore dans l’article avant d’en faire une fiche associée à sa source.
-  L’interface signale la limite de 1 200 caractères sur la sélection entière.
-- **Raison** : garder les définitions et les fiches liées aux données effectivement lues.
+- **Date** 2026-11-22
+- **Subject** Reader glossary and excerpt cards.
+- **Decision** Use the definitions from the validated outlines, giving priority to the most recent
+  program in case of homonyms. A term opens its definition on hover or by keyboard, with a link when
+  its chapter is published. The server verifies that a chosen passage still appears in the article
+  before turning it into a card tied to its source. The interface flags the 1,200-character limit on
+  the whole selection.
+- **Reason** Keep the definitions and cards tied to the data actually read.
 
 ## D259
 
-- **Date** : 2026-11-22
-- **Sujet** : Alertes du Radar vers les écarts de compétences.
-- **Décision** : réutiliser le relevé du Radar et le brief. Chaque brief reclasse les offres
-  de sa semaine locale notées à 70 ou plus, dédoublonne les liens et retient les cinq
-  meilleures. Il signale les entrées du classement encore inédites. L’écart
-  s’appuie sur les exigences du relevé et les niveaux actuels. Les manques choisis ouvrent
-  une proposition du Stratège soumise à la validation habituelle.
-- **Raison** : rendre une offre sélectionnée exploitable depuis le brief et décider des ajouts au planning.
+- **Date** 2026-11-22
+- **Subject** Radar alerts toward skill gaps.
+- **Decision** Reuse the Radar scan and the brief. Each brief re-ranks the postings of its local
+  week rated 70 or more, deduplicates the links and keeps the top five. It flags the ranking entries
+  that are still new. The gap relies on the scan's requirements and on the current levels. The
+  chosen shortfalls open a Strategist proposal subject to the usual validation.
+- **Reason** Make a selected posting actionable from the brief and decide on additions to the
+  schedule.
 
 ## D260
 
 - **Date** 2026-11-22
-- **Sujet** Pilote de concentration en quiz et training.
-- **Décision** Comparer les trois premières réponses mesurées et évaluées aux trois dernières.
-  Proposer une adaptation quand leur médiane augmente d’au moins 40 % et 1,5 seconde et que
-  deux erreurs supplémentaires sont observées. Les mesures de 300 ms à 90 s restent dans le
-  navigateur. Une interruption, un intervalle d’inactivité supérieur à 30 s ou un onglet masqué
-  écarte la mesure. Le quiz attend la correction existante. Le Tuteur joint à sa réponse un
-  repère facultatif uniquement pour un exercice qu’il estime avoir pu évaluer. La pause garde
-  le résultat du quiz ou le fil et le brouillon du training à leur place.
-- **Raison** Appuyer une proposition ponctuelle sur deux variations observées et laisser le
-  choix de l’adaptation à l’utilisatrice.
+- **Subject** Concentration pilot in quiz and training.
+- **Decision** Compare the first three measured and evaluated answers with the last three. Propose
+  an adaptation when their median rises by at least 40% and 1.5 seconds and two additional errors
+  are observed. Measurements from 300 ms to 90 s stay in the browser. An interruption, an inactivity
+  interval longer than 30 s or a hidden tab discards the measurement. The quiz waits for the
+  existing correction. The Tutor attaches to its answer an optional marker only for an exercise it
+  believes it could evaluate. The pause keeps the quiz result, or the thread and the draft of the
+  training, in place.
+- **Reason** Base a one-off proposal on two observed variations and leave the choice of the
+  adaptation to the user.
 
 ## D261
 
-- **Date** : 2026-11-22
-- **Sujet** : Preuve et fiches d’une explication Feynman.
-- **Décision** : ouvrir un fil sur la version de la leçon ou du fichier enregistrée.
-  Le Tuteur pose une question et, au besoin, une relance. Le bilan propose jusqu’à trois
-  fiches et une preuve lorsque la compréhension est étayée. L’accord enregistre la preuve
-  au plus au niveau « En cours » et conserve les niveaux supérieurs.
-- **Raison** : une explication orale ou écrite établit un premier niveau de pratique.
+- **Date** 2026-11-22
+- **Subject** Proof and cards from a Feynman explanation.
+- **Decision** Open a thread on the saved version of the lesson or of the file. The Tutor asks a
+  question and, if needed, a follow-up. The report proposes up to three cards and a proof when the
+  understanding is supported. The approval records the proof at most at the “In progress” level
+  and keeps the higher levels.
+- **Reason** An oral or written explanation establishes a first level of practice.
 
 ## D262
 
-- **Date** : 2026-11-22
-- **Sujet** : Attribution d’un commit GitHub public à un projet.
-- **Décision** : s’appuyer sur une signature déclarée valide par GitHub, l’identité
-  stable et commune de l’auteur et du committer, puis un code à durée limitée
-  dans la bio publique de ce compte. Le commit doit être dans la branche par
-  défaut du dépôt. Écrire l’attribution et la preuve de pratique avec le rendu
-  et sa session. Un SHA ne compte qu’une fois par compte Tremplin.
-- **Raison** : attacher une contribution publique au projet avec une trace
-  vérifiable du compte auteur et du contrôle du profil, sans accès GitHub en écriture.
+- **Date** 2026-11-22
+- **Subject** Attributing a public GitHub commit to a project.
+- **Decision** Rely on a signature declared valid by GitHub, the stable identity shared by the
+  author and the committer, then a time-limited code in the public bio of that account. The commit
+  must be in the repository's default branch. Write the attribution and the practice proof with the
+  submission and its session. A SHA only counts once per Tremplin account.
+- **Reason** Attach a public contribution to the project with a verifiable trace of the author
+  account and of control over the profile, with no write access to GitHub.
 
 ## D263
 
-- **Date** : 2026-11-22
-- **Sujet** : Rédaction et copie du profil LinkedIn.
-- **Décision** : partir du profil maître validé, des intitulés des projets validés et
-  de l’offre facultative choisie. Les termes de l’offre orientent la rédaction. Le
-  contrôle du CV signale les affirmations non étayées et borne les compétences aux
-  faits du profil. Un changement de version demande une nouvelle proposition.
-  La personne enregistre et vérifie les corrections avant la copie.
-- **Raison** : garder le titre, le résumé et les compétences cohérents avec les faits confirmés.
+- **Date** 2026-11-22
+- **Subject** Writing and copying the LinkedIn profile.
+- **Decision** Start from the validated master profile, the titles of the validated projects, and
+  the optional posting chosen. The posting's terms guide the writing. The résumé check flags
+  unsupported claims and bounds the skills to the profile's facts. A change of version requires a
+  new proposal. The person saves and checks the corrections before copying.
+- **Reason** Keep the title, the summary, and the skills consistent with the confirmed facts.
 
 ## D264
 
-- **Date** : 2026-11-22
-- **Sujet** : Évaluation d’une version de tableau en system design.
-- **Décision** : ouvrir un tableau autonome et figer son numéro de version à la remise.
-  L’Intervieweur évalue l’architecture, la fiabilité, la montée en charge et les compromis.
-  Une note d’au moins 14/20 et de 3/5 à chaque axe ajoute une preuve unique de « Conception
-  de systèmes », plafonnée à « En cours ».
-- **Raison** : permettre de retrouver le dessin effectivement évalué et les critères de la preuve.
+- **Date** 2026-11-22
+- **Subject** Evaluating a version of a system design board.
+- **Decision** Open a standalone board and freeze its version number at hand-in. The Interviewer
+  evaluates the architecture, reliability, scaling, and trade-offs. A grade of at least 14/20 and of
+  3/5 on each axis adds a single proof of “System design”, capped at “In progress”.
+- **Reason** Make it possible to find the drawing actually evaluated and the proof's criteria.
 
 ## D265
 
-- **Date** : 2026-11-22
-- **Sujet** : Dictée relue dans les parcours d’apprentissage et d’entretien.
-- **Décision** : demander le micro au départ, arrêter au plus tard après 60
-  secondes et transmettre le WAV à OpenAI seulement sur demande de
-  transcription. Le résultat rejoint la saisie existante. La restitution
-  volontaire passe par le port de synthèse du podcast et l’audio n’est pas
-  stocké durablement dans Tremplin. Le bilan d’entretien et les explications
-  Feynman et system design commentent la clarté et la structure.
-- **Raison** : permettre de relire la réponse, d’annuler la prise ou de
-  reprendre au clavier avant de remettre le texte.
+- **Date** 2026-11-22
+- **Subject** Reread dictation in the learning and interview flows.
+- **Decision** Ask for the microphone at the start, stop after 60 seconds at the latest, and send
+  the WAV to OpenAI only on a transcription request. The result joins the existing input. The
+  voluntary playback goes through the podcast's synthesis port and the audio is not stored durably
+  in Tremplin. The interview review and the Feynman and system design explanations comment on
+  clarity and structure.
+- **Reason** Allow rereading the answer, cancelling the take, or going back to the keyboard before
+  handing in the text.
 
 ## D266
 
-- **Date** : 2026-11-22
-- **Sujet** : Consentement et écriture ciblée Google Agenda.
-- **Décision** : utiliser un projet Google Cloud dédié à Agenda et les droits de disponibilité
-  et d’écriture sur les calendriers détenus, avec le port limité au calendrier principal.
-  Garder les créneaux occupés en mémoire pour la replanification, qui borne les 21 prochains
-  jours au plus long créneau libre dans la plage horaire d’étude 8 h–22 h. Chiffrer le jeton
-  de renouvellement. Sceller l’aperçu pour dix minutes et n’écrire qu’après confirmation.
-  Transmettre l’ETag lors d’un déplacement. Retenir un identifiant stable par source
-  Tremplin pour rejouer une écriture et lire le prochain événement local.
-- **Raison** : le programme planifie à la journée et la candidature indique le jour de
-  l’entretien. Le créneau présenté recueille un accord sur l’heure exacte et la donnée envoyée.
+- **Date** 2026-11-22
+- **Subject** Consent and targeted writing in Google Calendar.
+- **Decision** Use a Google Cloud project dedicated to Calendar and the availability and write
+  rights on the owned calendars, with the port limited to the primary calendar. Keep the busy slots
+  in memory for replanning, which bounds the next 21 days to the longest free slot within the 8
+  a.m.–10 p.m. study time range. Encrypt the refresh token. Seal the preview for ten minutes and
+  only write after confirmation. Pass the ETag when moving an event. Keep a stable identifier per
+  Tremplin source to replay a write and to read the next local event.
+- **Reason** The program plans by the day and the application states the day of the interview. The
+  slot presented collects agreement on the exact time and on the data sent.
 
 ## D267
 
-- **Date** : 2026-11-22
-- **Sujet** : Révisions hors connexion et notifications du mobile.
-- **Décision** : enregistrer le brief et les fiches du compte après accord sur cet
-  appareil. Associer la réponse à l’échéance de la fiche et à un reçu idempotent.
-  Effacer la copie et invalider les écritures en cours lors d’un changement de
-  compte. Le service worker met en cache les ressources statiques de l’application.
-  Pendant que la page mobile est ouverte et après autorisation, il signale les
-  offres du brief et un créneau Agenda confirmé dans les 30 minutes à venir.
-- **Raison** : pouvoir répondre hors connexion et appliquer chaque réponse une
-  seule fois, avec un contenu de notification bref.
+- **Date** 2026-11-22
+- **Subject** Offline reviews and mobile notifications.
+- **Decision** Store the account's brief and cards after agreement on this device. Associate the
+  answer with the card's due date and an idempotent receipt. Erase the copy and invalidate the
+  writes in progress at an account change. The service worker caches the application's static
+  resources. While the mobile page is open and after authorization, it flags the brief's postings
+  and a Calendar slot confirmed within the next 30 minutes.
+- **Reason** Be able to answer offline and apply each answer only once, with a brief notification
+  content.
 
 ## D268
 
-- **Date** : 2026-11-22
-- **Sujet** : Hébergement et approbation des versions du portfolio.
-- **Décision** : produire un HTML statique et son ZIP dans le stockage privé,
-  à partir d’une sélection initialement vide. L’hébergement Tremplin utilise
-  une origine HTTPS dédiée et reste désactivé sans origine configurée.
-  L’écriture de l’accord porte l’empreinte et l’URL de la version. Le retrait
-  coupe le pointeur public. L’inclusion dans les nouveaux CV et kits dépend
-  de deux choix propres à la version publiée.
-- **Raison** : laisser relire le fichier exact et choisir sa destination,
-  tout en gardant un export utilisable pour héberger la page ailleurs.
+- **Date** 2026-11-22
+- **Subject** Hosting and approval of portfolio versions.
+- **Decision** Produce a static HTML and its ZIP in private storage, from an initially empty
+  selection. Tremplin hosting uses a dedicated HTTPS origin and stays disabled without a configured
+  origin. The write of the approval carries the version's fingerprint and URL. Withdrawal cuts the
+  public pointer. Inclusion in new résumés and kits depends on two choices specific to the
+  published version.
+- **Reason** Let her reread the exact file and choose its destination, while keeping an export
+  usable to host the page elsewhere.
 
 ## D269
 
-- **Date** : 2026-11-22
-- **Sujet** : Délais d’indexation Ollama sur CPU.
-- **Décision** : conserver les lots habituels. Quand la lecture d’un lot
-  dépasse son délai, réessayer ses deux moitiés dans l’ordre. Un fragment
-  unique qui dépasse le délai remonte l’erreur habituelle. Au transfert,
-  reprendre les éléments non indexés avec le service d’entretien existant.
-- **Raison** : la réindexation des données transférées a dépassé la minute
-  sur un lot de fragments longs. Le découpage permet de reprendre sur le
-  même modèle avec les vecteurs déjà calculés.
+- **Date** 2026-11-22
+- **Subject** Ollama indexing timeouts on CPU.
+- **Decision** Keep the usual batches. When the reading of a batch exceeds its timeout, retry its
+  two halves in order. A single chunk that exceeds the timeout raises the usual error. At transfer,
+  resume the unindexed items with the existing housekeeping service.
+- **Reason** Reindexing the transferred data exceeded one minute on a batch of long chunks. The
+  splitting allows resuming on the same model with the vectors already computed.
 
 ## D270
 
-- **Date** : 2026-11-22
-- **Sujet** : Effacement du stockage mobile sous contrainte de quota.
-- **Décision** : libérer les clés privées avant de renouveler le marqueur.
-  Conserver une génération temporaire en mémoire si la rotation échoue.
-  L’envoi des révisions vérifie sa génération après les attentes réseau.
-- **Raison** : effacer les données hors ligne même quand le stockage est
-  plein et protéger un nouveau lot d’une ancienne synchronisation.
+- **Date** 2026-11-22
+- **Subject** Erasing mobile storage under quota constraint.
+- **Decision** Free the private keys before renewing the marker. Keep a temporary generation in
+  memory if the rotation fails. The sending of the reviews checks its generation after the network
+  waits.
+- **Reason** Erase the offline data even when the storage is full and protect a new batch from an
+  old synchronization.
 
 ## D271
 
-- **Date** : 2026-11-22
-- **Sujet** : Reprise d’un import Cerveau en erreur.
-- **Décision** : réexpédier la même version une fois toutes les cinq minutes
-  au plus par version de fichier et révision de dossier, pendant la vie du
-  relais. L’inventaire expose le statut de l’import. Le bilan reflète un
-  import incomplet tant que l’état persiste ou que le rejeu est en file.
-- **Raison** : reprendre une erreur transitoire avec le chemin d’import
-  idempotent existant.
+- **Date** 2026-11-22
+- **Subject** Resuming a failed Brain import.
+- **Decision** Resend the same version at most once every five minutes per file version and folder
+  revision, during the relay's lifetime. The inventory exposes the import's status. The review
+  reflects an incomplete import as long as the state persists or the replay is queued.
+- **Reason** Recover from a transient error with the existing idempotent import path.
 
 ## D272
 
