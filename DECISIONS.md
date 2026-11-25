@@ -8754,7 +8754,7 @@ pagination by `before = next_before`, 50 entries per page.
      (`WHERE advice_status = 'pending'`): advice stored in the meantime is never downgraded.
      **`failed` and `unavailable` are final for the day**: the port ignores any later write (first
      write wins, including a `None` advice), the contract says so (`BriefOut`, `advice_status`) so
-     that the front end (8.13) never offers a “Try again” that the port would ignore; only
+     that the front end (8.13) never offers a “Retry” that the port would ignore; only
      `pending` can still change (reread).
   4. **`daily_brief` task (10 min, at startup)**: per account, `brief_due(now, zone, brief_time)`
      → `claim(…, "daily_brief", day_period(local day))` → `ensure_today(origin="schedule",
@@ -8951,7 +8951,7 @@ pagination by `before = next_before`, 50 entries per page.
      three attempts of `structured_call`, no model key, step's own timeout exceeded, 100 s, stored
      under the code `node_timeout`) stores the failure through the port, `brief_failed(code)`
      (`structured_output_invalid`, `llm_key_missing`…), then stops the flow: `run.failed` states
-     the cause readably, “Try again” relaunches. No other information is stored.
+     the cause readably, “Retry” relaunches. No other information is stored.
   3. **Reading the repository (P2)**: `repo_text` is only called if a repository link is given; one
      page, text cut at 8,000 characters; an exception or `None` or an empty text:
      `repo_status = "unreadable"` (the exception class is the only thing logged); with no link:
@@ -9117,7 +9117,7 @@ pagination by `before = next_before`, 50 entries per page.
   11. **Tests**: briefs, submission, port, drafts, entry into the profile, reads, and logs
      (`tests/features/projects`), including trials on the **real engine** (`test_live.py`: real
      launcher and real port, scripted models: statement then validated evaluation, failed evaluation
-     session handed back to January, three failed statements then “Try again”), the feed source
+     session handed back to January, three failed statements then “Retry”), the feed source
      (`tests/features/activity/test_project_source.py`), and `GET /journal?kind=project`. No network
      or LLM.
 - **Reason** P1 to P3: a mini project per module, a submission judged on what the Practitioner can
@@ -9221,7 +9221,7 @@ pagination by `before = next_before`, 50 entries per page.
      `ActivityItem`…), like `applications` and `cv`: the `boundaries` rule forbids `components/`
      from importing the feature's `types.ts`. The `types.ts` of each feature re-exports them.
   3. **The advice**: `failed` and `unavailable` say the same thing (“The council had nothing to
-     say this morning.”), never a missing key, and offer no “Try again” (the server does not
+     say this morning.”), never a missing key, and offer no “Retry” (the server does not
      relaunch the advice within the day); `pending` is announced (`role="status"`); a `ready` advice
      with no sentence is treated as mute.
   4. **Never color alone**: written trend (“+8 pts”, “−2 pts”, “stable”, “new”,
@@ -11305,7 +11305,7 @@ pagination by `before = next_before`, 50 entries per page.
 ## D200
 
 - **Date** 2026-11-17
-- **Subject** Phase 10, task 10.P: common foundation and contract of the Python IDE (with teacher)
+- **Subject** Phase 10, task 10.P: common foundation and contract of the Python IDE (with professor)
   and of the MCP server, laid down before the fork into four streams
 - **Decision**
   1. **Contract first (P1)**: the 31 routes of `ide` (18) and `mcp` (13) are laid down as 501
@@ -11321,7 +11321,7 @@ pagination by `before = next_before`, 50 entries per page.
      (index); no foreign key (like the daily tables: the journal and the history survive the
      revocation of a token, a session its exercise). No stream writes a migration. Columns added
      beyond the plan, so as not to reopen the migration: `ide_notes.author_label`, `error_key` (the
-     teacher's anti-repetition), `ide_sessions.teacher_tokens` (session consumption),
+     professor's anti-repetition), `ide_sessions.teacher_tokens` (session consumption),
      `ide_runs.requested_by`, `mcp_confirmations.result_code`.
   3. **Export (P3)**: `mcp_tokens.hash` carries `info={"export": False}` (like
      `api_keys.encrypted_key`); the “secret” columns guard demands a decision for names that
@@ -11562,7 +11562,7 @@ pagination by `before = next_before`, 50 entries per page.
      (`PROFESSOR_LABEL`, 10.A3) is `professor`; the body has no `author` field (an extra field is
      ignored). `create_exercise`: `claude` or `user`; 10.A3 passes `origin="generated"`, `topic`,
      and `agent_session_id` through named arguments (never through the request). `add_note` likewise
-     accepts `reference_note_id` and `error_key` (the teacher's reference and anti-repetition) as
+     accepts `reference_note_id` and `error_key` (the professor's reference and anti-repetition) as
      named arguments.
   3. **Runs**: only one at a time per user (409 `run_in_progress`, `details.run_id`); before
      refusing, the “in progress” runs in the database are queried and frozen if the sandbox has
@@ -11620,21 +11620,22 @@ pagination by `before = next_before`, 50 entries per page.
 ## D203
 
 - **Date** 2026-11-17
-- **Subject** Phase 10, task 10.A3: real-time teacher (`ide_teacher`), generated exercises
+- **Subject** Phase 10, task 10.A3: real-time professor (`ide_teacher`), generated exercises
   (`ide_exercise`), costs, caps, anti-repetition
 - **Decision**
   1. **Cost barrier (`TeachGate`, `features/ide/service/teaching.py`)**: only
-     `POST /ide/sessions/{id}/teach` launches the teacher (flow in `ROUTE_ONLY`); saving files,
+     `POST /ide/sessions/{id}/teach` launches the professor (flow in `ROUTE_ONLY`); saving files,
      notes, runs never call it. Order of the checks for an **automatic** trigger (`run_error`,
-     `idle`): (a) same error in the same place (teacher's note with the same `error_key`): a
+     `idle`): (a) same error in the same place (professor's note with the same `error_key`): a
      reference, **no call**; (b) one call at a time per session (an `ide_teacher` session open on
      the session, under a per-session lock: `busy`); (c) “on request” mode or timer with no
-     option: `on_demand`; timer less than 30 s after the teacher's last note: `busy`; (d) session or
-     day cap reached: `cap_reached`. A **question** and a **requested hint** are explicit: handled
-     even after a cap or in on-request mode (only “one call at a time” stops them). `run_ok`
-     never launches the model: session not passed, `skipped: on_demand`; session passed, **a single
-     compliment** (an `explanation` note written with no call, `error_key` `compliment`) whose
-     identifier comes back in `reference_note_id`. Empty question: 422 (schema, D200 no. 11).
+     option: `on_demand`; timer less than 30 s after the professor's last note: `busy`; (d) session
+     or day cap reached: `cap_reached`. A **question** and a **requested hint** are explicit:
+     handled even after a cap or in on-request mode (only “one call at a time” stops them).
+     `run_ok` never launches the model: session not passed, `skipped: on_demand`; session passed,
+     **a single compliment** (an `explanation` note written with no call, `error_key`
+     `compliment`) whose identifier comes back in `reference_note_id`. Empty question: 422 (schema,
+     D200 no. 11).
   2. **Error key**: the signature of the last run (`error_signature`, error type and last frame of
      the code), otherwise `sha1(status|entry)` for `run_error`, otherwise the place (`file:line`),
      otherwise the session; `idle`: the place alone. Stored in `ide_notes.error_key` (40-character
@@ -11673,8 +11674,8 @@ pagination by `before = next_before`, 50 entries per page.
      counter: the code session = the calls of the agent sessions whose subject is `ide_session` /
      the session's identifier; the day = since midnight in January's time zone (D98). Retries and
      cut calls are counted. The column `ide_sessions.teacher_tokens` (D200 no. 2) stays unused
-     (reserved). Journal of a teacher call: code session, model, tokens, nothing else (tested on all
-     `app.*` logs). Exercise generations do not count in the teacher's caps.
+     (reserved). Journal of a professor call: code session, model, tokens, nothing else (tested on
+     all `app.*` logs). Exercise generations do not count in the professor's caps.
   9. **Generated exercises**: `POST /ide/exercises/generate` launches `ide_exercise` (topic fenced
      as untrusted). The writer writes the statement, starting files with tests, and a solution; the
      `verify` port runs **`check` (pytest) in the sandbox** on the solution, with the exercise's
@@ -11696,10 +11697,10 @@ pagination by `before = next_before`, 50 entries per page.
      played on a real database) and to `db/models/ide.py`. `contracts/openapi.json` and
      `schema.d.ts` regenerated. No other route or schema changes; `teach` stays 202 for all its
      responses.
-  12. **D197**: no scheduled task is added (the teacher and the exercises only start from an action
-     of January); nothing to count at the first launch.
-- **Reason** Plan of phase 10, 10.A3 and “Teacher's cost” (2026-11-14); P8 (a single notes
-  service); review no. 2 (“a teacher that costs or repeats”).
+  12. **D197**: no scheduled task is added (the professor and the exercises only start from an
+     action of January); nothing to count at the first launch.
+- **Reason** Plan of phase 10, 10.A3 and “Professor's cost” (2026-11-14); P8 (a single notes
+  service); review no. 2 (“a professor that costs or repeats”).
 
 ## D204
 
@@ -13281,382 +13282,396 @@ pagination by `before = next_before`, 50 entries per page.
 
 ## D272
 
-- **Date** : 2026-11-22
-- **Sujet** : Méthode de bibliothèque dans un exemple Python publié.
-- **Décision** : rattacher un appel de méthode au constructeur importé
-  d’une variable affectée une fois dans le bloc. La correspondance s’appuie
-  sur la syntaxe du bloc et la convention de nommage des classes Python.
-- **Raison** : rattacher une dépréciation clairement nommée, telle que
-  `pandas.DataFrame.append`, au chapitre qui l’utilise.
+- **Date** 2026-11-22
+- **Subject** Library method in a published Python example.
+- **Decision** Attach a method call to the imported constructor of a variable assigned once in the
+  block. The matching relies on the block's syntax and on the naming convention of Python classes.
+- **Reason** Attach a clearly named deprecation, such as `pandas.DataFrame.append`, to the chapter
+  that uses it.
 
 ## D273
 
-- **Date** : 2026-11-22
-- **Sujet** : Proposer une lecture dans un programme.
-- **Décision** : figer le titre et l’URL de la lecture choisie. Proposer une
-  seule tâche de 15 minutes dans le module de la prochaine tâche prévue.
-  Passer par l’aperçu et l’accord habituels de replanification.
-- **Raison** : donner un effet concret à la demande d’ajout tout en
-  conservant la validation avant modification du programme.
+- **Date** 2026-11-22
+- **Subject** Proposing a reading in a program.
+- **Decision** Freeze the title and URL of the reading chosen. Propose a single 15-minute task in
+  the module of the next planned task. Go through the usual replanning preview and agreement.
+- **Reason** Give a concrete effect to the request to add while keeping the validation before the
+  program is modified.
 
 ## D274
 
-- **Date** : 2026-11-22
-- **Sujet** : Reprise durable d’une réponse d’agent.
-- **Décision** : Le passage en cours stocke la réponse avec l’identifiant précis de la question. Au démarrage, seul un checkpoint qui attend encore cet identifiant reçoit la commande. Un changement d’issue ou un arrêt volontaire de la session libère la réponse temporaire.
-- **Raison** : Conserver la réponse déjà validée après un arrêt du processus.
+- **Date** 2026-11-22
+- **Subject** Durable resumption of an agent's answer.
+- **Decision** The current pass stores the answer with the precise identifier of the question. At
+  startup, only a checkpoint that still waits for this identifier receives the command. A change of
+  outcome or a voluntary stop of the session frees the temporary answer.
+- **Reason** Keep the answer already validated after a process stop.
 
 ## D275
 
-- **Date** : 2026-11-22
-- **Sujet** : Routines locales.
-- **Décision** : Une routine active réserve une exécution par compte, action et jour dans le fuseau du compte. Les rappels portent sur les fiches, les contrôles de transfert et les missions à terminer. Une demande manuelle rejoue le même reçu.
-- **Raison** : Donner un historique stable aux actions planifiées et manuelles.
+- **Date** 2026-11-22
+- **Subject** Local routines.
+- **Decision** An active routine reserves one execution per account, action, and day in the
+  account's time zone. The reminders concern the cards, the transfer checks, and the missions to
+  finish. A manual request replays the same receipt.
+- **Reason** Give a stable history to scheduled and manual actions.
 
 ## D276
 
-- **Date** : 2026-11-22
-- **Sujet** : Mission à partir d’une offre.
-- **Décision** : Une offre analysée donne une mission privée de 48 heures, avec une à trois exigences choisies et deux mesures par exigence. Le rendu après validation reçoit un identifiant de preuve.
-- **Raison** : Relier les mesures à la version choisie de l’offre.
+- **Date** 2026-11-22
+- **Subject** Mission from a posting.
+- **Decision** An analyzed posting gives a private 48-hour mission, with one to three requirements
+  chosen and two measures per requirement. The submission after validation receives a proof
+  identifier.
+- **Reason** Tie the measures to the chosen version of the posting.
 
 ## D277
 
-- **Date** : 2026-11-22
-- **Sujet** : Comparaison des architectures.
-- **Décision** : La charge, la durée de panne, la capacité et le prix des répliques suffisent au calcul reproductible. La critique reste un texte séparé et privé.
-- **Raison** : Permettre de comparer les hypothèses avec les mêmes unités et de rejouer le calcul.
+- **Date** 2026-11-22
+- **Subject** Comparing architectures.
+- **Decision** The load, the outage duration, the capacity, and the price of the replicas are enough
+  for the reproducible computation. The critique stays a separate, private text.
+- **Reason** Allow the assumptions to be compared with the same units and the computation to be
+  replayed.
 
 ## D278
 
-- **Date** : 2026-11-22
-- **Sujet** : Contrôle d’un acquis.
-- **Décision** : Le contrôle retient l’empreinte d’une preuve et une date du compte. Le Vérificateur compare un énoncé inédit et l’appréciation reste associée au contrôle.
-- **Raison** : Distinguer la vérification de transfert de la preuve initiale.
+- **Date** 2026-11-22
+- **Subject** Checking a learning.
+- **Decision** The check keeps the fingerprint of a proof and a date of the account. The Verifier
+  compares a new statement and the assessment stays associated with the check.
+- **Reason** Distinguish the transfer check from the initial proof.
 
 ## D279
 
-- **Date** : 2026-11-22
-- **Sujet** : Observations dans l’Atlas.
-- **Décision** : L’Atlas sélectionne les corrections de quiz et les critères de projet conclus. Un libellé normalisé regroupe les hypothèses et chaque source ne compte qu’une fois par groupe.
-- **Raison** : Conserver l’origine des indices et la confiance déclarée.
+- **Date** 2026-11-22
+- **Subject** Observations in the Atlas.
+- **Decision** The Atlas selects the quiz corrections and the project criteria that are concluded. A
+  normalized label groups the hypotheses and each source only counts once per group.
+- **Reason** Keep the origin of the clues and the declared confidence.
 
 ## D280
 
-- **Date** : 2026-11-22
-- **Sujet** : Dossier de preuves.
-- **Décision** : Le dossier de preuves fige les rendus approuvés de missions, avec leurs révisions et mesures, dans un manifeste privé scellé par empreinte SHA-256.
-- **Raison** : Permettre une vérification externe des octets volontairement exportés.
+- **Date** 2026-11-22
+- **Subject** Proof packet.
+- **Decision** The proof packet freezes the approved mission submissions, with their revisions and
+  measures, in a private manifest sealed by a SHA-256 fingerprint.
+- **Reason** Allow external verification of the bytes voluntarily exported.
 
 ## D281
 
-- **Date** : 2026-11-22
-- **Sujet** : Veille contradictoire.
-- **Décision** : Chaque expérience fige deux versions de référence, un protocole et un critère. La mesure est saisie après l’expérience et reste liée à ces versions.
-- **Raison** : Séparer le résultat observé des affirmations de départ.
+- **Date** 2026-11-22
+- **Subject** Contradictory watch.
+- **Decision** Each experiment freezes two reference versions, a protocol, and a criterion. The
+  measure is entered after the experiment and stays tied to these versions.
+- **Reason** Separate the observed result from the starting claims.
 
 ## D282
 
-- **Date** : 2026-11-22
-- **Sujet** : Épreuve en aveugle.
-- **Décision** : Le premier périmètre compare deux versions de CV détenues. Leur ordre est tiré au sort, leurs éléments d’identité sont retirés avant l’envoi au Vérificateur, et les liens des PDF apparaissent avec le verdict.
-- **Raison** : Respecter la même grille et rendre la comparaison traçable.
+- **Date** 2026-11-22
+- **Subject** Blind test.
+- **Decision** The first scope compares two owned résumé versions. Their order is drawn at random,
+  their identity elements are removed before sending to the Verifier, and the PDFs' links appear
+  with the verdict.
+- **Reason** Respect the same grid and make the comparison traceable.
 
 ## D283
 
-- **Date** : 2026-11-22
-- **Sujet** : Semaine entre programmes.
-- **Décision** : La proposition garde les échéances de la semaine, retranche les créneaux déjà confirmés du plafond de 85 % et rapproche les prérequis. L’accord recalcule puis enregistre les dates des tâches à faire dans une transaction.
-- **Raison** : Conserver les plages verrouillées et éviter une proposition périmée.
+- **Date** 2026-11-22
+- **Subject** Week between programs.
+- **Decision** The proposal keeps the week's deadlines, subtracts the already confirmed slots from
+  the 85% cap, and brings the prerequisites closer. The agreement recomputes then stores the dates
+  of the tasks to do in a single transaction.
+- **Reason** Keep the locked ranges and avoid an out-of-date proposal.
 
 ## D284
 
-- **Date** : 2026-11-22
-- **Sujet** : Relecture par un mentor.
-- **Décision** : Le compte partage une copie figée via un jeton dont la durée est bornée et qui peut être retiré. Le mentor ancre le retour à un rendu du dossier. Le propriétaire peut marquer le commentaire comme traité par MCP.
-- **Raison** : Rendre la relecture révocable et la copie vérifiable.
+- **Date** 2026-11-22
+- **Subject** Review by a mentor.
+- **Decision** The account shares a frozen copy through a token whose duration is bounded and which
+  can be withdrawn. The mentor anchors the feedback to a submission of the packet. The owner can
+  mark the comment as handled through MCP.
+- **Reason** Make the review revocable and the copy verifiable.
 
 ## D285
 
-- **Date** : 2026-11-22
-- **Sujet** : Recrutement simulé.
-- **Décision** : Une offre analysée fige une grille et les preuves manquantes. La revue de projet, la mise en situation et l’entretien écrit utilisent la même grille et reprennent au dernier stade enregistré.
-- **Raison** : Relier les réponses personnelles aux exigences de la mission choisie.
+- **Date** 2026-11-22
+- **Subject** Mock recruitment.
+- **Decision** An analyzed posting freezes a grid and the missing proofs. The project review, the
+  scenario exercise, and the written interview use the same grid and resume at the last stage
+  recorded.
+- **Reason** Tie the personal answers to the requirements of the mission chosen.
 
 ## D286
 
-- **Date** : 2026-11-22
-- **Sujet** : Chronologies d’entraînement.
-- **Décision** : La bibliothèque propose des incidents fictifs de performance. Le replay fige la chronologie et associe chaque hypothèse à un instant précis.
-- **Raison** : Rendre le raisonnement rejouable sur les mêmes observations.
+- **Date** 2026-11-22
+- **Subject** Training timelines.
+- **Decision** The library offers fictitious performance incidents. The replay freezes the timeline
+  and associates each hypothesis with a precise instant.
+- **Reason** Make the reasoning replayable on the same observations.
 
 ## D287
 
-- **Date** : 2026-11-22
-- **Sujet** : Reprise après une pause.
-- **Décision** : Le rappel fige des acquis, des fiches dues et le dernier bloc terminé. À l’ouverture du compte, la navigation signale le rappel. Démarrer le bloc et enregistrer son lien partagent la même transaction.
-- **Raison** : Retrouver la reprise sans décaler les tâches du programme.
+- **Date** 2026-11-22
+- **Subject** Coming back after a break.
+- **Decision** The reminder freezes learnings, due cards, and the last block finished. When the
+  account opens, the navigation flags the reminder. Starting the block and recording its link share
+  the same transaction.
+- **Reason** Find the way back in without shifting the program's tasks.
 
 ## D288
 
-- **Date** : 2026-11-22
-- **Sujet** : Enquête sur données synthétiques.
-- **Décision** : Chaque jeu conserve ses lignes sources et leur empreinte. Les opérations choisies produisent une trace ordonnée des lignes écartées. La remise compare les chiffres à cette trace et à la recette de référence.
-- **Raison** : Démontrer comment chaque résultat a été obtenu.
+- **Date** 2026-11-22
+- **Subject** Investigation on synthetic data.
+- **Decision** Each dataset keeps its source rows and their fingerprint. The operations chosen
+  produce an ordered trace of the rows discarded. The hand-in compares the figures with this trace
+  and with the reference recipe.
+- **Reason** Show how each result was obtained.
 
 ## D289
 
-- **Date** : 2026-11-22
-- **Sujet** : Modules issus de réunions.
-- **Décision** : Les décisions étiquetées ou formulées explicitement alimentent des étapes d’étude avec leur extrait littéral numéroté, une durée et un critère. L’accord fige les étapes en vérifiant que la sélection approuvée est toujours la sélection courante.
-- **Raison** : Conserver la provenance et la possibilité de relire la séquence avant de la ranger.
+- **Date** 2026-11-22
+- **Subject** Modules from meetings.
+- **Decision** The decisions labeled or explicitly formulated feed study steps with their numbered
+  literal excerpt, a duration, and a criterion. The agreement freezes the steps after checking that
+  the approved selection is still the current selection.
+- **Reason** Keep the provenance and the possibility of rereading the sequence before storing it.
 
 ## D290
 
-- **Date** : 2026-11-22
-- **Sujet** : Accès MCP Agenda et Portfolio.
-- **Décision** : Agenda expose le prochain créneau local et la préparation d’une proposition confirmée. Portfolio expose son état privé et la préparation confirmée d’un brouillon. Les opérations de connexion, de publication et de synchronisation restent réservées à l’interface.
-- **Raison** : Rendre les préparations possibles avec les autorisations du compte.
+- **Date** 2026-11-22
+- **Subject** Calendar and Portfolio MCP access.
+- **Decision** Calendar exposes the next local slot and the preparation of a confirmed proposal.
+  Portfolio exposes its private state and the confirmed preparation of a draft. The connection,
+  publication, and synchronization operations stay reserved to the interface.
+- **Reason** Make the preparations possible with the account's authorizations.
 
 ## D291
 
-- **Date** : 2026-11-22
-- **Sujet** : Engagements datés et exécutions de routine.
-- **Décision** : garder au plus cinq échéances ouvertes ou mesures du jour dans
-  le reçu de la routine. Les écarts d’aujourd’hui ou d’hier gardent une place
-  pour couvrir les mesures saisies après l’exécution. Le reçu indique
-  l’écart à la cible et donne accès à l’engagement du compte.
-- **Raison** : relire le contexte et l’écart obtenus à la date du rappel.
+- **Date** 2026-11-22
+- **Subject** Dated commitments and routine executions.
+- **Decision** Keep at most five open deadlines or measures of the day in the routine's receipt. The
+  gaps of today or yesterday keep a place to cover the measures entered after the execution. The
+  receipt states the gap to the target and gives access to the account's commitment.
+- **Reason** Reread the context and the gap obtained at the date of the reminder.
 
 ## D292
 
-- **Date** : 2026-11-22
-- **Sujet** : Formats dérivés d’une leçon publiée.
-- **Décision** : une fiche de révision et une lecture guidée réorganisent les
-  éléments de la même version publiée. Les deux formats conservent les
-  objectifs, exemples, références et l’empreinte de la source.
-- **Raison** : comparer les formats et retrouver la leçon d’origine.
+- **Date** 2026-11-22
+- **Subject** Formats derived from a published lesson.
+- **Decision** A review card and a guided reading reorganize the elements of the same published
+  version. Both formats keep the objectives, examples, references, and the source's fingerprint.
+- **Reason** Compare the formats and find the original lesson again.
 
 ## D293
 
-- **Date** : 2026-11-22
-- **Sujet** : Remise examinée dans un recrutement ou une contestation.
-- **Décision** : figer le rendu le plus récent dans les détails d’un projet
-  déjà évalué. La seconde lecture de contestation se fonde sur le critère,
-  la remise et le motif. Le choix final conserve les deux appréciations.
-- **Raison** : rattacher l’évaluation à la bonne version après plusieurs remises.
+- **Date** 2026-11-22
+- **Subject** Submission examined in a recruitment or an appeal.
+- **Decision** Freeze the most recent submission in the details of a project already evaluated. The
+  appeal's second reading is based on the criterion, the submission, and the reason. The final
+  choice keeps both assessments.
+- **Reason** Attach the evaluation to the right version after several submissions.
 
 ## D294
 
-- **Date** : 2026-11-22
-- **Sujet** : Comparaison privée des offres.
-- **Décision** : pondérer les critères renseignés dans les deux offres pour
-  comparer sur une base commune. Mesurer la sensibilité en faisant varier
-  chaque poids de dix points et figer les faits et poids enregistrés.
-- **Raison** : expliquer le classement malgré des informations manquantes.
+- **Date** 2026-11-22
+- **Subject** Private comparison of postings.
+- **Decision** Weight the criteria filled in for both postings to compare on a common basis. Measure
+  sensitivity by varying each weight by ten points and freeze the facts and weights recorded.
+- **Reason** Explain the ranking despite missing information.
 
 ## D295
 
-- **Date** : 2026-11-22
-- **Sujet** : Transmission d’un projet.
-- **Décision** : figer le dernier rendu du compte avec les commandes de
-  recette, les limites et les étapes ajoutées. L’export Markdown porte
-  l’empreinte de l’aperçu approuvé.
-- **Raison** : rendre le document de reprise traçable jusqu’au rendu.
+- **Date** 2026-11-22
+- **Subject** Handing over a project.
+- **Decision** Freeze the account's last submission with the acceptance commands, the limits, and
+  the steps added. The Markdown export carries the approved preview's fingerprint.
+- **Reason** Make the handover document traceable back to the submission.
 
 ## D296
 
-- **Date** : 2026-11-23
-- **Sujet** : Conversations du Cerveau et d’Étudier.
-- **Décision** : conserver les identifiants des fils existants et les classer par
-  activité. Les sessions training créées depuis la liste peuvent rester ouvertes en
-  parallèle. Les anciens points d’entrée conservent leur créneau de reprise. Le mode
-  et les leçons choisies sont enregistrés par fil. Une sélection limite les sources
-  pédagogiques du tour aux leçons choisies, avec au plus huit leçons par fil.
-  Le bilan d’étude reste acquis et le fil peut être repris. Le vidage conserve le
-  titre et les réglages. La suppression efface les échanges et
-  leurs points de reprise, et garde les références pédagogiques déjà enregistrées.
-- **Raison** : reprendre plusieurs sujets sans perdre le contexte d’un sujet ou les
-  acquis des sessions terminées.
+- **Date** 2026-11-23
+- **Subject** Brain and Learn conversations.
+- **Decision** Keep the identifiers of the existing threads and sort them by activity. The training
+  sessions created from the list can stay open in parallel. The old entry points keep their
+  resumption slot. The mode and the lessons chosen are stored per thread. A selection limits the
+  turn's pedagogical sources to the lessons chosen, with at most eight lessons per thread. The study
+  review stays acquired and the thread can be resumed. Clearing keeps the title and the settings.
+  Deletion erases the exchanges and their checkpoints, and keeps the pedagogical references already
+  stored.
+- **Reason** Resume several topics without losing the context of one topic or the learnings of
+  finished sessions.
 
 ## D297
 
-- **Date** : 2026-11-23
-- **Sujet** : Navigation commune et préférences du Labo.
-- **Décision** : proposer Accueil, Étudier, Coder, Cerveau et Carrière, puis Labo et
-  Réglages. Les liens existants restent utilisables. Les favoris du Labo sont des
-  raccourcis par compte. La visite guidée peut être relancée ou désactivée et respecte
-  la préférence de réduction des animations.
-- **Raison** : retrouver les usages quotidiens et conserver l’accès aux écrans spécialisés.
+- **Date** 2026-11-23
+- **Subject** Common navigation and Lab preferences.
+- **Decision** Offer Home, Learn, Code, Brain, and Career, then Lab and Settings. The existing links
+  stay usable. The Lab favorites are per-account shortcuts. The guided tour can be relaunched or
+  disabled and respects the reduced-animation preference.
+- **Reason** Find the daily uses and keep access to the specialized screens.
 
 ## D298
 
-- **Date** : 2026-11-23
-- **Sujet** : Disponibilité du relais Cerveau et exclusions.
-- **Décision** : détecter un relais actif par un contact valide pendant les dix dernières
-  minutes. Indiquer la progression et une estimation calculée à dix secondes par
-  fichier restant. Les exclusions par racine comparent les dossiers relatifs et les
-  extensions sans tenir compte de la casse. Les copies indexées sont retirées lors de
-  la synchronisation suivante.
-- **Raison** : rendre l’état de l’index compréhensible et limiter les documents traités.
+- **Date** 2026-11-23
+- **Subject** Availability of the Brain relay and exclusions.
+- **Decision** Detect an active relay by a valid contact within the last ten minutes. Show the
+  progress and an estimate computed at ten seconds per remaining file. The exclusions per root
+  compare the relative folders and the extensions regardless of case. The indexed copies are removed
+  at the next synchronization.
+- **Reason** Make the index's state understandable and limit the documents processed.
 
 ## D299
 
-- **Date** : 2026-11-23
-- **Sujet** : Gestes personnels, fichiers et données du compte par MCP.
-- **Décision** : ouvrir les gestes personnels et les suppressions au niveau 3, avec
-  exécution sous l’identité du jeton après confirmation dans l’interface. L’export
-  du compte renvoie un lien local au niveau 1. Les documents binaires passent par
-  des métadonnées de téléchargement. Les accès aux secrets, les connexions et les
-  réglages des modèles restent au niveau 4.
-- **Raison** : laisser le client MCP préparer les opérations du compte et conserver
-  la maîtrise des gestes irréversibles dans Tremplin.
+- **Date** 2026-11-23
+- **Subject** Personal gestures, files, and account data through MCP.
+- **Decision** Open the personal gestures and the deletions at level 3, with execution under the
+  token's identity after confirmation in the interface. The account export returns a local link at
+  level 1. The binary documents go through download metadata. Access to secrets, sign-ins, and model
+  settings stay at level 4.
+- **Reason** Let the MCP client prepare the account's operations and keep control of the
+  irreversible gestures in Tremplin.
 
 ## D300
 
-- **Date** : 2026-11-23
-- **Sujet** : Recherche dans les conversations d’Étudier et du Cerveau.
-- **Décision** : le fil actif et son brouillon restent en place pendant une recherche.
-  L’interface, l’API et le MCP filtrent les titres par le même paramètre. La comparaison
-  ignore les accents et la casse.
-- **Raison** : retrouver le même fil quel que soit le client et garder le brouillon en cours.
+- **Date** 2026-11-23
+- **Subject** Searching the Learn and Brain conversations.
+- **Decision** The active thread and its draft stay in place during a search. The interface, the
+  API, and the MCP filter the titles through the same parameter. The comparison ignores accents and
+  case.
+- **Reason** Find the same thread whatever the client and keep the draft in progress.
 
 ## D301
 
-- **Date** : 2026-11-23
-- **Sujet** : Disponibilité de la piste audio du Podcast.
-- **Décision** : le Labo lit les prérequis dans le même aperçu que le MCP. La disponibilité
-  de la clé OpenAI pour l’audio est indiquée séparément des modèles du dialogue.
-- **Raison** : expliquer pourquoi un épisode peut fonctionner en texte quand l’écoute
-  demande encore une configuration.
+- **Date** 2026-11-23
+- **Subject** Availability of the Podcast's audio track.
+- **Decision** The Lab reads the prerequisites in the same preview as the MCP. The availability of
+  the OpenAI key for the audio is shown separately from the dialogue's models.
+- **Reason** Explain why an episode may work as text when listening still requires a configuration.
 
 ## D302
 
-- **Date** : 2026-11-23
-- **Sujet** : Consentement d’effacement et reprise après panne de l’index.
-- **Décision** : la confirmation est liée à l’identité affichée. Le serveur exige
-  cette identité pour une demande directe en mode Google. Une demande MCP
-  confirmée utilise l’identité du jeton. La transaction de suppression en mode
-  Google garde un travail de purge vectorielle pour l’ancien identifiant. Le
-  démarrage et le planificateur peuvent le reprendre. Si ce travail reste à
-  faire, l’API répond 202. En mode local, le compte garde son identifiant et
-  une purge incomplète est signalée pour un nouvel essai explicite.
-- **Raison** : protéger le compte ouvert dans un autre onglet et terminer la
-  purge même si la session d’origine a disparu.
+- **Date** 2026-11-23
+- **Subject** Erasure consent and resumption after an index failure.
+- **Decision** The confirmation is tied to the identity displayed. The server requires this identity
+  for a direct request in Google mode. A confirmed MCP request uses the token's identity. The
+  deletion transaction in Google mode keeps a vector purge job for the old identifier. Startup and
+  the scheduler can resume it. If this job remains to be done, the API answers 202. In local mode,
+  the account keeps its identifier and an incomplete purge is flagged for an explicit new attempt.
+- **Reason** Protect the account open in another tab and finish the purge even if the original
+  session has disappeared.
 
 ## D303
 
-- **Date** : 2026-11-23
-- **Sujet** : Confidentialité des réponses de validation et du journal MCP.
-- **Décision** : conserver dans les réponses 422 les chemins attestés par le
-  schéma, dont les indices de listes et les clés fermées, avec des messages
-  français fixes. Le journal conserve les identifiants issus des réponses
-  réussies et ceux créés pour la confirmation et l’annulation. Les entrées
-  antérieures suivent leur durée de conservation de 30 jours.
-- **Raison** : localiser une erreur ou un appel sans conserver le texte transmis.
+- **Date** 2026-11-23
+- **Subject** Confidentiality of the validation responses and the MCP journal.
+- **Decision** Keep in the 422 responses the paths attested by the schema, including list indices
+  and closed keys, with fixed messages in French. The journal keeps the identifiers coming from
+  successful responses and those created for confirmation and undo. The earlier entries follow their
+  30-day retention.
+- **Reason** Locate an error or a call without keeping the text transmitted.
 
 ## D304
 
-- **Date** : 2026-11-23
-- **Sujet** : Association des mesures et des chiffres dans le CV ciblé.
-- **Décision** : vérifier les chiffres et proportions dans leur contexte
-  plutôt que par simple présence dans les faits cités. Une attribution
-  ambiguë requiert une confirmation. La composition du PDF fait la même
-  vérification, y compris pour les propositions acceptées avant la correction,
-  et tient compte des faits explicitement confirmés dans le profil maître.
-- **Raison** : éviter qu’une reformulation inverse les résultats mesurés.
+- **Date** 2026-11-23
+- **Subject** Associating measures and figures in the targeted résumé.
+- **Decision** Check the figures and proportions in their context rather than by mere presence in
+  the facts cited. An ambiguous attribution requires a confirmation. The PDF's composition does the
+  same check, including for the proposals accepted before the fix, and takes into account the facts
+  explicitly confirmed in the master profile.
+- **Reason** Prevent a rewording from inverting the measured results.
 
 ## D305
 
-- **Date** : 2026-11-23
-- **Sujet** : Révisions du Rédacteur et place de chaque semaine d'un programme.
-- **Décision** : le Vérificateur garde la meilleure version contrôlée ; une révision moins
-  bonne est écartée et la suivante repart de la meilleure. La consigne de révision donne la
-  longueur de départ, la borne et les critères déjà réussis, et demande une correction ciblée.
-  Chaque semaine d'un programme peut porter son étape et sa justification, chaque module ses
-  pages officielles (placées en tête des sources de la leçon) et ses API anciennes (encadré
-  « Lire du code ancien »). Ces champs restent facultatifs pour l'écriture directe.
-- **Raison** : le pilote du 22/11 a vu deux révisions faire baisser les notes et dépasser
-  2 500 mots, faute de source officielle.
+- **Date** 2026-11-23
+- **Subject** Writer revisions and the place of each week of a program.
+- **Decision** The Verifier keeps the best checked version; a worse revision is discarded and the
+  next one restarts from the best. The revision instruction gives the starting length, the bound,
+  and the criteria already met, and asks for a targeted correction. Each week of a program can carry
+  its stage and its rationale, each module its official pages (placed at the head of the lesson's
+  sources) and its legacy APIs (callout “Reading old code”). These fields stay optional for
+  direct writing.
+- **Reason** The pilot of 22/11 saw two revisions lower the grades and exceed 2,500 words, for lack
+  of an official source.
 
 ## D306
 
-- **Date** : 2026-11-23
-- **Sujet** : Nombre de features d'un jeton MCP.
-- **Décision** : un jeton peut ouvrir jusqu'à 120 features (`MAX_TOKEN_FEATURES`). Un test
-  vérifie que la borne contient toujours toutes les features déclarées.
-- **Raison** : après la réorganisation, 75 features exposent des outils ; « Tout cocher »
-  dépassait l'ancienne borne de 40 et la création répondait 422.
+- **Date** 2026-11-23
+- **Subject** Number of features of an MCP token.
+- **Decision** A token can open up to 120 features (`MAX_TOKEN_FEATURES`). A test checks that the
+  bound always contains all the declared features.
+- **Reason** After the reorganization, 75 features expose tools; “Check all” exceeded the old
+  bound of 40 and creation answered 422.
 
 ## D307
 
-- **Date** : 2026-11-23
-- **Sujet** : Programmes existants remis « de zéro à expert » sans les réécrire.
-- **Décision** : l'écriture directe d'un programme (`POST /programs/direct`) et les retouches de
-  semaine et de module (`PATCH /weeks/{id}`, `PATCH /modules/{id}`) acceptent les champs du livre :
-  `stage` et `rationale` pour la semaine, `official_urls` et `legacy` pour le module, et, à
-  l'écriture directe, `requires` et `introduces`. Une notion requise avant d'être introduite rend
-  422 `plan_invalid`, sans la nommer (D303). Les schémas d'écriture directe passent dans
-  `features/program/write_schemas.py`, réexportés par `schemas.py`.
-- **Raison** : January veut garder ses quatre programmes et leurs leçons, mis à jour sur place.
-  Claude (par le MCP) joue le Stratège et le Rédacteur ; il lui faut les mêmes champs que le
-  Stratège pour appliquer le plan sans recréer de programme.
+- **Date** 2026-11-23
+- **Subject** Existing programs reworked “from zero to expert” without rewriting them.
+- **Decision** The direct writing of a program (`POST /programs/direct`) and the week and module
+  touch-ups (`PATCH /weeks/{id}`, `PATCH /modules/{id}`) accept the book's fields: `stage` and
+  `rationale` for the week, `official_urls` and `legacy` for the module, and, for direct writing,
+  `requires` and `introduces`. A notion required before being introduced returns 422 `plan_invalid`,
+  without naming it (D303). The direct-writing schemas move into
+  `features/program/write_schemas.py`, re-exported by `schemas.py`.
+- **Reason** January wants to keep her four programs and their lessons, updated in place. Claude
+  (through the MCP) plays the Strategist and the Writer; it needs the same fields as the Strategist
+  to apply the plan without recreating a program.
 
 ## D308
 
-- **Date** : 2026-11-23
-- **Sujet** : Remarques du Vérificateur sur une soumission de leçon refusée.
-- **Décision** : une écriture directe refusée (`POST /modules/{id}/lesson`, `PATCH /lessons/{id}`)
-  garde, en plus du motif court par catégorie de D229, les remarques du dernier contrôle de la
-  meilleure version (D305) : problèmes de contrôle, dont les notes sous 75 avec leur raison, puis
-  affirmations non sourcées (30 au plus, 600 caractères chacune). Elles sont rangées dans
-  `lessons.verification_feedback` (migration 0075) et rendues par `GET /lessons/{id}`
-  (`LessonOut.verification_feedback`, donc `lessons_get_lesson` pour le MCP). Une nouvelle
-  soumission ou une publication les efface. Les messages de la session et les journaux restent
-  sans détail, comme avant.
-- **Raison** : avec les seules notes, l'autrice d'une soumission ne sait pas quoi corriger. Deux
-  essais de la leçon de la semaine 1 du programme LangChain ont échoué de peu (68 et 72 sur 100),
-  à environ 0,40 $ d'API chacun. Les remarques ne sont lues que par la propriétaire de la leçon,
-  qui a écrit le texte soumis.
+- **Date** 2026-11-23
+- **Subject** Verifier's remarks on a refused lesson submission.
+- **Decision** A refused direct write (`POST /modules/{id}/lesson`, `PATCH /lessons/{id}`) keeps, in
+  addition to D229's short reason per category, the remarks of the last check of the best version
+  (D305): check problems, including the grades below 75 with their reason, then the claims with no
+  source (30 at most, 600 characters each). They are stored in `lessons.verification_feedback`
+  (migration 0075) and returned by `GET /lessons/{id}` (`LessonOut.verification_feedback`, so
+  `lessons_get_lesson` for the MCP). A new submission or a publication erases them. The session's
+  messages and the logs stay without detail, as before.
+- **Reason** With the grades alone, the author of a submission does not know what to fix. Two
+  attempts at the week 1 lesson of the LangChain program failed narrowly (68 and 72 out of 100), at
+  about $0.40 of API each. The remarks are only read by the lesson's owner, who wrote the text
+  submitted.
 
 ## D309
 
-- **Date** : 2026-11-23
-- **Sujet** : pas de leçon pour un module « Valider mes acquis »
-- **Décision** : un module de validation (D220, `kind = "validation"`) ne reçoit jamais de leçon.
-  La production n'en crée pas et ne lance rien pour lui (`has_lesson` dans
-  `program/service/module_kinds.py`, qui écarte aussi les modules sautés). Une écriture directe
-  (`POST /modules/{id}/lesson`, `lessons_write_lesson`) répond 409 `module_without_lesson`. La
-  migration 0076 retire les leçons déjà écrites pour ces modules, avec leurs ressources, chasses,
-  propositions de mise à jour et variantes. Une leçon déjà citée par une séance d'étude ou un
-  épisode de podcast est gardée. Le module et son quiz restent.
-- **Raison** : D220 prévoyait un module sans leçon, mais la production ne regardait que
-  `skipped`. Elle a donc écrit une leçon « Valider mes acquis : Anglais courant » en semaine 1
-  du programme LangChain, hors sujet dans un parcours qui va des bases à l'expertise.
+- **Date** 2026-11-23
+- **Subject** No lesson for a “Valider mes acquis” module
+- **Decision** A validation module (D220, `kind = "validation"`) never receives a lesson. Production
+  creates none and launches nothing for it (`has_lesson` in `program/service/module_kinds.py`, which
+  also discards skipped modules). A direct write (`POST /modules/{id}/lesson`,
+  `lessons_write_lesson`) answers 409 `module_without_lesson`. Migration 0076 removes the lessons
+  already written for these modules, with their resources, hunts, update proposals, and variants. A
+  lesson already cited by a study session or a podcast episode is kept. The module and its quiz
+  stay.
+- **Reason** D220 provided for a module with no lesson, but production only looked at `skipped`. It
+  therefore wrote a lesson “Valider mes acquis : Anglais courant” (“Validate what I know:
+  Everyday English”) in week 1 of the LangChain program, off-topic in a path that goes from the
+  basics to expertise.
 
 ## D310
 
-- **Date** : 2026-11-23
-- **Sujet** : le relais joue les étapes sur Sonnet
-- **Décision** : le relais lance `claude -p --model <modèle>`, `sonnet` par défaut. La variable
-  `TREMPLIN_RELAY_CLAUDE_MODEL` en choisit un autre ; un nom hors de `[A-Za-z0-9._-]` retombe sur
-  `sonnet`, car la ligne de commande passe par le shell de Windows. Codex ne change pas.
-- **Raison** : sans `--model`, chaque étape jouée (Scout, Vérificateur) prenait le modèle par
-  défaut de Claude Code, le plus cher, et une leçon en lance plusieurs. Ces rôles n'ont pas
-  besoin de ce modèle ; la rédaction reste faite par la session principale.
+- **Date** 2026-11-23
+- **Subject** The relay plays the steps on Sonnet
+- **Decision** The relay launches `claude -p --model <model>`, `sonnet` by default. The variable
+  `TREMPLIN_RELAY_CLAUDE_MODEL` chooses another; a name outside `[A-Za-z0-9._-]` falls back to
+  `sonnet`, because the command line goes through the Windows shell. Codex does not change.
+- **Reason** Without `--model`, each step played (Scout, Verifier) took Claude Code's default model,
+  the most expensive, and a lesson launches several. These roles do not need that model; the writing
+  stays done by the main session.
 
 ## D311
 
-- **Date** : 2026-11-23
-- **Sujet** : limites du jour du serveur MCP réglables
-- **Décision** : les limites du jour par jeton (100 écritures, 1 000 appels, P17) se règlent par
-  `MCP_WRITES_PER_DAY` et `MCP_CALLS_PER_DAY` ; 0 coupe la limite (`Limits.with_daily`, champ à
-  `None`). Les valeurs par défaut ne changent pas. Les limites de la minute (10 écritures, 60
-  appels), les 20 demandes à confirmer par jour et les 2 exécutions de code par minute restent
-  fixes. `docker-compose.yml` transmet les deux variables depuis `.env` ou le shell.
-- **Raison** : January réécrit ses leçons et ses programmes par le MCP en longues séances ; les
-  100 écritures du jour, partagées avec les clients du relais, coupent le travail en plein milieu.
-  Les limites de la minute suffisent à freiner un client qui boucle.
+- **Date** 2026-11-23
+- **Subject** MCP server daily limits made adjustable
+- **Decision** The per-token daily limits (100 writes, 1,000 calls, P17) are set by
+  `MCP_WRITES_PER_DAY` and `MCP_CALLS_PER_DAY`; 0 turns the limit off (`Limits.with_daily`, field at
+  `None`). The default values do not change. The per-minute limits (10 writes, 60 calls), the 20
+  requests to confirm per day, and the 2 code runs per minute stay fixed. `docker-compose.yml`
+  passes both variables from `.env` or the shell.
+- **Reason** January rewrites her lessons and programs through the MCP in long sessions; the day's
+  100 writes, shared with the relay's clients, cut the work off in the middle. The per-minute limits
+  are enough to slow down a client that loops.
 
 ## D312
 
