@@ -1,10 +1,10 @@
-"""Import du profil maître (SPEC 5.1, D124) : le CV (PDF obligatoire) et le profil LinkedIn (PDF
-facultatif) sont rangés comme documents de la mémoire, étiquetés `cv` et `linkedin`, puis la
-capture `cv_capture` (mode `profile`) part sur ces documents et la note.
+"""Master profile import (SPEC 5.1, D124): the CV (PDF required) and the LinkedIn profile (PDF
+optional) are stored as memory documents, labelled `cv` and `linkedin`, then the `cv_capture`
+capture (`profile` mode) starts on these documents and the note.
 
-Une seule capture du profil à la fois (409 `capture_in_progress`). Un fichier qui n'est pas un PDF
-est refusé (415 `unsupported_file_type`), comme un fichier de plus de 10 Mo (413
-`file_too_large`) ; aucun message ne cite un nom de fichier ni un contenu (17.2)."""
+A single profile capture at a time (409 `capture_in_progress`). A file that is not a PDF is
+refused (415 `unsupported_file_type`), like a file over 10 MB (413 `file_too_large`); no
+message quotes a file name or a content (17.2)."""
 
 import logging
 
@@ -44,7 +44,7 @@ def pdf_too_large() -> AppError:
 
 
 async def check_pdf(file: UploadFile) -> None:
-    """PDF (extension et contenu) de 10 Mo au plus ; le fichier est rembobiné pour son envoi."""
+    """PDF (extension and content) of 10 MB at most; the file is rewound for its upload."""
     blocks: list[bytes] = []
     size = 0
     while block := await file.read(READ_BLOCK):
@@ -64,7 +64,7 @@ async def check_pdf(file: UploadFile) -> None:
 async def _store(
     rt: CvRuntime, db: AsyncSession, user_id: str, files: list[tuple[UploadFile, str]]
 ) -> list[str]:
-    """Chaque fichier rangé par l'envoi de la mémoire (doublon : le document existant)."""
+    """Each file stored by the memory upload (duplicate: the existing document)."""
     service = DocumentService(db, user_id, rt.memory)
     ids: list[str] = []
     for file, tag in files:
@@ -127,13 +127,13 @@ async def start_import(
         await _validate_stored(rt, user_id, stored)
         document_ids = await _store(rt, db, user_id, files)
         document_ids = await _tag_stored(db, user_id, stored, document_ids)
-        await db.commit()  # aucune écriture en attente quand le moteur écrit la session
+        await db.commit()  # no write pending when the engine writes the session
         body = {"mode": "profile", "document_ids": document_ids, "note": note}
         session_id = await rt.launcher.start(
             user_id, CAPTURE_GRAPH, body, subject_type=PROFILE_SUBJECT, subject_id=user_id
         )
     logger.info(
-        "Capture du profil lancée : utilisateur %s, session %s, %d document(s), note %s",
+        "Profile capture started: user %s, session %s, %d document(s), note %s",
         user_id,
         session_id,
         len(document_ids),

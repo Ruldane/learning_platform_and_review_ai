@@ -1,12 +1,12 @@
-"""Parcours `quiz` (SPEC F9, 9.2, D100) : un seul parcours à deux modes. `generate` : l'Examinateur
-écrit le quiz d'un module et ses fiches de révision ; `grade` : il note les réponses ouvertes
-d'une tentative (les QCM sont notés par le code). Aucune interruption.
+"""`quiz` graph (SPEC F9, 9.2, D100): a single graph with two modes. `generate`: the Examiner
+writes a module's quiz and its review cards; `grade`: it grades the open answers of an attempt
+(multiple-choice questions are graded by the code). No interruption.
 
 START -> route_mode
-generate : material -> write -> route_write
-           route_write : quiz conforme -> save_quiz -> END ;
-                         invalide après deux re-demandes -> failed -> END (`quiz_failed`)
-grade :    load_attempt -> grade_open -> save_grades -> announce -> END
+generate: material -> write -> route_write
+           route_write: valid quiz -> save_quiz -> END ;
+                         invalid after two re-asks -> failed -> END (`quiz_failed`)
+grade:    load_attempt -> grade_open -> save_grades -> announce -> END
 """
 
 from typing import Any, Literal, Self
@@ -35,11 +35,11 @@ class QuizInput(BaseModel):
 
     @model_validator(mode="after")
     def _id_of_mode(self) -> Self:
-        """`generate` demande le quiz, `grade` la tentative (422 `invalid_input` sinon)."""
+        """`generate` needs the quiz, `grade` the attempt (422 `invalid_input` otherwise)."""
         if self.mode == "generate" and self.quiz_id is None:
-            raise ValueError("Écrire un quiz demande `quiz_id`.")
+            raise ValueError("Writing a quiz needs `quiz_id`.")
         if self.mode == "grade" and self.attempt_id is None:
-            raise ValueError("Noter une tentative demande `attempt_id`.")
+            raise ValueError("Grading an attempt needs `attempt_id`.")
         return self
 
 

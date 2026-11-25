@@ -56,7 +56,7 @@ async def _argue(deps: GraphDeps, state: TrialState, role: str) -> CodeArgument:
     )
     request = untrusted(json.dumps(catalog, ensure_ascii=False), "frozen project excerpts")
     if other:
-        request += "\n\n" + untrusted(other, "plaidoirie du Procureur")
+        request += "\n\n" + untrusted(other, "prosecutor's argument")
     model = await deps.models.get_chat_model(deps.user_id, get_agent(role).tier, agent=role)
     reply = await structured_call(
         with_output_limit(model, 1250),
@@ -102,7 +102,7 @@ def build(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
                 ),
             ],
         )
-        return {"summary": "Les deux plaidoiries sont disponibles."}
+        return {"summary": "Both arguments are available."}
 
     graph = StateGraph(TrialState)
     graph.add_node("prosecute", prosecute)

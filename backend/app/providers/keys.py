@@ -15,5 +15,5 @@ class KeyProvider(Protocol):
     label: str
 
     async def test_key(self, api_key: str) -> KeyTestResult:
-        """Vérifie la clé sans jamais lever ; le message est en français et ne cite pas la clé."""
+        """Check the key without raising; the message is in English and never quotes the key."""
         ...

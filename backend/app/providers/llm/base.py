@@ -31,14 +31,14 @@ TIERS: tuple[Tier, ...] = ("fast", "standard", "strong", "vision")
 
 
 class ModelChoice(BaseModel):
-    """Fournisseur et identifiant de modèle retenus pour un niveau ou un agent."""
+    """Provider and model identifier chosen for a tier or an agent."""
 
     provider: str = Field(min_length=1)
     model: str = Field(min_length=1)
 
 
 class KeyTestResult(BaseModel):
-    """Résultat d'un test de clé : `message` est en français et ne contient jamais la clé."""
+    """Result of a key test: `message` is in English and never contains the key."""
 
     ok: bool
     message: str

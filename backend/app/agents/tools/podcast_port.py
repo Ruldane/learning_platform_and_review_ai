@@ -1,4 +1,4 @@
-"""Contrat entre le parcours du podcast et son stockage."""
+"""Contract between the podcast graph and its storage."""
 
 from dataclasses import dataclass
 from typing import Annotated, Protocol, Self
@@ -32,7 +32,7 @@ class PodcastScript(BaseModel):
         if self.lines[0].speaker != "host" or any(
             one.speaker == two.speaker for one, two in zip(self.lines, self.lines[1:], strict=False)
         ):
-            raise ValueError("Les deux voix alternent. L’hôte commence.")
+            raise ValueError("The two voices alternate. The host starts.")
         return self
 
 
@@ -55,13 +55,13 @@ class PodcastStore(Protocol):
 
 class _MissingPodcastStore:
     async def context(self, user_id: str, episode_id: str) -> PodcastContext:
-        raise RuntimeError("Le stockage du podcast n’est pas branché.")
+        raise RuntimeError("The podcast storage is not wired.")
 
     async def save_script(self, user_id: str, episode_id: str, script: PodcastScript) -> None:
-        raise RuntimeError("Le stockage du podcast n’est pas branché.")
+        raise RuntimeError("The podcast storage is not wired.")
 
     async def render_audio(self, user_id: str, episode_id: str) -> None:
-        raise RuntimeError("Le stockage du podcast n’est pas branché.")
+        raise RuntimeError("The podcast storage is not wired.")
 
 
 NO_PODCAST: PodcastStore = _MissingPodcastStore()

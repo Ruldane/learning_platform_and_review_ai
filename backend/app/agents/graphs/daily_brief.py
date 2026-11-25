@@ -1,15 +1,15 @@
-"""Parcours `daily_brief` (P11, D161) : les deux rubriques du brief du matin qui passent par un
-modèle. Le bloc, les révisions, les relances, les offres et l'avancement sont calculés par le code
-(feature `brief`) ; ici, la ressource (l'Éclaireur choisit parmi huit résultats d'une recherche du
-mois, le code lit la page) et le conseil (deux phrases du Modérateur, nombres contrôlés par le
-code) : deux appels rapides au plus.
+"""`daily_brief` graph (P11, D161): the two sections of the morning brief that go through a
+model. The block, the reviews, the follow-ups, the postings and the progress are computed by the
+code (`brief` feature); here, the resource (the Scout picks among eight results of a search of the
+month, the code reads the page) and the advice (two sentences from the Moderator, numbers checked
+by the code): at most two quick calls.
 
 START -> load -> resource -> advice -> close -> END
 
-Chaque rubrique relit l'état du brief par le port (`context`) et se saute si elle est déjà rangée :
-un redémarrage avant le conseil ne rappelle pas l'Éclaireur. Une rubrique en panne se range vide
-(`None`), jamais en erreur : elle n'empêche ni l'autre ni la fin du parcours. Aucune interruption,
-aucune boucle. Lancé seulement par la feature `brief` (8.6, `ROUTE_ONLY`)."""
+Each section re-reads the brief state through the port (`context`) and skips itself if it is
+already stored: a restart before the advice does not call the Scout again. A failed section is
+stored empty (`None`), never as an error: it stops neither the other one nor the end of the
+graph. No interruption, no loop. Launched only by the `brief` feature (8.6, `ROUTE_ONLY`)."""
 
 import logging
 from typing import Any
@@ -39,7 +39,7 @@ def make_load(deps: GraphDeps) -> Node:
     async def load(state: DailyBriefState) -> DailyBriefState:
         ctx = await deps.ports.brief.context(deps.user_id, state["brief_id"])
         logger.info(
-            "Brief lu : session %s, brief %s, ressource rangée %s, conseil rangé %s",
+            "Brief read: session %s, brief %s, resource stored %s, advice stored %s",
             deps.session_id,
             ctx.brief_id,
             ctx.resource_done,
@@ -53,7 +53,7 @@ def make_load(deps: GraphDeps) -> Node:
 def make_close(deps: GraphDeps) -> Node:
     @node_timeout()
     async def close(state: DailyBriefState) -> DailyBriefState:
-        logger.info("Brief prêt : session %s, brief %s", deps.session_id, state["brief_id"])
+        logger.info("Brief ready: session %s, brief %s", deps.session_id, state["brief_id"])
         return {"summary": SUMMARY}
 
     return close

@@ -1,14 +1,14 @@
-"""Doublons d'une offre (SPEC F8, 14.2, D122). Le niveau « certain » (même lien, même texte) est
-la réponse 200 de `POST /postings`. Les niveaux « probable » et « possible » demandent l'entreprise
-et le titre : ils sont calculés après l'analyse (`save_analysis`, G35) :
-- probable : même entreprise (`company_key`) et titres proches (`PROBABLE_TITLE`) ;
-- possible : même entreprise, et l'élément de mémoire `offre` de l'autre offre a un fragment
-  proche (`POSSIBLE_COSINE`) parmi les 5 premiers résultats de la recherche ;
-- « offres distinctes » (`distinct_from`, des deux côtés) les retire ; jamais l'offre elle-même.
+"""Duplicates of a posting (SPEC F8, 14.2, D122). The "certain" level (same link, same text) is
+the 200 response of `POST /postings`. The "probable" and "possible" levels need the company
+and the title: they are computed after the analysis (`save_analysis`, G35):
+- probable: same company (`company_key`) and close titles (`PROBABLE_TITLE`);
+- possible: same company, and the other posting's `posting` memory item has a close chunk
+  (`POSSIBLE_COSINE`) among the first 5 search results;
+- "distinct postings" (`distinct_from`, on both sides) removes them; never the posting itself.
 
-Rangés sur les deux offres (`duplicates` : niveau, offre, score), relus à l'affichage : une offre
-supprimée disparaît, titre, entreprise et date sont ceux de l'autre offre. Les dates sont rendues
-dans le fuseau de January. Journaux : identifiants et nombres seulement."""
+Stored on both postings (`duplicates`: level, posting, score), re-read for display: a deleted
+posting disappears, title, company and date are those of the other posting. Dates are returned
+in January's time zone. Logs: ids and numbers only."""
 
 import logging
 from typing import Any
@@ -49,7 +49,7 @@ def _hit(
 
 
 def _apart(posting: JobPosting, other: JobPosting) -> bool:
-    """« Offres distinctes », dit d'un côté ou de l'autre."""
+    """ "Distinct postings", said on one side or the other."""
     return other.id in posting.distinct_from or posting.id in other.distinct_from
 
 
@@ -65,13 +65,13 @@ def query_of(title: str | None, company: str | None, text: str) -> str:
 async def _best_scores(
     memory: MemoryRuntime, user_id: str, query: str, own_item_id: str | None, label: str | None
 ) -> dict[str, float]:
-    """`élément de mémoire → meilleur score` des offres proches ; recherche indisponible :
-    aucune (le doublon possible n'est qu'un signal)."""
+    """`memory item → best score` of the close postings; search unavailable: none (the possible
+    duplicate is only a signal)."""
     gateway = AgentMemoryGateway(memory)
     try:
         found = await gateway.search(user_id, query, kinds=["posting"], k=SEARCH_HITS + 1)
     except AppError as exc:
-        logger.warning("Doublons possibles non cherchés : offre %s (%s)", label, exc.code)
+        logger.warning("Possible duplicates not searched: posting %s (%s)", label, exc.code)
         return {}
     best: dict[str, float] = {}
     for hit in found.hits:
@@ -94,11 +94,11 @@ async def prefetch_scores(
     own_item_id: str | None,
     distinct_from: list[Any],
 ) -> dict[str, float]:
-    """Les scores de recherche dont `find_duplicates` aura besoin pour l'offre décrite, calculés
-    **avant toute écriture** : la vectorisation (Ollama) et la recherche (Qdrant) peuvent durer
-    plusieurs secondes, et le verrou d'écriture de SQLite ne doit pas les attendre (D66). `{}` sans
-    entreprise ou sans autre offre de la même entreprise qui ne soit pas déjà « probable »
-    (aucune recherche dans ce cas). `db` ne doit avoir écrit encore aucune ligne."""
+    """The search scores that `find_duplicates` will need for the described posting, computed
+    **before any write**: vectorization (Ollama) and search (Qdrant) can take several seconds,
+    and SQLite's write lock must not wait for them (D66). `{}` without a company or without
+    another posting of the same company that is not already "probable" (no search in that case).
+    `db` must not have written any row yet."""
     norm = company_key(company) if company else ""
     if not norm:
         return {}
@@ -114,7 +114,7 @@ async def prefetch_scores(
     if not rest:
         return {}
     return await _best_scores(
-        memory, user_id, query_of(title, company, text), own_item_id, "écrite"
+        memory, user_id, query_of(title, company, text), own_item_id, "written"
     )
 
 
@@ -125,9 +125,9 @@ async def find_duplicates(
     posting: JobPosting,
     scores: dict[str, float] | None = None,
 ) -> list[DuplicateHit]:
-    """Les doublons probables puis possibles de l'offre analysée, les plus anciens d'abord.
-    `scores` : ceux que `prefetch_scores` a déjà cherchés (aucune attente réseau ici) ; sinon la
-    recherche se fait ici."""
+    """The probable then possible duplicates of the analyzed posting, oldest first. `scores`:
+    those that `prefetch_scores` has already searched (no network wait here); otherwise the
+    search is done here."""
     if not posting.company_norm:
         return []
     same = [
@@ -166,8 +166,8 @@ def _stored(level: str, posting_id: str, score: float | None) -> dict[str, Any]:
 async def store_duplicates(
     db: AsyncSession, user_id: str, posting: JobPosting, hits: list[DuplicateHit]
 ) -> None:
-    """Range les doublons sur l'offre et, réciproquement, sur chaque autre offre (sans doublon de
-    ligne). Le commit appartient à l'appelant."""
+    """Stores the duplicates on the posting and, reciprocally, on each other posting (without a
+    duplicate row). The commit belongs to the caller."""
     posting.duplicates = [_stored(h.level, h.posting_id, h.score) for h in hits]
     others = await PostingRepository(db, user_id).by_ids([h.posting_id for h in hits])
     for hit in hits:
@@ -181,7 +181,7 @@ async def store_duplicates(
 async def shown_duplicates(
     db: AsyncSession, user_id: str, posting: JobPosting, zone: ZoneInfo
 ) -> list[DuplicateHit]:
-    """Les doublons rangés, relus : offres encore là et non déclarées distinctes."""
+    """The stored duplicates, re-read: postings still there and not declared distinct."""
     stored = [d for d in posting.duplicates if isinstance(d, dict) and d.get("posting_id")]
     others = await PostingRepository(db, user_id).by_ids([str(d["posting_id"]) for d in stored])
     hits: list[DuplicateHit] = []
@@ -200,8 +200,8 @@ def not_found() -> AppError:
 
 
 async def mark_distinct(db: AsyncSession, user_id: str, posting_id: str, other_id: str) -> None:
-    """« Offres distinctes » : chacune exclut l'autre et le doublon disparaît des deux côtés.
-    Idempotent ; une offre absente (ou d'une autre) : 404. Le commit appartient à l'appelant."""
+    """ "Distinct postings": each excludes the other and the duplicate disappears on both sides.
+    Idempotent; an absent posting (or another user's): 404. The commit belongs to the caller."""
     found = await PostingRepository(db, user_id).by_ids({posting_id, other_id})
     if posting_id == other_id or len(found) != 2:  # noqa: PLR2004
         raise not_found()
@@ -211,6 +211,4 @@ async def mark_distinct(db: AsyncSession, user_id: str, posting_id: str, other_i
             row.distinct_from = [*row.distinct_from, two]
         row.duplicates = [d for d in row.duplicates if d.get("posting_id") != two]
     await db.flush()
-    logger.info(
-        "Offres distinctes : utilisateur %s, offres %s et %s", user_id, posting_id, other_id
-    )
+    logger.info("Distinct postings: user %s, postings %s and %s", user_id, posting_id, other_id)

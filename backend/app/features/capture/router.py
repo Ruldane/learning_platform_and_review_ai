@@ -1,7 +1,7 @@
-"""API de la capture rapide et du journal (SPEC F18, D108). `POST /capture` lance l'Archiviste sur
-un lien, un texte ou un document importé ; ses questions (texte d'un lien illisible, tâche à
-cocher, fiches) passent par la reprise de la session (`POST /sessions/{id}/resume`, 14.1).
-`GET /journal` rend le journal, le plus récent d'abord."""
+"""Quick capture and journal API (SPEC F18, D108). `POST /capture` launches the Archivist on a
+link, a text or an imported document; its questions (text of an unreadable link, task to tick,
+cards) go through the session's resume (`POST /sessions/{id}/resume`, 14.1). `GET /journal`
+returns the journal, most recent first."""
 
 from typing import Annotated
 
@@ -23,7 +23,7 @@ router = APIRouter(tags=["capture"])
 
 
 def get_capture_runtime(conn: HTTPConnection) -> CaptureRuntime:
-    """La capture ouverte par le lifespan (`app.state.capture`)."""
+    """The capture opened by the lifespan (`app.state.capture`)."""
     runtime: CaptureRuntime = conn.app.state.capture
     return runtime
 
@@ -35,8 +35,8 @@ CaptureDep = Annotated[CaptureRuntime, Depends(get_capture_runtime)]
 async def start_capture(
     body: CaptureRequest, current: CurrentUserDep, rt: CaptureDep
 ) -> CaptureStarted:
-    """Lance la capture. Zéro ou plusieurs sources : 422 `invalid_input` ; lien non http(s) :
-    422 `invalid_url` ; document d'une autre : 404 `document_not_found`."""
+    """Launches the capture. Zero or several sources: 422 `invalid_input`; non-http(s) link:
+    422 `invalid_url`; another user's document: 404 `document_not_found`."""
     return await capture.start_capture(rt, current.id, body)
 
 
@@ -48,6 +48,6 @@ async def read_journal(
     before: Annotated[str | None, Query(max_length=36)] = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 50,
 ) -> JournalPage:
-    """Le journal (captures, sessions, quiz, bilans hebdomadaires), le plus récent d'abord ;
-    `before` : `next_before` de la page précédente."""
+    """The journal (captures, sessions, quizzes, weekly reviews), most recent first;
+    `before`: `next_before` of the previous page."""
     return await journal_page(db, current.id, kind=kind, before=before, limit=limit)

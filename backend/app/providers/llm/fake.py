@@ -1,4 +1,4 @@
-"""Faux fournisseur LLM, sans réseau : tests de bout en bout et tests des graphes d'agents."""
+"""Fake LLM provider, without network: end-to-end tests and tests of the agent graphs."""
 
 from collections.abc import AsyncIterator, Iterator
 from typing import Any
@@ -19,7 +19,7 @@ def _words(content: Any) -> int:
 
 
 class _Script:
-    """Réponses à rendre dans l'ordre et messages reçus, partagés par les modèles construits."""
+    """Replies to return in order and messages received, shared by the models built."""
 
     def __init__(self, responses: list[str], received: list[list[BaseMessage]]) -> None:
         self._responses = responses
@@ -29,7 +29,7 @@ class _Script:
     def next_reply(self, messages: list[BaseMessage]) -> tuple[str, UsageMetadata]:
         self.received.append(list(messages))
         if self._calls >= len(self._responses):
-            raise RuntimeError("FakeLlmProvider : plus aucune réponse prévue pour cet appel.")
+            raise RuntimeError("FakeLlmProvider: no reply left for this call.")
         reply = self._responses[self._calls]
         self._calls += 1
         tokens_in = sum(_words(m.content) for m in messages)
@@ -98,7 +98,7 @@ class FakeChatModel(BaseChatModel):
 
 class FakeLlmProvider:
     name = "fake"
-    label = "Faux fournisseur"
+    label = "Fake provider"
 
     def __init__(self, responses: list[str], *, valid_key: str = "fake-key") -> None:
         self.responses = responses
@@ -120,5 +120,5 @@ class FakeLlmProvider:
 
     async def test_key(self, api_key: str) -> KeyTestResult:
         if api_key == self.valid_key:
-            return KeyTestResult(ok=True, message="Clé valide.")
-        return KeyTestResult(ok=False, message="Clé refusée par le faux fournisseur.")
+            return KeyTestResult(ok=True, message="Valid key.")
+        return KeyTestResult(ok=False, message="Key refused by the fake provider.")

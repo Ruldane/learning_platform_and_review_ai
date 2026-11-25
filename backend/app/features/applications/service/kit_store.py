@@ -1,24 +1,24 @@
-"""Port du kit de candidature (`KitStore`, D142, D143) sur la feature `applications` :
-implémentation branchée par `bootstrap_agents.agent_ports(..., kit=...)`. Chaque appel ouvre
-ses propres sessions de base, courtes.
+"""Application kit port (`KitStore`, D142, D143) on the `applications` feature:
+implementation wired by `bootstrap_agents.agent_ports(..., kit=...)`. Each call opens its own
+short database sessions.
 
-- `context` : lecture seule. La fiche (entreprise, intitulé exact, contact), son offre (l'analyse de
-  l'offre liée, sinon une analyse minimale de la copie figée de la fiche), le profil maître validé,
-  le dossier de `companies` s'il a moins de 30 jours (ses pages **dans l'ordre des citations** :
-  `[n]` = rang + 1), la version de CV envoyée quand la fiche l'a figée (événement `version`), sinon
-  la version prête la plus récente de l'offre, les pièces modifiées par January (`keep`) et son
-  jour (fuseau de ses réglages). 409 `posting_required` (ni offre ni texte figé), 409
-  `profile_required` (aucun profil validé).
-- `save_piece` : **idempotent par `(fiche, pièce, session)`** et sûr sous écritures parallèles (les
-  sept branches du parcours rangent en même temps) : un verrou par fiche, puis la ligne unique
-  `(fiche, pièce)` ; la ligne de la même session, ou une pièce que January a modifiée entre-temps,
-  n'est jamais réécrite. Rangée la dernière pièce de la session, l'événement `kit` « terminé »
-  entre au fil, dans la même transaction.
-- `save_dossier` : `companies.dossier`, ses pages lues (dans l'ordre) et sa date ; idempotent par
-  session (l'identifiant de la session est rangé avec le dossier).
+- `context`: read-only. The record (company, exact title, contact), its posting (the linked
+  posting's analysis, otherwise a minimal analysis of the record's frozen copy), the validated
+  master profile, the `companies` dossier if it is under 30 days old (its pages **in citation
+  order**: `[n]` = rank + 1), the CV version sent when the record froze it (`version` event),
+  otherwise the posting's most recent ready version, the pieces January edited (`keep`) and her
+  day (time zone of her settings). 409 `posting_required` (neither posting nor frozen text), 409
+  `profile_required` (no validated profile).
+- `save_piece`: **idempotent per `(record, piece, session)`** and safe under parallel writes
+  (the seven branches of the flow store at the same time): one lock per record, then the unique
+  `(record, piece)` row; the row of the same session, or a piece January edited in the
+  meantime, is never rewritten. Once the session's last piece is stored, the `kit` "finished"
+  event enters the timeline, in the same transaction.
+- `save_dossier`: `companies.dossier`, its pages read (in order) and its date; idempotent per
+  session (the session id is stored with the dossier).
 
-Journaux : identifiants, nombres et statuts seulement, jamais une pièce, l'entreprise, un contact ni
-une adresse (17.2)."""
+Logs: ids, numbers and statuses only, never a piece, the company, a contact or an address
+(17.2)."""
 
 import asyncio
 import logging
@@ -71,8 +71,8 @@ SUBJECT = "application_kit"
 
 
 def company_name_key(name: str) -> str:
-    """La clé de la fiche entreprise d'un nom : `company_key`, sinon le nom en minuscules (un nom
-    sans lettre latine donnerait une clé vide). Une seule clé pour lire et écrire le dossier."""
+    """The company record key of a name: `company_key`, otherwise the lowercase name (a name
+    without a Latin letter would give an empty key). A single key to read and write the dossier."""
     return company_key(name) or name.strip().casefold()
 
 
@@ -89,15 +89,15 @@ def profile_required() -> AppError:
 
 
 def kit_lock(rt: ApplicationsRuntime, user_id: str, application_id: str) -> asyncio.Lock:
-    """Un verrou par fiche : lancement, pièces rangées et modifications ne se croisent pas."""
+    """One lock per record: launch, stored pieces and edits never interleave."""
     return rt.locks.get(user_id, f"kit:{application_id}")
 
 
 async def posting_inputs(
     db: AsyncSession, user_id: str, row: Application
 ) -> tuple[str, PostingAnalysis]:
-    """Le texte de l'offre (la copie figée de la fiche, sinon l'offre liée) et son analyse ;
-    409 `posting_required` sans texte."""
+    """The posting text (the record's frozen copy, otherwise the linked posting) and its
+    analysis; 409 `posting_required` without text."""
     posting = None
     if row.posting_id is not None:
         posting = (await postings_by_ids(db, user_id, [row.posting_id])).get(row.posting_id)
@@ -110,8 +110,8 @@ async def posting_inputs(
 def dossier_of(
     company: Company | None, now: datetime
 ) -> tuple[CompanyDossier | None, list[SourceRef]]:
-    """Le dossier repris (de moins de `DOSSIER_MAX_AGE`, à l'instant `now`) et ses pages, dans
-    l'ordre où elles sont citées. Une seule règle pour le kit et l'entretien blanc."""
+    """The reused dossier (under `DOSSIER_MAX_AGE`, at instant `now`) and its pages, in the
+    order they are cited. A single rule for the kit and the mock interview."""
     if company is None or company.dossier_at is None or not company.dossier:
         return None, []
     if now - company.dossier_at >= DOSSIER_MAX_AGE:
@@ -120,7 +120,7 @@ def dossier_of(
         dossier = CompanyDossier.model_validate(company.dossier)
         sources = [SourceRef.model_validate(ref) for ref in company.dossier_sources]
     except ValidationError:
-        return None, []  # un dossier illisible est refait
+        return None, []  # an unreadable dossier is redone
     return dossier, sources
 
 
@@ -162,8 +162,8 @@ class AgentKitStore:
     async def _version(
         self, db: AsyncSession, user_id: str, row: Application
     ) -> CvVersionRef | None:
-        """La version de CV du kit : la version envoyée quand la fiche l'a figée (événement
-        `version`), sinon la version prête la plus récente de l'offre."""
+        """The kit's CV version: the version sent when the record froze it (`version` event),
+        otherwise the posting's most recent ready version."""
         if row.cv_version_id and row.id in await EventRepository(db, user_id).version_frozen():
             number = (await version_numbers(db, user_id, [row.cv_version_id])).get(
                 row.cv_version_id
@@ -191,8 +191,8 @@ class AgentKitStore:
             repo = KitRepository(db, user_id)
             row = await repo.of_kind(application_id, kind)
             if row is not None and (row.session_id == session_id or row.edited):
-                # Rejeu (SPEC 9.4), ou pièce modifiée par January depuis : rien n'est réécrit,
-                # mais la pièce compte : la fin du kit s'écrit si elle était la dernière.
+                # Replay (SPEC 9.4), or piece edited by January since: nothing is rewritten,
+                # but the piece counts: the kit's end is written if it was the last one.
                 await self._close_if_done(db, user_id, session_id, app_row)
                 await db.commit()
                 return row.id
@@ -213,7 +213,7 @@ class AgentKitStore:
             await self._close_if_done(db, user_id, session_id, app_row)
             await db.commit()
             logger.info(
-                "Pièce du kit rangée : utilisateur %s, fiche %s, pièce %s, statut %s",
+                "Kit piece stored: user %s, record %s, piece %s, status %s",
                 user_id,
                 application_id,
                 kind,
@@ -224,8 +224,8 @@ class AgentKitStore:
     async def _meta(
         self, db: AsyncSession, user_id: str, row: Application, kind: str, meta: dict[str, Any]
     ) -> dict[str, Any]:
-        """Le `meta` de la pièce ; le dossier garde ses pages (`source_refs`, dans l'ordre des
-        citations) : elles survivent à un dossier refait plus tard par une autre fiche."""
+        """The piece's `meta`; the dossier keeps its pages (`source_refs`, in citation order):
+        they survive a dossier redone later by another record."""
         stored = dict(meta)
         if kind != "company_brief" or not meta.get("sources"):
             return stored
@@ -237,8 +237,8 @@ class AgentKitStore:
     async def _close_if_done(
         self, db: AsyncSession, user_id: str, session_id: str, app_row: Application
     ) -> None:
-        """Les sept pièces sont rangées (par la session, ou gardées telles quelles) : l'événement
-        `kit` « terminé » entre au fil, avec le compte des statuts."""
+        """The seven pieces are stored (by the session, or kept as they are): the `kit`
+        "finished" event enters the timeline, with the count of statuses."""
         if await EventRepository(db, user_id).kit_ended(session_id):
             return
         rows = await KitRepository(db, user_id).of_application(app_row.id)
@@ -274,13 +274,13 @@ class AgentKitStore:
             repo = CompanyRepository(db, user_id)
             row = await repo.by_key(key) or await repo.add(name=company[:200], name_norm=key[:200])
             if row.dossier and row.dossier.get("session_id") == session_id:
-                return  # rejeu : rien à réécrire
+                return  # replay: nothing to rewrite
             row.dossier = {**dossier.model_dump(mode="json"), "session_id": session_id}
             row.dossier_sources = [source.model_dump(mode="json") for source in sources]
             row.dossier_at = rt.now()
             await db.commit()
             logger.info(
-                "Dossier rangé : utilisateur %s, entreprise %s, session %s, %d page(s)",
+                "Dossier stored: user %s, company %s, session %s, %d page(s)",
                 user_id,
                 row.id,
                 session_id,

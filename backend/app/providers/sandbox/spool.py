@@ -1,12 +1,12 @@
-"""Implémentation du bac à sable par volume d'échange (phase 10, P5 et P6) : le back dépose
-`<spool>/jobs/<run_id>.json` ; le lanceur du conteneur `sandbox` (`sandbox/runner.py`, sans réseau
-ni socket) l'exécute et rend `<spool>/out/<run_id>.log` (la sortie, 64 Kio au plus) puis
-`<run_id>.done.json` (la fin). Annulation : un fichier `<spool>/cancel/<run_id>`. Battement de
-coeur : `<spool>/heartbeat` (son âge dit si le bac tourne).
+"""Sandbox implementation through an exchange volume (phase 10, P5 and P6): the back end drops
+`<spool>/jobs/<run_id>.json`; the `sandbox` container's launcher (`sandbox/runner.py`, without
+network or socket) runs it and returns `<spool>/out/<run_id>.log` (the output, 64 KiB at most) then
+`<run_id>.done.json` (the end). Cancellation: a file `<spool>/cancel/<run_id>`. Heartbeat:
+`<spool>/heartbeat` (its age says whether the sandbox runs).
 
-Seule la composition (`app.bootstrap_ide`) importe ce module : les features ne connaissent que le
-port `CodeSandbox` (contrat d'import 3). Le dossier d'échange est `2770 root:12345` ; le back y
-accède par `group_add: ["12345"]`. Si le bac est arrêté, `submit` lève une `OSError`."""
+Only the composition (`app.bootstrap_ide`) imports this module: the features only know the
+`CodeSandbox` port (import contract 3). The exchange folder is `2770 root:12345`; the back end
+accesses it through `group_add: ["12345"]`. If the sandbox is stopped, `submit` raises `OSError`."""
 
 import asyncio
 import json
@@ -31,13 +31,13 @@ from app.providers.sandbox.base import (
 )
 
 HEARTBEAT_MAX_AGE_S = 5.0
-# Le lanceur borne le journal à `MAX_OUTPUT_BYTES` : le back ne lit jamais plus (plus quatre octets
-# pour un caractère coupé), même si le volume contenait un fichier énorme.
+# The launcher bounds the log to `MAX_OUTPUT_BYTES`: the back end never reads more (plus four bytes
+# for a cut character), even if the volume held a huge file.
 MAX_READ_BYTES = MAX_OUTPUT_BYTES + 4
-# Taille d'un travail déposé : le lanceur en refuse au-delà (200 000 octets de caractères de
-# contrôle font 1,2 Mo une fois échappés en JSON ; même valeur que `MAX_JOB_BYTES` du lanceur).
+# Size of a submitted job: the launcher refuses more (200,000 bytes of control characters
+# make 1.2 MB once escaped in JSON; same value as the launcher's `MAX_JOB_BYTES`).
 MAX_JOB_BYTES = 1_500_000
-# Un travail resté en file plus longtemps alors que le lanceur ne bat plus : le bac est tombé.
+# A job left in the queue longer while the launcher no longer beats: the sandbox is down.
 QUEUE_DEAD_S = 60.0
 _STATUSES: tuple[Literal["done", "timeout", "killed", "error"], ...] = (
     "done",
@@ -48,7 +48,7 @@ _STATUSES: tuple[Literal["done", "timeout", "killed", "error"], ...] = (
 
 
 def _utf8_complete(data: bytes) -> bytes:
-    """`data` sans un éventuel caractère UTF-8 coupé à la fin (il sera lu à l'appel suivant)."""
+    """`data` without a UTF-8 character possibly cut at the end (read at the next call)."""
     for cut in range(len(data), max(len(data) - 4, -1), -1):
         try:
             data[:cut].decode("utf-8")
@@ -77,8 +77,8 @@ def _read_result(path: Path) -> SandboxResult | None:
 
 
 class SpoolSandbox:
-    """`CodeSandbox` par volume d'échange. Les accès disque sont de petits fichiers, faits dans
-    un fil (`asyncio.to_thread`) pour ne jamais bloquer la boucle d'événements."""
+    """`CodeSandbox` through an exchange volume. The disk accesses are small files, done in
+    a thread (`asyncio.to_thread`) so as never to block the event loop."""
 
     def __init__(self, spool_dir: Path) -> None:
         self._dir = Path(spool_dir)
@@ -99,7 +99,7 @@ class SpoolSandbox:
 
     def _write_job(self, job: SandboxJob) -> None:
         if self._log(job.run_id).exists():
-            raise ValueError("travail déjà déposé")
+            raise ValueError("job already submitted")
         body = {
             "run_id": job.run_id,
             "files": job.files,
@@ -111,21 +111,21 @@ class SpoolSandbox:
         }
         try:
             payload = json.dumps(body, ensure_ascii=False).encode("utf-8")
-        except UnicodeEncodeError:  # une substitution orpheline n'est pas du texte
-            raise ValueError("texte invalide dans les fichiers") from None
+        except UnicodeEncodeError:  # an orphan surrogate is not text
+            raise ValueError("invalid text in the files") from None
         if len(payload) > MAX_JOB_BYTES:
-            raise ValueError("travail trop gros")
-        tmp = self._dir / "jobs" / f".{job.run_id}.{secrets.token_hex(4)}.tmp"  # un par dépôt
+            raise ValueError("job too large")
+        tmp = self._dir / "jobs" / f".{job.run_id}.{secrets.token_hex(4)}.tmp"  # per submission
         fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o660)
         try:
-            os.fchmod(fd, 0o660)  # le umask du back (022) retirerait l'écriture au groupe
+            os.fchmod(fd, 0o660)  # the back end's umask (022) would remove group write
             os.write(fd, payload)
         finally:
             os.close(fd)
         try:
-            os.link(tmp, self._job(job.run_id))  # échoue si présent : deux dépôts ne s'écrasent pas
+            os.link(tmp, self._job(job.run_id))  # fails if present: no overwrite
         except FileExistsError:
-            raise ValueError("travail déjà déposé") from None
+            raise ValueError("job already submitted") from None
         finally:
             os.unlink(tmp)
 
@@ -137,7 +137,7 @@ class SpoolSandbox:
         return await asyncio.to_thread(self._poll, run_id, max(offset, 0))
 
     def _poll(self, run_id: str, offset: int, retry: bool = True) -> SandboxProgress:
-        result = _read_result(self._done(run_id))  # avant le journal : fin => journal complet
+        result = _read_result(self._done(run_id))  # before the log: end => complete log
         try:
             with open(self._log(run_id), "rb") as handle:
                 handle.seek(offset)
@@ -160,7 +160,7 @@ class SpoolSandbox:
         try:
             age = time.time() - self._job(run_id).stat().st_mtime
         except FileNotFoundError:
-            if retry:  # le lanceur a pris le travail entre les deux lectures : son journal existe
+            if retry:  # the launcher took the job between the two reads: its log exists
                 return self._poll(run_id, offset, retry=False)
             raise UnknownRun(run_id) from None
         if age > QUEUE_DEAD_S and not self._beating():
@@ -188,7 +188,7 @@ class SpoolSandbox:
     async def write_input(self, run_id: str, data: bytes) -> None:
         check_run_id(run_id)
         if not 0 < len(data) <= MAX_INPUT_CHUNK_BYTES:
-            raise ValueError("entrée trop grande")
+            raise ValueError("input too large")
         await asyncio.to_thread(self._append_input, run_id, data)
 
     def _append_input(self, run_id: str, data: bytes) -> None:
@@ -206,7 +206,7 @@ class SpoolSandbox:
                     not stat.S_ISREG(current.st_mode)
                     or current.st_size + len(data) > MAX_INPUT_BYTES
                 ):
-                    raise ValueError("entrée trop grande")
+                    raise ValueError("input too large")
                 os.fchmod(fd, 0o660)
                 handle.write(data)
 

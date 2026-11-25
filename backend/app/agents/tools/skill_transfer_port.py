@@ -1,4 +1,4 @@
-"""Contexte borné de préparation et de correction du transfert."""
+"""Bounded context for preparing and grading the transfer."""
 
 from dataclasses import dataclass
 from typing import Annotated, Protocol
@@ -47,17 +47,17 @@ class SkillTransferStore(Protocol):
 
 class _MissingTransfer:
     async def context(self, user_id: str, transfer_id: str, session_id: str) -> TransferContext:
-        raise RuntimeError("Le contrôle de transfert n’est pas branché.")
+        raise RuntimeError("The transfer check is not wired.")
 
     async def publish(
         self, user_id: str, transfer_id: str, session_id: str, exercise: TransferExercise
     ) -> None:
-        raise RuntimeError("Le contrôle de transfert n’est pas branché.")
+        raise RuntimeError("The transfer check is not wired.")
 
     async def assess(
         self, user_id: str, transfer_id: str, session_id: str, assessment: TransferAssessment
     ) -> None:
-        raise RuntimeError("Le contrôle de transfert n’est pas branché.")
+        raise RuntimeError("The transfer check is not wired.")
 
 
 NO_TRANSFER: SkillTransferStore = _MissingTransfer()

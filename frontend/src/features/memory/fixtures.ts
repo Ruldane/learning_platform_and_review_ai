@@ -131,7 +131,7 @@ export const mapOut: MapResponse = {
 };
 
 export const searchOut: SearchResponse = {
-  agent_text: "<<<CONTENU_NON_FIABLE>>>Cours NLP<<<FIN_CONTENU_NON_FIABLE>>>",
+  agent_text: "<<<UNTRUSTED_CONTENT>>>Cours NLP<<<END_UNTRUSTED_CONTENT>>>",
   hits: [
     {
       chunk_id: "c9",

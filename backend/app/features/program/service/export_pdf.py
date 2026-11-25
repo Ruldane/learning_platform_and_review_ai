@@ -1,7 +1,6 @@
-"""Export du programme en PDF A4 (SPEC 3.4, D89) : gabarit `program/program.html.j2` (échappement
-automatique de tous les titres, critères et compétences, venus d'un agent ou de January), aucun
-script, aucune ressource distante. Rendu à la demande : quelques secondes de Gotenberg, pas un
-travail d'agent."""
+"""Exporting the program as an A4 PDF (SPEC 3.4, D89): template `program/program.html.j2`
+(automatic escaping of all titles, criteria and skills, coming from an agent or January), no
+script, no remote resource. Rendered on demand: a few seconds of Gotenberg, not an agent job."""
 
 import logging
 from datetime import date
@@ -60,8 +59,8 @@ async def program_pdf(renderer: HtmlPdfRenderer, program: ProgramOut) -> bytes:
 async def export_program_pdf(
     db: AsyncSession, renderer: HtmlPdfRenderer, user_id: str, program_id: str
 ) -> bytes:
-    """PDF du programme de l'utilisateur (`program_not_found` sinon). La lecture est close avant
-    le rendu (jusqu'à 45 s) ; un rendu impossible devient une 502 `render_failed` lisible."""
+    """The user's program PDF (`program_not_found` otherwise). The read is closed before the
+    render (up to 45 s); an impossible render becomes a readable 502 `render_failed`."""
     program = await programs.get_program(db, user_id, program_id)
     await db.commit()
     try:
@@ -72,5 +71,5 @@ async def export_program_pdf(
             "The program PDF could not be generated. Try again in a moment.",
             status_code=502,
         ) from None
-    logger.info("PDF du programme rendu (programme %s, %d octets)", program.id, len(pdf))
+    logger.info("Program PDF rendered (program %s, %d bytes)", program.id, len(pdf))
     return pdf

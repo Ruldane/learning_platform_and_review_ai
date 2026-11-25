@@ -1,11 +1,11 @@
-"""Fin d'un relevé du radar (P6 à P9, D160) : le classement, l'évolution contre le dernier relevé
-`done` de même poste et même zone (normalisés), les alertes « absente de ton programme », le score
-de chaque offre, l'enrichissement du référentiel (sans niveau, F15), puis le statut `done`.
+"""End of a radar run (P6 to P9, D160): the ranking, the change against the last `done` run of
+the same role and zone (normalized), the "absent from your program" alerts, the score of each
+posting, the reference list enrichment (without a level, F15), then the `done` status.
 
-Tout est calculé par le code, sur les offres **analysées** : `program_alerts` reçoit le nombre
-d'offres analysées, jamais celui des offres lues. Les noms du programme et les niveaux tiennent
-compte des synonymes du référentiel. Idempotent : un relevé déjà fini rend son rapport sans rien
-recalculer. Journaux : identifiants et nombres seulement."""
+Everything is computed by the code, on the **analyzed** postings: `program_alerts` receives the
+number of analyzed postings, never that of the postings read. The program's names and the
+levels take the reference list's synonyms into account. Idempotent: an already finished run
+returns its report without recomputing anything. Logs: ids and numbers only."""
 
 import logging
 from collections.abc import Mapping
@@ -42,12 +42,12 @@ from app.features.skills.service import SkillsService
 logger = logging.getLogger(__name__)
 
 ANALYSIS_FAILED = "analysis_failed"
-DEFAULT_DOMAIN = "Autres"  # celui que la carte montre pour une compétence sans domaine
+DEFAULT_DOMAIN = "Other"  # what the map shows for a skill without a domain
 
 
 def summary_of(row: RadarRun) -> RadarSummary:
-    """Le rapport d'un relevé rangé : pages lisibles, bloquées, qui n'étaient pas des offres,
-    offres analysées ; échantillon réduit sous 30 **offres** lisibles."""
+    """The report of a stored run: readable pages, blocked ones, those that were not postings,
+    postings analyzed; reduced sample under 30 readable **postings**."""
     return RadarSummary(
         read_ok=row.read_count,
         blocked=row.blocked_count,
@@ -61,9 +61,9 @@ def summary_of(row: RadarRun) -> RadarSummary:
 def _expanded(
     in_program: set[str], levels: dict[str, SkillLevel], groups: list[frozenset[str]]
 ) -> tuple[set[str], dict[str, SkillLevel]]:
-    """Les noms du programme et les niveaux étendus aux synonymes d'une même compétence : un nom
-    du groupe au programme met tout le groupe au programme ; le meilleur niveau du groupe vaut
-    pour tous ses noms."""
+    """The program's names and the levels extended to the synonyms of the same skill: a name
+    of the group in the program puts the whole group in the program; the group's best level
+    applies to all its names."""
     for group in groups:
         if group & in_program:
             in_program |= group
@@ -77,8 +77,8 @@ def _expanded(
 async def _program_view(
     db: AsyncSession, user_id: str
 ) -> tuple[set[str], Mapping[str, SkillLevel]]:
-    """`(noms au programme, niveaux)` : modules non sautés des programmes validés
-    (`skill_weeks`), niveaux connus (`known_levels`), synonymes du référentiel compris."""
+    """`(names in the program, levels)`: non-skipped modules of the validated programs
+    (`skill_weeks`), known levels (`known_levels`), reference list synonyms included."""
     skills = SkillsService(db, user_id)
     in_program, levels = set(await skill_weeks(db, user_id)), dict(await skills.known_levels())
     return _expanded(in_program, levels, await skills.alias_groups())
@@ -109,8 +109,8 @@ def _trend_json(item: SkillTrend) -> dict[str, object]:
 
 
 def _scored(entries: list[Entry], levels: Mapping[str, SkillLevel]) -> list[Entry]:
-    """Les entrées sans leur texte (il ne sert qu'à l'extraction), les offres analysées avec leur
-    score de match (niveaux lus par nom normalisé)."""
+    """The entries without their text (it only serves extraction), the analyzed postings with
+    their match score (levels read by normalized name)."""
     out: list[Entry] = []
     for entry in entries:
         kept = {key: value for key, value in entry.items() if key != "text"}
@@ -130,20 +130,20 @@ async def finalize_run(rt: RadarRuntime, user_id: str, run_id: str) -> RadarSumm
             return summary_of(row)
         entries: list[Entry] = list(row.postings)
         counted = count(entries)
-        if analysis_failed(entries):  # aucune offre analysée : en échec, reprise possible (D173)
+        if analysis_failed(entries):  # no posting analyzed: failed, retry possible (D173)
             row.read_count, row.blocked_count = counted.read, counted.blocked
             row.not_postings, row.analyzed = counted.not_postings, 0
             row.blocked_domains = blocked_domains(entries)
             row.status, row.error_code, row.finished_at = "failed", ANALYSIS_FAILED, rt.now()
             await db.commit()
-            logger.info("Relevé sans analyse : relevé %s, %d lisible(s)", run_id, counted.read)
+            logger.info("Run without analysis: run %s, %d readable", run_id, counted.read)
             return summary_of(row)
         ranking = rank_skills(entries)
         previous = await repo.latest_done(
             role_norm=row.role_norm,
             zone_norm=row.zone_norm,
             before=row.created_at,
-            min_analyzed=1,  # un relevé aveugle n'est pas une référence
+            min_analyzed=1,  # a blind run is not a reference
         )
         in_program, levels = await _program_view(db, user_id)
         alerts = program_alerts(ranking, counted.analyzed, in_program, levels)
@@ -160,7 +160,7 @@ async def finalize_run(rt: RadarRuntime, user_id: str, run_id: str) -> RadarSumm
         await db.commit()
         summary = summary_of(row)
     logger.info(
-        "Relevé fini : relevé %s, %d lisible(s), %d bloquée(s), %d analysée(s), %d alerte(s)",
+        "Run finished: run %s, %d readable, %d blocked, %d analyzed, %d alert(s)",
         run_id,
         summary.read_ok,
         summary.blocked,

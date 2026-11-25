@@ -60,10 +60,10 @@ export interface paths {
         };
         /**
          * Get Activity
-         * @description Les événements des agents et des tâches de fond, triés par `(at, id)` décroissant.
-         *     Relecture : `after` = `latest_at` et `after_id` = `id` du premier événement de la page
-         *     précédente. Page plus ancienne : `before` et `before_id` = `at` et `id` du dernier. Un `id`
-         *     est stable (`{kind}:{ref}:{état}`) : le front ne montre jamais deux fois le même.
+         * @description Agent and background-task events, sorted by `(at, id)` descending.
+         *     Re-read: `after` = `latest_at` and `after_id` = the `id` of the first event of the previous
+         *     page. Older page: `before` and `before_id` = the `at` and `id` of the last one. An `id` is
+         *     stable (`{kind}:{ref}:{state}`): the front end never shows the same one twice.
          */
         get: operations["get_activity_api_v1_activity_get"];
         put?: never;
@@ -257,7 +257,7 @@ export interface paths {
         };
         /**
          * Get Kit Zip
-         * @description Téléchargement (`attachment`) : une pièce par fichier Markdown, le PDF du CV et
+         * @description Download (`attachment`): one Markdown file per piece, the CV PDF and
          *     `README.txt`.
          */
         get: operations["get_kit_zip_api_v1_applications__application_id__kit_zip_get"];
@@ -299,10 +299,10 @@ export interface paths {
         };
         /**
          * Google Callback
-         * @description Retour de Google : contrôle le `state`, échange le code, vérifie le jeton d'identité
-         *     (émetteur, audience, `nonce`, adresse vérifiée, `ALLOWED_EMAILS`) puis ouvre la session ou
-         *     propose la reprise de l'espace local. Toujours une redirection vers le front, jamais une
-         *     erreur affichée par l'API.
+         * @description Return from Google: checks the `state`, exchanges the code, verifies the identity token
+         *     (issuer, audience, `nonce`, verified address, `ALLOWED_EMAILS`) then opens the session or
+         *     offers to take over the local space. Always a redirect to the front end, never an error
+         *     displayed by the API.
          */
         get: operations["google_callback_api_v1_auth_google_callback_get"];
         put?: never;
@@ -324,9 +324,9 @@ export interface paths {
         put?: never;
         /**
          * Google Claim
-         * @description Le choix de la toute première connexion : `take_local` attache l'identité Google à
-         *     l'espace local, `fresh` crée un espace vide. Ouvre la session (cookie posé) et rend
-         *     l'utilisateur.
+         * @description The choice of the very first sign-in: `take_local` attaches the Google identity to the
+         *     local space, `fresh` creates an empty space. Opens the session (cookie set) and returns the
+         *     user.
          */
         post: operations["google_claim_api_v1_auth_google_claim_post"];
         delete?: never;
@@ -344,9 +344,9 @@ export interface paths {
         };
         /**
          * Google Login
-         * @description Commence la connexion : pose le témoin `tremplin_oauth` (`state`, vérificateur PKCE,
-         *     `nonce`, chiffrés, 10 minutes) et renvoie vers Google. `login_hint` (facultatif) préremplit
-         *     l'adresse. Mode local : 404 `google_auth_disabled`.
+         * @description Starts the sign-in: sets the `tremplin_oauth` cookie (`state`, PKCE verifier, `nonce`,
+         *     encrypted, 10 minutes) and redirects to Google. `login_hint` (optional) pre-fills the
+         *     address. Local mode: 404 `google_auth_disabled`.
          */
         get: operations["google_login_api_v1_auth_google_login_get"];
         put?: never;
@@ -368,8 +368,8 @@ export interface paths {
         put?: never;
         /**
          * Logout
-         * @description Supprime la session du cookie et efface le cookie (même chemin que la pose). Sans effet en
-         *     mode local ; sans session, 204 aussi.
+         * @description Deletes the cookie's session and clears the cookie (same path as when it was set). No
+         *     effect in local mode; without a session, 204 as well.
          */
         post: operations["logout_api_v1_auth_logout_post"];
         delete?: never;
@@ -387,7 +387,7 @@ export interface paths {
         };
         /**
          * Me
-         * @description L'utilisateur connecté (mode local : l'utilisateur unique).
+         * @description The signed-in user (local mode: the single user).
          */
         get: operations["me_api_v1_auth_me_get"];
         put?: never;
@@ -866,8 +866,8 @@ export interface paths {
         put?: never;
         /**
          * Start Capture
-         * @description Lance la capture. Zéro ou plusieurs sources : 422 `invalid_input` ; lien non http(s) :
-         *     422 `invalid_url` ; document d'une autre : 404 `document_not_found`.
+         * @description Launches the capture. Zero or several sources: 422 `invalid_input`; non-http(s) link:
+         *     422 `invalid_url`; another user's document: 404 `document_not_found`.
          */
         post: operations["start_capture_api_v1_capture_post"];
         delete?: never;
@@ -2001,7 +2001,7 @@ export interface paths {
         };
         /**
          * Get Top Missing
-         * @description Les 10 compétences absentes demandées par le plus d'offres.
+         * @description The 10 missing skills requested by the most postings.
          */
         get: operations["get_top_missing_api_v1_gap_top_missing_get"];
         put?: never;
@@ -2995,8 +2995,8 @@ export interface paths {
         };
         /**
          * Read Journal
-         * @description Le journal (captures, sessions, quiz, bilans hebdomadaires), le plus récent d'abord ;
-         *     `before` : `next_before` de la page précédente.
+         * @description The journal (captures, sessions, quizzes, weekly reviews), most recent first;
+         *     `before`: `next_before` of the previous page.
          */
         get: operations["read_journal_api_v1_journal_get"];
         put?: never;
@@ -3352,7 +3352,7 @@ export interface paths {
         };
         /**
          * List Actions
-         * @description La table des outils exposés et de leur niveau.
+         * @description The table of exposed tools and their level.
          */
         get: operations["list_actions_api_v1_mcp_actions_get"];
         put?: never;
@@ -3372,7 +3372,7 @@ export interface paths {
         };
         /**
          * List Calls
-         * @description Le journal des appels MCP (outil, niveau, code, durée), jamais leur contenu.
+         * @description The MCP call log (tool, level, code, duration), never their content.
          */
         get: operations["list_calls_api_v1_mcp_calls_get"];
         put?: never;
@@ -3392,7 +3392,7 @@ export interface paths {
         };
         /**
          * List Changes
-         * @description Les changements faits par Claude (niveau 2), annulables un appel à la fois.
+         * @description The changes made by Claude (level 2), undoable one call at a time.
          */
         get: operations["list_changes_api_v1_mcp_changes_get"];
         put?: never;
@@ -3414,8 +3414,8 @@ export interface paths {
         put?: never;
         /**
          * Undo Changes
-         * @description Remet les lignes d'un appel dans leur état d'avant, si aucune n'a changé depuis (409
-         *     sinon). Une mémoire restaurée ou retirée se réindexe ensuite, hors de l'appel.
+         * @description Puts a call's rows back in their previous state, if none has changed since (409
+         *     otherwise). A restored or removed memory is re-indexed afterwards, outside the call.
          */
         post: operations["undo_changes_api_v1_mcp_changes__call_id__undo_post"];
         delete?: never;
@@ -3433,7 +3433,7 @@ export interface paths {
         };
         /**
          * List Confirmations
-         * @description Les demandes « À confirmer », les plus récentes d'abord.
+         * @description The "To confirm" requests, most recent first.
          */
         get: operations["list_confirmations_api_v1_mcp_confirmations_get"];
         put?: never;
@@ -3455,7 +3455,7 @@ export interface paths {
         put?: never;
         /**
          * Confirm
-         * @description Exécute la demande, une seule fois ; expirée, refusée ou déjà traitée : 409.
+         * @description Executes the request, once only; expired, refused or already handled: 409.
          */
         post: operations["confirm_api_v1_mcp_confirmations__confirmation_id__confirm_post"];
         delete?: never;
@@ -3475,7 +3475,7 @@ export interface paths {
         put?: never;
         /**
          * Refuse
-         * @description Refuse la demande : elle ne s'exécutera jamais.
+         * @description Refuses the request: it will never run.
          */
         post: operations["refuse_api_v1_mcp_confirmations__confirmation_id__refuse_post"];
         delete?: never;
@@ -3493,7 +3493,7 @@ export interface paths {
         };
         /**
          * List Features
-         * @description Les features qui déclarent des outils, avec le nombre d'outils par niveau.
+         * @description The features that declare tools, with the number of tools per level.
          */
         get: operations["list_features_api_v1_mcp_features_get"];
         put?: never;
@@ -3515,7 +3515,7 @@ export interface paths {
         put?: never;
         /**
          * Exchange Pairing
-         * @description Échange par le relais local. Le code désigne le compte, indépendamment des cookies.
+         * @description Exchange by the local relay. The code designates the account, independently of cookies.
          */
         post: operations["exchange_pairing_api_v1_mcp_relay_exchange_post"];
         delete?: never;
@@ -3535,12 +3535,12 @@ export interface paths {
         put?: never;
         /**
          * Start Pairing
-         * @description Démarre l'appairage du relais du compte connecté.
+         * @description Starts the pairing of the signed-in account's relay.
          */
         post: operations["start_pairing_api_v1_mcp_relay_pairing_post"];
         /**
          * Revoke Pairing
-         * @description Annule un code en attente et révoque le jeton dédié du relais.
+         * @description Cancels a pending code and revokes the relay's dedicated token.
          */
         delete: operations["revoke_pairing_api_v1_mcp_relay_pairing_delete"];
         options?: never;
@@ -3557,7 +3557,7 @@ export interface paths {
         };
         /**
          * Pairing Status
-         * @description État de l'appairage et portées manquantes du compte connecté.
+         * @description Pairing state and missing scopes of the signed-in account.
          */
         get: operations["pairing_status_api_v1_mcp_relay_status_get"];
         put?: never;
@@ -3577,12 +3577,12 @@ export interface paths {
         };
         /**
          * Get Settings
-         * @description L'interrupteur général du MCP (coupé par défaut).
+         * @description The MCP master switch (off by default).
          */
         get: operations["get_settings_api_v1_mcp_settings_get"];
         /**
          * Put Settings
-         * @description Allume ou coupe tout l'accès MCP d'un geste.
+         * @description Turns all MCP access on or off in one gesture.
          */
         put: operations["put_settings_api_v1_mcp_settings_put"];
         post?: never;
@@ -3601,13 +3601,13 @@ export interface paths {
         };
         /**
          * List Tokens
-         * @description Mes jetons (sans leur valeur), révoqués compris.
+         * @description My tokens (without their value), revoked ones included.
          */
         get: operations["list_tokens_api_v1_mcp_tokens_get"];
         put?: never;
         /**
          * Create Token
-         * @description Crée un jeton ; sa valeur n'est rendue qu'ici, une seule fois.
+         * @description Creates a token; its value is returned only here, once.
          */
         post: operations["create_token_api_v1_mcp_tokens_post"];
         delete?: never;
@@ -3628,7 +3628,7 @@ export interface paths {
         post?: never;
         /**
          * Revoke Token
-         * @description Révoque un jeton : il cesse de fonctionner aussitôt.
+         * @description Revokes a token: it stops working immediately.
          */
         delete: operations["revoke_token_api_v1_mcp_tokens__token_id__delete"];
         options?: never;
@@ -4075,7 +4075,7 @@ export interface paths {
         head?: never;
         /**
          * Patch Module
-         * @description Retouche le titre, les compétences ou les prérequis d'un module, sans agent.
+         * @description Edits the title, skills or prerequisites of a module, without an agent.
          */
         patch: operations["patch_module_api_v1_modules__module_id__patch"];
         trace?: never;
@@ -4526,16 +4526,16 @@ export interface paths {
         };
         /**
          * Get Postings
-         * @description Les offres de January, les plus récentes d'abord.
+         * @description January's postings, most recent first.
          */
         get: operations["get_postings_api_v1_postings_get"];
         put?: never;
         /**
          * Add Posting
-         * @description 201 : offre créée, analyse lancée. 200 : même lien ou même texte, l'offre existante
-         *     (relancée si elle était refusée, en échec ou interrompue). 422 `posting_source`,
-         *     `posting_unreadable`, `posting_too_short`, `invalid_url`, `url_forbidden` : jamais l'entrée
-         *     dans la réponse.
+         * @description 201: posting created, analysis launched. 200: same link or same text, the existing posting
+         *     (relaunched if it was refused, failed or interrupted). 422 `posting_source`,
+         *     `posting_unreadable`, `posting_too_short`, `invalid_url`, `url_forbidden`: never the input
+         *     in the response.
          */
         post: operations["add_posting_api_v1_postings_post"];
         delete?: never;
@@ -4555,11 +4555,11 @@ export interface paths {
         put?: never;
         /**
          * Write Posting
-         * @description Écrit une offre en direct : son texte et son analyse sont ceux de January ou de Claude,
-         *     sans agent ni appel au modèle (l'écart se lance ensuite par `POST /postings/{id}/gap`). 201 :
-         *     offre créée, prête. 200 : même lien (ou, sans lien, même texte), l'offre existante. 422
-         *     `posting_too_short`, `posting_analysis_invalid`, `invalid_url`, `url_forbidden` : jamais
-         *     l'entrée dans la réponse.
+         * @description Writes a posting directly: its text and its analysis are January's or Claude's, with no
+         *     agent or model call (the gap is then launched through `POST /postings/{id}/gap`). 201:
+         *     posting created, ready. 200: same link (or, without a link, same text), the existing
+         *     posting. 422 `posting_too_short`, `posting_analysis_invalid`, `invalid_url`,
+         *     `url_forbidden`: never the input in the response.
          */
         post: operations["write_posting_api_v1_postings_direct_post"];
         delete?: never;
@@ -4581,16 +4581,16 @@ export interface paths {
         post?: never;
         /**
          * Remove Posting
-         * @description Retire l'offre, son élément de mémoire `offre`, ses revues et versions (PDF et images
-         *     compris) ; 409 `review_in_progress` ou `analysis_in_progress` si l'une tourne.
+         * @description Removes the posting, its `posting` memory item, its reviews and versions (PDFs and
+         *     images included); 409 `review_in_progress` or `analysis_in_progress` if one is running.
          */
         delete: operations["remove_posting_api_v1_postings__posting_id__delete"];
         options?: never;
         head?: never;
         /**
          * Patch Posting
-         * @description Retouche l'analyse d'une offre analysée (titre, entreprise, exigences, mots clés…), sans
-         *     agent : sa mémoire et ses doublons sont recalculés.
+         * @description Edits the analysis of an analyzed posting (title, company, requirements, keywords...),
+         *     without an agent: its memory and its duplicates are recomputed.
          */
         patch: operations["patch_posting_api_v1_postings__posting_id__patch"];
         trace?: never;
@@ -4606,7 +4606,7 @@ export interface paths {
         put?: never;
         /**
          * Distinct Postings
-         * @description « Offres distinctes » : le doublon disparaît des deux côtés.
+         * @description "Distinct postings": the duplicate disappears on both sides.
          */
         post: operations["distinct_postings_api_v1_postings__posting_id__distinct_post"];
         delete?: never;
@@ -4624,13 +4624,13 @@ export interface paths {
         };
         /**
          * Get Gap
-         * @description `pending` tant que l'analyse tourne ; offre d'une autre : 404 `posting_not_found`.
+         * @description `pending` while the analysis runs; another user's posting: 404 `posting_not_found`.
          */
         get: operations["get_gap_api_v1_postings__posting_id__gap_get"];
         put?: never;
         /**
          * Relaunch Gap
-         * @description Relance l'analyse d'écart ; 409 `gap_in_progress` si elle tourne déjà.
+         * @description Relaunches the gap analysis; 409 `gap_in_progress` if it is already running.
          */
         post: operations["relaunch_gap_api_v1_postings__posting_id__gap_post"];
         delete?: never;
@@ -4650,10 +4650,10 @@ export interface paths {
         put?: never;
         /**
          * Post Gap Plan
-         * @description Propose les ajouts au programme validé choisi, par défaut le plus récent.
+         * @description Proposes the additions to the chosen validated program, the most recent by default.
          *
-         *     422 `gap_skill_unknown` si une ligne ne peut pas être ajoutée. 404 `program_not_found`,
-         *     409 `program_not_validated`, `no_program` ou `replan_open` suivant le programme.
+         *     422 `gap_skill_unknown` if a line cannot be added. 404 `program_not_found`,
+         *     409 `program_not_validated`, `no_program` or `replan_open` depending on the program.
          */
         post: operations["post_gap_plan_api_v1_postings__posting_id__gap_plan_post"];
         delete?: never;
@@ -4673,9 +4673,9 @@ export interface paths {
         put?: never;
         /**
          * Post Gap Validate
-         * @description « Je les maîtrise déjà » (D220) : un module « Valider mes acquis » avec ces compétences dans
-         *     le programme validé le plus récent, et son quiz écrit par l'Examinateur ; réussi, il les passe
-         *     à « validé ». 422 `gap_skill_unknown`, 409 `no_program`, 409 `week_full`.
+         * @description "I already master them" (D220): a "Validate my skills" module with these skills in the
+         *     most recent validated program, and its quiz written by the Examiner; once passed, it moves
+         *     them to "validated". 422 `gap_skill_unknown`, 409 `no_program`, 409 `week_full`.
          */
         post: operations["post_gap_validate_api_v1_postings__posting_id__gap_validate_post"];
         delete?: never;
@@ -4778,7 +4778,7 @@ export interface paths {
         put?: never;
         /**
          * Write Program
-         * @description Écrit un programme complet (semaines, modules, tâches) en brouillon à valider, sans agent.
+         * @description Writes a complete program (weeks, modules, tasks) as a draft to validate, no agent.
          */
         post: operations["write_program_api_v1_programs_direct_post"];
         delete?: never;
@@ -4866,7 +4866,7 @@ export interface paths {
         };
         /**
          * Export Pdf
-         * @description PDF A4 du programme (Gotenberg, sans script) ; 502 `render_failed` si le rendu échoue.
+         * @description A4 PDF of the program (Gotenberg, no script); 502 `render_failed` if rendering fails.
          */
         get: operations["export_pdf_api_v1_programs__program_id__export_pdf_get"];
         put?: never;
@@ -4905,7 +4905,7 @@ export interface paths {
         put?: never;
         /**
          * Add Module
-         * @description Ajoute un module (sans tâche) à une semaine du programme, sans agent.
+         * @description Adds a module (without a task) to a week of the program, without an agent.
          */
         post: operations["add_module_api_v1_programs__program_id__modules_post"];
         delete?: never;
@@ -5000,7 +5000,7 @@ export interface paths {
         put?: never;
         /**
          * Add Week
-         * @description Ajoute une semaine (sans module) à la fin du programme, sans agent.
+         * @description Adds a week (without a module) at the end of the program, without an agent.
          */
         post: operations["add_week_api_v1_programs__program_id__weeks_post"];
         delete?: never;
@@ -5555,8 +5555,8 @@ export interface paths {
         };
         /**
          * Get Latest
-         * @description Le dernier relevé fini (réussi ou en échec), le relevé en cours s'il y en a un, et le poste
-         *     et la zone proposés par défaut.
+         * @description The last finished run (succeeded or failed), the run in progress if there is one, and the
+         *     default role and zone.
          */
         get: operations["get_latest_api_v1_radar_latest_get"];
         put?: never;
@@ -5576,14 +5576,14 @@ export interface paths {
         };
         /**
          * Get Runs
-         * @description Les 20 derniers relevés, le plus récent d'abord.
+         * @description The last 20 runs, most recent first.
          */
         get: operations["get_runs_api_v1_radar_runs_get"];
         put?: never;
         /**
          * Post Run
-         * @description Lance un relevé. `role` et `zone` donnés sont mémorisés dans les réglages ; absents, ceux
-         *     des réglages (poste : sinon celui du dernier objectif ; zone : « France »).
+         * @description Launches a run. The given `role` and `zone` are saved in the settings; when absent, those
+         *     of the settings (role: otherwise that of the last goal; zone: "France").
          */
         post: operations["post_run_api_v1_radar_runs_post"];
         delete?: never;
@@ -6366,7 +6366,7 @@ export interface paths {
         put?: never;
         /**
          * Create Skill
-         * @description Ajoute une compétence au référentiel. Son niveau sera établi par ses preuves.
+         * @description Adds a skill to the reference list. Its level will be established by its evidence.
          */
         post: operations["create_skill_api_v1_skills_post"];
         delete?: never;
@@ -6384,10 +6384,10 @@ export interface paths {
         };
         /**
          * Get Compare
-         * @description Moi face au poste cible (`goal` : les compétences du programme de l'objectif `goal_id`,
-         *     sinon du plus récent qui a un programme) ou face à une offre (`posting` : ses compétences
-         *     apprenables, `posting_id` obligatoire, 422 `posting_id_required` sinon), attendues
-         *     `valide`. 404 `goal_not_found`, `posting_not_found` ou `no_compare_target`.
+         * @description Me against the target job (`goal`: the skills of the program of goal `goal_id`, otherwise
+         *     of the most recent one that has a program) or against a posting (`posting`: its learnable
+         *     skills, `posting_id` required, otherwise 422 `posting_id_required`), expected at
+         *     `validated`. 404 `goal_not_found`, `posting_not_found` or `no_compare_target`.
          */
         get: operations["get_compare_api_v1_skills_compare_get"];
         put?: never;
@@ -6407,8 +6407,8 @@ export interface paths {
         };
         /**
          * Get Graph
-         * @description Compétences (nœuds), prérequis (liens) et radar par domaine. `demand` vaut `null`
-         *     jusqu'au Radar du marché (phase 8).
+         * @description Skills (nodes), prerequisites (links) and radar per domain. `demand` is `null` until
+         *     the market Radar (phase 8).
          */
         get: operations["get_graph_api_v1_skills_graph_get"];
         put?: never;
@@ -6428,7 +6428,7 @@ export interface paths {
         };
         /**
          * Get History
-         * @description Relevés hebdomadaires des `weeks` dernières semaines, plus la semaine en cours en direct.
+         * @description Weekly snapshots of the last `weeks` weeks, plus the current week live.
          */
         get: operations["get_history_api_v1_skills_history_get"];
         put?: never;
@@ -6448,8 +6448,8 @@ export interface paths {
         };
         /**
          * Get Skill
-         * @description Détail d'une compétence : preuves, offres prêtes qui la citent (10 au plus), prochaine
-         *     action. 404 `skill_not_found`.
+         * @description Detail of a skill: evidence, ready postings that cite it (10 at most), next action.
+         *     404 `skill_not_found`.
          */
         get: operations["get_skill_api_v1_skills__skill_id__get"];
         put?: never;
@@ -6539,9 +6539,9 @@ export interface paths {
         put?: never;
         /**
          * Start Study
-         * @description Ouvre une session et lance le Tuteur (202). `lesson_id` absent : bloc du jour (404
-         *     `no_block_today`) ; leçon pas prête : 409 `lesson_not_ready` ; session déjà ouverte sur la
-         *     même leçon : 200, elle-même ; sur une autre : 409 `study_already_open`.
+         * @description Opens a session and launches the Tutor (202). `lesson_id` absent: today's block (404
+         *     `no_block_today`); lesson not ready: 409 `lesson_not_ready`; session already open on the
+         *     same lesson: 200, itself; on another one: 409 `study_already_open`.
          */
         post: operations["start_study_api_v1_study_sessions_post"];
         delete?: never;
@@ -6559,8 +6559,8 @@ export interface paths {
         };
         /**
          * Study Summary
-         * @description Série (jours locaux avec une session terminée), minutes de la semaine, minuteur, session
-         *     ouverte et bloc du jour.
+         * @description Streak (local days with a finished session), minutes of the week, timer, open session
+         *     and today's block.
          */
         get: operations["study_summary_api_v1_study_sessions_summary_get"];
         put?: never;
@@ -6673,9 +6673,9 @@ export interface paths {
         head?: never;
         /**
          * Update Study
-         * @description « Terminer » (`finish`, minuteur gardé puis question en attente reprise ; Tuteur en
-         *     train d'écrire : 409 `study_not_waiting`) ou « Abandonner » (`cancel`, rien n'est écrit).
-         *     Déjà terminée ou abandonnée : l'état, sans rien changer.
+         * @description "Finish" (`finish`, timer kept then waiting question resumed; Tutor writing: 409
+         *     `study_not_waiting`) or "Abandon" (`cancel`, nothing is written). Already finished or
+         *     abandoned: the state, without changing anything.
          */
         patch: operations["update_study_api_v1_study_sessions__study_session_id__patch"];
         trace?: never;
@@ -6849,7 +6849,7 @@ export interface paths {
         head?: never;
         /**
          * Patch Week
-         * @description Retouche le thème, l'objectif ou le livrable d'une semaine, sans agent.
+         * @description Edits the theme, goal or deliverable of a week, without an agent.
          */
         patch: operations["patch_week_api_v1_weeks__week_id__patch"];
         trace?: never;
@@ -6860,8 +6860,8 @@ export interface components {
     schemas: {
         /**
          * ActivityItem
-         * @description Un événement. `id` est stable (`{kind}:{ref}:{état}`) : le front ne montre pas deux fois le
-         *     même ; `link` est une route du front.
+         * @description An event. `id` is stable (`{kind}:{ref}:{state}`): the front end does not show the same one
+         *     twice; `link` is a front-end route.
          */
         ActivityItem: {
             /**
@@ -6885,9 +6885,9 @@ export interface components {
         };
         /**
          * ActivityPage
-         * @description Les événements, le plus récent d'abord. `latest_at` : l'instant du plus récent d'entre eux
-         *     (`None` sans événement). Curseur de relecture : `after` = `latest_at`, `after_id` = `id` du
-         *     premier élément de `items` ; curseur de page ancienne : `at` et `id` du dernier élément.
+         * @description The events, most recent first. `latest_at`: the instant of the most recent of them
+         *     (`None` with no event). Re-read cursor: `after` = `latest_at`, `after_id` = the `id` of the
+         *     first item of `items`; older-page cursor: `at` and `id` of the last item.
          */
         ActivityPage: {
             /** Items */
@@ -7340,8 +7340,8 @@ export interface components {
         };
         /**
          * ArtifactInfo
-         * @description Une information jointe à un artefact : une fiche proche de celle qui vient d'être créée
-         *     (« même entreprise depuis 30 jours », SPEC 6.3), avec le message du serveur.
+         * @description Information attached to an artifact: an entry close to the one just created
+         *     ("same company within 30 days", SPEC 6.3), with the server's message.
          */
         ArtifactInfo: {
             /** Application Id */
@@ -7497,7 +7497,7 @@ export interface components {
         };
         /**
          * AtsCheckOut
-         * @description Un contrôle de lisibilité par un ATS ; `detail` : phrase française sans texte du CV.
+         * @description An ATS readability check; `detail`: an English sentence without CV text.
          */
         AtsCheckOut: {
             /** Detail */
@@ -7824,8 +7824,8 @@ export interface components {
         };
         /**
          * BoardUpdatePayload
-         * @description Un état du tableau. `board_id`, `kind`, `title` (D82) : plusieurs tableaux par session
-         *     (carte du domaine, prérequis, frise, comparaison) ; absents des événements d'avant.
+         * @description A board state. `board_id`, `kind` and `title` (D82) allow several boards per session
+         *     (domain map, prerequisites, timeline, comparison); they are absent from older events.
          */
         BoardUpdatePayload: {
             /**
@@ -8027,7 +8027,7 @@ export interface components {
         };
         /**
          * BraveUsageOut
-         * @description Requêtes Brave du mois civil UTC (`month` : « AAAA-MM ») pour la clé en vigueur.
+         * @description Brave requests of the UTC calendar month (`month`: "YYYY-MM") for the current key.
          */
         BraveUsageOut: {
             /** Cap */
@@ -8127,8 +8127,8 @@ export interface components {
         };
         /**
          * BulkResult
-         * @description `skipped` : les modifications « à confirmer » (jamais acceptées en groupe) et les
-         *     identifiants inconnus de la revue.
+         * @description `skipped`: the "to confirm" modifications (never accepted as a group) and the ids
+         *     unknown to the review.
          */
         BulkResult: {
             /** Skipped */
@@ -8196,8 +8196,8 @@ export interface components {
         };
         /**
          * CaptureRequest
-         * @description Une seule source : un lien http(s), un texte, ou un document déjà importé
-         *     (`POST /documents`). Zéro ou plusieurs : 422 `invalid_input`.
+         * @description A single source: an http(s) link, a text, or an already imported document
+         *     (`POST /documents`). Zero or several: 422 `invalid_input`.
          */
         CaptureRequest: {
             /** Document Id */
@@ -8327,8 +8327,8 @@ export interface components {
         };
         /**
          * ClaimIn
-         * @description Le choix de la toute première connexion Google : reprendre l'espace local (même `id`,
-         *     donc aucune donnée déplacée) ou repartir d'un espace vide (l'espace local reste intact).
+         * @description The choice of the very first Google sign-in: take over the local space (same `id`, so no
+         *     data moved) or start from an empty space (the local space stays intact).
          */
         ClaimIn: {
             /**
@@ -8899,10 +8899,10 @@ export interface components {
         };
         /**
          * CvReviewOut
-         * @description `before` : indicateurs du CV d'origine ; `gap_terms` : mots clés de l'offre que les faits
-         *     cités ne portent pas, à appuyer par un fait ou à acquérir (ils n'entrent pas dans le CV) ;
-         *     `waiting_output` : la session attend « Que veux-tu maintenant ? » (seul moment où
-         *     « Générer le PDF » est possible).
+         * @description `before`: indicators of the original CV; `gap_terms`: posting keywords that the cited
+         *     facts do not carry, to back with a fact or to acquire (they do not enter the CV);
+         *     `waiting_output`: the session is waiting on "What do you want now?" (the only moment when
+         *     "Generate the PDF" is possible).
          */
         CvReviewOut: {
             before: components["schemas"]["IndicatorsOut"] | null;
@@ -9112,7 +9112,7 @@ export interface components {
         };
         /**
          * DocumentError
-         * @description Erreur d'import lisible ; `item_id` : l'élément déjà en mémoire d'un doublon.
+         * @description Readable import error; `item_id`: the item already in memory for a duplicate.
          */
         DocumentError: {
             /** Code */
@@ -9238,7 +9238,7 @@ export interface components {
         };
         /**
          * EdgeWrite
-         * @description `before` précède `after` (noms de compétences).
+         * @description `before` precedes `after` (skill names).
          */
         EdgeWrite: {
             /** After */
@@ -9325,7 +9325,7 @@ export interface components {
         };
         /**
          * ErrorOut
-         * @description L'enveloppe de toute erreur métier : `{error: {code, message, details}}`.
+         * @description The envelope of every business error: `{error: {code, message, details}}`.
          */
         ErrorOut: {
             error: components["schemas"]["ErrorDetailOut"];
@@ -10036,7 +10036,7 @@ export interface components {
         };
         /**
          * GapOut
-         * @description `pending` tant que l'analyse tourne ; `failed` : offre refusée ou analyse arrêtée.
+         * @description `pending` while the analysis runs; `failed`: posting refused or analysis stopped.
          */
         GapOut: {
             /** Posting Id */
@@ -10086,7 +10086,7 @@ export interface components {
         };
         /**
          * GenerateIn
-         * @description `allow_extra_pages` : garder un CV plus long que l'original plutôt que s'arrêter.
+         * @description `allow_extra_pages`: keep a CV longer than the original rather than stop.
          */
         GenerateIn: {
             /**
@@ -10605,8 +10605,8 @@ export interface components {
         };
         /**
          * IndicatorsOut
-         * @description Couverture des exigences obligatoires de l'offre (`missing` : leur texte, tel que l'offre
-         *     l'écrit) et contrôles ATS. Aucune garantie de passage n'est promise.
+         * @description Coverage of the posting's mandatory requirements (`missing`: their text, as the posting
+         *     writes it) and ATS checks. No guarantee of passing is promised.
          */
         IndicatorsOut: {
             /** Checks */
@@ -10640,9 +10640,9 @@ export interface components {
         };
         /**
          * InterruptField
-         * @description Une question d'un cadrage à plusieurs champs (D82) ; la reprise porte
-         *     `{"answers": {id: texte}}` (ou la valeur d'une option, `"go"`, D84). Une confirmation à champs
-         *     pré remplis (`value`) reprend `{"choice": option, "fields": {id: texte}}` (D141).
+         * @description A question of a multi-field scoping step (D82); the resume payload carries
+         *     `{"answers": {id: text}}` (or an option value, `"go"`, D84). A confirmation with
+         *     prefilled fields (`value`) resumes with `{"choice": option, "fields": {id: text}}` (D141).
          */
         InterruptField: {
             /** Id */
@@ -10696,7 +10696,7 @@ export interface components {
         };
         /**
          * InterruptRequestedPayload
-         * @description `kind` et non `type` : `type` est déjà le discriminant de l'enveloppe (DECISIONS).
+         * @description `kind` rather than `type`: `type` is already the envelope discriminator (DECISIONS).
          */
         InterruptRequestedPayload: {
             /** Fields */
@@ -10977,8 +10977,8 @@ export interface components {
         };
         /**
          * JournalPage
-         * @description Les lignes, les plus récentes d'abord ; `next_before` : curseur de la page suivante
-         *     (`?before=`), `None` à la dernière.
+         * @description The rows, most recent first; `next_before`: cursor of the next page (`?before=`),
+         *     `None` on the last.
          */
         JournalPage: {
             /** Entries */
@@ -10988,7 +10988,7 @@ export interface components {
         };
         /**
          * KeyTestResult
-         * @description Résultat d'un test de clé : `message` est en français et ne contient jamais la clé.
+         * @description Result of a key test: `message` is in English and never contains the key.
          */
         KeyTestResult: {
             /** Message */
@@ -11120,7 +11120,7 @@ export interface components {
         };
         /**
          * LearnedStarted
-         * @description Session `learned_document` lancée par `POST /documents/{id}/learned`.
+         * @description `learned_document` session launched by `POST /documents/{id}/learned`.
          */
         LearnedStarted: {
             /** Session Id */
@@ -11460,8 +11460,8 @@ export interface components {
         };
         /**
          * MapResponse
-         * @description Un point par élément actif indexé (moyenne de ses fragments), coordonnées sur [-1, 1] ;
-         *     `truncated` : seuls les plus récents sont montrés.
+         * @description One point per indexed active item (mean of its chunks), coordinates in [-1, 1];
+         *     `truncated`: only the most recent are shown.
          */
         MapResponse: {
             /**
@@ -11506,8 +11506,8 @@ export interface components {
         };
         /**
          * McpActionOut
-         * @description Un outil exposé (table des niveaux). `kind` : une route ou un graphe de l'application.
-         *     `untrusted` : les champs rendus comme données, jamais comme consignes.
+         * @description An exposed tool (level table). `kind`: a route or a graph of the application.
+         *     `untrusted`: the fields returned as data, never as instructions.
          */
         McpActionOut: {
             /** Feature */
@@ -11538,9 +11538,9 @@ export interface components {
         };
         /**
          * McpCallOut
-         * @description Une ligne du journal : l'outil, le niveau, le code de résultat, la durée, les identifiants.
-         *     Jamais le contenu. Niveau 0 : appel refusé avant la résolution de l'outil ; `token_id` vide :
-         *     jeton non reconnu.
+         * @description A log line: the tool, the level, the result code, the duration, the ids. Never the
+         *     content. Level 0: call refused before the tool was resolved; empty `token_id`: token not
+         *     recognized.
          */
         McpCallOut: {
             /** Action */
@@ -11570,8 +11570,8 @@ export interface components {
         };
         /**
          * McpChangeOut
-         * @description Les changements d'un appel de niveau 2 : de quoi les annuler ensemble (`undone_at` posé
-         *     une fois annulés).
+         * @description The changes of a level 2 call: enough to undo them together (`undone_at` set once
+         *     undone).
          */
         McpChangeOut: {
             /** Action */
@@ -11592,9 +11592,9 @@ export interface components {
         };
         /**
          * McpConfirmationOut
-         * @description Une demande « À confirmer » (niveau 3) : ce que Claude veut faire (un résumé neutre et la
-         *     requête complète en `request`) et le verdict d'un éventuel contrôle préalable. Rien ne
-         *     s'exécute avant la confirmation.
+         * @description A "To confirm" request (level 3): what Claude wants to do (a neutral summary and the full
+         *     request in `request`) and the verdict of any prior check. Nothing runs before the
+         *     confirmation.
          */
         McpConfirmationOut: {
             /** Action */
@@ -11630,7 +11630,7 @@ export interface components {
         };
         /**
          * McpFeatureOut
-         * @description Une feature qui déclare des outils MCP : son nom et ses outils par niveau.
+         * @description A feature that declares MCP tools: its name and its tools per level.
          */
         McpFeatureOut: {
             /** Confirm Actions */
@@ -11644,8 +11644,8 @@ export interface components {
         };
         /**
          * McpRequestField
-         * @description Un champ de la requête à confirmer : son nom et sa valeur en texte (objets et listes en JSON
-         *     compact), tronquée à 500 caractères ; les clés d'API sont masquées.
+         * @description A field of the request to confirm: its name and its value as text (objects and lists as
+         *     compact JSON), truncated to 500 characters; API keys are masked.
          */
         McpRequestField: {
             /** Name */
@@ -11655,11 +11655,11 @@ export interface components {
         };
         /**
          * McpRequestPreview
-         * @description La requête qui partira à la confirmation, de quoi la lire en entier : méthode, route (le
-         *     gabarit, sans identifiant), libellé lisible de la cible quand la route en a une (titre, nom ;
-         *     lu par la route de lecture de la même ressource ; un texte venu du web est entouré de
-         *     `<donnee_non_fiable>`), **tous** les champs du corps et des paramètres, et `truncated` si une
-         *     valeur ou le total (4 000 caractères) a été coupé.
+         * @description The request that will go out on confirmation, enough to read it in full: method, route
+         *     (the template, without an id), readable label of the target when the route has one (title,
+         *     name; read by the read route of the same resource; a text from the web is wrapped in
+         *     `<donnee_non_fiable>`), **all** the body and parameter fields, and `truncated` if a value
+         *     or the total (4,000 characters) was cut.
          */
         McpRequestPreview: {
             /** Fields */
@@ -11675,7 +11675,7 @@ export interface components {
         };
         /**
          * McpSettingsIn
-         * @description L'interrupteur général : faux = aucun jeton n'ouvre rien (coupé par défaut).
+         * @description The master switch: false = no token opens anything (off by default).
          */
         McpSettingsIn: {
             /** Enabled */
@@ -11688,8 +11688,8 @@ export interface components {
         };
         /**
          * McpTokenCreateIn
-         * @description Crée un jeton : limité à certaines features, lecture seule par défaut, 30 jours par
-         *     défaut (1, 7, 30 ou 90).
+         * @description Creates a token: limited to certain features, read-only by default, 30 days by
+         *     default (1, 7, 30 or 90).
          */
         McpTokenCreateIn: {
             /**
@@ -11711,7 +11711,7 @@ export interface components {
         };
         /**
          * McpTokenCreated
-         * @description La réponse à la création : `token` (`tmcp_…`) n'est montré qu'ici, une seule fois.
+         * @description The creation response: `token` (`tmcp_…`) is shown only here, once.
          */
         McpTokenCreated: {
             /**
@@ -11744,7 +11744,7 @@ export interface components {
         };
         /**
          * McpTokenOut
-         * @description Un jeton, sans sa valeur : on ne la revoit jamais.
+         * @description A token, without its value: it is never seen again.
          */
         McpTokenOut: {
             /**
@@ -11775,7 +11775,7 @@ export interface components {
         };
         /**
          * McpUndoOut
-         * @description `undone` : le nombre de lignes remises dans leur état d'avant.
+         * @description `undone`: the number of rows put back in their previous state.
          */
         McpUndoOut: {
             /** Call Id */
@@ -11876,7 +11876,7 @@ export interface components {
         };
         /**
          * MemoryExport
-         * @description Toute la mémoire de l'utilisateur en JSON, sans aucun vecteur.
+         * @description The user's whole memory as JSON, without any vector.
          */
         MemoryExport: {
             /** Documents */
@@ -12023,8 +12023,8 @@ export interface components {
         };
         /**
          * MemoryItemPatch
-         * @description Tout est facultatif ; un champ absent ou `null` ne change rien. `status` n'accepte que
-         *     `active` : confirmer une décision en attente (la refuser, c'est la supprimer).
+         * @description Everything is optional; an absent or `null` field changes nothing. `status` only accepts
+         *     `active`: confirming a pending decision (refusing it means deleting it).
          */
         MemoryItemPatch: {
             /** Level */
@@ -12273,7 +12273,7 @@ export interface components {
         };
         /**
          * MergeRequest
-         * @description Éléments à fondre dans l'élément de l'URL (même type, 20 au plus).
+         * @description Items to merge into the URL's item (same type, 20 at most).
          */
         MergeRequest: {
             /** Other Ids */
@@ -12389,7 +12389,7 @@ export interface components {
         };
         /**
          * ModelChoice
-         * @description Fournisseur et identifiant de modèle retenus pour un niveau ou un agent.
+         * @description Provider and model identifier chosen for a tier or an agent.
          */
         ModelChoice: {
             /** Model */
@@ -12410,11 +12410,11 @@ export interface components {
         };
         /**
          * ModificationOut
-         * @description Une modification proposée. `ref` : « a3 » (Lecteur ATS) ou « r2 » (Recruteur) ; `before` :
-         *     le texte visé dans le CV d'origine (vide pour un ajout ou un déplacement) ; `after` : le
-         *     nouveau texte (pour `move`, la clé de la section avant laquelle `section` passe) ;
-         *     `blocks` : pourquoi elle est « à confirmer » (phrases fixes) ; `fact_ids` : les faits du
-         *     profil sur lesquels elle repose ; `author` : `ats_reader` ou `recruiter`.
+         * @description A proposed modification. `ref`: "a3" (ATS Reader) or "r2" (Recruiter); `before`: the
+         *     targeted text in the original CV (empty for an addition or a move); `after`: the new text
+         *     (for `move`, the key of the section before which `section` goes); `blocks`: why it is
+         *     "to confirm" (fixed sentences); `fact_ids`: the profile facts it rests on; `author`:
+         *     `ats_reader` or `recruiter`.
          */
         ModificationOut: {
             /**
@@ -12456,9 +12456,9 @@ export interface components {
         };
         /**
          * ModificationPatch
-         * @description Décision sur une modification. `after` : texte réécrit par January (revalidé contre le
-         *     profil) ; `confirm` : « Je confirme que c'est vrai », seul moyen d'accepter une modification
-         *     « à confirmer » (le fait entre alors au profil maître).
+         * @description Decision on a modification. `after`: text rewritten by January (re-validated against the
+         *     profile); `confirm`: "I confirm this is true", the only way to accept a "to confirm"
+         *     modification (the fact then enters the master profile).
          */
         ModificationPatch: {
             /** After */
@@ -12476,8 +12476,8 @@ export interface components {
         };
         /**
          * ModuleCreate
-         * @description Un module de plus dans une semaine (4 au plus par semaine), sans tâche : elles s'ajoutent
-         *     par `PATCH /programs/{id}` (`add_tasks`).
+         * @description One more module in a week (4 at most per week), without a task: they are added through
+         *     `PATCH /programs/{id}` (`add_tasks`).
          */
         ModuleCreate: {
             /** Prerequisites */
@@ -12495,7 +12495,7 @@ export interface components {
             id: string;
             /**
              * Legacy
-             * @description API anciennes à ne montrer que dans l'encadré « Lire du code ancien ».
+             * @description Old APIs to show only in the "Read legacy code" box.
              */
             legacy: string[];
             /** Lesson Id */
@@ -12504,7 +12504,7 @@ export interface components {
             lesson_status: ("pending" | "generating" | "ready" | "failed") | null;
             /**
              * Official Urls
-             * @description Pages de la documentation officielle du chapitre (3 au plus).
+             * @description Pages of the chapter's official documentation (3 at most).
              */
             official_urls: string[];
             /** Prerequisites */
@@ -12526,12 +12526,12 @@ export interface components {
         ModulePatch: {
             /**
              * Legacy
-             * @description API dépréciées, montrées seulement dans l'encadré « Lire du code ancien ».
+             * @description Deprecated APIs, shown only in the "Read legacy code" box.
              */
             legacy?: string[] | null;
             /**
              * Official Urls
-             * @description Pages de la documentation officielle.
+             * @description Pages of the official documentation.
              */
             official_urls?: string[] | null;
             /** Prerequisites */
@@ -12550,19 +12550,19 @@ export interface components {
             introduces?: components["schemas"]["NotionWrite"][];
             /**
              * Legacy
-             * @description API dépréciées, montrées seulement dans l'encadré « Lire du code ancien ».
+             * @description Deprecated APIs, shown only in the "Read legacy code" box.
              */
             legacy?: string[];
             /**
              * Official Urls
-             * @description Pages de la documentation officielle.
+             * @description Pages of the official documentation.
              */
             official_urls?: string[];
             /** Prerequisites */
             prerequisites?: string[];
             /**
              * Requires
-             * @description Notions introduites par un chapitre précédent, dont celui-ci a besoin.
+             * @description Notions introduced by a previous chapter, which this one needs.
              */
             requires?: string[];
             /** Skills */
@@ -12757,7 +12757,7 @@ export interface components {
         };
         /**
          * NotionWrite
-         * @description Une notion introduite par un chapitre, avec sa définition courte.
+         * @description A notion introduced by a chapter, with its short definition.
          */
         NotionWrite: {
             /** Definition */
@@ -13059,9 +13059,9 @@ export interface components {
         };
         /**
          * PasteCreate
-         * @description Texte collé (`POST /documents/text`, corps JSON). La longueur du texte (500 000
-         *     caractères au plus) est contrôlée par le service, qui répond `paste_too_long` ; le corps est
-         *     borné à 21 Mo par le middleware.
+         * @description Pasted text (`POST /documents/text`, JSON body). The text length (500,000 characters at
+         *     most) is checked by the service, which answers `paste_too_long`; the body is capped at
+         *     21 MB by the middleware.
          */
         PasteCreate: {
             /** Text */
@@ -13071,8 +13071,8 @@ export interface components {
         };
         /**
          * PlanDiffOut
-         * @description Différence de la dernière version (du Stratège, ou « Modifications de January » écrite à
-         *     la validation) avec le plan qu'elle a remplacé.
+         * @description Difference of the last version (the Strategist's, or "January's edits" written at
+         *     validation) with the plan it replaced.
          */
         PlanDiffOut: {
             /** Added */
@@ -13088,7 +13088,7 @@ export interface components {
         };
         /**
          * PlanGapIn
-         * @description Lignes « À ajouter » ou « Hors périmètre » et programme validé choisi.
+         * @description "To add" or "Out of scope" lines and the chosen validated program.
          */
         PlanGapIn: {
             /** Program Id */
@@ -13274,7 +13274,7 @@ export interface components {
         };
         /**
          * PostingAnalysisOut
-         * @description L'analyse de l'Analyste (`PostingAnalysis`, D121), telle qu'elle est rangée.
+         * @description The Analyst's analysis (`PostingAnalysis`, D121), as it is stored.
          */
         PostingAnalysisOut: {
             /** Apply Url */
@@ -13307,8 +13307,8 @@ export interface components {
         };
         /**
          * PostingCreatedOut
-         * @description `created` faux : même lien ou même texte (doublon « certain »), l'offre existante ;
-         *     `session_id` : l'analyse lancée (ou relancée), sinon `None`.
+         * @description `created` false: same link or same text ("certain" duplicate), the existing posting;
+         *     `session_id`: the analysis launched (or relaunched), otherwise `None`.
          */
         PostingCreatedOut: {
             /** Created */
@@ -13319,8 +13319,8 @@ export interface components {
         };
         /**
          * PostingDirectIn
-         * @description Une offre écrite en direct : son texte (copie figée, 300 caractères et 50 mots au moins), son
-         *     lien s'il y en a un (jamais lu : rien n'est téléchargé), et son analyse.
+         * @description A posting written directly: its text (frozen copy, 300 characters and 50 words at least),
+         *     its link if there is one (never read: nothing is downloaded), and its analysis.
          */
         PostingDirectIn: {
             /** Apply Url */
@@ -13361,7 +13361,7 @@ export interface components {
         };
         /**
          * PostingIn
-         * @description Exactement une source : le lien de l'offre ou son texte collé ; sinon 422
+         * @description Exactly one source: the posting's link or its pasted text; otherwise 422
          *     `posting_source`.
          */
         PostingIn: {
@@ -13411,8 +13411,9 @@ export interface components {
         };
         /**
          * PostingPatch
-         * @description Retouche de l'analyse d'une offre : les champs donnés remplacent ceux de l'analyse (une liste
-         *     donnée remplace toute la liste), qui est revalidée en entier. Le texte figé ne change pas.
+         * @description Edit of a posting's analysis: the given fields replace those of the analysis (a given
+         *     list replaces the whole list), which is re-validated in full. The frozen text does not
+         *     change.
          */
         PostingPatch: {
             /** Apply Url */
@@ -13442,8 +13443,8 @@ export interface components {
         };
         /**
          * PostingRefOut
-         * @description Une offre prête dont l'analyse cite la compétence (D123) ; `url` : sa page dans
-         *     l'application.
+         * @description A ready posting whose analysis cites the skill (D123); `url`: its page in the
+         *     application.
          */
         PostingRefOut: {
             /** Id */
@@ -13599,8 +13600,8 @@ export interface components {
         };
         /**
          * ProfileImportStarted
-         * @description Capture du profil lancée : la session `cv_capture` et les documents rangés dans la mémoire
-         *     (CV d'abord, puis LinkedIn).
+         * @description Profile capture started: the `cv_capture` session and the documents stored in memory
+         *     (CV first, then LinkedIn).
          */
         ProfileImportStarted: {
             /** Document Ids */
@@ -13610,9 +13611,9 @@ export interface components {
         };
         /**
          * ProfileOut
-         * @description Une version du profil. `source` : `archivist` (brouillon tiré des documents) ou `january`
-         *     (version qu'elle a validée). `dropped` : lignes retirées du brouillon (chiffre ou fait
-         *     introuvable dans les documents, texte invisible), montrées à January seule.
+         * @description A profile version. `source`: `archivist` (draft taken from the documents) or `january`
+         *     (version she validated). `dropped`: lines removed from the draft (figure or fact not found
+         *     in the documents, invisible text), shown to January only.
          */
         ProfileOut: {
             /**
@@ -13638,8 +13639,8 @@ export interface components {
         };
         /**
          * ProfilePutIn
-         * @description `base_version` : la version que January a relue (la dernière, sinon 409
-         *     `profile_conflict`) ; `None` s'il n'existe encore aucune version.
+         * @description `base_version`: the version January has read (the latest, otherwise 409
+         *     `profile_conflict`); `None` if no version exists yet.
          */
         ProfilePutIn: {
             /** Base Version */
@@ -13648,10 +13649,10 @@ export interface components {
         };
         /**
          * ProfileStateOut
-         * @description `draft` : seulement s'il est plus récent que la version validée. `session_id` : capture
-         *     du profil en cours (à suivre par ses événements), sinon `None`. `source_document_id` : le CV
-         *     (PDF étiqueté `cv`) du dernier import du profil, s'il est encore dans la mémoire, sinon
-         *     `None` (« Utiliser le CV de mon profil » pour capturer un gabarit).
+         * @description `draft`: only if it is more recent than the validated version. `session_id`: profile
+         *     capture in progress (to follow through its events), otherwise `None`. `source_document_id`:
+         *     the CV (PDF labelled `cv`) of the last profile import, if it is still in memory, otherwise
+         *     `None` ("Use my profile CV" to capture a template).
          */
         ProfileStateOut: {
             draft: components["schemas"]["ProfileOut"] | null;
@@ -13718,8 +13719,8 @@ export interface components {
         };
         /**
          * ProgramPatch
-         * @description Ajouts, suppressions et date de début (un lundi, brouillon seulement), appliqués
-         *     ensemble : une règle cassée annule tout.
+         * @description Additions, removals and start date (a Monday, draft only), applied together: a broken
+         *     rule cancels everything.
          */
         ProgramPatch: {
             /** Add Tasks */
@@ -13753,9 +13754,9 @@ export interface components {
         };
         /**
          * ProgramWrite
-         * @description Un programme complet écrit en un appel, sans agent (semaines, modules, tâches : les champs
-         *     et les bornes du Stratège, 1 à 52 semaines). L'application range les tâches sur le calendrier
-         *     selon les règles du Stratège ; le programme entre en brouillon, « à valider ».
+         * @description A complete program written in one call, without an agent (weeks, modules, tasks: the
+         *     Strategist's fields and bounds, 1 to 52 weeks). The application places the tasks on the
+         *     calendar following the Strategist's rules; the program enters as a draft, "to validate".
          */
         ProgramWrite: {
             /** Edges */
@@ -14569,7 +14570,7 @@ export interface components {
         };
         /**
          * RadarRunIn
-         * @description Poste et zone du relevé ; absents : ceux des réglages, puis du dernier objectif.
+         * @description Role and zone of the run; when absent: those of the settings, then of the last goal.
          */
         RadarRunIn: {
             /** Role */
@@ -14579,10 +14580,10 @@ export interface components {
         };
         /**
          * RadarRunOut
-         * @description Un relevé, avec les nombres réels. `read_count` : pages lisibles ; `not_postings` : celles
-         *     qui n'étaient pas des offres ; `analyzed` : offres analysées ; `not_analyzed` : offres lues
-         *     mais pas analysées (extraction en échec, ou au-delà des 50 lues d'un relevé) : l'écart ne se
-         *     cache jamais (« 55 lues, 50 analysées »).
+         * @description A run, with the real numbers. `read_count`: readable pages; `not_postings`: those that
+         *     were not postings; `analyzed`: postings analyzed; `not_analyzed`: postings read but not
+         *     analyzed (extraction failed, or beyond the 50 read in a run): the gap is never hidden
+         *     ("55 read, 50 analyzed").
          */
         RadarRunOut: {
             /** Alerts */
@@ -14918,7 +14919,7 @@ export interface components {
         };
         /**
          * ReindexState
-         * @description État de la réindexation de l'utilisateur, tenu en mémoire (perdu au redémarrage).
+         * @description State of the user's reindexing, kept in memory (lost on restart).
          */
         ReindexState: {
             /** Done */
@@ -15263,9 +15264,9 @@ export interface components {
         };
         /**
          * ReviewReport
-         * @description Le rapport de la revue : ATS repéré et ses notes, résumé de la fiche entreprise, forces et
-         *     risques vus par le Recruteur, critères éliminatoires de l'offre. Aucune garantie de passage
-         *     d'un ATS n'y est promise.
+         * @description The review report: detected ATS and its notes, company sheet summary, strengths and
+         *     risks seen by the Recruiter, and the posting's knockout criteria. It promises no
+         *     guarantee of passing an ATS.
          */
         ReviewReport: {
             /** Ats */
@@ -15301,8 +15302,8 @@ export interface components {
         };
         /**
          * ReviewStarted
-         * @description Revue lancée : la revue (`running`) et sa session `cv_review` (à suivre par ses
-         *     événements).
+         * @description Review started: the review (`running`) and its `cv_review` session (to follow through its
+         *     events).
          */
         ReviewStarted: {
             /** Review Id */
@@ -16070,8 +16071,8 @@ export interface components {
         };
         /**
          * SkillWrite
-         * @description Une compétence du référentiel, avec son domaine (facultatif : celles des modules sont
-         *     créées sans domaine à la validation).
+         * @description A skill of the reference list, with its domain (optional: those of the modules are
+         *     created without a domain at validation).
          */
         SkillWrite: {
             /** Domain */
@@ -16191,8 +16192,8 @@ export interface components {
         };
         /**
          * SourcedLine
-         * @description Le titre ou le résumé du profil : un fait à part entière, avec ses sources (un résumé tiré
-         *     de LinkedIn seul n'est pas « dans le CV »).
+         * @description The profile headline or summary: a fact in its own right, with its sources (a summary
+         *     drawn only from LinkedIn is not "in the CV").
          */
         SourcedLine: {
             /**
@@ -16626,8 +16627,8 @@ export interface components {
         };
         /**
          * TaskOut
-         * @description Une tâche reste dans son module (donc listée sous la semaine de ce module) même quand
-         *     January la déplace dans une autre semaine : le calendrier la place par `planned_date`.
+         * @description A task stays in its module (so listed under that module's week) even when January moves
+         *     it to another week: the calendar places it by `planned_date`.
          */
         TaskOut: {
             /** Already Known */
@@ -16640,13 +16641,13 @@ export interface components {
             minutes: number;
             /**
              * Module Id
-             * @description Module d'origine ; ne change pas quand la tâche bouge.
+             * @description Original module; does not change when the task moves.
              */
             module_id: string;
             /**
              * Planned Date
              * Format: date
-             * @description Jour planifié : c'est lui qui range la tâche dans une semaine du calendrier (charge et règles), pas son module.
+             * @description Planned day: it is what places the task in a calendar week (load and rules), not its module.
              */
             planned_date: string;
             /**
@@ -16675,8 +16676,8 @@ export interface components {
         };
         /**
          * TaskWrite
-         * @description Une tâche d'un programme écrit en direct : les champs et les bornes de `TaskDraft`. Son jour
-         *     est choisi par l'application, comme pour le Stratège.
+         * @description A task of a program written directly: the fields and bounds of `TaskDraft`. Its day is
+         *     chosen by the application, like for the Strategist.
          */
         TaskWrite: {
             /** Done Criterion */
@@ -17141,8 +17142,8 @@ export interface components {
         };
         /**
          * TrendOut
-         * @description Une compétence du classement. `delta_share` : points de pourcentage depuis le relevé
-         *     précédent ; `delta_rank` : rangs gagnés (positif) ou perdus ; `None` sans relevé précédent.
+         * @description A skill of the ranking. `delta_share`: percentage points since the previous run;
+         *     `delta_rank`: ranks gained (positive) or lost; `None` without a previous run.
          */
         TrendOut: {
             /** Count */
@@ -17306,7 +17307,7 @@ export interface components {
         };
         /**
          * UserMessagePayload
-         * @description Message de l'utilisatrice (D4) ; `command` : commande du débat, texte alors facultatif.
+         * @description A user message (D4); `command` is the debate command, and text is then optional.
          */
         UserMessagePayload: {
             /**
@@ -17410,7 +17411,7 @@ export interface components {
         };
         /**
          * ValidateGapStarted
-         * @description « Je les maîtrise déjà » : le module de validation ajouté et son quiz en préparation.
+         * @description "I already master them": the validation module added and its quiz being prepared.
          */
         ValidateGapStarted: {
             /** Module Id */
@@ -17422,8 +17423,8 @@ export interface components {
         };
         /**
          * ValidateOut
-         * @description `session_id` : session du Stratège reprise (la validation s'y termine) ; `None` : la
-         *     validation est faite (ou l'était déjà).
+         * @description `session_id`: the resumed Strategist session (the validation ends there); `None`: the
+         *     validation is done (or already was).
          */
         ValidateOut: {
             /** Program Id */
@@ -17479,12 +17480,12 @@ export interface components {
         };
         /**
          * VersionOut
-         * @description Un CV produit pour une offre (`number` compte par offre). `indicators` : après le rendu
-         *     (couverture des lignes adossées à un fait, contrôles ATS du PDF rendu), `None` avant ;
-         *     `filename` : nom ASCII du PDF (`CV_<Nom>_<Entreprise>_<Poste>.pdf`) ; `decisions` : la
-         *     décision de chaque modification au clic (`ref` → `accepted`, `refused`, `proposed`,
-         *     `to_confirm`, ou `ignored` pour une acceptée que la composition n'a pas pu placer) ;
-         *     `failure_reason` : phrase française d'un échec du rendu.
+         * @description A CV produced for a posting (`number` counts per posting). `indicators`: after rendering
+         *     (coverage of the lines backed by a fact, ATS checks of the rendered PDF), `None` before;
+         *     `filename`: ASCII name of the PDF (`CV_<Name>_<Company>_<Role>.pdf`); `decisions`: the
+         *     decision on each modification at the click (`ref` → `accepted`, `refused`, `proposed`,
+         *     `to_confirm`, or `ignored` for an accepted one the composition could not place);
+         *     `failure_reason`: an English sentence for a rendering failure.
          */
         VersionOut: {
             /** Allow Extra Pages */
@@ -17635,8 +17636,8 @@ export interface components {
         };
         /**
          * WeekCreate
-         * @description Une semaine de plus à la fin du programme (52 au plus), écrite à la main ou par Claude :
-         *     elle n'a ni module ni tâche, ils s'ajoutent ensuite.
+         * @description One more week at the end of the program (52 at most), written by hand or by Claude: it
+         *     has no module or task, they are added afterwards.
          */
         WeekCreate: {
             /** Deliverable */
@@ -17667,9 +17668,9 @@ export interface components {
         };
         /**
          * WeekOut
-         * @description Une semaine : sa charge se lit sur le calendrier (tâches dont `planned_date` tombe dans
-         *     ses sept jours), ses modules sont ceux que le Stratège y a rangés. Après un déplacement, la
-         *     somme des tâches de `modules` peut donc différer de `load_minutes`.
+         * @description A week: its load is read from the calendar (tasks whose `planned_date` falls within its
+         *     seven days), its modules are those the Strategist placed in it. After a move, the sum of
+         *     the tasks of `modules` may therefore differ from `load_minutes`.
          */
         WeekOut: {
             /** Deliverable */
@@ -17678,17 +17679,17 @@ export interface components {
             id: string;
             /**
              * Load Hours
-             * @description `load_minutes` en heures, à la demi-heure.
+             * @description `load_minutes` in hours, to the half hour.
              */
             load_hours: number;
             /**
              * Load Minutes
-             * @description Minutes des tâches planifiées du lundi au dimanche de cette semaine, quel que soit leur module (règle des 85 %).
+             * @description Minutes of the tasks planned from Monday to Sunday of this week, whatever their module (85% rule).
              */
             load_minutes: number;
             /**
              * Modules
-             * @description Modules rangés dans cette semaine, avec TOUTES leurs tâches, y compris celles que January a déplacées dans une autre semaine (voir `TaskOut.planned_date`).
+             * @description Modules placed in this week, with ALL their tasks, including those January moved to another week (see `TaskOut.planned_date`).
              */
             modules: components["schemas"]["ModuleOut"][];
             /** Objective */
@@ -17721,7 +17722,7 @@ export interface components {
             objective?: string | null;
             /**
              * Rationale
-             * @description Pourquoi cette semaine arrive à cette place.
+             * @description Why this week comes at this position.
              */
             rationale?: string | null;
             /**
@@ -17941,15 +17942,15 @@ export interface operations {
     get_activity_api_v1_activity_get: {
         parameters: {
             query?: {
-                /** @description Ne rendre que les événements plus récents que cet instant. */
+                /** @description Only return events more recent than this instant. */
                 after?: string | null;
-                /** @description Avec `after` : l'`id` du plus récent événement déjà vu. Le curseur est le couple `(at, id)` : les événements au même instant que lui ne sont pas perdus. */
+                /** @description With `after`: the `id` of the most recent event already seen. The cursor is the `(at, id)` pair: events at the same instant as it are not lost. */
                 after_id?: string | null;
-                /** @description Ne rendre que les événements plus anciens que cet instant. */
+                /** @description Only return events older than this instant. */
                 before?: string | null;
-                /** @description Avec `before` : l'`id` du plus ancien événement déjà vu (page suivante sans perte ni doublon, même à instant égal). */
+                /** @description With `before`: the `id` of the oldest event already seen (next page without loss or duplicate, even at an equal instant). */
                 before_id?: string | null;
-                /** @description Plafonné à 50. */
+                /** @description Capped at 50. */
                 limit?: number;
             };
             header?: never;
@@ -18572,7 +18573,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `claim_expired` (le témoin `tremplin_claim` manque ou a plus de 10 minutes, ou « espace vide » a déjà été choisi : le compte existe, il suffit de se reconnecter, ou l'adresse n'est plus nommée dans `ALLOWED_EMAILS`) ou `local_already_claimed` (l'espace local a déjà un propriétaire) */
+            /** @description `claim_expired` (the `tremplin_claim` cookie is missing or older than 10 minutes, or "empty space" was already chosen: the account exists, signing in again is enough, or the address is no longer named in `ALLOWED_EMAILS`) or `local_already_claimed` (the local space already has an owner) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -18662,7 +18663,7 @@ export interface operations {
                     "application/json": components["schemas"]["MeOut"];
                 };
             };
-            /** @description `auth_required` : mode Google, aucune session valide */
+            /** @description `auth_required`: Google mode, no valid session */
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -27410,7 +27411,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Offre déjà ajoutée */
+            /** @description Posting already added */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -27452,7 +27453,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Offre déjà ajoutée */
+            /** @description Posting already added */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -27537,7 +27538,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `review_in_progress` (une revue de CV de l'offre est lancée ou proposée : la terminer d'abord), `analysis_in_progress` (l'analyse de l'offre tourne : réessayer dans un instant), `posting_has_application` (une fiche de candidature cite l'offre : `details.application_id`), `posting_has_running_work` (un comité ou un entretien en cours cite l'offre : `details.kind`, `committee` ou `interview`) */
+            /** @description `review_in_progress` (a CV review of the posting is launched or proposed: finish it first), `analysis_in_progress` (the posting analysis is running: try again in a moment), `posting_has_application` (an application record cites the posting: `details.application_id`), `posting_has_running_work` (a committee or an interview in progress cites the posting: `details.kind`, `committee` or `interview`) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -27929,7 +27930,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description `invalid_start_date`, `planning_impossible` ou `plan_invalid` */
+            /** @description `invalid_start_date`, `planning_impossible` or `plan_invalid` */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -28216,7 +28217,7 @@ export interface operations {
                     "application/json": components["schemas"]["ModuleOut"];
                 };
             };
-            /** @description `program_not_found` ou `week_not_found` */
+            /** @description `program_not_found` or `week_not_found` */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -29757,7 +29758,7 @@ export interface operations {
                     "application/json": components["schemas"]["RunStarted"];
                 };
             };
-            /** @description `radar_in_progress` (`details.run_id`) ou `radar_role_required` : aucun poste ni dans la requête, ni dans les réglages, ni dans le dernier objectif */
+            /** @description `radar_in_progress` (`details.run_id`) or `radar_role_required`: no role in the request, nor in the settings, nor in the last goal */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -31722,7 +31723,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Session déjà ouverte sur cette leçon. */
+            /** @description Session already open on this lesson. */
             200: {
                 headers: {
                     [name: string]: unknown;

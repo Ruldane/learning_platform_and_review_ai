@@ -1,10 +1,11 @@
-"""HTML et CSS d'un CV, écrits par le code à partir du spec du Maquettiste (D118 n° 3, D120) : le
-modèle ne produit jamais de HTML ni de CSS. Gabarit unique `cv/cv.html.j2` (échappement
-automatique, variable inconnue = erreur), aucun script, aucune image, CSP en `<meta>`.
+"""HTML and CSS of a CV, written by the code from the Designer's spec (D118 no. 3, D120): the
+model never produces HTML or CSS. Single template `cv/cv.html.j2` (automatic escaping, unknown
+variable = error), no script, no image, CSP in a `<meta>`.
 
-Aucune valeur du spec n'entre dans le CSS sans passer par son type validé : nombres finis et
-bornés, couleurs `#rrggbb`, familles du catalogue des polices libres, styles d'une liste fermée.
-Une valeur hors type lève `ValueError` (le spec doit avoir passé `template_problems`)."""
+No value of the spec enters the CSS without going through its validated type: finite and
+bounded numbers, `#rrggbb` colors, families of the free fonts catalog, styles from a closed
+list. A value outside its type raises `ValueError` (the spec must have passed
+`template_problems`)."""
 
 import math
 import re
@@ -37,25 +38,25 @@ _DATES = {"right", "below", "left"}
 _BULLETS = {"dot", "dash", "none"}
 _POINTS_PER_INCH = 72
 _MM_PER_INCH = 25.4
-_DARK_LUMA = 140  # sous ce seuil, texte blanc sur le fond
+_DARK_LUMA = 140  # below this threshold, white text on the background
 
 
 def _number(value: float, low: float, high: float) -> str:
     if not math.isfinite(value) or not low <= value <= high:
-        raise ValueError("valeur numérique hors bornes")
+        raise ValueError("numeric value out of bounds")
     return f"{value:.2f}".rstrip("0").rstrip(".")
 
 
 def _hex(value: str) -> str:
     if not _HEX.fullmatch(value):
-        raise ValueError("couleur hors du format #rrggbb")
+        raise ValueError("color outside the #rrggbb format")
     return value.lower()
 
 
 def _family(name: str) -> str:
     family = _FAMILIES.get(name.casefold())
     if family is None:
-        raise ValueError("police hors du catalogue des polices libres")
+        raise ValueError("font outside the free fonts catalog")
     return family
 
 
@@ -72,15 +73,15 @@ def _dark(color: str) -> bool:
 
 
 def _on(color: str, fallback: str) -> str:
-    """Couleur lisible posée sur `color` : blanc sur un fond sombre, `fallback` sinon."""
+    """Readable color placed on `color`: white on a dark background, `fallback` otherwise."""
     return "#ffffff" if _dark(color) else fallback
 
 
 def _font_face(font: FontFile) -> str:
     if not _FONT_ASSET.fullmatch(font.asset_name) or font.style not in ("normal", "italic"):
-        raise ValueError("fichier de police refusé")
+        raise ValueError("font file refused")
     if font.weight not in range(100, 1000, 100):
-        raise ValueError("graisse de police refusée")
+        raise ValueError("font weight refused")
     kind = _FORMATS[font.asset_name.rsplit(".", 1)[1]]
     return (
         f"@font-face {{ font-family: '{_family(font.family)}'; "
@@ -118,7 +119,7 @@ def _columns_css(spec: TemplateSpec) -> list[str]:
         dark = background != "transparent" and _dark(background)
         if column.text_color:
             color = title = _hex(column.text_color)
-        elif dark:  # fond sombre sans couleur de texte : texte blanc, jamais illisible
+        elif dark:  # dark background without a text color: white text, never unreadable
             color = title = "#ffffff"
         else:
             color, title = "var(--text)", "var(--accent)"
@@ -129,9 +130,9 @@ def _columns_css(spec: TemplateSpec) -> list[str]:
 
 
 def cv_css(spec: TemplateSpec, fonts: Sequence[FontFile]) -> str:
-    """Feuille du design : `@page` à la taille du spec (marges nulles : la mise en page est dans
-    le corps), `@font-face` de chaque police jointe (URL relative à son nom de ressource),
-    variables (couleurs, polices, tailles, marges), grille à une ou deux colonnes."""
+    """Design stylesheet: `@page` at the spec's size (zero margins: the layout is in the body),
+    `@font-face` of each attached font (URL relative to its resource name), variables (colors,
+    fonts, sizes, margins), one- or two-column grid."""
     width, height = _number(spec.page.width_pt, 200, 1000), _number(spec.page.height_pt, 200, 1400)
     lines = [f"@page {{ size: {width}pt {height}pt; margin: 0; }}"]
     lines += [_font_face(font) for font in fonts]
@@ -149,11 +150,11 @@ def _blocks(
 
 
 def _place(spec: TemplateSpec, content: CvContent) -> list[list[ColumnBlock | CvSection]]:
-    """Blocs de chaque colonne dans l'ordre du spec ; une section du contenu absente du spec va à
-    la fin de la colonne la plus large (rien n'est perdu) ; sans bloc « identity » dans le spec,
-    l'identité ouvre la première colonne."""
+    """Blocks of each column in the spec's order; a content section absent from the spec goes
+    to the end of the widest column (nothing is lost); without an "identity" block in the spec,
+    the identity opens the first column."""
     by_key: dict[str, list[CvSection]] = {}
-    for section in content.sections:  # deux sections de même clé : rendues toutes les deux
+    for section in content.sections:  # two sections with the same key: both rendered
         by_key.setdefault(section.key, []).append(section)
     placed = {block for column in spec.columns for block in column.sections}
     columns: list[list[ColumnBlock | CvSection]] = [
@@ -187,7 +188,7 @@ def _classes(spec: TemplateSpec, band: bool) -> str:
 
 
 def _web_href(url: str) -> str | None:
-    """Un lien Web imprimé peut devenir cliquable. Les autres valeurs restent du texte."""
+    """A printed web link may become clickable. Other values stay text."""
     url = url.strip()
     if not url or any(char.isspace() or ord(char) < 32 or char == "\\" for char in url):
         return None
@@ -211,16 +212,15 @@ def _skill_columns(spec: TemplateSpec, rank: int) -> int:
     right = right if rank == len(spec.columns) - 1 else spec.gap_mm
     available_pt = spec.page.width_pt * spec.columns[rank].width_pct / 100
     available_pt -= (left + right) * _POINTS_PER_INCH / _MM_PER_INCH
-    # Laisse environ sept cadratins par compétence, gouttière de 0,6 em comprise.
+    # Leaves about seven ems per skill, 0.6 em gutter included.
     return max(1, min(3, int(available_pt / (7 * spec.fonts.body_pt))))
 
 
 def cv_document(spec: TemplateSpec, content: CvContent, fonts: Sequence[FontFile]) -> HtmlDocument:
-    """Le CV à rendre : `index.html` (ordre du DOM = colonne 1 puis colonne 2, intitulés en
-    `<h2>`, coordonnées dans le corps), `base.css`, `cv.css` et les polices jointes ; page à la
-    taille du spec, marges nulles, sans pied de page. Avec un bandeau (`header_band`) et
-    l'identité en tête de sa colonne, l'identité passe dans un bandeau pleine largeur, avant les
-    colonnes."""
+    """The CV to render: `index.html` (DOM order = column 1 then column 2, headings in `<h2>`,
+    contact details in the body), `base.css`, `cv.css` and the attached fonts; page at the
+    spec's size, zero margins, no footer. With a banner (`header_band`) and the identity at the
+    head of its column, the identity moves into a full-width banner, before the columns."""
     columns = _place(spec, content)
     band = spec.header_band is not None and any(column[:1] == ["identity"] for column in columns)
     if band:

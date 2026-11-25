@@ -1,5 +1,5 @@
-"""Schémas de la capture rapide et du journal (SPEC F18, D108). Une 422 ne recopie jamais la saisie
-(gestionnaire commun : chemins et messages seulement)."""
+"""Quick capture and journal schemas (SPEC F18, D108). A 422 never copies the input back
+(common handler: paths and messages only)."""
 
 from datetime import date, datetime
 from typing import Literal
@@ -22,8 +22,8 @@ URL_MAX = 2048
 
 
 class CaptureRequest(BaseModel):
-    """Une seule source : un lien http(s), un texte, ou un document déjà importé
-    (`POST /documents`). Zéro ou plusieurs : 422 `invalid_input`."""
+    """A single source: an http(s) link, a text, or an already imported document
+    (`POST /documents`). Zero or several: 422 `invalid_input`."""
 
     url: str | None = Field(default=None, max_length=URL_MAX)
     text: str | None = Field(default=None, max_length=TEXT_MAX)
@@ -55,8 +55,8 @@ class JournalEntryOut(BaseModel):
 
 
 class JournalPage(BaseModel):
-    """Les lignes, les plus récentes d'abord ; `next_before` : curseur de la page suivante
-    (`?before=`), `None` à la dernière."""
+    """The rows, most recent first; `next_before`: cursor of the next page (`?before=`),
+    `None` on the last."""
 
     entries: list[JournalEntryOut]
     next_before: str | None

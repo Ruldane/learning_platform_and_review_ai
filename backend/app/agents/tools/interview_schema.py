@@ -1,10 +1,10 @@
-"""Schémas de l'entretien blanc (SPEC F10, D145) : le plan de l'Intervieweur, sa décision après
-chaque réponse, le débrief et le contexte que le parcours `interview` lit.
+"""Mock interview schemas (SPEC F10, D145): the Interviewer's plan, its decision after each
+answer, the debrief and the context that the `interview` graph reads.
 
-Les longueurs d'un texte lu par January sont raccourcies (`Prose`) au lieu d'être refusées ; les
-nombres (questions du plan, notes, échelle 1 à 5) sont vérifiés par le code et renvoyés au modèle
-(`structured_call`). Les indices des questions sont ceux du plan, à partir de 0 : les réponses sont
-données dans l'ordre, la question `i` de la liste des échanges est donc celle du plan `i`."""
+The lengths of a text read by January are shortened (`Prose`) instead of being refused; the
+numbers (plan questions, scores, 1 to 5 scale) are checked by the code and sent back to the model
+(`structured_call`). The question indices are those of the plan, from 0: the answers are given
+in order, so question `i` of the exchange list is plan question `i`."""
 
 from typing import Annotated, Literal, Self
 
@@ -34,7 +34,7 @@ __all__ = [
     "plan_schema",
 ]
 
-QUESTIONS_BY_DURATION = {15: 4, 30: 7, 45: 10}  # questions principales ; une relance au plus
+QUESTIONS_BY_DURATION = {15: 4, 30: 7, 45: 10}  # main questions; one follow-up at most
 Criterion = Literal["clarity", "structure", "technical_depth", "role_fit"]
 QuestionSource = Literal["posting", "company_dossier", "cv", "gap", "general"]
 ScoreKey = Criterion
@@ -70,8 +70,8 @@ class InterviewPlan(BaseModel):
 
 
 def plan_schema(count: int) -> type[InterviewPlan]:
-    """Le plan d'exactement `count` questions, toutes différentes : une réponse qui s'en écarte
-    est renvoyée au modèle avec le motif."""
+    """The plan of exactly `count` questions, all different: an answer that departs from it
+    is sent back to the model with the reason."""
 
     class Plan(InterviewPlan):
         questions: list[PlannedQuestion] = Field(min_length=count, max_length=count)
@@ -81,14 +81,14 @@ def plan_schema(count: int) -> type[InterviewPlan]:
         def _distinct(cls, value: list[PlannedQuestion]) -> list[PlannedQuestion]:
             texts = {" ".join(q.text.casefold().split()) for q in value}
             if len(texts) != len(value):
-                raise ValueError("deux questions sont identiques : chaque question est différente")
+                raise ValueError("two questions are identical: every question must be different")
             return value
 
     return Plan
 
 
 class TurnDecision(BaseModel):
-    """Après une réponse : une relance (ou `None`) et la note interne de la réponse (1 à 5)."""
+    """After an answer: a follow-up (or `None`) and the internal score of the answer (1 to 5)."""
 
     follow_up: str | None = Field(default=None, max_length=300)
     note: int = Field(ge=1, le=5)
@@ -103,8 +103,8 @@ class TurnDecision(BaseModel):
 
 
 class Exchange(BaseModel):
-    """Une question principale, la réponse de January, la relance s'il y en a eu une (et sa
-    réponse), la note interne (1 à 5) de l'ensemble."""
+    """A main question, January's answer, the follow-up if there was one (and its
+    answer), the internal score (1 to 5) of the whole."""
 
     index: int = Field(ge=0)
     question: str
@@ -114,26 +114,26 @@ class Exchange(BaseModel):
     follow_up: str | None = None
     follow_up_answer: str | None = None
     note: int = Field(ge=1, le=5)
-    unrated: bool = False  # le modèle n'a pas répondu : la note est neutre, posée par le code
+    unrated: bool = False  # the model did not answer: the score is neutral, set by the code
     salary_raised: bool = False
 
 
 class ExpectedPoints(BaseModel):
-    """Les points qu'une bonne réponse à la question `index` aurait donnés (verso de la fiche)."""
+    """The points a good answer to question `index` would have given (back of the card)."""
 
     index: int = Field(ge=0)
     points: list[Point] = Field(min_length=1, max_length=4)
 
 
 class Debrief(BaseModel):
-    scores: dict[ScoreKey, int]  # 1 à 5, les quatre clés
+    scores: dict[ScoreKey, int]  # 1 to 5, the four keys
     strengths: list[Sentence] = Field(min_length=3, max_length=3)
     fixes: list[Sentence] = Field(min_length=3, max_length=3)
-    weakest_index: int = Field(ge=0)  # fixé par le code : la note interne la plus basse
+    weakest_index: int = Field(ge=0)  # set by the code: the lowest internal score
     improved_answer: Prose = Field(min_length=1, max_length=1500)
-    missed: list[int] = Field(default_factory=list)  # fixé par le code : notes ≤ 2
-    expected: list[ExpectedPoints] = Field(default_factory=list)  # une par question ratée
-    unrated: list[int] = Field(default_factory=list)  # fixé par le code : réponses non notées
+    missed: list[int] = Field(default_factory=list)  # set by the code: scores <= 2
+    expected: list[ExpectedPoints] = Field(default_factory=list)  # one per missed question
+    unrated: list[int] = Field(default_factory=list)  # set by the code: unrated answers
 
     @field_validator("scores", mode="before")
     @classmethod
@@ -151,14 +151,14 @@ class Debrief(BaseModel):
     @classmethod
     def _four_scores(cls, value: dict[ScoreKey, int]) -> dict[ScoreKey, int]:
         if set(value) != set(SCORE_KEYS):
-            raise ValueError("il faut une note pour chacun des quatre critères")
+            raise ValueError("a score is needed for each of the four criteria")
         if any(not 1 <= score <= 5 for score in value.values()):
-            raise ValueError("chaque note va de 1 à 5")
+            raise ValueError("each score goes from 1 to 5")
         return value
 
 
 def debrief_schema(missed: list[int]) -> type[Debrief]:
-    """Le débrief dont `expected` couvre chaque question ratée (`missed`, fixé par le code)."""
+    """The debrief whose `expected` covers each missed question (`missed`, set by the code)."""
 
     class Checked(Debrief):
         @model_validator(mode="after")
@@ -166,16 +166,16 @@ def debrief_schema(missed: list[int]) -> type[Debrief]:
             given = {item.index for item in self.expected}
             absent = [index for index in missed if index not in given]
             if absent:
-                raise ValueError(f"`expected` doit couvrir les questions ratées : {absent}")
+                raise ValueError(f"`expected` must cover the missed questions: {absent}")
             return self
 
     return Checked
 
 
 class InterviewContext(BaseModel):
-    """Ce que le parcours lit (lecture seule) : le réglage, l'offre (texte et analyse, absents d'un
-    entretien libre sur un intitulé), le dossier de l'entreprise, la version du CV envoyée, les
-    écarts connus et le profil validé."""
+    """What the graph reads (read-only): the setting, the posting (text and analysis, absent from
+    a free interview on a job title), the company dossier, the CV version sent, the known
+    gaps and the validated profile."""
 
     mode: InterviewMode
     duration_min: Literal[15, 30, 45]

@@ -31,7 +31,11 @@ _CASES = (
     ),
 )
 _DATA = json.dumps(
-    [[{"id": key, "urgente": urgent} for key, urgent in values] for _, values, _ in _CASES]
+    [
+        # `urgente` and `planifier` below serve files started before the switch to English.
+        [{"id": key, "urgent": urgent, "urgente": urgent} for key, urgent in values]
+        for _, values, _ in _CASES
+    ]
 )
 _CONTROLLER = f"""import json
 import os
@@ -76,7 +80,8 @@ checks = []
 for rows in cases:
     source = copy.deepcopy(rows)
     try:
-        ordered = service.planifier(rows)
+        schedule = getattr(service, "schedule", None) or service.planifier
+        ordered = schedule(rows)
         checks.append({"ordered": ordered, "intact": rows == source})
     except Exception:
         checks.append({"ordered": None, "intact": False})

@@ -3,13 +3,16 @@ import re
 from app.features.meeting_modules.schemas import ExcerptKind, MeetingExcerpt, MeetingStudyStep
 
 _MARKER = re.compile(r"^\s*(?:[-*•]|\d+[.)])\s+")
+# French labels and sentences still match: transcripts written in French stay supported.
 _LABEL = re.compile(
-    r"^(décision|decision|choix|à étudier|a etudier|sujet|question|action)\s*:\s*",
+    r"^(décision|decision|choix|choice|à étudier|a etudier|to study|sujet|topic|subject|question"
+    r"|action)\s*:\s*",
     re.IGNORECASE,
 )
-_DECISIONS = frozenset({"décision", "decision", "choix"})
+_DECISIONS = frozenset({"décision", "decision", "choix", "choice"})
 _DECISION_SENTENCE = re.compile(
-    r"^(?:nous\s+avons|on\s+a|il\s+a\s+été|j[’']ai|l[’']équipe\s+a)\s+décidé\b",
+    r"^(?:(?:nous\s+avons|on\s+a|il\s+a\s+été|j[’']ai|l[’']équipe\s+a)\s+décidé"
+    r"|(?:we|i|the\s+team)\s+(?:have\s+|had\s+)?decided)\b",
     re.IGNORECASE,
 )
 

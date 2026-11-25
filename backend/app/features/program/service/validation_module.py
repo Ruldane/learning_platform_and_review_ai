@@ -1,6 +1,6 @@
-"""« Je les maîtrise déjà » (D220) : un module « Valider mes acquis » dans le programme validé, sans
-tâche ni leçon ; son quiz, écrit d'après les compétences, les fait passer à « validé » s'il est
-réussi (même notation que tout quiz de module)."""
+""" "I already master them" (D220): a "Validate my skills" module in the validated program,
+with no task or lesson; its quiz, written from the skills, moves them to "validated" if
+passed (same grading as any module quiz)."""
 
 import logging
 from collections.abc import Sequence
@@ -23,8 +23,8 @@ _TITLE = "Valider mes acquis : "
 
 
 def _week(weeks: Sequence[Week], counts: dict[str, int], today: date) -> Week | None:
-    """La semaine en cours (ou la première à venir) qui a encore de la place, sinon la dernière
-    qui en a ; `None` si toutes sont pleines."""
+    """The current week (or the first upcoming one) that still has room, otherwise the last
+    one that has; `None` if all are full."""
     ordered = sorted(weeks, key=lambda w: w.rank)
     roomy = [w for w in ordered if counts.get(w.id, 0) < MAX_MODULES_PER_WEEK]
     current = [w for w in roomy if w.start_date + timedelta(days=7) > today]
@@ -35,7 +35,7 @@ def _week(weeks: Sequence[Week], counts: dict[str, int], today: date) -> Week | 
 async def add_validation_module(
     rt: ProgramRuntime, user_id: str, program_id: str, skills: Sequence[str], today: date
 ) -> str:
-    """Rend l'id du module ajouté ; 409 `week_full` si aucune semaine n'a de place."""
+    """Returns the id of the added module; 409 `week_full` if no week has room."""
     async with rt.program_lock(user_id, program_id), rt.session_factory() as db:
         loaded = await load(db, user_id, program_id)
         counts: dict[str, int] = {}
@@ -57,15 +57,15 @@ async def add_validation_module(
         )
         await db.commit()
         module_id = module.id
-    logger.info("Module de validation ajouté : programme %s, module %s", program_id, module_id)
+    logger.info("Validation module added: program %s, module %s", program_id, module_id)
     return module_id
 
 
-# Tient lieu de leçon pour l'Examinateur (le quiz d'un module de validation n'en a pas).
+# Stands in for the lesson for the Examiner (a validation module's quiz has none).
 VALIDATION_BRIEF = (
-    "Aucune leçon : ce module vérifie des acquis que January dit déjà maîtriser. Écris des "
-    "questions de niveau professionnel qui ne se réussissent qu'en maîtrisant réellement les "
-    "compétences du module (pratique, cas concrets, pièges courants), sans t'appuyer sur un cours."
+    "No lesson: this module checks skills January says she already masters. Write "
+    "professional-level questions that can only be passed by really mastering the module's "
+    "skills (practice, concrete cases, common pitfalls), without relying on a course."
 )
 
 

@@ -1,9 +1,8 @@
-"""Recherche web (SPEC 10.1, 10.4, 11.3, 17.3) : requête nettoyée, cache de 24 h, ordre de repli
-des fournisseurs, plafond de la session et plafond mensuel de Brave.
+"""Web search (SPEC 10.1, 10.4, 11.3, 17.3): cleaned query, 24 h cache, provider fallback
+order, session cap and Brave monthly cap.
 
-Aucune transaction n'est ouverte pendant un appel réseau (D66) : lecture (réglages, rejeu,
-plafond, cache), puis appel, puis une écriture courte. Journaux : identifiants seulement, jamais
-la requête (SPEC 17.2)."""
+No transaction is open during a network call (D66): read (settings, replay, cap, cache), then
+call, then a short write. Logs: ids only, never the query (SPEC 17.2)."""
 
 import logging
 from collections.abc import Awaitable, Callable, Sequence
@@ -28,7 +27,7 @@ type SearchFromClient = Callable[[SearchRequest, ResearchPrefs], Awaitable[list[
 
 @dataclass(frozen=True)
 class SearchOutcome:
-    query: str  # la requête nettoyée, celle qui a été envoyée
+    query: str  # the cleaned query, the one that was sent
     provider: str | None
     hits: list[RankedHit]
     cached: bool
@@ -45,7 +44,7 @@ async def _load(runtime: ResearchRuntime, user_id: str) -> tuple[ResearchPrefs, 
 async def _cached(
     runtime: ResearchRuntime, user_id: str, order: Sequence[str], request: SearchRequest
 ) -> tuple[str, list[SearchResult]] | None:
-    """Liste encore en cache (24 h), cherchée fournisseur par fournisseur dans l'ordre."""
+    """List still cached (24 h), searched provider by provider in order."""
     async with runtime.session_factory() as db:
         cache = WebCache(db, user_id, now=runtime.now)
         for name in order:
@@ -65,8 +64,8 @@ async def _save(
     session_id: str | None,
     hit_count: int,
 ) -> None:
-    """Une seule transaction courte : liste mise en cache (jamais vide : une liste vide n'arrive
-    pas jusqu'ici), requête de la session, purge du cache si due."""
+    """A single short transaction: list cached (never empty: an empty list does not get here),
+    the session's query, cache purge if due."""
     provider, results = found
     async with runtime.session_factory() as db:
         if store:
@@ -127,8 +126,8 @@ async def _in_session(
     request: SearchRequest,
     client: SearchFromClient | None = None,
 ) -> SearchOutcome:
-    """À appeler sous `session_lock`. Une requête déjà lancée par la session (nœud rejoué) n'est
-    ni recomptée ni refacturée : liste du cache, sinon nouvel essai sans Brave."""
+    """To call under `session_lock`. A query already launched by the session (replayed node) is
+    neither recounted nor rebilled: list from the cache, otherwise a new try without Brave."""
     async with runtime.session_factory() as db:
         repo = WebQueryRepository(db, user_id)
         known = await repo.get(session_id, request.query_hash)
@@ -169,9 +168,9 @@ async def search(
     budget_s: float = BRAVE_MAX_WAIT_S,
     client: SearchFromClient | None = None,
 ) -> SearchOutcome:
-    """Recherche `query` nettoyée de toute donnée personnelle. `budget_s` : attente maximale
-    acceptée pour le créneau de Brave (au-delà, Brave est sauté). Lève `WebQuotaReached` (429),
-    `NoSearchProvider` (503) ou 422 `search_query_empty`."""
+    """Searches `query` cleaned of any personal data. `budget_s`: maximum wait accepted for
+    Brave's slot (beyond it, Brave is skipped). Raises `WebQuotaReached` (429),
+    `NoSearchProvider` (503) or 422 `search_query_empty`."""
     settings, identity = await _load(runtime, user_id)
     cleaned = scrub_query(query, identity)
     if not cleaned:
@@ -197,8 +196,7 @@ async def search(
         )
         raise
     logger.info(
-        "Recherche web : utilisateur %s, session %s, fournisseur %s, %d résultat(s), "
-        "cache %s, rejouée %s",
+        "Web search: user %s, session %s, provider %s, %d result(s), cache %s, replayed %s",
         user_id,
         session_id,
         outcome.provider,

@@ -1,18 +1,17 @@
-"""Départ d'une session guidée (SPEC F14, D103) : « Commencer mon bloc » (bloc du jour) ou une
-leçon choisie, avec ou sans question pour le Tuteur.
+"""Start of a guided session (SPEC F14, D103): "Start my block" (today's block) or a chosen
+lesson, with or without a question for the Tutor.
 
-Sous le verrou de l'utilisatrice : la leçon (404 `lesson_not_found`, 409 `lesson_not_ready`) ou
-le bloc du jour (404 `no_block_today`, seulement s'il n'y a pas de session ouverte : « Commencer
-mon bloc » sans bloc, avec une session vivante, rend 409 `study_already_open` vers elle) ; une
-session `open` dont la session d'agents est terminée est rangée comme par un second « Terminer »
-si son temps a été gardé (« Terminer » envoyé, Tuteur arrêté avant de conclure : revue finale de
-la phase 5, S-I1), sinon passe à `cancelled` (avec `ended_at`) dans la même transaction que
-l'insertion de la nouvelle (F11) ; une session vivante sur la même leçon est
-rendue telle quelle (200), sur une autre leçon : 409 `study_already_open`
-(`details.study_session_id`). L'index unique partiel tranche une course qui passerait quand
-même : le second relit la session ouverte. La ligne est commitée AVANT `launcher.start` (jamais
-le verrou d'écriture de SQLite tenu pendant le lancement, D66, D72) ; un lancement refusé
-laisse la session `cancelled` (avec `ended_at`). Journaux : identifiants seulement."""
+Under the user's lock: the lesson (404 `lesson_not_found`, 409 `lesson_not_ready`) or today's
+block (404 `no_block_today`, only if there is no open session: "Start my block" without a
+block, with a live session, returns 409 `study_already_open` toward it); an `open` session
+whose agent session is finished is stored as by a second "Finish" if its time was kept
+("Finish" sent, Tutor stopped before concluding: final review of phase 5, S-I1), otherwise
+becomes `cancelled` (with `ended_at`) in the same transaction as the insertion of the new one
+(F11); a live session on the same lesson is returned as is (200), on another lesson: 409
+`study_already_open` (`details.study_session_id`). The partial unique index settles a race that
+would go through anyway: the second one re-reads the open session. The row is committed BEFORE
+`launcher.start` (SQLite's write lock is never held during the launch, D66, D72); a refused
+launch leaves the session `cancelled` (with `ended_at`). Logs: ids only."""
 
 import logging
 from dataclasses import dataclass
@@ -70,7 +69,7 @@ class Target:
 async def _target(
     rt: StudyRuntime, db: AsyncSession, user_id: str, body: StudyStart
 ) -> Target | None:
-    """La cible du départ ; `None` : « mon bloc » sans bloc du jour."""
+    """The start's target; `None`: "my block" without a block for today."""
     today = await rt.today(db, user_id)
     if body.lesson_id is None:
         block = await block_of_day(db, user_id, today)
@@ -87,10 +86,10 @@ async def _target(
 
 
 async def _settle_kept(rt: StudyRuntime, user_id: str) -> None:
-    """Sous le verrou, avant l'insertion : une session ouverte morte dont le temps a été gardé
-    (« Terminer » envoyé, puis le Tuteur s'est arrêté avant de conclure) est rangée comme le
-    ferait un second « Terminer » (temps, journal, série ; sans résultat de questions), jamais
-    annulée (revue finale de la phase 5, S-I1). Ordre des verrous : étude, puis programme (F4)."""
+    """Under the lock, before the insertion: a dead open session whose time was kept ("Finish"
+    sent, then the Tutor stopped before concluding) is stored as a second "Finish" would do
+    (time, log, streak; without question results), never cancelled (final review of phase 5,
+    S-I1). Lock order: study, then program (F4)."""
     async with rt.session_factory() as db:
         row = await StudyRepository(db, user_id).open_one()
         if row is None or row.kind != "guided" or row.worked_minutes is None:
@@ -99,14 +98,14 @@ async def _settle_kept(rt: StudyRuntime, user_id: str) -> None:
         dead = row.session_id is None or is_dead(row, status)
     if dead:
         await finish_study(rt, user_id, None, row.id, NO_OUTCOME)
-        logger.info("Fin rangée au départ suivant (Tuteur arrêté) : étude %s", row.id)
+        logger.info("End stored at the next start (Tutor stopped): study %s", row.id)
 
 
 async def _live(db: AsyncSession, user_id: str, now: datetime) -> tuple[str, str, str] | None:
-    """`(id, leçon, session)` de la session ouverte encore vivante ; une session morte (sa
-    session d'agents est terminée, ou son lancement s'est arrêté : sous le verrou, une session
-    sans session d'agents n'est plus en cours de lancement) passe à `cancelled` (F11), non
-    commitée. Une session morte au temps gardé a déjà été rangée par `_settle_kept`."""
+    """`(id, lesson, session)` of the open session still alive; a dead session (its agent
+    session is finished, or its launch stopped: under the lock, a session without an agent
+    session is no longer being launched) becomes `cancelled` (F11), not committed. A dead
+    session with kept time has already been stored by `_settle_kept`."""
     repo = StudyRepository(db, user_id)
     row = await repo.open_one()
     if row is None:
@@ -116,14 +115,14 @@ async def _live(db: AsyncSession, user_id: str, now: datetime) -> tuple[str, str
     status = await agent_status(db, user_id, row.session_id)
     if row.session_id is None or is_dead(row, status):
         await repo.close_open(row.id, status="cancelled", ended_at=now)
-        logger.info("Session d'étude interrompue annulée : étude %s", row.id)
+        logger.info("Interrupted study session cancelled: study %s", row.id)
         return None
-    assert row.lesson_id is not None  # cible obligatoire d'une séance guidée
+    assert row.lesson_id is not None  # required target of a guided session
     return row.id, row.lesson_id, row.session_id
 
 
 def _existing(live: tuple[str, str, str], lesson_id: str | None) -> StudyStarted:
-    """La session ouverte rendue telle quelle ; autre leçon, ou pas de leçon (pas de bloc) : 409."""
+    """The open session returned as is; another lesson, or no lesson (no block): 409."""
     study_id, open_lesson, session_id = live
     if open_lesson != lesson_id:
         raise study_already_open(study_id)
@@ -133,8 +132,8 @@ def _existing(live: tuple[str, str, str], lesson_id: str | None) -> StudyStarted
 async def _insert(
     rt: StudyRuntime, user_id: str, body: StudyStart
 ) -> tuple[StudyStarted | None, str, str]:
-    """Sous le verrou : `(session rendue telle quelle, None, None)` ou `(None, id, leçon)` de
-    la session insérée et commitée."""
+    """Under the lock: `(session returned as is, None, None)` or `(None, id, lesson)` of the
+    inserted and committed session."""
     async with rt.session_factory() as db:
         target = await _target(rt, db, user_id, body)
         live = await _live(db, user_id, rt.now())
@@ -176,7 +175,7 @@ async def _set_session(rt: StudyRuntime, user_id: str, study_id: str, sid: str |
 async def start_study(
     rt: StudyRuntime, user_id: str, body: StudyStart
 ) -> tuple[StudyStarted, bool]:
-    """Ouvre la session et lance le Tuteur ; rend `(départ, créée)` (créée : 202, sinon 200)."""
+    """Opens the session and launches the Tutor; returns `(start, created)` (202 if created)."""
     async with rt.study_lock(user_id):
         await _settle_kept(rt, user_id)
         existing, study_id, lesson_id = await _insert(rt, user_id, body)
@@ -194,5 +193,5 @@ async def start_study(
             await _set_session(rt, user_id, study_id, None)
             raise
         await _set_session(rt, user_id, study_id, sid)
-    logger.info("Session d'étude ouverte : étude %s, session %s", study_id, sid)
+    logger.info("Study session opened: study %s, session %s", study_id, sid)
     return StudyStarted(study_session_id=study_id, session_id=sid, lesson_id=lesson_id), True

@@ -1,5 +1,5 @@
-"""API de la recherche web, hors SPEC 14.2 (D76) : compteur Brave du mois et sources d'une session.
-La recherche et la lecture elles-mêmes passent par les agents (outils `web_*`, phase 3.7)."""
+"""Web research API, outside SPEC 14.2 (D76): the month's Brave counter and a session's sources.
+Searching and reading themselves go through the agents (`web_*` tools, phase 3.7)."""
 
 from dataclasses import asdict
 from typing import Annotated
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/research", tags=["research"])
 
 
 def get_research_runtime(conn: HTTPConnection) -> ResearchRuntime:
-    """La recherche web ouverte par le lifespan (`app.state.research`)."""
+    """The web research opened by the lifespan (`app.state.research`)."""
     runtime: ResearchRuntime = conn.app.state.research
     return runtime
 

@@ -87,7 +87,7 @@ async def patch_kit_item(
 async def get_kit_zip(
     application_id: Id, current: CurrentUserDep, rt: ApplicationsDep, cv: CvDep
 ) -> Response:
-    """Téléchargement (`attachment`) : une pièce par fichier Markdown, le PDF du CV et
+    """Download (`attachment`): one Markdown file per piece, the CV PDF and
     `README.txt`."""
     filename, body = await kit_archive(rt, cv, current.id, application_id)
     headers = {

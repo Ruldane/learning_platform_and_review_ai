@@ -1,8 +1,8 @@
-"""`SessionRunner` : lance, reprend, met en pause, annule les sessions et reprend celles qu'un
-arrêt du serveur a interrompues. Une tâche asyncio par session active, toujours suivie : aucune
-n'est orpheline, `shutdown` les annule et les attend.
+"""`SessionRunner`: starts, resumes, pauses, cancels the sessions and resumes those that a
+server stop interrupted. One asyncio task per active session, always tracked: none is orphaned,
+`shutdown` cancels them and waits for them.
 
-Le corps d'une tâche vit dans `execution.py`, les règles de statut dans `control.py`.
+The body of a task lives in `execution.py`, the status rules in `control.py`.
 """
 
 import asyncio
@@ -39,7 +39,7 @@ from app.db.models.agents import AgentSession
 
 logger = logging.getLogger(__name__)
 
-STOPPING_CODE = "server_stopping"  # reconnu par `SessionLauncher`
+STOPPING_CODE = "server_stopping"  # recognised by `SessionLauncher`
 ACCOUNT_DELETING_CODE = "account_deleting"
 _STOPPING = "The server is shutting down. Try again in a moment."
 _DELETING = "Sessions cannot start while the account is being deleted."
@@ -47,7 +47,7 @@ _DELETING = "Sessions cannot start while the account is being deleted."
 
 @dataclass(eq=False)
 class _Gate:
-    """Verrou de contrôle d'une session ; oublié quand plus personne ne le tient ni ne l'attend."""
+    """Control lock of a session; forgotten once nobody holds it or waits for it."""
 
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     users: int = 0
@@ -67,7 +67,7 @@ class SessionRunner:
         ports: AgentPorts = NO_PORTS,
         launch_quota: LaunchQuota | None = None,
     ) -> None:
-        self.launch_quota = launch_quota or LaunchQuota()  # plafond des lancements par le MCP (M11)
+        self.launch_quota = launch_quota or LaunchQuota()  # cap on MCP launches (M11)
         self._db = session_factory
         self._bus = bus
         self._ctx = RunContext(
@@ -76,7 +76,7 @@ class SessionRunner:
         self._tasks: dict[str, asyncio.Task[None]] = {}
         self._gates: dict[str, _Gate] = {}
         self._stopping = False
-        self._deleting: set[str] = set()  # comptes dont « Tout supprimer » est en cours
+        self._deleting: set[str] = set()  # accounts whose "Delete everything" is in progress
 
     async def start(
         self,
@@ -88,14 +88,15 @@ class SessionRunner:
         *,
         prepare: PrepareSession | None = None,
     ) -> str:
-        """Valide l'entrée, crée la session `running`, lance sa tâche et rend la main aussitôt."""
-        self._refuse_if_stopping()  # avant toute écriture : rien à reprendre au démarrage
+        """Validates the input, creates the `running` session, launches its task and returns."""
+        self._refuse_if_stopping()  # before any write: nothing to resume at startup
         self._refuse_if_deleting(user_id)
         spec = self._ctx.graphs.get(graph)
         if spec is None:
             raise unknown_graph(graph)
         data = validated_input(spec.input_model, input)
-        # Identité MCP ou client joué : compte dans le plafond du jour (M11), rendu si rien ne part.
+        # MCP identity or played client: counts toward the daily cap (M11),
+        # given back if nothing starts.
         client, provider = run_source(user_id)
         limited = client is not None or MCP_IDENTITY.get() is not None
         reserved = self.launch_quota.reserve(user_id) if limited else None
@@ -113,8 +114,8 @@ class SessionRunner:
             if reserved is not None:
                 self.launch_quota.release(user_id, reserved)
             raise
-        if user_id in self._deleting:  # « Tout supprimer » a commencé pendant l'insertion
-            with contextlib.suppress(AppError):  # déjà annulée par la suppression
+        if user_id in self._deleting:  # "Delete everything" started during the insert
+            with contextlib.suppress(AppError):  # already cancelled by the deletion
                 await control.claim_cancel(self._db, user_id, sid)
             self._refuse_if_deleting(user_id)
         self._launch(user_id, sid, None)
@@ -125,13 +126,13 @@ class SessionRunner:
     async def resume(
         self, user_id: str, session_id: str, interrupt_id: str | None, value: Any
     ) -> None:
-        """Réponse à la question en attente (`interrupt_id` = celui de `pending_interrupt`), ou
-        reprise d'une pause (`interrupt_id=None`) sur le dernier checkpoint."""
+        """Answer to the pending question (`interrupt_id` = that of `pending_interrupt`), or
+        resume from a pause (`interrupt_id=None`) on the last checkpoint."""
         async with self._control(session_id):
-            self._refuse_if_stopping()  # avant `claim_resume` : la question reste en attente
+            self._refuse_if_stopping()  # before `claim_resume`: the question stays pending
             self._refuse_if_deleting(user_id)
             command = await control.claim_resume(self._db, user_id, session_id, interrupt_id, value)
-            await self._settle(session_id)  # la tâche qui a posé la question finit d'en publier
+            await self._settle(session_id)  # the task that asked the question finishes publishing
             self._launch(user_id, session_id, command)
 
     async def submit_step(self, user_id: str, session_id: str, step_id: str, response: str) -> None:
@@ -146,22 +147,22 @@ class SessionRunner:
                 raise AppError("played_output_invalid", "Invalid reply.", 422, {"reason": problem})
 
     async def recover_on_startup(self) -> list[str]:
-        """Relance les sessions `running` qu'un arrêt a interrompues (dernier checkpoint : aucun
-        nœud terminé ne rejoue). `waiting_user` et `paused` attendent l'utilisatrice."""
+        """Restarts the `running` sessions that a stop interrupted (last checkpoint: no
+        finished node replays). `waiting_user` and `paused` wait for the user."""
         async with self._db() as db:
             to_recover = await list_sessions_to_recover(db)
         for user_id, session_id in to_recover:
             self._launch(user_id, session_id, None)
         return [session_id for _, session_id in to_recover]
 
-    # --- Actions de l'utilisatrice -------------------------------------------------------
+    # --- User actions --------------------------------------------------------------------
 
     async def post_message(
         self, user_id: str, session_id: str, text: str, command: UserCommand | None = None
     ) -> SessionEvent:
-        """Publie `user.message` (texte, commande du débat) ; les nœuds le lisent au tour
-        suivant (`GraphDeps.user_inputs_since`, D4, D82). Sous le verrou de contrôle, comme pause
-        et annulation : un message ne s'écrit jamais après une annulation acceptée."""
+        """Publishes `user.message` (text, debate command); the nodes read it on the next turn
+        (`GraphDeps.user_inputs_since`, D4, D82). Under the control lock, like pause and
+        cancellation: a message is never written after an accepted cancellation."""
         async with self._control(session_id):
             await control.check_open(self._db, user_id, session_id)
             return await self._bus.publish(
@@ -184,7 +185,7 @@ class SessionRunner:
         return await control.get_owned(self._db, user_id, session_id)
 
     async def settle_cancelled(self, user_id: str, session_id: str) -> None:
-        """Arrête une session dont l'annulation a déjà été commitée avec l'écriture métier."""
+        """Stops a session whose cancellation was already committed with the business write."""
         async with self._control(session_id):
             await self._close_cancelled(user_id, session_id)
 
@@ -193,18 +194,18 @@ class SessionRunner:
         await self._bus.close(user_id=user_id, session_id=session_id)
 
     async def delete_threads(self, session_ids: Iterable[str]) -> None:
-        """Efface les points de reprise (fils du checkpointer) de ces sessions, écritures en
-        attente comprises ; un fil absent n'est pas une erreur. L'appelant a annulé les sessions
-        avant (aucune tâche n'écrit plus dans ces fils)."""
+        """Erases the resume points (checkpointer threads) of these sessions, pending writes
+        included; a missing thread is not an error. The caller cancelled the sessions
+        beforehand (no task writes into these threads any more)."""
         for session_id in session_ids:
             await self._ctx.checkpointer.adelete_thread(session_id)
 
     @asynccontextmanager
     async def refusing_starts(self, user_id: str) -> AsyncIterator[None]:
-        """Pendant « Tout supprimer » : aucune session de ce compte ne démarre ni ne reprend
-        (`start` et `resume` rendent 409 `account_deleting`), qui que la lance (une autre
-        session, le planificateur, un autre onglet). Levé à la sortie, réussie ou non : un
-        compte dont la suppression a échoué travaille de nouveau. Propre au processus."""
+        """During "Delete everything": no session of this account starts or resumes
+        (`start` and `resume` return 409 `account_deleting`), whoever launches it (another
+        session, the scheduler, another tab). Lifted on exit, successful or not: an account
+        whose deletion failed works again. Specific to the process."""
         self._deleting.add(user_id)
         try:
             yield
@@ -212,19 +213,19 @@ class SessionRunner:
             self._deleting.discard(user_id)
 
     async def open_sessions(self, user_id: str) -> list[str]:
-        """Les sessions ouvertes (`running`, `waiting_user`, `paused`) de ce compte."""
+        """The open sessions (`running`, `waiting_user`, `paused`) of this account."""
         async with self._db() as db:
             return await SessionRepository(db, user_id).open_ids(control.OPEN)
 
-    # --- Tâches --------------------------------------------------------------------------
+    # --- Tasks ---------------------------------------------------------------------------
 
     def is_active(self, session_id: str) -> bool:
         task = self._tasks.get(session_id)
         return task is not None and not task.done()
 
     async def shutdown(self) -> None:
-        """Arrêt du serveur : annule et attend toutes les tâches SANS changer leur statut (les
-        sessions `running` seront reprises au prochain démarrage)."""
+        """Server shutdown: cancels and waits for all the tasks WITHOUT changing their status
+        (the `running` sessions will be resumed at the next startup)."""
         self._stopping = True
         tasks = list(self._tasks.values())
         for task in tasks:
@@ -241,8 +242,8 @@ class SessionRunner:
 
     @asynccontextmanager
     async def _control(self, session_id: str) -> AsyncIterator[None]:
-        """Tient le verrou de contrôle de la session. Aucune attente avant `acquire` : une
-        action appelée prend sa place dans la file dès son premier pas."""
+        """Holds the session's control lock. No wait before `acquire`: a called action takes
+        its place in the queue from its first step."""
         gate = self._gates.setdefault(session_id, _Gate())
         gate.users += 1
         try:
@@ -255,14 +256,14 @@ class SessionRunner:
 
     async def _run(self, user_id: str, session_id: str, command: Command[Any] | None) -> None:
         async with self._control(session_id):
-            pass  # laisse passer d'abord les actions de contrôle déjà en file (pause, annulation)
+            pass  # lets the control actions already queued go first (pause, cancellation)
         await run_session(self._ctx, user_id, session_id, command)
 
     def _launch(self, user_id: str, session_id: str, command: Command[Any] | None) -> None:
         self._refuse_if_stopping()
-        # Contexte vierge : lancée depuis le nœud d'une autre session (chaîne des leçons), la
-        # tâche hériterait sinon de sa configuration LangChain, donc de son suivi des coûts et
-        # de son plafond de tokens (chaque appel compté deux fois, D97 n° 12).
+        # Blank context: launched from another session's node (lesson chain), the task would
+        # otherwise inherit its LangChain configuration, hence its cost tracking and its
+        # token cap (each call counted twice, D97 no. 12).
         task = asyncio.create_task(
             self._run(user_id, session_id, command),
             name=f"session:{session_id}",
@@ -275,22 +276,22 @@ class SessionRunner:
         if self._tasks.get(session_id) is task:
             del self._tasks[session_id]
         if not task.cancelled() and task.exception() is not None:
-            # Issue impossible à écrire (base indisponible) : la session reste `running` et sera
-            # reprise au prochain démarrage.
+            # Outcome impossible to write (database unavailable): the session stays `running` and
+            # will be resumed at the next startup.
             logger.error(
-                "Session %s : issue non écrite (%s)", session_id, type(task.exception()).__name__
+                "Session %s: outcome not written (%s)", session_id, type(task.exception()).__name__
             )
 
     async def _settle(self, session_id: str) -> None:
-        """Attend la fin de la tâche en cours, sans l'annuler."""
+        """Waits for the current task to finish, without cancelling it."""
         task = self._tasks.get(session_id)
         if task is not None:
             await asyncio.wait({task})
 
     async def _stop(self, user_id: str, session_id: str) -> None:
-        """Annule la tâche en cours, attend qu'elle soit finie, puis que les publications encore
-        en vol de CETTE session soient écrites (N5) : la vue rendue ensuite (`last_seq`) les
-        compte toutes (D56), sans attendre celles des autres sessions."""
+        """Cancels the current task, waits for it to finish, then for the publications still
+        in flight of THIS session to be written (N5): the view returned afterwards (`last_seq`)
+        counts them all (D56), without waiting for those of other sessions."""
         task = self._tasks.get(session_id)
         if task is not None:
             task.cancel()

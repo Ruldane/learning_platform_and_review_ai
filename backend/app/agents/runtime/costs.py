@@ -1,18 +1,17 @@
-"""Suivi des coûts : chaque appel LLM est journalisé (`llm_calls`), cumulé dans la session, publié
-en direct (`cost.updated`) ; un plafond de tokens par session coupe les appels suivants (9.6).
+"""Cost tracking: each LLM call is logged (`llm_calls`), added up in the session, published
+live (`cost.updated`); a per-session token cap cuts the following calls (9.6).
 
-Un appel coupé (échéance, `node_timeout`, annulation, erreur du fournisseur) n'a pas d'usage
-rendu par le modèle : il est compté avec des tokens **estimés** (`estimated`, D117) ; entrée :
-caractères du texte / 4 (définitions d'outils et schémas non comptés), sortie : morceaux reçus.
-Une erreur du fournisseur rendue avant tout morceau (429, 401, 5xx, connexion refusée) n'a rien
-consommé : elle ne compte rien, et ses nouveaux essais non plus. LangChain n'appelle
-`on_llm_error` que pour une erreur levée par le modèle ; un appel annulé (`CancelledError`, ce
-que font `asyncio.timeout` et `node_timeout`) n'appelle ni `on_llm_end` ni `on_llm_error` :
-`flush_cut()`, appelé en fin d'exécution (`runtime/execution.py`), écrit ces départs restés
-sans fin.
+A cut call (deadline, `node_timeout`, cancellation, provider error) has no usage returned by
+the model: it is counted with **estimated** tokens (`estimated`, D117); input: characters of the
+text / 4 (tool definitions and schemas not counted), output: chunks received. A provider error
+returned before any chunk (429, 401, 5xx, connection refused) consumed nothing: it counts for
+nothing, and neither do its retries. LangChain calls `on_llm_error` only for an error raised
+by the model; a cancelled call (`CancelledError`, which is what `asyncio.timeout` and
+`node_timeout` do) calls neither `on_llm_end` nor `on_llm_error`: `flush_cut()`, called at the
+end of the execution (`runtime/execution.py`), writes those starts left without an end.
 
-`CostTracker` est un callback LangChain asynchrone exécuté sur la boucle de l'appelant : le bus ne
-sait pas publier depuis un autre fil (D42), un callback synchrone (exécuté dans un fil) est exclu.
+`CostTracker` is an asynchronous LangChain callback run on the caller's loop: the bus cannot
+publish from another thread (D42), a synchronous callback (run in a thread) is ruled out.
 """
 
 import json
@@ -36,7 +35,7 @@ from app.providers.llm.errors import is_timeout
 
 logger = logging.getLogger(__name__)
 
-_UNKNOWN = "inconnu"
+_UNKNOWN = "unknown"
 APPROX_CHARS_PER_TOKEN = 4
 
 
@@ -47,7 +46,7 @@ class ModelPrice:
 
 
 def load_prices(path: Path) -> dict[str, ModelPrice]:
-    """Table des prix (USD par million de tokens) ; `ValueError` si une entrée est mal formée."""
+    """Price table (USD per million tokens); `ValueError` if an entry is malformed."""
     raw = json.loads(path.read_text(encoding="utf-8"))
     prices: dict[str, ModelPrice] = {}
     for model, entry in raw.items():
@@ -56,14 +55,14 @@ def load_prices(path: Path) -> dict[str, ModelPrice]:
                 float(entry["input_per_mtok"]), float(entry["output_per_mtok"])
             )
         except (KeyError, TypeError, ValueError):
-            raise ValueError(f"Prix mal formé pour le modèle {model!r}") from None
+            raise ValueError(f"Malformed price for model {model!r}") from None
     return prices
 
 
 def estimate_cost(
     model: str, tokens_in: int, tokens_out: int, prices: Mapping[str, ModelPrice]
 ) -> float:
-    """Coût estimé en USD ; 0.0 pour un modèle absent de la table."""
+    """Estimated cost in USD; 0.0 for a model absent from the table."""
     price = prices.get(model)
     if price is None:
         return 0.0
@@ -74,14 +73,14 @@ class TokenBudgetExceeded(AppError):
     def __init__(self, cap_tokens: int) -> None:
         super().__init__(
             "token_cap_reached",
-            f"Plafond de {cap_tokens} tokens atteint pour cette session.",
+            f"Token cap of {cap_tokens} reached for this session.",
             400,
             {"cap_tokens": cap_tokens},
         )
 
 
 def _chars(message: BaseMessage) -> int:
-    """Caractères du texte d'un message ; une image (ou tout autre bloc) compte 0."""
+    """Characters of a message's text; an image (or any other block) counts 0."""
     content = message.content
     if isinstance(content, str):
         return len(content)
@@ -95,7 +94,7 @@ def _chars(message: BaseMessage) -> int:
 
 
 def approx_tokens(messages: Sequence[Sequence[BaseMessage]]) -> int:
-    """Estimation des tokens d'entrée : caractères du texte // 4, au moins 1."""
+    """Estimate of the input tokens: characters of the text // 4, at least 1."""
     chars = sum(_chars(message) for batch in messages for message in batch)
     return max(1, chars // APPROX_CHARS_PER_TOKEN)
 
@@ -110,7 +109,7 @@ class _CallStart:
 
 
 def _usage(response: LLMResult) -> tuple[int, int]:
-    """Tokens `(entrée, sortie)` du dernier message généré, `(0, 0)` si le modèle n'en donne pas."""
+    """Tokens `(input, output)` of the last generated message, `(0, 0)` if the model gives none."""
     for generations in reversed(response.generations):
         for generation in reversed(generations):
             usage = getattr(getattr(generation, "message", None), "usage_metadata", None)
@@ -120,10 +119,10 @@ def _usage(response: LLMResult) -> tuple[int, int]:
 
 
 class CostTracker(AsyncCallbackHandler):
-    raise_error = True  # sans cela, TokenBudgetExceeded serait avalée par LangChain
-    # Pas `run_inline` : un gestionnaire « en ligne » qui lève laisse les coroutines des autres
-    # gestionnaires jamais attendues (langchain_core, `on_chat_model_start`) ; regroupé avec eux
-    # par `asyncio.gather`, il s'exécute toujours sur la boucle de l'appelant (D42, D46).
+    raise_error = True  # without it, TokenBudgetExceeded would be swallowed by LangChain
+    # Not `run_inline`: an "inline" handler that raises leaves the other handlers' coroutines
+    # never awaited (langchain_core, `on_chat_model_start`); grouped with them by
+    # `asyncio.gather`, it always runs on the caller's loop (D42, D46).
     run_inline = False
 
     def __init__(
@@ -145,7 +144,7 @@ class CostTracker(AsyncCallbackHandler):
         self._prices = prices
         self._cap = cap_tokens
         self._calls: dict[UUID, _CallStart] = {}
-        self._chunks: dict[UUID, int] = {}  # morceaux reçus par appel en cours
+        self._chunks: dict[UUID, int] = {}  # chunks received per call in progress
 
     async def on_chat_model_start(
         self,
@@ -156,10 +155,10 @@ class CostTracker(AsyncCallbackHandler):
         metadata: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> None:
-        """Refuse l'appel si le plafond de la session est atteint, sinon mémorise son départ.
+        """Refuses the call if the session cap is reached, otherwise remembers its start.
 
-        Provider et modèle : métadonnées `tremplin_*` posées par les fournisseurs, à défaut les
-        `ls_provider` / `ls_model_name` que LangChain déduit du modèle.
+        Provider and model: `tremplin_*` metadata set by the providers, failing that the
+        `ls_provider` / `ls_model_name` that LangChain infers from the model.
         """
         async with self._factory() as db:
             session = await SessionRepository(db, self._user_id).get(self._session_id)
@@ -167,7 +166,7 @@ class CostTracker(AsyncCallbackHandler):
             raise TokenBudgetExceeded(self._cap)
         meta = metadata or {}
         if meta.get("tremplin_provider") == "mcp":
-            return  # La réservation de l’étape journalise le rendu une seule fois.
+            return  # The step reservation logs the render only once.
         self._calls[run_id] = _CallStart(
             started=time.monotonic(),
             agent=meta.get("agent"),
@@ -179,15 +178,15 @@ class CostTracker(AsyncCallbackHandler):
     async def on_llm_new_token(
         self, token: str | list[str | dict[str, Any]], *, run_id: UUID, **kwargs: Any
     ) -> None:
-        """Un morceau de réponse reçu (un morceau ≈ un token) : la sortie d'un appel coupé."""
+        """A chunk of the reply received (one chunk ~ one token): the output of a cut call."""
         if run_id in self._calls:
             self._chunks[run_id] = self._chunks.get(run_id, 0) + 1
 
     async def on_llm_error(self, error: BaseException, *, run_id: UUID, **kwargs: Any) -> None:
-        """Appel en échec : compté en tokens estimés s'il a commencé à répondre (morceaux reçus)
-        ou s'il a dépassé un délai ; une erreur rendue avant toute réponse (429, 401, 5xx,
-        connexion refusée) ne compte rien. Le départ est retiré au premier événement de fin :
-        jamais deux lignes pour un même `run_id`."""
+        """Failed call: counted in estimated tokens if it started answering (chunks received)
+        or if it exceeded a deadline; an error returned before any answer (429, 401, 5xx,
+        connection refused) counts for nothing. The start is removed at the first end event:
+        never two rows for the same `run_id`."""
         await self._record_cut(run_id, only_if_answered=not is_timeout(error))
 
     async def on_llm_end(self, response: LLMResult, *, run_id: UUID, **kwargs: Any) -> None:
@@ -198,16 +197,16 @@ class CostTracker(AsyncCallbackHandler):
         await self._record_safely(start, *_usage(response))
 
     async def flush_cut(self) -> int:
-        """Écrit, en tokens estimés, les appels partis sans `on_llm_end` ni `on_llm_error`
-        (annulés) ; rend leur nombre. Appelé en fin d'exécution, quand aucun appel ne court."""
+        """Writes, in estimated tokens, the calls that left without `on_llm_end` or `on_llm_error`
+        (cancelled); returns their number. Called at the end of the execution, when no call runs."""
         cut = list(self._calls)
         for run_id in cut:
             await self._record_cut(run_id)
         return len(cut)
 
     async def _record_cut(self, run_id: UUID, *, only_if_answered: bool = False) -> None:
-        """`only_if_answered` : rien n'est écrit si aucun morceau n'est arrivé (erreur rendue
-        avant toute réponse). Sinon (annulation, délai) : la requête a pu être traitée."""
+        """`only_if_answered`: nothing is written if no chunk arrived (error returned before
+        any answer). Otherwise (cancellation, deadline): the request may have been processed."""
         start = self._calls.pop(run_id, None)
         chunks = self._chunks.pop(run_id, 0)
         if start is None or (only_if_answered and chunks == 0):
@@ -219,8 +218,8 @@ class CostTracker(AsyncCallbackHandler):
     ) -> None:
         try:
             await self._record(start, tokens_in, tokens_out, estimated=estimated)
-        except Exception:  # la comptabilité ne doit jamais faire échouer l'appel ni son issue
-            logger.exception("Suivi des coûts impossible pour la session %s", self._session_id)
+        except Exception:  # accounting must never make the call or its outcome fail
+            logger.exception("Cost tracking failed for session %s", self._session_id)
 
     async def _record(
         self, start: _CallStart, tokens_in: int, tokens_out: int, *, estimated: bool

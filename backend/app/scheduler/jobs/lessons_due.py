@@ -1,10 +1,10 @@
-"""Tâche « J-7 » (SPEC 3.5, D91) : toutes les 15 minutes et au démarrage, chaque programme
-validé voit sa chaîne de leçons relancée si besoin (`ensure_lessons` : semaine qui commence dans
-7 jours au plus, leçon interrompue en échec, nouvel essai d'une leçon en échec). La règle J-7 se
-juge au jour près ; la cadence courte sert à reprendre vite une chaîne arrêtée hors du port.
-Sans rien de dû, un passage ne fait que lire la base. Sans table `jobs` (phase 8) : l'état des
-leçons suffit à l'idempotence. Une panne sur un programme n'arrête pas les autres. Journaux :
-identifiants et type d'erreur seulement."""
+"""The "D-7" task (SPEC 3.5, D91): every 15 minutes and at startup, each validated program
+has its lesson chain restarted if needed (`ensure_lessons`: week that starts within
+7 days at most, interrupted lesson failed, retry of a failed lesson). The D-7 rule is
+judged to the day; the short cadence is there to quickly resume a chain stopped outside the port.
+With nothing due, a run only reads the database. Without a `jobs` table (phase 8): the lessons'
+state is enough for idempotence. A failure on one program does not stop the others. Logs:
+identifiers and error type only."""
 
 import logging
 
@@ -22,10 +22,8 @@ async def run(ctx: JobContext) -> None:
             launched += await ensure_lessons(ctx.production, user_id, program_id) is not None
         except Exception as exc:
             logger.warning(
-                "Leçons J-7 : programme %s non traité (%s)", program_id, type(exc).__name__
+                "Lessons D-7: program %s not processed (%s)", program_id, type(exc).__name__
             )
-    # Un passage à vide toutes les 15 minutes ne mérite pas une ligne au niveau INFO.
+    # An empty run every 15 minutes does not deserve an INFO line.
     level = logging.INFO if launched else logging.DEBUG
-    logger.log(
-        level, "Leçons J-7 : %d programme(s), %d leçon(s) lancée(s)", len(programs), launched
-    )
+    logger.log(level, "Lessons D-7: %d program(s), %d lesson(s) launched", len(programs), launched)

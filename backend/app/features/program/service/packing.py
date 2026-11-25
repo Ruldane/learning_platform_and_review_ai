@@ -1,10 +1,10 @@
-"""Placement des tâches d'une semaine sur ses jours, sans jamais dépasser 85 % du budget.
+"""Placing a week's tasks on its days, never exceeding 85% of the budget.
 
-Une semaine se range en deux temps : la pratique et le quiz de la semaine sont réservés d'abord
-(leur minutes sont retirées du plafond et de leur jour), puis les autres tâches suivent dans
-leur ordre, sans en doubler aucune ; ce qui ne tient plus est reporté à la semaine suivante.
-Une semaine rangée trop légère avance ensuite des tâches de la suivante (`pull_forward`, D98).
-Aucune donnée n'est écrite ici : des fonctions pures, testées sans base.
+A week is packed in two steps: the week's practice and quiz are reserved first (their minutes
+are removed from the cap and from their day), then the other tasks follow in their order,
+without doubling any; what no longer fits is carried to the next week. A week packed too light
+then pulls tasks forward from the next one (`pull_forward`, D98). No data is written here: pure
+functions, tested without a database.
 """
 
 from collections.abc import Set
@@ -15,20 +15,21 @@ from app.agents.tools.plan_schema import ModuleDraft, TaskDraft
 from app.db.models.program import TaskType
 from app.features.program.service.advance import Dated, WeekSlots, plan_advances
 from app.features.program.service.budget import Budget
+from app.features.program.service.rules import SUITE_SUFFIX, strip_suite_suffix
 
 DAYS_PER_WEEK = 7
 
 
 class NoRoom(Exception):
-    """La semaine ne peut pas contenir ses tâches réservées (pratique, quiz)."""
+    """The week cannot hold its reserved tasks (practice, quiz)."""
 
 
 @dataclass(frozen=True)
 class Entry:
-    """Une tâche à placer ; `origin` = (semaine, module, tâche) du brouillon, ordre naturel.
-    Replanification (D106, revue finale de la phase 5) : `not_before`, la date actuelle d'une
-    tâche (jamais placée avant ; la pratique et le quiz réservés la préfèrent seulement) ;
-    `retry`, un « Refaire le quiz » (jamais le quiz qui ferme la semaine)."""
+    """A task to place; `origin` = (week, module, task) of the draft, natural order.
+    Replanning (D106, final review of phase 5): `not_before`, a task's current date (never
+    placed before it; the reserved practice and quiz only prefer it); `retry`, a "Retake the
+    quiz" (never the quiz that closes the week)."""
 
     task: TaskDraft
     origin: tuple[int, int, int]
@@ -54,19 +55,19 @@ def week_days(start: date) -> list[date]:
 
 
 def final_quiz(own: list[Entry]) -> Entry | None:
-    """Le dernier quiz de la semaine : il ferme la semaine."""
+    """The week's last quiz: it closes the week."""
     quizzes = [entry for entry in own if entry.task.type == "quiz" and not entry.retry]
     return quizzes[-1] if quizzes else None
 
 
 def first_practice(own: list[Entry]) -> Entry | None:
-    """La première pratique de la semaine : sa place est réservée d'avance."""
+    """The week's first practice: its place is reserved in advance."""
     practices = [entry for entry in own if entry.task.type == "practice"]
     return practices[0] if practices else None
 
 
 def _quiz_day(days: list[date], remaining: dict[date, int], minutes: int) -> date:
-    """Le dernier jour qui a la place du quiz (samedi d'abord)."""
+    """The last day that has room for the quiz (Saturday first)."""
     for day in reversed(days):
         if remaining[day] >= minutes:
             return day
@@ -74,7 +75,7 @@ def _quiz_day(days: list[date], remaining: dict[date, int], minutes: int) -> dat
 
 
 def _practice_day(usable: list[date], remaining: dict[date, int], entry: Entry) -> date:
-    """Le premier jour qui a la place de la pratique, à partir de sa date si elle en a une."""
+    """The first day that has room for the practice, from its date if it has one."""
     fits = [day for day in usable if remaining[day] >= entry.task.minutes]
     later = [day for day in fits if entry.not_before is None or day >= entry.not_before]
     if not fits:
@@ -83,7 +84,7 @@ def _practice_day(usable: list[date], remaining: dict[date, int], entry: Entry) 
 
 
 def _first_index(usable: list[date], cursor: int, entry: Entry) -> int:
-    """Le premier rang de jour utilisable pour `entry` : jamais avant le curseur ni sa date."""
+    """The first usable day rank for `entry`: never before the cursor or its date."""
     floor = entry.not_before
     while floor is not None and cursor < len(usable) and usable[cursor] < floor:
         cursor += 1
@@ -98,10 +99,10 @@ def pack_week(
     *,
     completed_kinds: Set[TaskType] = frozenset(),
 ) -> WeekPacking:
-    """Place `carried` (reportées) puis `own` (propres à la semaine) sur sept jours depuis `start`.
+    """Places `carried` (carried over) then `own` (the week's own) over seven days from `start`.
 
-    Les tâches sont reportées dans l'ordre. Le quiz réservé ferme la semaine.
-    Une pratique ou un quiz déjà fait peut satisfaire sa règle sans réserver une seconde tâche.
+    The tasks are carried in order. The reserved quiz closes the week.
+    A practice or a quiz already done can satisfy its rule without reserving a second task.
     """
     days = week_days(start)
     remaining = {day: budget.day_capacity(day) for day in days}
@@ -174,11 +175,8 @@ class ScheduledPlan:
     moved_tasks: int
 
 
-SUITE = " (suite)"
-
-
 def _reserved(tasks: list[ScheduledTask]) -> set[int]:
-    """Rangs du quiz qui ferme la semaine (le dernier) et de sa première pratique."""
+    """Ranks of the quiz that closes the week (the last) and of its first practice."""
     quizzes = [i for i, task in enumerate(tasks) if task.type == "quiz"]
     practices = [i for i, task in enumerate(tasks) if task.type == "practice"]
     return set(quizzes[-1:] + practices[:1])
@@ -193,9 +191,10 @@ def _slots(week: ScheduledWeek) -> WeekSlots:
 
 
 def _module_slot(modules: list[ModuleDraft], source: ModuleDraft) -> int:
-    """Rang, dans `modules`, du module d'origine d'une tâche avancée : le même module (titre sans
-    « (suite) », mêmes compétences) s'il y est, sinon ajouté sous son titre suivi de « (suite) »."""
-    base = source.title.removesuffix(SUITE)
+    """Rank, in `modules`, of the original module of a pulled-forward task: the same module (title
+    without " (continued)", same skills) if it is there, otherwise added under its title followed
+    by " (continued)"."""
+    base = strip_suite_suffix(source.title)
     for index, module in enumerate(modules):
         if source.chapter_index is not None:
             if module.chapter_index == source.chapter_index:
@@ -203,11 +202,11 @@ def _module_slot(modules: list[ModuleDraft], source: ModuleDraft) -> int:
             continue
         if (
             module.chapter_index is None
-            and module.title.removesuffix(SUITE) == base
+            and strip_suite_suffix(module.title) == base
             and module.skills == source.skills
         ):
             return index
-    modules.append(source.model_copy(update={"title": f"{base[:112]}{SUITE}"}))
+    modules.append(source.model_copy(update={"title": f"{base[:112]}{SUITE_SUFFIX}"}))
     return len(modules) - 1
 
 
@@ -220,7 +219,7 @@ def _draft(task: ScheduledTask) -> TaskDraft:
 def _rebuilt(
     week: ScheduledWeek, modules: list[ModuleDraft], tasks: list[ScheduledTask]
 ) -> ScheduledWeek:
-    """La semaine avec ces tâches : modules vidés retirés, rangs de module recalculés."""
+    """The week with these tasks: emptied modules removed, module ranks recomputed."""
     used = sorted({task.module_index for task in tasks})
     rank = {old: new for new, old in enumerate(used)}
     tasks = [replace(task, module_index=rank[task.module_index]) for task in tasks]
@@ -236,7 +235,7 @@ def _rebuilt(
 def _move(
     receiver: ScheduledWeek, source: ScheduledWeek, days: dict[int, date]
 ) -> tuple[ScheduledWeek, ScheduledWeek]:
-    """Les tâches `days` (rang dans `source` → jour) passent dans `receiver`, avant son quiz."""
+    """The tasks `days` (rank in `source` → day) move into `receiver`, before its quiz."""
     modules = list(receiver.modules)
     added = [
         replace(
@@ -255,10 +254,10 @@ def _move(
 def pull_forward(
     weeks: list[ScheduledWeek], budget: Budget, *, floor_share: float
 ) -> list[ScheduledWeek]:
-    """Chaque semaine (sauf la dernière) sous `floor_share` × plafond avance, dans l'ordre, des
-    tâches de la suivante (jamais son quiz ni sa pratique réservée) sur ses jours qui ont la
-    place, sans dépasser le plafond (`advance.plan_advances`). Une tâche avancée garde son module,
-    ajouté à la semaine qui la reçoit. Rend de nouvelles semaines ; `weeks` est inchangé."""
+    """Each week (except the last) under `floor_share` × cap pulls forward, in order, tasks of
+    the next one (never its quiz or its reserved practice) onto its days that have room,
+    without exceeding the cap (`advance.plan_advances`). A pulled-forward task keeps its module,
+    added to the week that receives it. Returns new weeks; `weeks` is unchanged."""
     moves = plan_advances([_slots(week) for week in weeks], budget, floor_share=floor_share)
     by_source: dict[int, dict[int, date]] = {}
     for move in moves:

@@ -1,8 +1,8 @@
-"""Lancement de l'analyse d'une offre (parcours `gap_analysis`, D121, D122), sous le verrou de
-l'offre : une seule session à la fois. `gap_session_id` est posé dès que la session existe ; un
-lancement qui échoue passe l'offre en `failed` (raison fixe) avant de relever l'erreur. Une offre
-refusée, en échec, interrompue ou sans écart est relancée : statut remis à `analyzing` (ou
-`ready` si son analyse est rangée), raison effacée. Journaux : identifiants seulement."""
+"""Launching a posting's analysis (`gap_analysis` flow, D121, D122), under the posting's lock:
+a single session at a time. `gap_session_id` is set as soon as the session exists; a launch
+that fails sets the posting to `failed` (fixed reason) before raising the error. A refused,
+failed, interrupted or gapless posting is relaunched: status reset to `analyzing` (or `ready`
+if its analysis is stored), reason cleared. Logs: ids only."""
 
 import logging
 
@@ -37,24 +37,24 @@ async def _set_session(rt: PostingsRuntime, user_id: str, posting_id: str, sid: 
 
 
 async def _start(rt: PostingsRuntime, user_id: str, posting_id: str) -> str:
-    """À appeler sous le verrou de l'offre."""
+    """To be called under the posting's lock."""
     try:
         sid = await rt.launcher.start(
             user_id, GRAPH, {"posting_id": posting_id}, subject_type=SUBJECT, subject_id=posting_id
         )
     except BaseException:
         await _set_session(rt, user_id, posting_id, None)
-        logger.warning("Analyse d'offre non lancée : utilisateur %s, offre %s", user_id, posting_id)
+        logger.warning("Posting analysis not started: user %s, posting %s", user_id, posting_id)
         raise
     await _set_session(rt, user_id, posting_id, sid)
     logger.info(
-        "Analyse d'offre lancée : utilisateur %s, offre %s, session %s", user_id, posting_id, sid
+        "Posting analysis started: user %s, posting %s, session %s", user_id, posting_id, sid
     )
     return sid
 
 
 async def launch_new(rt: PostingsRuntime, user_id: str, posting_id: str) -> str:
-    """L'analyse d'une offre qui vient d'être ajoutée."""
+    """The analysis of a posting that has just been added."""
     async with rt.launch_locks.get(user_id, posting_id):
         return await _start(rt, user_id, posting_id)
 
@@ -62,9 +62,9 @@ async def launch_new(rt: PostingsRuntime, user_id: str, posting_id: str) -> str:
 async def relaunch(
     rt: PostingsRuntime, user_id: str, posting_id: str, *, if_needed: bool
 ) -> str | None:
-    """Relance l'analyse. `if_needed` (offre de nouveau envoyée) : seulement si `needs_launch`,
-    sinon `None`. Sans lui (`POST /postings/{id}/gap`) : toujours, sauf session en cours
-    (409 `gap_in_progress`). Offre absente ou d'une autre : 404."""
+    """Relaunches the analysis. `if_needed` (posting sent again): only if `needs_launch`,
+    otherwise `None`. Without it (`POST /postings/{id}/gap`): always, except a session in
+    progress (409 `gap_in_progress`). Absent posting or another user's: 404."""
     async with rt.launch_locks.get(user_id, posting_id):
         async with rt.session_factory() as db:
             open_ids = await open_sessions(db, user_id, posting_id)

@@ -1,12 +1,12 @@
-"""Praticiens repérés par l'Éclaireur (SPEC 10.3, D84) : une ligne `sources` de `kind` `person`.
+"""Practitioners spotted by the Scout (SPEC 10.3, D84): a `sources` row of `kind` `person`.
 
-Seules des informations professionnelles publiques sont gardées : nom (`title`), rôle
-(`author`), où il publie (`summary`, domaines séparés par « ; ») et l'adresse d'une page lue ou
-d'un résultat de la session. Une personne est retenue d'office (`kept`), sans note.
+Only public professional information is kept: name (`title`), role (`author`), where they
+publish (`summary`, domains separated by "; ") and the address of a page read or of a result
+from the session. A person is kept outright (`kept`), without a score.
 
-L'empreinte (`url_hash`) couvre le type, l'adresse normalisée et le nom : une personne ne prend
-jamais la ligne de la page de même adresse, et deux praticiens d'une même page (une équipe)
-ont chacun la leur. Journaux : identifiants seulement (SPEC 17.2)."""
+The fingerprint (`url_hash`) covers the type, the normalized address and the name: a person
+never takes the row of the page with the same address, and two practitioners from the same
+page (a team) each have their own. Logs: ids only (SPEC 17.2)."""
 
 import hashlib
 import logging
@@ -24,8 +24,8 @@ _MAX_WHERE = 1000
 
 
 def person_key(normalized_url: str, name: str) -> str:
-    """Empreinte d'un praticien : `person`, adresse DÉJÀ normalisée (`normalize_url`), nom sur
-    une ligne en minuscules."""
+    """Fingerprint of a practitioner: `person`, ALREADY normalized address (`normalize_url`), name
+    on one line in lowercase."""
     folded = " ".join(name.split()).casefold()
     return hashlib.sha256(f"person\n{normalized_url}\n{folded}".encode()).hexdigest()
 
@@ -52,9 +52,9 @@ def _row(session_id: str, url: str, key: str, person: PersonFound) -> Source:
 async def record_person(
     db: AsyncSession, user_id: str, session_id: str, person: PersonFound
 ) -> Source:
-    """Ligne `sources` du praticien, unique par `(session, url_hash)` : rejouée, rend la ligne
-    déjà écrite. Lève l'erreur de `normalize_url` pour une adresse qui n'est pas http(s). Le
-    commit appartient à l'appelant."""
+    """The practitioner's `sources` row, unique per `(session, url_hash)`: replayed, returns the
+    row already written. Raises the `normalize_url` error for an address that is not http(s).
+    The commit belongs to the caller."""
     url = normalize_url(person.url)
     key = person_key(url, person.name)
     repo = SourceRepository(db, user_id)
@@ -63,7 +63,7 @@ async def record_person(
         return known
     source = await repo.add(_row(session_id, url, key, person))
     logger.info(
-        "Praticien enregistré : utilisateur %s, session %s, source %s",
+        "Practitioner recorded: user %s, session %s, source %s",
         user_id,
         session_id,
         source.id,
@@ -72,12 +72,12 @@ async def record_person(
 
 
 def person_of(source: Source) -> PersonFound:
-    """La personne telle qu'enregistrée (nom, rôle, adresse, domaines)."""
+    """The person as recorded (name, role, address, domains)."""
     where = tuple(part for part in (source.summary or "").split(" ; ") if part)
     return PersonFound(source.title or "", source.author or "", source.url, where)
 
 
 async def session_people(db: AsyncSession, user_id: str, session_id: str) -> list[Source]:
-    """Praticiens de la session de l'utilisateur, dans l'ordre d'enregistrement."""
+    """The practitioners of the user's session, in recording order."""
     sources = await SourceRepository(db, user_id).list_for_session(session_id)
     return [source for source in sources if source.kind == "person"]

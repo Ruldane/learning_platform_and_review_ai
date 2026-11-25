@@ -1,6 +1,6 @@
-"""Les opérations de `cv_compose` sur un contenu de CV : retrouver une ligne par le fait qu'elle
-reformule, retirer, réécrire, ajouter à sa place dans le profil, déplacer une section. Chaque
-opération rend vrai si elle a écrit quelque chose, faux si sa cible est introuvable."""
+"""The `cv_compose` operations on CV content: find a line by the fact it rewords, remove,
+rewrite, add at its place in the profile, move a section. Each operation returns true if it
+wrote something, false if its target cannot be found."""
 
 import re
 from collections.abc import Callable
@@ -17,6 +17,8 @@ from app.agents.tools.cv_schema import (
 )
 from app.agents.tools.review_schema import Proposal, section_of
 
+# Titles of the sections created by the code: French on purpose, like the CVs and profiles of
+# this deployment (the ATS checks and `committee_schema` accept the English headings as well).
 SECTION_TITLES: dict[SectionKey, str] = {
     "summary": "Profil",
     "experience": "Expériences",
@@ -37,10 +39,10 @@ def period(start: str | None, end: str | None) -> str | None:
 
 
 def heads(profile: MasterProfileData, facts: dict[str, str]) -> dict[str, CvEntry]:
-    """Une entrée sans ligne par expérience, formation et projet du profil (`fact_id` = son id)."""
+    """An entry with no lines per experience, education and project (`fact_id` = its id)."""
     out: dict[str, CvEntry] = {}
     for x in profile.experiences:
-        if x.id in facts:  # un fait sans identifiant n'existe pas pour le CV
+        if x.id in facts:  # a fact without an identifier does not exist for the CV
             out[x.id] = CvEntry(
                 heading=facts[x.id],
                 subheading=x.location,
@@ -57,12 +59,12 @@ def heads(profile: MasterProfileData, facts: dict[str, str]) -> dict[str, CvEntr
 
 
 def _insert[T](seq: list[T], item: T, rank_of: Callable[[T], int], rank: int) -> None:
-    """Insère `item` avant le premier élément de rang plus grand (l'ordre du profil)."""
+    """Inserts `item` before the first element of greater rank (the profile's order)."""
     seq.insert(next((n for n, other in enumerate(seq) if rank_of(other) > rank), len(seq)), item)
 
 
 class Composer:
-    """Un contenu de CV (copie de `base`) auquel on applique des modifications une à une."""
+    """A CV content (copy of `base`) to which changes are applied one by one."""
 
     def __init__(self, base: CvContent, profile: MasterProfileData) -> None:
         self.content = base.model_copy(deep=True)
@@ -89,7 +91,7 @@ class Composer:
         return self._rank_of(line.fact_ids[0] if line.fact_ids else None)
 
     def _fact_ids(self, p: Proposal) -> list[str]:
-        """`target` puis les faits cités par la proposition, connus du profil, sans doublon."""
+        """`target` then the cited facts known to the profile, without duplicates."""
         ids = dict.fromkeys(i for i in (p.target, *p.fact_ids) if i and i in self.facts)
         return list(ids)
 
@@ -113,7 +115,7 @@ class Composer:
         return bool(self.title_id) and fact_id == self.title_id
 
     def _section(self, key: SectionKey) -> CvSection:
-        """La section `key`, créée à sa place habituelle si le contenu n'en a pas."""
+        """The section `key`, created at its usual place if the content has none."""
         for section in self.content.sections:
             if section.key == key:
                 return section
@@ -190,8 +192,8 @@ class Composer:
         return True
 
     def _add_child(self, key: SectionKey, parent: str, target: str, text: str, p: Proposal) -> bool:
-        """Une réalisation ou un détail : dans l'entrée de son parent, créée avec ses seuls faits
-        propres (rôle, entreprise, dates) si le CV d'origine ne l'avait pas."""
+        """An achievement or a detail: in its parent's entry, created with its own facts
+        only (role, company, dates) if the original CV did not have it."""
         found = self._entry(parent)
         if found is None:
             head = self.heads.get(parent)

@@ -12,23 +12,23 @@ type Speaker = Literal["host", "coach"]
 
 class SpeechUnavailable(AppError):
     def __init__(self) -> None:
-        super().__init__("speech_unavailable", "La synthèse vocale est indisponible.", 503)
+        super().__init__("speech_unavailable", "Speech synthesis is unavailable.", 503)
 
 
 class SpeechProvider(Protocol):
     async def speak(self, user_id: str, speaker: Speaker, text: str) -> bytes:
-        """Rend un seul segment PCM 16 bits, mono, à 24 kHz."""
+        """Returns a single PCM segment, 16-bit, mono, at 24 kHz."""
         ...
 
 
 class TranscriptionUnavailable(AppError):
     def __init__(self) -> None:
         super().__init__(
-            "transcription_unavailable", "La transcription est indisponible. Tu peux écrire.", 503
+            "transcription_unavailable", "Transcription is unavailable. You can type instead.", 503
         )
 
 
 class TranscriptionProvider(Protocol):
     async def transcribe(self, user_id: str, wav: bytes) -> str:
-        """Lit un enregistrement WAV mono PCM déjà borné et contrôlé par le service."""
+        """Reads a mono PCM WAV recording already bounded and checked by the service."""
         ...

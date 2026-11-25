@@ -1,4 +1,4 @@
-"""Sources publiques rendues par le client qui joue l'Éclaireur."""
+"""Public sources returned by the client playing the Scout."""
 
 from urllib.parse import urlsplit
 
@@ -64,24 +64,22 @@ class ClientWeb:
 
     async def search(self, request: SearchRequest, prefs: ResearchPrefs) -> list[SearchResult]:
         details = (
-            f"Requête : {request.query}\nLangue : {request.lang or ', '.join(prefs.languages)}\n"
-            f"Période : {request.time_range or 'sans limite'}\n"
-            f"Domaines privilégiés : {', '.join(prefs.preferred)}\n"
-            f"Domaines exclus : {', '.join(prefs.excluded)}"
+            f"Query: {request.query}\nLanguage: {request.lang or ', '.join(prefs.languages)}\n"
+            f"Period: {request.time_range or 'no limit'}\n"
+            f"Preferred domains: {', '.join(prefs.preferred)}\n"
+            f"Excluded domains: {', '.join(prefs.excluded)}"
         )
         model = await self.models.get_chat_model(self.user_id, "fast", agent="scout")
         result = await structured_call(
             model,
             SearchSources,
             [
-                SystemMessage(
-                    "Cherche avec tes outils web publics et rends les résultats observés."
-                ),
-                HumanMessage(untrusted(details, "paramètres de recherche")),
+                SystemMessage("Search with your public web tools and return the observed results."),
+                HumanMessage(untrusted(details, "search parameters")),
             ],
             agent="scout",
             step="sources-web",
-            intent="je recherche des sources publiques",
+            intent="I am searching public sources",
         )
         return keep_unique(
             [
@@ -100,18 +98,18 @@ class ClientWeb:
             ReadSource,
             [
                 SystemMessage(
-                    "Lis cette page avec tes outils web publics. Rends son texte visible et "
-                    "ses métadonnées. Si elle est inaccessible, laisse le texte vide."
+                    "Read this page with your public web tools. Return its visible text and "
+                    "its metadata. If it is inaccessible, leave the text empty."
                 ),
-                HumanMessage(untrusted(url, "adresse à lire")),
+                HumanMessage(untrusted(url, "address to read")),
             ],
             agent="scout",
             step="lecture-web",
-            intent="je lis une source publique",
+            intent="I am reading a public source",
         )
         if not result.text.strip():
             return CachedPage(
-                "unreadable", result.title, "", None, None, None, "Page inaccessible."
+                "unreadable", result.title, "", None, None, None, "Page not accessible."
             )
         return CachedPage(
             "ok",

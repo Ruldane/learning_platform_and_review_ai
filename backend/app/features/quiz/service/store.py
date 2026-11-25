@@ -1,12 +1,12 @@
-"""Port des quiz (`QuizStore`, D100) sur la feature `quiz` : implémentation branchée par
-`bootstrap.agent_ports` (D101). Chaque appel ouvre sa propre session de base, courte, et la
-commite (D66) ; chaque appel vérifie que le quiz ou la tentative est à l'utilisateur (404).
+"""Quiz port (`QuizStore`, D100) on the `quiz` feature: implementation wired by
+`bootstrap.agent_ports` (D101). Each call opens its own short database session and commits it
+(D66); each call checks that the quiz or attempt is the user's (404).
 
-Écritures idempotentes (SPEC 9.4) : `save_quiz` gardé par `UPDATE … WHERE status != 'ready'`
-(rejoué : le nombre de questions, rien de plus) ; `quiz_failed` ne touche jamais un quiz prêt ;
-`save_grades` gardé par `UPDATE … WHERE status = 'grading'`, sous le verrou du programme pris
-AVANT la transaction (F4) ; le reflet des niveaux dans la mémoire vient après le commit, hors du
-verrou, et se rattrape au rejeu. Journaux : identifiants et nombres seulement (SPEC 17.2)."""
+Idempotent writes (SPEC 9.4): `save_quiz` guarded by `UPDATE … WHERE status != 'ready'`
+(replayed: the number of questions, nothing more); `quiz_failed` never touches a ready quiz;
+`save_grades` guarded by `UPDATE … WHERE status = 'grading'`, under the program lock taken
+BEFORE the transaction (F4); the reflection of levels in memory comes after the commit,
+outside the lock, and is caught up on replay. Logs: ids and numbers only (SPEC 17.2)."""
 
 import logging
 from collections.abc import Mapping
@@ -49,8 +49,8 @@ async def _module(db: AsyncSession, user_id: str, quiz: Quiz) -> Module:
 
 
 def _skill(name: str, module: Module) -> str:
-    """La compétence d'une question : celle du module de même nom normalisé, sinon la
-    première du module (une compétence hors du module n'entre jamais au graphe)."""
+    """A question's skill: that of the module with the same normalized name, otherwise the
+    module's first (a skill outside the module never enters the graph)."""
     skills = [str(s) for s in module.skills]
     by_norm = {normalize_skill_name(s): s for s in skills}
     return by_norm.get(normalize_skill_name(name)) or (skills[0] if skills else name)
@@ -111,7 +111,7 @@ class AgentQuizStore:
         async with self._rt.session_factory() as db:
             count = await self._save_quiz(db, user_id, session_id, quiz_id, draft)
             await db.commit()
-        logger.info("Quiz rangé : session %s, quiz %s, %d question(s)", session_id, quiz_id, count)
+        logger.info("Quiz stored: session %s, quiz %s, %d question(s)", session_id, quiz_id, count)
         return count
 
     async def quiz_failed(self, user_id: str, quiz_id: str, reason: str) -> None:
@@ -119,7 +119,7 @@ class AgentQuizStore:
             await owned_quiz(db, user_id, quiz_id)
             await QuizRepository(db, user_id).mark_failed(quiz_id, reason.strip()[:MAX_FAILURE])
             await db.commit()
-        logger.info("Quiz en échec : quiz %s", quiz_id)
+        logger.info("Quiz failed: quiz %s", quiz_id)
 
     async def attempt(self, user_id: str, attempt_id: str) -> AttemptToGrade:
         async with self._rt.session_factory() as db:
@@ -180,7 +180,7 @@ class AgentQuizStore:
     ) -> GradedSaved:
         async with self._rt.session_factory() as db:
             ctx = await _context(db, user_id, attempt_id)
-        # F4 : le verrou du programme AVANT la transaction d'écriture (même ordre qu'`editing`).
+        # F4: the program lock BEFORE the write transaction (same order as `editing`).
         async with self._rt.program.program_lock(user_id, ctx.quiz.program_id):
             saved, levels, title = await self._grade(user_id, session_id, attempt_id, grades)
         if levels:
@@ -191,12 +191,12 @@ class AgentQuizStore:
                     levels,
                     author="examiner",
                     session_id=session_id,
-                    reason=f"Quiz « {title} » réussi",
+                    reason=f'Quiz "{title}" passed',
                 )
             except Exception:
-                logger.warning("Acquis non reflétés après un quiz : tentative %s", attempt_id)
+                logger.warning("Learned items not reflected after a quiz: attempt %s", attempt_id)
         logger.info(
-            "Tentative rangée : session %s, tentative %s, %d %%, %d fiche(s), %d tâche(s)",
+            "Attempt stored: session %s, attempt %s, %d%%, %d card(s), %d task(s)",
             session_id,
             attempt_id,
             saved.score,

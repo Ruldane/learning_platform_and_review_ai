@@ -1,18 +1,18 @@
-"""Parcours `replan` (SPEC F13, D105) : le Stratège propose une replanification après le bilan
-hebdomadaire ou un message de January (« cette semaine je n'ai que 5 heures »), ou quand January
-ajoute au planning des compétences d'une offre (déclencheur `gap`, D123 : sans option, ajouts
-seuls dans le module « Compétences des offres »), le code la range dans le budget, January
-l'accepte, la refuse ou demande une autre proposition.
+"""`replan` graph (SPEC F13, D105): the Strategist proposes a replan after the weekly review
+or a message from January ("this week I only have 5 hours"), or when January adds skills from
+a posting to the schedule (`gap` trigger, D123: no option, additions only in the "Skills from
+postings" module), the code fits it in the budget, January accepts it, refuses it or asks for
+another proposal.
 
-START -> context -> (options ? ask_option : propose) ; déclencheur `gap` : propose (D123)
-ask_option -> propose (réponse invalide : ask_option)
-propose -> preview -> (impossible, ou rien à changer sans option ? finalize : ask_accept)
-ask_accept : accept -> apply -> (périmée ? propose : finalize) ; refuse -> refuse -> finalize ;
-             revise (note) -> propose ; réponse invalide -> ask_accept
+START -> context -> (options ? ask_option : propose); `gap` trigger: propose (D123)
+ask_option -> propose (invalid answer: ask_option)
+propose -> preview -> (impossible, or nothing to change without an option ? finalize : ask_accept)
+ask_accept: accept -> apply -> (stale ? propose : finalize); refuse -> refuse -> finalize;
+             revise (note) -> propose; invalid answer -> ask_accept
 finalize -> END
 
-Deux points d'arrêt (`ask_option`, `ask_accept`), chacun seul dans son nœud (SPEC 9.4). Les
-écritures du port (`preview`, `apply`, `refuse`) sont idempotentes."""
+Two stopping points (`ask_option`, `ask_accept`), each alone in its node (SPEC 9.4). The
+port writes (`preview`, `apply`, `refuse`) are idempotent."""
 
 from typing import Annotated, Any, Self
 
@@ -63,29 +63,29 @@ class ReplanInput(BaseModel):
     available_minutes: int | None = Field(default=None, ge=60, le=10080)
     message: str | None = Field(default=None, max_length=1000)
     reading: ReplanReading | None = None
-    # Déclencheur `gap` seulement (« Ajouter au planning », D123) : noms de lignes `to_add`.
+    # `gap` trigger only ("Add to the schedule", D123): names of the `to_add` rows.
     skills: list[Annotated[str, Field(min_length=1, max_length=120)]] = Field(
         default_factory=list, max_length=10
     )
 
     @model_validator(mode="after")
     def _review_of_weekly(self) -> Self:
-        """Le bilan hebdomadaire demande son entrée (422 `invalid_input` sinon)."""
+        """The weekly review needs its entry (422 `invalid_input` otherwise)."""
         if self.trigger == "weekly_review" and self.review_entry_id is None:
-            raise ValueError("Une replanification du bilan demande `review_entry_id`.")
+            raise ValueError("A review replan needs `review_entry_id`.")
         return self
 
     @model_validator(mode="after")
     def _skills_of_gap(self) -> Self:
-        """Des compétences avec le déclencheur `gap`, et avec lui seul."""
+        """Skills with the `gap` trigger, and with it alone."""
         if (self.trigger == "gap") != bool(self.skills):
-            raise ValueError("`skills` accompagne le déclencheur `gap`, et lui seul.")
+            raise ValueError("`skills` goes with the `gap` trigger, and only with it.")
         return self
 
     @model_validator(mode="after")
     def _selected_reading(self) -> Self:
         if (self.trigger == "reading") != (self.reading is not None):
-            raise ValueError("Une lecture accompagne seulement le déclencheur reading.")
+            raise ValueError("A reading goes only with the reading trigger.")
         return self
 
 

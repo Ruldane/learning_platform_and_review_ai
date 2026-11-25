@@ -1,5 +1,5 @@
-"""Schémas de l'accès MCP (phase 10, P1, P15 à P19) : définitifs dès 10.P. Un jeton n'apparaît en
-clair qu'une fois, dans `McpTokenCreated` ; ni liste ni journal ne le rendent jamais."""
+"""MCP access schemas (phase 10, P1, P15 to P19): final from 10.P. A token appears in clear
+only once, in `McpTokenCreated`; neither the list nor the log ever return it."""
 
 from datetime import datetime
 from typing import Any, Literal
@@ -32,7 +32,7 @@ ActionKind = Literal["route", "graph"]
 
 
 class McpSettingsIn(BaseModel):
-    """L'interrupteur général : faux = aucun jeton n'ouvre rien (coupé par défaut)."""
+    """The master switch: false = no token opens anything (off by default)."""
 
     enabled: bool
 
@@ -42,7 +42,7 @@ class McpSettingsOut(McpSettingsIn):
 
 
 class McpFeatureOut(BaseModel):
-    """Une feature qui déclare des outils MCP : son nom et ses outils par niveau."""
+    """A feature that declares MCP tools: its name and its tools per level."""
 
     feature: str
     read_actions: int
@@ -51,8 +51,8 @@ class McpFeatureOut(BaseModel):
 
 
 class McpActionOut(BaseModel):
-    """Un outil exposé (table des niveaux). `kind` : une route ou un graphe de l'application.
-    `untrusted` : les champs rendus comme données, jamais comme consignes."""
+    """An exposed tool (level table). `kind`: a route or a graph of the application.
+    `untrusted`: the fields returned as data, never as instructions."""
 
     name: str
     feature: str
@@ -64,13 +64,13 @@ class McpActionOut(BaseModel):
     untrusted: list[str]
 
 
-# « Tout cocher » ouvre toutes les features (75 au 23/11) ; marge pour les suivantes (D306).
+# "Check all" opens every feature (75 on 23/11); margin for the following ones (D306).
 MAX_TOKEN_FEATURES = 120
 
 
 class McpTokenCreateIn(BaseModel):
-    """Crée un jeton : limité à certaines features, lecture seule par défaut, 30 jours par
-    défaut (1, 7, 30 ou 90)."""
+    """Creates a token: limited to certain features, read-only by default, 30 days by
+    default (1, 7, 30 or 90)."""
 
     label: str = Field(min_length=1, max_length=LABEL_MAX)
     features: list[str] = Field(min_length=1, max_length=MAX_TOKEN_FEATURES)
@@ -79,7 +79,7 @@ class McpTokenCreateIn(BaseModel):
 
 
 class McpTokenOut(BaseModel):
-    """Un jeton, sans sa valeur : on ne la revoit jamais."""
+    """A token, without its value: it is never seen again."""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -94,25 +94,25 @@ class McpTokenOut(BaseModel):
 
 
 class McpTokenCreated(McpTokenOut):
-    """La réponse à la création : `token` (`tmcp_…`) n'est montré qu'ici, une seule fois."""
+    """The creation response: `token` (`tmcp_…`) is shown only here, once."""
 
     token: str
 
 
 class McpRequestField(BaseModel):
-    """Un champ de la requête à confirmer : son nom et sa valeur en texte (objets et listes en JSON
-    compact), tronquée à 500 caractères ; les clés d'API sont masquées."""
+    """A field of the request to confirm: its name and its value as text (objects and lists as
+    compact JSON), truncated to 500 characters; API keys are masked."""
 
     name: str
     value_preview: str
 
 
 class McpRequestPreview(BaseModel):
-    """La requête qui partira à la confirmation, de quoi la lire en entier : méthode, route (le
-    gabarit, sans identifiant), libellé lisible de la cible quand la route en a une (titre, nom ;
-    lu par la route de lecture de la même ressource ; un texte venu du web est entouré de
-    `<donnee_non_fiable>`), **tous** les champs du corps et des paramètres, et `truncated` si une
-    valeur ou le total (4 000 caractères) a été coupé."""
+    """The request that will go out on confirmation, enough to read it in full: method, route
+    (the template, without an id), readable label of the target when the route has one (title,
+    name; read by the read route of the same resource; a text from the web is wrapped in
+    `<donnee_non_fiable>`), **all** the body and parameter fields, and `truncated` if a value
+    or the total (4,000 characters) was cut."""
 
     method: str
     route: str
@@ -122,9 +122,9 @@ class McpRequestPreview(BaseModel):
 
 
 class McpConfirmationOut(BaseModel):
-    """Une demande « À confirmer » (niveau 3) : ce que Claude veut faire (un résumé neutre et la
-    requête complète en `request`) et le verdict d'un éventuel contrôle préalable. Rien ne
-    s'exécute avant la confirmation."""
+    """A "To confirm" request (level 3): what Claude wants to do (a neutral summary and the full
+    request in `request`) and the verdict of any prior check. Nothing runs before the
+    confirmation."""
 
     id: str
     token_id: str
@@ -139,9 +139,9 @@ class McpConfirmationOut(BaseModel):
 
 
 class McpCallOut(BaseModel):
-    """Une ligne du journal : l'outil, le niveau, le code de résultat, la durée, les identifiants.
-    Jamais le contenu. Niveau 0 : appel refusé avant la résolution de l'outil ; `token_id` vide :
-    jeton non reconnu."""
+    """A log line: the tool, the level, the result code, the duration, the ids. Never the
+    content. Level 0: call refused before the tool was resolved; empty `token_id`: token not
+    recognized."""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -156,8 +156,8 @@ class McpCallOut(BaseModel):
 
 
 class McpChangeOut(BaseModel):
-    """Les changements d'un appel de niveau 2 : de quoi les annuler ensemble (`undone_at` posé
-    une fois annulés)."""
+    """The changes of a level 2 call: enough to undo them together (`undone_at` set once
+    undone)."""
 
     call_id: str
     action: str
@@ -168,7 +168,7 @@ class McpChangeOut(BaseModel):
 
 
 class McpUndoOut(BaseModel):
-    """`undone` : le nombre de lignes remises dans leur état d'avant."""
+    """`undone`: the number of rows put back in their previous state."""
 
     call_id: str
     undone: int

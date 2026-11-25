@@ -1,11 +1,11 @@
-"""Recherche par SearXNG (API JSON, `GET /search?format=json`), fournisseur par défaut et sans
-clé, joint sur le réseau Docker interne. `format=json` doit être dans `search.formats`
-(`infra/searxng/settings.yml`), sinon SearXNG répond 403.
+"""Search through SearXNG (JSON API, `GET /search?format=json`), default provider and without
+a key, reached on the internal Docker network. `format=json` must be in `search.formats`
+(`infra/searxng/settings.yml`), otherwise SearXNG answers 403.
 
-Réponse : `results[]` (`url`, `title`, `content`, `engine`, `publishedDate` en ISO 8601 ou
-`null`) et `unresponsive_engines` (paires `[moteur, erreur]`). Zéro résultat avec des moteurs
-non répondants = SearXNG bloqué ou en panne : `SearchUnavailable`, pour que l'appelant passe à
-Brave ; zéro résultat sans moteur en panne = vraie absence de résultat."""
+Response: `results[]` (`url`, `title`, `content`, `engine`, `publishedDate` in ISO 8601 or
+`null`) and `unresponsive_engines` (pairs `[engine, error]`). Zero results with
+unresponsive engines = SearXNG blocked or down: `SearchUnavailable`, so that the caller
+falls back to Brave; zero results with no engine down = a real absence of results."""
 
 import logging
 from collections.abc import Sequence
@@ -52,22 +52,22 @@ def _result(item: dict[str, Any]) -> SearchResult:
 
 def _parse(body: object) -> list[SearchResult]:
     if not isinstance(body, dict) or not isinstance(body.get("results", []), list):
-        logger.info("Réponse SearXNG inattendue")
+        logger.info("Unexpected SearXNG response")
         raise SearchUnavailable() from None
     items = [i for i in body.get("results", []) if isinstance(i, dict) and is_web_url(i.get("url"))]
     unresponsive = body.get("unresponsive_engines") or []
     if not items and not isinstance(unresponsive, list):
-        # Revue 3.3 (D74) : forme inattendue, jugée comme des moteurs en panne (repli sur Brave).
-        logger.info("SearXNG sans résultat, moteurs sans réponse de forme inattendue")
+        # Review 3.3 (D74): unexpected shape, judged like engines down (fall back to Brave).
+        logger.info("SearXNG without results, unresponsive engines of an unexpected shape")
         raise SearchUnavailable() from None
     if not items and unresponsive:
-        logger.info("SearXNG sans résultat, %d moteurs sans réponse", len(unresponsive))
+        logger.info("SearXNG without results, %d unresponsive engines", len(unresponsive))
         raise SearchUnavailable() from None
     return keep_unique([_result(i) for i in items])
 
 
 class SearxngSearch:
-    """`SearchProvider` sur un client dédié (`bootstrap.research_providers`)."""
+    """`SearchProvider` on a dedicated client (`bootstrap.research_providers`)."""
 
     name = "searxng"
 
@@ -90,15 +90,15 @@ class SearxngSearch:
                 timeout=SEARCH_TIMEOUT_S,
             )
         except httpx.HTTPError as exc:
-            # Type seul : le message d'une erreur httpx peut citer l'URL, donc la requête.
-            logger.info("SearXNG injoignable (%s)", type(exc).__name__)
+            # Type only: the message of an httpx error may quote the URL, hence the query.
+            logger.info("SearXNG unreachable (%s)", type(exc).__name__)
             raise SearchUnavailable() from None
         if response.status_code != 200:
-            logger.info("SearXNG a refusé la recherche (statut %s)", response.status_code)
+            logger.info("SearXNG refused the search (status %s)", response.status_code)
             raise SearchUnavailable() from None
         try:
             body = response.json()
         except ValueError:
-            logger.info("Réponse SearXNG illisible")
+            logger.info("Unreadable SearXNG response")
             raise SearchUnavailable() from None
         return _parse(body)

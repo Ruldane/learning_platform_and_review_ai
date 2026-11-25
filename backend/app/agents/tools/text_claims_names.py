@@ -1,12 +1,14 @@
-"""Les noms propres d'un texte écrit au nom de January (contrôle `text_claims`) : une entreprise ou
-un outil que le profil ne nomme pas. Une lettre est de la prose : contrairement à une ligne de CV,
-un nom y ouvre aussi une phrase (« Capgemini m'a confié… ») ou s'écrit en capitales (« chez IBM »).
+"""The proper nouns of a text written in January's name (`text_claims` check): a company or
+a tool that the profile does not name. A letter is prose: unlike a CV line,
+a name there also opens a sentence ("Capgemini m'a confié...") or is written in capitals
+("chez IBM").
 
-Sont vérifiés : les mots en capitales de 2 lettres ou plus (sauf `ACRONYMS`), les mots capitalisés
-hors début de phrase, ceux qui suivent « chez », « at », « pour »… même en début de phrase, et
-ceux qui ouvrent une phrase suivis d'un verbe (« X m'a », « X a été »). Ne sont jamais des noms :
-les formules d'adresse et destinataires génériques (`GREETINGS`), les mois et jours, les noms qui
-suivent une salutation (« Bonjour Julie »). Un saut de ligne ouvre une phrase."""
+Checked: words in capitals of 2 letters or more (except `ACRONYMS`), capitalised words
+outside the start of a sentence, those that follow "chez", "at", "pour"... even at the start of a
+sentence, and those that open a sentence followed by a verb ("X m'a", "X a été"). Never names:
+the forms of address and generic recipients (`GREETINGS`), months and days, the names that
+follow a greeting ("Bonjour Julie"). A line break opens a sentence. The French and English
+word lists both stay: letters and CVs stored before the switch are French."""
 
 import re
 
@@ -17,15 +19,15 @@ _SENTENCE_END = re.compile(r"[.!?\n]")
 _CLAUSE_END = re.compile(r"[,.;:!?\n]")
 _MIN_NAME = 3
 
-# Sigles courants d'une lettre, jamais un employeur (liste courte à dessein : tout autre sigle est
-# rendu, un humain le lève).
+# Common acronyms of a letter, never an employer (short list on purpose: any other acronym is
+# flagged, a human lifts it).
 ACRONYMS = frozenset("CV IA AI RH HR IT PDF CDI CDD PME ESN OK FR EN UE EU PS".split())  # noqa: SIM905
-# Salutations : le nom qui les suit est celui du destinataire.
+# Greetings: the name that follows is the recipient's.
 SALUTATIONS = frozenset(
     """bonjour bonsoir hello hi dear cher chere madame monsieur mademoiselle messieurs mesdames
     sir madam mr mrs ms mme mlle""".split()  # noqa: SIM905
 )
-# Formules d'adresse, destinataires génériques, mois et jours anglais.
+# Forms of address, generic recipients, English months and days.
 GREETINGS = frozenset(
     SALUTATIONS
     | set(
@@ -36,7 +38,7 @@ GREETINGS = frozenset(
 )
 _EMPLOYER_CUES = frozenset("chez at pour for avec with rejoint joined".split())  # noqa: SIM905
 _FOLLOWERS = frozenset("m me nous a ont est était etait has had was gave taught hired".split())  # noqa: SIM905
-# Mots de phrase qui ressemblent à un sujet nommé sans en être un.
+# Sentence words that look like a named subject without being one.
 _SUBJECT_WORDS = frozenset(
     """cela ceci tout elle elles ils nous vous cette ces ceux celle celui chacun personne rien
     this that everything she they""".split()  # noqa: SIM905
@@ -52,17 +54,17 @@ def _starts_sentence(text: str, before: int, start: int) -> bool:
 
 
 def name_claims(text: str, known: str) -> list[tuple[int, str]]:
-    """Les noms propres de `text` absents de `known` (un texte normalisé entre espaces) :
-    `(position, mot tel qu'écrit)`, un par forme comparée, dans l'ordre du texte."""
+    """The proper nouns of `text` absent from `known` (a normalised text between spaces):
+    `(position, word as written)`, one per compared form, in text order."""
     matches = list(_WORD.finditer(text))
     forms = [normalize_term(m.group(), plural=True) for m in matches]
     found: dict[str, tuple[int, str]] = {}
-    greeting = 0  # noms à passer après une salutation
+    greeting = 0  # names to skip after a greeting
     for rank, match in enumerate(matches):
         word, form = match.group(), forms[rank]
         gap = text[matches[rank - 1].end() : match.start()] if rank else ""
         if _CLAUSE_END.search(gap):
-            greeting = 0  # la salutation s'arrête à sa virgule ou à son saut de ligne
+            greeting = 0  # the greeting stops at its comma or its line break
         if form in SALUTATIONS:
             greeting = 2
             continue

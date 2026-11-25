@@ -1,4 +1,4 @@
-"""Données du parcours qui transforme un article lu en exercice Python."""
+"""Data of the graph that turns a paper that was read into a Python exercise."""
 
 import re
 from dataclasses import dataclass
@@ -32,12 +32,12 @@ class ArticleSource:
 
 
 def cited_course(source: ArticleSource, draft: PaperDraft) -> str:
-    """Le cours cite un extrait vérifié du texte remis au Rédacteur."""
+    """The course quotes a verified excerpt of the text given to the Writer."""
     quote = " ".join(draft.source_quote.split())
     if len(quote) < 20 or quote not in " ".join(source.material.split()):
         raise AppError("paper_lab_citation", "The quoted text does not appear in the paper.", 422)
     literal = re.sub(r"([\\\x60*_{}\[\]()<>#!|])", r"\\\1", quote)
-    return f"{draft.course}\n\n## Extrait de l’article\n\n> {literal}"
+    return f"{draft.course}\n\n## Excerpt from the paper\n\n> {literal}"
 
 
 @dataclass(frozen=True)
@@ -56,12 +56,12 @@ class PaperLabStore(Protocol):
 
 class _MissingPaperLab:
     async def context(self, user_id: str, lab_id: str, session_id: str) -> PaperLabContext:
-        raise RuntimeError("Le parcours Du papier au code n’est pas branché.")
+        raise RuntimeError("The From Paper to Code graph is not wired.")
 
     async def publish(
         self, user_id: str, lab_id: str, session_id: str, source: ArticleSource, draft: PaperDraft
     ) -> None:
-        raise RuntimeError("Le parcours Du papier au code n’est pas branché.")
+        raise RuntimeError("The From Paper to Code graph is not wired.")
 
 
 NO_PAPER_LAB: PaperLabStore = _MissingPaperLab()

@@ -1,9 +1,9 @@
-"""Extraction PDF en sous-processus (D72, lève le risque M6 de D63) : un PDF piégé (flux Flate
-sans fin, boucle de pdfminer) ne peut ni bloquer le back au-delà du délai, ni épuiser sa mémoire.
+"""PDF extraction in a subprocess (D72, lifts risk M6 of D63): a booby-trapped PDF (endless Flate
+stream, pdfminer loop) can neither block the back end beyond the timeout, nor exhaust its memory.
 
-Chaque appel lance `app.providers.pdf.worker` avec l'interpréteur courant ; délai réel (le
-processus est tué), espace d'adressage plafonné par le worker (POSIX), `concurrency` workers au
-plus à la fois. stderr est jeté (jamais journalisé : il pourrait citer le contenu)."""
+Each call launches `app.providers.pdf.worker` with the current interpreter; real timeout (the
+process is killed), address space capped by the worker (POSIX), at most `concurrency` workers at a
+time. stderr is thrown away (never logged: it could quote the content)."""
 
 import asyncio
 import contextlib
@@ -22,12 +22,13 @@ from app.providers.pdf.base import (
 
 logger = logging.getLogger(__name__)
 
-# Racine du back (parent du paquet `app`) : répertoire de travail du worker, d'où `-m` l'importe.
+# Back-end root (parent of the `app` package): the worker's working directory,
+# from where `-m` imports it.
 BACKEND_ROOT = Path(__file__).resolve().parents[3]
 WORKER_MODULE = "app.providers.pdf.worker"
-# Variables transmises au worker : le reste de l'environnement (clés d'API...) ne le regarde pas.
+# Variables passed to the worker: it has no business seeing the rest (API keys...).
 _ENV_KEPT = ("PATH", "SYSTEMROOT", "TMPDIR", "TEMP", "TMP", "LANG", "LC_ALL")
-# Un caractère tient en 4 octets UTF-8 au plus.
+# A character takes at most 4 UTF-8 bytes.
 _BYTES_PER_CHAR = 4
 
 
@@ -48,8 +49,8 @@ async def spawn_worker(command: list[str]) -> asyncio.subprocess.Process:
 
 
 class SubprocessPdfExtractor:
-    """`PdfTextExtractor` de la composition. Les plafonds de pages et de caractères sont lus à
-    chaque appel dans `base` et passés au worker."""
+    """`PdfTextExtractor` of the composition. The page and character caps are read at
+    each call in `base` and passed to the worker."""
 
     def __init__(
         self,
@@ -69,20 +70,20 @@ class SubprocessPdfExtractor:
             try:
                 process = await spawn_worker(command)
             except OSError as exc:
-                # EAGAIN, ENOMEM, interpréteur absent : page illisible, jamais le chemin.
-                logger.info("Extraction PDF : worker non lancé (%s)", type(exc).__name__)
+                # EAGAIN, ENOMEM, missing interpreter: unreadable PDF, never the path.
+                logger.info("PDF extraction: worker not launched (%s)", type(exc).__name__)
                 raise PdfUnreadable() from None
             try:
                 async with asyncio.timeout(self._timeout_s):
                     output = await exchange_with_worker(process, data, max_chars * _BYTES_PER_CHAR)
             except TimeoutError:
-                logger.info("Extraction PDF interrompue : délai dépassé")
+                logger.info("PDF extraction interrupted: timeout exceeded")
                 raise PdfUnreadable(PDF_TIMEOUT_MESSAGE) from None
             finally:
-                # Délai, annulation ou erreur : le worker ne survit jamais à l'appel.
+                # Timeout, cancellation or error: the worker never outlives the call.
                 await reap_worker(process)
         if output is None or process.returncode != 0:
-            logger.info("Extraction PDF : worker en échec (code %s)", process.returncode)
+            logger.info("PDF extraction: worker failed (code %s)", process.returncode)
             raise PdfUnreadable() from None
         return output.decode("utf-8", errors="replace")
 
@@ -90,19 +91,19 @@ class SubprocessPdfExtractor:
 async def exchange_with_worker(
     process: asyncio.subprocess.Process, data: bytes, limit: int
 ) -> bytes | None:
-    """Envoie le PDF, lit au plus `limit` octets de texte et attend la fin du worker. `None` :
-    worker mort avant d'avoir tout lu, ou sortie au-delà du plafond."""
+    """Sends the PDF, reads at most `limit` bytes of text and waits for the worker to end. `None`:
+    worker dead before having read everything, or output beyond the cap."""
     assert process.stdin is not None and process.stdout is not None
     try:
         process.stdin.write(data)
         await process.stdin.drain()
         process.stdin.close()
-    except OSError:  # tube fermé : le worker est déjà mort (mémoire, plantage)
+    except OSError:  # pipe closed: the worker is already dead (memory, crash)
         return None
     try:
         await process.stdout.readexactly(limit + 1)
     except asyncio.IncompleteReadError as short:
-        output = short.partial  # fin de flux avant le plafond : cas normal
+        output = short.partial  # end of stream before the cap: normal case
     else:
         return None
     await process.wait()
@@ -111,6 +112,6 @@ async def exchange_with_worker(
 
 async def reap_worker(process: asyncio.subprocess.Process) -> None:
     if process.returncode is None:
-        with contextlib.suppress(ProcessLookupError):  # mort entre-temps
+        with contextlib.suppress(ProcessLookupError):  # died meanwhile
             process.kill()
     await process.wait()

@@ -1,4 +1,4 @@
-"""Prépare et retire les documents locaux confiés à la chaîne d'ingestion de la mémoire."""
+"""Prepares and removes the local documents entrusted to the memory's ingestion chain."""
 
 import logging
 from collections.abc import Sequence
@@ -85,7 +85,7 @@ class RemovedDocument:
 
 
 def prepare_sync_document(path: str, data: bytes) -> SyncDraft:
-    """Détecte le cas à partir du chemin validé, et rejoue les contrôles d'import existants."""
+    """Detects the case from the validated path, and replays the existing import checks."""
     relative = PurePosixPath(path)
     suffix = relative.suffix.lower()
     filename = relative.name
@@ -101,7 +101,7 @@ def prepare_sync_document(path: str, data: bytes) -> SyncDraft:
 async def store_sync_document(
     db: AsyncSession, runtime: MemoryRuntime, user_id: str, draft: SyncDraft
 ) -> Document:
-    """Écrit le nouveau document dans la transaction appelante, avant mise en file."""
+    """Writes the new document in the calling transaction, before queueing."""
     storage = runtime.providers.storage
     key = await storage.save(user_id, STORAGE_CATEGORY, draft.data, SUFFIX_OF[draft.kind])
     try:
@@ -135,7 +135,7 @@ async def retire_sync_document(
             action="delete",
             author=USER_AUTHOR,
             session_id=None,
-            reason="Retrait du document synchronisé.",
+            reason="Removal of the synced document.",
         )
         await items.delete(item.id)
     await docs.delete(doc.id)
@@ -146,7 +146,7 @@ async def delete_sync_file(runtime: MemoryRuntime, user_id: str, key: str) -> No
     try:
         await runtime.providers.storage.delete(user_id, key)
     except Exception as exc:
-        logger.warning("Nettoyage des fichiers synchronisés %s (%s)", user_id, type(exc).__name__)
+        logger.warning("Cleaning up synced files %s (%s)", user_id, type(exc).__name__)
 
 
 async def clean_removed_documents(

@@ -9,7 +9,7 @@ from app.core.errors import AppError
 from app.core.skills import evidence
 from app.db.base import utcnow
 from app.db.models.boss import BossAttempt
-from app.features.boss.challenge import ENTRY, SKILL
+from app.features.boss.challenge import ENTRY, LEGACY_SKILL, SKILL
 from app.features.boss.repository import BossRepository
 from app.features.boss.service import diagnostic
 from app.features.skills.service import SkillsService
@@ -98,6 +98,8 @@ class AgentBossReview:
                 raise AppError("boss_review_stale", "The evaluation has changed.", 409)
             if proof:
                 item = evidence("ide", row.ide_session_id, "End-of-program Boss passed", utcnow())
-                await SkillsService(db, user_id).raise_levels([SKILL], "in_progress", item)
+                skills = SkillsService(db, user_id)
+                name = await skills.existing_name(SKILL, LEGACY_SKILL)
+                await skills.raise_levels([name], "in_progress", item)
             await db.commit()
             return grade

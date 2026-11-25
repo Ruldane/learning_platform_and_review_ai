@@ -1,13 +1,13 @@
-"""Rafraîchissement de la base ATS (P14, D158) : appelé par la tâche planifiée `ats_refresh`
-(`app.scheduler`, jamais importé ici : contrat 8).
+"""Refreshing the ATS base (P14, D158): called by the scheduled task `ats_refresh`
+(`app.scheduler`, never imported here: contract 8).
 
-Chaque compte est dû quand aucun passage `done` n'a fini il y a moins de 30 jours. Le passage se
-gagne dans le registre (`claim`, période = jour local de January, D98) ; puis une session
-`web_research` est lancée avec une requête fixe sur le fonctionnement des ATS (sujet
-`ats_refresh`). Le Lecteur ATS relit ensuite ses sources retenues (`review_store.ats_updates`).
-Un lancement refusé est rangé sous son code (type d'erreur ou code d'`AppError`, jamais le
-message) et repris au passage suivant, 3 essais par jour. Une panne pour un compte n'arrête pas
-les autres. Journaux : identifiants, nombres et codes seulement."""
+Each account is due when no `done` pass finished less than 30 days ago. The pass is won in the
+registry (`claim`, period = January's local day, D98); then a `web_research` session is
+launched with a fixed query about how ATSs work (subject `ats_refresh`). The ATS Reader then
+re-reads its retained sources (`review_store.ats_updates`). A refused launch is stored under
+its code (error type or `AppError` code, never the message) and retried on the next pass, 3
+tries per day. A failure for one account does not stop the others. Logs: ids, numbers and codes
+only."""
 
 import logging
 from datetime import datetime, timedelta
@@ -37,7 +37,7 @@ JOB = "ats_refresh"
 GRAPH = "web_research"
 SUBJECT = "ats_refresh"
 ATS_QUERY = (
-    "fonctionnement logiciels ATS recrutement Greenhouse Workday Lever Teamtailor nouveautés"
+    "how applicant tracking systems ATS work recruiting Greenhouse Workday Lever Teamtailor updates"
 )
 
 
@@ -50,9 +50,9 @@ _MAX_REOPENED = 5
 
 
 async def _last_good_done(db: AsyncSession, user_id: str, now: datetime) -> JobRunView | None:
-    """Le dernier passage `done` dont la session n'a pas échoué. Un passage `done` est écrit dès
-    le lancement : si sa session est ensuite `failed`, il compte comme non fait (il repasse en
-    `failed` dans le registre : repris au passage suivant, dans la limite des essais)."""
+    """The last `done` pass whose session has not failed. A `done` pass is written at launch:
+    if its session is then `failed`, it counts as not done (it goes back to `failed` in the
+    registry: retried on the next pass, within the limit of tries)."""
     for _ in range(_MAX_REOPENED):
         last = await last_done(db, user_id, JOB)
         if last is None or last.ref_id is None:
@@ -66,8 +66,8 @@ async def _last_good_done(db: AsyncSession, user_id: str, now: datetime) -> JobR
 
 
 async def _claim_due(db: AsyncSession, user_id: str, now: datetime) -> Claim | None:
-    """Le passage gagné si ce compte est dû, sinon `None` (déjà fait il y a moins de 30 jours,
-    ou période déjà prise)."""
+    """The pass won if this account is due, otherwise `None` (already done less than 30 days
+    ago, or period already taken)."""
     last = await _last_good_done(db, user_id, now)
     finished = last.finished_at if last is not None else None
     if finished is not None and now - finished < timedelta(days=ATS_EVERY_DAYS):
@@ -96,7 +96,7 @@ async def _refresh(
         async with session_factory() as db:
             await fail(db, user_id, got.run_id, attempt=got.attempt, code=_code(exc), now=now)
             await db.commit()
-        logger.warning("Rafraîchissement ATS : utilisateur %s, lancement refusé", user_id)
+        logger.warning("ATS refresh: user %s, launch refused", user_id)
         return False
     async with session_factory() as db:
         await finish(
@@ -110,14 +110,14 @@ async def _refresh(
             next_due_at=now + timedelta(days=ATS_EVERY_DAYS),
         )
         await db.commit()
-    logger.info("Rafraîchissement ATS : utilisateur %s, session %s", user_id, session_id)
+    logger.info("ATS refresh: user %s, session %s", user_id, session_id)
     return True
 
 
 async def run_ats_refresh(
     session_factory: async_sessionmaker[AsyncSession], launcher: SessionLauncher, now: datetime
 ) -> int:
-    """Un passage de la tâche planifiée ; rend le nombre de sessions lancées."""
+    """One pass of the scheduled task; returns the number of sessions launched."""
     async with session_factory() as db:
         users = await scheduled_user_ids(db)
     launched = 0
@@ -125,9 +125,7 @@ async def run_ats_refresh(
         try:
             launched += await _refresh(session_factory, launcher, user_id, now)
         except Exception as exc:
-            logger.warning(
-                "Rafraîchissement ATS : utilisateur %s non traité (%s)", user_id, type(exc).__name__
-            )
+            logger.warning("ATS refresh: user %s not processed (%s)", user_id, type(exc).__name__)
     level = logging.INFO if launched else logging.DEBUG
-    logger.log(level, "Rafraîchissement ATS : %d compte(s), %d session(s)", len(users), launched)
+    logger.log(level, "ATS refresh: %d account(s), %d session(s)", len(users), launched)
     return launched

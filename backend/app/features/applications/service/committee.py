@@ -1,19 +1,19 @@
-"""Le comité de recrutement simulé côté API (SPEC F19, D147) : lancement du parcours
-`hiring_committee` sur une version de CV prête, liste et détail avec l'avant et l'après.
+"""The simulated hiring committee on the API side (SPEC F19, D147): launching the
+`hiring_committee` flow on a ready CV version, list and detail with the before and after.
 
-- Un seul comité ouvert par offre (409 `committee_in_progress`, `details.run_id`), sous le verrou
-  des comités de l'utilisatrice ; l'exécution est rangée (`running`) AVANT le lancement : le
-  parcours la relit dans sa propre session. Un lancement refusé par le moteur la passe en `failed`.
-  `previous_id` : la dernière exécution `done` de l'offre, fixée au lancement (aucune exécution de
-  la même offre ne tourne en parallèle).
-- Le statut suit l'issue de la session (comme D129 n° 5) : une exécution `running` dont la session
-  n'est plus ouverte (panne, délai, annulation) passe en `failed` à la lecture suivante, sous le
-  verrou ; une session terminée ne reprend jamais, la correction est sûre. `done` est posé par le
-  port (`committee_store`).
-- `previous` (« avant et après », F19) : le diff avec `previous_id`, calculé à la lecture
-  (`committee_diff`), seulement pour une exécution terminée.
+- One open committee per posting (409 `committee_in_progress`, `details.run_id`), under the lock
+  of the user's committees; the run is stored (`running`) BEFORE the launch: the flow re-reads it
+  in its own session. A launch refused by the engine sets it to `failed`.
+  `previous_id`: the last `done` run of the posting, fixed at launch (no run of the same posting
+  runs in parallel).
+- The status follows the outcome of the session (as D129 no. 5): a `running` run whose session is
+  no longer open (crash, timeout, cancellation) becomes `failed` on the next read, under the
+  lock; a finished session never resumes, so the fix is safe. `done` is set by the port
+  (`committee_store`).
+- `previous` ("before and after", F19): the diff with `previous_id`, computed on read
+  (`committee_diff`), only for a finished run.
 
-Journaux : identifiants et statuts seulement, jamais le CV, l'offre ni une parole."""
+Logs: ids and statuses only, never the CV, the posting or a spoken line."""
 
 import asyncio
 import logging
@@ -70,12 +70,12 @@ def version_not_ready() -> AppError:
 
 
 def committee_lock(rt: ApplicationsRuntime, user_id: str) -> asyncio.Lock:
-    """Un verrou par utilisatrice : lancement, résultat rangé et lecture ne se croisent pas."""
+    """One lock per user: launch, stored result and read never interleave."""
     return rt.locks.get(user_id, "committee")
 
 
 async def committee_row(db: AsyncSession, user_id: str, run_id: str) -> CommitteeRun:
-    """L'exécution de l'utilisatrice, relue en base ; 404 `committee_not_found` sinon."""
+    """The user's run, re-read from the database; 404 `committee_not_found` otherwise."""
     row = await CommitteeRepository(db, user_id).get_fresh(run_id)
     if row is None:
         raise committee_not_found()
@@ -83,8 +83,8 @@ async def committee_row(db: AsyncSession, user_id: str, run_id: str) -> Committe
 
 
 async def settle(db: AsyncSession, user_id: str) -> None:
-    """Exécutions en cours sans session ouverte → `failed`. Sessions lues AVANT les exécutions
-    (D97 n° 9). L'appelant tient `committee_lock`."""
+    """Running runs without an open session → `failed`. Sessions read BEFORE the runs
+    (D97 no. 9). The caller holds `committee_lock`."""
     open_ids = await list_open_sessions_by_subject(db, user_id, graph=GRAPH, subject_type=SUBJECT)
     stale = [
         row
@@ -93,7 +93,7 @@ async def settle(db: AsyncSession, user_id: str) -> None:
     ]
     for row in stale:
         row.status = "failed"
-        logger.info("Comité sans session : utilisateur %s, exécution %s", user_id, row.id)
+        logger.info("Committee without session: user %s, run %s", user_id, row.id)
     if stale:
         await db.commit()
 
@@ -107,8 +107,8 @@ def _objection_texts(row: CommitteeRun) -> list[str]:
 
 
 def run_out(row: CommitteeRun, previous: CommitteeRun | None) -> CommitteeRunOut:
-    """L'exécution pour l'API ; `previous` : celle de `previous_id`, si elle existe encore. Le
-    diff n'est calculé que pour deux exécutions terminées."""
+    """The run for the API; `previous`: the one of `previous_id`, if it still exists. The diff
+    is only computed for two finished runs."""
     diff = None
     if row.status == "done" and previous is not None and previous.status == "done":
         diff = committee_diff(
@@ -137,7 +137,7 @@ def run_out(row: CommitteeRun, previous: CommitteeRun | None) -> CommitteeRunOut
 async def _launch(
     rt: ApplicationsRuntime, db: AsyncSession, user_id: str, row: CommitteeRun
 ) -> str:
-    """Lance le parcours sur l'exécution rangée ; refusé, elle passe en `failed`."""
+    """Launches the flow on the stored run; if refused, it becomes `failed`."""
     try:
         session_id = await rt.launcher.start(
             user_id, GRAPH, {"run_id": row.id}, subject_type=SUBJECT, subject_id=row.id
@@ -145,7 +145,7 @@ async def _launch(
     except Exception:
         row.status = "failed"
         await db.commit()
-        logger.warning("Comité non lancé : utilisateur %s, exécution %s", user_id, row.id)
+        logger.warning("Committee not started: user %s, run %s", user_id, row.id)
         raise
     row.session_id = session_id
     await db.commit()
@@ -155,7 +155,7 @@ async def _launch(
 async def start_committee(
     rt: ApplicationsRuntime, user_id: str, body: CommitteeIn
 ) -> CommitteeStartOut:
-    """Lance le comité sur la version de CV. 404 `version_not_found`, 409 `version_not_ready`,
+    """Launches the committee on the CV version. 404 `version_not_found`, 409 `version_not_ready`,
     409 `committee_in_progress`, 409 `profile_required`, 404 `posting_not_found`."""
     async with committee_lock(rt, user_id), rt.session_factory() as db:
         await settle(db, user_id)
@@ -177,14 +177,14 @@ async def start_committee(
             cv_version_id=body.cv_version_id,
             posting_id=posting_id,
             application_id=application.id if application else None,
-            session_id="",  # posé dès que le parcours est lancé (la colonne est obligatoire)
+            session_id="",  # set as soon as the flow is launched (the column is required)
             status="running",
             previous_id=previous.id if previous else None,
         )
-        await db.commit()  # le parcours relit l'exécution dans sa propre session
+        await db.commit()  # the flow re-reads the run in its own session
         session_id = await _launch(rt, db, user_id, row)
     logger.info(
-        "Comité lancé : utilisateur %s, exécution %s, session %s, version %s",
+        "Committee started: user %s, run %s, session %s, version %s",
         user_id,
         row.id,
         session_id,
@@ -204,7 +204,7 @@ async def _outs(
 async def list_runs(
     rt: ApplicationsRuntime, user_id: str, posting_id: str | None
 ) -> list[CommitteeRunOut]:
-    """Les exécutions (d'une offre), la plus récente d'abord, chacune avec son avant et après."""
+    """The runs (of a posting), most recent first, each with its before and after."""
     async with committee_lock(rt, user_id), rt.session_factory() as db:
         await settle(db, user_id)
         return await _outs(db, user_id, await CommitteeRepository(db, user_id).recent(posting_id))

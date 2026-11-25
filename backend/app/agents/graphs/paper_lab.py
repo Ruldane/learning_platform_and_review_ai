@@ -43,9 +43,9 @@ async def _prepare(deps: GraphDeps, source: ArticleSource) -> PaperDraft:
             HumanMessage(
                 untrusted(
                     json.dumps(
-                        {"titre": source.title, "texte": source.material}, ensure_ascii=False
+                        {"title": source.title, "text": source.material}, ensure_ascii=False
                     ),
-                    "texte principal de l’article",
+                    "main text of the paper",
                 )
             ),
         ],

@@ -1,5 +1,5 @@
-"""Le moteur d'agents dans la vie de l'application : checkpointer, bus et runner ouverts au
-démarrage (avec reprise des sessions interrompues), fermés dans l'ordre à l'arrêt."""
+"""The agent engine in the life of the application: checkpointer, bus and runner opened at
+startup (with the resuming of interrupted sessions), closed in order at shutdown."""
 
 import logging
 from collections.abc import AsyncIterator, Mapping
@@ -30,12 +30,12 @@ async def agent_runtime(
     *,
     ports: AgentPorts = NO_PORTS,
 ) -> AsyncIterator[AgentRuntime]:
-    """`prices`, `run_settings` et `ports` viennent de la composition (`app.bootstrap`) :
-    `app.agents` ne lit ni la table des prix des fournisseurs (contrat 3) ni les features
-    (`settings`, `memory`, `research`… : contrat 6, D82).
-    À la sortie : tâches des sessions annulées et attendues (statut inchangé, reprises au
-    prochain démarrage), puis écritures du bus vidées, puis checkpointer fermé — le tout avant
-    la fermeture du moteur par l'appelant."""
+    """`prices`, `run_settings` and `ports` come from the composition (`app.bootstrap`):
+    `app.agents` reads neither the providers' price table (contract 3) nor the features
+    (`settings`, `memory`, `research`...: contract 6, D82).
+    On exit: session tasks cancelled and awaited (status unchanged, resumed at the
+    next startup), then the bus writes flushed, then the checkpointer closed, all of it before
+    the caller closes the engine."""
     async with open_checkpointer(settings.checkpoints_path) as checkpointer:
         bus = EventBus(session_factory)
         runner = SessionRunner(
@@ -50,7 +50,7 @@ async def agent_runtime(
         try:
             recovered = await runner.recover_on_startup()
             if recovered:
-                logger.info("%d session(s) reprise(s) après redémarrage", len(recovered))
+                logger.info("%d session(s) resumed after restart", len(recovered))
             yield AgentRuntime(bus=bus, runner=runner)
         finally:
             await runner.shutdown()

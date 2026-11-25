@@ -9,6 +9,10 @@ from app.features.conversations.lesson_context import lesson_material, lesson_ve
 from app.features.ide.service import IdeService
 from app.features.lessons.service.lessons import get_lesson
 from app.features.program.service.programs import load
+from app.features.skills.service import SkillsService
+
+PYTHON_SKILL = "Python development"
+LEGACY_PYTHON_SKILL = "Développement Python"  # the French name stored before the switch
 
 
 async def lesson_source(db: AsyncSession, user: str, lesson_id: str) -> tuple[FeynmanData, str]:
@@ -36,7 +40,9 @@ async def file_source(
     file = path if path is not None else project.entry
     if file not in project.files:
         raise AppError("feynman_file_not_found", "Saved file not found.", 404)
-    skill = "Développement Python" if file.lower().endswith((".py", ".ipynb")) else None
+    skill = None
+    if file.lower().endswith((".py", ".ipynb")):
+        skill = await SkillsService(db, user).existing_name(PYTHON_SKILL, LEGACY_PYTHON_SKILL)
     data = FeynmanData.model_validate(
         {
             "source": {"kind": "ide", "id": session_id, "title": project.title, "path": file},

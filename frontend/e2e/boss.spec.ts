@@ -14,7 +14,7 @@ async function repairAndSave(page: Page): Promise<void> {
     (result) => result.request().method() === "PUT" && result.url().endsWith("/files"),
   );
   await page.keyboard.insertText(
-    'def planifier(demandes):\n    return [d["id"] for d in sorted(demandes, key=lambda d: not d["urgente"])]\n',
+    'def schedule(requests):\n    return [r["id"] for r in sorted(requests, key=lambda r: not r["urgent"])]\n',
   );
   expect((await saved).ok()).toBe(true);
   await page.goBack();

@@ -1,11 +1,11 @@
-"""Bac à sable de test (phase 10) : sortie scriptée, déterministe, sans processus ni disque.
+"""Test sandbox (phase 10): scripted, deterministic output, with no process or disk.
 
-`scripted` associe un `run_id` à une sortie : `str` (le travail finit `done`, code 0, dès le
-dépôt), `SandboxResult` (fin sans sortie), ou `tuple[str, ...]` (**en cours** : chaque `poll` révèle
-un morceau de plus, `result` reste `None` jusqu'au dernier, puis `done`, code 0). La clé `"*"`
-répond à tout travail non scripté (les services créent leurs identifiants eux-mêmes). Sans clé ni
-`"*"` : fin `done`, code 0, sortie vide. `cancel` rend `killed` un travail **en cours** (la sortie
-déjà révélée reste) ; un travail fini reste fini, un inconnu est sans effet."""
+`scripted` maps a `run_id` to an output: `str` (the job ends `done`, code 0, as soon as it is
+submitted), `SandboxResult` (end without output), or `tuple[str, ...]` (**in progress**: each `poll`
+reveals one more chunk, `result` stays `None` until the last, then `done`, code 0). The key `"*"`
+answers any unscripted job (the services create their own identifiers). Without a key or
+`"*"`: `done` end, code 0, empty output. `cancel` makes a job **in progress** `killed` (the output
+already revealed stays); a finished job stays finished, an unknown one has no effect."""
 
 from dataclasses import dataclass, field
 
@@ -26,7 +26,7 @@ Script = SandboxResult | str | tuple[str, ...]
 class _Run:
     data: bytes
     result: SandboxResult
-    ends: list[int]  # fin (en octets) de chaque morceau ; une seule entrée = fini dès le dépôt
+    ends: list[int]  # end (in bytes) of each chunk; a single entry = finished on submission
     revealed: int
     killed: bool = False
     killed_result: SandboxResult = field(init=False)
@@ -61,7 +61,7 @@ class FakeSandbox:
         chunks = script if isinstance(script, tuple) else (script,)
         data = "".join(chunks).encode()
         truncated = len(data) > MAX_OUTPUT_BYTES
-        if truncated:  # coupé sur une frontière de caractère
+        if truncated:  # cut on a character boundary
             data = data[:MAX_OUTPUT_BYTES].decode(errors="ignore").encode()
         ends, total = [], 0
         for chunk in chunks:
@@ -94,7 +94,7 @@ class FakeSandbox:
         if run is None or run.finished:
             raise UnknownRun(run_id)
         if not 0 < len(data) <= MAX_INPUT_CHUNK_BYTES:
-            raise ValueError("entrée trop grande")
+            raise ValueError("input too large")
         self.inputs.append((run_id, data))
 
     async def healthy(self) -> bool:

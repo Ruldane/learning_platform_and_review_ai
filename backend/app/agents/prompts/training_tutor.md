@@ -33,8 +33,8 @@ and let January look for the next step.
 When January has really tried and failed an exercise, give an understandable correction.
 If a lesson from the catalog supports the review, add at the end a line in this exact format,
 replacing the number with that lesson's number, and the text with the question and the answer
-(keep the prefix "À revoir" exactly as written, without translating it).
-À revoir [1] : Review question → Concise answer
+(use the prefix "To review" exactly as written).
+To review [1] : Review question → Concise answer
 Do not add this line if the exercise was only proposed, if the answer was correct,
 or if no proposed lesson supports the answer.
 

@@ -67,8 +67,8 @@ BoardKind = Literal["domain_map", "prerequisites", "timeline", "comparison"]
 
 
 class BoardUpdatePayload(BaseModel):
-    """Un état du tableau. `board_id`, `kind`, `title` (D82) : plusieurs tableaux par session
-    (carte du domaine, prérequis, frise, comparaison) ; absents des événements d'avant."""
+    """A board state. `board_id`, `kind` and `title` (D82) allow several boards per session
+    (domain map, prerequisites, timeline, comparison); they are absent from older events."""
 
     mermaid: str
     step: int
@@ -97,9 +97,9 @@ def _optional_in_schema(schema: dict[str, Any]) -> None:
 
 
 class InterruptField(BaseModel):
-    """Une question d'un cadrage à plusieurs champs (D82) ; la reprise porte
-    `{"answers": {id: texte}}` (ou la valeur d'une option, `"go"`, D84). Une confirmation à champs
-    pré remplis (`value`) reprend `{"choice": option, "fields": {id: texte}}` (D141)."""
+    """A question of a multi-field scoping step (D82); the resume payload carries
+    `{"answers": {id: text}}` (or an option value, `"go"`, D84). A confirmation with
+    prefilled fields (`value`) resumes with `{"choice": option, "fields": {id: text}}` (D141)."""
 
     id: str = Field(pattern=r"^[a-z0-9_]{1,32}$")
     label: str
@@ -115,7 +115,7 @@ class InterruptField(BaseModel):
 
 
 class InterruptRequestedPayload(BaseModel):
-    """`kind` et non `type` : `type` est déjà le discriminant de l'enveloppe (DECISIONS)."""
+    """`kind` rather than `type`: `type` is already the envelope discriminator (DECISIONS)."""
 
     interrupt_id: str
     kind: str
@@ -130,8 +130,8 @@ class ProposalReadyPayload(BaseModel):
 
 
 class ArtifactInfo(BaseModel):
-    """Une information jointe à un artefact : une fiche proche de celle qui vient d'être créée
-    (« même entreprise depuis 30 jours », SPEC 6.3), avec le message du serveur."""
+    """Information attached to an artifact: an entry close to the one just created
+    ("same company within 30 days", SPEC 6.3), with the server's message."""
 
     application_id: str
     company: str
@@ -177,7 +177,7 @@ UserCommand = Literal["another_round", "to_proposals", "more_concrete", "shorter
 
 
 class UserMessagePayload(BaseModel):
-    """Message de l'utilisatrice (D4) ; `command` : commande du débat, texte alors facultatif."""
+    """A user message (D4); `command` is the debate command, and text is then optional."""
 
     text: str = ""
     command: UserCommand | None = None

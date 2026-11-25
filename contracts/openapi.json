@@ -2,7 +2,7 @@
   "components": {
     "schemas": {
       "ActivityItem": {
-        "description": "Un événement. `id` est stable (`{kind}:{ref}:{état}`) : le front ne montre pas deux fois le\nmême ; `link` est une route du front.",
+        "description": "An event. `id` is stable (`{kind}:{ref}:{state}`): the front end does not show the same one\ntwice; `link` is a front-end route.",
         "properties": {
           "at": {
             "format": "date-time",
@@ -62,7 +62,7 @@
         "type": "object"
       },
       "ActivityPage": {
-        "description": "Les événements, le plus récent d'abord. `latest_at` : l'instant du plus récent d'entre eux\n(`None` sans événement). Curseur de relecture : `after` = `latest_at`, `after_id` = `id` du\npremier élément de `items` ; curseur de page ancienne : `at` et `id` du dernier élément.",
+        "description": "The events, most recent first. `latest_at`: the instant of the most recent of them\n(`None` with no event). Re-read cursor: `after` = `latest_at`, `after_id` = the `id` of the\nfirst item of `items`; older-page cursor: `at` and `id` of the last item.",
         "properties": {
           "items": {
             "items": {
@@ -1520,7 +1520,7 @@
         "type": "object"
       },
       "ArtifactInfo": {
-        "description": "Une information jointe à un artefact : une fiche proche de celle qui vient d'être créée\n(« même entreprise depuis 30 jours », SPEC 6.3), avec le message du serveur.",
+        "description": "Information attached to an artifact: an entry close to the one just created\n(\"same company within 30 days\", SPEC 6.3), with the server's message.",
         "properties": {
           "application_id": {
             "title": "Application Id",
@@ -1910,7 +1910,7 @@
         "type": "object"
       },
       "AtsCheckOut": {
-        "description": "Un contrôle de lisibilité par un ATS ; `detail` : phrase française sans texte du CV.",
+        "description": "An ATS readability check; `detail`: an English sentence without CV text.",
         "properties": {
           "detail": {
             "title": "Detail",
@@ -2709,7 +2709,7 @@
         "type": "object"
       },
       "BoardUpdatePayload": {
-        "description": "Un état du tableau. `board_id`, `kind`, `title` (D82) : plusieurs tableaux par session\n(carte du domaine, prérequis, frise, comparaison) ; absents des événements d'avant.",
+        "description": "A board state. `board_id`, `kind` and `title` (D82) allow several boards per session\n(domain map, prerequisites, timeline, comparison); they are absent from older events.",
         "properties": {
           "board_id": {
             "anyOf": [
@@ -3334,7 +3334,7 @@
         "type": "object"
       },
       "BraveUsageOut": {
-        "description": "Requêtes Brave du mois civil UTC (`month` : « AAAA-MM ») pour la clé en vigueur.",
+        "description": "Brave requests of the UTC calendar month (`month`: \"YYYY-MM\") for the current key.",
         "properties": {
           "cap": {
             "title": "Cap",
@@ -3581,7 +3581,7 @@
         "type": "object"
       },
       "BulkResult": {
-        "description": "`skipped` : les modifications « à confirmer » (jamais acceptées en groupe) et les\nidentifiants inconnus de la revue.",
+        "description": "`skipped`: the \"to confirm\" modifications (never accepted as a group) and the ids\nunknown to the review.",
         "properties": {
           "skipped": {
             "items": {
@@ -3731,7 +3731,7 @@
         "type": "object"
       },
       "CaptureRequest": {
-        "description": "Une seule source : un lien http(s), un texte, ou un document déjà importé\n(`POST /documents`). Zéro ou plusieurs : 422 `invalid_input`.",
+        "description": "A single source: an http(s) link, a text, or an already imported document\n(`POST /documents`). Zero or several: 422 `invalid_input`.",
         "properties": {
           "document_id": {
             "anyOf": [
@@ -4065,7 +4065,7 @@
         "type": "object"
       },
       "ClaimIn": {
-        "description": "Le choix de la toute première connexion Google : reprendre l'espace local (même `id`,\ndonc aucune donnée déplacée) ou repartir d'un espace vide (l'espace local reste intact).",
+        "description": "The choice of the very first Google sign-in: take over the local space (same `id`, so no\ndata moved) or start from an empty space (the local space stays intact).",
         "properties": {
           "choice": {
             "enum": [
@@ -5604,7 +5604,7 @@
         "type": "object"
       },
       "CvReviewOut": {
-        "description": "`before` : indicateurs du CV d'origine ; `gap_terms` : mots clés de l'offre que les faits\ncités ne portent pas, à appuyer par un fait ou à acquérir (ils n'entrent pas dans le CV) ;\n`waiting_output` : la session attend « Que veux-tu maintenant ? » (seul moment où\n« Générer le PDF » est possible).",
+        "description": "`before`: indicators of the original CV; `gap_terms`: posting keywords that the cited\nfacts do not carry, to back with a fact or to acquire (they do not enter the CV);\n`waiting_output`: the session is waiting on \"What do you want now?\" (the only moment when\n\"Generate the PDF\" is possible).",
         "properties": {
           "before": {
             "anyOf": [
@@ -6203,7 +6203,7 @@
         "type": "object"
       },
       "DocumentError": {
-        "description": "Erreur d'import lisible ; `item_id` : l'élément déjà en mémoire d'un doublon.",
+        "description": "Readable import error; `item_id`: the item already in memory for a duplicate.",
         "properties": {
           "code": {
             "title": "Code",
@@ -6548,7 +6548,7 @@
         "type": "object"
       },
       "EdgeWrite": {
-        "description": "`before` précède `after` (noms de compétences).",
+        "description": "`before` precedes `after` (skill names).",
         "properties": {
           "after": {
             "maxLength": 120,
@@ -6802,7 +6802,7 @@
         "type": "object"
       },
       "ErrorOut": {
-        "description": "L'enveloppe de toute erreur métier : `{error: {code, message, details}}`.",
+        "description": "The envelope of every business error: `{error: {code, message, details}}`.",
         "properties": {
           "error": {
             "$ref": "#/components/schemas/ErrorDetailOut"
@@ -8812,7 +8812,7 @@
         "type": "object"
       },
       "GapOut": {
-        "description": "`pending` tant que l'analyse tourne ; `failed` : offre refusée ou analyse arrêtée.",
+        "description": "`pending` while the analysis runs; `failed`: posting refused or analysis stopped.",
         "properties": {
           "posting_id": {
             "title": "Posting Id",
@@ -8968,7 +8968,7 @@
         "type": "object"
       },
       "GenerateIn": {
-        "description": "`allow_extra_pages` : garder un CV plus long que l'original plutôt que s'arrêter.",
+        "description": "`allow_extra_pages`: keep a CV longer than the original rather than stop.",
         "properties": {
           "allow_extra_pages": {
             "default": false,
@@ -10404,7 +10404,7 @@
         "type": "object"
       },
       "IndicatorsOut": {
-        "description": "Couverture des exigences obligatoires de l'offre (`missing` : leur texte, tel que l'offre\nl'écrit) et contrôles ATS. Aucune garantie de passage n'est promise.",
+        "description": "Coverage of the posting's mandatory requirements (`missing`: their text, as the posting\nwrites it) and ATS checks. No guarantee of passing is promised.",
         "properties": {
           "checks": {
             "items": {
@@ -10474,7 +10474,7 @@
         "type": "object"
       },
       "InterruptField": {
-        "description": "Une question d'un cadrage à plusieurs champs (D82) ; la reprise porte\n`{\"answers\": {id: texte}}` (ou la valeur d'une option, `\"go\"`, D84). Une confirmation à champs\npré remplis (`value`) reprend `{\"choice\": option, \"fields\": {id: texte}}` (D141).",
+        "description": "A question of a multi-field scoping step (D82); the resume payload carries\n`{\"answers\": {id: text}}` (or an option value, `\"go\"`, D84). A confirmation with\nprefilled fields (`value`) resumes with `{\"choice\": option, \"fields\": {id: text}}` (D141).",
         "properties": {
           "id": {
             "pattern": "^[a-z0-9_]{1,32}$",
@@ -10586,7 +10586,7 @@
         "type": "object"
       },
       "InterruptRequestedPayload": {
-        "description": "`kind` et non `type` : `type` est déjà le discriminant de l'enveloppe (DECISIONS).",
+        "description": "`kind` rather than `type`: `type` is already the envelope discriminator (DECISIONS).",
         "properties": {
           "fields": {
             "items": {
@@ -11384,7 +11384,7 @@
         "type": "object"
       },
       "JournalPage": {
-        "description": "Les lignes, les plus récentes d'abord ; `next_before` : curseur de la page suivante\n(`?before=`), `None` à la dernière.",
+        "description": "The rows, most recent first; `next_before`: cursor of the next page (`?before=`),\n`None` on the last.",
         "properties": {
           "entries": {
             "items": {
@@ -11413,7 +11413,7 @@
         "type": "object"
       },
       "KeyTestResult": {
-        "description": "Résultat d'un test de clé : `message` est en français et ne contient jamais la clé.",
+        "description": "Result of a key test: `message` is in English and never contains the key.",
         "properties": {
           "message": {
             "title": "Message",
@@ -11793,7 +11793,7 @@
         "type": "object"
       },
       "LearnedStarted": {
-        "description": "Session `learned_document` lancée par `POST /documents/{id}/learned`.",
+        "description": "`learned_document` session launched by `POST /documents/{id}/learned`.",
         "properties": {
           "session_id": {
             "title": "Session Id",
@@ -12586,7 +12586,7 @@
         "type": "object"
       },
       "MapResponse": {
-        "description": "Un point par élément actif indexé (moyenne de ses fragments), coordonnées sur [-1, 1] ;\n`truncated` : seuls les plus récents sont montrés.",
+        "description": "One point per indexed active item (mean of its chunks), coordinates in [-1, 1];\n`truncated`: only the most recent are shown.",
         "properties": {
           "method": {
             "const": "pca",
@@ -12718,7 +12718,7 @@
         "type": "object"
       },
       "McpActionOut": {
-        "description": "Un outil exposé (table des niveaux). `kind` : une route ou un graphe de l'application.\n`untrusted` : les champs rendus comme données, jamais comme consignes.",
+        "description": "An exposed tool (level table). `kind`: a route or a graph of the application.\n`untrusted`: the fields returned as data, never as instructions.",
         "properties": {
           "feature": {
             "title": "Feature",
@@ -12797,7 +12797,7 @@
         "type": "object"
       },
       "McpCallOut": {
-        "description": "Une ligne du journal : l'outil, le niveau, le code de résultat, la durée, les identifiants.\nJamais le contenu. Niveau 0 : appel refusé avant la résolution de l'outil ; `token_id` vide :\njeton non reconnu.",
+        "description": "A log line: the tool, the level, the result code, the duration, the ids. Never the\ncontent. Level 0: call refused before the tool was resolved; empty `token_id`: token not\nrecognized.",
         "properties": {
           "action": {
             "title": "Action",
@@ -12861,7 +12861,7 @@
         "type": "object"
       },
       "McpChangeOut": {
-        "description": "Les changements d'un appel de niveau 2 : de quoi les annuler ensemble (`undone_at` posé\nune fois annulés).",
+        "description": "The changes of a level 2 call: enough to undo them together (`undone_at` set once\nundone).",
         "properties": {
           "action": {
             "title": "Action",
@@ -12912,7 +12912,7 @@
         "type": "object"
       },
       "McpConfirmationOut": {
-        "description": "Une demande « À confirmer » (niveau 3) : ce que Claude veut faire (un résumé neutre et la\nrequête complète en `request`) et le verdict d'un éventuel contrôle préalable. Rien ne\ns'exécute avant la confirmation.",
+        "description": "A \"To confirm\" request (level 3): what Claude wants to do (a neutral summary and the full\nrequest in `request`) and the verdict of any prior check. Nothing runs before the\nconfirmation.",
         "properties": {
           "action": {
             "title": "Action",
@@ -12995,7 +12995,7 @@
         "type": "object"
       },
       "McpFeatureOut": {
-        "description": "Une feature qui déclare des outils MCP : son nom et ses outils par niveau.",
+        "description": "A feature that declares MCP tools: its name and its tools per level.",
         "properties": {
           "confirm_actions": {
             "title": "Confirm Actions",
@@ -13024,7 +13024,7 @@
         "type": "object"
       },
       "McpRequestField": {
-        "description": "Un champ de la requête à confirmer : son nom et sa valeur en texte (objets et listes en JSON\ncompact), tronquée à 500 caractères ; les clés d'API sont masquées.",
+        "description": "A field of the request to confirm: its name and its value as text (objects and lists as\ncompact JSON), truncated to 500 characters; API keys are masked.",
         "properties": {
           "name": {
             "title": "Name",
@@ -13043,7 +13043,7 @@
         "type": "object"
       },
       "McpRequestPreview": {
-        "description": "La requête qui partira à la confirmation, de quoi la lire en entier : méthode, route (le\ngabarit, sans identifiant), libellé lisible de la cible quand la route en a une (titre, nom ;\nlu par la route de lecture de la même ressource ; un texte venu du web est entouré de\n`<donnee_non_fiable>`), **tous** les champs du corps et des paramètres, et `truncated` si une\nvaleur ou le total (4 000 caractères) a été coupé.",
+        "description": "The request that will go out on confirmation, enough to read it in full: method, route\n(the template, without an id), readable label of the target when the route has one (title,\nname; read by the read route of the same resource; a text from the web is wrapped in\n`<donnee_non_fiable>`), **all** the body and parameter fields, and `truncated` if a value\nor the total (4,000 characters) was cut.",
         "properties": {
           "fields": {
             "items": {
@@ -13087,7 +13087,7 @@
         "type": "object"
       },
       "McpSettingsIn": {
-        "description": "L'interrupteur général : faux = aucun jeton n'ouvre rien (coupé par défaut).",
+        "description": "The master switch: false = no token opens anything (off by default).",
         "properties": {
           "enabled": {
             "title": "Enabled",
@@ -13114,7 +13114,7 @@
         "type": "object"
       },
       "McpTokenCreateIn": {
-        "description": "Crée un jeton : limité à certaines features, lecture seule par défaut, 30 jours par\ndéfaut (1, 7, 30 ou 90).",
+        "description": "Creates a token: limited to certain features, read-only by default, 30 days by\ndefault (1, 7, 30 or 90).",
         "properties": {
           "expires_in_days": {
             "default": 30,
@@ -13160,7 +13160,7 @@
         "type": "object"
       },
       "McpTokenCreated": {
-        "description": "La réponse à la création : `token` (`tmcp_…`) n'est montré qu'ici, une seule fois.",
+        "description": "The creation response: `token` (`tmcp_…`) is shown only here, once.",
         "properties": {
           "created_at": {
             "format": "date-time",
@@ -13239,7 +13239,7 @@
         "type": "object"
       },
       "McpTokenOut": {
-        "description": "Un jeton, sans sa valeur : on ne la revoit jamais.",
+        "description": "A token, without its value: it is never seen again.",
         "properties": {
           "created_at": {
             "format": "date-time",
@@ -13313,7 +13313,7 @@
         "type": "object"
       },
       "McpUndoOut": {
-        "description": "`undone` : le nombre de lignes remises dans leur état d'avant.",
+        "description": "`undone`: the number of rows put back in their previous state.",
         "properties": {
           "call_id": {
             "title": "Call Id",
@@ -13575,7 +13575,7 @@
         "type": "object"
       },
       "MemoryExport": {
-        "description": "Toute la mémoire de l'utilisateur en JSON, sans aucun vecteur.",
+        "description": "The user's whole memory as JSON, without any vector.",
         "properties": {
           "documents": {
             "items": {
@@ -14027,7 +14027,7 @@
         "type": "object"
       },
       "MemoryItemPatch": {
-        "description": "Tout est facultatif ; un champ absent ou `null` ne change rien. `status` n'accepte que\n`active` : confirmer une décision en attente (la refuser, c'est la supprimer).",
+        "description": "Everything is optional; an absent or `null` field changes nothing. `status` only accepts\n`active`: confirming a pending decision (refusing it means deleting it).",
         "properties": {
           "level": {
             "anyOf": [
@@ -14591,7 +14591,7 @@
         "type": "object"
       },
       "MergeRequest": {
-        "description": "Éléments à fondre dans l'élément de l'URL (même type, 20 au plus).",
+        "description": "Items to merge into the URL's item (same type, 20 at most).",
         "properties": {
           "other_ids": {
             "items": {
@@ -14902,7 +14902,7 @@
         "type": "object"
       },
       "ModelChoice": {
-        "description": "Fournisseur et identifiant de modèle retenus pour un niveau ou un agent.",
+        "description": "Provider and model identifier chosen for a tier or an agent.",
         "properties": {
           "model": {
             "minLength": 1,
@@ -14966,7 +14966,7 @@
         "type": "object"
       },
       "ModificationOut": {
-        "description": "Une modification proposée. `ref` : « a3 » (Lecteur ATS) ou « r2 » (Recruteur) ; `before` :\nle texte visé dans le CV d'origine (vide pour un ajout ou un déplacement) ; `after` : le\nnouveau texte (pour `move`, la clé de la section avant laquelle `section` passe) ;\n`blocks` : pourquoi elle est « à confirmer » (phrases fixes) ; `fact_ids` : les faits du\nprofil sur lesquels elle repose ; `author` : `ats_reader` ou `recruiter`.",
+        "description": "A proposed modification. `ref`: \"a3\" (ATS Reader) or \"r2\" (Recruiter); `before`: the\ntargeted text in the original CV (empty for an addition or a move); `after`: the new text\n(for `move`, the key of the section before which `section` goes); `blocks`: why it is\n\"to confirm\" (fixed sentences); `fact_ids`: the profile facts it rests on; `author`:\n`ats_reader` or `recruiter`.",
         "properties": {
           "action": {
             "enum": [
@@ -15070,7 +15070,7 @@
         "type": "object"
       },
       "ModificationPatch": {
-        "description": "Décision sur une modification. `after` : texte réécrit par January (revalidé contre le\nprofil) ; `confirm` : « Je confirme que c'est vrai », seul moyen d'accepter une modification\n« à confirmer » (le fait entre alors au profil maître).",
+        "description": "Decision on a modification. `after`: text rewritten by January (re-validated against the\nprofile); `confirm`: \"I confirm this is true\", the only way to accept a \"to confirm\"\nmodification (the fact then enters the master profile).",
         "properties": {
           "after": {
             "anyOf": [
@@ -15106,7 +15106,7 @@
         "type": "object"
       },
       "ModuleCreate": {
-        "description": "Un module de plus dans une semaine (4 au plus par semaine), sans tâche : elles s'ajoutent\npar `PATCH /programs/{id}` (`add_tasks`).",
+        "description": "One more module in a week (4 at most per week), without a task: they are added through\n`PATCH /programs/{id}` (`add_tasks`).",
         "properties": {
           "prerequisites": {
             "items": {
@@ -15157,7 +15157,7 @@
             "type": "string"
           },
           "legacy": {
-            "description": "API anciennes à ne montrer que dans l'encadré « Lire du code ancien ».",
+            "description": "Old APIs to show only in the \"Read legacy code\" box.",
             "items": {
               "type": "string"
             },
@@ -15193,7 +15193,7 @@
             "title": "Lesson Status"
           },
           "official_urls": {
-            "description": "Pages de la documentation officielle du chapitre (3 au plus).",
+            "description": "Pages of the chapter's official documentation (3 at most).",
             "items": {
               "type": "string"
             },
@@ -15272,7 +15272,7 @@
                 "type": "null"
               }
             ],
-            "description": "API dépréciées, montrées seulement dans l'encadré « Lire du code ancien ».",
+            "description": "Deprecated APIs, shown only in the \"Read legacy code\" box.",
             "title": "Legacy"
           },
           "official_urls": {
@@ -15291,7 +15291,7 @@
                 "type": "null"
               }
             ],
-            "description": "Pages de la documentation officielle.",
+            "description": "Pages of the official documentation.",
             "title": "Official Urls"
           },
           "prerequisites": {
@@ -15358,7 +15358,7 @@
             "type": "array"
           },
           "legacy": {
-            "description": "API dépréciées, montrées seulement dans l'encadré « Lire du code ancien ».",
+            "description": "Deprecated APIs, shown only in the \"Read legacy code\" box.",
             "items": {
               "maxLength": 120,
               "minLength": 2,
@@ -15369,7 +15369,7 @@
             "type": "array"
           },
           "official_urls": {
-            "description": "Pages de la documentation officielle.",
+            "description": "Pages of the official documentation.",
             "items": {
               "format": "uri",
               "maxLength": 500,
@@ -15391,7 +15391,7 @@
             "type": "array"
           },
           "requires": {
-            "description": "Notions introduites par un chapitre précédent, dont celui-ci a besoin.",
+            "description": "Notions introduced by a previous chapter, which this one needs.",
             "items": {
               "maxLength": 120,
               "minLength": 2,
@@ -15987,7 +15987,7 @@
         "type": "object"
       },
       "NotionWrite": {
-        "description": "Une notion introduite par un chapitre, avec sa définition courte.",
+        "description": "A notion introduced by a chapter, with its short definition.",
         "properties": {
           "definition": {
             "maxLength": 300,
@@ -16997,7 +16997,7 @@
         "type": "object"
       },
       "PasteCreate": {
-        "description": "Texte collé (`POST /documents/text`, corps JSON). La longueur du texte (500 000\ncaractères au plus) est contrôlée par le service, qui répond `paste_too_long` ; le corps est\nborné à 21 Mo par le middleware.",
+        "description": "Pasted text (`POST /documents/text`, JSON body). The text length (500,000 characters at\nmost) is checked by the service, which answers `paste_too_long`; the body is capped at\n21 MB by the middleware.",
         "properties": {
           "text": {
             "title": "Text",
@@ -17023,7 +17023,7 @@
         "type": "object"
       },
       "PlanDiffOut": {
-        "description": "Différence de la dernière version (du Stratège, ou « Modifications de January » écrite à\nla validation) avec le plan qu'elle a remplacé.",
+        "description": "Difference of the last version (the Strategist's, or \"January's edits\" written at\nvalidation) with the plan it replaced.",
         "properties": {
           "added": {
             "items": {
@@ -17066,7 +17066,7 @@
         "type": "object"
       },
       "PlanGapIn": {
-        "description": "Lignes « À ajouter » ou « Hors périmètre » et programme validé choisi.",
+        "description": "\"To add\" or \"Out of scope\" lines and the chosen validated program.",
         "properties": {
           "program_id": {
             "anyOf": [
@@ -17602,7 +17602,7 @@
         "type": "object"
       },
       "PostingAnalysisOut": {
-        "description": "L'analyse de l'Analyste (`PostingAnalysis`, D121), telle qu'elle est rangée.",
+        "description": "The Analyst's analysis (`PostingAnalysis`, D121), as it is stored.",
         "properties": {
           "apply_url": {
             "anyOf": [
@@ -17721,7 +17721,7 @@
         "type": "object"
       },
       "PostingCreatedOut": {
-        "description": "`created` faux : même lien ou même texte (doublon « certain »), l'offre existante ;\n`session_id` : l'analyse lancée (ou relancée), sinon `None`.",
+        "description": "`created` false: same link or same text (\"certain\" duplicate), the existing posting;\n`session_id`: the analysis launched (or relaunched), otherwise `None`.",
         "properties": {
           "created": {
             "title": "Created",
@@ -17751,7 +17751,7 @@
         "type": "object"
       },
       "PostingDirectIn": {
-        "description": "Une offre écrite en direct : son texte (copie figée, 300 caractères et 50 mots au moins), son\nlien s'il y en a un (jamais lu : rien n'est téléchargé), et son analyse.",
+        "description": "A posting written directly: its text (frozen copy, 300 characters and 50 words at least),\nits link if there is one (never read: nothing is downloaded), and its analysis.",
         "properties": {
           "apply_url": {
             "anyOf": [
@@ -17893,7 +17893,7 @@
         "type": "object"
       },
       "PostingIn": {
-        "description": "Exactement une source : le lien de l'offre ou son texte collé ; sinon 422\n`posting_source`.",
+        "description": "Exactly one source: the posting's link or its pasted text; otherwise 422\n`posting_source`.",
         "properties": {
           "text": {
             "anyOf": [
@@ -18064,7 +18064,7 @@
         "type": "object"
       },
       "PostingPatch": {
-        "description": "Retouche de l'analyse d'une offre : les champs donnés remplacent ceux de l'analyse (une liste\ndonnée remplace toute la liste), qui est revalidée en entier. Le texte figé ne change pas.",
+        "description": "Edit of a posting's analysis: the given fields replace those of the analysis (a given\nlist replaces the whole list), which is re-validated in full. The frozen text does not\nchange.",
         "properties": {
           "apply_url": {
             "anyOf": [
@@ -18239,7 +18239,7 @@
         "type": "object"
       },
       "PostingRefOut": {
-        "description": "Une offre prête dont l'analyse cite la compétence (D123) ; `url` : sa page dans\nl'application.",
+        "description": "A ready posting whose analysis cites the skill (D123); `url`: its page in the\napplication.",
         "properties": {
           "id": {
             "title": "Id",
@@ -18567,7 +18567,7 @@
         "type": "object"
       },
       "ProfileImportStarted": {
-        "description": "Capture du profil lancée : la session `cv_capture` et les documents rangés dans la mémoire\n(CV d'abord, puis LinkedIn).",
+        "description": "Profile capture started: the `cv_capture` session and the documents stored in memory\n(CV first, then LinkedIn).",
         "properties": {
           "document_ids": {
             "items": {
@@ -18589,7 +18589,7 @@
         "type": "object"
       },
       "ProfileOut": {
-        "description": "Une version du profil. `source` : `archivist` (brouillon tiré des documents) ou `january`\n(version qu'elle a validée). `dropped` : lignes retirées du brouillon (chiffre ou fait\nintrouvable dans les documents, texte invisible), montrées à January seule.",
+        "description": "A profile version. `source`: `archivist` (draft taken from the documents) or `january`\n(version she validated). `dropped`: lines removed from the draft (figure or fact not found\nin the documents, invisible text), shown to January only.",
         "properties": {
           "created_at": {
             "format": "date-time",
@@ -18639,7 +18639,7 @@
         "type": "object"
       },
       "ProfilePutIn": {
-        "description": "`base_version` : la version que January a relue (la dernière, sinon 409\n`profile_conflict`) ; `None` s'il n'existe encore aucune version.",
+        "description": "`base_version`: the version January has read (the latest, otherwise 409\n`profile_conflict`); `None` if no version exists yet.",
         "properties": {
           "base_version": {
             "anyOf": [
@@ -18664,7 +18664,7 @@
         "type": "object"
       },
       "ProfileStateOut": {
-        "description": "`draft` : seulement s'il est plus récent que la version validée. `session_id` : capture\ndu profil en cours (à suivre par ses événements), sinon `None`. `source_document_id` : le CV\n(PDF étiqueté `cv`) du dernier import du profil, s'il est encore dans la mémoire, sinon\n`None` (« Utiliser le CV de mon profil » pour capturer un gabarit).",
+        "description": "`draft`: only if it is more recent than the validated version. `session_id`: profile\ncapture in progress (to follow through its events), otherwise `None`. `source_document_id`:\nthe CV (PDF labelled `cv`) of the last profile import, if it is still in memory, otherwise\n`None` (\"Use my profile CV\" to capture a template).",
         "properties": {
           "draft": {
             "anyOf": [
@@ -18854,7 +18854,7 @@
         "type": "object"
       },
       "ProgramPatch": {
-        "description": "Ajouts, suppressions et date de début (un lundi, brouillon seulement), appliqués\nensemble : une règle cassée annule tout.",
+        "description": "Additions, removals and start date (a Monday, draft only), applied together: a broken\nrule cancels everything.",
         "properties": {
           "add_tasks": {
             "items": {
@@ -18938,7 +18938,7 @@
         "type": "object"
       },
       "ProgramWrite": {
-        "description": "Un programme complet écrit en un appel, sans agent (semaines, modules, tâches : les champs\net les bornes du Stratège, 1 à 52 semaines). L'application range les tâches sur le calendrier\nselon les règles du Stratège ; le programme entre en brouillon, « à valider ».",
+        "description": "A complete program written in one call, without an agent (weeks, modules, tasks: the\nStrategist's fields and bounds, 1 to 52 weeks). The application places the tasks on the\ncalendar following the Strategist's rules; the program enters as a draft, \"to validate\".",
         "properties": {
           "edges": {
             "items": {
@@ -21240,7 +21240,7 @@
         "type": "object"
       },
       "RadarRunIn": {
-        "description": "Poste et zone du relevé ; absents : ceux des réglages, puis du dernier objectif.",
+        "description": "Role and zone of the run; when absent: those of the settings, then of the last goal.",
         "properties": {
           "role": {
             "anyOf": [
@@ -21273,7 +21273,7 @@
         "type": "object"
       },
       "RadarRunOut": {
-        "description": "Un relevé, avec les nombres réels. `read_count` : pages lisibles ; `not_postings` : celles\nqui n'étaient pas des offres ; `analyzed` : offres analysées ; `not_analyzed` : offres lues\nmais pas analysées (extraction en échec, ou au-delà des 50 lues d'un relevé) : l'écart ne se\ncache jamais (« 55 lues, 50 analysées »).",
+        "description": "A run, with the real numbers. `read_count`: readable pages; `not_postings`: those that\nwere not postings; `analyzed`: postings analyzed; `not_analyzed`: postings read but not\nanalyzed (extraction failed, or beyond the 50 read in a run): the gap is never hidden\n(\"55 read, 50 analyzed\").",
         "properties": {
           "alerts": {
             "items": {
@@ -22271,7 +22271,7 @@
         "type": "object"
       },
       "ReindexState": {
-        "description": "État de la réindexation de l'utilisateur, tenu en mémoire (perdu au redémarrage).",
+        "description": "State of the user's reindexing, kept in memory (lost on restart).",
         "properties": {
           "done": {
             "title": "Done",
@@ -23210,7 +23210,7 @@
         "type": "object"
       },
       "ReviewReport": {
-        "description": "Le rapport de la revue : ATS repéré et ses notes, résumé de la fiche entreprise, forces et\nrisques vus par le Recruteur, critères éliminatoires de l'offre. Aucune garantie de passage\nd'un ATS n'y est promise.",
+        "description": "The review report: detected ATS and its notes, company sheet summary, strengths and\nrisks seen by the Recruiter, and the posting's knockout criteria. It promises no\nguarantee of passing an ATS.",
         "properties": {
           "ats": {
             "anyOf": [
@@ -23335,7 +23335,7 @@
         "type": "object"
       },
       "ReviewStarted": {
-        "description": "Revue lancée : la revue (`running`) et sa session `cv_review` (à suivre par ses\névénements).",
+        "description": "Review started: the review (`running`) and its `cv_review` session (to follow through its\nevents).",
         "properties": {
           "review_id": {
             "title": "Review Id",
@@ -25411,7 +25411,7 @@
         "type": "object"
       },
       "SkillWrite": {
-        "description": "Une compétence du référentiel, avec son domaine (facultatif : celles des modules sont\ncréées sans domaine à la validation).",
+        "description": "A skill of the reference list, with its domain (optional: those of the modules are\ncreated without a domain at validation).",
         "properties": {
           "domain": {
             "maxLength": 120,
@@ -25757,7 +25757,7 @@
         "type": "object"
       },
       "SourcedLine": {
-        "description": "Le titre ou le résumé du profil : un fait à part entière, avec ses sources (un résumé tiré\nde LinkedIn seul n'est pas « dans le CV »).",
+        "description": "The profile headline or summary: a fact in its own right, with its sources (a summary\ndrawn only from LinkedIn is not \"in the CV\").",
         "properties": {
           "id": {
             "default": "",
@@ -27015,7 +27015,7 @@
         "type": "object"
       },
       "TaskOut": {
-        "description": "Une tâche reste dans son module (donc listée sous la semaine de ce module) même quand\nJanuary la déplace dans une autre semaine : le calendrier la place par `planned_date`.",
+        "description": "A task stays in its module (so listed under that module's week) even when January moves\nit to another week: the calendar places it by `planned_date`.",
         "properties": {
           "already_known": {
             "title": "Already Known",
@@ -27034,12 +27034,12 @@
             "type": "integer"
           },
           "module_id": {
-            "description": "Module d'origine ; ne change pas quand la tâche bouge.",
+            "description": "Original module; does not change when the task moves.",
             "title": "Module Id",
             "type": "string"
           },
           "planned_date": {
-            "description": "Jour planifié : c'est lui qui range la tâche dans une semaine du calendrier (charge et règles), pas son module.",
+            "description": "Planned day: it is what places the task in a calendar week (load and rules), not its module.",
             "format": "date",
             "title": "Planned Date",
             "type": "string"
@@ -27142,7 +27142,7 @@
         "type": "object"
       },
       "TaskWrite": {
-        "description": "Une tâche d'un programme écrit en direct : les champs et les bornes de `TaskDraft`. Son jour\nest choisi par l'application, comme pour le Stratège.",
+        "description": "A task of a program written directly: the fields and bounds of `TaskDraft`. Its day is\nchosen by the application, like for the Strategist.",
         "properties": {
           "done_criterion": {
             "maxLength": 200,
@@ -28312,7 +28312,7 @@
         "type": "object"
       },
       "TrendOut": {
-        "description": "Une compétence du classement. `delta_share` : points de pourcentage depuis le relevé\nprécédent ; `delta_rank` : rangs gagnés (positif) ou perdus ; `None` sans relevé précédent.",
+        "description": "A skill of the ranking. `delta_share`: percentage points since the previous run;\n`delta_rank`: ranks gained (positive) or lost; `None` without a previous run.",
         "properties": {
           "count": {
             "title": "Count",
@@ -28725,7 +28725,7 @@
         "type": "object"
       },
       "UserMessagePayload": {
-        "description": "Message de l'utilisatrice (D4) ; `command` : commande du débat, texte alors facultatif.",
+        "description": "A user message (D4); `command` is the debate command, and text is then optional.",
         "properties": {
           "command": {
             "anyOf": [
@@ -28916,7 +28916,7 @@
         "type": "object"
       },
       "ValidateGapStarted": {
-        "description": "« Je les maîtrise déjà » : le module de validation ajouté et son quiz en préparation.",
+        "description": "\"I already master them\": the validation module added and its quiz being prepared.",
         "properties": {
           "module_id": {
             "title": "Module Id",
@@ -28947,7 +28947,7 @@
         "type": "object"
       },
       "ValidateOut": {
-        "description": "`session_id` : session du Stratège reprise (la validation s'y termine) ; `None` : la\nvalidation est faite (ou l'était déjà).",
+        "description": "`session_id`: the resumed Strategist session (the validation ends there); `None`: the\nvalidation is done (or already was).",
         "properties": {
           "program_id": {
             "title": "Program Id",
@@ -29089,7 +29089,7 @@
         "type": "object"
       },
       "VersionOut": {
-        "description": "Un CV produit pour une offre (`number` compte par offre). `indicators` : après le rendu\n(couverture des lignes adossées à un fait, contrôles ATS du PDF rendu), `None` avant ;\n`filename` : nom ASCII du PDF (`CV_<Nom>_<Entreprise>_<Poste>.pdf`) ; `decisions` : la\ndécision de chaque modification au clic (`ref` → `accepted`, `refused`, `proposed`,\n`to_confirm`, ou `ignored` pour une acceptée que la composition n'a pas pu placer) ;\n`failure_reason` : phrase française d'un échec du rendu.",
+        "description": "A CV produced for a posting (`number` counts per posting). `indicators`: after rendering\n(coverage of the lines backed by a fact, ATS checks of the rendered PDF), `None` before;\n`filename`: ASCII name of the PDF (`CV_<Name>_<Company>_<Role>.pdf`); `decisions`: the\ndecision on each modification at the click (`ref` → `accepted`, `refused`, `proposed`,\n`to_confirm`, or `ignored` for an accepted one the composition could not place);\n`failure_reason`: an English sentence for a rendering failure.",
         "properties": {
           "allow_extra_pages": {
             "title": "Allow Extra Pages",
@@ -29465,7 +29465,7 @@
         "type": "object"
       },
       "WeekCreate": {
-        "description": "Une semaine de plus à la fin du programme (52 au plus), écrite à la main ou par Claude :\nelle n'a ni module ni tâche, ils s'ajoutent ensuite.",
+        "description": "One more week at the end of the program (52 at most), written by hand or by Claude: it\nhas no module or task, they are added afterwards.",
         "properties": {
           "deliverable": {
             "maxLength": 300,
@@ -29530,7 +29530,7 @@
         "type": "object"
       },
       "WeekOut": {
-        "description": "Une semaine : sa charge se lit sur le calendrier (tâches dont `planned_date` tombe dans\nses sept jours), ses modules sont ceux que le Stratège y a rangés. Après un déplacement, la\nsomme des tâches de `modules` peut donc différer de `load_minutes`.",
+        "description": "A week: its load is read from the calendar (tasks whose `planned_date` falls within its\nseven days), its modules are those the Strategist placed in it. After a move, the sum of\nthe tasks of `modules` may therefore differ from `load_minutes`.",
         "properties": {
           "deliverable": {
             "title": "Deliverable",
@@ -29541,17 +29541,17 @@
             "type": "string"
           },
           "load_hours": {
-            "description": "`load_minutes` en heures, à la demi-heure.",
+            "description": "`load_minutes` in hours, to the half hour.",
             "title": "Load Hours",
             "type": "number"
           },
           "load_minutes": {
-            "description": "Minutes des tâches planifiées du lundi au dimanche de cette semaine, quel que soit leur module (règle des 85 %).",
+            "description": "Minutes of the tasks planned from Monday to Sunday of this week, whatever their module (85% rule).",
             "title": "Load Minutes",
             "type": "integer"
           },
           "modules": {
-            "description": "Modules rangés dans cette semaine, avec TOUTES leurs tâches, y compris celles que January a déplacées dans une autre semaine (voir `TaskOut.planned_date`).",
+            "description": "Modules placed in this week, with ALL their tasks, including those January moved to another week (see `TaskOut.planned_date`).",
             "items": {
               "$ref": "#/components/schemas/ModuleOut"
             },
@@ -29660,7 +29660,7 @@
                 "type": "null"
               }
             ],
-            "description": "Pourquoi cette semaine arrive à cette place.",
+            "description": "Why this week comes at this position.",
             "title": "Rationale"
           },
           "stage": {
@@ -30082,11 +30082,11 @@
     },
     "/api/v1/activity": {
       "get": {
-        "description": "Les événements des agents et des tâches de fond, triés par `(at, id)` décroissant.\nRelecture : `after` = `latest_at` et `after_id` = `id` du premier événement de la page\nprécédente. Page plus ancienne : `before` et `before_id` = `at` et `id` du dernier. Un `id`\nest stable (`{kind}:{ref}:{état}`) : le front ne montre jamais deux fois le même.",
+        "description": "Agent and background-task events, sorted by `(at, id)` descending.\nRe-read: `after` = `latest_at` and `after_id` = the `id` of the first event of the previous\npage. Older page: `before` and `before_id` = the `at` and `id` of the last one. An `id` is\nstable (`{kind}:{ref}:{state}`): the front end never shows the same one twice.",
         "operationId": "get_activity_api_v1_activity_get",
         "parameters": [
           {
-            "description": "Ne rendre que les événements plus récents que cet instant.",
+            "description": "Only return events more recent than this instant.",
             "in": "query",
             "name": "after",
             "required": false,
@@ -30100,12 +30100,12 @@
                   "type": "null"
                 }
               ],
-              "description": "Ne rendre que les événements plus récents que cet instant.",
+              "description": "Only return events more recent than this instant.",
               "title": "After"
             }
           },
           {
-            "description": "Avec `after` : l'`id` du plus récent événement déjà vu. Le curseur est le couple `(at, id)` : les événements au même instant que lui ne sont pas perdus.",
+            "description": "With `after`: the `id` of the most recent event already seen. The cursor is the `(at, id)` pair: events at the same instant as it are not lost.",
             "in": "query",
             "name": "after_id",
             "required": false,
@@ -30119,12 +30119,12 @@
                   "type": "null"
                 }
               ],
-              "description": "Avec `after` : l'`id` du plus récent événement déjà vu. Le curseur est le couple `(at, id)` : les événements au même instant que lui ne sont pas perdus.",
+              "description": "With `after`: the `id` of the most recent event already seen. The cursor is the `(at, id)` pair: events at the same instant as it are not lost.",
               "title": "After Id"
             }
           },
           {
-            "description": "Ne rendre que les événements plus anciens que cet instant.",
+            "description": "Only return events older than this instant.",
             "in": "query",
             "name": "before",
             "required": false,
@@ -30138,12 +30138,12 @@
                   "type": "null"
                 }
               ],
-              "description": "Ne rendre que les événements plus anciens que cet instant.",
+              "description": "Only return events older than this instant.",
               "title": "Before"
             }
           },
           {
-            "description": "Avec `before` : l'`id` du plus ancien événement déjà vu (page suivante sans perte ni doublon, même à instant égal).",
+            "description": "With `before`: the `id` of the oldest event already seen (next page without loss or duplicate, even at an equal instant).",
             "in": "query",
             "name": "before_id",
             "required": false,
@@ -30157,18 +30157,18 @@
                   "type": "null"
                 }
               ],
-              "description": "Avec `before` : l'`id` du plus ancien événement déjà vu (page suivante sans perte ni doublon, même à instant égal).",
+              "description": "With `before`: the `id` of the oldest event already seen (next page without loss or duplicate, even at an equal instant).",
               "title": "Before Id"
             }
           },
           {
-            "description": "Plafonné à 50.",
+            "description": "Capped at 50.",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
               "default": 30,
-              "description": "Plafonné à 50.",
+              "description": "Capped at 50.",
               "minimum": 1,
               "title": "Limit",
               "type": "integer"
@@ -30795,7 +30795,7 @@
     },
     "/api/v1/applications/{application_id}/kit.zip": {
       "get": {
-        "description": "Téléchargement (`attachment`) : une pièce par fichier Markdown, le PDF du CV et\n`README.txt`.",
+        "description": "Download (`attachment`): one Markdown file per piece, the CV PDF and\n`README.txt`.",
         "operationId": "get_kit_zip_api_v1_applications__application_id__kit_zip_get",
         "parameters": [
           {
@@ -30918,7 +30918,7 @@
     },
     "/api/v1/auth/google/callback": {
       "get": {
-        "description": "Retour de Google : contrôle le `state`, échange le code, vérifie le jeton d'identité\n(émetteur, audience, `nonce`, adresse vérifiée, `ALLOWED_EMAILS`) puis ouvre la session ou\npropose la reprise de l'espace local. Toujours une redirection vers le front, jamais une\nerreur affichée par l'API.",
+        "description": "Return from Google: checks the `state`, exchanges the code, verifies the identity token\n(issuer, audience, `nonce`, verified address, `ALLOWED_EMAILS`) then opens the session or\noffers to take over the local space. Always a redirect to the front end, never an error\ndisplayed by the API.",
         "operationId": "google_callback_api_v1_auth_google_callback_get",
         "parameters": [
           {
@@ -30996,7 +30996,7 @@
     },
     "/api/v1/auth/google/claim": {
       "post": {
-        "description": "Le choix de la toute première connexion : `take_local` attache l'identité Google à\nl'espace local, `fresh` crée un espace vide. Ouvre la session (cookie posé) et rend\nl'utilisateur.",
+        "description": "The choice of the very first sign-in: `take_local` attaches the Google identity to the\nlocal space, `fresh` creates an empty space. Opens the session (cookie set) and returns the\nuser.",
         "operationId": "google_claim_api_v1_auth_google_claim_post",
         "requestBody": {
           "content": {
@@ -31023,7 +31023,7 @@
             "description": "`google_auth_disabled`"
           },
           "409": {
-            "description": "`claim_expired` (le témoin `tremplin_claim` manque ou a plus de 10 minutes, ou « espace vide » a déjà été choisi : le compte existe, il suffit de se reconnecter, ou l'adresse n'est plus nommée dans `ALLOWED_EMAILS`) ou `local_already_claimed` (l'espace local a déjà un propriétaire)"
+            "description": "`claim_expired` (the `tremplin_claim` cookie is missing or older than 10 minutes, or \"empty space\" was already chosen: the account exists, signing in again is enough, or the address is no longer named in `ALLOWED_EMAILS`) or `local_already_claimed` (the local space already has an owner)"
           },
           "422": {
             "content": {
@@ -31044,7 +31044,7 @@
     },
     "/api/v1/auth/google/login": {
       "get": {
-        "description": "Commence la connexion : pose le témoin `tremplin_oauth` (`state`, vérificateur PKCE,\n`nonce`, chiffrés, 10 minutes) et renvoie vers Google. `login_hint` (facultatif) préremplit\nl'adresse. Mode local : 404 `google_auth_disabled`.",
+        "description": "Starts the sign-in: sets the `tremplin_oauth` cookie (`state`, PKCE verifier, `nonce`,\nencrypted, 10 minutes) and redirects to Google. `login_hint` (optional) pre-fills the\naddress. Local mode: 404 `google_auth_disabled`.",
         "operationId": "google_login_api_v1_auth_google_login_get",
         "parameters": [
           {
@@ -31090,7 +31090,7 @@
     },
     "/api/v1/auth/logout": {
       "post": {
-        "description": "Supprime la session du cookie et efface le cookie (même chemin que la pose). Sans effet en\nmode local ; sans session, 204 aussi.",
+        "description": "Deletes the cookie's session and clears the cookie (same path as when it was set). No\neffect in local mode; without a session, 204 as well.",
         "operationId": "logout_api_v1_auth_logout_post",
         "responses": {
           "204": {
@@ -31105,7 +31105,7 @@
     },
     "/api/v1/auth/me": {
       "get": {
-        "description": "L'utilisateur connecté (mode local : l'utilisateur unique).",
+        "description": "The signed-in user (local mode: the single user).",
         "operationId": "me_api_v1_auth_me_get",
         "responses": {
           "200": {
@@ -31119,7 +31119,7 @@
             "description": "Successful Response"
           },
           "401": {
-            "description": "`auth_required` : mode Google, aucune session valide"
+            "description": "`auth_required`: Google mode, no valid session"
           }
         },
         "summary": "Me",
@@ -32356,7 +32356,7 @@
     },
     "/api/v1/capture": {
       "post": {
-        "description": "Lance la capture. Zéro ou plusieurs sources : 422 `invalid_input` ; lien non http(s) :\n422 `invalid_url` ; document d'une autre : 404 `document_not_found`.",
+        "description": "Launches the capture. Zero or several sources: 422 `invalid_input`; non-http(s) link:\n422 `invalid_url`; another user's document: 404 `document_not_found`.",
         "operationId": "start_capture_api_v1_capture_post",
         "requestBody": {
           "content": {
@@ -35830,7 +35830,7 @@
     },
     "/api/v1/gap/top-missing": {
       "get": {
-        "description": "Les 10 compétences absentes demandées par le plus d'offres.",
+        "description": "The 10 missing skills requested by the most postings.",
         "operationId": "get_top_missing_api_v1_gap_top_missing_get",
         "responses": {
           "200": {
@@ -38903,7 +38903,7 @@
     },
     "/api/v1/journal": {
       "get": {
-        "description": "Le journal (captures, sessions, quiz, bilans hebdomadaires), le plus récent d'abord ;\n`before` : `next_before` de la page précédente.",
+        "description": "The journal (captures, sessions, quizzes, weekly reviews), most recent first;\n`before`: `next_before` of the previous page.",
         "operationId": "read_journal_api_v1_journal_get",
         "parameters": [
           {
@@ -40004,7 +40004,7 @@
     },
     "/api/v1/mcp/actions": {
       "get": {
-        "description": "La table des outils exposés et de leur niveau.",
+        "description": "The table of exposed tools and their level.",
         "operationId": "list_actions_api_v1_mcp_actions_get",
         "responses": {
           "200": {
@@ -40030,7 +40030,7 @@
     },
     "/api/v1/mcp/calls": {
       "get": {
-        "description": "Le journal des appels MCP (outil, niveau, code, durée), jamais leur contenu.",
+        "description": "The MCP call log (tool, level, code, duration), never their content.",
         "operationId": "list_calls_api_v1_mcp_calls_get",
         "parameters": [
           {
@@ -40080,7 +40080,7 @@
     },
     "/api/v1/mcp/changes": {
       "get": {
-        "description": "Les changements faits par Claude (niveau 2), annulables un appel à la fois.",
+        "description": "The changes made by Claude (level 2), undoable one call at a time.",
         "operationId": "list_changes_api_v1_mcp_changes_get",
         "parameters": [
           {
@@ -40130,7 +40130,7 @@
     },
     "/api/v1/mcp/changes/{call_id}/undo": {
       "post": {
-        "description": "Remet les lignes d'un appel dans leur état d'avant, si aucune n'a changé depuis (409\nsinon). Une mémoire restaurée ou retirée se réindexe ensuite, hors de l'appel.",
+        "description": "Puts a call's rows back in their previous state, if none has changed since (409\notherwise). A restored or removed memory is re-indexed afterwards, outside the call.",
         "operationId": "undo_changes_api_v1_mcp_changes__call_id__undo_post",
         "parameters": [
           {
@@ -40175,7 +40175,7 @@
     },
     "/api/v1/mcp/confirmations": {
       "get": {
-        "description": "Les demandes « À confirmer », les plus récentes d'abord.",
+        "description": "The \"To confirm\" requests, most recent first.",
         "operationId": "list_confirmations_api_v1_mcp_confirmations_get",
         "responses": {
           "200": {
@@ -40201,7 +40201,7 @@
     },
     "/api/v1/mcp/confirmations/{confirmation_id}/confirm": {
       "post": {
-        "description": "Exécute la demande, une seule fois ; expirée, refusée ou déjà traitée : 409.",
+        "description": "Executes the request, once only; expired, refused or already handled: 409.",
         "operationId": "confirm_api_v1_mcp_confirmations__confirmation_id__confirm_post",
         "parameters": [
           {
@@ -40246,7 +40246,7 @@
     },
     "/api/v1/mcp/confirmations/{confirmation_id}/refuse": {
       "post": {
-        "description": "Refuse la demande : elle ne s'exécutera jamais.",
+        "description": "Refuses the request: it will never run.",
         "operationId": "refuse_api_v1_mcp_confirmations__confirmation_id__refuse_post",
         "parameters": [
           {
@@ -40291,7 +40291,7 @@
     },
     "/api/v1/mcp/features": {
       "get": {
-        "description": "Les features qui déclarent des outils, avec le nombre d'outils par niveau.",
+        "description": "The features that declare tools, with the number of tools per level.",
         "operationId": "list_features_api_v1_mcp_features_get",
         "responses": {
           "200": {
@@ -40317,7 +40317,7 @@
     },
     "/api/v1/mcp/relay/exchange": {
       "post": {
-        "description": "Échange par le relais local. Le code désigne le compte, indépendamment des cookies.",
+        "description": "Exchange by the local relay. The code designates the account, independently of cookies.",
         "operationId": "exchange_pairing_api_v1_mcp_relay_exchange_post",
         "requestBody": {
           "content": {
@@ -40359,7 +40359,7 @@
     },
     "/api/v1/mcp/relay/pairing": {
       "delete": {
-        "description": "Annule un code en attente et révoque le jeton dédié du relais.",
+        "description": "Cancels a pending code and revokes the relay's dedicated token.",
         "operationId": "revoke_pairing_api_v1_mcp_relay_pairing_delete",
         "responses": {
           "204": {
@@ -40372,7 +40372,7 @@
         ]
       },
       "post": {
-        "description": "Démarre l'appairage du relais du compte connecté.",
+        "description": "Starts the pairing of the signed-in account's relay.",
         "operationId": "start_pairing_api_v1_mcp_relay_pairing_post",
         "responses": {
           "201": {
@@ -40394,7 +40394,7 @@
     },
     "/api/v1/mcp/relay/status": {
       "get": {
-        "description": "État de l'appairage et portées manquantes du compte connecté.",
+        "description": "Pairing state and missing scopes of the signed-in account.",
         "operationId": "pairing_status_api_v1_mcp_relay_status_get",
         "responses": {
           "200": {
@@ -40416,7 +40416,7 @@
     },
     "/api/v1/mcp/settings": {
       "get": {
-        "description": "L'interrupteur général du MCP (coupé par défaut).",
+        "description": "The MCP master switch (off by default).",
         "operationId": "get_settings_api_v1_mcp_settings_get",
         "responses": {
           "200": {
@@ -40436,7 +40436,7 @@
         ]
       },
       "put": {
-        "description": "Allume ou coupe tout l'accès MCP d'un geste.",
+        "description": "Turns all MCP access on or off in one gesture.",
         "operationId": "put_settings_api_v1_mcp_settings_put",
         "requestBody": {
           "content": {
@@ -40478,7 +40478,7 @@
     },
     "/api/v1/mcp/tokens": {
       "get": {
-        "description": "Mes jetons (sans leur valeur), révoqués compris.",
+        "description": "My tokens (without their value), revoked ones included.",
         "operationId": "list_tokens_api_v1_mcp_tokens_get",
         "responses": {
           "200": {
@@ -40502,7 +40502,7 @@
         ]
       },
       "post": {
-        "description": "Crée un jeton ; sa valeur n'est rendue qu'ici, une seule fois.",
+        "description": "Creates a token; its value is returned only here, once.",
         "operationId": "create_token_api_v1_mcp_tokens_post",
         "requestBody": {
           "content": {
@@ -40544,7 +40544,7 @@
     },
     "/api/v1/mcp/tokens/{token_id}": {
       "delete": {
-        "description": "Révoque un jeton : il cesse de fonctionner aussitôt.",
+        "description": "Revokes a token: it stops working immediately.",
         "operationId": "revoke_token_api_v1_mcp_tokens__token_id__delete",
         "parameters": [
           {
@@ -42004,7 +42004,7 @@
     },
     "/api/v1/modules/{module_id}": {
       "patch": {
-        "description": "Retouche le titre, les compétences ou les prérequis d'un module, sans agent.",
+        "description": "Edits the title, skills or prerequisites of a module, without an agent.",
         "operationId": "patch_module_api_v1_modules__module_id__patch",
         "parameters": [
           {
@@ -43242,7 +43242,7 @@
     },
     "/api/v1/postings": {
       "get": {
-        "description": "Les offres de January, les plus récentes d'abord.",
+        "description": "January's postings, most recent first.",
         "operationId": "get_postings_api_v1_postings_get",
         "responses": {
           "200": {
@@ -43266,7 +43266,7 @@
         ]
       },
       "post": {
-        "description": "201 : offre créée, analyse lancée. 200 : même lien ou même texte, l'offre existante\n(relancée si elle était refusée, en échec ou interrompue). 422 `posting_source`,\n`posting_unreadable`, `posting_too_short`, `invalid_url`, `url_forbidden` : jamais l'entrée\ndans la réponse.",
+        "description": "201: posting created, analysis launched. 200: same link or same text, the existing posting\n(relaunched if it was refused, failed or interrupted). 422 `posting_source`,\n`posting_unreadable`, `posting_too_short`, `invalid_url`, `url_forbidden`: never the input\nin the response.",
         "operationId": "add_posting_api_v1_postings_post",
         "requestBody": {
           "content": {
@@ -43287,7 +43287,7 @@
                 }
               }
             },
-            "description": "Offre déjà ajoutée"
+            "description": "Posting already added"
           },
           "201": {
             "content": {
@@ -43318,7 +43318,7 @@
     },
     "/api/v1/postings/direct": {
       "post": {
-        "description": "Écrit une offre en direct : son texte et son analyse sont ceux de January ou de Claude,\nsans agent ni appel au modèle (l'écart se lance ensuite par `POST /postings/{id}/gap`). 201 :\noffre créée, prête. 200 : même lien (ou, sans lien, même texte), l'offre existante. 422\n`posting_too_short`, `posting_analysis_invalid`, `invalid_url`, `url_forbidden` : jamais\nl'entrée dans la réponse.",
+        "description": "Writes a posting directly: its text and its analysis are January's or Claude's, with no\nagent or model call (the gap is then launched through `POST /postings/{id}/gap`). 201:\nposting created, ready. 200: same link (or, without a link, same text), the existing\nposting. 422 `posting_too_short`, `posting_analysis_invalid`, `invalid_url`,\n`url_forbidden`: never the input in the response.",
         "operationId": "write_posting_api_v1_postings_direct_post",
         "requestBody": {
           "content": {
@@ -43339,7 +43339,7 @@
                 }
               }
             },
-            "description": "Offre déjà ajoutée"
+            "description": "Posting already added"
           },
           "201": {
             "content": {
@@ -43370,7 +43370,7 @@
     },
     "/api/v1/postings/{posting_id}": {
       "delete": {
-        "description": "Retire l'offre, son élément de mémoire `offre`, ses revues et versions (PDF et images\ncompris) ; 409 `review_in_progress` ou `analysis_in_progress` si l'une tourne.",
+        "description": "Removes the posting, its `posting` memory item, its reviews and versions (PDFs and\nimages included); 409 `review_in_progress` or `analysis_in_progress` if one is running.",
         "operationId": "remove_posting_api_v1_postings__posting_id__delete",
         "parameters": [
           {
@@ -43391,7 +43391,7 @@
             "description": "`posting_not_found`"
           },
           "409": {
-            "description": "`review_in_progress` (une revue de CV de l'offre est lancée ou proposée : la terminer d'abord), `analysis_in_progress` (l'analyse de l'offre tourne : réessayer dans un instant), `posting_has_application` (une fiche de candidature cite l'offre : `details.application_id`), `posting_has_running_work` (un comité ou un entretien en cours cite l'offre : `details.kind`, `committee` ou `interview`)"
+            "description": "`review_in_progress` (a CV review of the posting is launched or proposed: finish it first), `analysis_in_progress` (the posting analysis is running: try again in a moment), `posting_has_application` (an application record cites the posting: `details.application_id`), `posting_has_running_work` (a committee or an interview in progress cites the posting: `details.kind`, `committee` or `interview`)"
           },
           "422": {
             "content": {
@@ -43450,7 +43450,7 @@
         ]
       },
       "patch": {
-        "description": "Retouche l'analyse d'une offre analysée (titre, entreprise, exigences, mots clés…), sans\nagent : sa mémoire et ses doublons sont recalculés.",
+        "description": "Edits the analysis of an analyzed posting (title, company, requirements, keywords...),\nwithout an agent: its memory and its duplicates are recomputed.",
         "operationId": "patch_posting_api_v1_postings__posting_id__patch",
         "parameters": [
           {
@@ -43502,7 +43502,7 @@
     },
     "/api/v1/postings/{posting_id}/distinct": {
       "post": {
-        "description": "« Offres distinctes » : le doublon disparaît des deux côtés.",
+        "description": "\"Distinct postings\": the duplicate disappears on both sides.",
         "operationId": "distinct_postings_api_v1_postings__posting_id__distinct_post",
         "parameters": [
           {
@@ -43548,7 +43548,7 @@
     },
     "/api/v1/postings/{posting_id}/gap": {
       "get": {
-        "description": "`pending` tant que l'analyse tourne ; offre d'une autre : 404 `posting_not_found`.",
+        "description": "`pending` while the analysis runs; another user's posting: 404 `posting_not_found`.",
         "operationId": "get_gap_api_v1_postings__posting_id__gap_get",
         "parameters": [
           {
@@ -43589,7 +43589,7 @@
         ]
       },
       "post": {
-        "description": "Relance l'analyse d'écart ; 409 `gap_in_progress` si elle tourne déjà.",
+        "description": "Relaunches the gap analysis; 409 `gap_in_progress` if it is already running.",
         "operationId": "relaunch_gap_api_v1_postings__posting_id__gap_post",
         "parameters": [
           {
@@ -43632,7 +43632,7 @@
     },
     "/api/v1/postings/{posting_id}/gap/plan": {
       "post": {
-        "description": "Propose les ajouts au programme validé choisi, par défaut le plus récent.\n\n422 `gap_skill_unknown` si une ligne ne peut pas être ajoutée. 404 `program_not_found`,\n409 `program_not_validated`, `no_program` ou `replan_open` suivant le programme.",
+        "description": "Proposes the additions to the chosen validated program, the most recent by default.\n\n422 `gap_skill_unknown` if a line cannot be added. 404 `program_not_found`,\n409 `program_not_validated`, `no_program` or `replan_open` depending on the program.",
         "operationId": "post_gap_plan_api_v1_postings__posting_id__gap_plan_post",
         "parameters": [
           {
@@ -43685,7 +43685,7 @@
     },
     "/api/v1/postings/{posting_id}/gap/validate": {
       "post": {
-        "description": "« Je les maîtrise déjà » (D220) : un module « Valider mes acquis » avec ces compétences dans\nle programme validé le plus récent, et son quiz écrit par l'Examinateur ; réussi, il les passe\nà « validé ». 422 `gap_skill_unknown`, 409 `no_program`, 409 `week_full`.",
+        "description": "\"I already master them\" (D220): a \"Validate my skills\" module with these skills in the\nmost recent validated program, and its quiz written by the Examiner; once passed, it moves\nthem to \"validated\". 422 `gap_skill_unknown`, 409 `no_program`, 409 `week_full`.",
         "operationId": "post_gap_validate_api_v1_postings__posting_id__gap_validate_post",
         "parameters": [
           {
@@ -43892,7 +43892,7 @@
     },
     "/api/v1/programs/direct": {
       "post": {
-        "description": "Écrit un programme complet (semaines, modules, tâches) en brouillon à valider, sans agent.",
+        "description": "Writes a complete program (weeks, modules, tasks) as a draft to validate, no agent.",
         "operationId": "write_program_api_v1_programs_direct_post",
         "requestBody": {
           "content": {
@@ -43922,7 +43922,7 @@
             "description": "`program_exists`"
           },
           "422": {
-            "description": "`invalid_start_date`, `planning_impossible` ou `plan_invalid`"
+            "description": "`invalid_start_date`, `planning_impossible` or `plan_invalid`"
           }
         },
         "summary": "Write Program",
@@ -44211,7 +44211,7 @@
     },
     "/api/v1/programs/{program_id}/export.pdf": {
       "get": {
-        "description": "PDF A4 du programme (Gotenberg, sans script) ; 502 `render_failed` si le rendu échoue.",
+        "description": "A4 PDF of the program (Gotenberg, no script); 502 `render_failed` if rendering fails.",
         "operationId": "export_pdf_api_v1_programs__program_id__export_pdf_get",
         "parameters": [
           {
@@ -44301,7 +44301,7 @@
     },
     "/api/v1/programs/{program_id}/modules": {
       "post": {
-        "description": "Ajoute un module (sans tâche) à une semaine du programme, sans agent.",
+        "description": "Adds a module (without a task) to a week of the program, without an agent.",
         "operationId": "add_module_api_v1_programs__program_id__modules_post",
         "parameters": [
           {
@@ -44336,7 +44336,7 @@
             "description": "Successful Response"
           },
           "404": {
-            "description": "`program_not_found` ou `week_not_found`"
+            "description": "`program_not_found` or `week_not_found`"
           },
           "409": {
             "description": "`week_full`"
@@ -44548,7 +44548,7 @@
     },
     "/api/v1/programs/{program_id}/weeks": {
       "post": {
-        "description": "Ajoute une semaine (sans module) à la fin du programme, sans agent.",
+        "description": "Adds a week (without a module) at the end of the program, without an agent.",
         "operationId": "add_week_api_v1_programs__program_id__weeks_post",
         "parameters": [
           {
@@ -46299,7 +46299,7 @@
     },
     "/api/v1/radar/latest": {
       "get": {
-        "description": "Le dernier relevé fini (réussi ou en échec), le relevé en cours s'il y en a un, et le poste\net la zone proposés par défaut.",
+        "description": "The last finished run (succeeded or failed), the run in progress if there is one, and the\ndefault role and zone.",
         "operationId": "get_latest_api_v1_radar_latest_get",
         "responses": {
           "200": {
@@ -46321,7 +46321,7 @@
     },
     "/api/v1/radar/runs": {
       "get": {
-        "description": "Les 20 derniers relevés, le plus récent d'abord.",
+        "description": "The last 20 runs, most recent first.",
         "operationId": "get_runs_api_v1_radar_runs_get",
         "responses": {
           "200": {
@@ -46345,7 +46345,7 @@
         ]
       },
       "post": {
-        "description": "Lance un relevé. `role` et `zone` donnés sont mémorisés dans les réglages ; absents, ceux\ndes réglages (poste : sinon celui du dernier objectif ; zone : « France »).",
+        "description": "Launches a run. The given `role` and `zone` are saved in the settings; when absent, those\nof the settings (role: otherwise that of the last goal; zone: \"France\").",
         "operationId": "post_run_api_v1_radar_runs_post",
         "requestBody": {
           "content": {
@@ -46376,7 +46376,7 @@
             "description": "Successful Response"
           },
           "409": {
-            "description": "`radar_in_progress` (`details.run_id`) ou `radar_role_required` : aucun poste ni dans la requête, ni dans les réglages, ni dans le dernier objectif"
+            "description": "`radar_in_progress` (`details.run_id`) or `radar_role_required`: no role in the request, nor in the settings, nor in the last goal"
           },
           "422": {
             "content": {
@@ -48959,7 +48959,7 @@
     },
     "/api/v1/skills": {
       "post": {
-        "description": "Ajoute une compétence au référentiel. Son niveau sera établi par ses preuves.",
+        "description": "Adds a skill to the reference list. Its level will be established by its evidence.",
         "operationId": "create_skill_api_v1_skills_post",
         "requestBody": {
           "content": {
@@ -49001,7 +49001,7 @@
     },
     "/api/v1/skills/compare": {
       "get": {
-        "description": "Moi face au poste cible (`goal` : les compétences du programme de l'objectif `goal_id`,\nsinon du plus récent qui a un programme) ou face à une offre (`posting` : ses compétences\napprenables, `posting_id` obligatoire, 422 `posting_id_required` sinon), attendues\n`valide`. 404 `goal_not_found`, `posting_not_found` ou `no_compare_target`.",
+        "description": "Me against the target job (`goal`: the skills of the program of goal `goal_id`, otherwise\nof the most recent one that has a program) or against a posting (`posting`: its learnable\nskills, `posting_id` required, otherwise 422 `posting_id_required`), expected at\n`validated`. 404 `goal_not_found`, `posting_not_found` or `no_compare_target`.",
         "operationId": "get_compare_api_v1_skills_compare_get",
         "parameters": [
           {
@@ -49083,7 +49083,7 @@
     },
     "/api/v1/skills/graph": {
       "get": {
-        "description": "Compétences (nœuds), prérequis (liens) et radar par domaine. `demand` vaut `null`\njusqu'au Radar du marché (phase 8).",
+        "description": "Skills (nodes), prerequisites (links) and radar per domain. `demand` is `null` until\nthe market Radar (phase 8).",
         "operationId": "get_graph_api_v1_skills_graph_get",
         "responses": {
           "200": {
@@ -49105,7 +49105,7 @@
     },
     "/api/v1/skills/history": {
       "get": {
-        "description": "Relevés hebdomadaires des `weeks` dernières semaines, plus la semaine en cours en direct.",
+        "description": "Weekly snapshots of the last `weeks` weeks, plus the current week live.",
         "operationId": "get_history_api_v1_skills_history_get",
         "parameters": [
           {
@@ -49151,7 +49151,7 @@
     },
     "/api/v1/skills/{skill_id}": {
       "get": {
-        "description": "Détail d'une compétence : preuves, offres prêtes qui la citent (10 au plus), prochaine\naction. 404 `skill_not_found`.",
+        "description": "Detail of a skill: evidence, ready postings that cite it (10 at most), next action.\n404 `skill_not_found`.",
         "operationId": "get_skill_api_v1_skills__skill_id__get",
         "parameters": [
           {
@@ -49298,7 +49298,7 @@
     },
     "/api/v1/study-sessions": {
       "post": {
-        "description": "Ouvre une session et lance le Tuteur (202). `lesson_id` absent : bloc du jour (404\n`no_block_today`) ; leçon pas prête : 409 `lesson_not_ready` ; session déjà ouverte sur la\nmême leçon : 200, elle-même ; sur une autre : 409 `study_already_open`.",
+        "description": "Opens a session and launches the Tutor (202). `lesson_id` absent: today's block (404\n`no_block_today`); lesson not ready: 409 `lesson_not_ready`; session already open on the\nsame lesson: 200, itself; on another one: 409 `study_already_open`.",
         "operationId": "start_study_api_v1_study_sessions_post",
         "requestBody": {
           "content": {
@@ -49319,7 +49319,7 @@
                 }
               }
             },
-            "description": "Session déjà ouverte sur cette leçon."
+            "description": "Session already open on this lesson."
           },
           "202": {
             "content": {
@@ -49350,7 +49350,7 @@
     },
     "/api/v1/study-sessions/summary": {
       "get": {
-        "description": "Série (jours locaux avec une session terminée), minutes de la semaine, minuteur, session\nouverte et bloc du jour.",
+        "description": "Streak (local days with a finished session), minutes of the week, timer, open session\nand today's block.",
         "operationId": "study_summary_api_v1_study_sessions_summary_get",
         "responses": {
           "200": {
@@ -49736,7 +49736,7 @@
         ]
       },
       "patch": {
-        "description": "« Terminer » (`finish`, minuteur gardé puis question en attente reprise ; Tuteur en\ntrain d'écrire : 409 `study_not_waiting`) ou « Abandonner » (`cancel`, rien n'est écrit).\nDéjà terminée ou abandonnée : l'état, sans rien changer.",
+        "description": "\"Finish\" (`finish`, timer kept then waiting question resumed; Tutor writing: 409\n`study_not_waiting`) or \"Abandon\" (`cancel`, nothing is written). Already finished or\nabandoned: the state, without changing anything.",
         "operationId": "update_study_api_v1_study_sessions__study_session_id__patch",
         "parameters": [
           {
@@ -50219,7 +50219,7 @@
     },
     "/api/v1/weeks/{week_id}": {
       "patch": {
-        "description": "Retouche le thème, l'objectif ou le livrable d'une semaine, sans agent.",
+        "description": "Edits the theme, goal or deliverable of a week, without an agent.",
         "operationId": "patch_week_api_v1_weeks__week_id__patch",
         "parameters": [
           {

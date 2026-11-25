@@ -1,10 +1,10 @@
-"""Lectures et suppression des offres (SPEC 14.2, D122) : liste (plus récentes d'abord), détail
-(texte figé, analyse, doublons relus, statut montré), suppression avec l'élément de mémoire
-`offre` (revues et versions en cascade, puis leurs fichiers ; 409 `review_in_progress` si une revue
-de CV tourne ou attend, 409 `analysis_in_progress` si l'analyse de l'offre est ouverte, 409
-`posting_has_application` tant qu'une fiche de candidature la cite, 409 `posting_has_running_work`
-tant qu'un comité ou un entretien en cours la cite). Journaux :
-identifiants seulement."""
+"""Reads and deletion of postings (SPEC 14.2, D122): list (most recent first), detail (frozen
+text, analysis, re-read duplicates, status shown), deletion with the `posting` memory item
+(reviews and versions cascade, then their files; 409 `review_in_progress` if a CV review is
+running or waiting, 409 `analysis_in_progress` if the posting's analysis is open, 409
+`posting_has_application` as long as an application record cites it, 409
+`posting_has_running_work` as long as a committee or an interview in progress cites it).
+Logs: ids only."""
 
 import asyncio
 import logging
@@ -63,7 +63,7 @@ def analysis_in_progress() -> AppError:
 
 
 async def get_posting(db: AsyncSession, user_id: str, posting_id: str) -> JobPosting:
-    """L'offre de January, relue ; 404 `posting_not_found` sinon."""
+    """January's posting, re-read; 404 `posting_not_found` otherwise."""
     posting = await PostingRepository(db, user_id).get_fresh(posting_id)
     if posting is None:
         raise not_found()
@@ -73,8 +73,8 @@ async def get_posting(db: AsyncSession, user_id: str, posting_id: str) -> JobPos
 async def postings_by_ids(
     db: AsyncSession, user_id: str, posting_ids: Collection[str]
 ) -> dict[str, JobPosting]:
-    """Les offres de January parmi `posting_ids` (lecture seule, pour les candidatures) ; une
-    offre absente n'y figure pas."""
+    """January's postings among `posting_ids` (read-only, for applications); an absent
+    posting is not included."""
     return await PostingRepository(db, user_id).by_ids(posting_ids)
 
 
@@ -156,15 +156,13 @@ async def list_postings(db: AsyncSession, user_id: str) -> list[PostingSummaryOu
 
 
 async def _erase_files(memory: MemoryRuntime, user_id: str, keys: list[str]) -> None:
-    """Retire les PDF et les images des versions, après le commit ; un échec n'est journalisé que
-    par son type (la ligne a disparu : le fichier est orphelin, jamais l'inverse)."""
+    """Removes the PDFs and images of the versions, after the commit; a failure is only logged
+    by its type (the row is gone: the file is orphaned, never the reverse)."""
     for key in keys:
         try:
             await memory.providers.storage.delete(user_id, key)
-        except Exception as exc:  # noqa: BLE001 - un fichier de moins ne défait pas la suppression
-            logger.warning(
-                "Fichier de version non retiré : utilisateur %s, %s", user_id, type(exc).__name__
-            )
+        except Exception as exc:  # noqa: BLE001 - one file less does not undo the deletion
+            logger.warning("Version file not removed: user %s, %s", user_id, type(exc).__name__)
 
 
 async def delete_posting(
@@ -174,24 +172,24 @@ async def delete_posting(
     user_id: str,
     posting_id: str,
 ) -> None:
-    """Supprime l'offre (revues et versions en cascade), l'élément de mémoire `offre` (sauf s'il
-    sert encore à une autre offre) puis, la transaction validée, les fichiers des versions.
-    409 `review_in_progress` (revue lancée ou proposée), `analysis_in_progress` (session
-    d'analyse ouverte) ou `posting_has_running_work` (comité ou entretien en cours, `details.kind`).
-    `review_lock` : le verrou des revues de l'utilisatrice
-    (`CvRuntime`), pris avant les vérifications et gardé jusqu'au commit : une revue créée entre les
-    deux ne part pas en cascade (D137 n° 7). **Valide la transaction.**"""
+    """Deletes the posting (reviews and versions cascade), the `posting` memory item (unless it
+    still serves another posting) then, once the transaction is committed, the version files.
+    409 `review_in_progress` (review launched or proposed), `analysis_in_progress` (analysis
+    session open) or `posting_has_running_work` (committee or interview in progress,
+    `details.kind`). `review_lock`: the user's reviews lock (`CvRuntime`), taken before the
+    checks and kept until the commit: a review created between the two does not cascade away
+    (D137 no. 7). **Commits the transaction.**"""
     async with review_lock:
         files = await _delete_rows(db, memory, user_id, posting_id)
     await _erase_files(memory, user_id, files)
-    logger.info("Offre supprimée : utilisateur %s, offre %s", user_id, posting_id)
+    logger.info("Posting deleted: user %s, posting %s", user_id, posting_id)
 
 
 async def _delete_rows(
     db: AsyncSession, memory: MemoryRuntime, user_id: str, posting_id: str
 ) -> list[str]:
-    """Les vérifications, puis les lignes et l'élément de mémoire, jusqu'au commit ; rend les clés
-    des fichiers des versions à retirer."""
+    """The checks, then the rows and the memory item, up to the commit; returns the keys of the
+    version files to remove."""
     repo = PostingRepository(db, user_id)
     posting = await get_posting(db, user_id, posting_id)
     application_id = await repo.application_id(posting_id)
@@ -210,11 +208,11 @@ async def _delete_rows(
     await db.flush()
     if item_id is not None and not shared:
         try:
-            await MemoryService(db, user_id, memory).delete(item_id)  # valide la transaction
+            await MemoryService(db, user_id, memory).delete(item_id)  # commits the transaction
         except AppError as exc:
             if exc.code != "memory_item_not_found":
                 raise
-            await db.commit()  # élément déjà retiré par January
+            await db.commit()  # item already removed by January
     else:
         await db.commit()
     return files

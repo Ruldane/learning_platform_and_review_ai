@@ -1,14 +1,14 @@
-"""Le kit de candidature d'une fiche (SPEC 6.4, F16, D143) : lancement du parcours
-`application_kit`, lecture des sept pièces et modification d'une pièce par January.
+"""A record's application kit (SPEC 6.4, F16, D143): launching the `application_kit` flow,
+reading the seven pieces and editing a piece by January.
 
-- `start_kit` : sous le verrou de la fiche, une seule session ouverte à la fois (409
-  `kit_in_progress`, `details.session_id`), après les contrôles d'entrée (409 `posting_required`,
-  409 `profile_required`) ; l'événement `kit` « lancé » entre au fil. Relancer refait les pièces
-  que January n'a pas modifiées (`KitContext.keep`).
-- `patch_piece` : le texte de January remplace la pièce (`edited`, gardée aux relances) ; une pièce
-  « à vérifier » est relue par le code (`kit_items.recheck`).
+- `start_kit`: under the record's lock, a single open session at a time (409
+  `kit_in_progress`, `details.session_id`), after the input checks (409 `posting_required`,
+  409 `profile_required`); the `kit` event "started" enters the timeline. Relaunching redoes the
+  pieces January has not edited (`KitContext.keep`).
+- `patch_piece`: January's text replaces the piece (`edited`, kept across relaunches); a piece
+  "to check" is re-read by the code (`kit_items.recheck`).
 
-Journaux : identifiants et statuts seulement, jamais une pièce ni l'entreprise (17.2)."""
+Logs: ids and statuses only, never a piece or the company (17.2)."""
 
 import logging
 
@@ -62,8 +62,8 @@ _EDIT_BLOCKED = {
 async def _context_for_edit(
     rt: ApplicationsRuntime, user_id: str, application_id: str
 ) -> KitContext:
-    """Le contexte pour relire la modification ; un refus (409) parle de la modification, pas du
-    lancement du kit."""
+    """The context to re-read the edit; a refusal (409) talks about the edit, not about
+    launching the kit."""
     try:
         return await AgentKitStore(rt).context(user_id, application_id)
     except AppError as exc:
@@ -73,7 +73,7 @@ async def _context_for_edit(
 
 
 async def start_kit(rt: ApplicationsRuntime, user_id: str, application_id: str) -> str:
-    """Lance le kit de la fiche et rend l'identifiant de la session."""
+    """Launches the record's kit and returns the session id."""
     async with kit_lock(rt, user_id, application_id), rt.session_factory() as db:
         row = await get_application(db, user_id, application_id)
         await posting_inputs(db, user_id, row)
@@ -95,14 +95,12 @@ async def start_kit(rt: ApplicationsRuntime, user_id: str, application_id: str) 
             ref_id=session_id,
         )
         await db.commit()
-    logger.info(
-        "Kit lancé : utilisateur %s, fiche %s, session %s", user_id, application_id, session_id
-    )
+    logger.info("Kit started: user %s, record %s, session %s", user_id, application_id, session_id)
     return session_id
 
 
 async def read_kit(rt: ApplicationsRuntime, user_id: str, application_id: str) -> KitOut:
-    """Les sept pièces dans l'ordre fixe, `pending` pour celles pas encore rangées."""
+    """The seven pieces in the fixed order, `pending` for those not stored yet."""
     async with rt.session_factory() as db:
         row = await get_application(db, user_id, application_id)
         pieces = {
@@ -121,14 +119,14 @@ async def read_kit(rt: ApplicationsRuntime, user_id: str, application_id: str) -
 async def patch_piece(
     rt: ApplicationsRuntime, user_id: str, application_id: str, kind: KitKind, content: str
 ) -> KitItemOut:
-    """Le texte de January remplace la pièce, marquée `edited`. 404 `application_not_found`, 404
-    `kit_item_not_found` (pièce pas encore rangée)."""
+    """January's text replaces the piece, marked `edited`. 404 `application_not_found`, 404
+    `kit_item_not_found` (piece not stored yet)."""
     async with kit_lock(rt, user_id, application_id), rt.session_factory() as db:
         await get_application(db, user_id, application_id)
         row = await KitRepository(db, user_id).of_kind(application_id, kind)
         if row is None:
             raise piece_not_found()
-        # Une pièce prête n'est pas relue : seul le contexte d'une pièce à relire est lu.
+        # A ready piece is not re-read: only the context of a piece to re-read is read.
         ctx = None
         if needs_context(row.status, content):
             ctx = await _context_for_edit(rt, user_id, application_id)
@@ -139,7 +137,7 @@ async def patch_piece(
         await db.commit()
         out = item_out(row)
     logger.info(
-        "Pièce du kit modifiée : utilisateur %s, fiche %s, pièce %s, statut %s",
+        "Kit piece edited: user %s, record %s, piece %s, status %s",
         user_id,
         application_id,
         kind,

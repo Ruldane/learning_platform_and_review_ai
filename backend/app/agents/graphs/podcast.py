@@ -25,7 +25,7 @@ class PodcastDraft(PodcastScript):
     def check_length(self) -> Self:
         words = sum(len(line.text.split()) for line in self.lines)
         if not 1_550 <= words <= 1_850:
-            raise ValueError("Le dialogue doit contenir entre 1 550 et 1 850 mots.")
+            raise ValueError("The dialogue must contain between 1,550 and 1,850 words.")
         return self
 
 

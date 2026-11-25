@@ -23,7 +23,7 @@ describe("SearchBench", () => {
   });
 
   it("renders the agent text untouched in a pre", () => {
-    const agentText = '<<<CONTENU_NON_FIABLE source="memory">>>\n  ligne  indentée\n<<<FIN>>>';
+    const agentText = '<<<UNTRUSTED_CONTENT source="memory">>>\n  ligne  indentée\n<<<FIN>>>';
     const { container } = render(<SearchBench {...base} result={{ hits: [hit()], agentText }} />);
     const pre = container.querySelector("pre");
     expect(pre?.textContent).toBe(agentText);

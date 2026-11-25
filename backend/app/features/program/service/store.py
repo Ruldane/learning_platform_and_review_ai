@@ -1,11 +1,11 @@
-"""Port du programme (`ProgramStore`, D86) sur la feature `program` : implémentation branchée par
-`bootstrap.agent_ports` (D88). Chaque appel ouvre sa propre session de base, courte, et la
-commite (D66) ; chaque appel vérifie que l'objectif, les propositions et le programme sont à
-l'utilisateur (404 sinon). Les règles sont celles de 4.2 (`check_draft`, `schedule`) : un seul
-jeu de règles pour le Stratège et pour les modifications de January.
+"""Program port (`ProgramStore`, D86) on the `program` feature: implementation wired by
+`bootstrap.agent_ports` (D88). Each call opens its own short database session and commits it
+(D66); each call checks that the goal, the proposals and the program are the user's (404
+otherwise). The rules are those of 4.2 (`check_draft`, `schedule`): a single set of rules for
+the Strategist and for January's edits.
 
-L'écriture d'une révision et la validation passent sous le verrou du programme (même verrou que
-les modifications de January). Journaux : identifiants seulement (SPEC 17.2)."""
+Writing a revision and validation go under the program lock (same lock as January's edits).
+Logs: ids only (SPEC 17.2)."""
 
 import logging
 from collections.abc import Awaitable, Callable, Sequence
@@ -67,7 +67,7 @@ class AgentProgramStore:
             proposals = await proposal_drafts(db, user_id, goal_id, proposal_ids)
             budget = await budget_of(db, user_id, goal.weekly_minutes)
             if budget.cap_minutes < PRACTICE_MINUTES + QUIZ_MINUTES:
-                raise PlanningImpossible()  # avant tout appel au modèle (D86 §9)
+                raise PlanningImpossible()  # before any model call (D86 §9)
             current: str | None = None
             if program_id is not None:
                 loaded = await load(db, user_id, program_id)
@@ -126,13 +126,13 @@ class AgentProgramStore:
             )
 
         program_id = await self._program_of(user_id, session_id)
-        if program_id is None:  # première version : aucun autre écrivain possible
+        if program_id is None:  # first version: no other writer possible
             saved = await self._run(work)
         else:
             async with self._rt.program_lock(user_id, program_id):
                 saved = await self._run(work)
         logger.info(
-            "Version du programme : utilisateur %s, session %s, programme %s, version %d",
+            "Program version: user %s, session %s, program %s, version %d",
             user_id,
             session_id,
             saved.program_id,
@@ -141,9 +141,9 @@ class AgentProgramStore:
         return saved
 
     async def validate(self, user_id: str, session_id: str, program_id: str) -> None:
-        """Validation sous le verrou, puis reflet des niveaux en mémoire hors du verrou ; rejoué
-        (`finalize` après un redémarrage), rattrape un reflet manqué ; lance enfin les leçons
-        des semaines 1 et 2 (D91, une seule chaîne par programme)."""
+        """Validation under the lock, then reflection of the levels in memory outside the lock;
+        replayed (`finalize` after a restart), it catches up a missed reflection; finally launches
+        the lessons of weeks 1 and 2 (D91, a single chain per program)."""
         async with self._rt.program_lock(user_id, program_id):
             async with self._rt.session_factory() as db:
                 program = await ProgramRepository(db, user_id).get_fresh(program_id)

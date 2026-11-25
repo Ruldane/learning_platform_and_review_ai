@@ -24,7 +24,7 @@ describe("useMemorySearch", () => {
     act(() => result.current.mutate({ query: "attention", kinds: ["document"] }));
     await waitFor(() => expect(result.current.data?.hits[0]?.score).toBe(0.834));
     expect(bodies).toEqual([{ query: "attention", kinds: ["document"], k: 8 }]);
-    expect(result.current.data?.agentText).toContain("CONTENU_NON_FIABLE");
+    expect(result.current.data?.agentText).toContain("UNTRUSTED_CONTENT");
   });
 
   it("sends no kinds filter when none is picked and passes k through", async () => {

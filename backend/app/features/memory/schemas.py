@@ -1,4 +1,4 @@
-"""Schémas de l'API de la mémoire (14.2) : éléments, journal, recherche, documents."""
+"""Memory API schemas (14.2): items, log, search, documents."""
 
 from datetime import datetime
 from typing import Annotated, Literal
@@ -14,7 +14,7 @@ from app.db.models.memory import (
     WriteAction,
 )
 
-# Les types littéraux sont réexportés : un router n'importe pas `app.db` (contrat 1b).
+# The literal types are re-exported: a router does not import `app.db` (contract 1b).
 __all__ = [
     "AgentLevel",
     "ChunkOut",
@@ -47,10 +47,10 @@ __all__ = [
     "UserWritableKind",
 ]
 
-# Types qu'un utilisateur crée à la main ; les `lecon` et `source` viennent des agents, les
-# `document` de l'import (`/documents`).
+# Types a user creates by hand; the `lesson` and `source` ones come from the agents, the
+# `document` ones from the import (`/documents`).
 UserWritableKind = Literal["skill", "decision", "posting"]
-# Niveaux qu'on peut donner à la main ou par un agent : `valide` et `prouve` se gagnent (phase 4).
+# Levels that can be given by hand or by an agent: `validated` and `proven` are earned (phase 4).
 AgentLevel = Literal["declared", "in_progress"]
 Tag = Annotated[str, Field(min_length=1, max_length=40)]
 
@@ -125,8 +125,8 @@ class MemoryItemCreate(BaseModel):
 
 
 class MemoryItemPatch(BaseModel):
-    """Tout est facultatif ; un champ absent ou `null` ne change rien. `status` n'accepte que
-    `active` : confirmer une décision en attente (la refuser, c'est la supprimer)."""
+    """Everything is optional; an absent or `null` field changes nothing. `status` only accepts
+    `active`: confirming a pending decision (refusing it means deleting it)."""
 
     title: str | None = Field(default=None, min_length=1, max_length=200)
     text: str | None = Field(default=None, min_length=1, max_length=20_000)
@@ -157,7 +157,7 @@ class SearchResponse(BaseModel):
 
 
 class DocumentError(BaseModel):
-    """Erreur d'import lisible ; `item_id` : l'élément déjà en mémoire d'un doublon."""
+    """Readable import error; `item_id`: the item already in memory for a duplicate."""
 
     code: str
     message: str
@@ -184,25 +184,25 @@ class DocumentCreated(BaseModel):
 
 
 class LearnedStarted(BaseModel):
-    """Session `learned_document` lancée par `POST /documents/{id}/learned`."""
+    """`learned_document` session launched by `POST /documents/{id}/learned`."""
 
     session_id: str
 
 
 class PasteCreate(BaseModel):
-    """Texte collé (`POST /documents/text`, corps JSON). La longueur du texte (500 000
-    caractères au plus) est contrôlée par le service, qui répond `paste_too_long` ; le corps est
-    borné à 21 Mo par le middleware."""
+    """Pasted text (`POST /documents/text`, JSON body). The text length (500,000 characters at
+    most) is checked by the service, which answers `paste_too_long`; the body is capped at
+    21 MB by the middleware."""
 
     text: str
     title: str | None = Field(default=None, max_length=200)
 
 
-# --- explorateur : fusion, carte, statistiques, réindexation, export (D67) -------------------
+# --- explorer: merge, map, statistics, reindexing, export (D67) -------------------------------
 
 
 class MergeRequest(BaseModel):
-    """Éléments à fondre dans l'élément de l'URL (même type, 20 au plus)."""
+    """Items to merge into the URL's item (same type, 20 at most)."""
 
     other_ids: list[str] = Field(min_length=1, max_length=20)
 
@@ -216,8 +216,8 @@ class MapPoint(BaseModel):
 
 
 class MapResponse(BaseModel):
-    """Un point par élément actif indexé (moyenne de ses fragments), coordonnées sur [-1, 1] ;
-    `truncated` : seuls les plus récents sont montrés."""
+    """One point per indexed active item (mean of its chunks), coordinates in [-1, 1];
+    `truncated`: only the most recent are shown."""
 
     points: list[MapPoint]
     method: Literal["pca"]
@@ -228,7 +228,7 @@ ReindexStatus = Literal["idle", "queued", "running", "done", "failed"]
 
 
 class ReindexState(BaseModel):
-    """État de la réindexation de l'utilisateur, tenu en mémoire (perdu au redémarrage)."""
+    """State of the user's reindexing, kept in memory (lost on restart)."""
 
     status: ReindexStatus
     done: int
@@ -251,7 +251,7 @@ class StatsOut(BaseModel):
 
 
 class MemoryExport(BaseModel):
-    """Toute la mémoire de l'utilisateur en JSON, sans aucun vecteur."""
+    """The user's whole memory as JSON, without any vector."""
 
     version: Literal[1]
     exported_at: datetime

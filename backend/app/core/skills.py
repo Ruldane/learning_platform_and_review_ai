@@ -1,5 +1,5 @@
-"""Compétences : nom normalisé (clé de dédoublonnage du graphe et des acquis connus) et preuves
-structurées d'un niveau (D99)."""
+"""Skills: normalised name (deduplication key of the graph and of the known achievements) and
+structured evidence of a level (D99)."""
 
 import re
 import unicodedata
@@ -8,12 +8,12 @@ from datetime import UTC, datetime
 from typing import Any, Literal, TypedDict, cast, get_args
 
 _SPACES = re.compile(r"\s+")
-# Ponctuation de bord retirée ; « + » et « # » restent (C++, C#).
+# Edge punctuation removed; "+" and "#" stay (C++, C#).
 _EDGE = " .,;:!?'\"«»()[]{}-_/\\"
 
 
 def normalize_skill_name(name: str) -> str:
-    """Sans accents, en minuscules (`casefold`), espaces ramassés, ponctuation de bord retirée."""
+    """Without accents, lowercase (`casefold`), spaces collapsed, edge punctuation removed."""
     decomposed = unicodedata.normalize("NFKD", name)
     plain = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
     return _SPACES.sub(" ", plain.casefold()).strip(_EDGE)
@@ -37,8 +37,8 @@ _KINDS: frozenset[str] = frozenset(get_args(EvidenceKind))
 
 
 class Evidence(TypedDict):
-    """Une preuve d'un niveau : d'où il vient. `ref_id` désigne l'objet (quiz, session,
-    programme…) ; `at` est un instant ISO en UTC, vide pour une preuve de la phase 4."""
+    """Evidence of a level: where it comes from. `ref_id` designates the object (quiz, session,
+    program...); `at` is an ISO instant in UTC, empty for a phase 4 evidence."""
 
     kind: EvidenceKind
     ref_id: str | None
@@ -47,9 +47,9 @@ class Evidence(TypedDict):
 
 
 def evidence(kind: EvidenceKind, ref_id: str | None, label: str, at: datetime) -> Evidence:
-    """Une preuve datée à `at` (un instant avec fuseau, rendu en UTC)."""
+    """Evidence dated at `at` (an instant with a time zone, rendered in UTC)."""
     if at.tzinfo is None:
-        raise ValueError("datetime sans fuseau horaire refusé (UTC attendu)")
+        raise ValueError("datetime without a time zone refused (UTC expected)")
     return Evidence(kind=kind, ref_id=ref_id, label=label, at=at.astimezone(UTC).isoformat())
 
 
@@ -58,8 +58,8 @@ def _kind_of(value: object) -> EvidenceKind | None:
 
 
 def read_evidence(raw: Sequence[Any]) -> list[Evidence]:
-    """Les preuves d'un niveau, lues de la base. Une chaîne de la phase 4 devient une preuve
-    `program` sans référence ni date ; ce qui n'est ni l'une ni l'autre est ignoré."""
+    """The evidence of a level, read from the database. A phase 4 string becomes a `program`
+    evidence without reference or date; whatever is neither is ignored."""
     out: list[Evidence] = []
     for item in raw:
         if isinstance(item, str):

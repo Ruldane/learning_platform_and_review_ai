@@ -1,19 +1,19 @@
-"""Création d'une fiche (SPEC 6.1 n° 2, 6.3, D139), à la main ou depuis une offre, sous le verrou
-des candidatures de l'utilisatrice : contrôle des doublons, puis écriture de la fiche, de son
-fil et de ses contacts dans la même transaction.
+"""Creating a record (SPEC 6.1 no. 2, 6.3, D139), by hand or from a posting, under the lock of
+the user's applications: duplicate check, then writing the record, its timeline and its
+contacts in the same transaction.
 
-- Une fiche de cette offre existe déjà : 409 `application_exists` (`details.application_id`).
-- Une fiche qui ressemble (certain, probable, possible) et que `distinct_from` ne couvre pas :
-  409 `application_duplicate` (`details.alerts` : les fiches existantes, jamais l'entrée).
-- Sinon 201 ; les fiches de la même entreprise des 30 derniers jours partent en `info`, et
-  `distinct_from` est posé dans les deux sens (avec l'offre de chaque fiche, pour que le contrôle
-  par offre se taise aussi).
+- A record for this posting already exists: 409 `application_exists` (`details.application_id`).
+- A record that looks alike (certain, probable, possible) and that `distinct_from` does not
+  cover: 409 `application_duplicate` (`details.alerts`: the existing records, never the input).
+- Otherwise 201; records of the same company from the last 30 days go out as `info`, and
+  `distinct_from` is set in both directions (with the posting of each record, so that the
+  per-posting check goes quiet too).
 
-Créée par une session de l'Assistant de suivi (`session_id`, 7.4), la fiche garde l'identifiant
-de la session dans `ref_id` de son événement `created` : une création rejouée après un arrêt (SPEC
-9.4) relit cette fiche au lieu d'en créer une seconde.
+Created by a session of the tracking assistant (`session_id`, 7.4), the record keeps the session
+id in `ref_id` of its `created` event: a creation replayed after a stop (SPEC 9.4) re-reads that
+record instead of creating a second one.
 
-Journaux : identifiants seulement, jamais l'entreprise, l'intitulé, un contact ni une note."""
+Logs: ids only, never the company, the title, a contact or a note."""
 
 import logging
 from dataclasses import dataclass
@@ -49,7 +49,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class Source:
-    """Ce qui entre dans la fiche : la copie figée de l'offre ou ce que January a saisi."""
+    """What goes into the record: the frozen copy of the posting or what January typed."""
 
     posting_id: str | None
     company: str
@@ -78,7 +78,7 @@ def application_duplicate(alerts: list[AlertOut]) -> AppError:
 
 
 def link_key(url: str | None) -> str | None:
-    """La clé du lien ; 422 `url` s'il est refusé (jamais cité)."""
+    """The link key; 422 `url` if it is refused (never quoted)."""
     if url is None:
         return None
     try:
@@ -90,8 +90,8 @@ def link_key(url: str | None) -> str | None:
 
 
 def _source(body: ApplicationIn, posting: JobPosting | None) -> Source:
-    """La copie figée de l'offre (entreprise, intitulé, lien, texte) ; ce que January a saisi ne
-    sert que là où l'offre ne dit rien encore. Sans `company` ou `title` : 422 `fields`."""
+    """The frozen copy of the posting (company, title, link, text); what January typed only
+    serves where the posting says nothing yet. Without `company` or `title`: 422 `fields`."""
     analysis = (posting.analysis if posting is not None else None) or {}
     company = (posting.company if posting else None) or analysis.get("company") or body.company
     title = (posting.title if posting else None) or analysis.get("title") or body.title
@@ -105,9 +105,9 @@ def _source(body: ApplicationIn, posting: JobPosting | None) -> Source:
 
 
 def _incoming(source: Source, posting: JobPosting | None, body: ApplicationIn) -> Incoming:
-    """L'offre entrante, telle que la fiche sera écrite (`source` : entreprise, intitulé, lien, y
-    compris ce que January a saisi pour une offre pas encore analysée) ; de l'offre, seuls
-    l'identifiant et ses offres « possibles » comptent."""
+    """The incoming posting, as the record will be written (`source`: company, title, link,
+    including what January typed for a posting not yet analyzed); of the posting, only the id
+    and its "possible" postings count."""
     possible = incoming_from_posting(posting).possible_posting_ids if posting else frozenset()
     return Incoming(
         url_norm=source.url_norm,
@@ -120,8 +120,8 @@ def _incoming(source: Source, posting: JobPosting | None, body: ApplicationIn) -
 
 
 def _dates(body: ApplicationIn, source: Source, today: date) -> dict[str, date]:
-    """Les dates posées par le statut de départ (`on_status`) ; la date de candidature donnée
-    l'emporte sur celle du jour."""
+    """The dates set by the starting status (`on_status`); the given application date wins
+    over today's."""
     start = ApplicationView(
         id="",
         status="to_apply",
@@ -150,8 +150,8 @@ def _joined(current: list[object], rows: list[Application]) -> list[object]:
 
 
 def confirm_distinct(rows: list[Application], new: Application, confirmed: list[str]) -> None:
-    """« C'est un autre poste » : chaque fiche confirmée et la nouvelle se désignent, par
-    identifiant de fiche et par offre (le contrôle par offre se tait alors aussi)."""
+    """ "It is another job": each confirmed record and the new one point at each other, by
+    record id and by posting (the per-posting check goes quiet too)."""
     others = [row for row in rows if row.id in confirmed]
     new.distinct_from = _joined(new.distinct_from, others)
     for other in others:
@@ -159,8 +159,8 @@ def confirm_distinct(rows: list[Application], new: Application, confirmed: list[
 
 
 async def _link_version(db: AsyncSession, user_id: str, row: Application, now: datetime) -> None:
-    """Une fiche « À postuler » suit la version prête de son offre ; une fiche créée à un autre
-    statut que « Retirée » la fige (la version envoyée est celle du jour)."""
+    """A "To apply" record follows the ready version of its posting; a record created at a
+    status other than "Withdrawn" freezes it (the sent version is today's)."""
     if row.posting_id is None:
         return
     if row.status not in ("to_apply", "withdrawn"):
@@ -207,7 +207,7 @@ async def _insert(
 async def _of_session(
     db: AsyncSession, user_id: str, session_id: str | None, today: date
 ) -> CreatedOut | None:
-    """La fiche déjà créée par cette session (rejeu), sinon `None`."""
+    """The record already created by this session (replay), otherwise `None`."""
     if session_id is None:
         return None
     known = await EventRepository(db, user_id).created_by(session_id)
@@ -224,7 +224,7 @@ async def _of_session(
 async def create_application(
     rt: ApplicationsRuntime, user_id: str, body: ApplicationIn, *, session_id: str | None = None
 ) -> CreatedOut:
-    """Crée la fiche (voir le module). 404 `posting_not_found` si `posting_id` est inconnu."""
+    """Creates the record (see the module). 404 `posting_not_found` if `posting_id` is unknown."""
     async with rt.lock(user_id), rt.session_factory() as db:
         zone = await zone_of(db, user_id)
         now = rt.now()
@@ -246,7 +246,7 @@ async def create_application(
         await sync_user(db, user_id, today, application_id=row.id)
         await db.commit()
         info = [hit for hit in hits if hit.level == "info"]
-        logger.info("Fiche créée : utilisateur %s, fiche %s", user_id, row.id)
+        logger.info("Record created: user %s, record %s", user_id, row.id)
         return CreatedOut(
             application=await detail_out(db, user_id, row, today),
             info=await alerts_out(db, user_id, info, zone, today),

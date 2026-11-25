@@ -1,11 +1,11 @@
-"""Suivi d'un quiz dans le programme (SPEC F9, D101) : tâches de révision et nouvel essai posés
-dans le budget, tâche `quiz` de la semaine et tâches « Refaire le quiz » cochées.
+"""Following up a quiz in the program (SPEC F9, D101): review tasks and new attempt placed in
+the budget, the week's `quiz` task and "Retake the quiz" tasks ticked.
 
-Toutes ces fonctions supposent le verrou du programme DÉJÀ TENU par l'appelant
-(`ProgramRuntime.program_lock`, pris avant la transaction d'écriture, F4) : elles lisent les
-lignes, écrivent dans la session `db` et ne commitent pas. La règle d'une semaine est celle de
-4.2 (`rules.week_breaks` : 85 % du budget, une pratique, un quiz) : une tâche ne va que dans un
-jour dont la semaine reste conforme après l'ajout ; sinon elle n'est pas placée (comptée)."""
+All these functions assume the program lock is ALREADY HELD by the caller
+(`ProgramRuntime.program_lock`, taken before the write transaction, F4): they read the rows,
+write in the `db` session and do not commit. A week's rule is that of 4.2 (`rules.week_breaks`:
+85% of the budget, a practice, a quiz): a task only goes on a day whose week stays compliant
+after the addition; otherwise it is not placed (counted)."""
 
 import builtins
 from collections.abc import Sequence
@@ -18,11 +18,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.models.program import Task, TaskType, Week
 from app.features.program.repository import TaskRepository
 from app.features.program.service.programs import Loaded, load, program_of_module
-from app.features.program.service.rules import RETRY_PREFIX, week_breaks
+from app.features.program.service.rules import RETRY_PREFIX, RETRY_PREFIXES, week_breaks
 from app.features.program.service.runtime import ProgramRuntime
 from app.features.quiz.service.graded import graded_modules
 
-SUNDAY = 6  # dimanche libre (SPEC 3.4) : aucune tâche de suivi n'y est posée
+SUNDAY = 6  # free Sunday (SPEC 3.4): no follow-up task is placed on it
 TITLE_MAX = 200
 
 
@@ -49,8 +49,8 @@ def _fits(loaded: Loaded, week: Week, new: FollowupTask) -> bool:
 
 
 def _first_day(loaded: Loaded, new: FollowupTask) -> date | None:
-    """Premier jour ≥ `earliest`, hors dimanche, dans une semaine du programme qui reste
-    conforme avec la tâche ; `None` s'il n'y en a pas."""
+    """First day ≥ `earliest`, except Sunday, in a program week that stays compliant with the
+    task; `None` if there is none."""
     if not loaded.weeks:
         return None
     end = loaded.weeks[-1].start_date + timedelta(days=7)
@@ -70,8 +70,8 @@ async def add_followup(
     module_id: str,
     tasks: Sequence[FollowupTask],
 ) -> tuple[list[date], int]:
-    """Pose chaque tâche au premier jour possible (module `module_id`) ; rend les jours des
-    tâches posées, dans l'ordre, et le nombre de tâches non placées. Verrou tenu (F4)."""
+    """Places each task on the first possible day (module `module_id`); returns the days of the
+    tasks placed, in order, and the number of tasks not placed. Lock held (F4)."""
     loaded = await load(db, user_id, await program_of_module(db, user_id, module_id))
     repo = TaskRepository(db, user_id)
     days: list[date] = []
@@ -108,13 +108,13 @@ def _done(tasks: Sequence[Task]) -> builtins.list[Task]:
 async def tick_retry(
     db: AsyncSession, runtime: ProgramRuntime, user_id: str, module_id: str
 ) -> int:
-    """Coche les tâches « Refaire le quiz » encore à faire de ce module (F18) ; rend leur
-    nombre. Idempotent. Verrou tenu (F4)."""
+    """Ticks the module's "Retake the quiz" tasks still to do (F18); returns their number.
+    Idempotent. Lock held (F4)."""
     loaded = await load(db, user_id, await program_of_module(db, user_id, module_id))
     retries = [
         t
         for t in loaded.tasks_of_module(module_id)
-        if t.type == "quiz" and t.title.startswith(RETRY_PREFIX)
+        if t.type == "quiz" and t.title.startswith(RETRY_PREFIXES)
     ]
     ticked = _done(retries)
     await db.flush()
@@ -124,9 +124,9 @@ async def tick_retry(
 async def tick_week_quiz(
     db: AsyncSession, runtime: ProgramRuntime, user_id: str, module_id: str
 ) -> bool:
-    """Coche la tâche `quiz` de la semaine du module (celles des modules de cette semaine, hors
-    « Refaire le quiz ») quand chaque module non sauté de la semaine a une tentative notée ;
-    rend vrai si une tâche vient d'être cochée. Idempotent. Verrou tenu (F4)."""
+    """Ticks the `quiz` task of the module's week (those of this week's modules, excluding
+    "Retake the quiz") when each non-skipped module of the week has a graded attempt; returns
+    true if a task has just been ticked. Idempotent. Lock held (F4)."""
     loaded = await load(db, user_id, await program_of_module(db, user_id, module_id))
     module = next(m for m in loaded.modules if m.id == module_id)
     week_modules = [m for m in loaded.modules if m.week_id == module.week_id and not m.skipped]
@@ -137,7 +137,7 @@ async def tick_week_quiz(
     quizzes = [
         t
         for t in loaded.tasks
-        if t.module_id in ids and t.type == "quiz" and not t.title.startswith(RETRY_PREFIX)
+        if t.module_id in ids and t.type == "quiz" and not t.title.startswith(RETRY_PREFIXES)
     ]
     ticked = _done(quizzes)
     await db.flush()
@@ -147,8 +147,8 @@ async def tick_week_quiz(
 async def tick_tasks(
     db: AsyncSession, runtime: ProgramRuntime, user_id: str, task_ids: Sequence[str]
 ) -> builtins.list[str]:
-    """Coche les tâches de l'utilisateur encore à faire parmi `task_ids` ; rend leurs titres.
-    Une tâche inconnue ou d'un autre est ignorée. Idempotent. Verrou tenu (F4)."""
+    """Ticks the user's tasks still to do among `task_ids`; returns their titles. An unknown or
+    another user's task is ignored. Idempotent. Lock held (F4)."""
     repo = TaskRepository(db, user_id)
     found = [task for task_id in dict.fromkeys(task_ids) if (task := await repo.get_fresh(task_id))]
     ticked = _done(found)
@@ -157,7 +157,7 @@ async def tick_tasks(
 
 
 async def program_of_task(db: AsyncSession, user_id: str, task_id: str) -> str | None:
-    """Le programme d'une tâche de l'utilisateur (`None` : inconnue ou d'un autre), pour prendre
-    son verrou avant de la cocher (F4). Lecture pour les autres features (contrat 2)."""
+    """The program of one of the user's tasks (`None`: unknown or another user's), to take its
+    lock before ticking it (F4). Read for the other features (contract 2)."""
     task = await TaskRepository(db, user_id).get(task_id)
     return None if task is None else task.program_id

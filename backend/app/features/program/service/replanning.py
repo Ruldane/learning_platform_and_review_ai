@@ -1,14 +1,14 @@
-"""Replanification sur les lignes du programme (SPEC F13, D106) : empreinte des lignes et
-rangement d'une proposition (`repack`). Fonctions pures, sans base ni modèle.
+"""Replanning on the program's rows (SPEC F13, D106): rows fingerprint and packing of a
+proposal (`repack`). Pure functions, without a database or model.
 
-Seules les tâches à faire bougent, de la semaine en cours et des suivantes ; une tâche garde son
-module, seule sa date change (D88 §1 : la semaine d'une tâche est celle de son jour). Le budget
-passe avant l'échéance : ce qui ne tient pas part dans des semaines « Suite », quelle que soit
-l'option. Le rangement est stable (revue finale de la phase 5, P-I1) : une semaine qui ne reçoit
-ni retard ni ajout garde ses dates (`replan_stable.keeps_dates`), et une tâche à faire n'est
-jamais placée avant sa date, hors option « avancer », qui n'avance jamais un « Refaire le quiz ».
-« Repousser l'échéance » range les semaines à venir sous 60 % du plafond (P-I2) : le surplus part
-en semaines « Suite », l'échéance recule. L'écriture est dans `replan_versions`."""
+Only the tasks to do move, from the current week and the following ones; a task keeps its
+module, only its date changes (D88 §1: a task's week is that of its day). The budget comes
+before the deadline: what does not fit goes into "Continued" weeks, whatever the option. The
+packing is stable (final review of phase 5, P-I1): a week that receives neither delay nor
+addition keeps its dates (`replan_stable.keeps_dates`), and a task to do is never placed
+before its date, except with the "pull forward" option, which never pulls forward a "Retake
+the quiz". "Push back the deadline" packs the coming weeks under 60% of the cap (P-I2): the
+surplus goes into "Continued" weeks, the deadline moves back. Writing is in `replan_versions`."""
 
 import hashlib
 import json
@@ -45,15 +45,15 @@ DAYS = 7
 
 
 class ProgramFinished(PlanningImpossible):
-    """Plus aucune semaine à replanifier : le programme est terminé."""
+    """No week left to replan: the program is finished."""
 
     def __init__(self) -> None:
-        super().__init__("Le programme est terminé : plus aucune semaine à replanifier.")
+        super().__init__("The program is finished: no week left to replan.")
 
 
 def fingerprint(rows: ProgramRows) -> str:
-    """sha256 des `(tâche, jour, statut, minutes)` triés : toute modification de January (jour,
-    durée, case cochée, ajout, suppression) change l'empreinte."""
+    """sha256 of the sorted `(task, day, status, minutes)`: any edit by January (day, duration,
+    ticked box, addition, removal) changes the fingerprint."""
     items = sorted(
         (t.task_id, t.planned_date.isoformat(), t.status, t.minutes)
         for week in rows.weeks
@@ -65,9 +65,9 @@ def fingerprint(rows: ProgramRows) -> str:
 
 @dataclass(frozen=True)
 class RepackResult:
-    """`tasks` : toutes les tâches à faire après le rangement (gardées, ajoutées, et pratique et
-    quiz des semaines « Suite ») ; `removed` : ids retirés ; `kept` : retraits ignorés (dernier
-    quiz ou dernière pratique d'une semaine)."""
+    """`tasks`: all the tasks to do after packing (kept, added, and practice and quiz of the
+    "Continued" weeks); `removed`: ids removed; `kept`: removals ignored (last quiz or last
+    practice of a week)."""
 
     tasks: list[PlannedTask]
     new_weeks: list[NewWeek]
@@ -84,22 +84,22 @@ class _Row:
 
 
 def _rows(rows: ProgramRows) -> list[_Row]:
-    """Les tâches dans l'ordre du programme (semaine, module, rang), par date ensuite."""
+    """The tasks in the program's order (week, module, rank), then by date."""
     found = [_Row(t, m.module_id) for week in rows.weeks for m in week.modules for t in m.tasks]
     order = {id(r): n for n, r in enumerate(found)}
     return sorted(found, key=lambda r: (r.task.planned_date, order[id(r)]))
 
 
 def _start_day(today: date, budget: Budget) -> date:
-    """Aujourd'hui, ou lundi prochain s'il ne reste aucun jour de travail cette semaine (le bilan
-    du dimanche replanifie à partir de la semaine suivante)."""
+    """Today, or next Monday if no working day is left this week (the Sunday review replans
+    from the following week)."""
     monday = week_start(today)
     left = (today + timedelta(days=n) for n in range((monday + timedelta(days=6) - today).days + 1))
     return today if any(budget.day_capacity(day) > 0 for day in left) else monday + timedelta(DAYS)
 
 
 def _span(starts: Sequence[date], day: date) -> int:
-    """Le rang de la semaine dont les sept jours contiennent `day` (avant la première : 0)."""
+    """The rank of the week whose seven days contain `day` (before the first: 0)."""
     for index, start in enumerate(starts):
         if day < start + timedelta(days=DAYS):
             return index
@@ -107,8 +107,8 @@ def _span(starts: Sequence[date], day: date) -> int:
 
 
 def _drops(found: list[_Row], starts: list[date], drop: Set[str]) -> tuple[set[str], int]:
-    """Les retraits faits, et ceux ignorés : jamais le dernier quiz ni la dernière pratique de
-    sa semaine (faites comprises)."""
+    """The removals made, and those ignored: never the last quiz nor the last practice of its
+    week (done ones included)."""
     removed: set[str] = set()
     kept = 0
     for row in found:
@@ -138,8 +138,8 @@ def _planned(row: _Row) -> PlannedTask:
 
 
 def _entry(task: PlannedTask, seq: int) -> Entry:
-    """Une tâche existante n'est jamais placée avant sa date (`not_before`) ; un « Refaire le
-    quiz » ne ferme jamais la semaine à la place de son quiz."""
+    """An existing task is never placed before its date (`not_before`); a "Retake the quiz"
+    never closes the week in place of its quiz."""
     draft = TaskDraft.model_construct(
         title=task.title, type=task.type, minutes=task.minutes, done_criterion=task.done_criterion
     )
@@ -149,7 +149,7 @@ def _entry(task: PlannedTask, seq: int) -> Entry:
 
 @dataclass
 class _Queue:
-    """Les tâches à ranger, numérotées dans l'ordre de la file (`origin` des entrées)."""
+    """The tasks to pack, numbered in queue order (`origin` of the entries)."""
 
     tasks: list[PlannedTask]
 
@@ -164,9 +164,9 @@ class _Queue:
 def _own(
     rows: ProgramRows, found: list[_Row], current: int, removed: set[str], add: Sequence[NewTask]
 ) -> tuple[list[PlannedTask], dict[int, list[PlannedTask]]]:
-    """Les retards des semaines passées, puis les tâches à faire de chaque semaine ; un ajout du
-    Stratège va à la fin de la semaine de son module (même vide : « Compétences des offres »,
-    D123) si elle est en cours ou à venir, sinon de la semaine en cours."""
+    """The delays of past weeks, then the tasks to do of each week; a Strategist addition goes
+    to the end of its module's week (even empty: "Postings skills", D123) if it is current or
+    upcoming, otherwise of the current week."""
     starts = [week.start_date for week in rows.weeks]
     late: list[PlannedTask] = []
     own: dict[int, list[PlannedTask]] = {}
@@ -198,8 +198,8 @@ def _done_minutes(found: list[_Row]) -> dict[date, int]:
 def _cap(
     budget: Budget, current: bool, override: int | None, option: ReplanOption | None
 ) -> tuple[int, bool]:
-    """Le plafond de la semaine (celui de January pour la semaine en cours, s'il est donné), et
-    s'il faut l'abaisser (« Repousser l'échéance », toute autre semaine)."""
+    """The week's cap (January's for the current week, if given), and whether it must be
+    lowered ("Push back the deadline", any other week)."""
     if current and override is not None:
         return override, False
     return budget.cap_minutes, option == "push_deadline"
@@ -228,7 +228,7 @@ def _pack(
 
 
 def _kept(queue: _Queue, tasks: list[PlannedTask]) -> list[tuple[int, date]]:
-    """Une semaine gardée telle quelle : chaque tâche à sa date."""
+    """A week kept as it is: each task on its date."""
     entries = queue.entries(tasks)
     return [(e.origin[0], t.planned_date) for e, t in zip(entries, tasks, strict=True)]
 
@@ -243,8 +243,8 @@ def repack(
     option: ReplanOption | None,
     week_cap_override: int | None,
 ) -> RepackResult:
-    """Range la suite du programme (voir le module) ; `PlanningImpossible` si une semaine ne
-    tient pas sa pratique et son quiz, ou si le programme est terminé."""
+    """Packs the rest of the program (see the module); `PlanningImpossible` if a week cannot
+    hold its practice and quiz, or if the program is finished."""
     starts = [week.start_date for week in rows.weeks]
     found = _rows(rows)
     from_day = _start_day(today, budget)
@@ -256,7 +256,7 @@ def repack(
     used = _done_minutes(found)
     queue = _Queue([])
     carried = queue.entries(late)
-    placed: list[tuple[int, date]] = []  # (rang dans la file, jour)
+    placed: list[tuple[int, date]] = []  # (rank in the queue, day)
     new_weeks: list[NewWeek] = []
     index = current
     while index < len(starts) or carried:
@@ -264,7 +264,7 @@ def repack(
         cap, lower = _cap(budget, index == current, week_cap_override, option)
         week = week_budget(budget, cap, used, start, from_day, lower=lower)
         if not carried and keeps_dates(own.get(index, []), week, start):
-            placed += _kept(queue, own.get(index, []))  # ni retard ni ajout : dates gardées
+            placed += _kept(queue, own.get(index, []))  # no delay or addition: dates kept
             index += 1
             continue
         mine = queue.entries(own.get(index, []))

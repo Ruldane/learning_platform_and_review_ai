@@ -1,5 +1,5 @@
-"""API du fil d'activité (SPEC 14.2, P15, P16, D163) : `GET /activity?after=&before=&limit=`, en
-lecture seule, au nom de l'utilisatrice courante. La page relit toutes les 60 s avec `after`."""
+"""Activity feed API (SPEC 14.2, P15, P16, D163): `GET /activity?after=&before=&limit=`, read-only,
+on behalf of the current user. The page re-reads every 60 s with `after`."""
 
 from datetime import UTC, datetime
 from typing import Annotated
@@ -23,38 +23,38 @@ async def get_activity(
     db: Db,
     after: Annotated[
         datetime | None,
-        Query(description="Ne rendre que les événements plus récents que cet instant."),
+        Query(description="Only return events more recent than this instant."),
     ] = None,
     after_id: Annotated[
         str | None,
         Query(
             max_length=200,
             description=(
-                "Avec `after` : l'`id` du plus récent événement déjà vu. Le curseur est le couple "
-                "`(at, id)` : les événements au même instant que lui ne sont pas perdus."
+                "With `after`: the `id` of the most recent event already seen. The cursor is the "
+                "`(at, id)` pair: events at the same instant as it are not lost."
             ),
         ),
     ] = None,
     before: Annotated[
         datetime | None,
-        Query(description="Ne rendre que les événements plus anciens que cet instant."),
+        Query(description="Only return events older than this instant."),
     ] = None,
     before_id: Annotated[
         str | None,
         Query(
             max_length=200,
             description=(
-                "Avec `before` : l'`id` du plus ancien événement déjà vu (page suivante sans "
-                "perte ni doublon, même à instant égal)."
+                "With `before`: the `id` of the oldest event already seen (next page without "
+                "loss or duplicate, even at an equal instant)."
             ),
         ),
     ] = None,
-    limit: Annotated[int, Query(ge=1, description="Plafonné à 50.")] = DEFAULT_LIMIT,
+    limit: Annotated[int, Query(ge=1, description="Capped at 50.")] = DEFAULT_LIMIT,
 ) -> ActivityPage:
-    """Les événements des agents et des tâches de fond, triés par `(at, id)` décroissant.
-    Relecture : `after` = `latest_at` et `after_id` = `id` du premier événement de la page
-    précédente. Page plus ancienne : `before` et `before_id` = `at` et `id` du dernier. Un `id`
-    est stable (`{kind}:{ref}:{état}`) : le front ne montre jamais deux fois le même."""
+    """Agent and background-task events, sorted by `(at, id)` descending.
+    Re-read: `after` = `latest_at` and `after_id` = the `id` of the first event of the previous
+    page. Older page: `before` and `before_id` = the `at` and `id` of the last one. An `id` is
+    stable (`{kind}:{ref}:{state}`): the front end never shows the same one twice."""
     return await activity_page(
         db,
         current.id,

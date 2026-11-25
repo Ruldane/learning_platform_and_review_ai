@@ -1,17 +1,17 @@
-"""Parcours `cv_review` (SPEC 5.3, F9, D129) : le Lecteur ATS et le Recruteur relisent le CV de
-January contre une offre, se confrontent en deux tours au plus, puis le code valide chaque
-proposition contre le profil maître et range la revue ; January choisit ensuite la sortie.
+"""`cv_review` graph (SPEC 5.3, F9, D129): the ATS Reader and the Recruiter review January's CV
+against a posting, confront each other in at most two rounds, then the code validates each
+proposal against the master profile and stores the review; January then chooses the output.
 
-START -> load -> (analyse rangée ? company : analyze)
-analyze -> (offre d'emploi ? save_analysis -> company : not_a_posting, échec lisible)
+START -> load -> (analysis stored ? company : analyze)
+analyze -> (job posting ? save_analysis -> company : not_a_posting, readable failure)
 company -> ats_reader -> recruiter -> confront_1 -> confront_2 -> validate -> save -> ask_output
-ask_output : `interrupt()` seul ; réponse invalide -> ask_output (même question)
-apply_output : rapport ou PDF -> ask_output ; Terminer -> close -> END
+ask_output: `interrupt()` alone; invalid answer -> ask_output (same question)
+apply_output: report or PDF -> ask_output; Finish -> close -> END
 
-`analyze` et `save_analysis` sont les nœuds de l'Analyste (6.5) : une offre déjà analysée n'est
-jamais réanalysée (D121 ; branche inatteignable en pratique, la route refuse une offre non prête).
-Lancé seulement par la route de la feature `cv` (6.14). Chaque écriture d'un port est idempotente
-(SPEC 9.4) et `durability="sync"` (D46) ne rejoue jamais un nœud terminé."""
+`analyze` and `save_analysis` are the Analyst's nodes (6.5): a posting already analysed is
+never analysed again (D121; branch unreachable in practice, the route refuses a posting that is
+not ready). Launched only by the route of the `cv` feature (6.14). Every port write is idempotent
+(SPEC 9.4) and `durability="sync"` (D46) never replays a finished node."""
 
 import logging
 from typing import Any
@@ -53,7 +53,7 @@ def make_load(deps: GraphDeps) -> Node:
     async def load(state: CvReviewState) -> CvReviewState:
         ctx = await deps.ports.cv_review.context(deps.user_id, state["review_id"])
         logger.info(
-            "Revue lue : session %s, revue %s, offre %s, analyse rangée %s",
+            "Review read: session %s, review %s, posting %s, analysis stored %s",
             deps.session_id,
             ctx.review_id,
             ctx.posting_id,
@@ -75,7 +75,7 @@ def route_analyze(state: CvReviewState) -> str:
 
 
 def not_a_posting(state: CvReviewState) -> CvReviewState:
-    """Échec lisible : sans offre analysée, aucune revue (rien n'est écrit)."""
+    """Readable failure: without an analysed posting, no review (nothing is written)."""
     raise AppError("posting_not_a_job", NOT_A_POSTING, 422)
 
 

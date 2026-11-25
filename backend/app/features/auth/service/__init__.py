@@ -14,15 +14,15 @@ class AuthService:
         self._users = UserRepository(session)
 
     async def ensure_local_user(self) -> User:
-        """Renvoie l'utilisateur local, en le créant au premier appel (idempotent). Si l'espace a
-        été repris par un compte Google (la ligne `local` porte alors une identité) et que
-        `users` n'a qu'un seul compte, c'est lui l'utilisateur unique : repasser en mode local
-        rend les données (revue 9.R, A-I1). Avec plusieurs comptes, un espace neuf est créé."""
+        """Returns the local user, creating it on the first call (idempotent). If the space has
+        been taken over by a Google account (the `local` row then carries an identity) and
+        `users` has only one account, that is the single user: switching back to local mode
+        gives the data back (review 9.R, A-I1). With several accounts, a new space is created."""
         user = await self._users.get_local() or await self._users.only_user()
         if user is None:
             user = await self._users.add_local()
             if await self._users.any_google_user():
-                logger.info("espace local repris par un compte Google : nouvel espace local")
+                logger.info("local space taken over by a Google account: new local space")
         return user
 
     async def get_user(self, user_id: str) -> User:

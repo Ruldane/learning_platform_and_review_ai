@@ -1,6 +1,6 @@
-"""API de l'écart (SPEC F8, D122, D123) : le tableau d'une offre, recalculé à chaque lecture, les
-compétences qui manquent le plus souvent dans les offres de January et « Ajouter au planning »
-(une replanification au déclencheur `gap`, validée par January)."""
+"""Gap API (SPEC F8, D122, D123): a posting's table, recomputed on every read, the skills most
+often missing from January's postings and "Add to the plan" (a replan with the `gap` trigger,
+validated by January)."""
 
 from typing import Annotated
 
@@ -28,7 +28,7 @@ router = APIRouter(tags=["gap"])
 
 
 def get_replan_runtime(conn: HTTPConnection) -> ReplanRuntime:
-    """La replanification ouverte par le lifespan (`app.state.replan`)."""
+    """The replanning opened by the lifespan (`app.state.replan`)."""
     runtime: ReplanRuntime = conn.app.state.replan
     return runtime
 
@@ -38,7 +38,7 @@ ReplanDep = Annotated[ReplanRuntime, Depends(get_replan_runtime)]
 
 @router.get("/postings/{posting_id}/gap", response_model=GapOut)
 async def get_gap(posting_id: str, current: CurrentUserDep, db: Db) -> GapOut:
-    """`pending` tant que l'analyse tourne ; offre d'une autre : 404 `posting_not_found`."""
+    """`pending` while the analysis runs; another user's posting: 404 `posting_not_found`."""
     return await posting_gap(db, current.id, posting_id)
 
 
@@ -50,10 +50,10 @@ async def get_gap(posting_id: str, current: CurrentUserDep, db: Db) -> GapOut:
 async def post_gap_plan(
     posting_id: str, body: PlanGapIn, current: CurrentUserDep, rt: ReplanDep
 ) -> PlanGapStarted:
-    """Propose les ajouts au programme validé choisi, par défaut le plus récent.
+    """Proposes the additions to the chosen validated program, the most recent by default.
 
-    422 `gap_skill_unknown` si une ligne ne peut pas être ajoutée. 404 `program_not_found`,
-    409 `program_not_validated`, `no_program` ou `replan_open` suivant le programme.
+    422 `gap_skill_unknown` if a line cannot be added. 404 `program_not_found`,
+    409 `program_not_validated`, `no_program` or `replan_open` depending on the program.
     """
     session_id = await plan_gap(rt, current.id, posting_id, body.skills, program_id=body.program_id)
     return PlanGapStarted(session_id=session_id)
@@ -81,15 +81,15 @@ async def post_gap_validate(
     program: Annotated[ProgramRuntime, Depends(get_program_runtime)],
     quiz: Annotated[QuizRuntime, Depends(get_quiz_runtime)],
 ) -> ValidateGapStarted:
-    """« Je les maîtrise déjà » (D220) : un module « Valider mes acquis » avec ces compétences dans
-    le programme validé le plus récent, et son quiz écrit par l'Examinateur ; réussi, il les passe
-    à « validé ». 422 `gap_skill_unknown`, 409 `no_program`, 409 `week_full`."""
+    """ "I already master them" (D220): a "Validate my skills" module with these skills in the
+    most recent validated program, and its quiz written by the Examiner; once passed, it moves
+    them to "validated". 422 `gap_skill_unknown`, 409 `no_program`, 409 `week_full`."""
     return await validate_gap(program, quiz, current.id, posting_id, body.skills)
 
 
 @router.get("/gap/top-missing", response_model=list[TopMissingOut])
 async def get_top_missing(current: CurrentUserDep, db: Db) -> list[TopMissingOut]:
-    """Les 10 compétences absentes demandées par le plus d'offres."""
+    """The 10 missing skills requested by the most postings."""
     found = await top_missing_skills(db, current.id)
     return [
         TopMissingOut(skill=m.skill, postings=m.postings, required_in=m.required_in) for m in found

@@ -1,10 +1,10 @@
-"""Le fil d'activité (P15, D163) : la fusion des `ACTIVITY_SOURCES`, la plus récente d'abord. Aucune
-table, aucun écrit. Ordre total `(at, id)` décroissant ; **le curseur est un couple `(at, id)`** :
-deux événements au même instant ne se perdent donc ni à la coupure d'une page (`before`), ni à la
-frontière d'une relecture (`after`). Les sources reçoivent des bornes **incluses** et rendent leurs
-plus récents ; le fil écarte lui-même ce que le curseur exclut, et redemande plus à une source qui
-a pu être tronquée par ses ex æquo. Une source qui échoue est écartée, le reste du fil est rendu
-(journal : nom de la source et classe de l'exception seulement)."""
+"""The activity feed (P15, D163): the merge of the `ACTIVITY_SOURCES`, most recent first. No
+table, no write. Total order `(at, id)` descending; **the cursor is an `(at, id)` pair**: two
+events at the same instant are therefore lost neither at the cut of a page (`before`) nor at the
+boundary of a re-read (`after`). Sources receive **inclusive** bounds and return their most
+recent events; the feed itself discards what the cursor excludes, and asks a source for more when
+it may have been truncated by its ties. A source that fails is dropped, the rest of the feed is
+returned (log: the source name and the exception class only)."""
 
 import logging
 from datetime import datetime
@@ -18,14 +18,14 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_LIMIT = 30
 MAX_LIMIT = 50
-MAX_FETCH = 400  # une source ne rend jamais plus de lignes (ex æquo extrêmes)
+MAX_FETCH = 400  # a source never returns more rows than this (extreme ties)
 
 Cursor = tuple[datetime | None, str | None]
 
 
 def _inside(item: ActivityItem, after: Cursor, before: Cursor) -> bool:
-    """L'événement est-il dans la fenêtre ? Sans `id`, la borne est exclusive sur l'instant ;
-    avec `id`, c'est le couple `(at, id)` qui est strictement au-delà du curseur."""
+    """Is the event inside the window? Without `id`, the bound is exclusive on the instant;
+    with `id`, it is the `(at, id)` pair that is strictly beyond the cursor."""
     key = (item.at, item.id)
     after_at, after_id = after
     if after_at is not None:
@@ -52,8 +52,8 @@ async def _read(
     before: Cursor,
     limit: int,
 ) -> list[ActivityItem]:
-    """Les `limit` premiers événements de la fenêtre pour une source ; vide si elle échoue. Le
-    savepoint garde la transaction valide pour les sources suivantes après une erreur SQL."""
+    """The first `limit` events of the window for one source; empty if it fails. The savepoint
+    keeps the transaction valid for the following sources after an SQL error."""
     fetch = limit
     while True:
         try:
@@ -61,13 +61,13 @@ async def _read(
                 raw = await source(db, user_id, after[0], before[0], fetch)
         except Exception as exc:
             logger.warning(
-                "Fil d'activité : source %s en échec (%s)", source.__name__, type(exc).__name__
+                "Activity feed: source %s failed (%s)", source.__name__, type(exc).__name__
             )
             return []
         kept = [item for item in raw if _inside(item, after, before)]
         if len(raw) < fetch or len(kept) >= limit or fetch >= MAX_FETCH:
             return kept
-        fetch = min(fetch * 2, MAX_FETCH)  # source peut-être tronquée par des ex æquo écartés
+        fetch = min(fetch * 2, MAX_FETCH)  # source possibly truncated by discarded ties
 
 
 async def activity_page(
@@ -80,9 +80,9 @@ async def activity_page(
     before_id: str | None = None,
     limit: int = DEFAULT_LIMIT,
 ) -> ActivityPage:
-    """Les événements entre les curseurs `(after, after_id)` et `(before, before_id)`, `limit` au
-    plus (1 à 50). `after` seul : plus récents que cet instant ; avec `after_id` : plus récents que
-    cet événement (le suivant au même instant compris). Même chose pour `before` vers l'ancien."""
+    """The events between the cursors `(after, after_id)` and `(before, before_id)`, at most
+    `limit` (1 to 50). `after` alone: more recent than this instant; with `after_id`: more recent
+    than this event (the next one at the same instant included). Same for `before`, going older."""
     limit = min(max(limit, 1), MAX_LIMIT)
     merged: dict[str, ActivityItem] = {}
     for source in ACTIVITY_SOURCES:

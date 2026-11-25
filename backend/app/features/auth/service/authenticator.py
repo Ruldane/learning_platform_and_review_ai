@@ -1,6 +1,6 @@
-"""Qui est l'utilisateur de la requête (P7) : l'utilisateur unique en mode local, le cookie de
-session en mode Google. Toute anomalie (cookie absent, falsifié, expiré, utilisateur supprimé,
-adresse retirée de `ALLOWED_EMAILS`) donne la même 401 `auth_required`, jamais un autre compte."""
+"""Who is the request's user (P7): the single user in local mode, the session cookie in Google
+mode. Any anomaly (cookie missing, forged, expired, user deleted, address removed from
+`ALLOWED_EMAILS`) gives the same 401 `auth_required`, never another account."""
 
 from collections.abc import Callable
 from datetime import UTC, datetime
@@ -23,7 +23,7 @@ def _auth_required() -> AppError:
 
 
 class LocalAuthenticator:
-    """Mode local : toute requête est celle de l'utilisateur unique créé au démarrage."""
+    """Local mode: every request is the single user's, created at startup."""
 
     def __init__(self, user_id: str) -> None:
         self._user_id = user_id
@@ -33,8 +33,8 @@ class LocalAuthenticator:
 
 
 class CookieAuthenticator:
-    """Mode Google : cookie `tremplin_session` → SHA-256 → session non expirée → utilisateur →
-    adresse toujours autorisée. Une session courte et en lecture seule par requête."""
+    """Google mode: `tremplin_session` cookie → SHA-256 → unexpired session → user → address
+    still allowed. A short, read-only session per request."""
 
     def __init__(
         self,
@@ -53,9 +53,9 @@ class CookieAuthenticator:
         async with self._session_factory() as db:
             session = await AuthSessionRepository(db).get_valid(hash_token(token), self._now())
             user = await UserRepository(db).get(session.user_id) if session else None
-        # `allowed_emails` est relue ici à chaque requête, dans la liste chargée au démarrage :
-        # retirer une adresse du `.env` prend effet au redémarrage du back, qui recontrôle alors
-        # toutes les sessions encore valides (pas de relecture à chaud du fichier).
+        # `allowed_emails` is re-read here on every request, in the list loaded at startup:
+        # removing an address from `.env` takes effect when the back end restarts, which then
+        # re-checks all the sessions still valid (no hot re-read of the file).
         if user is None or not user.email or not allowed(user.email, self._settings.allowed_emails):
             raise _auth_required()
         return CurrentUser(id=user.id, email=user.email)
@@ -68,6 +68,6 @@ def build_authenticator(
 ) -> Authenticator:
     if settings.auth_mode == "local":
         if local_user_id is None:
-            raise RuntimeError("Mode local : l'utilisateur local n'existe pas encore.")
+            raise RuntimeError("Local mode: the local user does not exist yet.")
         return LocalAuthenticator(local_user_id)
     return CookieAuthenticator(session_factory, settings, lambda: datetime.now(UTC))

@@ -1,6 +1,6 @@
-"""Composition de la sécurité et de la connexion : secret et chiffreur, utilisateur du mode local,
-puis le client HTTP du point `token` et `GoogleOidc` (mode Google seulement). Le lifespan les
-appelle au démarrage, `app.bootstrap` en reçoit le résultat."""
+"""Composition of security and sign-in: secret and cipher, local-mode user, then the
+HTTP client of the `token` endpoint and `GoogleOidc` (Google mode only). The lifespan calls
+them at startup, `app.bootstrap` receives the result."""
 
 import logging
 from contextlib import AsyncExitStack
@@ -23,7 +23,7 @@ _LOG_LEVEL = "INFO"
 
 
 async def ensure_local_user(app: FastAPI) -> None:
-    """Mode `local` : crée l'utilisateur unique s'il manque et mémorise son id."""
+    """`local` mode: creates the single user if missing and remembers its id."""
     try:
         async with app.state.session_factory() as session:
             user = await AuthService(session).ensure_local_user()
@@ -32,15 +32,13 @@ async def ensure_local_user(app: FastAPI) -> None:
     except OperationalError as exc:
         if "no such table" not in str(exc.orig):
             raise
-        message = (
-            "Base de données non initialisée : lance `alembic upgrade head` avant de démarrer."
-        )
+        message = "Database not initialised: run `alembic upgrade head` before starting."
         logger.error(message)
         raise RuntimeError(message) from exc
 
 
 def setup_security(app: FastAPI) -> None:
-    """Secret de l'application, chiffreur, et masquage des clés dans les journaux."""
+    """The application secret, the cipher, and the masking of keys in the logs."""
     settings: Settings = app.state.settings
     app.state.cipher = Cipher(load_or_create_secret(settings.secret_path))
     for key in (
@@ -61,8 +59,8 @@ def setup_security(app: FastAPI) -> None:
 
 
 def oidc_http() -> httpx.AsyncClient:
-    """Client du point `token` : ni redirection, ni proxy ni réglage de l'environnement, aucun
-    cookie retenu ; ouvert et fermé par le lifespan."""
+    """Client of the `token` endpoint: no redirect, no proxy or environment setting, no
+    cookie kept; opened and closed by the lifespan."""
     return httpx.AsyncClient(
         follow_redirects=False,
         trust_env=False,
@@ -72,16 +70,16 @@ def oidc_http() -> httpx.AsyncClient:
 
 
 async def open_oidc(settings: Settings, stack: AsyncExitStack) -> OidcProvider | None:
-    """La connexion Google, avec son client HTTP fermé par `stack` ; en mode local rien n'est
-    ouvert (aucun client inutile) et le résultat est `None`."""
+    """Google sign-in, with its HTTP client closed by `stack`; in local mode nothing is
+    opened (no useless client) and the result is `None`."""
     if settings.auth_mode != "google":
         return None
     return build_oidc(settings, await stack.enter_async_context(oidc_http()))
 
 
 def build_oidc(settings: Settings, http: httpx.AsyncClient) -> OidcProvider | None:
-    """`GoogleOidc` en mode Google (identifiants contrôlés au démarrage par `check_google_config`),
-    `None` en mode local. Les adresses et l'émetteur viennent de la configuration (P5)."""
+    """`GoogleOidc` in Google mode (credentials checked at startup by `check_google_config`),
+    `None` in local mode. The addresses and the issuer come from the configuration (P5)."""
     if settings.auth_mode != "google":
         return None
     return GoogleOidc(

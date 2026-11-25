@@ -1,4 +1,4 @@
-"""Origine explicite et chemin unique de la publication statique."""
+"""Explicit origin and single path of the static publication."""
 
 from urllib.parse import urlsplit
 
@@ -16,7 +16,7 @@ def normalize_origin(value: str | None) -> str | None:
         host = parts.hostname
         port = parts.port
     except ValueError as error:
-        raise ValueError("Origine publique invalide.") from error
+        raise ValueError("Invalid public origin.") from error
     if (
         not host
         or not host.isascii()
@@ -28,7 +28,7 @@ def normalize_origin(value: str | None) -> str | None:
         or parts.fragment
         or (parts.scheme != "https" and not (parts.scheme == "http" and host in _LOCAL))
     ):
-        raise ValueError("Configure une origine HTTPS, ou une adresse locale pour les tests.")
+        raise ValueError("Set an HTTPS origin, or a local address for tests.")
     authority = f"[{host}]" if ":" in host else host
     if port is not None and port != _DEFAULT_PORTS[parts.scheme]:
         authority = f"{authority}:{port}"

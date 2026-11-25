@@ -1,12 +1,12 @@
-"""Polices d'un gabarit de CV (D119, D126). Le texte prend la police la plus employée (en
-caractères), les titres celle des plus grandes tailles hors du nom ; chacune est remplacée par sa
-famille libre (`choose_font`). Les fichiers d'une famille sont téléchargés une fois, rangés dans le
-stockage (catégorie `cv_fonts`, suffixe du fichier reçu) et réutilisés d'un gabarit à l'autre.
-Une famille introuvable (`FontUnavailable`) cède la place à Liberation Sans (ou Serif) de l'image
-de Gotenberg, sans fichier joint.
+"""Fonts of a CV template (D119, D126). The body takes the most used font (in characters), the
+headings that of the largest sizes outside the name; each is replaced by its free family
+(`choose_font`). The files of a family are downloaded once, stored in the storage (category
+`cv_fonts`, suffix of the received file) and reused from one template to another. A family not
+found (`FontUnavailable`) gives way to Liberation Sans (or Serif) from the Gotenberg image,
+with no attached file.
 
-Un écart de police est toujours dit à January, **sans le nom lu dans le PDF** : seules les
-familles du catalogue apparaissent. Journaux : identifiants et nombres seulement (17.2)."""
+A font difference is always told to January, **without the name read in the PDF**: only the
+families of the catalog appear. Logs: ids and numbers only (17.2)."""
 
 import logging
 import re
@@ -48,8 +48,8 @@ _LABELS: dict[tuple[Role, ...], str] = {
 
 @dataclass(frozen=True)
 class FontRole:
-    """Police d'un rôle telle que lue dans le PDF. `original` : nom nettoyé (donnée du CV, jamais
-    journalisée ni rendue par l'API) ; `known` : la police a un substitut connu."""
+    """Font of a role as read in the PDF. `original`: cleaned name (CV data, never logged nor
+    returned by the API); `known`: the font has a known substitute."""
 
     role: Role
     original: str
@@ -85,8 +85,8 @@ def _role(role: Role, pdf_font: str) -> FontRole:
 
 
 def _heading(visible: list[TextBlock], first_page: list[TextBlock], body_size: float) -> str | None:
-    """Police du plus grand texte plus grand que le corps, hors du nom (le plus grand texte de la
-    première page) ; à taille égale, la plus employée."""
+    """Font of the largest text bigger than the body, outside the name (the largest text of the
+    first page); at equal size, the most used."""
     name_size = max((b.size for b in first_page), default=None)
     larger = [b for b in visible if round(b.size, 1) > body_size and b.size != name_size]
     if not larger:
@@ -100,7 +100,7 @@ def _heading(visible: list[TextBlock], first_page: list[TextBlock], body_size: f
 
 
 def font_roles(layout: PdfLayout) -> list[FontRole]:
-    """Le texte et les titres ; aucune police pour un CV scanné (aucun texte visible)."""
+    """The body and the headings; no font for a scanned CV (no visible text)."""
 
     def shown(blocks: Sequence[TextBlock]) -> list[TextBlock]:
         return [b for b in blocks if not b.invisible and b.text.strip()]
@@ -164,7 +164,7 @@ def font_uses(roles: Sequence[FontRole], loaded: Collection[str]) -> list[FontUs
 
 
 async def _reusable(rt: CvRuntime, user_id: str, family: str) -> list[StoredFont] | None:
-    """Fichiers déjà rangés de `family` (toutes les graisses voulues), d'un autre gabarit."""
+    """Files already stored for `family` (all the wanted weights), from another template."""
     async with rt.session_factory() as db:
         rows = await TemplateRepository(db, user_id).prepared_rows()
     for row in rows:
@@ -176,7 +176,7 @@ async def _reusable(rt: CvRuntime, user_id: str, family: str) -> list[StoredFont
 
 
 async def _family(rt: CvRuntime, user_id: str, family: str) -> list[StoredFont] | None:
-    """Fichiers de `family` réutilisés ou téléchargés puis rangés ; `None` s'ils manquent."""
+    """Files of `family` reused or downloaded then stored; `None` if they are missing."""
     if (found := await _reusable(rt, user_id, family)) is not None:
         return found
     try:
@@ -193,7 +193,7 @@ async def _family(rt: CvRuntime, user_id: str, family: str) -> list[StoredFont] 
 async def resolve_roles(
     rt: CvRuntime, user_id: str, roles: Sequence[FontRole]
 ) -> tuple[list[StoredFont], list[FontUse], list[str]]:
-    """Fichiers rangés, polices employées et écarts des rôles lus dans le PDF."""
+    """Stored files, fonts used and differences of the roles read in the PDF."""
     stored: list[StoredFont] = []
     loaded: set[str] = set()
     for family in dict.fromkeys(role.family for role in roles):
@@ -202,7 +202,7 @@ async def resolve_roles(
             stored += files
             loaded.add(family)
     logger.info(
-        "Polices du gabarit : utilisateur %s, %d famille(s), %d chargée(s), %d fichier(s)",
+        "Template fonts: user %s, %d family(ies), %d loaded, %d file(s)",
         user_id,
         len({role.family for role in roles}),
         len(loaded),
@@ -214,7 +214,7 @@ async def resolve_roles(
 async def load_files(
     rt: CvRuntime, user_id: str, stored: Sequence[StoredFont], families: Collection[str]
 ) -> list[FontFile]:
-    """Les fichiers rangés des familles citées, relus du stockage."""
+    """The stored files of the cited families, re-read from the storage."""
     files: list[FontFile] = []
     for font in stored:
         if font.family in families:
@@ -224,22 +224,22 @@ async def load_files(
 
 
 def available_families(stored: Sequence[StoredFont]) -> list[str]:
-    """Familles qu'un `TemplateSpec` peut citer : celles qui ont des fichiers, puis celles de
-    l'image de Gotenberg."""
+    """Families a `TemplateSpec` may cite: those that have files, then those of the Gotenberg
+    image."""
     return list(dict.fromkeys([*(font.family for font in stored), *IMAGE_FAMILIES]))
 
 
 async def resolve_fonts(
     rt: CvRuntime, user_id: str, layout: PdfLayout
 ) -> tuple[list[FontFile], list[FontUse], list[str]]:
-    """Fichiers des polices employées (joints au rendu), polices employées et écarts."""
+    """Files of the fonts used (attached to the rendering), fonts used and differences."""
     stored, uses, gaps = await resolve_roles(rt, user_id, font_roles(layout))
     return await load_files(rt, user_id, stored, {use.family for use in uses}), uses, gaps
 
 
 def offered_choices(roles: Sequence[FontRole], available: Collection[str]) -> list[FontChoice]:
-    """Polices libres retenues, ramenées à ce qui est réellement disponible : une famille sans
-    fichier ni présence dans l'image cède la place à son repli (revue 6.10, M1)."""
+    """Free fonts retained, brought back to what is really available: a family with neither a
+    file nor a presence in the image gives way to its fallback (review 6.10, M1)."""
     return [
         FontChoice(r.original, r.family, r.free)
         if r.family in available
@@ -249,7 +249,7 @@ def offered_choices(roles: Sequence[FontRole], available: Collection[str]) -> li
 
 
 def offered_summary(summary: str, available: Collection[str]) -> str:
-    """Blocs résumés dont la colonne « police » ne cite que des familles disponibles."""
+    """Summary blocks whose "font" column only cites available families."""
     lines: list[str] = []
     for line in summary.splitlines():
         parts = line.split(" | ", 2)

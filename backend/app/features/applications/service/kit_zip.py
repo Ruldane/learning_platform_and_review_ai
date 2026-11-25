@@ -1,13 +1,13 @@
-"""L'archive du kit de candidature (SPEC 6.4, F16, D143) : `Kit_<Entreprise>_<Poste>.zip`.
+"""The application kit archive (SPEC 6.4, F16, D143): `Kit_<Company>_<Role>.zip`.
 
-- un fichier Markdown par pièce rangée, dans l'ordre de F16 : `01_cv.md` … `07_pitch.md` ;
-- le PDF de la version de CV prête, sous son nom (`CV_<Nom>_<Entreprise>_<Poste>.pdf`), si la pièce
-  `cv` en désigne une ;
-- `README.txt` : les pièces « à vérifier » avec leurs raisons, et les pièces omises (absentes ou
-  en échec).
+- one Markdown file per stored piece, in the order of F16: `01_cv.md` … `07_pitch.md`;
+- the PDF of the ready CV version, under its name (`CV_<Name>_<Company>_<Role>.pdf`), if the
+  `cv` piece designates one;
+- `README.txt`: the pieces "to check" with their reasons, and the omitted pieces (missing or
+  failed).
 
-Rien n'est envoyé par l'application : January relit puis copie. Journaux : identifiants seulement,
-jamais le nom du fichier ni une pièce (17.2)."""
+Nothing is sent by the application: January reads then copies. Logs: ids only, never the file
+name or a piece (17.2)."""
 
 import io
 import logging
@@ -111,7 +111,7 @@ def _write(files: list[tuple[str, bytes]], now: datetime) -> bytes:
 async def kit_archive(
     rt: ApplicationsRuntime, cv: CvRuntime, user_id: str, application_id: str
 ) -> tuple[str, bytes]:
-    """`(nom ASCII de l'archive, octets)` ; 404 `application_not_found`."""
+    """`(ASCII name of the archive, bytes)`; 404 `application_not_found`."""
     async with rt.session_factory() as db:
         app_row = await get_application(db, user_id, application_id)
         rows = await KitRepository(db, user_id).of_application(app_row.id)
@@ -136,7 +136,7 @@ async def kit_archive(
         (README, readme(entries, pdf[0] if pdf else None, wanted and pdf is None).encode())
     )
     logger.info(
-        "Archive du kit préparée : utilisateur %s, fiche %s, %d fichier(s)",
+        "Kit archive prepared: user %s, record %s, %d file(s)",
         user_id,
         application_id,
         len(files),

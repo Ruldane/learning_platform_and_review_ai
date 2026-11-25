@@ -17,7 +17,7 @@ async def verified_profile(db: AsyncSession, user_id: str) -> tuple[int, MasterP
     version, profile = current
     known = {row.name.casefold() for row in profile.projects}
     projects = [
-        Project(id=f"projet-{key}", name=title[:120], description="Project validated in Tremplin.")
+        Project(id=f"project-{key}", name=title[:120], description="Project validated in Tremplin.")
         for key, title in await validated_titles(db, user_id, 6)
         if title.strip() and title[:120].casefold() not in known
     ]

@@ -1,16 +1,15 @@
-"""Parcours `application_kit` (SPEC 6.4, F16, D142) : le kit de candidature, sept pièces écrites en
-parallèle, chacune contrôlée par le code (aucun fait que le profil ne dit pas).
+"""`application_kit` graph (SPEC 6.4, F16, D142): the application kit, seven pieces written in
+parallel, each one checked by the code (no fact that the profile does not state).
 
-START -> load -> (une branche par pièce non gardée) -> close -> END
-branches : cv, letter, linkedin, followups, form_answers, pitch (Assistant de suivi), company_brief
-(Éclaireur, mode `dossier`)
+START -> load -> (one branch per piece not guarded) -> close -> END
+branches: cv, letter, linkedin, followups, form_answers, pitch (Tracker), company_brief
+(Scout, `dossier` mode)
 
-Les branches tournent dans le même super pas : une pièce rangée est annoncée (`artifact.ready`,
-`kind = "kit_item"`) dès qu'elle est prête, sans attendre les autres. Une pièce en échec n'arrête
-pas les autres. Les pièces que January a modifiées (`KitContext.keep`) ne sont jamais refaites :
-aucune branche pour elles. `close` publie `run.completed` avec le compte des pièces. Lancé
-seulement par la route de la feature `applications` (7.6, `ROUTE_ONLY`) ; chaque écriture d'un port
-est idempotente (SPEC 9.4)."""
+The branches run in the same superstep: a stored piece is announced (`artifact.ready`,
+`kind = "kit_item"`) as soon as it is ready, without waiting for the others. A failed piece does
+not stop the others. The pieces January edited (`KitContext.keep`) are never redone: no branch
+for them. `close` publishes `run.completed` with the piece count. Launched only by the route of
+the `applications` feature (7.6, `ROUTE_ONLY`); every port write is idempotent (SPEC 9.4)."""
 
 from typing import Any
 
@@ -43,7 +42,7 @@ def build(deps: GraphDeps) -> StateGraph[Any, Any, Any, Any]:
         },
     }
     if set(nodes) != set(KIT_KINDS):
-        raise ValueError("Chaque pièce du kit doit avoir sa branche.")
+        raise ValueError("Every kit piece must have its branch.")
     for name, node in nodes.items():
         graph.add_node(name, node)
         graph.add_edge(name, "close")

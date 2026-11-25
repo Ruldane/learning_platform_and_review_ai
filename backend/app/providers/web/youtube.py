@@ -1,9 +1,9 @@
-"""Transcriptions YouTube avec `youtube-transcript-api` (1.x), repli sur le titre et la
-description de la page.
+"""YouTube transcripts with `youtube-transcript-api` (1.x), falling back on the page's title and
+description.
 
-La bibliothèque n'appelle que YouTube (hôte fixe) avec un identifiant validé par
-`youtube_video_id` : aucune URL reçue ne lui est transmise. La page de repli passe par notre
-lecteur sûr. Les journaux ne citent que le type d'erreur."""
+The library only calls YouTube (fixed host) with an identifier validated by
+`youtube_video_id`: no received URL is passed to it. The fallback page goes through our safe
+reader. The logs only quote the error type."""
 
 import asyncio
 import logging
@@ -26,12 +26,12 @@ from app.providers.web.base import (
 logger = logging.getLogger(__name__)
 
 TRANSCRIPT_TIMEOUT_S = 15.0
-REQUEST_TIMEOUT_S = (5.0, 10.0)  # connexion, lecture : `asyncio.timeout` n'arrête pas le thread
+REQUEST_TIMEOUT_S = (5.0, 10.0)  # connect, read: `asyncio.timeout` does not stop the thread
 
 
 class BoundedSession(Session):
-    """Session de la bibliothèque : délai par défaut sur chaque requête (sans lui, un thread
-    resterait bloqué au-delà des 15 s) et aucun proxy ni `.netrc` de l'environnement."""
+    """The library's session: default timeout on each request (without it, a thread
+    would stay blocked beyond the 15 s) and no proxy or `.netrc` from the environment."""
 
     def __init__(self) -> None:
         super().__init__()
@@ -43,7 +43,7 @@ class BoundedSession(Session):
 
 
 def _fetch_text(video_id: str, languages: tuple[str, ...]) -> str:
-    """Bloquant (requests) : appelé dans un thread."""
+    """Blocking (requests): called in a thread."""
     with BoundedSession() as session:
         fetched = YouTubeTranscriptApi(http_client=session).fetch(video_id, languages=languages)
     return " ".join(" ".join(snippet.text for snippet in fetched).split())
@@ -74,16 +74,16 @@ class TranscriptApiYoutube:
             async with asyncio.timeout(TRANSCRIPT_TIMEOUT_S):
                 return await asyncio.to_thread(_fetch_text, video_id, self._languages)
         except Exception as exc:
-            # Toute erreur (désactivée, absente, bloquée, réseau, délai) mène au repli.
-            logger.info("Transcription YouTube indisponible (%s)", type(exc).__name__)
+            # Any error (disabled, missing, blocked, network, timeout) leads to the fallback.
+            logger.info("YouTube transcript unavailable (%s)", type(exc).__name__)
             return ""
 
     async def _page(self, video_id: str) -> WebDocument | None:
-        """Page `watch?v=<id>` lue par le lecteur sûr, sans exiger de texte principal."""
+        """Page `watch?v=<id>` read by the safe reader, without requiring main text."""
         try:
             return await self._reader.read(
                 f"https://www.youtube.com/watch?v={video_id}", require_text=False
             )
         except AppError as exc:
-            logger.info("Page YouTube illisible (%s)", exc.code)
+            logger.info("YouTube page unreadable (%s)", exc.code)
             return None

@@ -1,4 +1,4 @@
-"""Échanges avec le Vérificateur d’une étape de recrutement simulé."""
+"""Exchanges with the Verifier of a simulated recruitment step."""
 
 from dataclasses import dataclass
 from typing import Annotated, Literal, Protocol
@@ -46,12 +46,12 @@ class RecruitmentStore(Protocol):
 
 class _MissingRecruitment:
     async def context(self, user_id: str, process_id: str, session_id: str) -> RecruitmentContext:
-        raise RuntimeError("Le parcours de recrutement n’est pas branché.")
+        raise RuntimeError("The recruitment graph is not wired.")
 
     async def grade(
         self, user_id: str, process_id: str, session_id: str, grade: RecruitmentGrade
     ) -> None:
-        raise RuntimeError("Le parcours de recrutement n’est pas branché.")
+        raise RuntimeError("The recruitment graph is not wired.")
 
 
 NO_RECRUITMENT: RecruitmentStore = _MissingRecruitment()

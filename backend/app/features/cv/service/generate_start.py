@@ -1,17 +1,17 @@
-"""« Générer le PDF » (SPEC 5.3 ; D130) : une version par clic, décisions figées au clic, une
-seule version en rendu à la fois.
+""" "Generate the PDF" (SPEC 5.3; D130): one version per click, decisions frozen at the click,
+a single version rendering at a time.
 
-Sous le verrou des revues : la revue doit être proposée (409 `review_closed` après « Terminer »
-ou un échec, `review_not_waiting` sinon), aucune de ses versions en rendu (409
-`generation_in_progress`) et sa session doit attendre la question de sortie (409
-`review_not_waiting`). La version est créée (`rendering`, numéro suivant de l'offre, contenu
-composé par le code à partir des modifications **acceptées à cet instant**, `decisions` : la
-décision de chaque modification, `ignored` si une modification acceptée ne peut pas être
-appliquée ou ferait perdre un lien ou une preuve de l'expérience), puis la question est reprise
-avec `{"choice": "pdf", "version_id": …}`. Le parcours rend la version (`render_version`).
-Une reprise refusée retire la version.
+Under the reviews lock: the review must be proposed (409 `review_closed` after "Finish" or a
+failure, `review_not_waiting` otherwise), none of its versions rendering (409
+`generation_in_progress`) and its session must be waiting for the exit question (409
+`review_not_waiting`). The version is created (`rendering`, next number of the posting, content
+composed by the code from the modifications **accepted at that instant**, `decisions`: the
+decision on each modification, `ignored` if an accepted modification cannot be applied or would
+lose a link or a proof from the experience), then the question is resumed with
+`{"choice": "pdf", "version_id": …}`. The flow renders the version (`render_version`). A
+refused resume removes the version.
 
-Journaux : identifiants et nombres ; jamais le nom du fichier ni un texte du CV."""
+Logs: ids and numbers; never the file name nor a CV text."""
 
 import logging
 
@@ -81,7 +81,7 @@ async def _new_version(
     allow_extra: bool,
     portfolio_origin: str | None,
 ) -> CvVersion:
-    """La version figée au clic : contenu composé et décisions de cet instant."""
+    """The version frozen at the click: composed content and decisions of that instant."""
     profile, base = await frozen_base(db, user_id, review)
     posting = await get_posting(db, user_id, review.posting_id)
     analysis = PostingAnalysis.model_validate(posting.analysis) if posting.analysis else None
@@ -117,7 +117,7 @@ async def _new_version(
 
 
 async def _checked(db: AsyncSession, user_id: str, review_id: str) -> tuple[CvReview, str]:
-    """La revue, et l'`interrupt_id` de la question de sortie qu'elle attend."""
+    """The review, and the `interrupt_id` of the exit question it is waiting on."""
     await settle(db, user_id)
     review = await review_row(db, user_id, review_id)
     if review.status not in ("running", "proposed"):
@@ -125,13 +125,13 @@ async def _checked(db: AsyncSession, user_id: str, review_id: str) -> tuple[CvRe
     interrupt_id = await waiting_output(db, user_id, review)
     rendering = await VersionRepository(db, user_id).rendering([review.id])
     if rendering and interrupt_id is not None:
-        # Le rendu ne tourne que session `running` : une version `rendering` alors que la session
-        # attend la question de sortie est restée là (processus mort entre son enregistrement et
-        # la reprise) ; elle ne bloque plus « Générer » (revue 6.14, M-1).
+        # Rendering only runs while the session is `running`: a `rendering` version while the
+        # session waits for the exit question stayed there (process died between its recording
+        # and the resume); it no longer blocks "Generate" (review 6.14, M-1).
         for stale in rendering:
             stale.status, stale.failure_reason = "failed", RENDER_FAILED
         await db.commit()
-        logger.info("Version restée en rendu : utilisateur %s, revue %s", user_id, review.id)
+        logger.info("Version left rendering: user %s, review %s", user_id, review.id)
         rendering = []
     if rendering:
         raise generation_in_progress(rendering[0].id)
@@ -149,14 +149,14 @@ async def _forget(rt: CvRuntime, user_id: str, version_id: str) -> None:
 async def generate(
     rt: CvRuntime, user_id: str, review_id: str, body: GenerateIn
 ) -> GenerateStarted:
-    """Voir l'en-tête du module."""
+    """See the module header."""
     async with rt.review_lock(user_id):
         async with rt.session_factory() as db:
             review, interrupt_id = await _checked(db, user_id, review_id)
             version = await _new_version(
                 db, user_id, review, body.allow_extra_pages, rt.portfolio_origin()
             )
-            await db.commit()  # le parcours relit la version dans sa propre session
+            await db.commit()  # the flow re-reads the version in its own session
             version_id, session_id, number = version.id, str(review.session_id), version.number
         value = {"choice": "pdf", "version_id": version_id}
         try:
@@ -167,7 +167,7 @@ async def generate(
                 raise review_not_waiting() from None
             raise
     logger.info(
-        "Génération demandée : utilisateur %s, revue %s, version %s (n° %d), session %s",
+        "Generation requested: user %s, review %s, version %s (no. %d), session %s",
         user_id,
         review_id,
         version_id,

@@ -1,10 +1,10 @@
-"""Journal chronologique (SPEC F18, D99) : captures, sessions d'étude, quiz, bilans hebdomadaires.
+"""Chronological journal (SPEC F18, D99): captures, study sessions, quizzes, weekly reviews.
 
-Ce module est le seul écrivain du journal ; les autres features l'appellent par leur service
-(contrat 2). Une écriture est idempotente par `ref_key` : un rejeu rend l'id de la ligne déjà
-écrite. Le commit appartient à l'appelant.
+This module is the journal's only writer; the other features call it through their service
+(contract 2). A write is idempotent per `ref_key`: a replay returns the id of the row already
+written. The commit belongs to the caller.
 
-Journaux de l'application : jamais le texte d'une ligne, seulement des identifiants (17.4).
+Application logs: never a row's text, only ids (17.4).
 """
 
 from collections.abc import Mapping
@@ -23,7 +23,7 @@ from app.features.capture.schemas import JournalEntryOut, JournalLinksOut, Journ
 
 @dataclass(frozen=True)
 class JournalLinks:
-    """Les objets auxquels la ligne renvoie (tous facultatifs)."""
+    """The objects the row points to (all optional)."""
 
     session_id: str | None = None
     study_session_id: str | None = None
@@ -46,8 +46,8 @@ async def add_entry(
     links: JournalLinks = NO_LINKS,
     data: Mapping[str, Any] = NO_DATA,
 ) -> str:
-    """Écrit une ligne du journal et rend son id ; si `ref_key` existe déjà pour cet
-    utilisateur, rend l'id de la ligne existante (la première écriture gagne)."""
+    """Writes a journal row and returns its id; if `ref_key` already exists for this user,
+    returns the id of the existing row (the first write wins)."""
     return await JournalRepository(db, user_id).insert_once(
         ref_key,
         kind=kind,
@@ -62,16 +62,16 @@ async def add_entry(
 
 
 async def entry_by_ref(db: AsyncSession, user_id: str, ref_key: str) -> JournalEntry | None:
-    """La ligne de cette clé (« capture:{session} »…), `None` si elle n'est pas encore écrite."""
+    """The row of this key ("capture:{session}"...), `None` if it is not written yet."""
     return await JournalRepository(db, user_id).by_ref(ref_key)
 
 
 def invalid_cursor() -> AppError:
-    return AppError("invalid_cursor", "Curseur du journal inconnu.", 422)
+    return AppError("invalid_cursor", "Unknown journal cursor.", 422)
 
 
 def _out(row: JournalEntry) -> JournalEntryOut:
-    """`data` n'est jamais rendu tel quel (texte du Tuteur, faits du bilan, concepts)."""
+    """`data` is never returned as is (Tutor text, review facts, concepts)."""
     study_kind: Literal["guided", "training"] = (
         "training" if row.data.get("kind") == "training" else "guided"
     )
@@ -100,8 +100,8 @@ def _out(row: JournalEntry) -> JournalEntryOut:
 async def journal_page(
     db: AsyncSession, user_id: str, *, kind: JournalKind | None, before: str | None, limit: int
 ) -> JournalPage:
-    """Le journal de l'utilisateur, le plus récent d'abord (`kind` : un genre seulement) ;
-    `before` : id de la dernière ligne déjà lue, 422 `invalid_cursor` s'il n'est pas à lui."""
+    """The user's journal, most recent first (`kind`: a single kind only); `before`: id of the
+    last row already read, 422 `invalid_cursor` if it is not theirs."""
     rows = await JournalRepository(db, user_id).page(kind, before, limit + 1)
     if rows is None:
         raise invalid_cursor()

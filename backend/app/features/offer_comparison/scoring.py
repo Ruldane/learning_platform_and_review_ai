@@ -15,17 +15,22 @@ from app.features.offer_comparison.schemas import (
 )
 
 CRITERIA: tuple[OfferCriterion, ...] = ("match", "work_mode", "location")
+# French spellings stay: postings and rows stored before the switch to English use them.
 _WORK_MODES: dict[str, OfferWorkMode] = {
     "à distance": "remote",
     "100 % télétravail": "remote",
     "100% télétravail": "remote",
     "full remote": "remote",
+    "fully remote": "remote",
+    "100% remote": "remote",
     "remote": "remote",
     "télétravail intégral": "remote",
     "total": "remote",
     "hybride": "hybrid",
     "hybrid": "hybrid",
     "partiel": "hybrid",
+    "partial": "hybrid",
+    "partially remote": "hybrid",
     "télétravail partiel": "hybrid",
     "sur site": "onsite",
     "présentiel": "onsite",
@@ -33,6 +38,8 @@ _WORK_MODES: dict[str, OfferWorkMode] = {
     "none": "onsite",
     "onsite": "onsite",
     "on-site": "onsite",
+    "in office": "onsite",
+    "in-office": "onsite",
 }
 
 

@@ -1,9 +1,9 @@
-"""Connexion (SPEC 14.2, 17.1, phase 9) : l'utilisateur courant, la connexion par Google (OpenID
-Connect, code d'autorisation avec PKCE), la reprise de l'espace local et la déconnexion.
+"""Sign-in (SPEC 14.2, 17.1, phase 9): the current user, Google sign-in (OpenID Connect,
+authorization code with PKCE), taking over the local space and sign-out.
 
-Le cookie de session (`tremplin_session`) est opaque, `HttpOnly` et `SameSite=Lax` ; seul son
-SHA-256 est gardé. Ni e-mail, ni nom, ni `sub`, ni code, ni `state`, ni jeton, ni `login_hint` ne
-sont journalisés. Aucune redirection ne vise une adresse reçue en paramètre."""
+The session cookie (`tremplin_session`) is opaque, `HttpOnly` and `SameSite=Lax`; only its
+SHA-256 is kept. No e-mail, name, `sub`, code, `state`, token or `login_hint` is logged. No
+redirect targets an address received as a parameter."""
 
 from datetime import UTC, datetime
 from typing import Any
@@ -25,7 +25,7 @@ _NO_GOOGLE: dict[int | str, dict[str, Any]] = {404: {"description": "`google_aut
 
 
 def _oidc(request: Request) -> OidcProvider:
-    """La connexion Google de l'application ; mode local : 404 `google_auth_disabled`."""
+    """The application's Google sign-in; local mode: 404 `google_auth_disabled`."""
     oidc = get_providers(request).oidc
     if oidc is None:
         raise AppError("google_auth_disabled", "Google sign-in is disabled.", 404)
@@ -33,12 +33,12 @@ def _oidc(request: Request) -> OidcProvider:
 
 
 def _secure(settings: Settings) -> bool:
-    """`Secure` quand l'adresse de retour (où les cookies sont posés) est en https."""
+    """`Secure` when the return address (where the cookies are set) is https."""
     return settings.google_redirect_uri.startswith("https://")
 
 
 def _destination(settings: Settings, outcome: CallbackOutcome) -> str:
-    """Toujours une adresse du front fixée par la configuration, jamais reçue en paramètre (P10)."""
+    """Always a front-end address set by the configuration, never a received parameter (P10)."""
     front = settings.frontend_url.rstrip("/")
     if outcome.kind == "signed_in":
         return f"{front}/"
@@ -50,10 +50,10 @@ def _destination(settings: Settings, outcome: CallbackOutcome) -> str:
 @router.get(
     "/me",
     response_model=MeOut,
-    responses={401: {"description": "`auth_required` : mode Google, aucune session valide"}},
+    responses={401: {"description": "`auth_required`: Google mode, no valid session"}},
 )
 async def me(request: Request, current: CurrentUserDep, db: Db) -> MeOut:
-    """L'utilisateur connecté (mode local : l'utilisateur unique)."""
+    """The signed-in user (local mode: the single user)."""
     user = await AuthService(db).get_user(current.id)
     return MeOut(
         id=user.id,
@@ -70,9 +70,9 @@ async def me(request: Request, current: CurrentUserDep, db: Db) -> MeOut:
     responses={302: {"description": "Redirection vers Google"}, **_NO_GOOGLE},
 )
 async def google_login(request: Request, login_hint: str | None = None) -> RedirectResponse:
-    """Commence la connexion : pose le témoin `tremplin_oauth` (`state`, vérificateur PKCE,
-    `nonce`, chiffrés, 10 minutes) et renvoie vers Google. `login_hint` (facultatif) préremplit
-    l'adresse. Mode local : 404 `google_auth_disabled`."""
+    """Starts the sign-in: sets the `tremplin_oauth` cookie (`state`, PKCE verifier, `nonce`,
+    encrypted, 10 minutes) and redirects to Google. `login_hint` (optional) pre-fills the
+    address. Local mode: 404 `google_auth_disabled`."""
     settings: Settings = request.app.state.settings
     url, pending = start_login(_oidc(request), get_cipher(request), login_hint)
     response = RedirectResponse(url, status_code=302)
@@ -99,10 +99,10 @@ async def google_callback(
     state: str | None = None,
     error: str | None = None,
 ) -> RedirectResponse:
-    """Retour de Google : contrôle le `state`, échange le code, vérifie le jeton d'identité
-    (émetteur, audience, `nonce`, adresse vérifiée, `ALLOWED_EMAILS`) puis ouvre la session ou
-    propose la reprise de l'espace local. Toujours une redirection vers le front, jamais une
-    erreur affichée par l'API."""
+    """Return from Google: checks the `state`, exchanges the code, verifies the identity token
+    (issuer, audience, `nonce`, verified address, `ALLOWED_EMAILS`) then opens the session or
+    offers to take over the local space. Always a redirect to the front end, never an error
+    displayed by the API."""
     settings: Settings = request.app.state.settings
     outcome = await finish_login(
         db,
@@ -131,18 +131,18 @@ async def google_callback(
     response_model=MeOut,
     responses={
         409: {
-            "description": "`claim_expired` (le témoin `tremplin_claim` manque ou a plus de "
-            "10 minutes, ou « espace vide » a déjà été choisi : le compte existe, il suffit de "
-            "se reconnecter, ou l'adresse n'est plus nommée dans `ALLOWED_EMAILS`) ou "
-            "`local_already_claimed` (l'espace local a déjà un propriétaire)"
+            "description": "`claim_expired` (the `tremplin_claim` cookie is missing or older than "
+            '10 minutes, or "empty space" was already chosen: the account exists, signing in '
+            "again is enough, or the address is no longer named in `ALLOWED_EMAILS`) or "
+            "`local_already_claimed` (the local space already has an owner)"
         },
         **_NO_GOOGLE,
     },
 )
 async def google_claim(body: ClaimIn, request: Request, response: Response, db: Db) -> MeOut:
-    """Le choix de la toute première connexion : `take_local` attache l'identité Google à
-    l'espace local, `fresh` crée un espace vide. Ouvre la session (cookie posé) et rend
-    l'utilisateur."""
+    """The choice of the very first sign-in: `take_local` attaches the Google identity to the
+    local space, `fresh` creates an empty space. Opens the session (cookie set) and returns the
+    user."""
     _oidc(request)  # mode local : 404 `google_auth_disabled`
     settings: Settings = request.app.state.settings
     user = await claim.claim(
@@ -163,8 +163,8 @@ async def google_claim(body: ClaimIn, request: Request, response: Response, db: 
 
 @router.post("/logout", status_code=204, response_class=Response)
 async def logout(request: Request, db: Db) -> Response:
-    """Supprime la session du cookie et efface le cookie (même chemin que la pose). Sans effet en
-    mode local ; sans session, 204 aussi."""
+    """Deletes the cookie's session and clears the cookie (same path as when it was set). No
+    effect in local mode; without a session, 204 as well."""
     response = Response(status_code=204)
     settings: Settings = request.app.state.settings
     if settings.auth_mode == "google":

@@ -1,19 +1,19 @@
-"""Port du comité de recrutement (`CommitteeStore`, D147) sur la feature `applications` :
-implémentation branchée par `bootstrap_agents.agent_ports(..., committee=...)`. Chaque appel ouvre
-sa propre session de base, courte.
+"""Hiring committee port (`CommitteeStore`, D147) on the `applications` feature:
+implementation wired by `bootstrap_agents.agent_ports(..., committee=...)`. Each call opens its
+own short database session.
 
-- `context` : lecture seule. L'exécution (404 `committee_not_found` si elle n'est pas à
-  l'utilisatrice), le CV de la version (texte sans nom ni coordonnées), l'offre (texte et analyse,
-  sinon une analyse minimale : aucune exigence inventée), l'entreprise et l'intitulé exacts (de la
-  fiche de l'offre si elle existe), le dossier de moins de 30 jours (`kit_store.dossier_of`, la
-  règle du kit et de l'entretien) et la taille qu'il donne, les termes de l'offre vus dans le CV
-  (`ats_terms_of`) et le profil maître validé (409 `profile_required`).
-- `save_result` : **idempotent par session**, sous le verrou des comités : une exécution qui n'est
-  plus `running` (rejeu après un arrêt, SPEC 9.4) n'est jamais réécrite. Range les votes, le
-  verdict, les objections et les changements, passe l'exécution à `done` et, si l'offre a une
-  fiche, ajoute l'événement `committee` à son fil, dans la même transaction.
+- `context`: read-only. The run (404 `committee_not_found` if it is not the user's), the CV of
+  the version (text without name or contact details), the posting (text and analysis, otherwise
+  a minimal analysis: no invented requirement), the exact company and title (from the posting's
+  record if it exists), the dossier under 30 days old (`kit_store.dossier_of`, the rule of the
+  kit and of the interview) and the size it gives, the posting terms seen in the CV
+  (`ats_terms_of`) and the validated master profile (409 `profile_required`).
+- `save_result`: **idempotent per session**, under the committee lock: a run that is no longer
+  `running` (replay after a stop, SPEC 9.4) is never rewritten. Stores the votes, the verdict,
+  the objections and the changes, sets the run to `done` and, if the posting has a record, adds
+  the `committee` event to its timeline, in the same transaction.
 
-Journaux : identifiants, statuts et nombres seulement (17.2)."""
+Logs: ids, statuses and numbers only (17.2)."""
 
 import logging
 from collections import Counter
@@ -50,19 +50,19 @@ from app.features.postings.service.queries import postings_by_ids
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_TITLE = "Poste"
+DEFAULT_TITLE = "Role"
 
 
 def _analysis(posting: JobPosting, application: Application | None) -> PostingAnalysis:
-    """L'analyse rangée de l'offre ; sinon une analyse minimale (intitulé, entreprise, langue).
-    Avec une fiche, c'est celle du kit (`kit_language.posting_analysis`, une seule règle)."""
+    """The stored analysis of the posting; otherwise a minimal analysis (title, company,
+    language). With a record, it is the kit's (`kit_language.posting_analysis`, a single rule)."""
     if application is not None:
         return posting_analysis(posting.analysis, application, posting.text)
     if posting.analysis:
         try:
             return PostingAnalysis.model_validate(posting.analysis)
         except ValidationError:
-            pass  # une analyse illisible : le texte de l'offre reste la source
+            pass  # an unreadable analysis: the posting text remains the source
     return PostingAnalysis(
         is_job_posting=True,
         title=(posting.title or DEFAULT_TITLE).ljust(2, "."),
@@ -132,7 +132,7 @@ class AgentCommitteeStore:
         async with committee_lock(rt, user_id), rt.session_factory() as db:
             row = await committee_row(db, user_id, run_id)
             if row.status != "running":
-                return  # rejeu : l'issue de la session est déjà rangée
+                return  # replay: the outcome of the session is already stored
             row.votes = [vote.model_dump(mode="json") for vote in votes]
             row.verdict = synthesis.verdict
             row.objections = [o.model_dump(mode="json") for o in synthesis.objections]
@@ -141,7 +141,7 @@ class AgentCommitteeStore:
             await self._timeline(db, user_id, row, votes, synthesis)
             await db.commit()
         logger.info(
-            "Comité rangé : utilisateur %s, exécution %s, session %s, verdict %s",
+            "Committee stored: user %s, run %s, session %s, verdict %s",
             user_id,
             run_id,
             session_id,
@@ -156,7 +156,7 @@ class AgentCommitteeStore:
         votes: list[PersonaVote],
         synthesis: Synthesis,
     ) -> None:
-        """L'événement `committee` de la fiche de l'offre, si elle existe (même transaction)."""
+        """The `committee` event of the posting's record, if it exists (same transaction)."""
         application = await ApplicationRepository(db, user_id).by_posting(row.posting_id)
         if application is None:
             return

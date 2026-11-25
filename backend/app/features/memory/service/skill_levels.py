@@ -1,10 +1,10 @@
-"""Niveaux des compétences reflétés dans les acquis de la mémoire (D6, D88) : pour chaque
-compétence, l'acquis du même nom (nom normalisé) est créé ou monté, jamais baissé, et
-l'écriture est journalisée (`memory_writes` : auteur, session, raison). Idempotent : refléter
-deux fois le même niveau n'écrit rien de plus (c'est ce qui permet de rattraper un reflet manqué).
+"""Skill levels reflected in the memory's learned items (D6, D88): for each skill, the learned
+item of the same name (normalized name) is created or raised, never lowered, and the write is
+logged (`memory_writes`: author, session, reason). Idempotent: reflecting the same level twice
+writes nothing more (this is what allows catching up a missed reflection).
 
-Lecture inverse : `acquis_levels` rend le niveau de chaque acquis de la mémoire (ceux que
-l'Archiviste a écrits n'ont pas de ligne `user_skills`)."""
+Reverse read: `acquis_levels` returns the level of each learned item in memory (those the
+Archivist wrote have no `user_skills` row)."""
 
 from collections.abc import Sequence
 from typing import cast
@@ -25,12 +25,12 @@ def _level(item: MemoryItem) -> MasteryLevel:
 
 
 async def _acquis(db: AsyncSession, user_id: str) -> list[MemoryItem]:
-    """Tous les acquis actifs, du plus ancien au plus récent : lus une fois par appel."""
+    """All active learned items, oldest to most recent: read once per call."""
     return await MemoryItemRepository(db, user_id).of_kind("skill")
 
 
 async def acquis_levels(db: AsyncSession, user_id: str) -> dict[str, MasteryLevel]:
-    """`nom normalisé → niveau` des acquis actifs de la mémoire (le plus haut s'il y a doublon)."""
+    """`normalized name → level` of the active learned items (the highest if duplicated)."""
     levels: dict[str, MasteryLevel] = {}
     for item in await _acquis(db, user_id):
         norm, level = normalize_skill_name(item.title), _level(item)
@@ -50,8 +50,8 @@ async def _raise(
     reason: str,
     allow_lower: bool = False,
 ) -> None:
-    """Monte le niveau de l'acquis s'il est plus bas (ou le pose, plus bas compris, avec
-    `allow_lower`), journalise `update` ; sinon rien."""
+    """Raises the learned item's level if it is lower (or sets it, lower included, with
+    `allow_lower`), logs `update`; otherwise nothing."""
     current = MASTERY_ORDER[_level(item)]
     if current == MASTERY_ORDER[level] or (current > MASTERY_ORDER[level] and not allow_lower):
         return
@@ -73,13 +73,13 @@ async def _create(
     session_id: str | None,
     reason: str,
 ) -> MemoryItem:
-    """Un acquis se crée au plus « en cours » (règles d'écriture, D65) ; `_raise` pose ensuite
-    un niveau plus haut. Texte déterminé par le titre : deux créations simultanées du même nom
-    tombent sur le même hash (une seule ligne)."""
+    """A learned item is created at most "in progress" (write rules, D65); `_raise` then sets a
+    higher level. Text determined by the title: two simultaneous creations of the same name
+    land on the same hash (a single row)."""
     draft = WriteDraft(
         kind="skill",
         title=title,
-        text=f"Compétence travaillée dans un programme d'apprentissage : {title}.",
+        text=f"Skill worked on in a learning program: {title}.",
         author=author,
         reason=reason,
         level=level if level in WRITABLE_LEVELS else "in_progress",
@@ -98,10 +98,10 @@ async def reflect_skill_levels(
     reason: str,
     allow_lower: bool = False,
 ) -> list[str]:
-    """Reflète chaque `(titre, niveau)` dans l'acquis du même nom normalisé (créé, ou monté,
-    jamais plus bas) ; rend les ids des acquis. Les acquis sont lus une seule fois. Session de
-    base propre, commitée (la vectorisation d'un acquis créé valide sa transaction avant).
-    `allow_lower` : seule baisse admise (D6, D101), deux échecs de fiches de suite (SPEC F9)."""
+    """Reflects each `(title, level)` in the learned item of the same normalized name (created,
+    or raised, never lower); returns the learned items' ids. The items are read once. Own
+    database session, committed (vectorizing a created item commits its transaction first).
+    `allow_lower`: the only decrease allowed (D6, D101), two card failures in a row (SPEC F9)."""
     ids: list[str] = []
     async with runtime.session_factory() as db:
         index: dict[str, MemoryItem] = {}
@@ -150,8 +150,8 @@ async def reflect_skill_level(
     reason: str,
     allow_lower: bool = False,
 ) -> str:
-    """Crée l'acquis `title` au niveau `level` (ou le monte ; plus bas seulement avec
-    `allow_lower`) ; rend son id."""
+    """Creates the learned item `title` at level `level` (or raises it; lower only with
+    `allow_lower`); returns its id."""
     [item_id] = await reflect_skill_levels(
         runtime,
         user_id,

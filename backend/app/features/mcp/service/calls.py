@@ -1,7 +1,7 @@
-"""Le journal des appels MCP (phase 10, P19) et l'envoyeur gardé. Chaque appel d'outil laisse une
-ligne : l'outil, son niveau, le code de résultat, la durée et les identifiants touchés, **jamais le
-contenu** des arguments ni de la réponse. `GuardedDispatcher` enveloppe l'envoyeur de B2 : limites
-d'abord (429), journal ensuite, même pour un appel refusé ou en échec."""
+"""The MCP call log (phase 10, P19) and the guarded dispatcher. Each tool call leaves a row:
+the tool, its level, the result code, the duration and the ids touched, **never the content**
+of the arguments or the response. `GuardedDispatcher` wraps B2's dispatcher: limits first
+(429), log afterwards, even for a refused or failed call."""
 
 import logging
 import re
@@ -27,11 +27,11 @@ logger = logging.getLogger(__name__)
 _ID = re.compile(r"[A-Za-z0-9_-]{1,40}")
 _MAX_IDS = 10
 _REFUSALS_PER_MINUTE = 30
-RETENTION_DAYS = 30  # le journal des appels ne garde que les 30 derniers jours
+RETENTION_DAYS = 30  # the call log only keeps the last 30 days
 
 
 def clean_ids(ids: Mapping[str, Any]) -> dict[str, Any]:
-    """Borne les identifiants et codes issus de l'envoyeur avant leur écriture au journal."""
+    """Bounds the ids and codes coming from the dispatcher before they are written to the log."""
     kept: dict[str, Any] = {}
     for key, value in list(ids.items())[:_MAX_IDS]:
         if not isinstance(key, str) or not _ID.fullmatch(key):
@@ -47,7 +47,7 @@ def clean_ids(ids: Mapping[str, Any]) -> dict[str, Any]:
 
 
 class CallJournal:
-    """Écrit une ligne du journal dans sa propre courte session (l'appel est déjà fait)."""
+    """Writes a log row in its own short session (the call is already made)."""
 
     def __init__(
         self,
@@ -55,7 +55,7 @@ class CallJournal:
         fallback_user: Callable[[], str | None] = lambda: None,
     ) -> None:
         self._session_factory = session_factory
-        self._fallback_user = fallback_user  # l'utilisatrice du mode local, pour un jeton inconnu
+        self._fallback_user = fallback_user  # the local-mode user, for an unknown token
         self._refusals: dict[str, deque[float]] = {}
 
     async def record(
@@ -67,9 +67,9 @@ class CallJournal:
         ids: Mapping[str, Any],
         call_id: str | None = None,
     ) -> None:
-        """Une panne du journal n'annule pas un appel déjà fait : signalée, sans contenu. Un appel
-        refusé par la limite (429) passe par le budget des refus : un client qui insiste n'écrit
-        pas une ligne par requête."""
+        """A log failure does not cancel a call already made: reported, without content. A call
+        refused by the limit (429) goes through the refusals budget: a client that insists does
+        not write one row per request."""
         if code == 429 and not self._refusal_budget(f"{identity.token_id}|limit"):
             return
         try:
@@ -85,11 +85,11 @@ class CallJournal:
                 )
                 await db.commit()
         except Exception as exc:
-            logger.error("MCP : journal de l'appel impossible (%s)", type(exc).__name__)
+            logger.error("MCP: logging the call is impossible (%s)", type(exc).__name__)
 
     def _refusal_budget(self, key: str) -> bool:
-        """Au plus 30 lignes par minute et par `key` (jeton et motif du refus : un flot de faux
-        jetons ne remplit pas la base ni ne masque un refus d'un autre motif)."""
+        """At most 30 rows per minute and per `key` (token and refusal reason: a flood of fake
+        tokens fills neither the database nor hides a refusal of another reason)."""
         now = time.monotonic()
         recent = self._refusals.setdefault(key, deque())
         while recent and recent[0] <= now - 60:
@@ -102,8 +102,8 @@ class CallJournal:
     async def refusal(
         self, user_id: str | None, token_id: str | None, action: str, level: int, code: int
     ) -> None:
-        """Journalise un refus de la porte (niveau 0 : avant de résoudre l'outil), jamais le
-        contenu. Sans compte connu (jeton inconnu), c'est l'utilisatrice du mode local, ou rien."""
+        """Logs a refusal at the gate (level 0: before resolving the tool), never the content.
+        Without a known account (unknown token), it is the local-mode user, or nothing."""
         owner = user_id or self._fallback_user()
         if owner is None or not self._refusal_budget(f"{token_id or '-'}|{action}"):
             return
@@ -112,11 +112,11 @@ class CallJournal:
                 await CallRepository(db, owner).record(token_id, action[:80], level, code, 0, {})
                 await db.commit()
         except Exception as exc:
-            logger.error("MCP : journal du refus impossible (%s)", type(exc).__name__)
+            logger.error("MCP: logging the refusal is impossible (%s)", type(exc).__name__)
 
 
 class GuardedDispatcher:
-    """Limites puis journal autour de l'envoyeur réel."""
+    """Limits then log around the real dispatcher."""
 
     def __init__(
         self,
@@ -148,8 +148,8 @@ class GuardedDispatcher:
 
 
 async def purge_old_calls(session_factory: async_sessionmaker[AsyncSession], now: datetime) -> int:
-    """Retire du journal les appels de plus de `RETENTION_DAYS` jours (tâche planifiée, tous
-    comptes : une rétention, pas une lecture). Rend le nombre de lignes retirées."""
+    """Removes from the log the calls older than `RETENTION_DAYS` days (scheduled task, all
+    accounts: a retention, not a read). Returns the number of rows removed."""
     cutoff = now - timedelta(days=RETENTION_DAYS)
     async with session_factory() as db:
         result = await db.execute(delete(McpCall).where(McpCall.created_at < cutoff))
@@ -162,7 +162,7 @@ def _since(started: float) -> int:
 
 
 class CallsService:
-    """Le journal tel que le voit January : mes appels, les plus récents d'abord."""
+    """The log as January sees it: my calls, most recent first."""
 
     def __init__(self, db: AsyncSession, user_id: str) -> None:
         self._calls = CallRepository(db, user_id)

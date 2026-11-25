@@ -1,7 +1,8 @@
-"""API des offres (SPEC F8, 14.2, D122). `POST /postings` ajoute une offre par son lien ou son
-texte collé et lance l'analyse (`gap_analysis`) ; le même lien ou le même texte rend l'offre
-existante (200, doublon « certain »). Les doublons probables et possibles arrivent avec
-l'analyse (`GET /postings/{id}`). L'écart se lit par `GET /postings/{id}/gap` (feature `gap`)."""
+"""Postings API (SPEC F8, 14.2, D122). `POST /postings` adds a posting by its link or pasted
+text and launches the analysis (`gap_analysis`); the same link or the same text returns the
+existing posting (200, "certain" duplicate). Probable and possible duplicates arrive with the
+analysis (`GET /postings/{id}`). The gap is read through `GET /postings/{id}/gap` (`gap`
+feature)."""
 
 from typing import Annotated
 
@@ -32,7 +33,7 @@ router = APIRouter(tags=["postings"])
 
 
 def get_postings_runtime(conn: HTTPConnection) -> PostingsRuntime:
-    """Les offres ouvertes par le lifespan (`app.state.career.postings`)."""
+    """The postings opened by the lifespan (`app.state.career.postings`)."""
     runtime: PostingsRuntime = conn.app.state.career.postings
     return runtime
 
@@ -41,8 +42,8 @@ PostingsDep = Annotated[PostingsRuntime, Depends(get_postings_runtime)]
 
 
 def get_cv_runtime(conn: HTTPConnection) -> CvRuntime:
-    """Le CV ouvert par le lifespan (`app.state.career.cv`) : son verrou des revues sert à la
-    suppression d'une offre (D137 n° 7). Import d'un service d'une autre feature : permis."""
+    """The CV opened by the lifespan (`app.state.career.cv`): its reviews lock serves the
+    deletion of a posting (D137 no. 7). Importing a service from another feature: allowed."""
     runtime: CvRuntime = conn.app.state.career.cv
     return runtime
 
@@ -54,15 +55,15 @@ CvDep = Annotated[CvRuntime, Depends(get_cv_runtime)]
     "/postings",
     response_model=PostingCreatedOut,
     status_code=status.HTTP_201_CREATED,
-    responses={200: {"model": PostingCreatedOut, "description": "Offre déjà ajoutée"}},
+    responses={200: {"model": PostingCreatedOut, "description": "Posting already added"}},
 )
 async def add_posting(
     body: PostingIn, current: CurrentUserDep, rt: PostingsDep, response: Response
 ) -> PostingCreatedOut:
-    """201 : offre créée, analyse lancée. 200 : même lien ou même texte, l'offre existante
-    (relancée si elle était refusée, en échec ou interrompue). 422 `posting_source`,
-    `posting_unreadable`, `posting_too_short`, `invalid_url`, `url_forbidden` : jamais l'entrée
-    dans la réponse."""
+    """201: posting created, analysis launched. 200: same link or same text, the existing posting
+    (relaunched if it was refused, failed or interrupted). 422 `posting_source`,
+    `posting_unreadable`, `posting_too_short`, `invalid_url`, `url_forbidden`: never the input
+    in the response."""
     created = await create_posting(rt, current.id, body)
     if not created.created:
         response.status_code = status.HTTP_200_OK
@@ -73,7 +74,7 @@ async def add_posting(
     "/postings/direct",
     response_model=PostingCreatedOut,
     status_code=status.HTTP_201_CREATED,
-    responses={200: {"model": PostingCreatedOut, "description": "Offre déjà ajoutée"}},
+    responses={200: {"model": PostingCreatedOut, "description": "Posting already added"}},
 )
 async def write_posting(
     body: PostingDirectIn,
@@ -82,11 +83,11 @@ async def write_posting(
     caller: CallerDep,
     response: Response,
 ) -> PostingCreatedOut:
-    """Écrit une offre en direct : son texte et son analyse sont ceux de January ou de Claude,
-    sans agent ni appel au modèle (l'écart se lance ensuite par `POST /postings/{id}/gap`). 201 :
-    offre créée, prête. 200 : même lien (ou, sans lien, même texte), l'offre existante. 422
-    `posting_too_short`, `posting_analysis_invalid`, `invalid_url`, `url_forbidden` : jamais
-    l'entrée dans la réponse."""
+    """Writes a posting directly: its text and its analysis are January's or Claude's, with no
+    agent or model call (the gap is then launched through `POST /postings/{id}/gap`). 201:
+    posting created, ready. 200: same link (or, without a link, same text), the existing
+    posting. 422 `posting_too_short`, `posting_analysis_invalid`, `invalid_url`,
+    `url_forbidden`: never the input in the response."""
     created = await create_direct(rt, current.id, body, is_mcp=caller.kind == "mcp")
     if not created.created:
         response.status_code = status.HTTP_200_OK
@@ -109,14 +110,14 @@ async def patch_posting(
     rt: PostingsDep,
     caller: CallerDep,
 ) -> PostingOut:
-    """Retouche l'analyse d'une offre analysée (titre, entreprise, exigences, mots clés…), sans
-    agent : sa mémoire et ses doublons sont recalculés."""
+    """Edits the analysis of an analyzed posting (title, company, requirements, keywords...),
+    without an agent: its memory and its duplicates are recomputed."""
     return await patch_direct(rt, current.id, posting_id, body, is_mcp=caller.kind == "mcp")
 
 
 @router.get("/postings", response_model=list[PostingSummaryOut])
 async def get_postings(current: CurrentUserDep, db: Db) -> list[PostingSummaryOut]:
-    """Les offres de January, les plus récentes d'abord."""
+    """January's postings, most recent first."""
     return await list_postings(db, current.id)
 
 
@@ -132,11 +133,12 @@ async def get_posting(posting_id: str, current: CurrentUserDep, db: Db) -> Posti
         404: {"description": "`posting_not_found`"},
         409: {
             "description": (
-                "`review_in_progress` (une revue de CV de l'offre est lancée ou proposée : "
-                "la terminer d'abord), `analysis_in_progress` (l'analyse de l'offre tourne : "
-                "réessayer dans un instant), `posting_has_application` (une fiche de candidature "
-                "cite l'offre : `details.application_id`), `posting_has_running_work` (un comité "
-                "ou un entretien en cours cite l'offre : `details.kind`, `committee` ou "
+                "`review_in_progress` (a CV review of the posting is launched or proposed: "
+                "finish it first), `analysis_in_progress` (the posting analysis is running: "
+                "try again in a moment), `posting_has_application` (an application record "
+                "cites the posting: `details.application_id`), `posting_has_running_work` (a "
+                "committee or an interview in progress cites the posting: `details.kind`, "
+                "`committee` or "
                 "`interview`)"
             )
         },
@@ -145,8 +147,8 @@ async def get_posting(posting_id: str, current: CurrentUserDep, db: Db) -> Posti
 async def remove_posting(
     posting_id: str, current: CurrentUserDep, db: Db, rt: PostingsDep, cv: CvDep
 ) -> Response:
-    """Retire l'offre, son élément de mémoire `offre`, ses revues et versions (PDF et images
-    compris) ; 409 `review_in_progress` ou `analysis_in_progress` si l'une tourne."""
+    """Removes the posting, its `posting` memory item, its reviews and versions (PDFs and
+    images included); 409 `review_in_progress` or `analysis_in_progress` if one is running."""
     await delete_posting(db, rt.memory, cv.review_lock(current.id), current.id, posting_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -155,7 +157,7 @@ async def remove_posting(
 async def distinct_postings(
     posting_id: str, body: DistinctIn, current: CurrentUserDep, db: Db
 ) -> Response:
-    """« Offres distinctes » : le doublon disparaît des deux côtés."""
+    """ "Distinct postings": the duplicate disappears on both sides."""
     await mark_distinct(db, current.id, posting_id, body.other_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -164,7 +166,7 @@ async def distinct_postings(
     "/postings/{posting_id}/gap", response_model=GapStarted, status_code=status.HTTP_202_ACCEPTED
 )
 async def relaunch_gap(posting_id: str, current: CurrentUserDep, rt: PostingsDep) -> GapStarted:
-    """Relance l'analyse d'écart ; 409 `gap_in_progress` si elle tourne déjà."""
+    """Relaunches the gap analysis; 409 `gap_in_progress` if it is already running."""
     sid = await relaunch(rt, current.id, posting_id, if_needed=False)
-    assert sid is not None  # sans `if_needed`, une session est toujours lancée
+    assert sid is not None  # without `if_needed`, a session is always launched
     return GapStarted(session_id=sid)

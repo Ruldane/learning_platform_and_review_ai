@@ -1,8 +1,8 @@
-"""`MemoryRepository` sur Qdrant (`qdrant-client`, API asynchrone).
+"""`MemoryRepository` on Qdrant (`qdrant-client`, asynchronous API).
 
-Une seule collection ; l'id d'un point est le `chunk_id`. CHAQUE requête porte la condition
-`user_id` : aucune lecture ni suppression ne sort du périmètre d'un utilisateur. Les erreurs du
-client deviennent `VectorStoreUnavailable` (jamais le texte de l'exception)."""
+A single collection; a point's id is the `chunk_id`. EVERY query carries the `user_id`
+condition: no read or deletion leaves a user's perimeter. The client's errors become
+`VectorStoreUnavailable` (never the exception's text)."""
 
 import asyncio
 import logging
@@ -36,7 +36,7 @@ async def _store_errors() -> AsyncIterator[None]:
     try:
         yield
     except _CLIENT_ERRORS as exc:
-        logger.warning("Qdrant indisponible : %s", type(exc).__name__)
+        logger.warning("Qdrant unavailable: %s", type(exc).__name__)
         raise VectorStoreUnavailable() from None
 
 
@@ -57,12 +57,12 @@ def _payload(raw: dict[str, object] | None) -> ChunkPayload | None:
         return None
     try:
         return ChunkPayload(**raw)  # type: ignore[arg-type]
-    except TypeError:  # point écrit par autre chose que ce dépôt : ignoré
+    except TypeError:  # point written by something other than this repository: ignored
         return None
 
 
 def _dense(vector: object) -> list[float] | None:
-    """Le vecteur d'un point s'il est dense et unique (collection anonyme), sinon `None`."""
+    """The vector of a point if it is dense and single (anonymous collection), otherwise `None`."""
     if isinstance(vector, list) and all(isinstance(x, int | float) for x in vector):
         return [float(x) for x in vector]
     return None
@@ -80,7 +80,7 @@ class QdrantMemoryRepository:
         self._lock = asyncio.Lock()
 
     async def _ensure_collection(self) -> None:
-        """Créée à la première utilisation : le back démarre même si Qdrant est arrêté."""
+        """Created on first use: the back end starts even if Qdrant is stopped."""
         if self._ready:
             return
         async with self._lock:
@@ -93,7 +93,7 @@ class QdrantMemoryRepository:
                         size=self._dimension, distance=models.Distance.COSINE
                     ),
                 )
-            for field in _INDEXED_FIELDS:  # idempotent côté serveur
+            for field in _INDEXED_FIELDS:  # idempotent on the server side
                 await self._client.create_payload_index(
                     self._collection, field, models.PayloadSchemaType.KEYWORD
                 )
@@ -104,7 +104,7 @@ class QdrantMemoryRepository:
             return
         vectors = await self._embedder.aembed_documents([c.payload.text for c in chunks])
         if len(vectors) != len(chunks):
-            raise ValueError("un vecteur par fragment attendu")
+            raise ValueError("one vector per chunk expected")
         points = [
             models.PointStruct(id=c.chunk_id, vector=vector, payload=asdict(c.payload))
             for c, vector in zip(chunks, vectors, strict=True)
@@ -117,7 +117,7 @@ class QdrantMemoryRepository:
         self, user_id: str, query: str, *, kinds: Sequence[str] | None = None, k: int = DEFAULT_K
     ) -> list[VectorHit]:
         vector = await self._embedder.aembed_query(query)
-        # Aucun type demandé : tous les types (un filtre vide ne renverrait jamais rien).
+        # No type requested: all types (an empty filter would never return anything).
         by_kind: list[models.Condition] = (
             [models.FieldCondition(key="kind", match=models.MatchAny(any=list(kinds)))]
             if kinds
@@ -133,7 +133,7 @@ class QdrantMemoryRepository:
         itself = models.HasIdCondition(has_id=[chunk_id])
         async with _store_errors():
             await self._ensure_collection()
-            # Vecteur lu sous le filtre `user_id` : l'id d'un autre utilisateur ne donne rien.
+            # Vector read under the `user_id` filter: another user's id gives nothing.
             found, _ = await self._client.scroll(
                 self._collection,
                 scroll_filter=_user_filter(user_id, itself),

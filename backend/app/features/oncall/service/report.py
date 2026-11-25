@@ -13,6 +13,9 @@ from app.features.oncall.schemas import OncallReviewStarted
 from app.features.oncall.service import OncallService, review_state
 from app.features.skills.service import SkillsService
 
+INCIDENT_SKILL = "Incident diagnosis"
+LEGACY_INCIDENT_SKILL = "Diagnostic d’incident"  # the French name stored before the switch
+
 
 async def launch_report(
     launcher: SessionLauncher,
@@ -106,9 +109,9 @@ class AgentOncallStore:
             ) == row.diagnostic_hash
             if score.accepted and same_diagnostic and await service.repaired(row):
                 proof = evidence("ide", row.ide_session_id, "On-call simulation passed", utcnow())
-                await SkillsService(db, user_id).raise_levels(
-                    ["Diagnostic d’incident"], "in_progress", proof
-                )
+                skills = SkillsService(db, user_id)
+                skill = await skills.existing_name(INCIDENT_SKILL, LEGACY_INCIDENT_SKILL)
+                await skills.raise_levels([skill], "in_progress", proof)
                 row.proof_recorded = True
             await db.commit()
             return row.proof_recorded

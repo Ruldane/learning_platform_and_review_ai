@@ -1,14 +1,14 @@
-"""Port des gabarits vu par le Maquettiste (`CvTemplateStore`, D125, D126).
+"""Templates port as seen by the Designer (`CvTemplateStore`, D125, D126).
 
-La mise en page du CV d'origine est extraite **une fois**, à la création du gabarit (la route
-refuse un PDF illisible avant de lancer quoi que ce soit) : images des pages rangées, géométrie,
-blocs résumés, texte visible et rôles des polices dans `cv_templates.prepared`. `prepare` y
-ajoute les polices (téléchargées une fois, réutilisées d'un gabarit à l'autre), puis n'est plus
-qu'une relecture. `render_pass` est idempotent par `(gabarit, passe)` : une passe rangée dans
-`pass_log` est relue, jamais rendue deux fois ; la passe rendue devient la passe courante du
-gabarit (spec, HTML, CSS, score, zones, images), celle que `finish(ready)` garde.
+The original CV's layout is extracted **once**, when the template is created (the route refuses
+an unreadable PDF before launching anything): stored page images, geometry, summary blocks,
+visible text and font roles in `cv_templates.prepared`. `prepare` adds the fonts to it
+(downloaded once, reused from one template to another), then is only a re-read. `render_pass` is
+idempotent per `(template, pass)`: a pass stored in `pass_log` is re-read, never rendered
+twice; the rendered pass becomes the template's current pass (spec, HTML, CSS, score, zones,
+images), the one `finish(ready)` keeps.
 
-Journaux : identifiants et nombres seulement, jamais un texte, une image ni une police du CV."""
+Logs: ids and numbers only, never a CV text, image or font."""
 
 import logging
 from typing import Any
@@ -59,7 +59,7 @@ def capture_over() -> AppError:
 
 
 class AgentCvTemplateStore:
-    """`CvTemplateStore` de la composition (`app.bootstrap_career`)."""
+    """The composition's `CvTemplateStore` (`app.bootstrap_career`)."""
 
     def __init__(self, runtime: CvRuntime) -> None:
         self._rt = runtime
@@ -75,7 +75,7 @@ class AgentCvTemplateStore:
         return [await self._rt.storage.read(user_id, str(key)) for key in keys]
 
     async def _fonts(self, user_id: str, row: CvTemplate) -> dict[str, Any]:
-        """Polices résolues une seule fois par gabarit, puis relues telles quelles."""
+        """Fonts resolved once per template, then re-read as they are."""
         prepared = dict(row.prepared or {})
         if "font_files" in prepared:
             return prepared
@@ -87,7 +87,7 @@ class AgentCvTemplateStore:
             fresh = await repo.get(row.id)
             if fresh is None:
                 raise template_not_found()
-            if "font_files" in (fresh.prepared or {}):  # déjà résolues entre-temps
+            if "font_files" in (fresh.prepared or {}):  # already resolved meanwhile
                 return dict(fresh.prepared or {})
             fresh.prepared = prepared
             fresh.fonts = [use.model_dump() for use in uses]
@@ -143,8 +143,8 @@ class AgentCvTemplateStore:
         current: dict[str, Any],
         adjusted: bool,
     ) -> bool:
-        """La passe entre dans le journal ; elle devient la passe courante (colonnes `current`)
-        seulement si `keeps_pass` : la meilleure fait le gabarit (D125)."""
+        """The pass enters the log; it becomes the current pass (`current` columns) only if
+        `keeps_pass`: the best one makes the template (D125)."""
         async with self._rt.session_factory() as db:
             fresh = await TemplateRepository(db, user_id).get(template_id)
             if fresh is None:
@@ -170,7 +170,7 @@ class AgentCvTemplateStore:
         adjusted: bool = False,
     ) -> PassResult:
         row = await self._row(user_id, template_id)
-        if row.status == "failed":  # session annulée pendant un rendu : rien n'est rangé (M2)
+        if row.status == "failed":  # session cancelled during a rendering: nothing is stored (M2)
             raise capture_over()
         if (done := await self._stored_pass(user_id, row, pass_no)) is not None:
             return done
@@ -199,7 +199,7 @@ class AgentCvTemplateStore:
         }
         kept = await self._store_pass(user_id, template_id, entry, current, adjusted)
         logger.info(
-            "Passe rangée : utilisateur %s, gabarit %s, passe %d, score %d, %d page(s), gardée %s",
+            "Pass stored: user %s, template %s, pass %d, score %d, %d page(s), kept %s",
             user_id,
             template_id,
             pass_no,
@@ -212,7 +212,7 @@ class AgentCvTemplateStore:
     async def finish(
         self, user_id: str, template_id: str, status: TemplateOutcome, reason: str | None
     ) -> None:
-        """Idempotent ; un gabarit prêt ou archivé ne change plus."""
+        """Idempotent; a ready or archived template no longer changes."""
         async with self._rt.template_lock(user_id), self._rt.session_factory() as db:
             repo = TemplateRepository(db, user_id)
             row = await repo.get(template_id)
@@ -220,7 +220,7 @@ class AgentCvTemplateStore:
                 raise template_not_found()
             if row.status in ("ready", "archived"):
                 return
-            if row.status == "failed":  # figé : `failed` redit est sans effet, `ready` refusé
+            if row.status == "failed":  # frozen: a repeated `failed` has no effect, `ready` refused
                 if status == "ready":
                     raise capture_over()
                 return

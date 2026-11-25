@@ -1,7 +1,7 @@
-"""Les captures d'un rendu (P2) : vérifiées par leurs **octets de tête** (signature PNG, JPEG ou
-WebP), jamais par le nom ni le type annoncé par le navigateur ; le suffixe rangé vient du type
-détecté. Le nom du fichier reçu n'est ni gardé ni journalisé. Rangées par `FileStorage`
-(`<user_id>/projects/<uuid><suffixe>`), servies avec leur type d'origine."""
+"""The screenshots of a submission (P2): checked by their **leading bytes** (PNG, JPEG or WebP
+signature), never by the name or the type announced by the browser; the stored suffix comes
+from the detected type. The received file name is neither kept nor logged. Stored by
+`FileStorage` (`<user_id>/projects/<uuid><suffix>`), served with their original type."""
 
 import logging
 from collections.abc import Sequence
@@ -22,14 +22,14 @@ _SUFFIX_TYPES = {suffix: media for media, suffix in IMAGE_TYPES.items()}
 
 
 def _is_jpeg(data: bytes) -> bool:
-    """`FF D8 FF` suivi d'un octet de marqueur (`C0` à `FE` : APPn, DQT, DHT, SOFn, COM…) et de la
-    longueur du segment sur deux octets : un fichier réduit à la signature, ou à la signature et au
-    marqueur nus (4 octets), n'est pas une image (D181)."""
+    """`FF D8 FF` followed by a marker byte (`C0` to `FE`: APPn, DQT, DHT, SOFn, COM...) and the
+    segment length on two bytes: a file reduced to the signature, or to the bare signature and
+    marker (4 bytes), is not an image (D181)."""
     return len(data) >= 6 and data.startswith(_JPEG) and 0xC0 <= data[3] <= 0xFE
 
 
 def detect_image(data: bytes) -> str | None:
-    """Le type d'image selon les octets de tête, `None` si ce n'est ni PNG, ni JPEG, ni WebP."""
+    """The image type according to the leading bytes, `None` if it is neither PNG, JPEG nor WebP."""
     if data.startswith(_PNG):
         return "image/png"
     if _is_jpeg(data):
@@ -40,7 +40,7 @@ def detect_image(data: bytes) -> str | None:
 
 
 def media_type_of(key: str) -> str:
-    """Le type d'origine d'une capture rangée, d'après le suffixe de sa clé."""
+    """The original type of a stored screenshot, from the suffix of its key."""
     for suffix, media in _SUFFIX_TYPES.items():
         if key.endswith(suffix):
             return media
@@ -48,7 +48,7 @@ def media_type_of(key: str) -> str:
 
 
 async def read_upload(file: UploadFile) -> bytes:
-    """Les octets du fichier, jamais plus de 5 Mo (413 sinon) : la lecture s'arrête au plafond."""
+    """The file's bytes, never more than 5 MB (413 otherwise): reading stops at the cap."""
     data = await file.read(SCREENSHOT_BYTES + 1)
     if len(data) > SCREENSHOT_BYTES:
         raise screenshot_too_large()
@@ -58,8 +58,8 @@ async def read_upload(file: UploadFile) -> bytes:
 async def store_all(
     rt: ProjectsRuntime, user_id: str, images: Sequence[tuple[bytes, str]]
 ) -> list[str]:
-    """Range les captures `(octets, type)` et rend leurs clés ; en cas d'échec, retire celles déjà
-    rangées avant de relever l'erreur."""
+    """Stores the `(bytes, type)` screenshots and returns their keys; on failure, removes those
+    already stored before raising the error."""
     keys: list[str] = []
     try:
         for data, media in images:
@@ -71,19 +71,19 @@ async def store_all(
 
 
 async def delete_all(rt: ProjectsRuntime, user_id: str, keys: Sequence[str]) -> None:
-    """Retire des captures rangées ; une panne est journalisée (classe seule), jamais relevée."""
+    """Removes stored screenshots; a failure is logged (class only), never raised."""
     for key in keys:
         try:
             await rt.storage.delete(user_id, key)
         except Exception as exc:
-            logger.warning("Capture non retirée : utilisateur %s (%s)", user_id, type(exc).__name__)
+            logger.warning("Screenshot not removed: user %s (%s)", user_id, type(exc).__name__)
 
 
 async def screenshot_file(
     rt: ProjectsRuntime, user_id: str, project_id: str, number: int, submission: int
 ) -> tuple[bytes, str]:
-    """Les octets et le type d'origine de la capture `number` (à partir de 1) du rendu
-    `submission` (à partir de 1, le dernier d'abord) ; 404 sinon. Le projet d'une autre : 404."""
+    """The bytes and original type of screenshot `number` (from 1) of submission `submission`
+    (from 1, the latest first); 404 otherwise. Another user's project: 404."""
     async with rt.session_factory() as db:
         row = await owned(db, user_id, project_id)
     submissions = list(reversed(row.submissions))

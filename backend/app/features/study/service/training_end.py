@@ -137,6 +137,6 @@ async def update_training(
                 reason="Session training.",
             )
         except Exception:
-            logger.warning("Acquis non reflétés après le training : étude %s", study_id)
+            logger.warning("Learned items not reflected after the training: study %s", study_id)
     async with rt.session_factory() as db:
         return await training_out(db, await training_row(db, user_id, study_id))

@@ -74,9 +74,9 @@ def _prompt(
 ) -> dict[str, object]:
     return {
         "role": _LABELS[role],
-        "question": untrusted(question[:1_500], "question de l’utilisatrice"),
+        "question": untrusted(question[:1_500], "user's question"),
         "catalog": "\n\n".join(
-            f"[{source.index}] {untrusted(source.title + '\n' + source.material, 'page web lue')}"
+            f"[{source.index}] {untrusted(source.title + '\n' + source.material, 'web page read')}"
             for source in sources
         ),
         "previous": untrusted(

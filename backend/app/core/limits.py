@@ -1,8 +1,8 @@
-"""Limite de taille du corps des requêtes d'import, appliquée avant toute analyse (multipart).
+"""Size limit of the body of import requests, applied before any parsing (multipart).
 
-Middleware ASGI pur : un `Content-Length` déclaré trop grand est refusé sans lire le corps ; sinon
-les octets reçus sont comptés et, au dépassement, la lecture est abandonnée et la réponse de
-l'application (une 400 de FastAPI qui n'a pas pu analyser le corps) est remplacée par la 413."""
+Pure ASGI middleware: a declared `Content-Length` that is too large is refused without reading the
+body; otherwise the bytes received are counted and, when exceeded, the read is abandoned and the
+application's response (a FastAPI 400 that could not parse the body) is replaced by the 413."""
 
 from dataclasses import dataclass
 
@@ -10,11 +10,11 @@ from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 TOO_LARGE_CODE = "file_too_large"
-TOO_LARGE_MESSAGE = "Fichier trop volumineux : 20 Mo au maximum."
+TOO_LARGE_MESSAGE = "File too large: 20 MB maximum."
 
 
 class BodyTooLarge(Exception):
-    """Levée par la lecture du corps au dépassement ; jamais rendue telle quelle."""
+    """Raised by the body read when exceeded; never returned as is."""
 
 
 @dataclass
@@ -35,13 +35,13 @@ def _declared_length(scope: Scope) -> int | None:
             try:
                 return int(value)
             except ValueError:
-                return None  # illisible : le décompte des octets s'applique
+                return None  # unreadable: the byte count applies
     return None
 
 
 class BodySizeLimit:
-    """Requêtes POST sur `path` ou sous `path/` (pas `pathX`) ; `code` et `message` : l'erreur
-    413 rendue (par défaut, celle d'un import de fichier)."""
+    """POST requests on `path` or under `path/` (not `pathX`); `code` and `message`: the 413
+    error returned (by default, that of a file import)."""
 
     def __init__(
         self,
@@ -87,7 +87,7 @@ class BodySizeLimit:
 
         async def guarded_send(message: Message) -> None:
             if progress.exceeded:
-                return  # la réponse de l'application est remplacée par la 413
+                return  # the application's response is replaced by the 413
             if message["type"] == "http.response.start":
                 progress.started = True
             await send(message)

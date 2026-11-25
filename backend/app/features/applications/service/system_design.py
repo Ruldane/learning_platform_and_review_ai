@@ -24,7 +24,7 @@ from app.features.learning.service.design_boards import create_design_board, rea
 from app.features.skills.service import SkillsService
 
 SKILL = "System design"
-LEGACY_SKILL = "Conception de systèmes"
+LEGACY_SKILL = "Conception de systèmes"  # the French name stored before the switch to English
 SUBJECT_CARD = DesignSubject(
     title="Design a reminder service",
     situation="Teams schedule reminders for their members. Traffic peaks at the start of the day.",

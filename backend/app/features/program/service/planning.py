@@ -1,8 +1,8 @@
-"""Règles du programme (SPEC 3.4) : acquis, pratique et quiz chaque semaine, 85 % du budget.
+"""Program rules (SPEC 3.4): learned items, practice and quiz every week, 85% of the budget.
 
-Le Stratège propose un brouillon (`PlanDraft`) ; ce module le vérifie (`check_draft`), l'allège
-des acquis de January (`apply_known`), le complète (`ensure_week_rules`) et le range sur le
-calendrier (`schedule`). Rien ici n'écrit en base ni n'appelle un modèle.
+The Strategist proposes a draft (`PlanDraft`); this module checks it (`check_draft`), lightens
+it with January's known skills (`apply_known`), completes it (`ensure_week_rules`) and places
+it on the calendar (`schedule`). Nothing here writes to the database or calls a model.
 """
 
 from collections.abc import Sequence
@@ -26,10 +26,18 @@ from app.features.program.service.packing import (
     pack_week,
     pull_forward,
 )
-from app.features.program.service.rules import UNDERLOAD_SHARE, describe, week_breaks
+from app.features.program.service.rules import (
+    SUITE_SUFFIX,
+    UNDERLOAD_SHARE,
+    describe,
+    strip_suite_prefix,
+    suite_text,
+    suite_theme,
+    week_breaks,
+)
 from app.features.program.service.verbs import ACTION_VERBS, review_subject
 
-# Types de l'ordonnancement, verbes d'action et part de sous-charge : réexportés.
+# Scheduling types, action verbs and underload share: re-exported.
 __all__ = [
     "ACTION_VERBS",
     "UNDERLOAD_SHARE",
@@ -45,10 +53,12 @@ QUIZ_MINUTES = 20
 MAX_WEEKS = 52
 MONDAY = 0
 
-REVIEW_PREFIX = "Réviser : "
-REVIEW_CRITERION = "Relire la fiche et répondre aux questions d'auto-évaluation"
-_PRACTICE_CRITERION = "Produire un résultat que l'on peut montrer et expliquer"
-_QUIZ_CRITERION = "Répondre à toutes les questions puis relire les erreurs"
+REVIEW_PREFIX = "Review: "
+REVIEW_CRITERION = "Re-read the card and answer the self-assessment questions"
+# The French spellings are what programs stored before the switch to English contain.
+_LEGACY_REVIEW = ("Réviser : ", "Relire la fiche et répondre aux questions d'auto-évaluation")
+_PRACTICE_CRITERION = "Produce a result you can show and explain"
+_QUIZ_CRITERION = "Answer all the questions then re-read the mistakes"
 _SKILLED = ("validated", "proven")
 
 
@@ -60,17 +70,22 @@ class PlanningImpossible(AppError):
 
 
 def next_monday(today: date) -> date:
-    """`today` si c'est un lundi, sinon le lundi suivant."""
+    """`today` if it is a Monday, otherwise the following Monday."""
     return today + timedelta(days=(MONDAY - today.weekday()) % 7)
 
 
 def is_review(task: TaskDraft) -> bool:
-    """Révision d'un acquis (produite par `apply_known`) : tâche « déjà acquise »."""
+    """Review of a learned item (produced by `apply_known`): an "already known" task."""
     return (
         task.type == "read"
         and task.minutes == REVIEW_MINUTES
-        and task.title.startswith(REVIEW_PREFIX)
-        and task.done_criterion == REVIEW_CRITERION
+        and (
+            (task.title.startswith(REVIEW_PREFIX) and task.done_criterion == REVIEW_CRITERION)
+            or (
+                task.title.startswith(_LEGACY_REVIEW[0])
+                and task.done_criterion == _LEGACY_REVIEW[1]
+            )
+        )
     )
 
 
@@ -89,10 +104,10 @@ def _review_of(module: ModuleDraft) -> ModuleDraft:
 
 
 def apply_known(draft: PlanDraft, known: KnownSkills) -> tuple[PlanDraft, list[str]]:
-    """Saute les modules acquis (valide, prouve) ; réduit les autres à une révision de 20 min.
+    """Skips the known modules (validated, proven); reduces the others to a 20 min review.
 
-    Un module n'est concerné que si TOUTES ses compétences sont connues. Une semaine dont tous
-    les modules sont sautés disparaît. Rend le brouillon allégé et les titres des modules sautés.
+    A module is only concerned if ALL its skills are known. A week whose modules are all
+    skipped disappears. Returns the lightened draft and the titles of the skipped modules.
     """
     skipped: list[str] = []
     weeks: list[WeekDraft] = []
@@ -116,7 +131,7 @@ def _quizzes_last(tasks: list[TaskDraft]) -> list[TaskDraft]:
 
 
 def ensure_week_rules(week: WeekDraft, rank: int) -> WeekDraft:
-    """Ajoute la pratique et le quiz manquants (dernier module) ; les quiz passent en dernier."""
+    """Adds the missing practice and quiz (last module); quizzes go last."""
     modules = [m.model_copy(update={"tasks": _quizzes_last(m.tasks)}) for m in week.modules]
     if not modules:
         modules = [
@@ -140,7 +155,7 @@ def ensure_week_rules(week: WeekDraft, rank: int) -> WeekDraft:
     if not any(task.type == "quiz" for task in tasks):
         quizzes.append(
             TaskDraft(
-                title=f"Faire le quiz de la semaine {rank}",
+                title=f"Take the week {rank} quiz",
                 type="quiz",
                 minutes=QUIZ_MINUTES,
                 done_criterion=_QUIZ_CRITERION,
@@ -153,7 +168,7 @@ def ensure_week_rules(week: WeekDraft, rank: int) -> WeekDraft:
 def week_problems(
     tasks: Sequence[tuple[date, int, TaskType]], week_start: date, budget: Budget
 ) -> list[str]:
-    """Règles vérifiées à chaque modification d'une semaine : charge, pratique, quiz."""
+    """Rules checked at each edit of a week: load, practice, quiz."""
     label = f"Week of {week_start:%d/%m}"
     pairs = [(minutes, kind) for _, minutes, kind in tasks]
     total, cap = sum(minutes for minutes, _ in pairs), budget.cap_minutes
@@ -169,16 +184,16 @@ def _entries(week: WeekDraft, week_index: int) -> list[Entry]:
 
 
 def _suite_week(last: WeekDraft) -> WeekDraft:
-    """Semaine ajoutée pour les tâches qui ne tiennent pas : thème et livrable repris."""
-    theme = last.theme.removeprefix("Suite : ")
+    """Week added for the tasks that do not fit: theme and deliverable carried over."""
+    theme = strip_suite_prefix(last.theme)
     module = ModuleDraft.model_construct(
-        title=f"Suite : {theme}"[:120], skills=[theme[:120]], prerequisites=[], tasks=[]
+        title=suite_theme(theme)[:120], skills=[theme[:120]], prerequisites=[], tasks=[]
     )
     return last.model_copy(
         update={
-            "theme": f"Suite : {theme}"[:120],
-            "objective": f"{last.objective.removesuffix(' (suite)')} (suite)"[:300],
-            "deliverable": f"{last.deliverable.removesuffix(' (suite)')} (suite)"[:300],
+            "theme": suite_theme(theme)[:120],
+            "objective": suite_text(last.objective)[:300],
+            "deliverable": suite_text(last.deliverable)[:300],
             "modules": [module],
         }
     )
@@ -197,7 +212,9 @@ def _build_week(
     for week_index, module_index in keys:
         source = sources[week_index].modules[module_index]
         title = (
-            f"{source.title[:112]} (suite)" if (week_index, module_index) in seen else source.title
+            f"{source.title[:112]}{SUITE_SUFFIX}"
+            if (week_index, module_index) in seen
+            else source.title
         )
         tasks = [p.entry.task for p in placed if p.entry.origin[:2] == (week_index, module_index)]
         modules.append(source.model_copy(update={"title": title, "tasks": tasks}))
@@ -229,7 +246,7 @@ def _build_week(
 
 
 def _check_fits(weeks: list[WeekDraft], budget: Budget) -> None:
-    """Refuse d'emblée ce qu'aucune semaine ne pourrait contenir (budget trop faible)."""
+    """Refuses at once what no week could hold (budget too low)."""
     longest = budget.longest_day_minutes
     for week in weeks:
         entries = _entries(week, 0)
@@ -244,11 +261,11 @@ def _check_fits(weeks: list[WeekDraft], budget: Budget) -> None:
 
 
 def schedule(draft: PlanDraft, budget: Budget, known: KnownSkills, start: date) -> ScheduledPlan:
-    """Range le brouillon sur le calendrier : jamais plus de 85 % du budget par semaine.
+    """Places the draft on the calendar: never more than 85% of the budget per week.
 
-    Ce qui ne tient pas passe à la semaine suivante ; des semaines « Suite » sont ajoutées tant
-    qu'il reste des tâches (52 semaines au plus). `start` est le premier jour (un lundi). Une
-    semaine sous 60 % du plafond, sauf la dernière, avance ensuite des tâches de la suivante.
+    What does not fit moves to the next week; "Continued" weeks are added as long as tasks
+    remain (52 weeks at most). `start` is the first day (a Monday). A week under 60% of the cap,
+    except the last, then pulls tasks forward from the next one.
     """
     reduced, skipped = apply_known(draft.with_chapter_indices(), known)
     if not reduced.weeks:

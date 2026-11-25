@@ -1,25 +1,25 @@
-"""Schémas des projets preuves (P1 à P4, D165) : l'énoncé écrit par le Praticien, son évaluation et
-les quatre brouillons au nom de January. Rien ici ne décide d'un fait : le verdict, les longueurs
-et la référence d'honnêteté sont du code.
+"""Schemas of the proof projects (P1 to P4, D165): the statement written by the Practitioner, its
+evaluation and the four drafts in January's name. Nothing here decides a fact: the verdict, the
+lengths and the honesty reference are code.
 
-- `verdict` : « validé » seulement si **chaque** critère de 1 à N a **un seul** résultat et que tous
-  sont atteints ; un résultat manquant, en double ou d'un rang hors de 1 à N fait « à reprendre ».
-  `settled_results` range un résultat par critère (un critère sans résultat unique n'est pas
-  atteint) pour le port et pour la phrase de fin.
-- `project_fact` / `project_reference` (P4) : le fait de projet (titre de l'énoncé, description de
-  January, compétences du module) ajouté au profil validé (ou à une identité vide). Le README du
-  dépôt n'y entre jamais : c'est du texte web, pas un fait de January. La description (4 000
-  caractères au plus) est coupée en lignes de 600 caractères au plus, la taille d'un fait du
-  profil : `text_claims` la lit en entier.
-- `draft_text` : le texte que `text_claims` contrôle, pour chaque brouillon.
+- `verdict`: "validated" only if **each** criterion from 1 to N has **a single** result and all
+  are met; a missing, duplicated or out-of-range (outside 1 to N) result makes it "to redo".
+  `settled_results` stores one result per criterion (a criterion without a single result is not
+  met) for the port and for the closing sentence.
+- `project_fact` / `project_reference` (P4): the project fact (statement title, January's
+  description, module skills) added to the validated profile (or to an empty identity). The
+  repository README never goes in: it is web text, not a fact from January. The description
+  (4,000 characters at most) is cut into lines of at most 600 characters, the size of a profile
+  fact: `text_claims` reads it in full.
+- `draft_text`: the text that `text_claims` checks, for each draft.
 
-Les lignes écrites par le modèle (critères, contraintes, nom et réalisations de l'entrée de profil)
-sont ramenées à **une seule ligne** (`one_line`) avant toute vérification : un retour à la ligne ne
-fabrique jamais un faux critère numéroté, et une valeur blanche est refusée (nouvel essai) au lieu
-d'être rangée puis refusée à la lecture. Les textes lus par January sont raccourcis (`Prose`,
-`ShortenToMax`) plutôt que refusés (D97) ; les plafonds en mots du plan sont posés en caractères
-(7,5 par mot) dans le schéma envoyé au modèle ; seul le post LinkedIn est compté en mots, par le
-code (`linkedin_words`)."""
+The lines written by the model (criteria, constraints, name and achievements of the profile
+entry) are brought down to **a single line** (`one_line`) before any check: a line break never
+makes a fake numbered criterion, and a blank value is refused (retry) instead of being stored
+then refused on reading. The texts read by January are shortened (`Prose`, `ShortenToMax`)
+rather than refused (D97); the plan's word caps are set in characters (7.5 per word) in the
+schema sent to the model; only the LinkedIn post is counted in words, by the code
+(`linkedin_words`)."""
 
 from collections.abc import Sequence
 from typing import Annotated, Literal
@@ -58,15 +58,15 @@ __all__ = [
 ]
 
 DRAFT_KINDS: tuple[DraftKind, ...] = ("cv_line", "profile_entry", "linkedin_post", "readme_plan")
-LINKEDIN_WORDS = (80, 200)  # mots du post LinkedIn, comptés par le code
+LINKEDIN_WORDS = (80, 200)  # words of the LinkedIn post, counted by the code
 NOT_ASSESSED = "This criterion wasn't assessed."
-_LINE = 600  # taille d'une ligne de fait du profil (`Line.text`)
-_DESCRIPTION = 4_800  # 8 lignes de 600 : la description de 4 000 caractères tient en entier
+_LINE = 600  # size of a profile fact line (`Line.text`)
+_DESCRIPTION = 4_800  # 8 lines of 600: the 4,000-character description fits in full
 _MAX_LINES = 8  # `Project.achievements`
 
 
 def one_line(value: object) -> object:
-    """Le texte sur une seule ligne : blancs et retours à la ligne ramenés à une espace."""
+    """The text on a single line: blanks and line breaks brought down to one space."""
     return " ".join(value.split()) if isinstance(value, str) else value
 
 
@@ -87,11 +87,11 @@ PlanStep = Annotated[str, Field(min_length=1, max_length=120), ShortenToMax()]
 
 
 class ProjectBrief(BaseModel):
-    """L'énoncé d'un mini projet : 3 à 6 critères qu'un relecteur peut vérifier, 3 à 6 heures."""
+    """The statement of a mini project: 3 to 6 criteria a reviewer can check, 3 to 6 hours."""
 
     title: str = Field(min_length=3, max_length=120)
-    context: Prose = Field(min_length=1, max_length=900)  # 120 mots au plus
-    objective: Prose = Field(min_length=1, max_length=450)  # 60 mots au plus
+    context: Prose = Field(min_length=1, max_length=900)  # 120 words at most
+    objective: Prose = Field(min_length=1, max_length=450)  # 60 words at most
     constraints: list[Short] = Field(min_length=2, max_length=5)
     criteria: list[Criterion] = Field(min_length=3, max_length=6)
     hours: int = Field(ge=3, le=6)
@@ -99,18 +99,18 @@ class ProjectBrief(BaseModel):
 
 
 class CriterionResult(BaseModel):
-    index: int = Field(ge=1)  # rang du critère, à partir de 1
+    index: int = Field(ge=1)  # rank of the criterion, from 1
     met: bool
     comment: Prose = Field(default="", max_length=300)
 
 
 class ProjectEvaluation(BaseModel):
     results: list[CriterionResult] = Field(max_length=6)
-    feedback: Prose = Field(min_length=1, max_length=1500)  # 200 mots au plus
+    feedback: Prose = Field(min_length=1, max_length=1500)  # 200 words at most
 
 
 class ProfileEntryDraft(BaseModel):
-    """L'entrée de projet que January peut ajouter à son profil (jamais sans son clic)."""
+    """The project entry January can add to her profile (never without her click)."""
 
     name: Annotated[str, Field(min_length=1, max_length=120), BeforeValidator(one_line)]
     description: Annotated[
@@ -124,7 +124,7 @@ class ProjectDrafts(BaseModel):
     profile_entry: ProfileEntryDraft
     linkedin_post: Prose = Field(
         min_length=1, max_length=1800
-    )  # 80 à 200 mots, comptés par le code
+    )  # 80 to 200 words, counted by the code
     readme_plan: list[PlanStep] = Field(min_length=5, max_length=10)
 
 
@@ -142,7 +142,7 @@ def _by_index(results: Sequence[CriterionResult]) -> dict[int, list[CriterionRes
 def verdict(
     criteria_count: int, results: Sequence[CriterionResult]
 ) -> Literal["validated", "to_redo"]:
-    """« validé » : un résultat par critère de 1 à N, tous atteints, aucun rang hors de 1 à N."""
+    """ "validated": one result per criterion from 1 to N, all met, no rank outside 1 to N."""
     found = _by_index(results)
     if criteria_count < 1 or any(not 1 <= index <= criteria_count for index in found):
         return "to_redo"
@@ -156,8 +156,8 @@ def verdict(
 def settled_results(
     criteria_count: int, results: Sequence[CriterionResult]
 ) -> list[CriterionResult]:
-    """Un résultat par critère de 1 à N, dans l'ordre : celui du modèle s'il est unique, sinon
-    « non évalué » (manquant ou en double) ; un rang hors de 1 à N est écarté."""
+    """One result per criterion from 1 to N, in order: the model's if it is unique, otherwise
+    "not assessed" (missing or duplicated); a rank outside 1 to N is dropped."""
     found = _by_index(results)
     return [
         found[index][0]
@@ -168,12 +168,12 @@ def settled_results(
 
 
 def unmet_count(criteria_count: int, results: Sequence[CriterionResult]) -> int:
-    """Les critères non atteints ou sans résultat unique, sur N."""
+    """The criteria not met or without a single result, out of N."""
     return sum(not result.met for result in settled_results(criteria_count, results))
 
 
 def draft_text(kind: DraftKind, drafts: ProjectDrafts) -> str:
-    """Le texte de chaque brouillon, tel que `text_claims` le contrôle."""
+    """The text of each draft, as `text_claims` checks it."""
     if kind == "cv_line":
         return drafts.cv_line
     if kind == "linkedin_post":
@@ -185,11 +185,11 @@ def draft_text(kind: DraftKind, drafts: ProjectDrafts) -> str:
 
 
 def _chunks(text: str, size: int) -> list[str]:
-    """`text` en morceaux de `size` caractères au plus, coupés entre deux mots."""
+    """`text` in chunks of at most `size` characters, cut between two words."""
     chunks: list[str] = []
     current = ""
     for word in text.split():
-        while len(word) > size:  # un « mot » plus long qu'une ligne : coupé net
+        while len(word) > size:  # a "word" longer than a line: cut short
             if current:
                 chunks.append(current)
                 current = ""
@@ -208,13 +208,13 @@ def _chunks(text: str, size: int) -> list[str]:
 def project_fact(
     title: str, description: str | None, skills: Sequence[str], repo_url: str | None
 ) -> Project:
-    """Le fait de projet : le titre de l'énoncé, ce que January en dit (en lignes de 600
-    caractères au plus), puis les compétences du module. Sans identifiant (`project_reference`)."""
+    """The project fact: the statement title, what January says about it (in lines of at most
+    600 characters), then the module's skills. Without identifier (`project_reference`)."""
     pieces = _chunks((description or "")[:_DESCRIPTION], _LINE)
     names = [name for name in dict.fromkeys(skills) if name.strip()]
     lines = [Line(text=piece) for piece in pieces[1 : _MAX_LINES + 1]]
     if names and len(lines) < _MAX_LINES:
-        lines.append(Line(text=f"Compétences : {', '.join(names)}"[:_LINE]))
+        lines.append(Line(text=f"Skills: {', '.join(names)}"[:_LINE]))
     return Project(
         name=title[:120],
         description=pieces[0] if pieces else "",
@@ -227,8 +227,8 @@ def project_fact(
 def project_reference(
     profile: MasterProfileData | None, fact: Project, skills: Sequence[str]
 ) -> MasterProfileData:
-    """Ce que les brouillons ont le droit de dire : le profil validé (ou une identité vide), le
-    fait de projet et les compétences du module. Les identifiants sont attribués par le code."""
+    """What the drafts may say: the validated profile (or an empty identity), the
+    project fact and the module's skills. The identifiers are assigned by the code."""
     base = profile or MasterProfileData(identity=Identity(name="January"))
     extra = [
         SkillFact(name=name[:80], sources=["january"])

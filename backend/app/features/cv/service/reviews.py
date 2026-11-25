@@ -1,15 +1,14 @@
-"""Revues de CV côté API (SPEC 5.3, 14.2 ; D130) : lancement, liste et détail.
+"""CV reviews on the API side (SPEC 5.3, 14.2; D130): launch, list and detail.
 
-`POST /cv/reviews` vérifie et **fige** ce que la revue lira : le profil validé (sa version), le
-gabarit actif, l'offre analysée ; il calcule les indicateurs avant (couverture des exigences par
-le CV d'origine, contrôles ATS du PDF d'origine) puis lance le parcours `cv_review`. Une revue en
-cours par offre (409 `review_in_progress`).
+`POST /cv/reviews` checks and **freezes** what the review will read: the validated profile (its
+version), the active template, the analyzed posting; it computes the before indicators (coverage
+of the requirements by the original CV, ATS checks of the original PDF) then launches the
+`cv_review` flow. One review in progress per posting (409 `review_in_progress`).
 
-Le statut suit l'issue de la session (comme D126 n° 5) : une revue lancée ou proposée dont la
-session n'est plus ouverte (panne du modèle, délai, annulation, offre qui n'en est pas une)
-passe en `failed` à la lecture suivante, ses versions encore en rendu aussi, sous le verrou des
-revues ; une session terminée ne reprend jamais : la correction est sûre. Journaux : identifiants
-et nombres seulement."""
+The status follows the outcome of the session (as D126 no. 5): a launched or proposed review
+whose session is no longer open (model failure, timeout, cancellation, posting that is not one)
+becomes `failed` on the next read, its versions still rendering too, under the reviews lock; a
+finished session never resumes: the fix is safe. Logs: ids and numbers only."""
 
 import logging
 
@@ -47,7 +46,7 @@ from app.features.sessions.service import list_open_sessions_by_subject, session
 
 logger = logging.getLogger(__name__)
 
-OUTPUT_KIND = "cv_output"  # la question de sortie du parcours (« Que veux-tu maintenant ? »)
+OUTPUT_KIND = "cv_output"  # the flow's exit question ("What do you want now?")
 
 
 def profile_required() -> AppError:
@@ -74,8 +73,8 @@ def review_in_progress(review_id: str) -> AppError:
 
 
 async def settle(db: AsyncSession, user_id: str) -> dict[str, list[str]]:
-    """Revues en cours sans session ouverte → `failed` (versions en rendu aussi) ; rend les
-    sessions ouvertes par revue. Sessions lues AVANT les revues (D97 n° 9). L'appelant tient
+    """Reviews in progress without an open session → `failed` (versions rendering too); returns
+    the sessions open per review. Sessions read BEFORE the reviews (D97 no. 9). The caller holds
     `review_lock`."""
     open_ids = await list_open_sessions_by_subject(
         db, user_id, graph=REVIEW_GRAPH, subject_type=REVIEW_SUBJECT
@@ -87,7 +86,7 @@ async def settle(db: AsyncSession, user_id: str) -> dict[str, list[str]]:
     ]
     for row in stale:
         row.status = "failed"
-        logger.info("Revue sans session : utilisateur %s, revue %s", user_id, row.id)
+        logger.info("Review without session: user %s, review %s", user_id, row.id)
     for version in await VersionRepository(db, user_id).rendering([row.id for row in stale]):
         version.status, version.failure_reason = "failed", RENDER_FAILED
     if stale:
@@ -96,7 +95,7 @@ async def settle(db: AsyncSession, user_id: str) -> dict[str, list[str]]:
 
 
 async def waiting_output(db: AsyncSession, user_id: str, review: CvReview) -> str | None:
-    """L'`interrupt_id` de la question de sortie si la session de la revue l'attend."""
+    """The `interrupt_id` of the exit question if the review's session is waiting on it."""
     if review.session_id is None or review.status != "proposed":
         return None
     facts = await session_facts(db, user_id, review.session_id)
@@ -142,14 +141,14 @@ async def get_review(rt: CvRuntime, user_id: str, review_id: str) -> CvReviewOut
 async def _original_checks(
     rt: CvRuntime, user_id: str, template: CvTemplate, content: CvContent
 ) -> list[AtsCheck]:
-    """Contrôles ATS du PDF d'origine (le document du gabarit) ; aucun s'il n'est plus lisible."""
+    """ATS checks of the original PDF (the template's document); none if unreadable."""
     stored = await document_file(rt.memory, user_id, template.document_id)
     if stored is None:
         return []
     try:
         layout = await rt.layout.extract_layout(stored.data)
     except AppError as exc:
-        logger.warning("CV d'origine illisible : gabarit %s (%s)", template.id, exc.code)
+        logger.warning("Original CV unreadable: template %s (%s)", template.id, exc.code)
         return []
     return ats_checks(layout, content)
 
@@ -161,8 +160,8 @@ async def _before(
     profile: MasterProfileData,
     analysis: PostingAnalysis,
 ) -> Indicators:
-    """Indicateurs du CV d'origine : couverture de toutes ses lignes (`backed_only=False`) et
-    contrôles ATS de son PDF, lu avec les intitulés copiés de l'original (`sample_content`)."""
+    """Indicators of the original CV: coverage of all its lines (`backed_only=False`) and ATS
+    checks of its PDF, read with the headings copied from the original (`sample_content`)."""
     base = base_content(profile, template_order(template.spec))
     lines = content_lines(base)
     cover = coverage(analysis.requirements, analysis.keywords, lines, backed_only=False)
@@ -202,7 +201,7 @@ async def _launch(rt: CvRuntime, db: AsyncSession, user_id: str, review: CvRevie
     except BaseException:
         review.status = "failed"
         await db.commit()
-        logger.warning("Revue non lancée : utilisateur %s, revue %s", user_id, review.id)
+        logger.warning("Review not started: user %s, review %s", user_id, review.id)
         raise
     review.session_id = session_id
     await db.commit()
@@ -210,7 +209,7 @@ async def _launch(rt: CvRuntime, db: AsyncSession, user_id: str, review: CvRevie
 
 
 async def start_review(rt: CvRuntime, user_id: str, posting_id: str) -> ReviewStarted:
-    """Voir l'en-tête du module : 404 `posting_not_found`, 409 `posting_not_ready`,
+    """See the module header: 404 `posting_not_found`, 409 `posting_not_ready`,
     `profile_required`, `template_required`, `review_in_progress`."""
     async with rt.review_lock(user_id), rt.session_factory() as db:
         await settle(db, user_id)
@@ -225,11 +224,11 @@ async def start_review(rt: CvRuntime, user_id: str, posting_id: str) -> ReviewSt
             status="running",
             before=indicators_json(before),
         )
-        await db.commit()  # le parcours relit la revue dans sa propre session
+        await db.commit()  # the flow re-reads the review in its own session
         session_id = await _launch(rt, db, user_id, review)
         review_id = review.id
     logger.info(
-        "Revue lancée : utilisateur %s, revue %s, offre %s, profil v%d, gabarit %s, session %s",
+        "Review started: user %s, review %s, posting %s, profile v%d, template %s, session %s",
         user_id,
         review_id,
         posting_id,

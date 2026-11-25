@@ -1,17 +1,17 @@
-"""Ranger l'évaluation d'un rendu (P3, D166) : `AgentProjectStore.save_review`, sous le verrou du
-projet, **idempotent par session** (SPEC 9.4) : une évaluation déjà rangée par cette session n'est
-pas réécrite, et une évaluation qui n'attend plus (le projet n'est plus `reviewing` pour cette
-session : statut corrigé, autre rendu) est ignorée.
+"""Storing the evaluation of a submission (P3, D166): `AgentProjectStore.save_review`, under the
+project's lock, **idempotent per session** (SPEC 9.4): an evaluation already stored by this
+session is not rewritten, and an evaluation that is no longer awaited (the project is no longer
+`reviewing` for this session: status corrected, another submission) is ignored.
 
-Le verdict est recalculé par le code (`verdict`) sur les résultats reçus : « validé » seulement si
-chaque critère a un seul résultat atteint **et** que le parcours l'avait jugé validé (un résultat
-hors énoncé, écarté du port, ne peut pas faire valider ce que le parcours a jugé à reprendre,
-D173). Validé : `validated_at`, les compétences du module
-montées à `prouve` avec la preuve `project` (jamais plus bas), une ligne `project` au journal
-(`ref_key = project:{id}`) dans la même transaction ; puis, **hors transaction**, le reflet dans les
-acquis de la mémoire (auteur `practitioner`), refait au rejeu pour rattraper un arrêt. Les
-brouillons ne sont rangés qu'à la validation ; l'entrée de projet n'entre jamais au profil ici.
-Journaux : identifiants, nombres et codes."""
+The verdict is recomputed by the code (`verdict`) on the results received: "validated" only if
+each criterion has a single met result **and** the flow had judged it validated (a result
+outside the statement, discarded by the port, cannot validate what the flow judged to redo,
+D173). Validated: `validated_at`, the module's skills raised to `proven` with `project` evidence
+(never lower), a `project` line in the log (`ref_key = project:{id}`) in the same transaction;
+then, **outside the transaction**, the reflection in the memory's learned items (author
+`practitioner`), redone on replay to catch up after a stop. The drafts are only stored at
+validation; the project entry never enters the profile here.
+Logs: ids, numbers and codes."""
 
 import logging
 from typing import Any
@@ -33,7 +33,7 @@ from app.features.skills.service import SkillLevel, SkillsService
 logger = logging.getLogger(__name__)
 
 AUTHOR = "practitioner"
-REFLECT_REASON = "Projet validé : les compétences du module sont prouvées."
+REFLECT_REASON = "Project validated: the module's skills are proven."
 
 
 def draft_data(draft: DraftResult) -> dict[str, Any]:
@@ -68,13 +68,13 @@ def _evaluation(
 async def _validate(
     rt: ProjectsRuntime, db: AsyncSession, user_id: str, row: Project, session_id: str
 ) -> list[str]:
-    """Compétences du module à `prouve`, ligne du journal : dans la transaction de `db`. Rend les
-    noms des compétences (à refléter ensuite)."""
+    """Module skills to `proven`, log line: in the transaction of `db`. Returns the skill names
+    (to reflect afterwards)."""
     now = rt.now()
     zone = user_zone((await SettingsService(db, user_id).get()).timezone)
     day = local_today(zone, now)
     names = await module_skills(db, user_id, row)
-    label = f"Projet « {row.title} » validé ({day:%d/%m})"
+    label = f"Project '{row.title}' validated ({day:%d/%m})"
     if names:
         await SkillsService(db, user_id).raise_levels(
             names, "proven", evidence("project", row.id, label, now)
@@ -83,7 +83,7 @@ async def _validate(
         db,
         user_id,
         kind="project",
-        text=f"Projet validé : {row.title}",
+        text=f"Project validated: {row.title}",
         occurred_on=day,
         ref_key=f"project:{row.id}",
         links=JournalLinks(session_id=session_id),
@@ -93,8 +93,8 @@ async def _validate(
 
 
 async def _reflect(rt: ProjectsRuntime, user_id: str, session_id: str, names: list[str]) -> None:
-    """Le niveau de chaque compétence (qui fait foi) reflété dans les acquis de la mémoire ;
-    idempotent, jamais plus bas. Une panne est journalisée (classe seule) : le rejeu la rattrape."""
+    """The level of each skill (which is authoritative) reflected in the memory's learned items;
+    idempotent, never lower. A failure is logged (class only): the replay catches it up."""
     if not names:
         return
     try:
@@ -105,7 +105,9 @@ async def _reflect(rt: ProjectsRuntime, user_id: str, session_id: str, names: li
         )
     except Exception as exc:
         logger.warning(
-            "Acquis non reflétés après un projet : session %s (%s)", session_id, type(exc).__name__
+            "Learned items not reflected after a project: session %s (%s)",
+            session_id,
+            type(exc).__name__,
         )
 
 
@@ -117,7 +119,7 @@ async def save_review(
         row = await owned(db, user_id, project_id)
         replay = (row.evaluation or {}).get("session_id") == session_id
         if not replay and (row.status != "reviewing" or row.session_id not in (None, session_id)):
-            logger.info("Évaluation ignorée : projet %s, session %s", project_id, session_id)
+            logger.info("Evaluation ignored: project %s, session %s", project_id, session_id)
             return
         if not replay:
             evaluation = _evaluation(row, outcome, session_id, rt.now().isoformat())
@@ -127,7 +129,7 @@ async def save_review(
                 row.drafts = {draft.kind: draft_data(draft) for draft in outcome.drafts or []}
                 names = await _validate(rt, db, user_id, row, session_id)
             await db.commit()
-            logger.info("Évaluation rangée : projet %s, verdict %s", project_id, row.status)
+            logger.info("Evaluation stored: project %s, verdict %s", project_id, row.status)
         elif row.status == "validated":
             names = await module_skills(db, user_id, row)
     if names:
@@ -137,20 +139,20 @@ async def save_review(
 async def save_drafts(
     rt: ProjectsRuntime, user_id: str, session_id: str, project_id: str, drafts: list[DraftResult]
 ) -> bool:
-    """Les brouillons d'un projet **déjà validé** qui n'en a pas (D173 n° 4, D181), sous le verrou
-    du projet : la première écriture gagne (un rejeu ou une autre session ne change rien), rien
-    n'est rangé si le projet n'est pas validé ou si la liste est vide (« brouillons indisponibles »
-    de nouveau). Rend `True` si les brouillons sont rangés, `False` si l'écriture est ignorée.
-    L'évaluation, les compétences et le journal ne sont pas touchés."""
+    """The drafts of an **already validated** project that has none (D173 no. 4, D181), under the
+    project's lock: the first write wins (a replay or another session changes nothing), nothing
+    is stored if the project is not validated or if the list is empty ("drafts unavailable"
+    again). Returns `True` if the drafts are stored, `False` if the write is ignored. The
+    evaluation, the skills and the log are not touched."""
     async with rt.project_lock(user_id, project_id), rt.session_factory() as db:
         row = await owned(db, user_id, project_id)
         if row.status != "validated" or row.drafts or not drafts:
-            logger.info("Brouillons ignorés : projet %s, session %s", project_id, session_id)
+            logger.info("Drafts ignored: project %s, session %s", project_id, session_id)
             return False
         row.drafts = {draft.kind: draft_data(draft) for draft in drafts}
         await db.commit()
     logger.info(
-        "Brouillons rangés : projet %s, session %s, %d brouillon(s)",
+        "Drafts stored: project %s, session %s, %d draft(s)",
         project_id,
         session_id,
         len(drafts),

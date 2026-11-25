@@ -1,5 +1,5 @@
-"""Schémas du profil maître (SPEC 5.1, 14.2 ; D124). Une 422 ne recopie jamais la saisie : sur les
-routes du profil, `details.fields` nomme les champs par leur chemin (« experiences.2.role »)."""
+"""Master profile schemas (SPEC 5.1, 14.2; D124). A 422 never copies the input back: on the
+profile routes, `details.fields` names the fields by their path ("experiences.2.role")."""
 
 from datetime import datetime
 
@@ -10,9 +10,9 @@ from app.db.models.career import ProfileOrigin, ProfileStatus
 
 
 class ProfileOut(BaseModel):
-    """Une version du profil. `source` : `archivist` (brouillon tiré des documents) ou `january`
-    (version qu'elle a validée). `dropped` : lignes retirées du brouillon (chiffre ou fait
-    introuvable dans les documents, texte invisible), montrées à January seule."""
+    """A profile version. `source`: `archivist` (draft taken from the documents) or `january`
+    (version she validated). `dropped`: lines removed from the draft (figure or fact not found
+    in the documents, invisible text), shown to January only."""
 
     version: int
     status: ProfileStatus
@@ -23,10 +23,10 @@ class ProfileOut(BaseModel):
 
 
 class ProfileStateOut(BaseModel):
-    """`draft` : seulement s'il est plus récent que la version validée. `session_id` : capture
-    du profil en cours (à suivre par ses événements), sinon `None`. `source_document_id` : le CV
-    (PDF étiqueté `cv`) du dernier import du profil, s'il est encore dans la mémoire, sinon
-    `None` (« Utiliser le CV de mon profil » pour capturer un gabarit)."""
+    """`draft`: only if it is more recent than the validated version. `session_id`: profile
+    capture in progress (to follow through its events), otherwise `None`. `source_document_id`:
+    the CV (PDF labelled `cv`) of the last profile import, if it is still in memory, otherwise
+    `None` ("Use my profile CV" to capture a template)."""
 
     validated: ProfileOut | None
     draft: ProfileOut | None
@@ -35,8 +35,8 @@ class ProfileStateOut(BaseModel):
 
 
 class ProfilePutIn(BaseModel):
-    """`base_version` : la version que January a relue (la dernière, sinon 409
-    `profile_conflict`) ; `None` s'il n'existe encore aucune version."""
+    """`base_version`: the version January has read (the latest, otherwise 409
+    `profile_conflict`); `None` if no version exists yet."""
 
     data: MasterProfileData
     base_version: int | None = Field(default=None, ge=1)
@@ -50,8 +50,8 @@ class ProfileVersionOut(BaseModel):
 
 
 class ProfileImportStarted(BaseModel):
-    """Capture du profil lancée : la session `cv_capture` et les documents rangés dans la mémoire
-    (CV d'abord, puis LinkedIn)."""
+    """Profile capture started: the `cv_capture` session and the documents stored in memory
+    (CV first, then LinkedIn)."""
 
     session_id: str
     document_ids: list[str]

@@ -1,7 +1,7 @@
-"""Pièces du rangement d'une replanification (`replanning.repack`, D106) : tâches rangées,
-semaines « Suite », budget d'une semaine entamée, charges et règles des semaines touchées, et le
-plan après la proposition (pour l'instantané et la différence). L'avance (« avancer ») et les
-semaines gardées telles quelles sont dans `replan_stable`. Fonctions pures."""
+"""Pieces of a replanning's packing (`replanning.repack`, D106): placed tasks, "Continued"
+weeks, budget of a started week, loads and rules of the touched weeks, and the plan after the
+proposal (for the snapshot and the difference). Advancing ("pull forward") and the weeks kept
+as they are are in `replan_stable`. Pure functions."""
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field, replace
@@ -10,6 +10,7 @@ from typing import Any, Protocol
 
 from app.agents.tools.replan_port import WeekLoad
 from app.db.models.program import TaskType
+from app.features.program.service import rules
 from app.features.program.service.budget import Budget
 from app.features.program.service.diff import ModuleRow, ProgramRows, TaskRow, WeekRow
 from app.features.program.service.planning import (
@@ -21,14 +22,13 @@ from app.features.program.service.planning import (
 from app.features.program.service.rules import UNDERLOAD_SHARE, floor_minutes, week_breaks
 
 DAYS = 7
-SUITE = "Suite : "
-PRACTICE_CRITERION = "Produire un résultat que l'on peut montrer et expliquer"
-QUIZ_CRITERION = "Répondre à toutes les questions puis relire les erreurs"
+PRACTICE_CRITERION = "Produce a result you can show and explain"
+QUIZ_CRITERION = "Answer all the questions then re-read the mistakes"
 
 
 @dataclass(frozen=True)
 class NewTask:
-    """Une tâche ajoutée par le Stratège (« approfondir ») dans un module existant."""
+    """A task added by the Strategist ("go deeper") in an existing module."""
 
     module_id: str
     title: str
@@ -39,8 +39,8 @@ class NewTask:
 
 @dataclass(frozen=True)
 class PlannedTask:
-    """Une tâche à faire après le rangement. `task_id` vide : tâche neuve, dans `module_id`
-    (ajout du Stratège) ou dans le module de la semaine « Suite » de rang `suite_rank`."""
+    """A task to do after packing. Empty `task_id`: new task, in `module_id` (Strategist's
+    addition) or in the module of the "Continued" week of rank `suite_rank`."""
 
     task_id: str
     planned_date: date
@@ -82,7 +82,7 @@ class PlannedTask:
 
 @dataclass(frozen=True)
 class NewWeek:
-    """Une semaine « Suite » : ce qui ne tient pas dans le budget, plutôt qu'un dépassement."""
+    """A "Continued" week: what does not fit in the budget, rather than an overrun."""
 
     rank: int
     theme: str
@@ -112,8 +112,8 @@ class NewWeek:
 
 @dataclass(frozen=True)
 class WeekBudget(Budget):
-    """Le budget d'une semaine entamée : plafond (85 %, ou celui de January cette semaine) moins
-    les minutes déjà faites, jours passés fermés, minutes faites retirées de leur jour."""
+    """The budget of a started week: cap (85%, or January's this week) minus the minutes
+    already done, past days closed, done minutes removed from their day."""
 
     cap: int = 0
     used: Mapping[date, int] = field(default_factory=dict)
@@ -133,9 +133,9 @@ class WeekBudget(Budget):
 def week_budget(
     budget: Budget, cap: int, used: dict[date, int], start: date, from_day: date, *, lower: bool
 ) -> WeekBudget:
-    """Le budget de la semaine, minutes faites retirées. `lower` (« Repousser l'échéance ») :
-    plafond abaissé à 60 %, en gardant toujours la place d'une pratique et d'un quiz au-delà des
-    minutes faites, et jamais au-delà du plafond (85 %)."""
+    """The week's budget, done minutes removed. `lower` ("Push back the deadline"): cap lowered
+    to 60%, always keeping room for a practice and a quiz beyond the done minutes, and never
+    beyond the cap (85%)."""
     week_used = {d: m for d, m in used.items() if start <= d < start + timedelta(days=DAYS)}
     done = sum(week_used.values())
     if lower:
@@ -152,21 +152,20 @@ def week_budget(
 
 
 def suite_week(last: WeekRow, rank: int, last_start: date, count: int) -> NewWeek:
-    """La semaine « Suite » de rang `rank`, après la dernière (`count` semaines) ; thème, objectif
-    et livrable repris de la dernière semaine."""
-    theme = last.theme.removeprefix(SUITE)
+    """The "Continued" week of rank `rank`, after the last one (`count` weeks); theme, goal and
+    deliverable carried over from the last week."""
     return NewWeek(
         rank,
-        f"{SUITE}{theme}"[:200],
-        f"{last.objective.removesuffix(' (suite)')} (suite)"[:300],
-        f"{last.deliverable.removesuffix(' (suite)')} (suite)"[:300],
+        rules.suite_theme(last.theme)[:200],
+        rules.suite_text(last.objective)[:300],
+        rules.suite_text(last.deliverable)[:300],
         last_start + timedelta(days=DAYS * (rank - count)),
     )
 
 
 def suite_tasks(week: NewWeek) -> list[PlannedTask]:
-    """La pratique et le quiz d'une semaine « Suite » (chaque semaine garde les siens)."""
-    theme = week.theme.removeprefix(SUITE)
+    """The practice and quiz of a "Continued" week (each week keeps its own)."""
+    theme = rules.strip_suite_prefix(week.theme)
     day = week.start_date
     return [
         PlannedTask(
@@ -182,7 +181,7 @@ def suite_tasks(week: NewWeek) -> list[PlannedTask]:
         PlannedTask(
             "",
             day,
-            f"Faire le quiz de la semaine {week.rank}",
+            f"Take the week {week.rank} quiz",
             "quiz",
             QUIZ_MINUTES,
             QUIZ_CRITERION,
@@ -198,11 +197,11 @@ def open_week(
     new_weeks: list[NewWeek],
     own: dict[int, list[PlannedTask]],
 ) -> date:
-    """Le début de la semaine `index` ; au-delà de la dernière, une semaine « Suite » est ouverte
-    avec sa pratique et son quiz (52 semaines au plus)."""
+    """The start of week `index`; beyond the last one, a "Continued" week is opened with its
+    practice and quiz (52 weeks at most)."""
     starts = [week.start_date for week in rows.weeks]
     if index >= MAX_WEEKS:
-        raise PlanningImpossible("Le programme dépasse 52 semaines avec ce budget.")
+        raise PlanningImpossible("The program exceeds 52 weeks with this budget.")
     if index < len(starts):
         return starts[index]
     new_weeks.append(suite_week(rows.weeks[-1], index + 1, starts[-1], len(starts)))
@@ -217,8 +216,8 @@ class _Found(Protocol):
 
 @dataclass(frozen=True)
 class Slots:
-    """Les semaines du rangement : débuts (anciennes puis « Suite »), rang de la semaine en
-    cours, toutes les tâches d'origine, budget et premier jour ouvert."""
+    """The packing's weeks: starts (old ones then "Continued"), rank of the current week, all
+    the original tasks, budget and first open day."""
 
     starts: list[date]
     current: int
@@ -239,8 +238,8 @@ class Slots:
 
 
 def week_loads(slots: Slots, tasks: list[PlannedTask], override: int | None) -> list[WeekLoad]:
-    """Charge avant et après de chaque semaine touchée, et ses règles (85 % ou le plafond de
-    January, une pratique, un quiz) : une règle cassée lève `PlanningImpossible`."""
+    """Before and after load of each touched week, and its rules (85% or January's cap, a
+    practice, a quiz): a broken rule raises `PlanningImpossible`."""
     loads: list[WeekLoad] = []
     for index in range(slots.current, len(slots.starts)):
         before = sum(
@@ -274,7 +273,7 @@ def after_rows(
     removed: Sequence[str],
     weeks: Sequence[NewWeek],
 ) -> ProgramRows:
-    """Le programme tel que la proposition le laisserait (instantané et différence)."""
+    """The program as the proposal would leave it (snapshot and difference)."""
     dates = {t.task_id: t.planned_date for t in tasks if t.task_id}
     gone = set(removed)
     out: list[WeekRow] = []

@@ -1,12 +1,12 @@
-"""Relancer les brouillons d'un projet validé qui n'en a pas (D173 n° 4, D181) :
-`POST /projects/{id}/drafts`, sous le verrou du projet. Leur écriture avait échoué (« brouillons
-indisponibles ») : une session `project_review` en mode `drafts` les écrit, **sans refaire
-l'évaluation** (un appel standard, un nouvel essai au plus, `text_claims` comme à la validation).
+"""Relaunching the drafts of a validated project that has none (D173 no. 4, D181):
+`POST /projects/{id}/drafts`, under the project's lock. Their writing had failed ("drafts
+unavailable"): a `project_review` session in `drafts` mode writes them, **without redoing the
+evaluation** (one standard call, one retry at most, `text_claims` as at validation).
 
-Refus : projet d'une autre (404), pas validé (409 `project_not_validated`), brouillons déjà là (409
-`drafts_present`), session des brouillons ou de l'évaluation encore ouverte (409
-`review_in_progress`, `details.session_id`), lancement refusé (503 `drafts_unavailable`, rien n'est
-changé). Journaux : identifiants et codes seulement."""
+Refusals: another user's project (404), not validated (409 `project_not_validated`), drafts
+already there (409 `drafts_present`), drafts or evaluation session still open (409
+`review_in_progress`, `details.session_id`), launch refused (503 `drafts_unavailable`, nothing
+is changed). Logs: ids and codes only."""
 
 import logging
 
@@ -33,8 +33,8 @@ logger = logging.getLogger(__name__)
 
 
 async def _check(rt: ProjectsRuntime, user_id: str, project_id: str) -> SessionFacts | None:
-    """Le projet peut recevoir ses brouillons ; sinon l'erreur lisible. Rend sa dernière session,
-    dont la relance reprend la source (client joué ou fournisseur forcé)."""
+    """The project can receive its drafts; otherwise the readable error. Returns its last
+    session, whose relaunch takes over the source (played client or forced provider)."""
     async with rt.session_factory() as db:
         row = await owned(db, user_id, project_id)
         open_ids = await list_open_sessions_by_subject(
@@ -43,10 +43,10 @@ async def _check(rt: ProjectsRuntime, user_id: str, project_id: str) -> SessionF
         running = open_ids.get(project_id, [])
         if row.status == "reviewing":
             raise review_in_progress(running[0] if running else row.session_id)
-        if running:  # le projet est validé : c'est la session des brouillons qui tourne
-            raise review_in_progress(running[0], "Les brouillons s'écrivent déjà.")
+        if running:  # the project is validated: it is the drafts session that is running
+            raise review_in_progress(running[0], "The drafts are already being written.")
         if row.status != "validated":
-            raise project_not_validated("Seul un projet validé a des brouillons.")
+            raise project_not_validated("Only a validated project has drafts.")
         if row.drafts:
             raise drafts_present()
         return await session_facts(db, user_id, row.session_id) if row.session_id else None
@@ -72,13 +72,11 @@ async def regenerate_drafts(rt: ProjectsRuntime, user_id: str, project_id: str) 
                 )
         except Exception as exc:
             code = exc.code if isinstance(exc, AppError) else type(exc).__name__
-            logger.warning(
-                "Brouillons non lancés : projet %s, cause %s", project_id, safe_code(code)
-            )
+            logger.warning("Drafts not started: project %s, cause %s", project_id, safe_code(code))
             raise drafts_unavailable() from None
         async with rt.session_factory() as db:
             row = await owned(db, user_id, project_id)
             row.session_id = session_id
             await db.commit()
-    logger.info("Brouillons relancés : projet %s, session %s", project_id, session_id)
+    logger.info("Drafts relaunched: project %s, session %s", project_id, session_id)
     return SessionStarted(session_id=session_id)

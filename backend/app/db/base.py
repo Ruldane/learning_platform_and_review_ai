@@ -7,7 +7,7 @@ from sqlalchemy.engine import Dialect
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.types import TypeDecorator
 
-# Noms de contraintes déterministes : indispensables à Alembic (mode batch de SQLite).
+# Deterministic constraint names: required by Alembic (SQLite batch mode).
 NAMING_CONVENTION = {
     "ix": "ix_%(column_0_label)s",
     "uq": "uq_%(table_name)s_%(column_0_name)s",
@@ -18,7 +18,7 @@ NAMING_CONVENTION = {
 
 
 def new_id() -> str:
-    """Identifiant texte (UUID4) de chaque ligne."""
+    """Text identifier (UUID4) of each row."""
     return str(uuid.uuid4())
 
 
@@ -27,9 +27,9 @@ def utcnow() -> datetime:
 
 
 class UTCDateTime(TypeDecorator[datetime]):
-    """`DateTime(timezone=True)` qui rend toujours des datetimes UTC avec fuseau.
+    """`DateTime(timezone=True)` that always returns UTC datetimes with a time zone.
 
-    SQLite ne conserve pas le fuseau : sans cela, une lecture renverrait des datetimes naïfs.
+    SQLite does not keep the time zone: without this, a read would return naive datetimes.
     """
 
     impl = DateTime(timezone=True)
@@ -39,7 +39,7 @@ class UTCDateTime(TypeDecorator[datetime]):
         if value is None:
             return None
         if value.tzinfo is None:
-            raise ValueError("datetime sans fuseau horaire refusé (UTC attendu)")
+            raise ValueError("datetime without a time zone refused (UTC expected)")
         return value.astimezone(UTC)
 
     def process_result_value(self, value: datetime | None, dialect: Dialect) -> datetime | None:
@@ -52,7 +52,7 @@ class Base(DeclarativeBase):
 
 
 class UserScopedMixin:
-    """Colonnes communes à toute table : `id`, `user_id`, `created_at`, `updated_at`."""
+    """Columns common to every table: `id`, `user_id`, `created_at`, `updated_at`."""
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     user_id: Mapped[str] = mapped_column(String(36), index=True)

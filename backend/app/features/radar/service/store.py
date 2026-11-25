@@ -1,15 +1,15 @@
-"""Port du parcours `market_radar` (`RadarStore`, D159) sur la feature `radar` : implémentation
-branchée par `bootstrap_agents.agent_ports(..., radar=...)`. Chaque appel ouvre ses propres
-sessions de base, courtes ; la lecture d'une page se fait hors transaction.
+"""Port of the `market_radar` flow (`RadarStore`, D159) on the `radar` feature: implementation
+wired by `bootstrap_agents.agent_ports(..., radar=...)`. Each call opens its own short
+database sessions; reading a page happens outside a transaction.
 
-Toutes les écritures d'un relevé (colonne JSON `postings`, compteurs) passent sous le verrou du
-relevé : les cinq lectures simultanées d'un passage s'écrivent l'une après l'autre. Chacune est
-**idempotente** (SPEC 9.4) : une page déjà lue (lien normalisé) est rendue sans relecture ni
-recompte, une extraction déjà rangée n'est pas refaite. Une page qui ne se lit pas (site bloqué,
-domaine exclu, lien refusé) n'est pas une erreur : `unreadable`, comptée par site.
+All the writes of a run (JSON column `postings`, counters) go under the run's lock: the five
+simultaneous reads of a pass are written one after the other. Each is **idempotent** (SPEC
+9.4): an already read page (normalized link) is returned without re-reading or recounting, an
+already stored extraction is not redone. A page that cannot be read (blocked site, excluded
+domain, refused link) is not an error: `unreadable`, counted per site.
 
-Le poste, la zone, les liens, les sites et les textes sont des données personnelles ou du web :
-jamais journalisés (17.2) ; les journaux portent des identifiants, des nombres et des codes."""
+The role, the zone, the links, the sites and the texts are personal or web data: never logged
+(17.2); the logs carry ids, numbers and codes."""
 
 import logging
 
@@ -47,7 +47,7 @@ def read_limit() -> AppError:
 
 
 def _apply(row: RadarRun, entries: list[Entry]) -> None:
-    """Range les entrées (nouvelle liste : la colonne JSON est vue modifiée) et les nombres."""
+    """Stores the entries (new list: the JSON column is seen as modified) and the numbers."""
     counted = count(entries)
     row.postings = entries
     row.read_count, row.blocked_count = counted.read, counted.blocked
@@ -56,8 +56,8 @@ def _apply(row: RadarRun, entries: list[Entry]) -> None:
 
 
 def _with_finding(entry: Entry, item: RadarFinding) -> Entry:
-    """L'entrée enrichie de l'extraction ; le salaire n'est gardé que si ses nombres figurent dans
-    le texte lu (la vérification du parcours est refaite : l'adaptateur ne la présume pas)."""
+    """The entry enriched with the extraction; the salary is only kept if its numbers appear in
+    the text read (the flow's check is redone: the adapter does not presume it)."""
     if not item.is_job_posting:
         return entry | {"read": "not_posting"}
     return entry | {
@@ -74,8 +74,8 @@ def _with_finding(entry: Entry, item: RadarFinding) -> Entry:
 def _extracted_entries(
     entries: list[Entry], items: list[RadarFinding], failed_refs: list[str]
 ) -> list[Entry]:
-    """Les entrées avec les extractions et les échecs rangés ; une entrée qui a déjà son issue (ou
-    qui est bloquée) n'est jamais réécrite : le rejeu ne change rien."""
+    """The entries with the extractions and failures stored; an entry that already has its
+    outcome (or that is blocked) is never rewritten: the replay changes nothing."""
     out = [dict(entry) for entry in entries]
     position = {str(entry["ref"]): number for number, entry in enumerate(out)}
     for item in items:
@@ -122,7 +122,7 @@ class AgentRadarStore:
             row = await self._row(db, user_id, run_id)
             row.queries, row.candidates = queries, len(urls)
             await db.commit()
-        logger.info("Candidats : relevé %s, %d requête(s), %d lien(s)", run_id, queries, len(urls))
+        logger.info("Candidates: run %s, %d query(ies), %d link(s)", run_id, queries, len(urls))
 
     async def _known(self, user_id: str, run_id: str, key: str) -> PostingPage | None:
         async with self._rt.session_factory() as db:
@@ -133,12 +133,12 @@ class AgentRadarStore:
         return None
 
     async def _fetch(self, user_id: str, url: str) -> tuple[bool, str]:
-        """`(lisible, texte)` : cache, débit par domaine, garde SSRF et domaines exclus sont ceux
-        de la recherche web (lecture hors session)."""
+        """`(readable, text)`: cache, per-domain rate, SSRF guard and excluded domains are those
+        of the web search (read outside a session)."""
         try:
             outcome = await read(self._rt.research, user_id, None, url)
-        except AppError as exc:  # lien refusé (`invalid_url`, `url_forbidden`) : page illisible
-            logger.info("Lien refusé : utilisateur %s, code %s", user_id, exc.code)
+        except AppError as exc:  # link refused (`invalid_url`, `url_forbidden`): unreadable page
+            logger.info("Link refused: user %s, code %s", user_id, exc.code)
             return False, ""
         return outcome.status == "ok", outcome.text[:TEXT_MAX]
 
@@ -154,7 +154,7 @@ class AgentRadarStore:
             row = await self._row(db, user_id, run_id)
             entries: list[Entry] = [dict(entry) for entry in row.postings]
             for entry in entries:
-                if entry.get("key") == key:  # une lecture simultanée du même lien a gagné
+                if entry.get("key") == key:  # a simultaneous read of the same link won
                     return page_of(entry)
             if len(entries) >= MAX_READS:
                 raise read_limit()
@@ -168,7 +168,7 @@ class AgentRadarStore:
             }
             _apply(row, [*entries, added])
             await db.commit()
-        logger.info("Page lue : relevé %s, repère %s, %s", run_id, added["ref"], added["read"])
+        logger.info("Page read: run %s, ref %s, %s", run_id, added["ref"], added["read"])
         return page_of(added)
 
     async def save_extraction(
@@ -184,7 +184,7 @@ class AgentRadarStore:
             _apply(row, _extracted_entries(list(row.postings), items, failed_refs))
             await db.commit()
         logger.info(
-            "Extraction : relevé %s, %d offre(s), %d en échec", run_id, len(items), len(failed_refs)
+            "Extraction: run %s, %d posting(s), %d failed", run_id, len(items), len(failed_refs)
         )
 
     async def finalize(self, user_id: str, session_id: str, run_id: str) -> RadarSummary:
@@ -197,4 +197,4 @@ class AgentRadarStore:
                 row.status, row.error_code = "failed", safe_code(code)
                 row.finished_at = self._rt.now()
                 await db.commit()
-        logger.info("Relevé en échec : relevé %s, code %s", run_id, safe_code(code))
+        logger.info("Run failed: run %s, code %s", run_id, safe_code(code))

@@ -1,9 +1,10 @@
-"""Lancer une session hors d'une requête HTTP (D82) : un port d'une feature (choix d'un parcours
-qui lance la construction du programme) ou une tâche planifiée (leçons à J-7).
+"""Launching a session outside an HTTP request (D82): a feature port (choice of a graph that
+launches the building of the program) or a scheduled task (lessons at D-7).
 
-Le lanceur existe avant le moteur et lui est lié ensuite (`main._lifespan`, juste après
-`agent_runtime`) : la composition des ports peut le recevoir sans cycle (les ports sont donnés
-au moteur, le moteur au lanceur). Non lié, ou serveur qui s'arrête : 503 `engine_unavailable`.
+The launcher exists before the engine and is bound to it afterwards (`main._lifespan`, right
+after `agent_runtime`): the composition of the ports can receive it without a cycle (the ports
+are given to the engine, the engine to the launcher). Unbound, or server stopping: 503
+`engine_unavailable`.
 """
 
 import logging
@@ -34,7 +35,7 @@ class SessionLauncher:
         self._runner = runner
 
     def unbind(self) -> None:
-        """À l'arrêt, avant celui du moteur : plus aucune session lancée par ce chemin."""
+        """At shutdown, before the engine's: no session is launched through this path any more."""
         self._runner = None
 
     async def start(
@@ -47,12 +48,12 @@ class SessionLauncher:
         subject_id: str | None = None,
         prepare: PrepareSession | None = None,
     ) -> str:
-        """Comme `SessionRunner.start` (entrée validée, session `running`, tâche lancée) ; rend
-        l'id de la session. Les erreurs du runner (parcours inconnu, entrée invalide) passent
-        telles quelles, sauf l'arrêt du serveur, rendu comme un moteur indisponible."""
+        """Like `SessionRunner.start` (validated input, `running` session, task launched); returns
+        the session id. The runner's errors (unknown graph, invalid input) pass through
+        as they are, except the server shutdown, returned as an engine unavailable."""
         runner = self._runner
         if runner is None:
-            logger.warning("Session non lancée (utilisateur %s) : moteur non lié", user_id)
+            logger.warning("Session not launched (user %s): engine not bound", user_id)
             raise engine_unavailable()
         try:
             return await runner.start(
@@ -61,22 +62,22 @@ class SessionLauncher:
         except AppError as exc:
             if exc.code != STOPPING_CODE:
                 raise
-            logger.warning("Session non lancée (utilisateur %s) : serveur en arrêt", user_id)
+            logger.warning("Session not launched (user %s): server stopping", user_id)
             raise engine_unavailable() from None
 
     async def resume(self, user_id: str, session_id: str, interrupt_id: str, value: Any) -> None:
-        """Comme `SessionRunner.resume` : réponse à la question en attente, donnée par la route
-        d'une feature (« Générer le PDF » d'une revue de CV, D130). Erreurs du runner telles
-        quelles (`stale_interrupt`…), sauf l'arrêt du serveur, rendu comme un moteur
-        indisponible."""
+        """Like `SessionRunner.resume`: answer to the pending question, given by a feature's
+        route ("Generate the PDF" of a CV review, D130). The runner's errors as they are
+        (`stale_interrupt`...), except the server shutdown, returned as an engine
+        unavailable."""
         runner = self._runner
         if runner is None:
-            logger.warning("Session non reprise (utilisateur %s) : moteur non lié", user_id)
+            logger.warning("Session not resumed (user %s): engine not bound", user_id)
             raise engine_unavailable()
         try:
             await runner.resume(user_id, session_id, interrupt_id, value)
         except AppError as exc:
             if exc.code != STOPPING_CODE:
                 raise
-            logger.warning("Session non reprise (utilisateur %s) : serveur en arrêt", user_id)
+            logger.warning("Session not resumed (user %s): server stopping", user_id)
             raise engine_unavailable() from None

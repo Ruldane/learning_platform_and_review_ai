@@ -1,12 +1,12 @@
-"""Port du stockage de fichiers. Le nom de fichier reçu n'entre jamais dans un chemin : la clé
-est générée (`<user_id>/<catégorie>/<uuid4><suffixe canonique>`) et seule elle est conservée."""
+"""File storage port. The received file name never enters a path: the key
+is generated (`<user_id>/<category>/<uuid4><canonical suffix>`) and only it is kept."""
 
 from typing import Protocol
 
 from app.core.errors import AppError
 
-# Documents importés ; images des pages et polices d'un gabarit de CV (D119) ; captures d'un projet
-# (PNG, JPEG, WebP : D166).
+# Imported documents; page images and fonts of a CV template (D119); screenshots of a project
+# (PNG, JPEG, WebP: D166).
 ALLOWED_SUFFIXES = (
     ".pdf",
     ".docx",
@@ -25,35 +25,35 @@ ALLOWED_SUFFIXES = (
 
 
 class StorageKeyInvalid(AppError):
-    """Clé, utilisateur, catégorie ou suffixe hors du format attendu (ou hors du dossier racine).
-    Le message ne cite jamais la valeur refusée."""
+    """Key, user, category or suffix outside the expected format (or outside the root folder).
+    The message never quotes the refused value."""
 
     def __init__(self) -> None:
-        super().__init__("storage_key_invalid", "Chemin de fichier refusé.", status_code=400)
+        super().__init__("storage_key_invalid", "File path refused.", status_code=400)
 
 
 class FileStorage(Protocol):
     async def save(self, user_id: str, category: str, data: bytes, suffix: str) -> str:
-        """Écrit `data` et rend la clé relative générée."""
+        """Writes `data` and returns the generated relative key."""
         ...
 
     async def read(self, user_id: str, key: str) -> bytes:
-        """La clé doit appartenir à `user_id` (préfixe `<user_id>/`), sinon `StorageKeyInvalid`."""
+        """The key must belong to `user_id` (prefix `<user_id>/`), otherwise `StorageKeyInvalid`."""
         ...
 
     async def delete(self, user_id: str, key: str) -> None:
-        """Idempotent : une clé déjà supprimée ne lève rien. Même contrôle d'appartenance."""
+        """Idempotent: an already deleted key raises nothing. Same ownership check."""
         ...
 
     async def list_user(self, user_id: str) -> list[str]:
-        """Les clés de tous les fichiers de `user_id` (la forme que `save` rend, préfixe
-        `<user_id>/` compris), triées. Jamais un fichier d'un autre utilisateur ni un résidu
-        d'écriture ; `StorageKeyInvalid` si `user_id` n'a pas la forme attendue."""
+        """The keys of all the files of `user_id` (the form `save` returns, `<user_id>/`
+        prefix included), sorted. Never a file of another user nor a write
+        leftover; `StorageKeyInvalid` if `user_id` does not have the expected form."""
         ...
 
     async def delete_user(self, user_id: str) -> int:
-        """Efface tout le dossier de `user_id` (résidus d'écriture compris) et rend le nombre de
-        fichiers rangés qu'il contenait. Idempotent : sans dossier, rend 0. Jamais un fichier d'un
-        autre utilisateur ; `StorageKeyInvalid` si `user_id` n'a pas la forme attendue ou si son
-        dossier est un lien qui sort de la racine."""
+        """Erases the whole folder of `user_id` (write leftovers included) and returns the number of
+        stored files it contained. Idempotent: without a folder, returns 0. Never a file of another
+        user; `StorageKeyInvalid` if `user_id` does not have the expected form or if its
+        folder is a link that leaves the root."""
         ...

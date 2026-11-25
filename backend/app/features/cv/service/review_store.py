@@ -1,14 +1,13 @@
-"""Port de la revue d'un CV vu par le parcours `cv_review` (`CvReviewStore`, D129, D130).
+"""Port of a CV review as seen by the `cv_review` flow (`CvReviewStore`, D129, D130).
 
-`context` relit tout à chaque nœud (rien n'est gardé dans l'état du graphe) : l'offre et son
-analyse, le profil **à la version figée dans la revue**, le CV d'origine composé dans l'ordre des
-sections du gabarit figé (`base_content`), les indicateurs avant, l'entreprise et sa fiche
-seulement si elle a moins de `BRIEF_MAX_AGE_DAYS` jours. Chaque écriture est idempotente :
-`save_company` (fiche réécrite à l'identique, revue rattachée par sa session), `save_proposals`
-(`(revue, référence)` unique), `render_version` (version déjà rendue relue), `close`.
+`context` re-reads everything at each node (nothing is kept in the graph state): the posting and
+its analysis, the profile **at the version frozen in the review**, the original CV composed in
+the order of the frozen template's sections (`base_content`), the before indicators, the company
+and its record only if it is under `BRIEF_MAX_AGE_DAYS` days old. Each write is idempotent:
+`save_company` (record rewritten identically, review attached by its session), `save_proposals`
+(`(review, reference)` unique), `render_version` (already rendered version re-read), `close`.
 
-Journaux : identifiants et nombres seulement (jamais une entreprise, un texte du CV ni de
-l'offre)."""
+Logs: ids and numbers only (never a company, a CV or posting text)."""
 
 import logging
 from collections.abc import Sequence
@@ -69,7 +68,7 @@ async def review_row(db: AsyncSession, user_id: str, review_id: str) -> CvReview
 async def frozen_base(
     db: AsyncSession, user_id: str, review: CvReview
 ) -> tuple[MasterProfileData, CvContent]:
-    """Le profil figé dans la revue et le CV d'origine composé dans l'ordre du gabarit figé."""
+    """The profile frozen in the review and the original CV in the frozen template's order."""
     profile_row = await ProfileRepository(db, user_id).by_version(review.profile_version)
     if profile_row is None:
         raise review_not_found()
@@ -88,8 +87,8 @@ def _fresh_brief(rt: CvRuntime, company: Company | None) -> CompanyBrief | None:
 
 
 async def ats_updates(db: AsyncSession, rt: CvRuntime, user_id: str) -> list[AtsUpdate]:
-    """Les sources retenues de la dernière session `ats_refresh` terminée il y a moins de
-    `ATS_UPDATES_MAX_AGE_DAYS` jours (P14), 3 au plus ; rien sans rafraîchissement récent."""
+    """The retained sources of the last `ats_refresh` session finished less than
+    `ATS_UPDATES_MAX_AGE_DAYS` days ago (P14), 3 at most; nothing without a recent refresh."""
     repo = AtsSourceRepository(db, user_id)
     session_id = await repo.latest_session(rt.now() - timedelta(days=ATS_UPDATES_MAX_AGE_DAYS))
     if session_id is None:
@@ -106,7 +105,7 @@ async def ats_updates(db: AsyncSession, rt: CvRuntime, user_id: str) -> list[Ats
 
 
 class AgentCvReviewStore:
-    """`CvReviewStore` de la composition (`app.bootstrap_career`)."""
+    """The composition's `CvReviewStore` (`app.bootstrap_career`)."""
 
     def __init__(self, runtime: CvRuntime) -> None:
         self._rt = runtime
@@ -160,7 +159,7 @@ class AgentCvReviewStore:
                 review.company_id = row.id
             await db.commit()
             company_id = row.id
-        logger.info("Fiche entreprise rangée : session %s, entreprise %s", session_id, company_id)
+        logger.info("Company record stored: session %s, company %s", session_id, company_id)
 
     async def save_proposals(
         self,
@@ -179,7 +178,7 @@ class AgentCvReviewStore:
             added = 0
             for proposal, verdict in items:
                 if verdict.status == "to_gap" or proposal.ref in known:
-                    continue  # un mot clé absent du profil n'entre jamais dans le CV
+                    continue  # a keyword absent from the profile never enters the CV
                 known.add(proposal.ref)
                 added += 1
                 await repo.add(
@@ -203,7 +202,7 @@ class AgentCvReviewStore:
                 review.status = "proposed"
             await db.commit()
         logger.info(
-            "Propositions rangées : session %s, revue %s, %d nouvelle(s), %d en tout",
+            "Proposals stored: session %s, review %s, %d new, %d in all",
             session_id,
             review_id,
             added,
@@ -221,4 +220,4 @@ class AgentCvReviewStore:
             if review.status in ("running", "proposed"):
                 review.status = "done"
                 await db.commit()
-        logger.info("Revue fermée : utilisateur %s, revue %s", user_id, review_id)
+        logger.info("Review closed: user %s, review %s", user_id, review_id)

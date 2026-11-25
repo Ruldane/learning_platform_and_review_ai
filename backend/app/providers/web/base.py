@@ -1,6 +1,6 @@
-"""Ports de la lecture du web et de YouTube, limites et erreurs.
+"""Ports for reading the web and YouTube, limits and errors.
 
-Aucun message d'erreur ne cite l'URL, le nom d'hôte ni un extrait de la page (spec 17.2)."""
+No error message quotes the URL, the host name or an extract of the page (spec 17.2)."""
 
 import asyncio
 import re
@@ -23,23 +23,23 @@ ALLOWED_CONTENT_TYPES = (
     "application/pdf",
 )
 
-UNREACHABLE_MESSAGE = "Page injoignable."
-TIMEOUT_MESSAGE = "Délai dépassé (15 s) en lisant la page."
-NO_TEXT_MESSAGE = "Page illisible : aucun texte principal trouvé."
-TOO_MANY_REDIRECTS_MESSAGE = "Page injoignable : trop de redirections."
-NOT_YOUTUBE_MESSAGE = "Lien YouTube non reconnu."
-NO_TRANSCRIPT_MESSAGE = "Vidéo illisible : ni transcription ni description disponibles."
-GITHUB_UNREADABLE = "Dépôt GitHub illisible : README absent ou API indisponible."
-ARXIV_UNREADABLE = "Article arXiv introuvable ou API indisponible."
+UNREACHABLE_MESSAGE = "Page unreachable."
+TIMEOUT_MESSAGE = "Timed out (15 s) while reading the page."
+NO_TEXT_MESSAGE = "Page unreadable: no main text found."
+TOO_MANY_REDIRECTS_MESSAGE = "Page unreachable: too many redirects."
+NOT_YOUTUBE_MESSAGE = "YouTube link not recognised."
+NO_TRANSCRIPT_MESSAGE = "Video unreadable: neither transcript nor description available."
+GITHUB_UNREADABLE = "GitHub repository unreadable: README missing or API unavailable."
+ARXIV_UNREADABLE = "arXiv paper not found or API unavailable."
 
-# Échéance de la lecture en cours (`loop.time()`), posée par `RoutingWebReader` : le fetch, le
-# débit, le repli Gotenberg et le PDF arXiv se règlent sur ce qui reste des 15 s de la page.
+# Deadline of the read in progress (`loop.time()`), set by `RoutingWebReader`: the fetch, the
+# rate limit, the Gotenberg fallback and the arXiv PDF all follow what remains of the page's 15 s.
 READ_DEADLINE: ContextVar[float | None] = ContextVar("web_read_deadline", default=None)
 
 
 def deadline_within(seconds: float) -> float:
-    """Échéance à `seconds` d'ici, ramenée à celle de la lecture en cours si elle est plus
-    proche. À appeler dans une boucle asyncio."""
+    """Deadline `seconds` from now, brought down to that of the read in progress if it is
+    closer. To be called inside an asyncio loop."""
     own = asyncio.get_running_loop().time() + seconds
     outer = READ_DEADLINE.get()
     return own if outer is None else min(own, outer)
@@ -83,18 +83,18 @@ class UrlForbidden(AppError):
 
 class UrlTooLarge(AppError):
     def __init__(self) -> None:
-        super().__init__("url_too_large", "Page trop volumineuse : 20 Mo au maximum.", 413)
+        super().__init__("url_too_large", "Page too large: 20 MB maximum.", 413)
 
 
 class UrlUnsupported(AppError):
     def __init__(self) -> None:
         super().__init__(
-            "url_unsupported_content", "Type de contenu non pris en charge à cette adresse.", 415
+            "url_unsupported_content", "Content type not supported at this address.", 415
         )
 
 
 class UrlUnreadable(AppError):
-    """`message` est toujours une des constantes de ce module, jamais un texte reçu."""
+    """`message` is always one of the constants of this module, never a received text."""
 
     def __init__(self, message: str = UNREACHABLE_MESSAGE) -> None:
         super().__init__("url_unreadable", message, status_code=422)
@@ -108,16 +108,17 @@ class WebFetcher(Protocol):
         content_types: tuple[str, ...] = ALLOWED_CONTENT_TYPES,
         headers: Mapping[str, str] | None = None,
     ) -> FetchedResource:
-        """`content_types` remplace la liste blanche des types (une API JSON ou Atom) ;
-        `headers` s'ajoute aux en-têtes par défaut, sauf `Accept-Encoding` (D74, compatible
-        D63 : un appel sans option se comporte comme avant)."""
+        """`content_types` replaces the whitelist of types (a JSON or Atom API);
+        `headers` is added to the default headers, except `Accept-Encoding` (D74, compatible
+        with D63: a call without options behaves as before)."""
         ...
 
 
 class WebReader(Protocol):
     async def read(self, url: str, *, require_text: bool = True) -> WebDocument:
-        """`require_text=False` rend la page même sans texte principal (titre et description
-        seuls), pour le repli YouTube ; sinon un texte trop court lève `UrlUnreadable`."""
+        """`require_text=False` returns the page even without main text (title and description
+        only), for the YouTube fallback; otherwise a text that is too short raises
+        `UrlUnreadable`."""
         ...
 
 
@@ -130,7 +131,7 @@ _VIDEO_ID = re.compile(r"[A-Za-z0-9_-]{11}")
 
 
 def youtube_video_id(url: str) -> str | None:
-    """Identifiant d'une vidéo YouTube, ou `None` si l'URL n'en est pas une forme reconnue."""
+    """Identifier of a YouTube video, or `None` if the URL is not a recognised form of one."""
     try:
         parts = urlsplit(url)
         host = (parts.hostname or "").lower()

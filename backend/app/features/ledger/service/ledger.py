@@ -1,9 +1,9 @@
-"""Registre des passages planifiés (P13, D158) : `claim` atomique, `finish`, `fail`, lectures.
+"""Registry of scheduled passes (P13, D158): atomic `claim`, `finish`, `fail`, reads.
 
-Un passage se range par `(utilisateur, tâche, période)` (`periods`). `claim` gagne la période
-(insertion sans conflit) ou reprend un passage `failed` ou `running` périmé (30 minutes), 3 essais
-au plus ; `done` et `skipped` ne se reprennent jamais. Le commit appartient à l'appelant : il
-valide juste après `claim`. Journaux : identifiants, nombres et codes seulement."""
+A pass is stored by `(user, task, period)` (`periods`). `claim` wins the period (insert without
+conflict) or takes over a `failed` pass or a stale `running` one (30 minutes), 3 tries at most;
+`done` and `skipped` are never taken over. The commit belongs to the caller: it commits right
+after `claim`. Logs: ids, numbers and codes only."""
 
 import logging
 import re
@@ -60,34 +60,34 @@ def _view(row: JobRun) -> JobRunView:
 
 
 def safe_code(code: str) -> str:
-    """Un code d'erreur (type d'exception ou code d'`AppError`) ; tout autre texte (un message
-    peut citer une donnée) est remplacé par `error`."""
+    """An error code (exception type or `AppError` code); any other text (a message may quote
+    data) is replaced by `error`."""
     return code if _CODE.fullmatch(code) else GENERIC_CODE
 
 
 async def claim(
     db: AsyncSession, user_id: str, name: str, period: str, now: datetime
 ) -> Claim | None:
-    """Gagne le passage `(name, period)` ou rend `None` (déjà gagné, fini, en cours non périmé
-    ou sans essai restant). À valider tout de suite par l'appelant."""
+    """Wins the pass `(name, period)` or returns `None` (already won, finished, running and not
+    stale, or no try left). To be committed right away by the caller."""
     repo = JobRunRepository(db, user_id)
     created = await repo.insert_running(name, period, now)
     if created is not None:
-        logger.debug("Registre : passage %s gagné (essai 1)", created)
+        logger.debug("Registry: pass %s won (try 1)", created)
         return Claim(created, 1)
     row = await repo.by_period(name, period)
     if row is None or row.status in ("done", "skipped"):
         return None
     if row.status == "running" and not is_stale(row.started_at, now):
         return None
-    run_id, old = row.id, row.attempts  # lus avant l'UPDATE, qui met à jour l'objet de la session
+    run_id, old = row.id, row.attempts  # read before the UPDATE, which updates the session object
     if old >= MAX_ATTEMPTS:
         if row.status == "running" and await repo.abandon(run_id, old, now):
-            logger.warning("Registre : passage %s abandonné après %d essais", run_id, old)
+            logger.warning("Registry: pass %s abandoned after %d tries", run_id, old)
         return None
     if not await repo.reclaim(run_id, old, now):
         return None
-    logger.info("Registre : passage %s repris (essai %d)", run_id, old + 1)
+    logger.info("Registry: pass %s taken over (try %d)", run_id, old + 1)
     return Claim(run_id, old + 1)
 
 
@@ -102,36 +102,36 @@ async def finish(
     ref_id: str | None = None,
     next_due_at: datetime | None = None,
 ) -> None:
-    """Termine l'essai `attempt` (celui du `Claim`) : un ouvrier périmé, dont le passage a été
-    repris depuis (essai suivant), ne ferme rien."""
+    """Ends the try `attempt` (the `Claim`'s): a stale worker, whose pass has been taken over
+    since (next try), closes nothing."""
     done = await JobRunRepository(db, user_id).close_running(
         run_id, attempt, now, status=status, ref_id=ref_id, next_due_at=next_due_at, error_code=None
     )
     if done:
-        logger.debug("Registre : passage %s terminé (%s)", run_id, status)
+        logger.debug("Registry: pass %s finished (%s)", run_id, status)
     else:
-        logger.info("Registre : passage %s, essai %d déjà clos ou repris", run_id, attempt)
+        logger.info("Registry: pass %s, try %d already closed or taken over", run_id, attempt)
 
 
 async def fail(
     db: AsyncSession, user_id: str, run_id: str, *, attempt: int, code: str, now: datetime
 ) -> None:
-    """Met en échec l'essai `attempt` (voir `finish`)."""
+    """Fails the try `attempt` (see `finish`)."""
     code = safe_code(code)
     failed = await JobRunRepository(db, user_id).close_running(
         run_id, attempt, now, status="failed", error_code=code
     )
     if failed:
-        logger.warning("Registre : passage %s en échec (%s)", run_id, code)
+        logger.warning("Registry: pass %s failed (%s)", run_id, code)
     else:
-        logger.info("Registre : passage %s, essai %d déjà clos ou repris", run_id, attempt)
+        logger.info("Registry: pass %s, try %d already closed or taken over", run_id, attempt)
 
 
 async def reopen(
     db: AsyncSession, user_id: str, view: JobRunView, *, code: str, now: datetime
 ) -> bool:
-    """Un passage `done` dont le travail lancé a échoué repasse en `failed` : il compte comme non
-    fait, `claim` le reprend (3 essais au plus, comme tout passage en échec)."""
+    """A `done` pass whose launched work failed goes back to `failed`: it counts as not done,
+    `claim` takes it over (3 tries at most, like any failed pass)."""
     reopened = await JobRunRepository(db, user_id).reopen_done(
         view.run_id, view.attempts, now, safe_code(code)
     )
@@ -148,16 +148,16 @@ async def last_done(db: AsyncSession, user_id: str, name: str) -> JobRunView | N
 async def recent_failures(
     db: AsyncSession, user_id: str, after: datetime | None, before: datetime | None, limit: int
 ) -> list[JobRunView]:
-    """Les passages en échec finis dans `[after, before]` (bornes incluses, plus récents
-    d'abord), pour le fil d'activité."""
+    """The failed passes finished in `[after, before]` (bounds included, most recent first),
+    for the activity feed."""
     rows = await JobRunRepository(db, user_id).failures(after, before, limit)
     return [_view(row) for row in rows]
 
 
 async def scheduled_user_ids(db: AsyncSession) -> list[str]:
-    """SEULE lecture sans `user_id` des tâches du registre (comme D18, D91, D197) : les comptes
-    dont le premier lancement est fini, la même règle que `GET /settings` (`onboarding_done`). Un
-    compte qui ne l'a pas fini ne prend aucun passage du registre : il sera traité au premier
-    passage qui suit. Les tâches planifiées qui appellent un modèle ou le web n'en lisent pas
-    d'autre."""
+    """The ONLY read without `user_id` of the registry's tasks (like D18, D91, D197): the
+    accounts whose first launch is finished, the same rule as `GET /settings`
+    (`onboarding_done`). An account that has not finished it takes no pass of the registry: it
+    will be handled on the first pass that follows. Scheduled tasks that call a model or the web
+    read no other."""
     return await scheduled_users(db)

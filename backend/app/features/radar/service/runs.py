@@ -1,8 +1,8 @@
-"""Lancer un relevé du radar (P10, D160), sous le verrou des relevés de l'utilisatrice : un seul
-relevé en cours (409 `radar_in_progress`) ; un relevé `running` dont la session n'est plus ouverte
-passe en `failed` d'abord (le statut suit la session, comme D129 n° 5, et se corrige à la
-lecture) ; sans poste, 409 `radar_role_required`. Le poste et la zone donnés sont mémorisés dans
-les réglages. Journaux : identifiants, nombres et codes seulement, jamais le poste ni la zone."""
+"""Launching a radar run (P10, D160), under the user's runs lock: a single run in progress
+(409 `radar_in_progress`); a `running` run whose session is no longer open becomes `failed`
+first (the status follows the session, as D129 no. 5, and is corrected on read); without a
+role, 409 `radar_role_required`. The given role and zone are saved in the settings. Logs: ids,
+numbers and codes only, never the role or the zone."""
 
 import logging
 from datetime import datetime
@@ -54,8 +54,8 @@ def radar_run_not_found() -> AppError:
 
 
 async def defaults(db: AsyncSession, user_id: str) -> tuple[str, str]:
-    """`(poste, zone)` par défaut : les réglages, sinon le poste visé du dernier objectif ;
-    zone « France » sans réglage. Le poste peut être vide."""
+    """Default `(role, zone)`: the settings, otherwise the last goal's target role; zone
+    "France" without a setting. The role may be empty."""
     settings = await SettingsService(db, user_id).get()
     role = settings.radar_role.strip()
     if not role:
@@ -69,9 +69,9 @@ def _dead_code(status: str | None) -> str:
 
 
 async def settle(db: AsyncSession, user_id: str, now: datetime) -> None:
-    """Les relevés `running` sans session ouverte passent en `failed`, avec un code lisible
-    (`session_failed`, `session_cancelled`, `not_finalized`, `launch_failed`). Sessions lues AVANT
-    les relevés (D97 n° 9). L'appelant tient `runs_lock`."""
+    """`running` runs without an open session become `failed`, with a readable code
+    (`session_failed`, `session_cancelled`, `not_finalized`, `launch_failed`). Sessions read
+    BEFORE the runs (D97 no. 9). The caller holds `runs_lock`."""
     open_ids = await list_open_sessions_by_subject(db, user_id, graph=GRAPH, subject_type=SUBJECT)
     changed = False
     for row in await RadarRunRepository(db, user_id).running():
@@ -81,20 +81,20 @@ async def settle(db: AsyncSession, user_id: str, now: datetime) -> None:
         row.status, row.error_code = "failed", _dead_code(facts.status if facts else None)
         row.finished_at = now
         changed = True
-        logger.info("Relevé sans session : utilisateur %s, relevé %s", user_id, row.id)
+        logger.info("Run without session: user %s, run %s", user_id, row.id)
     if changed:
         await db.commit()
 
 
 async def settled(rt: RadarRuntime, user_id: str) -> None:
-    """`settle` sous le verrou des relevés, dans sa propre session : à appeler avant toute lecture
-    qui montre un statut."""
+    """`settle` under the runs lock, in its own session: to call before any read that shows a
+    status."""
     async with rt.runs_lock(user_id), rt.session_factory() as db:
         await settle(db, user_id, rt.now())
 
 
 async def _resolve(db: AsyncSession, user_id: str, body: RadarRunIn) -> tuple[str, str]:
-    """Poste et zone du relevé ; ceux que la requête donne sont mémorisés dans les réglages."""
+    """Role and zone of the run; those the request gives are saved in the settings."""
     default_role, default_zone = await defaults(db, user_id)
     role, zone = body.role or default_role, body.zone or default_zone
     if not role:
@@ -122,14 +122,14 @@ async def _launch(rt: RadarRuntime, user_id: str, run_id: str) -> RunStarted:
     except BaseException as exc:
         code = exc.code if isinstance(exc, AppError) else type(exc).__name__
         await _mark_failed(rt, user_id, run_id, code)
-        logger.warning("Relevé non lancé : utilisateur %s, relevé %s", user_id, run_id)
+        logger.warning("Run not started: user %s, run %s", user_id, run_id)
         raise
     async with rt.session_factory() as db:
         row = await RadarRunRepository(db, user_id).get_fresh(run_id)
         if row is not None:
             row.session_id = session_id
             await db.commit()
-    logger.info("Relevé lancé : utilisateur %s, relevé %s, session %s", user_id, run_id, session_id)
+    logger.info("Run started: user %s, run %s, session %s", user_id, run_id, session_id)
     return RunStarted(run_id=run_id, session_id=session_id)
 
 
@@ -141,8 +141,8 @@ async def start_run(
     trigger: RadarTrigger,
     period: str | None,
 ) -> RunStarted:
-    """Crée le relevé puis lance le parcours `market_radar` (sujet `radar_run`, limite de pas fixée
-    par le parcours). 409 `radar_in_progress` (`details.run_id`) ou `radar_role_required`."""
+    """Creates the run then launches the `market_radar` flow (subject `radar_run`, step limit set
+    by the flow). 409 `radar_in_progress` (`details.run_id`) or `radar_role_required`."""
     async with rt.runs_lock(user_id):
         async with rt.session_factory() as db:
             await settle(db, user_id, rt.now())

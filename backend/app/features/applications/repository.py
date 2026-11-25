@@ -134,6 +134,7 @@ class EventRepository(UserScopedRepository[ApplicationEvent]):
             ApplicationEvent.kind == "kit",
             ApplicationEvent.ref_id == session_id,
             ApplicationEvent.text.like(f"{KIT_COMPLETED_TITLE}%")
+            # Rows stored before the switch to English start with the French title.
             | ApplicationEvent.text.like("Kit de candidature terminé%"),
         )
         return (await self.session.execute(stmt.limit(1))).first() is not None
