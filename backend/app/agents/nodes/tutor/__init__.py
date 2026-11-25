@@ -1,7 +1,7 @@
-"""Le Tuteur (SPEC F14, 9.1, D102) : mène une séance d'étude guidée. Il enseigne la leçon section
-par section selon le mode (socratique, Feynman, direct), pose une question après chaque section,
-puis l'exercice de la leçon et trois questions finales ; « Je bloque » donne trois indices
-gradués puis la solution. Utilisé par le parcours `study_session`."""
+"""The Tutor (SPEC F14, 9.1, D102): runs a guided study session. It teaches the lesson section
+by section according to the mode (Socratic, Feynman, direct), asks a question after each
+section, then the lesson's exercise and three final questions; "I'm stuck" gives three graded
+hints then the solution. Used by the `study_session` flow."""
 
 from app.agents.nodes.tutor.answers import (
     ask,

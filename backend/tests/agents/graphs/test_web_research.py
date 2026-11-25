@@ -100,7 +100,7 @@ async def test_kept_source_written_to_memory_as_source(
     written = [e for e in events if e.type == "memory.written"]
     assert len(written) == 1 and written[0].agent == "scout"
     assert written[0].payload.kind == "source" and written[0].payload.title == "Doc A"  # type: ignore[union-attr]
-    assert written[0].payload.reason == "Source retenue par l'Éclaireur (score 82/100)."  # type: ignore[union-attr]
+    assert written[0].payload.reason == "Source kept by the Scout (score 82/100)."  # type: ignore[union-attr]
     async with web.factory() as db:
         rows, _ = await MemoryItemRepository(db, user_id).filtered(
             ItemFilter(kind="source"), limit=10, offset=0

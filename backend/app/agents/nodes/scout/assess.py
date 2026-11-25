@@ -1,6 +1,6 @@
-"""Nœuds de l'Éclaireur qui jugent : noter chaque page lue, garder les sources retenues en mémoire,
-résumer. La note vient de cinq critères bornés par le schéma ; le code additionne et applique le
-seuil de 60 (la passerelle enregistre, SPEC 10.3)."""
+"""Scout nodes that judge: score each page read, keep the selected sources in memory, summarize.
+The score comes from five criteria bounded by the schema; the code adds them up and applies the
+threshold of 60 (the gateway records it, SPEC 10.3)."""
 
 import asyncio
 import logging
@@ -31,18 +31,18 @@ from app.agents.tools.memory_tools import memory_write
 from app.agents.tools.web_port import KEEP_THRESHOLD, SourceVerdictView
 from app.core.errors import AppError
 
-PAGE_JUDGE_TIMEOUT_S = 90  # une page trop lente à noter est écartée sans note (D82)
-# Le nœud laisse à chaque page son délai complet : au pire toutes les pages notables sont lentes
-# (15 × 90 s), plus une minute pour les écritures. Ainsi une page lente est toujours écartée
-# seule, jamais avec tout le nœud (D82).
+PAGE_JUDGE_TIMEOUT_S = 90  # a page too slow to score is discarded without a score (D82)
+# The node gives each page its full timeout: at worst all the scorable pages are slow
+# (15 x 90 s), plus a minute for the writes. So a slow page is always discarded alone, never
+# together with the whole node (D82).
 JUDGE_TIMEOUT_S = MAX_PAGES_JUDGED * PAGE_JUDGE_TIMEOUT_S + 60
-# Page dont le modèle n'a rendu aucune note conforme au schéma, ou trop lente (revue phase 3, I2).
+# Page for which the model returned no schema-conforming score, or too slow (phase 3 review, I2).
 UNSCORED_REASON = "This source could not be scored."
 INVALID_OUTPUT_CODE = "structured_output_invalid"
 PAGE_TIMEOUT_CODE = "page_judge_timeout"
 
 logger = logging.getLogger(__name__)
-REMEMBER_TIMEOUT_S = 300  # une vectorisation par source retenue
+REMEMBER_TIMEOUT_S = 300  # one vectorization per selected source
 
 
 def _prompt(page: dict[str, Any]) -> str:
@@ -96,10 +96,10 @@ def _page_timeout() -> AppError:
 
 
 async def _score(model: BaseChatModel, page: dict[str, Any]) -> SourceScore | AppError:
-    """Les cinq critères de la page, ou une erreur rendue et non levée : `structured_output_invalid`
-    (aucune note conforme au schéma après les essais), ou `page_judge_timeout` (au-delà de
-    `PAGE_JUDGE_TIMEOUT_S`). Toute autre erreur (quota, fournisseur indisponible) remonte : elle
-    vaudrait pour toutes les pages."""
+    """The page's five criteria, or an error returned and not raised: `structured_output_invalid`
+    (no schema-conforming score after the retries), or `page_judge_timeout` (beyond
+    `PAGE_JUDGE_TIMEOUT_S`). Any other error (quota, provider unavailable) bubbles up: it
+    would hold for all the pages."""
     limit = asyncio.timeout(PAGE_JUDGE_TIMEOUT_S)
     try:
         async with limit:
@@ -117,14 +117,14 @@ async def _score(model: BaseChatModel, page: dict[str, Any]) -> SourceScore | Ap
         return exc
     except TimeoutError:
         if not limit.expired():
-            raise  # un délai levé plus bas, pas le nôtre
+            raise  # a timeout raised further down, not ours
         return _page_timeout()
 
 
 async def _record(
     deps: GraphDeps, page: dict[str, Any], score: SourceScore | None
 ) -> SourceVerdictView:
-    """Verdict enregistré par la passerelle ; sans note : écartée, raison fixe (revue phase 3)."""
+    """Verdict recorded by the gateway; without a score: discarded, fixed reason (review 3)."""
     return await deps.web.judge(
         deps.user_id,
         deps.session_id,
@@ -151,7 +151,7 @@ def _entry(
 
 
 def _from_state(page: dict[str, Any]) -> SourceVerdictView | None:
-    """Verdict déjà posé dans la session, rendu par la lecture (D82)."""
+    """Verdict already set in the session, returned by the reading (D82)."""
     known = page.get("verdict")
     if not known:
         return None
@@ -165,9 +165,9 @@ def _from_state(page: dict[str, Any]) -> SourceVerdictView | None:
 
 
 async def _known(deps: GraphDeps, pages: list[dict[str, Any]]) -> dict[str, SourceVerdictView]:
-    """Verdicts déjà posés, par `source_id` : ceux que la lecture a rendus (état), puis ceux
-    que la base connaît pour les autres pages. Un `judge` coupé au milieu puis rejoué depuis le
-    checkpoint de `read` retrouve ainsi les pages déjà notées sans rappeler le modèle (D82)."""
+    """Verdicts already set, by `source_id`: those the reading returned (state), then those the
+    database knows for the other pages. A `judge` cut in the middle then replayed from the
+    `read` checkpoint thus finds the pages already scored without calling the model again (D82)."""
     known = {p["source_id"]: v for p in pages if (v := _from_state(p)) is not None}
     missing = [p["source_id"] for p in pages if p["source_id"] not in known]
     if missing:
@@ -189,7 +189,7 @@ async def _judge_page(
         if isinstance(outcome, AppError):
             failure = (outcome.code, outcome.message, outcome.status_code, outcome.details)
             logger.warning(
-                "Note impossible (%s) : session %s, source %s",
+                "Score impossible (%s): session %s, source %s",
                 outcome.code,
                 deps.session_id,
                 page["source_id"],
@@ -203,8 +203,8 @@ async def _judge_page(
 def make_judge(deps: GraphDeps, *, checkpoint_pages: bool = True) -> Node:
     @node_timeout(JUDGE_TIMEOUT_S)
     async def judge(state: WebResearchState) -> WebResearchState:
-        """Une page dont la note est impossible à établir est écartée sans note et la session
-        continue ; elle échoue seulement si aucune page n'a pu être notée."""
+        """A page whose score cannot be established is discarded without a score and the session
+        continues; it fails only if no page could be scored."""
         model = await deps.models.get_chat_model(deps.user_id, get_agent(AGENT).tier, agent=AGENT)
         verdicts: list[dict[str, Any]] = []
         failure: PageFailure | None = None
@@ -215,8 +215,8 @@ def make_judge(deps: GraphDeps, *, checkpoint_pages: bool = True) -> Node:
         async def judge_source(page: dict[str, Any]) -> PageResult:
             return await _judge_page(deps, model, page, already.get(page["source_id"]))
 
-        # Toujours la même séquence de tâches, même si la base connaît désormais un verdict.
-        # Une reprise retrouve le résultat de chaque source terminée avant la source en attente.
+        # Always the same sequence of tasks, even if the database now knows a verdict.
+        # A resume finds the result of each source finished before the pending source.
         score_page = task(judge_source) if checkpoint_pages else judge_source
         for page in pages:
             entry, error = await score_page(page)
@@ -234,14 +234,14 @@ def make_judge(deps: GraphDeps, *, checkpoint_pages: bool = True) -> Node:
 
 
 def _write_of(verdict: dict[str, Any]) -> AgentWrite:
-    """Source retenue, écrite en mémoire (SPEC 4.2 : ne pas la rechercher deux fois). Le même
-    contenu rejoué est reconnu : jamais un second élément."""
+    """Selected source, written to memory (SPEC 4.2: do not look it up twice). The same content
+    replayed is recognized: never a second item."""
     lang = verdict["lang"]
     return AgentWrite(
         kind="source",
         title=verdict["title"][:200],
         text=f"{verdict['summary']}\n{verdict['url']}",
-        reason=f"Source retenue par l'Éclaireur (score {verdict['score']}/100).",
+        reason=f"Source kept by the Scout (score {verdict['score']}/100).",
         tags=(lang,) if lang else (),
         source_id=verdict["source_id"],
     )

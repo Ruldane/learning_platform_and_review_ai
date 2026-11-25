@@ -1,6 +1,6 @@
-"""Citations et recopie (SPEC 3.5, D90) : « rien n'est recopié » = aucun passage de plus de 25
-mots identique à une source, hors d'une citation courte entre « » suivie de `[n]`. Les mots sont
-comparés sans casse ni ponctuation."""
+"""Quotations and copying (SPEC 3.5, D90): "nothing is copied" = no passage of more than 25
+words identical to a source, outside a short quotation between « » followed by `[n]`. Words are
+compared ignoring case and punctuation."""
 
 import re
 from collections.abc import Sequence
@@ -11,7 +11,7 @@ _PUNCTUATION = re.compile(r"\W")
 
 
 def words_of(text: str) -> list[str]:
-    """Mots comme un lecteur les compte (séparés par des espaces), sans casse ni ponctuation."""
+    """Words as a reader counts them (separated by spaces), ignoring case and punctuation."""
     return [word for token in text.casefold().split() if (word := _PUNCTUATION.sub("", token))]
 
 
@@ -21,7 +21,7 @@ def _windows(words: list[str]) -> set[tuple[str, ...]]:
 
 
 def build_index(sources: Sequence[tuple[int, str, str]]) -> dict[tuple[str, ...], int]:
-    """Chaque suite de 26 mots d'une source, avec le numéro de la première qui la contient."""
+    """Each run of 26 words of a source, with the number of the first one that contains it."""
     index: dict[tuple[str, ...], int] = {}
     for number, _url, text in sources:
         for window in _windows(words_of(text)):
@@ -30,8 +30,8 @@ def build_index(sources: Sequence[tuple[int, str, str]]) -> dict[tuple[str, ...]
 
 
 def split_quotes(text: str) -> tuple[list[str], list[str]]:
-    """`(texte hors citation attribuée, citations attribuées)` : une citation attribuée est
-    `« … »` suivie de `[n]` ; une citation sans `[n]` reste du texte courant."""
+    """`(text outside attributed quotations, attributed quotations)`: an attributed quotation is
+    `« ... »` followed by `[n]`; a quotation without `[n]` stays running text."""
     outside: list[str] = []
     quotes: list[str] = []
     last = 0
@@ -46,8 +46,9 @@ def split_quotes(text: str) -> tuple[list[str], list[str]]:
 
 
 def copied_from(parts: Sequence[str], index: dict[tuple[str, ...], int]) -> set[int]:
-    """Numéros des sources dont un passage de plus de 25 mots figure dans ces morceaux de texte
-    (chaque morceau est comparé seul : une citation retirée ne rapproche pas ses voisins)."""
+    """Numbers of the sources of which a passage of more than 25 words appears in these pieces
+    of text (each piece is compared alone: a removed quotation does not bring its neighbors
+    together)."""
     found: set[int] = set()
     if not index:
         return found

@@ -1,13 +1,13 @@
-"""Les réponses de January (D102) : la question posée (point d'arrêt), puis le verdict, un indice,
-la solution ou le saut.
+"""January's answers (D102): the question asked (stop point), then the verdict, a hint, the
+solution or the skip.
 
-`ask` ne fait qu'`interrupt()` puis lit la réponse (pur) : rien avant l'arrêt (SPEC 9.4). Une
-réponse illisible repose la même question. « Je bloque » et « Passer » sont des options de la
-question ; le libellé de « Je bloque » porte le compte des indices (« Je bloque (1/3) »), puis
-devient « Voir la solution » : le front ne compte rien (F15). La réponse de January est encadrée
-comme non fiable (SPEC 17.4) : une consigne qu'elle contient ne change pas le verdict.
-Modèle muet ou trop lent (`fallback`, D115) : réponse non corrigée (`skipped`), indice compté
-sans texte ; la séance continue."""
+`ask` only does `interrupt()` then reads the answer (pure): nothing before the stop (SPEC 9.4).
+An unreadable answer asks the same question again. "I'm stuck" and "Skip" are options of the
+question; the label of "I'm stuck" carries the hint count ("I'm stuck (1/3)"), then becomes
+"Show the solution": the front end counts nothing (F15). January's answer is wrapped as
+untrusted (SPEC 17.4): an instruction it contains does not change the verdict.
+Silent or too slow model (`fallback`, D115): answer not graded (`skipped`), hint counted
+without text; the session continues."""
 
 import logging
 from dataclasses import asdict
@@ -54,7 +54,7 @@ logger = logging.getLogger(__name__)
 
 
 def stuck_label(hints: int) -> str:
-    """« Je bloque (n/3) » pour l'indice n à venir ; « Voir la solution » une fois épuisés."""
+    """ "I'm stuck (n/3)" for the upcoming hint n; "Show the solution" once exhausted."""
     return REVEAL_LABEL if hints >= MAX_HINTS else f"I’m stuck ({hints + 1}/{MAX_HINTS})"
 
 
@@ -69,7 +69,7 @@ def question_payload(state: StudySessionState) -> dict[str, Any]:
 
 
 def ask(state: StudySessionState) -> StudySessionState:
-    """Point d'arrêt : la question en cours. Rien avant `interrupt()`."""
+    """Stop point: the current question. Nothing before `interrupt()`."""
     answer = parse_tutor_answer(interrupt(question_payload(state)))
     if answer is None:
         return {"reply": None}
@@ -93,7 +93,7 @@ def _key(state: StudySessionState) -> str:
 
 
 def _reference(state: StudySessionState) -> str:
-    """Ce qui sert à juger : la section, l'énoncé de l'exercice, ou toute la leçon (finale)."""
+    """What is used to judge: the section, the exercise statement, or the whole lesson (final)."""
     context = context_of(state)
     if state["phase"] == "section":
         return lesson_prompt(section_text(context.sections[state["index"]]))
@@ -103,8 +103,8 @@ def _reference(state: StudySessionState) -> str:
 
 
 def _item(state: StudySessionState) -> str:
-    """Question et réponse attendue : écrites par le Tuteur ou tirées de la leçon (non fiable)."""
-    expected = state["expected"].strip() or NO_EXPECTED  # question finale de repli (D115)
+    """Question and expected answer: written by the Tutor or taken from the lesson (untrusted)."""
+    expected = state["expected"].strip() or NO_EXPECTED  # fallback final question (D115)
     text = f"Question: {state['question']}\nExpected answer: {expected}"
     return untrusted(text, "question")
 
@@ -113,7 +113,7 @@ def make_check(deps: GraphDeps) -> Node:
     @node_timeout()
     async def check(state: StudySessionState) -> StudySessionState:
         reply = state["reply"]
-        assert reply is not None  # garanti par `route_answer`
+        assert reply is not None  # guaranteed by `route_answer`
         prompt = tutor_prompt(
             state,
             "check",
@@ -129,11 +129,11 @@ def make_check(deps: GraphDeps) -> Node:
             step=f"verdict-{_key(state)}",
             intent="I’m reading your answer",
         )
-        # Sans verdict du modèle : `skipped`, ni fiche ni pratique cochée (F13, D115).
+        # Without a model verdict: `skipped`, no card and no practice ticked (F13, D115).
         verdict = found.verdict if found else "skipped"
         say(state, found.feedback if found else UNCHECKED, f"tutor-retour-{_key(state)}")
         logger.info(
-            "Réponse jugée : session %s, %s, verdict %s, %d indice(s)",
+            "Answer judged: session %s, %s, verdict %s, %d hint(s)",
             deps.session_id,
             _key(state),
             verdict,
@@ -153,8 +153,8 @@ def _previous(hints: list[str]) -> str:
 def make_hint(deps: GraphDeps) -> Node:
     @node_timeout()
     async def hint(state: StudySessionState) -> StudySessionState:
-        """Indice gradué : 1 une piste, 2 la méthode, 3 presque la réponse ; puis la question
-        est reposée, avec le compte à jour."""
+        """Graded hint: 1 a lead, 2 the method, 3 almost the answer; then the question is asked
+        again, with the updated count."""
         level = state.get("hints", 0) + 1
         given = state.get("given_hints", [])
         prompt = tutor_prompt(
@@ -174,7 +174,7 @@ def make_hint(deps: GraphDeps) -> Node:
             intent="I’m preparing a hint",
         )
         message_id = f"tutor-indice-{_key(state)}-{level}"
-        if found is None:  # l'indice compte : la solution reste à trois clics, sans le modèle
+        if found is None:  # the hint counts: the solution stays three clicks away, no model
             say(state, hint_unavailable(level, MAX_HINTS), message_id)
             return {"hints": level, "given_hints": given}
         say(state, f"Hint {level} of {MAX_HINTS}\n\n{found.hint}", message_id)
@@ -184,8 +184,8 @@ def make_hint(deps: GraphDeps) -> Node:
 
 
 def reveal(state: StudySessionState) -> StudySessionState:
-    """Après trois indices : la solution (la réponse attendue), et la question est réglée. Sans
-    réponse attendue (question finale de repli) : aucune solution inventée, et aucune fiche."""
+    """After three hints: the solution (the expected answer), and the question is settled. Without
+    an expected answer (fallback final question): no invented solution, and no card."""
     expected = state["expected"].strip()
     text = f"Solution\n\n{expected}" if expected else NO_SOLUTION
     say(state, text, f"tutor-solution-{_key(state)}")

@@ -1,6 +1,6 @@
-"""L'Assistant de suivi (SPEC 9.1, F5, D141) : il lit la phrase de January (« j'ai postulé hier chez
-X pour le poste Y ») et en tire une fiche de candidature en préparation, qu'elle confirme avant
-la création. Utilisé par le parcours `application_intake`."""
+"""The Tracking assistant (SPEC 9.1, F5, D141): it reads January's sentence ("I applied
+yesterday at X for the Y role") and extracts a draft application record, which she confirms
+before creation. Used by the `application_intake` flow."""
 
 from app.agents.nodes.tracker.confirm import ask_confirm, route_confirm
 from app.agents.nodes.tracker.intake import (

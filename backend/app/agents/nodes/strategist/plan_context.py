@@ -1,9 +1,9 @@
-"""Variables du prompt `plan` du Stratège (D86), tirées du contexte du port `ProgramStore`.
+"""Variables of the Strategist's `plan` prompt (D86), taken from the `ProgramStore` port context.
 
-Les propositions et le compte rendu sont des sorties d'agents, le plan courant mêle des textes de
-January et du Stratège, les acquis viennent en partie de la mémoire : tous sont encadrés par
-`untrusted()` (17.4). L'objectif et le cadrage
-sont les souhaits de January : non encadrés (D53 §5, D84), jamais journalisés."""
+The proposals and the minutes are agent outputs, the current plan mixes January's and the
+Strategist's texts, the acquired skills partly come from memory: all are wrapped by
+`untrusted()` (17.4). The goal and the framing are January's wishes: not wrapped (D53 section 5,
+D84), never logged."""
 
 from typing import Any
 
@@ -22,18 +22,18 @@ _LANGUAGES = {"fr": "French", "en": "English"}
 
 
 def hours(minutes: int) -> str:
-    """`750` → « 12 h 30 », `600` → « 10 h »."""
+    """`750` -> "12 h 30", `600` -> "10 h"."""
     whole, rest = divmod(minutes, 60)
     return f"{whole} h {rest:02d}" if rest else f"{whole} h"
 
 
 def _known(known: KnownSkills) -> str:
-    """Encadrés par `untrusted()` : les noms viennent en partie des acquis de la mémoire (écrits
-    par l'Archiviste d'après un document importé ; relecture de 4.5, D88)."""
+    """Wrapped by `untrusted()`: the names partly come from the memory's acquired skills (written
+    by the Archivist from an imported document; reread of 4.5, D88)."""
     if not known:
         return "No known skills recorded."
     lines = [f"- {name} ({_LEVELS.get(level, level)})" for name, level in sorted(known.items())]
-    return untrusted("\n".join(lines), "acquis connus de January")
+    return untrusted("\n".join(lines), "January's known skills")
 
 
 def _proposal(rank: int, proposal: ProposalDraft) -> str:
@@ -47,11 +47,11 @@ def _proposal(rank: int, proposal: ProposalDraft) -> str:
             f"Trade-offs: {', '.join(proposal.tradeoffs)}",
         ]
     )
-    return untrusted(text, f"proposition {rank}")
+    return untrusted(text, f"proposal {rank}")
 
 
 def context_vars(ctx: ProgramContext) -> dict[str, Any]:
-    """Variables JSON du prompt (gardées dans l'état du graphe)."""
+    """JSON variables of the prompt (kept in the graph state)."""
     goal, budget = ctx.goal, ctx.budget
     framing = [f"- {answer}" for answer in goal.framing.values() if answer.strip()]
     minutes = ctx.council_minutes
@@ -69,7 +69,7 @@ def context_vars(ctx: ProgramContext) -> dict[str, Any]:
         "known": _known(ctx.known_skills),
         "mix": len(ctx.proposals) > 1,
         "proposals": "\n\n".join(_proposal(n, p) for n, p in enumerate(ctx.proposals, start=1)),
-        "minutes": untrusted(minutes, "compte rendu du Scribe") if minutes else "",
-        "current_plan": untrusted(ctx.current_plan, "plan courant") if ctx.current_plan else "",
+        "minutes": untrusted(minutes, "Scribe's minutes") if minutes else "",
+        "current_plan": untrusted(ctx.current_plan, "current plan") if ctx.current_plan else "",
         "language": _LANGUAGES.get(ctx.language, ctx.language),
     }

@@ -56,7 +56,7 @@ async def test_builder_saves_draft_and_stops_for_validation(
         "url": f"/learn/programs/{pid}",
     }
     said = await c.events("agent.message")
-    assert "2 semaine(s)" in said[-1]["text"] and "85 %" in said[-1]["text"]
+    assert "2 week(s)" in said[-1]["text"] and "85%" in said[-1]["text"]
     prompt = c.prompt_of_call(1)
     for expected in (
         "714 min",
@@ -66,10 +66,12 @@ async def test_builder_saves_draft_and_stops_for_validation(
         "The lesson language is French.",
     ):
         assert expected in prompt
-    assert 'source="proposition 1"' in prompt and 'source="compte rendu du Scribe"' in prompt
+    assert 'source="proposal 1"' in prompt and 'source="Scribe\'s minutes"' in prompt
     assert "chose to MIX" not in prompt and len(c.plan_prompts()) == 1
     saved = c.store.drafts[0]
-    assert str(saved.start_date) == "2026-11-16" and saved.reason == "Première version du Stratège"
+    assert (
+        str(saved.start_date) == "2026-11-16" and saved.reason == "First version by the Strategist"
+    )
 
 
 async def test_mix_of_two_proposals_is_one_program(make_builder_runner: MakeBuilder) -> None:
@@ -119,7 +121,7 @@ async def test_third_bad_draft_is_packed_by_rules(make_builder_runner: MakeBuild
         kinds = [t.type for t in each.tasks]
         assert "practice" in kinds and kinds[-1] == "quiz"
     said = await c.events("agent.message")
-    assert "reportée(s)" in said[-1]["text"]
+    assert "moved to the following week" in said[-1]["text"]
 
 
 async def test_known_skill_reduced_to_review(make_builder_runner: MakeBuilder) -> None:
@@ -142,7 +144,7 @@ async def test_known_skill_reduced_to_review(make_builder_runner: MakeBuilder) -
     assert not any("pandas" in t.title for t in tasks if not t.already_known)
     assert c.store.drafts[0].plan.skipped_modules == ["Tracer des graphiques"]
     said = await c.events("agent.message")
-    assert "Déjà acquis, sautés : Tracer des graphiques." in said[-1]["text"]
+    assert "Already acquired, skipped: Tracer des graphiques." in said[-1]["text"]
 
 
 async def test_revise_note_produces_a_new_version(make_builder_runner: MakeBuilder) -> None:
@@ -156,9 +158,9 @@ async def test_revise_note_produces_a_new_version(make_builder_runner: MakeBuild
     last = c.prompt_of_last_plan()
     assert "Moins de vidéos" in last
     assert "Tâche déplacée par January" in last and "Revision no. 1" in last
-    assert 'source="note de révision de January"' in last and 'source="plan courant"' in last
+    assert 'source="January\'s revision note"' in last and 'source="current plan"' in last
     assert c.store.contexts == [None, pid]  # le plan courant est relu en base
-    assert c.store.drafts[1].reason == "Révision 1 : Moins de vidéos"
+    assert c.store.drafts[1].reason == "Revision 1: Moins de vidéos"
     await c.resume({"answers": {"note": "Plus de pratique"}})  # le champ seul : une révision
     await c.wait_question(after=second)
     assert [d.revision for d in c.store.drafts] == [0, 1, 2]

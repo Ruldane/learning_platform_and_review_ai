@@ -56,7 +56,7 @@ def options_for(alerts: list[dict[str, Any]]) -> list[str]:
 
 
 def question(state: ApplicationIntakeState) -> dict[str, Any]:
-    """La question de la confirmation (voir le module) : ne dépend que de l'état."""
+    """The confirmation question (see the module): only depends on the state."""
     alerts = state.get("alerts", [])
     text = f"{QUESTION} {alerts[0]['message']}" if alerts else QUESTION
     values = _values(state["draft"])
@@ -73,7 +73,7 @@ def question(state: ApplicationIntakeState) -> dict[str, Any]:
 
 
 def _choice_and_fields(value: Any) -> tuple[str, dict[str, str]] | None:
-    """`(option, champs envoyés)` d'une réponse bien formée, sinon `None`."""
+    """`(option, fields sent)` of a well-formed answer, otherwise `None`."""
     if isinstance(value, str):
         return value, {}
     if not isinstance(value, dict) or not isinstance(value.get("choice"), str):
@@ -88,8 +88,8 @@ def _choice_and_fields(value: Any) -> tuple[str, dict[str, str]] | None:
 
 
 def _confirmed(state: ApplicationIntakeState, fields: dict[str, str]) -> IntakeDraft | None:
-    """Le brouillon relu : celui de l'état, les champs envoyés par-dessus, revalidé. Une date
-    dans le futur (jour de January) est refusée comme à la lecture de la phrase."""
+    """The draft reread: the state's, the fields sent on top, revalidated. A date in the future
+    (January's day) is refused as when reading the sentence."""
     try:
         draft = IntakeDraft.model_validate({**state["draft"], **fields})
     except ValidationError:
@@ -101,7 +101,7 @@ def _confirmed(state: ApplicationIntakeState, fields: dict[str, str]) -> IntakeD
 
 
 def parse_answer(value: Any, state: ApplicationIntakeState) -> dict[str, Any] | None:
-    """`{"choice", "draft"}` ou `None` (la question est reposée). Pur : aucun port."""
+    """`{"choice", "draft"}` or `None` (the question is asked again). Pure: no port."""
     parsed = _choice_and_fields(value)
     if parsed is None or parsed[0] not in options_for(state.get("alerts", [])):
         return None
@@ -113,7 +113,7 @@ def parse_answer(value: Any, state: ApplicationIntakeState) -> dict[str, Any] | 
 
 
 def ask_confirm(state: ApplicationIntakeState) -> ApplicationIntakeState:
-    """`interrupt()` seul : rien avant lui ; la réponse est relue sans aucun port."""
+    """`interrupt()` alone: nothing before it; the answer is reread without any port."""
     return {"answer": parse_answer(interrupt(question(state)), state)}
 
 

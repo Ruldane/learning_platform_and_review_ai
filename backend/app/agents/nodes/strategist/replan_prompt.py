@@ -1,10 +1,10 @@
-"""Variables du prompt `replan` du Stratège (D105), tirées de l'instantané du contexte.
+"""Variables of the Strategist's `replan` prompt (D105), taken from the context snapshot.
 
-Le modèle ne voit que les références (`t12`, `m3`), jamais les ids (F7). Les titres des modules
-et des tâches mêlent des textes du Stratège et de January : le plan est encadré par `untrusted()`
-(17.4), comme le message et la note de January, et les compétences du déclencheur `gap` (tirées
-d'offres d'emploi par l'Analyste, D123). L'objectif est son souhait : non encadré (D53 §5,
-D84), comme pour le mode `plan`. Le bilan est écrit par le code."""
+The model only sees the references (`t12`, `m3`), never the ids (F7). The titles of the modules
+and tasks mix the Strategist's and January's texts: the plan is wrapped by `untrusted()`
+(17.4), like January's message and note, and the skills of the `gap` trigger (taken from job
+postings by the Analyst, D123). The goal is her wish: not wrapped (D53 section 5,
+D84), as for the `plan` mode. The review is written by the code."""
 
 from typing import Any
 

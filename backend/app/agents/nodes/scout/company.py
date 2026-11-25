@@ -1,15 +1,16 @@
-"""L'Éclaireur en mode `company` (SPEC 5.3, D129) : la fiche de l'entreprise d'une offre, pour la
-revue du CV.
+"""The Scout in `company` mode (SPEC 5.3, D129): the company sheet of a posting, for the CV
+review.
 
-Entreprise inconnue → l'étape est sautée et dite dans le fil. Fiche de moins de 30 jours
-(`ReviewContext.company_brief`) → reprise telle quelle, sans recherche ni écriture. Sinon :
-`web_search` du nom de l'entreprise, trois pages lues au plus (`page_agent_text`, encadrées),
-`CompanyBrief` demandée au modèle avec l'offre (encadrée), puis rangée (`save_company`, idempotent
-par entreprise et session). L'ATS est reconnu au domaine des liens de l'offre (lien de
-candidature compris) et des pages lues (`detect_ats`). Une recherche refusée (plafond, moteur
-absent) ou une sortie du modèle invalide ne bloque pas la revue : elle continue sans fiche.
+Unknown company -> the step is skipped and said in the thread. Sheet less than 30 days old
+(`ReviewContext.company_brief`) -> reused as is, without search or write. Otherwise:
+`web_search` of the company name, three pages read at most (`page_agent_text`, wrapped),
+`CompanyBrief` requested from the model with the posting (wrapped), then filed (`save_company`,
+idempotent per company and session). The ATS is recognized from the domain of the posting's
+links (application link included) and of the pages read (`detect_ats`). A refused search (cap,
+engine absent) or an invalid model output does not block the review: it continues without a
+sheet.
 
-Journaux : identifiants et nombres, jamais le nom de l'entreprise ni une adresse (17.2)."""
+Logs: identifiers and numbers, never the company name or an address (17.2)."""
 
 import logging
 from typing import Protocol
@@ -34,7 +35,7 @@ from app.core.errors import AppError
 
 COMPANY_REQUEST = "Write the company dossier."
 MAX_COMPANY_PAGES = 3
-COMPANY_TIMEOUT_S = 300  # une recherche, trois pages (15 s chacune), une sortie structurée
+COMPANY_TIMEOUT_S = 300  # one search, three pages (15 s each), one structured output
 MAX_POSTING_CHARS = 30_000
 UNKNOWN = "The posting does not identify a company. Continuing with the CV review."
 NO_BRIEF = "The company dossier could not be prepared. The CV review will continue."
@@ -51,14 +52,14 @@ def _say(message_id: str, text: str) -> None:
 
 
 async def _pages(deps: GraphDeps, name: str) -> list[PageRead]:
-    """Les pages lisibles parmi les trois premiers résultats ; une erreur de recherche lève."""
+    """The readable pages among the first three results; a search error raises."""
     found = await web_search(deps, name, agent=AGENT)
     pages: list[PageRead] = []
     for hit in found.hits[:MAX_COMPANY_PAGES]:
         try:
             page = await web_read(deps, hit.url, agent=AGENT)
         except AppError:
-            continue  # plafond de pages, adresse refusée : la page est sautée
+            continue  # page cap, address refused: the page is skipped
         if page.status == "ok":
             pages.append(page)
     return pages
@@ -90,12 +91,12 @@ def _links(ctx: ReviewContext, analysis: PostingAnalysis) -> list[str]:
 async def _research(
     deps: GraphDeps, ctx: ReviewContext, name: str, links: list[str]
 ) -> CvReviewState:
-    """Recherche, fiche demandée au modèle, fiche rangée ; rien de rangé en cas d'échec."""
+    """Search, sheet requested from the model, sheet filed; nothing filed on failure."""
     try:
         pages = await _pages(deps, name)
         brief = await _brief(deps, name, ctx.posting_text, pages)
     except AppError as exc:
-        logger.info("Fiche entreprise abandonnée : session %s, code %s", deps.session_id, exc.code)
+        logger.info("Company sheet abandoned: session %s, code %s", deps.session_id, exc.code)
         _say("fiche", NO_BRIEF)
         return {"company": name, "company_brief": None, "ats": detect_ats(links)}
     sources = [page.url for page in pages]
@@ -104,7 +105,7 @@ async def _research(
         deps.user_id, deps.session_id, name, brief, sources, ats
     )
     logger.info(
-        "Fiche entreprise rangée : session %s, revue %s, %d page(s) lue(s), ATS repéré %s",
+        "Company sheet filed: session %s, review %s, %d page(s) read, ATS spotted %s",
         deps.session_id,
         ctx.review_id,
         len(pages),
@@ -123,14 +124,12 @@ def make_company(deps: GraphDeps) -> Node:
         links = _links(ctx, analysis)
         name = ctx.company or analysis.company
         if not name:
-            logger.info(
-                "Entreprise inconnue : session %s, revue %s", deps.session_id, ctx.review_id
-            )
+            logger.info("Unknown company: session %s, review %s", deps.session_id, ctx.review_id)
             _say("fiche", UNKNOWN)
             return {"company": None, "company_brief": None, "ats": detect_ats(links)}
         if ctx.company_brief is not None:
             logger.info(
-                "Fiche entreprise reprise : session %s, revue %s", deps.session_id, ctx.review_id
+                "Company sheet reused: session %s, review %s", deps.session_id, ctx.review_id
             )
             _say("fiche", "Using the recent company dossier for this review.")
             brief = ctx.company_brief.model_dump(mode="json")
